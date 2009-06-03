@@ -59,6 +59,59 @@ mutex_t::~mutex_t()
 #endif
 }
 
+/* read-shared write-exclusive lock */
+rwlock_t::rwlock_t() 
+{
+#if HAVE_PTHREAD
+	int error=pthread_rwlock_init(&l, NULL);
+	switch(error)
+	{
+		case EINVAL: throw std::runtime_error("pthread_rwlock_init error EINVAL"); break;
+		case ENOMEM: throw std::runtime_error("pthread_rwlock_init error ENOMEM"); break;
+		case EAGAIN: throw std::runtime_error("pthread_rwlock_init error EAGAIN"); break;
+		default: break;
+	}
+#endif
+}
+
+void rwlock_t::readLock() 
+{
+#if HAVE_PTHREAD
+	if(pthread_rwlock_rdlock(&l))
+	{
+		throw std::runtime_error("Error rwlock readLock");
+	}
+#endif
+}
+
+void rwlock_t::writeLock() 
+{
+#if HAVE_PTHREAD
+	if(pthread_rwlock_wrlock(&l))
+	{
+		throw std::runtime_error("Error rwlock writeLock");
+	}
+#endif
+}
+
+void rwlock_t::unlock() 
+{
+#if HAVE_PTHREAD
+	if(pthread_rwlock_unlock(&l))
+	{
+		throw std::runtime_error("Error rwlock unlock");
+	}
+#endif
+}
+
+rwlock_t::~rwlock_t() 
+{
+#if HAVE_PTHREAD
+	pthread_rwlock_destroy(&l);
+#endif
+}
+
+
 /* condition object */
 
 conditionVar_t::conditionVar_t() 

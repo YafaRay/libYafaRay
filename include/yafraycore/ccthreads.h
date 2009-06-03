@@ -41,6 +41,26 @@ class YAFRAYCORE_EXPORT mutex_t
 #endif
 };
 
+/*! The try to provide a platform independant read-shared write-exclusive lock,
+	 as a matter of fact it is simply a pthread wrapper now...
+*/
+class YAFRAYCORE_EXPORT rwlock_t
+{
+	public:
+		rwlock_t();
+		void readLock();
+		void writeLock();
+		void unlock();
+		~rwlock_t();
+	protected:
+		rwlock_t(const rwlock_t &l);
+		rwlock_t & operator = (const rwlock_t &l);
+#if HAVE_PTHREAD
+		pthread_rwlock_t l;
+#endif
+};
+
+
 /*! The try to provide a platform independant codition object, as a matter of fact
 	it is simply a pthread wrapper now...
 	It is mutex and condition variable in one!
