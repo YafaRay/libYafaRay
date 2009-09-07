@@ -1,0 +1,61 @@
+import sys
+import os
+
+Import('shared_env')
+#Import('config')
+Import('append_lib')
+core_env = shared_env.Clone();
+
+core_env.Append (CPPDEFINES= ['BUILDING_YAFRAYCORE'])
+
+source_files = ['bound.cc',
+				'yafsystem.cc',
+				'environment.cc',
+				'console.cc',
+				'faure_tables.cc',
+				'builtincameras.cc',
+				'std_primitives.cc',
+				'color.cc',
+				'matrix4.cc',
+				'object3d.cc',
+				'timer.cc',
+				'kdtree.cc',
+				'ray_kdtree.cc',
+				'tribox3_d.cc',
+				'triclip.cc',
+				'scene.cc',
+				'imagefilm.cc',
+				'imagesplitter.cc',
+				'material.cc',
+				'nodematerial.cc',
+				'ccthreads.cc',
+				'triangle.cc',
+				'vector3d.cc',
+				'tga_io.cc',
+				'photon.cc',
+				'old_photonmap.cc',
+#				'HDR_io.cc',
+				'xmlparser.cc',
+				'spectrum.cc',
+				'vmap.cc',
+				'volume.cc',
+				'memoryIO.cc',
+				'surface.cc',
+				'irradiancecache.cc',
+				'integrator.cc'
+				]
+
+#if config.exr.present:
+if core_env['WITH_YF_EXR']:
+	source_files.append('EXR_io.cc')
+
+#append_lib(core_env, [config.pthread, config.exr, config.xml, config.freetype2, config.others])
+append_lib(core_env, ['PTHREAD', 'EXR', 'XML', 'FREETYPE', 'PNG', 'ZLIB', 'MISC'])
+
+#core_env.Install(config.libpath, core_env.SharedLibrary(target=config.corelib, source=source_files) )
+#core_env.Alias('install_core',config.libpath)
+yafcore = core_env.SharedLibrary(target='${YF_CORELIB}', source=source_files);
+core_env.Install('${YF_LIBOUT}', yafcore )
+core_env.Install('${YF_PACKPATH}${YF_LIBOUT}', yafcore )
+core_env.Alias('install_core','${YF_LIBOUT}')
+

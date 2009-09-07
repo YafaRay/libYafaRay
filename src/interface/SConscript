@@ -1,0 +1,17 @@
+import sys
+
+#Import('config')
+Import('plugin_env')
+Import('append_lib')
+Import('append_includes')
+
+interf_env = plugin_env.Clone();
+append_lib(interf_env, ['MISC'])
+append_includes(interf_env, ['PTHREAD'])
+
+interf=interf_env.SharedLibrary (target='yafarayplugin', source=['yafrayinterface.cc', 'xmlinterface.cc'])
+interf_env.Install('${YF_LIBOUT}',interf)
+
+interf_env.Install('${YF_PACKPATH}${YF_LIBOUT}',interf)
+
+interf_env.Alias('install_interf','${YF_LIBOUT}')

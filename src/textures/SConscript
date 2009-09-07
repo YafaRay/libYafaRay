@@ -1,0 +1,27 @@
+import sys
+
+Import('plugin_env')
+Import('append_lib')
+Import('append_includes')
+
+tex_env = plugin_env.Clone();
+append_includes(tex_env, ['PTHREAD'])
+
+image_env = tex_env.Clone()
+append_lib(image_env, ['JPEG', 'PNG', 'EXR', 'ZLIB'])
+
+image_sources=['basictex.cc','noise.cc', 'jpeg.cc', 'imagetex.cc', 'rgbe_texture.cc']
+#if config.png.present:
+if tex_env['WITH_YF_PNG']:
+	image_sources += ['png.cc']
+
+basictex=image_env.SharedLibrary (target='basictex', source=image_sources)
+image_env.Install('${YF_PLUGINPATH}',basictex)
+
+# nodes:
+basicnodes=tex_env.SharedLibrary (target='basicnodes', source=['basicnodes.cc', 'layernode.cc'])
+tex_env.Install('${YF_PLUGINPATH}',basicnodes)
+
+tex_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[basictex,basicnodes])
+
+tex_env.Alias('install_tex','${YF_PLUGINPATH}')

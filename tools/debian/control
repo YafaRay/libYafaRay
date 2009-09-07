@@ -1,0 +1,11 @@
+Source: yafaray
+Section: unknow
+Priority: optional
+Maintainer: foo <foo@yafray.org>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: yafaray
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: <YafRay is a free rendering engine that can be used as plugin or with XML files>

@@ -1,0 +1,12 @@
+yafaray (0.1.0.C_REV) unstable; urgency=low
+
+  * build of SVN revision C_REV
+
+ -- Lynx <lynx@yafray.org>  C_DATE
+
+yafaray (0.1.0) unstable; urgency=low
+
+  * initial release
+
+ -- Lynx <lynx@yafray.org>  Sun,  25 Nov 2007 22:18:03 +0100
+

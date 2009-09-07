@@ -1,0 +1,31 @@
+import distutils.sysconfig, os
+Import('qt_env')
+Import('append_includes')
+
+#gui_env = plugin_env.Clone(tools=['default','qt'], QTDIR=plugin_env['YF_QTDIR'], QT_LIB=None, QT_UIC='uic-qt4')
+gui_env = qt_env.Clone()
+#print gui_env['QT_UICCOMSTR']
+gui_env.Append(	LIBS=[gui_env['YF_CORELIB'], Split(gui_env['YF_QT4_LIB'])],
+				LIBPATH = ['../yafraycore'],
+				SHLINKFLAGS = gui_env['YF_SHLINKFLAGS'],
+				CPPDEFINES= ['BUILDING_QTPLUGIN'],
+				CPPPATH=['.'])
+gui_env.Append(FRAMEWORKS=['QtGui', 'QtCore'])
+gui_env.Append(FRAMEWORKPATH=[gui_env['YF_QTDIR'] + '/lib'])
+append_includes(gui_env, ['PTHREAD'])
+
+gui_env.Command('windowbase.h', 'windowbase.ui', '$QT_UIC $QT_UICFLAGS -o $TARGET $SOURCE')
+gui_src = ['renderwidget.cc', 'qtoutput.cc', 'worker.cc', 'mywindow.cc', 'events.cc', 'qtprogress.cc', 'animworking.cc']
+qt_qui = gui_env.SharedLibrary(target='yafarayqt', source=gui_src)
+gui_env.Depends('yafarayqt', 'windowbase.h')
+Alias('qtgui', qt_qui )
+
+gui_env.Install('${YF_LIBOUT}', qt_qui )
+gui_env.Install('${YF_PACKPATH}${YF_LIBOUT}', qt_qui )
+
+#swig_env = shared_env.Clone(SWIGFLAGS=['-c++', '-python'], SHLIBPREFIX="_")
+#swig_env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()] )
+#swig_env.Append(LIBS = [ shared_env['YF_CORELIB'], 'yafarayqt','QtGui', 'QtCore'] )
+#swig_env.Append(LIBPATH = ['.'])
+#Alias('qtgui', swig_env.LoadableModule(target='yafqt', source=['renderwidget.i']))
+

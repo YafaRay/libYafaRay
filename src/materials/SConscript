@@ -1,0 +1,36 @@
+import sys
+
+#Import('config')
+Import('plugin_env')
+Import('append_includes')
+
+mat_env = plugin_env.Clone();
+append_includes(mat_env, ['PTHREAD'])
+
+glass=mat_env.SharedLibrary (target='glass', source=['glass.cc', 'roughglass.cc'])
+mat_env.Install('${YF_PLUGINPATH}',glass)
+
+blendermat=mat_env.SharedLibrary (target='blendermat', source=['blendmat.cc'])
+mat_env.Install('${YF_PLUGINPATH}',blendermat)
+
+glossymat=mat_env.SharedLibrary (target='glossymat', source=['glossy_mat.cc'])#, 'microfacet.cc'])
+mat_env.Install('${YF_PLUGINPATH}',glossymat)
+
+shinydiffuse=mat_env.SharedLibrary (target='shinydiffuse', source=['shinydiff.cc'])
+mat_env.Install('${YF_PLUGINPATH}',shinydiffuse)
+
+coatedglossy=mat_env.SharedLibrary (target='coatedglossy', source=['coatedglossy.cc'])#, 'microfacet.cc'])
+mat_env.Install('${YF_PLUGINPATH}',coatedglossy)
+
+simplemats=mat_env.SharedLibrary (target='simplemats', source=['simplemats.cc', 'maskmat.cc'])
+mat_env.Install('${YF_PLUGINPATH}',simplemats)
+
+volumetrics=mat_env.SharedLibrary(target='volumetrics', source=['beer.cc'])
+mat_env.Install('${YF_PLUGINPATH}',volumetrics)
+#rgbe_texture=mat_env.SharedLibrary (target='rgbe_texture', source=['rgbe_texture.cc'])
+#mat_env.Depends(rgbe_texture,'../yafraycore');
+#mat_env.Install(config.pluginpath,rgbe_texture)
+
+mat_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[glass,blendermat,glossymat,shinydiffuse,coatedglossy,simplemats,volumetrics])
+
+mat_env.Alias('install_mat','${YF_PLUGINPATH}')

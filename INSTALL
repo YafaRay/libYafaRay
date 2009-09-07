@@ -1,0 +1,54 @@
+This software uses SCons (http://www.scons.org) as build system for
+all supported platforms.
+Please make sure you have SCons 0.97 or later, or at very least one
+of the later 0.97 prerelease (0.96.93 etc.)
+0.96.1 is DEFINITELY TOO OLD
+
+Note: several header files are automatically created by the build process
+If you have problems after updating or changing options, try to remove
+the file "yafray_config.h" (it's for some advanced settings normal users
+probably don't want to touch), because this file is not overwritten
+automatically!
+
+----- DEPENDENCIES -----
+
+YafRay requires a couple of additional packages to enable all features.
+These are currently:
+
+zlib:        http://www.gzip.org/zlib/
+libpng:      http://www.libpng.org/pub/png/
+libjpeg:     http://www.ijg.org/
+OpenEXR:     http://openexr.com/
+libxml2:     http://xmlsoft.org/
+freetype2:   http://www.freetype.org/
+pthread:     (win32) http://sourceware.org/pthreads-win32/
+
+Pre-built libraries for Win32/MSVC8 are available in the svn dir 'libs'
+Note that there is no guarantee YafRay will build with some libraries
+disabled, some code sections may not be disabled automatically yet, or
+the library is even mandatory (e.g. pthread).
+
+----- OPTIONS -----
+
+The recommended way to change options is to override settings
+in 'user-config.py'. You have to create this file (in the dir
+as the SConstruct, NOT config/user-config.py)
+Do NOT edit the files in config/, this asks for conficts with SVN!
+
+A couple of useful settings:
+- enable/disable libraries (e.g. YF_WITH_FREETYPE = 'false')
+- change include/library paths (YF_PNG_INC, YF_PNG_LIBPATH etc.)
+- change installation dirs: e.g. PREFIX = '/opt'
+  note: YF_LIBOUT usually needs to be known to the dynamic linker
+- change compiler flags: CCFLAGS, REL_CCFLAGS, DEBUG_CCFLAGS
+- do debug build: YF_DEBUG = 'true'
+  note: you may want to set DEBUG_CCFLAGS and link against
+        debug libraries instead
+
+To install (*n*x) do 'scons install' or 'sudo scons install' in case
+you're a sudoer.
+If you chose an install dir outside the source tree, you may have
+to do 'scons install' on windows too, but note that YafRay still requires
+a registry key to find its paths in Windows, whereas the default paths
+are hard-coded on other platforms.
+

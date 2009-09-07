@@ -1,0 +1,19 @@
+import os, sys, commands
+Import('shared_env')
+
+shared_env['DEB_ARCH'] = commands.getoutput('dpkg --print-architecture')
+
+shared_env.Install('#debian', ['compat', 'control'])
+
+rev = os.popen('svnversion').readline().strip()
+date = os.popen('date -R').readline().strip()
+
+shared_env.Command('#debian/changelog', 'changelog',
+    'sed -e \'s/C_REV/'+rev+'/g\' -e \'s/C_DATE/'+date+'/g\' $SOURCE > $TARGET')
+
+shared_env.Command('#debian/yafaray_${YF_VERSION}.'+rev+'_${DEB_ARCH}.deb',
+	['#debian/changelog', '#debian/compat', '#debian/control', '#debian/yafaray'],
+	["dh_shlibdeps",
+	 "fakeroot dh_gencontrol",
+	 "fakeroot dpkg-deb -b debian/yafaray ${TARGET}"] )
+

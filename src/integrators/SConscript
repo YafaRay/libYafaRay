@@ -1,0 +1,39 @@
+import sys
+Import('append_lib')
+
+#Import('config')
+Import('plugin_env')
+
+integr_env = plugin_env.Clone();
+append_lib(integr_env, ['PTHREAD', 'MISC'])
+
+directlight=integr_env.SharedLibrary (target='directlight', source=['directlight.cc', 'common.cc'])
+integr_env.Install('${YF_PLUGINPATH}',directlight)
+
+photonmap=integr_env.SharedLibrary (target='photonmap', source=['photonintegr.cc', 'photonintegr_cache.cc', 'common.cc'])
+integr_env.Install('${YF_PLUGINPATH}',photonmap)
+
+pathtrace=integr_env.SharedLibrary (target='pathtrace', source=['pathtracer.cc', 'common.cc'])
+integr_env.Install('${YF_PLUGINPATH}',pathtrace)
+
+bidirpath=integr_env.SharedLibrary (target='bidirpath', source=['bidirpath.cc'])
+integr_env.Install('${YF_PLUGINPATH}',bidirpath)
+
+EmissionIntegrator=integr_env.SharedLibrary (target='EmissionIntegrator', source=['EmissionIntegrator.cc'])
+integr_env.Install('${YF_PLUGINPATH}',EmissionIntegrator)
+
+SingleScatterIntegrator=integr_env.SharedLibrary (target='SingleScatterIntegrator', source=['SingleScatterIntegrator.cc'])
+integr_env.Install('${YF_PLUGINPATH}',SingleScatterIntegrator)
+
+EmptyVolumeIntegrator=integr_env.SharedLibrary (target='EmptyVolumeIntegrator', source=['EmptyVolumeIntegrator.cc'])
+integr_env.Install('${YF_PLUGINPATH}',EmptyVolumeIntegrator)
+
+DebugIntegrator=integr_env.SharedLibrary (target='DebugIntegrator', source=['DebugIntegrator.cc'])
+integr_env.Install('${YF_PLUGINPATH}',DebugIntegrator)
+
+SkyIntegrator=integr_env.SharedLibrary (target='SkyIntegrator', source=['SkyIntegrator.cc'])
+integr_env.Install('${YF_PLUGINPATH}',SkyIntegrator)
+
+integr_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[directlight,photonmap,pathtrace,bidirpath,EmissionIntegrator,
+	SingleScatterIntegrator,EmptyVolumeIntegrator,DebugIntegrator,SkyIntegrator])
+integr_env.Alias('install_integr','${YF_PLUGINPATH}')

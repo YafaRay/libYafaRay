@@ -1,0 +1,47 @@
+import sys
+import os
+
+#Import('config')
+Import('program_env')
+Import('append_lib')
+Import('append_includes')
+
+loader_env = program_env.Clone()
+append_includes(loader_env, ['PTHREAD'])
+
+source_files = ['testmain.cc',
+				'plyread.cc',
+				'simplemat.cc',
+				'rply-1.01/rply.c'
+				]
+
+photon_files = ['testphoton.cc',
+				'simplemat.cc']
+
+loader_files = ['testloader.cc']
+if sys.platform == 'win32' :
+	loader_files += ['wingetopt.cc']
+
+append_lib(loader_env, ['EXR', 'ZLIB', 'PTHREAD', 'MISC'])
+
+loader_env.Prepend (LIBPATH = [ '../integrators', '../yafraycore'] )
+loader_env.Append(LIBS = ['${YF_CORELIB}'])
+
+#testsuite=loader_env.Program (target='testsuite', source=source_files, LIBS=libs)
+photontest=loader_env.Program (target='photontest', source=photon_files)
+testloader=loader_env.Program (target='yafaray-xml', source=loader_files)
+
+demo_env = loader_env.Clone();
+demo_env.Prepend (LIBPATH = ['../interface'] )
+demo_env.Append(LIBS = ['yafarayplugin'] )
+interface_demo=demo_env.Program (target='interface-demo', source='interface_demo.cc')
+
+#loader_env.Install(config.binpath,testsuite)
+#loader_env.Install(config.binpath,photontest)
+#loader_env.Install(config.rootpath + os.sep + 'build/bin',testloader)
+loader_env.Install('${YF_BINPATH}',testloader)
+
+loader_env.Install('${YF_PACKPATH}${YF_BINPATH}',testloader)
+
+loader_env.Alias('install_testsuite','${YF_BINPATH}')
+

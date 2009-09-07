@@ -1,0 +1,27 @@
+import sys
+
+#Import('config')
+Import('plugin_env')
+Import('static_env')
+Import('append_lib')
+
+volume_env = plugin_env.Clone()
+
+uniformvolume=volume_env.SharedLibrary (target='UniformVolume', source=['UniformVolume.cc'])
+volume_env.Install('${YF_PLUGINPATH}',uniformvolume)
+
+ExpDensityVolume=volume_env.SharedLibrary (target='ExpDensityVolume', source=['ExpDensityVolume.cc'])
+volume_env.Install('${YF_PLUGINPATH}',ExpDensityVolume)
+
+NoiseVolume=volume_env.SharedLibrary (target='NoiseVolume', source=['NoiseVolume.cc'])
+volume_env.Install('${YF_PLUGINPATH}',NoiseVolume)
+
+GridVolume=volume_env.SharedLibrary (target='GridVolume', source=['GridVolume.cc'])
+volume_env.Install('${YF_PLUGINPATH}',GridVolume)
+
+SkyVolume=volume_env.SharedLibrary (target='SkyVolume', source=['SkyVolume.cc'])
+volume_env.Install('${YF_PLUGINPATH}',SkyVolume)
+
+volume_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[uniformvolume,ExpDensityVolume,NoiseVolume,SkyVolume])
+
+volume_env.Alias('install_volumes','${YF_PLUGINPATH}')
