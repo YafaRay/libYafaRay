@@ -42,7 +42,7 @@ class glassMat_t: public nodeMaterial_t
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		virtual bool volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const;
 		virtual float getMatIOR() const;
-	//	virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
+		virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 	protected:
 		shaderNode_t* bumpS;
@@ -273,7 +273,7 @@ bool glassMat_t::volumeTransmittance(const renderState_t &state, const surfacePo
 	return false;
 }
 
-/* bool glassMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
+bool glassMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
 {
 	if(!(s.flags & BSDF_SPECULAR)) return false;
 	nodeStack_t stack(state.userdata);
@@ -312,7 +312,7 @@ bool glassMat_t::volumeTransmittance(const renderState_t &state, const surfacePo
 		return true;
 	}
 	return false;
-} */
+}
 
 float glassMat_t::getMatIOR() const
 {

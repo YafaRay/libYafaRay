@@ -14,7 +14,7 @@ vector3d_t inline SampleCosHemisphere(const vector3d_t &N,const vector3d_t &Ru,c
 {
 	PFLOAT z1 = s1;
 	PFLOAT z2 = s2*M_2PI;
-	return (Ru*fCos(z2) + Rv*fSin(z2))*sqrt(1.0-z1) + N*fSqrt(z1);
+	return (Ru*fCos(z2) + Rv*fSin(z2))*fSqrt(1.0-z1) + N*fSqrt(z1);
 }
 
 //! Uniform sample a sphere

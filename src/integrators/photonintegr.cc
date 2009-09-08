@@ -325,7 +325,7 @@ bool photonIntegrator_t::preprocess()
 			const material_t *material = sp.material;
 			BSDF_t bsdfs;
 			material->initBSDF(state, sp, bsdfs);
-			if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECT))
+			if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
 			{
 				++_nDiffuse;
 				//deposit photon on surface
@@ -570,7 +570,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				}
 				else if(caustic)
 				{
-					vector3d_t sf = hit.N;//FACE_FORWARD(hit.Ng, hit.N, pwo);
+					vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, pwo);
 					const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
 					if(nearest) pathCol += throughput * nearest->color();
 				}
@@ -907,14 +907,14 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				{
 					vector3d_t pdir = gathered[i].photon->direction();
 					color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
-					col += surfCol * scale * gathered[i].photon->color();// * std::std::fabs(sp.N*pdir); //< wrong!?
+					col += surfCol * scale * gathered[i].photon->color() * std::fabs(sp.N*pdir); //< wrong!?
 				}
 	//			vector3d_t pdir = gathered[0].photon->direction();
 	//			col += CFLOAT(nGathered) * scale * material->eval(state, sp, wo, pdir, BSDF_DIFFUSE)* gathered[0].photon->color();
 			}
 		}
 		// add caustics
-		if(bsdfs & (BSDF_DIFFUSE))// | BSDF_GLOSSY))
+		if(bsdfs & (BSDF_DIFFUSE || BSDF_GLOSSY))
 		{
 			col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, dsRadius);
 		}

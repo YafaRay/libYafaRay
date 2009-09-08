@@ -101,75 +101,21 @@ bool pathIntegrator_t::preprocess()
 	{
 		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons);
 	}
-//	else if(causticType == BOTH)
-//	{
-//		for(li=scene->lights.begin(); li!=scene->lights.end(); ++li)
-//		{
-//			if((*li)->diracLight()) cLights.push_back(*li);
-//		}
-//		if(cLights.size()>0) success = createCausticMap(*scene, cLights, causticMap, cDepth, nPhotons);
-//	}
+/*
+	else if(causticType == BOTH)
+	{
+		for(li=scene->lights.begin(); li!=scene->lights.end(); ++li)
+		{
+			if((*li)->diracLight()) cLights.push_back(*li);
+		}
+		if(cLights.size()>0) success = createCausticMap(*scene, cLights, causticMap, cDepth, nPhotons);
+	}
+*/
+
 	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
 	else traceCaustics = false;
 	return true;
 }
-
-/* inline color_t pathIntegrator_t::estimateDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, light_t *light, int d1, int n)const
-{
-	color_t lcol(0.0), scol, col(0.0);
-	ray_t lightRay;
-	float lightPdf;
-	bool shadowed;
-	const material_t *material = sp.material;
-	lightRay.from = sp.P;
-	// handle lights with delta distribution, e.g. point and directional lights
-	if( light->diracLight() )
-	{
-		if( light->illuminate(sp, lcol, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(lightRay, sp, sDepth, scol) : scene->isShadowed(lightRay, sp);
-			if(!shadowed)
-			{
-				if(trShad) lcol *= scol;
-				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE);
-				col = surfCol * lcol * std::std::fabs(sp.N*lightRay.dir);
-			}
-		}
-	}
-	else // area light and suchlike
-	{
-		color_t ccol(0.0);
-		// ...get sample val...
-		float s1, s2;
-		if(d1>49)
-		{
-			s1 = (*state.prng)();
-			s2 = (*state.prng)();
-		}
-		else
-		{
-			s1 = scrHalton(d1, n);//ourRandom();//
-			s2 = scrHalton(d1+1, n);//ourRandom();//
-		}
-		
-		if( light->illumSample (sp, s1, s2, lcol, lightPdf, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(lightRay, sp, sDepth, scol) : scene->isShadowed(lightRay, sp);
-			if(!shadowed)
-			{
-				if(trShad) lcol *= scol;
-				//color_t surfCol = bsdf->eval(sp, wo, lightRay.dir, userdata);
-				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE);
-				col = surfCol * lcol * std::std::fabs(sp.N*lightRay.dir) * lightPdf;
-			}
-		}
-	}
-	return col;
-} */
 
 inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n)const
 {

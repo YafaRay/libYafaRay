@@ -24,7 +24,9 @@
 
 __BEGIN_YAFRAY
 
-double CosineInterpolate(
+// Algorithms from: http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/
+
+inline static double CosineInterpolate(
 		double y1,double y2,
 		double mu)
 {
@@ -34,7 +36,7 @@ double CosineInterpolate(
 	return ( y1 * (1 - mu2) + y2 * mu2);
 }
 
-double CubicInterpolate(
+inline static double CubicInterpolate(
 		double y0,double y1,
 		double y2,double y3,
 		double mu)

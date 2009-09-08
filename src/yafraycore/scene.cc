@@ -34,6 +34,9 @@
 #include <yafraycore/vmap.h>
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
+#ifdef __APPLE__
+	#include <sys/sysctl.h>
+#endif
 #include <iostream>
 #include <limits>
 

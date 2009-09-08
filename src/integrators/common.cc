@@ -206,7 +206,7 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 						{
 							float mPdf = material->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
 							float l2 = ls.pdf * ls.pdf;
-							float m2 = mPdf * mPdf + 0.01f;
+							float m2 = mPdf * mPdf;
 							float w = l2 / (l2 + m2);
 							ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
 						}

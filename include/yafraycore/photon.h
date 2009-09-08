@@ -8,6 +8,13 @@
 #include <core_api/color.h>
 
 __BEGIN_YAFRAY
+#define c255Ratio 81.16902097686662123083
+#define c256Ratio 40.74366543152520595687
+
+
+#define cInv255Ratio 0.01231997119054820878
+#define cInv256Ratio 0.02454369260617025968
+
 
 class dirConverter_t
 {
@@ -22,8 +29,8 @@ class dirConverter_t
 		}
 		std::pair<unsigned char,unsigned char> convert(const vector3d_t &dir)
 		{
-			int t=(int)(acos(dir.z)*(255.0/M_PI));
-			int p=(int)(atan2(dir.y,dir.x)*(256.0/M_2PI));
+			int t=(int)(acos(dir.z)*c255Ratio);
+			int p=(int)(atan2(dir.y,dir.x)*c256Ratio);
 			if(t>254) t=254;
 			else if(t<0) t=0;
 			if(p>255) p=255;

@@ -9,13 +9,13 @@ dirConverter_t::dirConverter_t()
 {
 	for(int i=0;i<255;++i)
 	{
-		PFLOAT angle=(PFLOAT)i*(1.0/255.0)*M_PI;
+		PFLOAT angle=(PFLOAT)i * cInv255Ratio;
 		costheta[i]=fCos(angle);
 		sintheta[i]=fSin(angle);
 	}
 	for(int i=0;i<256;++i)
 	{
-		PFLOAT angle=(PFLOAT)i*(1.0/256.0)*M_2PI;
+		PFLOAT angle=(PFLOAT)i * cInv256Ratio;
 		cosphi[i]=fCos(angle);
 		sinphi[i]=fSin(angle);
 	}

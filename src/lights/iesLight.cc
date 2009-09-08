@@ -23,7 +23,8 @@
 #include <core_api/environment.h>
 #include <utilities/sample_utils.h>
 #include <utilities/iesUtils.h>
-#include <utilities/interpolation.h>
+
+
 
 __BEGIN_YAFRAY
 
@@ -31,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, IesData& iesD, int smpls, bool sSha, float ang);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, const std::string iesFile, int smpls, bool sSha, float ang);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -48,13 +49,12 @@ class iesLight_t : public light_t
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		
+		bool isIESOk(){ return IESOk; };
+		
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
 
 	protected:
-
-		bool getRadiance(float u, float v, float &result) const;
-		float getRadianceBlurred(float u, float v) const;
 
 		point3d_t position;
 		vector3d_t dir; //!< orientation of the spot cone
@@ -62,70 +62,36 @@ class iesLight_t : public light_t
 		vector3d_t du, dv; //!< form a coordinate system with dir, to sample directions
 		PFLOAT cosEnd; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
 		color_t color; //<! color, premulitplied by light intensity
-		float intensity;
-		int resolution;
-		float blurStrength;
-		
-		float maxRad;
-		
-		int minRes;
-		int maxRes;
-		
-		float resStep;
 
 		int samples;
 		bool softShadow;
 		
 		float totEnergy;
 
-		IesData iesData;
+		IESData_t *iesData;
+		
+		bool IESOk;
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, IesData& iesD, int smpls, bool sSha, float ang):
-	light_t(LIGHT_SINGULAR), position(from), intensity(power), resolution(res), blurStrength(blurS), samples(smpls), softShadow(sSha)
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, const std::string iesFile, int smpls, bool sSha, float ang):
+	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
 {
-	ndir = (from - to);
-	ndir.normalize();
-	dir = -ndir;
-	color = col*power;
-	createCS(dir, du, dv);
+	iesData = new IESData_t(blurS, res);
+	
+	IESOk = iesData->parseIESFile(iesFile);
 
-	iesData = iesD;
-	// debug output
-	for (int i = 0; i < iesData.vertAngles; ++i) {
-		std::cout << iesData.vertAngleMap[i] << " ";
-	}
-	std::cout << std::endl;
+	if(IESOk)
+	{
+		ndir = (from - to);
+		ndir.normalize();
+		dir = -ndir;
+		color = col*power;
+		createCS(dir, du, dv);
 
-	for (int i = 0; i < iesData.horAngles; ++i) {
-		std::cout << iesData.horAngleMap[i] << " ";
+		cosEnd = fCos(iesData->getMaxVAngle());
+	
+		totEnergy = M_2PI * (1.f - 0.5f * cosEnd);
 	}
-	std::cout << std::endl;
-	
-	maxRad = 0.f;
-	
-	for (int i = 0; i < iesData.horAngles; ++i) {
-		for (int j = 0; j < iesData.vertAngles; ++j) {
-			if(iesData.radMap[i][j] > maxRad) maxRad = iesData.radMap[i][j];
-			
-			std::cout << iesData.radMap[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
-	// end debug output
-	
-	cosEnd = fCos(degToRad(iesData.vertAngleMap[iesData.vertAngles - 1]));
-	
-	totEnergy = M_2PI * (1.f - 0.5f * cosEnd);
-	
-	maxRad = 1.f / maxRad;
-	
-	int reso_2 = resolution >> 1; //reso / 2
-	
-	minRes = -reso_2; 
-	maxRes = reso_2;
-	
-	resStep = blurStrength / (float)resolution;
 }
 
 bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
@@ -144,10 +110,10 @@ bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) c
 
 	float u, v;
 
-	u = 1.f; // arbitrary
+	u = radToDeg(std::acos(ldir.z));
 	v = radToDeg(std::acos(cosa));
 
-	col = color * getRadianceBlurred(u, v) * iDistSqrt;
+	col = color * iesData->getRadianceBlurred(u, v) * iDistSqrt;
 	
 	wi.tmax = dist;
 	wi.dir = ldir;
@@ -176,10 +142,10 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	wi.tmax = dist;
 	wi.dir = sampleCone(ldir, du, dv, cosa, u, v);
 
-	u = 1.f; // arbitrary
+	u = radToDeg(std::acos(ldir.z));
 	v = radToDeg(std::acos(cosa));
 	
-	float rad = getRadianceBlurred(u, v);
+	float rad = iesData->getRadianceBlurred(u, v);
 	
 	if(rad == 0.f) return false;
 	
@@ -208,10 +174,10 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	ray.from = position;
 	ray.dir = sampleCone(dir, du, dv, cosEnd, u, v);
 	
-	u = 1.f;
+	u = radToDeg(std::acos(ray.dir.z));
 	v = radToDeg(std::acos(ray.dir * dir));
 	
-	float rad = getRadianceBlurred(u, v);
+	float rad = iesData->getRadianceBlurred(u, v);
 	
 	ipdf = rad;
 
@@ -238,64 +204,6 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	dirPdf = 1.0f / 2.0f;
 }
 
-// amount: size of "kernel" in degrees, resolution: number of samples
-float iesLight_t::getRadianceBlurred(float u, float v) const {
-
-	float ret = 0.f;
-
-	if (blurStrength < 0.5 || resolution < 2)
-	{
-		getRadiance(u, v, ret);
-	}
-	else
-	{
-		int hits = 0;
-	
-		for (int i = minRes; i < maxRes; ++i)
-		{
-			float tmp;
-			
-			if (getRadiance(u, v + (resStep * (float)i), tmp))
-			{
-				ret += tmp;
-				++hits;
-			}
-		}
-		ret /= (float)hits;
-	}
-
-	return ret * maxRad;
-}
-
-bool iesLight_t::getRadiance(float u, float v, float& rad) const {
-	
-	rad = 0;
-	
-	if (iesData.horAngles == 1)
-	{
-		float vertAngleStart = iesData.vertAngleMap[0];
-		float vertAngleEnd = iesData.vertAngleMap[iesData.vertAngles - 1];
-
-		if (v >= vertAngleStart && v < vertAngleEnd)
-		{
-			int i_v = 0;
-
-			while (i_v < iesData.vertAngles - 2 && v > iesData.vertAngleMap[i_v+1]) ++i_v;
-			
-			float vert1 = iesData.vertAngleMap[i_v];
-			float vert2 = iesData.vertAngleMap[i_v+1];
-			float vertDiff = vert2 - vert1;
-
-			float offset_v = (v - vert1) / vertDiff;
-
-			rad = CosineInterpolate(iesData.radMap[0][i_v], iesData.radMap[0][i_v + 1], offset_v);
-			
-			return true;
-		}
-	}
-	return false;
-}
-
 light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
 	point3d_t from(0.0);
@@ -320,12 +228,15 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("soft_shadows", sSha);
 	params.getParam("cone_angle", ang);
 
-	IesData iesData;
-	if (!parseIesFile(file, iesData)) {
+	iesLight_t* light = new iesLight_t(from, to, color, power, res, blurS, file, sam, sSha, ang);
+
+	if (!light->isIESOk())
+	{
+		delete light;
 		return NULL;
 	}
 
-	return new iesLight_t(from, to, color, power, res, blurS, iesData, sam, sSha, ang);
+	return light;
 }
 
 
