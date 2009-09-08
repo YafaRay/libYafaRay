@@ -42,7 +42,7 @@ public:
 private:
 
 	bool getRadiance(float hAng, float vAng, float& rad) const;
-	float blurRadiance(float rad) const;
+	float blurRadiance(float hAng, float vAng) const;
 	float* vertAngleMap; //<! vertical spherical angles
 	float* horAngleMap; //<! horizontal sperical angles
 	float** radMap; //<! spherical radiance map corresponding with entries to the angle maps
@@ -129,6 +129,7 @@ bool IESData_t::getRadiance(float hAng, float vAng, float& rad) const {
 float IESData_t::blurRadiance(float hAng, float vAng) const
 {
 	float ret = 0.f;
+	int hits = 0;
 	for (int i = -resBound; i < resBound; ++i)
 	{
 		float tmp;
@@ -138,8 +139,9 @@ float IESData_t::blurRadiance(float hAng, float vAng) const
 			ret += tmp;
 			++hits;
 		}
+		if(hits > 0) ret /= (float)hits;
 	}
-	return ret/(float)hits;
+	return ret;
 }
 
 // IES description: http://lumen.iee.put.poznan.pl/kw/iesna.txt
