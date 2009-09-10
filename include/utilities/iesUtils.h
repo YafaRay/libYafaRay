@@ -37,12 +37,13 @@ public:
 	~IESData_t();
 	bool parseIESFile(const std::string file);
 	float getRadianceBlurred(float u, float v) const;
-	float getMaxVAngle() const { return maxVAngle; };
+	float getMaxVAngle() const { return maxVAngle; }
 	
 private:
 
 	bool getRadiance(float hAng, float vAng, float& rad) const;
 	float blurRadiance(float hAng, float vAng) const;
+	
 	float* vertAngleMap; //<! vertical spherical angles
 	float* horAngleMap; //<! horizontal sperical angles
 	float** radMap; //<! spherical radiance map corresponding with entries to the angle maps
@@ -57,6 +58,7 @@ private:
 	
 	bool blurred;
 };
+
 IESData_t::IESData_t(float blur, int reso)
 {
 	blurred = !(blur < 0.5f || reso < 2);
@@ -93,7 +95,7 @@ float IESData_t::getRadianceBlurred(float hAng, float vAng) const
 		ret = blurRadiance(hAng, vAng);
 	}
 
-	return ret * maxRad;
+	return (ret * maxRad);
 }
 
 //! hAng and vAng in degrees, rad is the buffer for the radiance at that angle
@@ -130,14 +132,14 @@ float IESData_t::blurRadiance(float hAng, float vAng) const
 {
 	float ret = 0.f;
 	int hits = 0;
-	for (int i = -resBound; i < resBound; ++i)
+	for (int i = -resBound; i < resBound; i++)
 	{
 		float tmp;
 		
 		if (getRadiance(hAng + (resStep * (float)i), vAng + (resStep * (float)i), tmp))
 		{
 			ret += tmp;
-			++hits;
+			hits++;
 		}
 		if(hits > 0) ret /= (float)hits;
 	}
@@ -170,30 +172,126 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		fin >> line;
 	}
 	
-	if(line == "TILT=INCLUDE")
+	if(line.find("TILT=") != string::npos)
 	{
-		int pairs = 0;
-		fin >> line;
-		fin >> pairs;
-		for(int i = 0; i < (pairs * 2); i++) fin >> line;
+		if(line == "TILT=INCLUDE")
+		{
+			Y_INFO << "IES Parser: Tilt data included in IES file.\nSkiping...\n";
+			
+			int pairs = 0;
+			
+			fin >> line;
+			fin >> pairs;
+			
+			for(int i = 0; i < (pairs * 2); i++) fin >> line;
+			
+			Y_INFO << "IES Parser: Tilt data skipped.\n";
+		}
+		else if(line == "TILT=NONE")
+		{
+			Y_INFO << "IES Parser: No tilt data.\n";
+		}
+		else if(line == "TILT=NONE")
+		{
+			Y_INFO << "IES Parser: Tilt data in another file.\n";
+		}
 	}
-
-	for (int i = 0; i < 2; i++)
-		fin >> line;
+	else
+	{
+		fin.close();
+	
+		Y_INFO << "IES Parser: Tilt not found IES invalid!\n";
+		
+		return false;
+	}
 	
 	float candelaMult = 0.f;
+	
+	fin >> line;
+	Y_INFO << "IES Parser: Number of lamps: " << line << "\n";
+	fin >> line;
+	Y_INFO << "IES Parser: lumens per lamp: " << line << "\n";
 	fin >> candelaMult;
+	candelaMult *= 0.001;
+	Y_INFO << "IES Parser: Candela multiplier (kcd): " << candelaMult << "\n";
 	fin >> vertAngles;
+	Y_INFO << "IES Parser: Vertical Angles: " << vertAngles << "\n";
 	fin >> horAngles;
+	Y_INFO << "IES Parser: Horizontal Angles: " << horAngles << "\n";
+	fin >> line;
+	Y_INFO << "IES Parser: Photometric Type: " << line << "\n";
+	fin >> line;
+	Y_INFO << "IES Parser: Units Type: " << line << "\n";
+	
+	float w = 0.f, l = 0.f, h = 0.f;
+	
+	fin >> w;
+	fin >> l;
+	fin >> h;
 
-	for (int i = 0; i < 8; i++)
-		fin >> line;
+	Y_INFO << "IES Parser: Luminous opening dimensions:\n";
+	Y_INFO << "IES Parser: (Width, Length, Height) = (" << w << ", " << l << ", " << h << ")\n";
+	Y_INFO << "IES Parser: Lamp Geometry: ";
+	
+	//Check geometry type
+	if(w == 0.f && l == 0.f && h == 0.f)
+	{
+		Y_INFO << "Point Light\n";
+	}
+	else if(w >= 0.f && l >= 0.f && h >= 0.f)
+	{
+		Y_INFO << "Rectangular Light\n";
+	}
+	else if(w < 0.f && l == 0.f && h == 0.f)
+	{
+		Y_INFO << "Circular Light\n";
+	}
+	else if(w < 0.f && l == 0.f && h < 0.f)
+	{
+		Y_INFO << "Shpere Light\n";
+	}
+	else if(w < 0.f && l == 0.f && h >= 0.f)
+	{
+		Y_INFO << "Vertical Cylindric Light\n";
+	}
+	else if(w == 0.f && l >= 0.f && h < 0.f)
+	{
+		Y_INFO << "Horizontal Cylindric Light (Along width)\n";
+	}
+	else if(w >= 0.f && l == 0.f && h < 0.f)
+	{
+		Y_INFO << "Horizontal Cylindric Light (Along length)\n";
+	}
+	else if(w < 0.f && l >= 0.f && h >= 0.f)
+	{
+		Y_INFO << "Elipse Light (Along width)\n";
+	}
+	else if(w >= 0.f && l < 0.f && h >= 0.f)
+	{
+		Y_INFO << "Elipse Light (Along length)\n";
+	}
+	else if(w < 0.f && l >= 0.f && h < 0.f)
+	{
+		Y_INFO << "Elipsoid Light (Along width)\n";
+	}
+	else if(w >= 0.f && l < 0.f && h < 0.f)
+	{
+		Y_INFO << "Elipsoid Light (Along length)\n";
+	}
+	
+	fin >> line;
+	Y_INFO << "IES Parser: Ballast Factor: " << line << "\n";
+	fin >> line;
+	Y_INFO << "IES Parser: Ballast-Lamp Photometric Factor: " << line << "\n";
+	fin >> line;
+	Y_INFO << "IES Parser: Input Watts: " << line << "\n";
 
 	vertAngleMap = new float[vertAngles];
 	
 	maxVAngle = 0.f;
 	
-	for (int i = 0; i < vertAngles; ++i) {
+	for (int i = 0; i < vertAngles; ++i)
+	{
 		fin >> vertAngleMap[i];
 		if(maxVAngle < vertAngleMap[i]) maxVAngle = vertAngleMap[i];
 	}
@@ -202,25 +300,24 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	
 	horAngleMap = new float[horAngles];
 	
-	for (int i = 0; i < horAngles; ++i) {
-		fin >> horAngleMap[i];
-	}
+	for (int i = 0; i < horAngles; ++i) fin >> horAngleMap[i];
 	
 	maxRad = 0.f;
-	float tmpRad = 0.f;
 	
 	radMap = new float*[horAngles];
 	
-	for (int i = 0; i < horAngles; ++i) {
+	for (int i = 0; i < horAngles; ++i)
+	{
 		radMap[i] = new float[vertAngles];
-		for (int j = 0; j < vertAngles; ++j) {
+		
+		for (int j = 0; j < vertAngles; ++j)
+		{
 			fin >> radMap[i][j];
-			if(tmpRad < radMap[i][j]) tmpRad = radMap[i][j];
+			if(maxRad < radMap[i][j]) maxRad = radMap[i][j];
 		}
-		maxRad += tmpRad;
 	}
 	
-	maxRad /= horAngles;
+	Y_INFO << "IES Parser: maxRad = " << maxRad << "\n";
 	maxRad = 1.f / maxRad;
 	
 	fin.close();

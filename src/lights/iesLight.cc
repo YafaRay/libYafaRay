@@ -85,11 +85,12 @@ iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t
 		ndir = (from - to);
 		ndir.normalize();
 		dir = -ndir;
-		color = col*power;
+
 		createCS(dir, du, dv);
 
 		cosEnd = fCos(iesData->getMaxVAngle());
-	
+
+		color = col*power;
 		totEnergy = M_2PI * (1.f - 0.5f * cosEnd);
 	}
 }
@@ -178,7 +179,7 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	v = radToDeg(std::acos(ray.dir * dir));
 	
 	float rad = iesData->getRadianceBlurred(u, v);
-	
+
 	ipdf = rad;
 
 	return color * totEnergy;
@@ -189,8 +190,22 @@ color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	s.sp->P = position;
 	s.areaPdf = 1.f;
 	s.flags = flags;
-	wo = sampleCone(dir, du, dv, cosEnd, s.s1, s.s2);
-	s.dirPdf = 1.0f / 2.0f;
+	
+	float u, v, cosa;
+
+	ShirleyDisk(s.s1, s.s2, u, v);
+	
+	wo = sampleCone(dir, du, dv, cosEnd, u, v);
+	
+	cosa = wo * dir;
+	
+	u = radToDeg(std::acos(wo.z));
+	v = radToDeg(std::acos(cosa));
+	
+	float rad = iesData->getRadianceBlurred(u, v);
+
+	s.dirPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+
 	return color;
 }
 
@@ -199,9 +214,22 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	areaPdf = 1.f;
 	cos_wo = 1.f;
 	
-	PFLOAT cosa = dir*wo;
-	if(cosa < cosEnd) dirPdf = 0.f;
-	dirPdf = 1.0f / 2.0f;
+	float cosa = dir * wo;
+	
+	if(cosa < cosEnd)
+	{
+		dirPdf = 0.f;
+	}
+	else
+	{
+		float u, v;
+		u = radToDeg(std::acos(wo.z));
+		v = radToDeg(std::acos(cosa));
+	
+		float rad = iesData->getRadianceBlurred(u, v);
+
+		dirPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+	}
 }
 
 light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)

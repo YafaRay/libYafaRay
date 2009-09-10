@@ -283,8 +283,9 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 	ve.sp.P = ray.from;
 	ve.qi_wo = ve.qi_wi = 1.f; // definitely no russian roulette here...
 	// temporary!
-//	PFLOAT cu, cv;
+	PFLOAT cu, cv;
 	float camPdf = 0.0;
+	cam->project(ray, 0, 0, cu, cv, camPdf);
 	ve.pdf_wo = camPdf;
 	ve.f_s = color_t(camPdf);
 	// /temporary
