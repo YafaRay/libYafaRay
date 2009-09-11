@@ -121,7 +121,7 @@ float irregularSpectrum_t::sample(float wl)
 	i = lower_bound(wavelen.begin(), wavelen.end(), wl);
 	if(i == wavelen.begin() || i == wavelen.end()) return 0.f;
 	int index = (i-wavelen.begin()) - 1;
-	float delta = wl - wavelen[index] / (wavelen[index+1] - wavelen[index]);
+	float delta = (wl - wavelen[index]) / (wavelen[index+1] - wavelen[index]);
 	return (1.f - delta) * amplitude[index] + delta * amplitude[index+1];
 }
 
