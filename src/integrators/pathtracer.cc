@@ -490,7 +490,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	inte->rDepth = raydepth;
 	inte->nPaths = path_samples;
 	inte->bounces = bounces;
-	inte->use_bg = use_bg;
+	inte->use_bg = false;//use_bg;
 	inte->no_recursive = noRec;
 	return inte;
 }
