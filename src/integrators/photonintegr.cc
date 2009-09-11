@@ -907,14 +907,14 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				{
 					vector3d_t pdir = gathered[i].photon->direction();
 					color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
-					col += surfCol * scale * gathered[i].photon->color() * std::fabs(sp.N*pdir); //< wrong!?
+					col += surfCol * scale * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 				}
 	//			vector3d_t pdir = gathered[0].photon->direction();
 	//			col += CFLOAT(nGathered) * scale * material->eval(state, sp, wo, pdir, BSDF_DIFFUSE)* gathered[0].photon->color();
 			}
 		}
 		// add caustics
-		if(bsdfs & (BSDF_DIFFUSE || BSDF_GLOSSY))
+		if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
 		{
 			col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, dsRadius);
 		}
@@ -1098,7 +1098,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	ite->maxBounces = bounces;
 	ite->nPaths = fgPaths;
 	ite->gatherBounces = fgBounces;
-	ite->use_bg = use_bg;
+	ite->use_bg = false;//use_bg;
 	ite->showMap = show_map;
 	ite->gatherDist = gatherDist;
 	ite->cacheIrrad = cache_irrad;

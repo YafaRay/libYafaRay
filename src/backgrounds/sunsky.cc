@@ -113,30 +113,30 @@ double sunskyBackground_t::PerezFunction(const double *lam, double theta, double
 {
   double e1=0, e2=0, e3=0, e4=0;
   if (lam[1]<=230.)
-    e1 = exp(lam[1]);
+    e1 = fExp(lam[1]);
   else
     e1 = 7.7220185e99;
   if ((e2 = lam[3]*thetaS)<=230.)
-    e2 = exp(e2);
+    e2 = fExp(e2);
   else
     e2 = 7.7220185e99;
   if ((e3 = lam[1]/cos(theta))<=230.)
-    e3 = exp(e3);
+    e3 = fExp(e3);
   else
     e3 = 7.7220185e99;
   if ((e4 = lam[3]*gamma)<=230.)
-    e4 = exp(e4);
+    e4 = fExp(e4);
   else
     e4 = 7.7220185e99;
-  double den = (1 + lam[0]*e1) * (1 + lam[2]*e2 + lam[4]*cos(thetaS)*cos(thetaS));
-  double num = (1 + lam[0]*e3) * (1 + lam[2]*e4 + lam[4]*cos(gamma)*cos(gamma));
+  double den = (1 + lam[0]*e1) * (1 + lam[2]*e2 + lam[4]*fCos(thetaS)*fCos(thetaS));
+  double num = (1 + lam[0]*e3) * (1 + lam[2]*e4 + lam[4]*fCos(gamma)*fCos(gamma));
   return (lvz * num / den);
 }
 
 
 double sunskyBackground_t::AngleBetween(double thetav, double phiv) const
 {
-  double cospsi = sin(thetav) * sin(thetaS) * cos(phiS-phiv) + cos(thetav) * cos(thetaS);
+  double cospsi = fSin(thetav) * fSin(thetaS) * fCos(phiS-phiv) + fCos(thetav) * fCos(thetaS);
   if (cospsi > 1)  return 0;
   if (cospsi < -1) return M_PI;
   return acos(cospsi);
@@ -180,7 +180,9 @@ inline color_t sunskyBackground_t::getSkyCol(const ray_t &ray) const
 	double y = PerezFunction(perez_y, theta, gamma, zenith_y);
 	// Luminance scale 1.0/15000.0
 	double Y = 6.666666667e-5 * nfade * hfade * PerezFunction(perez_Y, theta, gamma, zenith_Y);
-
+	
+	if(y == 0.f) return skycolor;
+	
 	// conversion to RGB, from gamedev.net thread on skycolor computation
 	double X = (x / y) * Y;
 	double Z = ((1.0 - x - y) / y) * Y;
@@ -188,6 +190,7 @@ inline color_t sunskyBackground_t::getSkyCol(const ray_t &ray) const
 	skycolor.set((3.240479 * X - 1.537150 * Y - 0.498535 * Z),
 				 (-0.969256 * X + 1.875992 * Y + 0.041556 * Z),
 				 ( 0.055648 * X - 0.204043 * Y + 1.057311 * Z));
+	skycolor.clampRGB01();
 	return skycolor;
 }
 
@@ -237,7 +240,7 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 	{
 		color_t suncol = ComputeAttenuatedSunlight(acos(std::fabs(dir.z)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
-		double cosAngle = cos(angle*M_PI/180.0);
+		double cosAngle = cos(degToRad(angle));
 		CFLOAT invpdf = (2.f * M_PI * (1.f - cosAngle));
 		suncol *= invpdf * power;
 

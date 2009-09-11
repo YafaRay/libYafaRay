@@ -269,13 +269,18 @@ inline float ckernel(PFLOAT r_photon2, PFLOAT r_gather2)
 
 color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const photonMap_t &map, const vector3d_t &wo, int nSearch, PFLOAT radius)
 {
-	static bool debug=true;
+//	static bool debug=false;
 	if(!map.ready()) return color_t(0.f);
+	
 	foundPhoton_t *gathered = (foundPhoton_t *)alloca(nSearch * sizeof(foundPhoton_t));
-	int nGathered=0;
+	int nGathered = 0;
+	
 	PFLOAT gRadiusSquare = radius;
+	
 	nGathered = map.gather(sp.P, gathered, nSearch, gRadiusSquare);
+	
 	color_t sum(0.0);
+	
 	if(nGathered > 0)
 	{
 		const material_t *material = sp.material;
@@ -288,11 +293,12 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 		}
 		sum *= 1.f / ( float(map.nPaths()) );
 	}
-	if(debug && nGathered > 10)
+/*	if(debug && nGathered > 10)
 	{
 		std::cout << "\ncaustic color:" << sum << std::endl;
-		debug=false;
+		//debug=false;
 	}
+*/
 	return sum;
 }
 

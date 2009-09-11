@@ -121,7 +121,7 @@ float irregularSpectrum_t::sample(float wl)
 	i = lower_bound(wavelen.begin(), wavelen.end(), wl);
 	if(i == wavelen.begin() || i == wavelen.end()) return 0.f;
 	int index = (i-wavelen.begin()) - 1;
-	float delta = wl - wavelen[index] / (wavelen[index+1] - wavelen[index+1]);
+	float delta = wl - wavelen[index] / (wavelen[index+1] - wavelen[index]);
 	return (1.f - delta) * amplitude[index] + delta * amplitude[index+1];
 }
 
@@ -143,33 +143,35 @@ color_t ComputeAttenuatedSunlight(float theta, int turbidity)
 
 	int i;
 	float lambda;
-	for(i = 0, lambda = 380; i < 38; i++, lambda+=10) {
+	for(i = 0, lambda = 380; i < 38; i++, lambda+=10)
+	{
+		float uL = lambda * 0.001f;
 				// Rayleigh Scattering
 				// Results agree with the graph (pg 115, MI) */
-		tauR = exp( -m * 0.008735 * pow(lambda/1000.f, -4.08f));
+		tauR = fExp( -m * 0.008735 * pow(uL, -4.08f));
 				// Aerosal (water + dust) attenuation
 				// beta - amount of aerosols present 
 				// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
 				// Results agree with the graph (pg 121, MI) 
-		tauA = exp(-m * beta * pow(lambda/1000, -alpha));  // lambda should be in um
+		tauA = fExp(-m * beta * pow(uL, -alpha));  // lambda should be in um
 				// Attenuation due to ozone absorption  
 				// lOzone - amount of ozone in cm(NTP) 
 				// Results agree with the graph (pg 128, MI) 
-		tauO = exp(-m * k_oCurve.sample(lambda) * lOzone);
+		tauO = fExp(-m * k_oCurve.sample(lambda) * lOzone);
 				// Attenuation due to mixed gases absorption  
 				// Results agree with the graph (pg 131, MI)
-		tauG = exp(-1.41 * k_gCurve.sample(lambda) * m / pow(1 + 118.93 * k_gCurve.sample(lambda) * m, 0.45));
+		tauG = fExp(-1.41 * k_gCurve.sample(lambda) * m / pow(1 + 118.93 * k_gCurve.sample(lambda) * m, 0.45));
 				// Attenuation due to water vapor absorbtion  
 				// w - precipitable water vapor in centimeters (standard = 2) 
 				// Results agree with the graph (pg 132, MI)
-		tauWA = exp(-0.2385 * k_waCurve.sample(lambda) * w * m /
-				pow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
+		tauWA = fExp(-0.2385 * k_waCurve.sample(lambda) * w * m /
+				fPow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
 		
 		data[i] = 100 * solAmplitudes[i] * tauR * tauA * tauO * tauG * tauWA; // 100 comes from solCurve being
 																		 // in wrong units.
 		sun_xyz += wl2XYZ(lambda) * data[i];
 	}
-	sun_xyz *= 1.f/38.f;
+	sun_xyz *= 0.02631578947368421053f;
 	color_t sun_col;
 	sun_col.set(( 3.240479 * sun_xyz.R - 1.537150 * sun_xyz.G - 0.498535 * sun_xyz.B),
 				(-0.969256 * sun_xyz.R + 1.875992 * sun_xyz.G + 0.041556 * sun_xyz.B),

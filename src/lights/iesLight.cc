@@ -188,12 +188,12 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 {
 	s.sp->P = position;
-	s.areaPdf = 1.f;
+	s.dirPdf = 0.25f;
 	s.flags = flags;
 	
 	float u, v, cosa;
 
-	ShirleyDisk(s.s1, s.s2, u, v);
+	ShirleyDisk(s.s3, s.s4, u, v);
 	
 	wo = sampleCone(dir, du, dv, cosEnd, u, v);
 	
@@ -204,21 +204,20 @@ color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 
-	s.dirPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+	s.areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
 
 	return color;
 }
 
 void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
 {
-	areaPdf = 1.f;
 	cos_wo = 1.f;
 	
 	float cosa = dir * wo;
 	
 	if(cosa < cosEnd)
 	{
-		dirPdf = 0.f;
+		dirPdf = areaPdf = 0.f;
 	}
 	else
 	{
@@ -228,7 +227,7 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	
 		float rad = iesData->getRadianceBlurred(u, v);
 
-		dirPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+		dirPdf = areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
 	}
 }
 

@@ -59,8 +59,8 @@ spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color
 	dir = -ndir;
 	color = col*power;
 	createCS(dir, du, dv);
-	double rad_angle = angle*M_PI/180.0;
-	double rad_inner_angle = rad_angle*(1.f-falloff);
+	double rad_angle = degToRad(angle);
+	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cosStart = fCos(rad_inner_angle);
 	cosEnd = fCos(rad_angle);
 	icosDiff = 1.0/(cosStart-cosEnd);
