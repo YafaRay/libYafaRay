@@ -19,7 +19,7 @@ class gammaLUT_t
 			LUT[0]=0;
 			for(int i=1;i<256;i++)
 			{
-				LUT[i] = fPow( 0.00390625f*(float)i, gamma );
+				LUT[i] = fPow( 0.00392156862745098039*(float)i, gamma );
 			}
 		}
 		float getGamma() { return g; }

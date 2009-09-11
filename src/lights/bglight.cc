@@ -52,7 +52,7 @@ inline float sinSample(float s)
 	return fSin(ang);
 }
 
-bgLight_t::bgLight_t(background_t *bg, int sampl): samples(sampl), background(bg)
+bgLight_t::bgLight_t(background_t *bg, int sampl):light_t(LIGHT_SINGULAR), samples(sampl), background(bg)
 {
 	initIS();
 }
@@ -225,7 +225,7 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 
 	ray.from = worldCenter + worldRadius*offs - worldRadius*ray.dir;
 	
-	ipdf = ipdf2 * worldPIFactor;
+	ipdf = ipdf2;// * worldPIFactor;
 	
 	return pcol;
 }
@@ -263,8 +263,10 @@ float bgLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_lig
 
 void bgLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
 {
-	cos_wo = 1.f;
-	vector3d_t wi = -wo;
+	vector3d_t wi = wo;
+	wi.normalize();
+	cos_wo = wi.z;
+	wi = -wi;
 	dirPdf = dir_pdf(wi);
 	areaPdf = iaPdf;
 }

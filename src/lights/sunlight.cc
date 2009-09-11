@@ -98,16 +98,19 @@ bool sunLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipd
 
 color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
 {
-	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, s3, s4);
+	float u, v;
+	ShirleyDisk(s1, s2, u, v);
+	
+	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, u, v);
 	vector3d_t du2, dv2;
 	minRot(direction, du, ldir, du2, dv2);
-	PFLOAT u, v;
-	ShirleyDisk(s1, s2, u, v);
+	//PFLOAT u, v;
+	//ShirleyDisk(s1, s2, u, v);
 	
 	ipdf = eIPdf;
 	ray.from = worldCenter + worldRadius*(u*du2 + v*dv2 + ldir);
 	ray.dir = -ldir;
-	return color;
+	return color * ePdf;
 }
 
 
