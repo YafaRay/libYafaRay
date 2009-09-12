@@ -94,8 +94,8 @@ bool pathIntegrator_t::preprocess()
 	}
 	
 	// create caustics photon map, if requested
-	std::vector<light_t*> cLights;
-	std::vector<light_t*>::const_iterator li;
+	//std::vector<light_t*> cLights;
+	//std::vector<light_t*>::const_iterator li;
 	bool success;
 	if(causticType == PHOTON || causticType == BOTH)
 	{
@@ -300,11 +300,11 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				pRay.tmin = 0.0005;
 				pRay.tmax = -1.0;
 				pRay.from = sp.P;
-				if(!scene->intersect(pRay, *hit)) //hit background
-				{
-					if(include_bg) pathCol += throughput * (*background)(pRay, state, true);
-					continue;
-				}
+				//if(!scene->intersect(pRay, *hit)) //hit background
+				//{
+				//	if(include_bg) pathCol += throughput * (*background)(pRay, state, true);
+				//	continue;
+				//}
 				//if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, pRay, vcol))
 				const volumeHandler_t *vol;
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * pRay.dir < 0)) != 0)
@@ -365,7 +365,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if(include_bg || (state.includeLights && ibl)) pathCol += throughput * (*background)(pRay, state, true);
+						//if(include_bg || (state.includeLights && ibl)) pathCol += throughput * (*background)(pRay, state, true);
 						break;
 					}
 					//if((matBSDFs&BSDF_VOLUMETRIC) && p_mat->volumeTransmittance(state, *hit, pRay, vcol))

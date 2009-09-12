@@ -107,11 +107,10 @@ bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) c
 	ldir *= 1.f/dist; //normalize
 	
 	PFLOAT cosa = ndir*ldir;
-	if(cosa < cosEnd) return false; //outside cone
 
 	float u, v;
-
 	u = radToDeg(std::acos(ldir.z));
+	if(ldir.y < 0) u += 180.f;
 	v = radToDeg(std::acos(cosa));
 
 	col = color * iesData->getRadianceBlurred(u, v) * iDistSqrt;
@@ -134,7 +133,6 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	ldir *= 1.f/dist; //normalize
 	
 	PFLOAT cosa = ndir*ldir;
-	if(cosa < cosEnd) return false; //outside cone
 
 	float u, v;
 	
@@ -144,6 +142,7 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	wi.dir = sampleCone(ldir, du, dv, cosa, u, v);
 
 	u = radToDeg(std::acos(ldir.z));
+	if(ldir.y < 0) u += 180.f;
 	v = radToDeg(std::acos(cosa));
 	
 	float rad = iesData->getRadianceBlurred(u, v);
@@ -176,6 +175,7 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	ray.dir = sampleCone(dir, du, dv, cosEnd, u, v);
 	
 	u = radToDeg(std::acos(ray.dir.z));
+	if(ray.dir.y < 0) u += 180.f;
 	v = radToDeg(std::acos(ray.dir * dir));
 	
 	float rad = iesData->getRadianceBlurred(u, v);
@@ -188,7 +188,6 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 {
 	s.sp->P = position;
-	s.dirPdf = 0.25f;
 	s.flags = flags;
 	
 	float u, v, cosa;
@@ -204,7 +203,7 @@ color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 
-	s.areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+	s.dirPdf = s.areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
 
 	return color;
 }

@@ -22,7 +22,7 @@
 
 #include "ColorConv.h"
 #include "spectralData.h"
-#include "sunSpectrumCurves.h"
+#include <utilities/curveUtils.h>
 
 __BEGIN_YAFRAY
 

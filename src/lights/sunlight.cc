@@ -101,16 +101,16 @@ color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	float u, v;
 	ShirleyDisk(s1, s2, u, v);
 	
-	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, u, v);
+	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, s1, s2);
 	vector3d_t du2, dv2;
-	minRot(direction, du, ldir, du2, dv2);
-	//PFLOAT u, v;
-	//ShirleyDisk(s1, s2, u, v);
 	
-	ipdf = eIPdf;
+	minRot(direction, du, ldir, du2, dv2);
+	
+	ipdf = invpdf;
 	ray.from = worldCenter + worldRadius*(u*du2 + v*dv2 + ldir);
+	ray.tmax = -1;
 	ray.dir = -ldir;
-	return color * ePdf;
+	return color;
 }
 
 

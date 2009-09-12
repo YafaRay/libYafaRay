@@ -24,10 +24,14 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <utilities/interpolation.h>
+#include <utilities/curveUtils.h>
 
 __BEGIN_YAFRAY
 //!TODO: Preblur data
+
+#define TYPE_C 1
+#define TYPE_B 2
+#define TYPE_A 3
 
 class IESData_t
 {
@@ -52,9 +56,11 @@ private:
 	
 	float maxRad;
 	float resStep;
-	int resBound;
+	float resBound;
 	
 	float maxVAngle;
+	
+	int type;
 	
 	bool blurred;
 };
@@ -66,7 +72,7 @@ IESData_t::IESData_t(float blur, int reso)
 	if(blurred)
 	{
 		resStep = blur/(float)reso;
-		resBound = reso >> 1;
+		resBound = (float)reso * 0.5f;
 	}
 }
 
@@ -99,31 +105,66 @@ float IESData_t::getRadianceBlurred(float hAng, float vAng) const
 }
 
 //! hAng and vAng in degrees, rad is the buffer for the radiance at that angle
-bool IESData_t::getRadiance(float hAng, float vAng, float& rad) const {
+bool IESData_t::getRadiance(float h, float v, float& rad) const {
 	
-	int i = 0;
-
+	int x = 0, y = 0;
 	rad = 0.f;
-	float tmp = 0.f;
+	float hAng = 0.f, vAng = 0.f;
+	
+	if(type == TYPE_C)
+	{
+		hAng = h;
+		vAng = v;
+	}
+	else
+	{
+		hAng = v;
+		vAng = h;
+		if(type == TYPE_B) hAng += 90;
+	}
 
-	while (i < horAngles && hAng >= horAngleMap[i])
-	{	
-		if (vAng >= vertAngleMap[0] && vAng <= vertAngleMap[vertAngles - 1])
+	if(hAng > 180.f && horAngleMap[horAngles-1] <= 180.f) hAng -= 180.f;
+	if(hAng > 90.f && horAngleMap[horAngles-1] <= 90.f) hAng -= 90.f;
+	
+	if(vAng > 90.f && vertAngleMap[vertAngles-1] <= 90.f) vAng -= 90.f;
+
+	if(hAng < horAngleMap[0]) return rad;
+	if(vAng < vertAngleMap[0] || vAng > vertAngleMap[vertAngles - 1]) return rad;
+	
+	for(int i = 0;i < horAngles; i++)
+	{
+		if(horAngleMap[i] <= hAng)
 		{
-			int j = -1;
-			
-			while (j < vertAngles - 2 && vAng >= vertAngleMap[j+1]) j++;
-			
-			float vertDiff = vertAngleMap[j+1] - vertAngleMap[j];
-			float offset_v = (vAng - vertAngleMap[j]) / vertDiff;
-			
-			tmp = CosineInterpolate(radMap[i][j], radMap[i][j + 1], offset_v);
+			x = i;
+			break;
 		}
-		rad += tmp;
-		i++;
+	}
+
+	for(int i = 0;i < vertAngles; i++)
+	{
+		if(vertAngleMap[i] <= vAng && vertAngleMap[i+1] > vAng)
+		{
+			y = i;
+			break;
+		}
 	}
 	
-	rad /= horAngles;
+	
+	if(y == vertAngles - 1 )
+	{
+		rad = radMap[x][y];
+	}
+	else
+	{
+		float dX = (hAng - horAngleMap[x]) / (horAngleMap[x+1] - horAngleMap[x]);
+		float dY = (vAng - vertAngleMap[y]) / (vertAngleMap[y+1] - vertAngleMap[y]);
+		
+		float rx1 = ((1.f - dX) * radMap[x][y]) + (dX * radMap[x+1][y]);
+		float rx2 = ((1.f - dX) * radMap[x][y+1]) + (dX * radMap[x+1][y+1]);
+		
+		
+		rad = ((1.f - dY) * rx1) + (dY * rx2);
+	}
 	
 	return true;
 }
@@ -132,11 +173,11 @@ float IESData_t::blurRadiance(float hAng, float vAng) const
 {
 	float ret = 0.f;
 	int hits = 0;
-	for (int i = -resBound; i < resBound; i++)
+	for (float i = -resBound; i < resBound; i += resStep)
 	{
 		float tmp;
 		
-		if (getRadiance(hAng + (resStep * (float)i), vAng + (resStep * (float)i), tmp))
+		if (getRadiance(hAng + resStep , vAng + resStep, tmp))
 		{
 			ret += tmp;
 			hits++;
@@ -218,8 +259,9 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	Y_INFO << "IES Parser: Vertical Angles: " << vertAngles << "\n";
 	fin >> horAngles;
 	Y_INFO << "IES Parser: Horizontal Angles: " << horAngles << "\n";
-	fin >> line;
-	Y_INFO << "IES Parser: Photometric Type: " << line << "\n";
+	type = 0;
+	fin >> type;
+	Y_INFO << "IES Parser: Photometric Type: " << type << "\n";
 	fin >> line;
 	Y_INFO << "IES Parser: Units Type: " << line << "\n";
 	
@@ -289,19 +331,42 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	vertAngleMap = new float[vertAngles];
 	
 	maxVAngle = 0.f;
-	
+	Y_INFO << "Vertical Angles:\n";
 	for (int i = 0; i < vertAngles; ++i)
 	{
 		fin >> vertAngleMap[i];
 		if(maxVAngle < vertAngleMap[i]) maxVAngle = vertAngleMap[i];
+		std::cout << vertAngleMap[i] << ", ";
 	}
 	
+	std::cout << std::endl;
+
+	if(vertAngleMap[0] > 0.f)
+	{
+		Y_INFO << "Vertical Angles (transformed):\n";
+		float minus = vertAngleMap[0];
+		for (int i = 0; i < vertAngles; ++i)
+		{
+			vertAngleMap[i] -= minus;
+			std::cout << vertAngleMap[i] << ", ";
+		}
+		std::cout << std::endl;
+	}
+	
+	
 	maxVAngle = degToRad(maxVAngle);
+	if(type == TYPE_C && horAngles == 1) horAngles++;
 	
 	horAngleMap = new float[horAngles];
 	
-	for (int i = 0; i < horAngles; ++i) fin >> horAngleMap[i];
-	
+	for (int i = 0; i < horAngles; ++i)
+	{
+		if(type == TYPE_C && i < horAngles-1) fin >> horAngleMap[i];
+		else horAngleMap[i] = 180.f;
+		std::cout << horAngleMap[i] << ", ";
+	}
+	std::cout << std::endl;
+
 	maxRad = 0.f;
 	
 	radMap = new float*[horAngles];
@@ -309,10 +374,10 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	for (int i = 0; i < horAngles; ++i)
 	{
 		radMap[i] = new float[vertAngles];
-		
 		for (int j = 0; j < vertAngles; ++j)
 		{
-			fin >> radMap[i][j];
+			if(type == TYPE_C && i < horAngles - 1) fin >> radMap[i][j];
+			else radMap[i][j] = radMap[i-1][j];
 			if(maxRad < radMap[i][j]) maxRad = radMap[i][j];
 		}
 	}

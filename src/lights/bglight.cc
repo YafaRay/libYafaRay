@@ -109,6 +109,15 @@ void bgLight_t::initIS()
 	delete[] fu;
 }
 
+void bgLight_t::init(scene_t &scene)
+{
+	bound_t w=scene.getSceneBound();
+	worldCenter = 0.5 * (w.a + w.g);
+	worldRadius = 0.5 * (w.g - w.a).length();
+	aPdf = worldRadius * worldRadius;
+	iaPdf = 1.f / aPdf;
+	worldPIFactor = (M_2PI * aPdf);
+}
 
 float bgLight_t::CalcFromSample(float s1, float s2, float &u, float &v, bool inv) const
 {
@@ -174,12 +183,20 @@ float bgLight_t::dir_pdf(const vector3d_t dir) const
 bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
 	float u = 0.f, v = 0.f;
+	vector3d_t U, V;
 	
 	wi.tmax = -1.0;
 	
-	s.pdf = CalcFromSample(s.s1, s.s2, u, v);
+	s.pdf = CalcFromSample(s.s1, s.s2, u, v, true);
 	
 	invSpheremap(u, v, wi.dir);
+	
+	createCS(wi.dir, U, V);
+
+	vector3d_t offs = u*U + v*V;
+	vector3d_t from(worldCenter + worldRadius*(offs - wi.dir));
+	
+	float iDistSqrt = 1.f / from.lengthSqr();
 	
 	s.col = background->eval(wi);
 	
@@ -211,9 +228,9 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 	color_t pcol;
 	vector3d_t U, V;
 	vector3d_t offs;
-	float ipdf2, u, v;
+	float u, v;
 	
-	sample_dir(s3, s4, ray.dir, ipdf2, true);
+	sample_dir(s3, s4, ray.dir, ipdf, false);
 
 	pcol = background->eval(ray);
 	ray.dir = -ray.dir;
@@ -223,11 +240,9 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 
 	offs = u*U + v*V;
 
-	ray.from = worldCenter + worldRadius*offs - worldRadius*ray.dir;
+	ray.from = worldCenter + worldRadius*(offs - ray.dir);
 	
-	ipdf = ipdf2;// * worldPIFactor;
-	
-	return pcol;
+	return pcol * worldPIFactor;
 }
 
 color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
@@ -249,7 +264,7 @@ color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 
 	s.sp->P = worldCenter + worldRadius*offs - worldRadius*wo;
 	s.sp->N = s.sp->Ng = wo;
-	s.areaPdf = iaPdf;
+	s.areaPdf = 1.f;
 	s.flags = flags;
 	
 	return pcol;
@@ -268,18 +283,7 @@ void bgLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &a
 	cos_wo = wi.z;
 	wi = -wi;
 	dirPdf = dir_pdf(wi);
-	areaPdf = iaPdf;
-}
-
-void bgLight_t::init(scene_t &scene)
-{
-	bound_t w=scene.getSceneBound();
-	worldCenter = 0.5 * (w.a + w.g);
-	worldRadius = 0.5 * (w.g - w.a).length();
-	std::cout << "bgLight: World Radius: " << worldRadius << "\n";
-	aPdf = worldRadius * worldRadius;
-	iaPdf = 1.f / aPdf;
-	worldPIFactor = (M_2PI * aPdf);
+	areaPdf = 1.f;
 }
 
 __END_YAFRAY
