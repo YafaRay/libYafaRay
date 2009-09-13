@@ -300,11 +300,11 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				pRay.tmin = 0.0005;
 				pRay.tmax = -1.0;
 				pRay.from = sp.P;
-				//if(!scene->intersect(pRay, *hit)) //hit background
-				//{
+				if(!scene->intersect(pRay, *hit)) //hit background
+				{
 				//	if(include_bg) pathCol += throughput * (*background)(pRay, state, true);
-				//	continue;
-				//}
+					continue;
+				}
 				//if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, pRay, vcol))
 				const volumeHandler_t *vol;
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * pRay.dir < 0)) != 0)
