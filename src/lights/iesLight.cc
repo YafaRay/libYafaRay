@@ -55,7 +55,9 @@ class iesLight_t : public light_t
 		
 
 	protected:
-
+		
+		void getAngles(float &u, float &v, const vector3d_t &dir, const float &costheta) const;
+		
 		point3d_t position;
 		vector3d_t dir; //!< orientation of the spot cone
 		vector3d_t ndir; //!< negative orientation (-dir)
@@ -87,12 +89,23 @@ iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t
 		dir = -ndir;
 
 		createCS(dir, du, dv);
-
 		cosEnd = fCos(iesData->getMaxVAngle());
-
+		
 		color = col*power;
 		totEnergy = M_2PI * (1.f - 0.5f * cosEnd);
 	}
+}
+
+void iesLight_t::getAngles(float &u, float &v, const vector3d_t &dir, const float &costheta) const
+{
+	u = (dir.z >= 1.f) ? 0.f : radToDeg(std::acos(dir.z));
+	
+	if(dir.y < 0)
+	{
+		u = 360.f - u;
+	}
+	
+	v = (costheta >= 1.f) ? 0.f : radToDeg(std::acos(costheta));
 }
 
 bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
@@ -106,12 +119,12 @@ bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) c
 	
 	ldir *= 1.f/dist; //normalize
 	
-	PFLOAT cosa = ndir*ldir;
-
+	float cosa = ndir*ldir;
+	if(cosa < cosEnd) return false;
+	
 	float u, v;
-	u = radToDeg(std::acos(ldir.z));
-	if(ldir.y < 0) u += 180.f;
-	v = radToDeg(std::acos(cosa));
+
+	getAngles(u, v, ldir, cosa);
 
 	col = color * iesData->getRadianceBlurred(u, v) * iDistSqrt;
 	
@@ -132,8 +145,9 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	
 	ldir *= 1.f/dist; //normalize
 	
-	PFLOAT cosa = ndir*ldir;
-
+	float cosa = ndir*ldir;
+	if(cosa < cosEnd) return false;
+	
 	float u, v;
 	
 	ShirleyDisk(s.s1, s.s2, u, v);
@@ -141,9 +155,7 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	wi.tmax = dist;
 	wi.dir = sampleCone(ldir, du, dv, cosa, u, v);
 
-	u = radToDeg(std::acos(ldir.z));
-	if(ldir.y < 0) u += 180.f;
-	v = radToDeg(std::acos(cosa));
+	getAngles(u, v, ldir, cosa);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 	
@@ -174,43 +186,50 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	ray.from = position;
 	ray.dir = sampleCone(dir, du, dv, cosEnd, u, v);
 	
-	u = radToDeg(std::acos(ray.dir.z));
-	if(ray.dir.y < 0) u += 180.f;
-	v = radToDeg(std::acos(ray.dir * dir));
+	ipdf = 0.f;
+	
+	float cosa = ray.dir * dir;
+	
+	if(cosa < cosEnd) return color_t(0.f);
+	
+	getAngles(u, v, ray.dir, cosa);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 
 	ipdf = rad;
 
-	return color * totEnergy;
+	return color;// * totEnergy;
 }
 
 color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 {
 	s.sp->P = position;
 	s.flags = flags;
+	s.dirPdf = 0.f;
+	s.areaPdf = 0.f;
 	
 	float u, v, cosa;
 
-	ShirleyDisk(s.s3, s.s4, u, v);
+	ShirleyDisk(s.s1, s.s2, u, v);
 	
 	wo = sampleCone(dir, du, dv, cosEnd, u, v);
 	
 	cosa = wo * dir;
+	if(cosa < cosEnd) return color_t(0.f);
 	
-	u = radToDeg(std::acos(wo.z));
-	v = radToDeg(std::acos(cosa));
+	getAngles(u, v, wo, cosa);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 
-	s.dirPdf = s.areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+	s.dirPdf = (rad>0.f) ? (1.f / rad) : 0.f;
+	s.areaPdf = 1.f;
 
 	return color;
 }
 
 void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
 {
-	cos_wo = 1.f;
+	cos_wo = 0.f;
 	
 	float cosa = dir * wo;
 	
@@ -221,12 +240,14 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	else
 	{
 		float u, v;
-		u = radToDeg(std::acos(wo.z));
-		v = radToDeg(std::acos(cosa));
+		
+		getAngles(u, v, wo, cosa);
 	
 		float rad = iesData->getRadianceBlurred(u, v);
 
-		dirPdf = areaPdf = (rad>0.f) ? (1.f / rad) : 1.f;
+		dirPdf = (rad>0.f) ? (1.f / rad) : 0.f;
+		areaPdf = 1.f;
+		cos_wo = std::min(-1.f,std::max(1.f,cosa));
 	}
 }
 

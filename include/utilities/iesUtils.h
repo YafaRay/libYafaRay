@@ -120,23 +120,23 @@ bool IESData_t::getRadiance(float h, float v, float& rad) const {
 	{
 		hAng = v;
 		vAng = h;
-		if(type == TYPE_B) hAng += 90;
+		if(type == TYPE_B)
+		{
+			hAng += 90;
+			if(hAng > 360.f) hAng -= 360.f;
+		}
 	}
 
-	if(hAng > 180.f && horAngleMap[horAngles-1] <= 180.f) hAng -= 180.f;
+	if(hAng > 180.f && horAngleMap[horAngles-1] <= 180.f) hAng = 360.f - hAng;
 	if(hAng > 90.f && horAngleMap[horAngles-1] <= 90.f) hAng -= 90.f;
 	
 	if(vAng > 90.f && vertAngleMap[vertAngles-1] <= 90.f) vAng -= 90.f;
-
-	if(hAng < horAngleMap[0]) return rad;
-	if(vAng < vertAngleMap[0] || vAng > vertAngleMap[vertAngles - 1]) return rad;
 	
 	for(int i = 0;i < horAngles; i++)
 	{
-		if(horAngleMap[i] <= hAng)
+		if(horAngleMap[i] <= hAng && horAngleMap[i+1] > hAng)
 		{
 			x = i;
-			break;
 		}
 	}
 
@@ -150,21 +150,31 @@ bool IESData_t::getRadiance(float h, float v, float& rad) const {
 	}
 	
 	
-	if(y == vertAngles - 1 )
+	if(hAng == horAngleMap[x] && vAng == vertAngleMap[y])
 	{
 		rad = radMap[x][y];
 	}
 	else
 	{
-		float dX = (hAng - horAngleMap[x]) / (horAngleMap[x+1] - horAngleMap[x]);
-		float dY = (vAng - vertAngleMap[y]) / (vertAngleMap[y+1] - vertAngleMap[y]);
+		int x1 = x, x2 = x+1;
+		int y1 = y, y2 = y+1;
 		
-		float rx1 = ((1.f - dX) * radMap[x][y]) + (dX * radMap[x+1][y]);
-		float rx2 = ((1.f - dX) * radMap[x][y+1]) + (dX * radMap[x+1][y+1]);
+		float dX = (hAng - horAngleMap[x1]) / (horAngleMap[x2] - horAngleMap[x1]);
+		float dY = (vAng - vertAngleMap[y1]) / (vertAngleMap[y2] - vertAngleMap[y1]);
 		
+		float rx1 = ((1.f - dX) * radMap[x1][y1]) + (dX * radMap[x2][y1]);
+		float rx2 = ((1.f - dX) * radMap[x1][y2]) + (dX * radMap[x2][y2]);
 		
 		rad = ((1.f - dY) * rx1) + (dY * rx2);
+		if(false)
+		{
+			Y_INFO << "rad:" << rad;
+			std::cout << " | dX:" << dX << " dY: " << dY;
+			std::cout << " | Angles (h,x1,x2) | (v,y1,y2): (" << hAng << ", " << horAngleMap[x1] << ", " << horAngleMap[x2] << ") | (" << vAng << ", " << vertAngleMap[y1] << ", " << vertAngleMap[y2] << ")";
+			std::cout << " rx1:" << rx1 << " rx2: " << rx2 << "\n";
+		}
 	}
+
 	
 	return true;
 }
@@ -182,9 +192,9 @@ float IESData_t::blurRadiance(float hAng, float vAng) const
 			ret += tmp;
 			hits++;
 		}
-		if(hits > 0) ret /= (float)hits;
 	}
-	return ret;
+
+	return (hits > 0) ? ret / (float)hits : 0.f;
 }
 
 // IES description: http://lumen.iee.put.poznan.pl/kw/iesna.txt
@@ -331,7 +341,9 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	vertAngleMap = new float[vertAngles];
 	
 	maxVAngle = 0.f;
-	Y_INFO << "Vertical Angles:\n";
+
+	Y_INFO << "IES Parser: Vertical Angle Map:\n";
+
 	for (int i = 0; i < vertAngles; ++i)
 	{
 		fin >> vertAngleMap[i];
@@ -343,8 +355,9 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 
 	if(vertAngleMap[0] > 0.f)
 	{
-		Y_INFO << "Vertical Angles (transformed):\n";
+		Y_INFO << "IES Parser: Vertical Angle Map (transformed):\n";
 		float minus = vertAngleMap[0];
+		maxVAngle -= minus;
 		for (int i = 0; i < vertAngles; ++i)
 		{
 			vertAngleMap[i] -= minus;
@@ -353,16 +366,28 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		std::cout << std::endl;
 	}
 	
+	Y_INFO << "IES Parser: Max vertical angle (degrees): " << maxVAngle << "\n";
 	
 	maxVAngle = degToRad(maxVAngle);
-	if(type == TYPE_C && horAngles == 1) horAngles++;
+
+	Y_INFO << "IES Parser: Max vertical angle (radians): " << maxVAngle << "\n";
+	
+	bool hAdjust = false;
+	
+	if(type == TYPE_C && horAngles == 1)
+	{
+		horAngles++;
+		hAdjust = true;
+	}
 	
 	horAngleMap = new float[horAngles];
 	
+	Y_INFO << "IES Parser: Horizontal Angle Map:\n";
+	
 	for (int i = 0; i < horAngles; ++i)
 	{
-		if(type == TYPE_C && i < horAngles-1) fin >> horAngleMap[i];
-		else horAngleMap[i] = 180.f;
+		if(i == horAngles - 1 && hAdjust) horAngleMap[i] = 180.f;
+		else fin >> horAngleMap[i];
 		std::cout << horAngleMap[i] << ", ";
 	}
 	std::cout << std::endl;
@@ -370,14 +395,13 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	maxRad = 0.f;
 	
 	radMap = new float*[horAngles];
-	
 	for (int i = 0; i < horAngles; ++i)
 	{
 		radMap[i] = new float[vertAngles];
 		for (int j = 0; j < vertAngles; ++j)
 		{
-			if(type == TYPE_C && i < horAngles - 1) fin >> radMap[i][j];
-			else radMap[i][j] = radMap[i-1][j];
+			if(i == horAngles - 1 && hAdjust) radMap[i][j] = radMap[i-1][j];
+			else  fin >> radMap[i][j];
 			if(maxRad < radMap[i][j]) maxRad = radMap[i][j];
 		}
 	}
