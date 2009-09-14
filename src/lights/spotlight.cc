@@ -141,7 +141,8 @@ bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	
 	float u, v;
 	
-	ShirleyDisk(s.s1, s.s2, u, v);
+	u = s.s1; v = s.s2;
+	//ShirleyDisk(s.s1, s.s2, u, v);
 
 	wi.tmax = dist;
 	wi.dir = sampleCone(ldir, du, dv, cosa, u, v);
