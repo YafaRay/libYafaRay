@@ -32,7 +32,6 @@ class glassMat_t: public nodeMaterial_t
 		glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS);
 		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
-	//	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, float s1, float s2)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
@@ -42,7 +41,6 @@ class glassMat_t: public nodeMaterial_t
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		virtual bool volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const;
 		virtual float getMatIOR() const;
-		virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 	protected:
 		shaderNode_t* bumpS;
@@ -269,47 +267,6 @@ bool glassMat_t::volumeTransmittance(const renderState_t &state, const surfacePo
 			col = color_t( fExp(be.getR()), fExp(be.getG()), fExp(be.getB()) );
 			return true;
 		}
-	}
-	return false;
-}
-
-bool glassMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
-{
-	if(!(s.flags & BSDF_SPECULAR)) return false;
-	nodeStack_t stack(state.userdata);
-	color_t scol = color_t(1.f,1.f,1.f);
-	vector3d_t refdir;
-	
-	if( refract(sp.N, wi, refdir, ior) )
-	{
-		CFLOAT Kr, Kt;
-		fresnel(wi, sp.N, ior, Kr, Kt);
-		if(s.s1 < Kt)
-		{
-			wo = refdir;
-			s.sampledFlags = BSDF_SPECULAR | BSDF_TRANSMIT;
-			scol = filterCol;
-		}
-		else
-		{
-			wo = reflect_plane(sp.N, wo);
-			s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-			scol = (mirColS ? mirColS->getColor(stack) : specRefCol);
-		}
-	}
-	else //total inner reflection
-	{
-		wo = reflect_plane(sp.N, wo);
-		s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-	}
-	color_t cnew = s.lcol * s.alpha * scol;
-	CFLOAT new_max = std::max( std::max(cnew.getR(), cnew.getG()), cnew.getB() );
-	CFLOAT old_max = std::max( std::max(s.lcol.getR(), s.lcol.getG()), s.lcol.getB() );
-	float prob = std::min(1.f, new_max/old_max);
-	if(s.s3 <= prob)
-	{
-		s.color = cnew*(1.f/prob);
-		return true;
 	}
 	return false;
 }
