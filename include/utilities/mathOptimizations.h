@@ -9,9 +9,9 @@
  *		Fast SSE2 pow: tables or polynomials?
  *		http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
  *		
- *		fSin() based on Fast and Accurate Trigonometric Functions on the HP-12C Platinum
- *		Posted by Gerson W. Barbosa on 6 Aug 2006, 3:10 p.m.
- *		http://www.hpmuseum.org/cgi-sys/cgiwrap/hpmuseum/articles.cgi?read=654
+ *		fSin(), fCos() and fTan() based on Fast and Accurate sine/cosine thread on DevMaster.net forum
+ *		Posted by Nick
+ *		http://www.devmaster.net/forums/showthread.php?t=5784
  *
  */
 #ifndef MATHOPTIMIZATIONS_H_
@@ -39,7 +39,10 @@
 __BEGIN_YAFRAY
 
 #define M_2PI		6.28318530717958647692
+#define M_PI2		9.86960440108935861882
 #define M_1_2PI		0.15915494309189533577
+#define M_4_PI		1.27323954473516268615
+#define M_4_PI2		0.40528473456935108578
 
 #define degToRad(deg) (deg * 0.01745329251994329576922)
 #define radToDeg(rad) (rad * 57.29577951308232087684636)
@@ -47,16 +50,10 @@ __BEGIN_YAFRAY
 #define POLYEXP(x) (x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
 #define POLYLOG(x) (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
 
-#define ca1  1.00000000000e+00
-#define ca2 -1.66666666666e-01
-#define ca3  8.33333320429e-03
-#define ca4 -1.98410347969e-04
-#define ca5  2.74201854577e-06
-
-#define POLYMINMAX(x, x2) (x * (ca1 + x2 * (ca2 + x2 * (ca3 + x2 * (ca4 + x2 * ca5)))))
-
 #define f_HI 129.00000f
 #define f_LOW -126.99999f
+
+#define CONST_P 0.225f
 
 union bitTwiddler
 {
@@ -132,10 +129,27 @@ inline float fLdexp(float x, int a)
 inline float fSin(float x)
 {
 #ifdef FAST_TRIG
-	float nx = x * 3.3333333333e-1f;
-	float x2 = nx * nx;
-	float y = POLYMINMAX(nx, x2);
-	return (y * (3.0 - (4.0 * y * y)));
+	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * M_1_2PI)) * M_2PI;
+	if(x < -M_PI)
+	{
+		x += M_2PI;
+	}
+	else if(x > M_PI)
+	{
+		x -= M_2PI;
+	}
+
+	if(x > 0)
+	{
+		x = (M_4_PI * x) - (M_4_PI2 * x * x);
+		return CONST_P * (x * x - x) + x;
+	}
+	else
+	{
+		x = (M_4_PI * x) + (M_4_PI2 * x * x);
+		return CONST_P * (-x * x - x) + x;
+	}
+
 #else
 	return sin(x);
 #endif
@@ -144,10 +158,7 @@ inline float fSin(float x)
 inline float fCos(float x)
 {
 #ifdef FAST_TRIG
-	float nx = (M_PI_2 - x) * 3.3333333333e-1f;
-	float x2 = nx * nx;
-	float y = POLYMINMAX(nx, x2);
-	return (y * (3.0 - (4.0 * y * y)));
+	return fSin(x + M_PI_2);
 #else
 	return cos(x);
 #endif
@@ -161,16 +172,23 @@ inline float fTan(float x)
 	return tan(x);
 #endif
 }
-inline float fArcTan(float x)
+
+inline float fAsin(float x)
 {
-#ifdef FAST_TRIG
-	float ax = fabs(x);
-	return (M_PI_2 - fArcTan(1.0/ax)) * x/ax;
-#else
-	return tan(x);
-#endif
+	float x2 = x * x;
+	return (1.f + (0.166666667f + (0.075f + (0.0446428571f + (0.0303819444f + 0.022372159f * x2) * x2) * x2) * x2) * x2) * x;
 }
 
+inline float fAcos(float x)
+{
+	return M_PI_2 - fAsin(x);
+}
+
+inline float fAtan(float x)
+{
+	float x2 = x * x;
+	return (1.f - (0.333333333333f + (0.2f - (0.1428571429f + (0.111111111111f - 0.0909090909f * x2) * x2) * x2) * x2) * x2) * x;
+}
 __END_YAFRAY
 
 #endif

@@ -242,7 +242,7 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 
 	ray.from = worldCenter + worldRadius*(offs - ray.dir);
 	
-	return pcol * worldPIFactor;
+	return pcol;// * worldPIFactor;
 }
 
 color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
