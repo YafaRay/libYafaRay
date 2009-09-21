@@ -53,7 +53,7 @@ color_t material_t::getReflectivity(const renderState_t &state, const surfacePoi
 	vector3d_t wi, wo;
 	for(int i=0; i<16; ++i)
 	{
-		s1 = 0.09375 * (float)i;
+		s1 = 0.03125 + 0.0625 * (float)i; // (1.f/32.f) + (1.f/16.f)*(float)i;
 		s2 = RI_vdC(i);
 		s3 = scrHalton(2, i);
 		s4 = scrHalton(3, i);

@@ -271,9 +271,9 @@ bool yafrayInterface_t::getRenderedImage(colorOutput_t &output)
 char* yafrayInterface_t::getVersion() const
 {
 #ifdef RELEASE
-	return (const char*)VERSION;
+	return (char*)std::string(VERSION).c_str();
 #else
-	return (const char*)YAF_SVN_REV;
+	return (char*)std::string(YAF_SVN_REV).c_str();
 #endif
 }
 

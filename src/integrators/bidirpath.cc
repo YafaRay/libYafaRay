@@ -878,7 +878,7 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 			{
 				if(trShad) lcol *= scol;
 				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				col = surfCol * lcol * std::std::fabs(sp.N*lightRay.dir);
+				col = surfCol * lcol * std::fabs(sp.N*lightRay.dir);
 			}
 		}
 	}
@@ -899,7 +899,7 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				//test! limit lightPdf...
 				if(lightPdf > 2.f) lightPdf = 2.f;
-				col = surfCol * lcol * std::std::fabs(sp.N*lightRay.dir) * lightPdf;
+				col = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * lightPdf;
 			}
 		}
 	}

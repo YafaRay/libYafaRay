@@ -104,28 +104,30 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 	if( (as_diffuse && diffuse_flag) || (!as_diffuse && (bsdfs & BSDF_GLOSSY)) )
 	{
 		vector3d_t H = (wo + wi).normalize(); // half-angle
-		PFLOAT cos_wi_H = wi*H;
-		PFLOAT glossy;
+		float cos_wi_H = wi*H;
+		float glossy;
+
 		if(anisotropic)
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, H*N);
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
 		}
 		else
 		{
-			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+
 		}
-		col = (CFLOAT)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
+
+		col = glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 	}
+
 	if(with_diffuse && diffuse_flag)
 	{
 		PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
 		PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
 		PFLOAT diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
 		color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
-		col += (CFLOAT)diffuse * dat->mDiffuse * diff_base;
+		col += diffuse * dat->mDiffuse * diff_base;
 	}
 	return col;
 }
@@ -139,86 +141,59 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
 	vector3d_t Hs;
 	s.pdf = 0.f;
-	float wiN = 0.f , woN = 0.f;
-	
-	nodeStack_t stack(dat->stack);
-	bool use[2] = {false, false};
-	float sum = 0.f, accumC[2], val[2], width[2];
-	int cIndex[2]; // entry values: 0 := glossy part, 1:= diffuse part;
-	int rcIndex[2]; // reverse fmapping of cIndex, gives position of spec/glossy/diff in val/width array
-	accumC[0] = (1.f - dat->pDiffuse);
-	accumC[1] = (dat->pDiffuse);
-	
-	int nMatch = 0, pick = -1;
-	if(s.flags & BSDF_GLOSSY)
-	{
-		use[0] = true;
-		width[nMatch] = accumC[0];
-		cIndex[nMatch] = 0;
-		rcIndex[0] = nMatch;
-		sum += width[nMatch];
-		val[nMatch] = sum;
-		++nMatch;
-	}
-	
-	if(s.flags & BSDF_DIFFUSE)
-	{
-		use[1] = true;
-		width[nMatch] = accumC[1];
-		cIndex[nMatch] = 1;
-		rcIndex[1] = nMatch;
-		sum += width[nMatch];
-		val[nMatch] = sum;
-		++nMatch;
-	}
-
-	if(!nMatch || sum < 0.00001){ return color_t(0.f); }
-	else if(nMatch==1){ pick=0; width[0]=1.f; }
-	else
-	{
-		float inv_sum = 1.f/sum;
-		for(int i=0; i<nMatch; ++i)
-		{
-			val[i] *= inv_sum;
-			width[i] *= inv_sum;
-			if((s.s1 <= val[i]) && (pick<0 ))	pick = i;
-		}
-	}
-	if(pick<0) pick=nMatch-1;
-	float s1;
-	if(pick>0) s1 = (s.s1 - val[pick-1]) / width[pick];
-	else 	   s1 = s.s1 / width[pick];
+	float wiN = 0.f;
+	float woN = std::fabs(wo * N);
+	float cos_wo_H = 0.f;
 	
 	color_t scolor(0.f);
-	
-	switch(cIndex[pick])
-	{
-		case 0: // glossy
-			if(anisotropic) AS_Aniso_Sample(Hs, s1, s.s2, exp_u, exp_v);
-			else 			Blinn_Sample(Hs, s1, s.s2, exponent);
-			break;
-		case 1: // lambertian
-		default:
-			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
-			cos_Ng_wi = sp.Ng*wi;
-			if(cos_Ng_wo*cos_Ng_wi < 0) return color_t(0.f);
-	}
 
-	wiN = std::fabs(wi * N);
-	woN = std::fabs(wo * N);
+	float s1 = s.s1;
+	float cur_pDiffuse = dat->pDiffuse;
+	bool use_glossy = as_diffuse ? (s.flags & BSDF_DIFFUSE) : (s.flags & BSDF_GLOSSY);
+	bool use_diffuse = with_diffuse && (s.flags & BSDF_DIFFUSE);
+	nodeStack_t stack(dat->stack);
+	float glossy = 0.f;
 	
-	if(use[0])
+	if(use_diffuse)
 	{
-		PFLOAT glossy;
-		PFLOAT cos_wo_H;
-		if(cIndex[pick] == 1)
+		float s_pDiffuse = use_glossy ? cur_pDiffuse : 1.f;
+		if(s1 < s_pDiffuse)
 		{
-			vector3d_t H = (wi+wo).normalize();
-			Hs = vector3d_t(H*sp.NU, H*sp.NV, H*N);
-			cos_wo_H = wo*H;
+			s1 /= s_pDiffuse;
+			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
+			wiN = std::fabs(wi * N);
+			cos_Ng_wi = sp.Ng*wi;
+			s.pdf = wiN;
+			if(use_glossy)
+			{
+				vector3d_t H = (wi+wo).normalize();
+				cos_wo_H = wo*H;
+				float cos_N_H = N*H;
+				if(anisotropic)
+				{
+					vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
+					s.pdf = s.pdf*cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v)*(1.f-cur_pDiffuse);
+					glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+				}
+				else
+				{
+					s.pdf = s.pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, exponent)*(1.f-cur_pDiffuse);
+					glossy = Blinn_D(cos_N_H, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+				}
+			}
+			s.sampledFlags = BSDF_DIFFUSE | BSDF_REFLECT;
+			scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
+			return scolor;
 		}
-		else
+		s1 -= cur_pDiffuse;
+		s1 /= (1.f - cur_pDiffuse);
+	}
+	
+	if(use_glossy)
+	{
+		if(anisotropic)
 		{
+			AS_Aniso_Sample(Hs, s1, s.s2, exp_u, exp_v);
 			vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
 			cos_wo_H = wo*H;
 			if ( cos_wo_H < 0.f )
@@ -230,35 +205,44 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wi = reflect_dir(H, wo);
 			cos_Ng_wi = sp.Ng*wi;
 			if(cos_Ng_wo*cos_Ng_wi < 0) return color_t(0.f);
-		}
-		
-		wiN = std::fabs(wi * N);
-		
-		if(anisotropic)
-		{
-			s.pdf += AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * width[rcIndex[0]];
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-								( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+			wiN = std::fabs(wi * N);
+
+			s.pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
+			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 		}
 		else
 		{
-			s.pdf += Blinn_Pdf(Hs.z, cos_wo_H, exponent) * width[rcIndex[0]];
-			glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-								( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+ 			Blinn_Sample(Hs, s1, s.s2, exponent);
+			vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
+			cos_wo_H = wo*H;
+			if ( cos_wo_H < 0.f )
+			{
+				H = reflect_plane(N, H);
+				cos_wo_H = wo*H;
+			}
+			// Compute incident direction by reflecting wo about H
+			wi = reflect_dir(H, wo);
+			cos_Ng_wi = sp.Ng*wi;
+			if(cos_Ng_wo*cos_Ng_wi < 0) return color_t(0.f);
+			wiN = std::fabs(wi * N);
+
+			s.pdf = Blinn_Pdf(Hs.z, cos_wo_H, exponent);
+			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 		}
-		scolor = (float)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
-	}
 		
-	if(use[1])
-	{
-		PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
-		PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
-		PFLOAT diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
-		color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
-		scolor += (float)diffuse * dat->mDiffuse * diff_base;
-		s.pdf += wiN * width[rcIndex[1]];
+		scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
+		s.sampledFlags = as_diffuse ? BSDF_DIFFUSE | BSDF_REFLECT : BSDF_GLOSSY | BSDF_REFLECT;
+	
+		if(use_diffuse)
+		{
+			s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
+			PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
+			PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
+			PFLOAT diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
+			color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
+			scolor += (float)diffuse * dat->mDiffuse * diff_base;
+		}
 	}
-	s.sampledFlags = (cIndex[pick]==0) ? BSDF_GLOSSY : BSDF_DIFFUSE;
 	
 	return scolor;
 }
@@ -266,46 +250,45 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags)const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
-	bool transmit = ((sp.Ng * wo) * (sp.Ng * wi)) < 0.f;
-	if(transmit) return 0.f;
+	if((sp.Ng * wo) * (sp.Ng * wi) < 0.f) return 0.f;
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float pdf = 0.f;
+	float cos_wo_H = 0.f;
+	float cos_N_H = 0.f;
 	
-	float accumC[2], sum=0.f, width;
-	accumC[0] = (1.f - dat->pDiffuse);
-	accumC[1] = (dat->pDiffuse);
+	float cur_pDiffuse = dat->pDiffuse;
+	bool use_glossy = as_diffuse ? (flags & BSDF_DIFFUSE) : (flags & BSDF_GLOSSY);
+	bool use_diffuse = with_diffuse && (flags & BSDF_DIFFUSE);
 	
-	int nMatch=0;
-	
-	if(flags & BSDF_GLOSSY)
+	if(use_diffuse)
 	{
-		width = accumC[0];
-		sum += width;
+		pdf = std::fabs(wi*N);
+		if(use_glossy)
+		{
+			vector3d_t H = (wi+wo).normalize();
+			cos_wo_H = wo*H;
+			cos_N_H = N*H;
+			if(anisotropic)
+			{
+				vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
+				pdf = pdf*cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v)*(1.f-cur_pDiffuse);
+			}
+			else pdf = pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, exponent)*(1.f-cur_pDiffuse);
+		}
+	}
+	else if(use_glossy)
+	{
 		vector3d_t H = (wi+wo).normalize();
-		PFLOAT cos_wo_H = wo*H;
-		PFLOAT cos_N_H = N*H;
-
+		cos_wo_H = wo*H;
+		cos_N_H = N*H;
 		if(anisotropic)
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
-			pdf += AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * width;
+			pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
 		}
-		else pdf += Blinn_Pdf(cos_N_H, cos_wo_H, exponent) * width;
-
-		++nMatch;
+		else pdf = Blinn_Pdf(cos_N_H, cos_wo_H, exponent);
 	}
-
-	if(flags & BSDF_DIFFUSE)
-	{
-		width = accumC[1];
-		sum += width;
-		pdf += std::fabs(wi*N) * width;
-		++nMatch;
-	}
-
-	if(!nMatch || sum < 0.00001) return 0.f;
-
-	return pdf / sum;
+	return pdf;
 }
 
 

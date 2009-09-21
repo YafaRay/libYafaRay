@@ -411,7 +411,7 @@ void MainWindow::adjustWindow() {
  	QRect scrGeom = QApplication::desktop()->availableGeometry();
 
 	int w = std::min(res_x + 10, scrGeom.width()-offset);
-	int h = std::min(res_y + 10, scrGeom.height()-offset);
+	int h = std::min(res_y + 10, scrGeom.height()-offset*3);
 	
 	std::cout << "w,h = " << w << ", " << h << "\n";
 	

@@ -198,57 +198,47 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 
 	ipdf = rad;
 
-	return color;// * totEnergy;
+	return color;
 }
 
 color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 {
 	s.sp->P = position;
 	s.flags = flags;
-	s.dirPdf = 0.f;
-	s.areaPdf = 0.f;
 	
-	float u, v, cosa;
+	float u, v;
 
-	ShirleyDisk(s.s1, s.s2, u, v);
+	//ShirleyDisk(s.s3, s.s4, u, v);
 	
-	wo = sampleCone(dir, du, dv, cosEnd, u, v);
+	wo = sampleCone(dir, du, dv, cosEnd, s.s3, s.s4);
 	
-	cosa = wo * dir;
-	if(cosa < cosEnd) return color_t(0.f);
-	
-	getAngles(u, v, wo, cosa);
+	getAngles(u, v, wo, wo * dir);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 
-	s.dirPdf = (rad>0.f) ? (1.f / rad) : 0.f;
+	s.dirPdf = (rad>0.f) ? (totEnergy / rad) : 0.f;
 	s.areaPdf = 1.f;
 
-	return color;
+	return color * rad * totEnergy;
 }
 
 void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
 {
-	cos_wo = 0.f;
+	cos_wo = 1.f;
+	areaPdf = 1.f;
+	dirPdf = 0.f;
 	
 	float cosa = dir * wo;
 	
-	if(cosa < cosEnd)
-	{
-		dirPdf = areaPdf = 0.f;
-	}
-	else
-	{
-		float u, v;
-		
-		getAngles(u, v, wo, cosa);
+	if(cosa < cosEnd) return;
 	
-		float rad = iesData->getRadianceBlurred(u, v);
+	float u, v;
+		
+	getAngles(u, v, wo, cosa);
 
-		dirPdf = (rad>0.f) ? (1.f / rad) : 0.f;
-		areaPdf = 1.f;
-		cos_wo = std::min(-1.f,std::max(1.f,cosa));
-	}
+	float rad = iesData->getRadianceBlurred(u, v);
+
+	dirPdf = (rad>0.f) ? (totEnergy / rad) : 0.f;
 }
 
 light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)

@@ -20,8 +20,6 @@
 #include <integrators/integr_utils.h>
 
 
-#define OLD_PMAP 0
-
 __BEGIN_YAFRAY
 
 // from common.cc
@@ -58,16 +56,12 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		PFLOAT dsRadius; //!< diffuse search radius
 		PFLOAT lookupRad; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
 		PFLOAT gatherDist; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
-#if OLD_PMAP > 0
-		globalPhotonMap_t diffuseMap, causticMap;
-		globalPhotonMap_t radianceMap; //!< this map contains precomputed radiance "photons", not incoming photon marks
-#else
 		photonMap_t diffuseMap, causticMap;
 		photonMap_t radianceMap; //!< this map contains precomputed radiance "photons", not incoming photon marks
-#endif
 		pdf1D_t *lightPowerD;
 		std::vector<light_t*> lights;
 		/* mutable  */irradianceCache_t irCache;
+		BSDF_t allBSDFIntersect;
 		friend class prepassWorker_t;
 };
 

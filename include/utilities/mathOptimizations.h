@@ -53,6 +53,10 @@ __BEGIN_YAFRAY
 #define f_HI 129.00000f
 #define f_LOW -126.99999f
 
+#define LOG_EXP 0x7F800000
+#define LOG_MANT 0x7FFFFF
+
+
 #define CONST_P 0.225f
 
 union bitTwiddler
@@ -78,14 +82,12 @@ inline float fExp2(float x)
 
 inline float fLog2(float x)
 {
-	int exp = 0x7F800000;
-	int mant = 0x7FFFFF;
 	bitTwiddler one, i, m, e;
 
 	one.f = 1.0f;
 	i.f = x;
-	e.f = (float)(((i.i & exp) >> 23) - 127);
-	m.i = ((i.i & mant) | one.i);
+	e.f = (float)(((i.i & LOG_EXP) >> 23) - 127);
+	m.i = ((i.i & LOG_MANT) | one.i);
 
 	return POLYLOG(m.f) * (m.f - one.f) + e.f;
 }
@@ -111,7 +113,8 @@ inline float fExp(float a)
 inline float fSqrt(float a)
 {
 #ifdef FAST_MATH
-	return fExp2(fLog2(a) * 0.5);
+	//return fExp2(fLog2(a) * 0.5);
+	return sqrt(a);
 #else
 	return sqrt(a);
 #endif
@@ -144,11 +147,9 @@ inline float fSin(float x)
 		x = (M_4_PI * x) - (M_4_PI2 * x * x);
 		return CONST_P * (x * x - x) + x;
 	}
-	else
-	{
-		x = (M_4_PI * x) + (M_4_PI2 * x * x);
-		return CONST_P * (-x * x - x) + x;
-	}
+
+	x = (M_4_PI * x) + (M_4_PI2 * x * x);
+	return CONST_P * (-x * x - x) + x;
 
 #else
 	return sin(x);

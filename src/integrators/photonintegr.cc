@@ -18,7 +18,6 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//#include <mcqmc.h>
 #include <integrators/photonintegr.h>
 
 __BEGIN_YAFRAY
@@ -29,9 +28,7 @@ photonIntegrator_t::photonIntegrator_t(int photons, bool transpShad, int shadowD
 	type = SURFACE;
 	rDepth = 6;
 	maxBounces = 5;
-#if OLD_PMAP > 0
-	diffuseMap.setMaxRadius(fSqrt(dsRad)); causticMap.setMaxRadius(fSqrt(dsRad));
-#endif
+	allBSDFIntersect = BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT;
 }
 
 struct preGatherData_t
@@ -73,28 +70,35 @@ void preGatherWorker_t::body()
 	gdata->mutex.unlock();
 	
 	foundPhoton_t *gathered = new foundPhoton_t[nSearch];
-	float diffPaths = (float)gdata->diffuseMap->nPaths();
+
+	float radius = 0.f;
+	float iScale = 1.f / ((float)gdata->diffuseMap->nPaths() * M_PI);
+	float scale = 0.f;
+	
 	while(start < total)
 	{
 		for(unsigned int n=start; n<end; ++n)
 		{
-			PFLOAT radius = dsRadius_2; //actually the square radius...
+			radius = dsRadius_2;//actually the square radius...
 			int nGathered = gdata->diffuseMap->gather(gdata->rad_points[n].pos, gathered, nSearch, radius);
+			
 			vector3d_t rnorm = gdata->rad_points[n].normal;
+			
 			color_t sum(0.0);
+			
 			if(nGathered > 0)
 			{
-				color_t surfCol = gdata->rad_points[n].refl;
-				float scale = 1.f / ( diffPaths * radius * M_PI);
-				if(isnan(scale)){ std::cout << "NaN WARNING (scale)" << std::endl; break; }
+				scale = iScale / radius;
+				
 				for(int i=0; i<nGathered; ++i)
 				{
 					vector3d_t pdir = gathered[i].photon->direction();
 					
-					if( rnorm * pdir > 0.f ) sum += surfCol * scale * gathered[i].photon->color();
+					if( rnorm * pdir > 0.f ) sum += gdata->rad_points[n].refl * scale * gathered[i].photon->color();
 					else sum += gdata->rad_points[n].transm * scale * gathered[i].photon->color();
 				}
 			}
+			
 			gdata->radianceVec[n] = photon_t(rnorm, gdata->rad_points[n].pos, sum);
 		}
 		gdata->mutex.lock();
@@ -112,7 +116,6 @@ photonIntegrator_t::~photonIntegrator_t()
 
 inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n)const
 {
-	//static bool debug=true;
 	color_t lcol(0.0), scol, col(0.0);
 	ray_t lightRay;
 	float lightPdf;
@@ -120,17 +123,21 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 	const material_t *oneMat = sp.material;
 	lightRay.from = sp.P;
 	int nLightsI = lights.size();
+	
 	if(nLightsI == 0) return color_t(0.f);
+	
 	float nLights = float(nLightsI);
 	float s1;
-	if(d1 > 50)  s1 = (*state.prng)();
+	
+	if(d1 > 49)  s1 = (*state.prng)();
 	else s1 = scrHalton(d1, n) * nLights;
-	int lnum = (int)(s1);
-	if(lnum > nLightsI-1) lnum = nLightsI-1;
+	
+	int lnum = std::min((int)(s1), nLightsI - 1);
+	
 	const light_t *light = lights[lnum];
-	s1 = s1 - (float)lnum; // scrHalton(d1, n); // 
-	//BSDF_t oneBSDFs = oneMat->getFlags();
-	//oneMat->initBSDF(state, sp, oneBSDFs);
+
+	s1 = s1 - (float)lnum;
+	
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{
@@ -149,13 +156,14 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 	}
 	else // area light and suchlike
 	{
-		//color_t ccol(0.0);
 		// ...get sample val...
 		lSample_t ls;
 		ls.s1 = s1;
-		if(d1 > 49)  ls.s2 = (*state.prng)();
+		
+		if(d1 > 49) ls.s2 = (*state.prng)();
 		else ls.s2 = scrHalton(d1+1, n);
-		bool canIntersect=light->canIntersect();
+		
+		bool canIntersect = light->canIntersect();
 		
 		if( light->illumSample (sp, ls, lightRay) )
 		{
@@ -170,7 +178,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 				
 				if( canIntersect ) // bound samples and compensate by sampling from BSDF later
 				{
-					float mPdf = oneMat->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
+					float mPdf = oneMat->pdf(state, sp, wo, lightRay.dir, allBSDFIntersect);
 					float l2 = ls.pdf * ls.pdf;
 					float m2 = mPdf * mPdf + 0.01f;
 					float w = l2 / (l2 + m2);
@@ -181,19 +189,17 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 				else
 				{
 					//test! limit lightPdf...
-					if(ls.pdf < 0.0001f) ls.pdf = 0.0001f;
+					//if(ls.pdf < 0.0001f) ls.pdf = 0.0001f;
 					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
 				}
 			}
 		}
 		if(canIntersect) // sample from BSDF to complete MIS
 		{
-			//color_t ccol2(0.f);
-
 			ray_t bRay;
 			bRay.tmin = YAF_SHADOW_BIAS;
 			bRay.from = sp.P;
-			sample_t s(ls.s1, ls.s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
+			sample_t s(ls.s1, ls.s2, allBSDFIntersect);
 			color_t surfCol = oneMat->sample(state, sp, wo, bRay.dir, s);
 			if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 			{
@@ -304,7 +310,7 @@ bool photonIntegrator_t::preprocess()
 		if(lightNum >= numLights){ std::cout << "lightPDF sample error! "<<sL<<"/"<<lightNum<<"\n"; delete lightPowerD; return false; }
 		
 		pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
-		ray.tmin = 0.0005;
+		ray.tmin = MIN_RAYDIST;
 		ray.tmax = -1.0;
 		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 		if(pcol.isBlack())
@@ -397,7 +403,7 @@ bool photonIntegrator_t::preprocess()
 			}
 			ray.from = sp.P;
 			ray.dir = wo;
-			ray.tmin = 0.0005;
+			ray.tmin = MIN_RAYDIST;
 			ray.tmax = -1.0;
 			++nBounces;
 		}
@@ -536,7 +542,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		else continue;
 		//scol = p_mat->sample(state, hit, pwo, pRay.dir, s1, s2); //ya no pdf yet...assume lambertian
 		if(scol.isBlack()) continue;
-		pRay.tmin = 0.0005;
+		pRay.tmin = MIN_RAYDIST;
 		pRay.tmax = -1.0;
 		pRay.from = hit.P;
 		throughput = scol;
@@ -565,7 +571,6 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				if(close)
 				{
 					lcol = estimateOneDirect(state, hit, pwo, lights, 4*depth+5, offs);
-					//lcol += estimatePhotons(state, hit, causticMap, pwo, nCausSearch, dsRadius);
 					pathCol += lcol*throughput;
 				}
 				else if(caustic)
@@ -584,12 +589,10 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				s2 = addMod1(s2, state.dc2);
 			}
 			sample_t sb(s1, s2, (close) ? BSDF_ALL : BSDF_ALL_SPECULAR | BSDF_FILTER);
-			//scol = p_mat->sample(state, hit, pwo, pRay.dir, s1, s2); //ya no pdf yet...assume lambertian
-			//if(scol.isBlack()) break;
 			scol = p_mat->sample(state, hit, pwo, pRay.dir, sb);
 			if( sb.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*hit.N)/sb.pdf);
 			else { did_hit=false; break; }
-			pRay.tmin = 0.0005;
+			pRay.tmin = MIN_RAYDIST;
 			pRay.tmax = -1.0;
 			pRay.from = hit.P;
 			throughput *= scol;
@@ -606,6 +609,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			close =  length < gatherDist;
 			do_bounce = caustic || close;
 		}
+		
 		if(did_hit)
 		{
 			matBSDFs = p_mat->getFlags();
@@ -651,7 +655,7 @@ void photonIntegrator_t::sampleIrrad(renderState_t &state, const surfacePoint_t 
 		float s2 = scrHalton(2, offs);
 		//sample_t s(s1, s2, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT); // specular/glossy done via recursive raytracing
 		//scol = p_mat->sample(state, hit, pwo, pRay.dir, s);
-		//if(s.pdf > 1.0e-6f) scol *= (std::std::fabs(pRay.dir*sp.N)/s.pdf);
+		//if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
 		//else continue;
 		vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 		wi_0 = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s2);
@@ -863,38 +867,26 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			}
 			else
 			{
-				if( bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY) )
-					col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) std::cout << "NaN WARNING! (photonintegr, estimateDirect)\n";
-				if( bsdfs & BSDF_DIFFUSE )
-					col += finalGathering(state, sp, wo);
-				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) std::cout << "NaN WARNING! (photonintegr, finalGathering)\n";
+				if( bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY) ) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
+				
+				//if(isnan(col.R) || isnan(col.G) || isnan(col.B)) std::cout << "NaN WARNING! (photonintegr, estimateDirect)\n";
+				
+				if( bsdfs & BSDF_DIFFUSE ) col += finalGathering(state, sp, wo);
+				
+				//if(isnan(col.R) || isnan(col.G) || isnan(col.B)) std::cout << "NaN WARNING! (photonintegr, finalGathering)\n";
 			}
 		}
 		else
 		{
-	#if OLD_PMAP > 0
-			std::vector<foundPhoton_t> gathered;
-			PFLOAT radius = fSqrt(dsRadius); //actually the square radius...
-	#else		
 			foundPhoton_t *gathered = (foundPhoton_t *)alloca(nSearch * sizeof(foundPhoton_t));
 			PFLOAT radius = dsRadius; //actually the square radius...
-	#endif
+
 			int nGathered=0;
 			
-	#if OLD_PMAP > 0
-			if(diffuseMap.nPhotons() > 0) diffuseMap.gather(sp.P, sp.N, gathered, nSearch, radius);
-			nGathered = gathered.size();
-	#else
 			if(diffuseMap.nPhotons() > 0) nGathered = diffuseMap.gather(sp.P, gathered, nSearch, radius);
-	#endif
 			color_t sum(0.0);
 			if(nGathered > 0)
 			{
-	#if OLD_PMAP > 0
-				radius = gathered.front().dis;
-				radius *= radius;
-	#endif			
 				if(nGathered > _nMax)
 				{
 					_nMax = nGathered;
@@ -918,13 +910,15 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		{
 			col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, dsRadius);
 		}
+		
 		state.raylevel++;
+		
 		if(state.raylevel <= rDepth)
 		{
 			// dispersive effects with recursive raytracing:
 			if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic )
 			{
-				state.includeLights = true; //debatable...
+				state.includeLights = false; //debatable...
 				int dsam = 8;
 				int oldDivision = state.rayDivision;
 				int oldOffset = state.rayOffset;
@@ -953,7 +947,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 						state.chromatic = false;
 						color_t wl_col;
 						wl2rgb(state.wavelength, wl_col);
-						diffRay_t refRay(sp.P, wi, 0.0005);
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
 						dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
 						state.chromatic = true;
 					}
@@ -996,7 +990,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 					if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_GLOSSY))
 					{
 						mcol *= std::fabs(wi*sp.N)/s.pdf;
-						diffRay_t refRay(sp.P, wi, 0.0005);
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
 						gcol += (color_t)integrate(state, refRay) * mcol;
 					}
 				}
@@ -1014,23 +1008,25 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				bool reflect=false, refract=false;
 				vector3d_t dir[2];
 				color_t rcol[2], vcol;
-				material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
+				material->getSpecular(state, sp, wo, reflect, refract, dir, rcol);
 				if(reflect)
 				{
-					diffRay_t refRay(sp.P, dir[0], 0.0005);
+					diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
 					spDiff.reflectedRay(ray, refRay);
 					color_t integ = color_t(integrate(state, refRay) );
-					if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
-					{	integ *= vcol;	}
+					
+					if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol)) integ *= vcol;
+					
 					col += color_t(integ) * rcol[0];
 				}
 				if(refract)
 				{
-					diffRay_t refRay(sp.P, dir[1], 0.0005);
+					diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
 					spDiff.refractedRay(ray, refRay, material->getMatIOR());
 					colorA_t integ = integrate(state, refRay);
-					if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
-					{	integ *= vcol;	}
+					
+					if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol)) integ *= vcol;
+										
 					col += color_t(integ) * rcol[1];
 					alpha = integ.A;
 				}

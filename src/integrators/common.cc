@@ -21,127 +21,22 @@
 #include <yafray_config.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
-//#include <core_api/background.h>
 #include <core_api/light.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/photon.h>
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
 #include <yafraycore/spectrum.h>
+#include <integrators/integr_utils.h>
 
 __BEGIN_YAFRAY
 
-/*
-// outdated...only for reference of sampling method from paper
-// "Illumination in the Presence of Weak Singularities"
-color_t estimateDirect(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth)
-{
-	color_t col;
-	Halton hal3(3);
-//	BSDF_t bsdfs;
-	bool shadowed;
-	unsigned int l_offs = 0;
-	const material_t *material = sp.material;
-//	material->initBSDF(state, sp, bsdfs);
-//	vector3d_t wo = -ray.dir;
-	ray_t lightRay;
-	lightRay.from = sp.P;
-	// contribution of light emitting surfaces
-//	col += material->emit(state, wo, sp);
-	for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
-	{
-		color_t lcol(0.0), scol;
-		float lightPdf;
-		// handle lights with delta distribution, e.g. point and directional lights
-		if( (*l)->diracLight() )
-		{
-			if( (*l)->illuminate(sp, lcol, lightRay) )
-			{
-				// ...shadowed...
-				lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-				shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-				if(!shadowed)
-				{
-					if(trShad) lcol *= scol;
-					color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-					col += surfCol * lcol * std::std::fabs(sp.N*lightRay.dir);
-				}
-			}
-		}
-		
-		else // area light and suchlike
-		{
-			int n = (*l)->nSamples();
-			unsigned int offs = n * state.pixelSample + state.samplingOffs + l_offs;
-			bool bias=(*l)->canIntersect();//false;
-			l_offs += 4567; //just some number to have different sequences per light...and it's a prime even...
-			color_t ccol(0.0);
-			hal3.setStart(offs-1);
-			lSample_t ls;
-			for(int i=0; i<n; ++i)
-			{
-				// ...get sample val...
-				ls.s1 = RI_vdC(offs+i);
-				ls.s2 = hal3.getNext();
-				
-				if( (*l)->illumSample (sp, ls, lightRay) )
-				{
-					// ...shadowed...
-					lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-					shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-					if(!shadowed)
-					{
-						lightPdf = 1.f/ls.pdf;
-						if(trShad) ls.col *= scol;
-						color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-						//lightPdf *= std::std::fabs(sp.N*lightRay.dir);
-						if( lightPdf>1.f && (*l)->canIntersect() ) // bound samples and compensate by sampling from BSDF later
-						{
-							bias=true;
-							lightPdf = 1.f;
-						}
-						ccol += surfCol * ls.col * std::std::fabs(sp.N*lightRay.dir) * lightPdf;
-					}
-				}
-			}
-			col += ccol * ( (CFLOAT)1.0 / (CFLOAT)n );
-			if(bias) // sample from BSDF to compensate bias from bounding samples above
-			{
-				color_t ccol2(0.f);
-				for(int i=0; i<n; ++i)
-				{
-					ray_t bRay;
-					bRay.tmin = 0.0005; bRay.from = sp.P;
-					float s1 = scrHalton(3, offs+i);
-					float s2 = scrHalton(4, offs+i);
-					sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-					color_t surfCol = material->sample(state, sp, wo, bRay.dir, s);
-					if( (*l)->intersect(bRay, bRay.tmax, lcol, lightPdf) )
-					{
-						shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
-						if(!shadowed)
-						{
-							if(trShad) lcol *= scol;
-							CFLOAT cos2 = std::std::fabs(sp.N*bRay.dir);
-							//lightPdf *= cos2;
-							if(s.pdf>0.f) ccol2 += surfCol * lcol * cos2 * std::max(0.f, lightPdf-1.f)/(lightPdf*s.pdf);
-						}
-					}
-				}
-				col += ccol2 * ( (CFLOAT)1.0 / (CFLOAT)n );
-			}
-		}
-	} //end light loop
-	return col;
-}
- */
 //! estimate direct lighting with multiple importance sampling using the power heuristic with exponent=2
 /*! sp.material must be initialized with "initBSDF()" before calling this function! */
 color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth)
 {
 	color_t col;
 	Halton hal3(3);
-//	BSDF_t bsdfs;
 	bool shadowed;
 	unsigned int l_offs = 0;
 	const material_t *material = sp.material;
@@ -173,6 +68,7 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 		else // area light and suchlike
 		{
 			int n = (*l)->nSamples();
+			float invNS = 1.f / (float)n;
 			if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
 			unsigned int offs = n * state.pixelSample + state.samplingOffs + l_offs;
 			bool canIntersect=(*l)->canIntersect();//false;
@@ -214,14 +110,14 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 					}
 				}
 			}
-			col += ccol * ( (CFLOAT)1.0 / (CFLOAT)n );
+			col += ccol * invNS;
 			if(canIntersect) // sample from BSDF to complete MIS
 			{
 				color_t ccol2(0.f);
 				for(int i=0; i<n; ++i)
 				{
 					ray_t bRay;
-					bRay.tmin = 0.0005; bRay.from = sp.P;
+					bRay.tmin = MIN_RAYDIST; bRay.from = sp.P;
 					float s1 = scrHalton(3, offs+i);
 					float s2 = scrHalton(4, offs+i);
 					if(state.rayDivision > 1)
@@ -244,32 +140,19 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 							float m2 = s.pdf * s.pdf;
 							float w = m2 / (l2 + m2);
 							CFLOAT cos2 = std::fabs(sp.N*bRay.dir);
-							if(s.pdf>1.0e-6f) ccol2 += surfCol * lcol * cos2 * w / s.pdf;
+							ccol2 += surfCol * lcol * cos2 * w / s.pdf;
 						}
 					}
 				}
-				col += ccol2 * ( (CFLOAT)1.0 / (CFLOAT)n );
+				col += ccol2 * invNS;
 			}
 		}
 	} //end light loop
 	return col;
 }
 
-inline float kernel(PFLOAT r_photon2, PFLOAT r_gather2)
-{
-	float s = (1.f - r_photon2 / r_gather2);
-	return 3.f / (r_gather2 * M_PI) * s * s;
-}
-
-inline float ckernel(PFLOAT r_photon2, PFLOAT r_gather2)
-{
-	float r_p=fSqrt(r_photon2), r_g=fSqrt(r_gather2);
-	return 3.f * (1.f - r_p/r_g) / (r_gather2 * M_PI);
-}
-
 color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const photonMap_t &map, const vector3d_t &wo, int nSearch, PFLOAT radius)
 {
-//	static bool debug=false;
 	if(!map.ready()) return color_t(0.f);
 	
 	foundPhoton_t *gathered = (foundPhoton_t *)alloca(nSearch * sizeof(foundPhoton_t));
@@ -278,6 +161,8 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 	PFLOAT gRadiusSquare = radius;
 	
 	nGathered = map.gather(sp.P, gathered, nSearch, gRadiusSquare);
+	
+	gRadiusSquare = 1.f / gRadiusSquare;
 	
 	color_t sum(0.0);
 	
@@ -288,17 +173,11 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 		{
 			const photon_t *photon = gathered[i].photon;
 			color_t surfCol = material->eval(state, sp, wo, photon->direction(), BSDF_ALL);
-			CFLOAT k = (CFLOAT) kernel(gathered[i].distSquare, gRadiusSquare);
+			float k = kernel(gathered[i].distSquare, gRadiusSquare);
 			sum += surfCol * k * photon->color();
 		}
 		sum *= 1.f / ( float(map.nPaths()) );
 	}
-/*	if(debug && nGathered > 10)
-	{
-		std::cout << "\ncaustic color:" << sum << std::endl;
-		//debug=false;
-	}
-*/
 	return sum;
 }
 
@@ -345,7 +224,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights
 		if(lightNum >= numLights){ std::cout << "lightPDF sample error! "<<sL<<"/"<<lightNum<<"\n"; delete lightPowerD; return false; }
 		
 		color_t pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
-		ray.tmin = 0.0005;
+		ray.tmin = MIN_RAYDIST;
 		ray.tmax = -1.0;
 		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 		if(pcol.isBlack())
@@ -414,6 +293,10 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights
 			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
 			// caustic-only calculation can be stopped if:
 			if(!(causticPhoton || directPhoton)) break;
+			/*if((sample.sampledFlags & BSDF_VOLUMETRIC) && material->volumeTransmittance(state, *hit, ray, vcol))
+			{
+				pcol *= vcol;
+			}*/
 			if(state.chromatic && sample.sampledFlags & BSDF_DISPERSIVE)
 			{
 				state.chromatic=false;
@@ -423,7 +306,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights
 			}
 			ray.from = hit->P;
 			ray.dir = wo;
-			ray.tmin = 0.0005;
+			ray.tmin = MIN_RAYDIST;
 			ray.tmax = -1.0;
 			++nBounces;
 		}

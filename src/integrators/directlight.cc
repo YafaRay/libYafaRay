@@ -77,7 +77,6 @@ bool directLighting_t::preprocess()
 		light_t *bgl = background->getLight();
 		if(bgl) lights.push_back(bgl);
 	}
-	//currently background lights cannot emit photons yet...so we create map here:
 	if(caustics)
 	{
 		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons);

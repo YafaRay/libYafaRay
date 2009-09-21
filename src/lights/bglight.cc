@@ -119,7 +119,7 @@ void bgLight_t::init(scene_t &scene)
 	worldPIFactor = (M_2PI * aPdf);
 }
 
-float bgLight_t::CalcFromSample(float s1, float s2, float &u, float &v, bool inv) const
+inline float bgLight_t::CalcFromSample(float s1, float s2, float &u, float &v, bool inv) const
 {
 	int iv;
 	float pdf1 = 0.f, pdf2 = 0.f;
@@ -138,7 +138,7 @@ float bgLight_t::CalcFromSample(float s1, float s2, float &u, float &v, bool inv
 	return calcPdf(pdf1, pdf2, v);
 }
 
-float bgLight_t::CalcFromDir(const vector3d_t &dir, float &u, float &v, bool inv) const
+inline float bgLight_t::CalcFromDir(const vector3d_t &dir, float &u, float &v, bool inv) const
 {
 	int iv, iu;
 	float invInt;
@@ -187,18 +187,11 @@ bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) c
 	
 	wi.tmax = -1.0;
 	
-	s.pdf = CalcFromSample(s.s1, s.s2, u, v, true);
+	s.pdf = CalcFromSample(s.s1, s.s2, u, v, false);
 	
 	invSpheremap(u, v, wi.dir);
 	
-	createCS(wi.dir, U, V);
-
-	vector3d_t offs = u*U + v*V;
-	vector3d_t from(worldCenter + worldRadius*(offs - wi.dir));
-	
-	float iDistSqrt = 1.f / from.lengthSqr();
-	
-	s.col = background->eval(wi);
+	s.col = background->eval(wi) * vDist->integral;
 	
 	return true;
 }
@@ -230,7 +223,7 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 	vector3d_t offs;
 	float u, v;
 	
-	sample_dir(s3, s4, ray.dir, ipdf, false);
+	sample_dir(s3, s4, ray.dir, ipdf, true);
 
 	pcol = background->eval(ray);
 	ray.dir = -ray.dir;
@@ -242,7 +235,7 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 
 	ray.from = worldCenter + worldRadius*(offs - ray.dir);
 	
-	return pcol;// * worldPIFactor;
+	return pcol * aPdf;
 }
 
 color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
@@ -252,7 +245,7 @@ color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	vector3d_t offs;
 	float u, v;
 	
-	sample_dir(s.s3, s.s4, wo, s.dirPdf, false);
+	sample_dir(s.s1, s.s2, wo, s.dirPdf, true);
 	
 	pcol = background->eval(ray_t(point3d_t(0,0,0), wo));
 	wo = -wo;

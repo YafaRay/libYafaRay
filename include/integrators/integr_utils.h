@@ -35,6 +35,20 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 
 bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count);
 
+//! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
+inline float kernel(PFLOAT r_photon2, PFLOAT ir_gather2)
+{
+	float s = (1.f - r_photon2 * ir_gather2);
+	return 3.f * ir_gather2 * M_1_PI * s * s;
+}
+
+inline float ckernel(PFLOAT r_photon2, PFLOAT r_gather2)
+{
+	float r_p=fSqrt(r_photon2), r_g=fSqrt(r_gather2);
+	return 3.f * (1.f - r_p/r_g) / (r_gather2 * M_PI);
+}
+
+
 /*! estimate direct lighting by sampling ONE light, i.e. only use this when you know that you'll
 	call this function sufficiently often in your integration!
 	precondition: userdata must be set and material must be initialized (initBSDF(...))

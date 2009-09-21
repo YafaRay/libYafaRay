@@ -155,7 +155,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				}
 				return filterCol*(Kt/std::fabs(sp.N*wi));
 			}
-			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )
+			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) ) //total inner reflection
 			{
 				wi = reflect_plane(N, wo);
 				s.pdf = pKr;
@@ -170,9 +170,13 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 		}
 		else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )//total inner reflection
 		{
+			CFLOAT Kr, Kt;
 			wi = reflect_plane(N, wo);
+			fresnel(wo, -N, ior, Kr, Kt);
+			float pKt = 0.01+0.99*Kt;
 			s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-			color_t tir_col(1.f/std::fabs(sp.N*wi));
+			color_t tir_col(Kt/std::fabs(sp.N*wi));
+			s.pdf = pKt;
 			if(s.reverse)
 			{
 				s.pdf_back = s.pdf;

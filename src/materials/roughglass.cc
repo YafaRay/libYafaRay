@@ -80,8 +80,8 @@ void roughGlassMat_t::func()
 			//color_t col = sample(state, sp, wi, wo, s);
 			//if(s.pdf > 1e-6)
 			//{
-			//	if(s.sampledFlags & BSDF_REFLECT) ref += col * std::std::fabs(wo.z) / s.pdf;
-			//	else trans += col * std::std::fabs(wo.z) / s.pdf;
+			//	if(s.sampledFlags & BSDF_REFLECT) ref += col * std::fabs(wo.z) / s.pdf;
+			//	else trans += col * std::fabs(wo.z) / s.pdf;
 			//}
 		}
 		//float sref = ref.energy()/32.f , strans = trans.energy()/32.f;
