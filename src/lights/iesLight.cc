@@ -98,14 +98,14 @@ iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t
 
 void iesLight_t::getAngles(float &u, float &v, const vector3d_t &dir, const float &costheta) const
 {
-	u = (dir.z >= 1.f) ? 0.f : radToDeg(std::acos(dir.z));
+	u = (dir.z >= 1.f) ? 0.f : radToDeg(acos(dir.z));
 	
 	if(dir.y < 0)
 	{
 		u = 360.f - u;
 	}
 	
-	v = (costheta >= 1.f) ? 0.f : radToDeg(std::acos(costheta));
+	v = (costheta >= 1.f) ? 0.f : radToDeg(acos(costheta));
 }
 
 bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
@@ -148,19 +148,16 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	float cosa = ndir*ldir;
 	if(cosa < cosEnd) return false;
 	
-	float u, v;
-	
-	ShirleyDisk(s.s1, s.s2, u, v);
-
 	wi.tmax = dist;
-	wi.dir = sampleCone(ldir, du, dv, cosa, u, v);
+	wi.dir = sampleCone(ldir, du, dv, cosa, s.s1, s.s2);
 
-	getAngles(u, v, ldir, cosa);
+	float u, v;
+	getAngles(u, v, wi.dir, cosa);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
 	
 	if(rad == 0.f) return false;
-	
+
 	s.col = color * iDistSqrt;
 	s.pdf = 1.f / rad;
 
@@ -179,12 +176,8 @@ bool iesLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipd
 
 color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
 {
-	float u, v;
-
-	ShirleyDisk(s1, s2, u, v);
-	
 	ray.from = position;
-	ray.dir = sampleCone(dir, du, dv, cosEnd, u, v);
+	ray.dir = sampleCone(dir, du, dv, cosEnd, s1, s2);
 	
 	ipdf = 0.f;
 	
@@ -192,6 +185,7 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	
 	if(cosa < cosEnd) return color_t(0.f);
 	
+	float u, v;
 	getAngles(u, v, ray.dir, cosa);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
@@ -206,12 +200,9 @@ color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	s.sp->P = position;
 	s.flags = flags;
 	
-	float u, v;
-
-	//ShirleyDisk(s.s3, s.s4, u, v);
-	
 	wo = sampleCone(dir, du, dv, cosEnd, s.s3, s.s4);
 	
+	float u, v;
 	getAngles(u, v, wo, wo * dir);
 	
 	float rad = iesData->getRadianceBlurred(u, v);
@@ -233,7 +224,6 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	if(cosa < cosEnd) return;
 	
 	float u, v;
-		
 	getAngles(u, v, wo, cosa);
 
 	float rad = iesData->getRadianceBlurred(u, v);

@@ -56,7 +56,6 @@ __BEGIN_YAFRAY
 #define LOG_EXP 0x7F800000
 #define LOG_MANT 0x7FFFFF
 
-
 #define CONST_P 0.225f
 
 union bitTwiddler
@@ -132,7 +131,7 @@ inline float fLdexp(float x, int a)
 inline float fSin(float x)
 {
 #ifdef FAST_TRIG
-	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * M_1_2PI)) * M_2PI;
+	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * M_1_2PI)) * M_2PI; //float modulo x % M_2PI
 	if(x < -M_PI)
 	{
 		x += M_2PI;
@@ -142,14 +141,8 @@ inline float fSin(float x)
 		x -= M_2PI;
 	}
 
-	if(x > 0)
-	{
-		x = (M_4_PI * x) - (M_4_PI2 * x * x);
-		return CONST_P * (x * x - x) + x;
-	}
-
-	x = (M_4_PI * x) + (M_4_PI2 * x * x);
-	return CONST_P * (-x * x - x) + x;
+	x = (M_4_PI * x) - (M_4_PI2 * x * std::fabs(x));
+	return CONST_P * (x * std::fabs(x) - x) + x;
 
 #else
 	return sin(x);
