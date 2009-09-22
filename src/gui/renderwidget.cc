@@ -59,8 +59,9 @@ bool RenderWidget::event(QEvent *e)
 			QPainter p;
 			p.begin(&pix);
 			p.drawImage(ge->rect(), ge->img(), ge->rect());
-			update(ge->rect());
 			p.end();
+			
+			update(ge->rect());
 
 			p.begin(&img);
 			p.drawImage(ge->rect(), ge->img(), ge->rect());

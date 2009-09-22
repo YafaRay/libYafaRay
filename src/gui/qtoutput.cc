@@ -58,9 +58,9 @@ bool QtOutput::putPixel(int x, int y, const float *c, int channels)
 {
 	int r, g, b, a = 255;
 
-	r = (c[0]<0.f) ? 0 : ((c[0]>=1.f) ? 255 : (unsigned char)(255.f*c[0]) );
-	g = (c[1]<0.f) ? 0 : ((c[1]>=1.f) ? 255 : (unsigned char)(255.f*c[1]) );
-	b = (c[2]<0.f) ? 0 : ((c[2]>=1.f) ? 255 : (unsigned char)(255.f*c[2]) );
+	r = (c[0]<0.f) ? 0 : ((c[0]>=1.f) ? 255 : (int)(255.f*c[0]) );
+	g = (c[1]<0.f) ? 0 : ((c[1]>=1.f) ? 255 : (int)(255.f*c[1]) );
+	b = (c[2]<0.f) ? 0 : ((c[2]>=1.f) ? 255 : (int)(255.f*c[2]) );
 	QRgb rgb = qRgb(r, g, b);
 	if (channels > 3)
 	{
