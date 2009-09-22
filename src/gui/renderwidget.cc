@@ -57,15 +57,16 @@ bool RenderWidget::event(QEvent *e)
 		else
 		{
 			QPainter p;
-			p.begin(&pix);
-			p.drawImage(ge->rect(), ge->img(), ge->rect());
-			p.end();
-			
-			update(ge->rect());
-
 			p.begin(&img);
 			p.drawImage(ge->rect(), ge->img(), ge->rect());
 			p.end();
+			
+			p.begin(&pix);
+			p.drawImage(ge->rect(), img, ge->rect());
+			p.end();
+
+			update(ge->rect());
+
 		}
 		return true;
 	}
