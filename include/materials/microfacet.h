@@ -14,7 +14,7 @@ __BEGIN_YAFRAY
 
 #define DIFFUSE_RATIO 1.2173913
 
-inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
+static inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
 {
 	PFLOAT phi = atan(fSqrt((e_u + 1.f)/(e_v + 1.f)) * fTan(M_PI * s1 * 0.5f));
 	PFLOAT cos_phi = fCos(phi);
@@ -32,18 +32,18 @@ inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOA
 	H.z = cos_theta;
 }
 
-inline float AS_Aniso_D(vector3d_t h, PFLOAT e_u, PFLOAT e_v)
+static inline float AS_Aniso_D(vector3d_t h, PFLOAT e_u, PFLOAT e_v)
 {
 	float exponent = (e_u * h.x*h.x + e_v * h.y*h.y)/(1.f - h.z*h.z);
 	return fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(h.z, exponent);
 }
 
-inline float AS_Aniso_Pdf(vector3d_t h, PFLOAT cos_w_H, PFLOAT e_u, PFLOAT e_v)
+static inline float AS_Aniso_Pdf(vector3d_t h, PFLOAT cos_w_H, PFLOAT e_u, PFLOAT e_v)
 {
-	return AS_Aniso_D(h, e_u, e_v) / (8.f * cos_w_H);
+	return AS_Aniso_D(h, e_u, e_v) / (4.f * cos_w_H);
 }
 
-inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
+static inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
 {
 	if(s1 < 0.25f)
 	{
@@ -67,17 +67,16 @@ inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOA
 	}
 }
 
-static inline PFLOAT Blinn_D(PFLOAT cos_h, PFLOAT e)
+static inline float Blinn_D(float cos_h, float e)
 {
 	return (e + 1.f) * fPow(std::fabs(cos_h), e);
 }
 
-static inline float Blinn_Pdf(PFLOAT costheta, PFLOAT cos_w_H, PFLOAT exponent)
+static inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
 {
-	return Blinn_D(costheta, exponent) / (8.f * cos_w_H);
+	return (e + 1.f) * fPow(std::fabs(costheta), e) / (4.f * cos_w_H);
 }
-
-static inline void Blinn_Sample(vector3d_t &H, float s1, float s2, PFLOAT exponent)
+static inline void Blinn_Sample(vector3d_t &H, float s1, float s2, float exponent)
 {
 	// Compute sampled half-angle vector H for Blinn distribution
 	PFLOAT costheta = fPow(s1, 1.f / (exponent+1.f));

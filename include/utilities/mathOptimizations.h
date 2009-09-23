@@ -47,6 +47,8 @@ __BEGIN_YAFRAY
 #define degToRad(deg) (deg * 0.01745329251994329576922)
 #define radToDeg(rad) (rad * 57.29577951308232087684636)
 
+#define powFive(x) (x * x * x * x * x)
+
 #define POLYEXP(x) (x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
 #define POLYLOG(x) (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
 

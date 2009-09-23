@@ -88,11 +88,11 @@ void glossyMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp,
 
 color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
 {
+	if( !(bsdfs & BSDF_REFLECT) ) return color_t(0.f);
+
 	MDat_t *dat = (MDat_t *)state.userdata;
 	color_t col(0.f);
 	bool diffuse_flag = bsdfs & BSDF_DIFFUSE;
-	
-	if( !diffuse_flag ) return col;
 	
 	nodeStack_t stack(dat->stack);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
@@ -110,11 +110,11 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 		if(anisotropic)
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, H*N);
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 4.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
 		}
 		else
 		{
-			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ( 4.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
 
 		}
 
@@ -123,12 +123,15 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 
 	if(with_diffuse && diffuse_flag)
 	{
-		PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
-		PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
-		PFLOAT diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
+		float f_wi = (1.f - (0.5f * wiN));
+		f_wi = powFive(f_wi);
+		float f_wo = (1.f - (0.5f * woN));
+		f_wo = powFive(f_wo);
+		float diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
 		color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
 		col += diffuse * dat->mDiffuse * diff_base;
 	}
+	
 	return col;
 }
 
@@ -173,17 +176,15 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 				{
 					vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
 					s.pdf = s.pdf*cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v)*(1.f-cur_pDiffuse);
-					glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 				}
 				else
 				{
 					s.pdf = s.pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, exponent)*(1.f-cur_pDiffuse);
-					glossy = Blinn_D(cos_N_H, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 				}
 			}
 			s.sampledFlags = BSDF_DIFFUSE | BSDF_REFLECT;
-			scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
-			return scolor;
+
+			return eval(state, sp, wo, wi, s.flags);
 		}
 		s1 -= cur_pDiffuse;
 		s1 /= (1.f - cur_pDiffuse);
@@ -208,7 +209,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wiN = std::fabs(wi * N);
 
 			s.pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ( 4.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 		}
 		else
 		{
@@ -227,21 +228,23 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wiN = std::fabs(wi * N);
 
 			s.pdf = Blinn_Pdf(Hs.z, cos_wo_H, exponent);
-			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+			glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ( 4.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 		}
 		
 		scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
 		s.sampledFlags = as_diffuse ? BSDF_DIFFUSE | BSDF_REFLECT : BSDF_GLOSSY | BSDF_REFLECT;
-	
-		if(use_diffuse)
-		{
-			s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
-			PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
-			PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
-			PFLOAT diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
-			color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
-			scolor += (float)diffuse * dat->mDiffuse * diff_base;
-		}
+	}
+
+	if(use_diffuse)
+	{
+		s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
+		float f_wi = (1.f - (0.5f * wiN));
+		f_wi = powFive(f_wi);
+		float f_wo = (1.f - (0.5f * woN));
+		f_wo = powFive(f_wo);
+		float diffuse = DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
+		color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
+		scolor += diffuse * dat->mDiffuse * diff_base;
 	}
 	
 	return scolor;

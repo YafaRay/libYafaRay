@@ -132,22 +132,24 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, H*N);
 			glossy = Kt * AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+							( 4.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
 		}
 		else
 		{
 			glossy = Kt * Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+							( 4.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
 		}
 		col = (CFLOAT)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 	}
 	if(with_diffuse && diffuse_flag)
 	{
-		PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
-		PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
-		PFLOAT diffuse = Kt * DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
+		float f_wi = (1.f - (0.5f * wiN));
+		f_wi = powFive(f_wi);
+		float f_wo = (1.f - (0.5f * woN));
+		f_wo = powFive(f_wo);
+		float diffuse = Kt * DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
 		color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
-		col += (CFLOAT)diffuse * dat->mDiffuse * diff_base;
+		col += diffuse * dat->mDiffuse * diff_base;
 	}
 	return col;
 }
@@ -267,24 +269,26 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			{
 				s.pdf += AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * width[rcIndex[C_GLOSSY]];
 				glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-									( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+									( 4.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 			}
 			else
 			{
 				s.pdf += Blinn_Pdf(Hs.z, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
 				glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-									( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+									( 4.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
 			}
 			scolor = (CFLOAT)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
 		}
 		
 		if(use[C_DIFFUSE])
 		{
-			PFLOAT f_wi = fPow(1.f - (0.5f * wiN), 5.f);
-			PFLOAT f_wo = fPow(1.f - (0.5f * woN), 5.f);
-			PFLOAT diffuse = Kt * DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
+			float f_wi = (1.f - (0.5f * wiN));
+			f_wi = powFive(f_wi);
+			float f_wo = (1.f - (0.5f * woN));
+			f_wo = powFive(f_wo);
+			float diffuse = Kt * DIFFUSE_RATIO * (1.f - dat->mGlossy) * (1.f - f_wi) * (1.f - f_wo);
 			color_t diff_base = (diffuseS ? diffuseS->getColor(stack) : diff_color);
-			scolor += (CFLOAT)diffuse * dat->mDiffuse * diff_base;
+			scolor += diffuse * dat->mDiffuse * diff_base;
 			s.pdf += wiN * width[rcIndex[C_DIFFUSE]];
 		}
 	}
@@ -355,8 +359,6 @@ void coatedGlossyMat_t::getSpecular(const renderState_t &state, const surfacePoi
 		N = (cos_wo_N <= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
 		Ng = -sp.Ng;
 	}
-//	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-//	vector3d_t refdir;
 	
 	CFLOAT Kr, Kt;
 	fresnel(wo, N, IOR, Kr, Kt);
