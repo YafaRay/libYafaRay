@@ -131,7 +131,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			// dispersive effects with recursive raytracing:
 			if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic )
 			{
-				state.includeLights = true; //debatable...
+				state.includeLights = false; //debatable...
 				int dsam = 8;
 				int oldDivision = state.rayDivision;
 				int oldOffset = state.rayOffset;
@@ -159,7 +159,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 						color_t wl_col;
 						wl2rgb(state.wavelength, wl_col);
 						state.chromatic = false;
-						diffRay_t refRay(sp.P, wi, 0.0005);
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
 						dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
 						state.chromatic = true;
 					}
@@ -202,7 +202,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_GLOSSY))
 					{
 						mcol *= std::fabs(wi*sp.N)/s.pdf;
-						diffRay_t refRay(sp.P, wi, 0.0005);
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
 						gcol += (color_t)integrate(state, refRay) * mcol;
 					}
 				}
@@ -243,13 +243,6 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			}
 		}
 		--state.raylevel;
-		/* // account for volumetric effects:
-		color_t vcol;
-		if(material->volumeTransmittance(state, sp, ray, vcol))
-		{
-			col *= vcol;
-		} */
-		// else <use "global" volume integrator, if existant (and raylevel>1?)
 		
 		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f-m_alpha)*alpha;
@@ -292,7 +285,7 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 		lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is still bad...
 		lightRay.tmax = AO_dist;
 		
-		sample_t s(s1, s2, /* BSDF_GLOSSY |  */ BSDF_DIFFUSE | BSDF_REFLECT );
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
 		color_t surfCol = material->sample(state, sp, wo, lightRay.dir, s);
 		if(s.pdf > 1.0e-6f)
 		{

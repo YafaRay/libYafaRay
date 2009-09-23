@@ -61,10 +61,6 @@ bool RenderWidget::event(QEvent *e)
 			p.drawImage(ge->rect(), ge->img(), ge->rect());
 			p.end();
 			
-			p.begin(&pix);
-			p.drawImage(ge->rect(), img, ge->rect());
-			p.end();
-
 			update(ge->rect());
 
 		}
@@ -87,7 +83,7 @@ void RenderWidget::paintEvent(QPaintEvent *e)
 			painter.drawText(rect(), Qt::AlignCenter, tr("<no image data>"));
 			return;
 		}
-		painter.drawPixmap(r, pix, r);
+		painter.drawImage(r, img, r, Qt::AvoidDither | Qt::AutoColor);
 	}
 	else {
 		QLabel::paintEvent(e);
@@ -112,6 +108,7 @@ bool RenderWidget::saveImage(const QString &path, bool alpha)
 
 void RenderWidget::finishedRender() {
 	rendering = false;
+	pix = QPixmap::fromImage(img);
 	setPixmap(pix);
 }
 
