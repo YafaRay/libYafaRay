@@ -76,14 +76,13 @@ void RenderWidget::paintEvent(QPaintEvent *e)
 		QPainter painter(this);
 		painter.setClipRegion(e->region());
 
-		//if (pixmap.isNull()) {
 		if (pix.isNull()) {
 			painter.fillRect(r, Qt::black);
 			painter.setPen(Qt::white);
 			painter.drawText(rect(), Qt::AlignCenter, tr("<no image data>"));
 			return;
 		}
-		painter.drawImage(r, img, r, Qt::AvoidDither | Qt::AutoColor);
+		painter.drawImage(r, img, r);
 	}
 	else {
 		QLabel::paintEvent(e);

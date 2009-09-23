@@ -222,10 +222,10 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
 			if(reflect)
 			{
-				diffRay_t refRay(sp.P, dir[0], 0.0005);
+				diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
 				color_t integ = color_t(integrate(state, refRay) );
-				integ *= scene->volIntegrator->transmittance(state, refRay); // T
-				integ += scene->volIntegrator->integrate(state, refRay); // L_v
+				//integ *= scene->volIntegrator->transmittance(state, refRay); // T
+				//integ += scene->volIntegrator->integrate(state, refRay); // L_v
 				// account for volumetric effects:
 				if(bsdfs&BSDF_VOLUMETRIC && material->volumeTransmittance(state, sp, refRay, vcol))
 				{	integ *= vcol;	}
@@ -233,7 +233,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			}
 			if(refract)
 			{
-				diffRay_t refRay(sp.P, dir[1], 0.0005);
+				diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
 				colorA_t integ = integrate(state, refRay);
 				// account for volumetric effects:
 				if(bsdfs&BSDF_VOLUMETRIC && material->volumeTransmittance(state, sp, refRay, vcol))
