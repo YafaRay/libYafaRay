@@ -69,7 +69,7 @@ void sunLight_t::init(scene_t &scene)
 	bound_t w=scene.getSceneBound();
 	worldRadius = 0.5 * (w.g - w.a).length();
 	worldCenter = 0.5 * (w.a + w.g);
-	ePdf = (M_2PI * worldRadius * worldRadius);
+	ePdf = (M_PI * worldRadius * worldRadius);
 	eIPdf = ePdf * invpdf;
 }
 
@@ -99,7 +99,8 @@ bool sunLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipd
 color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
 {
 	float u, v;
-	ShirleyDisk(s1, s2, u, v);
+	ShirleyDisk(s3, s4, u, v);
+	//u = s3; v = s4;
 	
 	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, s3, s4);
 	vector3d_t du2, dv2;

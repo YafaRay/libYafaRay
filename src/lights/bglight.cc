@@ -36,20 +36,19 @@ __BEGIN_YAFRAY
 #define addOff(v) (v + SMPL_OFF)
 #define clampSample(s, m) std::max(0, std::min((int)(v), m - 1))
 
-#define multPdf(p0, p1) (p0 * p1)
-#define calcPdf(p0, p1, s) std::max( sigma, multPdf(p0, p1) * (float)M_1_2PI * clampZero(sinSample(s)) )
-#define calcInvPdf(p0, p1, s) std::max( sigma, (float)M_2PI * sinSample(s) * clampZero(multPdf(p0, p1)) )
+#define multPdf(p0, p1) (p0 + p1)
+#define calcPdf(p0, p1, s) ( multPdf(p0, p1) * (float)M_1_2PI * clampZero(sinSample(s)) )
+#define calcInvPdf(p0, p1, s) ( (float)M_2PI * sinSample(s) * clampZero(multPdf(p0, p1)) )
 
 inline float clampZero(float val)
 {
 	if(val > 0.f) return 1.f / val;
-	else return 1.f;
+	else return sigma;
 }
 
 inline float sinSample(float s)
 {
-	float ang = s * M_PI;
-	return fSin(ang);
+	return fSin(s * M_PI);
 }
 
 bgLight_t::bgLight_t(background_t *bg, int sampl):light_t(LIGHT_SINGULAR), samples(sampl), background(bg)

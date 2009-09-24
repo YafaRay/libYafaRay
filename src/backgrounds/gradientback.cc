@@ -41,8 +41,6 @@ class gradientBackground_t: public background_t
 	protected:
 
 		color_t gzenith,  ghoriz, szenith, shoriz;
-		
-		//bool ibl; //!< indicate wether to do image based lighting
 		light_t *envLight;
 };
 
@@ -68,7 +66,9 @@ color_t gradientBackground_t::operator() (const ray_t &ray, renderState_t &state
 color_t gradientBackground_t::eval(const ray_t &ray, bool filtered) const
 {
 	color_t color;
-	CFLOAT blend = ray.dir.z;
+	
+	float blend = ray.dir.z;
+	
 	if(blend >= 0.f)
 	{
 		color = blend*szenith + (1.f-blend)*shoriz;
@@ -78,7 +78,9 @@ color_t gradientBackground_t::eval(const ray_t &ray, bool filtered) const
 		blend = -blend;
 		color = blend*gzenith + (1.f-blend)*ghoriz;
 	}
+
 	if(color.minimum() < 0.000001) color = color_t(0.00001);
+
 	return color;
 }
 

@@ -407,10 +407,13 @@ void imageFilm_t::addSample(const colorA_t &c, int x, int y, float dx, float dy,
 //		std::cout << "camp: dx0 "<<dx0<<", dx1 "<<dx1<<" dy0, "<<dy0<<", dy1 "<<dy1<<"\n";
 	// get indizes in filter table
 	double x_offs = dx - 0.5;
+
 	int xIndex[MAX_FILTER_SIZE+1], yIndex[MAX_FILTER_SIZE+1];
+
 	for (int i=dx0, n=0; i <= dx1; ++i, ++n) {
 		double d = std::fabs( (double(i) - x_offs) * tableScale);
 		xIndex[n] = Floor2Int(d);
+
 		if(xIndex[n] > FILTER_TABLE_SIZE-1)
 		{
 			std::cout << "filter table x error!\n";
@@ -419,11 +422,13 @@ void imageFilm_t::addSample(const colorA_t &c, int x, int y, float dx, float dy,
 			throw std::logic_error("addSample error");
 		}
 	}
+
 	double y_offs = dy - 0.5;
+
 	for (int i=dy0, n=0; i <= dy1; ++i, ++n) {
-		float d = fabsf( (double(i) - y_offs) * tableScale);
+		double d = std::fabs( (double(i) - y_offs) * tableScale);
 		yIndex[n] = Floor2Int(d);
-		// yIndex[n] = std::min(Floor2Int(d), FILTER_TABLE_SIZE-1);
+
 		if(yIndex[n] > FILTER_TABLE_SIZE-1)
 		{
 			std::cout << "filter table y error!\n";

@@ -166,30 +166,28 @@ void shinyDiffuseMat_t::initOrenNayar(double sigma)
 
 CFLOAT shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const
 {
-	PFLOAT cos_ti = N*wi;
-	PFLOAT cos_to = N*wo;
+	PFLOAT cos_ti = std::max(-1.f,std::min(1.f,N*wi));
+	PFLOAT cos_to = std::max(-1.f,std::min(1.f,N*wo));
 	CFLOAT maxcos_f = 0.f;
-	cos_to = std::max(-1.f,std::min(1.f,cos_to)); // Domain validation due to precision errors
-	cos_ti = std::max(-1.f,std::min(1.f,cos_ti));;	// Domain validation due to precision errors
 	
-	if(cos_ti < 0.9999f && cos_to < 0.9999f)
-	{
+//	if(cos_ti <= 1.f && cos_to <= 1.f)
+//	{
 		vector3d_t v1 = (wi - N*cos_ti).normalize();
 		vector3d_t v2 = (wo - N*cos_to).normalize();
 		maxcos_f = std::max(0.f, v1*v2);
-	}
+//	}
 	
 	CFLOAT sin_alpha, tan_beta;
 	
-	if(cos_to > cos_ti)
+	if(cos_to >= cos_ti)
 	{
-		sin_alpha = sqrt(1.f - cos_ti*cos_ti);
-		tan_beta = sqrt(1.f - cos_to*cos_to) / cos_to;
+		sin_alpha = fSqrt(1.f - cos_ti*cos_ti);
+		tan_beta = fSqrt(1.f - cos_to*cos_to) / cos_to;
 	}
 	else
 	{
-		sin_alpha = sqrt(1.f - cos_to*cos_to);
-		tan_beta = sqrt(1.f - cos_ti*cos_ti) / cos_ti;
+		sin_alpha = fSqrt(1.f - cos_to*cos_to);
+		tan_beta = fSqrt(1.f - cos_ti*cos_ti) / cos_ti;
 	}
 	
 	return A + B * maxcos_f * sin_alpha * tan_beta;
@@ -201,19 +199,17 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
 	PFLOAT cos_Ng_wo = sp.Ng*wo;
 	PFLOAT cos_Ng_wl = sp.Ng*wl;
 	// face forward:
-	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
 	if(!(bsdfs & bsdfFlags & BSDF_DIFFUSE)) return color_t(0.f);
 	
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
-//	std::vector<shaderNode_t *>::const_iterator iter, end=allViewdep.end();
-//	for(iter = allViewdep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp, wo, wl);
-	
-//	getComponents(vdNodes, stack, dat->component); //that's wrong! we can't eval viewdependant nodes yet...
+
 	CFLOAT Kr = getFresnel(wo, N);
 	float mT = (1.f - Kr*dat->component[0])*(1.f - dat->component[1]);
 	
 	bool transmit = ( cos_Ng_wo * cos_Ng_wl ) < 0;
+	
 	if(transmit) // light comes from opposite side of surface
 	{
 		if(isTransluc) return dat->component[2] * mT * (diffuseS ? diffuseS->getColor(stack) : color);
@@ -244,10 +240,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 	
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
-//	std::vector<shaderNode_t *>::const_iterator iter, end=allViewdep.end();
-//	for(iter = allViewdep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp, wo, wl);
-	
-//	getComponents(vdNodes, stack, dat->component);
+
 	CFLOAT Kr = getFresnel(wo, N);
 	accumulate(dat->component, accumC, Kr);
 	
@@ -429,8 +422,8 @@ bool shinyDiffuseMat_t::scatterPhoton(const renderState_t &state, const surfaceP
 	if(s.pdf > 1.0e-6f)
 	{
 		color_t cnew = s.lcol * s.alpha * scol * (std::fabs(wo*sp.N)/s.pdf);
-		CFLOAT new_max = std::max( std::max(cnew.getR(), cnew.getG()), cnew.getB() );
-		CFLOAT old_max = std::max( std::max(s.lcol.getR(), s.lcol.getG()), s.lcol.getB() );
+		CFLOAT new_max = cnew.maximum();
+		CFLOAT old_max = s.lcol.maximum();
 		float prob = std::min(1.f, new_max/old_max);
 		if(s.s3 <= prob)
 		{

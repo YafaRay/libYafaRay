@@ -82,9 +82,9 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	Y_INFO << "DarkSky: RGB Clamping " << act << std::endl;
 	Y_INFO << "DarkSky: Altitude " << alt << std::endl;
 
-	cosThetaS = cos(thetaS);
+	cosThetaS = fCos(thetaS);
 	cosTheta2 = cosThetaS * cosThetaS;
-	sinThetaS = sin(thetaS);
+	sinThetaS = fSin(thetaS);
 
 	theta2 = thetaS*thetaS;
 	theta3 = theta2*thetaS;

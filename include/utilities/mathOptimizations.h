@@ -124,9 +124,10 @@ inline float fSqrt(float a)
 inline float fLdexp(float x, int a)
 {
 #ifdef FAST_MATH
-	return x * fPow(2.0, a);
+	//return x * fPow(2.0, a);
+	return ldexp(x, a);
 #else
-	return ldexp(x,a);
+	return ldexp(x, a);
 #endif
 }
 
