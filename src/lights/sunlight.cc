@@ -47,7 +47,6 @@ class sunLight_t : public light_t
 	int samples;
 	float worldRadius;
 	float ePdf;
-	float eIPdf;
 };
 
 sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples):
@@ -70,11 +69,11 @@ void sunLight_t::init(scene_t &scene)
 	worldRadius = 0.5 * (w.g - w.a).length();
 	worldCenter = 0.5 * (w.a + w.g);
 	ePdf = (M_PI * worldRadius * worldRadius);
-	eIPdf = ePdf * invpdf;
 }
 
 bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	return false;
 	//sample direction uniformly inside cone:
 	wi.dir = sampleCone(direction, du, dv, cosAngle, s.s1, s.s2);
 	wi.tmax = -1.f;
@@ -88,6 +87,7 @@ bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 
 bool sunLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
 {
+	return false;
 	PFLOAT cosine = ray.dir*direction;
 	if(cosine < cosAngle) return false;
 	col = colPdf;
@@ -107,11 +107,11 @@ color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	
 	minRot(direction, du, ldir, du2, dv2);
 	
-	ipdf = eIPdf;
+	ipdf = invpdf;
 	ray.from = worldCenter + worldRadius*(u*du2 + v*dv2 + ldir);
 	ray.tmax = -1;
 	ray.dir = -ldir;
-	return color * ePdf;
+	return colPdf * ePdf;
 }
 
 
