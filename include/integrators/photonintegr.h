@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 {
 	public:
-		photonIntegrator_t(int photons, bool transpShad=false, int shadowDepth = 4, float dsRad = 0.1f, float cRad = 0.01f);
+		photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad=false, int shadowDepth = 4, float dsRad = 0.1f, float cRad = 0.01f);
 		~photonIntegrator_t();
 		virtual bool render(imageFilm_t *image);
 		virtual bool preprocess();
@@ -51,6 +51,7 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		bool use_bg;
 		bool prepass;
 		unsigned int nPhotons;
+		unsigned int nCausPhotons;
 		int sDepth, rDepth, maxBounces, nSearch, nCausSearch;
 		int nPaths, gatherBounces;
 		float dsRadius; //!< diffuse search radius

@@ -22,8 +22,8 @@
 
 __BEGIN_YAFRAY
 
-photonIntegrator_t::photonIntegrator_t(int photons, bool transpShad, int shadowDepth, float dsRad, float cRad):
-	trShad(transpShad), finalGather(true), cacheIrrad(false), nPhotons(photons), sDepth(shadowDepth), dsRadius(dsRad), cRadius(cRad)
+photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad):
+	trShad(transpShad), finalGather(true), cacheIrrad(false), nPhotons(dPhotons), nCausPhotons(cPhotons), sDepth(shadowDepth), dsRadius(dsRad), cRadius(cRad)
 {
 	type = SURFACE;
 	rDepth = 6;
@@ -301,6 +301,8 @@ bool photonIntegrator_t::preprocess()
 	renderState_t state;
 	unsigned char userdata[USER_DATA_SIZE+7];
 	state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+	
+	//Pregather diffuse photons
 	while(!done)
 	{
 		state.chromatic = true;
@@ -348,13 +350,7 @@ bool photonIntegrator_t::preprocess()
 			{
 				++_nDiffuse;
 				//deposit photon on surface
-				if(causticPhoton)
-				{
-					photon_t np(wi, sp.P, pcol);
-					causticMap.pushPhoton(np);
-					causticMap.setNumPaths(curr);
-				}
-				else
+				if(!causticPhoton)
 				{
 					photon_t np(wi, sp.P, pcol);
 					diffuseMap.pushPhoton(np);
@@ -401,7 +397,7 @@ bool photonIntegrator_t::preprocess()
 			causticPhoton = ((sample.sampledFlags & (BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
 							((sample.sampledFlags & (BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
 			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
-			if(state.chromatic && sample.sampledFlags & BSDF_DISPERSIVE)
+			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
 			{
 				state.chromatic=false;
 				color_t wl_col;
@@ -417,6 +413,107 @@ bool photonIntegrator_t::preprocess()
 		++curr;
 		done = (curr >= nPhotons) ? true : false;
 	}
+	done = false;
+	curr=0;
+	//Pregather caustic photons
+	while(!done)
+	{
+		state.chromatic = true;
+		state.wavelength = RI_S(curr);
+
+		s1 = RI_vdC(curr);
+		s2 = scrHalton(2, curr);
+		s3 = scrHalton(3, curr);
+		s4 = scrHalton(4, curr);
+
+		sL = float(curr) / float(nCausPhotons);
+		int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
+		if(lightNum >= numLights){ std::cout << "lightPDF sample error! "<<sL<<"/"<<lightNum<<"\n"; delete lightPowerD; return false; }
+		
+		pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
+		ray.tmin = MIN_RAYDIST;
+		ray.tmax = -1.0;
+		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
+		if(pcol.isBlack())
+		{
+			++curr;
+			done = (curr >= nCausPhotons) ? true : false;
+			continue;
+		}
+		int nBounces=0;
+		bool causticPhoton = false;
+		bool directPhoton = true;
+		while( scene->intersect(ray, sp) )
+		{
+			if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
+			{ std::cout << "NaN WARNING (photon color)" << std::endl; continue; }
+			
+			color_t transm(1.f);
+			
+			vector3d_t wi = -ray.dir, wo;
+			const material_t *material = sp.material;
+			BSDF_t bsdfs;
+			material->initBSDF(state, sp, bsdfs);
+			
+			color_t vcol(0.f);
+			if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, ray, vcol)) transm = vcol;
+
+			if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
+			{
+				if(causticPhoton)
+				{
+					photon_t np(wi, sp.P, pcol);
+					causticMap.pushPhoton(np);
+					causticMap.setNumPaths(curr);
+				}
+			}
+			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
+			if(nBounces == maxBounces) break;
+			// scatter photon
+			int d5 = 3*nBounces + 5;
+
+			// scrHalton is not a good choice for dimensions bigger than 50, and in those cases 
+			// using random numbers might be a better choice.
+			if(d5+2 <= 50)
+			{
+				s5 = scrHalton(d5, curr);
+				s6 = scrHalton(d5+1, curr);
+				s7 = scrHalton(d5+2, curr);
+			}
+			else
+			{
+				s5 = ourRandom();
+				s6 = ourRandom();
+				s7 = ourRandom();
+			}
+			
+			pSample_t sample(s5, s6, s7, BSDF_ALL, pcol, transm);
+
+			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+			if(!scattered) break; //photon was absorped.
+
+			pcol = sample.color;
+
+			causticPhoton = ((sample.sampledFlags & (BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
+							((sample.sampledFlags & (BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
+			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
+			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
+			{
+				state.chromatic=false;
+				color_t wl_col;
+				wl2rgb(state.wavelength, wl_col);
+				pcol *= wl_col;
+			}
+			ray.from = sp.P;
+			ray.dir = wo;
+			ray.tmin = MIN_RAYDIST;
+			ray.tmax = -1.0;
+			++nBounces;
+		}
+		++curr;
+		done = (curr >= nCausPhotons) ? true : false;
+	}
+
 	delete lightPowerD;
 	Y_INFO << "Photonmap: Shot "<<curr<<" photons, "<<_nIntersect<<" hits, "<<_nDiffuse<<" of them on diffuse srf.\n";
 	Y_INFO << "Photonmap: Stored caustic photons: "<<causticMap.nPhotons()<<"\n";
@@ -1069,7 +1166,8 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	bool cache_irrad=false;
 	int shadowDepth=5;
 	int raydepth=5;
-	int numPhotons=100000;
+	int numPhotons = 100000;
+	int numCPhotons = 500000;
 	int search = 50;
 	int caustic_mix = 50;
 	int bounces = 5;
@@ -1083,6 +1181,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	params.getParam("shadowDepth", shadowDepth);
 	params.getParam("raydepth", raydepth);
 	params.getParam("photons", numPhotons);
+	params.getParam("cPhotons", numCPhotons);
 	params.getParam("diffuseRadius", dsRad);
 	params.getParam("causticRadius", cRad);
 	params.getParam("search", search);
@@ -1098,7 +1197,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	params.getParam("show_map", show_map);
 	params.getParam("irradiance_cache", cache_irrad);
 	
-	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, transpShad, shadowDepth, dsRad, cRad);
+	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	ite->rDepth = raydepth;
 	ite->nSearch = search;
 	ite->nCausSearch = caustic_mix;
