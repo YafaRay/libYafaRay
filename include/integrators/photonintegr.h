@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 {
 	public:
-		photonIntegrator_t(int photons, bool transpShad=false, int shadowDepth=4, float dsRad=0.1);
+		photonIntegrator_t(int photons, bool transpShad=false, int shadowDepth = 4, float dsRad = 0.1f, float cRad = 0.01f);
 		~photonIntegrator_t();
 		virtual bool render(imageFilm_t *image);
 		virtual bool preprocess();
@@ -41,7 +41,7 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		bool renderIrradPass();
 		bool progressiveTile(renderArea_t &a, int log_spacing, bool first, std::vector<irradSample_t> &samples, int threadID) const;
 		bool progressiveTile2(renderArea_t &a, int log_spacing, bool first, std::vector<irradSample_t> &samples, int threadID) const;
-		colorA_t fillIrradCache(renderState_t &state, PFLOAT x, PFLOAT y, bool first, std::vector<irradSample_t> &samples) const;
+		colorA_t fillIrradCache(renderState_t &state, float x, float y, bool first, std::vector<irradSample_t> &samples) const;
 		colorA_t recFillCache(renderState_t &state, diffRay_t &c_ray, bool first, std::vector<irradSample_t> &samples) const;
 		
 		background_t *background;
@@ -53,9 +53,10 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		unsigned int nPhotons;
 		int sDepth, rDepth, maxBounces, nSearch, nCausSearch;
 		int nPaths, gatherBounces;
-		PFLOAT dsRadius; //!< diffuse search radius
-		PFLOAT lookupRad; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
-		PFLOAT gatherDist; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
+		float dsRadius; //!< diffuse search radius
+		float cRadius; //!< caustic search radius
+		float lookupRad; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
+		float gatherDist; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
 		photonMap_t diffuseMap, causticMap;
 		photonMap_t radianceMap; //!< this map contains precomputed radiance "photons", not incoming photon marks
 		pdf1D_t *lightPowerD;

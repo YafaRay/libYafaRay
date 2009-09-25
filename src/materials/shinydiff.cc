@@ -306,7 +306,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 		default:
 			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
 			cos_Ng_wi = sp.Ng*wi;
-			if(cos_Ng_wo*cos_Ng_wi > 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
+			if(cos_Ng_wo*cos_Ng_wi >= 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
 			if(orenNayar) scolor *= OrenNayar(wo, wi, N);
 			//else if(isTransluc) scolor = accumC[2] * (diffuseS ? diffuseS->getColor(stack) : color);
 			s.pdf = std::abs(wi*N) * width[pick]; break;

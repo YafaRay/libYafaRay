@@ -98,7 +98,6 @@ color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 {
 	float u, v;
 	ShirleyDisk(s3, s4, u, v);
-	//u = s3; v = s4;
 	
 	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, s3, s4);
 	vector3d_t du2, dv2;

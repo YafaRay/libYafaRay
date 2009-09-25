@@ -34,13 +34,15 @@ inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOA
 
 inline float AS_Aniso_D(vector3d_t h, PFLOAT e_u, PFLOAT e_v)
 {
+	if(h.z <= 0.f) return 0.f;
 	float exponent = (e_u * h.x*h.x + e_v * h.y*h.y)/(1.f - h.z*h.z);
 	return fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(h.z, exponent);
 }
 
 inline float AS_Aniso_Pdf(vector3d_t h, PFLOAT cos_w_H, PFLOAT e_u, PFLOAT e_v)
 {
-	return AS_Aniso_D(h, e_u, e_v) / ( 8.f * cos_w_H);
+	float exponent = (e_u * h.x*h.x + e_v * h.y*h.y)/(1.f - h.z*h.z);
+	return (fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(h.z, exponent)) / ( 8.f * cos_w_H);
 }
 
 inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
@@ -69,12 +71,12 @@ inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOA
 
 inline float Blinn_D(float cos_h, float e)
 {
-	return (cos_h > 0) ? (e + 2.f) * fPow(cos_h, e) : 0.f;
+	return (cos_h > 0.f) ? (e + 2.f) * fPow(cos_h, e) : 0.f;
 }
 
 inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
 {
-	return Blinn_D(costheta, e) / ( 8.f * cos_w_H);
+	return ((e + 2.f) * fPow(costheta, e)) / ( 8.f * cos_w_H);
 }
 
 inline void Blinn_Sample(vector3d_t &H, float s1, float s2, float exponent)
