@@ -73,7 +73,6 @@ void sunLight_t::init(scene_t &scene)
 
 bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
-	return false;
 	//sample direction uniformly inside cone:
 	wi.dir = sampleCone(direction, du, dv, cosAngle, s.s1, s.s2);
 	wi.tmax = -1.f;
@@ -87,7 +86,6 @@ bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 
 bool sunLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
 {
-	return false;
 	PFLOAT cosine = ray.dir*direction;
 	if(cosine < cosAngle) return false;
 	col = colPdf;
