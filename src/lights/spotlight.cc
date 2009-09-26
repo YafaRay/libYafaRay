@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class spotLight_t : public light_t
 {
 	public:
-		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl);
+		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy);
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
@@ -53,11 +53,12 @@ class spotLight_t : public light_t
 		
 		bool photonOnly;
 		bool softShadows;
+		float shadowFuzzy;
 		int samples;
 };
 
-spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl):
-	light_t(LIGHT_SINGULAR), position(from), intensity(power), photonOnly(ponly), softShadows(sSha), samples(smpl)
+spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy):
+	light_t(LIGHT_SINGULAR), position(from), intensity(power), photonOnly(ponly), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl)
 {
 	ndir = (from - to).normalize();
 	dir = -ndir;
@@ -68,7 +69,7 @@ spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color
 	cosStart = fCos(rad_inner_angle);
 	cosEnd = fCos(rad_angle);
 	icosDiff = 1.0/(cosStart-cosEnd);
-	float func[66];
+	float func[65];
 	for(int i=0; i<65; ++i)
 	{
 		float v = (float)i/64.0;
@@ -140,7 +141,7 @@ bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	if(cosa < cosEnd) return false; //outside cone
 	
 	wi.tmax = dist;
-	wi.dir = sampleCone(ldir, du, dv, cosa, s.s1, s.s2);
+	wi.dir = sampleCone(ldir, du, dv, cosa, s.s1 * shadowFuzzy, s.s2 * shadowFuzzy);
 	
 	if(cosa >= cosStart) // not affected by falloff
 	{
@@ -230,11 +231,12 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	point3d_t from(0.0);
 	point3d_t to(0.f, 0.f, -1.f);
 	color_t color(1.0);
-	CFLOAT power = 1.0;
-	PFLOAT angle=45, falloff=0.15;
+	float power = 1.0;
+	float angle=45, falloff=0.15;
 	bool pOnly = false;
 	bool softShadows = false;
 	int smpl = 8;
+	float ssfuzzy = 1.f;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -244,9 +246,10 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("blend",falloff);
 	params.getParam("photon_only",pOnly);
 	params.getParam("soft_shadows",softShadows);
+	params.getParam("shadowFuzzyness",ssfuzzy);
 	params.getParam("samples",smpl);
 
-	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl);
+	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy);
 }
 
 

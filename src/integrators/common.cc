@@ -297,7 +297,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights
 			{
 				pcol *= vcol;
 			}*/
-			if(state.chromatic && sample.sampledFlags & BSDF_DISPERSIVE)
+			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
 			{
 				state.chromatic=false;
 				color_t wl_col;

@@ -92,6 +92,7 @@ private:
 	QTime timeMeasure;		// time measure for the render
 	QProgressBar* progressbar;
 	AnimWorking* anim;
+	bool renderSaved;
 };
 
 #endif

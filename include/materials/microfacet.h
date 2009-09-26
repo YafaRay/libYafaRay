@@ -13,6 +13,7 @@ __BEGIN_YAFRAY
 #define RAW_VMAP 3
 
 #define DIFFUSE_RATIO 1.2173913
+#define pdfDivisor(cos) (8.f * (cos + 0.00001f))
 
 inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
 {
@@ -42,7 +43,7 @@ inline float AS_Aniso_D(vector3d_t h, PFLOAT e_u, PFLOAT e_v)
 inline float AS_Aniso_Pdf(vector3d_t h, PFLOAT cos_w_H, PFLOAT e_u, PFLOAT e_v)
 {
 	float exponent = (e_u * h.x*h.x + e_v * h.y*h.y)/(1.f - h.z*h.z);
-	return (fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(h.z, exponent)) / ( 8.f * cos_w_H);
+	return (fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(h.z, exponent)) / pdfDivisor(cos_w_H);
 }
 
 inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
@@ -76,7 +77,7 @@ inline float Blinn_D(float cos_h, float e)
 
 inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
 {
-	return ((e + 2.f) * fPow(costheta, e)) / ( 8.f * cos_w_H);
+	return ((e + 2.f) * fPow(costheta, e)) / pdfDivisor(cos_w_H);
 }
 
 inline void Blinn_Sample(vector3d_t &H, float s1, float s2, float exponent)
@@ -109,14 +110,7 @@ inline color_t diffuseReflect(float wiN, float woN, float mGlossy, float mDiffus
 
 inline color_t diffuseReflectFresnel(float wiN, float woN, float mGlossy, float mDiffuse, const color_t &diff_base, float Kt)
 {
-	float temp = 0.f;		
-	float f_wi = (1.f - (0.5f * wiN));
-	temp = f_wi * f_wi;
-	f_wi = temp * temp * f_wi;
-	float f_wo = (1.f - (0.5f * woN));
-	temp = f_wo * f_wo;
-	f_wo = temp * temp * f_wo;
-	return Kt * DIFFUSE_RATIO * (1.f - mGlossy) * (1.f - f_wi) * (1.f - f_wo) * mDiffuse * diff_base;
+	return Kt * diffuseReflect(wiN, woN, mGlossy, mDiffuse, diff_base);
 }
 
 __END_YAFRAY

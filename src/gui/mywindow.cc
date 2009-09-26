@@ -40,6 +40,7 @@
 #include <QtCore/QDir>
 #include <QtGui/QImageWriter>
 #include <QtGui/QErrorMessage>
+#include <QtGui/QMessageBox>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QDesktopWidget>
 #include <QtGui/QFontDatabase>
@@ -94,7 +95,9 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->setupUi(this);
 	
 	setWindowIcon(QIcon(yafIcon));
-
+	
+	renderSaved = false;
+	
 	m_render = new RenderWidget(m_ui->renderArea);
 	m_output = new QtOutput(m_render);
 	m_worker = new Worker(env, this, m_output);
@@ -102,15 +105,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	m_output->setRenderSize(QSize(resx, resy));
 
-	// create the progressbar and hide it
-	progressbar = new QProgressBar(m_ui->centralwidget);
-	progressbar->setObjectName("yafPB");
-	progressbar->setMinimum(0);
-	progressbar->setMaximum(10);
-	progressbar->setTextVisible(false);
-	progressbar->setMaximumHeight(13);
-	progressbar->setMinimumHeight(13);
-	m_ui->gridLayout->addWidget(progressbar,2,0,1,5);
+	// get progressbar from layout
+	progressbar = m_ui->progressbar;
 	
 	// animation widget
 	anim = new AnimWorking(this);
@@ -206,7 +202,7 @@ void MainWindow::slotRender()
 {
 	slotEnableDisable(false);
 	timeMeasure.start();
-
+	m_ui->yafLabel->setText(tr("Rendering..."));
 	m_worker->start();
 }
 
@@ -261,6 +257,7 @@ void MainWindow::slotFinished()
 		
 		QString rt = QString("Render time: %1 [%2 s.]").arg(timeStr).arg(timeSec, 5);
 		m_ui->statusbar->showMessage(rt);
+		m_ui->yafLabel->setText(rt);
 		std::cout << "finished, setting pixmap" << std::endl;
 		m_render->finishedRender();
 		slotEnableDisable(true);
@@ -342,13 +339,17 @@ void MainWindow::slotSaveAs()
 			std::string fname = m_lastPath.toStdString();
 			yafaray::outEXR_t exrout(res_x, res_y, fname.c_str(), "");
 			interf->getRenderedImage(exrout);
+			renderSaved = true;
 #else
 			errorMessage->showMessage(tr("This build has been compiled without OpenEXR."));
+			m_ui->yafLabel->setText(tr("Render couldn't be saved."));
 #endif
 		}
 		else if (m_render->saveImage(fileName, m_ui->alphaCheck->isChecked()))
 		{
 			m_outputPath = fileName;
+			renderSaved = true;
+			m_ui->yafLabel->setText(tr("Render saved."));
 		}
 		// TODO: show error message on !saving
 	}
@@ -362,7 +363,18 @@ void MainWindow::slotUseAlpha(int state)
 		m_output->setUseAlpha(alpha); */
 }
 
-void MainWindow::slotCancel() {
+void MainWindow::slotCancel()
+{
+	if(!renderSaved && !m_render->isRendering())
+	{
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Question);
+		msgBox.setText("The render hasn't been saved.");
+		msgBox.setInformativeText("Do you want to save your render?");
+		msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard);
+		msgBox.setDefaultButton(QMessageBox::Save);
+		if(msgBox.exec() == QMessageBox::Save) slotSaveAs();
+	}
 	// cancel the render and cleanup, especially wait for the worker to finish up
 	// (otherwise the app will crash (if this is followed by a quit))
 	interf->abort();

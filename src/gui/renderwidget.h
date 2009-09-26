@@ -42,6 +42,8 @@ public:
 	
 	void zoomIn(QPoint mPos);
 	void zoomOut(QPoint mPos);
+	
+	bool isRendering() { return rendering; }
 
 	//bool useAlpha();
 	//void setUseAlpha(bool use);

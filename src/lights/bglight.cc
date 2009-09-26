@@ -190,7 +190,7 @@ bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) c
 	
 	invSpheremap(u, v, wi.dir);
 	
-	s.col = background->eval(wi) * vDist->integral;
+	s.col = background->eval(wi);
 	
 	return true;
 }
