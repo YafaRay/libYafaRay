@@ -253,7 +253,7 @@ void scene_t::setNumThreads(int threads)
 {
 	nthreads = threads;
 	
-	if(nthreads == 0) //Automatic detection of number of threads supported by this system, taken from Blender
+	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		Y_INFO << "Automatic Detection of Threads: Active.\n";
 
@@ -284,7 +284,6 @@ void scene_t::setNumThreads(int threads)
 		Y_INFO << "Automatic Detection of Threads: Inactive.\n";
 	}
 	
-	nthreads = std::min(nthreads, Y_MAX_THREADS);
 	Y_INFO << "Using [" << nthreads << "] Threads\n";
 }	
 

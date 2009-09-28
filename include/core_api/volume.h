@@ -59,7 +59,7 @@ class YAFRAYCORE_EXPORT VolumeRegion {
 	virtual color_t tau(const ray_t &ray, float step, float offset) = 0;
 	
 	bool intersect(const ray_t &ray, float& t0, float& t1) {
-		return bBox.cross(ray.from, ray.dir, t0, t1, 10000.f);
+		return bBox.cross(ray, t0, t1, 10000.f);
 	}
 
 	bound_t getBB() { return bBox; }

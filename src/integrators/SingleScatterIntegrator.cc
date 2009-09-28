@@ -285,7 +285,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 			float t0 = -1, t1 = -1;
 			if (vr->intersect(ray, t0, t1)) {
 				float random = (*state.prng)();
-				color_t opticalThickness = listVR.at(i)->tau(ray, stepSize, random);
+				color_t opticalThickness = vr->tau(ray, stepSize, random);
 				Tr *= colorA_t(fExp(-opticalThickness.energy()));
 			}
 		}

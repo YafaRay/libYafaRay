@@ -682,7 +682,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
 	
-	if (!treeBound.cross(ray.from, ray.dir, a, b, dist))
+	if (!treeBound.cross(ray, a, b, dist))
 	{ return false; }
 	
 	unsigned char udat1[PRIM_DAT_SIZE], udat2[PRIM_DAT_SIZE];
@@ -825,7 +825,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
 	
-	if (!treeBound.cross(ray.from, ray.dir, a, b, dist))
+	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
 	unsigned char udat[PRIM_DAT_SIZE];
@@ -965,7 +965,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
 	
-	if (!treeBound.cross(ray.from, ray.dir, a, b, dist))
+	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
 	/* unsigned char */double udat[PRIM_DAT_SIZE];

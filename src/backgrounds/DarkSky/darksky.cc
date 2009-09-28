@@ -63,7 +63,7 @@ class darkSkyBackground_t: public background_t
 
 darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
 									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night):
-									   envLight(0), power(pwr), skyBrightness(skyBright), convert(clamp), alt(altitude), nightSky(night)
+									   envLight(0), power(pwr * skyBright), skyBrightness(skyBright), convert(clamp), alt(altitude), nightSky(night)
 {
 	
 	

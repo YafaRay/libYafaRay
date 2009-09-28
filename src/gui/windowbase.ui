@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>238</width>
-    <height>152</height>
+    <width>183</width>
+    <height>130</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
     <property name="spacing">
      <number>2</number>
     </property>
-    <item row="0" column="0" colspan="5">
+    <item row="0" column="0" colspan="3">
      <widget class="QScrollArea" name="renderArea">
       <property name="verticalScrollBarPolicy">
        <enum>Qt::ScrollBarAsNeeded</enum>
@@ -43,7 +43,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>232</width>
+         <width>177</width>
          <height>57</height>
         </rect>
        </property>
@@ -57,31 +57,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="cancelButton">
-      <property name="text">
-       <string>Cancel</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3">
-     <widget class="QCheckBox" name="alphaCheck">
-      <property name="text">
-       <string>Use Alpha</string>
-      </property>
-      <property name="checked">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="4">
-     <widget class="QPushButton" name="quitButton">
-      <property name="text">
-       <string>Close</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="5">
+    <item row="3" column="0" colspan="3">
      <widget class="QProgressBar" name="progressbar">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -107,7 +83,7 @@
        </font>
       </property>
       <property name="value">
-       <number>24</number>
+       <number>0</number>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -120,7 +96,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="2">
+    <item row="1" column="1">
      <widget class="QLabel" name="yafLabel">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -129,7 +105,23 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string/>
+       <string>Rendering...</string>
+      </property>
+      <property name="margin">
+       <number>0</number>
+      </property>
+      <property name="indent">
+       <number>4</number>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::NoTextInteraction</set>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="cancelButton">
+      <property name="text">
+       <string>Cancel</string>
       </property>
      </widget>
     </item>
@@ -140,7 +132,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>238</width>
+     <width>183</width>
      <height>25</height>
     </rect>
    </property>
@@ -160,11 +152,11 @@
     <addaction name="separator"/>
     <addaction name="actionZoom_In"/>
     <addaction name="actionZoom_Out"/>
+    <addaction name="actionSaveAlpha"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuImage"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>
@@ -208,6 +200,17 @@
    </property>
    <property name="shortcut">
     <string>-</string>
+   </property>
+  </action>
+  <action name="actionSaveAlpha">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Save with Alpha channel</string>
+   </property>
+   <property name="toolTip">
+    <string>Save image with transparency channel</string>
    </property>
   </action>
  </widget>

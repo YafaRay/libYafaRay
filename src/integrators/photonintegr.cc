@@ -429,7 +429,6 @@ bool photonIntegrator_t::preprocess()
 	curr=0;
 
 	Y_INFO << "Photonmap: Building caustic photon map...\n";
-
 	//Pregather caustic photons
 	while(!done)
 	{
@@ -528,7 +527,7 @@ bool photonIntegrator_t::preprocess()
 		++curr;
 		done = (curr >= nCausPhotons) ? true : false;
 	}
-	
+
 	Y_INFO << "Photonmap: Done.\n";
 	
 	delete lightPowerD;

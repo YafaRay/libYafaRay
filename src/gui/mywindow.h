@@ -24,11 +24,12 @@
 
 #include <QtGui/QMainWindow>
 #include <QtCore/QTime>
-#include <QtGui/QProgressBar>
 #include <string>
 
 #include <yafraycore/memoryIO.h>
 #include "yafqtapi.h"
+//#include "ConsoleRedir.h"
+
 
 namespace Ui
 {
@@ -68,8 +69,9 @@ public slots:
 	void slotOpen();
 	void slotSave();
 	void slotSaveAs();
-	void slotUseAlpha(int state);
 	void slotCancel();
+	void slotUnsaved();
+	void setAlpha(bool checked);
 	void close();
 	void zoomIn();
 	void zoomOut();
@@ -88,11 +90,12 @@ private:
 	bool autoClose;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
 	bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened
 	bool autoSaveAlpha;	// if true, the automatically saved image contains no alpha channel
+	bool saveWithAlpha;
 	yafaray::memoryIO_t* memIO;	// if not NULL, the image also is saved into this memory buffer
 	QTime timeMeasure;		// time measure for the render
-	QProgressBar* progressbar;
 	AnimWorking* anim;
 	bool renderSaved;
+	//ConsoleRedir* cRedir;
 };
 
 #endif

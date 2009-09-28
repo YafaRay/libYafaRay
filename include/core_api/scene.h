@@ -100,7 +100,6 @@ __END_YAFRAY
 #define Y_SIG_ABORT 1
 #define Y_SIG_PAUSE 1<<1
 #define Y_SIG_STOP  1<<2
-#define Y_MAX_THREADS 20
 
 __BEGIN_YAFRAY
 

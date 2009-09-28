@@ -94,6 +94,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui = new Ui::WindowBase();
 	m_ui->setupUi(this);
 	
+	//cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
+	
 	setWindowIcon(QIcon(yafIcon));
 	
 	renderSaved = false;
@@ -105,9 +107,6 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	m_output->setRenderSize(QSize(resx, resy));
 
-	// get progressbar from layout
-	progressbar = m_ui->progressbar;
-	
 	// animation widget
 	anim = new AnimWorking(this);
 	anim->resize(70,70);
@@ -126,16 +125,14 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	
 	connect(m_ui->renderButton, SIGNAL(clicked()), this, SLOT(slotRender()));
 	connect(m_ui->cancelButton, SIGNAL(clicked()), this, SLOT(slotCancel()));
-	connect(m_ui->quitButton, SIGNAL(clicked()), this, SLOT(close()));
 	connect(m_worker, SIGNAL(finished()), this, SLOT(slotFinished()));
+	connect(app, SIGNAL(aboutToQuit()), this, SLOT(slotUnsaved()));
 	connect(app, SIGNAL(aboutToQuit()), this, SLOT(slotCancel()));
 
 	// move the animwidget over the render area
 	QRect r = anim->rect();
 	r.moveCenter(m_ui->renderArea->rect().center());
 	anim->move(r.topLeft());
-
-	connect(m_ui->alphaCheck, SIGNAL(stateChanged(int)), this, SLOT(slotUseAlpha(int)));
 
 	// actions
 	connect(m_ui->actionOpen, SIGNAL(triggered(bool)),
@@ -150,6 +147,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 			this, SLOT(zoomIn()));
 	connect(m_ui->actionZoom_Out, SIGNAL(triggered(bool)),
 			this, SLOT(zoomOut()));
+	connect(m_ui->actionSaveAlpha, SIGNAL(triggered(bool)),
+			this, SLOT(setAlpha(bool)));
 
 	// offset when using border rendering
 	m_render->borderStart = QPoint(bStartX, bStartY);
@@ -160,6 +159,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	autoSave = settings.autoSave;
 	autoSaveAlpha = settings.autoSaveAlpha;
 	autoClose = settings.closeAfterFinish;
+	saveWithAlpha = autoSaveAlpha;
 
 	if (autoSave) {
 		this->fileName = settings.fileName;
@@ -177,6 +177,7 @@ MainWindow::~MainWindow()
 	delete m_worker;
 	delete m_ui;
 	delete errorMessage;
+	//delete cRedir;
 }
 
 bool MainWindow::event(QEvent *e)
@@ -188,10 +189,10 @@ bool MainWindow::event(QEvent *e)
 
 		ProgressUpdateEvent *p = static_cast<ProgressUpdateEvent*>(e);
 		if (p->min() >= 0)
-			progressbar->setMinimum(p->min());
+			m_ui->progressbar->setMinimum(p->min());
 		if (p->max() >= 0)
-			progressbar->setMaximum(p->max());
-		progressbar->setValue(p->progress());
+			m_ui->progressbar->setMaximum(p->max());
+		m_ui->progressbar->setValue(p->progress());
 		return true;
 	}
 
@@ -203,66 +204,79 @@ void MainWindow::slotRender()
 	slotEnableDisable(false);
 	timeMeasure.start();
 	m_ui->yafLabel->setText(tr("Rendering..."));
+	m_render->startRendering();
 	m_worker->start();
 }
 
 void MainWindow::slotFinished()
 {
-	if (autoSave) {
+	QString rt = "";
+
+	if (autoSave)
+	{
 		std::cout << "INFO: Image saved to " << fileName;
 		if (autoSaveAlpha) std::cout << " with alpha" << std::endl;
 		else std::cout << " without alpha" << std::endl;
 		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
+		rt = QString("Image Auto-saved. ");
+		if (autoClose)
+		{
+			app->exit(0);
+			return;
+		}
 	}
 
-	if (autoClose) {
+	int renderTime = timeMeasure.elapsed();
+	float timeSec = renderTime / 1000.f;
+	
+	int ms = renderTime % 1000;
+	renderTime = renderTime / 1000;
+	int s = renderTime % 60;
+	renderTime = renderTime / 60;
+	int m = renderTime % 60;
+	int h = renderTime / 60;
+	
+	QString timeStr = "";
+	QChar fill = '0';
+	QString suffix = "";
+	
+	if(h > 0)
+	{
+		timeStr.append(QString("%1:").arg(h));
+		suffix = "h.";
+	}
+	
+	if(m > 0 || h > 0)
+	{
+		if(h == 0) timeStr.append(QString("%1:").arg(m, 2, 10, fill));
+		else timeStr.append(QString("%1:").arg(m));
+		
+		if(suffix == "") suffix = "m.";
+	}
+	
+	if(s < 10 && m == 0 && h == 0) timeStr.append(QString("%1.%2").arg(s).arg(ms, 3, 10, fill));
+	else timeStr.append(QString("%1.%2").arg(s, 2, 10, fill).arg(ms, 3, 10, fill));
+
+	if(suffix == "") suffix = "s.";
+	
+	timeStr.append(QString(" %1").arg(suffix));
+
+	rt.append(QString("Render time: %1 [%2s.]").arg(timeStr).arg(timeSec, 5));
+	m_ui->yafLabel->setText(rt);
+	std::cout << "finished, setting pixmap" << std::endl;
+	m_render->finishedRender();
+	
+	slotEnableDisable(true);
+	
+	if (autoClose)
+	{
 		app->exit(0);
+		return;
 	}
-	else {
-		int renderTime = timeMeasure.elapsed();
-		float timeSec = renderTime / 1000.f;
-		
-		int ms = renderTime % 1000;
-		renderTime = renderTime / 1000;
-		int s = renderTime % 60;
-		renderTime = renderTime / 60;
-		int m = renderTime % 60;
-		int h = renderTime / 60;
-		
-		QString timeStr = "";
-		QChar fill = '0';
-		QString suffix = "";
-		
-		if(h > 0)
-		{
-			timeStr.append(QString("%1:").arg(h));
-			suffix = "h.";
-		}
-		
-		if(m > 0 || h > 0)
-		{
-			if(h == 0) timeStr.append(QString("%1:").arg(m, 2, 10, fill));
-			else timeStr.append(QString("%1:").arg(m));
-			
-			if(suffix == "") suffix = "m.";
-		}
-		
-		if(s < 10 && m == 0 && h == 0) timeStr.append(QString("%1.%2").arg(s).arg(ms, 3, 10, fill));
-		else timeStr.append(QString("%1.%2").arg(s, 2, 10, fill).arg(ms, 3, 10, fill));
 
-		if(suffix == "") suffix = "s.";
-		
-		timeStr.append(QString(" %1").arg(suffix));
-		
-		
-		QString rt = QString("Render time: %1 [%2 s.]").arg(timeStr).arg(timeSec, 5);
-		m_ui->statusbar->showMessage(rt);
-		m_ui->yafLabel->setText(rt);
-		std::cout << "finished, setting pixmap" << std::endl;
-		m_render->finishedRender();
-		slotEnableDisable(true);
-	}
+	QApplication::alert(this);
 }
+
 
 void MainWindow::slotEnableDisable(bool enable)
 {
@@ -270,6 +284,11 @@ void MainWindow::slotEnableDisable(bool enable)
 	m_ui->cancelButton->setEnabled(!enable);
  	m_ui->actionZoom_In->setEnabled(enable);
  	m_ui->actionZoom_Out->setEnabled(enable);
+}
+
+void MainWindow::setAlpha(bool checked)
+{
+	saveWithAlpha = checked;
 }
 
 void MainWindow::slotOpen()
@@ -335,7 +354,6 @@ void MainWindow::slotSaveAs()
 		if(fileName.endsWith(".exr", Qt::CaseInsensitive))
 		{
 #if HAVE_EXR
-			//std::cout << "saving EXR file\n" << qPrintable(fileName) << std::endl;
 			std::string fname = m_lastPath.toStdString();
 			yafaray::outEXR_t exrout(res_x, res_y, fname.c_str(), "");
 			interf->getRenderedImage(exrout);
@@ -345,36 +363,40 @@ void MainWindow::slotSaveAs()
 			m_ui->yafLabel->setText(tr("Render couldn't be saved."));
 #endif
 		}
-		else if (m_render->saveImage(fileName, m_ui->alphaCheck->isChecked()))
+		else 
 		{
-			m_outputPath = fileName;
-			renderSaved = true;
-			m_ui->yafLabel->setText(tr("Render saved."));
+			if (m_render->saveImage(fileName, saveWithAlpha))
+			{
+				m_outputPath = fileName;
+				renderSaved = true;
+				m_ui->yafLabel->setText(tr("Render saved."));
+			}
+			else
+			{
+				m_ui->yafLabel->setText(tr("Render couldn't be saved."));
+			}
 		}
-		// TODO: show error message on !saving
 	}
 }
 
-void MainWindow::slotUseAlpha(int state)
-{
-	/* 	bool alpha = (state == Qt::Checked);
-
-	if (alpha != m_output->useAlpha())
-		m_output->setUseAlpha(alpha); */
-}
-
-void MainWindow::slotCancel()
+void MainWindow::slotUnsaved()
 {
 	if(!renderSaved && !m_render->isRendering())
 	{
 		QMessageBox msgBox;
-		msgBox.setIcon(QMessageBox::Question);
-		msgBox.setText("The render hasn't been saved.");
+		msgBox.setText("The render hasn't been saved, if you close it will be lost.");
 		msgBox.setInformativeText("Do you want to save your render?");
 		msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard);
-		msgBox.setDefaultButton(QMessageBox::Save);
+		msgBox.setDefaultButton(QMessageBox::Discard);
+		msgBox.setWindowTitle(tr("YafaRay Question"));
+		msgBox.setIcon(QMessageBox::Question);
+		msgBox.setWindowIcon(windowIcon());
 		if(msgBox.exec() == QMessageBox::Save) slotSaveAs();
 	}
+}
+
+void MainWindow::slotCancel()
+{
 	// cancel the render and cleanup, especially wait for the worker to finish up
 	// (otherwise the app will crash (if this is followed by a quit))
 	interf->abort();
@@ -386,16 +408,16 @@ void MainWindow::slotCancel()
 		interf->getRenderedImage(*memIO);
 }
 
-void MainWindow::close() {
+void MainWindow::close()
+{
 	// this will call slotCancel as well, since it's slotted into aboutToQuit signal
 	app->quit();
 }
 
 
-void MainWindow::keyPressEvent(QKeyEvent* event) {
-	if (event->key() == Qt::Key_Escape) {
-		app->exit(1);
-	}
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+	if (event->key() == Qt::Key_Escape)	app->exit(1);
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent* event)
@@ -410,22 +432,23 @@ bool MainWindow::eventFilter(QObject *obj, QEvent* event)
 	return QMainWindow::eventFilter(obj, event);
 }
 
-void MainWindow::zoomOut() {
+void MainWindow::zoomOut()
+{
 	m_render->zoomOut(QPoint(0,0));
 }
 
-void MainWindow::zoomIn() {
+void MainWindow::zoomIn()
+{
 	m_render->zoomIn(QPoint(0,0));
 }
 
-void MainWindow::adjustWindow() {
+void MainWindow::adjustWindow()
+{
 	int offset = 40;
  	QRect scrGeom = QApplication::desktop()->availableGeometry();
 
 	int w = std::min(res_x + 10, scrGeom.width()-offset);
 	int h = std::min(res_y + 10, scrGeom.height()-offset*3);
-	
-	std::cout << "w,h = " << w << ", " << h << "\n";
 	
 	m_ui->renderArea->setMaximumSize(w, h);
 	m_ui->renderArea->setMinimumSize(w, h);
@@ -435,5 +458,4 @@ void MainWindow::adjustWindow() {
 	
 	m_ui->renderArea->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 	m_ui->renderArea->setMinimumSize(0, 0);
-	
 }

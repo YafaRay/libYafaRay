@@ -39,7 +39,7 @@ void QtProgress::init(int totalSteps)
 	m_totalSteps = totalSteps;
 	QCoreApplication::postEvent(m_win, new ProgressUpdateEvent(0, 0, totalSteps));
 
-	yafaray::ConsoleProgressBar_t::init(totalSteps);
+	//yafaray::ConsoleProgressBar_t::init(totalSteps);
 }
 
 void QtProgress::update(int steps)
@@ -47,7 +47,7 @@ void QtProgress::update(int steps)
 	m_currentStep += steps;
 	QCoreApplication::postEvent(m_win, new ProgressUpdateEvent(m_currentStep));
 
-	yafaray::ConsoleProgressBar_t::update(steps);
+	//yafaray::ConsoleProgressBar_t::update(steps);
 }
 
 void QtProgress::done()
@@ -55,6 +55,6 @@ void QtProgress::done()
 	m_currentStep = m_totalSteps;
 	QCoreApplication::postEvent(m_win, new ProgressUpdateEvent(m_currentStep));
 	
-	yafaray::ConsoleProgressBar_t::done();
+	//yafaray::ConsoleProgressBar_t::done();
 }
 
