@@ -272,9 +272,6 @@
    <property name="toolTip">
     <string>Save image with transparency channel</string>
    </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
   </action>
  </widget>
  <resources/>
