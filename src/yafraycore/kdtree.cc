@@ -915,10 +915,10 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 			triangle_t *mp = currNode->onePrimitive;
 //			if (mp->lastMailboxId != rayId) {
 //				mp->lastMailboxId = rayId;
-				if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+				if (mp->intersect(ray, &t_hit, (void*)udat))
 				{
 //					hit = true;
-					if(t_hit < dist && t_hit > 0.f ) // '>=' ?
+					if(t_hit < dist && t_hit >= 0.f ) // '>=' ?
 					{
 						*tr = mp;
 						return true;
@@ -932,9 +932,9 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 				triangle_t *mp = prims[i];
 //				if (mp->lastMailboxId != rayId) {
 //					mp->lastMailboxId = rayId;
-					if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+					if (mp->intersect(ray, &t_hit, (void*)udat))
 					{
-						if(t_hit < dist && t_hit > 0.f )
+						if(t_hit < dist && t_hit >= 0.f )
 						{
 //							hit = true;
 							*tr = mp;

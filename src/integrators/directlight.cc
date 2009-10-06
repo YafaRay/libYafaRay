@@ -18,7 +18,6 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//#include <mcqmc.h>
 #include <yafray_config.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
@@ -46,6 +45,7 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public tiledIntegrator_t
 		bool trShad, caustics, do_AO;
 		int sDepth, rDepth, cDepth;
 		int nPhotons, nSearch, AO_samples;
+		float invAOSamples;
 		PFLOAT cRadius, AO_dist;
 		color_t AO_col;
 		std::vector<light_t*> lights;
@@ -56,7 +56,6 @@ directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDept
 	trShad(transpShad), caustics(false), sDepth(shadowDepth), rDepth(rayDepth)
 {
 	type = SURFACE;
-	// temporary defaults
 	cRadius = 0.25;
 	cDepth = 10;
 	nPhotons = 100000;
@@ -84,7 +83,7 @@ bool directLighting_t::preprocess()
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const
+colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 {
 	color_t col(0.0);
 	CFLOAT alpha=0.0;
@@ -99,7 +98,6 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		if(state.raylevel == 0)
 		{
 			state.includeLights = true;
-			//...
 		}
 		
 		Halton hal3(3);
@@ -113,6 +111,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		vector3d_t wo = -ray.dir;
 		ray_t lightRay;
 		lightRay.from = sp.P;
+
 		// contribution of light emitting surfaces
 		col += material->emit(state, sp, wo);
 		if(bsdfs & (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE))
@@ -224,10 +223,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			{
 				diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
 				color_t integ = color_t(integrate(state, refRay) );
-				//integ *= scene->volIntegrator->transmittance(state, refRay); // T
-				//integ += scene->volIntegrator->integrate(state, refRay); // L_v
-				// account for volumetric effects:
-				if(bsdfs&BSDF_VOLUMETRIC && material->volumeTransmittance(state, sp, refRay, vcol))
+				if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
 				{	integ *= vcol;	}
 				col += color_t(integ) * rcol[0];
 			}
@@ -235,8 +231,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			{
 				diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
 				colorA_t integ = integrate(state, refRay);
-				// account for volumetric effects:
-				if(bsdfs&BSDF_VOLUMETRIC && material->volumeTransmittance(state, sp, refRay, vcol))
+				if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
 				{	integ *= vcol;	}
 				col += color_t(integ) * rcol[1];
 				alpha = integ.A;
@@ -270,10 +265,10 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 	
 	int n = AO_samples;
 	if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
-	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+	unsigned int offs = AO_samples * state.pixelSample + state.samplingOffs;
 	hal3.setStart(offs-1);
 	
-	for(int i=0; i<n; ++i)
+	for(int i=0; i<AO_samples; ++i)
 	{
 		float s1 = RI_vdC(offs+i);
 		float s2 = hal3.getNext();
@@ -289,7 +284,7 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 		color_t surfCol = material->sample(state, sp, wo, lightRay.dir, s);
 		if(s.pdf > 1.0e-6f)
 		{
-			shadowed = /* (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : */ scene->isShadowed(state, lightRay);
+			shadowed = scene->isShadowed(state, lightRay);
 			if(!shadowed)
 			{
 				CFLOAT cos = std::fabs(sp.N*lightRay.dir);
@@ -297,7 +292,7 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 			}
 		}
 	}
-	return col * ( (CFLOAT)1.0 / (CFLOAT)n );
+	return col * invAOSamples;
 }
 
 integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -336,6 +331,7 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	// AO settings
 	inte->do_AO = do_AO;
 	inte->AO_samples = AO_samples;
+	inte->invAOSamples = 1.f / (float)AO_samples;
 	inte->AO_dist = (PFLOAT)AO_dist;
 	inte->AO_col = AO_col;
 	return inte;

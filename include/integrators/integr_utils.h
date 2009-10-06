@@ -23,6 +23,7 @@
 
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
+#include <yafraycore/monitor.h>
 
 __BEGIN_YAFRAY
 
@@ -33,7 +34,7 @@ class photonMap_t;
 color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth);
 color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const photonMap_t &map, const vector3d_t &wo, int nSearch, PFLOAT radius);
 
-bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count);
+bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb = 0);
 
 //! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
 inline float kernel(PFLOAT r_photon2, PFLOAT ir_gather2)

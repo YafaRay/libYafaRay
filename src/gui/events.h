@@ -28,7 +28,8 @@
 enum CustomEvents
 {
 	GuiUpdate = QEvent::User,
-	ProgressUpdate
+	ProgressUpdate,
+	ProgressUpdateTag
 };
 
 // this event is just to trigger an update in a widget from 
@@ -57,6 +58,15 @@ private:
 	int m_progress;
 	int m_min;
 	int m_max;
+};
+
+class ProgressUpdateTagEvent : public QEvent
+{
+public:
+	ProgressUpdateTagEvent(const char *tag);
+	inline QString &tag() { return m_tag; }
+private:
+	QString m_tag;
 };
 
 #endif

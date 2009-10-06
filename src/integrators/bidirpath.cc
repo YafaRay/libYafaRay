@@ -268,147 +268,160 @@ void biDirIntegrator_t::cleanup()
  ============================================================ */
 colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) const
 {
-	static int dbg=0;
-	state.includeLights = true;
-	pathData_t &pathData = threadData[state.threadID];
-	++pathData.nPaths;
 	color_t col(0.f);
-	random_t &prng = *(state.prng);
-	pathVertex_t &ve = pathData.eyePath.front();
-	pathVertex_t &vl = pathData.lightPath.front();
-	int nEye=1, nLight=1;
-	// setup ve
-	ve.f_s = color_t(1.f); // some random guess...need to read up on importance paths
-	ve.alpha = color_t(1.f);
-	ve.sp.P = ray.from;
-	ve.qi_wo = ve.qi_wi = 1.f; // definitely no russian roulette here...
-	// temporary!
-	PFLOAT cu, cv;
-	float camPdf = 0.0;
-	cam->project(ray, 0, 0, cu, cv, camPdf);
-	ve.pdf_wo = camPdf;
-	ve.f_s = color_t(camPdf);
-	// /temporary
-	ve.cos_wo = 1.f;
-	//ve.pdf_wo = 1.f;
-	ve.pdf_wi = 1.f;
-	ve.flags = BSDF_DIFFUSE; //place holder! not applicable for e.g. orthogonal camera!
-	
-	// create eyePath
-	nEye = createPath(state, ray, pathData.eyePath, MAX_PATH_LENGTH);
-	
-	// sample light (todo!)
-	ray_t lray;
-	lray.tmin = 0.0005;
-	lray.tmax = -1.f;
-	float lightNumPdf;
-	int lightNum = lightPowerD->DSample(prng(), &lightNumPdf);
-	lightNumPdf *= fNumLights;
-	lSample_t ls;
-	ls.s1=prng(), ls.s2=prng(), ls.s3=prng(), ls.s4=prng();
-	ls.sp = &vl.sp;
-	color_t pcol = lights[lightNum]->emitSample(lray.dir, ls);
-	lray.from = vl.sp.P;
-	// test!
-	ls.areaPdf *= lightNumPdf;
-	
-	if(dbg<10) std::cout << "lightNumPdf=" << lightNumPdf << std::endl;
-	++dbg;
-	
-	// setup vl
-	vl.f_s = color_t(1.f); // veach set this to L_e^(1)(y0->y1), a BSDF like value; not available yet, cancels out anyway when using direct lighting
-	vl.alpha = pcol/ls.areaPdf; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
-	vl.G = 0.f; //unused actually...
-	vl.qi_wo = vl.qi_wi = 1.f; // definitely no russian roulette here...
-	vl.cos_wo = (ls.flags & LIGHT_SINGULAR) ? 1.0 : std::fabs(vl.sp.N * lray.dir); //singularities have no surface, hence no normal
-	vl.cos_wi = 1.f;
-	vl.pdf_wo = ls.dirPdf;
-	vl.pdf_wi = ls.areaPdf; //store area PDF here, so we don't need extra members just for camera/eye vertices
-	vl.flags = ls.flags; //store light flags in BSDF flags...same purpose though, check if delta function are involved
-	pathData.singularL = (ls.flags & LIGHT_SINGULAR);
-	
-	// create lightPath
-	nLight = createPath(state, lray, pathData.lightPath, MAX_PATH_LENGTH);
-	if(nLight>1)
-	{
-		pathData.pdf_illum = lights[lightNum]->illumPdf(pathData.lightPath[1].sp, vl.sp) * lightNumPdf;
-		pathData.pdf_emit = ls.areaPdf * pathData.lightPath[1].ds / vl.cos_wo;
-	}
-	
-	// do bidir evalulation
+	surfacePoint_t sp;
+	ray_t testray = ray;
 
-#if _DO_LIGHTIMAGE
-	// TEST! create a light image (t == 1)
-	for(int s=2; s<=nLight; ++s)
+	if(scene->intersect(testray, sp))
 	{
-		clear_path(pathData.path, s, 1);
-		if(!connectPathE(state, s, pathData)) continue;
-		check_path(pathData.path, s, 1);
-		CFLOAT wt = pathWeight(state, s, 1, pathData);
-		if(wt > 0.f)
-		{
-			color_t li_col = evalPathE(state, s, pathData);
-			if(li_col.isBlack()) continue;
-			PFLOAT ix, idx, iy, idy;
-			idx = std::modf(pathData.u, &ix);
-			idy = std::modf(pathData.v, &iy);
-			lightImage->addDensitySample(li_col, ix, iy, idx, idy);
+		static int dbg=0;
+		state.includeLights = true;
+		pathData_t &pathData = threadData[state.threadID];
+		++pathData.nPaths;
+		random_t &prng = *(state.prng);
+		pathVertex_t &ve = pathData.eyePath.front();
+		pathVertex_t &vl = pathData.lightPath.front();
+		int nEye=1, nLight=1;
+		// setup ve
+		ve.f_s = color_t(1.f); // some random guess...need to read up on importance paths
+		ve.alpha = color_t(1.f);
+		ve.sp.P = ray.from;
+		ve.qi_wo = ve.qi_wi = 1.f; // definitely no russian roulette here...
+		// temporary!
+		PFLOAT cu, cv;
+		float camPdf = 0.0;
+		cam->project(ray, 0, 0, cu, cv, camPdf);
+		ve.pdf_wo = camPdf;
+		ve.f_s = color_t(camPdf);
+		// /temporary
+		ve.cos_wo = 1.f;
+		//ve.pdf_wo = 1.f;
+		ve.pdf_wi = 1.f;
+		ve.flags = BSDF_DIFFUSE; //place holder! not applicable for e.g. orthogonal camera!
 		
-		}
-	}
-#endif
-	
-	CFLOAT wt;
-	for(int t=2; t<=nEye; ++t)
-	{
-		//directly hit a light?
-		if(pathData.eyePath[t-1].sp.light)
+		// create eyePath
+		nEye = createPath(state, ray, pathData.eyePath, MAX_PATH_LENGTH);
+		
+		// sample light (todo!)
+		ray_t lray;
+		lray.tmin = MIN_RAYDIST;
+		lray.tmax = -1.f;
+		float lightNumPdf;
+		int lightNum = lightPowerD->DSample(prng(), &lightNumPdf);
+		lightNumPdf *= fNumLights;
+		lSample_t ls;
+		ls.s1=prng(), ls.s2=prng(), ls.s3=prng(), ls.s4=prng();
+		ls.sp = &vl.sp;
+		color_t pcol = lights[lightNum]->emitSample(lray.dir, ls);
+		lray.from = vl.sp.P;
+		// test!
+		ls.areaPdf *= lightNumPdf;
+		
+		if(dbg<10) std::cout << "lightNumPdf=" << lightNumPdf << std::endl;
+		++dbg;
+		
+		// setup vl
+		vl.f_s = color_t(1.f); // veach set this to L_e^(1)(y0->y1), a BSDF like value; not available yet, cancels out anyway when using direct lighting
+		vl.alpha = pcol/ls.areaPdf; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
+		vl.G = 0.f; //unused actually...
+		vl.qi_wo = vl.qi_wi = 1.f; // definitely no russian roulette here...
+		vl.cos_wo = (ls.flags & LIGHT_SINGULAR) ? 1.0 : std::fabs(vl.sp.N * lray.dir); //singularities have no surface, hence no normal
+		vl.cos_wi = 1.f;
+		vl.pdf_wo = ls.dirPdf;
+		vl.pdf_wi = ls.areaPdf; //store area PDF here, so we don't need extra members just for camera/eye vertices
+		vl.flags = ls.flags; //store light flags in BSDF flags...same purpose though, check if delta function are involved
+		pathData.singularL = (ls.flags & LIGHT_SINGULAR);
+		
+		// create lightPath
+		nLight = createPath(state, lray, pathData.lightPath, MAX_PATH_LENGTH);
+		if(nLight>1)
 		{
-			// pathWeight_0t computes required probabilities, since no connection is required
-			clear_path(pathData.path, 0, t);
-			// unless someone proves the necessity, directly visible lights (s+t==2) will never be connected via light vertices
-			wt = (t==2) ? 1.f : pathWeight_0t(state, t, pathData);
-			if(wt > 0.f)
-			{
-				//eval is done in place here...
-				pathVertex_t v = pathData.eyePath[t-1];
-				state.userdata = v.userdata;
-				color_t emit = v.sp.material->emit(state, v.sp, v.wi);
-				col += wt * v.alpha * emit;
-			}
+			pathData.pdf_illum = lights[lightNum]->illumPdf(pathData.lightPath[1].sp, vl.sp) * lightNumPdf;
+			pathData.pdf_emit = ls.areaPdf * pathData.lightPath[1].ds / vl.cos_wo;
 		}
-		// direct lighting strategy (desperately needs adaption...):
-		ray_t dRay;
-		color_t dcol;
-		clear_path(pathData.path, 1, t);
-		bool o_singularL = pathData.singularL; // will be overwritten from connectLPath...
-		float o_pdf_illum = pathData.pdf_illum; // will be overwritten from connectLPath...
-		float o_pdf_emit = pathData.pdf_emit; // will be overwritten from connectLPath...
-		if(connectLPath(state, t, pathData, dRay, dcol))
-		{
-			check_path(pathData.path, 1, t);
-			wt = pathWeight(state, 1, t, pathData);
-			if(wt > 0.f)
-			{
-				col += wt * evalLPath(state, t, pathData, dRay, dcol);
-			}
-		}
-		pathData.singularL = o_singularL;
-		pathData.pdf_illum = o_pdf_illum;
-		pathData.pdf_emit = o_pdf_emit;
-		// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
-		// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
-		pathData.light = lights[lightNum];
+		
+		// do bidir evalulation
+
+	#if _DO_LIGHTIMAGE
+		// TEST! create a light image (t == 1)
 		for(int s=2; s<=nLight; ++s)
 		{
-			clear_path(pathData.path, s, t);
-			if(!connectPaths(state, s, t, pathData)) continue;
-			check_path(pathData.path, s, t);
-			wt = pathWeight(state, s, t, pathData);
+			clear_path(pathData.path, s, 1);
+			if(!connectPathE(state, s, pathData)) continue;
+			check_path(pathData.path, s, 1);
+			CFLOAT wt = pathWeight(state, s, 1, pathData);
 			if(wt > 0.f)
 			{
-				col += wt * evalPath(state, s, t, pathData);
+				color_t li_col = evalPathE(state, s, pathData);
+				if(li_col.isBlack()) continue;
+				PFLOAT ix, idx, iy, idy;
+				idx = std::modf(pathData.u, &ix);
+				idy = std::modf(pathData.v, &iy);
+				lightImage->addDensitySample(li_col, ix, iy, idx, idy);
+			
 			}
+		}
+	#endif
+		
+		CFLOAT wt;
+		for(int t=2; t<=nEye; ++t)
+		{
+			//directly hit a light?
+			if(pathData.eyePath[t-1].sp.light)
+			{
+				// pathWeight_0t computes required probabilities, since no connection is required
+				clear_path(pathData.path, 0, t);
+				// unless someone proves the necessity, directly visible lights (s+t==2) will never be connected via light vertices
+				wt = (t==2) ? 1.f : pathWeight_0t(state, t, pathData);
+				if(wt > 0.f)
+				{
+					//eval is done in place here...
+					pathVertex_t v = pathData.eyePath[t-1];
+					state.userdata = v.userdata;
+					color_t emit = v.sp.material->emit(state, v.sp, v.wi);
+					col += wt * v.alpha * emit;
+				}
+			}
+			// direct lighting strategy (desperately needs adaption...):
+			ray_t dRay;
+			color_t dcol;
+			clear_path(pathData.path, 1, t);
+			bool o_singularL = pathData.singularL; // will be overwritten from connectLPath...
+			float o_pdf_illum = pathData.pdf_illum; // will be overwritten from connectLPath...
+			float o_pdf_emit = pathData.pdf_emit; // will be overwritten from connectLPath...
+			if(connectLPath(state, t, pathData, dRay, dcol))
+			{
+				check_path(pathData.path, 1, t);
+				wt = pathWeight(state, 1, t, pathData);
+				if(wt > 0.f)
+				{
+					col += wt * evalLPath(state, t, pathData, dRay, dcol);
+				}
+			}
+			pathData.singularL = o_singularL;
+			pathData.pdf_illum = o_pdf_illum;
+			pathData.pdf_emit = o_pdf_emit;
+			// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
+			// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
+			pathData.light = lights[lightNum];
+			for(int s=2; s<=nLight; ++s)
+			{
+				clear_path(pathData.path, s, t);
+				if(!connectPaths(state, s, t, pathData)) continue;
+				check_path(pathData.path, s, t);
+				wt = pathWeight(state, s, t, pathData);
+				if(wt > 0.f)
+				{
+					col += wt * evalPath(state, s, t, pathData);
+				}
+			}
+		}
+	}
+	else
+	{
+		if(background)
+		{
+			col += (*background)(ray, state, false);
 		}
 	}
 	return col;
@@ -474,7 +487,7 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 		v.flags = s.sampledFlags;
 		v.wo = ray.dir;
 		ray.from = v.sp.P;
-		ray.tmin = 0.0005;
+		ray.tmin = MIN_RAYDIST;
 		ray.tmax = -1.f;
 	}
 	++dbg;

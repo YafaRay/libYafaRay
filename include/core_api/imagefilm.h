@@ -110,6 +110,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		progressBar_t *pbar;
 		int _n_locked, _n_unlocked; //just debug crap...
 		renderEnvironment_t *env;
+		int nPass;
 };
 
 __END_YAFRAY

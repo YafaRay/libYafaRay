@@ -16,6 +16,8 @@ class YAFRAYCORE_EXPORT progressBar_t
 		virtual void update(int steps=1)=0;
 		//! finish progress bar. It could output some summary, simply disappear from GUI or whatever...
 		virtual void done()=0;
+		//! method to pass some informative text to the progress bar in case needed
+		virtual void setTag(const char* text)=0;
 };
 
 /*! the default console progress bar (implemented in console.cc)
@@ -27,6 +29,8 @@ class YAFRAYCORE_EXPORT ConsoleProgressBar_t : public progressBar_t
 		virtual void init(int totalSteps);
 		virtual void update(int steps=1);
 		virtual void done();
+		virtual void setTag(const char* text) {};
+		
 	protected:
 		int width, totalBarLen;
 		int lastBarLen;

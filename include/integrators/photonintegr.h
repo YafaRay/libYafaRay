@@ -22,9 +22,6 @@
 
 __BEGIN_YAFRAY
 
-// from common.cc
-//color_t estimateDirect(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth);
-
 class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 {
 	public:
@@ -48,7 +45,6 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		bool trShad;
 		bool finalGather, showMap;
 		bool cacheIrrad;
-		bool use_bg;
 		bool prepass;
 		unsigned int nPhotons;
 		unsigned int nCausPhotons;
@@ -62,7 +58,7 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		photonMap_t radianceMap; //!< this map contains precomputed radiance "photons", not incoming photon marks
 		pdf1D_t *lightPowerD;
 		std::vector<light_t*> lights;
-		/* mutable  */irradianceCache_t irCache;
+		irradianceCache_t irCache;
 		BSDF_t allBSDFIntersect;
 		friend class prepassWorker_t;
 };

@@ -1,6 +1,7 @@
 
 #include <materials/shinydiff.h>
 #include <utilities/sample_utils.h>
+#include <materials/microfacet.h>
 
 __BEGIN_YAFRAY
 
@@ -208,20 +209,17 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
 	CFLOAT Kr = getFresnel(wo, N);
 	float mT = (1.f - Kr*dat->component[0])*(1.f - dat->component[1]);
 	
-	bool transmit = ( cos_Ng_wo * cos_Ng_wl ) < 0;
+	bool transmit = ( cos_Ng_wo * cos_Ng_wl ) < 0.f;
 	
 	if(transmit) // light comes from opposite side of surface
 	{
 		if(isTransluc) return dat->component[2] * mT * (diffuseS ? diffuseS->getColor(stack) : color);
 	}
-	else
-	{
-		if(N*wl <= 0.0) return color_t(0.f);
-		float mD = mT*(1.f - dat->component[2]) * dat->component[3];
-		if(orenNayar) mD *= OrenNayar(wo, wl, N);
-		return mD * (diffuseS ? diffuseS->getColor(stack) : color);
-	}
-	return color_t(0.f);
+	
+	if(N*wl < 0.0) return color_t(0.f);
+	float mD = mT*(1.f - dat->component[2]) * dat->component[3];
+	if(orenNayar) mD *= OrenNayar(wo, wl, N);
+	return mD * (diffuseS ? diffuseS->getColor(stack) : color);
 }
 
 color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -236,14 +234,14 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 {
 	float accumC[4];
 	PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi, cos_N;
-	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
 	
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
 
 	CFLOAT Kr = getFresnel(wo, N);
 	accumulate(dat->component, accumC, Kr);
-	
+
 	float sum=0.f, val[4], width[4];
 	BSDF_t choice[4];
 	int nMatch=0, pick=-1;
@@ -301,15 +299,15 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 			cos_Ng_wi = sp.Ng*wi;
 			if(cos_Ng_wo*cos_Ng_wi < 0) scolor = accumC[2] * (diffuseS ? diffuseS->getColor(stack) : color);
 			//else if(isDiffuse) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
-			s.pdf = std::abs(wi*N) * width[pick]; break;
+			s.pdf = std::fabs(wi*N) * width[pick]; break;
 		case (BSDF_DIFFUSE | BSDF_REFLECT): // diffuse reflect
 		default:
-			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
+			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s.s1, s.s2);
 			cos_Ng_wi = sp.Ng*wi;
-			if(cos_Ng_wo*cos_Ng_wi >= 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
+			if(cos_Ng_wo*cos_Ng_wi > 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
 			if(orenNayar) scolor *= OrenNayar(wo, wi, N);
 			//else if(isTransluc) scolor = accumC[2] * (diffuseS ? diffuseS->getColor(stack) : color);
-			s.pdf = std::abs(wi*N) * width[pick]; break;
+			s.pdf = std::fabs(wi*N) * width[pick]; break;
 	}
 	s.sampledFlags = choice[pick];
 	
@@ -324,14 +322,14 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 	float pdf=0.f;
 	float accumC[4];
 	PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi;
-	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
 	CFLOAT Kr = getFresnel(wo, N);
 	accumulate(dat->component, accumC, Kr);
 	float sum=0.f, width;
 	int nMatch=0;
 	for(int i=0; i<nBSDF; ++i)
 	{
-		if((bsdfs & cFlags[i]) == cFlags[i])
+		if((bsdfs & cFlags[i]))
 		{
 			width = accumC[cIndex[i]];
 			sum += width;
@@ -340,11 +338,11 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 			{
 				case (BSDF_DIFFUSE | BSDF_TRANSMIT): // translucency (diffuse transmitt)
 					cos_Ng_wi = sp.Ng*wi;
-					if(cos_Ng_wo*cos_Ng_wi < 0) pdf += std::abs(wi*N) * width; break;
+					if(cos_Ng_wo*cos_Ng_wi < 0) pdf += std::fabs(wi*N) * width; break;
 				
 				case (BSDF_DIFFUSE | BSDF_REFLECT): // lambertian
 					cos_Ng_wi = sp.Ng*wi;
-					if(cos_Ng_wo*cos_Ng_wi > 0) pdf += std::abs(wi*N) * width; break;
+					/*if(cos_Ng_wo*cos_Ng_wi > 0)*/ pdf += std::fabs(wi*N) * width; break;
 			}
 			++nMatch;
 		}

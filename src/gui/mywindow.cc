@@ -30,7 +30,9 @@
 #include <yafraycore/EXR_io.h>
 #include <yafraycore/memoryIO.h>
 #include "yafarayicon.h"
-#include "guifont.h"
+#ifndef __APPLE__
+	#include "guifont.h"
+#endif
 
 #include <iostream>
 
@@ -84,17 +86,22 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QPixmap yafIcon;
 
 	yafIcon.loadFromData(yafarayicon, yafarayicon_size);
-	
+#ifndef __APPLE__
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray(guifont, guifont_size));
 	QStringList fam = QFontDatabase::applicationFontFamilies(fId);
 	QFont gFont = QFont(fam[0]);
 	gFont.setPointSize(8);
 	QApplication::setFont(gFont);
+#else
+	QFont gFont = QApplication::font();
+	gFont.setPointSize(13);
+	QApplication::setFont(gFont);
+#endif
 	
 	m_ui = new Ui::WindowBase();
 	m_ui->setupUi(this);
 	
-	//cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
+	cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
 	
 	setWindowIcon(QIcon(yafIcon));
 	
@@ -108,7 +115,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_output->setRenderSize(QSize(resx, resy));
 
 	// animation widget
-	anim = new AnimWorking(this);
+	anim = new AnimWorking(m_ui->renderArea);
 	anim->resize(70,70);
 
 	this->move(20, 20);
@@ -119,15 +126,13 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	QPalette renderAreaPal;
 	renderAreaPal = m_ui->renderArea->viewport()->palette();
-	renderAreaPal.setColor(QPalette::Background, Qt::black);
+	renderAreaPal.setColor(QPalette::Window, Qt::black);
 	
 	m_ui->renderArea->viewport()->setPalette(renderAreaPal);
 	
 	connect(m_ui->renderButton, SIGNAL(clicked()), this, SLOT(slotRender()));
 	connect(m_ui->cancelButton, SIGNAL(clicked()), this, SLOT(slotCancel()));
 	connect(m_worker, SIGNAL(finished()), this, SLOT(slotFinished()));
-	connect(app, SIGNAL(aboutToQuit()), this, SLOT(slotUnsaved()));
-	connect(app, SIGNAL(aboutToQuit()), this, SLOT(slotCancel()));
 
 	// move the animwidget over the render area
 	QRect r = anim->rect();
@@ -177,7 +182,7 @@ MainWindow::~MainWindow()
 	delete m_worker;
 	delete m_ui;
 	delete errorMessage;
-	//delete cRedir;
+	delete cRedir;
 }
 
 bool MainWindow::event(QEvent *e)
@@ -196,14 +201,35 @@ bool MainWindow::event(QEvent *e)
 		return true;
 	}
 
+	if (e->type() == (QEvent::Type)ProgressUpdateTag)
+	{
+		ProgressUpdateTagEvent *p = static_cast<ProgressUpdateTagEvent*>(e);
+		m_ui->yafLabel->setText(p->tag());
+		return true;
+	}
+
 	return QMainWindow::event(e);
+}
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+	if(!closeUnsaved())
+	{
+		e->ignore();
+	}
+	else
+	{
+		slotCancel();
+		e->accept();
+	}
+
 }
 
 void MainWindow::slotRender()
 {
 	slotEnableDisable(false);
 	timeMeasure.start();
-	m_ui->yafLabel->setText(tr("Rendering..."));
+	m_ui->yafLabel->setText(tr("Rendering image..."));
 	m_render->startRendering();
 	m_worker->start();
 }
@@ -268,6 +294,8 @@ void MainWindow::slotFinished()
 	
 	slotEnableDisable(true);
 	
+	cRedir->FlushReminder();
+	
 	if (autoClose)
 	{
 		app->exit(0);
@@ -310,12 +338,16 @@ void MainWindow::slotSave()
 {
 	if (m_outputPath.isNull())
 	{
-		slotSaveAs();
-		return;
+		saveDlg();
 	}
 }
 
 void MainWindow::slotSaveAs()
+{
+	saveDlg();
+}
+
+bool MainWindow::saveDlg()
 {
 	QString formats;
 	QList<QByteArray> formatList;
@@ -338,8 +370,8 @@ void MainWindow::slotSaveAs()
 		m_lastPath = QDir::currentPath();
 
 	QString selectedFilter;
-
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Image"), m_lastPath,
+	renderSaved = false;
+	QString fileName = QFileDialog::getSaveFileName(this, tr("YafaRay Save Image"), m_lastPath,
 			formats, &selectedFilter);
 
 	// "re"extract the actual file ending
@@ -370,6 +402,7 @@ void MainWindow::slotSaveAs()
 				m_outputPath = fileName;
 				renderSaved = true;
 				m_ui->yafLabel->setText(tr("Render saved."));
+				
 			}
 			else
 			{
@@ -377,22 +410,27 @@ void MainWindow::slotSaveAs()
 			}
 		}
 	}
+	
+	return renderSaved;
 }
 
-void MainWindow::slotUnsaved()
+bool MainWindow::closeUnsaved()
 {
 	if(!renderSaved && !m_render->isRendering())
 	{
-		QMessageBox msgBox;
-		msgBox.setText("The render hasn't been saved, if you close it will be lost.");
-		msgBox.setInformativeText("Do you want to save your render?");
-		msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard);
+		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close it will be lost.",
+						   QMessageBox::NoButton, this);
+
+		msgBox.setInformativeText("Do you want to save your render?\n(press \"Discard\" to leave without saving)");
+		msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Save | QMessageBox::Discard);
 		msgBox.setDefaultButton(QMessageBox::Discard);
-		msgBox.setWindowTitle(tr("YafaRay Question"));
-		msgBox.setIcon(QMessageBox::Question);
-		msgBox.setWindowIcon(windowIcon());
-		if(msgBox.exec() == QMessageBox::Save) slotSaveAs();
+
+		int ret = msgBox.exec();
+
+		if(ret == QMessageBox::Save) return saveDlg();
+		else if(ret == QMessageBox::Cancel) return false;
 	}
+	return true;
 }
 
 void MainWindow::slotCancel()
@@ -408,16 +446,9 @@ void MainWindow::slotCancel()
 		interf->getRenderedImage(*memIO);
 }
 
-void MainWindow::close()
-{
-	// this will call slotCancel as well, since it's slotted into aboutToQuit signal
-	app->quit();
-}
-
-
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
-	if (event->key() == Qt::Key_Escape)	app->exit(1);
+	if (event->key() == Qt::Key_Escape)	close();
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent* event)
@@ -444,11 +475,10 @@ void MainWindow::zoomIn()
 
 void MainWindow::adjustWindow()
 {
-	int offset = 40;
  	QRect scrGeom = QApplication::desktop()->availableGeometry();
 
-	int w = std::min(res_x + 10, scrGeom.width()-offset);
-	int h = std::min(res_y + 10, scrGeom.height()-offset*3);
+	int w = std::min(res_x + 10, scrGeom.width()-60);
+	int h = std::min(res_y + 10, scrGeom.height()-160);
 	
 	m_ui->renderArea->setMaximumSize(w, h);
 	m_ui->renderArea->setMinimumSize(w, h);

@@ -181,7 +181,7 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 	return sum;
 }
 
-bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count)
+bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb)
 {
 	cMap.clear();
 	ray_t ray;

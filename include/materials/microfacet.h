@@ -12,8 +12,8 @@ __BEGIN_YAFRAY
 #define TANGENT_V 2
 #define RAW_VMAP 3
 
-#define DIFFUSE_RATIO 1.2173913
-#define pdfDivisor(cos) (8.f * (cos + 0.00001f))
+#define DIFFUSE_RATIO 1.2173913f
+#define pdfDivisor(cos) (float)(8.f * cos)
 
 inline void sample_quadrant(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOAT e_v)
 {
@@ -72,12 +72,12 @@ inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, PFLOAT e_u, PFLOA
 
 inline float Blinn_D(float cos_h, float e)
 {
-	return (cos_h > 0.f) ? (e + 2.f) * fPow(cos_h, e) : 0.f;
+	return (e + 1.f) * fPow(std::fabs(cos_h), e) * M_1_2PI;
 }
 
 inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
 {
-	return ((e + 2.f) * fPow(costheta, e)) / pdfDivisor(cos_w_H);
+	return std::max(0.f, Blinn_D(costheta, e) / pdfDivisor(cos_w_H));
 }
 
 inline void Blinn_Sample(vector3d_t &H, float s1, float s2, float exponent)

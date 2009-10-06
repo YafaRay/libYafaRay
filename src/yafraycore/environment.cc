@@ -585,7 +585,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("z_channel", z_chan); // render z-buffer
 	
 	imageFilm_t *film = createImageFilm(params, output);
-	if (pb) film->setProgressBar(pb);
+	if (pb)
+	{
+		film->setProgressBar(pb);
+		inte->setProgressBar(pb);
+	}
 	if(z_chan) film->addChannel("Depth");
 	
 	//setup scene and render.

@@ -28,7 +28,7 @@
 
 #include <yafraycore/memoryIO.h>
 #include "yafqtapi.h"
-//#include "ConsoleRedir.h"
+#include "ConsoleRedir.h"
 
 
 namespace Ui
@@ -61,6 +61,9 @@ public:
 protected:
 	virtual bool eventFilter(QObject *obj, QEvent* event);
 	virtual void keyPressEvent(QKeyEvent* event);
+	void closeEvent(QCloseEvent *e);
+	bool closeUnsaved();
+	bool saveDlg();
 
 public slots:
 	void slotRender();
@@ -70,9 +73,7 @@ public slots:
 	void slotSave();
 	void slotSaveAs();
 	void slotCancel();
-	void slotUnsaved();
 	void setAlpha(bool checked);
-	void close();
 	void zoomIn();
 	void zoomOut();
 
@@ -95,7 +96,7 @@ private:
 	QTime timeMeasure;		// time measure for the render
 	AnimWorking* anim;
 	bool renderSaved;
-	//ConsoleRedir* cRedir;
+	ConsoleRedir* cRedir;
 };
 
 #endif

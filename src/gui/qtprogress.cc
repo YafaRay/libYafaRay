@@ -58,3 +58,9 @@ void QtProgress::done()
 	//yafaray::ConsoleProgressBar_t::done();
 }
 
+void QtProgress::setTag(const char *tag)
+{
+	QCoreApplication::postEvent(m_win, new ProgressUpdateTagEvent(tag));
+	
+	//yafaray::ConsoleProgressBar_t::done();
+}

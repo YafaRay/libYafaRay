@@ -30,9 +30,9 @@ roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol,
 		bumpS(0), mirColS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), exponent(exp), absorb(false),
 		disperse(false), fakeShadow(fakeS)
 {
-	bsdfFlags = BSDF_GLOSSY | BSDF_REFLECT | BSDF_TRANSMIT;
+	bsdfFlags = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECT | BSDF_TRANSMIT;
 	if(fakeS) bsdfFlags |= BSDF_FILTER;
-	tmFlags = fakeS ? BSDF_FILTER | BSDF_TRANSMIT : BSDF_GLOSSY | BSDF_TRANSMIT;
+	tmFlags = fakeS ? BSDF_FILTER | BSDF_TRANSMIT : BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_TRANSMIT;
 	/* if(disp_pow > 0.0)
 	{
 		disperse = true;
@@ -119,7 +119,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 	PFLOAT cos_Ng_wi = sp.Ng*wi;
 	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
 	color_t col(0.f);
-	if(! (bsdfs & BSDF_GLOSSY) ) return col;
+	if( !(bsdfs & BSDF_GLOSSY) || !(bsdfs & BSDF_DIFFUSE) ) return col;
 	
 	bool transmit = ( cos_Ng_wo * cos_Ng_wi ) < 0;
 	bool outside = cos_Ng_wo > 0;
@@ -184,7 +184,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			wi = refdir;
 			CFLOAT xy =  1.f/( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*N), std::fabs(wi*N)) );
 			s.pdf = 0.7f * Blinn_Pdf(Hs.z, cos_wo_H, exponent);
-			s.sampledFlags = BSDF_GLOSSY | BSDF_TRANSMIT;
+			s.sampledFlags = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_TRANSMIT;
 			//if(cos_Ng_wo < 0) std::cout << "pdf:" << s.pdf << " col:" << filterCol * (Kt)  * Blinn_D(Hs.z, exponent) << std::endl;
 			return filterCol * (Kt)  * Blinn_D(Hs.z, exponent) * xy;
 		}
@@ -214,7 +214,7 @@ float roughGlassMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp,
 	PFLOAT cos_Ng_wi = sp.Ng*wi;
 	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
 	float pdf = 0.f;
-	if(! (bsdfs & BSDF_GLOSSY) ) return 0.f;
+	if( !(bsdfs & BSDF_DIFFUSE) ) return 0.f;
 	
 	bool transmit = ( cos_Ng_wo * cos_Ng_wi ) < 0;
 	bool outside = cos_Ng_wo > 0;

@@ -29,3 +29,8 @@ ProgressUpdateEvent::ProgressUpdateEvent(int progress, int min, int max)
 : QEvent((QEvent::Type)ProgressUpdate), m_progress(progress), m_min(min), m_max(max)
 {
 }
+
+ProgressUpdateTagEvent::ProgressUpdateTagEvent(const char *tag)
+: QEvent((QEvent::Type)ProgressUpdateTag), m_tag(tag)
+{
+}

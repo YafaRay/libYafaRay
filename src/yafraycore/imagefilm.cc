@@ -103,18 +103,18 @@ void imageFilm_t::drawRenderSettings()
 
 	int num_chars = strlen( text );
 
-	std::cout << "render settings\n" << text;
+	Y_INFO << "ImageOverly: render settings\n" << text << "\n";
 
 	error = FT_Init_FreeType( &library ); // initialize library
-	if ( error ) { std::cout << "lib error\n"; return; }
+	if ( error ) { Y_ERROR << "ImageOverly: lib error\n"; return; }
 
 	error = FT_New_Memory_Face( library, (const FT_Byte*)ttf, ttf_size, 0, &face ); // create face object
-	if ( error ) { std::cout << "face error\n"; return; }
+	if ( error ) { Y_ERROR << "ImageOverly: face error\n"; return; }
 
 	// use 10pt at default dpi
 	float fontsize = 12.0f;
 	error = FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ); // set character size
-	if ( error ) { std::cout << "char size error\n"; return; }
+	if ( error ) { Y_ERROR << "ImageOverly: char size error\n"; return; }
 
 	slot = face->glyph;
 
@@ -174,7 +174,7 @@ void imageFilm_t::drawRenderSettings()
 		// load glyph image into the slot (erase previous one)
 		error = FT_Load_Char( face, text[n], FT_LOAD_DEFAULT );
 		if ( error ) {
-			std::cout << "char error: " << text[n] << "\n";
+			Y_ERROR << "ImageOverly: char error: " << text[n] << "\n";
 			continue;
 		}
 		FT_Render_Glyph( slot, FT_RENDER_MODE_NORMAL );
@@ -196,30 +196,53 @@ typedef float filterFunc(float dx, float dy);
 
 float Box(float dx, float dy){ return 1.f; }
 
+//! Mitchel-Netravali constants
+//! with B = 1/3 and C = 1/3 as suggested by the authors
+//! mnX1 = constants for 1 <= |x| < 2
+//! mna1 = (-B - 6 * C)/6
+//! mnb1 = (6 * B + 30 * C)/6
+//! mnc1 = (-12 * B - 48 * C)/6
+//! mnd1 = (8 * B + 24 * C)/6
+//!
+//! mnX2 = constants for 1 > |x|
+//! mna2 = (12 - 9 * B - 6 * C)/6
+//! mnb2 = (-18 + 12 * B + 6 * C)/6
+//! mnc2 = (6 - 2 * B)/6
+
+#define mna1 -0.38888889
+#define mnb1  2.0
+#define mnc1 -3.33333333
+#define mnd1  1.77777778
+
+#define mna2  1.16666666
+#define mnb2 -2.0
+#define mnc2  0.88888889
+
+#define gaussExp 0.00247875
+
 float Mitchell(float dx, float dy)
 {
-	const float B = 0.33333333;
-	const float C = 0.33333333;
-	float val;
+	//const float B = 0.33333333;
+	//const float C = 0.33333333;
+	//float val;
 	float x = 2.f * fSqrt(dx*dx + dy*dy);
-	if(x>2.f) return (0.f);
-	float x2 = x*x;
-	if(x>1.f)
+	
+	if(x > 2.f) return (0.f);
+
+	if(x >= 1.f) // from mitchell-netravali paper 1 <= |x| < 2
 	{
-		val = ((-B - 6 * C) * x * x2 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C)) * 0.1666666;
+		//((-B - 6 * C) * x * x2 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C)) * 0.1666666;
+		return (float)( x * ( x * ( x * mna1 + mnb1) + mnc1) + mnd1 );
 	}
-	else
-	{
-		val = ((12 - 9 * B - 6 * C) * x * x2 + (-18 + 12 * B + 6 * C) * x2 + (6 - 2 * B)) * 0.1666666;
-	}
-	return (val);
+
+	//((12 - 9 * B - 6 * C) * x * x2 + (-18 + 12 * B + 6 * C) * x2 + (6 - 2 * B)) * 0.1666666;
+	return (float)( x * x * ( mna2 * x + mnb2 ) + mnc2 );
 }
 
 float Gauss(float dx, float dy)
 {
 	float r2 = dx*dx + dy*dy;
-	const float expo = fExp(-6.f);
-	return std::max(0.f, float(fExp(-6 * r2) - expo));
+	return std::max(0.f, float(fExp(-6 * r2) - gaussExp));
 }
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e):
@@ -230,8 +253,10 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	cx1 = xstart + width;
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
+	
 	// allocate image, the pixels are NOT YET set black! See init()...
 	image = new tiledArray2D_t<pixel_t, 3>(width, height, false);
+	
 	// fill filter table:
 	float *fTp = filterTable;
 	float scale = 1.f/(float)FILTER_TABLE_SIZE;
@@ -264,7 +289,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 
 void imageFilm_t::setProgressBar(progressBar_t *pb)
 {
-	delete pbar;
+	if(pbar) delete pbar;
 	pbar = pb;
 }
 
@@ -306,9 +331,12 @@ void imageFilm_t::init()
 		area_cnt = splitter->size();
 	}
 	else area_cnt = 1;
+
 	if(pbar) pbar->init(area_cnt);
+
 	abort = false;
 	completed_cnt = 0;
+	nPass = 1;
 }
 
 // currently the splitter only gives tiles in scanline order...
@@ -535,83 +563,82 @@ void imageFilm_t::nextPass(bool adaptive_AA)
 	splitterMutex.lock();
 	next_area = 0;
 	splitterMutex.unlock();
+	nPass++;
+	std::stringstream passString;
+	
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
-	if(adaptive_AA && AA_thesh>0.f) for(int y=0; y<h-1; ++y)
+	
+	if(adaptive_AA && AA_thesh > 0.f)
 	{
-		for(int x=0; x<w-1; ++x)
+		float fb[5];
+		fb[0] =  fb[1] = fb[2] = fb[3] = 1.f; fb[4] = 0.f;
+
+		for(int y=0; y<h-1; ++y)
 		{
-			bool needAA=false;
-			float c=(*image)(x, y).normalized().abscol2bri();
-			if(std::fabs(c-(*image)(x+1, y).normalized().col2bri()) >= AA_thesh)
+			for(int x=0; x<w-1; ++x)
 			{
-				needAA=true; flags->setBit(x+1, y);
-			}
-			if(std::fabs(c-(*image)(x, y+1).normalized().col2bri()) >= AA_thesh)
-			{
-				needAA=true; flags->setBit(x, y+1);
-			}
-			if(std::fabs(c-(*image)(x+1, y+1).normalized().col2bri()) >= AA_thesh)
-			{
-				needAA=true; flags->setBit(x+1, y+1);
-			}
-			if(x > 0 && std::fabs(c-(*image)(x-1, y+1).normalized().col2bri()) >= AA_thesh)
-			{
-				needAA=true; flags->setBit(x-1, y+1);
-			}
-			if(needAA)
-			{
-				flags->setBit(x, y);
-				// color all pixels to be resampled:
-				float fb[5];
-				fb[0] =  fb[1] = fb[2] = fb[3] = 1.f; fb[4] = 0.f;
-				if(interactive) output->putPixel(x, y, fb, 4);
-				//if(interactive) output->putPixel(x, y, color_t(1.f), 1.f);
-				++n_resample;
+				bool needAA=false;
+				float c=(*image)(x, y).normalized().abscol2bri();
+				if(std::fabs(c-(*image)(x+1, y).normalized().col2bri()) >= AA_thesh)
+				{
+					needAA=true; flags->setBit(x+1, y);
+				}
+				if(std::fabs(c-(*image)(x, y+1).normalized().col2bri()) >= AA_thesh)
+				{
+					needAA=true; flags->setBit(x, y+1);
+				}
+				if(std::fabs(c-(*image)(x+1, y+1).normalized().col2bri()) >= AA_thesh)
+				{
+					needAA=true; flags->setBit(x+1, y+1);
+				}
+				if(x > 0 && std::fabs(c-(*image)(x-1, y+1).normalized().col2bri()) >= AA_thesh)
+				{
+					needAA=true; flags->setBit(x-1, y+1);
+				}
+				if(needAA)
+				{
+					flags->setBit(x, y);
+					// color all pixels to be resampled:
+					if(interactive) output->putPixel(x, y, fb, 4);
+					//if(interactive) output->putPixel(x, y, color_t(1.f), 1.f);
+					++n_resample;
+				}
 			}
 		}
 	}
+	else
+	{
+		n_resample = h*w;
+	}
+	
 	if(interactive) output->flush();
-	std::cout << "imageFilm_t::nextPass: resampling "<<n_resample<<" pixels!\n";
-	if(pbar) pbar->init(area_cnt);
+
+	passString << "Rendering pass " << nPass << ", resampling " << n_resample << " pixels.";
+
+	Y_INFO << "imageFilm: " << passString.str() << "\n";
+	
+	if(pbar)
+	{
+		pbar->init(area_cnt);
+		pbar->setTag(passString.str().c_str());
+	}
 	completed_cnt = 0;
 }
 
 void imageFilm_t::flush(int flags, colorOutput_t *out)
 {
-	std::cout << "flushing imageFilm buffer\n";
+	Y_INFO << "imageFilm: Flushing buffer...\n";
 	colorOutput_t *colout = out ? out : output;
 #if HAVE_FREETYPE
 	if (env && env->getDrawParams()) {
 		drawRenderSettings();
 	}
 #else
-	if (env && env->getDrawParams()) std::cout << "info: compiled without freetype; overlay feature not available" << std::endl;
+	if (env && env->getDrawParams()) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available\n";
 #endif
 	int n = channels.size();
 	float *fb = (float *)alloca( (n+5) * sizeof(float) );
-	//if this is a density image (light tracing, metropolis whatever...)
-	/* if(estimateDensity)
-	{
-		float multi = float(w*h)/(float)numSamples;
-		for(int j=0; j<h; ++j)
-		{
-			for(int i=0; i<w; ++i)
-			{
-				pixel_t &pixel = (*image)(i, j);
-				colorA_t col;
-				col = pixel.col*multi;
-				col.clampRGB0();
-				// !!! assume color output size matches width and height of image film, probably (likely!) stupid!
-				if(correctGamma) col.gammaAdjust(gamma);
-				
-				fb[0] = col.R, fb[1] = col.G, fb[2] = col.B, fb[3] = col.A, fb[4] = 0.f;
-				for(int k=0; k<n; ++k) fb[k+4] = channels[k](i, j);
-				output->putPixel(i, j, fb, 4+n );
-			}
-		}
-	}
-	else */
 	float multi = float(w*h)/(float)numSamples;
 	for(int j=0; j<h; ++j)
 	{
@@ -641,6 +668,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 	}
 	
 	colout->flush();
+	Y_INFO << "imageFilm: Done.\n";
 }
 
 bool imageFilm_t::doMoreSamples(int x, int y) const
@@ -663,7 +691,7 @@ imageFilm_t::~imageFilm_t ()
 	delete[] filterTable;
 	if(splitter) delete splitter;
 	if(pbar) delete pbar; //remove when pbar no longer created by imageFilm_t!!
-	std::cout << "** imageFilter stats: unlocked adds: "<<_n_unlocked<<" locked adds: " <<_n_locked<<"\n";
+	Y_INFO << "imageFilter stats:\n\tUnlocked adds: " << _n_unlocked << "\n\tLocked adds: " <<_n_locked<<"\n";
 }
 
 __END_YAFRAY

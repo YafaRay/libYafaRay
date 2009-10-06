@@ -24,6 +24,7 @@
 #include <yafray_config.h>
 
 #include "scene.h"
+#include <yafraycore/monitor.h>
 // #include "sampling.h"
 
 __BEGIN_YAFRAY
@@ -42,12 +43,14 @@ class YAFRAYCORE_EXPORT integrator_t
 		void setScene(scene_t *s) { scene=s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		virtual bool render(imageFilm_t *imageFilm) { return false; }
+		virtual void setProgressBar(progressBar_t *pb) { intpb = pb; }
 		virtual ~integrator_t() {}
 		enum TYPE{ SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
 	protected:
 		TYPE type;
 		scene_t *scene;
+		progressBar_t *intpb;
 };
 
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t

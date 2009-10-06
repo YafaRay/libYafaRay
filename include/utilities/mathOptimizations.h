@@ -49,8 +49,8 @@ __BEGIN_YAFRAY
 
 #define powFive(x) (x * x * x * x * x)
 
-#define POLYEXP(x) (x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
-#define POLYLOG(x) (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
+#define POLYEXP(x) (float)(x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
+#define POLYLOG(x) (float)(x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
 
 #define f_HI 129.00000f
 #define f_LOW -126.99999f
@@ -78,7 +78,7 @@ inline float fExp2(float x)
 	fpart.f = (x - (float)(ipart.i));
 	expipart.i = ((ipart.i + 127) << 23);
 
-	return expipart.f * POLYEXP(fpart.f);
+	return (float)(expipart.f * POLYEXP(fpart.f));
 }
 
 inline float fLog2(float x)
@@ -90,13 +90,13 @@ inline float fLog2(float x)
 	e.f = (float)(((i.i & LOG_EXP) >> 23) - 127);
 	m.i = ((i.i & LOG_MANT) | one.i);
 
-	return POLYLOG(m.f) * (m.f - one.f) + e.f;
+	return (float)(POLYLOG(m.f) * (m.f - one.f) + e.f);
 }
 
 inline float fPow(float a, float b)
 {
 #ifdef FAST_MATH
-	return fExp2(fLog2(a) * b);
+	return (float)fExp2(fLog2(a) * b);
 #else
 	return pow(a,b);
 #endif
@@ -115,7 +115,7 @@ inline float fSqrt(float a)
 {
 #ifdef FAST_MATH
 	//return fExp2(fLog2(a) * 0.5);
-	return sqrt(a);
+	return sqrtf(a);
 #else
 	return sqrt(a);
 #endif
@@ -155,7 +155,7 @@ inline float fSin(float x)
 inline float fCos(float x)
 {
 #ifdef FAST_TRIG
-	return fSin(x + M_PI_2);
+	return fSin(x + (float)M_PI_2);
 #else
 	return cos(x);
 #endif
@@ -173,7 +173,7 @@ inline float fTan(float x)
 inline float fAsin(float x)
 {
 	float x2 = x * x;
-	return (1.f + (0.166666667f + (0.075f + (0.0446428571f + (0.0303819444f + 0.022372159f * x2) * x2) * x2) * x2) * x2) * x;
+	return (x + (0.166666667f + (0.075f + (0.0446428571f + (0.0303819444f + 0.022372159f * x2) * x2) * x2) * x2) * x2);
 }
 
 inline float fAcos(float x)
@@ -184,7 +184,7 @@ inline float fAcos(float x)
 inline float fAtan(float x)
 {
 	float x2 = x * x;
-	return (1.f - (0.333333333333f + (0.2f - (0.1428571429f + (0.111111111111f - 0.0909090909f * x2) * x2) * x2) * x2) * x2) * x;
+	return (x - (0.333333333333f + (0.2f - (0.1428571429f + (0.111111111111f - 0.0909090909f * x2) * x2) * x2) * x2) * x2);
 }
 __END_YAFRAY
 

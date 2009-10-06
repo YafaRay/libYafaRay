@@ -88,7 +88,7 @@ void glossyMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp,
 
 color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
 {
-	if( !(bsdfs & BSDF_REFLECT) ) return color_t(0.f);
+	if( !(bsdfs & BSDF_DIFFUSE) || ((sp.Ng*wi)*(sp.Ng*wo)) < 0.f ) return color_t(0.f);
 
 	MDat_t *dat = (MDat_t *)state.userdata;
 	color_t col(0.f);
@@ -135,7 +135,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 	MDat_t *dat = (MDat_t *)state.userdata;
 	float cos_Ng_wo = sp.Ng*wo;
 	float cos_Ng_wi;
-	vector3d_t N = (cos_Ng_wo < 0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	vector3d_t Hs;
 	s.pdf = 0.f;
 	float wiN = 0.f;
@@ -158,8 +158,13 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 		{
 			s1 /= s_pDiffuse;
 			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
+
+			cos_Ng_wi = sp.Ng * wi;
+
+			if(cos_Ng_wi * cos_Ng_wo < 0.f) return scolor;
+
 			wiN = std::fabs(wi * N);
-			cos_Ng_wi = sp.Ng*wi;
+
 			s.pdf = wiN;
 
 			if(use_glossy)

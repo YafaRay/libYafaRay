@@ -65,7 +65,7 @@ color_t material_t::getReflectivity(const renderState_t &state, const surfacePoi
 			total += col * std::fabs(wi * sp.N) / s.pdf;
 		}
 	}
-	return total * 0.0625;
+	return total * 0.0625; //total / 16.f
 }
 		
 

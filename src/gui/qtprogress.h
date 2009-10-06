@@ -32,6 +32,7 @@ public:
 	virtual ~QtProgress();
 	virtual void init(int totalSteps);
 	virtual void update(int steps=1);
+	virtual void setTag(const char *tag);
 	virtual void done();
 private:
 	MainWindow *m_win;

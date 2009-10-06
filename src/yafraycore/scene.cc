@@ -43,7 +43,7 @@
 __BEGIN_YAFRAY
 
 scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),
-					AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(0), do_depth(false), signals(0)
+					AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), do_depth(false), signals(0)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
@@ -284,7 +284,7 @@ void scene_t::setNumThreads(int threads)
 		Y_INFO << "Automatic Detection of Threads: Inactive.\n";
 	}
 	
-	Y_INFO << "Using [" << nthreads << "] Threads\n";
+	Y_INFO << "Using [" << nthreads << "] Threads.\n";
 }	
 
 /* currently not fully implemented! id=0 means state.curObj, other than 0 not supported yet. */

@@ -113,7 +113,7 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	color_t col(0.f);
 	bool diffuse_flag = bsdfs & BSDF_DIFFUSE;
 	
-	if( !diffuse_flag ) return col;
+	if( !diffuse_flag || ((sp.Ng*wi)*(sp.Ng*wo)) < 0.f ) return col;
 	
 	nodeStack_t stack(dat->stack);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);

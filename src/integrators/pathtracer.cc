@@ -37,19 +37,16 @@ __BEGIN_YAFRAY
 class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public tiledIntegrator_t
 {
 	public:
-		pathIntegrator_t(/*scene_t &s,*/ bool transpShad=false, int shadowDepth=4);
+		pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
 		virtual bool preprocess();
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		enum { NONE, PATH, PHOTON, BOTH };
 	protected:
-//	color_t estimateDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, light_t *light, int d1, int n) const;
 		color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n)const;
 		background_t *background;
 		bool trShad;
-		bool use_bg; //!< configuration; include background for GI
 		bool ibl; //!< configuration; use background light, if available
-		bool include_bg; //!< determined on precrocess;
 		bool traceCaustics; //!< use path tracing for caustics (determined by causticType)
 		bool no_recursive;
 		int sDepth, rDepth, bounces, nPaths;
@@ -60,17 +57,15 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public tiledIntegrator_t
 		photonMap_t causticMap;
 };
 
-pathIntegrator_t::pathIntegrator_t(/*scene_t &s,*/ bool transpShad, int shadowDepth):
+pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
 	trShad(transpShad), sDepth(shadowDepth), causticType(PATH)
 {
 	std::cout << "created pathIntegrator!\n";
 	type = SURFACE;
-//	scene = &s;
 	rDepth = 6;
 	bounces = 5;
 	nPaths = 64;
 	invNPaths = 1.f/64.f;
-	use_bg = true;
 	no_recursive = false;
 }
 
@@ -87,36 +82,25 @@ bool pathIntegrator_t::preprocess()
 			ibl = true;
 		}
 		else ibl = false;
-		include_bg = use_bg && !ibl;
 	}
 	else
 	{
-		include_bg = false;
 		ibl = false;
 	}
 	
 	// create caustics photon map, if requested
-	//std::vector<light_t*> cLights;
-	//std::vector<light_t*>::const_iterator li;
-	bool success;
+
+	bool success = true;
+	traceCaustics = false;
+	
 	if(causticType == PHOTON || causticType == BOTH)
 	{
 		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons);
 	}
-/*
-	else if(causticType == BOTH)
-	{
-		for(li=scene->lights.begin(); li!=scene->lights.end(); ++li)
-		{
-			if((*li)->diracLight()) cLights.push_back(*li);
-		}
-		if(cLights.size()>0) success = createCausticMap(*scene, cLights, causticMap, cDepth, nPhotons);
-	}
-*/
 
 	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
-	else traceCaustics = false;
-	return true;
+
+	return success;
 }
 
 inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n)const
@@ -137,9 +121,8 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 	int lnum = (int)(s1);
 	if(lnum > nLightsI-1) lnum = nLightsI-1;
 	const light_t *light = lights[lnum];
-	s1 = s1 - (float)lnum; // scrHalton(d1, n); // 
-	//BSDF_t oneBSDFs = oneMat->getFlags();
-	//oneMat->initBSDF(state, sp, oneBSDFs);
+	s1 = s1 - (float)lnum;
+
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{
@@ -158,7 +141,6 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 	}
 	else // area light and suchlike
 	{
-		//color_t ccol(0.0);
 		// ...get sample val...
 		lSample_t ls;
 		ls.s1 = s1;
@@ -174,7 +156,7 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 			if(!shadowed && ls.pdf > 1e-6f)
 			{
 				if(trShad) ls.col *= scol;
-				//color_t surfCol = bsdf->eval(sp, wo, lightRay.dir, userdata);
+
 				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				
 				if( canIntersect )
@@ -184,21 +166,19 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 					float m2 = mPdf * mPdf + 0.1f;
 					float w = l2 / (l2 + m2);
 					//test! limit lightPdf...
-					if(ls.pdf < 0.1f) ls.pdf = 0.1f;
+					if(ls.pdf < 0.00001f) ls.pdf = 0.00001f;
 					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
 				}
 				else
 				{
 					//test! limit lightPdf...
-					if(ls.pdf < 0.0001f) ls.pdf = 0.0001f;
+					if(ls.pdf < 0.00001f) ls.pdf = 0.00001f;
 					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
 				}
 			}
 		}
 		if(canIntersect) // sample from BSDF to complete MIS
 		{
-			//color_t ccol2(0.f);
-
 			ray_t bRay;
 			bRay.tmin = MIN_RAYDIST;
 			bRay.from = sp.P;
@@ -263,8 +243,10 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		// the first path segment is "unrolled" from the loop because for the spot the camera hit
 		// we do things slightly differently (e.g. may not sample specular, need not to init BSDF anymore,
 		// have more efficient ways to compute samples...)
+		
 		bool was_chromatic = state.chromatic;
 		BSDF_t path_flags = no_recursive ? BSDF_ALL : (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE);
+		
 		if(bsdfs & path_flags)
 		{
 			color_t pathCol(0.0), wl_col;
@@ -294,7 +276,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				else continue;
 				throughput = scol;
 				state.includeLights = false;
-				//state.chromatic = state.chromatic && !(s.sampledFlags & BSDF_DISPERSIVE);
+
 				if(state.chromatic && (s.sampledFlags & BSDF_DISPERSIVE))
 				{
 					state.chromatic = false;
@@ -304,15 +286,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				pRay.tmin = MIN_RAYDIST;
 				pRay.tmax = -1.0;
 				pRay.from = sp.P;
-				if(!scene->intersect(pRay, *hit)) //hit background
-				{
-/*					if(state.includeLights && ibl)
-					{
-						pathCol += throughput * background->eval(pRay);
-					}
-*/
-					continue;
-				}
+				
+				if(!scene->intersect(pRay, *hit)) continue; //hit background
 
 				const volumeHandler_t *vol;
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * pRay.dir < 0)) != 0)
@@ -328,10 +303,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				pwo = -pRay.dir;
 				lcol = estimateOneDirect(state, *hit, pwo, lights, 3, offs);
 				lcol += p_mat->emit(state, *hit, pwo);
-				/* if((matBSDFs&BSDF_VOLUMETRIC) && p_mat->volumeTransmittance(state, hit, pRay, vcol))
-				{
-					throughput *= vcol;
-				} */
+
 				pathCol += lcol*throughput;
 				
 				for(int depth=1; depth<bounces; ++depth)
@@ -355,7 +327,6 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					if(scol.isBlack()) break;
 					throughput *= scol;
 					state.includeLights = traceCaustics && (s.sampledFlags & BSDF_SPECULAR);
-					//state.chromatic = state.chromatic && !(s.sampledFlags & BSDF_DISPERSIVE);
 					if(state.chromatic && (s.sampledFlags & BSDF_DISPERSIVE))
 					{
 						state.chromatic = false;
@@ -368,13 +339,12 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if(/*include_bg || */(state.includeLights && ibl))
+						if((state.includeLights && ibl))
 						{
 							pathCol += throughput * background->eval(pRay);
 						}
 						break;
 					}
-					//if((matBSDFs&BSDF_VOLUMETRIC) && p_mat->volumeTransmittance(state, *hit, pRay, vcol))
 					if((matBSDFs&BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit->Ng * pRay.dir < 0)))
 					{
 						vol->transmittance(state, pRay, vcol);
@@ -388,10 +358,6 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					if(matBSDFs & (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE)) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
 					else lcol = color_t(0.f);
 					lcol += p_mat->emit(state, *hit, pwo);
-					/* if((matBSDFs&BSDF_VOLUMETRIC) && p_mat->volumeTransmittance(state, hit, pRay, vcol))
-					{
-						throughput *= vcol;
-					} */
 					pathCol += lcol*throughput;
 				}
 				state.userdata = first_udat;
@@ -405,6 +371,93 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		++state.raylevel;
 		if(!no_recursive && state.raylevel <= rDepth)
 		{
+			// dispersive effects with recursive raytracing:
+			if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic )
+			{
+				state.includeLights = false; //debatable...
+				int dsam = 8;
+				int oldDivision = state.rayDivision;
+				int oldOffset = state.rayOffset;
+				float old_dc1 = state.dc1, old_dc2 = state.dc2;
+				if(state.rayDivision > 1) dsam = std::max(1, dsam/oldDivision);
+				state.rayDivision *= dsam;
+				int branch = state.rayDivision*oldOffset;
+				float d_1 = 1.f/(float)dsam;
+				float ss1 = RI_S(state.pixelSample + state.samplingOffs);
+				color_t dcol(0.f);
+				vector3d_t wi;
+				for(int ns=0; ns<dsam; ++ns)
+				{
+					state.wavelength = (ns + ss1)*d_1;
+					state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
+					state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
+					if(oldDivision > 1)	state.wavelength = addMod1(state.wavelength, old_dc1);
+					state.rayOffset = branch;
+					++branch;
+					sample_t s(0.5f, 0.5f, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_DISPERSIVE);
+					color_t mcol = material->sample(state, sp, wo, wi, s);
+					if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_DISPERSIVE))
+					{
+						mcol *= std::fabs(wi*sp.N)/s.pdf;
+						color_t wl_col;
+						wl2rgb(state.wavelength, wl_col);
+						state.chromatic = false;
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
+						dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
+						state.chromatic = true;
+					}
+				}
+				col += dcol * d_1;
+				state.rayDivision = oldDivision;
+				state.rayOffset = oldOffset;
+				state.dc1 = old_dc1; state.dc2 = old_dc2;
+			}
+			// glossy reflection with recursive raytracing:
+			if( bsdfs & BSDF_GLOSSY )
+			{
+				state.includeLights = false;
+				int gsam = 8;
+				int oldDivision = state.rayDivision;
+				int oldOffset = state.rayOffset;
+				float old_dc1 = state.dc1, old_dc2 = state.dc2;
+				if(state.rayDivision > 1) gsam = std::max(1, gsam/oldDivision);
+				state.rayDivision *= gsam;
+				int branch = state.rayDivision*oldOffset;
+				int offs = gsam * state.pixelSample + state.samplingOffs;
+				float d_1 = 1.f/(float)gsam;
+				color_t gcol(0.f);
+				vector3d_t wi;
+				for(int ns=0; ns<gsam; ++ns)
+				{
+					state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
+					state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
+					state.rayOffset = branch;
+					++branch;
+					float s1 = RI_vdC(offs + ns);
+					float s2 = scrHalton(2, offs + ns);
+					if(oldDivision > 1) // create generalized halton sequence
+					{
+						s1 = addMod1(s1, old_dc1);
+						s2 = addMod1(s2, old_dc2);
+					}
+					sample_t s(s1, s2, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_GLOSSY);
+					color_t mcol = material->sample(state, sp, wo, wi, s);
+					if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_GLOSSY))
+					{
+						mcol *= std::fabs(wi*sp.N)/s.pdf;
+						diffRay_t refRay(sp.P, wi, MIN_RAYDIST);
+						gcol += (color_t)integrate(state, refRay) * mcol;
+					}
+				}
+				col += gcol * d_1;
+				//restore renderstate
+				state.rayDivision = oldDivision;
+				state.rayOffset = oldOffset;
+				state.dc1 = old_dc1; state.dc2 = old_dc2;
+			}
+			
+			//...perfect specular reflection/refraction with recursive raytracing...
+
 			state.includeLights = true;
 			bool reflect=false, refract=false;
 			vector3d_t dir[2];
@@ -452,7 +505,6 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	int path_samples = 32;
 	int bounces = 3;
 	int raydepth = 5;
-	bool use_bg = true;
 	const std::string *cMethod=0;
 	
 	params.getParam("raydepth", raydepth);
@@ -460,7 +512,6 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("shadowDepth", shadowDepth);
 	params.getParam("path_samples", path_samples);
 	params.getParam("bounces", bounces);
-	params.getParam("use_background", use_bg);
 	params.getParam("no_recursive", noRec);
 	
 	pathIntegrator_t* inte = new pathIntegrator_t(transpShad, shadowDepth);
@@ -488,7 +539,6 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	inte->nPaths = path_samples;
 	inte->invNPaths = 1.f / (float)path_samples;
 	inte->bounces = bounces;
-	inte->use_bg = false;//use_bg;
 	inte->no_recursive = noRec;
 	return inte;
 }

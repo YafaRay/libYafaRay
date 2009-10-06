@@ -162,11 +162,11 @@ void RenderWidget::mousePressEvent(QMouseEvent *e)
 {
 	if(e->button() == Qt::MidButton)
 	{
-		e->accept();
 		setCursor(Qt::SizeAllCursor);
 		panning = true;
 		panPos = e->globalPos();
 		barPos = QPoint(hBar->value(), vBar->value());
+		e->accept();
 	}
 	else
 	{
@@ -178,9 +178,9 @@ void RenderWidget::mouseReleaseEvent(QMouseEvent *e)
 {
 	if(e->button() == Qt::MidButton)
 	{
-		e->accept();
 		setCursor(Qt::ArrowCursor);
 		panning = false;
+		e->accept();
 	}
 	else
 	{
@@ -192,10 +192,10 @@ void RenderWidget::mouseMoveEvent(QMouseEvent *e)
 {
 	if(panning)
 	{
-		e->accept();
 		QPoint dpos = barPos + (panPos - e->globalPos());
 		hBar->setValue(dpos.x());
 		vBar->setValue(dpos.y());
+		e->accept();
 	}
 	else
 	{
