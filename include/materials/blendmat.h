@@ -12,7 +12,7 @@ __BEGIN_YAFRAY
 	note: if both materials have specular reflection or specular transmission
 	components, recursive raytracing will not work properly!
 	Sampling will still work, but possibly be inefficient
-	Outdated info...
+	Outdated info... DarkTide
 */
 
 class blendMat_t: public nodeMaterial_t
@@ -37,11 +37,10 @@ class blendMat_t: public nodeMaterial_t
 	protected:
 		const material_t *mat1, *mat2;
 		shaderNode_t *blendS; //!< the shader node used for blending the materials
-		CFLOAT blendVal;
-		BSDF_t cFlags[2];
-		float *val;
-		float *ival;
+		float blendVal;
 		size_t mmem1;
+	private:
+		void getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const;
 };
 
 

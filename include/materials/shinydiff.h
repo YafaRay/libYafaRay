@@ -46,10 +46,9 @@ class shinyDiffuseMat_t: public nodeMaterial_t
 			void *nodeStack;
 		};
 	protected:
-		//color_t getDiffuse(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl)const;
 		void config(shaderNode_t *diff, shaderNode_t *refl, shaderNode_t *transp, shaderNode_t *transl, shaderNode_t *bump);
 		int getComponents(const bool *useNode, nodeStack_t &stack, float *component) const;
-		CFLOAT getFresnel(const vector3d_t &wo, const vector3d_t &N) const;
+		void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr) const;
 		CFLOAT OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const;
 		void initOrenNayar(double sigma);
 		
@@ -67,11 +66,11 @@ class shinyDiffuseMat_t: public nodeMaterial_t
 		shaderNode_t *mirColS; //!< shader node for specular reflection color
 
 		color_t color, emitCol, specRefCol;
-		CFLOAT mSpecRefl, mTransp, mTransl, mDiffuse; // BSDF components when not textured
-		CFLOAT filter; //!< determines how strong light passing through material gets tinted
-		CFLOAT A, B; //!< OrenNayar coefficients
+		float mSpecRefl, mTransp, mTransl, mDiffuse; // BSDF components when not textured
+		float filter; //!< determines how strong light passing through material gets tinted
+		float A, B; //!< OrenNayar coefficients
 		bool orenNayar;
-		PFLOAT IOR;
+		float IOR; //!< Squared IOR actually
 		int nBSDF;
 		BSDF_t cFlags[4]; //!< list the BSDF components that are present
 		int cIndex[4]; //!< list the index of the BSDF components (0=spec. refl, 1=spec. transp, 2=transl. 3=diff refl.)

@@ -110,15 +110,31 @@ int shinyDiffuseMat_t::getComponents(const bool *useNode, nodeStack_t &stack, fl
 	return 0;
 }
 
-inline CFLOAT shinyDiffuseMat_t::getFresnel(const vector3d_t &wo, const vector3d_t &N) const
+inline void shinyDiffuseMat_t::getFresnel(const vector3d_t &wo, const vector3d_t &n, float &Kr) const
 {
-	CFLOAT Kr=1.f, Kt;
+	Kr = 1.f;
 	if(fresnelEffect)
 	{
-		fresnel(wo, N, IOR, Kr, Kt);
-		return Kr;
+		vector3d_t N;
+
+		if((wo*n) < 0.f)
+		{
+			N=-n;
+		}
+		else
+		{
+			N=n;
+		}
+
+		float c = wo*N;
+		float g = IOR + c*c - 1.f;
+		if(g < 0.f) g = 0.f;
+		else g = fSqrt(g);
+		float aux = c * (g+c);
+
+		Kr = ( ( 0.5f * (g-c) * (g-c) )/( (g+c)*(g+c) ) ) *
+			   ( 1.f + ((aux-1)*(aux-1))/((aux+1)*(aux+1)) );
 	}
-	else return 1.f;
 }
 
 // calculate the absolute value of scattering components from the "normalized"
@@ -171,12 +187,12 @@ CFLOAT shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, 
 	PFLOAT cos_to = std::max(-1.f,std::min(1.f,N*wo));
 	CFLOAT maxcos_f = 0.f;
 	
-//	if(cos_ti <= 1.f && cos_to <= 1.f)
-//	{
+	if(cos_ti < 0.9999f && cos_to < 0.9999f)
+	{
 		vector3d_t v1 = (wi - N*cos_ti).normalize();
 		vector3d_t v2 = (wo - N*cos_to).normalize();
 		maxcos_f = std::max(0.f, v1*v2);
-//	}
+	}
 	
 	CFLOAT sin_alpha, tan_beta;
 	
@@ -200,13 +216,14 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
 	PFLOAT cos_Ng_wo = sp.Ng*wo;
 	PFLOAT cos_Ng_wl = sp.Ng*wl;
 	// face forward:
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	if(!(bsdfs & bsdfFlags & BSDF_DIFFUSE)) return color_t(0.f);
 	
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
-
-	CFLOAT Kr = getFresnel(wo, N);
+	
+	float Kr;
+	getFresnel(wo, N, Kr);
 	float mT = (1.f - Kr*dat->component[0])*(1.f - dat->component[1]);
 	
 	bool transmit = ( cos_Ng_wo * cos_Ng_wl ) < 0.f;
@@ -239,7 +256,8 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
 
-	CFLOAT Kr = getFresnel(wo, N);
+	float Kr;
+	getFresnel(wo, N, Kr);
 	accumulate(dat->component, accumC, Kr);
 
 	float sum=0.f, val[4], width[4];
@@ -290,7 +308,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 			if(cos_N < 1e-6) s.pdf = 0.f;
 			else
 			{
-				scolor *= 1.f/CFLOAT(cos_N);
+				//scolor *= 1.f/CFLOAT(cos_N);
 				s.pdf = width[pick];
 			}
 			break;
@@ -302,7 +320,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 			s.pdf = std::fabs(wi*N) * width[pick]; break;
 		case (BSDF_DIFFUSE | BSDF_REFLECT): // diffuse reflect
 		default:
-			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s.s1, s.s2);
+			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
 			cos_Ng_wi = sp.Ng*wi;
 			if(cos_Ng_wo*cos_Ng_wi > 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
 			if(orenNayar) scolor *= OrenNayar(wo, wi, N);
@@ -323,7 +341,9 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 	float accumC[4];
 	PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi;
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
-	CFLOAT Kr = getFresnel(wo, N);
+	float Kr;
+	getFresnel(wo, N, Kr);
+
 	accumulate(dat->component, accumC, Kr);
 	float sum=0.f, width;
 	int nMatch=0;
@@ -363,12 +383,13 @@ void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoi
 	bool backface = sp.Ng * wo < 0;
 	vector3d_t N = backface ? -sp.N : sp.N;
 	vector3d_t Ng = backface ? -sp.Ng : sp.Ng;
-	CFLOAT Kr = getFresnel(wo, N);
+	float Kr;
+	getFresnel(wo, N, Kr);
 	refract = isTranspar;
 	if(isTranspar)
 	{
 		dir[1] = -wo;
-		color_t tcol = filter*(diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter);
+		color_t tcol = filter * (diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter);
 		col[1] = (1.f - dat->component[0]*Kr) * dat->component[1] * tcol;
 	}
 	reflect=isReflective;
@@ -387,17 +408,19 @@ color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const sur
 	std::vector<shaderNode_t *>::const_iterator iter, end=allSorted.end();
 	for(iter = allSorted.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
 	float accum=1.f;
+	float Kr;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	getFresnel(wo, N, Kr);
+
 	if(isReflective)
 	{
-		vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-		CFLOAT Kr = getFresnel(wo, N);
 		accum = 1.f - Kr*(specReflS ? specReflS->getScalar(stack) : mSpecRefl);
 	}
 	if(isTranspar) //uhm...should actually be true if this function gets called anyway...
 	{
 		accum *= transpS ? transpS->getScalar(stack) * accum : mTransp * accum;
 	}
-	color_t tcol = filter*(diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter);
+	color_t tcol = filter * (diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter);
 	return accum * tcol;
 }
 
@@ -407,7 +430,8 @@ CFLOAT shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoin
 	if(isTranspar)
 	{
 		vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-		CFLOAT Kr = getFresnel(wo, N);
+		float Kr;
+		getFresnel(wo, N, Kr);
 		CFLOAT refl = (1.f - dat->component[0]*Kr) * dat->component[1];
 		return 1.f - refl;
 	}
@@ -459,7 +483,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 	
 	if(fresnEff)
 	{
-		mat->IOR = IOR;
+		mat->IOR = IOR * IOR;
 		mat->fresnelEffect = true;
 	}
 	if(params.getParam("diffuse_brdf", name))
