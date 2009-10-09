@@ -14,20 +14,16 @@ public:
 	ConsoleRedir(std::ostream &stream, QTextEdit* text_edit) : conStream(stream)
 	{
 		console = text_edit;
-		oldBufer = conStream.rdbuf();
+		oldBuffer = conStream.rdbuf();
 		conStream.rdbuf(this);
 		stringBuffer = "";
-		streamT = new QTextStream(&stringBuffer);
 		
 		console->setHtml("<body bgcolor=\"#000000\">");
 		sb = console->verticalScrollBar();
-		
-		//console->setTextBackgroundColor(Qt::black);
 	}
 	~ConsoleRedir()
 	{
-		if (!stringBuffer.isEmpty()) console->append(stringBuffer);
-		conStream.rdbuf(oldBufer);
+		conStream.rdbuf(oldBuffer);
 	}
 	void FlushReminder()
 	{
@@ -42,7 +38,7 @@ protected:
 	{
 		
 		if (v == '\n' || v == '\r') insertColored(0);
-		else *streamT << v;
+		else stringBuffer.append((QChar)v);
 
 		return v;
 	}
@@ -52,7 +48,7 @@ protected:
 		QString temp = p;
 		temp.chop(temp.size() - n);
 		
-		*streamT << temp;
+		stringBuffer.append(temp);
 		
 		insertColored();
 		
@@ -75,13 +71,12 @@ private:
 				sb->setValue(sb->maximum());
 			}
 			stringBuffer.clear();
-			if(off > 0) *streamT << list[list.size()-1];
+			if(off > 0) stringBuffer.append(list[list.size()-1]);
 		}
 	}
 	std::ostream &conStream;
-	std::streambuf *oldBufer;
+	std::streambuf *oldBuffer;
 	QString stringBuffer;
-	QTextStream *streamT;
 	QTextEdit *console;
 	QScrollBar *sb;
 };

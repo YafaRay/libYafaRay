@@ -189,8 +189,7 @@ bool MainWindow::event(QEvent *e)
 {
 	if (e->type() == (QEvent::Type)ProgressUpdate)
 	{
-		if (anim->isVisible())
-			anim->hide();
+		anim->hide();
 
 		ProgressUpdateEvent *p = static_cast<ProgressUpdateEvent*>(e);
 		if (p->min() >= 0)
@@ -421,7 +420,7 @@ bool MainWindow::closeUnsaved()
 		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close it will be lost.",
 						   QMessageBox::NoButton, this);
 
-		msgBox.setInformativeText("Do you want to save your render?\n(press \"Discard\" to leave without saving)");
+		msgBox.setInformativeText("Do you want to save your render\n(press \"Discard\" to leave without saving)");
 		msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Save | QMessageBox::Discard);
 		msgBox.setDefaultButton(QMessageBox::Discard);
 

@@ -56,18 +56,14 @@ void QtOutput::clear()
 
 bool QtOutput::putPixel(int x, int y, const float *c, int channels)
 {
-	int r, g, b, a = 255;
+	int r = std::max(0,std::min(255, (int)(c[0] * 255)));
+	int g = std::max(0,std::min(255, (int)(c[1] * 255)));	
+	int b = std::max(0,std::min(255, (int)(c[2] * 255)));
+	int a = 255;
 
-	r = (c[0]<0.f) ? 0 : ((c[0]>=1.f) ? 255 : (int)(255.f*c[0]) );
-	g = (c[1]<0.f) ? 0 : ((c[1]>=1.f) ? 255 : (int)(255.f*c[1]) );
-	b = (c[2]<0.f) ? 0 : ((c[2]>=1.f) ? 255 : (int)(255.f*c[2]) );
 	QRgb rgb = qRgb(r, g, b);
-	if (channels > 3)
-	{
-		a = (int)(c[3]*255);
-		if (a > 255) a = 255;
-		if (a < 0) a = 0;
-	}
+	
+	if (channels > 3) a = std::max(0,std::min(255, (int)(c[3] * 255)));
 
 	img.setPixel(x + widgy->borderStart.x(),y + widgy->borderStart.y(), rgb);
 	//widgy->alphaChannel.setPixel(x + widgy->borderStart.x(), y + widgy->borderStart.y(), a);
