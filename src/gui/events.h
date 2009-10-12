@@ -28,6 +28,7 @@
 enum CustomEvents
 {
 	GuiUpdate = QEvent::User,
+	GuiAreaHighlite,
 	ProgressUpdate,
 	ProgressUpdateTag
 };
@@ -45,6 +46,17 @@ private:
 	QRect m_rect;
 	QImage m_image;
 	bool m_full;
+};
+
+class GuiAreaHighliteEvent : public QEvent
+{
+public:
+	GuiAreaHighliteEvent(const QRect &rect, const QImage &img);
+	inline QRect rect() { return m_rect; }
+	inline QImage img() { return m_image; }
+private:
+	QRect m_rect;
+	QImage m_image;
 };
 
 class ProgressUpdateEvent : public QEvent

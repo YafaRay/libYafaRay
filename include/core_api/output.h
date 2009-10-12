@@ -37,6 +37,7 @@ class colorOutput_t
 		virtual bool putPixel(int x, int y, const float *c, int channels)=0;
 		virtual void flush()=0;
 		virtual void flushArea(int x0, int y0, int x1, int y1)=0;
+		virtual void highliteArea(int x0, int y0, int x1, int y1){};
 };
 
 __END_YAFRAY

@@ -31,7 +31,7 @@ class QtOutput: public yafaray::colorOutput_t
 {
 public:
 	QtOutput(RenderWidget *render);
-	~QtOutput(){};
+	~QtOutput() {}
 
 	void setRenderSize(const QSize &s);
 	void clear();
@@ -42,6 +42,7 @@ public:
 	virtual bool putPixel(int x, int y, const float *c, int channels);
 	virtual void flush();
 	virtual void flushArea(int x0, int y0, int x1, int y1);
+	virtual void highliteArea(int x0, int y0, int x1, int y1);
 
 private:
 	RenderWidget *widgy;

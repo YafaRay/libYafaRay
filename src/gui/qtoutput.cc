@@ -25,7 +25,8 @@
 #include <cstdlib>
 
 QtOutput::QtOutput(RenderWidget *render): widgy(render)
-{ }
+{
+}
 
 void QtOutput::setRenderSize(const QSize &s)
 {
@@ -35,6 +36,7 @@ void QtOutput::setRenderSize(const QSize &s)
 	// greyscale image
 	widgy->alphaChannel = img.alphaChannel();
 	widgy->resize(s);
+
 	QPalette palette;
 	palette.setColor(QPalette::Background, QColor(0, 0, 0));
 	widgy->setPalette(palette);
@@ -66,8 +68,6 @@ bool QtOutput::putPixel(int x, int y, const float *c, int channels)
 	if (channels > 3) a = std::max(0,std::min(255, (int)(c[3] * 255)));
 
 	img.setPixel(x + widgy->borderStart.x(),y + widgy->borderStart.y(), rgb);
-	//widgy->alphaChannel.setPixel(x + widgy->borderStart.x(), y + widgy->borderStart.y(), a);
-	//widgy->alphaChannel.scanLine(y + widgy->borderStart.y())[x + widgy->borderStart.x()] = a;
 	widgy->alphaChannel.bits()[widgy->alphaChannel.bytesPerLine() * (y + widgy->borderStart.y()) + x + widgy->borderStart.x()] = a;
 
 	return true;
@@ -81,12 +81,14 @@ void QtOutput::flush()
 
 void QtOutput::flushArea(int x0, int y0, int x1, int y1)
 {
-	// adjust borders
-	x0 += widgy->borderStart.x();
-	x1 += widgy->borderStart.x();
-	y0 += widgy->borderStart.y();
-	y1 += widgy->borderStart.y();
 	// as the tile is finished, it looks like it is safe to use the image instead of
 	// copying the tiles for updating
 	QCoreApplication::postEvent(widgy, new GuiUpdateEvent(QRect(x0,y0,x1-x0,y1-y0), img));
+}
+
+void QtOutput::highliteArea(int x0, int y0, int x1, int y1)
+{
+	// as the tile is finished, it looks like it is safe to use the image instead of
+	// copying the tiles for updating
+	QCoreApplication::postEvent(widgy, new GuiAreaHighliteEvent(QRect(x0,y0,x1-x0,y1-y0), img));
 }

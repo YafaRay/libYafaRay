@@ -41,57 +41,6 @@ roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol,
 	} */
 }
 
-void roughGlassMat_t::func()
-{
-	surfacePoint_t sp;
-	sp.P = point3d_t(0,0,0);
-	sp.N = sp.Ng = vector3d_t(0, 0, 1);
-	createCS(sp.N, sp.NU, sp.NV);
-	vector3d_t wi(0, 0, 0), wo, Hs;
-	renderState_t state;
-	state.userdata = malloc(USER_DATA_SIZE);
-	sample_t s(0,0,BSDF_ALL);
-	float reflect[32], transmit[32];
-	for(int i=0; i<32; ++i)
-	{
-		wi.z = ((PFLOAT)i+0.5f)/32.f;
-		wi.x = fSqrt(1.f - wi.z*wi.z);
-		reflect[i] = 0, transmit[i] = 0;
-		for(int j=0; j<32; ++j)
-		{
-			s.s1 = (float(j)+0.5f)/32.f;
-			s.s2 = RI_vdC(j);
-			Blinn_Sample(Hs, s.s1, s.s2, exponent);
-			vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*sp.N;
-			PFLOAT cos_wo_H = wo*H;
-			if (cos_wo_H < 0 ){ /* H = -H; */ cos_wo_H = -cos_wo_H; }
-			s.pdf = Blinn_Pdf(Hs.z, cos_wo_H, exponent);
-			vector3d_t refdir;
-			CFLOAT xy =  1.f/( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*sp.N), std::fabs(wi*sp.N)) );
-			xy = Blinn_D(Hs.z, exponent) * xy;
-			if( refract(H, wo, refdir, ior) )
-			{
-				CFLOAT Kr, Kt;
-				fresnel(wo, H, ior, Kr, Kt);
-				reflect[i] += Kr*xy/s.pdf;
-				transmit[i] += Kt*xy/s.pdf;
-			}
-			else reflect[i] += xy/s.pdf;
-			//color_t col = sample(state, sp, wi, wo, s);
-			//if(s.pdf > 1e-6)
-			//{
-			//	if(s.sampledFlags & BSDF_REFLECT) ref += col * std::fabs(wo.z) / s.pdf;
-			//	else trans += col * std::fabs(wo.z) / s.pdf;
-			//}
-		}
-		//float sref = ref.energy()/32.f , strans = trans.energy()/32.f;
-		//std::cout << "cos: " << wi.z << "\t ref: " << sref << 
-		//	"\t trans: " << strans << "\tsum: " << sref+strans << std::endl;
-	}
-	
-	free(state.userdata);
-}
-
 void roughGlassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const
 {
 	nodeStack_t stack(state.userdata);
@@ -139,7 +88,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 			fresnel(wo, H, ior, Kr, Kt); //wo or wi?
 			col = filterCol * Kt * glossy;
 			if((bsdfs & BSDF_DIFFUSE))
-				col += diffuseReflectFresnel(wi*N, wo*N, glossy, 0.f, filterCol, Kt);
+				col += diffuseReflectFresnel(wi*N, wo*N, glossy, 0.001f, filterCol, Kt);
 		}
 	}
 	else
@@ -152,13 +101,11 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 			fresnel(wo, H, ior, Kr, Kt); //outside!?
 			col = (mirColS ? mirColS->getColor(stack) : specRefCol) * Kr * glossy;
 			if((bsdfs & BSDF_DIFFUSE))
-				col += diffuseReflectFresnel(wi*N, wo*N, glossy, 0.f, (mirColS ? mirColS->getColor(stack) : specRefCol), Kr);
+				col += diffuseReflectFresnel(wi*N, wo*N, glossy, 0.001f, (mirColS ? mirColS->getColor(stack) : specRefCol), Kr);
 		}
 		else // total internal reflection
 		{	
 			col = glossy;
-			if((bsdfs & BSDF_DIFFUSE))
-				col += diffuseReflect(wi*N, wo*N, glossy, 0.f, (mirColS ? mirColS->getColor(stack) : specRefCol));
 		}
 	}
 	return col;
@@ -166,7 +113,6 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 
 color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {
-	if( !(s.flags & BSDF_GLOSSY) ) return color_t(0.f);
 	nodeStack_t stack(state.userdata);
 	vector3d_t N = /* (cos_Ng_wo<0) ? -sp.N : */ sp.N;
 	vector3d_t Hs;
@@ -180,6 +126,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
 	
 	float glossy;
+	color_t col(0.f);
 	
 	float cos_wo_H = wo*H;
 	if (cos_wo_H < 0 ){ cos_wo_H = -cos_wo_H; }
@@ -196,7 +143,8 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			glossy = Blinn_D(Hs.z, exponent) / ( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*N), std::fabs(wi*N)) );
 			s.pdf = 0.7f * Blinn_Pdf(Hs.z, cos_wo_H, exponent);
 			s.sampledFlags = BSDF_GLOSSY | BSDF_TRANSMIT;
-			return filterCol * Kt  * glossy;
+			col = filterCol * Kt  * glossy;
+			if((s.flags & BSDF_DIFFUSE)) col *= diffuseReflectFresnel(wi*N, wo*N, glossy, 0.f, filterCol, Kt);
 		}
 		else
 		{
@@ -204,7 +152,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			glossy = Blinn_D(Hs.z, exponent) / ( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*N), std::fabs(wi*N)) );
 			s.pdf = 0.3f * Blinn_Pdf(Hs.z, cos_wo_H, exponent);
 			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-			return (mirColS ? mirColS->getColor(stack) : specRefCol) * Kr * glossy;
+			col = (mirColS ? mirColS->getColor(stack) : specRefCol) * Kr * glossy;
 		}
 	}
 	else //total inner reflection
@@ -213,8 +161,10 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 		glossy = Blinn_D(Hs.z, exponent) / ( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*N), std::fabs(wi*N)) );
 		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
 		s.pdf = Blinn_Pdf(Hs.z, cos_wo_H, exponent);
-		return color_t( glossy );
+		col = color_t( glossy );
+		if((s.flags & BSDF_DIFFUSE)) col = (col * 0.8f) + (0.2f * diffuseReflect(wi*N, wo*N, glossy, 0.f, col));
 	}
+	return col;
 }
 
 
@@ -326,7 +276,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 		}
 	}
 	mat->reqMem = mat->reqNodeMem;
-	//mat->func();
+
 	return mat;
 }
 

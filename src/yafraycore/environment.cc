@@ -465,7 +465,9 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int width=320, height=240, xstart=0, ystart=0;
 	float filt_sz = 1.5, gamma=1.f;
 	bool clamp = false;
-	
+	bool showSampledPixels = false;
+	int tileSize = 32;
+		
 	params.getParam("gamma", gamma);
 	params.getParam("clamp_rgb", clamp);
 	params.getParam("AA_pixelwidth", filt_sz);
@@ -474,6 +476,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("xstart", xstart); // x-offset (for cropped rendering)
 	params.getParam("ystart", ystart); // y-offset (for cropped rendering)
 	params.getParam("filter_type", name); // AA filter type
+	params.getParam("show_sam_pix", showSampledPixels); // Show pixels marked to be resampled on adaptative sampling
+	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
 	
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -483,7 +487,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_WARN_ENV << "Defaulting to Box AA filter!\n";
 	
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this));
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize);
 	film->setClamp(clamp);
 	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
 	return film;

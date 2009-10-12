@@ -28,7 +28,7 @@
 
 #include <yafraycore/memoryIO.h>
 #include "yafqtapi.h"
-#include "ConsoleRedir.h"
+//#include "ConsoleRedir.h"
 
 
 namespace Ui
@@ -96,7 +96,7 @@ private:
 	QTime timeMeasure;		// time measure for the render
 	AnimWorking* anim;
 	bool renderSaved;
-	ConsoleRedir* cRedir;
+	//ConsoleRedir* cRedir;
 };
 
 #endif

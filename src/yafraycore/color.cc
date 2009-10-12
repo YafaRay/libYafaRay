@@ -109,16 +109,16 @@ ostream & operator << (ostream & out,const colorA_t c)
 
 color_t mix(const color_t &a,const color_t &b,CFLOAT point)
 {
-	if(point<0.0) return b;
-	if(point>1.0) return a;
+	if(point<=0.0) return b;
+	if(point>=1.0) return a;
 
 	return ( a*point + (1-point)*b );
 }
 
 colorA_t mix(const colorA_t &a,const colorA_t &b,CFLOAT point)
 {
-	if(point<0.0) return b;
-	if(point>1.0) return a;
+	if(point<=0.0) return b;
+	if(point>=1.0) return a;
 
 	return ( a*point + (1-point)*b );
 }

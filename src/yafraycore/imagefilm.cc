@@ -208,7 +208,7 @@ float Box(float dx, float dy){ return 1.f; }
 //! mna2 = (12 - 9 * B - 6 * C)/6
 //! mnb2 = (-18 + 12 * B + 6 * C)/6
 //! mnc2 = (6 - 2 * B)/6
-
+/*
 #define mna1 -0.38888889
 #define mnb1  2.0
 #define mnc1 -3.33333333
@@ -217,7 +217,7 @@ float Box(float dx, float dy){ return 1.f; }
 #define mna2  1.16666666
 #define mnb2 -2.0
 #define mnc2  0.88888889
-
+*/
 #define gaussExp 0.00247875
 
 float Mitchell(float dx, float dy)
@@ -232,11 +232,11 @@ float Mitchell(float dx, float dy)
 	if(x >= 1.f) // from mitchell-netravali paper 1 <= |x| < 2
 	{
 		//((-B - 6 * C) * x * x2 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C)) * 0.1666666;
-		return (float)( x * ( x * ( x * mna1 + mnb1) + mnc1) + mnd1 );
+		return (float)( x * ( x * ( x * -0.38888889f + 2.0f) - 3.33333333f) + 1.77777778f );
 	}
 
 	//((12 - 9 * B - 6 * C) * x * x2 + (-18 + 12 * B + 6 * C) * x2 + (6 - 2 * B)) * 0.1666666;
-	return (float)( x * x * ( mna2 * x + mnb2 ) + mnc2 );
+	return (float)( x * x * ( 1.16666666f * x - 2.0f ) + 0.88888889f );
 }
 
 float Gauss(float dx, float dy)
@@ -245,10 +245,10 @@ float Gauss(float dx, float dy)
 	return std::max(0.f, float(fExp(-6 * r2) - gaussExp));
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e):
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
 	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), estimateDensity(false), numSamples(0),
-	splitter(0), pbar(0), env(e)
+	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -327,7 +327,7 @@ void imageFilm_t::init()
 	if(split)
 	{
 		next_area = 0;
-		splitter = new imageSpliter_t(w, h, cx0, cy0, 32);
+		splitter = new imageSpliter_t(w, h, cx0, cy0, tileSize);
 		area_cnt = splitter->size();
 	}
 	else area_cnt = 1;
@@ -356,6 +356,15 @@ bool imageFilm_t::nextArea(renderArea_t &a)
 			a.sx1 = a.X + a.W - ifilterw;
 			a.sy0 = a.Y + ifilterw;
 			a.sy1 = a.Y + a.H - ifilterw;
+			
+			if(interactive)
+			{
+				outMutex.lock();
+				int end_x = a.X+a.W, end_y = a.Y+a.H;
+				output->highliteArea(a.X, a.Y, end_x, end_y);
+				outMutex.unlock();
+			}
+
 			return true;
 		}
 	}
@@ -401,7 +410,7 @@ void imageFilm_t::finishArea(renderArea_t &a)
 			//if( !output->putPixel(i, j, col, col.getA()) ) abort=true;
 		}
 	}
-	if(interactive) output->flushArea(a.X-cx0, a.Y-cy0, end_x, end_y);
+	if(interactive) output->flushArea(a.X, a.Y, end_x+cx0, end_y+cy0);
 	if(pbar)
 	{
 		if(++completed_cnt == area_cnt) pbar->done();
@@ -571,8 +580,11 @@ void imageFilm_t::nextPass(bool adaptive_AA)
 	
 	if(adaptive_AA && AA_thesh > 0.f)
 	{
-		float fb[5];
-		fb[0] =  fb[1] = fb[2] = fb[3] = 1.f; fb[4] = 0.f;
+		float fb[4];
+		fb[0] = 1.f;
+		fb[1] = 0.5f;
+		fb[2] = 0.5f;
+		fb[3] = 1.f;
 
 		for(int y=0; y<h-1; ++y)
 		{
@@ -599,9 +611,15 @@ void imageFilm_t::nextPass(bool adaptive_AA)
 				if(needAA)
 				{
 					flags->setBit(x, y);
-					// color all pixels to be resampled:
-					if(interactive) output->putPixel(x, y, fb, 4);
-					//if(interactive) output->putPixel(x, y, color_t(1.f), 1.f);
+					
+					if(interactive && showMask)
+					{
+						color_t pixcol = (color_t)(*image)(x, y).normalized();
+						float w = (pixcol.energy() + pixcol.maximum());
+						fb[0] = fb[1] = fb[2] = w;
+						output->putPixel(x, y, fb, 4);
+					}
+					
 					++n_resample;
 				}
 			}

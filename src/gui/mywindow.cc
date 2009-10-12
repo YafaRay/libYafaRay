@@ -101,7 +101,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui = new Ui::WindowBase();
 	m_ui->setupUi(this);
 	
-	cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
+	//cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
 	
 	setWindowIcon(QIcon(yafIcon));
 	
@@ -182,7 +182,7 @@ MainWindow::~MainWindow()
 	delete m_worker;
 	delete m_ui;
 	delete errorMessage;
-	delete cRedir;
+	//delete cRedir;
 }
 
 bool MainWindow::event(QEvent *e)
@@ -293,7 +293,7 @@ void MainWindow::slotFinished()
 	
 	slotEnableDisable(true);
 	
-	cRedir->FlushReminder();
+	//cRedir->FlushReminder();
 	
 	if (autoClose)
 	{
@@ -420,14 +420,16 @@ bool MainWindow::closeUnsaved()
 		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close it will be lost.",
 						   QMessageBox::NoButton, this);
 
-		msgBox.setInformativeText("Do you want to save your render\n(press \"Discard\" to leave without saving)");
-		msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Save | QMessageBox::Discard);
-		msgBox.setDefaultButton(QMessageBox::Discard);
+		msgBox.setInformativeText("Do you want to save your render befor closing?");
+		QPushButton *discard = msgBox.addButton("Close without Saving", QMessageBox::DestructiveRole);
+		QPushButton *save = msgBox.addButton("Save", QMessageBox::AcceptRole);
+		QPushButton *cancel = msgBox.addButton("Cancel", QMessageBox::RejectRole);
+		msgBox.setDefaultButton(discard);
 
-		int ret = msgBox.exec();
+		msgBox.exec();
 
-		if(ret == QMessageBox::Save) return saveDlg();
-		else if(ret == QMessageBox::Cancel) return false;
+		if(msgBox.clickedButton() == save) return saveDlg();
+		else if(msgBox.clickedButton() == cancel) return false;
 	}
 	return true;
 }

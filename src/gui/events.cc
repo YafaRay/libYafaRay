@@ -25,6 +25,11 @@ GuiUpdateEvent::GuiUpdateEvent(const QRect &rect, const QImage &img, bool fullUp
 {
 }
 
+GuiAreaHighliteEvent::GuiAreaHighliteEvent(const QRect &rect, const QImage &img)
+: QEvent((QEvent::Type)GuiAreaHighlite), m_rect(rect), m_image(img)
+{
+}
+
 ProgressUpdateEvent::ProgressUpdateEvent(int progress, int min, int max)
 : QEvent((QEvent::Type)ProgressUpdate), m_progress(progress), m_min(min), m_max(max)
 {

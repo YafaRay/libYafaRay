@@ -66,6 +66,43 @@ bool RenderWidget::event(QEvent *e)
 		}
 		return true;
 	}
+	else if (e->type() == (QEvent::Type)GuiAreaHighlite)
+	{
+		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent*)e;
+		QPainter p;
+		
+		int lineL = 4;
+		QPoint tr(ge->rect().topRight());
+		QPoint tl(ge->rect().topLeft());
+		QPoint br(ge->rect().bottomRight());
+		QPoint bl(ge->rect().bottomLeft());
+		
+		p.begin(&img);
+		p.drawImage(ge->rect(), ge->img(), ge->rect());
+		p.setPen(QColor(160, 0, 0));
+		//top-left corner
+		p.drawLine(tl, QPoint(tl.x() + lineL, tl.y()));
+		p.drawLine(tl, QPoint(tl.x(), tl.y() + lineL));
+
+		//top-right corner
+		p.drawLine(tr, QPoint(tr.x() - lineL, tr.y()));
+		p.drawLine(tr, QPoint(tr.x(), tr.y() + lineL));
+
+		//bottom-left corner
+		p.drawLine(bl, QPoint(bl.x() + lineL, bl.y()));
+		p.drawLine(bl, QPoint(bl.x(), bl.y() - lineL));
+
+		//bottom-right corner
+		p.drawLine(br, QPoint(br.x() - lineL, br.y()));
+		p.drawLine(br, QPoint(br.x(), br.y() - lineL));
+		
+		p.end();
+		
+		update(ge->rect());
+
+		return true;
+	}
+	
 	return QLabel::event(e);
 }
 
@@ -77,7 +114,7 @@ void RenderWidget::paintEvent(QPaintEvent *e)
 		painter.setClipRegion(e->region());
 
 		if (pix.isNull()) {
-			painter.fillRect(r, Qt::black);
+			painter.fillRect(r, Qt::red);
 			painter.setPen(Qt::white);
 			painter.drawText(rect(), Qt::AlignCenter, tr("<no image data>"));
 			return;
@@ -149,13 +186,13 @@ void RenderWidget::zoomOut(QPoint mPos)
 
 void RenderWidget::wheelEvent(QWheelEvent* e)
 {
+	e->accept();
+
 	if(!rendering && !panning && (e->modifiers() & Qt::ControlModifier))
 	{
 		if(e->delta() > 0) zoomIn(e->pos());
 		else zoomOut(e->pos());
 	}
-
-	e->accept();
 }
 
 void RenderWidget::mousePressEvent(QMouseEvent *e)
