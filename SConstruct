@@ -48,6 +48,10 @@ release = ARGUMENTS.get('release', 0)
 if release:
 	common_env.Append (CPPDEFINES= ['RELEASE'])
 
+yafqt_font_embed = ARGUMENTS.get('qt_font_embed', 0)
+if yafqt_font_embed:
+	common_env.Append (CPPDEFINES= ['YAFQT_EMBEDED_FONT'])
+
 if not buildtools.check_config(common_env):
 	print 'Error: not all enabled libraries are available!'
 	print 'if they are installed, make sure the paths are setup correctly'

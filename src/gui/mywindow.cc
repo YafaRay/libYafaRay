@@ -30,7 +30,7 @@
 #include <yafraycore/EXR_io.h>
 #include <yafraycore/memoryIO.h>
 #include "yafarayicon.h"
-#ifndef __APPLE__
+#if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	#include "guifont.h"
 #endif
 
@@ -86,16 +86,19 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QPixmap yafIcon;
 
 	yafIcon.loadFromData(yafarayicon, yafarayicon_size);
-#ifndef __APPLE__
+	
+#if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray(guifont, guifont_size));
 	QStringList fam = QFontDatabase::applicationFontFamilies(fId);
 	QFont gFont = QFont(fam[0]);
 	gFont.setPointSize(8);
 	QApplication::setFont(gFont);
 #else
+	#if defined(__APPLE__)
 	QFont gFont = QApplication::font();
 	gFont.setPointSize(13);
 	QApplication::setFont(gFont);
+	#endif
 #endif
 	
 	m_ui = new Ui::WindowBase();

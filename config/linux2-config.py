@@ -45,4 +45,4 @@ YF_FREETYPE_LIB = 'freetype'
 ### Miscellaneous
 YF_MISC_LIB = 'dl'
 
-WITH_YF_QT='false'
+WITH_YF_QT='true'

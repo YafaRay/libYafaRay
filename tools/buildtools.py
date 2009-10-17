@@ -64,7 +64,7 @@ def read_opts(cfiles, cargs):
 		('YF_MISC_LIBPATH', 'miscellaneous required library paths', ''),
 		('YF_MISC_LIB', 'miscellaneous required library files', ''),
 	### Qt
-		(BoolOption('WITH_YF_QT', 'enable Qt GUI support', 'false')),
+		(BoolOption('WITH_YF_QT', 'enable Qt GUI support', 'true')),
 		('YF_QTDIR', 'Qt base path getting used for QTDIR environment var', '/usr/share/qt4'),
 		('YF_QT4_LIB', 'Qt library files', 'QtGui QtCore'),
 
