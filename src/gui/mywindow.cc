@@ -101,8 +101,6 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui = new Ui::WindowBase();
 	m_ui->setupUi(this);
 	
-	//cRedir = new ConsoleRedir(std::cout, m_ui->yafConsole);
-	
 	setWindowIcon(QIcon(yafIcon));
 	
 	renderSaved = false;
@@ -182,7 +180,6 @@ MainWindow::~MainWindow()
 	delete m_worker;
 	delete m_ui;
 	delete errorMessage;
-	//delete cRedir;
 }
 
 bool MainWindow::event(QEvent *e)
@@ -292,8 +289,6 @@ void MainWindow::slotFinished()
 	m_render->finishedRender();
 	
 	slotEnableDisable(true);
-	
-	//cRedir->FlushReminder();
 	
 	if (autoClose)
 	{

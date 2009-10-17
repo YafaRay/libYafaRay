@@ -28,12 +28,10 @@
 
 #include <yafraycore/memoryIO.h>
 #include "yafqtapi.h"
-//#include "ConsoleRedir.h"
-
 
 namespace Ui
 {
-class WindowBase;
+	class WindowBase;
 }
 
 namespace yafaray
@@ -51,7 +49,6 @@ class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 public:
-	//MainWindow(const char *filename = 0);
 	MainWindow(yafaray::yafrayInterface_t *interf, int resx, int resy, int bStartX, int bStartY, Settings settings);
 	~MainWindow();
 
@@ -96,7 +93,6 @@ private:
 	QTime timeMeasure;		// time measure for the render
 	AnimWorking* anim;
 	bool renderSaved;
-	//ConsoleRedir* cRedir;
 };
 
 #endif
