@@ -96,7 +96,7 @@ inline float fLog2(float x)
 inline float fPow(float a, float b)
 {
 #ifdef FAST_MATH
-	return (float)fExp2(fLog2(a) * b);
+	return fExp2(fLog2(a) * b);
 #else
 	return pow(a,b);
 #endif
