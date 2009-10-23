@@ -93,6 +93,7 @@ private:
 	QTime timeMeasure;		// time measure for the render
 	AnimWorking* anim;
 	bool renderSaved;
+	bool renderCancelled;
 };
 
 #endif

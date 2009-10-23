@@ -107,6 +107,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	setWindowIcon(QIcon(yafIcon));
 	
 	renderSaved = false;
+	renderCancelled = false;
 	
 	m_render = new RenderWidget(m_ui->renderArea);
 	m_output = new QtOutput(m_render);
@@ -219,6 +220,8 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	else
 	{
 		slotCancel();
+		
+		if(renderCancelled) app->exit(1); //check if a render was stopped and exit with the appropiate code
 		e->accept();
 	}
 
@@ -230,6 +233,8 @@ void MainWindow::slotRender()
 	timeMeasure.start();
 	m_ui->yafLabel->setText(tr("Rendering image..."));
 	m_render->startRendering();
+	renderSaved = false;
+	renderCancelled = false;
 	m_worker->start();
 }
 
@@ -246,7 +251,8 @@ void MainWindow::slotFinished()
 		rt = QString("Image Auto-saved. ");
 		if (autoClose)
 		{
-			app->exit(0);
+			if(renderCancelled) app->exit(1);
+			else app->quit();
 			return;
 		}
 	}
@@ -295,7 +301,8 @@ void MainWindow::slotFinished()
 	
 	if (autoClose)
 	{
-		app->exit(0);
+		if(renderCancelled) app->exit(1);
+		else app->quit();
 		return;
 	}
 
@@ -436,6 +443,8 @@ void MainWindow::slotCancel()
 {
 	// cancel the render and cleanup, especially wait for the worker to finish up
 	// (otherwise the app will crash (if this is followed by a quit))
+	if(m_render->isRendering()) renderCancelled = true;
+
 	interf->abort();
 	m_worker->wait();
 
