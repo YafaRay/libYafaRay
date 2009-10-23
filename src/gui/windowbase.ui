@@ -115,7 +115,7 @@
              <x>0</x>
              <y>0</y>
              <width>183</width>
-             <height>77</height>
+             <height>78</height>
             </rect>
            </property>
           </widget>
@@ -165,14 +165,8 @@
      <x>0</x>
      <y>0</y>
      <width>220</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Bitstream Vera Sans</family>
-     <kerning>true</kerning>
-    </font>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">

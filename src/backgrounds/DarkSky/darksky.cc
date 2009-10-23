@@ -157,9 +157,9 @@ color_t darkSkyBackground_t::getSunColorFromPerez()
 	double pCosTheta = (thetaS > M_PI_2)?0.0:cosThetaS;
 	color_t sunColor = convert.fromxyY
 	(
-		PerezFunction(perez_x, pCosTheta, 0.0, 1.0, zenith_x),
-		PerezFunction(perez_y, pCosTheta, 0.0, 1.0, zenith_y),
-		PerezFunction(perez_Y, pCosTheta, 0.0, 1.0, zenith_Y)
+		PerezFunction(perez_x, pCosTheta, 1e-6f, 1.f, zenith_x),
+		PerezFunction(perez_y, pCosTheta, 1e-6f, 1.f, zenith_y),
+		PerezFunction(perez_Y, pCosTheta, 1e-6f, 1.f, zenith_Y)
 	);
 	return (sunColor / sunColor.maximum()) * 0.5; //this is to let the color be affected by power
 }
@@ -169,7 +169,7 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	int L, uL;
 	float kgLm, kwaLmw, mw;
     float Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
-	color_t sXYZ(0.0);
+	color_t sXYZ(0.5);
 	color_t tmpCol(0.0);
 
 	float B = (0.04608365822050 * T) - 0.04586025928522;
@@ -186,21 +186,11 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	mw = m * w;
 	lm = -m * l;
 	
-	if(nightSky)
-	{
-		m1 = -0.008735;
-		mB = -B;
-		am = -a * m;
-		m4 = -4.08 * m;
-	}
-	else
-	{
-		m1 = -0.008735 * m;
-		mB = -B * m;
-		am = -a;
-		m4 = -4.08;
-	}
-
+	m1 = -0.008735;
+	mB = -B;
+	am = -a * m;
+	m4 = -4.08 * m;
+	
 	for(L = 360; L < 835; L+=5)
 	{
 		uL = L * 1000;
@@ -213,7 +203,7 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 		Gas = fExp((-1.41 * kgLm) / fPow(1 + (118.93 * kgLm), 0.45));
 		Water = fExp((-0.2385 * kwaLmw) / fPow(1 + (20.07 * kwaLmw), 0.45));
 
-		tmpCol = chromaMatch(L) * sunRadianceCurve(L) * Rayleigh * Angstrom * Ozone * Gas * Water;
+		tmpCol = sunRadianceCurve(L) * Rayleigh * Angstrom * Ozone * Gas * Water;
 		sXYZ = 1.0 - ((1.0 - sXYZ)*(1.0 - convert.fromXYZ(tmpCol)));
 	}
 
@@ -249,10 +239,10 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	
 	cosTheta = Iw.z;
 	
-	if(cosTheta < 0.0)
+	if(cosTheta < 1e-6f)
 	{
 		theta = M_PI_2;
-		cosTheta = 0.0;
+		cosTheta = 1e-6f;
 	}
 	else
 	{

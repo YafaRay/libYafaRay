@@ -27,8 +27,6 @@ class NoiseVolume : public DensityVolume {
 			cover = cov;
 			sharpness = sharp * sharp;
 			density = dens;
-			std::cout << "NoiseVolume vol: " << s_a << " " << s_s << " " << l_e << " " 
-				<< sharp << " " << cov << " " << dens << " " << attgridScale << std::endl;
 		}
 		
 		virtual float Density(point3d_t p);
@@ -64,6 +62,7 @@ VolumeRegion* NoiseVolume::factory(paraMap_t &params,renderEnvironment_t &render
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
 	int attSc = 1;
+	const std::string *texName = 0;
 	
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);
@@ -79,11 +78,22 @@ VolumeRegion* NoiseVolume::factory(paraMap_t &params,renderEnvironment_t &render
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", attSc);
+	params.getParam("texture", texName);
 	
-	texture_t* noise = render.getTexture("TEmytex");
-	
-	if (noise == 0) std::cout << "mytex not found" << std::endl;
-	
+	if (!texName)
+	{
+		Y_INFO << "NoiseVolume: Noise texture not set, the volume region won't be created." << std::endl;
+		return 0;
+	}
+
+	texture_t* noise = render.getTexture(*texName);
+
+	if(!noise)
+	{
+		Y_INFO << "NoiseVolume: Noise texture '" << *texName << "' couldn't be found, the volume region won't be created." << std::endl;
+		return 0;
+	}
+		
 	NoiseVolume *vol = new NoiseVolume(color_t(sa), color_t(ss), color_t(le), g, cov, sharp, dens,
 						point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]), attSc, noise);
 	return vol;
