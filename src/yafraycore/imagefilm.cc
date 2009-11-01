@@ -123,14 +123,10 @@ void imageFilm_t::drawRenderSettings()
 	pen.y = 33 * 64;
 
 	// dark bar at the bottom
-	for ( int x = 46; x < w; x++ )
-	{
-		for ( int y = h - 46; y < h; y++ )
-		{
-			pixel_t pix;
-			pix = (*image)(x, y);
-			pix.col = pix.col * 0.4 ;
-			(*image)(x, y) = pix;
+	for ( int x = 46; x < w; x++ ) {
+		for ( int y = h - 46; y < h; y++ ) {
+			(*image)(x, y).col *= 0.4;
+			(*image)(x, y).weight = 1.0;
 		}
 	}
 	
@@ -152,7 +148,8 @@ void imageFilm_t::drawRenderSettings()
 				colorA_t col = (*logo)(lx, ly);
 				pixel_t pix = (*image)(ix, iy);
 				
-				pix.col = multColors(pix.col, col);
+				pix.col = (0.5 * pix.col) + (0.5 * col);
+				pix.weight = 1.0;
 				
 				(*image)(ix, iy) = pix;
 			}
