@@ -13,7 +13,10 @@ swig_env.Replace( SWIGFLAGS=['-c++', '-python'],
 if sys.platform == "darwin":
 	swig_env.Replace(LDMODULESUFFIX = '.so', LDMODULEPREFIX="_")
 
-swig_env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()] )
+if shared_env['YF_PYTHON']:
+	swig_env.Append(CPPPATH=[shared_env['YF_PYTHON_INC']] )
+else:
+	swig_env.Append(CPPPATH=[distutils.sysconfig.get_python_inc()] )
 swig_env.Append(LIBS = [ shared_env['YF_CORELIB'], 'yafarayplugin'] )
 swig_env.Append(LIBPATH = ['#build/yafraycore', '#build/interface', shared_env['YF_PYTHON_LIBPATH'] ])
 swig_env.Append(CPPDEFINES= ['BUILDING_YAFRAYPLUGIN'])

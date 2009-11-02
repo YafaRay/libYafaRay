@@ -68,6 +68,9 @@ def read_opts(cfiles, cargs):
 		('YF_QTDIR', 'Qt base path getting used for QTDIR environment var', '/usr/share/qt4'),
 		('YF_QT4_LIB', 'Qt library files', 'QtGui QtCore'),
 
+		('YF_PYTHON', 'Python prefix', ''),
+		('YF_PYTHON_VERSION', 'Python version', ''),
+		('YF_PYTHON_INC', 'Python include dir', ''),
 		('YF_PYTHON_LIBPATH', 'Python lib dir', '')
 	);
 	return opts

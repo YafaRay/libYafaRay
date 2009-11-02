@@ -45,4 +45,11 @@ YF_FREETYPE_LIB = 'freetype'
 ### Miscellaneous
 YF_MISC_LIB = 'dl'
 
+# Qt
 WITH_YF_QT='true'
+
+# Python
+#YF_PYTHON = '/usr'
+#YF_PYTHON_VERSION = '3.1'
+#YF_PYTHON_INC = '${YF_PYTHON}/include/python${YF_PYTHON_VERSION}'
+#YF_PYTHON_LIBPATH = '${YF_PYTHON}/lib/python${YF_PYTHON_VERSION}'
