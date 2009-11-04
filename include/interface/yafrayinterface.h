@@ -36,7 +36,8 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 			in this state only vertices, UVs and triangles can be created
 			\param id returns the ID of the created mesh
 		*/
-		virtual bool startTriMesh(unsigned int &id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		virtual unsigned int getNextFreeID();
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle

@@ -125,7 +125,7 @@ class YAFRAYCORE_EXPORT scene_t
 		//bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
 		bool startGeometry();
 		bool endGeometry();
-		bool startTriMesh(objID_t &id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		bool endTriMesh();
 		int  addVertex(const point3d_t &p);
 		int  addVertex(const point3d_t &p, const point3d_t &orco);
@@ -140,6 +140,7 @@ class YAFRAYCORE_EXPORT scene_t
 		
 		bool addLight(light_t *l);
 		bool addMaterial(material_t *m, const char* name);
+		objID_t getNextFreeID();
 		bool addObject(object3d_t *obj, objID_t &id);
 		void addVolumeRegion(VolumeRegion* vr) { volumes.push_back(vr); }
 		void setCamera(camera_t *cam);

@@ -112,21 +112,13 @@ bool scene_t::endGeometry()
 	return true;
 }
 
-bool scene_t::startTriMesh(objID_t &id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = type & 0xFF;
 	if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
 	
-	id = state.nextFreeID;
-	//create new entry for object, assert that no ID collision happens:
-	if(meshes.find(id) != meshes.end())
-	{
-		std::cerr << "program error! ID already in use!\n"; return false;
-	}
-	//create new triangle object:
-	objData_t &nObj = meshes[state.nextFreeID];
-	++state.nextFreeID;
+	objData_t &nObj = meshes[id];
 	switch(ptype)
 	{
 		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco); 
@@ -799,18 +791,31 @@ bool scene_t::render()
 //! does not do anything yet...maybe never will
 bool scene_t::addMaterial(material_t *m, const char* name) { return false; }
 
-bool scene_t::addObject(object3d_t *obj, objID_t &id)
-{
+objID_t scene_t::getNextFreeID() {
+	objID_t id;
 	id = state.nextFreeID;
 	//create new entry for object, assert that no ID collision happens:
 	if(meshes.find(id) != meshes.end())
 	{
-		std::cerr << "program error! ID already in use!\n"; return false;
+		std::cerr << "program error! ID already in use!\n"; return 0;
 	}
-	//create new triangle object:
-	objects[state.nextFreeID] = obj;
 	++state.nextFreeID;
-	return true;
+	return id;
+}
+
+bool scene_t::addObject(object3d_t *obj, objID_t &id)
+{
+	id = getNextFreeID();
+	if( id>0 )
+	{
+		//create new triangle object:
+		objects[id] = obj;
+		return true;
+	} 
+	else
+	{
+		return false;
+	}
 }
 
 __END_YAFRAY

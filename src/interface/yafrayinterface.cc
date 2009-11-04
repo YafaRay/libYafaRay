@@ -79,20 +79,33 @@ bool yafrayInterface_t::startGeometry() { return scene->startGeometry(); }
 
 bool yafrayInterface_t::endGeometry() { return scene->endGeometry(); }
 
-bool yafrayInterface_t::startTriMesh(unsigned int &id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+unsigned int yafrayInterface_t::getNextFreeID() {
+	objID_t id;
+	id = scene->getNextFreeID();
+	return id;
+}
+
+bool yafrayInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
-	objID_t _id;
-	bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type);
-	id = _id;
+	bool success = scene->startTriMesh(id, vertices, triangles, hasOrco, hasUV, type);
 	return success;
 }
 
 bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
+	Y_WARNING << "This method is going to be removed, please use getNextFreeID and startTriMesh for trimesh generation" << std::endl;
 	objID_t _id;
-	bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type);
-	*id = _id;
-	return success;
+	_id = scene->getNextFreeID();
+	if ( _id > 0 )
+	{
+		bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type);
+		*id = _id;
+		return success;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool yafrayInterface_t::endTriMesh() { return scene->endTriMesh(); }
