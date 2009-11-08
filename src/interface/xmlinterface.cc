@@ -58,9 +58,13 @@ bool xmlInterface_t::startGeometry() { return true; }
 
 bool xmlInterface_t::endGeometry() { return true; }
 
-bool xmlInterface_t::startTriMesh(unsigned int &id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+unsigned int xmlInterface_t::getNextFreeID() {
+        return ++nextObj;
+}
+
+
+bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
-	id = ++nextObj;
 	last_mat = 0;
 	n_uvs = 0;
 	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles 

@@ -111,7 +111,8 @@ class xmlInterface_t: public yafrayInterface_t
 		virtual void loadPlugins(const char *path);
 		virtual bool startGeometry();
 		virtual bool endGeometry();
-		virtual bool startTriMesh(unsigned int &id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		virtual unsigned int getNextFreeID();
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool endTriMesh();
 		virtual int  addVertex(double x, double y, double z);
