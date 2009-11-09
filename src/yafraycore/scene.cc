@@ -112,6 +112,118 @@ bool scene_t::endGeometry()
 	return true;
 }
 
+bool scene_t::startCurveMesh(objID_t id, int vertices)
+{
+	if(state.stack.front() != GEOMETRY) return false;
+	int ptype = 0 & 0xFF;
+	//if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
+
+	objData_t &nObj = meshes[id];
+
+	//TODO: switch?
+	// Allocate triangles to render the curve
+	nObj.obj = new triangleObject_t( 2 * (vertices-1) , false, false);
+	//nObj.obj->setVisibility( !(0 & INVISIBLEM) );
+	nObj.type = ptype;
+	state.stack.push_front(OBJECT);
+	state.changes |= C_GEOM;
+	state.orco=false;
+	state.curObj = &nObj;
+
+	nObj.points.reserve(2*vertices);
+	return true;
+}
+
+bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd)
+{
+	if(state.stack.front() != OBJECT) return false;
+
+	// TODO: Check if we have at least 2 vertex...
+
+	// extrude vertices and create faces
+	std::vector<point3d_t> &points = state.curObj->points;
+	float r;	//current radius
+	int i;
+	point3d_t o,a,b;
+	vector3d_t N(0),u(0),v(0);
+	int n = points.size();
+	float step = ( strandEnd - strandStart ) / (n-1);
+	// Path vertex extruding, calcolare il triangolo equilatero
+	for (i=0;i<n;i++){
+		o = points[i];
+		r = strandStart + i * step;
+		// Last point keep previous tangent plane
+		u = vector3d_t(1.0,0,0);
+		v = vector3d_t(0,1.0,0);
+		/*if (i<n-1)
+		{
+			N = points[i+1]-points[i];
+			N.normalize();
+			createCS(N,u,v);
+		}*/
+		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
+		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
+		points[i] += v * r;
+		state.curObj->points.push_back(a);
+		state.curObj->points.push_back(b);
+	}
+
+	triangle_t tri;
+	int a1,a2,a3,b1,b2,b3;
+	for (i=0;i<n-1;i++){
+		a1 = i;
+		a2 = 2*i+n;
+		a3 = a2 +1;
+		b1 = i+1;
+		b2 = a2 +2;
+		b3 = b2 +1;
+		// Close bottom
+		if (i == 0)
+		{
+			tri = triangle_t(a1, a2, a3, state.curObj->obj);
+			tri.setMaterial(mat);
+			state.curTri = state.curObj->obj->addTriangle(tri);
+		}
+		
+		// Fill
+		tri = triangle_t(a1, b2, b1, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+
+		tri = triangle_t(a1, a2, b2, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+		
+		tri = triangle_t(a2, b3, b2, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+
+		tri = triangle_t(a2, a3, b3, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+		
+		tri = triangle_t(b3, a3, a1, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+
+		tri = triangle_t(b3, a1, b1, state.curObj->obj);
+		tri.setMaterial(mat);
+		state.curTri = state.curObj->obj->addTriangle(tri);
+		
+	}
+	// Close top
+	tri = triangle_t(i, 2*i+n, 2*i+n+1, state.curObj->obj);
+	tri.setMaterial(mat);
+	state.curTri = state.curObj->obj->addTriangle(tri);
+
+	state.curObj->obj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
+	state.curObj->obj->finish();
+
+	state.stack.pop_front();
+	//smoothMesh(0, 181.0);
+	return true;
+}
+
 bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
 	if(state.stack.front() != GEOMETRY) return false;
@@ -327,7 +439,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 	else if(angle>0.1)// angle dependant smoothing
 	{
 		PFLOAT thresh = fCos(degToRad(angle));
-		std::cout << "smoothing angle:" << angle << " (thresh = "<< thresh << ")" << std::endl;
+		//std::cout << "smoothing angle:" << angle << " (thresh = "<< thresh << ")" << std::endl;
 		std::vector<vector3d_t> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex
@@ -384,7 +496,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 			vnormals.clear();
 			vn_index.clear();
 		}
-		std::cout << "vertices:" << points.size() << ", vertex normals:" << normals.size() << std::endl;
+		//std::cout << "vertices:" << points.size() << ", vertex normals:" << normals.size() << std::endl;
 		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
 		odat->obj->is_smooth = true;
 	}

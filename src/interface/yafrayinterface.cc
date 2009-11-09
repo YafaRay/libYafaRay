@@ -91,6 +91,13 @@ bool yafrayInterface_t::startTriMesh(unsigned int id, int vertices, int triangle
 	return success;
 }
 
+bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices)
+{
+        bool success = scene->startCurveMesh(id, vertices);
+        return success;
+}
+
+
 bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
 	Y_WARNING << "This method is going to be removed, please use getNextFreeID and startTriMesh for trimesh generation" << std::endl;
@@ -109,6 +116,7 @@ bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int tria
 }
 
 bool yafrayInterface_t::endTriMesh() { return scene->endTriMesh(); }
+bool yafrayInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd) { return scene->endCurveMesh(mat, strandStart, strandEnd); }
 
 int  yafrayInterface_t::addVertex(double x, double y, double z) { return scene->addVertex( point3d_t(x,y,z) ); }
 
