@@ -153,14 +153,14 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		o = points[i];
 		r = strandStart + i * step;
 		// Last point keep previous tangent plane
-		u = vector3d_t(1.0,0,0);
-		v = vector3d_t(0,1.0,0);
-		/*if (i<n-1)
+		//u = vector3d_t(1.0,0,0);
+		//v = vector3d_t(0,1.0,0);
+		if (i<n-1)
 		{
 			N = points[i+1]-points[i];
 			N.normalize();
 			createCS(N,u,v);
-		}*/
+		}
 		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
 		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
 		points[i] += v * r;
@@ -180,7 +180,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		// Close bottom
 		if (i == 0)
 		{
-			tri = triangle_t(a1, a2, a3, state.curObj->obj);
+			tri = triangle_t(a1, a3, a2, state.curObj->obj);
 			tri.setMaterial(mat);
 			state.curTri = state.curObj->obj->addTriangle(tri);
 		}
