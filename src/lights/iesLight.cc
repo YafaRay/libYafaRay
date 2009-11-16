@@ -32,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, const std::string iesFile, int smpls, bool sSha, float ang);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -75,14 +75,12 @@ class iesLight_t : public light_t
 		bool IESOk;
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, int res, float blurS, const std::string iesFile, int smpls, bool sSha, float ang):
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang):
 	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
 {
-	iesData = new IESData_t(blurS, res);
+	iesData = new IESData_t();
 	
-	IESOk = iesData->parseIESFile(iesFile);
-
-	if(IESOk)
+	if((IESOk = iesData->parseIESFile(iesFile)))
 	{
 		ndir = (from - to);
 		ndir.normalize();
@@ -126,7 +124,7 @@ bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) c
 
 	getAngles(u, v, ldir, cosa);
 
-	col = color * iesData->getRadianceBlurred(u, v) * iDistSqrt;
+	col = color * iesData->getRadiance(u, v) * iDistSqrt;
 	
 	wi.tmax = dist;
 	wi.dir = ldir;
@@ -154,7 +152,7 @@ bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) 
 	float u, v;
 	getAngles(u, v, wi.dir, cosa);
 	
-	float rad = iesData->getRadianceBlurred(u, v);
+	float rad = iesData->getRadiance(u, v);
 	
 	if(rad == 0.f) return false;
 
@@ -188,7 +186,7 @@ color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ra
 	float u, v;
 	getAngles(u, v, ray.dir, cosa);
 	
-	float rad = iesData->getRadianceBlurred(u, v);
+	float rad = iesData->getRadiance(u, v);
 
 	ipdf = rad;
 
@@ -205,7 +203,7 @@ color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	float u, v;
 	getAngles(u, v, wo, wo * dir);
 	
-	float rad = iesData->getRadianceBlurred(u, v);
+	float rad = iesData->getRadiance(u, v);
 
 	s.dirPdf = (rad>0.f) ? (totEnergy / rad) : 0.f;
 	s.areaPdf = 1.f;
@@ -226,7 +224,7 @@ void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &
 	float u, v;
 	getAngles(u, v, wo, cosa);
 
-	float rad = iesData->getRadianceBlurred(u, v);
+	float rad = iesData->getRadiance(u, v);
 
 	dirPdf = (rad>0.f) ? (totEnergy / rad) : 0.f;
 }
@@ -238,8 +236,6 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	color_t color(1.0);
 	CFLOAT power = 1.0;
 	std::string file;
-	float blurS = 0;
-	int res = 0;
 	int sam = 16; //wild goose... sorry guess :D
 	bool sSha = false;
 	float ang = 180.f; //full hemi
@@ -248,14 +244,12 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("to",to);
 	params.getParam("color",color);
 	params.getParam("power",power);
-	params.getParam("resolution", res);
-	params.getParam("blurStrength", blurS);
 	params.getParam("file", file);
 	params.getParam("samples", sam);
 	params.getParam("soft_shadows", sSha);
 	params.getParam("cone_angle", ang);
 
-	iesLight_t* light = new iesLight_t(from, to, color, power, res, blurS, file, sam, sSha, ang);
+	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang);
 
 	if (!light->isIESOk())
 	{

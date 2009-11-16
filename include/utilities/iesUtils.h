@@ -37,16 +37,14 @@ class IESData_t
 {
 public:
 
-	IESData_t(float blur, int reso);
+	IESData_t();
 	~IESData_t();
 	bool parseIESFile(const std::string file);
-	float getRadianceBlurred(float u, float v) const;
+	float getRadiance(float hAng, float vAng) const;
 	float getMaxVAngle() const { return maxVAngle; }
 	
 private:
 
-	bool getRadiance(float hAng, float vAng, float& rad) const;
-	float blurRadiance(float hAng, float vAng) const;
 	
 	float* vertAngleMap; //<! vertical spherical angles
 	float* horAngleMap; //<! horizontal sperical angles
@@ -55,25 +53,13 @@ private:
 	int vertAngles;
 	
 	float maxRad;
-	float resStep;
-	float resBound;
-	
 	float maxVAngle;
 	
 	int type;
-	
-	bool blurred;
 };
 
-IESData_t::IESData_t(float blur, int reso)
+IESData_t::IESData_t()
 {
-	blurred = !(blur < 0.5f || reso < 2);
-	
-	if(blurred)
-	{
-		resStep = blur/(float)reso;
-		resBound = (float)reso * 0.5f;
-	}
 }
 
 IESData_t::~IESData_t()
@@ -87,28 +73,11 @@ IESData_t::~IESData_t()
 	}
 }
 
-float IESData_t::getRadianceBlurred(float hAng, float vAng) const
-{
-
-	float ret = 0.f;
-
-	if (!blurred)
-	{
-		getRadiance(hAng, vAng, ret);
-	}
-	else
-	{
-		ret = blurRadiance(hAng, vAng);
-	}
-
-	return (ret * maxRad);
-}
-
-//! hAng and vAng in degrees, rad is the buffer for the radiance at that angle
-bool IESData_t::getRadiance(float h, float v, float& rad) const {
+//! hAng and vAng in degrees, returns the radiance at that angle
+float IESData_t::getRadiance(float h, float v) const {
 	
 	int x = 0, y = 0;
-	rad = 0.f;
+	float rad = 0.f;
 	float hAng = 0.f, vAng = 0.f;
 	
 	if(type == TYPE_C)
@@ -166,35 +135,10 @@ bool IESData_t::getRadiance(float h, float v, float& rad) const {
 		float rx2 = ((1.f - dX) * radMap[x1][y2]) + (dX * radMap[x2][y2]);
 		
 		rad = ((1.f - dY) * rx1) + (dY * rx2);
-		if(false)
-		{
-			Y_INFO << "rad:" << rad;
-			std::cout << " | dX:" << dX << " dY: " << dY;
-			std::cout << " | Angles (h,x1,x2) | (v,y1,y2): (" << hAng << ", " << horAngleMap[x1] << ", " << horAngleMap[x2] << ") | (" << vAng << ", " << vertAngleMap[y1] << ", " << vertAngleMap[y2] << ")";
-			std::cout << " rx1:" << rx1 << " rx2: " << rx2 << "\n";
-		}
 	}
 
 	
-	return true;
-}
-
-float IESData_t::blurRadiance(float hAng, float vAng) const
-{
-	float ret = 0.f;
-	int hits = 0;
-	for (float i = -resBound; i < resBound; i += resStep)
-	{
-		float tmp;
-		
-		if (getRadiance(hAng + resStep , vAng + resStep, tmp))
-		{
-			ret += tmp;
-			hits++;
-		}
-	}
-
-	return (hits > 0) ? ret / (float)hits : 0.f;
+	return (rad * maxRad);
 }
 
 // IES description: http://lumen.iee.put.poznan.pl/kw/iesna.txt
