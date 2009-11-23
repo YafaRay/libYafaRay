@@ -153,7 +153,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		o = points[i];
 		if (strandShape < 0)
 		{
-			r = strandStart + pow(i/(n-1) ,1+strandShape) * ( strandEnd - strandStart );
+			r = strandStart + pow((float)i/(n-1) ,1+strandShape) * ( strandEnd - strandStart );
 		}
 		else
 		{
