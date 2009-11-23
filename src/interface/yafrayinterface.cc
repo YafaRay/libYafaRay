@@ -116,7 +116,7 @@ bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int tria
 }
 
 bool yafrayInterface_t::endTriMesh() { return scene->endTriMesh(); }
-bool yafrayInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd) { return scene->endCurveMesh(mat, strandStart, strandEnd); }
+bool yafrayInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape) { return scene->endCurveMesh(mat, strandStart, strandEnd, strandShape); }
 
 int  yafrayInterface_t::addVertex(double x, double y, double z) { return scene->addVertex( point3d_t(x,y,z) ); }
 

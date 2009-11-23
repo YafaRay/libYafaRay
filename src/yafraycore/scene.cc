@@ -134,12 +134,13 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 	return true;
 }
 
-bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd)
+bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape)
 {
 	if(state.stack.front() != OBJECT) return false;
 
 	// TODO: Check if we have at least 2 vertex...
-
+	// TODO: math optimizations
+	
 	// extrude vertices and create faces
 	std::vector<point3d_t> &points = state.curObj->points;
 	float r;	//current radius
@@ -147,27 +148,36 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	point3d_t o,a,b;
 	vector3d_t N(0),u(0),v(0);
 	int n = points.size();
-	float step = ( strandEnd - strandStart ) / (n-1);
-	// Path vertex extruding, calcolare il triangolo equilatero
+	// Vertex extruding
 	for (i=0;i<n;i++){
 		o = points[i];
-		r = strandStart + i * step;
+		if (strandShape < 0)
+		{
+			r = strandStart + pow(i/(n-1) ,1+strandShape) * ( strandEnd - strandStart );
+		}
+		else
+		{
+			r = strandStart + (1 - pow(((float)(n-i-1))/(n-1) ,1-strandShape)) * ( strandEnd - strandStart );
+		}
 		// Last point keep previous tangent plane
-		//u = vector3d_t(1.0,0,0);
-		//v = vector3d_t(0,1.0,0);
 		if (i<n-1)
 		{
 			N = points[i+1]-points[i];
 			N.normalize();
 			createCS(N,u,v);
 		}
-		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
-		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
-		points[i] += v * r;
+		// TODO: thikness?
+		//a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
+		//b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
+		//points[i] += v * r;
+		a = o - (0.1 * r *v) - 1.5 * r / sqrt(3) * u;
+		b = o - (0.1 * r *v) + 1.5 * r / sqrt(3) * u;
+		
 		state.curObj->points.push_back(a);
 		state.curObj->points.push_back(b);
 	}
 
+	// Face fill
 	triangle_t tri;
 	int a1,a2,a3,b1,b2,b3;
 	for (i=0;i<n-1;i++){
@@ -220,7 +230,6 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	state.curObj->obj->finish();
 
 	state.stack.pop_front();
-	//smoothMesh(0, 181.0);
 	return true;
 }
 

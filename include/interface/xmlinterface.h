@@ -20,7 +20,9 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		virtual unsigned int getNextFreeID();
 		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		//virtual bool startCurveMesh(unsigned int id, int vertices);
 		virtual bool endTriMesh();
+		//virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 		virtual int  addVertex(double x, double y, double z);
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz);
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat);

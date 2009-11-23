@@ -128,7 +128,7 @@ class YAFRAYCORE_EXPORT scene_t
 		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		bool endTriMesh();
 		bool startCurveMesh(objID_t id, int vertices);
-		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd);
+		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 		int  addVertex(const point3d_t &p);
 		int  addVertex(const point3d_t &p, const point3d_t &orco);
 		bool addTriangle(int a, int b, int c, const material_t *mat);

@@ -46,7 +46,7 @@ class yafrayInterface_t
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual unsigned int getNextFreeID();
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
-		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd); //!< end current mesh and return to geometry state
+		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat); //!< add a triangle given vertex indices and material pointer
@@ -118,7 +118,7 @@ class xmlInterface_t: public yafrayInterface_t
 		virtual bool startCurveMesh(unsigned int id, int vertices);
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool endTriMesh();
-		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd); //!< end current mesh and return to geometry state
+		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z);
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz);
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat);
