@@ -122,7 +122,7 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 
 	//TODO: switch?
 	// Allocate triangles to render the curve
-	nObj.obj = new triangleObject_t( 2 * (vertices-1) , false, false);
+	nObj.obj = new triangleObject_t( 2 * (vertices-1) , true, false);
 	//nObj.obj->setVisibility( !(0 & INVISIBLEM) );
 	nObj.type = ptype;
 	state.stack.push_front(OBJECT);
@@ -167,11 +167,9 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 			createCS(N,u,v);
 		}
 		// TODO: thikness?
-		//a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
-		//b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
-		//points[i] += v * r;
-		a = o - (0.1 * r *v) - 1.5 * r / sqrt(3) * u;
-		b = o - (0.1 * r *v) + 1.5 * r / sqrt(3) * u;
+		// points[i] += v * r;
+		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
+		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
 		
 		state.curObj->points.push_back(a);
 		state.curObj->points.push_back(b);
@@ -180,7 +178,18 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	// Face fill
 	triangle_t tri;
 	int a1,a2,a3,b1,b2,b3;
+	float su,sv;
+	int iu,iv;
 	for (i=0;i<n-1;i++){
+		// 1D particles UV mapping
+		su = (float)i / (n-1);
+		sv = su + 1. / (n-1);
+		iu = addUV(su,su);
+		iv = addUV(sv,sv);
+		/*state.curObj->obj->uv_values.push_back(uv_t(su, su));
+		iu = (int)state.curObj->obj->uv_values.size()-1;
+		state.curObj->obj->uv_values.push_back(uv_t(sv, sv));
+		iv = (int)state.curObj->obj->uv_values.size()-1;*/
 		a1 = i;
 		a2 = 2*i+n;
 		a3 = a2 +1;
@@ -193,38 +202,63 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 			tri = triangle_t(a1, a3, a2, state.curObj->obj);
 			tri.setMaterial(mat);
 			state.curTri = state.curObj->obj->addTriangle(tri);
+			state.curObj->obj->uv_offsets.push_back(iu);
+			state.curObj->obj->uv_offsets.push_back(iu);
+			state.curObj->obj->uv_offsets.push_back(iu);
 		}
 		
 		// Fill
 		tri = triangle_t(a1, b2, b1, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		// StrandUV
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iv);
+		state.curObj->obj->uv_offsets.push_back(iv);
 
 		tri = triangle_t(a1, a2, b2, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iv);
 		
 		tri = triangle_t(a2, b3, b2, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iv);
+		state.curObj->obj->uv_offsets.push_back(iv);
 
 		tri = triangle_t(a2, a3, b3, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iv);
 		
 		tri = triangle_t(b3, a3, a1, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		state.curObj->obj->uv_offsets.push_back(iv);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iu);
 
 		tri = triangle_t(b3, a1, b1, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
+		state.curObj->obj->uv_offsets.push_back(iv);
+		state.curObj->obj->uv_offsets.push_back(iu);
+		state.curObj->obj->uv_offsets.push_back(iv);
 		
 	}
 	// Close top
 	tri = triangle_t(i, 2*i+n, 2*i+n+1, state.curObj->obj);
 	tri.setMaterial(mat);
 	state.curTri = state.curObj->obj->addTriangle(tri);
+	state.curObj->obj->uv_offsets.push_back(iv);
+	state.curObj->obj->uv_offsets.push_back(iv);
+	state.curObj->obj->uv_offsets.push_back(iv);
 
 	state.curObj->obj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
 	state.curObj->obj->finish();
