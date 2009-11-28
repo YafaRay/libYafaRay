@@ -470,18 +470,61 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	return new textureDistortedNoise_t(col1, col2, dist, size, *ntype1, *ntype2);
 }
 
+//-----------------------------------------------------------------------------------------
+// Blend Texture
+//-----------------------------------------------------------------------------------------
+
+textureBlend_t::textureBlend_t(const std::string &stype)
+{
+	// TODO: Blend Types
+}
+
+textureBlend_t::~textureBlend_t()
+{
+}
+
+CFLOAT textureBlend_t::getFloat(const point3d_t &p) const
+{
+	float blend;
+	// Transform -1..1 to 0..1
+	blend = 0.5 * ( p.x + 1. );
+	// Clipping to 0..1
+	blend = std::max(0.f, std::min(blend, 1.f));
+	
+	return blend;
+}
+
+colorA_t textureBlend_t::getColor(const point3d_t &p) const
+{
+	// TODO: colorband
+        return colorA_t(1.0,1.0,1.0,1.0);
+}
+
+texture_t *textureBlend_t::factory(paraMap_t &params, renderEnvironment_t &render)
+{
+	std::string _stype;
+	const std::string *stype=&_stype;
+	//bool invertXY = false;
+	
+	params.getParam("stype", _stype);
+	//params.getParam("invertXY", invertXY);
+	
+	return new textureBlend_t(*stype);
+}
+
 extern "C"
 {
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
+		render.registerFactory("blend",		textureBlend_t::factory);
 		render.registerFactory("clouds", 	textureClouds_t::factory);
 		render.registerFactory("marble", 	textureMarble_t::factory);
 		render.registerFactory("wood", 		textureWood_t::factory);
 		render.registerFactory("voronoi", 	textureVoronoi_t::factory);
 		render.registerFactory("musgrave", 	textureMusgrave_t::factory);
 		render.registerFactory("distorted_noise", textureDistortedNoise_t::factory);
-		render.registerFactory("rgb_cube", rgbCube_t::factory);
-		render.registerFactory("image", textureImage_t::factory);
+		render.registerFactory("rgb_cube",	rgbCube_t::factory);
+		render.registerFactory("image",		textureImage_t::factory);
 	}
 }
 

@@ -159,6 +159,17 @@ class rgbCube_t : public texture_t
 };
 
 
+class textureBlend_t : public texture_t
+{
+	public:
+		textureBlend_t(const std::string &stype);
+		virtual ~textureBlend_t();
+		
+		virtual colorA_t getColor(const point3d_t &p) const;
+		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
+};	
 __END_YAFRAY
 
 #endif // Y_BASICTEX_H
