@@ -32,7 +32,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 {
 	public:
 		enum filterType { BOX, MITCHELL, GAUSS, LANCZOS };
-		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX, renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32);
+		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX, renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32, imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR);
 		~imageFilm_t();
 		/*! initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init();
@@ -113,6 +113,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		int nPass;
 		bool showMask;
 		int tileSize;
+		imageSpliter_t::tilesOrderType tilesOrder;
 };
 
 __END_YAFRAY

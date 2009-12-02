@@ -242,10 +242,10 @@ float Gauss(float dx, float dy)
 	return std::max(0.f, float(fExp(-6 * r2) - gaussExp));
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize):
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
 	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), estimateDensity(false), numSamples(0),
-	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize)
+	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -324,7 +324,7 @@ void imageFilm_t::init()
 	if(split)
 	{
 		next_area = 0;
-		splitter = new imageSpliter_t(w, h, cx0, cy0, tileSize);
+		splitter = new imageSpliter_t(w, h, cx0, cy0, tileSize, tilesOrder);
 		area_cnt = splitter->size();
 	}
 	else area_cnt = 1;

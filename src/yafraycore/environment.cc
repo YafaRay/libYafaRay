@@ -462,6 +462,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
 {
 	const std::string *name=0;
+	const std::string *tiles_order=0;
 	int width=320, height=240, xstart=0, ystart=0;
 	float filt_sz = 1.5, gamma=1.f;
 	bool clamp = false;
@@ -478,7 +479,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("filter_type", name); // AA filter type
 	params.getParam("show_sam_pix", showSampledPixels); // Show pixels marked to be resampled on adaptative sampling
 	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
-	
+	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
@@ -486,8 +487,16 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		else if(*name == "gauss") type=imageFilm_t::GAUSS;
 	}
 	else Y_WARN_ENV << "Defaulting to Box AA filter!\n";
+
+	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::LINEAR;
+	if(tiles_order)
+	{
+		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
+		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
+	}
+	else Y_WARN_ENV << "Defaulting to Linear tiles order!\n";
 	
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder);
 	film->setClamp(clamp);
 	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
 	return film;

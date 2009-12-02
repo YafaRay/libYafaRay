@@ -8,7 +8,6 @@
 
 __BEGIN_YAFRAY
 
-
 struct renderArea_t
 {
 	renderArea_t(int x,int y,int w,int h):X(x),Y(y),W(w),H(h),
@@ -54,7 +53,8 @@ struct renderArea_t
 class imageSpliter_t
 {
 	public:
-		imageSpliter_t(int w, int h, int x0,int y0, int bsize);
+		enum tilesOrderType { LINEAR, RANDOM };
+		imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder);
 		/* return the n-th area to be rendered.
 			\return false if n is out of range, true otherwise
 		*/
@@ -71,6 +71,7 @@ class imageSpliter_t
 		};
 		int width,height,blocksize;
 		std::vector<region_t> regions;
+		tilesOrderType tilesorder;
 };
 
 __END_YAFRAY

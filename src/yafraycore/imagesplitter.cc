@@ -1,13 +1,15 @@
 #include <core_api/imagesplitter.h>
 #include <iostream>
 
+#include <algorithm>
+
 __BEGIN_YAFRAY
 
 // currently only supports creation of scanrow-ordered tiles
 // shuffling would of course be easy, but i don't find that too usefull really,
 // it does maximum damage to the coherency gain and visual feedback is medicore too
 
-imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize): blocksize(bsize)
+imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder): blocksize(bsize), tilesorder(torder)
 {
 	int nx, ny;
 	nx = (w+blocksize-1)/blocksize;
@@ -23,6 +25,12 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize): blocksiz
 			r.h = std::min(blocksize, y0+h-r.y);
 			regions.push_back(r);
 		}
+	}
+	switch(tilesorder)
+	{
+		case RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
+		case LINEAR:
+		default:	break;
 	}
 }
 
