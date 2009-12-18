@@ -308,6 +308,8 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		}
 		parser.pushState(startEl_mesh, endEl_mesh, md);
 		if(!parser.scene->startGeometry()) std::cerr << "invalid scene state on startGeometry()!" << std::endl;
+		// Get a new object ID
+		md->ID = parser.scene->getNextFreeID();
 		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type))
 		{	std::cerr << "invalid scene state on startTriMesh()!" << std::endl; }
 		//std::cout << "starting <" << el << ">" << std::endl;
