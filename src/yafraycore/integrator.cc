@@ -33,14 +33,14 @@ void renderWorker_t::body()
 	renderArea_t a;
 	while(imageFilm->nextArea(a))
 	{
+		int s=scene->getSignals();
+		if(s & Y_SIG_ABORT) break;
 		integrator->renderTile(a, samples, offset, adaptive, threadID);
 //		imageFilm->finishArea(a);
 		control->countCV.lock();
 		control->areas.push_back(a);
 		control->countCV.signal();
 		control->countCV.unlock();
-		int s=scene->getSignals();
-		if(s & Y_SIG_ABORT) break;
 	}
 	control->countCV.lock();
 	++(control->finishedThreads);
@@ -62,11 +62,11 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	renderPass(AA_samples, 0, false);
 	for(int i=1; i<AA_passes; ++i)
 	{
+		int s = scene->getSignals();
+		if(s & Y_SIG_ABORT) break;
 		imageFilm->setAAThreshold(AA_threshold);
 		imageFilm->nextPass(true);
 		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
-		int s = scene->getSignals();
-		if(s & Y_SIG_ABORT) break;
 	}
 	gTimer.stop("rendert");
 	std::cout << "overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
