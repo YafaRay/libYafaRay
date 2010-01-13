@@ -33,8 +33,7 @@ void renderWorker_t::body()
 	renderArea_t a;
 	while(imageFilm->nextArea(a))
 	{
-		int s=scene->getSignals();
-		if(s & Y_SIG_ABORT) break;
+		if(scene->getSignals() & Y_SIG_ABORT) break;
 		integrator->renderTile(a, samples, offset, adaptive, threadID);
 //		imageFilm->finishArea(a);
 		control->countCV.lock();
@@ -62,8 +61,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	renderPass(AA_samples, 0, false);
 	for(int i=1; i<AA_passes; ++i)
 	{
-		int s = scene->getSignals();
-		if(s & Y_SIG_ABORT) break;
+		if(scene->getSignals() & Y_SIG_ABORT) break;
 		imageFilm->setAAThreshold(AA_threshold);
 		imageFilm->nextPass(true);
 		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
@@ -107,10 +105,9 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 		renderArea_t a;
 		while(imageFilm->nextArea(a))
 		{
+			if(scene->getSignals() & Y_SIG_ABORT) break;
 			renderTile(a, samples, offset, adaptive,0);
 			imageFilm->finishArea(a);
-			int s = scene->getSignals();
-			if(s & Y_SIG_ABORT) break;
 		}
 #ifdef USING_THREADS
 	}
@@ -139,6 +136,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	{
 		for(int j=a.X; j<end_x; ++j)
 		{
+			if(scene->getSignals() & Y_SIG_ABORT) break;
 			if(adaptive)
 			{
 				if(!imageFilm->doMoreSamples(j, i)) continue;
