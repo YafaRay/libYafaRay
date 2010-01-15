@@ -167,36 +167,65 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 	CFLOAT du, dv;
 	if(tex_coords == TXC_UV)
 	{
-		point3d_t p1 = point3d_t(sp.U+deltaU, sp.V, 0.f);
-		point3d_t p2 = point3d_t(sp.U-deltaU, sp.V, 0.f);
-		p1 = doMapping(p1,sp.Ng);
-		p2 = doMapping(p2,sp.Ng);
-		CFLOAT dfdu = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaU;
-		p1 = point3d_t(sp.U, sp.V+deltaV, 0.f);
-		p2 = point3d_t(sp.U, sp.V-deltaV, 0.f);
-		p1 = doMapping(p1,sp.Ng);
-		p2 = doMapping(p2,sp.Ng);
-		CFLOAT dfdv = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaV;
-		// now we got the derivative in UV-space, but need it in shading space:
-		vector3d_t vecU = /* deltaU * */ sp.dSdU;
-		vector3d_t vecV = /* deltaV * */ sp.dSdV;
-		vecU.z = dfdu;
-		vecV.z = dfdv;
-		// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
-		vector3d_t norm = vecU ^ vecV;
-		if(std::fabs(norm.z) > 1e-30f)
-		{
-			PFLOAT NF = 1.0/norm.z * bumpStr;
-			du = norm.x*NF;
-			dv = norm.y*NF;
+		if (tex->isNormalmap())
+                {
+			point3d_t p = point3d_t(sp.U, sp.V, 0.f);
+			p = doMapping(p,sp.Ng);
+			CFLOAT dfdu = 2*tex->getColor(p).R -1.0f;
+			CFLOAT dfdv = 2*tex->getColor(p).G -1.0f;
+			CFLOAT dfdw = 2*tex->getColor(p).B -1.0f;
+			vector3d_t t = vector3d_t(1,0,0);
+			vector3d_t b = vector3d_t(0,1,0);
+			vector3d_t n = vector3d_t(0,0,1);
+			vector3d_t norm = dfdu*t + dfdv*b + dfdw*n;
+			// Convert norm into shading space
+			vector3d_t vecU,vecV;
+			createCS(sp.Ng,vecU,vecV);
+			vector3d_t dSdU,dSdV;
+			dSdU.x = vecU  * sp.dPdU;
+			dSdU.y = vecV  * sp.dPdU;
+			dSdU.z = sp.Ng * sp.dPdU;
+			dSdV.x = vecU  * sp.dPdV;
+			dSdV.y = vecV  * sp.dPdV;
+			dSdV.z = sp.Ng * sp.dPdV;
+			du = (norm * dSdU.normalize())*bumpStr;
+			dv = -(norm * dSdV.normalize())*bumpStr;
 		}
-		else du = dv = 0.f;
-		if(debug)
+		else
 		{
-			std::cout << "deltaU:" << deltaU << ", deltaV:" << deltaV << std::endl;
-			std::cout << "dfdu:" << dfdu << ", dfdv:" << dfdv << std::endl;
-			std::cout << "vecU:" << vecU << ", vecV:" << vecV << ", norm:" << norm << std::endl;
-			std::cout << "du:" << du << ", dv:" << dv << std::endl;
+			point3d_t p1 = point3d_t(sp.U+deltaU, sp.V, 0.f);
+			point3d_t p2 = point3d_t(sp.U-deltaU, sp.V, 0.f);
+			p1 = doMapping(p1,sp.Ng);
+			p2 = doMapping(p2,sp.Ng);
+			CFLOAT dfdu = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaU;
+			p1 = point3d_t(sp.U, sp.V+deltaV, 0.f);
+			p2 = point3d_t(sp.U, sp.V-deltaV, 0.f);
+			p1 = doMapping(p1,sp.Ng);
+			p2 = doMapping(p2,sp.Ng);
+			CFLOAT dfdv = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaV;
+			// now we got the derivative in UV-space, but need it in shading space:
+			vector3d_t vecU = /* deltaU * */ sp.dSdU;
+			vector3d_t vecV = /* deltaV * */ sp.dSdV;
+			vecU.normalize();
+			vecV.normalize();
+			vecU.z = dfdu;
+			vecV.z = dfdv;
+			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
+			vector3d_t norm = vecU ^ vecV;
+			if(std::fabs(norm.z) > 1e-30f)
+			{
+				PFLOAT NF = 1.0/norm.z * bumpStr * 0.01f;
+				du = norm.x*NF;
+				dv = norm.y*NF;
+			}
+			else du = dv = 0.f;
+			/*if(debug)
+			{
+				std::cout << "deltaU:" << deltaU << ", deltaV:" << deltaV << std::endl;
+				std::cout << "dfdu:" << dfdu << ", dfdv:" << dfdv << std::endl;
+				std::cout << "vecU:" << vecU << ", vecV:" << vecV << ", norm:" << norm << std::endl;
+				std::cout << "du:" << du << ", dv:" << dv << std::endl;
+			}*/
 		}
 	}
 	else
@@ -301,7 +330,7 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	tm->scale = vector3d_t(scale);
 	tm->offset = vector3d_t(2*offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
 	tm->doScalar = scalar;
-	tm->bumpStr = bumpStr * 0.04;
+	tm->bumpStr = bumpStr;
 	tm->mtx = mtx;
 	tm->setup();
 	return tm;
