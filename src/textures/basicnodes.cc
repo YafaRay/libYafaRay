@@ -2,6 +2,7 @@
 #include <textures/basicnodes.h>
 #include <textures/layernode.h>
 #include <core_api/object3d.h>
+#include <core_api/camera.h>
 
 __BEGIN_YAFRAY
 
@@ -140,7 +141,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 		case TXC_UV:	texpt = eval_uv(sp, vmap); Ng = sp.Ng; break;
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 		case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
-		case TXC_WIN:	texpt= state.screenpos; Ng = sp.Ng; break;
+		case TXC_WIN:   texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
 		case TXC_STICK:	// Not implemented yet use GLOB
 		case TXC_STRESS:// Not implemented yet use GLOB
 		case TXC_TAN:	// Not implemented yet use GLOB
@@ -247,14 +248,14 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		{
 			case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 			case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
-			case TXC_WIN:	texpt= state.screenpos; Ng = sp.Ng; break;
+			case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
 			case TXC_STICK:	// Not implemented yet use GLOB
 			case TXC_STRESS:// Not implemented yet use GLOB
 			case TXC_TAN:	// Not implemented yet use GLOB
 			case TXC_NOR:	// Not implemented yet use GLOB
 			case TXC_REFL:	// Not implemented yet use GLOB
 			case TXC_GLOB:	// Nothing to do for GLOB
-			default: texpt = sp.P; Ng = sp.Ng; break;
+			default:	texpt = sp.P; Ng = sp.Ng; break;
 		}
 		//doMapping(...)
 		//placeholder!

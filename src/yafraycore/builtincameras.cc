@@ -22,7 +22,7 @@
 
 #include <yafraycore/builtincameras.h>
 #include <core_api/params.h>
-#include <core_api/environment.h>
+//#include <core_api/environment.h>
 
 __BEGIN_YAFRAY
 
@@ -31,11 +31,15 @@ perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, 
 		PFLOAT df, PFLOAT ap, PFLOAT dofd, bokehType bt, bkhBiasType bbt, PFLOAT bro)
 		:bkhtype(bt), bkhbias(bbt)
 {
-	eye = pos;
+	position = pos;
 	aperture = ap;
 	dof_distance = dofd;
+
+	// Screen resolution
 	resx = _resx;
 	resy = _resy;
+	
+	// Calculate and store camera axis
 	vup = up - pos;
 	vto = look - pos;
 	vright = vup ^ vto;
@@ -44,17 +48,17 @@ perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, 
 	vright.normalize();
 	vright = -vright; // due to the order in which we derive the vectors from input it comes out as "vleft"...
 	
-	fdist = vto.normLen();
 	camX = vright;
 	camY = vup;
 	camZ = vto;
-	
+	camZ.normalize();
+
+	fdist = vto.normLen();
 	dof_rt = vright * aperture; // for dof, premul with aperture
 	dof_up = vup * aperture;
-	
 	aspect_ratio = aspect * (PFLOAT)resy / (PFLOAT)resx;
-	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
 	
+	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
 	vto = (vto * df) - 0.5 * (vup + vright);
 	vup /= (PFLOAT)resy;
 	vright /= (PFLOAT)resx;	
@@ -135,8 +139,8 @@ ray_t perspectiveCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOA
 {
 	ray_t ray;
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
-
-	ray.from = eye;
+	
+	ray.from = position;
 	ray.dir = vright*px + vup*py + vto;
 	ray.dir.normalize();
 
@@ -150,6 +154,28 @@ ray_t perspectiveCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOA
 		ray.dir.normalize();
 	}
 	return ray;
+}
+
+point3d_t perspectiveCam_t::screenproject(const point3d_t &p) const
+{
+	point3d_t s;
+	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+
+	// project p to pixel plane:
+	PFLOAT dx = camX * dir;
+	PFLOAT dy = camY * dir;
+	PFLOAT dz = camZ * dir;
+	//if(dz <= 0) return false;
+	
+	s.x = 2 * dx * focal_distance / dz;
+	//if(s.x < -1.0 || s.y > 1.0) return false;
+	
+	s.y = -2 * dy * focal_distance / (dz * aspect_ratio);
+	//if(s.y < -1.0 || s.y > 1.0) return false;
+	
+	s.z = 0;
+
+	return s;
 }
 
 bool perspectiveCam_t::project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const
@@ -231,7 +257,7 @@ architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, cons
 	*/
 
 
-	eye = pos;
+	position = pos;
 	aperture = ap;
 	dof_distance = dofd;
 	resx = _resx;
@@ -245,6 +271,10 @@ architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, cons
 	
 	vright *= -1.0; // vright is negative here
 	fdist = vto.normLen();
+
+	camX = vright;
+	camY = vup;
+	camZ = vto;
 	
 	dof_rt = vright * aperture; // for dof, premul with aperture
 	dof_up = vup * aperture;
@@ -272,6 +302,34 @@ architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, cons
 
 architectCam_t::~architectCam_t() 
 {
+}
+
+point3d_t architectCam_t::screenproject(const point3d_t &p) const
+{
+	// FIXME
+	point3d_t s;
+	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	
+	// project p to pixel plane:
+	vector3d_t camy = vector3d_t(0,0,1);
+	vector3d_t camz = camy ^ camX;
+	vector3d_t camx = camz ^ camy;
+	
+	PFLOAT dx = dir * camx;
+	PFLOAT dy = dir * camY;
+	PFLOAT dz = dir * camz;
+	
+	s.y = 2 * dy * focal_distance / (dz * aspect_ratio);
+	//if(s.y < -1.0 || s.y > 1.0) return false;
+	
+	// Needs focal_distance correction
+	PFLOAT fod = (focal_distance) * camy * camY / (camx * camX);
+	s.x = 2 * dx * fod / dz;
+	//if(s.x < -1.0 || s.x > 1.0) return false;
+	
+	s.z = 0;
+	
+	return s;
 }
 
 camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -313,9 +371,10 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 //=============================================================================
 
 orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-		int _resx, int _resy, PFLOAT aspect, PFLOAT scale)
+		int _resx, int _resy, PFLOAT aspect, PFLOAT _scale)
 		:resx(_resx), resy(_resy)
 {
+	scale = _scale;
 	vup = up - pos;
 	vto = (look - pos).normalize();
 	vright = vup ^ vto;
@@ -324,12 +383,20 @@ orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3
 	vright.normalize();
 	
 	vright *= -1.0; // vright is negative here
+
+	camX = vright;
+	camY = vup;
+	camZ = vto;
+
+	// TODO
+	aspect_ratio = /*aspect **/ (PFLOAT)resy / (PFLOAT)resx;
+	
 	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
 	
 	position = pos - 0.5 * scale* (vup + vright);
-
-	vup 	*= scale/(PFLOAT)resy;
-	vright 	*= scale/(PFLOAT)resx;	
+	
+	vup	*= scale/(PFLOAT)resy;
+	vright	*= scale/(PFLOAT)resx;	
 }
 
 ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const
@@ -339,6 +406,29 @@ ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt)
 	ray.from = position + vright*px + vup*py;
 	ray.dir = vto;
 	return ray;
+}
+
+point3d_t orthoCam_t::screenproject(const point3d_t &p) const
+{
+	point3d_t s;
+	
+	// Project p to pixel plane
+	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+
+	PFLOAT dz = camZ * dir;
+	//if(dz <= 0) return false;
+	
+	vector3d_t proj = dir - dz * camZ;
+	
+	s.x = 2 * (proj * camX / scale) - 1.0f;
+	//if(s.x < -1.0 || s.x > 1.0) return false;
+
+	s.y = - 2 * proj * camY / (aspect_ratio * scale) + 1.0f;
+	//if(s.y < -1.0 || s.y > 1.0) return false;
+	
+	s.z = 0;
+
+	return s;
 }
 
 bool orthoCam_t::sampleLense() const { return false; }
@@ -373,6 +463,10 @@ angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const po
 	vup = vright ^ vto;
 	vup.normalize();
 	vright.normalize();
+
+	camX = vright;
+	camY = vup;
+	camZ = vto;
 	
 	//vright *= -1.0; // vright is negative here
 	aspect *= (PFLOAT)resy/(PFLOAT)resx;
@@ -424,5 +518,30 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 }
 
 bool angularCam_t::sampleLense() const { return false; }
+
+point3d_t angularCam_t::screenproject(const point3d_t &p) const
+{
+	//FIXME
+	point3d_t s;
+	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	dir.normalize();
+	
+	// project p to pixel plane:	
+	PFLOAT dx = camX * dir;
+	PFLOAT dy = camY * dir;
+	PFLOAT dz = camZ * dir;
+
+	//if(dz <= 0) return false;
+	//std::cout << hor_phi << std::endl;	
+	s.x = -dx / (4.0 * M_PI * dz);
+	//if(s.x < -1.0 || s.x > 1.0) return false;
+	s.y = -dy / (4.0 * M_PI * dz);
+	//if(s.y < -1.0 || s.y > 1.0) return false;
+	
+	s.z = 0;
+	
+	return s;
+}
+
 
 __END_YAFRAY

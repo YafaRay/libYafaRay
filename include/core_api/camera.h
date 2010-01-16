@@ -25,9 +25,6 @@
 
 #include <yafray_config.h>
 
-//#include "vector3d.h"
-//#include "matrix4.h"
-//#include "mcqmc.h"
 #include "ray.h"
 #include <vector>
 
@@ -37,14 +34,16 @@ class YAFRAYCORE_EXPORT camera_t
 {
 	public:
 		virtual ~camera_t() {};
-		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float u, float v, PFLOAT &wt) const = 0;
 		virtual int resX() const = 0;
 		virtual int resY() const = 0;
-		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const
-			{ return false; }
+		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float u, float v, PFLOAT &wt) const = 0;
 		/*! indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
 			DOF-like effects. When false, no lense samples need to be computed */
 		virtual bool sampleLense() const = 0;
+		virtual point3d_t screenproject(const point3d_t &p) const = 0;
+		
+		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const
+			{ return false; }
 };
 
 

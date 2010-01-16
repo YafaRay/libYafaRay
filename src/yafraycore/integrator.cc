@@ -130,6 +130,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	random_t prng(offset*(x*a.Y+a.X)+123);
 	renderState_t rstate(&prng);
 	rstate.threadID = threadID;
+	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
 	for(int i=a.Y; i<end_y; ++i)
@@ -142,7 +143,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				if(!imageFilm->doMoreSamples(j, i)) continue;
 			}
 			rstate.pixelNumber = x*i+j;
-			rstate.screenpos = point3d_t(2.0f * j / x - 1.0f, -2.0f * i / y + 1.0f, 0.f); // screen position in -1..1 coordinates
+			//rstate.screenpos = point3d_t(2.0f * j / x - 1.0f, -2.0f * i / y + 1.0f, 0.f); // screen position in -1..1 coordinates
 			rstate.samplingOffs = fnv_32a_buf(i*fnv_32a_buf(j));//fnv_32a_buf(rstate.pixelNumber);
 			float toff = scrHalton(5, pass_offs+rstate.samplingOffs); // **shall be just the pass number...**
 			for(int sample=0; sample<n_samples; ++sample)

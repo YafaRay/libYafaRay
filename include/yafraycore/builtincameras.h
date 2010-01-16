@@ -25,9 +25,10 @@ class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
 		virtual int resX() const { return resx; }
 		virtual int resY() const { return resy; }
 		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
-		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const;
 		virtual bool sampleLense() const;
-		PFLOAT getFocal() const { return focal_distance; }
+		virtual point3d_t screenproject(const point3d_t &p) const;
+		
+		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const;
 		
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
@@ -35,12 +36,14 @@ class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
 		void sampleTSD(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const;
 		void getLensUV(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const;
 		
-		int resx, resy;
-		point3d_t eye; //!< camera position 
+		int resx, resy; //<! camera resolution
+		point3d_t position; //<! camera position
+		vector3d_t camX, camY, camZ; //<! camera coordinate system
+		vector3d_t vto, vup, vright;
+		
+		vector3d_t dof_up, dof_rt;
 		PFLOAT focal_distance, dof_distance;
 		PFLOAT aspect_ratio; //<! aspect ratio of camera (not image in pixel units!)
-		vector3d_t vto, vup, vright, dof_up, dof_rt;
-		vector3d_t camX, camY, camZ; // camera coordinate system
 		PFLOAT fdist, aperture;
 		PFLOAT A_pix;
 		bokehType bkhtype;
@@ -56,6 +59,8 @@ class YAFRAYCORE_EXPORT architectCam_t: public perspectiveCam_t
 			PFLOAT df=1, PFLOAT ap=0, PFLOAT dofd=0, bokehType bt=BK_DISK1, bkhBiasType bbt=BB_NONE,
 			PFLOAT bro=0);
 		virtual ~architectCam_t();
+		virtual point3d_t screenproject(const point3d_t &p) const;
+
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -64,16 +69,21 @@ class YAFRAYCORE_EXPORT orthoCam_t: public camera_t
 	public:
 		orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 				   int _resx, int _resy, PFLOAT aspect, PFLOAT scale);
-		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
-		virtual bool sampleLense() const;
 		virtual int resX() const { return resx; }
 		virtual int resY() const { return resy; }
+		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
+		virtual bool sampleLense() const;
+		virtual point3d_t screenproject(const point3d_t &p) const;
 		
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		int resx, resy;
-		point3d_t position;
+		int resx, resy; //<! camera resolution
+		point3d_t position; //<! camera position
+		vector3d_t camX, camY, camZ; //<! camera coordinate system
 		vector3d_t vto, vup, vright;
+		
+		PFLOAT scale;
+		PFLOAT aspect_ratio; //<! aspect ratio of camera (not image in pixel units!)
 };
 
 class YAFRAYCORE_EXPORT angularCam_t: public camera_t
@@ -81,16 +91,19 @@ class YAFRAYCORE_EXPORT angularCam_t: public camera_t
 	public:
 		angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 				   int _resx, int _resy, PFLOAT aspect, PFLOAT angle, bool circ);
-		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
-		virtual bool sampleLense() const;
 		virtual int resX() const { return resx; }
 		virtual int resY() const { return resy; }
+		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
+		virtual bool sampleLense() const;
+		virtual point3d_t screenproject(const point3d_t &p) const;
 		
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		int resx, resy;
-		point3d_t position;
+		int resx, resy; //<! camera resolution
+		point3d_t position; //<! camera position
+		vector3d_t camX, camY, camZ; //<! camera coordinate system
 		vector3d_t vto, vup, vright;
+		
 		PFLOAT aspect, hor_phi, max_r;
 		bool circular;
 };

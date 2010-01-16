@@ -67,7 +67,8 @@ struct YAFRAYCORE_EXPORT renderState_t
 	int pixelNumber;
 	int threadID; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
 	unsigned int samplingOffs; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
-	point3d_t screenpos; //!< the image coordinates of the pixel being computed currently
+	//point3d_t screenpos; //!< the image coordinates of the pixel being computed currently
+	const camera_t *cam;
 	bool chromatic; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
 	bool includeLights; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
 	PFLOAT wavelength; //!< the (normalized) wavelength being used when chromatic is false.
