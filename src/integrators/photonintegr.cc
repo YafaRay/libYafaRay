@@ -306,7 +306,7 @@ bool photonIntegrator_t::preprocess()
 	renderState_t state;
 	unsigned char userdata[USER_DATA_SIZE+7];
 	state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-	
+	state.cam = scene->getCamera();
 	progressBar_t *pb;
 	int pbStep;
 	if(intpb) pb = intpb;
