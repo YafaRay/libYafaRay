@@ -29,43 +29,14 @@ __BEGIN_YAFRAY
 perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 		int _resx, int _resy, PFLOAT aspect,
 		PFLOAT df, PFLOAT ap, PFLOAT dofd, bokehType bt, bkhBiasType bbt, PFLOAT bro)
-		:bkhtype(bt), bkhbias(bbt)
+		:camera_t(pos, look, up,  _resx, _resy, aspect), bkhtype(bt), bkhbias(bbt), aperture(ap) , focal_distance(df), dof_distance(dofd)
 {
-	position = pos;
-	aperture = ap;
-	dof_distance = dofd;
+	// Initialize camera specific plane coordinates
+	setAxis(camX,camY,camZ);
 
-	// Screen resolution
-	resx = _resx;
-	resy = _resy;
-	
-	// Calculate and store camera axis
-	vup = up - pos;
-	vto = look - pos;
-	vright = vup ^ vto;
-	vup = vright ^ vto;
-	vup.normalize();
-	vright.normalize();
-	vright = -vright; // due to the order in which we derive the vectors from input it comes out as "vleft"...
-	
-	camX = vright;
-	camY = vup;
-	camZ = vto;
-	camZ.normalize();
-
-	fdist = vto.normLen();
-	dof_rt = vright * aperture; // for dof, premul with aperture
-	dof_up = vup * aperture;
-	aspect_ratio = aspect * (PFLOAT)resy / (PFLOAT)resx;
-	
-	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
-	vto = (vto * df) - 0.5 * (vup + vright);
-	vup /= (PFLOAT)resy;
-	vright /= (PFLOAT)resx;	
-	
-	focal_distance = df;
+	fdist = (look - pos).length();
 	A_pix = aspect_ratio / ( df * df );
-	
+
 	int ns = (int)bkhtype;
 	if ((ns>=3) && (ns<=6)) {
 		PFLOAT w=degToRad(bro), wi=(M_2PI)/(PFLOAT)ns;
@@ -81,6 +52,22 @@ perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, 
 
 perspectiveCam_t::~perspectiveCam_t() 
 {
+}
+
+void perspectiveCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+{
+	camX = vx;
+	camY = vy;
+	camZ = vz;
+
+	dof_rt = aperture * camX; // for dof, premul with aperture
+	dof_up = aperture * camY;
+
+	vright = camX;
+	vup = aspect_ratio * camY;
+	vto = (camZ * focal_distance) - 0.5 * (vup + vright);
+	vup /= (PFLOAT)resy;
+	vright /= (PFLOAT)resx;
 }
 
 void perspectiveCam_t::biasDist(PFLOAT &r) const
@@ -159,20 +146,15 @@ ray_t perspectiveCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOA
 point3d_t perspectiveCam_t::screenproject(const point3d_t &p) const
 {
 	point3d_t s;
-	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	vector3d_t dir = p - position;
 
 	// project p to pixel plane:
-	PFLOAT dx = camX * dir;
-	PFLOAT dy = camY * dir;
-	PFLOAT dz = camZ * dir;
-	//if(dz <= 0) return false;
+	PFLOAT dx = dir * camX;
+	PFLOAT dy = dir * camY;
+	PFLOAT dz = dir * camZ;
 	
-	s.x = 2 * dx * focal_distance / dz;
-	//if(s.x < -1.0 || s.y > 1.0) return false;
-	
-	s.y = -2 * dy * focal_distance / (dz * aspect_ratio);
-	//if(s.y < -1.0 || s.y > 1.0) return false;
-	
+	s.x = 2.0f * dx * focal_distance / dz;
+	s.y = -2.0f * dy * focal_distance / (dz * aspect_ratio);
 	s.z = 0;
 
 	return s;
@@ -244,49 +226,11 @@ camera_t* perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 		int _resx, int _resy, PFLOAT aspect,
 		PFLOAT df, PFLOAT ap, PFLOAT dofd, bokehType bt, bkhBiasType bbt, PFLOAT bro)
-		:perspectiveCam_t(pos, look, up, _resx, _resy, aspect,
-		df, ap, dofd, bt, bbt, bro)
+		:perspectiveCam_t(pos, look, up, _resx, _resy, aspect, df, ap, dofd, bt, bbt, bro)
 {
-/*
-	vup = vector3d_t(0, 0, -1);
-	dof_up = vup * aperture;
-	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
-	
-	vto = (vto * df) - 0.5 * (vup + vright);
-	vup /= (PFLOAT)resy;
-	*/
+	// Initialize camera specific plane coordinates
+	setAxis(camX,camY,camZ);
 
-
-	position = pos;
-	aperture = ap;
-	dof_distance = dofd;
-	resx = _resx;
-	resy = _resy;
-	vup = up - pos;
-	vto = look - pos;
-	vright = vup ^ vto;
-	vup = vector3d_t(0, 0, -1);
-	vup.normalize();
-	vright.normalize();
-	
-	vright *= -1.0; // vright is negative here
-	fdist = vto.normLen();
-
-	camX = vright;
-	camY = vup;
-	camZ = vto;
-	
-	dof_rt = vright * aperture; // for dof, premul with aperture
-	dof_up = vup * aperture;
-	
-	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
-	
-	vto = (vto * df) - 0.5 * (vup + vright);
-	vup /= (PFLOAT)resy;
-	vright /= (PFLOAT)resx;	
-	
-	focal_distance = df;
-	
 	int ns = (int)bkhtype;
 	if ((ns>=3) && (ns<=6)) {
 		PFLOAT w=degToRad(bro), wi=(M_2PI)/(PFLOAT)ns;
@@ -304,11 +248,27 @@ architectCam_t::~architectCam_t()
 {
 }
 
+void architectCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+{
+	camX = vx;
+	camY = vy;
+	camZ = vz;
+	
+	dof_rt = camX * aperture; // for dof, premul with aperture
+	dof_up = camY * aperture;
+
+	vright = camX;
+	vup = aspect_ratio * vector3d_t(0, 0, -1);
+	vto = (camZ * focal_distance) - 0.5 * (vup + vright);
+	vup /= (PFLOAT)resy;
+	vright /= (PFLOAT)resx;
+}
+
 point3d_t architectCam_t::screenproject(const point3d_t &p) const
 {
 	// FIXME
 	point3d_t s;
-	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	vector3d_t dir = p - position;
 	
 	// project p to pixel plane:
 	vector3d_t camy = vector3d_t(0,0,1);
@@ -320,13 +280,9 @@ point3d_t architectCam_t::screenproject(const point3d_t &p) const
 	PFLOAT dz = dir * camz;
 	
 	s.y = 2 * dy * focal_distance / (dz * aspect_ratio);
-	//if(s.y < -1.0 || s.y > 1.0) return false;
-	
 	// Needs focal_distance correction
 	PFLOAT fod = (focal_distance) * camy * camY / (camx * camX);
 	s.x = 2 * dx * fod / dz;
-	//if(s.x < -1.0 || s.x > 1.0) return false;
-	
 	s.z = 0;
 	
 	return s;
@@ -372,38 +328,32 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 
 orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 		int _resx, int _resy, PFLOAT aspect, PFLOAT _scale)
-		:resx(_resx), resy(_resy)
+		:camera_t(pos, look, up, _resx, _resy, aspect), scale(_scale)
 {
-	scale = _scale;
-	vup = up - pos;
-	vto = (look - pos).normalize();
-	vright = vup ^ vto;
-	vup = vright ^ vto;
-	vup.normalize();
-	vright.normalize();
-	
-	vright *= -1.0; // vright is negative here
-
-	camX = vright;
-	camY = vup;
-	camZ = vto;
-
-	// TODO
-	aspect_ratio = /*aspect **/ (PFLOAT)resy / (PFLOAT)resx;
-	
-	vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
-	
-	position = pos - 0.5 * scale* (vup + vright);
-	
-	vup	*= scale/(PFLOAT)resy;
-	vright	*= scale/(PFLOAT)resx;	
+	// Initialize camera specific plane coordinates
+	setAxis(camX,camY,camZ);
 }
+
+void orthoCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+{
+	camX = vx;
+	camY = vy;
+	camZ = vz;
+
+	vright = camX;
+	vup = aspect_ratio * camY;
+	vto = camZ;
+	pos = position - 0.5 * scale* (vup + vright);
+	vup     *= scale/(PFLOAT)resy;
+	vright  *= scale/(PFLOAT)resx;
+}
+
 
 ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const
 {
 	ray_t ray;
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
-	ray.from = position + vright*px + vup*py;
+	ray.from = pos + vright*px + vup*py;
 	ray.dir = vto;
 	return ray;
 }
@@ -411,27 +361,19 @@ ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt)
 point3d_t orthoCam_t::screenproject(const point3d_t &p) const
 {
 	point3d_t s;
-	
+	vector3d_t dir = p - pos;	
 	// Project p to pixel plane
-	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
 
 	PFLOAT dz = camZ * dir;
-	//if(dz <= 0) return false;
 	
 	vector3d_t proj = dir - dz * camZ;
 	
 	s.x = 2 * (proj * camX / scale) - 1.0f;
-	//if(s.x < -1.0 || s.x > 1.0) return false;
-
 	s.y = - 2 * proj * camY / (aspect_ratio * scale) + 1.0f;
-	//if(s.y < -1.0 || s.y > 1.0) return false;
-	
 	s.z = 0;
 
 	return s;
 }
-
-bool orthoCam_t::sampleLense() const { return false; }
 
 camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
@@ -454,24 +396,24 @@ camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 //=============================================================================
 
 angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-			 int _resx, int _resy, PFLOAT asp, PFLOAT angle, bool circ):
-			 resx(_resx), resy(_resy), position(pos), aspect(asp), hor_phi(angle*M_PI/180.f), circular(circ)
+			int _resx, int _resy, PFLOAT asp, PFLOAT angle, bool circ)
+			:camera_t(pos, look, up, _resx, _resy, asp),hor_phi(angle*M_PI/180.f), circular(circ)
 {
-	vup = up - pos;
-	vto = (look - pos).normalize();
-	vright = vup ^ vto;
-	vup = vright ^ vto;
-	vup.normalize();
-	vright.normalize();
+	// Initialize camera specific plane coordinates
+	setAxis(camX,camY,camZ);
 
-	camX = vright;
-	camY = vup;
-	camZ = vto;
-	
-	//vright *= -1.0; // vright is negative here
-	aspect *= (PFLOAT)resy/(PFLOAT)resx;
 	max_r = 1;
-	//vup *= aspect * (PFLOAT)resy / (PFLOAT)resx;
+}
+
+void angularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+{
+	camX = vx;
+	camY = vy;
+	camZ = vz;
+
+	vright = camX;
+	vup = camY;
+	vto = camZ;
 }
 
 ray_t angularCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const
@@ -481,7 +423,7 @@ ray_t angularCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &w
 	ray.from = position;
 	PFLOAT u = 1.f - 2.f * (px/(PFLOAT)resx);
 	PFLOAT v = 2.f * (py/(PFLOAT)resy) - 1.f;
-	v *= aspect;
+	v *= aspect_ratio;
 	PFLOAT radius = fSqrt(u*u + v*v);
 	if (circular && radius>max_r) { wt=0; return ray; }
 	PFLOAT theta=0;
@@ -517,8 +459,6 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	return cam;
 }
 
-bool angularCam_t::sampleLense() const { return false; }
-
 point3d_t angularCam_t::screenproject(const point3d_t &p) const
 {
 	//FIXME
@@ -531,17 +471,11 @@ point3d_t angularCam_t::screenproject(const point3d_t &p) const
 	PFLOAT dy = camY * dir;
 	PFLOAT dz = camZ * dir;
 
-	//if(dz <= 0) return false;
-	//std::cout << hor_phi << std::endl;	
 	s.x = -dx / (4.0 * M_PI * dz);
-	//if(s.x < -1.0 || s.x > 1.0) return false;
 	s.y = -dy / (4.0 * M_PI * dz);
-	//if(s.y < -1.0 || s.y > 1.0) return false;
-	
 	s.z = 0;
 	
 	return s;
 }
-
 
 __END_YAFRAY

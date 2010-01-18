@@ -19,11 +19,9 @@ class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
 		enum bkhBiasType {BB_NONE, BB_CENTER, BB_EDGE};
 		perspectiveCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 			int _resx, int _resy, PFLOAT aspect=1,
-			PFLOAT df=1, PFLOAT ap=0, PFLOAT dofd=0, bokehType bt=BK_DISK1, bkhBiasType bbt=BB_NONE,
-			PFLOAT bro=0);
+			PFLOAT df=1, PFLOAT ap=0, PFLOAT dofd=0, bokehType bt=BK_DISK1, bkhBiasType bbt=BB_NONE, PFLOAT bro=0);
 		virtual ~perspectiveCam_t();
-		virtual int resX() const { return resx; }
-		virtual int resY() const { return resy; }
+		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const;
 		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
 		virtual bool sampleLense() const;
 		virtual point3d_t screenproject(const point3d_t &p) const;
@@ -36,18 +34,13 @@ class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
 		void sampleTSD(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const;
 		void getLensUV(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const;
 		
-		int resx, resy; //<! camera resolution
-		point3d_t position; //<! camera position
-		vector3d_t camX, camY, camZ; //<! camera coordinate system
-		vector3d_t vto, vup, vright;
-		
-		vector3d_t dof_up, dof_rt;
-		PFLOAT focal_distance, dof_distance;
-		PFLOAT aspect_ratio; //<! aspect ratio of camera (not image in pixel units!)
-		PFLOAT fdist, aperture;
-		PFLOAT A_pix;
 		bokehType bkhtype;
 		bkhBiasType bkhbias;
+		mutable vector3d_t dof_up, dof_rt;
+		PFLOAT aperture;
+		PFLOAT focal_distance, dof_distance;
+		PFLOAT fdist;
+		PFLOAT A_pix;
 		std::vector<PFLOAT> LS;
 };
 
@@ -59,6 +52,7 @@ class YAFRAYCORE_EXPORT architectCam_t: public perspectiveCam_t
 			PFLOAT df=1, PFLOAT ap=0, PFLOAT dofd=0, bokehType bt=BK_DISK1, bkhBiasType bbt=BB_NONE,
 			PFLOAT bro=0);
 		virtual ~architectCam_t();
+		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const;
 		virtual point3d_t screenproject(const point3d_t &p) const;
 
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
@@ -69,21 +63,14 @@ class YAFRAYCORE_EXPORT orthoCam_t: public camera_t
 	public:
 		orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 				   int _resx, int _resy, PFLOAT aspect, PFLOAT scale);
-		virtual int resX() const { return resx; }
-		virtual int resY() const { return resy; }
+		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const;
 		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
-		virtual bool sampleLense() const;
 		virtual point3d_t screenproject(const point3d_t &p) const;
 		
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		int resx, resy; //<! camera resolution
-		point3d_t position; //<! camera position
-		vector3d_t camX, camY, camZ; //<! camera coordinate system
-		vector3d_t vto, vup, vright;
-		
 		PFLOAT scale;
-		PFLOAT aspect_ratio; //<! aspect ratio of camera (not image in pixel units!)
+		mutable point3d_t pos;
 };
 
 class YAFRAYCORE_EXPORT angularCam_t: public camera_t
@@ -91,20 +78,13 @@ class YAFRAYCORE_EXPORT angularCam_t: public camera_t
 	public:
 		angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
 				   int _resx, int _resy, PFLOAT aspect, PFLOAT angle, bool circ);
-		virtual int resX() const { return resx; }
-		virtual int resY() const { return resy; }
+		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const;
 		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const;
-		virtual bool sampleLense() const;
 		virtual point3d_t screenproject(const point3d_t &p) const;
 		
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		int resx, resy; //<! camera resolution
-		point3d_t position; //<! camera position
-		vector3d_t camX, camY, camZ; //<! camera coordinate system
-		vector3d_t vto, vup, vright;
-		
-		PFLOAT aspect, hor_phi, max_r;
+		PFLOAT aspect,hor_phi, max_r;
 		bool circular;
 };
 
