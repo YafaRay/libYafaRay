@@ -168,8 +168,8 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		}
 		// TODO: thikness?
 		// points[i] += v * r;
-		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3) * u;
-		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3) * u;
+		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3.f) * u;
+		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3.f) * u;
 		
 		state.curObj->points.push_back(a);
 		state.curObj->points.push_back(b);
