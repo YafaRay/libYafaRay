@@ -320,6 +320,7 @@ bool photonIntegrator_t::preprocess()
 	//Pregather diffuse photons
 	while(!done)
 	{
+		if(scene->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb) delete pb; return false; }
 		state.chromatic = true;
 		state.wavelength = RI_S(curr);
 
@@ -443,6 +444,7 @@ bool photonIntegrator_t::preprocess()
 	//Pregather caustic photons
 	while(!done)
 	{
+		if(scene->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb) delete pb; return false; }
 		state.chromatic = true;
 		state.wavelength = RI_S(curr);
 
