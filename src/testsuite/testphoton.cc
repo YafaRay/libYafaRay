@@ -142,18 +142,22 @@ int main()
 	
 	std::cout << "creating TGA output;\n";
 	outTga_t *out = new outTga_t(400, 400, "photon_bounce.tga", false);
-	outTga_t *out2 = new outTga_t(400, 400, "test_cmp.tga", false);
+	//outTga_t *out2 = new outTga_t(400, 400, "test_cmp.tga", false);
 	std::cout << "creating scene instance;\n";
 	scene_t *scene = new scene_t();
 	scene->setAntialiasing(1, 1, 1, 0.05);
+	scene->setMode(0);
+
 	//camera:
 	std::cout << "adding camera;\n";
 	perspectiveCam_t *camera = new perspectiveCam_t(point3d_t(0,-3.0,-0.5), point3d_t(0,0,-0.2), point3d_t(0,-3.0,1), 400,400, 1, 1.0);
 //	perspectiveCam_t *camera = new perspectiveCam_t(point3d_t(0,-3.0,1.0), point3d_t(0,0,0.5), point3d_t(0,-3.0,2.0), 400,400, 1, 1.0);
 	scene->setCamera(camera);
+
 	//image film:
 	imageFilm_t *myFilm = new imageFilm_t(400, 400, 0, 0, *out, 1.5);
 	scene->setImageFilm(myFilm);
+
 	//some materials:
 //	params["type"] = parameter_t(std::string("glass"));
 //	params["IOR"] = parameter_t( 1.4f );
@@ -164,6 +168,7 @@ int main()
 	simplemat_t *mat2 = new simplemat_t(color_t(1.0, 0.15, 0.1), 0.8);
 	simplemat_t *blueMat = new simplemat_t(color_t(0.15, 0.15, 0.75));
 	simplemat_t *redMat = new simplemat_t(color_t(0.75, 0.15, 0.15));
+
 	//a trivial integrator:
 	params.clear();
 //	params["type"] = parameter_t(std::string("directlighting"));
@@ -177,10 +182,18 @@ int main()
 	if(!integrator) exit(1);
 	std::cout << "adding integrator to scene;\n";
 	scene->setSurfIntegrator(integrator);
+
+	//dummy volume integrator
+	params.clear();
+	params["type"] = parameter_t(std::string("none"));
+	volumeIntegrator_t* volIntegrator = (volumeIntegrator_t*)env->createIntegrator("Volume", params);
+	scene->setVolIntegrator(volIntegrator);
+	
 	//a bit geometry:
 	std::cout << "adding geometry;\n";
 	if(!scene->startGeometry()){ std::cout << "error on startGeometry!\n"; return 1; }
 	objID_t id;
+	id = scene->getNextFreeID();
 	if(!scene->startTriMesh(id,8,12,false,false)){ std::cout << "error on startTriMesh!\n"; return 1; }
 //	std::cout << "ading a cube...\n";
 	room(*scene, mat, blueMat, redMat, mat);
@@ -241,7 +254,7 @@ int main()
 	scene->render();
 
 	// save the tga file:
-	out->flush();
+	//out->flush();
 	
 	//clean up...although the only effect could be a crash due to destructor errors...
 	delete mat;
