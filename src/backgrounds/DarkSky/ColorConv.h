@@ -54,12 +54,12 @@ private:
 
 inline color_t ColorConv::fromXYZ(float x, float y, float z) const
 {
-	color_t ret(x,y,z);
+	color_t ret(0.f);
 
  	ret.set(
-		sGammaEnc((cieRGB_E[0][0] * ret.R) + (cieRGB_E[1][0] * ret.G) + (cieRGB_E[2][0] * ret.B)),
-		sGammaEnc((cieRGB_E[0][1] * ret.R) + (cieRGB_E[1][1] * ret.G) + (cieRGB_E[2][1] * ret.B)),
-		sGammaEnc((cieRGB_E[0][2] * ret.R) + (cieRGB_E[1][2] * ret.G) + (cieRGB_E[2][2] * ret.B))
+		sGammaEnc((cieRGB_E[0][0] * x) + (cieRGB_E[1][0] * y) + (cieRGB_E[2][0] * z)),
+		sGammaEnc((cieRGB_E[0][1] * x) + (cieRGB_E[1][1] * y) + (cieRGB_E[2][1] * z)),
+		sGammaEnc((cieRGB_E[0][2] * x) + (cieRGB_E[1][2] * y) + (cieRGB_E[2][2] * z))
 	);
 
 	if(clamp) ret.clampRGB01();
@@ -102,7 +102,7 @@ inline color_t ColorConv::fromxyY2XYZ(float x, float y, float Y) const
 
 inline float ColorConv::sGammaEnc(float v) const
 {
-	float ret = fPow(v, simpleGEnc) * scale; //we need to scale the resulting value because is in [0,100] range
+	float ret = fPow(v, simpleGEnc) * scale; //we need to scale the resulting value because the output is in [0,100] range
 	return ret;
 }
 

@@ -92,9 +92,9 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	T = turb;
 	T2 = turb*turb;
 
-	double chi = ((53.33333333f - T) / 120.0) * (M_PI - (2.0 * thetaS));
+	double chi = (0.44444444 - (T / 120.0)) * (M_PI - (2.0 * thetaS));
 
-	zenith_Y = ((4.0453 * T - 4.9710) * tan(chi)) - (0.2155 * T + 2.4192);
+	zenith_Y = (4.0453 * T - 4.9710) * tan(chi) - 0.2155 * T + 2.4192;
 	zenith_Y *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
 	zenith_x =
@@ -106,6 +106,8 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	( 0.00275*theta3 - 0.00610*theta2 + 0.00316*thetaS          ) * T2 +
 	(-0.04214*theta3 + 0.08970*theta2 - 0.04153*thetaS + 0.00515) * T  +
 	( 0.15346*theta3 - 0.26756*theta2 + 0.06669*thetaS + 0.26688);
+
+	Y_INFO << "DarkSky: Zenithal luminicense (x,y,Y) = (" << zenith_x << ", " << zenith_y << ", " << zenith_Y << ")\n";
 
 	perez_Y[0] = (( 0.17872 * T) - 1.46303) * av;
 	perez_Y[1] = ((-0.35540 * T) + 0.42749) * bv;
@@ -154,35 +156,35 @@ color_t darkSkyBackground_t::getAttenuatedSunColor()
 
 color_t darkSkyBackground_t::getSunColorFromPerez()
 {
-	double pCosTheta = (thetaS > M_PI_2)?0.0:cosThetaS;
+	double pCosTheta = (thetaS > M_PI_2) ? 1e-6 : cosThetaS;
 	color_t sunColor = convert.fromxyY
 	(
-		PerezFunction(perez_x, pCosTheta, 1e-6f, 1.f, zenith_x),
-		PerezFunction(perez_y, pCosTheta, 1e-6f, 1.f, zenith_y),
-		PerezFunction(perez_Y, pCosTheta, 1e-6f, 1.f, zenith_Y)
+		(float)PerezFunction(perez_x, pCosTheta, 1e-6, 1.0, zenith_x),
+		(float)PerezFunction(perez_y, pCosTheta, 1e-6, 1.0, zenith_y),
+		(float)PerezFunction(perez_Y, pCosTheta, 1e-6, 1.0, zenith_Y)
 	);
-	return (sunColor / sunColor.maximum()) * 0.5; //this is to let the color be affected by power
+	return sunColor;
 }
 
 color_t darkSkyBackground_t::getSunColorFromSunRad()
 {
 	int L, uL;
-	float kgLm, kwaLmw, mw;
-    float Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
+	double kgLm, kwaLmw, mw;
+    double Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
 	color_t sXYZ(0.5);
 	color_t tmpCol(0.0);
 
-	float B = (0.04608365822050 * T) - 0.04586025928522;
-	float a = 1.3;
-	float l = 0.35;
-	float w = 2.0;
+	double B = (0.04608365822050 * T) - 0.04586025928522;
+	double a = 1.3;
+	double l = 0.35;
+	double w = 2.0;
 
 	IrregularCurve ko(koAmplitudes, koWavelengths, 64);
     IrregularCurve kg(kgAmplitudes, kgWavelengths, 4);
     IrregularCurve kwa(kwaAmplitudes, kwaWavelengths, 13);
     RegularCurve sunRadianceCurve(sunRadiance, 380, 750, 38);
-
-    m = 1.0/(cosThetaS + 0.15 * fPow(93.885 - radToDeg(thetaS),-1.253));
+	
+	m = 1.0 / (cosThetaS + 0.15 * fPow(93.885f - radToDeg(thetaS), -1.253f));
 	mw = m * w;
 	lm = -m * l;
 	
@@ -206,7 +208,6 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 		tmpCol = sunRadianceCurve(L) * Rayleigh * Angstrom * Ozone * Gas * Water;
 		sXYZ = 1.0 - ((1.0 - sXYZ)*(1.0 - convert.fromXYZ(tmpCol)));
 	}
-
 	return sXYZ;
 }
 
@@ -217,13 +218,15 @@ darkSkyBackground_t::~darkSkyBackground_t()
 
 double darkSkyBackground_t::prePerez(const double *perez)
 {
-	return 1.0 / ((1 + perez[0] * fExp(perez[1])) * (1 +( perez[2] * fExp(perez[3] * thetaS) ) + (perez[4] * cosTheta2)));
+	double pNum = ((1 + perez[0] * fExp(perez[1])) * (1 +( perez[2] * fExp(perez[3] * thetaS) ) + (perez[4] * cosTheta2)));
+	if(pNum == 0.0) return 0.0;
+	
+	return 1.0 / pNum;
 }
 
 double darkSkyBackground_t::PerezFunction(const double *lam, double cosTheta, double gamma, double cosGamma2, double lvz) const
 {
   double num = ( (1 + lam[0] * fExp(lam[1]/cosTheta) ) * (1 + lam[2] * fExp(lam[3]*gamma)  + lam[4] * cosGamma2));
-
   return lvz * num * lam[5];
 }
 
@@ -233,21 +236,13 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	Iw.z += alt;
 	Iw.normalize();
 
-	double theta, cosTheta, gamma, cosGamma, cosGamma2;
+	double cosTheta, gamma, cosGamma, cosGamma2;
 	double x, y, Y;
 	color_t skyCol(0.0);
 	
 	cosTheta = Iw.z;
 	
-	if(cosTheta < 1e-6f)
-	{
-		theta = M_PI_2;
-		cosTheta = 1e-6f;
-	}
-	else
-	{
-		theta = acos(cosTheta);
-	}
+	if(cosTheta <= 0.0) cosTheta = 1e-6;
     
 	cosGamma = Iw VDOT sunDir;
     cosGamma2 = cosGamma * cosGamma;
@@ -260,21 +255,19 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	skyCol = convert.fromxyY(x,y,Y);
 	
 	if(nightSky) skyCol *= color_t(0.05,0.05,0.08);
-	
+
 	return skyCol;
 }
 
 color_t darkSkyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
 {
 	color_t ret = getSkyCol(ray) * skyBrightness;
-	ret.clampRGB01();
 	return ret;
 }
 
 color_t darkSkyBackground_t::eval(const ray_t &ray, bool filtered) const
 {
 	color_t ret = getSkyCol(ray) * power;
-	ret.clampRGB01();
 	return ret;
 }
 
