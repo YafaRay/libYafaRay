@@ -54,7 +54,7 @@ perspectiveCam_t::~perspectiveCam_t()
 {
 }
 
-void perspectiveCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+void perspectiveCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
 {
 	camX = vx;
 	camY = vy;
@@ -248,7 +248,7 @@ architectCam_t::~architectCam_t()
 {
 }
 
-void architectCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+void architectCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
 {
 	camX = vx;
 	camY = vy;
@@ -334,7 +334,7 @@ orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3
 	setAxis(camX,camY,camZ);
 }
 
-void orthoCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+void orthoCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
 {
 	camX = vx;
 	camY = vy;
@@ -405,7 +405,7 @@ angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const po
 	max_r = 1;
 }
 
-void angularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const
+void angularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
 {
 	camX = vx;
 	camY = vy;

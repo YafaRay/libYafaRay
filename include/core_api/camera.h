@@ -30,6 +30,10 @@
 
 __BEGIN_YAFRAY
 
+//! Camera base class.
+/*!
+ Camera base class used by all camera types.
+*/
 class YAFRAYCORE_EXPORT camera_t
 {
 	public:
@@ -47,25 +51,35 @@ class YAFRAYCORE_EXPORT camera_t
 			camZ.normalize();
 		}
 		virtual ~camera_t() {};
-		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) const = 0; //<! set camera axis
-		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float u, float v, PFLOAT &wt) const = 0;
-		virtual point3d_t screenproject(const point3d_t &p) const = 0;
+		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) = 0; //!< Set camera axis
+		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
+		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float u, float v, PFLOAT &wt) const = 0; //!< Shoot a new ray from the camera.
+		virtual point3d_t screenproject(const point3d_t &p) const = 0; //!< Get projection of point p into camera plane
 		
-		virtual int resX() const { return resx; } //<! get camera X resolution
-		virtual int resY() const { return resy; } // <! get camera Y resolution
-		virtual point3d_t getPosition() const { return position; } //<! get camera position
-		virtual void setPosition(const point3d_t &pos) const { position = pos; } //<! set camera position
-		virtual void getAxis(vector3d_t &vx, vector3d_t &vy, vector3d_t &vz) const { vx = camX; vy = camY; vz = camZ; } //<! get camera axis
-		/*! indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
+		virtual int resX() const { return resx; } //!< Get camera X resolution
+		virtual int resY() const { return resy; } //!< Get camera Y resolution
+		virtual point3d_t getPosition() const { return position; } //!< Get camera position
+		virtual void setPosition(const point3d_t &pos) { position = pos; } //!< Set camera position
+		virtual void getAxis(vector3d_t &vx, vector3d_t &vy, vector3d_t &vz) const { vx = camX; vy = camY; vz = camZ; } //!< Get camera axis
+		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
 			DOF-like effects. When false, no lense samples need to be computed */
-		virtual bool sampleLense() const { return false; }
+		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
 		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const { return false; }
 	protected:
-		mutable point3d_t position; //<! camera position
-		int resx, resy; //<! camera resolution
-		mutable vector3d_t camX, camY, camZ; //<! camera coordinate system
-		mutable vector3d_t vto, vup, vright;
-		float aspect_ratio;  //<! aspect ratio of camera (not image in pixel units!)
+		point3d_t position;	//!< Camera position
+		
+		int resx;		//!< Camera X resolution
+		int resy;		//!< Camera Y resolution
+		
+		vector3d_t camX;	//!< Camera X axis
+		vector3d_t camY;	//!< Camera Y axis
+		vector3d_t camZ;	//!< Camera Z axis
+		
+		vector3d_t vto;
+		vector3d_t vup;
+		vector3d_t vright;
+		
+		float aspect_ratio;	//<! Aspect ratio of camera (not image in pixel units!)
 };
 
 __END_YAFRAY
