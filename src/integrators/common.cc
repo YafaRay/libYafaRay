@@ -68,8 +68,8 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 		else // area light and suchlike
 		{
 			int n = (*l)->nSamples();
-			float invNS = 1.f / (float)n;
 			if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
+			float invNS = 1.f / (float)n;
 			unsigned int offs = n * state.pixelSample + state.samplingOffs + l_offs;
 			bool canIntersect=(*l)->canIntersect();//false;
 			l_offs += 4567; //just some number to have different sequences per light...and it's a prime even...
