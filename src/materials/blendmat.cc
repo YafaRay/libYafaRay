@@ -23,31 +23,46 @@
 
 __BEGIN_YAFRAY
 
-blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, CFLOAT bval):
-	mat1(m1), mat2(m2), blendS(0), blendVal(bval)
+#define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
+
+#define screenColors(c1,c2) (1.0 - ((1.0 - (c1)) * (1.0 - (c2))))
+#define sumColors(c1, c2) ((c1) + (c2))
+#define multColors(c1,c2) ((c1) * (c2))
+#define addColors(c1, c2, v1, v2) sumColors(c1*v1, c2*v2)
+
+#define addPdf(p1, p2) std::max(p1, p2)//((p1+p2) * 0.5f)
+
+blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval):
+	mat1(m1), mat2(m2), blendS(0)
 {
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
 	mmem1 = mat1->getReqMem();
+	recalcBlend = false;
+	blendVal = bval;
+	blendedIOR = (mat1->getMatIOR() + mat2->getMatIOR()) * 0.5f;
 }
 
 blendMat_t::~blendMat_t()
 {
 }
 
-#define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
-
-#define screenColors(c1,c2) (1.0 - ((1.0 - (c1)) * (1.0 - (c2))))
-#define sumColors(c1, c2) ((c1) + (c2))
-#define multColors(c1,c2) ((c1) * (c2))
-#define addColors(c1, c2) screenColors(c1, c2)
-
 inline void blendMat_t::getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const
 {
-	nodeStack_t stack(state.userdata);
-	evalNodes(state, sp, allSorted, stack);
 
-	val = (blendS) ? blendS->getScalar(stack) : blendVal;
-	val = std::max(std::min(val,1.f), 0.f); //clamp
+	if(recalcBlend)
+	{
+		void *old_dat = state.userdata;
+		
+		nodeStack_t stack(state.userdata);
+		evalNodes(state, sp, allSorted, stack);
+		val = blendS->getScalar(stack);
+		state.userdata = old_dat;
+	}
+	else
+	{	
+		val = blendVal;
+	}
+
 	ival = 1.f - val;
 }
 
@@ -62,10 +77,12 @@ void blendMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, 
 	bsdfTypes = BSDF_NONE;
 	
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(val > 0.f) mat1->initBSDF(state, sp, bsdfTypes);
+	if(ival > 0.f)
+	mat1->initBSDF(state, sp, bsdfTypes);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(ival > 0.f) mat2->initBSDF(state, sp, matFlags);
+	if(val > 0.f)
+	mat2->initBSDF(state, sp, matFlags);
 	
 	bsdfTypes |= matFlags;
 	
@@ -82,18 +99,85 @@ color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, c
 	void *old_udat = state.userdata;
 
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f) col1 = mat1->eval(state, sp, wo, wl, bsdfs);
+	if(ival > 0.f)
+	col1 = mat1->eval(state, sp, wo, wl, bsdfs);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f) col2 = mat2->eval(state, sp, wo, wl, bsdfs);
+	if(val > 0.f)
+	col2 = mat2->eval(state, sp, wo, wl, bsdfs);
 	
 	state.userdata = old_udat;
 
 	col1.clampRGB01();
 	col2.clampRGB01();
 
-	col1 = addColors(col1 * ival, col2 * val);
+	col1 = addColors(col1, col2, ival, val);
 	return col1;
+}
+
+color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+{
+	float val, ival;
+	getBlendVal(state, sp, val, ival);
+	
+	color_t col1(0.f), col2(0.f);
+	sample_t s1 = s, s2 = s;
+	void *old_udat = state.userdata;
+
+	s2.pdf = s1.pdf = s.pdf = 0.f;
+	wi = wo;
+	vector3d_t wi1 = wi, wi2 = wi;
+
+	state.userdata = PTR_ADD(state.userdata, reqMem);
+	if(ival > 0.f)
+	{
+		col1 = mat1->sample(state, sp, wo, wi1, s1);
+		col1.clampRGB01();
+	}
+	
+	state.userdata = PTR_ADD(state.userdata, mmem1);
+	if(val > 0.f)
+	{
+		col2 = mat2->sample(state, sp, wo, wi2, s2);
+		col2.clampRGB01();
+	}
+	
+	wi = (wi2 + wi1).normalize();
+	
+	s.pdf = addPdf(s1.pdf, s2.pdf);
+	s.sampledFlags = s1.sampledFlags || s2.sampledFlags;
+	s.reverse = s1.reverse || s2.reverse;
+	if(s.reverse)
+	{
+		s.pdf_back = addPdf(s1.pdf_back, s2.pdf_back);
+		s.col_back = addColors(s1.col_back, s2.col_back, ival, val);
+	}
+	col1 = addColors(col1, col2, ival, val);
+
+	state.userdata = old_udat;
+	return col1;
+}
+
+float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+{
+	float val, ival;
+	getBlendVal(state, sp, val, ival);
+	
+	float pdf1 = 0.f, pdf2 = 0.f;
+	void *old_udat = state.userdata;
+	
+	state.userdata = PTR_ADD(state.userdata, reqMem);
+	if(ival>0.f)
+	pdf1 = mat1->pdf(state, sp, wo, wi, bsdfs);
+	
+	state.userdata = PTR_ADD(state.userdata, mmem1);
+	if(val>0.f)
+	pdf2 = mat2->pdf(state, sp, wo, wi, bsdfs);
+
+	state.userdata = old_udat;
+
+	pdf1 = addPdf(pdf1, pdf2);
+	return pdf1;
 }
 
 void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
@@ -112,11 +196,18 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	vector3d_t m1_dir[2];
 	color_t m1_col[2];
 	
+	m1_col[0] = color_t(0.f);
+	m1_col[1] = color_t(0.f);
+	m1_dir[0] = vector3d_t(0.f);
+	m1_dir[1] = vector3d_t(0.f);
+	
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f) mat1->getSpecular(state, sp, wo, m1_reflect, m1_refract, m1_dir, m1_col);
+	if(ival > 0.f)
+	mat1->getSpecular(state, sp, wo, m1_reflect, m1_refract, m1_dir, m1_col);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f) mat2->getSpecular(state, sp, wo, reflect, refract, dir, col);
+	if(val > 0.f)
+	mat2->getSpecular(state, sp, wo, reflect, refract, dir, col);
 	
 	state.userdata = old_udat;
 	
@@ -127,7 +218,7 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 
 	if(reflect && m1_reflect)
 	{
-		col[0] = addColors(m1_col[0] * ival, col[0] * val);
+		col[0] = addColors(m1_col[0], col[0], ival, val);
 		dir[0] = (dir[0] + m1_dir[0]).normalize();
 	}
 	else if(m1_reflect)
@@ -137,12 +228,12 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	}
 	else
 	{
-		col[0] *= val;
+		col[0] = col[0] * val;
 	}
 	
 	if(refract && m1_refract)
 	{
-		col[1] = addColors(m1_col[1] * ival, col[1] * val);
+		col[1] = addColors(m1_col[1], col[1], ival, val);
 		dir[1] = (dir[1] + m1_dir[1]).normalize();
 	}
 	else if(m1_refract)
@@ -152,65 +243,16 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	}
 	else
 	{
-		col[1] *= val;
+		col[1] = col[1] * val;
 	}
 
 	refract = refract || m1_refract;
 	reflect = reflect || m1_reflect;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+float blendMat_t::getMatIOR() const
 {
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-	
-	color_t col1(0.f), col2(0.f);
-	float pdf1 = 0.f, pdf2 = 0.f;
-	void *old_udat = state.userdata;
-
-	s.pdf = 0.f;
-
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f)
-	{
-		col1 = mat1->sample(state, sp, wo, wi, s);
-		col1.clampRGB01();
-		pdf1 = s.pdf;
-	}
-	
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f)
-	{
-		col2 = mat2->sample(state, sp, wo, wi, s);
-		col2.clampRGB01();
-		pdf2 = s.pdf;
-	}
-	
-	s.pdf = (pdf1 + pdf2) * 0.5;
-	col1 = addColors(col1 * ival, col2 * val);
-
-	state.userdata = old_udat;
-	return col1;
-}
-
-float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
-{
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-	
-	float pdf1 = 0.f, pdf2 = 0.f;
-	void *old_udat = state.userdata;
-	
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival>0.f) pdf1 = mat1->pdf(state, sp, wo, wi, bsdfs);
-	
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val>0.f) pdf2 = mat2->pdf(state, sp, wo, wi, bsdfs);
-
-	state.userdata = old_udat;
-
-	pdf1 = (pdf1 + pdf2) * 0.5;
-	return pdf1;
+	return blendedIOR;
 }
 
 bool blendMat_t::isTransparent() const
@@ -228,15 +270,17 @@ color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	void *old_udat = state.userdata;
 	
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f && mat1->isTransparent()) col1 = mat1->getTransparency(state, sp, wo);
+	if(ival > 0.f)
+	col1 = mat1->getTransparency(state, sp, wo);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f && mat2->isTransparent()) col2 = mat2->getTransparency(state, sp, wo);
+	if(val > 0.f)
+	col2 = mat2->getTransparency(state, sp, wo);
 
 	col1.clampRGB01();
 	col2.clampRGB01();
 
-	col1 = addColors(col1 * ival, col2 * val);
+	col1 = addColors(col1, col2, ival, val);
 	
 	state.userdata = old_udat;
 	return col1;
@@ -249,15 +293,17 @@ CFLOAT blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp
 		float val, ival;
 		getBlendVal(state, sp, val, ival);
 		
-		float al1 = 0.0, al2 = 0.0;
+		float al1 = 0.f, al2 = 0.f;
 		
 		void *old_udat = state.userdata;
 		
 		state.userdata = PTR_ADD(state.userdata, reqMem);
-		if(ival > 0.f && mat1->isTransparent()) al1 = mat1->getAlpha(state, sp, wo);
+		if(ival > 0.f)
+		al1 = mat1->getAlpha(state, sp, wo);
 		
 		state.userdata = PTR_ADD(state.userdata, mmem1);
-		if(val > 0.f && mat2->isTransparent()) al2 = mat2->getAlpha(state, sp, wo);
+		if(val > 0.f)
+		al2 = mat2->getAlpha(state, sp, wo);
 	
 		al1 = (al1 * ival) + (al2 * val);
 		
@@ -279,16 +325,18 @@ bool blendMat_t::volumeTransmittance(const renderState_t &state, const surfacePo
 	bool ret = false;
 
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f) ret = ret || mat1->volumeTransmittance(state, sp, ray, col1);
+	if(ival > 0.f)
+	ret = ret || mat1->volumeTransmittance(state, sp, ray, col1);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f) ret = ret || mat2->volumeTransmittance(state, sp, ray, col2);
+	if(val > 0.f)
+	ret = ret || mat2->volumeTransmittance(state, sp, ray, col2);
 		
 	
 	col1.clampRGB01();
 	col2.clampRGB01();
 	
-	col = sumColors(col1 * ival, col2 * val);
+	col1 = addColors(col1, col2, ival, val);
 		
 	state.userdata = old_udat;
 	return ret;
@@ -303,15 +351,17 @@ color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 	void *old_udat = state.userdata;
 
 	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f) col1 = mat1->emit(state, sp, wo);
+	if(ival > 0.f)
+	col1 = mat1->emit(state, sp, wo);
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f) col2 = mat2->emit(state, sp, wo);
+	if(val > 0.f)
+	col2 = mat2->emit(state, sp, wo);
 	
 	col1.clampRGB01();
 	col2.clampRGB01();
 
-	col1 = addColors(col1 * ival, col2 * val);
+	col1 = addColors(col1, col2, ival, val);
 		
 	state.userdata = old_udat;
 	return col1;
@@ -344,7 +394,7 @@ bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	col1.clampRGB01();
 	col2.clampRGB01();
 	
-	s.color = sumColors(col1 * ival, col2 * val);
+	s.color = addColors(col1, col2, ival, val);
 		
 	state.userdata = old_udat;
 	return ret;
@@ -361,8 +411,6 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	if(! params.getParam("material2", name) ) return 0;
 	m2 = env.getMaterial(*name);
 	params.getParam("blend_value", blend_val);
-	//if(! params.getParam("mask", name) ) return 0;
-	//mask = env.getTexture(*name);
 	
 	if(m1==0 || m2==0 ) return 0;
 	
@@ -374,7 +422,12 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 		if(params.getParam("mask", name))
 		{
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->blendS = i->second; roots.push_back(mat->blendS); }
+			if(i!=mat->shader_table.end())
+			{
+				mat->blendS = i->second;
+				mat->recalcBlend = true;
+				roots.push_back(mat->blendS);
+				}
 			else
 			{
 				Y_ERROR << "[Blend Material] Blend shader node '"<<*name<<"' does not exist!\n";

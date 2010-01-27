@@ -18,12 +18,13 @@ __BEGIN_YAFRAY
 class blendMat_t: public nodeMaterial_t
 {
 	public:
-		blendMat_t(const material_t *m1, const material_t *m2, CFLOAT blendv);
+		blendMat_t(const material_t *m1, const material_t *m2, float blendv);
 		virtual ~blendMat_t();
 		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
+		virtual float getMatIOR ()const;
 		virtual bool isTransparent() const;
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual bool volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const;
@@ -38,7 +39,11 @@ class blendMat_t: public nodeMaterial_t
 		const material_t *mat1, *mat2;
 		shaderNode_t *blendS; //!< the shader node used for blending the materials
 		float blendVal;
+		float minThres;
+		float maxThres;
 		size_t mmem1;
+		bool recalcBlend;
+		float blendedIOR;
 	private:
 		void getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const;
 };
