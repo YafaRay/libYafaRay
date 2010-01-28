@@ -248,6 +248,7 @@ void MainWindow::slotFinished()
 		if (autoSaveAlpha) std::cout << " with alpha" << std::endl;
 		else std::cout << " without alpha" << std::endl;
 		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
+		renderSaved = true;
 		rt = QString("Image Auto-saved. ");
 		if (autoClose)
 		{
