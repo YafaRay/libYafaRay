@@ -6,6 +6,7 @@
 %pointer_functions(unsigned int, uintp);
 
 %include "carrays.i"
+%include "std_string.i"
 %array_functions(float, floatArray);
 
 
@@ -13,6 +14,7 @@
 #include <interface/yafrayinterface.h>
 #include <interface/xmlinterface.h>
 #include <yafraycore/tga_io.h>
+#include <yafraycore/EXR_io.h>
 #include <yafraycore/memoryIO.h>
 using namespace yafaray;
 %}
@@ -174,6 +176,26 @@ class outTga_t : public colorOutput_t
 		unsigned char *alpha_buf;
 		int sizex, sizey;
 		std::string outfile;
+};
+
+class outEXR_t : public colorOutput_t
+{
+	public:
+		outEXR_t(int resx, int resy, const char *fname, const std::string &exr_flags);
+		//virtual bool putPixel(int x, int y, const color_t &c, 
+		//		CFLOAT alpha=0,PFLOAT depth=0);
+		virtual bool putPixel(int x, int y, const float *c, int channels);
+		virtual void flush() { saveEXR(); }
+		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format...useless
+		virtual ~outEXR_t();
+	protected:
+		outEXR_t(const outEXR_t &o) {}; //forbidden
+		bool saveEXR();
+		fcBuffer_t* fbuf;
+		gBuf_t<float, 1>* zbuf;
+		int sizex, sizey;
+		const char* filename;
+		std::string out_flags;
 };
 
 class memoryIO_t : public colorOutput_t
