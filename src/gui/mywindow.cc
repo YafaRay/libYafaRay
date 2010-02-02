@@ -423,10 +423,10 @@ bool MainWindow::closeUnsaved()
 {
 	if(!renderSaved && !m_render->isRendering())
 	{
-		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close it will be lost.",
+		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close, it will be lost.",
 						   QMessageBox::NoButton, this);
 
-		msgBox.setInformativeText("Do you want to save your render befor closing?");
+		msgBox.setInformativeText("Do you want to save your render before closing?");
 		QPushButton *discard = msgBox.addButton("Close without Saving", QMessageBox::DestructiveRole);
 		QPushButton *save = msgBox.addButton("Save", QMessageBox::AcceptRole);
 		QPushButton *cancel = msgBox.addButton("Cancel", QMessageBox::RejectRole);
