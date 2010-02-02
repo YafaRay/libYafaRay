@@ -22,6 +22,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		float adaptiveStepSize;
 		std::vector<VolumeRegion*> listVR;
 		std::vector<light_t*> lights;
+		unsigned int VRSize;
+		float iVRSize;
 
 	public:
 	SingleScatterIntegrator(float sSize, bool adapt, bool opt) {
@@ -30,12 +32,12 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		optimize = opt;
 		adaptiveStepSize = sSize * 100.0f;
 
-		std::cout << "INFO: ScatterIntegrator, stepSize: " << stepSize << " adaptive: " << adaptive 
+		Y_INFO << "[SingleScatterIntegrator] stepSize: " << stepSize << " adaptive: " << adaptive 
 			<< " optimize: " << optimize << std::endl;
 	}
 
 	virtual bool preprocess() {
-		// std::cout << "Preprocessing SingleScatterIntegrator" << std::endl;
+		Y_INFO << "[SingleScatterIntegrator] Preprocessing..." << std::endl;
 
 		for(unsigned int i=0;i<scene->lights.size();++i) {
 			lights.push_back(scene->lights[i]);
@@ -46,9 +48,11 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		}
 
 		listVR = scene->getVolumes();
+		VRSize = listVR.size();
+		iVRSize = 1.f / (float)VRSize;
 		
 		if (optimize) {
-			for (unsigned int i = 0; i < listVR.size(); i++) {
+			for (unsigned int i = 0; i < VRSize; i++) {
 			//std::cout << "using vr" << std::endl;
 				VolumeRegion* vr = listVR.at(i);
 				bound_t bb = vr->getBB();
@@ -61,7 +65,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 				float ySizeInv = 1.f/(float)ySize;
 				float zSizeInv = 1.f/(float)zSize;
 
-				std::cout << "volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
+				Y_INFO << "[SingleScatterIntegrator] volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
 			
 				for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l) {
 					color_t lcol(0.0);
@@ -88,7 +92,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 								// handle lights with delta distribution, e.g. point and directional lights
 								if( (*l)->diracLight() ) {
 									bool ill = (*l)->illuminate(sp, lcol, lightRay);
-									lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
+									lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 									if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -96,7 +100,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 									color_t lightstepTau(0.f);
 									if (ill) {
-										for (unsigned int j = 0; j < listVR.size(); j++) {
+										for (unsigned int j = 0; j < VRSize; j++) {
 											VolumeRegion* vr2 = listVR.at(j);
 											lightstepTau += vr2->tau(lightRay, stepSize, 0.0f);
 										}
@@ -112,7 +116,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 								else // area light and suchlike
 								{
 									float lightTr = 0;
-									int n = (*l)->nSamples() / 2;
+									int n = (*l)->nSamples() >> 1; // samples / 2
 									if (n < 1) n = 1;
 									lSample_t ls;
 									for(int i=0; i<n; ++i)
@@ -121,13 +125,13 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 										ls.s2 = 0.5f; //(*state.prng)();
 
 										(*l)->illumSample(sp, ls, lightRay);
-										lightRay.tmin = 0.0005;
+										lightRay.tmin = YAF_SHADOW_BIAS;
 										if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 										// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 										//color_t lightstepTau = vr->tau(lightRay, stepSize, 0.5f);
 										color_t lightstepTau(0.f);
-										for (unsigned int j = 0; j < listVR.size(); j++) {
+										for (unsigned int j = 0; j < VRSize; j++) {
 											VolumeRegion* vr2 = listVR.at(j);
 											lightstepTau += vr2->tau(lightRay, stepSize, 0.0f);
 										}
@@ -174,30 +178,30 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 						if (optimize) {
 							//lightTr = vr->attenuation(sp.P, (*l));
 							// replaced by
-							for (unsigned int i = 0; i < listVR.size(); i++) {
+							for (unsigned int i = 0; i < VRSize; i++) {
 								VolumeRegion* vr = listVR.at(i);
 								float t0Tmp = -1, t1Tmp = -1;
 								if (vr->intersect(lightRay, t0Tmp, t1Tmp)) {
-									lightTr += vr->attenuation(sp.P, (*l)) / (float)listVR.size();
+									lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
 								}
 							}
 						}
 						else {
 							// replaced by
 							color_t lightstepTau(0.f);
-							for (unsigned int i = 0; i < listVR.size(); i++) {
+							for (unsigned int i = 0; i < VRSize; i++) {
 								VolumeRegion* vr = listVR.at(i);
 								float t0Tmp = -1, t1Tmp = -1;
 								if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp)) {
 									//lightstepTau += vr->tau(lightRay, currentStep * 4.f, (*state.prng)());
 									//lightstepTau += vr->tau(lightRay, currentStep, (*state.prng)() * currentStep);
-									lightstepTau += vr->tau(lightRay, currentStep, 0.f) / (float)listVR.size();
+									lightstepTau += vr->tau(lightRay, currentStep, 0.f) * iVRSize;
 								}
 							}
 							// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 							lightTr = fExp(-lightstepTau.energy());
 						}
-						lightTr /= listVR.size();
+						lightTr *= iVRSize;
 
 						//std::cout << "stepSample: " << stepSample << " " << sigma_s << " " << lcol.energy() << " " << lightTr << std::endl;
 						inScatter += lightTr * lcol; // * vr->p(lightRay.dir, -ray.dir);
@@ -206,8 +210,9 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 			}
 			else // area light and suchlike
 			{
-				int n = (*l)->nSamples() / 4;
+				int n = (*l)->nSamples() >> 2; // samples / 4
 				if (n < 1) n = 1;
+				float iN = 1.f / (float)n; // inverse of n
 				color_t ccol(0.0);
 				float lightTr = 0.0f;
 				lSample_t ls;
@@ -231,12 +236,12 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 							if (optimize) {
 								//lightTr = vr->attenuation(sp.P, (*l));
 								// replaced by
-								for (unsigned int i = 0; i < listVR.size(); i++) {
+								for (unsigned int i = 0; i < VRSize; i++) {
 									VolumeRegion* vr = listVR.at(i);
 									float t0Tmp = -1, t1Tmp = -1;
 									if (vr->intersect(lightRay, t0Tmp, t1Tmp)) {
 										//lightTr *= vr->attenuation(sp.P, (*l));
-										lightTr += vr->attenuation(sp.P, (*l)) / (float)listVR.size();
+										lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
 										break;
 									}
 								}
@@ -245,7 +250,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 								//color_t lightstepTau = vr->tau(lightRay, step * 4.f,(*state.prng)());
 								// replaced by
 								color_t lightstepTau(0.f);
-								for (unsigned int i = 0; i < listVR.size(); i++) {
+								for (unsigned int i = 0; i < VRSize; i++) {
 									VolumeRegion* vr = listVR.at(i);
 									float t0Tmp = -1, t1Tmp = -1;
 									if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp)) {
@@ -253,17 +258,17 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 									}
 								}
 								// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-								lightTr += fExp(-lightstepTau.energy()) / (float)listVR.size();
+								lightTr += fExp(-lightstepTau.energy()) * iVRSize;
 							}
 
 						}
 					}
-					lightTr /= listVR.size();
+					lightTr *= iVRSize;
 				} // end of area light sample loop
 
-				lightTr /= (float)n;
+				lightTr *= iN;
 
-				ccol = ccol /* * vr->p(lightRay.dir, -ray.dir) */ / (float)n;
+				ccol = ccol /* * vr->p(lightRay.dir, -ray.dir) */ * iN;
 				inScatter += lightTr * ccol;
 				//inScatter += trTmp * lightTr * sigma_s * ccol;
 			} // end of area lights loop
@@ -278,9 +283,9 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		colorA_t Tr(1.f);
 		//return Tr;
 		
-		if (listVR.size() == 0) return Tr;
+		if (VRSize == 0) return Tr;
 		
-		for (unsigned int i = 0; i < listVR.size(); i++) {
+		for (unsigned int i = 0; i < VRSize; i++) {
 			VolumeRegion* vr = listVR.at(i);
 			float t0 = -1, t1 = -1;
 			if (vr->intersect(ray, t0, t1)) {
@@ -300,12 +305,12 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		colorA_t result(0.f);
 		//return result;
 				
-		if (listVR.size() == 0) return result;
+		if (VRSize == 0) return result;
 		
 		bool hit = (ray.tmax > 0.f);
 
 		// find min t0 and max t1
-		for (unsigned int i = 0; i < listVR.size(); i++) {
+		for (unsigned int i = 0; i < VRSize; i++) {
 			float t0Tmp, t1Tmp;
 			VolumeRegion* vr = listVR.at(i);
 
@@ -346,7 +351,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 				point3d_t p = ray.from + (stepSize * i + pos) * ray.dir;
 
 				float density = 0;
-				for (unsigned int j = 0; j < listVR.size(); j++) {
+				for (unsigned int j = 0; j < VRSize; j++) {
 					VolumeRegion* vr = listVR.at(j);
 					density += vr->sigma_t(p, vector3d_t()).energy();
 				}
@@ -401,7 +406,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 				//std::cout << densitySamples.at(stepSample) * currentStep << std::endl;
 			}
 			else {
-				for (unsigned int j = 0; j < listVR.size(); j++) {
+				for (unsigned int j = 0; j < VRSize; j++) {
 					VolumeRegion* vr = listVR.at(j);
 					float t0Tmp = -1, t1Tmp = -1;
 					if (vr->intersect(stepRay, t0Tmp, t1Tmp)) {
@@ -431,7 +436,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 			//resultTmp = trTmp * vr->emission(stepRay.from, stepRay.dir);
 
 			float sigma_s = 0.0f;
-			for (unsigned int i = 0; i < listVR.size(); i++) {
+			for (unsigned int i = 0; i < VRSize; i++) {
 				VolumeRegion* vr = listVR.at(i);
 				float t0Tmp = -1, t1Tmp = -1;
 				if (listVR.at(i)->intersect(stepRay, t0Tmp, t1Tmp)) {
