@@ -14,6 +14,7 @@ shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &col, const color_t &srcol, f
 	emitVal = emit;
 	mDiffuse = diffuse;
 	bsdfFlags = BSDF_NONE;
+	if(emitVal > 0.f) bsdfFlags |= BSDF_EMIT;
 }
 
 shinyDiffuseMat_t::~shinyDiffuseMat_t()
