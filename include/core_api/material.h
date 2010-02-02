@@ -29,10 +29,22 @@ class surfacePoint_t;
 class renderState_t;
 class volumeHandler_t;
 
-enum bsdfFlags_t { BSDF_NONE = 0, BSDF_SPECULAR=1, BSDF_GLOSSY= 1<<1, BSDF_DIFFUSE=1<<2,
-				 BSDF_DISPERSIVE=1<<3, BSDF_REFLECT=1<<4, BSDF_TRANSMIT=1<<5, BSDF_FILTER=1<<6, BSDF_EMIT=1<<7, BSDF_VOLUMETRIC=1<<8,
-				 BSDF_ALL_SPECULAR = BSDF_SPECULAR | BSDF_REFLECT | BSDF_TRANSMIT,
-				 BSDF_ALL = BSDF_SPECULAR | BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT | BSDF_FILTER };
+enum bsdfFlags_t
+{
+	BSDF_NONE		= 0x0000,
+	BSDF_SPECULAR	= 0x0001,
+	BSDF_GLOSSY		= 0x0002,
+	BSDF_DIFFUSE	= 0x0004,
+	BSDF_DISPERSIVE	= 0x0008,
+	BSDF_REFLECT	= 0x0010,
+	BSDF_TRANSMIT	= 0x0020,
+	BSDF_FILTER		= 0x0040,
+	BSDF_EMIT		= 0x0080,
+	BSDF_VOLUMETRIC = 0x0100,
+	BSDF_ALL_SPECULAR = BSDF_SPECULAR | BSDF_REFLECT | BSDF_TRANSMIT,
+	BSDF_ALL_GLOSSY = BSDF_GLOSSY | BSDF_REFLECT | BSDF_TRANSMIT,
+	BSDF_ALL = BSDF_SPECULAR | BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT | BSDF_FILTER
+};
 
 typedef unsigned int BSDF_t;
 
@@ -48,7 +60,7 @@ struct sample_t
 	color_t col_back;
 };
 
-struct pSample_t: public sample_t
+struct pSample_t: public sample_t // << whats with the public?? structs inherit publicly by default *DarkTide
 {
 	pSample_t(float s_1, float s_2, float s_3, BSDF_t sflags, const color_t &l_col, const color_t& transm=color_t(1.f)):
 		sample_t(s_1, s_2, sflags), s3(s_3), lcol(l_col), alpha(transm){}
@@ -85,6 +97,7 @@ class YAFRAYCORE_EXPORT material_t
 		*/
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		
+
 		/*! indicate whether light can (partially) pass the material without getting refracted,
 			e.g. a curtain or even very thin foils approximated as single non-refractive layer.
 			used to trace transparent shadows. Note that in this case, initBSDF was NOT called before!
