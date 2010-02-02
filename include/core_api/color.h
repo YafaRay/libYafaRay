@@ -62,10 +62,9 @@ class YAFRAYCORE_EXPORT color_t
 		color_t & operator *=(CFLOAT f);
 
 		CFLOAT energy() const {return (R+G+B)*0.333333f;};
-		// just used the most frequently used weights, not really correct anymore..
-		// might change to coefs used in Blender, or other, maybe add as another function.
-		CFLOAT col2bri() const { return (0.299f*R + 0.587f*G + 0.114f*B); }
-		CFLOAT abscol2bri() const { return (0.299f*std::fabs(R) + 0.587f*std::fabs(G) + 0.114f*std::fabs(B)); }
+		// Using ITU/Photometric values Y = 0.2126 R + 0.7152 G + 0.0722 B
+		CFLOAT col2bri() const { return (0.2126f*R + 0.7152f*G + 0.0722f*B); }
+		CFLOAT abscol2bri() const { return (0.2126f*std::fabs(R) + 0.7152f*std::fabs(G) + 0.0722f*std::fabs(B)); }
 		void gammaAdjust(CFLOAT g){ R = fPow(R, g); G = fPow(G, g); B = fPow(B, g); }
 		void expgam_Adjust (CFLOAT e, CFLOAT g, bool clamp_rgb);
 		CFLOAT getR() const { return R; }
