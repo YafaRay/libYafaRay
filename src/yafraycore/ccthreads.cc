@@ -147,31 +147,31 @@ conditionVar_t::~conditionVar_t()
 void * wrapper(void *data)
 {
 	thread_t *obj=(thread_t *)data;
-	obj->lock.lock();
+	//obj->lock.lock();
 	try{ obj->body(); }
 	catch(std::exception &e)
 	{
 		std::cout << "exception occured: " << e.what() << std::endl;
 	}
 	obj->running=false;
-	obj->lock.unlock();
+	//obj->lock.unlock();
 	pthread_exit(0);
 	return NULL;
 }
 
 void thread_t::run()
 {
-	lock.lock();
+	//lock.lock();
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
 	pthread_create(&id,&attr,wrapper,this);
 	running=true;
-	lock.unlock();
+	//lock.unlock();
 }
 
 void thread_t::wait()
 {
-	if(running)
+	//if(running)
 		pthread_join(id,NULL);
 	running=false;
 }
