@@ -71,13 +71,15 @@ void meshLight_t::initIS()
 void meshLight_t::init(scene_t &scene)
 {
 	mesh = scene.getMesh(objID);
-	if(mesh) initIS();
-	std::cout << "meshLight(): triangles:" << nTris << ", double sided:" << doubleSided << ", area:" << area
+	if(mesh)
+	{
+		initIS();
+		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
+		mesh->setLight(this);
+
+		Y_INFO << "MeshLight: triangles:" << nTris << ", double sided:" << doubleSided << ", area:" << area
 			  << std::endl << "\tcolor:" << color << std::endl;
-	// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-	mesh->setLight(this);
-//	stats = new int[nTris];
-//	for(int i=0; i<nTris; ++i) stats[i]=0;
+	}
 }
 
 void meshLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float s2) const
@@ -232,5 +234,4 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 
 	return new meshLight_t(object, color*(CFLOAT)power, samples, doubleS);
 }
-
 __END_YAFRAY

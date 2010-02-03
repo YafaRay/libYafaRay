@@ -51,7 +51,7 @@ inline float sinSample(float s)
 	return fSin(s * M_PI);
 }
 
-bgLight_t::bgLight_t(background_t *bg, int sampl):light_t(LIGHT_SINGULAR), samples(sampl), background(bg)
+bgLight_t::bgLight_t(background_t *bg, int sampl, bool shootC, bool shootD):light_t(LIGHT_SINGULAR), samples(sampl), background(bg), shootCaustic(shootC), shootDiffuse(shootD)
 {
 	initIS();
 }

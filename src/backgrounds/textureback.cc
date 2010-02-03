@@ -33,7 +33,7 @@ class textureBackground_t: public background_t
 {
 	public:
 		enum PROJECTION { spherical=0, angular };
-		textureBackground_t(const texture_t *texture, PROJECTION proj, bool doIBL, int nsam, CFLOAT bpower, float rot);
+		textureBackground_t(const texture_t *texture, PROJECTION proj, bool doIBL, int nsam, CFLOAT bpower, float rot, bool shootC, bool shootD);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual light_t* getLight() const { return envLight; }
@@ -48,6 +48,8 @@ class textureBackground_t: public background_t
 		CFLOAT power;
 		float rotation;
 		PFLOAT sin_r, cos_r;
+		bool shootCaustic;
+		bool shootDiffuse;
 };
 
 class constBackground_t: public background_t
@@ -56,8 +58,8 @@ class constBackground_t: public background_t
 		constBackground_t(color_t col, bool ibl, int iblsamples);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
-		virtual ~constBackground_t();
 		virtual light_t* getLight() const { return envLight; }
+		virtual ~constBackground_t();
 		static background_t *factory(paraMap_t &params,renderEnvironment_t &render);
 	protected:
 		color_t color;
@@ -65,14 +67,14 @@ class constBackground_t: public background_t
 };
 
 
-textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, bool IBL, int nsam, CFLOAT bpower, float rot):
+textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, bool IBL, int nsam, CFLOAT bpower, float rot, bool shootC, bool shootD):
 	tex(texture), ibl(IBL), project(proj), envLight(0), power(bpower)
 {
 	rotation = 2.0f * rot / 360.f;
 	sin_r = fSin(M_PI*rotation);
 	cos_r = fCos(M_PI*rotation);
 	
-	if(ibl) envLight = new bgLight_t(this, nsam);
+	if(ibl) envLight = new bgLight_t(this, nsam, shootC, shootD);
 }
 
 textureBackground_t::~textureBackground_t()
@@ -120,6 +122,8 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	double power = 1.0, rot=0.0;
 	bool IBL = false;
 	int IBL_sam = 8; //quite arbitrary really...
+	bool caust = true;
+	bool diffuse = true;
 	
 	if( !params.getParam("texture", texname) )
 	{
@@ -140,7 +144,9 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("power", power);
 	params.getParam("rotation", rot);
-	return new textureBackground_t(tex, pr, IBL, IBL_sam, (CFLOAT)power, float(rot));
+	params.getParam("with_caustic", caust);
+	params.getParam("with_diffuse", diffuse);
+	return new textureBackground_t(tex, pr, IBL, IBL_sam, (CFLOAT)power, float(rot), caust, diffuse);
 }
 
 /* ========================================
@@ -149,7 +155,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 
 constBackground_t::constBackground_t(color_t col, bool ibl, int iblsamples):color(col), envLight(0)
 {
-	if(ibl) envLight = new bgLight_t(this, iblsamples);
+	if(ibl) envLight = new bgLight_t(this, iblsamples, false, true);
 }
 constBackground_t::~constBackground_t()
 {

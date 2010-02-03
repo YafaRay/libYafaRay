@@ -61,9 +61,11 @@ class light_t
 		/* sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf=0.f; dirPdf=0.f; }
 		// (preferred) number of samples for direct lighting
+		//! checks if the light can shoot caustic photons (photonmap integrator)
+		virtual bool shootsCausticP() const { return true;}
+		//! checks if the light can shoot diffuse photons (photonmap integrator)
+		virtual bool shootsDiffuseP() const { return true;}
 		virtual int nSamples() const { return 1; }
-		// can the light illuminate a certain point due to its type (e.g. a spotlight can only illuminate points in its cone)
-		virtual bool canIlluminate(point3d_t) const { return true; }
 		virtual ~light_t() {};
 		light_t(): flags(LIGHT_NONE){}
 		light_t(LIGHTF_t _flags): flags(_flags){}

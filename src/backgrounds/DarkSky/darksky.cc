@@ -130,7 +130,7 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	perez_y[4] = ((-0.01092 * T) + 0.05291);
 	perez_y[5] = prePerez(perez_y);
 
-	if(bgl) envLight = new bgLight_t(this, bgsamples);
+	if(bgl) envLight = new bgLight_t(this, bgsamples, false, true);
 };
 
 color_t darkSkyBackground_t::getAttenuatedSunColor()

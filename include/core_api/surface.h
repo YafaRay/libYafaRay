@@ -23,13 +23,14 @@
 #define Y_SURFACE_H
 #include "vector3d.h"
 //#include <yafray/core/extern/vector2d.h>
+#include <core_api/light.h>
 #include "color.h"
 
 #include<yafray_config.h>
 
 __BEGIN_YAFRAY
 class material_t;
-class light_t;
+//class light_t;
 class object3d_t;
 class diffRay_t;
 
