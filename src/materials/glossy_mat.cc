@@ -43,6 +43,11 @@ class glossyMat_t: public nodeMaterial_t
 			float mDiffuse, mGlossy, pDiffuse;
 			void *stack;
 		};
+		
+		void initOrenNayar(double sigma);
+		
+	private:
+		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const;
 
 	protected:
 		shaderNode_t* diffuseS;
@@ -54,6 +59,8 @@ class glossyMat_t: public nodeMaterial_t
 		float reflectivity;
 		float mDiffuse;
 		bool as_diffuse, with_diffuse, anisotropic;
+		bool orenNayar;
+		float orenA, orenB;
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff):
@@ -67,7 +74,9 @@ glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect,
 		bsdfFlags = BSDF_DIFFUSE | BSDF_REFLECT;
 		with_diffuse = true;
 	}
-	
+
+	orenNayar = false;
+
 	bsdfFlags |= as_diffuse ? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
 }
 
@@ -84,6 +93,43 @@ void glossyMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp,
 	dat->mDiffuse = mDiffuse;
 	dat->mGlossy = glossyRefS ? glossyRefS->getScalar(stack) : reflectivity;
 	dat->pDiffuse = std::min(0.6f , 1.f - (dat->mGlossy/(dat->mGlossy + (1.f-dat->mGlossy)*dat->mDiffuse)) );
+}
+
+void glossyMat_t::initOrenNayar(double sigma)
+{
+	double sigma2 = sigma*sigma;
+	orenA = 1.0 - 0.5*(sigma2 / (sigma2+0.33));
+	orenB = 0.45 * sigma2 / (sigma2 + 0.09);
+	orenNayar = true;
+}
+
+float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const
+{
+	float cos_ti = std::max(-1.f,std::min(1.f,N*wi));
+	float cos_to = std::max(-1.f,std::min(1.f,N*wo));
+	float maxcos_f = 0.f;
+	
+	if(cos_ti < 0.9999f && cos_to < 0.9999f)
+	{
+		vector3d_t v1 = (wi - N*cos_ti).normalize();
+		vector3d_t v2 = (wo - N*cos_to).normalize();
+		maxcos_f = std::max(0.f, v1*v2);
+	}
+	
+	float sin_alpha, tan_beta;
+	
+	if(cos_to >= cos_ti)
+	{
+		sin_alpha = fSqrt(1.f - cos_ti*cos_ti);
+		tan_beta = fSqrt(1.f - cos_to*cos_to) / cos_to;
+	}
+	else
+	{
+		sin_alpha = fSqrt(1.f - cos_to*cos_to);
+		tan_beta = fSqrt(1.f - cos_ti*cos_ti) / cos_ti;
+	}
+	
+	return orenA + orenB * maxcos_f * sin_alpha * tan_beta;
 }
 
 color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
@@ -123,7 +169,7 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 
 	if(with_diffuse && diffuse_flag)
 	{
-		col += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+		col += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 	
 	return col;
@@ -191,7 +237,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 
 			scolor = glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 
-			if(use_diffuse) scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+			if(use_diffuse) scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 
 			return scolor;
 
@@ -252,7 +298,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 	if(use_diffuse)
 	{
 		s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
-		scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+		scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 	
 	return scolor;
@@ -350,6 +396,17 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		mat->exp_u = e_u;
 		mat->exp_v = e_v;
 	}
+	
+	if(params.getParam("diffuse_brdf", name))
+	{
+		if(*name == "Oren-Nayar")
+		{
+			double sigma=0.1;
+			params.getParam("sigma", sigma);
+			mat->initOrenNayar(sigma);
+		}
+	}
+	
 	//shaderNode_t *diffuseS=0, *glossyS=0, *bumpS=0;
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(paramList, render))

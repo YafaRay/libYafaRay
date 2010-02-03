@@ -54,6 +54,12 @@ class coatedGlossyMat_t: public nodeMaterial_t
 			float mDiffuse, mGlossy, pDiffuse;
 			void *stack;
 		};
+
+		void initOrenNayar(double sigma);
+		
+	private:
+		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const;
+
 	protected:
 		shaderNode_t* diffuseS;
 		shaderNode_t* glossyS;
@@ -68,6 +74,8 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		BSDF_t specFlags, glossyFlags;
 		BSDF_t cFlags[3];
 		int nBSDF;
+		bool orenNayar;
+		float orenA, orenB;
 };
 
 coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, PFLOAT ior, float expo, bool as_diff):
@@ -89,6 +97,8 @@ coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, fl
 		nBSDF = 2;
 	}
 
+	orenNayar = false;
+
 	bsdfFlags = cFlags[C_SPECULAR] | cFlags[C_GLOSSY] | cFlags[C_DIFFUSE];
 }
 
@@ -105,6 +115,43 @@ void coatedGlossyMat_t::initBSDF(const renderState_t &state, const surfacePoint_
 	dat->mDiffuse = mDiffuse;
 	dat->mGlossy = glossyRefS ? glossyRefS->getScalar(stack) : reflectivity;
 	dat->pDiffuse = std::min(0.6f , 1.f - (dat->mGlossy/(dat->mGlossy + (1.f-dat->mGlossy)*dat->mDiffuse)) );
+}
+
+void coatedGlossyMat_t::initOrenNayar(double sigma)
+{
+	double sigma2 = sigma*sigma;
+	orenA = 1.0 - 0.5*(sigma2 / (sigma2+0.33));
+	orenB = 0.45 * sigma2 / (sigma2 + 0.09);
+	orenNayar = true;
+}
+
+float coatedGlossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const
+{
+	float cos_ti = std::max(-1.f,std::min(1.f,N*wi));
+	float cos_to = std::max(-1.f,std::min(1.f,N*wo));
+	float maxcos_f = 0.f;
+	
+	if(cos_ti < 0.9999f && cos_to < 0.9999f)
+	{
+		vector3d_t v1 = (wi - N*cos_ti).normalize();
+		vector3d_t v2 = (wo - N*cos_to).normalize();
+		maxcos_f = std::max(0.f, v1*v2);
+	}
+	
+	float sin_alpha, tan_beta;
+	
+	if(cos_to >= cos_ti)
+	{
+		sin_alpha = fSqrt(1.f - cos_ti*cos_ti);
+		tan_beta = fSqrt(1.f - cos_to*cos_to) / cos_to;
+	}
+	else
+	{
+		sin_alpha = fSqrt(1.f - cos_to*cos_to);
+		tan_beta = fSqrt(1.f - cos_ti*cos_ti) / cos_ti;
+	}
+	
+	return orenA + orenB * maxcos_f * sin_alpha * tan_beta;
 }
 
 color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
@@ -143,7 +190,7 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	}
 	if(with_diffuse && diffuse_flag)
 	{
-		col += diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt);
+		col += diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 	return col;
 }
@@ -276,7 +323,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 		
 		if(use[C_DIFFUSE])
 		{
-			scolor += diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt);
+			scolor += diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 			s.pdf += wiN * width[rcIndex[C_DIFFUSE]];
 		}
 	}
@@ -411,6 +458,17 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 		mat->exp_u = e_u;
 		mat->exp_v = e_v;
 	}
+	
+	if(params.getParam("diffuse_brdf", name))
+	{
+		if(*name == "Oren-Nayar")
+		{
+			double sigma=0.1;
+			params.getParam("sigma", sigma);
+			mat->initOrenNayar(sigma);
+		}
+	}
+	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(paramList, render))
 	{
