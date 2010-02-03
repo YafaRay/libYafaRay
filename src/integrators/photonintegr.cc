@@ -415,7 +415,7 @@ bool photonIntegrator_t::preprocess()
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
 				if(finalGather && ourRandom() < 0.125 )
 				{
-					vector3d_t N = FACE_FORWARD(sp.N, sp.Ng, wi);
+					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wi);
 					radData_t rd(sp.P, N);
 					rd.refl = material->getReflectivity(state, sp, BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECT);
 					rd.transm = material->getReflectivity(state, sp, BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_TRANSMIT);
@@ -642,7 +642,7 @@ bool photonIntegrator_t::preprocess()
 			{
 				cleaned.push_back(pgdat.rad_points[i]);
 				eliminatePhoton_t elimProc(pgdat.rad_points[i].normal);
-				PFLOAT maxrad = 0.001f*dsRadius; // 10% of diffuse search radius
+				PFLOAT maxrad = 0.01f*dsRadius; // 10% of diffuse search radius
 				rTree->lookup(pgdat.rad_points[i].pos, elimProc, maxrad);
 			}
 		}
@@ -730,10 +730,9 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 	
 	int nSampl = std::max(1, nPaths/state.rayDivision);
-	unsigned int offs = nPaths * state.pixelSample + state.samplingOffs;
 	for(int i=0; i<nSampl; ++i)
 	{
-		color_t throughput( 1.0 ), wl_col(0.f);
+		color_t throughput( 1.0 );
 		PFLOAT length=0;
 		surfacePoint_t hit=sp;
 		vector3d_t pwo = wo;
@@ -741,13 +740,11 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		BSDF_t matBSDFs;
 		bool did_hit;
 		const material_t *p_mat = sp.material;
+		unsigned int offs = nPaths * state.pixelSample + state.samplingOffs + i; // some redundancy here...
 		color_t lcol, scol;
 		// "zero'th" FG bounce:
-		float s1 = 0.f, s2 = 0.f;
-		
-		s1 = RI_vdC(offs);
-		s2 = scrHalton(2, offs);
-
+		float s1 = RI_vdC(offs);
+		float s2 = scrHalton(2, offs);
 		if(state.rayDivision > 1)
 		{
 			s1 = addMod1(s1, state.dc1);
@@ -847,7 +844,6 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				if(nearest) pathCol += throughput * nearest->color();
 			}
 		}
-		offs++;
 		state.userdata = first_udat;
 	}
 	return pathCol / (CFLOAT)nSampl;
@@ -1056,7 +1052,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				
 				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) Y_WARNING << "Photonmap: NaN! (photonintegr, estimateDirect)\n";
 				
-				if( bsdfs & (BSDF_DIFFUSE) ) col += finalGathering(state, sp, wo);
+				if( bsdfs & BSDF_DIFFUSE ) col += finalGathering(state, sp, wo);
 				
 				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) Y_WARNING << "Photonmap: NaN! (photonintegr, finalGathering)\n";
 			}
@@ -1101,7 +1097,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			// dispersive effects with recursive raytracing:
 			if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic)
 			{
-				state.includeLights = true; //debatable...
+				state.includeLights = false; //debatable...
 				int dsam = 8;
 				int oldDivision = state.rayDivision;
 				int oldOffset = state.rayOffset;
@@ -1201,7 +1197,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				state.dc1 = old_dc1; state.dc2 = old_dc2;
 			}
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(bsdfs & BSDF_SPECULAR)
+			if(bsdfs & (BSDF_SPECULAR | BSDF_FILTER))
 			{
 				state.includeLights = true;
 				bool reflect=false, refract=false;
