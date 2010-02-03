@@ -16,6 +16,7 @@ class shaderNode_t;
 
 struct nodeResult_t
 {
+	nodeResult_t() {}
 	nodeResult_t(colorA_t color, CFLOAT fval): col(color), f(fval) {}
 	colorA_t col;
 	CFLOAT f;
@@ -24,14 +25,15 @@ struct nodeResult_t
 class nodeStack_t
 {
 	public:
-		nodeStack_t(void *data){ dat = (nodeResult_t *)data; }
+		nodeStack_t() { dat = NULL; }
+		nodeStack_t(void *data) { dat = (nodeResult_t *)data; }
 		const nodeResult_t& operator()( unsigned int ID) const
 		{
-			return *(dat+ID);
+			return dat[ID];//*(dat+ID);
 		}
 		nodeResult_t& operator[]( unsigned int ID)
 		{
-			return *(dat+ID);
+			return dat[ID];//*(dat+ID);
 		}
 	private:
 		nodeResult_t *dat;
@@ -90,6 +92,108 @@ class YAFRAYCORE_EXPORT shaderNode_t
 		unsigned int ID;
 };
 
+///////////////////////////
+
+inline color_t texture_rgb_blend(const color_t &tex, const color_t &out, float fact, float facg, mix_modes blendtype)
+{
+	
+	switch(blendtype) {
+		case MN_MULT:
+			fact *= facg;
+			return (color_t(1.f-facg) + fact*tex)*out;
+
+		case MN_SCREEN: {
+			color_t white(1.0);
+			fact *= facg;
+			return white - (color_t(1.f-facg) + fact*(white-tex)) * (white-out);
+		}
+
+		case MN_SUB:
+			fact = -fact;
+		case MN_ADD:
+			fact *= facg;
+			return fact*tex + out;
+
+		case MN_DIV: {
+			fact *= facg;
+			color_t itex(tex);
+			itex.invertRGB();
+			return (1.f-fact)*out + fact*out*itex;
+		}
+
+		case MN_DIFF: {
+			fact *= facg;
+			color_t tmo(tex-out);
+			tmo.absRGB();
+			return (1.f-fact)*out + fact*tmo;
+		}
+
+		case MN_DARK: {
+			fact *= facg;
+			color_t col(fact*tex);
+			col.darkenRGB(out);
+			return col;
+		}
+
+		case MN_LIGHT: {
+			fact *= facg;
+			color_t col(fact*tex);
+			col.lightenRGB(out);
+			return col;
+		}
+
+		default:
+		case MN_MIX:
+			fact *= facg;
+			return fact*tex + (1.f-fact)*out;
+	}
+
+}
+
+inline float texture_value_blend(float tex, float out, float fact, float facg, mix_modes blendtype, bool flip)
+{
+	fact *= facg;
+	float facm = 1.f-fact;
+	if (flip) std::swap(fact, facm);
+
+	switch(blendtype) {
+		case MN_MULT:
+			facm = 1.f-facg;
+			return (facm+fact*tex)*out;
+
+		case MN_SCREEN:
+			facm = 1.f-facg;
+			return 1.f-(facm+fact*(1.f-tex))*(1.f-out);
+
+		case MN_SUB:
+			fact = -fact;
+		case MN_ADD:
+			return fact*tex + out;
+
+		case MN_DIV:
+			if (tex==0.f) return 0.f;
+			return facm*out + fact*out/tex;
+
+		case MN_DIFF:
+			return facm*out + fact*std::fabs(tex-out);
+
+		case MN_DARK: {
+			CFLOAT col = fact*tex;
+			if (col<out) return col;
+			return out;
+		}
+
+		case MN_LIGHT: {
+			CFLOAT col = fact*tex;
+			if (col>out) return col;
+			return out;
+		}
+
+		default:
+		case MN_MIX:
+			return fact*tex + facm*out;
+	}
+}
 	
 
 __END_YAFRAY

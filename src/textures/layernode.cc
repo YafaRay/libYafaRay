@@ -3,9 +3,6 @@
 
 __BEGIN_YAFRAY
 
-color_t texture_rgb_blend(const color_t &tex, const color_t &out, CFLOAT fact, CFLOAT facg, mix_modes blendtype);
-CFLOAT texture_value_blend(CFLOAT tex, CFLOAT out, CFLOAT fact, CFLOAT facg, mix_modes blendtype, bool flip);
-
 layerNode_t::layerNode_t(unsigned tflag, CFLOAT col_fac, CFLOAT val_fac, CFLOAT def_val, colorA_t def_col, mix_modes mmod):
 			input(0), upperLayer(0), texflag(tflag), colfac(col_fac), valfac(val_fac), default_val(def_val),
 			default_col(def_col), mode(mmod), do_color(false), do_scalar(false), color_input(false)
@@ -31,15 +28,20 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	else Tin = input->getScalar(stack);
 	//bool Talpha = true;
 	
-	if(texflag & TXF_RGBTOINT){
-		Tin = 0.35f*texcolor.getR() + 0.45f*texcolor.getG() + 0.2f*texcolor.getB();
+	if(texflag & TXF_RGBTOINT)
+	{
+		Tin = texcolor.col2bri();
 		TEX_RGB = false;
 	}
-	if(texflag & TXF_NEGATIVE){
+	
+	if(texflag & TXF_NEGATIVE)
+	{
 		if (TEX_RGB) texcolor = colorA_t(1.f)-texcolor;
 		Tin = 1.f-Tin;
 	}
+	
 	CFLOAT fact;
+	
 	if(texflag & TXF_STENCIL)
 	{
 		if(TEX_RGB) // only scalar input affects stencil...?
@@ -76,7 +78,9 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 				Tin = Ta;
 				if(texflag & TXF_NEGATIVE) Tin = 1.f - Tin;
 			}
-			else Tin = 0.35f*texcolor.getR() + 0.45f*texcolor.getG() + 0.2f*texcolor.getB();
+			else
+				//Tin = 0.35f*texcolor.getR() + 0.45f*texcolor.getG() + 0.2f*texcolor.getB();
+				Tin = texcolor.col2bri();
 		}
 		
 		rval = texture_value_blend(default_val, rval, Tin, stencilTin * valfac, mode, (do_scalar<0));
@@ -226,110 +230,4 @@ shaderNode_t* layerNode_t::factory(const paraMap_t &params,renderEnvironment_t &
 	
 	return node;
 }
-
-//////////////////
-
-
-color_t texture_rgb_blend(const color_t &tex, const color_t &out, CFLOAT fact, CFLOAT facg, mix_modes blendtype)
-{
-	
-	switch(blendtype) {
-		case MN_MULT:
-			fact *= facg;
-			return (color_t(1.f-facg) + fact*tex)*out;
-
-		case MN_SCREEN: {
-			color_t white(1.0);
-			fact *= facg;
-			return white - (color_t(1.f-facg) + fact*(white-tex)) * (white-out);
-		}
-
-		case MN_SUB:
-			fact = -fact;
-		case MN_ADD:
-			fact *= facg;
-			return fact*tex + out;
-
-		case MN_DIV: {
-			fact *= facg;
-			color_t itex(tex);
-			itex.invertRGB();
-			return (1.f-fact)*out + fact*out*itex;
-		}
-
-		case MN_DIFF: {
-			fact *= facg;
-			color_t tmo(tex-out);
-			tmo.absRGB();
-			return (1.f-fact)*out + fact*tmo;
-		}
-
-		case MN_DARK: {
-			fact *= facg;
-			color_t col(fact*tex);
-			col.darkenRGB(out);
-			return col;
-		}
-
-		case MN_LIGHT: {
-			fact *= facg;
-			color_t col(fact*tex);
-			col.lightenRGB(out);
-			return col;
-		}
-
-		default:
-		case MN_MIX:
-			fact *= facg;
-			return fact*tex + (1.f-fact)*out;
-	}
-
-}
-
-CFLOAT texture_value_blend(CFLOAT tex, CFLOAT out, CFLOAT fact, CFLOAT facg, mix_modes blendtype, bool flip)
-{
-	fact *= facg;
-	CFLOAT facm = 1.f-fact;
-	if (flip) std::swap(fact, facm);
-
-	switch(blendtype) {
-		case MN_MULT:
-			facm = 1.f-facg;
-			return (facm+fact*tex)*out;
-
-		case MN_SCREEN:
-			facm = 1.f-facg;
-			return 1.f-(facm+fact*(1.f-tex))*(1.f-out);
-
-		case MN_SUB:
-			fact = -fact;
-		case MN_ADD:
-			return fact*tex + out;
-
-		case MN_DIV:
-			if (tex==0.f) return 0.f;
-			return facm*out + fact*out/tex;
-
-		case MN_DIFF:
-			return facm*out + fact*std::fabs(tex-out);
-
-		case MN_DARK: {
-			CFLOAT col = fact*tex;
-			if (col<out) return col;
-			return out;
-		}
-
-		case MN_LIGHT: {
-			CFLOAT col = fact*tex;
-			if (col>out) return col;
-			return out;
-		}
-
-		default:
-		case MN_MIX:
-			return fact*tex + facm*out;
-	}
-}
-
-
 __END_YAFRAY
