@@ -546,6 +546,7 @@ inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, 
 	x_l.pdf_f /= cos_y;
 	x_l.pdf_b /= y.cos_wi;
 	pd.f_y = y.sp.material->eval(state, y.sp, y.wi, vec, BSDF_ALL);
+	pd.f_y += y.sp.material->emit(state, y.sp, vec);
 	
 	state.userdata = z.userdata;
 	x_e.pdf_b = z.sp.material->pdf(state, z.sp, z.wi, -vec, BSDF_ALL); // eye vert to light vert
@@ -554,6 +555,7 @@ inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, 
 	x_e.pdf_b /= cos_z;
 	x_e.pdf_f /= z.cos_wi;
 	pd.f_z = z.sp.material->eval(state, z.sp, z.wi, -vec, BSDF_ALL);
+	pd.f_z += z.sp.material->emit(state, z.sp, -vec);
 	
 	pd.w_l_e = vec;
 	pd.d_yz = fSqrt(dist2);
@@ -641,6 +643,7 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	x_e.pdf_f /= z.cos_wi;
 	x_e.specular = false;
 	pd.f_z = z.sp.material->eval(state, z.sp, z.wi, lRay.dir, BSDF_ALL);
+	pd.f_z += z.sp.material->emit(state, z.sp, lRay.dir);
 	pd.light = light;
 	
 	//copy values required
@@ -688,6 +691,7 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
 	x_l.pdf_f /= cos_y;
 	x_l.pdf_b /= y.cos_wi;
 	pd.f_y = y.sp.material->eval(state, y.sp, y.wi, vec, BSDF_ALL);
+	pd.f_y += y.sp.material->emit(state, y.sp, vec);
 	x_l.specular = false;
 	
 	pd.w_l_e = vec;
