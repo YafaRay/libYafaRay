@@ -47,8 +47,6 @@ __BEGIN_YAFRAY
 #define degToRad(deg) (deg * 0.01745329251994329576922)
 #define radToDeg(rad) (rad * 57.29577951308232087684636)
 
-#define powFive(x) (x * x * x * x * x)
-
 #define POLYEXP(x) (float)(x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
 #define POLYLOG(x) (float)(x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
 
@@ -78,7 +76,7 @@ inline float fExp2(float x)
 	fpart.f = (x - (float)(ipart.i));
 	expipart.i = ((ipart.i + 127) << 23);
 
-	return (float)(expipart.f * POLYEXP(fpart.f));
+	return (expipart.f * POLYEXP(fpart.f));
 }
 
 inline float fLog2(float x)
@@ -90,7 +88,31 @@ inline float fLog2(float x)
 	e.f = (float)(((i.i & LOG_EXP) >> 23) - 127);
 	m.i = ((i.i & LOG_MANT) | one.i);
 
-	return (float)(POLYLOG(m.f) * (m.f - one.f) + e.f);
+	return (POLYLOG(m.f) * (m.f - one.f) + e.f);
+}
+
+// Two Babylonian Steps method
+inline float bab2xSqrt(float x)
+{
+	bitTwiddler a;
+
+	a.f = x;
+	a.i = (1<<29) + (a.i >> 1) - (1<<22); 
+	
+	// a simplification to add a bit of speed
+	a.f = a.f + x/a.f;
+	return 0.25f*a.f + x/a.f;
+}
+
+inline float iSqrt(float x)
+{
+    bitTwiddler a;
+    float xhalf = 0.5f * x;
+
+    a.f = x;
+    a.i = 0x5f3759df - (a.i>>1);
+
+    return a.f*(1.5f - xhalf*a.f*a.f);
 }
 
 inline float fPow(float a, float b)
@@ -111,11 +133,21 @@ inline float fExp(float a)
 #endif
 }
 
+inline float fISqrt(float a)
+{
+#ifdef FAST_MATH
+	return iSqrt(a);
+#else
+	return 1.f/sqrt(a);
+#endif
+}
+
 inline float fSqrt(float a)
 {
 #ifdef FAST_MATH
-	//return fExp2(fLog2(a) * 0.5);
-	return sqrtf(a);
+	return bab2xSqrt(a);
+	//return iSqrt(a) * a;
+	//return sqrtf(a);
 #else
 	return sqrt(a);
 #endif
