@@ -24,6 +24,7 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/monitor.h>
+#include <string>
 
 __BEGIN_YAFRAY
 
