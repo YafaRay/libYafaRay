@@ -34,7 +34,7 @@ class photonMap_t;
 color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth);
 color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const photonMap_t &map, const vector3d_t &wo, int nSearch, PFLOAT radius);
 
-bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb = 0);
+bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb = 0, std::string intName = "None");
 
 //! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
 inline float kernel(PFLOAT r_photon2, PFLOAT ir_gather2)
@@ -102,15 +102,20 @@ inline color_t estimateOneDirect(renderState_t &state, const scene_t *scene, con
 		if( light->illumSample (sp, ls, lightRay) )
 		{
 			// ...shadowed...
-			lightPdf = 1.f/ls.pdf;
+			if(ls.pdf < 1e-6f)
+			{
+				lightPdf = 1.f;
+			}
+			else
+			{
+				lightPdf = 1.f/ls.pdf;
+			}
 			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
 			if(!shadowed)
 			{
 				if(trShad) ls.col *= scol;
 				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				//test! limit lightPdf...
-				if(lightPdf > 1.f) lightPdf = 1.f;
 				col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * lightPdf;
 			}
 		}
