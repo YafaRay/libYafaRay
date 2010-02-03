@@ -95,7 +95,11 @@ bool pathIntegrator_t::preprocess()
 	
 	if(causticType == PHOTON || causticType == BOTH)
 	{
-		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons);
+		progressBar_t *pb;
+		if(intpb) pb = intpb;
+		else pb = new ConsoleProgressBar_t(80);
+		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, "PathTracer");
+		if(!intpb) delete pb;
 	}
 
 	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
@@ -116,8 +120,9 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 	if(nLightsI == 0) return color_t(0.f);
 	float nLights = float(nLightsI);
 	float s1;
-	if(d1 > 50)  s1 = (*state.prng)();
-	else s1 = scrHalton(d1, n) * nLights;
+	//if(d1 > 50)  s1 = (*state.prng)();
+	//else s1 = scrHalton(d1, n) * nLights;
+	s1 = scrHalton(d1, n) * nLights;
 	int lnum = (int)(s1);
 	if(lnum > nLightsI-1) lnum = nLightsI-1;
 	const light_t *light = lights[lnum];
@@ -144,8 +149,9 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 		// ...get sample val...
 		lSample_t ls;
 		ls.s1 = s1;
-		if(d1 > 50)  ls.s2 = (*state.prng)();
-		else ls.s2 = scrHalton(d1+1, n);
+		//if(d1 > 50)  ls.s2 = (*state.prng)();
+		//else ls.s2 = scrHalton(d1+1, n);
+		ls.s2 = scrHalton(d1+1, n);
 		bool canIntersect=light->canIntersect();
 		
 		if( light->illumSample (sp, ls, lightRay) )
@@ -195,7 +201,7 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 					float m2 = s.pdf * s.pdf + 0.1f;
 					float w = m2 / (l2 + m2);
 					CFLOAT cos2 = std::fabs(sp.N*bRay.dir);
-					if(s.pdf>1.0e-6f) col += surfCol * lcol * cos2 * w / s.pdf;
+					if(s.pdf>1e-6f) col += surfCol * lcol * cos2 * w / s.pdf;
 				}
 			}
 		}
@@ -230,11 +236,11 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		// contribution of light emitting surfaces
 		col += material->emit(state, sp, wo);
 		
-		if(bsdfs & (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE))
+		if(bsdfs & BSDF_DIFFUSE)
 		{
 			col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
 		}
-		if((bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY)) && (causticType == PHOTON || causticType == BOTH))
+		if((bsdfs & BSDF_DIFFUSE) && (causticType == PHOTON || causticType == BOTH))
 		{
 			col += estimatePhotons(state, sp, causticMap, wo, nSearch, cRadius);
 		}
@@ -245,25 +251,25 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		// have more efficient ways to compute samples...)
 		
 		bool was_chromatic = state.chromatic;
-		BSDF_t path_flags = no_recursive ? BSDF_ALL : (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE);
+		BSDF_t path_flags = no_recursive ? BSDF_ALL : (BSDF_DIFFUSE);
 		
 		if(bsdfs & path_flags)
 		{
 			color_t pathCol(0.0), wl_col;
 			path_flags |= (BSDF_REFLECT | BSDF_TRANSMIT);
+			unsigned int offs = nPaths * state.pixelSample + state.samplingOffs;
 			for(int i=0; i<nPaths; ++i)
 			{
 				void *first_udat = state.userdata;
 				unsigned char userdata[USER_DATA_SIZE+7];
 				void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-				unsigned int offs = nPaths * state.pixelSample + state.samplingOffs + i; // some redunancy here...
-				//bool vol_scatter = false;
 				color_t throughput( 1.0 );
-				color_t lcol, scol, vcol;
+				color_t lcol, scol;
 				surfacePoint_t sp1=sp, sp2;
 				surfacePoint_t *hit=&sp1, *hit2=&sp2;
 				vector3d_t pwo = wo;
 				ray_t pRay;
+
 				state.chromatic = was_chromatic;
 				if(was_chromatic) state.wavelength = RI_S(offs);
 				//this mat already is initialized, just sample (diffuse...non-specular?)
@@ -272,30 +278,17 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				// do proper sampling now...
 				sample_t s(s1, s2, path_flags);
 				scol = material->sample(state, sp, pwo, pRay.dir, s);
-				if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
+				if(s.pdf > 1.0e-5f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
 				else continue;
 				throughput = scol;
 				state.includeLights = false;
 
-				if(state.chromatic && (s.sampledFlags & BSDF_DISPERSIVE))
-				{
-					state.chromatic = false;
-					wl2rgb(state.wavelength, wl_col);
-					throughput *= wl_col;
-				}
 				pRay.tmin = MIN_RAYDIST;
 				pRay.tmax = -1.0;
 				pRay.from = sp.P;
 				
 				if(!scene->intersect(pRay, *hit)) continue; //hit background
 
-				const volumeHandler_t *vol;
-				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * pRay.dir < 0)) != 0)
-				{
-					vol->transmittance(state, pRay, vcol);
-					throughput *= vcol;
-				}
-				
 				state.userdata = n_udat;
 				const material_t *p_mat = hit->material;
 				BSDF_t matBSDFs;
@@ -309,91 +302,184 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				for(int depth=1; depth<bounces; ++depth)
 				{
 					int d4 = 4*depth;
-					if(d4 > 50)
-					{
-						s.s1 = (*state.prng)();
-						s.s2 = (*state.prng)();
-					}
-					else
-					{
-						s.s1 = scrHalton(d4+1, offs); //ourRandom();//
-						s.s2 = scrHalton(d4+2, offs); //ourRandom();//
-					}
+					s.s1 = scrHalton(d4+1, offs); //ourRandom();//
+					s.s2 = scrHalton(d4+2, offs); //ourRandom();//
 					s.flags = BSDF_ALL;
 					
 					scol = p_mat->sample(state, *hit, pwo, pRay.dir, s);
-					if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*hit->N)/s.pdf);
+					if(s.pdf > 1.0e-5f) scol *= (std::fabs(pRay.dir*hit->N)/s.pdf);
 					else break;
 					if(scol.isBlack()) break;
 					throughput *= scol;
 					state.includeLights = traceCaustics && (s.sampledFlags & BSDF_SPECULAR);
-					if(state.chromatic && (s.sampledFlags & BSDF_DISPERSIVE))
-					{
-						state.chromatic = false;
-						wl2rgb(state.wavelength, wl_col);
-						throughput *= wl_col;
-					}
+
 					pRay.tmin = MIN_RAYDIST;
 					pRay.tmax = -1.0;
 					pRay.from = hit->P;
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if((state.includeLights && ibl))
+						if((state.includeLights))
 						{
-							pathCol += throughput * background->eval(pRay);
+							pathCol += throughput * (*background)(pRay, state);//background->eval(pRay);
 						}
 						break;
-					}
-					if((matBSDFs&BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit->Ng * pRay.dir < 0)))
-					{
-						vol->transmittance(state, pRay, vcol);
-						throughput *= vcol;
 					}
 					std::swap(hit, hit2);
 					p_mat = hit->material;
 					p_mat->initBSDF(state, *hit, matBSDFs);
 					pwo = -pRay.dir;
 
-					if(matBSDFs & (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE)) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
+					if(matBSDFs & (BSDF_DIFFUSE)) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
 					else lcol = color_t(0.f);
 					lcol += p_mat->emit(state, *hit, pwo);
 					pathCol += lcol*throughput;
 				}
 				state.userdata = first_udat;
-				
+				offs++;
 			}
 			col += pathCol * invNPaths;
 		}
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
-		//...reflection/refraction with recursive raytracing...
+
 		++state.raylevel;
+
 		if(!no_recursive && state.raylevel <= rDepth)
 		{
-			//...perfect specular reflection/refraction with recursive raytracing...
-
-			state.includeLights = true;
-			bool reflect=false, refract=false;
-			vector3d_t dir[2];
-			color_t rcol[2], vcol;
-			material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
-			if(reflect)
+			// dispersive effects with recursive raytracing:
+			if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic)
 			{
-				diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
-				color_t integ  = color_t(integrate(state, refRay) );
-				if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
-				{	integ *= vcol;	}
-				col += color_t(integ) * rcol[0];
+				state.includeLights = true; //debatable...
+				int dsam = 8;
+				int oldDivision = state.rayDivision;
+				int oldOffset = state.rayOffset;
+				float old_dc1 = state.dc1, old_dc2 = state.dc2;
+				if(state.rayDivision > 1) dsam = std::max(1, dsam/oldDivision);
+				state.rayDivision *= dsam;
+				int branch = state.rayDivision*oldOffset;
+				float d_1 = 1.f/(float)dsam;
+				float ss1 = RI_S(state.pixelSample + state.samplingOffs);
+				color_t dcol(0.f), vcol(1.f);
+				vector3d_t wi;
+				const volumeHandler_t *vol;
+				diffRay_t refRay;
+				for(int ns=0; ns<dsam; ++ns)
+				{
+					state.wavelength = (ns + ss1)*d_1;
+					state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
+					state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
+					if(oldDivision > 1)	state.wavelength = addMod1(state.wavelength, old_dc1);
+					state.rayOffset = branch;
+					++branch;
+					sample_t s(0.5f, 0.5f, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_DISPERSIVE);
+					color_t mcol = material->sample(state, sp, wo, wi, s);
+					if(s.pdf > 1.0e-5f && (s.sampledFlags & BSDF_DISPERSIVE))
+					{
+						mcol *= std::fabs(wi*sp.N)/s.pdf;
+						state.chromatic = false;
+						color_t wl_col;
+						wl2rgb(state.wavelength, wl_col);
+						refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
+						dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
+						state.chromatic = true;
+					}
+					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.N * refRay.dir < 0)))
+					{
+						if(vol->transmittance(state, refRay, vcol)) dcol *= vcol;
+					}
+				}
+				col += dcol * d_1;
+				state.rayDivision = oldDivision;
+				state.rayOffset = oldOffset;
+				state.dc1 = old_dc1; state.dc2 = old_dc2;
 			}
-			if(refract)
+			// glossy reflection with recursive raytracing:
+			if( bsdfs & BSDF_GLOSSY )
 			{
-				diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
-				colorA_t integ = integrate(state, refRay);
-				if((bsdfs&BSDF_VOLUMETRIC) && material->volumeTransmittance(state, sp, refRay, vcol))
-				{	integ *= vcol;	}
-				col += color_t(integ) * rcol[1];
-				alpha = integ.A;
+				state.includeLights = false;
+				int gsam = 8;
+				int oldDivision = state.rayDivision;
+				int oldOffset = state.rayOffset;
+				float old_dc1 = state.dc1, old_dc2 = state.dc2;
+				if(state.rayDivision > 1) gsam = std::max(1, gsam/oldDivision);
+				state.rayDivision *= gsam;
+				int branch = state.rayDivision*oldOffset;
+				unsigned int offs = gsam * state.pixelSample + state.samplingOffs;
+				float d_1 = 1.f/(float)gsam;
+				color_t gcol(0.f), vcol(1.f);
+				vector3d_t wi;
+				const volumeHandler_t *vol;
+				diffRay_t refRay;
+				for(int ns=0; ns<gsam; ++ns)
+				{
+					state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
+					state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
+					state.rayOffset = branch;
+					++offs;
+					++branch;
+					
+					float s1 = RI_vdC(offs);
+					float s2 = scrHalton(2, offs);
+					
+					if(oldDivision > 1) // create generalized halton sequence
+					{
+						s1 = addMod1(s1, old_dc1);
+						s2 = addMod1(s2, old_dc2);
+					}
+					
+					sample_t s(s1, s2, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_GLOSSY);
+					color_t mcol = material->sample(state, sp, wo, wi, s);
+					if(s.pdf > 1.0e-5f && (s.sampledFlags & BSDF_GLOSSY))
+					{
+						mcol *= std::fabs(wi*sp.N)/s.pdf;
+						refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
+						gcol += (color_t)integrate(state, refRay) * mcol;
+					}
+					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.N * refRay.dir < 0)))
+					{
+						if(vol->transmittance(state, refRay, vcol)) gcol *= vcol;
+					}
+				}
+
+				col += gcol * d_1;
+				//restore renderstate
+				state.rayDivision = oldDivision;
+				state.rayOffset = oldOffset;
+				state.dc1 = old_dc1; state.dc2 = old_dc2;
+			}
+			//...perfect specular reflection/refraction with recursive raytracing...
+			if(bsdfs & BSDF_SPECULAR)
+			{
+				state.includeLights = true;
+				bool reflect=false, refract=false;
+				vector3d_t dir[2];
+				color_t rcol[2], vcol;
+				const volumeHandler_t *vol;
+				material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
+				if(reflect)
+				{
+					diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
+					color_t integ  = color_t(integrate(state, refRay) );
+					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
+					{
+						vol->transmittance(state, refRay, vcol);
+						integ *= vcol;
+					}
+					col += integ * rcol[0];
+				}
+				if(refract)
+				{
+					diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
+					colorA_t integ = integrate(state, refRay);
+					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
+					{
+						vol->transmittance(state, refRay, vcol);
+						integ *= vcol;
+					}
+					col += color_t(integ) * rcol[1];
+					alpha = integ.A;
+				}
 			}
 		}
 		--state.raylevel;
@@ -405,7 +491,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	{
 		if(background)
 		{
-			col += (*background)(ray, state, false);
+			col += background->eval(ray);//(*background)(ray, state, false);
 		}
 	}
 	//dbg = false;
