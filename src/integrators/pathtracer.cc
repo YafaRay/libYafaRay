@@ -257,12 +257,13 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		{
 			color_t pathCol(0.0), wl_col;
 			path_flags |= (BSDF_REFLECT | BSDF_TRANSMIT);
-			unsigned int offs = nPaths * state.pixelSample + state.samplingOffs;
 			for(int i=0; i<nPaths; ++i)
 			{
 				void *first_udat = state.userdata;
 				unsigned char userdata[USER_DATA_SIZE+7];
 				void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+				unsigned int offs = nPaths * state.pixelSample + state.samplingOffs + i; // some redunancy here...
+				//bool vol_scatter = false;
 				color_t throughput( 1.0 );
 				color_t lcol, scol;
 				surfacePoint_t sp1=sp, sp2;
@@ -336,7 +337,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					pathCol += lcol*throughput;
 				}
 				state.userdata = first_udat;
-				offs++;
+				
 			}
 			col += pathCol * invNPaths;
 		}
@@ -491,7 +492,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	{
 		if(background)
 		{
-			col += background->eval(ray);//(*background)(ray, state, false);
+			col += (*background)(ray, state, false);
 		}
 	}
 	//dbg = false;
