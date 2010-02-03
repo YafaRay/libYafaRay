@@ -32,10 +32,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
 {
 	public:
 		enum filterType { BOX, MITCHELL, GAUSS, LANCZOS };
-		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX, renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32, imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR);
+		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
+		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32, imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false);
 		~imageFilm_t();
 		/*! initialize imageFilm for new rendering, i.e. set pixels black etc */
-		void init();
+		void init(int numPasses = 0);
 		/*! return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
@@ -114,6 +115,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool showMask;
 		int tileSize;
 		imageSpliter_t::tilesOrderType tilesOrder;
+		bool premultAlpha;
+		int nPasses;
 };
 
 __END_YAFRAY

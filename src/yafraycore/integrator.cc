@@ -6,6 +6,7 @@
 #include <yafraycore/scr_halton.h>
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
+#include <sstream>
 
 __BEGIN_YAFRAY
 
@@ -50,13 +51,17 @@ void renderWorker_t::body()
 
 bool tiledIntegrator_t::render(imageFilm_t *image)
 {
+	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
 	std::cout << "rendering "<<AA_passes<<" passes, min " << AA_samples << " samples, " << 
 				AA_inc_samples << " per additional pass (max "<<AA_samples + std::max(0,AA_passes-1)*AA_inc_samples<<" total)\n";
+	passString << "Rendering pass 1 of " << std::max(1, AA_passes);
+	if(intpb) intpb->setTag(passString.str().c_str());
+
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
-	imageFilm->init();
+	imageFilm->init(AA_passes);
 	
 	renderPass(AA_samples, 0, false);
 	for(int i=1; i<AA_passes; ++i)

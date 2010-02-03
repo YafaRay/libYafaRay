@@ -126,7 +126,6 @@ void imageFilm_t::drawRenderSettings()
 	for ( int x = 46; x < w; x++ ) {
 		for ( int y = h - 46; y < h; y++ ) {
 			(*image)(x, y).col *= 0.4;
-			(*image)(x, y).weight = 1.0;
 		}
 	}
 	
@@ -148,8 +147,7 @@ void imageFilm_t::drawRenderSettings()
 				colorA_t col = (*logo)(lx, ly);
 				pixel_t pix = (*image)(ix, iy);
 				
-				pix.col = (0.5 * pix.col) + (0.5 * col);
-				pix.weight = 1.0;
+				pix.col = pix.col * col;
 				
 				(*image)(ix, iy) = pix;
 			}
@@ -219,20 +217,15 @@ float Box(float dx, float dy){ return 1.f; }
 
 float Mitchell(float dx, float dy)
 {
-	//const float B = 0.33333333;
-	//const float C = 0.33333333;
-	//float val;
 	float x = 2.f * fSqrt(dx*dx + dy*dy);
 	
-	if(x > 2.f) return (0.f);
+	if(x >= 2.f) return (0.f);
 
 	if(x >= 1.f) // from mitchell-netravali paper 1 <= |x| < 2
 	{
-		//((-B - 6 * C) * x * x2 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C)) * 0.1666666;
 		return (float)( x * ( x * ( x * -0.38888889f + 2.0f) - 3.33333333f) + 1.77777778f );
 	}
 
-	//((12 - 9 * B - 6 * C) * x * x2 + (-18 + 12 * B + 6 * C) * x2 + (6 - 2 * B)) * 0.1666666;
 	return (float)( x * x * ( 1.16666666f * x - 2.0f ) + 0.88888889f );
 }
 
@@ -242,10 +235,10 @@ float Gauss(float dx, float dy)
 	return std::max(0.f, float(fExp(-6 * r2) - gaussExp));
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder):
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
 	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), estimateDensity(false), numSamples(0),
-	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder)
+	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -303,7 +296,7 @@ void imageFilm_t::setDensityEstimation(bool enable)
 }
 
 
-void imageFilm_t::init()
+void imageFilm_t::init(int numPasses)
 {
 	unsigned int size = image->size();
 	pixel_t *pixels = image->getData();
@@ -334,6 +327,7 @@ void imageFilm_t::init()
 	abort = false;
 	completed_cnt = 0;
 	nPass = 1;
+	nPasses = numPasses;
 }
 
 // currently the splitter only gives tiles in scanline order...
@@ -493,7 +487,10 @@ void imageFilm_t::addSample(const colorA_t &c, int x, int y, float dx, float dy,
 			float filterWt = filterTable[offset];
 			// update pixel values with filtered sample contribution
 			pixel_t &pixel = (*image)(i - cx0, j - cy0);
-			pixel.col += (col * filterWt);
+			
+			if(premultAlpha) pixel.col += (col * filterWt) * col.A;
+			else pixel.col += (col * filterWt);
+			
 			pixel.weight += filterWt;
 			/*if(i==0 && j==129) std::cout<<"col: "<<col<<" pcol: "<<
 			pixel.col<<" pw: "<<pixel.weight<<" x:"<<x<<"y:"<<y<<"\n";*/
@@ -629,7 +626,7 @@ void imageFilm_t::nextPass(bool adaptive_AA)
 	
 	if(interactive) output->flush();
 
-	passString << "Rendering pass " << nPass << ", resampling " << n_resample << " pixels.";
+	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
 	Y_INFO << "imageFilm: " << passString.str() << "\n";
 	
@@ -666,7 +663,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 				col = pixel.col/pixel.weight;
 				col.clampRGB0();
 			}
-			else col = 0.0;
+			else col = colorA_t(0.f);
 			if(estimateDensity && (flags & IF_DENSITYIMAGE))
 			{
 				col += densityImage(i, j) * multi;

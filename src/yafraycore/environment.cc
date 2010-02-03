@@ -468,6 +468,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	bool clamp = false;
 	bool showSampledPixels = false;
 	int tileSize = 32;
+	bool premult = false;
 		
 	params.getParam("gamma", gamma);
 	params.getParam("clamp_rgb", clamp);
@@ -480,6 +481,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("show_sam_pix", showSampledPixels); // Show pixels marked to be resampled on adaptative sampling
 	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
+	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
+
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
@@ -496,7 +499,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_WARN_ENV << "Defaulting to Linear tiles order!\n";
 	
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder, premult);
 	film->setClamp(clamp);
 	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
 	return film;
