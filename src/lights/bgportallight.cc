@@ -29,19 +29,23 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl):
-	objID(msh), samples(sampl), tree(0)
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow):
+	objID(msh), samples(sampl), power(pow), tree(0)
 {
-	mesh = 0;
-	//initIS();
+	mesh = NULL;
 }
 
 bgPortalLight_t::~bgPortalLight_t()
 {
 	delete areaDist;
-	areaDist = 0;
+	areaDist = NULL;
 	delete[] tris;
-	if(tree) delete tree;
+	tris = NULL;
+	if(tree)
+	{
+		delete tree;
+		tree = NULL;
+	}
 }
 
 void bgPortalLight_t::initIS()
@@ -68,14 +72,18 @@ void bgPortalLight_t::initIS()
 void bgPortalLight_t::init(scene_t &scene)
 {
 	bg = scene.getBackground();
+	//realLight = new bgLight_t(bg, samples);
+	
 	worldCenter = scene.getSceneBound().center();
 	mesh = scene.getMesh(objID);
-	if(mesh) initIS();
-	std::cout << "bgPortalLight:init(): triangles:" << nTris << ", area:" << area << std::endl;
-	// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-	mesh->setLight(this);
-//	stats = new int[nTris];
-//	for(int i=0; i<nTris; ++i) stats[i]=0;
+	if(mesh)
+	{	
+		mesh->setVisibility(false);
+
+		initIS();
+		Y_INFO << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << std::endl;
+		mesh->setLight(this);
+	}
 }
 
 void bgPortalLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float s2) const
@@ -91,7 +99,6 @@ void bgPortalLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float
 	}
 	else ss1 = s1 / delta;
 	tris[primNum]->sample(ss1, s2, p, n);
-//	++stats[primNum];
 }
 
 color_t bgPortalLight_t::totalEnergy() const
@@ -109,35 +116,10 @@ color_t bgPortalLight_t::totalEnergy() const
 			if(cos_n > 0) energy += col*cos_n*tris[j]->surfaceArea();
 		}
 	}
-	energy *= M_PI/(CFLOAT)1000;
-	return energy;
-}
+	//energy = bg->eval(ray_t(point3d_t(0,0,0), vector3d_t(0.5, 0.5, 0.5))) * M_2PI;
+	return energy * M_1_PI * 0.001f;
+	//return energy;
 
-bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const
-{
-	vector3d_t n;
-	point3d_t p;
-	sampleSurface(p, n, s1, s2);
-	
-	vector3d_t ldir = p - sp.P;
-	PFLOAT dist_sqr = ldir.lengthSqr();
-	PFLOAT dist = fSqrt(dist_sqr);
-	if(dist <= 0.0) return false;
-	PFLOAT idist_sqr = 1.f/(dist_sqr);
-	ldir *= 1.f/dist;
-	PFLOAT cos_angle = ldir*(-n);
-	//no light if point is behind area light surface and single sided!
-	if(cos_angle <= 0) return false;
-	
-	// fill direction
-	wi.tmax = dist;
-	wi.dir = ldir;
-	
-	col = bg->eval(wi);
-	// pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
-	ipdf = idist_sqr * area * cos_angle * M_1_PI;
-	
-	return true;
 }
 
 bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
@@ -160,7 +142,7 @@ bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t 
 	wi.tmax = dist;
 	wi.dir = ldir;
 	
-	color_t col = bg->eval(wi);
+	s.col = bg->eval(wi) * power;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf = dist_sqr*M_PI / (area * cos_angle);
 	s.flags = flags;
@@ -216,7 +198,7 @@ bool bgPortalLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float
 	if(cos_angle <= 0) return false;
 	PFLOAT idist_sqr = 1.f / (t*t);
 	ipdf = idist_sqr * area * cos_angle * (1.f/M_PI);
-	col = bg->eval(ray);
+	col = bg->eval(ray) * power;
 	
 	return true;
 }
@@ -242,11 +224,12 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
 	int samples = 4;
 	int object = 0;
+	float pow = 1.0f;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
+	params.getParam("power", pow);
 	
-	return new bgPortalLight_t(object, samples);
+	return new bgPortalLight_t(object, samples, pow);
 }
-
 __END_YAFRAY

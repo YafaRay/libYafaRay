@@ -198,15 +198,12 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 extern "C"
 {
 	
-YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
-{
-	render.registerFactory("arealight", areaLight_t::factory);
-	render.registerFactory("meshlight", meshLight_t::factory);
-	render.registerFactory("bg_portal_light", bgPortalLight_t::factory);
-}
+	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	{
+		render.registerFactory("arealight", areaLight_t::factory);
+		render.registerFactory("bgPortalLight",bgPortalLight_t::factory);
+		render.registerFactory("meshlight", meshLight_t::factory);
+	}
 
 }
-
-
-
 __END_YAFRAY

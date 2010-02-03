@@ -36,14 +36,14 @@ class background_t;
 class bgPortalLight_t : public light_t
 {
 	public:
-		bgPortalLight_t(unsigned int msh, int sampl);
+		bgPortalLight_t(unsigned int msh, int sampl, float pow);
 		virtual ~bgPortalLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const;
+		//virtual bool illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const;
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
 		virtual int nSamples() const { return samples; }
@@ -62,12 +62,14 @@ class bgPortalLight_t : public light_t
 		int samples;
 		int nTris; //!< gives the array size of uDist
 		float area, invArea;
+		float power;
 		triangleObject_t *mesh;
 		triKdTree_t *tree;
 		background_t *bg;
 		point3d_t worldCenter;
 		//debug stuff:
-		int *stats;
+		//int *stats;
+		//bgLight_t *realLight;
 };
 
 __END_YAFRAY
