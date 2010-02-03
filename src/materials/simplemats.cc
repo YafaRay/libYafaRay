@@ -37,10 +37,11 @@ class lightMat_t: public material_t
 {
 	public:
 		lightMat_t(color_t lightC, bool ds=false);
-		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=bsdfFlags; }
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
-		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
+		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes=bsdfFlags; }
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs) const {return color_t(0.0);}
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s) const;
+		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
 		static material_t* factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env);
 	protected:
 		color_t lightCol;
@@ -54,8 +55,9 @@ lightMat_t::lightMat_t(color_t lightC, bool ds): lightCol(lightC), doubleSided(d
 
 color_t lightMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {
-	s.pdf = 0.f;
-	return color_t(0.f);
+	wi = -wo;
+	s.pdf = std::fabs(wi*sp.N);
+	return lightCol;
 }
 
 color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -67,6 +69,10 @@ color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 	return (angle>0) ? lightCol : color_t(0.f);
 }
 
+float lightMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
+{
+	return std::fabs(wo*sp.N);
+}
 material_t* lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env)
 {
 	color_t col(1.0);
