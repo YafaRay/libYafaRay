@@ -364,11 +364,12 @@ bool MainWindow::saveDlg()
 		QByteArray format = formatList.at(i);
 		QByteArray desc = formatDesc.at(i);
 		if (qtFormats.contains(format)) {
-			formats += QString(desc) + " (*." + QString(format) + ")" + ";;";
+			formats += QString(desc) + " (*." + QString(format) + ")";
+			if(i<formatList.size()-1) formats + ";;";
 		}
 	}
 #if HAVE_EXR
-	formats += "EXR (*.exr)";
+	formats += ";;EXR (*.exr)";
 #endif
 
 	if (m_lastPath.isNull())
