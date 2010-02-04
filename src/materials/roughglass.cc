@@ -155,7 +155,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	}
 	else //total inner reflection
 	{
-		wi = reflect_plane(H, wo);
+		wi = reflect_plane(N, wo);
 		glossy = Blinn_D(H*N, exponent) / ( 8.f * std::fabs(cos_wo_H) * std::max(std::fabs(wo*N), std::fabs(wi*N)) );
 		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
 		s.pdf = Blinn_Pdf(H*N, cos_wo_H, exponent);
