@@ -451,7 +451,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				state.dc1 = old_dc1; state.dc2 = old_dc2;
 			}
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(bsdfs & BSDF_SPECULAR)
+			if(bsdfs & (BSDF_SPECULAR | BSDF_FILTER))
 			{
 				state.includeLights = true;
 				bool reflect=false, refract=false;

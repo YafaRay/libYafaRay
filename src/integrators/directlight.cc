@@ -234,7 +234,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 			}
 			
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if( bsdfs & BSDF_SPECULAR )
+			if( bsdfs & (BSDF_SPECULAR | BSDF_FILTER) )
 			{
 				bool reflect=false, refract=false;
 				state.includeLights = true;
