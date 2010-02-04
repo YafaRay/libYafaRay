@@ -60,6 +60,7 @@ directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDept
 	nPhotons = 100000;
 	nSearch = 100;
 	intpb = 0;
+	integratorName = "DirectLight";
 }
 
 bool directLighting_t::preprocess()
@@ -81,7 +82,7 @@ bool directLighting_t::preprocess()
 		progressBar_t *pb;
 		if(intpb) pb = intpb;
 		else pb = new ConsoleProgressBar_t(80);
-		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, "DirectLight");
+		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, integratorName);
 		if(!intpb) delete pb;
 	}
 	return success;

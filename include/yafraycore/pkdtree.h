@@ -83,14 +83,15 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 	Y_LOOKUPS=0; Y_PROCS=0;
 	nextFreeNode = 0;
 	nElements = dat.size();
-	if(nElements == 0){ std::cout << "pointKdTree: [ERROR] empty vector!\n"; return; }
+	if(nElements == 0){ Y_ERROR << "pointKdTree: Empty vector!\n"; return; }
 	nodes = (kdNode<T> *)y_memalign(64, 4*nElements*sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
 	const T **elements = new const T*[nElements];
 	for(u_int32 i=0; i<nElements; ++i) elements[i] = &dat[i];
 	treeBound.set(dat[0].pos, dat[0].pos);
 	for(u_int32 i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
-	std::cout << "starting recusive tree build (n="<<nElements<<"):\n";
+	Y_INFO << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements...\n";
 	buildTree(0, nElements, treeBound, elements);
+	Y_INFO << "pointKdTree: Tree built.\n";
 	delete[] elements;
 }
 

@@ -67,6 +67,7 @@ pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
 	nPaths = 64;
 	invNPaths = 1.f/64.f;
 	no_recursive = false;
+	integratorName = "PathTracer";
 }
 
 bool pathIntegrator_t::preprocess()
@@ -98,7 +99,7 @@ bool pathIntegrator_t::preprocess()
 		progressBar_t *pb;
 		if(intpb) pb = intpb;
 		else pb = new ConsoleProgressBar_t(80);
-		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, "PathTracer");
+		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, integratorName);
 		if(!intpb) delete pb;
 	}
 

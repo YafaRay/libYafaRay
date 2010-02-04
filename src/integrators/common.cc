@@ -204,7 +204,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		}
 		
 	}
-	Y_INFO << "TL, CL = " << all_lights.size() << ", " << lights.size() << "\n";
+
 	int numLights = lights.size();
 
 	if(numLights > 0)
@@ -214,13 +214,23 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		float *energies = new float[numLights];
 		for(int i=0;i<numLights;++i) energies[i] = lights[i]->totalEnergy().energy();
 		pdf1D_t *lightPowerD = new pdf1D_t(energies, numLights);
-		for(int i=0;i<numLights;++i) std::cout << "energy: "<< energies[i] <<" (dirac: "<<lights[i]->diracLight()<<")\n";
+		
+		Y_INFO << intName << ": Light(s) photon color testing for caustics map:\n";
+		color_t pcol(0.f);
+		for(int i=0;i<numLights;++i)
+		{
+			pcol = lights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
+			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
+			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
+			Y_INFO << intName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
+		}
+		
 		delete[] energies;
 
 		int pbStep;
 		Y_INFO << intName << ": Building caustics photon map...\n";
 		pb->init(128);
-		pbStep = nPhotons >> 7;
+		pbStep = std::max(1U, nPhotons / 128);
 		pb->setTag("Building caustics photon map...");
 
 		bool done=false;
@@ -336,14 +346,19 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		Y_INFO << intName << ": Done.\n";
 		Y_INFO << intName << ": Shot "<<curr<<" caustic photons from " << numLights <<" light(s).\n";
 		Y_INFO << intName << ": Stored caustic photons: "<<cMap.nPhotons()<<"\n";
+		
 		delete lightPowerD;
-		pb->setTag("Building caustic photons kd-tree...");
-		if(cMap.nPhotons() > 0) cMap.updateTree();
-		Y_INFO << intName << ": Done.\n";
+		
+		if(cMap.nPhotons() > 0)
+		{
+			pb->setTag("Building caustic photons kd-tree...");
+			cMap.updateTree();
+			Y_INFO << intName << ": Done.\n";
+		}
 	}
 	else
 	{
-		Y_INFO << intName << ": No caustic source lights found, skiping caustic gathering...\n";
+		Y_INFO << intName << ": No caustic source lights found, skiping caustic map building...\n";
 	}
 	return true;
 }

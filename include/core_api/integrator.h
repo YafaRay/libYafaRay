@@ -25,6 +25,7 @@
 
 #include "scene.h"
 #include <yafraycore/monitor.h>
+#include <string>
 // #include "sampling.h"
 
 __BEGIN_YAFRAY
@@ -51,6 +52,7 @@ class YAFRAYCORE_EXPORT integrator_t
 		TYPE type;
 		scene_t *scene;
 		progressBar_t *intpb;
+		std::string integratorName;
 };
 
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t

@@ -54,9 +54,11 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
-	std::cout << "rendering "<<AA_passes<<" passes, min " << AA_samples << " samples, " << 
-				AA_inc_samples << " per additional pass (max "<<AA_samples + std::max(0,AA_passes-1)*AA_inc_samples<<" total)\n";
-	passString << "Rendering pass 1 of " << std::max(1, AA_passes);
+	Y_INFO << integratorName << ": Rendering "<<AA_passes<<" passes\n";
+	Y_INFO << integratorName << ": Min. " << AA_samples << " samples\n";
+	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass\n";
+	Y_INFO << integratorName << ": Max. "<<AA_samples + std::max(0,AA_passes-1)*AA_inc_samples<<" total samples\n";
+	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
 	if(intpb) intpb->setTag(passString.str().c_str());
 
 	gTimer.addEvent("rendert");
@@ -71,10 +73,10 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 		imageFilm->nextPass(true);
 		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
 	}
+
 	gTimer.stop("rendert");
-	std::cout << "overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
-//	surfIntegrator->cleanup();
-//	imageFilm->flush();
+	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
+
 	return true;
 }
 
