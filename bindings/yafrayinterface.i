@@ -14,7 +14,9 @@
 #include <interface/yafrayinterface.h>
 #include <interface/xmlinterface.h>
 #include <yafraycore/tga_io.h>
+#if HAVE_EXR
 #include <yafraycore/EXR_io.h>
+#endif
 #include <yafraycore/memoryIO.h>
 using namespace yafaray;
 %}
@@ -178,6 +180,7 @@ class outTga_t : public colorOutput_t
 		std::string outfile;
 };
 
+#if HAVE_EXR
 class outEXR_t : public colorOutput_t
 {
 	public:
@@ -197,6 +200,8 @@ class outEXR_t : public colorOutput_t
 		const char* filename;
 		std::string out_flags;
 };
+#endif
+
 
 class memoryIO_t : public colorOutput_t
 {
