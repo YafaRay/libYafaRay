@@ -30,7 +30,7 @@ class darkSkyBackground_t: public background_t
 {
 	public:
 		darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-						   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night);
+						   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual light_t* getLight() const { return envLight; }
@@ -62,7 +62,7 @@ class darkSkyBackground_t: public background_t
 };
 
 darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night):
+									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff):
 									   envLight(0), power(pwr * skyBright), skyBrightness(skyBright), convert(clamp), alt(altitude), nightSky(night)
 {
 	
@@ -130,7 +130,7 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	perez_y[4] = ((-0.01092 * T) + 0.05291);
 	perez_y[5] = prePerez(perez_y);
 
-	if(bgl) envLight = new bgLight_t(this, bgsamples, false, true);
+	if(bgl) envLight = new bgLight_t(this, bgsamples, caus, diff);
 };
 
 color_t darkSkyBackground_t::getAttenuatedSunColor()
@@ -285,6 +285,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	bool clamp = false;
 	bool night = false;
 	float av, bv, cv, dv, ev;
+	bool caus = true;
+	bool diff = true;
 	av = bv = cv = dv = ev = 1.0;
 
 	Y_INFO << "DarkSky: Begin" << std::endl;
@@ -307,6 +309,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("sun_power", pw);
 
 	params.getParam("background_light", bgl);
+	params.getParam("with_caustic", caus);
+	params.getParam("with_diffuse", diff);
 	params.getParam("light_samples", bgl_samples);
 
 	params.getParam("night", night);
@@ -317,7 +321,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		pw *= 0.5;
 	}
 
-	darkSkyBackground_t * new_sunsky = new darkSkyBackground_t(dir, turb, bgl, bgl_samples, power, bright, clamp, av, bv, cv, dv, ev, altitude, night);
+	darkSkyBackground_t * new_sunsky = new darkSkyBackground_t(dir, turb, bgl, bgl_samples, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, caus, diff);
 
 	if (add_sun && radToDeg(acos(dir.z)) < 100.0)
 	{
