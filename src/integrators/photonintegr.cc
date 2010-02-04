@@ -171,7 +171,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 			// ...shadowed...
 			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed && ls.pdf > 1e-5f)
+			if(!shadowed && ls.pdf > 1e-6f)
 			{
 				if(trShad) ls.col *= scol;
 				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
@@ -179,7 +179,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 				if( canIntersect ) // bound samples and compensate by sampling from BSDF later
 				{
 					float mPdf = oneMat->pdf(state, sp, wo, lightRay.dir, allBSDFIntersect);
-					if(mPdf > 1e-5f)
+					if(mPdf > 1e-6f)
 					{
 						float l2 = ls.pdf * ls.pdf;
 						float m2 = mPdf * mPdf;
@@ -205,7 +205,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 			bRay.from = sp.P;
 			sample_t s(ls.s1, ls.s2, allBSDFIntersect);
 			color_t surfCol = oneMat->sample(state, sp, wo, bRay.dir, s);
-			if( s.pdf>1e-5f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
+			if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 			{
 				shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
 				if(!shadowed)
@@ -214,7 +214,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 					color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 					ls.col *= transmitCol;
 					float cos2 = std::fabs(sp.N*bRay.dir);
-					if(lightPdf > 1e-5f)
+					if(lightPdf > 1e-6f)
 					{
 						float lPdf = 1.f/lightPdf;
 						float l2 = lPdf * lPdf;

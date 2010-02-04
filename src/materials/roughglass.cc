@@ -58,7 +58,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 	nodeStack_t stack(state.userdata);
 	float cos_Ng_wo = sp.Ng*wo;
 	float cos_Ng_wi = sp.Ng*wi;
-	vector3d_t N = /*(cos_Ng_wo<0) ? -sp.N :*/ sp.N;
+	vector3d_t N = sp.N;
 	color_t col(0.f);
 	if( !(bsdfs & BSDF_GLOSSY) ) return col;
 	
@@ -108,7 +108,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {
 	nodeStack_t stack(state.userdata);
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	vector3d_t N = sp.N;
 	vector3d_t Hs;
 	float s1;
 	bool transmit;

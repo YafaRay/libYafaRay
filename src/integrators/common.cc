@@ -92,7 +92,7 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 					// ...shadowed...
 					lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 					shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-					if(!shadowed && ls.pdf > 1e-5f)
+					if(!shadowed && ls.pdf > 1e-6f)
 					{
 						if(trShad) ls.col *= scol;
 						color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
@@ -101,7 +101,7 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 						if( canIntersect)
 						{
 							float mPdf = material->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-							if(mPdf > 1e-5f)
+							if(mPdf > 1e-6f)
 							{
 								float l2 = ls.pdf * ls.pdf;
 								float m2 = mPdf * mPdf;
@@ -134,10 +134,10 @@ color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const 
 					}
 					sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
 					color_t surfCol = material->sample(state, sp, wo, bRay.dir, s);
-					if( s.pdf>1e-5f && (*l)->intersect(bRay, bRay.tmax, lcol, lightPdf) )
+					if( s.pdf>1e-6f && (*l)->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 					{
 						shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
-						if(!shadowed && lightPdf > 1e-5f)
+						if(!shadowed && lightPdf > 1e-6f)
 						{
 							if(trShad) lcol *= scol;
 							color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);

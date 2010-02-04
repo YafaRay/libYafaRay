@@ -45,7 +45,6 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public tiledIntegrator_t
 		bool trShad, caustics, do_AO;
 		int sDepth, rDepth, cDepth;
 		int nPhotons, nSearch, AO_samples;
-		float invAOSamples;
 		PFLOAT cRadius, AO_dist;
 		color_t AO_col;
 		std::vector<light_t*> lights;
@@ -320,7 +319,7 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 			}
 		}
 	}
-	return col / (float)n; //* invAOSamples;
+	return col / (float)n;
 }
 
 integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -359,7 +358,6 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	// AO settings
 	inte->do_AO = do_AO;
 	inte->AO_samples = AO_samples;
-	inte->invAOSamples = 1.f / (float)AO_samples;
 	inte->AO_dist = (PFLOAT)AO_dist;
 	inte->AO_col = AO_col;
 	return inte;
