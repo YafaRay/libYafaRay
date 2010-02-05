@@ -29,10 +29,11 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow):
-	objID(msh), samples(sampl), power(pow), tree(0)
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly):
+	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly)
 {
 	mesh = NULL;
+	aPdf = 0.f;
 }
 
 bgPortalLight_t::~bgPortalLight_t()
@@ -72,9 +73,11 @@ void bgPortalLight_t::initIS()
 void bgPortalLight_t::init(scene_t &scene)
 {
 	bg = scene.getBackground();
-	//realLight = new bgLight_t(bg, samples);
+	bound_t w = scene.getSceneBound();
+	float worldRadius = 0.5 * (w.g - w.a).length();
+	aPdf = worldRadius * worldRadius;
 	
-	worldCenter = scene.getSceneBound().center();
+	worldCenter = 0.5 * (w.a + w.g);
 	mesh = scene.getMesh(objID);
 	if(mesh)
 	{	
@@ -124,6 +127,8 @@ color_t bgPortalLight_t::totalEnergy() const
 
 bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if(photonOnly) return false;
+	
 	vector3d_t n;
 	point3d_t p;
 	sampleSurface(p, n, s.s1, s.s2);
@@ -225,11 +230,17 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int samples = 4;
 	int object = 0;
 	float pow = 1.0f;
+	bool caus = true;
+	bool diff = true;
+	bool ponly = false;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
 	params.getParam("power", pow);
+	params.getParam("with_caustic", caus);
+	params.getParam("with_diffuse", diff);
+	params.getParam("photon_only", ponly);
 	
-	return new bgPortalLight_t(object, samples, pow);
+	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly);
 }
 __END_YAFRAY
