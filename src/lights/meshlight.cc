@@ -98,7 +98,7 @@ void meshLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float s2)
 //	++stats[primNum];
 }
 
-color_t meshLight_t::totalEnergy() const { return doubleSided ? 2.f*color*area : color*area; }
+color_t meshLight_t::totalEnergy() const { return (doubleSided ? 2.f*color*area : color*area); }
 
 bool meshLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
@@ -232,6 +232,6 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples", samples);
 	params.getParam("double_sided", doubleS);
 
-	return new meshLight_t(object, color*(CFLOAT)power, samples, doubleS);
+	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS);
 }
 __END_YAFRAY

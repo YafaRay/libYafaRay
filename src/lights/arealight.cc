@@ -59,7 +59,7 @@ void areaLight_t::init(scene_t &scene)
 	{
 		object3d_t *obj = scene.getObject(objID);
 		if(obj) obj->setLight(this);
-		else std::cout << "areaLight_t::init(): invalid object ID given!\n";
+		else Y_INFO << "AreaLight: Invalid object ID given!\n";
 	}
 }
 
@@ -131,8 +131,7 @@ inline bool triIntersect(const point3d_t &a, const point3d_t &b, const point3d_t
 	v = (ray.dir*qvec) * inv_det;
 	if ((v<0.0) || ((u+v)>1.0) ) return false;
 	t = edge2 * qvec * inv_det;
-//	PFLOAT *dat = (PFLOAT*)userdata;
-//	dat[0]=u; dat[1]=v;
+
 	return true;
 }
 
@@ -166,7 +165,6 @@ void areaLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float 
 {
 	areaPdf = invArea * M_PI;
 	cos_wo = wo*sp.N;
-	//if(sp.N * normal < 0.95f) std::cout << "whow!\n";
 	dirPdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
@@ -177,7 +175,6 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	point3d_t p2(0.0);
 	color_t color(1.0);
 	CFLOAT power = 1.0;
-//	bool shadow = true;
 	int samples = 4;
 	int object = 0;
 
@@ -188,7 +185,6 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("power",power);
 	params.getParam("samples",samples);
 	params.getParam("object", object);
-//	params.getParam("cast_shadows",shadow);
 
 	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples);
 	light->objID = (unsigned int)object;
