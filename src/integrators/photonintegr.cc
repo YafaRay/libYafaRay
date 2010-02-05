@@ -263,17 +263,21 @@ bool photonIntegrator_t::preprocess()
 {
 	gTimer.addEvent("prepass");
 	gTimer.start("prepass");
-	
+
+	Y_INFO << integratorName << ": Starting preprocess...\n";
+
 	diffuseMap.clear();
 	causticMap.clear();
 	background = scene->getBackground();
 	lights = scene->lights;
+	std::vector<light_t*> tmplights;
+
 	if(background)
 	{
 		light_t *bgl = background->getLight();
-		if(bgl) lights.push_back(bgl);
+		if(bgl) tmplights.push_back(bgl);
 	}
-
+	
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
 	int numCLights = 0;
@@ -282,23 +286,28 @@ bool photonIntegrator_t::preprocess()
 	float *energies = NULL;
 	color_t pcol;
 
+	tmplights.clear();
+
 	for(int i=0;i<(int)lights.size();++i)
 	{
-		if(lights[i]->shootsCausticP()) numCLights++;
-		if(lights[i]->shootsDiffuseP()) numDLights++;
+		if(lights[i]->shootsDiffuseP())
+		{
+			numDLights++;
+			tmplights.push_back(lights[i]);
+		}
 	}
 	
 	fNumLights = (float)numDLights;
 	energies = new float[numDLights];
 
-	for(int i=0;i<numDLights;++i) energies[i] = lights[i]->totalEnergy().energy();
+	for(int i=0;i<numDLights;++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
 	lightPowerD = new pdf1D_t(energies, numDLights);
 	
 	Y_INFO << integratorName << ": Light(s) photon color testing for diffuse map:\n";
 	for(int i=0;i<numDLights;++i)
 	{
-		pcol = lights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
+		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 		lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 		Y_INFO << integratorName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
@@ -345,14 +354,8 @@ bool photonIntegrator_t::preprocess()
 		sL = float(curr) * invDiffPhotons;
 		int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
 		if(lightNum >= numDLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return false; }
-		if(!lights[lightNum]->shootsDiffuseP())
-		{
-			curr++;
-			done = (curr >= nPhotons);
-			continue;
-		}
-	
-		pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
+
+		pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 		ray.tmin = MIN_RAYDIST;
 		ray.tmax = -1.0;
 		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -453,22 +456,35 @@ bool photonIntegrator_t::preprocess()
 	Y_INFO << integratorName << ": Shot "<<curr<<" photons from " << numDLights << " light(s)\n";
 
 	delete lightPowerD;
+
+	tmplights.clear();
+
+	for(int i=0;i<(int)lights.size();++i)
+	{
+		if(lights[i]->shootsCausticP())
+		{
+			numCLights++;
+			tmplights.push_back(lights[i]);
+		}
+	}
+
 	if(numCLights > 0)
 	{
+		
 		done = false;
 		curr=0;
 
 		fNumLights = (float)numCLights;
 		energies = new float[numCLights];
 
-		for(int i=0;i<numCLights;++i) energies[i] = lights[i]->totalEnergy().energy();
+		for(int i=0;i<numCLights;++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
 		lightPowerD = new pdf1D_t(energies, numCLights);
 		
 		Y_INFO << integratorName << ": Light(s) photon color testing for caustics map:\n";
 		for(int i=0;i<numCLights;++i)
 		{
-			pcol = lights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
+			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			Y_INFO << integratorName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
@@ -498,13 +514,8 @@ bool photonIntegrator_t::preprocess()
 			sL = float(curr) * invCaustPhotons;
 			int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
 			if(lightNum >= numCLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return false; }
-			if(!lights[lightNum]->shootsCausticP())
-			{
-				curr++;
-				done = (curr >= nCausPhotons);
-				continue;
-			}
-			pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
+
+			pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 			ray.tmin = MIN_RAYDIST;
 			ray.tmax = -1.0;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
@@ -621,7 +632,9 @@ bool photonIntegrator_t::preprocess()
 	if(diffuseMap.nPhotons() < 50) { Y_ERROR << integratorName << ": Too few diffuse photons, stopping now.\n"; return false; }
 	
 	lookupRad = 4*dsRadius*dsRadius;
-
+	
+	tmplights.clear();
+	
 	if(finalGather) //create radiance map:
 	{
 #ifdef USING_THREADS
