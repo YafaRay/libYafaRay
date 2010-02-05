@@ -13,7 +13,7 @@ __BEGIN_YAFRAY
 class paraMap_t;
 class renderEnvironment_t;
 
-class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
+class perspectiveCam_t: public camera_t
 {
 	public:
 		enum bokehType {BK_DISK1, BK_DISK2, BK_TRI=3, BK_SQR, BK_PENTA, BK_HEXA, BK_RING};
@@ -45,7 +45,7 @@ class YAFRAYCORE_EXPORT perspectiveCam_t: public camera_t
 		std::vector<PFLOAT> LS;
 };
 
-class YAFRAYCORE_EXPORT architectCam_t: public perspectiveCam_t
+class architectCam_t: public perspectiveCam_t
 {
 	public:
 		architectCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
@@ -59,7 +59,7 @@ class YAFRAYCORE_EXPORT architectCam_t: public perspectiveCam_t
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
-class YAFRAYCORE_EXPORT orthoCam_t: public camera_t
+class orthoCam_t: public camera_t
 {
 	public:
 		orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
@@ -74,7 +74,7 @@ class YAFRAYCORE_EXPORT orthoCam_t: public camera_t
 		mutable point3d_t pos;
 };
 
-class YAFRAYCORE_EXPORT angularCam_t: public camera_t
+class angularCam_t: public camera_t
 {
 	public:
 		angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
