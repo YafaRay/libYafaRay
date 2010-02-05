@@ -105,6 +105,9 @@ Export('append_includes')
 BuildDir('build/yafraycore', 'src/yafraycore', duplicate=0)
 SConscript(['build/yafraycore/SConscript'])
 
+BuildDir('build/cameras', 'src/cameras', duplicate=0)
+SConscript(['build/cameras/SConscript'])
+
 BuildDir('build/lights', 'src/lights', duplicate=0)
 SConscript(['build/lights/SConscript'])
 

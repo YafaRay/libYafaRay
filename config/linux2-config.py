@@ -12,11 +12,11 @@ BASE_LPATH = '/usr/lib'
 BASE_IPATH = '/usr/include'
 
 ### pthreads
+WITH_YF_PTHREAD = 'true'
 YF_PTHREAD_LIB = 'pthread'
 
 ### OpenEXR
-# Disable line below if you don't want EXR support
-#WITH_YF_EXR = 'false'
+WITH_YF_EXR = 'true'
 YF_EXR_INC = '${BASE_IPATH}/OpenEXR'
 YF_EXR_LIB = 'Half Iex Imath IlmImf'
 YF_EXR_LIBPATH = '${BASE_LPATH}'
@@ -26,6 +26,7 @@ YF_XML_INC = '${BASE_IPATH}/libxml2'
 YF_XML_LIB = 'xml2'
 
 ### JPEG
+WITH_YF_JPEG = 'true'
 YF_JPEG_INC = ''
 YF_JPEG_LIB = 'jpeg'
 
@@ -49,7 +50,7 @@ YF_MISC_LIB = 'dl'
 
 # Qt
 WITH_YF_QT='true'
-#YF_QTDIR='/usr/lib/qt4'
+YF_QTDIR='/usr/lib/qt4'
 
 # Python
 #YF_PYTHON = '/usr'

@@ -41,7 +41,6 @@
 #include <core_api/imagefilm.h>
 #include <core_api/object3d.h>
 #include <core_api/volume.h>
-#include <yafraycore/builtincameras.h>
 #include <yafraycore/std_primitives.h>
 #include <yaf_revision.h>
 #include <string>
@@ -70,10 +69,10 @@ renderEnvironment_t::renderEnvironment_t()
 	std::cout << PACKAGE << " (" << YAF_SVN_REV << ")" << std::endl;
 #endif
 	// add builtin types to factory tables:
-	camera_factory["perspective"] = perspectiveCam_t::factory;
-	camera_factory["architect"] = architectCam_t::factory;
-	camera_factory["orthographic"] = orthoCam_t::factory;
-	camera_factory["angular"] = angularCam_t::factory;
+	//camera_factory["perspective"] = perspectiveCam_t::factory;
+	//camera_factory["architect"] = architectCam_t::factory;
+	//camera_factory["orthographic"] = orthoCam_t::factory;
+	//camera_factory["angular"] = angularCam_t::factory;
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
 }

@@ -7,7 +7,7 @@
 #include <core_api/surface.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
-#include <yafraycore/builtincameras.h>
+#include <core_api/camera.h>
 #include <yafraycore/tga_io.h>
 
 #include <testsuite/simplemat.h>
@@ -150,8 +150,20 @@ int main()
 
 	//camera:
 	std::cout << "adding camera;\n";
-	perspectiveCam_t *camera = new perspectiveCam_t(point3d_t(0,-3.0,-0.5), point3d_t(0,0,-0.2), point3d_t(0,-3.0,1), 400,400, 1, 1.0);
+//	perspectiveCam_t *camera = new perspectiveCam_t(point3d_t(0,-3.0,-0.5), point3d_t(0,0,-0.2), point3d_t(0,-3.0,1), 400,400, 1, 1.0);
 //	perspectiveCam_t *camera = new perspectiveCam_t(point3d_t(0,-3.0,1.0), point3d_t(0,0,0.5), point3d_t(0,-3.0,2.0), 400,400, 1, 1.0);
+//	scene->setCamera(camera);
+	camera_t* camera=0;
+	params.clear();
+	params["type"] = parameter_t(std::string("perspective"));
+	params["from"] = parameter_t(point3d_t(0,-3.0,1.0));
+	params["to"] = parameter_t(point3d_t(0,0,0.5));
+	params["up"] = parameter_t(point3d_t(0,-3.0,2.0));
+	params["resx"] = parameter_t(400);
+	params["resy"] = parameter_t(400);
+	params["aspect"] = parameter_t(1);
+	params["focal"] = parameter_t(1.0);
+	camera = env->createCamera("Camera", params);
 	scene->setCamera(camera);
 
 	//image film:
