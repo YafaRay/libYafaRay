@@ -121,11 +121,9 @@ inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const s
 	if(nLightsI == 0) return color_t(0.f);
 	float nLights = float(nLightsI);
 	float s1;
-	//if(d1 > 50)  s1 = (*state.prng)();
-	//else s1 = scrHalton(d1, n) * nLights;
+
 	s1 = scrHalton(d1, n) * nLights;
-	int lnum = (int)(s1);
-	if(lnum > nLightsI-1) lnum = nLightsI-1;
+	int lnum = std::min((int)(s1), nLightsI-1);
 	const light_t *light = lights[lnum];
 	s1 = s1 - (float)lnum;
 
@@ -297,7 +295,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				p_mat->initBSDF(state, *hit, matBSDFs);
 				pwo = -pRay.dir;
 				lcol = estimateOneDirect(state, *hit, pwo, lights, 3, offs);
-				lcol += p_mat->emit(state, *hit, pwo);
+				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
 
 				pathCol += lcol*throughput;
 				
