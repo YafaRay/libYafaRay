@@ -233,7 +233,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		material->initBSDF(state, sp, bsdfs);
 		vector3d_t wo = -ray.dir;
 		// contribution of light emitting surfaces
-		col += material->emit(state, sp, wo);
+		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 		
 		if(bsdfs & BSDF_DIFFUSE)
 		{
@@ -256,7 +256,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		{
 			color_t pathCol(0.0), wl_col;
 			path_flags |= (BSDF_REFLECT | BSDF_TRANSMIT);
-			for(int i=0; i<nPaths; ++i)
+			int nSamples = std::max(1, nPaths/state.rayDivision);
+			for(int i=0; i<nSamples; ++i)
 			{
 				void *first_udat = state.userdata;
 				unsigned char userdata[USER_DATA_SIZE+7];
@@ -275,10 +276,15 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				//this mat already is initialized, just sample (diffuse...non-specular?)
 				float s1 = RI_vdC(offs);
 				float s2 = scrHalton(2, offs);
+				if(state.rayDivision > 1)
+				{
+					s1 = addMod1(s1, state.dc1);
+					s2 = addMod1(s2, state.dc2);
+				}
 				// do proper sampling now...
 				sample_t s(s1, s2, path_flags);
 				scol = material->sample(state, sp, pwo, pRay.dir, s);
-				if(s.pdf > 1.0e-5f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
+				if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
 				else continue;
 				throughput = scol;
 				state.includeLights = false;
@@ -302,12 +308,19 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				for(int depth=1; depth<bounces; ++depth)
 				{
 					int d4 = 4*depth;
-					s.s1 = scrHalton(d4+1, offs); //ourRandom();//
-					s.s2 = scrHalton(d4+2, offs); //ourRandom();//
+					s.s1 = scrHalton(d4+3, offs); //ourRandom();//
+					s.s2 = scrHalton(d4+4, offs); //ourRandom();//
+
+					if(state.rayDivision > 1)
+					{
+						s1 = addMod1(s1, state.dc1);
+						s2 = addMod1(s2, state.dc2);
+					}
+
 					s.flags = BSDF_ALL;
 					
 					scol = p_mat->sample(state, *hit, pwo, pRay.dir, s);
-					if(s.pdf > 1.0e-5f) scol *= (std::fabs(pRay.dir*hit->N)/s.pdf);
+					if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*hit->N)/s.pdf);
 					else break;
 					if(scol.isBlack()) break;
 					throughput *= scol;
@@ -325,6 +338,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 						}
 						break;
 					}
+					
 					std::swap(hit, hit2);
 					p_mat = hit->material;
 					p_mat->initBSDF(state, *hit, matBSDFs);
@@ -332,13 +346,15 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(matBSDFs & (BSDF_DIFFUSE)) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
 					else lcol = color_t(0.f);
-					lcol += p_mat->emit(state, *hit, pwo);
+					
+					if (matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
+					
 					pathCol += lcol*throughput;
 				}
 				state.userdata = first_udat;
 				
 			}
-			col += pathCol * invNPaths;
+			col += pathCol / nSamples;
 		}
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
@@ -374,7 +390,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					++branch;
 					sample_t s(0.5f, 0.5f, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_DISPERSIVE);
 					color_t mcol = material->sample(state, sp, wo, wi, s);
-					if(s.pdf > 1.0e-5f && (s.sampledFlags & BSDF_DISPERSIVE))
+					if(s.pdf > 1e-6f && (s.sampledFlags & BSDF_DISPERSIVE))
 					{
 						mcol *= std::fabs(wi*sp.N)/s.pdf;
 						state.chromatic = false;
@@ -430,7 +446,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					
 					sample_t s(s1, s2, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_GLOSSY);
 					color_t mcol = material->sample(state, sp, wo, wi, s);
-					if(s.pdf > 1.0e-5f && (s.sampledFlags & BSDF_GLOSSY))
+					if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_GLOSSY))
 					{
 						mcol *= std::fabs(wi*sp.N)/s.pdf;
 						refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);

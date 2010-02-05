@@ -55,9 +55,8 @@ lightMat_t::lightMat_t(color_t lightC, bool ds): lightCol(lightC), doubleSided(d
 
 color_t lightMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {
-	wi = -wo;
-	s.pdf = std::fabs(wi*sp.N);
-	return lightCol;
+	s.pdf = 0.f;
+	return color_t(0.f);
 }
 
 color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -71,7 +70,7 @@ color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 
 float lightMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
-	return std::fabs(wo*sp.N);
+	return 0.f;
 }
 material_t* lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env)
 {
