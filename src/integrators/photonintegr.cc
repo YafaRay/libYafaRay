@@ -275,7 +275,7 @@ bool photonIntegrator_t::preprocess()
 	if(background)
 	{
 		light_t *bgl = background->getLight();
-		if(bgl) tmplights.push_back(bgl);
+		if(bgl) lights.push_back(bgl);
 	}
 	
 	ray_t ray;
