@@ -50,7 +50,7 @@ YF_MISC_LIB = 'dl'
 
 # Qt
 WITH_YF_QT='true'
-YF_QTDIR='/usr/lib/qt4'
+#YF_QTDIR='/usr/lib/qt4'
 
 # Python
 #YF_PYTHON = '/usr'
