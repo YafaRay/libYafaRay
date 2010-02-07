@@ -216,14 +216,4 @@ camera_t* perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 	return new perspectiveCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot);
 }
 
-extern "C"
-{
-
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
-	{
-		render.registerFactory("perspective",	perspectiveCam_t::factory);
-	}
-
-}
-
 __END_YAFRAY

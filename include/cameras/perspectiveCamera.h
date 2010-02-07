@@ -36,7 +36,7 @@ class perspectiveCam_t: public camera_t
 		
 		bokehType bkhtype;
 		bkhBiasType bkhbias;
-		mutable vector3d_t dof_up, dof_rt;
+		vector3d_t dof_up, dof_rt;
 		PFLOAT aperture;
 		PFLOAT focal_distance, dof_distance;
 		PFLOAT fdist;

@@ -23,7 +23,7 @@ class orthoCam_t: public camera_t
 		static camera_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		PFLOAT scale;
-		mutable point3d_t pos;
+		point3d_t pos;
 };
 
 __END_YAFRAY

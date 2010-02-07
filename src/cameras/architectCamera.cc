@@ -128,6 +128,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
+		render.registerFactory("perspective",   perspectiveCam_t::factory);
 		render.registerFactory("architect",	architectCam_t::factory);
 	}
 
