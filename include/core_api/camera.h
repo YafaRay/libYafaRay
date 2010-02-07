@@ -26,7 +26,6 @@
 #include <yafray_config.h>
 
 #include "ray.h"
-#include <vector>
 
 __BEGIN_YAFRAY
 

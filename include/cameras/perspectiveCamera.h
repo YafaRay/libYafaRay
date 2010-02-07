@@ -5,6 +5,7 @@
 #include <yafray_config.h>
 
 #include <core_api/camera.h>
+#include <vector>
 
 __BEGIN_YAFRAY
 
