@@ -149,6 +149,7 @@ if 'swig_install' in COMMAND_LINE_TARGETS:
 
 Alias('install',['install_core',
 				 'install_testsuite',
+				 'install_cameras',
 				 'install_lights',
 				 'install_volumes',
 				 'install_mat',

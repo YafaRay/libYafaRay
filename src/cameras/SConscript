@@ -5,13 +5,23 @@ Import('plugin_env')
 Import('static_env')
 Import('append_lib')
 
-
 cameras_env = plugin_env.Clone();
 
-builtincameras=cameras_env.SharedLibrary (target='builtincameras', source=['builtincameras.cc'])
-cameras_env.Install('${YF_PLUGINPATH}',builtincameras)
+perspectiveCamera=cameras_env.SharedLibrary (target='perspectiveCamera', source=['perspectiveCamera.cc'])
+cameras_env.Install('${YF_PLUGINPATH}',perspectiveCamera)
 
-cameras_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[builtincameras])
+orthographicCamera=cameras_env.SharedLibrary (target='orthographicCamera', source=['orthographicCamera.cc'])
+cameras_env.Install('${YF_PLUGINPATH}',orthographicCamera)
+
+angularCamera=cameras_env.SharedLibrary (target='angularCamera', source=['angularCamera.cc'])
+cameras_env.Install('${YF_PLUGINPATH}',angularCamera)
+
+architectCamera_env = cameras_env.Clone();
+architectCamera_env.Append(LIBS = ['perspectiveCamera'])
+architectCamera_env.Append(LIBPATH = ['../cameras'])
+architectCamera=architectCamera_env.SharedLibrary (target='architectCamera', source=['architectCamera.cc'])
+cameras_env.Install('${YF_PLUGINPATH}',architectCamera)
+
+cameras_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[perspectiveCamera,architectCamera,orthographicCamera,angularCamera])
 
 cameras_env.Alias('install_cameras','${YF_PLUGINPATH}')
-
