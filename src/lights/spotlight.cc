@@ -131,9 +131,9 @@ bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	if(photonOnly) return false;
 
 	vector3d_t ldir(position - sp.P);
-	PFLOAT dist_sqr = ldir*ldir;
-	PFLOAT dist = fSqrt(dist_sqr);
-	if(dist == 0.0) return false;
+	float dist_sqr = ldir*ldir;
+	if(dist_sqr == 0.0) return false;
+	float dist = fSqrt(dist_sqr);
 	
 	ldir *= 1.f/dist; //normalize
 	
@@ -141,7 +141,7 @@ bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	if(cosa < cosEnd) return false; //outside cone
 	
 	wi.tmax = dist;
-	wi.dir = sampleCone(ldir, du, dv, cosa, s.s1 * shadowFuzzy, s.s2 * shadowFuzzy);
+	wi.dir = sampleCone(ldir, du, dv, cosEnd, s.s1 * shadowFuzzy, s.s2 * shadowFuzzy);
 	
 	if(cosa >= cosStart) // not affected by falloff
 	{

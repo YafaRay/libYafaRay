@@ -339,12 +339,12 @@ bool photonIntegrator_t::preprocess()
 	//Pregather diffuse photons
 
 	float invDiffPhotons = 1.f / (float)nPhotons;
-
+	
 	while(!done)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb) delete pb; return false; }
-		state.chromatic = true;
-		state.wavelength = RI_S(curr);
+		//state.chromatic = true;
+		//state.wavelength = scrHalton(5, curr);
 
 		s1 = RI_vdC(curr);
 		s2 = scrHalton(2, curr);
@@ -405,7 +405,7 @@ bool photonIntegrator_t::preprocess()
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
-				if(finalGather && ourRandom() < 0.125 )
+				if(finalGather && ourRandom() < 0.125 && !causticPhoton )
 				{
 					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wi);
 					radData_t rd(sp.P, N);
@@ -433,13 +433,13 @@ bool photonIntegrator_t::preprocess()
 			causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
 							((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
 			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
-			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
+			/*if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
 			{
 				state.chromatic=false;
 				color_t wl_col;
 				wl2rgb(state.wavelength, wl_col);
 				pcol *= wl_col;
-			}
+			}*/
 			ray.from = sp.P;
 			ray.dir = wo;
 			ray.tmin = MIN_RAYDIST;
@@ -504,7 +504,7 @@ bool photonIntegrator_t::preprocess()
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb) delete pb; return false; }
 			state.chromatic = true;
-			state.wavelength = RI_S(curr);
+			state.wavelength = scrHalton(5,curr);
 
 			s1 = RI_vdC(curr);
 			s2 = scrHalton(2, curr);
