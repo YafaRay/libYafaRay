@@ -232,6 +232,9 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
 		vector3d_t wo = -ray.dir;
+		const volumeHandler_t *vol;
+		color_t vcol(0.f);
+
 		// contribution of light emitting surfaces
 		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 		
@@ -346,6 +349,11 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(matBSDFs & (BSDF_DIFFUSE)) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
 					else lcol = color_t(0.f);
+
+					if((matBSDFs & BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit->N * pwo < 0)))
+					{
+						if(vol->transmittance(state, pRay, vcol)) throughput *= vcol;
+					}
 					
 					if (matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
 					
@@ -376,9 +384,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				int branch = state.rayDivision*oldOffset;
 				float d_1 = 1.f/(float)dsam;
 				float ss1 = RI_S(state.pixelSample + state.samplingOffs);
-				color_t dcol(0.f), vcol(1.f);
+				color_t dcol(0.f);
 				vector3d_t wi;
-				const volumeHandler_t *vol;
 				diffRay_t refRay;
 				for(int ns=0; ns<dsam; ++ns)
 				{
@@ -423,9 +430,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				int branch = state.rayDivision*oldOffset;
 				unsigned int offs = gsam * state.pixelSample + state.samplingOffs;
 				float d_1 = 1.f/(float)gsam;
-				color_t gcol(0.f), vcol(1.f);
+				color_t gcol(0.f);
 				vector3d_t wi;
-				const volumeHandler_t *vol;
 				diffRay_t refRay;
 				for(int ns=0; ns<gsam; ++ns)
 				{
@@ -470,9 +476,10 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				state.includeLights = true;
 				bool reflect=false, refract=false;
 				vector3d_t dir[2];
-				color_t rcol[2], vcol;
-				const volumeHandler_t *vol;
+				color_t rcol[2];
+				
 				material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
+				
 				if(reflect)
 				{
 					diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);

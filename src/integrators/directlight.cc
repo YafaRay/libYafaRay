@@ -295,7 +295,7 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 	if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
 	unsigned int offs = n * state.pixelSample + state.samplingOffs;
 	hal3.setStart(offs-1);
-	
+	color_t surfCol(0.f), scol(0.f);
 	for(int i=0; i<n; ++i)
 	{
 		float s1 = RI_vdC(offs+i);
@@ -309,14 +309,15 @@ color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &s
 		lightRay.tmax = AO_dist;
 		
 		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
-		color_t surfCol = material->sample(state, sp, wo, lightRay.dir, s);
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s);
 		if(s.pdf > 1e-6f)
 		{
-			shadowed = scene->isShadowed(state, lightRay);
+			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
 			if(!shadowed)
 			{
 				CFLOAT cos = std::fabs(sp.N*lightRay.dir);
-				col += AO_col * surfCol * cos / s.pdf;
+				if(trShad) col += AO_col * scol * surfCol * cos / s.pdf;
+				else col += AO_col * surfCol * cos / s.pdf;
 			}
 		}
 	}

@@ -733,6 +733,8 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	void *first_udat = state.userdata;
 	unsigned char userdata[USER_DATA_SIZE+7];
 	void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+	const volumeHandler_t *vol;
+	color_t vcol(0.f);
 	
 	int nSampl = std::max(1, nPaths/state.rayDivision);
 	for(int i=0; i<nSampl; ++i)
@@ -785,7 +787,12 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			int d4 = 4*depth;
 			pwo = -pRay.dir;
 			p_mat->initBSDF(state, hit, matBSDFs);
-
+			
+			if((matBSDFs & BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit.N * pwo < 0)))
+			{
+				if(vol->transmittance(state, pRay, vcol)) throughput *= vcol;
+			}
+	
 			if(matBSDFs & (BSDF_DIFFUSE))
 			{
 				if(close)
@@ -1090,7 +1097,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			}
 		}
 		// add caustics
-		if(bsdfs & (BSDF_DIFFUSE/* | BSDF_GLOSSY*/))
+		if(bsdfs & (BSDF_DIFFUSE))
 		{
 			col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, cRadius);
 		}

@@ -165,22 +165,26 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 	foundPhoton_t *gathered = (foundPhoton_t *)alloca(nSearch * sizeof(foundPhoton_t));
 	int nGathered = 0;
 	
-	PFLOAT gRadiusSquare = radius;
+	float gRadiusSquare = radius * radius;
 	
 	nGathered = map.gather(sp.P, gathered, nSearch, gRadiusSquare);
 	
 	gRadiusSquare = 1.f / gRadiusSquare;
 	
-	color_t sum(0.0);
+	color_t sum(0.f);
 	
 	if(nGathered > 0)
 	{
 		const material_t *material = sp.material;
+		color_t surfCol(0.f);
+		float k = 0.f;
+		const photon_t *photon;
+
 		for(int i=0; i<nGathered; ++i)
 		{
-			const photon_t *photon = gathered[i].photon;
-			color_t surfCol = material->eval(state, sp, wo, photon->direction(), BSDF_ALL);
-			float k = kernel(gathered[i].distSquare, gRadiusSquare);
+			photon = gathered[i].photon;
+			surfCol = material->eval(state, sp, wo, photon->direction(), BSDF_ALL);
+			k = kernel(gathered[i].distSquare, gRadiusSquare);
 			sum += surfCol * k * photon->color();
 		}
 		sum *= 1.f / ( float(map.nPaths()) );

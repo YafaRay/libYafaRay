@@ -17,7 +17,7 @@ integr_env.Install('${YF_PLUGINPATH}',photonmap)
 pathtrace=integr_env.SharedLibrary (target='pathtrace', source=['pathtracer.cc', 'common.cc'])
 integr_env.Install('${YF_PLUGINPATH}',pathtrace)
 
-bidirpath=integr_env.SharedLibrary (target='bidirpath', source=['bidirpath.cc'])
+bidirpath=integr_env.SharedLibrary (target='bidirpath', source=['bidirpath.cc','common.cc'])
 integr_env.Install('${YF_PLUGINPATH}',bidirpath)
 
 EmissionIntegrator=integr_env.SharedLibrary (target='EmissionIntegrator', source=['EmissionIntegrator.cc'])
