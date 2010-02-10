@@ -55,7 +55,7 @@ directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, con
 	color = col * inte;
 	intensity = color.energy();
 	direction.normalize();
-	createCS(dir, du, dv);
+	createCS(direction, du, dv);
 	vector3d_t &d = direction;
 	majorAxis = (d.x>d.y) ? ((d.x>d.z) ? 0 : 2) : ((d.y>d.z) ? 1:2 );
 }

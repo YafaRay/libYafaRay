@@ -151,10 +151,10 @@ inline bool bound_t::cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const
 	const point3d_t &a0=a,&a1=g;
 	const point3d_t &p = ray.from-a0;
 
-	PFLOAT lmin=-1, lmax=-1,ltmin,ltmax;
+	float lmin=-1e38, lmax=1e38, ltmin, ltmax; //infinity check initial values
 
 	if (ray.dir.x != 0){
-		PFLOAT invrx = 1./ray.dir.x;
+		float invrx = 1./ray.dir.x;
 		if (invrx > 0){
 			lmin = -p.x * invrx;
 			lmax = ((a1.x - a0.x) - p.x) * invrx;
@@ -162,10 +162,11 @@ inline bool bound_t::cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const
 			lmin = ((a1.x - a0.x) - p.x) * invrx;
 			lmax = -p.x * invrx;
 		}
+
 		if((lmax<0) || (lmin>dist)) return false;
 	}
 	if (ray.dir.y != 0){
-		PFLOAT invry = 1./ray.dir.y;
+		float invry = 1./ray.dir.y;
 		if (invry > 0){
 			ltmin = -p.y * invry;
 			ltmax = ((a1.y - a0.y) - p.y) * invry;
@@ -175,11 +176,11 @@ inline bool bound_t::cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const
 		}
 		lmin = std::max(ltmin,lmin);
 		lmax = std::min(ltmax,lmax);
-		//if ((ltmax < lmax) || (lmax<0)) lmax = ltmax;
+
 		if((lmax<0) || (lmin>dist)) return false;
 	}
 	if (ray.dir.z != 0){
-		PFLOAT invrz = 1./ray.dir.z;
+		float invrz = 1./ray.dir.z;
 		if (invrz > 0){
 			ltmin = -p.z * invrz;
 			ltmax = ((a1.z - a0.z) - p.z) * invrz;
@@ -189,7 +190,7 @@ inline bool bound_t::cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const
 		}
 		lmin = std::max(ltmin,lmin);
 		lmax = std::min(ltmax,lmax);
-		//if ((ltmax < lmax) || (lmax<0)) lmax = ltmax;
+
 		if((lmax<0) || (lmin>dist)) return false;
 	}
 	if((lmin <= lmax) && (lmax >= 0) && (lmin<=dist))
