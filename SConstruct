@@ -102,50 +102,50 @@ Export('append_lib')
 append_includes = tools.buildtools.append_includes
 Export('append_includes')
 
-BuildDir('build/yafraycore', 'src/yafraycore', duplicate=0)
-SConscript(['build/yafraycore/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/yafraycore', 'src/yafraycore', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/yafraycore/SConscript'])
 
-BuildDir('build/cameras', 'src/cameras', duplicate=0)
-SConscript(['build/cameras/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/cameras', 'src/cameras', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/cameras/SConscript'])
 
-BuildDir('build/lights', 'src/lights', duplicate=0)
-SConscript(['build/lights/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/lights', 'src/lights', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/lights/SConscript'])
 
-BuildDir('build/volumes', 'src/volumes', duplicate=0)
-SConscript(['build/volumes/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/volumes', 'src/volumes', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/volumes/SConscript'])
 
-BuildDir('build/backgrounds', 'src/backgrounds', duplicate=0)
-SConscript(['build/backgrounds/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/backgrounds', 'src/backgrounds', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/backgrounds/SConscript'])
 
-BuildDir('build/materials', 'src/materials', duplicate=0)
-SConscript(['build/materials/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/materials', 'src/materials', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/materials/SConscript'])
 
-BuildDir('build/textures', 'src/textures', duplicate=0)
-SConscript(['build/textures/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/textures', 'src/textures', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/textures/SConscript'])
 
-BuildDir('build/integrators', 'src/integrators', duplicate=0)
-SConscript(['build/integrators/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/integrators', 'src/integrators', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/integrators/SConscript'])
 
-BuildDir('build/interface', 'src/interface', duplicate=0)
-SConscript(['build/interface/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/interface', 'src/interface', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/interface/SConscript'])
 
-BuildDir('build/testsuite', 'src/testsuite', duplicate=0)
-SConscript(['build/testsuite/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/testsuite', 'src/testsuite', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/testsuite/SConscript'])
 
 if common_env['WITH_YF_QT']:
-	BuildDir('build/gui', 'src/gui', duplicate=0)
-	SConscript(['build/gui/SConscript'])
+	BuildDir(common_env['YF_BUILDPATH'] + '/gui', 'src/gui', duplicate=0)
+	SConscript([common_env['YF_BUILDPATH'] + '/gui/SConscript'])
 
 if 'debian' in COMMAND_LINE_TARGETS:
 	SConscript("tools/debian/SConscript")
 
 if 'swig' in COMMAND_LINE_TARGETS:
-	BuildDir('build/bindings', 'bindings', duplicate=0)
-	SConscript("build/bindings/SConscript")
+	BuildDir(common_env['YF_BUILDPATH'] + '/bindings', 'bindings', duplicate=0)
+	SConscript(common_env['YF_BUILDPATH'] + "/bindings/SConscript")
 
 if 'swig_install' in COMMAND_LINE_TARGETS:
-	BuildDir('build/bindings', 'bindings', duplicate=0)
-	SConscript("build/bindings/SConscript")
+	BuildDir(common_env['YF_BUILDPATH'] + '/bindings', 'bindings', duplicate=0)
+	SConscript(common_env['YF_BUILDPATH'] + "/bindings/SConscript")
 
 Alias('install',['install_core',
 				 'install_testsuite',
@@ -158,7 +158,7 @@ Alias('install',['install_core',
 				 'install_interf'
 	])
 
-Default('build')
+Default(common_env['YF_BUILDPATH'])
 
 ## test...dump environment for review...
 #env_txt = open("env.txt", "w")

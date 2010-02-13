@@ -17,6 +17,7 @@ def read_opts(cfiles, cargs):
 		('YF_PLUGINPATH', 'YafaRay plugin installation dir', '${PREFIX}/plugins'),
 		('YF_BINPATH', 'YafaRay binary installation dir', '${PREFIX}'),
 		('YF_PACKPATH', 'YafaRay package root dir', '#debian/yafaray'),
+		('YF_BUILDPATH', 'YafaRay build dir', '#build'),
 		('YF_BINDINGS', 'Python bindings installation dir', ''),
 		('YF_CORELIB', 'name of YafaRay dynamic core library', 'yafaraycore'),
 		(BoolOption('YF_DEBUG', 'create a debug build', 'false')),
