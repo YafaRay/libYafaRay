@@ -140,21 +140,15 @@ inline float bgLight_t::CalcFromSample(float s1, float s2, float &u, float &v, b
 inline float bgLight_t::CalcFromDir(const vector3d_t &dir, float &u, float &v, bool inv) const
 {
 	int iv, iu;
-	float invInt;
 	float pdf1 = 0.f, pdf2 = 0.f;
 	
-	spheremap(dir, u, v);
-
-	u = u * 0.5f + 0.5f;
-	v = v * 0.5f + 0.5f;
+	spheremap(dir, u, v);//returns u,v pair in [0,1] range
 
 	iv = clampSample(addOff(v * vDist->count), vDist->count);
 	iu = clampSample(addOff(u * uDist[iv]->count), uDist[iv]->count);
 	
-	invInt = uDist[iv]->invIntegral * vDist->invIntegral;
-	
-	pdf1 = uDist[iv]->func[iu] * invInt;
-	pdf2 = vDist->func[iv] * invInt;
+	pdf1 = uDist[iv]->func[iu] * uDist[iv]->invIntegral;
+	pdf2 = vDist->func[iv] * vDist->invIntegral;
 
 	if(inv)return calcInvPdf(pdf1, pdf2, v);
 	
@@ -200,7 +194,7 @@ bool bgLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf
 	float u = 0.f, v = 0.f;
 	ray_t tr = ray;
 	
-	ipdf = CalcFromDir(tr.dir, u, v, true);
+	ipdf = CalcFromDir(-tr.dir, u, v, true);
 	
 	invSpheremap(u, v, tr.dir);
 

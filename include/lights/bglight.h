@@ -52,8 +52,7 @@ class bgLight_t : public light_t
 //	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void initIS();
-		void sample_dir(float s1, float s2, vector3d_t &dir, float &pdf, bool inv) const;
-		void sample_dir_inv(float s1, float s2, vector3d_t &dir, float &ipdf) const;
+		void sample_dir(float s1, float s2, vector3d_t &dir, float &pdf, bool inv = false) const;
 		float dir_pdf(const vector3d_t dir) const;
 		float CalcFromSample(float s1, float s2, float &u, float &v, bool inv = false) const;
 		float CalcFromDir(const vector3d_t &dir, float &u, float &v, bool inv = false) const;

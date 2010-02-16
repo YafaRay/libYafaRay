@@ -100,15 +100,17 @@ color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
 	}
 	else
 	{
-		// Spheremap is the only other mapping available
-		spheremap(ray.dir, u, v);
+		spheremap(ray.dir, u, v);//this returns u,v in 0,1 range (useful for bgLight_t)
+		//put u,v in -1,1 range
+		u = 2.f * u - 1.f;
+		v = 2.f * v - 1.f;
 		u += rotation;
-		if (u > 1.0f) u -= 2.0f;
+		if (u > 1.f) u -= 2.f;
 	}
 	
-	color_t ret = tex->getColor(point3d_t(u, v, 0.0f));
+	color_t ret = tex->getColor(point3d_t(u, v, 0.f));
 	
-	if(ret.minimum() < 0.000001) ret = color_t(0.00001);
+	if(ret.minimum() < 1e-6f) ret = color_t(1e-5f);
 	
 	return power * ret;
 }

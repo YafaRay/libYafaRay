@@ -27,15 +27,14 @@ class YAFRAYCORE_EXPORT texture_t
 inline void angmap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 {
 	PFLOAT r = p.x*p.x + p.z*p.z;
-	if (r!=0.f)  {
-		r = 1.f/fSqrt(r);
-		if (p.y>1.f)
-			r = 0;
-		else if (p.y>=-1.f)
-			r *= M_1_PI * acos(p.y);
+	u = v = 0.f;
+	if (r!=0.f)
+	{
+		float phiRatio = M_1_PI * acos(p.y);//[0,1] range
+		r = ((r >0.f)?(1.f/fSqrt(r)):1e-6f) * phiRatio;
+		u = p.x * r;// costheta * r * phiRatio
+		v = p.z * r;// sintheta * r * phiRatio
 	}
-	if ((u = p.x*r)<-1.f) u=-1.f; else if (u>1.f) u=1.f;
-	if ((v = p.z*r)<-1.f) v=-1.f; else if (v>1.f) v=1.f;
 }
 
 // slightly modified Blender's own functions,
@@ -51,24 +50,32 @@ inline void tubemap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 	}
 }
 
-// maps a direction to a 2d -1..1 interval
+// maps a direction to a 2d 0..1 interval
 inline void spheremap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 {
-	PFLOAT d = p.x*p.x + p.y*p.y + p.z*p.z;
-	u = v= 0;
-	if (d>0) {
-		if ((p.x!=0) && (p.y!=0)) u = -atan2(p.y, p.x)*M_1_PI - 1.0f; // shift by 180 degrees
-		if (u < -1.0f) u += 2.0f;
-		v = 1.0f - 2.0f * acos(p.z/fSqrt(d)) * M_1_PI;
+	float sqrtRPhi = p.x*p.x + p.y*p.y;
+	float sqrtRTheta = sqrtRPhi + p.z*p.z;
+	float phiRatio;
+	
+	u = 0.f;
+	v = 0.f;
+	
+	if(sqrtRPhi > 0.f)
+	{
+		if(p.y < 0.f) phiRatio = (M_2PI - acos(p.x / fSqrt(sqrtRPhi))) * M_1_2PI;
+		else		  phiRatio = acos(p.x / fSqrt(sqrtRPhi)) * M_1_2PI;
+		u = 1.f - phiRatio;
 	}
+	
+	v = 1.f - (acos(p.z / fSqrt(sqrtRTheta)) * M_1_PI);
 }
 
 // maps u,v coords in the 0..1 interval to a direction
 inline void invSpheremap(float u, float v, vector3d_t &p)
 {
 	float theta = v * M_PI;
-	float costheta = fCos(theta), sintheta = fSin(theta);
 	float phi = -(u * M_2PI);
+	float costheta = fCos(theta), sintheta = fSin(theta);
 	float cosphi = fCos(phi), sinphi = fSin(phi);
 	p.x = sintheta * cosphi;
 	p.y = sintheta * sinphi;
