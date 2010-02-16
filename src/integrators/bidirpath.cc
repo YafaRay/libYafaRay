@@ -274,26 +274,6 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 
 	if(scene->intersect(testray, sp))
 	{
-		if(state.raylevel == 0)
-		{
-			state.includeLights = true;
-			//...
-		}
-		unsigned char userdata[USER_DATA_SIZE+7];
-		userdata[0] = 0;
-		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-		BSDF_t bsdfs;
-		const material_t *material = sp.material;
-		material->initBSDF(state, sp, bsdfs);
-		vector3d_t wo = -testray.dir;
-
-		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
-		
-		if(bsdfs & BSDF_DIFFUSE)
-		{
-			col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-		}
-
 		static int dbg=0;
 		state.includeLights = true;
 		pathData_t &pathData = threadData[state.threadID];
