@@ -144,6 +144,7 @@ bool sphereLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &
 		PFLOAT idist_sqr = 1.f/(dist_sqr);
 		PFLOAT cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
 		ipdf = 2.f * (1.f - cosAlpha);
+		col = color;
 		return true;
 	}
 	return false;
