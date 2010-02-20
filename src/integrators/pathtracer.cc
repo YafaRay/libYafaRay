@@ -333,7 +333,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if((caustic && background->getLight()))
+						if((caustic && hasBGLight))
 						{
 							pathCol += throughput * (*background)(pRay, state);
 						}
