@@ -44,11 +44,10 @@ class sphereLight_t : public light_t
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const;
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
-		virtual bool canIntersect(){ return false/* true */; }
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf);
+		virtual bool canIntersect() const{ return true; }
+		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }
@@ -100,39 +99,6 @@ inline bool sphereIntersect(const ray_t &ray, const point3d_t &c, PFLOAT R2, PFL
 	return true;
 }
 
-bool sphereLight_t::illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const
-{
-	static bool debug=true;
-	vector3d_t cdir = center - sp.P;
-	PFLOAT dist_sqr = cdir.lengthSqr();
-	if(dist_sqr <= square_radius)
-	{
-		if(debug) std::cout << "radius to small!?\n";
-		debug=false;
-		return false; //only emit light on the outside!
-	}
-	PFLOAT dist = fSqrt(dist_sqr);
-	PFLOAT idist_sqr = 1.f/(dist_sqr);
-	PFLOAT cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
-	cdir *= 1.f/dist;
-	vector3d_t du, dv;
-	createCS(cdir, du, dv);
-	
-	wi.dir = sampleCone(cdir, du, dv, cosAlpha, s1, s2);
-	PFLOAT d1, d2;
-	if( !sphereIntersect(wi, center, square_radius_epsilon, d1, d2) )
-	{
-		if(debug){ std::cout << "missed the sphere!?\n"; debug=false; }
-		//return false;
-	}
-	wi.tmax = d1;
-	
-	// pdf = 1.f / (2.f * M_PI * (1.f - cos(cone_angle)));
-	ipdf = 2.f * (1.f - cosAlpha);
-	col = color;
-	return true;
-}
-
 bool sphereLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
 	vector3d_t cdir = center - sp.P;
@@ -166,7 +132,7 @@ bool sphereLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &w
 	return true;
 }
 
-bool sphereLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf)
+bool sphereLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
 {
 	PFLOAT d1, d2;
 	if( sphereIntersect(ray, center, square_radius, d1, d2) )
