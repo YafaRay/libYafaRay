@@ -32,6 +32,7 @@ photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhot
 	allBSDFIntersect = BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT;
 	intpb = 0;
 	integratorName = "PhotonMap";
+	hasBGLight = false;
 }
 
 struct preGatherData_t
@@ -275,7 +276,11 @@ bool photonIntegrator_t::preprocess()
 	if(background)
 	{
 		light_t *bgl = background->getLight();
-		if(bgl) lights.push_back(bgl);
+		if(bgl)
+		{
+			lights.push_back(bgl);
+			hasBGLight = true;
+		}
 	}
 	
 	ray_t ray;
@@ -838,7 +843,14 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			throughput *= scol;
 			did_hit = scene->intersect(pRay, hit);
 			
-			if(!did_hit) break; //hit background
+			if(!did_hit) //hit background
+			{
+				 if(caustic && hasBGLight)
+				 {
+					pathCol += throughput * (*background)(pRay, state);
+				 }
+				 break;
+			}
 			
 			p_mat = hit.material;
 			length += pRay.tmax;
@@ -861,7 +873,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		}
 		state.userdata = first_udat;
 	}
-	return pathCol / (CFLOAT)nSampl;
+	return pathCol / (float)nSampl;
 }
 
 void photonIntegrator_t::sampleIrrad(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, irradSample_t &ir) const
