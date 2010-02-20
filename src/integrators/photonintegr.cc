@@ -607,8 +607,6 @@ bool photonIntegrator_t::preprocess()
 		Y_INFO << integratorName << ": No caustic source lights found, skiping caustic gathering...\n";		
 	}
 	
-	if(!intpb) delete pb;
-	
 	Y_INFO << integratorName << ": Shot "<<curr<<" caustic photons from " << numCLights <<" light(s).\n";
 	Y_INFO << integratorName << ": Stored caustic photons: "<<causticMap.nPhotons()<<"\n";
 	Y_INFO << integratorName << ": Stored diffuse photons: "<<diffuseMap.nPhotons()<<"\n";
@@ -634,6 +632,8 @@ bool photonIntegrator_t::preprocess()
 	lookupRad = 4*dsRadius*dsRadius;
 	
 	tmplights.clear();
+
+	if(!intpb) delete pb;
 	
 	if(finalGather) //create radiance map:
 	{
@@ -761,9 +761,8 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		sample_t s(s1, s2, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT); // glossy/dispersion/specular done via recursive raytracing
 		scol = p_mat->sample(state, hit, pwo, pRay.dir, s);
 
-		if(s.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
-		else continue;
-
+		if(s.pdf <= 1.0e-6f) continue;
+		scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
 		if(scol.isBlack()) continue;
 
 		pRay.tmin = MIN_RAYDIST;
@@ -798,14 +797,18 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				if(close)
 				{
 					lcol = estimateOneDirect(state, hit, pwo, lights, d4+5, offs);
-					if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, pwo);
-					pathCol += lcol*throughput;
 				}
-				if(caustic)
+				else if(caustic)
 				{
 					vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, pwo);
 					const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
-					if(nearest) pathCol += throughput * nearest->color();
+					if(nearest) lcol = nearest->color();
+				}
+				
+				if(close || caustic)
+				{
+					if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, pwo);
+					pathCol += lcol*throughput;
 				}
 			}
 			
@@ -821,15 +824,13 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			sample_t sb(s1, s2, (close) ? BSDF_ALL : BSDF_ALL_SPECULAR | BSDF_FILTER);
 			scol = p_mat->sample(state, hit, pwo, pRay.dir, sb);
 			
-			if( sb.pdf > 1.0e-6f)
-			{
-				scol *= (std::fabs(pRay.dir*hit.N)/sb.pdf);
-			}
-			else
+			if( sb.pdf <= 1.0e-6f)
 			{
 				did_hit=false;
 				break;
 			}
+
+			scol *= (std::fabs(pRay.dir*hit.N)/sb.pdf);
 
 			pRay.tmin = MIN_RAYDIST;
 			pRay.tmax = -1.0;
@@ -848,12 +849,14 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		
 		if(did_hit)
 		{
-			matBSDFs = p_mat->getFlags();
+			p_mat->initBSDF(state, hit, matBSDFs);
 			if(matBSDFs & (BSDF_DIFFUSE | BSDF_GLOSSY))
 			{
 				vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, -pRay.dir);
 				const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
-				if(nearest) pathCol += throughput * nearest->color();
+				if(nearest) lcol = nearest->color();
+				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, -pRay.dir);
+				pathCol += lcol * throughput;
 			}
 		}
 		state.userdata = first_udat;
@@ -1060,13 +1063,12 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			}
 			else
 			{
-				if( bsdfs & (BSDF_DIFFUSE/* | BSDF_GLOSSY*/) ) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
+				// contribution of light emitting surfaces
+				if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 				
-				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) Y_WARNING << integratorName << ": NaN! (photonintegr, estimateDirect)\n";
+				if(bsdfs & BSDF_DIFFUSE) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
 				
-				if( bsdfs & BSDF_DIFFUSE ) col += finalGathering(state, sp, wo);
-				
-				if(isnan(col.R) || isnan(col.G) || isnan(col.B)) Y_WARNING << integratorName << ": NaN! (photonintegr, finalGathering)\n";
+				if(bsdfs & BSDF_DIFFUSE) col += finalGathering(state, sp, wo);
 			}
 		}
 		else
