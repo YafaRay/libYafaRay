@@ -36,6 +36,8 @@ class spotLight_t : public light_t
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
+		virtual bool canIntersect() const{ return softShadows; }
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 
 		virtual int nSamples() const { return samples; };
@@ -190,13 +192,13 @@ color_t spotLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	if(s.s3 <= interv1) // sample from cone not affected by falloff:
 	{
 		wo = sampleCone(dir, du, dv, cosStart, s.s1, s.s2);
-		s.dirPdf = interv1 / ( 2.0f * (1.f - cosStart) );
+		s.dirPdf = interv1 / ( M_2PI * (1.f - cosStart) );
 	}
 	else // sample in the falloff area 
 	{
 		float spdf;
 		float sm2 = pdf->Sample(s.s2, &spdf) * pdf->invCount;
-		s.dirPdf = (interv2 * spdf) / ( 2.0f * (cosStart - cosEnd) );
+		s.dirPdf = (interv2 * spdf) / ( M_2PI * (cosStart - cosEnd) );
 		double cosAng = cosEnd + (cosStart - cosEnd) * (double)sm2;
 		double sinAng = fSqrt(1.0 - cosAng*cosAng);
 		PFLOAT t1 = M_2PI*s.s1;
@@ -216,14 +218,52 @@ void spotLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float 
 	if(cosa < cosEnd) dirPdf = 0.f;
 	else if(cosa >= cosStart) // not affected by falloff
 	{
-		dirPdf = interv1 / ( 2.0f * (1.f - cosStart) );
+		dirPdf = interv1 / ( M_2PI * (1.f - cosStart) );
 	}
 	else
 	{
 		PFLOAT v = (cosa - cosEnd)*icosDiff;
 		v = v*v*(3.f - 2.f*v);
-		dirPdf = interv2 * v * 2.f / ( 2.0f * (cosStart - cosEnd) ); //divide by integral of v (0.5)?
+		dirPdf = interv2 * v * 2.f / ( M_2PI * (cosStart - cosEnd) ); //divide by integral of v (0.5)?
 	}
+}
+bool spotLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+{
+	float cosA = dir*ray.dir;
+	
+	if(cosA == 0.f) return false;
+	
+	t = (dir*vector3d_t(position - ray.from)) / cosA;
+
+	if(t < 0.f) return false;
+	
+	vector3d_t P(ray.from + point3d_t(t*ray.dir));
+	
+	if(dir * vector3d_t(P - position) == 0)
+	{
+		if(P*P <= 1e-2)
+		{
+			float cosa = dir * ray.dir;
+			
+			if(cosa < cosEnd) return false; //outside cone
+			
+			if(cosa >= cosStart) // not affected by falloff
+			{
+				col = color;
+			}
+			else
+			{
+				float v = (cosa - cosEnd)*icosDiff;
+				v = v*v*(3.f - 2.f*v);
+				col = color * v;
+			}
+			
+			ipdf = 1.f / (t*t);
+			Y_INFO << "SpotLight: ipdf, color = " << ipdf << ", " << color << std::endl;
+			return true;
+		}
+	}
+	return false;
 }
 
 light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
