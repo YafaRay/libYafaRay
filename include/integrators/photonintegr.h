@@ -61,6 +61,7 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public tiledIntegrator_t
 		irradianceCache_t irCache;
 		BSDF_t allBSDFIntersect;
 		friend class prepassWorker_t;
+		bool hasBGLight;
 };
 
 __END_YAFRAY
