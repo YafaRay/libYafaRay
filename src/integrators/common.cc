@@ -313,7 +313,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 				s6 = scrHalton(d5+1, curr);
 				s7 = scrHalton(d5+2, curr);
 
-				pSample_t sample(s5, s6, s7, BSDF_ALL_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE, pcol, transm);
+				pSample_t sample(s5, s6, s7, BSDF_ALL_SPECULAR | BSDF_GLOSSY | BSDF_FILTER | BSDF_DISPERSIVE, pcol, transm);
 				bool scattered = material->scatterPhoton(state, *hit, wi, wo, sample);
 				if(!scattered) break; //photon was absorped.
 				pcol = sample.color;
@@ -324,10 +324,7 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 				directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
 				// caustic-only calculation can be stopped if:
 				if(!(causticPhoton || directPhoton)) break;
-				/*if((sample.sampledFlags & BSDF_VOLUMETRIC) && material->volumeTransmittance(state, *hit, ray, vcol))
-				{
-					pcol *= vcol;
-				}*/
+
 				if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
 				{
 					state.chromatic=false;
