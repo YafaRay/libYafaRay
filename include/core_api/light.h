@@ -46,20 +46,20 @@ class light_t
 		/*!	return false only if no light is emitted towards sp, e.g. outside cone angle of spot light	*/
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const = 0;
 		//! indicate whether the light can intersect with a ray (by the intersect function)
-		virtual bool canIntersect() const{ return false; }
+		virtual bool canIntersect() const { return false; }
 		//! intersect the light source with a ray, giving back distance, energy and 1/PDF
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const{ return false; }
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const { return false; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
 		/*! this method requires an intersection point with the light (sp_light). Otherwise, use intersect() */
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
-		/* sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
+		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf=0.f; dirPdf=0.f; }
-		// (preferred) number of samples for direct lighting
 		//! checks if the light can shoot caustic photons (photonmap integrator)
 		virtual bool shootsCausticP() const { return true;}
 		//! checks if the light can shoot diffuse photons (photonmap integrator)
 		virtual bool shootsDiffuseP() const { return true;}
+		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 1; }
 		virtual ~light_t() {};
 		light_t(): flags(LIGHT_NONE){}
