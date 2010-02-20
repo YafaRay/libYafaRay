@@ -176,7 +176,11 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 					lens_v = scrHalton(4, rstate.pixelSample+rstate.samplingOffs);
 				}
 				c_ray = camera->shootRay(j+dx, i+dy, lens_u, lens_v, wt);
-				if(wt==0.0) continue;
+				if(wt==0.0)
+				{
+					imageFilm->addSample(colorA_t(0.f), j, i, dx, dy, &a);
+					continue;
+				}
 				//setup ray differentials
 				d_ray = camera->shootRay(j+1+dx, i+dy, lens_u, lens_v, wt_dummy);
 				c_ray.xfrom = d_ray.from;
