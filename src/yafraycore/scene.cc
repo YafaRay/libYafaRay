@@ -39,6 +39,7 @@
 #endif
 #include <iostream>
 #include <limits>
+#include <sstream>
 
 __BEGIN_YAFRAY
 
@@ -841,7 +842,13 @@ bool scene_t::update()
 	if(!surfIntegrator){ std::cout << "no surface integrator!\n"; return false; }
 	if(state.changes != C_NONE)
 	{
+		std::stringstream inteSettings;
+
 		bool success = (surfIntegrator->preprocess() && volIntegrator->preprocess());
+		
+		inteSettings << surfIntegrator->getName() << " (" << surfIntegrator->getSettings() << ")";
+		imageFilm->setIntegParams(inteSettings.str());
+
 		if(!success) return false;
 	}
 	state.changes = C_NONE;

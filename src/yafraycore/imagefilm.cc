@@ -1,11 +1,10 @@
-#include <utilities/drawfont.h>
+#include <utilities/guifont.h>
 #include <utilities/loadMemPNG.h>
 #include <utilities/yafLogoTiny.h>
 
 #include <core_api/imagefilm.h>
 #include <yafraycore/monitor.h>
 #include <utilities/math_utils.h>
-//#include <utilities/tiled_array.h>
 #include <yafraycore/timer.h>
 #include <yaf_revision.h>
 #include <cstring>
@@ -25,16 +24,17 @@ __BEGIN_YAFRAY
 #define FILTER_TABLE_SIZE 16
 #define MAX_FILTER_SIZE 8
 
-#define addColors(c1,c2) (1.0 - ((1.0 - (c1)) * (1.0 - (c2))))
-#define multColors(c1,c2) ((c1) * (c2))
-#define sumColors(c1,c2) ((c1) + (c2))
+//! Simple alpha blending with pixel weighting
+#define alphaBlend(b_bg_col, b_weight, b_fg_col, b_alpha) (( b_bg_col * (1.f - b_alpha) ) + ( b_fg_col * b_weight * b_alpha ))
 
 #if HAVE_FREETYPE
+
 void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 {
 	int i, j, p, q;
 	int x_max = x + bitmap->width;
 	int y_max = y + bitmap->rows;
+	color_t textColor(1.f);
 
 	for ( i = x, p = 0; i < x_max; i++, p++ )
 	{
@@ -48,7 +48,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 			if (tmpBuf > 0) {
 				pix = (*image)(i, j);
 				float alpha = (float)tmpBuf/255.0;
-				pix.col = ((*image)(i, j).col * (1.0 - alpha)) + (pix.weight * alpha * colorA_t(1.0, 1.0, 1.0));
+				pix.col = alphaBlend((*image)(i, j).col, pix.weight, colorA_t(textColor, std::max((*image)(x, y).col.getA(), alpha)), alpha);
 				(*image)(i, j) = pix;
 			}
 		}
@@ -65,127 +65,146 @@ void imageFilm_t::drawRenderSettings()
 	FT_Vector pen; // untransformed origin
 	FT_Error error;
 
+#ifdef RELEASE
+	std::string version = std::string(VERSION);
+#else
+	std::string version = std::string(YAF_SVN_REV);
+#endif
+
 	std::stringstream ss;
+	
+	ss << "YafaRay (" << version << ")";
+	
 	ss << std::setprecision(4);
 	double times = gTimer.getTime("rendert");
 	int timem, timeh;
 	gTimer.splitTime(times, &times, &timem, &timeh);
-	ss << "render time:";
+	ss << " | Render time:";
 	if (timeh > 0) ss << " " << timeh << "h";
 	if (timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
-//	env->addToParamsString(ss.str().c_str());
-
-	std::string str(env->getParamsString());
-	std::string::size_type p = str.find("$REVISION", 0);
-	if (p != std::string::npos) {
-#ifdef RELEASE
-		std::string version = std::string(VERSION);
-#else
-		std::string version = std::string(YAF_SVN_REV);
-#endif
-		// 9 == length of "$REVISION"
-		str.replace(p, 9, version);
-		env->clearParamsString();
-		env->addToParamsString(str.c_str());
+	ss << " | " << aaSettings;
+	ss << "\nLighting: " << integratorSettings;
+	
+	if(!customString.empty())
+	{
+		ss << " | " << customString;
 	}
 
-	str = std::string(env->getParamsString());
-	p = str.find("$TIME", 0);
-	if (p != std::string::npos) {
-		// 5 == length of "$TIME"
-		str.replace(p, 5, ss.str());
-		env->clearParamsString();
-		env->addToParamsString(str.c_str());
-	}
-
-	const char* text = env->getParamsString();
-
-	int num_chars = strlen( text );
+	std::string text = ss.str();//"Testing text free of exporter dependencies";
 
 	Y_INFO << "ImageOverly: render settings\n" << text << "\n";
 
-	error = FT_Init_FreeType( &library ); // initialize library
-	if ( error ) { Y_ERROR << "ImageOverly: lib error\n"; return; }
-
-	error = FT_New_Memory_Face( library, (const FT_Byte*)ttf, ttf_size, 0, &face ); // create face object
-	if ( error ) { Y_ERROR << "ImageOverly: face error\n"; return; }
-
 	// use 10pt at default dpi
-	float fontsize = 12.0f;
+	float fontsize = 9.5f;
+
+	error = FT_Init_FreeType( &library ); // initialize library
+	if ( error ) { Y_ERROR << "ImageOverly: FreeType lib couldn't be initialized!\n"; return; }
+
+	error = FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ); // create face object
+	if ( error ) { Y_ERROR << "ImageOverly: FreeType couldn't load the font!\n"; return; }
+
 	error = FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ); // set character size
-	if ( error ) { Y_ERROR << "ImageOverly: char size error\n"; return; }
+	if ( error ) { Y_ERROR << "ImageOverly: FreeType couldn't set the character size!\n"; return; }
 
 	slot = face->glyph;
 
-	// the pen position in 26.6 cartesian space coordinates
-	pen.x = 50 * 64;
-	pen.y = 33 * 64;
+	// offsets
+	int textOffsetX = 4;
+	int textOffsetY = 18;
+	int textInterlineOffset = 13;
+	int logoWidth = 0;
 
-	// dark bar at the bottom
-	for ( int x = 46; x < w; x++ ) {
-		for ( int y = h - 46; y < h; y++ ) {
-			(*image)(x, y).col *= 0.4;
-		}
-	}
-	
+	// Draw logo image
 	imgBuffer_t *logo = load_mem_png(yafLogoTiny, yafLogoTiny_size);
 	if(logo)
 	{
-		int ix, iy, lx, ly;
-		int sy = h - 46;
-		int imWidth = logo->resx();
+		int lx, ly;
+		int sx = 0;
+		int sy = h - logo->resy();
+		int imWidth = logo->resx() + sx;
 		int imHeight = logo->resy() + sy;
+		logoWidth = logo->resx();
+		textOffsetX += logoWidth;
 
-		for ( ix = 0, lx = 0; ix < imWidth; ix++, lx++ )
+		for ( lx = sx; lx < imWidth; lx++ )
 		{
-			for ( iy = sy, ly = 0; iy < imHeight; iy++, ly++ )
+			for ( ly = sy; ly < imHeight; ly++ )
 			{
-				if ( ix >= w || iy >= h )
-					continue;
-
-				colorA_t col = (*logo)(lx, ly);
-				pixel_t pix = (*image)(ix, iy);
+				colorA_t col = (*logo)(lx-sx, ly-sy);
+				pixel_t pix = (*image)(lx, ly);
 				
-				pix.col = pix.col * col;
+				pix.col = alphaBlend((*image)(lx, ly).col, pix.weight, col, col.getA());
 				
-				(*image)(ix, iy) = pix;
+				(*image)(lx, ly) = pix;
 			}
 		}
 		delete logo;
 	}
+
+	// Draw the dark bar at the bottom
+	float bgAlpha = 0.3f;
+	color_t bgColor(0.f);
 	
-	for ( int n = 0; n < num_chars; n++ )
+	for ( int x = logoWidth; x < w; x++ ) {
+		for ( int y = h - 30; y < h; y++ ) {
+			(*image)(x, y).col = alphaBlend((*image)(x, y).col, (*image)(x, y).weight, colorA_t(bgColor, std::max((*image)(x, y).col.getA(), bgAlpha)), bgAlpha);
+		}
+	}
+	
+	
+	// The pen position in 26.6 cartesian space coordinates
+	pen.x = textOffsetX * 64;
+	pen.y = textOffsetY * 64;
+	
+	// Draw the text
+	for ( size_t n = 0; n < text.size(); n++ )
 	{
-		// set transformation
+		// Set Coordinates for the carrige return
+		if (text[n] == '\n') {
+			pen.x = textOffsetX * 64;
+			pen.y -= textInterlineOffset * 64;
+			continue;
+		}
+
+		// Set transformation
 		FT_Set_Transform( face, 0, &pen );
 
-		if (text[n] == '\n') {
-			pen.x = 50 * 64;
-			pen.y -= ( 14 ) * 64;
-			continue;
-		}
-
-		// load glyph image into the slot (erase previous one)
+		// Load glyph image into the slot (erase previous one)
 		error = FT_Load_Char( face, text[n], FT_LOAD_DEFAULT );
-		if ( error ) {
-			Y_ERROR << "ImageOverly: char error: " << text[n] << "\n";
-			continue;
-		}
+		if ( error ) { Y_ERROR << "ImageOverly: FreeType Couldn't load the glyph image for: '" << text[n] << "'!\n"; continue; }
+		
+		// Render the glyph into the slot
 		FT_Render_Glyph( slot, FT_RENDER_MODE_NORMAL );
 
-		// now, draw to our target surface (convert position)
+		// Now, draw to our target surface (convert position)
 		drawFontBitmap( &slot->bitmap, slot->bitmap_left, h - slot->bitmap_top);
 
 		// increment pen position
 		pen.x += slot->advance.x;
 		pen.y += slot->advance.y;
 	}
+	
+	// Cleanup
 	FT_Done_Face    ( face );
 	FT_Done_FreeType( library );
 }
 #endif
 
+void imageFilm_t::setAAParams(const std::string &aa_params)
+{
+	aaSettings = aa_params;
+}
+
+void imageFilm_t::setIntegParams(const std::string &integ_params)
+{
+	integratorSettings = integ_params;
+}
+
+void imageFilm_t::setCustomString(const std::string &custom)
+{
+	customString = custom;
+}
 
 typedef float filterFunc(float dx, float dy);
 
@@ -235,10 +254,11 @@ float Gauss(float dx, float dy)
 	return std::max(0.f, float(fExp(-6 * r2) - gaussExp));
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt, renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
+						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
 	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), estimateDensity(false), numSamples(0),
-	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA)
+	splitter(0), pbar(0), env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -643,11 +663,11 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 	Y_INFO << "imageFilm: Flushing buffer...\n";
 	colorOutput_t *colout = out ? out : output;
 #if HAVE_FREETYPE
-	if (env && env->getDrawParams()) {
+	if (drawParams) {
 		drawRenderSettings();
 	}
 #else
-	if (env && env->getDrawParams()) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available\n";
+	if (drawParams) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available\n";
 #endif
 	int n = channels.size();
 	float *fb = (float *)alloca( (n+5) * sizeof(float) );

@@ -1,0 +1,26 @@
+import sys
+import os
+
+Import('program_env')
+Import('append_lib')
+Import('append_includes')
+
+xml_loader_env = program_env.Clone()
+#append_includes(loader_env, ['PTHREAD'])
+
+xml_loader_files = ['xml-loader.cc']
+
+#append_lib(xml_loader_env, ['EXR', 'ZLIB', 'PTHREAD', 'MISC'])
+append_lib(xml_loader_env, ['EXR'])
+
+#xml_loader_env.Prepend (LIBPATH = [ '../integrators', '../yafraycore'] )
+xml_loader_env.Prepend (LIBPATH = ['../yafraycore'] )
+xml_loader_env.Append(LIBS = ['${YF_CORELIB}'])
+
+yafaray_xml=xml_loader_env.Program (target='yafaray-xml', source=xml_loader_files)
+
+xml_loader_env.Install('${YF_BINPATH}',yafaray_xml)
+
+xml_loader_env.Install('${YF_PACKPATH}${YF_BINPATH}',yafaray_xml)
+
+xml_loader_env.Alias('install_xml_loader','${YF_BINPATH}')

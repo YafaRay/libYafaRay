@@ -81,9 +81,9 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual void setInputGamma(float gammaVal, bool enable);
-		virtual void addToParamsString(const char* params);
-		virtual void clearParamsString();
-		virtual void setDrawParams(bool b);
+//		virtual void addToParamsString(const char* params);
+//		virtual void clearParamsString();
+//		virtual void setDrawParams(bool b);
 		virtual void abort();
 		virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
 		//Versioning stuff

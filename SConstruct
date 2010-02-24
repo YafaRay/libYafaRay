@@ -129,8 +129,8 @@ SConscript([common_env['YF_BUILDPATH'] + '/integrators/SConscript'])
 BuildDir(common_env['YF_BUILDPATH'] + '/interface', 'src/interface', duplicate=0)
 SConscript([common_env['YF_BUILDPATH'] + '/interface/SConscript'])
 
-BuildDir(common_env['YF_BUILDPATH'] + '/testsuite', 'src/testsuite', duplicate=0)
-SConscript([common_env['YF_BUILDPATH'] + '/testsuite/SConscript'])
+BuildDir(common_env['YF_BUILDPATH'] + '/xml_loader', 'src/xml_loader', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/xml_loader/SConscript'])
 
 if common_env['WITH_YF_QT']:
 	BuildDir(common_env['YF_BUILDPATH'] + '/gui', 'src/gui', duplicate=0)
@@ -148,7 +148,7 @@ if 'swig_install' in COMMAND_LINE_TARGETS:
 	SConscript(common_env['YF_BUILDPATH'] + "/bindings/SConscript")
 
 Alias('install',['install_core',
-				 'install_testsuite',
+				 'install_xml_loader',
 				 'install_cameras',
 				 'install_lights',
 				 'install_volumes',

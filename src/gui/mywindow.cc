@@ -31,7 +31,7 @@
 #include <yafraycore/memoryIO.h>
 #include "yafarayicon.h"
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-	#include "guifont.h"
+	#include <utilities/guifont.h>
 #endif
 
 #include <iostream>

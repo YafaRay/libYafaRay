@@ -160,6 +160,8 @@ biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(t
 	type = SURFACE;
 	intpb = 0;
 	integratorName = "BidirectionalPathTracer";
+	integratorShortName = "BdPT";
+	settings = "";
 }
 
 biDirIntegrator_t::~biDirIntegrator_t()

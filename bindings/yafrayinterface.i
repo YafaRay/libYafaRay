@@ -45,10 +45,10 @@ class yafrayInterface_t
 			in this state only vertices, UVs and triangles can be created
 			\param id returns the ID of the created mesh
 		*/
+		virtual unsigned int getNextFreeID();
 		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
 		virtual bool startCurveMesh(unsigned int id, int vertices);
 		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-		virtual unsigned int getNextFreeID();
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
@@ -61,7 +61,7 @@ class yafrayInterface_t
 		virtual bool addVmapValues(float *val); //!< add vertex map values; val must point to array of 3*dimension floats (one triangle)
 		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		// functions to build paramMaps instead of passing them from Blender
-		// (decouling implementation details of STL containers, paramMap_t etc. as much as possible)
+		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char* name, double x, double y, double z);
 		virtual void paramsSetString(const char* name, const char* s);
 		virtual void paramsSetBool(const char* name, bool b);
@@ -71,8 +71,8 @@ class yafrayInterface_t
 		virtual void paramsSetColor(const char* name, float *rgb, bool with_alpha=false);
 		virtual void paramsSetMatrix(const char* name, float m[4][4], bool transpose=false);
 		virtual void paramsSetMatrix(const char* name, double m[4][4], bool transpose=false);
-		virtual void paramsSetMemMatrix(const char* name, float *matrix, bool transpose=false);
-		virtual void paramsSetMemMatrix(const char* name, double *matrix, bool transpose=false);
+		virtual void paramsSetMemMatrix(const char* name, float* matrix, bool transpose=false);
+		virtual void paramsSetMemMatrix(const char* name, double* matrix, bool transpose=false);
 		virtual void paramsClearAll(); 	//!< clear the paramMap and paramList
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
@@ -87,20 +87,21 @@ class yafrayInterface_t
 		virtual VolumeRegion* 	createVolumeRegion(const char* name);
 		virtual unsigned int 	createObject	(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(colorOutput_t &output); //!< render the scene...
+		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual void setInputGamma(float gammaVal, bool enable);
-		virtual void addToParamsString(const char* params);
-		virtual void clearParamsString();
-		virtual void setDrawParams(bool b);
+//		virtual void addToParamsString(const char* params);
+//		virtual void clearParamsString();
+//		virtual void setDrawParams(bool b);
 		virtual void abort();
-		virtual bool getRenderedImage(colorOutput_t &output);
+		virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
+		//Versioning stuff
 		virtual char* getVersion() const;
-			
+	
 	protected:
-		paramMap_t *params;
-		std::list<paramMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
-		paramMap_t *cparams; //! just a pointer to the current paramMap, either params or a eparams element
+		paraMap_t *params;
+		std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
+		paraMap_t *cparams; //! just a pointer to the current paramMap, either params or a eparams element
 		renderEnvironment_t *env;
 		scene_t *scene;
 		imageFilm_t *film;

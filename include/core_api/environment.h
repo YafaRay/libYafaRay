@@ -92,11 +92,11 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual void registerFactory(const std::string &name,volume_factory_t *f);
 		virtual void registerFactory(const std::string &name,volumeregion_factory_t *f);
 
- 		void addToParamsString(const char *params);
- 		const char *getParamsString();
- 		void clearParamsString();
-		void setDrawParams(bool b);
-		bool getDrawParams();
+// 		void addToParamsString(const char *params);
+// 		const char *getParamsString();
+// 		void clearParamsString();
+//		void setDrawParams(bool b);
+//		bool getDrawParams();
 		int Debug;
 
 		renderEnvironment_t();
@@ -127,8 +127,8 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,shaderNode_t *> shader_table;
 		std::map<std::string,volumeHandler_t *> volume_table;
 		std::map<std::string,VolumeRegion *> volumeregion_table;
-		bool drawParamsString;
-		std::string paramsString;
+//		bool drawParamsString;
+//		std::string paramsString;
 		scene_t *curren_scene;
 };
 

@@ -274,11 +274,11 @@ unsigned int 	yafrayInterface_t::createObject	(const char* name)
 	return 0;
 }
 
-void yafrayInterface_t::addToParamsString(const char* params) { env->addToParamsString(params);  }
+//void yafrayInterface_t::addToParamsString(const char* params) { env->addToParamsString(params);  }
 
-void yafrayInterface_t::clearParamsString() { env->clearParamsString(); }
+//void yafrayInterface_t::clearParamsString() { env->clearParamsString(); }
 
-void yafrayInterface_t::setDrawParams(bool b) { env->setDrawParams(b); }
+//void yafrayInterface_t::setDrawParams(bool b) { env->setDrawParams(b); }
 
 void yafrayInterface_t::abort(){ if(scene) scene->abort(); }
 

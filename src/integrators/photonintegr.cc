@@ -32,6 +32,7 @@ photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhot
 	allBSDFIntersect = BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT;
 	intpb = 0;
 	integratorName = "PhotonMap";
+	integratorShortName = "PM";
 	hasBGLight = false;
 }
 
@@ -262,10 +263,18 @@ bool photonIntegrator_t::render(imageFilm_t *image)
 
 bool photonIntegrator_t::preprocess()
 {
+	std::stringstream set;
 	gTimer.addEvent("prepass");
 	gTimer.start("prepass");
 
 	Y_INFO << integratorName << ": Starting preprocess...\n";
+
+	if(trShad)
+	{
+		set << "ShadowDepth [" << sDepth << "]";
+	}
+	if(!set.str().empty()) set << "+";
+	set << "RayDepth [" << rDepth << "]";
 
 	diffuseMap.clear();
 	causticMap.clear();
@@ -280,8 +289,20 @@ bool photonIntegrator_t::preprocess()
 		{
 			lights.push_back(bgl);
 			hasBGLight = true;
+			set << "IBL";
 		}
 	}
+	
+	if(!set.str().empty()) set << "+";
+	
+	set << "DiffPhotons [" << nPhotons << "]+CausPhotons[" << nCausPhotons << "]+DiffSrch[" << nSearch << "]+CausSrch[" << nCausSearch << "]";
+	
+	if(finalGather)
+	{
+		set << "+FG[" << nPaths << ", " << gatherBounces << "]";
+	}
+	
+	settings = set.str();
 	
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;

@@ -45,6 +45,9 @@ class YAFRAYCORE_EXPORT integrator_t
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		virtual bool render(imageFilm_t *imageFilm) { return false; }
 		virtual void setProgressBar(progressBar_t *pb) { intpb = pb; }
+		virtual std::string getSettings() const { return settings; }
+		virtual std::string getShortName() const { return integratorShortName; }
+		virtual std::string getName() const { return integratorName; }
 		virtual ~integrator_t() {}
 		enum TYPE{ SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
@@ -53,6 +56,8 @@ class YAFRAYCORE_EXPORT integrator_t
 		scene_t *scene;
 		progressBar_t *intpb;
 		std::string integratorName;
+		std::string integratorShortName;
+		std::string settings;
 };
 
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t

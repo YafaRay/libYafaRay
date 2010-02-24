@@ -31,6 +31,7 @@
 #include <yafraycore/photon.h>
 #include <yafraycore/spectrum.h>
 #include <integrators/integr_utils.h>
+#include <sstream>
 
 __BEGIN_YAFRAY
 
@@ -67,13 +68,23 @@ pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
 	invNPaths = 1.f/64.f;
 	no_recursive = false;
 	integratorName = "PathTracer";
+	integratorShortName = "PT";
 	hasBGLight = false;
 }
 
 bool pathIntegrator_t::preprocess()
 {
+	std::stringstream set;
 	background = scene->getBackground();
 	lights = scene->lights;
+	
+	if(trShad)
+	{
+		set << "ShadowDepth: [" << sDepth << "]";
+	}
+	if(!set.str().empty()) set << "+";
+	set << "RayDepth: [" << rDepth << "]";
+
 	if(background)
 	{
 		light_t *bgl = background->getLight();
@@ -81,6 +92,7 @@ bool pathIntegrator_t::preprocess()
 		{
 			lights.push_back(bgl);
 			hasBGLight = true;
+			set << "IBL";
 		}
 	}
 	
@@ -99,7 +111,25 @@ bool pathIntegrator_t::preprocess()
 	}
 
 	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
-
+	
+	if(causticType == PATH)
+	{
+		if(!set.str().empty()) set << "+";
+		set << "Caustics: Path";
+	}
+	else if(causticType == PHOTON)
+	{
+		if(!set.str().empty()) set << "+";
+		set << "Caustics: Photon(" << nPhotons << ")";
+	}
+	else if(causticType == BOTH)
+	{
+		if(!set.str().empty()) set << "+";
+		set << "Caustics: Path+Photon(" << nPhotons << ")";
+	}
+	
+	settings = set.str();
+	
 	return success;
 }
 

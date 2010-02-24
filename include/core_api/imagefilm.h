@@ -33,7 +33,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 	public:
 		enum filterType { BOX, MITCHELL, GAUSS, LANCZOS };
 		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
-		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32, imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false);
+		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32,
+		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false, bool drawParams = false);
 		~imageFilm_t();
 		/*! initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(int numPasses = 0);
@@ -74,6 +75,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 
 		/*! sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
+		void setAAParams(const std::string &aa_params);
+		void setIntegParams(const std::string &integ_params);
+		void setCustomString(const std::string &custom);
 
 #if HAVE_FREETYPE
 		void drawRenderSettings();
@@ -117,6 +121,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		imageSpliter_t::tilesOrderType tilesOrder;
 		bool premultAlpha;
 		int nPasses;
+		bool drawParams;
+		std::string aaSettings;
+		std::string integratorSettings;
+		std::string customString;
 };
 
 __END_YAFRAY

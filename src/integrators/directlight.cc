@@ -29,6 +29,7 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
+#include <sstream>
 
 __BEGIN_YAFRAY
 
@@ -61,11 +62,22 @@ directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDept
 	nSearch = 100;
 	intpb = 0;
 	integratorName = "DirectLight";
+	integratorShortName = "DL";
 }
 
 bool directLighting_t::preprocess()
 {
 	bool success = true;
+	std::stringstream set;
+	settings = "";
+	
+	if(trShad)
+	{
+		set << "ShadowDepth: [" << sDepth << "]";
+	}
+	if(!set.str().empty()) set << "+";
+	set << "RayDepth: [" << rDepth << "]";
+	
 	background = scene->getBackground();
 	lights.clear();
 	for(unsigned int i=0;i<scene->lights.size();++i)
@@ -75,7 +87,12 @@ bool directLighting_t::preprocess()
 	if(background)
 	{
 		light_t *bgl = background->getLight();
-		if(bgl) lights.push_back(bgl);
+		if(bgl)
+		{
+			lights.push_back(bgl);
+			if(!set.str().empty()) set << "+";
+			set << "IBL";
+		}
 	}
 	if(caustics)
 	{
@@ -84,7 +101,18 @@ bool directLighting_t::preprocess()
 		else pb = new ConsoleProgressBar_t(80);
 		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, integratorName);
 		if(!intpb) delete pb;
+		if(!set.str().empty()) set << "+";
+		set << "Caustics:" << nPhotons << " photons. ";
 	}
+	
+	if(do_AO)
+	{
+		if(!set.str().empty()) set << "+";
+		set << "AO";
+	}
+	
+	settings = set.str();
+
 	return success;
 }
 

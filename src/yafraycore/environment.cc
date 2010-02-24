@@ -44,6 +44,7 @@
 #include <yafraycore/std_primitives.h>
 #include <yaf_revision.h>
 #include <string>
+#include <sstream>
 
 __BEGIN_YAFRAY
 #define ENV_TAG << " [Environment] "
@@ -468,6 +469,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	bool showSampledPixels = false;
 	int tileSize = 32;
 	bool premult = false;
+	bool drawParams = false;
 		
 	params.getParam("gamma", gamma);
 	params.getParam("clamp_rgb", clamp);
@@ -481,7 +483,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
-
+	params.getParam("drawParams", drawParams);
+	
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
@@ -496,11 +499,13 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
 		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
 	}
-	else Y_WARN_ENV << "Defaulting to Linear tiles order!\n";
+	else Y_INFO_ENV << "Defaulting to Linear tiles order.\n"; // this is info imho not a warning
 	
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder, premult);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder, premult, drawParams);
+
 	film->setClamp(clamp);
 	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
+
 	return film;
 }
 
@@ -573,6 +578,9 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=1;
 	double AA_threshold=0.05;
 	bool z_chan = false;
+	bool drawParams = false;
+	const std::string *custString = 0;
+	std::stringstream aaSettings;
 	
 	if(! params.getParam("camera_name", name) ){ Y_ERROR_ENV << "Specify a Camera!!\n"; return false; }
 	camera_t *cam = this->getCamera(*name);
@@ -596,8 +604,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	AA_inc_samples = AA_samples;
 	params.getParam("AA_inc_samples", AA_inc_samples);
 	params.getParam("AA_threshold", AA_threshold);
-	params.getParam("threads", nthreads); // number of threads
+	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("z_channel", z_chan); // render z-buffer
+	params.getParam("drawParams", drawParams);
+	params.getParam("customString", custString);
 	
 	imageFilm_t *film = createImageFilm(params, output);
 	if (pb)
@@ -606,6 +616,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		inte->setProgressBar(pb);
 	}
 	if(z_chan) film->addChannel("Depth");
+	params.getParam("filter_type", name); // AA filter type
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples;
+	
+	film->setAAParams(aaSettings.str());
+	if(custString) film->setCustomString(*custString);
 	
 	//setup scene and render.
 	scene.setImageFilm(film);
@@ -695,7 +710,7 @@ renderEnvironment_t::shader_factory_t* renderEnvironment_t::getShaderNodeFactory
 }
 
 
-void renderEnvironment_t::addToParamsString(const char *params)
+/*void renderEnvironment_t::addToParamsString(const char *params)
 {
 	paramsString = paramsString + std::string(params);
 }
@@ -717,6 +732,6 @@ void renderEnvironment_t::setDrawParams(bool b) {
 bool renderEnvironment_t::getDrawParams() {
 	return drawParamsString;
 }
-
+*/
 
 __END_YAFRAY
