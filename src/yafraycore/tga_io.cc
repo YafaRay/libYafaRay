@@ -45,8 +45,8 @@ bool outTga_t::putPixel(int x, int y, const float *c, int channels)
 	pix[0]= (c[0]<0.f) ? 0 : ((c[0]>=1.f) ? 255 : (unsigned char)(255.f*c[0]) );
 	pix[1]= (c[1]<0.f) ? 0 : ((c[1]>=1.f) ? 255 : (unsigned char)(255.f*c[1]) );
 	pix[2]= (c[2]<0.f) ? 0 : ((c[2]>=1.f) ? 255 : (unsigned char)(255.f*c[2]) );
-	if (save_alpha && channels > 4)
-		alpha_buf[yx] = (unsigned char)(255.0*((c[4]<0)?0:((c[4]>1)?1:c[4])));
+	if (save_alpha && channels > 3)
+		alpha_buf[yx] = (unsigned char)(255.0*((c[3]<0)?0:((c[3]>1)?1:c[3])));
 	return true;
 }
 
