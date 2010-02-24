@@ -51,6 +51,7 @@ class YAFRAYCORE_EXPORT parameter_t
 		// operator= assigns new value, be aware that this may change the parameter type!
 		parameter_t &operator = (const std::string &s) { vtype=TYPE_STRING; str=s; return *this; }
 		parameter_t &operator = (int i) { vtype=TYPE_INT; ival=i; return *this; }
+		parameter_t &operator = (bool b) { vtype=TYPE_BOOL; bval=b; return *this; }
 		parameter_t &operator = (float f) { vtype=TYPE_FLOAT; fval=f; return *this; }
 		parameter_t &operator = (const point3d_t &p) { vtype=TYPE_POINT; P[0]=p.x, P[1]=p.y, P[2]=p.z; return *this; }
 		parameter_t &operator = (const colorA_t &c) { vtype=TYPE_COLOR; C[0]=c.R, C[1]=c.G, C[2]=c.B, C[3]=c.A; return *this; }
