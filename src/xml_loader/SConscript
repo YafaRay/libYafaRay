@@ -6,7 +6,7 @@ Import('append_lib')
 Import('append_includes')
 
 xml_loader_env = program_env.Clone()
-append_includes(loader_env, ['PTHREAD'])
+append_includes(xml_loader_env, ['PTHREAD'])
 
 xml_loader_files = ['xml-loader.cc']
 
