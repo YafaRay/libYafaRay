@@ -6,14 +6,12 @@ Import('append_lib')
 Import('append_includes')
 
 xml_loader_env = program_env.Clone()
-#append_includes(loader_env, ['PTHREAD'])
+append_includes(loader_env, ['PTHREAD'])
 
 xml_loader_files = ['xml-loader.cc']
 
-#append_lib(xml_loader_env, ['EXR', 'ZLIB', 'PTHREAD', 'MISC'])
-append_lib(xml_loader_env, ['EXR'])
+append_lib(xml_loader_env, ['EXR', 'PTHREAD'])
 
-#xml_loader_env.Prepend (LIBPATH = [ '../integrators', '../yafraycore'] )
 xml_loader_env.Prepend (LIBPATH = ['../yafraycore'] )
 xml_loader_env.Append(LIBS = ['${YF_CORELIB}'])
 
