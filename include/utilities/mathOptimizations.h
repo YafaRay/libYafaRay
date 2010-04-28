@@ -127,7 +127,7 @@ inline float fPow(float a, float b)
 inline float fExp(float a)
 {
 #ifdef FAST_MATH
-	return fExp2(M_LOG2E * a);
+	return fExp2((float)M_LOG2E * a);
 #else
 	return exp(a);
 #endif
@@ -166,17 +166,17 @@ inline float fLdexp(float x, int a)
 inline float fSin(float x)
 {
 #ifdef FAST_TRIG
-	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * M_1_2PI)) * M_2PI; //float modulo x % M_2PI
+	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * (float)M_1_2PI)) * (float)M_2PI; //float modulo x % M_2PI
 	if(x < -M_PI)
 	{
-		x += M_2PI;
+		x += (float)M_2PI;
 	}
 	else if(x > M_PI)
 	{
-		x -= M_2PI;
+		x -= (float)M_2PI;
 	}
 
-	x = (M_4_PI * x) - (M_4_PI2 * x * std::fabs(x));
+	x = ((float)M_4_PI * x) - ((float)M_4_PI2 * x * std::fabs(x));
 	return CONST_P * (x * std::fabs(x) - x) + x;
 
 #else
@@ -210,7 +210,7 @@ inline float fAsin(float x)
 
 inline float fAcos(float x)
 {
-	return M_PI_2 - fAsin(x);
+	return (float)M_PI_2 - fAsin(x);
 }
 
 inline float fAtan(float x)
