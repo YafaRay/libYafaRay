@@ -8,13 +8,15 @@
 #include<errno.h>
 
 #if HAVE_PTHREAD
-#include<pthread.h>
-//#include<semaphore.h>
-#define USING_THREADS
+	#include<pthread.h>
+	#define USING_THREADS
 #elif defined(WIN32)
-#include <windows.h>
-#define USING_THREADS
-#define WIN32_THREADS
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <windows.h>
+	#define USING_THREADS
+	#define WIN32_THREADS
 #endif
 
 namespace yafthreads {

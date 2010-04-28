@@ -16,9 +16,7 @@ class YAFRAYCORE_EXPORT outTga_t : public colorOutput_t
 {
 	public:
 		outTga_t(int resx, int resy, const char *fname, bool sv_alpha=false);
-		//virtual bool putPixel(int x, int y, const color_t &c, 
-		//		CFLOAT alpha=0,PFLOAT depth=0);
-		virtual bool putPixel(int x, int y, const float *c, int channels);
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
 		virtual void flush() { savetga(outfile.c_str()); }
 		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format...useless
 		virtual ~outTga_t();

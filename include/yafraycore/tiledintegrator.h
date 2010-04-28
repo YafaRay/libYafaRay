@@ -19,8 +19,12 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
 	protected:
 		int AA_samples, AA_passes, AA_inc_samples;
-		CFLOAT AA_threshold;
+		float iAA_passes; //!< Inverse of AA_passes used for depth map
+		float AA_threshold;
 		imageFilm_t *imageFilm;
+		float maxDepth; //!< Inverse of max depth from camera within the scene boundaries
+		float minDepth; //!< Distance between camera and the closest object on the scene
+
 };
 
 #ifdef USING_THREADS

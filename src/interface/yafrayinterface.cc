@@ -250,6 +250,7 @@ material_t* 	yafrayInterface_t::createMaterial(const char* name) { return env->c
 camera_t* 		yafrayInterface_t::createCamera(const char* name) { return env->createCamera(name, *params); }
 background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }
 integrator_t* 	yafrayInterface_t::createIntegrator(const char* name) { return env->createIntegrator(name, *params); }
+imageHandler_t* yafrayInterface_t::createImageHandler(const char* name) { return env->createImageHandler(name, *params); }
 VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name) { 
 	//return env->createVolumeRegion(name, *params);
 	VolumeRegion* vr = env->createVolumeRegion(name, *params);
@@ -274,6 +275,26 @@ bool yafrayInterface_t::getRenderedImage(colorOutput_t &output)
 	if(!film) return false;
 	film->flush(IF_ALL, &output);
 	return true;
+}
+
+std::vector<std::string> yafrayInterface_t::listImageHandlers()
+{
+	return env->listImageHandlers();
+}
+
+std::vector<std::string> yafrayInterface_t::listImageHandlersFullName()
+{
+	return env->listImageHandlersFullName();
+}
+
+std::string yafrayInterface_t::getImageFormatFromFullName(const std::string &fullname)
+{
+	return env->getImageFormatFromFullName(fullname);
+}
+
+std::string yafrayInterface_t::getImageFullNameFromFormat(const std::string &format)
+{
+	return env->getImageFullNameFromFormat(format);
 }
 
 char* yafrayInterface_t::getVersion() const

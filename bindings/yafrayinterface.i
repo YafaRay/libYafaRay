@@ -7,16 +7,19 @@
 
 %include "carrays.i"
 %include "std_string.i"
+%include "std_vector.i"
+
 %array_functions(float, floatArray);
 
+namespace std
+{
+	%template(StrVector) vector<string>;
+}
 
 %{
 #include <interface/yafrayinterface.h>
 #include <interface/xmlinterface.h>
-#include <yafraycore/tga_io.h>
-#if HAVE_EXR
-#include <yafraycore/EXR_io.h>
-#endif
+#include <yafraycore/imageOutput.h>
 #include <yafraycore/memoryIO.h>
 using namespace yafaray;
 %}
@@ -27,9 +30,42 @@ class colorOutput_t
 {
 	public:
 		virtual ~colorOutput_t() {};
-		virtual bool putPixel(int x, int y, const float *c, int channels)=0;
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)=0;
 		virtual void flush()=0;
 		virtual void flushArea(int x0, int y0, int x1, int y1)=0;
+};
+
+class imageHandler_t
+{
+public:
+	virtual ~imageHandler_t() {};
+	virtual bool loadFromFile(const std::string &name) = 0;
+	virtual bool loadFromMemory(unsigned char *data) = 0;
+	virtual bool saveToFile(const std::string &name) = 0;
+	virtual void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f) = 0;
+	virtual colorA_t getPixel(int x, int y) = 0;
+	
+protected:
+	int m_width;
+	int m_height;
+	bool m_hasAlpha;
+	bool m_hasDepth;
+	rgba2DImage_nw_t *m_rgba;
+	gray2DImage_nw_t *m_depth;
+};
+
+class imageOutput_t : public colorOutput_t
+{
+	public:
+		imageOutput_t(imageHandler_t *handle, const std::string &name);
+		imageOutput_t(); //!< Dummy initializer
+		virtual ~imageOutput_t();
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
+		virtual void flush();
+		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // not used by images... yet
+	private:
+		imageHandler_t *image;
+		std::string fname;
 };
 
 class yafrayInterface_t
@@ -56,9 +92,6 @@ class yafrayInterface_t
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat); //!< add a triangle given vertex indices and material pointer
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUV(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
-		virtual bool startVmap(int id, int type, int dimensions); //!< start a vertex map of given type and dimension; gets added to last created mesh
-		virtual bool endVmap(); //!< finish editing current vertex map and return to geometry state
-		virtual bool addVmapValues(float *val); //!< add vertex map values; val must point to array of 3*dimension floats (one triangle)
 		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
@@ -78,23 +111,27 @@ class yafrayInterface_t
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
 		// functions directly related to renderEnvironment_t
-		virtual light_t* 		createLight		(const char* name);
-		virtual texture_t* 		createTexture	(const char* name);
-		virtual material_t* 	createMaterial	(const char* name);
-		virtual camera_t* 		createCamera	(const char* name);
-		virtual background_t* 	createBackground(const char* name);
-		virtual integrator_t* 	createIntegrator(const char* name);
-		virtual VolumeRegion* 	createVolumeRegion(const char* name);
-		virtual unsigned int 	createObject	(const char* name);
+		virtual light_t* 		createLight			(const char* name);
+		virtual texture_t* 		createTexture		(const char* name);
+		virtual material_t* 	createMaterial		(const char* name);
+		virtual camera_t* 		createCamera		(const char* name);
+		virtual background_t* 	createBackground	(const char* name);
+		virtual integrator_t* 	createIntegrator	(const char* name);
+		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
+		virtual imageHandler_t*	createImageHandler	(const char* name);
+		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual void setInputGamma(float gammaVal, bool enable);
-//		virtual void addToParamsString(const char* params);
-//		virtual void clearParamsString();
-//		virtual void setDrawParams(bool b);
 		virtual void abort();
+		virtual paraMap_t* getRenderParameters() { return params; }
 		virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
+		virtual std::vector<std::string> listImageHandlers();
+		virtual std::vector<std::string> listImageHandlersFullName();
+		virtual std::string getImageFormatFromFullName(const std::string &fullname);
+		virtual std::string getImageFullNameFromFormat(const std::string &format);
+
 		//Versioning stuff
 		virtual char* getVersion() const;
 	
@@ -160,55 +197,11 @@ class xmlInterface_t: public yafrayInterface_t
 		unsigned int nextObj;
 };
 
-
-class outTga_t : public colorOutput_t
-{
-	public:
-		outTga_t(int resx, int resy, const char *fname, bool sv_alpha=false);
-		//virtual bool putPixel(int x, int y, const color_t &c, 
-		//		CFLOAT alpha=0,PFLOAT depth=0);
-		virtual bool putPixel(int x, int y, const float *c, int channels);
-		virtual void flush() { savetga(outfile.c_str()); }
-		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format...useless
-		virtual ~outTga_t();
-	protected:
-		outTga_t(const outTga_t &o) {}; //forbidden
-		bool savetga(const char* filename);
-		bool save_alpha;
-		unsigned char *data;
-		unsigned char *alpha_buf;
-		int sizex, sizey;
-		std::string outfile;
-};
-
-#if HAVE_EXR
-class outEXR_t : public colorOutput_t
-{
-	public:
-		outEXR_t(int resx, int resy, const char *fname, const std::string &exr_flags);
-		//virtual bool putPixel(int x, int y, const color_t &c, 
-		//		CFLOAT alpha=0,PFLOAT depth=0);
-		virtual bool putPixel(int x, int y, const float *c, int channels);
-		virtual void flush() { saveEXR(); }
-		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format...useless
-		virtual ~outEXR_t();
-	protected:
-		outEXR_t(const outEXR_t &o) {}; //forbidden
-		bool saveEXR();
-		fcBuffer_t* fbuf;
-		gBuf_t<float, 1>* zbuf;
-		int sizex, sizey;
-		const char* filename;
-		std::string out_flags;
-};
-#endif
-
-
 class memoryIO_t : public colorOutput_t
 {
 	public:
 		memoryIO_t(int resx, int resy, float* iMem);
-		virtual bool putPixel(int x, int y, const float *c, int channels);
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
 		void flush();
 		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format used...yet
 		virtual ~memoryIO_t();

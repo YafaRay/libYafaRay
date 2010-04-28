@@ -11,6 +11,7 @@
 //#include "camera.h"
 #include "yafsystem.h"
 #include <list>
+#include <vector>
 
 __BEGIN_YAFRAY
 class light_t;
@@ -28,6 +29,7 @@ class imageFilm_t;
 class scene_t;
 class colorOutput_t;
 class progressBar_t;
+class imageHandler_t;
 
 class YAFRAYCORE_EXPORT renderEnvironment_t
 {
@@ -45,6 +47,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		typedef shaderNode_t 	*shader_factory_t(const paraMap_t &,renderEnvironment_t &);
 		typedef volumeHandler_t *volume_factory_t(const paraMap_t &,renderEnvironment_t &);
 		typedef VolumeRegion	*volumeregion_factory_t(paraMap_t &,renderEnvironment_t &);
+		typedef imageHandler_t	*imagehandler_factory_t(paraMap_t &,renderEnvironment_t &);
 //		typedef filter_t 	*filter_factory_t(paraMap_t &,renderEnvironment_t &);
 //		typedef pluginInfo_t info_t();
 		
@@ -76,6 +79,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		volumeHandler_t* createVolumeH(const std::string &name, const paraMap_t &params);
 		VolumeRegion*	createVolumeRegion(const std::string &name, paraMap_t &params);
 		imageFilm_t*	createImageFilm(const paraMap_t &params, colorOutput_t &output);
+		imageHandler_t* createImageHandler(const std::string &name, paraMap_t &params);
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
 		void clearAll();
@@ -91,12 +95,13 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual void registerFactory(const std::string &name,shader_factory_t *f);
 		virtual void registerFactory(const std::string &name,volume_factory_t *f);
 		virtual void registerFactory(const std::string &name,volumeregion_factory_t *f);
+		
+		virtual void registerImageHandler(const std::string &name, const std::string &fullName, imagehandler_factory_t *f);
+		virtual std::vector<std::string> listImageHandlers();
+		virtual std::vector<std::string> listImageHandlersFullName();
+		virtual std::string getImageFormatFromFullName(const std::string &fullname);
+		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
-// 		void addToParamsString(const char *params);
-// 		const char *getParamsString();
-// 		void clearParamsString();
-//		void setDrawParams(bool b);
-//		bool getDrawParams();
 		int Debug;
 
 		renderEnvironment_t();
@@ -115,6 +120,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,shader_factory_t *> 	shader_factory;
 		std::map<std::string,volume_factory_t *> 	volume_factory;
 		std::map<std::string,volumeregion_factory_t *> 	volumeregion_factory;
+		std::map<std::string,imagehandler_factory_t *> 	imagehandler_factory;
 		
 		std::map<std::string,light_t *> 	light_table;
 		std::map<std::string,material_t *> 	material_table;
@@ -127,8 +133,9 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,shaderNode_t *> shader_table;
 		std::map<std::string,volumeHandler_t *> volume_table;
 		std::map<std::string,VolumeRegion *> volumeregion_table;
-//		bool drawParamsString;
-//		std::string paramsString;
+		
+		std::map<std::string,imageHandler_t *> imagehandler_table;
+		std::map<std::string,std::string> imagehandler_fullnames;
 		scene_t *curren_scene;
 };
 

@@ -28,6 +28,7 @@ typedef unsigned int yafUint;
 typedef Buffer_t<colorA_t> imgBuffer_t;
 
 #define toFloat(c) ((float)c / 255.f)
+#define toFloat16(c) ((float)c / 255.f)
 
 class ImgDataReader
 {

@@ -2,7 +2,7 @@
  *
  * 			color.h: Color type and operators api 
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Estévez
+ *      Copyright (C) 2002  Alejandro Conty Estï¿½vez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -145,6 +145,18 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 		void alphaPremultiply() { R*=A; G*=A; B*=A; }
 		CFLOAT getA() const { return A; }
 		void setAlpha(CFLOAT a) { A=a; }
+
+		void clampRGBA0()
+		{
+			clampRGB0();
+			if (A<0.0) A=0.0;
+		}
+
+		void clampRGBA01()
+		{
+			clampRGB01();
+			if (A<0.0) A=0.0; else if (A>1.0) A=1.0;
+		}
 
 //	protected:
 		CFLOAT A;

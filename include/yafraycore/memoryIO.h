@@ -11,7 +11,7 @@ class YAFRAYCORE_EXPORT memoryIO_t : public colorOutput_t
 {
 	public:
 		memoryIO_t(int resx, int resy, float* iMem);
-		virtual bool putPixel(int x, int y, const float *c, int channels);
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
 		void flush();
 		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format used...yet
 		virtual ~memoryIO_t();

@@ -229,6 +229,7 @@ bool photonIntegrator_t::render(imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
+	iAA_passes = 1.f / (float) AA_passes;
 	Y_INFO << integratorName << ": Rendering "<<AA_passes<<" passes\n";
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples\n";
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass\n";
@@ -240,6 +241,28 @@ bool photonIntegrator_t::render(imageFilm_t *image)
 	gTimer.start("rendert");
 	imageFilm->init(AA_passes);
 	
+	maxDepth = 0.f;
+
+	if(scene->doDepth())
+	{
+		const camera_t* camera = scene->getCamera();
+		diffRay_t c_ray;
+		int end_x=camera->resX(), end_y=camera->resY();
+		float wt = 0.f;
+		surfacePoint_t sp;
+		
+		for(int i=0; i<end_y; ++i)
+		{
+			for(int j=0; j<end_x; ++j)
+			{
+				c_ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
+				scene->intersect(c_ray, sp);
+				if(c_ray.tmax > maxDepth) maxDepth = c_ray.tmax;
+			}
+		}
+		if(maxDepth > 0.f) maxDepth = 1.f / maxDepth;
+	}
+
 	this->prepass = false;
 	if(cacheIrrad)
 	{
@@ -690,8 +713,8 @@ bool photonIntegrator_t::preprocess()
 		for(int i=0; i<nThreads; ++i) workers.push_back(new preGatherWorker_t(&pgdat, dsRadius, nSearch));
 		
 		for(int i=0;i<nThreads;++i) workers[i]->run();
-		for(int i=0;i<nThreads;++i) workers[i]->wait();
-		for(int i=0;i<nThreads;++i) delete workers[i];
+		for(int i=0;i<nThreads;++i)	workers[i]->wait();
+		for(int i=0;i<nThreads;++i)	delete workers[i];
 		
 		radianceMap.swapVector(pgdat.radianceVec);
 		pgdat.pbar->done();

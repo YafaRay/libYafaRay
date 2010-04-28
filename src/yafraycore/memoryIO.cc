@@ -14,10 +14,13 @@ memoryIO_t::memoryIO_t ( int resx, int resy, float* iMem )
 	imageMem = iMem; // iMem must be a valid pointer to memory of the size: sizex * sizey * 4 * sizeof(float)
 }
 
-bool memoryIO_t::putPixel ( int x, int y, const float *c, int channels )
+// Depth channel support?
+bool memoryIO_t::putPixel ( int x, int y, const float *c, bool alpha, bool depth, float z )
 {
-	for (int i = 0; i < 4; ++i) {
-		imageMem[(x + sizex * y) * 4 + i] = c[i];
+	for (int i = 0; i < 4; ++i)
+	{
+		if(!alpha && i == 3) imageMem[(x + sizex * y) * 4 + i] = 1.f;
+		else imageMem[(x + sizex * y) * 4 + i] = c[i];
 	}
 	return true;
 }

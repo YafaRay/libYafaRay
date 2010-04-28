@@ -11,7 +11,7 @@ __BEGIN_YAFRAY
 struct renderArea_t
 {
 	renderArea_t(int x,int y,int w,int h):X(x),Y(y),W(w),H(h),
-		realX(x),realY(y),realW(w),realH(h),depth(w*h),resample(w*h)
+		realX(x),realY(y),realW(w),realH(h),resample(w*h)
 	{};
 	renderArea_t() {};
 
@@ -22,7 +22,7 @@ struct renderArea_t
 		realW=W=w;
 		realH=H=h;
 //		image.resize(w*h);
-		depth.resize(w*h);
+//		depth.resize(w*h);
 		resample.resize(w*h);
 	}
 	void setReal(int x,int y,int w,int h)
@@ -36,13 +36,13 @@ struct renderArea_t
 //	bool out(colorOutput_t &o);
 
 //	colorA_t & imagePixel(int x,int y) {return image[(y-Y)*W+(x-X)];};
-	PFLOAT & depthPixel(int x,int y)   {return depth[(y-Y)*W+(x-X)];};
+//	PFLOAT & depthPixel(int x,int y)   {return depth[(y-Y)*W+(x-X)];};
 	bool  resamplePixel(int x,int y)  {return resample[(y-Y)*W+(x-X)];};
 
 	int X,Y,W,H,realX,realY,realW,realH;
 	int sx0, sx1, sy0, sy1; //!< safe area, i.e. region unaffected by samples outside (needs to be set by ImageFilm_t)
 //	std::vector<colorA_t> image;
-	std::vector<PFLOAT> depth;
+//	std::vector<PFLOAT> depth;
 	std::vector<bool> resample;
 };
 

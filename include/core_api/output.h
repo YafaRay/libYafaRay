@@ -1,8 +1,9 @@
 /****************************************************************************
  *
- * 			output.h: Generic output module api 
+ * 		output.h: Output base class
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Estévez
+ *      Copyright (C) 2002  Alejandro Conty Estï¿½vez
+ *		Modifyed by Rodrigo Placencia Vazquez (2009)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -24,17 +25,15 @@
 
 #include "yafray_constants.h"
 
-// #include "color.h" // to be removed
-
 __BEGIN_YAFRAY
+
+/*! Base class for rendering output containers */
 
 class colorOutput_t
 {
 	public:
 		virtual ~colorOutput_t() {};
-//		virtual bool putPixel(int x, int y,const color_t &c, 
-//				CFLOAT alpha=0,PFLOAT depth=0)=0;  // to be removed
-		virtual bool putPixel(int x, int y, const float *c, int channels)=0;
+		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)=0;
 		virtual void flush()=0;
 		virtual void flushArea(int x0, int y0, int x1, int y1)=0;
 		virtual void highliteArea(int x0, int y0, int x1, int y1){};

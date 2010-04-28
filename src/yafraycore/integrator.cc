@@ -2,6 +2,7 @@
 #include <yafraycore/tiledintegrator.h>
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
+#include <core_api/surface.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/scr_halton.h>
 #include <utilities/mcqmc.h>
@@ -54,6 +55,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
+	iAA_passes = 1.f / (float) AA_passes;
 	Y_INFO << integratorName << ": Rendering "<<AA_passes<<" passes\n";
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples\n";
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass\n";
@@ -65,6 +67,31 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	gTimer.start("rendert");
 	imageFilm->init(AA_passes);
 	
+	maxDepth = 0.f;
+	minDepth = 1e38f;
+
+	if(scene->doDepth())
+	{
+		const camera_t* camera = scene->getCamera();
+		diffRay_t c_ray;
+		int end_x=camera->resX(), end_y=camera->resY();
+		float wt = 0.f;
+		surfacePoint_t sp;
+		
+		for(int i=0; i<end_y; ++i)
+		{
+			for(int j=0; j<end_x; ++j)
+			{
+				c_ray.tmax = -1.f;
+				c_ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
+				scene->intersect(c_ray, sp);
+				if(c_ray.tmax > maxDepth) maxDepth = c_ray.tmax;
+				if(c_ray.tmax < minDepth && c_ray.tmax >= 0.f) minDepth = c_ray.tmax;
+			}
+		}
+		if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
+	}
+
 	renderPass(AA_samples, 0, false);
 	for(int i=1; i<AA_passes; ++i)
 	{
@@ -73,7 +100,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 		imageFilm->nextPass(true);
 		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
 	}
-
+	maxDepth = 0.f;
 	gTimer.stop("rendert");
 	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
 
@@ -197,9 +224,19 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				colorA_t col = integrate(rstate, c_ray); // L_o
 				col *= scene->volIntegrator->transmittance(rstate, c_ray); // T
 				col += scene->volIntegrator->integrate(rstate, c_ray); // L_v
-				imageFilm->addSample(wt * col, j, i, dx, dy,/*.5f, .5f,*/ &a);
+				imageFilm->addSample(wt * col, j, i, dx, dy, &a);
+				
+				if(do_depth)
+				{
+					float depth = 0.f;
+					if(c_ray.tmax > 0.f)
+					{
+						depth = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
+					}
+					
+					imageFilm->addDepthSample(0, depth, j, i, dx, dy);
+				}
 			}
-			if(do_depth) imageFilm->setChanPixel(c_ray.tmax, 0, j, i);
 		}
 	}
 	return true;

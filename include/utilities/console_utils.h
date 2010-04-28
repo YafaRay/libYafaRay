@@ -23,6 +23,7 @@
 
 #include <yafray_config.h>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -80,6 +81,7 @@ class cliParser_t
 	yvector<ystring> getCleanArgs() const;
 	void setAppName(const ystring name, const ystring bUsage);
 	void printUsage() const; //! Prints usage instructions with the registrered options
+	void printError() const; //! Prints error found during parsing (if any)
 	void clearOptions(); //! Clears the registrered options list
 	bool parseCommandLine(); //! Parses the input values from command line and fills the values on the right options if they exist on the args
 	
@@ -94,6 +96,7 @@ class cliParser_t
 	size_t cleanArgs;
 	size_t cleanArgsOptional;
 	ystring cleanArgsError;
+	ystring parseError;
 };
 
 cliParser_t::cliParser_t(int argc, char **argv, int cleanArgsNum, int cleanOptArgsNum, const ystring cleanArgError)
@@ -231,12 +234,19 @@ void cliParser_t::printUsage() const
 	<< "OPTIONS:\n";
 	for(size_t i = 0; i < regOptions.size(); i++)
 	{
-		std::cout << "\t"
-		<< regOptions[i]->shortOpt << " or "
-		<< regOptions[i]->longOpt << (regOptions[i]->isFlag?" : ":" <value> : ")
-		<< regOptions[i]->desc << std::endl << std::endl;
+		ysstream name;
+		name << regOptions[i]->shortOpt << ", " << regOptions[i]->longOpt << (regOptions[i]->isFlag?"":" <value>");
+		std::cout << "    "
+		<< std::setiosflags(std::ios::left) << std::setw(35)
+		<< name.str()
+		<< regOptions[i]->desc << std::endl;
 	}
 	Y_INFO << "Usage instructions end." << std::endl;
+}
+
+void cliParser_t::printError() const
+{
+	Y_ERROR << parseError << std::endl;
 }
 
 void cliParser_t::clearOptions()
@@ -253,6 +263,7 @@ void cliParser_t::clearOptions()
 
 bool cliParser_t::parseCommandLine()
 {
+	ysstream error;
 	cleanValues.clear();
 	for(size_t i = 0; i < argValues.size(); i++)
 	{
@@ -282,13 +293,15 @@ bool cliParser_t::parseCommandLine()
 						}
 						else
 						{
-							Y_ERROR << "Option " << regOptions[j]->longOpt << " has no value";
+							error << "Option " << regOptions[j]->longOpt << " has no value";
+							parseError = error.str();
 							return false;
 						}
 					}
 					else
 					{
-						Y_ERROR << "Option " << regOptions[j]->longOpt << " has no value";
+						error << "Option " << regOptions[j]->longOpt << " has no value";
+						parseError = error.str();
 						return false;
 					}
 				}
@@ -302,7 +315,8 @@ bool cliParser_t::parseCommandLine()
 	
 	if(cleanValues.size() < cleanArgs && cleanValues.size() < cleanArgs - cleanArgsOptional)
 	{
-		Y_ERROR << cleanArgsError << std::endl;
+		error << cleanArgsError;
+		parseError = error.str();
 		return false;
 	}
 	

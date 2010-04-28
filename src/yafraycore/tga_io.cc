@@ -28,24 +28,14 @@ outTga_t::outTga_t(int resx, int resy, const char *fname, bool sv_alpha)
 	}
 }
 
-/* bool outTga_t::putPixel(int x, int y, const color_t &c, 
-		CFLOAT alpha,PFLOAT depth)
-{
-	unsigned int yx = sizex*y + x;
-	(data+yx*3) << c;
-	if (save_alpha)
-		alpha_buf[yx] = (unsigned char)(255.0*((alpha<0)?0:((alpha>1)?1:alpha)));
-	return true;
-} */
-
-bool outTga_t::putPixel(int x, int y, const float *c, int channels)
+bool outTga_t::putPixel(int x, int y, const float *c, bool alpha, bool depth, float z)
 {
 	unsigned int yx = sizex*y + x;
 	unsigned char *pix = (data+yx*3);
 	pix[0]= (c[0]<0.f) ? 0 : ((c[0]>=1.f) ? 255 : (unsigned char)(255.f*c[0]) );
 	pix[1]= (c[1]<0.f) ? 0 : ((c[1]>=1.f) ? 255 : (unsigned char)(255.f*c[1]) );
 	pix[2]= (c[2]<0.f) ? 0 : ((c[2]>=1.f) ? 255 : (unsigned char)(255.f*c[2]) );
-	if (save_alpha && channels > 3)
+	if (save_alpha && alpha)
 		alpha_buf[yx] = (unsigned char)(255.0*((c[3]<0)?0:((c[3]>1)?1:c[3])));
 	return true;
 }

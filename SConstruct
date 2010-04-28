@@ -126,6 +126,9 @@ SConscript([common_env['YF_BUILDPATH'] + '/textures/SConscript'])
 BuildDir(common_env['YF_BUILDPATH'] + '/integrators', 'src/integrators', duplicate=0)
 SConscript([common_env['YF_BUILDPATH'] + '/integrators/SConscript'])
 
+BuildDir(common_env['YF_BUILDPATH'] + '/image_handlers', 'src/image_handlers', duplicate=0)
+SConscript([common_env['YF_BUILDPATH'] + '/image_handlers/SConscript'])
+
 BuildDir(common_env['YF_BUILDPATH'] + '/interface', 'src/interface', duplicate=0)
 SConscript([common_env['YF_BUILDPATH'] + '/interface/SConscript'])
 
@@ -148,6 +151,7 @@ if 'swig_install' in COMMAND_LINE_TARGETS:
 	SConscript(common_env['YF_BUILDPATH'] + "/bindings/SConscript")
 
 Alias('install',['install_core',
+				 'install_image_handlers',
 				 'install_xml_loader',
 				 'install_cameras',
 				 'install_lights',

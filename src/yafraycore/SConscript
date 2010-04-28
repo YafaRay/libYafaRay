@@ -39,7 +39,8 @@ source_files = ['bound.cc',
 				'memoryIO.cc',
 				'surface.cc',
 				'irradiancecache.cc',
-				'integrator.cc'
+				'integrator.cc',
+				'imageOutput.cc'
 				]
 
 #if config.exr.present:

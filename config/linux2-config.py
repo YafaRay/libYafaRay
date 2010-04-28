@@ -35,6 +35,11 @@ WITH_YF_PNG = 'true'
 YF_PNG_INC = ''
 YF_PNG_LIB = 'png'
 
+### TIFF
+WITH_YF_TIFF = 'true'
+YF_TIFF_INC = ''
+YF_TIFF_LIB = 'tiff'
+
 ### zlib
 WITH_YF_ZLIB = 'true'
 YF_ZLIB_INC = ''

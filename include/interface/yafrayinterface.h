@@ -6,6 +6,9 @@
 #include <yafray_constants.h>
 #include <yaf_revision.h>
 #include <list>
+#include <vector>
+#include <string>
+
 
 __BEGIN_YAFRAY
 
@@ -21,6 +24,7 @@ class renderEnvironment_t;
 class colorOutput_t;
 class paraMap_t;
 class imageFilm_t;
+class imageHandler_t;
 class progressBar_t;
 
 class YAFRAYPLUGIN_EXPORT yafrayInterface_t
@@ -47,9 +51,6 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat); //!< add a triangle given vertex indices and material pointer
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUV(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
-		virtual bool startVmap(int id, int type, int dimensions); //!< start a vertex map of given type and dimension; gets added to last created mesh
-		virtual bool endVmap(); //!< finish editing current vertex map and return to geometry state
-		virtual bool addVmapValues(float *val); //!< add vertex map values; val must point to array of 3*dimension floats (one triangle)
 		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
@@ -69,23 +70,27 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
 		// functions directly related to renderEnvironment_t
-		virtual light_t* 		createLight		(const char* name);
-		virtual texture_t* 		createTexture	(const char* name);
-		virtual material_t* 	createMaterial	(const char* name);
-		virtual camera_t* 		createCamera	(const char* name);
-		virtual background_t* 	createBackground(const char* name);
-		virtual integrator_t* 	createIntegrator(const char* name);
-		virtual VolumeRegion* 	createVolumeRegion(const char* name);
-		virtual unsigned int 	createObject	(const char* name);
+		virtual light_t* 		createLight			(const char* name);
+		virtual texture_t* 		createTexture		(const char* name);
+		virtual material_t* 	createMaterial		(const char* name);
+		virtual camera_t* 		createCamera		(const char* name);
+		virtual background_t* 	createBackground	(const char* name);
+		virtual integrator_t* 	createIntegrator	(const char* name);
+		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
+		virtual imageHandler_t*	createImageHandler	(const char* name);
+		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual void setInputGamma(float gammaVal, bool enable);
-//		virtual void addToParamsString(const char* params);
-//		virtual void clearParamsString();
-//		virtual void setDrawParams(bool b);
 		virtual void abort();
+		virtual paraMap_t* getRenderParameters() { return params; }
 		virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
+		virtual std::vector<std::string> listImageHandlers();
+		virtual std::vector<std::string> listImageHandlersFullName();
+		virtual std::string getImageFormatFromFullName(const std::string &fullname);
+		virtual std::string getImageFullNameFromFormat(const std::string &format);
+
 		//Versioning stuff
 		virtual char* getVersion() const;
 	

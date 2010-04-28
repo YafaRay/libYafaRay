@@ -25,7 +25,6 @@
 #include <yafray_config.h>
 
 #include <utilities/mathOptimizations.h>
-//#include <cmath>
 #include <iostream>
 
 // ensure isnan is available. I *hope* it works with OSX w. gcc 4.x too

@@ -126,9 +126,35 @@ YAFRAYCORE_EXPORT fcBuffer_t* loadEXR(const char* fname)
 	}
 }
 
+outEXR_t::outEXR_t(int resx, int resy, const char *fname, const std::string &exr_flags)
+{
+	sizex = resx;
+	sizey = resy;
+	filename = fname;
+	fbuf = new fcBuffer_t(resx, resy);
+	zbuf = NULL;
+	out_flags = exr_flags;
+	// zbuf handled here, other flags are handled in saveEXR() in EXR_io.cc
+	if (int(exr_flags.find("zbuf"))!=-1) zbuf = new gBuf_t<float, 1>(resx, resy);
+}
+
 bool outEXR_t::SaveEXR()
 {
 	return saveEXR(filename, fbuf, zbuf, sizex, sizey, out_flags);
+}
+
+bool outEXR_t::putPixel(int x, int y, const float *c, bool alpha, bool depth, float z)
+{
+	(*fbuf)(x, y) << colorA_t(c[0], c[1], c[2], c[3]);
+	if (zbuf && depth) *(*zbuf)(x, y) = z;
+	return true;
+}
+outEXR_t::~outEXR_t()
+{
+	if (zbuf) delete zbuf;
+	zbuf = NULL;
+	if (fbuf) delete fbuf;
+	fbuf = NULL;
 }
 
 __END_YAFRAY

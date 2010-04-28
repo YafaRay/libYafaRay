@@ -38,6 +38,12 @@ YF_PNG_INC = '${BASE_IPATH}/png/include'
 YF_PNG_LIBPATH = '${BASE_LPATH}/png/lib'
 YF_PNG_LIB = 'libpng'
 
+### TIFF
+WITH_YF_TIFF = 'true'
+YF_TIFF_INC = '${BASE_IPATH}/tiff/include'
+YF_TIFF_LIBPATH = '${BASE_LPATH}/tiff/lib'
+YF_TIFF_LIB = 'libtiff'
+
 ### zlib
 WITH_YF_ZLIB = 'true'
 YF_ZLIB_INC = '${BASE_IPATH}/zlib/include'

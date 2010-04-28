@@ -3,7 +3,7 @@
  *      environment.cc: Yafray environment for plugin loading and
  *      object instatiation
  *      This is part of the yafray package
- *      Copyright (C) 2005  Alejandro Conty Estévez, Mathias Wein
+ *      Copyright (C) 2005  Alejandro Conty Estï¿½vez, Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,7 @@
 #include <core_api/camera.h>
 #include <core_api/shader.h>
 #include <core_api/imagefilm.h>
+#include <core_api/imagehandler.h>
 #include <core_api/object3d.h>
 #include <core_api/volume.h>
 #include <yafraycore/std_primitives.h>
@@ -69,11 +70,6 @@ renderEnvironment_t::renderEnvironment_t()
 #else
 	std::cout << PACKAGE << " (" << YAF_SVN_REV << ")" << std::endl;
 #endif
-	// add builtin types to factory tables:
-	//camera_factory["perspective"] = perspectiveCam_t::factory;
-	//camera_factory["architect"] = architectCam_t::factory;
-	//camera_factory["orthographic"] = orthoCam_t::factory;
-	//camera_factory["angular"] = angularCam_t::factory;
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
 }
@@ -110,6 +106,7 @@ void renderEnvironment_t::clearAll()
 	freeMap(integrator_table);
 	freeMap(volume_table);
 	freeMap(volumeregion_table);
+	freeMap(imagehandler_table);
 
 	light_table.clear();
 	texture_table.clear();
@@ -120,6 +117,7 @@ void renderEnvironment_t::clearAll()
 	integrator_table.clear();
 	volume_table.clear();
 	volumeregion_table.clear();
+	imagehandler_table.clear();
 }
 
 void renderEnvironment_t::loadPlugins(const std::string &path)
@@ -372,6 +370,35 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 	return 0;
 }
 
+imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params)
+{
+	std::string pname = "ImageHandler";
+	if(imagehandler_table.find(name) != imagehandler_table.end() )
+	{
+		WarnExist; return 0;
+	}
+	std::string type;
+	if(! params.getParam("type", type) )
+	{
+		ErrNoType; return 0;
+	}
+	imageHandler_t* ih = 0;
+	std::map<std::string, imagehandler_factory_t *>::iterator i=imagehandler_factory.find(type);
+	if(i!=imagehandler_factory.end()) ih = i->second(params,*this);
+	else
+	{
+		ErrUnkType(type); return 0;
+	}
+	if(ih)
+	{
+		imagehandler_table[name] = ih;
+		InfoSucces(name, type);
+		return ih;
+	}
+	ErrOnCreate(type);
+	return 0;
+}
+
 object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t &params)
 {
 	std::string pname = "Object";
@@ -488,10 +515,12 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
-		if(*name == "mitchell") type=imageFilm_t::MITCHELL;
-		else if(*name == "gauss") type=imageFilm_t::GAUSS;
+		if(*name == "mitchell") type = imageFilm_t::MITCHELL;
+		else if(*name == "gauss") type = imageFilm_t::GAUSS;
+		else if(*name == "lanczos") type = imageFilm_t::LANCZOS;
+		else type = imageFilm_t::BOX;
 	}
-	else Y_WARN_ENV << "Defaulting to Box AA filter!\n";
+	else Y_WARN_ENV << "No AA filter defined defaulting to Box!\n";
 
 	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::LINEAR;
 	if(tiles_order)
@@ -501,7 +530,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_INFO_ENV << "Defaulting to Linear tiles order.\n"; // this is info imho not a warning
 	
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, &(*this), showSampledPixels, tileSize, tilesOrder, premult, drawParams);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
 
 	film->setClamp(clamp);
 	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
@@ -610,12 +639,15 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("customString", custString);
 	
 	imageFilm_t *film = createImageFilm(params, output);
+	
 	if (pb)
 	{
 		film->setProgressBar(pb);
 		inte->setProgressBar(pb);
 	}
-	if(z_chan) film->addChannel("Depth");
+	
+	if(z_chan) film->initDepthMap();
+	
 	params.getParam("filter_type", name); // AA filter type
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples;
 	
@@ -701,6 +733,73 @@ void renderEnvironment_t::registerFactory(const std::string &name,volumeregion_f
 	SuccessReg("VolumeRegion", name);
 }
 
+void renderEnvironment_t::registerImageHandler(const std::string &name, const std::string &fullName, imagehandler_factory_t *f)
+{
+	imagehandler_factory[name]=f;
+	imagehandler_fullnames[name]=fullName;
+	SuccessReg("ImageHandler", name);
+}
+
+std::vector<std::string> renderEnvironment_t::listImageHandlers()
+{
+	std::vector<std::string> ret;
+	if(imagehandler_fullnames.size() > 0)
+	{
+		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		{
+			ret.push_back(i->first);
+		}
+	}
+	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	
+	return ret;
+}
+
+std::vector<std::string> renderEnvironment_t::listImageHandlersFullName()
+{
+	std::vector<std::string> ret;
+	if(imagehandler_fullnames.size() > 0)
+	{
+		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		{
+			ret.push_back(i->second);
+		}
+	}
+	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	
+	return ret;
+}
+
+std::string renderEnvironment_t::getImageFormatFromFullName(const std::string &fullname)
+{
+	std::string ret;
+	if(imagehandler_fullnames.size() > 0)
+	{
+		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		{
+			if(i->second == fullname) ret = i->first;
+		}
+	}
+	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	
+	return ret;
+}
+
+std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &format)
+{
+	std::string ret;
+	if(imagehandler_fullnames.size() > 0)
+	{
+		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		{
+			if(i->first == format) ret = i->second;
+		}
+	}
+	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	
+	return ret;
+}
+
 renderEnvironment_t::shader_factory_t* renderEnvironment_t::getShaderNodeFactory(const std::string &name)const
 {
 	std::map<std::string,shader_factory_t *>::const_iterator i=shader_factory.find(name);
@@ -708,30 +807,5 @@ renderEnvironment_t::shader_factory_t* renderEnvironment_t::getShaderNodeFactory
 	Y_ERROR_ENV << "There is no factory for '"<<name<<"'\n";
 	return 0;
 }
-
-
-/*void renderEnvironment_t::addToParamsString(const char *params)
-{
-	paramsString = paramsString + std::string(params);
-}
-
-const char* renderEnvironment_t::getParamsString()
-{
-	return paramsString.c_str();
-}
-
-void renderEnvironment_t::clearParamsString()
-{
-	paramsString = std::string("");
-}
-
-void renderEnvironment_t::setDrawParams(bool b) {
-	drawParamsString = b;
-}
-
-bool renderEnvironment_t::getDrawParams() {
-	return drawParamsString;
-}
-*/
 
 __END_YAFRAY

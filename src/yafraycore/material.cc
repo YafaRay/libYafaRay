@@ -23,7 +23,6 @@
 #include <utilities/sample_utils.h>
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
-#include <cmath>
 
 __BEGIN_YAFRAY
 

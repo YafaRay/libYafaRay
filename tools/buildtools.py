@@ -44,6 +44,11 @@ def read_opts(cfiles, cargs):
 		('YF_PNG_INC', 'PNG library path', ''),
 		('YF_PNG_LIBPATH', 'PNG library path', ''),
 		('YF_PNG_LIB', 'PNG library files', ''),
+	### libTiff
+		(BoolOption('WITH_YF_TIFF', 'enable TIFF support', 'true')),
+		('YF_TIFF_INC', 'TIFF include path', ''),
+		('YF_TIFF_LIBPATH', 'TIFF library path', ''),
+		('YF_TIFF_LIB', 'TIFF libraries', ''),
 	### zlib
 		(BoolOption('WITH_YF_ZLIB', 'use zlib', 'true')),
 		('YF_ZLIB_INC', 'zlib include path', ''),
@@ -91,6 +96,9 @@ def add_lib_paths(lenv):
 	if lenv['WITH_YF_PNG']:
 		incpaths += Split(lenv['YF_PNG_INC'])
 		libpaths += Split(lenv['YF_PNG_LIBPATH'])
+	if lenv['WITH_YF_TIFF']:
+		incpaths += Split(lenv['YF_TIFF_INC'])
+		libpaths += Split(lenv['YF_TIFF_LIBPATH'])
 	if lenv['WITH_YF_ZLIB']:
 		incpaths += Split(lenv['YF_ZLIB_INC'])
 		libpaths += Split(lenv['YF_ZLIB_LIBPATH'])
@@ -141,6 +149,10 @@ def check_config(env):
 		if not config_lib(conf, common_env['YF_PNG_LIB']):
 			ok = False
 	else:	print "skipping PNG..."
+	if common_env['WITH_YF_TIFF']:
+		if not config_lib(conf, common_env['YF_TIFF_LIB']):
+			ok = False
+	else:	print "skipping TIFF..."
 	if common_env['WITH_YF_FREETYPE']:
 		if not config_lib(conf, common_env['YF_FREETYPE_LIB']):
 			ok = False
