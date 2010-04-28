@@ -1,0 +1,28 @@
+import sys
+
+Import('plugin_env')
+Import('append_lib')
+Import('append_includes')
+
+image_handlers_env = plugin_env.Clone();
+
+append_includes(image_handlers_env, ['PTHREAD','EXR','PNG'])
+append_lib(image_handlers_env, ['JPEG','PNG','EXR','ZLIB','TIFF'])
+
+exr = image_handlers_env.SharedLibrary (target='exrHandler', source=['exrHandler.cc'])
+image_handlers_env.Install('${YF_PLUGINPATH}',exr)
+
+tga = image_handlers_env.SharedLibrary (target='tgaHandler', source=['tgaHandler.cc'])
+image_handlers_env.Install('${YF_PLUGINPATH}',tga)
+
+png = image_handlers_env.SharedLibrary (target='pngHandler', source=['pngHandler.cc'])
+image_handlers_env.Install('${YF_PLUGINPATH}',png)
+
+jpg = image_handlers_env.SharedLibrary (target='jpgHandler', source=['jpgHandler.cc'])
+image_handlers_env.Install('${YF_PLUGINPATH}',jpg)
+
+tif = image_handlers_env.SharedLibrary (target='tifHandler', source=['tifHandler.cc'])
+image_handlers_env.Install('${YF_PLUGINPATH}',tif)
+
+image_handlers_env.Install('${YF_PACKPATH}${YF_PLUGINPATH}',[exr, tga, png, jpg, tif])
+image_handlers_env.Alias('install_image_handlers','${YF_PLUGINPATH}')
