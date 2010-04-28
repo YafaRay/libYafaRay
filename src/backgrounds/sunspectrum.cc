@@ -1,11 +1,8 @@
 #include<yafray_config.h>
 
+#include <yafraycore/spectrum.h>
 #include <algorithm>
 #include <vector>
-#include <cmath>
-
-#include <yafraycore/spectrum.h>
-
 
 __BEGIN_YAFRAY
 

@@ -8,9 +8,7 @@
 #include <yafraycore/photon.h>
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
-#include <utilities/mathOptimizations.h>
 #include <vector>
-#include <cmath>
 #include <stack>
 
 __BEGIN_YAFRAY

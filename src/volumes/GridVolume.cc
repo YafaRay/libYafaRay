@@ -7,12 +7,9 @@
 #include <core_api/surface.h>
 #include <core_api/texture.h>
 #include <core_api/environment.h>
-//#include <textures/noise.h>
-//#include <textures/basictex.h>
 #include <utilities/mcqmc.h>
 
 #include <fstream>
-#include <cmath>
 #include <cstdlib>
 
 __BEGIN_YAFRAY

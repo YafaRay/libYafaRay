@@ -9,7 +9,6 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <vector>
-#include <cmath>
 
 __BEGIN_YAFRAY
 

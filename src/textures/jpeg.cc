@@ -127,7 +127,8 @@ gBuf_t<unsigned char, 4> * load_jpeg(const char *name)
 	}
 
 	p = (*image)(0,0);
-
+	
+	
 	//colBuf now has alpha component, so have to allocate temporary scanline buffer for color jpeg as well
 	unsigned char* gbuf=NULL;
 	if (is_gray)

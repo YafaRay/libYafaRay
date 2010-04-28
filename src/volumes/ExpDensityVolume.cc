@@ -6,8 +6,6 @@
 #include <core_api/surface.h>
 #include <core_api/environment.h>
 
-#include <cmath>
-
 __BEGIN_YAFRAY
 
 class renderState_t;
