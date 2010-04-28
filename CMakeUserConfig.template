@@ -1,0 +1,34 @@
+# Uncoment and set the values of the following lines
+# to configure your build
+# NOTE: the defaults work perfectly on most cases
+# don't change anything unless you know what you're doing
+
+# The general install prefix, defaults to "/usr/local" on UNIX systems
+# and "C:\<Program_Files_Dir>" under windows systems
+#set(USER_INSTALL_PREFFIX /usr/local)
+
+# The executables instalation dir, default: bin
+# this will install the binary executables in ${USER_INSTALL_PREFIX}/bin
+#set(YAF_BIN_DIR bin)
+
+# The libraries instalation dir, default: lib
+# this will install the libraries and plugins in ${USER_INSTALL_PREFIX}/lib
+#set(YAF_LIB_DIR lib)
+
+# The bindings instalation dir, default: ${CMAKE_SOURCE_DIR}/bindings/python
+# this will install the Python bindings on ${CMAKE_SOURCE_DIR}/bindings/python
+# you can set this path to your local blender scripts directory
+# or what ever suits you best
+#set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
+
+# Set this variable if you wish to append
+# extra compiler flags to your build
+#set(USER_RELFLAGS "")
+#set(USER_DBGFLAGS "")
+
+# Uncomment next line if you want to disable QT Gui build
+#set(WITH_YF_QT OFF)
+
+# Uncomment next line if you want to embed the font for QT Gui
+#set(EMBED_FONT_QT ON)
+
