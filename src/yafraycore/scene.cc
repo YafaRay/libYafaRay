@@ -31,7 +31,6 @@
 #include <yafraycore/ray_kdtree.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/scr_halton.h>
-#include <yafraycore/vmap.h>
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
 #ifdef __APPLE__
@@ -338,62 +337,6 @@ bool scene_t::endTriMesh()
 	
 	state.stack.pop_front();
 	//if(state.smooth_angle > 0.f) smoothMesh(0, state.smooth_angle);
-	return true;
-}
-
-/*! only works in geometry state; vmaps are per object, even though they
-	are registered at scene scope; vmaps on different objects with same ID
-	must match in dimension though */
-bool scene_t::startVmap(int id, int type, int dimensions)
-{
-	if(state.stack.front() != GEOMETRY) return false;
-	std::map<int, int>::iterator i = vmaps.find(id);
-	if(i == vmaps.end())
-	{
-		// register new vmap
-		vmaps.insert(std::pair<int,int>(id, dimensions));
-	}
-	else
-	{
-		// make sure it is compatible with the registered type
-		if(i->second != dimensions) return false;
-	}
-	// !todo: add vmap to object
-	int ntris;
-	std::map<int, vmap_t> *vmm=0;
-	if(state.curObj->type == TRIM)
-	{
-		vmm = &(state.curObj->obj->vmaps);
-		ntris = state.curObj->obj->numPrimitives();
-	}
-	else
-	{
-		vmm = &(state.curObj->mobj->vmaps);
-		ntris = state.curObj->mobj->numPrimitives();
-	}
-	std::map<int, vmap_t>::iterator vmap = vmm->find(id);
-	if( vmap != vmm->end() ) return false;
-	std::pair<std::map<int, vmap_t>::iterator, bool> res = vmm->insert( std::pair<int, vmap_t>(id, vmap_t()) );
-	if(!res.second) return false;
-	vmap = res.first;
-	bool ok = vmap->second.init(type, dimensions, 3*ntris);
-	if(!ok) vmm->erase(res.first);
-	else state.stack.push_front(VMAP);
-	state.cur_vmap = &(vmap->second);
-	return ok;
-}
-
-bool scene_t::endVmap()
-{
-	if(state.stack.front() != VMAP) return false;
-	state.stack.pop_front();
-	return true;
-}
-
-bool scene_t::addVmapValues(float *val)
-{
-	if(state.stack.front() != VMAP) return false;
-	state.cur_vmap->pushTriVal(val);
 	return true;
 }
 

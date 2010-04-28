@@ -37,7 +37,6 @@ class volumeIntegrator_t;
 class imageFilm_t;
 class renderArea_t;
 class random_t;
-class vmap_t;
 
 typedef unsigned int objID_t;
 
@@ -196,7 +195,6 @@ class YAFRAYCORE_EXPORT scene_t
 			unsigned int changes;
 			objID_t nextFreeID;
 			objData_t *curObj;
-			vmap_t *cur_vmap;
 			triangle_t *curTri;
 			bool orco;
 			float smooth_angle;
@@ -206,7 +204,6 @@ class YAFRAYCORE_EXPORT scene_t
 		std::map<objID_t, objData_t> meshes;
 		std::map< std::string, material_t * > materials;
 		std::vector<VolumeRegion *> volumes;
-		std::map<int, int> vmaps;
 		camera_t *camera;
 		imageFilm_t *imageFilm;
 		triKdTree_t *tree; //!< kdTree for triangle-only mode

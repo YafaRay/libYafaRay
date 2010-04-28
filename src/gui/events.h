@@ -2,6 +2,7 @@
  *      events.h: custom events to enable thread communication to the UI
  *      This is part of the yafray package
  *      Copyright (C) 2009 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -23,7 +24,7 @@
 
 #include <QtCore/QEvent>
 #include <QtCore/QRect>
-#include <QtGui/QImage>
+#include <QtCore/QString>
 
 enum CustomEvents
 {
@@ -38,25 +39,21 @@ enum CustomEvents
 class GuiUpdateEvent : public QEvent
 {
 public:
-	GuiUpdateEvent(const QRect &rect, const QImage &img, bool fullUpdate = false);
+	GuiUpdateEvent(const QRect &rect, bool fullUpdate = false);
 	inline QRect rect() { return m_rect; }
-	inline QImage img() { return m_image; }
 	inline bool fullUpdate() { return m_full; }
 private:
 	QRect m_rect;
-	QImage m_image;
 	bool m_full;
 };
 
 class GuiAreaHighliteEvent : public QEvent
 {
 public:
-	GuiAreaHighliteEvent(const QRect &rect, const QImage &img);
+	GuiAreaHighliteEvent(const QRect &rect);
 	inline QRect rect() { return m_rect; }
-	inline QImage img() { return m_image; }
 private:
 	QRect m_rect;
-	QImage m_image;
 };
 
 class ProgressUpdateEvent : public QEvent

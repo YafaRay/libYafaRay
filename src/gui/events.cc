@@ -2,6 +2,7 @@
  *      events.cc: custom events to enable thread communication to the UI
  *      This is part of the yafray package
  *      Copyright (C) 2009 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -20,13 +21,13 @@
 
 #include "events.h"
 
-GuiUpdateEvent::GuiUpdateEvent(const QRect &rect, const QImage &img, bool fullUpdate)
-: QEvent((QEvent::Type)GuiUpdate), m_rect(rect), m_image(img), m_full(fullUpdate)
+GuiUpdateEvent::GuiUpdateEvent(const QRect &rect, bool fullUpdate)
+: QEvent((QEvent::Type)GuiUpdate), m_rect(rect), m_full(fullUpdate)
 {
 }
 
-GuiAreaHighliteEvent::GuiAreaHighliteEvent(const QRect &rect, const QImage &img)
-: QEvent((QEvent::Type)GuiAreaHighlite), m_rect(rect), m_image(img)
+GuiAreaHighliteEvent::GuiAreaHighliteEvent(const QRect &rect)
+: QEvent((QEvent::Type)GuiAreaHighlite), m_rect(rect)
 {
 }
 

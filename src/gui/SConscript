@@ -14,10 +14,10 @@ gui_env.Append(FRAMEWORKS=['QtGui', 'QtCore'])
 gui_env.Append(FRAMEWORKPATH=[gui_env['YF_QTDIR'] + '/lib'])
 append_includes(gui_env, ['PTHREAD'])
 
-gui_env.Command('windowbase.h', 'windowbase.ui', '$QT_UIC $QT_UICFLAGS -o $TARGET $SOURCE')
+gui_env.Command('ui_windowbase.h', 'windowbase.ui', '$QT_UIC $QT_UICFLAGS -o $TARGET $SOURCE')
 gui_src = ['renderwidget.cc', 'qtoutput.cc', 'worker.cc', 'mywindow.cc', 'events.cc', 'qtprogress.cc', 'animworking.cc']
 qt_qui = gui_env.SharedLibrary(target='yafarayqt', source=gui_src)
-gui_env.Depends('yafarayqt', 'windowbase.h')
+gui_env.Depends('yafarayqt', 'ui_windowbase.h')
 Alias('qtgui', qt_qui )
 
 gui_env.Install('${YF_LIBOUT}', qt_qui )

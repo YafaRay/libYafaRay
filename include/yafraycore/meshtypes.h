@@ -4,7 +4,6 @@
 
 #include <core_api/object3d.h>
 #include <yafraycore/triangle.h>
-#include <yafraycore/vmap.h>
 
 
 __BEGIN_YAFRAY
@@ -47,7 +46,6 @@ class YAFRAYCORE_EXPORT meshObject_t: public object3d_t
 		std::vector<normal_t>::iterator normals;
 		std::vector<int> uv_offsets;
 		std::vector<uv_t> uv_values;
-		std::map<int, vmap_t> vmaps;
 		bool has_orco;
 		bool has_uv;
 		bool has_vcol;
@@ -73,7 +71,6 @@ class YAFRAYCORE_EXPORT triangleObject_t: public object3d_t
 		/*! cannot return primitive_t...yet */
 		virtual int getPrimitives(const primitive_t **prims) const{ return 0; }
 		int getPrimitives(const triangle_t **prims);
-		virtual int evalVMap(const surfacePoint_t &sp, unsigned int ID, float *val) const;
 		
 		triangle_t* addTriangle(const triangle_t &t);
 		
@@ -85,7 +82,6 @@ class YAFRAYCORE_EXPORT triangleObject_t: public object3d_t
 		std::vector<normal_t>::iterator normals;
 		std::vector<int> uv_offsets;
 		std::vector<uv_t> uv_values;
-		std::map<int, vmap_t> vmaps;
 		bool has_orco;
 		bool has_uv;
 		bool has_vcol;

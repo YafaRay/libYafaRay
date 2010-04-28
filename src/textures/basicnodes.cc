@@ -6,7 +6,7 @@
 
 __BEGIN_YAFRAY
 
-textureMapper_t::textureMapper_t(const texture_t *texture): vmap(0), tex(texture), bumpStr(0.02), doScalar(true)
+textureMapper_t::textureMapper_t(const texture_t *texture): tex(texture), bumpStr(0.02), doScalar(true)
 {
 	map_x=1; map_y=2, map_z=3;
 }
@@ -109,26 +109,9 @@ point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)con
 }
 
 
-point3d_t eval_uv(const surfacePoint_t &sp, int vmap)
+point3d_t eval_uv(const surfacePoint_t &sp)
 {
-	if(vmap == 0)
-	{
 		return point3d_t(sp.U, sp.V, 0.f);
-	}
-	else
-	{
-		float vmval[4];
-		point3d_t p(0,0,0);
-		int dim = sp.object->evalVMap(sp, vmap, vmval);
-		if(dim < 2) return p;
-		else
-		{
-			p.x = vmval[0];
-			p.y = vmval[1];
-			if(dim>2) p.z = vmval[2];
-		}
-		return p;
-	}
 }
 
 void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
@@ -138,7 +121,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 	// Switch texture coordinates
 	switch(tex_coords)
 	{
-		case TXC_UV:	texpt = eval_uv(sp, vmap); Ng = sp.Ng; break;
+		case TXC_UV:	texpt = eval_uv(sp); Ng = sp.Ng; break;
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 		case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
 		case TXC_WIN:   texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
@@ -276,7 +259,6 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	TEX_PROJ maptype = TXP_PLAIN;
 	float bumpStr = 1.f;
 	bool scalar=true;
-	int vmap=0;
 	int map[3] = { 1, 2, 3 };
 	point3d_t offset(0.f), scale(1.f);
 	matrix4x4_t mtx(1);
@@ -312,7 +294,6 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 		else if(*option == "tube") maptype = TXP_TUBE;
 		else if(*option == "sphere") maptype = TXP_SPHERE;
 	}
-	params.getParam("vmap", vmap);
 	params.getMatrix("transform", mtx);
 	params.getParam("scale", scale);
 	params.getParam("offset", offset);
@@ -327,7 +308,6 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	tm->map_x = map[0];
 	tm->map_y = map[1];
 	tm->map_z = map[2];
-	tm->vmap = vmap;
 	tm->scale = vector3d_t(scale);
 	tm->offset = vector3d_t(2*offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
 	tm->doScalar = scalar;
@@ -360,38 +340,6 @@ shaderNode_t* valueNode_t::factory(const paraMap_t &params,renderEnvironment_t &
 	params.getParam("alpha", alpha);
 	params.getParam("scalar", val);
 	return new valueNode_t(colorA_t(col, alpha), val);
-}
-
-/* ==========================================
-/  A node that evaluates a vmap
-/ ========================================== */
-
-vcolorNode_t::vcolorNode_t(colorA_t dcol, int vmap_id): defcol(dcol), vmap(vmap_id) {}
-
-void vcolorNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
-{
-	float vcol[4];
-	colorA_t col;
-	int dim = sp.object->evalVMap(sp, vmap, vcol);
-	if(dim == 3) col.set(vcol[0], vcol[1], vcol[2], 1.f);
-	else if(dim == 4) col.set(vcol[0], vcol[1], vcol[2], vcol[3]);
-	else col = defcol;
-	stack[this->ID] = nodeResult_t(col, col.energy());
-}
-	
-void vcolorNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const
-{
-	eval(stack, state, sp);
-}
-
-shaderNode_t* vcolorNode_t::factory(const paraMap_t &params,renderEnvironment_t &render)
-{
-	colorA_t default_col(1.f);
-	int ID = 0;
-	params.getParam("default_color", default_col);
-	params.getParam("vmap", ID);
-	
-	return new vcolorNode_t(default_col, ID);
 }
 
 /* ==========================================
@@ -648,7 +596,6 @@ extern "C"
 		render.registerFactory("value", valueNode_t::factory);
 		render.registerFactory("mix", mixNode_t::factory);
 		render.registerFactory("layer", layerNode_t::factory);
-		render.registerFactory("vcolor", vcolorNode_t::factory);
 	}
 }
 

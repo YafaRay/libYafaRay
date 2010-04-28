@@ -2,6 +2,7 @@
  *      renderwidget.cc: a widget for displaying the rendering output
  *      This is part of the yafray package
  *      Copyright (C) 2008 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -31,7 +32,7 @@
 /	RenderWidget implementation
 /=====================================*/
 
-RenderWidget::RenderWidget(QScrollArea *parent): QLabel((QWidget*)parent) {
+RenderWidget::RenderWidget(QScrollArea *parent, bool use_zbuffer): QLabel((QWidget*)parent), use_zbuf(use_zbuffer) {
 	borderStart = QPoint(0, 0);
 	rendering = true;
 	scaleFactor = 1.0;
@@ -41,6 +42,155 @@ RenderWidget::RenderWidget(QScrollArea *parent): QLabel((QWidget*)parent) {
 	hBar = owner->horizontalScrollBar();
 	vBar = owner->verticalScrollBar();
 	barPos = QPoint(0, 0);
+	setScaledContents(true);
+}
+
+RenderWidget::~RenderWidget()
+{
+	colorBuffer = QImage();
+	alphaChannel = QImage();
+	depthChannel = QImage();
+}
+
+void RenderWidget::setup(const QSize &s)
+{
+	imageSize = s;
+	
+	initBuffers();
+	
+	QPalette palette;
+	palette.setColor(QPalette::Background, QColor(0, 0, 0));
+	setPalette(palette);
+}
+
+void RenderWidget::initBuffers()
+{
+	colorBuffer = QImage(imageSize, QImage::Format_RGB32);
+	colorBuffer.fill(0);
+	
+	alphaChannel = QImage(imageSize, QImage::Format_RGB32);
+	alphaChannel.fill(0);
+	
+	if(use_zbuf)
+	{
+		depthChannel = QImage(imageSize, QImage::Format_RGB32);
+		depthChannel.fill(0);
+	}
+	
+	resize(imageSize);
+	
+	activeBuffer = &colorBuffer;
+	
+	pix = QPixmap::fromImage(*activeBuffer);
+	setPixmap(pix);
+}
+
+void RenderWidget::startRendering()
+{
+	rendering = true;
+	scaleFactor = 1.0;
+	initBuffers();
+}
+
+void RenderWidget::finishRendering()
+{
+	rendering = false;
+	pix = QPixmap::fromImage(*activeBuffer);
+	setPixmap(pix);
+	update();
+}
+
+void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, QRgb depth, bool withAlpha, bool withDepth)
+{
+	int ix = x + borderStart.x();
+	int iy = y + borderStart.y();
+	
+	colorBuffer.setPixel(ix, iy, color);
+	if (withAlpha) alphaChannel.setPixel(ix, iy, alpha);	
+	if (withDepth) depthChannel.setPixel(ix, iy, depth);
+}
+
+void RenderWidget::paintColorBuffer()
+{
+	bufferMutex.lock();
+	pix = QPixmap::fromImage(colorBuffer);
+	setPixmap(pix);
+	activeBuffer = &colorBuffer;
+	bufferMutex.unlock();
+	if(!rendering) zoom(1.f, QPoint(0, 0));
+}
+
+void RenderWidget::paintAlpha()
+{
+	bufferMutex.lock();
+	pix = QPixmap::fromImage(alphaChannel);
+	setPixmap(pix);
+	activeBuffer = &alphaChannel;
+	bufferMutex.unlock();
+	if(!rendering) zoom(1.f, QPoint(0, 0));
+}
+
+void RenderWidget::paintDepth()
+{
+	if(use_zbuf)
+	{
+		bufferMutex.lock();
+		pix = QPixmap::fromImage(depthChannel);
+		setPixmap(pix);
+		activeBuffer = &depthChannel;
+		bufferMutex.unlock();
+		if(!rendering) zoom(1.f, QPoint(0, 0));
+	}
+}
+
+bool RenderWidget::saveImage(const QString &path, bool alpha)
+{
+	QImage image(colorBuffer);
+	if (alpha) image.setAlphaChannel(alphaChannel);
+	return image.save(path);
+}
+
+bool RenderWidget::saveAlphaImage(const QString &path)
+{
+	QImage image(alphaChannel);
+	return image.save(path);
+}
+
+bool RenderWidget::saveDepthImage(const QString &path)
+{
+	QImage image(depthChannel);
+	return image.save(path);
+}
+
+void RenderWidget::zoom(float f, QPoint mPos)
+{
+	scaleFactor *= f;
+	
+	QSize newSize = scaleFactor * activeBuffer->size();
+	resize(newSize);
+	update(owner->viewport()->geometry());
+
+	QPoint m = (mPos * f) - mPos;
+	
+	int dh = hBar->value() + (m.x());
+	int dv = vBar->value() + (m.y());
+
+	hBar->setValue(dh);
+	vBar->setValue(dv);
+}
+
+void RenderWidget::zoomIn(QPoint mPos)
+{
+	if(scaleFactor > 5.0) return;
+	
+	zoom(1.25, mPos);
+}
+
+void RenderWidget::zoomOut(QPoint mPos)
+{
+	if(scaleFactor < 0.2) return;
+	
+	zoom(0.8, mPos);
 }
 
 bool RenderWidget::event(QEvent *e)
@@ -48,38 +198,45 @@ bool RenderWidget::event(QEvent *e)
 	if (e->type() == (QEvent::Type)GuiUpdate)
 	{
 		GuiUpdateEvent *ge = (GuiUpdateEvent*)e;
+
+		ge->accept();
+
 		if (ge->fullUpdate())
 		{
-			img = ge->img();
-			pix = QPixmap::fromImage(ge->img());
+			bufferMutex.lock();
+			QPainter p(&pix);
+			p.drawImage(QPoint(0, 0), *activeBuffer);
+			bufferMutex.unlock();
 			update();
 		}
 		else
 		{
-			QPainter p;
-			p.begin(&img);
-			p.drawImage(ge->rect(), ge->img(), ge->rect());
-			p.end();
-			
+			bufferMutex.lock();
+			QPainter p(&pix);
+			p.drawImage(ge->rect(), *activeBuffer, ge->rect());
+			bufferMutex.unlock();
 			update(ge->rect());
 
 		}
+
 		return true;
 	}
 	else if (e->type() == (QEvent::Type)GuiAreaHighlite)
 	{
 		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent*)e;
-		QPainter p;
+		bufferMutex.lock();
+		QPainter p(&pix);
 		
-		int lineL = 4;
+		ge->accept();
+
+		int lineL = std::min( 4, std::min( ge->rect().height()-1, ge->rect().width()-1 ) );
 		QPoint tr(ge->rect().topRight());
 		QPoint tl(ge->rect().topLeft());
 		QPoint br(ge->rect().bottomRight());
 		QPoint bl(ge->rect().bottomLeft());
 		
-		p.begin(&img);
-		p.drawImage(ge->rect(), ge->img(), ge->rect());
 		p.setPen(QColor(160, 0, 0));
+
 		//top-left corner
 		p.drawLine(tl, QPoint(tl.x() + lineL, tl.y()));
 		p.drawLine(tl, QPoint(tl.x(), tl.y() + lineL));
@@ -96,8 +253,7 @@ bool RenderWidget::event(QEvent *e)
 		p.drawLine(br, QPoint(br.x() - lineL, br.y()));
 		p.drawLine(br, QPoint(br.x(), br.y() - lineL));
 		
-		p.end();
-		
+		bufferMutex.unlock();
 		update(ge->rect());
 
 		return true;
@@ -108,80 +264,17 @@ bool RenderWidget::event(QEvent *e)
 
 void RenderWidget::paintEvent(QPaintEvent *e)
 {
-	if (rendering) {
+	if (rendering)
+	{
 		QRect r = e->rect();
 		QPainter painter(this);
 		painter.setClipRegion(e->region());
-
-		if (pix.isNull()) {
-			painter.fillRect(r, Qt::red);
-			painter.setPen(Qt::white);
-			painter.drawText(rect(), Qt::AlignCenter, tr("<no image data>"));
-			return;
-		}
-		painter.drawImage(r, img, r);
+		painter.drawPixmap(r, pix, r);
 	}
-	else {
+	else
+	{
 		QLabel::paintEvent(e);
 	}
-}
-
-bool RenderWidget::saveImage(const QString &path, bool alpha)
-{
-	QImage image(img);
-	if (alpha) {
-		/*
-		QPainter p(&image);
-		p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-		p.drawImage(0, 0, alphaChannel);
-		TODO: the 8-bit greyscale colors need to be copied to the alpha channel somehow
-		      for now, use the obsolete setAlphaChannel() method
-		*/
-		image.setAlphaChannel(alphaChannel);
-	}
-	return image.save(path, 0);
-}
-
-void RenderWidget::finishedRender() {
-	rendering = false;
-	pix = QPixmap::fromImage(img);
-	setPixmap(pix);
-}
-
-void RenderWidget::zoom(float f, QPoint mPos)
-{
-	scaleFactor *= f;
-	
-	Qt::TransformationMode trasMode = Qt::FastTransformation;
-	if(scaleFactor <= 1.25) trasMode = Qt::SmoothTransformation;
-
-	QSize newSize = scaleFactor * pix.size();
-	
-	setPixmap(pix.scaled(newSize, Qt::KeepAspectRatio, trasMode));
-	resize(newSize);
-	update();
-
-	QPoint m = (mPos * f) - mPos;
-	
-	int dh = hBar->value() + (m.x());
-	int dv = vBar->value() + (m.y());
-
-	hBar->setValue(dh);
-	vBar->setValue(dv);
-}
-
-void RenderWidget::zoomIn(QPoint mPos)
-{
-	if(scaleFactor > 5.0 || rendering) return;
-	
-	zoom(1.25, mPos);
-}
-
-void RenderWidget::zoomOut(QPoint mPos)
-{
-	if(scaleFactor < 0.2 || rendering) return;
-	
-	zoom(0.8, mPos);
 }
 
 void RenderWidget::wheelEvent(QWheelEvent* e)

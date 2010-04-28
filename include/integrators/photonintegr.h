@@ -8,6 +8,7 @@
 #include <core_api/background.h>
 #include <core_api/light.h>
 #include <core_api/imagefilm.h>
+#include <core_api/camera.h>
 #include <yafraycore/tiledintegrator.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/old_photonmap.h>

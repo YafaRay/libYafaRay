@@ -30,7 +30,8 @@ class darkSkyBackground_t: public background_t
 {
 	public:
 		darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-						   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff);
+						   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff,
+						   float exp, bool genc, ColorSpaces cs);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual light_t* getLight() const { return envLight; }
@@ -62,8 +63,9 @@ class darkSkyBackground_t: public background_t
 };
 
 darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff):
-									   envLight(0), power(pwr * skyBright), skyBrightness(skyBright), convert(clamp), alt(altitude), nightSky(night)
+									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff,
+									   float exp, bool genc, ColorSpaces cs):
+									   envLight(0), power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night)
 {
 	
 	
@@ -107,8 +109,6 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	(-0.04214*theta3 + 0.08970*theta2 - 0.04153*thetaS + 0.00515) * T  +
 	( 0.15346*theta3 - 0.26756*theta2 + 0.06669*thetaS + 0.26688);
 
-	Y_INFO << "DarkSky: Zenithal luminicense (x,y,Y) = (" << zenith_x << ", " << zenith_y << ", " << zenith_Y << ")\n";
-
 	perez_Y[0] = (( 0.17872 * T) - 1.46303) * av;
 	perez_Y[1] = ((-0.35540 * T) + 0.42749) * bv;
 	perez_Y[2] = ((-0.02266 * T) + 5.32505) * cv;
@@ -137,14 +137,7 @@ color_t darkSkyBackground_t::getAttenuatedSunColor()
 {
 	color_t lightColor(1.0);
 	
-	if(thetaS > degToRad(70))
-	{
-		lightColor = getSunColorFromSunRad() * getSunColorFromPerez();
-	}
-	else
-	{
-		lightColor = getSunColorFromSunRad();
-	}
+	lightColor = getSunColorFromSunRad();
 	
 	if(nightSky)
 	{
@@ -159,20 +152,21 @@ color_t darkSkyBackground_t::getSunColorFromPerez()
 	double pCosTheta = (thetaS > M_PI_2) ? 1e-6 : cosThetaS;
 	color_t sunColor = convert.fromxyY
 	(
-		(float)PerezFunction(perez_x, pCosTheta, 1e-6, 1.0, zenith_x),
-		(float)PerezFunction(perez_y, pCosTheta, 1e-6, 1.0, zenith_y),
-		(float)PerezFunction(perez_Y, pCosTheta, 1e-6, 1.0, zenith_Y)
+		(float)PerezFunction(perez_x, pCosTheta, 0.f, 1.0, zenith_x),
+		(float)PerezFunction(perez_y, pCosTheta, 0.f, 1.0, zenith_y),
+		(float)PerezFunction(perez_Y, pCosTheta, 0.f, 1.0, zenith_Y)
 	);
 	return sunColor;
 }
 
 color_t darkSkyBackground_t::getSunColorFromSunRad()
 {
-	int L, uL;
+	int L;
+	double uL;
 	double kgLm, kwaLmw, mw;
     double Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
-	color_t sXYZ(0.5);
-	color_t tmpCol(0.0);
+	color_t sXYZ(0.0);
+	color_t spdf(0.0);
 
 	double B = (0.04608365822050 * T) - 0.04586025928522;
 	double a = 1.3;
@@ -188,14 +182,14 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	mw = m * w;
 	lm = -m * l;
 	
-	m1 = -0.008735;
-	mB = -B;
-	am = -a * m;
-	m4 = -4.08 * m;
+	m1 = -0.008735 * m;
+	mB = -B * m;
+	am = -a;
+	m4 = -4.08 ;
 	
-	for(L = 360; L < 835; L+=5)
+	for(L = 380; L < 750; L+=5)
 	{
-		uL = L * 1000;
+		uL = L * 0.001;
 		kgLm = kg(L) * m;
 		kwaLmw = kwa(L) * mw;
 
@@ -204,11 +198,11 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 		Ozone = fExp(ko(L) * lm);
 		Gas = fExp((-1.41 * kgLm) / fPow(1 + (118.93 * kgLm), 0.45));
 		Water = fExp((-0.2385 * kwaLmw) / fPow(1 + (20.07 * kwaLmw), 0.45));
-
-		tmpCol = sunRadianceCurve(L) * Rayleigh * Angstrom * Ozone * Gas * Water;
-		sXYZ = 1.0 - ((1.0 - sXYZ)*(1.0 - convert.fromXYZ(tmpCol)));
+		spdf = sunRadianceCurve(L) * Rayleigh * Angstrom * Ozone * Gas * Water;
+		color_t waveColor = chromaMatch(L) * spdf;
+		sXYZ += convert.fromXYZ(waveColor, true) * 1.33333333333333333333e-2;
 	}
-	return sXYZ;
+	return sXYZ * 0.2;
 }
 
 darkSkyBackground_t::~darkSkyBackground_t()
@@ -244,30 +238,32 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	
 	if(cosTheta <= 0.0) cosTheta = 1e-6;
     
-	cosGamma = Iw VDOT sunDir;
+	cosGamma = Iw * sunDir;
     cosGamma2 = cosGamma * cosGamma;
 	gamma = acos(cosGamma);
 
 	x = PerezFunction(perez_x, cosTheta, gamma, cosGamma2, zenith_x);
 	y = PerezFunction(perez_y, cosTheta, gamma, cosGamma2, zenith_y);
-	Y = PerezFunction(perez_Y, cosTheta, gamma, cosGamma2, zenith_Y);
+	Y = PerezFunction(perez_Y, cosTheta, gamma, cosGamma2, zenith_Y) * 6.66666666666666666667e-5;
 	
 	skyCol = convert.fromxyY(x,y,Y);
 	
 	if(nightSky) skyCol *= color_t(0.05,0.05,0.08);
-
-	return skyCol;
+	
+	
+	return skyCol * skyBrightness;
 }
 
 color_t darkSkyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
 {
-	color_t ret = getSkyCol(ray) * skyBrightness;
+	color_t ret = getSkyCol(ray);
 	return ret;
 }
 
 color_t darkSkyBackground_t::eval(const ray_t &ray, bool filtered) const
 {
-	color_t ret = getSkyCol(ray) * power;
+	color_t ret = getSkyCol(ray)  * power;
+	if(ret.minimum() < 1e-6f) ret = color_t(1e-5f);
 	return ret;
 }
 
@@ -278,7 +274,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	PFLOAT altitude = 0.0;
 	int bgl_samples = 8;
 	PFLOAT power = 1.0; //bgLight Power
-	PFLOAT pw = 1.0;// sunlight power
+	PFLOAT pw = 1.0;// sunLight power
 	PFLOAT bright = 1.0;
 	bool add_sun = false;
 	bool bgl = false;
@@ -288,6 +284,9 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	bool caus = true;
 	bool diff = true;
 	av = bv = cv = dv = ev = 1.0;
+	bool gammaEnc = false;
+	std::string cs = "CIE (E)";
+	float exp = 1.f;
 
 	Y_INFO << "DarkSky: Begin" << std::endl;
 
@@ -298,6 +297,9 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("bright", bright);
 
 	params.getParam("clamp_rgb", clamp);
+	params.getParam("exposure", exp);
+	params.getParam("gamma_enc", gammaEnc);
+	params.getParam("color_space", cs);
 
 	params.getParam("a_var", av); //Darkening or brightening towards horizon
 	params.getParam("b_var", bv); //Luminance gradient near the horizon
@@ -315,13 +317,21 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 
 	params.getParam("night", night);
 	
+	ColorSpaces colorS = cieRGB_E_CS;
+	if(cs == "CIE (E)") colorS = cieRGB_E_CS;
+	else if(cs == "CIE (D50)") colorS = cieRGB_D50_CS;
+	else if(cs == "sRGB (D65)") colorS = sRGB_D65_CS;
+	else if(cs == "sRGB (D50)") colorS = sRGB_D50_CS;
+	
 	if(night)
 	{
 		bright *= 0.5;
 		pw *= 0.5;
 	}
 
-	darkSkyBackground_t * new_sunsky = new darkSkyBackground_t(dir, turb, bgl, bgl_samples, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, caus, diff);
+	darkSkyBackground_t * new_sunsky = new darkSkyBackground_t(dir, turb, bgl, bgl_samples, power, bright, clamp,
+															   av, bv, cv, dv, ev, altitude, night, caus, diff,
+															   exp, gammaEnc, colorS);
 
 	if (add_sun && radToDeg(acos(dir.z)) < 100.0)
 	{

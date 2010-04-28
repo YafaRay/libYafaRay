@@ -28,10 +28,10 @@ inline void angmap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 {
 	PFLOAT r = p.x*p.x + p.z*p.z;
 	u = v = 0.f;
-	if (r!=0.f)
+	if (r > 0.f)
 	{
 		float phiRatio = M_1_PI * acos(p.y);//[0,1] range
-		r = ((r >0.f)?(1.f/fSqrt(r)):1e-6f) * phiRatio;
+		r = phiRatio / fSqrt(r);
 		u = p.x * r;// costheta * r * phiRatio
 		v = p.z * r;// sintheta * r * phiRatio
 	}

@@ -147,55 +147,49 @@ conditionVar_t::~conditionVar_t()
 void * wrapper(void *data)
 {
 	thread_t *obj=(thread_t *)data;
-	//obj->lock.lock();
 	try{ obj->body(); }
 	catch(std::exception &e)
 	{
 		std::cout << "exception occured: " << e.what() << std::endl;
 	}
 	obj->running=false;
-	//obj->lock.unlock();
 	pthread_exit(0);
 	return NULL;
 }
 
 void thread_t::run()
 {
-	//lock.lock();
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
 	pthread_create(&id,&attr,wrapper,this);
 	running=true;
-	//lock.unlock();
 }
 
 void thread_t::wait()
 {
-	//if(running)
+	if(running)
+	{
 		pthread_join(id,NULL);
-	running=false;
+		running=false;
+	}
 }
 
 thread_t::~thread_t()
 {
-	wait();
+	if(running) wait();
 }
 #elif defined( WIN32_THREADS )
 DWORD WINAPI wrapper (void *data)
 {
 	thread_t *obj=(thread_t *)data;
-	//obj->lock.lock();
 	obj->body();
-	//obj->lock.unlock();
 	return 0;
 }
 
 void thread_t::run()
 {
-	//lock.lock();
 	winThread = CreateThread(0, 0, wrapper, this, 0, &id);
 	running = true;
-	//lock.unlock();
 }
 
 void thread_t::wait()

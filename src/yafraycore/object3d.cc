@@ -47,24 +47,6 @@ void triangleObject_t::finish()
 	}
 }
 
-int triangleObject_t::evalVMap(const surfacePoint_t &sp, unsigned int ID, float *val) const
-{
-	std::map<int, vmap_t>::const_iterator vm = vmaps.find(ID);
-	if(vm == vmaps.end()) return 0;
-	const vmap_t &map = vm->second;
-	int ndim = map.getDimensions();
-	float *rvals = (float *)alloca( 3*ndim * sizeof(float) );
-	int tri_index = (triangle_t*)sp.origin - &(this->triangles.front());
-	map.getVal(tri_index, rvals);
-	float u=sp.sU, v=sp.sV;
-	float w=1.f - u - v;
-	for(int i=0; i<ndim; ++i)
-	{
-		val[i] = u*rvals[i] + v*rvals[i+ndim] + w*rvals[i+2*ndim];
-	}
-	return ndim;
-}
-
 /*===================
 	meshObject_t methods
 =====================================*/

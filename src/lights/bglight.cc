@@ -51,7 +51,8 @@ inline float sinSample(float s)
 	return fSin(s * M_PI);
 }
 
-bgLight_t::bgLight_t(background_t *bg, int sampl, bool shootC, bool shootD):light_t(LIGHT_SINGULAR), samples(sampl), background(bg), shootCaustic(shootC), shootDiffuse(shootD)
+bgLight_t::bgLight_t(background_t *bg, int sampl, bool shootC, bool shootD, bool invertIntersect):
+light_t(LIGHT_NONE), samples(sampl), background(bg), shootCaustic(shootC), shootDiffuse(shootD), iInter(invertIntersect)
 {
 	initIS();
 }
@@ -183,9 +184,9 @@ bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) c
 	s.pdf = CalcFromSample(s.s1, s.s2, u, v, false);
 	
 	invSpheremap(u, v, wi.dir);
-	
+
 	s.col = background->eval(wi);
-	
+
 	return true;
 }
 
@@ -193,8 +194,8 @@ bool bgLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf
 {
 	float u = 0.f, v = 0.f;
 	ray_t tr = ray;
-	
-	ipdf = CalcFromDir(-tr.dir, u, v, true);
+	if(iInter) ipdf = CalcFromDir(-tr.dir, u, v, true);
+	else ipdf = CalcFromDir(tr.dir, u, v, true);
 	
 	invSpheremap(u, v, tr.dir);
 

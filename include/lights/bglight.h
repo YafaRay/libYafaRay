@@ -31,14 +31,13 @@ class pdf1D_t;
 class bgLight_t : public light_t
 {
 	public:
-		bgLight_t(background_t *bg, int sampl, bool shootC = true, bool shootD = true);
+		bgLight_t(background_t *bg, int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false);
 		virtual ~bgLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual bool diracLight() const { return false; }
-		//virtual bool illumSample(const surfacePoint_t &sp, float s1, float s2, color_t &col, float &ipdf, ray_t &wi) const;
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
@@ -65,6 +64,7 @@ class bgLight_t : public light_t
 		background_t *background;
 		bool shootCaustic;
 		bool shootDiffuse;
+		bool iInter;
 };
 
 __END_YAFRAY

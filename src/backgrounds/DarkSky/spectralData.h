@@ -1,5 +1,5 @@
 /*
- * ciexyz.h - Chromatic Match Functions from CIE Standard Observer 1932 2-Degrees
+ * spectralData.h - Chromatic Match Functions from CIE Standard Observer 1932 2-Degrees
  *
  *  Created on: 28/03/2009
  *
@@ -150,7 +150,7 @@ color_t chromaMatch(float wl)
 {
 	color_t r(0.0);
 	if(wl < 360 || wl > 830) return r;
-	int i = static_cast<int>((wl - 360) / 5);
+	int i = (int)((wl - 360) / 5);
 	r.set(chromaMatch2Deg[i][0], chromaMatch2Deg[i][1], chromaMatch2Deg[i][2]);
 	return r;
 }

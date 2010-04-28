@@ -2,6 +2,7 @@
  *      mywindow.h: main window of the yafray UI
  *      This is part of the yafray package
  *      Copyright (C) 2008 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -49,7 +50,7 @@ class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 public:
-	MainWindow(yafaray::yafrayInterface_t *interf, int resx, int resy, int bStartX, int bStartY, Settings settings);
+	MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings);
 	~MainWindow();
 
 	virtual bool event(QEvent *e);
@@ -66,11 +67,13 @@ public slots:
 	void slotRender();
 	void slotFinished();
 	void slotEnableDisable(bool enable = true);
-	void slotOpen();
-	void slotSave();
 	void slotSaveAs();
 	void slotCancel();
 	void setAlpha(bool checked);
+	void showColor(bool checked);
+	void showAlpha(bool checked);
+	void showDepth(bool checked);
+	void setAskSave(bool checked);
 	void zoomIn();
 	void zoomOut();
 
@@ -94,6 +97,8 @@ private:
 	AnimWorking* anim;
 	bool renderSaved;
 	bool renderCancelled;
+	bool use_zbuf;
+	bool askUnsaved;
 };
 
 #endif

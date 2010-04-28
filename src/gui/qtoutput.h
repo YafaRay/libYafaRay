@@ -2,6 +2,7 @@
  *      qtoutput.h: a Qt color output for yafray
  *      This is part of the yafray package
  *      Copyright (C) 2008 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -34,20 +35,15 @@ public:
 	~QtOutput() {}
 
 	void setRenderSize(const QSize &s);
-	void clear();
 
-	//bool saveImage(const QString &path);
-
-	// reimplemented from yafaray
-	virtual bool putPixel(int x, int y, const float *c, int channels);
+	// inherited from yafaray::colorOutput_t
+	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
 	virtual void flush();
 	virtual void flushArea(int x0, int y0, int x1, int y1);
 	virtual void highliteArea(int x0, int y0, int x1, int y1);
 
 private:
-	RenderWidget *widgy;
-	bool m_alpha;
-	QImage img;
+	RenderWidget *renderBuffer;
 };
 
 #endif

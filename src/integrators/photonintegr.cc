@@ -289,13 +289,14 @@ bool photonIntegrator_t::preprocess()
 		{
 			lights.push_back(bgl);
 			hasBGLight = true;
+			if(!set.str().empty()) set << "+";
 			set << "IBL";
 		}
 	}
 	
 	if(!set.str().empty()) set << "+";
 	
-	set << "DiffPhotons [" << nPhotons << "]+CausPhotons[" << nCausPhotons << "]+DiffSrch[" << nSearch << "]+CausSrch[" << nCausSearch << "]";
+	set << "DiffPhotons [" << nPhotons << "]+CausPhotons[" << nCausPhotons << "]";
 	
 	if(finalGather)
 	{

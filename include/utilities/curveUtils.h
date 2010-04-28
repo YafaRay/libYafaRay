@@ -1,5 +1,5 @@
 /****************************************************************************
- * 		curveUtils.cc: IES Light
+ * 		curveUtils.cc: Curve interpolation utils
  *      This is part of the yafaray package
  *      Copyright (C) 2009 Rodrigo Placencia
  *

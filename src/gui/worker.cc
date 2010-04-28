@@ -23,10 +23,7 @@
 #include "qtprogress.h"
 #include "mywindow.h"
 
-//#include <core_api/scene.h>
 #include <interface/yafrayinterface.h>
-//#include <core_api/imagefilm.h>
-#include <yafraycore/xmlparser.h>
 
 Worker::Worker(yafaray::yafrayInterface_t *env, MainWindow *win, QtOutput *output)
 : QThread(), m_env(env),  m_output(output), m_win(win)
@@ -35,6 +32,5 @@ Worker::Worker(yafaray::yafrayInterface_t *env, MainWindow *win, QtOutput *outpu
 
 void Worker::run()
 {
-	//m_output->clear();
 	m_env->render(*m_output, new QtProgress(m_win));
 }

@@ -26,9 +26,6 @@ class YAFRAYCORE_EXPORT object3d_t
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
 		virtual int getPrimitives(const primitive_t **prims) const = 0;
-		/*! evaluate vertex map (or equivalent for other geometry types if available)
-			\return dimension of vmap */
-		virtual int evalVMap(const surfacePoint_t &sp, unsigned int ID, float *val) const { return false; }
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const light_t *l){ light=l; }
 		/*! query whether object surface can be sampled right now */

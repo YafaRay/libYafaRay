@@ -100,7 +100,7 @@ bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices)
 
 bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
-	Y_WARNING << "This method is going to be removed, please use getNextFreeID and startTriMesh for trimesh generation" << std::endl;
+	Y_WARNING << "This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << std::endl;
 	objID_t _id;
 	_id = scene->getNextFreeID();
 	if ( _id > 0 )
@@ -133,13 +133,6 @@ bool yafrayInterface_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int
 }
 
 int yafrayInterface_t::addUV(float u, float v) { return scene->addUV(u, v); }
-
-bool yafrayInterface_t::startVmap(int id, int type, int dimensions)
-{
-	return scene->startVmap(id, type, dimensions);
-}
-bool yafrayInterface_t::endVmap(){ return scene->endVmap(); }
-bool yafrayInterface_t::addVmapValues(float *val){ return scene->addVmapValues(val); }
 
 bool yafrayInterface_t::smoothMesh(unsigned int id, double angle) { return scene->smoothMesh(id, angle); }
 
@@ -273,12 +266,6 @@ unsigned int 	yafrayInterface_t::createObject	(const char* name)
 	if( scene->addObject(object, id) ) return id;
 	return 0;
 }
-
-//void yafrayInterface_t::addToParamsString(const char* params) { env->addToParamsString(params);  }
-
-//void yafrayInterface_t::clearParamsString() { env->clearParamsString(); }
-
-//void yafrayInterface_t::setDrawParams(bool b) { env->setDrawParams(b); }
 
 void yafrayInterface_t::abort(){ if(scene) scene->abort(); }
 

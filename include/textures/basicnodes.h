@@ -27,7 +27,6 @@ class textureMapper_t: public shaderNode_t
 		TEX_COORDS 	tex_coords;
 		TEX_PROJ tex_maptype;
 		int map_x, map_y, map_z; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
-		int vmap; //!< the vertex map to use for UV mapping
 		PFLOAT deltaU, deltaV, deltaW, delta;
 		const texture_t *tex;
 		vector3d_t scale;
@@ -48,20 +47,6 @@ class valueNode_t: public shaderNode_t
 	protected:
 		colorA_t color;
 		float value;
-};
-
-//! a node that evaluates a vertex color map
-class vcolorNode_t: public shaderNode_t
-{
-	public:
-		vcolorNode_t(colorA_t dcol, int vmap_id);
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
-		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) { return true; };
-		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
-	protected:
-		colorA_t defcol;
-		int vmap;
 };
 
 class mixNode_t: public shaderNode_t

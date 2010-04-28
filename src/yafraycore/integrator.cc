@@ -140,19 +140,22 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
+	
 	for(int i=a.Y; i<end_y; ++i)
 	{
 		for(int j=a.X; j<end_x; ++j)
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
+
 			if(adaptive)
 			{
 				if(!imageFilm->doMoreSamples(j, i)) continue;
 			}
+
 			rstate.pixelNumber = x*i+j;
-			//rstate.screenpos = point3d_t(2.0f * j / x - 1.0f, -2.0f * i / y + 1.0f, 0.f); // screen position in -1..1 coordinates
 			rstate.samplingOffs = fnv_32a_buf(i*fnv_32a_buf(j));//fnv_32a_buf(rstate.pixelNumber);
 			float toff = scrHalton(5, pass_offs+rstate.samplingOffs); // **shall be just the pass number...**
+
 			for(int sample=0; sample<n_samples; ++sample)
 			{
 				rstate.setDefaults();
@@ -192,7 +195,6 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				c_ray.hasDifferentials = true;
 				// col = T * L_o + L_v
 				colorA_t col = integrate(rstate, c_ray); // L_o
-				// I really don't like this here, bert...
 				col *= scene->volIntegrator->transmittance(rstate, c_ray); // T
 				col += scene->volIntegrator->integrate(rstate, c_ray); // L_v
 				imageFilm->addSample(wt * col, j, i, dx, dy,/*.5f, .5f,*/ &a);

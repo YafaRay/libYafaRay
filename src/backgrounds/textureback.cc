@@ -74,7 +74,7 @@ textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION pr
 	sin_r = fSin(M_PI*rotation);
 	cos_r = fCos(M_PI*rotation);
 	
-	if(ibl) envLight = new bgLight_t(this, nsam, shootC, shootD);
+	if(ibl) envLight = new bgLight_t(this, nsam, shootC, shootD, (project == angular));
 }
 
 textureBackground_t::~textureBackground_t()

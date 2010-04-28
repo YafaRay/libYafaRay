@@ -2,6 +2,7 @@
  *      progressbar.h: A progress updater for the yafray GUI
  *      This is part of the yafray package
  *      Copyright (C) 2009 Gustavo Pichorim Boiko
+ *		Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
