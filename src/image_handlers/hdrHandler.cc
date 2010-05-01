@@ -149,9 +149,8 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			return false;
 		}
 		
-		if (!pix.isARLEDesc()) // Adaptaive RLE schema encoding
+		if (pix.isARLEDesc()) // Adaptaive RLE schema encoding
 		{
-			Y_INFO << i << ".- READING ARLE..." << std::endl;
 			if (pix.getARLECount() > scanWidth)
 			{
 				Y_ERROR << handlerName << ": Error reading, invalid ARLE scanline width..." << std::endl;
@@ -159,7 +158,7 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 				return false;
 			}
 			
-			if (!readARLE(file, i, scanWidth))
+			if (!readARLE(file, i, pix.getARLECount()))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << std::endl;
 				file.close();
@@ -168,7 +167,6 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 		}
 		else // Original RLE schema encoding or raw without compression
 		{
-			Y_INFO << i << ".- READING ORLE..." << std::endl;
 			// rewind the read pixel to start reading from the begining of the scanline
 			file.seekg(-sizeof(rgbePixel_t), std::ios_base::cur);
 			
@@ -359,11 +357,12 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 		return false;
 	}
 	
-	int j = 0;
+	int j;
 	
 	// Read the 4 pieces of the scanline in order RGBE
 	for(int i = 0; i < 4; i++)
 	{
+		j = 0;
 		while(j < scanWidth)
 		{
 			file.read((char *)&count, 1);
