@@ -32,13 +32,11 @@ source_files = ['bound.cc',
 				'vector3d.cc',
 				'tga_io.cc',
 				'photon.cc',
-				'old_photonmap.cc',
 				'xmlparser.cc',
 				'spectrum.cc',
 				'volume.cc',
 				'memoryIO.cc',
 				'surface.cc',
-				'irradiancecache.cc',
 				'integrator.cc',
 				'imageOutput.cc'
 				]

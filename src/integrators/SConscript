@@ -10,8 +10,7 @@ append_lib(integr_env, ['PTHREAD', 'MISC'])
 directlight=integr_env.SharedLibrary (target='directlight', source=['directlight.cc', 'common.cc'])
 integr_env.Install('${YF_PLUGINPATH}',directlight)
 
-photonmap=integr_env.SharedLibrary (target='photonmap', source=['photonintegr.cc', 'photonintegr_cache.cc', 'common.cc'])
-#photonmap=integr_env.SharedLibrary (target='photonmap', source=['photonintegr.cc', 'common.cc'])
+photonmap=integr_env.SharedLibrary (target='photonmap', source=['photonintegr.cc', 'common.cc'])
 integr_env.Install('${YF_PLUGINPATH}',photonmap)
 
 pathtrace=integr_env.SharedLibrary (target='pathtrace', source=['pathtracer.cc', 'common.cc'])
