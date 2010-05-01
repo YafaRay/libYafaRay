@@ -20,4 +20,7 @@ target_link_libraries(arealight yafaraycore)
 add_library(spherelight SHARED spherelight.cc)
 target_link_libraries(spherelight yafaraycore)
 
-install (TARGETS sunlight pointlight directional spotlight arealight spherelight LIBRARY DESTINATION ${YAF_PLUGIN_DIR})
+add_library(ieslight SHARED iesLight.cc)
+target_link_libraries(ieslight yafaraycore)
+
+install (TARGETS sunlight pointlight directional spotlight arealight spherelight ieslight LIBRARY DESTINATION ${YAF_PLUGIN_DIR})
