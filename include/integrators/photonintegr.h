@@ -11,7 +11,6 @@
 #include <core_api/camera.h>
 #include <yafraycore/tiledintegrator.h>
 #include <yafraycore/photon.h>
-#include <yafraycore/old_photonmap.h>
 #include <yafraycore/monitor.h>
 #include <yafraycore/ccthreads.h>
 #include <yafraycore/timer.h>

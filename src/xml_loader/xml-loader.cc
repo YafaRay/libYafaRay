@@ -193,17 +193,17 @@ int main(int argc, char *argv[])
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 	
 	//testing reading
-/*	
-	ihParams["type"] = std::string("tif");
+	
+	ihParams["type"] = std::string("hdr");
 	ihParams["width"] = width;
 	ihParams["height"] = height;
 	ihParams["alpha_channel"] = false;
 	ihParams["z_channel"] = false;
 	
 	imageHandler_t *ihtest = env->createImageHandler("testFile", ihParams);
-	ihtest->loadFromFile("whatever-you-want.tif");
-	ihtest->saveToFile("testfile.tif");
-*/	
+	ihtest->loadFromFile("whatever-you-want.hdr");
+	ihtest->saveToFile("testfile.hdr");
+	
 	if(ih)
 	{
 		out = new imageOutput_t(ih, outputPath);
