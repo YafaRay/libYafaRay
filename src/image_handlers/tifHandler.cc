@@ -28,9 +28,6 @@
 
 __BEGIN_YAFRAY
 
-typedef unsigned char yByte;
-typedef unsigned short yWord;
-
 #define inv8  0.00392156862745098039 // 1 / 255
 #define inv16 0.00001525902189669642 // 1 / 65535
 
@@ -41,7 +38,6 @@ public:
 	~tifHandler_t();
 	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
 	bool loadFromFile(const std::string &name);
-	bool loadFromMemory(unsigned char *data) { return false; };
 	bool saveToFile(const std::string &name);
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);

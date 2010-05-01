@@ -27,8 +27,6 @@
 
 __BEGIN_YAFRAY
 
-typedef unsigned char yByte;
-
 #pragma pack(push, 1)
 
 struct rgbeHeader_t 

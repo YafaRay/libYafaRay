@@ -1,11 +1,33 @@
-#include <utilities/guifont.h>
-#include <utilities/loadMemPNG.h>
-#include <utilities/yafLogoTiny.h>
+/****************************************************************************
+ *
+ *      imagefilm.cc: image data handling class
+ *      This is part of the yafray package
+ *		See AUTHORS for more information
+ *
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2.1 of the License, or (at your option) any later version.
+ *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library; if not, write to the Free Software
+ *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *      
+ */
 
 #include <core_api/imagefilm.h>
+#include <core_api/imagehandler.h>
 #include <yafraycore/monitor.h>
-#include <utilities/math_utils.h>
 #include <yafraycore/timer.h>
+#include <utilities/math_utils.h>
+#include <utilities/guifont.h>
+#include <utilities/yafLogoTiny.h>
+
 #include <yaf_revision.h>
 #include <cstring>
 #include <string>
@@ -689,28 +711,33 @@ void imageFilm_t::drawRenderSettings()
 	int textInterlineOffset = 13;
 	int logoWidth = 0;
 
+	
 	// Draw logo image
-	imgBuffer_t *logo = load_mem_png(yafLogoTiny, yafLogoTiny_size);
-	if(logo)
+	paraMap_t ihParams;
+	ihParams["type"] = std::string("png");
+	ihParams["for_output"] = false;
+
+	
+	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams);
+	if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size))
 	{
 		int lx, ly;
 		int sx = 0;
-		int sy = h - logo->resy();
-		int imWidth = logo->resx() + sx;
-		int imHeight = logo->resy() + sy;
-		logoWidth = logo->resx();
+		int sy = h - logo->getHeight();
+		int imWidth = logo->getWidth() + sx;
+		int imHeight = logo->getHeight() + sy;
+		logoWidth = logo->getWidth();
 		textOffsetX += logoWidth;
 
 		for ( lx = sx; lx < imWidth; lx++ )
 		{
 			for ( ly = sy; ly < imHeight; ly++ )
 			{
-				colorA_t col = (*logo)(lx-sx, ly-sy);
+				colorA_t col = logo->getPixel(lx-sx, ly-sy);
 				pixel_t &pix = (*image)(lx, ly);
 				pix.col = alphaBlend(pix.col, pix.weight, colorA_t((color_t) col, std::max(pix.col.getA(), col.getA())), col.getA());
 			}
 		}
-		delete logo;
 	}
 
 	// Draw the dark bar at the bottom

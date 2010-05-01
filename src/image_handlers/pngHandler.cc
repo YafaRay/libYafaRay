@@ -33,13 +33,9 @@ extern "C"
 
 #include <cstdio>
 
+#include "pngUtils.h"
+
 __BEGIN_YAFRAY
-
-typedef unsigned char yByte;
-typedef unsigned short yWord;
-
-#define inv8  0.00392156862745098039 // 1 / 255
-#define inv16 0.00001525902189669642 // 1 / 65535
 
 class pngHandler_t: public imageHandler_t
 {
@@ -48,11 +44,15 @@ public:
 	~pngHandler_t();
 	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
 	bool loadFromFile(const std::string &name);
-	bool loadFromMemory(unsigned char *data) { return false; };
+	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name);
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+private:
+	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
+	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
+	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
 };
 
 pngHandler_t::pngHandler_t()
@@ -108,7 +108,6 @@ bool pngHandler_t::saveToFile(const std::string &name)
 	FILE *fp;
 	png_structp pngPtr;
 	png_infop infoPtr;
-	unsigned int colorType;
 	int channels;
 	png_bytep *rowPointers = NULL;
 	
@@ -120,49 +119,26 @@ bool pngHandler_t::saveToFile(const std::string &name)
 		return false;
 	}
 	
-	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	Y_INFO << "Writting file structs" << std::endl;
+	
+	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr))
 	{
 		fclose(fp);
-		Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
 		return false;
 	}
 
-	if(!(infoPtr = png_create_info_struct(pngPtr)))
-	{
-		png_destroy_read_struct(&pngPtr, NULL, NULL);
-		fclose(fp);
-		Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
-		return false;
-	}
-	
-	if(setjmp(png_jmpbuf(pngPtr)))
-	{
-		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
-		fclose(fp);
-		Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
-		return false;
-	}
-	
-	png_init_io(pngPtr, fp);
-	
-	colorType = (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB;
-	
-	png_set_IHDR(pngPtr, infoPtr, (png_uint_32)m_width, (png_uint_32)m_height,
-				 8, colorType, PNG_INTERLACE_NONE,
-				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-	
-	png_write_info(pngPtr, infoPtr);
-
+	Y_INFO << "File structs written" << std::endl;
+	Y_INFO << "Filling image buffer..." << std::endl;
 	rowPointers = new png_bytep[m_height];
 	
 	channels = 3;
+
 	if(m_hasAlpha) channels++;
 	
 	for(int i = 0; i < m_height; i++)
 	{
 		rowPointers[i] = new yByte[ m_width * channels ];
 	}
-	
 	
 	for(int y = 0; y < m_height; y++)
 	{
@@ -179,7 +155,8 @@ bool pngHandler_t::saveToFile(const std::string &name)
 			if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
 		}
 	}
-
+	Y_INFO << "Image buffer filled, writting..." << std::endl;
+	
 	png_write_image(pngPtr, rowPointers);
 	
 	png_write_end(pngPtr, NULL);
@@ -208,39 +185,12 @@ bool pngHandler_t::saveToFile(const std::string &name)
 			return false;
 		}
 		
-		if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+		if(!fillWriteStructs(fp, PNG_COLOR_TYPE_GRAY, pngPtr, infoPtr))
 		{
 			fclose(fp);
-			Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
-			return false;
-		}
-
-		if(!(infoPtr = png_create_info_struct(pngPtr)))
-		{
-			png_destroy_read_struct(&pngPtr, NULL, NULL);
-			fclose(fp);
-			Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
 			return false;
 		}
 		
-		if(setjmp(png_jmpbuf(pngPtr)))
-		{
-			png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
-			fclose(fp);
-			Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
-			return false;
-		}
-		
-		png_init_io(pngPtr, fp);
-		
-		colorType = PNG_COLOR_TYPE_GRAY;
-		
-		png_set_IHDR(pngPtr, infoPtr, (png_uint_32)m_width, (png_uint_32)m_height,
-					 8, colorType, PNG_INTERLACE_NONE,
-					 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		
-		png_write_info(pngPtr, infoPtr);
-
 		rowPointers = new png_bytep[m_height];
 		
 		for(int i = 0; i < m_height; i++)
@@ -278,18 +228,13 @@ bool pngHandler_t::saveToFile(const std::string &name)
 
 	return true;
 }
+
 bool pngHandler_t::loadFromFile(const std::string &name)
 {
-	FILE *fp;
-	png_structp pngPtr;
-	png_infop infoPtr;
-	png_uint_32 w, h;
+	png_structp pngPtr = NULL;
+	png_infop infoPtr = NULL;
 	
-	int bitDepth, colorType;
-
-	m_hasDepth = false;
-	
-	fp = fopen(name.c_str(), "rb");
+	FILE *fp = fopen(name.c_str(), "rb");
 
 	if(!fp)
 	{
@@ -299,18 +244,70 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	
 	yByte signature[8];
 	
-    fread(signature, 1, 8, fp);
+    if(fread(signature, 1, 8, fp) != 8)
+    {
+    	 Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << std::endl;
+    	 return false;
+    }
     
-    if(png_sig_cmp(signature, 0, 8))
+    if(!fillReadStructs(signature, pngPtr, infoPtr))
     {
     	fclose(fp);
-		Y_ERROR << handlerName << ": File is not a PNG image!" << std::endl;
+    	return false;
+    }
+	
+	png_init_io(pngPtr, fp);
+
+	png_set_sig_bytes(pngPtr, 8);
+
+	readFromStructs(pngPtr, infoPtr);
+	
+	fclose(fp);
+	
+	return true;
+}
+bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
+{
+	png_structp pngPtr = NULL;
+	png_infop infoPtr = NULL;
+
+	pngDataReader_t *reader = new pngDataReader_t(data, size);
+	
+	yByte signature[8];
+	
+    if(reader->read(signature, 8) < 8)
+    {
+    	 Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << std::endl;
+    	 return false;
+    }
+    
+    if(!fillReadStructs(signature, pngPtr, infoPtr))
+    {
+    	delete reader;
+    	return false;
+    }
+	
+	png_set_read_fn(pngPtr, (void*)reader, readFromMem);
+
+	png_set_sig_bytes(pngPtr, 8);
+
+	readFromStructs(pngPtr, infoPtr);
+	
+	delete reader;
+
+	return true;
+}
+
+bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr)
+{
+    if(png_sig_cmp(sig, 0, 8))
+    {
+		Y_ERROR << handlerName << ": Data is not from a PNG image!" << std::endl;
     	return false;
     }
 	
 	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 	{
-		fclose(fp);
 		Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
 		return false;
 	}
@@ -318,7 +315,6 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	if(!(infoPtr = png_create_info_struct(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, NULL, NULL);
-		fclose(fp);
 		Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
 		return false;
 	}
@@ -326,14 +322,53 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	if(setjmp(png_jmpbuf(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
-		fclose(fp);
 		Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
 		return false;
 	}
 	
-	png_init_io(pngPtr, fp);
+	return true;
+}
 
-	png_set_sig_bytes(pngPtr, 8);
+bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr)
+{
+	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	{
+		Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
+		return false;
+	}
+
+	if(!(infoPtr = png_create_info_struct(pngPtr)))
+	{
+		png_destroy_read_struct(&pngPtr, NULL, NULL);
+		Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
+		return false;
+	}
+	
+	if(setjmp(png_jmpbuf(pngPtr)))
+	{
+		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+		Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
+		return false;
+	}
+
+	png_init_io(pngPtr, fp);
+	
+	png_set_IHDR(pngPtr, infoPtr, (png_uint_32)m_width, (png_uint_32)m_height,
+				 8, colorType, PNG_INTERLACE_NONE,
+				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	
+	png_write_info(pngPtr, infoPtr);
+	
+	return true;
+}
+
+void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
+{
+	png_uint_32 w, h;
+	
+	int bitDepth, colorType;
+
+	m_hasDepth = false;
 
 	png_read_info(pngPtr, infoPtr);
 
@@ -473,10 +508,6 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	}
 	
 	delete[] rowPointers;
-	
-	fclose(fp);
-	
-	return true;
 }
 
 imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)

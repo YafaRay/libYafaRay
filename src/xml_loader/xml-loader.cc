@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 	ihParams["z_channel"] = use_zbuf;
 	
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
-	
+
 	if(ih)
 	{
 		out = new imageOutput_t(ih, outputPath);

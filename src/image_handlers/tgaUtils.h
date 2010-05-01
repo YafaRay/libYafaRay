@@ -22,9 +22,6 @@
 
 __BEGIN_YAFRAY
 
-typedef unsigned char yByte;
-typedef unsigned short yWord;
-
 enum tgaImageDataType
 {
 	noData = 0,

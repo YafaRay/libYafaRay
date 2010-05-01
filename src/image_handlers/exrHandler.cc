@@ -48,7 +48,6 @@ public:
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
-	bool loadFromMemory(unsigned char *data) { return false; };
 	bool saveToFile(const std::string &name);
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);

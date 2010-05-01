@@ -34,8 +34,6 @@ extern "C"
 
 __BEGIN_YAFRAY
 
-typedef unsigned char yByte;
-
 #define inv8  0.00392156862745098039f // 1 / 255
 
 // error handlers for libJPEG,
@@ -72,7 +70,6 @@ public:
 	~jpgHandler_t();
 	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
 	bool loadFromFile(const std::string &name);
-	bool loadFromMemory(unsigned char *data) { return false; };
 	bool saveToFile(const std::string &name);
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);
