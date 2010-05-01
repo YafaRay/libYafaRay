@@ -24,7 +24,7 @@
 __BEGIN_YAFRAY
 
 photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad):
-	trShad(transpShad), finalGather(true), cacheIrrad(false), nPhotons(dPhotons), nCausPhotons(cPhotons), sDepth(shadowDepth), dsRadius(dsRad), cRadius(cRad)
+	trShad(transpShad), finalGather(true), nPhotons(dPhotons), nCausPhotons(cPhotons), sDepth(shadowDepth), dsRadius(dsRad), cRadius(cRad)
 {
 	type = SURFACE;
 	rDepth = 6;
@@ -224,7 +224,7 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 	return col*nLights;
 }
 
-bool photonIntegrator_t::render(imageFilm_t *image)
+/*bool photonIntegrator_t::render(imageFilm_t *image)
 {
 	std::stringstream passString;
 	imageFilm = image;
@@ -282,7 +282,7 @@ bool photonIntegrator_t::render(imageFilm_t *image)
 	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
 
 	return true;
-}
+}*/
 
 bool photonIntegrator_t::preprocess()
 {
@@ -761,13 +761,6 @@ bool photonIntegrator_t::preprocess()
 		Y_INFO << integratorName << ": Done.\n";
 	}
 
-	//irradiance cache
-	if(cacheIrrad)
-	{
-		Y_INFO << integratorName << ": Building irradiance cache..." << std::endl;
-		irCache.init(*scene, 1.f);
-		Y_INFO << integratorName << ": Done.\n";
-	}
 	gTimer.stop("prepass");
 	Y_INFO << integratorName << ": Photonmap building time: " << gTimer.getTime("prepass") << "\n";
 
@@ -921,127 +914,6 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	return pathCol / (float)nSampl;
 }
 
-void photonIntegrator_t::sampleIrrad(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, irradSample_t &ir) const
-{
-	ir.Rmin = -1.0;
-	ir.P = sp.P;
-	ir.N = sp.N; //!TODO: use unbumped normal!
-	
-	void *first_udat = state.userdata;
-	unsigned char userdata[USER_DATA_SIZE+7];
-	void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-	vector3d_t wi_0;
-	
-	int nSampl = nPaths;
-	for(int i=0; i<nSampl; ++i)
-	{
-		color_t throughput( 1.0 );
-		color_t pathCol(0.0);
-		PFLOAT length=0;
-		surfacePoint_t hit=sp;
-		vector3d_t pwo; // = wo;
-		ray_t pRay;
-		BSDF_t matBSDFs;
-		bool did_hit;
-
-		unsigned int offs = nPaths * state.pixelSample + state.samplingOffs + i; // some redundancy here...
-		color_t lcol, scol;
-		// "zero'th" FG bounce:
-		float s1 = RI_vdC(offs);
-		float s2 = scrHalton(2, offs);
-
-		vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-		wi_0 = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s2);
-		pRay.dir = wi_0;
-		
-		//if(scol.isBlack()) continue;
-		pRay.tmin = MIN_RAYDIST;
-		pRay.tmax = -1.0;
-		pRay.from = hit.P;
-		
-		if( (did_hit = scene->intersect(pRay, hit)) )
-		{
-			if(ir.Rmin < 0.f) ir.Rmin = pRay.tmax;
-			else ir.Rmin = std::min(ir.Rmin, pRay.tmax);
-		}
-		else //hit background
-		{
-			continue;
-		}
-		const material_t *p_mat = hit.material;
-		length = pRay.tmax;
-		state.userdata = n_udat;
-		matBSDFs = p_mat->getFlags();
-		bool has_spec = matBSDFs & BSDF_SPECULAR;
-		bool caustic = false;
-		bool close = length < gatherDist;
-		bool do_bounce = close || has_spec;
-		// further bounces construct a path just as with path tracing:
-		for(int depth=0; depth<gatherBounces && do_bounce; ++depth)
-		{
-			pwo = -pRay.dir;
-			p_mat->initBSDF(state, hit, matBSDFs);
-
-			if(matBSDFs & (BSDF_DIFFUSE | BSDF_GLOSSY))
-			{
-				if(close)
-				{
-					lcol = estimateOneDirect(state, hit, pwo, lights, 4*depth+5, offs);
-					pathCol += lcol*throughput;
-				}
-				else if(caustic)
-				{
-					vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, pwo);//hit.N;
-					const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
-					if(nearest) pathCol += throughput * nearest->color();
-				}
-			}
-			
-			s1 = scrHalton(4*depth+3, offs); //ourRandom();//
-			s2 = scrHalton(4*depth+4, offs); //ourRandom();//;
-			sample_t sb(s1, s2, (close) ? BSDF_ALL : BSDF_ALL_SPECULAR | BSDF_FILTER);
-
-			scol = p_mat->sample(state, hit, pwo, pRay.dir, sb);
-			
-			if( sb.pdf > 1.0e-6f) scol *= (std::fabs(pRay.dir*hit.N)/sb.pdf);
-			else { did_hit=false; break; }
-			
-			pRay.tmin = MIN_RAYDIST;
-			pRay.tmax = -1.0;
-			pRay.from = hit.P;
-			throughput *= scol;
-			did_hit = scene->intersect(pRay, hit);
-			
-			if(!did_hit) break; //hit background
-			
-			p_mat = hit.material;
-			length += pRay.tmax;
-			caustic = (caustic || !depth) && (sb.sampledFlags & (BSDF_SPECULAR | BSDF_FILTER));
-			close =  length < gatherDist;
-			do_bounce = caustic || close;
-		}
-		if(did_hit)
-		{
-			matBSDFs = p_mat->getFlags();
-			if(matBSDFs & (BSDF_DIFFUSE | BSDF_GLOSSY))
-			{
-				vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, -pRay.dir);//hit.N;
-				const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
-				if(nearest) pathCol += throughput * nearest->color();
-			}
-		}
-		ir.col += pathCol;
-		ir.w_r += pathCol.R * wi_0;
-		ir.w_g += pathCol.G * wi_0;
-		ir.w_b += pathCol.B * wi_0;
-		state.userdata = first_udat;
-	}
-	ir.col *= 1.f / (CFLOAT)nSampl;
-	ir.w_r.normalize();
-	ir.w_g.normalize();
-	ir.w_b.normalize();
-}
-
 colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) const
 {
 	static int _nMax=0;
@@ -1070,47 +942,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		col += material->emit(state, sp, wo);
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
-		if(cacheIrrad)
-		{
-			if(ray.hasDifferentials)
-			{
-				PFLOAT A_pix = spDiff.projectedPixelArea();
-				if(calls < 10) std::cout << "A_pix: " << A_pix << std::endl;
-				irradSample_t irr;
-				irr.N = N_nobump;
-				//bool do_debug = (state.pixelNumber == 245223 || state.pixelNumber == 246023 || state.pixelNumber == 246823);
-				//if(do_debug) std::cout << "\nCosine:" << sp.N*wo;
-				std::swap(sp.N, N_nobump);
-				if( irCache.gatherSamples(sp, A_pix, irr/* , do_debug */) )
-				{
-					//restore sp.N
-					std::swap(sp.N, N_nobump);
-					color_t cos_Nnb_w(1.f/std::max(0.05f, CFLOAT(N_nobump*irr.w_r)),
-									  1.f/std::max(0.05f, CFLOAT(N_nobump*irr.w_g)),
-									  1.f/std::max(0.05f, CFLOAT(N_nobump*irr.w_b)) );
-					color_t cos_N_w(	std::max(0.05f, CFLOAT(sp.N*irr.w_r)),
-										std::max(0.05f, CFLOAT(sp.N*irr.w_g)),
-										std::max(0.05f, CFLOAT(sp.N*irr.w_b)) );
-					if(calls < 10) std::cout << "irr.col: " << irr.col << std::endl;
-					color_t mcol;
-					mcol.R = (material->eval(state, sp, wo, irr.w_r, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT)).R;
-					mcol.G = (material->eval(state, sp, wo, irr.w_r, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT)).G;
-					mcol.B = (material->eval(state, sp, wo, irr.w_r, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT)).B;
-					col += mcol * irr.col * cos_N_w * cos_Nnb_w;
-				}
-				// we're forced to do final gathering unless we can write to cache while rendering...
-				else
-				{
-					//restore sp.N
-					std::swap(sp.N, N_nobump);
-					col += finalGathering(state, sp, wo);
-				}
-			}
-			else col += finalGathering(state, sp, wo);
-			if( bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY) )
-				col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-		}
-		else if(finalGather)
+		if(finalGather)
 		{
 			if(showMap)
 			{
@@ -1324,7 +1156,6 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	bool transpShad=false;
 	bool finalGather=true;
 	bool show_map=false;
-	bool cache_irrad=false;
 	int shadowDepth=5;
 	int raydepth=5;
 	int numPhotons = 100000;
@@ -1355,7 +1186,6 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	gatherDist = /* 2.f* */dsRad;
 	params.getParam("fg_min_pathlen", gatherDist);
 	params.getParam("show_map", show_map);
-	params.getParam("irradiance_cache", cache_irrad);
 	
 	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	ite->rDepth = raydepth;
@@ -1367,7 +1197,6 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	ite->gatherBounces = fgBounces;
 	ite->showMap = show_map;
 	ite->gatherDist = gatherDist;
-	ite->cacheIrrad = cache_irrad;
 	return ite;
 }
 

@@ -4,10 +4,10 @@ set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc faure_tables
 					std_primitives.cc color.cc matrix4.cc object3d.cc
 					timer.cc kdtree.cc ray_kdtree.cc tribox3_d.cc triclip.cc scene.cc
 					imagefilm.cc imagesplitter.cc material.cc nodematerial.cc
-					ccthreads.cc triangle.cc vector3d.cc tga_io.cc photon.cc
+					ccthreads.cc triangle.cc vector3d.cc photon.cc
 					xmlparser.cc spectrum.cc volume.cc
 					memoryIO.cc surface.cc irradiancecache.cc integrator.cc
-					imageOutput.cc EXR_io.cc)
+					imageOutput.cc EXR_io.cc tga_io.cc)
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 
@@ -21,4 +21,4 @@ endif (UNIX)
 
 target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${PNG_LIBRARIES} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
-install (TARGETS yafaraycore LIBRARY DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafaraycore DESTINATION ${YAF_LIB_DIR})

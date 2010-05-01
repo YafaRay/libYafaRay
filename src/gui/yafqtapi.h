@@ -20,7 +20,7 @@ struct YAF_QT_EXPORT Settings {
 	bool autoSave;
 	bool autoSaveAlpha;
 	bool closeAfterFinish;
-	const char* fileName;
+	std::string fileName;
 };
 
 extern "C"

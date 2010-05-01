@@ -9,4 +9,4 @@ target_link_libraries(basictex yafaraycore ${PNG_LIBRARIES} ${OPENEXR_LIBRARIES}
 add_library(basicnodes SHARED basicnodes.cc layernode.cc)
 target_link_libraries(basicnodes yafaraycore)
 
-install (TARGETS basictex basicnodes LIBRARY DESTINATION ${YAF_PLUGIN_DIR})
+install (TARGETS basictex basicnodes DESTINATION ${YAF_PLUGIN_DIR})

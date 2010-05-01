@@ -5,7 +5,7 @@ add_definitions(-DBUILDING_YAFRAYPLUGIN)
 add_library(directlight SHARED directlight.cc common.cc)
 target_link_libraries(directlight yafaraycore)
 
-add_library(photonmap SHARED photonintegr.cc photonintegr_cache.cc common.cc)
+add_library(photonmap SHARED photonintegr.cc common.cc)
 target_link_libraries(photonmap yafaraycore)
 
 add_library(pathtrace SHARED pathtracer.cc common.cc)
@@ -31,4 +31,4 @@ target_link_libraries(SkyIntegrator yafaraycore)
 
 install (TARGETS directlight photonmap pathtrace bidirpath EmissionIntegrator 
          SingleScatterIntegrator EmptyVolumeIntegrator DebugIntegrator SkyIntegrator 
-         LIBRARY DESTINATION ${YAF_PLUGIN_DIR})
+         DESTINATION ${YAF_PLUGIN_DIR})

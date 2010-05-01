@@ -8,6 +8,7 @@
 %include "carrays.i"
 %array_functions(float, floatArray);
 
+%include "std_string.i"
 
 %{
 #include <yafray_constants.h>
@@ -19,7 +20,7 @@ struct Settings {
     bool autoSave;
     bool autoSaveAlpha;
     bool closeAfterFinish;
-    const char* fileName;
+    std::string fileName;
 };
 
 void initGui();

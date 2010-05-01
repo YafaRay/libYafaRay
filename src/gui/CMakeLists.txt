@@ -1,19 +1,16 @@
-include_directories(${YAF_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${QT_INCLUDE_DIRS} ${OPENEXR_INCLUDE_DIRS})
+include_directories(${YAF_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTGUI_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIRS})
 
 if (EMBED_FONT_QT)
 	add_definitions(-DYAFQT_EMBEDED_FONT)
 endif (EMBED_FONT_QT)
 
-set(yfgui_SRCS animworking.cc events.cc mywindow.cc qtoutput.cc qtprogress.cc renderwidget.cc worker.cc)
-set(yfgui_HDRS animworking.h events.h mywindow.h qtoutput.h qtprogress.h renderwidget.h worker.h)
-set(yfgui_UIS windowbase.ui)
+set(YAF_QT_CC animworking.cc events.cc mywindow.cc qtoutput.cc qtprogress.cc renderwidget.cc worker.cc)
+set(YAF_QT_H_4_MOC animworking.h mywindow.h renderwidget.h worker.h)
+set(YAF_QT_UI windowbase.ui)
 
-QT4_WRAP_CPP(yfgui_MOC_SRCS ${yfgui_HDRS})
-QT4_WRAP_UI(yfgui_UI_SRCS ${yfgui_UIS})
+QT4_WRAP_CPP(YAF_QT_MOC_CC ${YAF_QT_H_4_MOC})
+QT4_WRAP_UI(YAF_QT_UI_H ${YAF_QT_UI})
 
-# Qt enabling header
-include(${QT_USE_FILE})
-
-add_library(yafarayqt SHARED ${yfgui_SRCS} ${yfgui_MOC_SRCS} ${yfgui_UI_SRCS})
-target_link_libraries(yafarayqt ${QT_LIBRARIES} yafaraycore ${OPENEXR_LIBRARIES})
-install (TARGETS yafarayqt LIBRARY DESTINATION ${YAF_LIB_DIR})
+add_library(yafarayqt SHARED ${YAF_QT_CC} ${YAF_QT_MOC_CC} ${YAF_QT_UI_H})
+target_link_libraries(yafarayqt ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} yafaraycore ${OPENEXR_LIBRARIES})
+install (TARGETS yafarayqt DESTINATION ${YAF_LIB_DIR})
