@@ -4,10 +4,10 @@ set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc faure_tables
 					std_primitives.cc color.cc matrix4.cc object3d.cc
 					timer.cc kdtree.cc ray_kdtree.cc tribox3_d.cc triclip.cc scene.cc
 					imagefilm.cc imagesplitter.cc material.cc nodematerial.cc
-					ccthreads.cc triangle.cc vector3d.cc photon.cc
+					triangle.cc vector3d.cc photon.cc
 					xmlparser.cc spectrum.cc volume.cc
-					memoryIO.cc surface.cc integrator.cc
-					imageOutput.cc EXR_io.cc tga_io.cc)
+					surface.cc integrator.cc ccthreads.cc
+					imageOutput.cc EXR_io.cc tga_io.cc memoryIO.cc)
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 

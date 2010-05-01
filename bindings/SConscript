@@ -47,9 +47,9 @@ Alias('swig', '#bindings/python/yafrayinterface.py')
 
 if swig_env['WITH_YF_QT']:
 	if sys.platform == "darwin":
-		pyqt = swig_qt_env.LoadableModule(target='yafqt', source=['renderwidget.i'])
+		pyqt = swig_qt_env.LoadableModule(target='yafqt', source=['yafqt.i'])
 	else:
-		pyqt = swig_qt_env.SharedLibrary(target='yafqt', source=['renderwidget.i'])
+		pyqt = swig_qt_env.SharedLibrary(target='yafqt', source=['yafqt.i'])
 	Alias('swig', pyqt)
 	
 	if sys.platform == "win32":

@@ -20,25 +20,42 @@ find_package(TIFF REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Qt4 4.5.0 COMPONENTS QtCore QtGui REQUIRED)
+find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
 
 # Qt enabling header
 include(${QT_USE_FILE})
 
+#check for swig if needed
+if (WITH_YF_PY_BINDINGS OR WITH_YF_RUBY_BINDINGS)
+	find_package(SWIG REQUIRED)
+	
+	if(NOT SWIG_FOUND)
+		message("Swig not found, please install it to build script bindings")
+		set(WITH_YF_PY_BINDINGS OFF)
+		set(WITH_YF_RUBY_BINDINGS OFF)
+	else(NOT SWIG_FOUND)
+		if(SWIG_VERSION VERSION_LESS 1.3.38)
+			message("Swig version < 1.3.38, please update or bindings can't be built")
+			set(WITH_YF_PY_BINDINGS OFF)
+			set(WITH_YF_RUBY_BINDINGS OFF)
+		endif(SWIG_VERSION VERSION_LESS 1.3.38)
+	endif(NOT SWIG_FOUND)
+endif (WITH_YF_PY_BINDINGS OR WITH_YF_RUBY_BINDINGS)
+
 # Python bindings 
 if (WITH_YF_PY_BINDINGS)
-	find_package(SWIG)
 	find_package(PythonLibs REQUIRED)
 	find_package(PythonInterp REQUIRED)
-
-	if (NOT SWIG_FOUND OR NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
+	
+	if (NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
+		message("Python wasn't found, please install it to build python bindings")
 		set(WITH_YF_PY_BINDINGS OFF)
-	endif (NOT SWIG_FOUND OR NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
+	endif (NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
+	
 endif (WITH_YF_PY_BINDINGS)
 
 # Ruby bindings TODO: finish Ruby bindings build
 if (WITH_YF_RUBY_BINDINGS)
-	find_package(SWIG)
 	find_package(Ruby REQUIRED)
 
 	if (NOT SWIG_FOUND OR NOT RUBY_FOUND)
@@ -63,7 +80,7 @@ set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
 SET(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 
 if(NOT WIN32)
-	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math -mfpmath=sse")
+	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
 	set(YAF_CXX_FLAGS_DEBUG "-ggdb")
 else(NOT WIN32)
 	set(YAF_CXX_FLAGS_RELEASE "")
