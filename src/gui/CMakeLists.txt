@@ -4,6 +4,8 @@ if (EMBED_FONT_QT)
 	add_definitions(-DYAFQT_EMBEDED_FONT)
 endif (EMBED_FONT_QT)
 
+add_definitions(-DBUILDING_QTPLUGIN)
+
 set(YAF_QT_CC animworking.cc events.cc mywindow.cc qtoutput.cc qtprogress.cc renderwidget.cc worker.cc)
 set(YAF_QT_H_4_MOC animworking.h mywindow.h renderwidget.h worker.h)
 set(YAF_QT_UI windowbase.ui)
