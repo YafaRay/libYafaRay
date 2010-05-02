@@ -205,7 +205,7 @@ void imageFilm_t::initDepthMap()
 	if(!depthMap) depthMap = new gray2DImage_t(w, h);
 	else depthMap->clear();
 }
-void imageFilm_t::nextPass(bool adaptive_AA)
+void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 {
 	int n_resample=0;
 	
@@ -266,7 +266,7 @@ void imageFilm_t::nextPass(bool adaptive_AA)
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
-	Y_INFO << "imageFilm: " << passString.str() << "\n";
+	Y_INFO << integratorName << ": " << passString.str() << "\n";
 	
 	if(pbar)
 	{
