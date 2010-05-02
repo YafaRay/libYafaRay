@@ -77,14 +77,15 @@ set(YAF_LIB_DIR lib)
 set(YAF_BIN_DIR bin)
 set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
 
-SET(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 
 if(NOT WIN32)
+	SET(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
 	set(YAF_CXX_FLAGS_DEBUG "-ggdb")
 else(NOT WIN32)
-	set(YAF_CXX_FLAGS_RELEASE "")
-	set(YAF_CXX_FLAGS_DEBUG "")
+	SET(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
+	set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
+	set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Fd")
 endif(NOT WIN32)
 
 if(CMAKE_HAVE_PTHREAD_H)

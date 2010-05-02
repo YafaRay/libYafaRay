@@ -130,7 +130,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	showColorIcon.loadFromData(rgb_icon, rgb_icon_size);
 	
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-	int fId = QFontDatabase::addApplicationFontFromData(QByteArray(guifont, guifont_size));
+	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char*)guifont, guifont_size));
 	QStringList fam = QFontDatabase::applicationFontFamilies(fId);
 	QFont gFont = QFont(fam[0]);
 	gFont.setPointSize(8);

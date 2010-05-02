@@ -13,4 +13,4 @@ QT4_WRAP_UI(YAF_QT_UI_H ${YAF_QT_UI})
 
 add_library(yafarayqt SHARED ${YAF_QT_CC} ${YAF_QT_MOC_CC} ${YAF_QT_UI_H})
 target_link_libraries(yafarayqt ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} yafaraycore ${OPENEXR_LIBRARIES})
-install (TARGETS yafarayqt DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafarayqt LIBRARY DESTINATION ${YAF_LIB_DIR} RUNTIME DESTINATION ${YAF_LIB_DIR})

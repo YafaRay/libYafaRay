@@ -1,5 +1,5 @@
 include_directories(${YAF_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIRS}
-                    ${FREETYPE_INCLUDE_DIRS} ${PNG_INCLUDE_DIR})
+                    ${FREETYPE_INCLUDE_DIRS})
 set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc faure_tables.cc 
 					std_primitives.cc color.cc matrix4.cc object3d.cc
 					timer.cc kdtree.cc ray_kdtree.cc tribox3_d.cc triclip.cc scene.cc
@@ -19,6 +19,6 @@ else (UNIX)
 	set (DLLOAD_LIB "")
 endif (UNIX)
 
-target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${PNG_LIBRARIES} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
+target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
-install (TARGETS yafaraycore DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafaraycore LIBRARY DESTINATION ${YAF_LIB_DIR} RUNTIME DESTINATION ${YAF_LIB_DIR})

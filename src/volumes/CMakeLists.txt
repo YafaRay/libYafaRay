@@ -17,4 +17,5 @@ target_link_libraries(GridVolume yafaraycore)
 add_library(SkyVolume SHARED SkyVolume.cc)
 target_link_libraries(SkyVolume yafaraycore)
 
-install (TARGETS UniformVolume ExpDensityVolume NoiseVolume SkyVolume DESTINATION ${YAF_PLUGIN_DIR})
+install (TARGETS UniformVolume ExpDensityVolume NoiseVolume SkyVolume
+		LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})

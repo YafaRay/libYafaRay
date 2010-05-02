@@ -11,4 +11,4 @@ target_link_libraries(orthographicCamera yafaraycore)
 add_library(angularCamera SHARED angularCamera.cc)
 target_link_libraries(angularCamera yafaraycore)
 
-install (TARGETS perspectiveCamera orthographicCamera angularCamera DESTINATION ${YAF_PLUGIN_DIR})
+install (TARGETS perspectiveCamera orthographicCamera angularCamera LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})

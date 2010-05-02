@@ -19,5 +19,5 @@ target_link_libraries(tifHandler yafaraycore ${TIFF_LIBRARY})
 add_library(hdrHandler SHARED hdrHandler.cc)
 target_link_libraries(hdrHandler yafaraycore)
 
-install (TARGETS exrHandler jpgHandler pngHandler tgaHandler tifHandler hdrHandler DESTINATION ${YAF_PLUGIN_DIR})
+install (TARGETS exrHandler jpgHandler pngHandler tgaHandler tifHandler hdrHandler LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})
 
