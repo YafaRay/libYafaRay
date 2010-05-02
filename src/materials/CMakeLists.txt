@@ -24,4 +24,4 @@ add_library(volumetrics SHARED beer.cc)
 target_link_libraries(volumetrics yafaraycore)
 
 install (TARGETS glass blendermat glossymat shinydiffuse coatedglossy simplemats volumetrics
-		LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})
+		${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

@@ -72,20 +72,27 @@ endif(DEBUG_BUILD)
 # definitions
 set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
 
-# installation directories
-set(YAF_LIB_DIR lib)
-set(YAF_BIN_DIR bin)
-set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
-
 
 if(NOT WIN32)
-	SET(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
+	# installation directories
+	set(YAF_LIB_DIR lib)
+	set(YAF_BIN_DIR bin)
+	set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
+	# build flags
+	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
 	set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+	set(YAF_TARGET_TYPE LIBRARY)
 else(NOT WIN32)
-	SET(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
+	# installation directories
+	set(YAF_LIB_DIR winpak)
+	set(YAF_BIN_DIR winpak)
+	set(YAF_BINDINGS_PY_DIR winpak/bindings/python)
+	# build flags
+	set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
 	set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
 	set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Fd")
+	set(YAF_TARGET_TYPE RUNTIME)
 endif(NOT WIN32)
 
 if(CMAKE_HAVE_PTHREAD_H)
@@ -114,7 +121,11 @@ endif(FREETYPE_FOUND)
 
 include(CMakeUserConfig.txt OPTIONAL)
 
-set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
+if(NOT WIN32)
+	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
+elseif(NOT WIN32)
+	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/plugins)
+endif(NOT WIN32)
 
 if (USER_INSTALL_PREFFIX)
 	set(CMAKE_INSTALL_PREFIX ${USER_INSTALL_PREFFIX})

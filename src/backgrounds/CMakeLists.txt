@@ -15,4 +15,4 @@ add_library(DarkSky SHARED DarkSky/darksky.cc ../lights/bglight.cc)
 target_link_libraries(DarkSky yafaraycore)
 
 install (TARGETS gradientback textureback sunsky DarkSky
-		LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})
+		${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

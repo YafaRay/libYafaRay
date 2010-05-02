@@ -31,4 +31,4 @@ target_link_libraries(SkyIntegrator yafaraycore)
 
 install (TARGETS directlight photonmap pathtrace bidirpath
 		EmissionIntegrator SingleScatterIntegrator EmptyVolumeIntegrator DebugIntegrator SkyIntegrator
-		LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})
+		${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

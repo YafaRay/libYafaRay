@@ -24,4 +24,4 @@ add_library(ieslight SHARED iesLight.cc)
 target_link_libraries(ieslight yafaraycore)
 
 install (TARGETS sunlight pointlight directional spotlight arealight spherelight ieslight
-		LIBRARY DESTINATION ${YAF_PLUGIN_DIR} RUNTIME DESTINATION ${YAF_PLUGIN_DIR})
+		${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
