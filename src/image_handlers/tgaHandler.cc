@@ -432,6 +432,8 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 
 bool tgaHandler_t::loadFromFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+
 	FILE *fp = fopen(name.c_str(), "rb");
 	if(!fp)
 	{
@@ -583,6 +585,8 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	
 	if (ColorMap) delete ColorMap;
 	ColorMap = NULL;
+
+	Y_INFO << handlerName << ": Done." << std::endl;
 
 	return true;
 }

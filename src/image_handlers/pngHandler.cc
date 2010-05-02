@@ -105,6 +105,8 @@ colorA_t pngHandler_t::getPixel(int x, int y)
 
 bool pngHandler_t::saveToFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << std::endl;
+
 	FILE *fp;
 	png_structp pngPtr;
 	png_infop infoPtr;
@@ -119,16 +121,12 @@ bool pngHandler_t::saveToFile(const std::string &name)
 		return false;
 	}
 	
-	Y_INFO << "Writting file structs" << std::endl;
-	
 	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr))
 	{
 		fclose(fp);
 		return false;
 	}
 
-	Y_INFO << "File structs written" << std::endl;
-	Y_INFO << "Filling image buffer..." << std::endl;
 	rowPointers = new png_bytep[m_height];
 	
 	channels = 3;
@@ -155,7 +153,6 @@ bool pngHandler_t::saveToFile(const std::string &name)
 			if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
 		}
 	}
-	Y_INFO << "Image buffer filled, writting..." << std::endl;
 	
 	png_write_image(pngPtr, rowPointers);
 	
@@ -176,6 +173,7 @@ bool pngHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.png";
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << std::endl;
 		
 		fp = fopen(zbufname.c_str(), "wb");
 
@@ -226,11 +224,15 @@ bool pngHandler_t::saveToFile(const std::string &name)
 		delete[] rowPointers;
 	}
 
+	Y_INFO << handlerName << ": Done." << std::endl;
+
 	return true;
 }
 
 bool pngHandler_t::loadFromFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+
 	png_structp pngPtr = NULL;
 	png_infop infoPtr = NULL;
 	
@@ -263,6 +265,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	readFromStructs(pngPtr, infoPtr);
 	
 	fclose(fp);
+
+	Y_INFO << handlerName << ": Done." << std::endl;
 	
 	return true;
 }

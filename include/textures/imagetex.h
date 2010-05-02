@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *          imagetex.h: Image specific functions
+ *		imagetex.h: Image specific functions
  *      This is part of the yafray package
  *      Copyright (C) 2006  Mathias Wein
  *

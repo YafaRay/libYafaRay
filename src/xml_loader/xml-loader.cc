@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 	render.getParam("z_channel", use_zbuf);
 	
 	// create output
-	colorOutput_t *out=0;
+	colorOutput_t *out = NULL;
 
 	paraMap_t ihParams;
 	ihParams["type"] = format;

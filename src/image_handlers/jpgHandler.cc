@@ -126,6 +126,8 @@ colorA_t jpgHandler_t::getPixel(int x, int y)
 
 bool jpgHandler_t::saveToFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << std::endl;
+
 	FILE * fp;
 	struct jpeg_compress_struct info;
 	struct jpgErrorManager jerr;
@@ -186,6 +188,7 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 	if(m_hasAlpha)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
+		Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << std::endl;
 
 		fp = fopen(alphaname.c_str(), "wb");
 		
@@ -239,6 +242,7 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.jpg";
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << std::endl;
 
 		fp = fopen(zbufname.c_str(), "wb");
 		
@@ -289,11 +293,15 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 		fclose(fp);
 	}
 
+	Y_INFO << handlerName << ": Done." << std::endl;
+
 	return true;
 }
 
 bool jpgHandler_t::loadFromFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+
 	FILE *fp;
 	jpeg_decompress_struct info;
 	jpgErrorManager jerr;
@@ -404,7 +412,9 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_destroy_decompress(&info);
 	
 	fclose(fp);
-	
+
+	Y_INFO << handlerName << ": Done." << std::endl;
+
 	return true;
 }
 

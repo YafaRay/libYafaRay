@@ -49,7 +49,7 @@ public:
 private:
 	bool writeHeader(std::ofstream &file);
 	bool writeScanline(std::ofstream &file, rgbePixel_t *scanline);
-	bool readHeader(std::ifstream &file); //!< Reads file header and detects
+	bool readHeader(std::ifstream &file); //!< Reads file header and detects if the file is valid
 	bool readORLE(std::ifstream &file, int y, int scanWidth); //!< Reads the scanline with the original Radiance RLE schema or without compression
 	bool readARLE(std::ifstream &file, int y, int scanWidth); //!< Reads a scanline with Adaptative RLE schema
 	
@@ -506,7 +506,7 @@ bool hdrHandler_t::saveToFile(const std::string &name)
 		}
 	}
 	
-	Y_INFO << handlerName << ": Saving successful..." << std::endl;
+	Y_INFO << handlerName << ": Done." << std::endl;
 	
 	return true;
 }

@@ -94,6 +94,8 @@ colorA_t tifHandler_t::getPixel(int x, int y)
 
 bool tifHandler_t::saveToFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << std::endl;
+
 	TIFF *out = TIFFOpen(name.c_str(), "w");
 	int channels;
 	size_t bytesPerScanline;
@@ -144,6 +146,8 @@ bool tifHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.tif";
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\" (16Bits grayscale)..." << std::endl;
+
 		out = TIFFOpen(zbufname.c_str(), "w");
 		
 		TIFFSetField(out, TIFFTAG_IMAGEWIDTH, m_width);
@@ -183,11 +187,15 @@ bool tifHandler_t::saveToFile(const std::string &name)
 
 	}
 
+	Y_INFO << handlerName << ": Done." << std::endl;
+
 	return true;
 }
 
 bool tifHandler_t::loadFromFile(const std::string &name)
 {
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+
 	uint32 w, h;
 	
 	TIFF *tif = TIFFOpen(name.c_str(), "r");
@@ -229,6 +237,8 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	_TIFFfree(tiffData);
 	
 	TIFFClose(tif);
+
+	Y_INFO << handlerName << ": Done." << std::endl;
 
 	return true;
 }
