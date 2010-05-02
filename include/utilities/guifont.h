@@ -41,7 +41,7 @@ Font Software without prior written authorization from the Gnome Foundation or B
 respectively. For further information, contact: fonts at gnome dot org.
 */
 int guifont_size= 65932;
-char guifont[]= {
+unsigned char guifont[]= {
   0,  1,  0,  0,  0, 17,  1,  0,  0,  4,  0, 16,
  79, 83, 47, 50,180, 95,244, 99,  0,  0,235,112,  0,  0,  0, 86, 80, 67, 76, 84,209,138, 94,151,  0,  0,235,200,  0,  0,  0, 54,
  99,109, 97,112,164,195,232,160,  0,  0,177,108,  0,  0,  3, 88, 99,118,116, 32,255,211, 29, 57,  0,  0, 30,252,  0,  0,  1,252,
