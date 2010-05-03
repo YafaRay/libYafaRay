@@ -4,15 +4,18 @@
 # don't change anything unless you know what you're doing
 
 # The general install prefix, defaults to "/usr/local" on UNIX systems
-# and "C:\<Program_Files_Dir>" under windows systems
+# and "C:\<Program_Files_Dir>" under windows platforms
 #set(USER_INSTALL_PREFFIX /usr/local)
 
 # The executables instalation dir, default: bin
 # this will install the binary executables in ${USER_INSTALL_PREFIX}/bin
+# NOTE: under windows platforms this is the installation path
+# and YAF_LIB_DIR is ignored
 #set(YAF_BIN_DIR bin)
 
 # The libraries instalation dir, default: lib
 # this will install the libraries and plugins in ${USER_INSTALL_PREFIX}/lib
+# NOT: under windows platforms this variable is ignored
 #set(YAF_LIB_DIR lib)
 
 # The bindings instalation dir, default: ${CMAKE_SOURCE_DIR}/bindings/python

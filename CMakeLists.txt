@@ -5,8 +5,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 set(CMAKE_COLOR_MAKEFILE ON)
    
 ####### Options ########
-option(WITH_YF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
-option(WITH_YF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
+option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
+option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(BUILDRELEASE "Enable release mode building of YafaRay" OFF)
 option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installations)" OFF)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
@@ -28,6 +28,10 @@ if(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
 	set(CMAKE_PROGRAM_PATH ${YAF_USER_QT_BIN_DIR} ${YAF_USER_SWIG_BIN_DIR} CACHE STRING "Executables search directories" FORCE)
 endif(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
 
+if(YAF_USER_EXTRA_LIBS)
+	set(CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES} ${YAF_USER_EXTRA_LIBS} CACHE STRING "Standard C++ libraries" FORCE)
+endif(YAF_USER_EXTRA_LIBS)
+
 # find the required libs
 find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -43,42 +47,42 @@ find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
 include(${QT_USE_FILE})
 
 #check for swig if needed
-if (WITH_YF_PY_BINDINGS OR WITH_YF_RUBY_BINDINGS)
+if (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
 	find_package(SWIG REQUIRED)
 	set(YAF_SWIG_MIN_VERSION 1.3.36)
 	if(NOT SWIG_FOUND)
 		message("Swig not found, please install it to build script bindings")
-		set(WITH_YF_PY_BINDINGS OFF)
-		set(WITH_YF_RUBY_BINDINGS OFF)
+		set(WITH_YAF_PY_BINDINGS OFF)
+		set(WITH_YAF_RUBY_BINDINGS OFF)
 	else(NOT SWIG_FOUND)
 		if(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
 			message("Swig version < ${YAF_SWIG_MIN_VERSION}, please update or bindings can't be built")
-			set(WITH_YF_PY_BINDINGS OFF)
-			set(WITH_YF_RUBY_BINDINGS OFF)
+			set(WITH_YAF_PY_BINDINGS OFF)
+			set(WITH_YAF_RUBY_BINDINGS OFF)
 		endif(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
 	endif(NOT SWIG_FOUND)
-endif (WITH_YF_PY_BINDINGS OR WITH_YF_RUBY_BINDINGS)
+endif (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
 
 # Python bindings 
-if (WITH_YF_PY_BINDINGS)
+if (WITH_YAF_PY_BINDINGS)
 	find_package(PythonLibs REQUIRED)
 	find_package(PythonInterp REQUIRED)
 	
 	if (NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
 		message("Python wasn't found, please install it to build python bindings")
-		set(WITH_YF_PY_BINDINGS OFF)
+		set(WITH_YAF_PY_BINDINGS OFF)
 	endif (NOT PYTHON_LIBRARY OR NOT PYTHON_EXECUTABLE)
 	
-endif (WITH_YF_PY_BINDINGS)
+endif (WITH_YAF_PY_BINDINGS)
 
 # Ruby bindings TODO: finish Ruby bindings build
-if (WITH_YF_RUBY_BINDINGS)
+if (WITH_YAF_RUBY_BINDINGS)
 	find_package(Ruby REQUIRED)
 
 	if (NOT SWIG_FOUND OR NOT RUBY_FOUND)
-		set(WITH_YF_RUBY_BINDINGS OFF)
+		set(WITH_YAF_RUBY_BINDINGS OFF)
 	endif (NOT SWIG_FOUND OR NOT RUBY_FOUND)
-endif (WITH_YF_RUBY_BINDINGS)
+endif (WITH_YAF_RUBY_BINDINGS)
 
 if(DEBUG_BUILD)
 	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build mode" FORCE)
@@ -86,14 +90,13 @@ else(DEBUG_BUILD)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build mode" FORCE)
 endif(DEBUG_BUILD)
 
-# definitions
 set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
 
 
 if(NOT WIN32)
 	# installation directories
-	set(YAF_LIB_DIR lib)
 	set(YAF_BIN_DIR bin)
+	set(YAF_LIB_DIR lib)
 	set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
 	# build flags
 	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
@@ -102,8 +105,8 @@ if(NOT WIN32)
 	set(YAF_TARGET_TYPE LIBRARY)
 else(NOT WIN32)
 	# installation directories
-	set(YAF_LIB_DIR winpak)
 	set(YAF_BIN_DIR winpak)
+	set(YAF_LIB_DIR ${YAF_BIN_DIR})
 	set(YAF_BINDINGS_PY_DIR ${YAF_BIN_DIR}/python)
 	# build flags
 	if(MINGW)
@@ -118,6 +121,7 @@ else(NOT WIN32)
 	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_BINARY_DIR}/libs RUNTIME)
 endif(NOT WIN32)
 
+# definitions
 if(CMAKE_HAVE_PTHREAD_H)
 	add_definitions(-DHAVE_PTHREAD)
 endif(CMAKE_HAVE_PTHREAD_H)
@@ -146,6 +150,12 @@ if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})
 endif(YAF_USER_EXTRA_DEFS)
 
+if (BUILDRELEASE)
+	add_definitions(-DRELEASE)
+endif (BUILDRELEASE)
+
+# Paths and flags configuration
+
 include(CMakeConfig/UserConfig.txt OPTIONAL)
 
 if(NOT WIN32)
@@ -170,16 +180,16 @@ else (USER_DBGFLAGS)
 	set(CMAKE_CXX_FLAGS_DEBUG "${YAF_CXX_FLAGS_DEBUG}" CACHE STRING "Debug compiler flags" FORCE)
 endif (USER_DBGFLAGS)
 
-if (BUILDRELEASE)
-	add_definitions(-DRELEASE)
-endif (BUILDRELEASE)
+# Adding subdirectories
 
 add_subdirectory(src)
 
-if (WITH_YF_PY_BINDINGS)
+if (WITH_YAF_PY_BINDINGS)
 	include(${SWIG_USE_FILE})
 	add_subdirectory(bindings)
-endif (WITH_YF_PY_BINDINGS)
+endif (WITH_YAF_PY_BINDINGS)
+
+# Generating config headers
 
 include(CMakeConfig/GenConfHeaders.txt)
 

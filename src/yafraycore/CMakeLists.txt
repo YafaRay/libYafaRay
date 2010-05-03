@@ -11,13 +11,6 @@ set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc faure_tables
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 
-set(YAF_EXTRA_LIBS "")
-
-if(MINGW)
-	add_definitions(-DOPENEXR_DLL)
-	set(YAF_EXTRA_LIBS iconv)
-endif(MINGW)
-
 add_library(yafaraycore SHARED ${YF_CORE_SOURCES})
 
 if (UNIX)
@@ -26,6 +19,6 @@ else (UNIX)
 	set (DLLOAD_LIB "")
 endif (UNIX)
 
-target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES} ${YAF_EXTRA_LIBS})
+target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
 install (TARGETS yafaraycore ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})

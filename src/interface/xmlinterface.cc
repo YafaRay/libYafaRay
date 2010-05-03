@@ -16,7 +16,7 @@ void xmlInterface_t::loadPlugins(const char *path) { }
 
 void xmlInterface_t::clearAll()
 {
-	std::cout << "xmlInterface_t::clearAll()...\n";
+	Y_INFO << "XMLInterface: cleaning up..." << std::endl;
 	env->clearAll();
 	materials.clear();
 	if(xmlFile.is_open())
@@ -36,10 +36,10 @@ bool xmlInterface_t::startScene(int type)
 	xmlFile.open(xmlName.c_str());
 	if(!xmlFile.is_open())
 	{
-		std::cout << "[ERROR] cannot open "<< xmlName << std::endl;
+		Y_ERROR << "XMLInterface: Couldn't open " << xmlName << std::endl;
 		return false;
 	}
-	else std::cout << "writing to: "<< xmlName << std::endl;
+	else Y_INFO << "XMLInterface: Writing scene to: " << xmlName << std::endl;
 	xmlFile << std::boolalpha;
 	xmlFile << "<?xml version=\"1.0\"?>" << std::endl;
 	xmlFile << "<scene type=\"";
@@ -67,7 +67,7 @@ bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, 
 {
 	last_mat = 0;
 	n_uvs = 0;
-	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles 
+	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
 			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type <<"\">\n";
 	return true;
 }
@@ -77,7 +77,7 @@ bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangl
 	*id = ++nextObj;
 	last_mat = 0;
 	n_uvs = 0;
-	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles 
+	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
 			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type <<"\">\n";
 	return true;
 }
@@ -96,7 +96,7 @@ int  xmlInterface_t::addVertex(double x, double y, double z)
 
 int  xmlInterface_t::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
-	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z 
+	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
 			<< "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
 	return true;
 }
@@ -125,7 +125,7 @@ bool xmlInterface_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv
 		xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
 		last_mat = mat;
 	}
-	xmlFile << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c 
+	xmlFile << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
 			<< "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
 	return true;
 }

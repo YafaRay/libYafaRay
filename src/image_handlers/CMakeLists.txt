@@ -1,10 +1,6 @@
 include_directories(${YAF_INCLUDE_DIRS} ${PNG_INCLUDE_DIR} ${JPEG_INCLUDE_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIRS})
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
-if(MINGW)
-	add_definitions(-DOPENEXR_DLL)
-endif(MINGW)
-
 add_library(exrHandler SHARED exrHandler.cc)
 target_link_libraries(exrHandler yafaraycore ${OPENEXR_LIBRARIES})
 

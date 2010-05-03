@@ -14,12 +14,12 @@
 # linked against some libs like iconv and the default config doesn't include   #
 # iconv as a linking lib, therefore you can use:                               #
 #                                                                              #
-#    set(YAF_USER_EXTRA_LIBS iconv)                                            #
+#    set(YAF_USER_EXTRA_LIBS -liconv)   *note the -l prefix                    #
 #                                                                              #
 # to add iconv to the library linkage list, again you can specify several libs #
 # at once in a list separated by spaces ie.                                    #
 #                                                                              #
-#    set(YAF_USER_EXTRA_LIBS mylib1 mylib2 mylib2)                             #
+#    set(YAF_USER_EXTRA_LIBS -lmylib1 -lmylib2 -lmylib2)                       #
 #                                                                              #
 ################################################################################
 

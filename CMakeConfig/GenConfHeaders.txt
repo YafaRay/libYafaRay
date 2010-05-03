@@ -1,3 +1,4 @@
+# WARNING: Please don't change this file
 # Get the SVN revision for this version
 if(NOT YAF_SVN_REV)
 	execute_process(COMMAND svnversion -n ${CMAKE_SOURCE_DIR}
@@ -8,7 +9,6 @@ if(NOT YAF_SVN_REV)
 	endif (YAF_SVN_REV STREQUAL "exported" OR YAF_SVN_REV STREQUAL "")
 endif(NOT YAF_SVN_REV)
 
-configure_file(templates/yaf_revision.h.cmake yaf_revision.h)
-configure_file(templates/yafray_config.h.cmake yafray_config.h)
-configure_file(templates/yafray_user_config.h.cmake yafray_user_config.h)
+configure_file(CMakeConfig/templates/yaf_revision.h.cmake yaf_revision.h)
+configure_file(CMakeConfig/templates/yafray_config.h.cmake yafray_config.h)
 
