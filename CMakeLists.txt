@@ -142,6 +142,10 @@ if(FREETYPE_FOUND)
 	add_definitions(-DHAVE_FREETYPE)
 endif(FREETYPE_FOUND)
 
+if(YAF_USER_EXTRA_DEFS)
+	add_definitions(${YAF_USER_EXTRA_DEFS})
+endif(YAF_USER_EXTRA_DEFS)
+
 include(CMakeConfig/UserConfig.txt OPTIONAL)
 
 if(NOT WIN32)
