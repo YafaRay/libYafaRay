@@ -12,12 +12,29 @@ option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installat
 option(DEBUG_BUILD "Enable debug build mode" OFF)
 
 ###### Packages and Definitions #########
+
+# Load a library config file if any
+include(CMakeConfig/LibsConfig.txt OPTIONAL)
+
+if(YAF_USER_INCLUDE_DIRS)
+	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
+endif(YAF_USER_INCLUDE_DIRS)
+
+if(YAF_USER_LIBRARY_DIRS)
+	set(CMAKE_LIBRARY_PATH ${YAF_USER_LIBRARY_DIRS} CACHE STRING "Library search directories" FORCE)
+endif(YAF_USER_LIBRARY_DIRS)
+
+if(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
+	set(CMAKE_PROGRAM_PATH ${YAF_USER_QT_BIN_DIR} ${YAF_USER_SWIG_BIN_DIR} CACHE STRING "Executables search directories" FORCE)
+endif(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
+
+# find the required libs
+find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(OpenEXR REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(TIFF REQUIRED)
-find_package(ZLIB REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
@@ -87,11 +104,17 @@ else(NOT WIN32)
 	# installation directories
 	set(YAF_LIB_DIR winpak)
 	set(YAF_BIN_DIR winpak)
-	set(YAF_BINDINGS_PY_DIR winpak/bindings/python)
+	set(YAF_BINDINGS_PY_DIR ${YAF_BIN_DIR}/python)
 	# build flags
-	set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
-	set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
-	set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Fd")
+	if(MINGW)
+		set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
+		set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
+		set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+	else(MINGW)
+		set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
+		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
+		set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1 /Fd")
+	endif(MINGW)
 	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_BINARY_DIR}/libs RUNTIME)
 endif(NOT WIN32)
 
@@ -119,7 +142,7 @@ if(FREETYPE_FOUND)
 	add_definitions(-DHAVE_FREETYPE)
 endif(FREETYPE_FOUND)
 
-include(CMakeUserConfig.txt OPTIONAL)
+include(CMakeConfig/UserConfig.txt OPTIONAL)
 
 if(NOT WIN32)
 	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
@@ -154,5 +177,5 @@ if (WITH_YF_PY_BINDINGS)
 	add_subdirectory(bindings)
 endif (WITH_YF_PY_BINDINGS)
 
-include(CMakeConfigGen.txt)
+include(CMakeConfig/GenConfHeaders.txt)
 

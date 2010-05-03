@@ -17,9 +17,9 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *      
+ *
  */
- 
+
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
@@ -64,12 +64,12 @@ exrHandler_t::exrHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 	m_hasDepth = false;
-	
+
 	m_rgba = NULL;
 	m_depth = NULL;
 	m_halfrgba = NULL;
 	m_depthSL = NULL;
-	
+
 	handlerName = "EXRHandler";
 }
 
@@ -79,7 +79,7 @@ void exrHandler_t::initForOutput(int width, int height, bool withAlpha, bool wit
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_hasDepth = withDepth;
-	
+
 	m_halfrgba = new halfRgbaScanlineImage_t(m_height, m_width);
 
 	if(m_hasDepth)
@@ -112,7 +112,7 @@ bool exrHandler_t::saveToFile(const std::string &name)
 	header.channels().insert("G", Channel(HALF));
 	header.channels().insert("B", Channel(HALF));
 	header.channels().insert("A", Channel(HALF));
-	if(m_hasDepth) header.channels().insert("Z", Channel(FLOAT));
+	if(m_hasDepth) header.channels().insert("Z", Channel(Imf::FLOAT));
 
 	OutputFile file(name.c_str(), header);
 
@@ -123,10 +123,10 @@ bool exrHandler_t::saveToFile(const std::string &name)
 	fb.insert("G", Slice(HALF, data_ptr +   chan_size, totchan_size, m_width*totchan_size));
 	fb.insert("B", Slice(HALF, data_ptr + 2*chan_size, totchan_size, m_width*totchan_size));
 	fb.insert("A", Slice(HALF, data_ptr + 3*chan_size, totchan_size, m_width*totchan_size));
-	if (m_hasDepth) fb.insert("Z", Slice(FLOAT, (char *)&(*m_depthSL)(0, 0), sizeof(float), m_width*sizeof(float)));
+	if (m_hasDepth) fb.insert("Z", Slice(Imf::FLOAT, (char *)&(*m_depthSL)(0, 0), sizeof(float), m_width*sizeof(float)));
 
 	file.setFrameBuffer(fb);
-	
+
 	try
 	{
 		file.writePixels(m_height);
@@ -143,14 +143,14 @@ bool exrHandler_t::saveToFile(const std::string &name)
 void exrHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
 {
 	Rgba &pixel = (*m_halfrgba)(y, x);
-	
+
 	pixel.r = rgba.getR();
 	pixel.g = rgba.getG();
 	pixel.b = rgba.getB();
-	
+
 	if(m_hasAlpha) pixel.a = rgba.getA();
 	else pixel.a = 1.f;
-		
+
 	if(m_hasDepth) (*m_depthSL)(y, x) = depth;
 }
 
@@ -172,7 +172,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		fp = NULL;
 		if(!isImfMagic(bytes)) return false;
 	}
-	
+
 	try
 	{
 		RgbaInputFile file(name.c_str());
@@ -182,7 +182,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		m_height = dw.max.y - dw.min.y + 1;
 		m_hasAlpha = true;
 		m_hasDepth = false;
-		
+
 		Rgba *rgba = new Rgba[m_width*m_height];
 
 		file.setFrameBuffer(rgba, 1, m_width);
@@ -225,11 +225,11 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
-	
+
 	imageHandler_t *ih = new exrHandler_t();
-	
+
 	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
-	
+
 	return ih;
 }
 

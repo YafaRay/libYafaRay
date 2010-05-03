@@ -17,7 +17,7 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *      
+ *
  */
 
 __BEGIN_YAFRAY
@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class pngDataReader_t
 {
 public:
-	
+
 	pngDataReader_t(const yByte *d, size_t s):size(s), cursor(0)
 	{
 		data = new yByte[size];
@@ -37,7 +37,7 @@ public:
 			data[i] = d[i];
 		}
 	}
-	
+
 	~pngDataReader_t()
 	{
 		delete [] data;
@@ -48,28 +48,28 @@ public:
 	{
 		if(cursor > size) return 0;
 		size_t i;
-		
+
 		for(i = 0;i < s && cursor < size;cursor++, i++)
 		{
 			buf[i] = data[cursor];
 		}
-		
+
 		return i;
 	}
-	
+
 private:
 	yByte *data;
 	size_t size;
 	size_t cursor;
 };
 
-void readFromMem(png_structp png_ptr, png_bytep buffer, png_size_t bytesToRead)
+void readFromMem(png_structp pngPtr, png_bytep buffer, png_size_t bytesToRead)
 {
-   if(png_ptr->io_ptr == NULL) png_error(png_ptr, "The image data pointer is null!!");
+   pngDataReader_t *img = (pngDataReader_t*) png_get_io_ptr(pngPtr);
 
-   pngDataReader_t *img = (pngDataReader_t*)png_ptr->io_ptr;
-   
-   if(img->read((yByte*)buffer, (size_t)bytesToRead) < bytesToRead) png_warning(png_ptr, "EOF Found while reading image data");
+   if(img == NULL) png_error(pngPtr, "The image data pointer is null!!");
+
+   if(img->read((yByte*)buffer, (size_t)bytesToRead) < bytesToRead) png_warning(pngPtr, "EOF Found while reading image data");
 }
 
 __END_YAFRAY
