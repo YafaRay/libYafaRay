@@ -3,6 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 set(CMAKE_COLOR_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
 option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
@@ -29,7 +30,7 @@ if(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
 endif(YAF_USER_QT_BIN_DIR AND YAF_USER_SWIG_BIN_DIR)
 
 if(YAF_USER_EXTRA_LIBS)
-	set(CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES} ${YAF_USER_EXTRA_LIBS} CACHE STRING "Standard C++ libraries" FORCE)
+	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ${YAF_USER_EXTRA_LIBS}" CACHE STRING "Standard C++ libraries" FORCE)
 endif(YAF_USER_EXTRA_LIBS)
 
 # find the required libs
@@ -190,6 +191,10 @@ if (WITH_YAF_PY_BINDINGS)
 endif (WITH_YAF_PY_BINDINGS)
 
 # Generating config headers
+
+if(NOT WIN32)
+	set_property(TARGET PROPERTY PREFIX "")
+endif(NOT WIN32)
 
 include(CMakeConfig/GenConfHeaders.txt)
 
