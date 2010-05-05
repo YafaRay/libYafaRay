@@ -6,10 +6,14 @@
 
 __BEGIN_YAFRAY
 
+#define printBar(progEmpty, progFull, per) \
+std::cout << "\r" << setColor(Green) << "INFO: " << \
+setColor(Red, true) << "[" << setColor(Green, true) << std::string(progFull, '#') << std::string(progEmpty, ' ') << setColor(Red, true) << "] " << \
+setColor() << "(" << setColor(Yellow, true) << per << "%" << setColor() << ")" << std::flush
 
 ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0), doneSteps(0)
 {
-	totalBarLen = width - 16;
+	totalBarLen = width - 15;
 }
 
 void ConsoleProgressBar_t::init(int totalSteps)
@@ -17,26 +21,25 @@ void ConsoleProgressBar_t::init(int totalSteps)
 	nSteps=totalSteps;
 	doneSteps = 0;
 	lastBarLen = 0;
-	std::cout << "\r[" << std::string(totalBarLen, ' ') << "] (0%)" << std::flush;
+	printBar(totalBarLen, 0, 0);
 }
 
 void ConsoleProgressBar_t::update(int steps)
 {
 	doneSteps += steps;
-	float progress = float(std::min(doneSteps, nSteps))/(float)nSteps;
+	float progress = (float) std::min(doneSteps, nSteps) / (float) nSteps;
 	int barLen = std::min(totalBarLen, (int)(totalBarLen*progress));
 	if(!(barLen >= 0)) barLen = 0;
 	if(barLen > lastBarLen)
 	{
-		std::cout << "\r[" << std::string(barLen, '#') << std::string(totalBarLen-barLen, ' ') << "] (" 
-				  << int(100*progress) << "%)" << std::flush;
+		printBar(totalBarLen-barLen, barLen, (int) 100 * progress);
 	}
 	lastBarLen = barLen;
 }
 
 void ConsoleProgressBar_t::done()
 {
-	std::cout << "\r[" << std::string(totalBarLen, '#') << "] (done)\n" << std::flush;
+	printBar(0, totalBarLen, 100) << yendl;
 }
 
 __END_YAFRAY

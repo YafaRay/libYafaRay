@@ -20,20 +20,20 @@
  */
  
 #include <yafray_config.h>
+#ifdef _WIN32
+	#include <wincon.h>
+#endif
 
 __BEGIN_YAFRAY
 
-#if !defined(_WIN32)
 std::ostream &operator << (std::ostream& o, const setColor& c)
 {
+#if !defined(_WIN32)
 	o << "\033[" << (int)c.intense;
 	if(c.fgCol != Default) o << ';' << c.fgCol;
 	if(c.bgCol != Default) o << ';' << c.bgCol;
 	return (o << 'm');
-}
 #else
-std::ostream &operator << (std::ostream& o, const setColor& c)
-{
 	static WORD origAttr = 0;
 	
 	if(origAttr == 0)
@@ -49,10 +49,9 @@ std::ostream &operator << (std::ostream& o, const setColor& c)
 	yColor newBgCol = (c.bgCol != Default) ? c.bgCol : (origAttr & 0xF0):
 	
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), newFgCol | newFgCol);
-
+#endif
 	return o;
 }
-#endif
 
 __END_YAFRAY
 

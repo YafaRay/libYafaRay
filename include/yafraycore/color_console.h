@@ -23,9 +23,6 @@
 #define Y_COLOR_CONSOLE_H
 
 #include <iostream>
-#ifdef _WIN32
-	#include <wincon.h>
-#endif
 
 __BEGIN_YAFRAY
 
@@ -45,13 +42,13 @@ enum
 	Default
 #else
 	Black 		= 0x0000,
-	Red			= FOREGROUND_RED,
-	Green		= FOREGROUND_GREEN,
-	Yellow		= FOREGROUND_RED | FOREGROUND_GREEN,
-	Blue		= FOREGROUND_BLUE,
-	Magenta		= FOREGROUND_BLUE | FOREGROUND_RED,
-	Cyan		= FOREGROUND_BLUE | FOREGROUND_GREEN,
-	White		= FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
+	Red			= 0x0004,
+	Green		= 0x0002,
+	Yellow		= Red | Green,
+	Blue		= 0x0008,
+	Magenta		= Blue | Red,
+	Cyan		= Blue | Green,
+	White		= Red | Green | Blue,
 	Default		= 0xFFFF;
 #endif
 };
