@@ -48,7 +48,7 @@ std::ostream &operator << (std::ostream& o, const setColor& c)
 		}
 	}
 	
-	yColor newFgCol = (c.fgCol != Default) ?  (c.fgCol | ((WORD)c.intense << 3)) : (origAttr & 0x0F):
+	yColor newFgCol = (c.fgCol != Default) ?  (c.fgCol | ((WORD)c.intense << 3)) : (origAttr & 0x0F);
 	yColor newBgCol = (c.bgCol != Default) ? c.bgCol : (origAttr & 0xF0);
 	
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), newFgCol | newFgCol);
