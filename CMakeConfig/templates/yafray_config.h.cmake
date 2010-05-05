@@ -2,7 +2,7 @@
 #ifndef Y_CONFIG_H
 #define Y_CONFIG_H
 #include "yafray_constants.h"
-#include <utilities/color_console.h>
+#include <yafraycore/color_console.h>
 
 #define MIN_RAYDIST 0.00005
 #define YAF_SHADOW_BIAS 0.0005
