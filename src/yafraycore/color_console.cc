@@ -21,7 +21,10 @@
  
 #include <yafray_config.h>
 #ifdef _WIN32
-	#include <wincon.h>
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <windows.h>
 #endif
 
 __BEGIN_YAFRAY
@@ -46,7 +49,7 @@ std::ostream &operator << (std::ostream& o, const setColor& c)
 	}
 	
 	yColor newFgCol = (c.fgCol != Default) ?  (c.fgCol | ((WORD)c.intense << 3)) : (origAttr & 0x0F):
-	yColor newBgCol = (c.bgCol != Default) ? c.bgCol : (origAttr & 0xF0):
+	yColor newBgCol = (c.bgCol != Default) ? c.bgCol : (origAttr & 0xF0);
 	
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), newFgCol | newFgCol);
 #endif

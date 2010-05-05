@@ -49,11 +49,11 @@ enum
 	Magenta		= Blue | Red,
 	Cyan		= Blue | Green,
 	White		= Red | Green | Blue,
-	Default		= 0xFFFF;
+	Default		= 0xFFFF
 #endif
 };
 
-struct setColor
+struct YAFRAYCORE_EXPORT setColor
 {
 	setColor() : fgCol(Default), bgCol(Default), intense(false) {}
 	setColor(yColor fgColor, yColor bgColor, bool intensecolor = false)
@@ -84,7 +84,7 @@ struct setColor
 };
 
 
-std::ostream &operator<<(std::ostream& o, const setColor& c);
+YAFRAYCORE_EXPORT std::ostream &operator<<(std::ostream& o, const setColor& c);
 
 __END_YAFRAY
 
