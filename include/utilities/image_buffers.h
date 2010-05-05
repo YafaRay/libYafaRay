@@ -1,5 +1,5 @@
 /****************************************************************************
- *      image_buffers.h: A
+ *      image_buffers.h: An image buffer handler
  *      This is part of the yafray package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *		(pixel_t class wa originally written by someone else, don't know exactly who)
