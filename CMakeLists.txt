@@ -96,9 +96,19 @@ set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include ${CMAKE_BIN
 
 if(NOT WIN32)
 	# installation directories
-	set(YAF_BIN_DIR bin)
-	set(YAF_LIB_DIR lib)
-	set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
+
+	if(NOT YAF_BIN_DIR)
+		set(YAF_BIN_DIR bin)
+	endif(NOT YAF_BIN_DIR)
+
+	if(NOT YAF_LIB_DIR)
+		set(YAF_LIB_DIR lib)
+	endif(NOT YAF_LIB_DIR)
+
+	if(NOT YAF_BINDINGS_PY_DIR)
+		set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
+	endif(NOT YAF_BINDINGS_PY_DIR)
+
 	# build flags
 	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
@@ -106,9 +116,17 @@ if(NOT WIN32)
 	set(YAF_TARGET_TYPE LIBRARY)
 else(NOT WIN32)
 	# installation directories
-	set(YAF_BIN_DIR winpak)
+
+	if(NOT YAF_BIN_DIR)
+		set(YAF_BIN_DIR winpak)
+	endif(NOT YAF_BIN_DIR)
+
 	set(YAF_LIB_DIR ${YAF_BIN_DIR})
-	set(YAF_BINDINGS_PY_DIR ${YAF_BIN_DIR}/python)
+
+	if(NOT YAF_BINDINGS_PY_DIR)
+		set(YAF_BINDINGS_PY_DIR ${YAF_BIN_DIR}/python)
+	endif(NOT YAF_BINDINGS_PY_DIR)
+
 	# build flags
 	if(MINGW)
 		set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
