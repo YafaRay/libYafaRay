@@ -22,8 +22,7 @@
  */
 
 #include <core_api/color.h>
-#include <string>
-#include <sstream>
+#include <utilities/stringUtils.h>
 
 __BEGIN_YAFRAY
 
@@ -130,14 +129,5 @@ struct rgbePixel_t
 };
 
 #pragma pack(pop)
-
-template <class T>
-void converter(std::string str, T &val)
-{
-	std::stringstream conv;
-	
-	conv << str;
-	conv >> std::skipws >> val;
-}
 
 __END_YAFRAY

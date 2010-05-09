@@ -617,7 +617,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("tga", "TGA (Truevision TARGA)", tgaHandler_t::factory);
+		render.registerImageHandler("tga", "tga tpic", "TGA (Truevision TARGA)", tgaHandler_t::factory);
 	}
 
 }

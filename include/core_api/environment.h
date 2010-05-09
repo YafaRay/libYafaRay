@@ -96,10 +96,11 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual void registerFactory(const std::string &name,volume_factory_t *f);
 		virtual void registerFactory(const std::string &name,volumeregion_factory_t *f);
 		
-		virtual void registerImageHandler(const std::string &name, const std::string &fullName, imagehandler_factory_t *f);
+		virtual void registerImageHandler(const std::string &name, const std::string &validExtensions, const std::string &fullName, imagehandler_factory_t *f);
 		virtual std::vector<std::string> listImageHandlers();
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
+		virtual std::string getImageFormatFromExtension(const std::string &extension);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
 		int Debug;
@@ -136,6 +137,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		
 		std::map<std::string,imageHandler_t *> imagehandler_table;
 		std::map<std::string,std::string> imagehandler_fullnames;
+		std::map<std::string,std::string> imagehandler_extensions;
 		scene_t *curren_scene;
 };
 

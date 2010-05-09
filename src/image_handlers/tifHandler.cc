@@ -269,7 +269,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("tif", "TIFF (Tag Image File Format)", tifHandler_t::factory);
+		render.registerImageHandler("tif", "tif tiff", "TIFF (Tag Image File Format)", tifHandler_t::factory);
 	}
 
 }

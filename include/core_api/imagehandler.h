@@ -38,12 +38,13 @@ public:
 	virtual void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true) = 0;
 	virtual ~imageHandler_t() {};
 	virtual bool loadFromFile(const std::string &name) = 0;
-	virtual bool loadFromMemory(const yByte *data, size_t size) {return false; };
+	virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
 	virtual bool saveToFile(const std::string &name) = 0;
 	virtual void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f) = 0;
 	virtual colorA_t getPixel(int x, int y) = 0;
-	virtual int getWidth() { return m_width; };
-	virtual int getHeight() { return m_height; };
+	virtual int getWidth() { return m_width; }
+	virtual int getHeight() { return m_height; }
+	virtual bool isHDR() { return false; }
 	
 protected:
 	std::string handlerName;

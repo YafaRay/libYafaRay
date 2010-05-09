@@ -44,6 +44,7 @@ public:
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	bool isHDR() { return true; }
 
 private:
 	bool writeHeader(std::ofstream &file);
@@ -631,7 +632,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("hdr", "HDR (Radiance RGBE)", hdrHandler_t::factory);
+		render.registerImageHandler("hdr", "hdr pic", "HDR (Radiance RGBE)", hdrHandler_t::factory);
 	}
 
 }

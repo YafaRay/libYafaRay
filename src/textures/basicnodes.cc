@@ -264,13 +264,13 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	matrix4x4_t mtx(1);
 	if( !params.getParam("texture", texname) )
 	{
-		std::cerr << "[ERROR]: no texture given for texture mapper!";
+		Y_ERROR << " TextureMapper: No texture given for texture mapper!";
 		return 0;
 	}
 	tex = render.getTexture(*texname);
 	if(!tex)
 	{
-		std::cerr << "[ERROR]: texture '"<<texname<<"' does not exist!";
+		Y_ERROR << " TextureMapper: texture '" << texname << "' does not exist!";
 		return 0;
 	}
 	textureMapper_t *tm = new textureMapper_t(tex);
@@ -319,7 +319,7 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 
 /* ==========================================
 /  The most simple node you could imagine...
-/ ========================================== */
+/  ========================================== */
 
 void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {

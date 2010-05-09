@@ -1,7 +1,8 @@
 /****************************************************************************
- * 			imagetex.cc: a texture class for various pixel image types
+ * 		imagetex.cc: a texture class for images
  *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *      Based on the original by: Mathias Wein; Copyright (C) 2006 Mathias Wein
+ *		Copyright (C) 2010 Rodrigo Placencia Vazquez (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -21,135 +22,150 @@
 #include <cstring>
 #include <cctype>
 #include <textures/imagetex.h>
-#include <textures/gamma.h>
-#if HAVE_EXR
-#include <yafraycore/EXR_io.h>
-#endif
+#include <utilities/stringUtils.h>
 
 __BEGIN_YAFRAY
 
-gBuf_t<unsigned char, 4>* load_jpeg(const char *name);
-#if HAVE_PNG
-gBuf_t<unsigned char, 4> * load_png(const char *name);
-#endif
-gBuf_t<unsigned char, 4> * load_tga(const char *name);
-gBuf_t<rgbe_t, 1>* loadHDR(const char* filename);
-
-//-----------------------------------------------------------------------------------------
-// Integer/Float Image Texture
-//-----------------------------------------------------------------------------------------
-
-textureImageIF_t::textureImageIF_t(cBuffer_t *im, fcBuffer_t *f_im, INTERPOLATE_TYPE intp):
-				textureImage_t(intp), image(im), float_image(f_im), gammaLUT(0)
-{ }
-
-textureImageIF_t::~textureImageIF_t()
+textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma):
+				image(ih), intp_type(intp), gamma(gamma)
 {
-	if (image) {
-		delete image;
-		image = NULL;
-	}
-	if (float_image) {
-		delete float_image;
-		float_image = NULL;
-	}
-	if(gammaLUT){
-		delete gammaLUT;
-		gammaLUT = 0;
-	}
+	// Empty
 }
 
-void textureImageIF_t::resolution(int &x, int &y, int &z) const
+textureImage_t::~textureImage_t()
 {
-	if(image){ x=image->resx(); y=image->resy(); z=0; }
-	else if(float_image){ x=float_image->resx(); y=float_image->resy(); z=0; }
-	else { x=0; y=0; z=0; }
+	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
+	image = NULL;
 }
 
-static inline void getUcharPixel(unsigned char *data, colorA_t &col){ data >> col; }
-static inline void getFloatPixel(float *data, colorA_t &col){ data >> col; }
-
-colorA_t textureImageIF_t::getColor(const point3d_t &p) const
+void textureImage_t::resolution(int &x, int &y, int &z) const
 {
-	// p->x/y == u, v
+	x=image->getWidth();
+	y=image->getHeight();
+	z=0;
+}
+
+colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
+{
+	int x, y, x2, y2;
+	
+	int resx=image->getWidth();
+	int resy=image->getHeight();
+	
+	float xf = ((float)resx * (p.x - floor(p.x)));
+	float yf = ((float)resy * (p.y - floor(p.y)));
+	
+	if (intp_type != INTP_NONE)
+	{
+		xf -= 0.5f;
+		yf -= 0.5f;
+	}
+	
+	x = std::max(0, std::min(resx-1, (int)xf));
+	y = std::max(0, std::min(resy-1, (int)yf));
+
+	colorA_t c1 = image->getPixel(x, y);
+	
+	if (intp_type == INTP_NONE) return c1;
+	
+	colorA_t c2, c3, c4;
+	
+	x2 = std::min(resx-1, x+1);
+	y2 = std::min(resy-1, y+1);
+
+	c2 = image->getPixel(x2, y);
+	c3 = image->getPixel(x, y2);
+	c4 = image->getPixel(x2, y2);
+
+	float dx = xf - floor(xf);
+	float dy = yf - floor(yf);
+	
+	if (intp_type == INTP_BILINEAR)
+	{
+		float w0 = (1-dx) * (1-dy);
+		float w1 = (1-dx) * dy;
+		float w2 = dx * (1-dy);
+		float w3 = dx * dy;
+		
+		return (w0 * c1) + (w1 * c3) + (w2 * c2) + (w3 * c4);
+	}
+
+	colorA_t c0, c5, c6, c7, c8, c9, cA, cB, cC, cD, cE, cF, ret;
+
+	int x0 = std::max(0, x-1);
+	int x3 = std::min(resx-1, x2+1);
+	int y0 = std::max(0, y-1);
+	int y3 = std::min(resy-1, y2+1);
+
+	c0 = image->getPixel(x0, y0);
+	c5 = image->getPixel(x,  y0);
+	c6 = image->getPixel(x2, y0);
+	c7 = image->getPixel(x3, y0);
+	c8 = image->getPixel(x0, y);
+	c9 = image->getPixel(x3, y);
+	cA = image->getPixel(x0, y2);
+	cB = image->getPixel(x3, y2);
+	cC = image->getPixel(x0, y3);
+	cD = image->getPixel(x,  y3);
+	cE = image->getPixel(x2, y3);
+	cF = image->getPixel(x3, y3);
+
+	c0 = CubicInterpolate(c0, c5, c6, c7, dx);
+	c8 = CubicInterpolate(c8, c1, c2, c9, dx);
+	cA = CubicInterpolate(cA, c3, c4, cB, dx);
+	cC = CubicInterpolate(cC, cD, cE, cF, dx);
+	
+	c0 = CubicInterpolate(c0, c8, cA, cC, dy);
+	
+	return c0;
+}
+
+colorA_t textureImage_t::getColor(const point3d_t &p) const
+{
+	colorA_t ret = getNoGammaColor(p);
+	
+	if(gamma != 1.f && !image->isHDR()) ret.gammaAdjust(gamma);
+	
+	return ret;
+}
+
+colorA_t textureImage_t::getNoGammaColor(const point3d_t &p) const
+{
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
+	colorA_t ret(0.f);
+
 	bool outside = doMapping(p1);
-	if(outside) return colorA_t(0.f, 0.f, 0.f, 0.f);
-	colorA_t res(0.f);
-	if(image)
-	{
-		if(gammaLUT)
-			res = interpolateImage(image, intp_type, p1, *gammaLUT);
-		else
-			res = interpolateImage(image, intp_type, p1, getUcharPixel);
-	}
-	else if (float_image)
-		res = interpolateImage(float_image, intp_type, p1, getFloatPixel);
-	if(!use_alpha) res.A = 1.f;
-	return res;
+
+	if(outside) return ret;
+	
+	ret = interpolateImage(p1);
+	
+	return ret;
 }
 
-colorA_t textureImageIF_t::getColor(int x, int y, int z) const
+colorA_t textureImage_t::getColor(int x, int y, int z) const
 {
-	int resx, resy;
-	if(image) resx=image->resx(), resy=image->resy();
-	else if(float_image) resx=float_image->resx(), resy=float_image->resy();
-	else return colorA_t(0.f);
+	colorA_t ret = getNoGammaColor(x, y, z);
+	
+	if(gamma != 1.f && !image->isHDR()) ret.gammaAdjust(gamma);
+	
+	return ret;
+}
+
+colorA_t textureImage_t::getNoGammaColor(int x, int y, int z) const
+{
+	int resx=image->getWidth();
+	int resy=image->getHeight();
+
 	y = resy - y; //on occasion change image storage from bottom to top...
-	if (x<0) x = 0;
-	if (y<0) y = 0;
-	if (x>=resx) x = resx-1;
-	if (y>=resy) y = resy-1;
+
+	x = std::max(0, std::min(resx-1, x));
+	y = std::max(0, std::min(resy-1, y));
+
 	colorA_t c1(0.f);
-	if(image)
-	{
-		if(gammaLUT)
-			(*gammaLUT)( (*image)(x, y), c1); 
-		else
-			getUcharPixel( (*image)(x, y), c1);
-	}
-	else if (float_image)
-		getFloatPixel( (*float_image)(x, y), c1);
-	return c1;
+	
+	return image->getPixel(x, y);
 }
-
-CFLOAT textureImageIF_t::getFloat(const point3d_t &p) const
-{
-	return getColor(p).energy();
-}
-
-void textureImageIF_t::setGammaLUT(gammaLUT_t *lut)
-{
-	gammaLUT = lut;
-}
-
-/* texture_t *textureImageIF_t::factory(paraMap_t &params,
-		renderEnvironment_t &render)
-{
-	std::string _name, _intp="bilinear";	// default bilinear interpolation
-	const std::string *name=&_name, *intp=&_intp;
-	double gamma = 1.0;
-	textureImageIF_t *tex = 0;
-	params.getParam("interpolate", intp);
-	params.getParam("filename", name);
-	params.getParam("gamma", gamma);	
-	if (*name=="")
-		std::cerr << "Required argument filename not found for image texture\n";
-	else
-		tex = new textureImageIF_t(name->c_str(), *intp);
-	if(!tex) return 0;
-	std::cout << "gamma is: " << gamma << "\n";
-	if(tex->image && (std::abs(1.0 - gamma) > 0.01) )
-	{
-		std::cout << "creating gamma LUT\n";
-		tex->gammaLUT = new gammaLUT_t(gamma);
-	}
-	return tex;
-} */
-
-//-----------------------------------------------------------------------------------------
-// Image Texture
-//-----------------------------------------------------------------------------------------
 
 bool textureImage_t::doMapping(point3d_t &texpt) const
 {
@@ -219,7 +235,7 @@ bool textureImage_t::doMapping(point3d_t &texpt) const
 	return outside;
 }
 
-void textureImage_t::setCrop(PFLOAT minx, PFLOAT miny, PFLOAT maxx, PFLOAT maxy)
+void textureImage_t::setCrop(float minx, float miny, float maxx, float maxy)
 {
 	cropminx=minx, cropmaxx=maxx, cropminy=miny, cropmaxy=maxy;
 	cropx = ((cropminx!=0.0) || (cropmaxx!=1.0));
@@ -240,161 +256,75 @@ int string2cliptype(const std::string *clipname)
 
 texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	std::string _name, _intp="bilinear";	// default bilinear interpolation
-	const std::string *name=&_name, *intp=&_intp;
+	const std::string *name = NULL;
+	const std::string *intpstr = NULL;
 	double gamma = 1.0;
-	double expadj=0.0;
-	bool normalmap=false;
-	textureImage_t *tex = 0;
-	params.getParam("interpolate", intp);
+	double expadj = 0.0;
+	bool normalmap = false;
+	textureImage_t *tex = NULL;
+	imageHandler_t *ih = NULL;
+	params.getParam("interpolate", intpstr);
 	params.getParam("gamma", gamma);
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
-	if(!params.getParam("filename", name))
+	params.getParam("filename", name);
+	
+	if(!name)
 	{
-		std::cerr << "Required argument filename not found for image texture\n";
-		return 0;
+		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << yendl;
+		return NULL;
 	}
+	
 	// interpolation type, bilinear default
-	INTERPOLATE_TYPE intp_type = BILINEAR;
-	if (*intp=="none")		  intp_type = NONE;
-	else if (*intp=="bicubic") intp_type = BICUBIC;
+	interpolationType intp = INTP_BILINEAR;
 	
-	// Load image, try to determine from extensions first
-	const char *filename = name->c_str();
-	const char *extp = strrchr(filename, '.');
-	bool jpg_tried = false;
-	bool tga_tried = false;
-	bool png_tried = false;
-	bool hdr_tried = false;
-#if HAVE_EXR
-	bool exr_tried = false;
-#endif
-	
-	cBuffer_t *image = 0;
-	fcBuffer_t *float_image = 0;
-	gBuf_t<rgbe_t, 1> *rgbe_image = 0;
-
-	std::cout << "Loading image file " << filename << std::endl;
-
-	// try loading image using extension as indication of imagetype
-	if (extp) {
-		std::string ext( extp );
-		for(unsigned int i=0; i<ext.size(); ++i) ext[i] = std::tolower(ext[i]);
-		// hdr
-		if ( (ext == ".hdr") || (ext == ".pic") ) // the "official" extension for radiance image files
-		{
-			rgbe_image = loadHDR(filename);
-			hdr_tried = true;
-		}
-		// jpeg
-		if ( (ext == ".jpg") || (ext == ".jpeg") )
-#ifdef HAVE_JPEG
-		{
-			image = load_jpeg(filename);
-			jpg_tried = true;
-		}
-#else
-		std::cout << "Warning, yafray was compiled without jpeg support, cannot load image.\n";
-#endif
-		// PNG
-		if(ext == ".png")
-#if HAVE_PNG
-		{
-			image = load_png(filename);
-			png_tried = true;
-		}
-#else
-		std::cout << "Warning, yafray was compiled without PNG support, cannot load image.\n";
-#endif
-		// OpenEXR
-		if(ext == ".exr")
-#if HAVE_EXR
-		{
-			float_image = loadEXR(filename);
-			exr_tried = true;
-		}
-#else
-		std::cout << "Warning, yafray was compiled without OpenEXR support, cannot load image.\n";
-#endif
-
-			// targa, apparently, according to ps description, on mac tga extension can be .tpic
-		if( (ext == ".tga") || (ext == ".tpic") )
-		{
-			image = load_tga(filename);
-			tga_tried = true;
-		}
-	}
-	// if none was able to load (or no extension), try every type until one or none succeeds
-	// targa last (targa has no ID)
-	if ((float_image==NULL) && (image==NULL)  && (rgbe_image==NULL)) {
-		std::cout << "unknown file extension, testing format...";
-		for(;;) {
-
-			if (!hdr_tried) {
-				rgbe_image = loadHDR(filename);
-				if (rgbe_image)
-				{
-					std::cout << "identified as Radiance format!\n";
-					break;
-				}
-			}
-
-#ifdef HAVE_JPEG
-			if (!jpg_tried) {
-				image = load_jpeg(filename);
-				if (image)
-				{
-					std::cout << "identified as Jpeg format!\n";
-					break;
-				}
-			}
-#endif
-
-#if HAVE_EXR
-			if (!exr_tried) {
-				float_image = loadEXR(filename);
-				if (float_image)
-				{
-					std::cout << "identified as OpenEXR format!\n";
-					break;
-				}
-			}
-#endif
-
-//			if (!tga_tried) {
-//				image = loadTGA(filename, true);
-//				if (image)
-//				{
-//					std::cout << "identified as Targa format!\n";
-//					break;
-//				}
-//			}
-
-			// nothing worked, give up
-			std::cout << "\nunknown format!\n";
-			break;
-
-		}
-
-	}
-	
-	if(image)
+	if(intpstr)
 	{
-		textureImageIF_t *itex = new textureImageIF_t(image, float_image, intp_type);
-		if((std::fabs(1.0 - gamma) > 0.01) )
-		{
-			std::cout << "creating gamma LUT\n";
-			itex->setGammaLUT(new gammaLUT_t(gamma));
-		}
-		tex = itex;
+		if (*intpstr == "none") intp = INTP_NONE;
+		else if (*intpstr == "bicubic") intp = INTP_BICUBIC;
 	}
-	else if(float_image) tex = new textureImageIF_t(image, float_image, intp_type);
-	else if(rgbe_image) tex = new RGBEtexture_t(rgbe_image, intp_type, expadj);
-	else{ std::cout << "Could not load image\n"; return 0; }
 	
-	std::cout << "OK\n";
+	size_t lDot = name->rfind(".") + 1;
+	size_t lSlash = name->rfind("/") + 1;
 	
+	std::string ext = toLower(name->substr(lDot));
+	
+	std::string fmt = render.getImageFormatFromExtension(ext);
+	
+	if(fmt == "")
+	{
+		Y_ERROR << "ImageTexture: Image extension not recognized, dropping texture." << yendl;
+		return NULL;
+	}
+	
+	paraMap_t ihpm;
+	ihpm["type"] = fmt;
+	ihpm["for_output"] = false;
+	std::string ihname = "ih";
+	ihname.append(toLower(name->substr(lSlash, lDot - lSlash - 1)));
+	
+	ih = render.createImageHandler(ihname, ihpm);
+	
+	if(!ih)
+	{
+		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << yendl;
+		return NULL;
+	}
+	
+	if(!ih->loadFromFile(*name))
+	{
+		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
+		return NULL;
+	}
+	
+	tex = new textureImage_t(ih, intp, 1.f / gamma);
+
+	if(!tex)
+	{
+		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
+		return NULL;
+	}
+
 	// setup image
 	bool rot90 = false;
 	bool even_tiles=false, odd_tiles=true;
@@ -427,6 +357,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->checker_even = even_tiles;
 	tex->checker_odd = odd_tiles;
 	tex->checker_dist = cdist;
+	
 	return tex;
 }
 

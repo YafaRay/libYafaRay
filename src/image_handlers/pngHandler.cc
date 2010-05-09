@@ -540,7 +540,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("png", "PNG (Portable Network Graphics)", pngHandler_t::factory);
+		render.registerImageHandler("png", "png", "PNG (Portable Network Graphics)", pngHandler_t::factory);
 	}
 
 }

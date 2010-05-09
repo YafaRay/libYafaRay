@@ -52,6 +52,7 @@ public:
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
 	colorA_t getPixel(int x, int y);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	bool isHDR() { return true; }
 
 private:
 	halfRgbaScanlineImage_t *m_halfrgba;
@@ -183,22 +184,12 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		m_hasAlpha = true;
 		m_hasDepth = false;
 
-		Rgba *rgba = new Rgba[m_width*m_height];
-
-		file.setFrameBuffer(rgba, 1, m_width);
-		file.readPixels(dw.min.y, dw.max.y);
-
 		if(m_halfrgba) delete m_halfrgba;
 		m_halfrgba = new halfRgbaScanlineImage_t(m_width, m_height);
 
-		for (int i = 0; i < m_width; i++)
-		{
-			for(int j = 0; j < m_height; j++)
-			{
-				Rgba &pixel = (*m_halfrgba)(i, j);
-				pixel = rgba[i*m_width + j];
-			}
-		}
+		file.setFrameBuffer(&(*m_halfrgba)(0, 0) - dw.min.y - dw.min.x * m_height, m_height, 1);
+		file.readPixels(dw.min.y, dw.max.y);
+
 		return true;
 	}
 	catch (const std::exception &exc)
@@ -238,7 +229,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("exr", "EXR (IL&M OpenEXR)", exrHandler_t::factory);
+		render.registerImageHandler("exr", "exr", "EXR (IL&M OpenEXR)", exrHandler_t::factory);
 	}
 
 }

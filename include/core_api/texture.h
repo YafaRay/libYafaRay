@@ -17,8 +17,10 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual bool isNormalmap() const { return false; }
 		virtual colorA_t getColor(const point3d_t &p) const = 0;
 		virtual colorA_t getColor(int x, int y, int z) const { return colorA_t(0.f); }
-		virtual CFLOAT getFloat(const point3d_t &p) const { return getColor(p).energy(); }
-		virtual CFLOAT getFloat(int x, int y, int z) const { return getColor(x, y, z).energy(); }
+		virtual colorA_t getNoGammaColor(const point3d_t &p) const { return getColor(p); }
+		virtual colorA_t getNoGammaColor(int x, int y, int z) const { return getColor(x, y, z); }
+		virtual CFLOAT getFloat(const point3d_t &p) const { return getNoGammaColor(p).energy(); }
+		virtual CFLOAT getFloat(int x, int y, int z) const { return getNoGammaColor(x, y, z).energy(); }
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
 		virtual ~texture_t() {}
@@ -37,8 +39,8 @@ inline void angmap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 	}
 }
 
-// slightly modified Blender's own functions,
-// works better than previous functions which needed extra tweaks
+// slightly modified Blender's own function,
+// works better than previous function which needed extra tweaks
 inline void tubemap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 {
 	u = 0;

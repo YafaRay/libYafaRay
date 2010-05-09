@@ -373,17 +373,36 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params)
 {
 	std::string pname = "ImageHandler";
-	if(imagehandler_table.find(name) != imagehandler_table.end() )
+	std::stringstream newname;
+	int sufixCount = 0;
+	
+	newname << name;
+	
+	while(true)
 	{
-		WarnExist; return 0;
+		if(imagehandler_table.find(newname.str()) != imagehandler_table.end() )
+		{
+			newname.seekg(0, std::ios::beg);
+			newname << name << ".";
+			newname.width(3);
+			newname.fill('0');
+			newname.flags(std::ios::right);
+			newname << sufixCount;
+			sufixCount++;
+		}
+		else break;
 	}
+	
 	std::string type;
+	
 	if(! params.getParam("type", type) )
 	{
 		ErrNoType; return 0;
 	}
+	
 	imageHandler_t* ih = 0;
 	std::map<std::string, imagehandler_factory_t *>::iterator i=imagehandler_factory.find(type);
+	
 	if(i!=imagehandler_factory.end()) ih = i->second(params,*this);
 	else
 	{
@@ -391,11 +410,13 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	}
 	if(ih)
 	{
-		imagehandler_table[name] = ih;
-		InfoSucces(name, type);
+		imagehandler_table[newname.str()] = ih;
+		InfoSucces(newname.str(), type);
 		return ih;
 	}
+	
 	ErrOnCreate(type);
+	
 	return 0;
 }
 
@@ -733,10 +754,11 @@ void renderEnvironment_t::registerFactory(const std::string &name,volumeregion_f
 	SuccessReg("VolumeRegion", name);
 }
 
-void renderEnvironment_t::registerImageHandler(const std::string &name, const std::string &fullName, imagehandler_factory_t *f)
+void renderEnvironment_t::registerImageHandler(const std::string &name, const std::string &validExtensions, const std::string &fullName, imagehandler_factory_t *f)
 {
-	imagehandler_factory[name]=f;
-	imagehandler_fullnames[name]=fullName;
+	imagehandler_factory[name] = f;
+	imagehandler_fullnames[name] = fullName;
+	imagehandler_extensions[name] = validExtensions;
 	SuccessReg("ImageHandler", name);
 }
 
@@ -778,6 +800,24 @@ std::string renderEnvironment_t::getImageFormatFromFullName(const std::string &f
 		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
 		{
 			if(i->second == fullname) ret = i->first;
+		}
+	}
+	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	
+	return ret;
+}
+
+std::string renderEnvironment_t::getImageFormatFromExtension(const std::string &ext)
+{
+	std::string ret = "";
+	
+	if(ext == "" || ext == " ") return ret;
+	
+	if(imagehandler_extensions.size() > 0)
+	{
+		for(std::map<std::string, std::string>::const_iterator i=imagehandler_extensions.begin(); i != imagehandler_extensions.end(); ++i)
+		{
+			if(i->second.find(ext) != std::string::npos) ret = i->first;
 		}
 	}
 	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
