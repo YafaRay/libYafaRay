@@ -1,24 +1,43 @@
-/*
- * mathOptimizations.h - Some experimetal math optimizations and some macros
+/****************************************************************************
  *
- *  Created on: 26/03/2009
- *
- *      Author: Rodrigo Placencia (DarkTide)
+ *      mathOptimizations.h: Math aproximations to speed up things
+ *      This is part of the yafray package
+ *      Copyright (C) 2009 Rodrigo Placencia Vazquez (DarkTide)
+ *		Creation date: 2009-03-26
  *
  *		fPow() based on the polynomials approach form Jose Fonséca's blog entry:
  *		Fast SSE2 pow: tables or polynomials?
  *		http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
  *		
- *		fSin(), fCos() and fTan() based on Fast and Accurate sine/cosine thread on DevMaster.net forum
- *		Posted by Nick
+ *		fSin(), fCos() and fTan() based on Fast and Accurate sine/cosine
+ *		thread on DevMaster.net forum, posted by Nick
  *		http://www.devmaster.net/forums/showthread.php?t=5784
  *
+ ****************************************************************************
+ *
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2.1 of the License, or (at your option) any later version.
+ *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library; if not, write to the Free Software
+ *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
  */
-#ifndef MATHOPTIMIZATIONS_H_
-#define MATHOPTIMIZATIONS_H_
+
+#ifndef Y_MATHOPTIMIZATIONS_H
+#define Y_MATHOPTIMIZATIONS_H
 
 #include <cmath>
 #include <algorithm>
+
+// Reference defines, this should be defined by the standard cmath header
 
 //# define M_E		2.7182818284590452354	/* e */
 //# define M_LOG2E	1.4426950408889634074	/* log_2 e */
@@ -33,6 +52,7 @@
 //# define M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
 //# define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
 //# define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
+
 #define FAST_MATH
 #define FAST_TRIG
 
