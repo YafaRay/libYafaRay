@@ -13,7 +13,7 @@ setColor() << "(" << setColor(Yellow, true) << per << "%" << setColor() << ")" <
 
 ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0), doneSteps(0)
 {
-	totalBarLen = width - 15;
+	totalBarLen = width - 22;
 }
 
 void ConsoleProgressBar_t::init(int totalSteps)
@@ -32,7 +32,7 @@ void ConsoleProgressBar_t::update(int steps)
 	if(!(barLen >= 0)) barLen = 0;
 	if(barLen > lastBarLen)
 	{
-		printBar(totalBarLen-barLen, barLen, (int) 100 * progress);
+		printBar(totalBarLen-barLen, barLen, (int) (100 * progress));
 	}
 	lastBarLen = barLen;
 }
