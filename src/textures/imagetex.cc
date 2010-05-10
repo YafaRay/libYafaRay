@@ -317,7 +317,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		return NULL;
 	}
 	
-	tex = new textureImage_t(ih, intp, 1.f / gamma);
+	tex = new textureImage_t(ih, intp, gamma);
 
 	if(!tex)
 	{
