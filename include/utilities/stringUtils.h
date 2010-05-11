@@ -50,6 +50,22 @@ inline std::string toLower(const std::string &in)
 	return out;
 }
 
+inline std::vector<std::string> tokenize(std::string str, std::string delimiter = " ")
+{
+	std::vector<std::string> result;
+	size_t lastPos = str.find_first_not_of(delimiter, 0);
+	size_t pos = str.find_first_of(delimiter, lastPos);
+
+	while (std::string::npos != pos || std::string::npos != lastPos)
+	{
+		result.push_back(str.substr(lastPos, pos - lastPos));
+		lastPos = str.find_first_not_of(delimiter, pos);
+		pos = str.find_first_of(delimiter, lastPos);
+	}
+	
+	return result;
+}
+
 __END_YAFRAY
 
 #endif
