@@ -224,7 +224,7 @@ void yafrayInterface_t::paramsClearAll()
 void yafrayInterface_t::paramsStartList()
 {
 	if(!eparams->empty()) eparams->push_back(paraMap_t());
-	else std::cout << "warning, appending to existing list!\n";
+	else Y_WARNING << "Interface: Appending to existing list!" << yendl;
 	cparams = &eparams->back();
 }
 void yafrayInterface_t::paramsPushList()
@@ -250,7 +250,7 @@ material_t* 	yafrayInterface_t::createMaterial(const char* name) { return env->c
 camera_t* 		yafrayInterface_t::createCamera(const char* name) { return env->createCamera(name, *params); }
 background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }
 integrator_t* 	yafrayInterface_t::createIntegrator(const char* name) { return env->createIntegrator(name, *params); }
-imageHandler_t* yafrayInterface_t::createImageHandler(const char* name) { return env->createImageHandler(name, *params); }
+imageHandler_t* yafrayInterface_t::createImageHandler(const char* name, bool addToTable) { return env->createImageHandler(name, *params, addToTable); }
 VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name) { 
 	//return env->createVolumeRegion(name, *params);
 	VolumeRegion* vr = env->createVolumeRegion(name, *params);

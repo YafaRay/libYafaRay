@@ -83,7 +83,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(renderArea_t &a);
 		/*! Output all pixels to the color output */
-		void flush(int flags = IF_ALL, colorOutput_t *out = 0);
+		void flush(int flags = IF_ALL, colorOutput_t *out = 0, bool addParamsBadge = true);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -127,10 +127,12 @@ class YAFRAYCORE_EXPORT imageFilm_t
 #endif
 
 	protected:
-		rgba2DImage_t *image;
+		rgba2DImage_t *image; //!< rgba color buffer
 		gray2DImage_t *depthMap; //!< storage for z-buffer channel
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
+		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
 		tiledBitArray2D_t<3> *flags; //!< flags for adaptive AA sampling;
+		int dpHeight; //!< height of the rendering parameters badge;
 		int w, h, cx0, cx1, cy0, cy1;
 		int area_cnt, completed_cnt;
 		volatile int next_area;

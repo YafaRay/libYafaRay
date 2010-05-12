@@ -46,8 +46,8 @@ __BEGIN_YAFRAY
 #define FILTER_TABLE_SIZE 16
 #define MAX_FILTER_SIZE 8
 
-//! Simple alpha blending with pixel weighting
-#define alphaBlend(b_bg_col, b_weight, b_fg_col, b_alpha) (( b_bg_col * (1.f - b_alpha) ) + ( b_fg_col * b_weight * b_alpha ))
+//! Simple alpha blending
+#define alphaBlend(b_bg_col, b_fg_col, b_alpha) (( b_bg_col * (1.f - b_alpha) ) + ( b_fg_col * b_alpha ))
 
 typedef float filterFunc(float dx, float dy);
 
@@ -126,9 +126,10 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 	
 	image = new rgba2DImage_t(width, height);
-	densityImage = 0;
+	densityImage = NULL;
 	estimateDensity = false;
-	depthMap = 0;
+	depthMap = NULL;
+	dpimage = NULL;
 	
 	// fill filter table:
 	float *fTp = filterTable;
@@ -168,6 +169,7 @@ imageFilm_t::~imageFilm_t ()
 	if(densityImage) delete densityImage;
 	delete[] filterTable;
 	if(splitter) delete splitter;
+	if(dpimage) delete dpimage;
 	if(pbar) delete pbar; //remove when pbar no longer created by imageFilm_t!!
 }
 
@@ -363,26 +365,29 @@ void imageFilm_t::finishArea(renderArea_t &a)
 	outMutex.unlock();
 }
 
-void imageFilm_t::flush(int flags, colorOutput_t *out)
+void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
 {
 	outMutex.lock();
-	Y_INFO << "imageFilm: Flushing buffer...\n";
+
+	Y_INFO << "imageFilm: Flushing buffer..." << yendl;
+
 	colorOutput_t *colout = out ? out : output;
 	
 #if HAVE_FREETYPE
 	if (drawParams) drawRenderSettings();
 #else
-	if (drawParams) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available\n";
+	if (drawParams) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available" << yendl;
 #endif
 
 	float multi = 0.f;
 	colorA_t col;
+	int k = 0;
 
-	if(estimateDensity) multi = (float) (w*h) / (float) numSamples;
+	if(estimateDensity) multi = (float) (w * h) / (float) numSamples;
 
-	for(int j=0; j<h; ++j)
+	for(int j = 0; j < h; j++)
 	{
-		for(int i=0; i<w; ++i)
+		for(int i = 0; i < w; i++)
 		{
 			if(flags & IF_IMAGE) col = (*image)(i, j).normalized();
 			else col = colorA_t(0.f);
@@ -393,6 +398,12 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 			
 			if(correctGamma) col.gammaAdjust(gamma);
 			
+			if(drawParams && addParamsBadge && h - j <= dpHeight)
+			{
+				colorA_t &dpcol = (*dpimage)(i, k);
+				col = alphaBlend(col, dpcol, dpcol.getA());
+			}
+			
 			if(depthMap)
 			{
 				colout->putPixel(i, j, (const float*)&col, true, true, (*depthMap)(i, j).normalized());
@@ -402,6 +413,8 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 				colout->putPixel(i, j, (const float*)&col);
 			}
 		}
+		
+		if(drawParams && addParamsBadge && h - j <= dpHeight) k++;
 	}
 
 	colout->flush();
@@ -642,10 +655,11 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 			tmpBuf = bitmap->buffer[q * bitmap->width + p];
 			
-			if (tmpBuf > 0) {
-				pixel_t &pix = (*image)(i, j);
+			if (tmpBuf > 0)
+			{
+				colorA_t &col = (*dpimage)(i, j);
 				alpha = (float)tmpBuf/255.0;
-				pix.col = alphaBlend(pix.col, pix.weight, colorA_t(textColor, std::max(pix.col.getA(), alpha)), alpha);
+				col = alphaBlend(col, colorA_t(textColor, alpha), alpha);
 			}
 		}
 	}
@@ -654,12 +668,17 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 void imageFilm_t::drawRenderSettings()
 {
+	if(dpimage) return;
+	
+	dpHeight = 30;
+	
+	dpimage = new rgba2DImage_nw_t(w, dpHeight);
+	
 	FT_Library library;
 	FT_Face face;
 
 	FT_GlyphSlot slot;
 	FT_Vector pen; // untransformed origin
-	FT_Error error;
 
 #ifdef RELEASE
 	std::string version = std::string(VERSION);
@@ -689,19 +708,31 @@ void imageFilm_t::drawRenderSettings()
 
 	std::string text = ss.str();//"Testing text free of exporter dependencies";
 
-	Y_INFO << "ImageOverly: render settings\n" << text << "\n";
+	Y_INFO << "ImageOverly: render settings" << yendl << text << yendl;
 
 	// use 10pt at default dpi
 	float fontsize = 9.5f;
 
-	error = FT_Init_FreeType( &library ); // initialize library
-	if ( error ) { Y_ERROR << "ImageOverly: FreeType lib couldn't be initialized!\n"; return; }
+	// initialize library
+	if (FT_Init_FreeType( &library ))
+	{
+		Y_ERROR << "ImageOverly: FreeType lib couldn't be initialized!" << yendl;
+		return;
+	}
 
-	error = FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ); // create face object
-	if ( error ) { Y_ERROR << "ImageOverly: FreeType couldn't load the font!\n"; return; }
+	// create face object
+	if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
+	{
+		Y_ERROR << "ImageOverly: FreeType couldn't load the font!" << yendl;
+		return;
+	}
 
-	error = FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ); // set character size
-	if ( error ) { Y_ERROR << "ImageOverly: FreeType couldn't set the character size!\n"; return; }
+	// set character size
+	if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
+	{
+		Y_ERROR << "ImageOverly: FreeType couldn't set the character size!\n";
+		return;
+	}
 
 	slot = face->glyph;
 
@@ -711,46 +742,39 @@ void imageFilm_t::drawRenderSettings()
 	int textInterlineOffset = 13;
 	int logoWidth = 0;
 
-	
 	// Draw logo image
 	paraMap_t ihParams;
 	ihParams["type"] = std::string("png");
 	ihParams["for_output"] = false;
 
+	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams, false);
 	
-	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams);
 	if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size))
 	{
 		int lx, ly;
-		int sx = 0;
-		int sy = h - logo->getHeight();
-		int imWidth = logo->getWidth() + sx;
-		int imHeight = logo->getHeight() + sy;
+		int imWidth = std::min(logo->getWidth(), w);
+		int imHeight = std::min(logo->getHeight(), dpHeight);
 		logoWidth = logo->getWidth();
 		textOffsetX += logoWidth;
 
-		for ( lx = sx; lx < imWidth; lx++ )
-		{
-			for ( ly = sy; ly < imHeight; ly++ )
-			{
-				colorA_t col = logo->getPixel(lx-sx, ly-sy);
-				pixel_t &pix = (*image)(lx, ly);
-				pix.col = alphaBlend(pix.col, pix.weight, colorA_t((color_t) col, std::max(pix.col.getA(), col.getA())), col.getA());
-			}
-		}
+		for ( lx = 0; lx < imWidth; lx++ )
+			for ( ly = 0; ly < imHeight; ly++ )
+				(*dpimage)(lx, ly) = logo->getPixel(lx, ly);
+		
+		delete logo;
 	}
 
 	// Draw the dark bar at the bottom
 	float bgAlpha = 0.3f;
 	color_t bgColor(0.f);
 	
-	for ( int x = logoWidth; x < w; x++ ) {
-		for ( int y = h - 30; y < h; y++ ) {
-			pixel_t &pix = (*image)(x, y);
-			pix.col = alphaBlend(pix.col, pix.weight, colorA_t(bgColor, std::max(pix.col.getA(), bgAlpha)), bgAlpha);
+	for ( int x = logoWidth; x < w; x++ )
+	{
+		for ( int y = 0; y < dpHeight; y++ )
+		{
+			(*dpimage)(x, y) = colorA_t(bgColor, bgAlpha);
 		}
 	}
-	
 	
 	// The pen position in 26.6 cartesian space coordinates
 	pen.x = textOffsetX * 64;
@@ -770,14 +794,17 @@ void imageFilm_t::drawRenderSettings()
 		FT_Set_Transform( face, 0, &pen );
 
 		// Load glyph image into the slot (erase previous one)
-		error = FT_Load_Char( face, text[n], FT_LOAD_DEFAULT );
-		if ( error ) { Y_ERROR << "ImageOverly: FreeType Couldn't load the glyph image for: '" << text[n] << "'!\n"; continue; }
+		if (FT_Load_Char( face, text[n], FT_LOAD_DEFAULT ))
+		{
+			Y_ERROR << "ImageOverly: FreeType Couldn't load the glyph image for: '" << text[n] << "'!" << yendl;
+			continue;
+		}
 		
 		// Render the glyph into the slot
 		FT_Render_Glyph( slot, FT_RENDER_MODE_NORMAL );
 
 		// Now, draw to our target surface (convert position)
-		drawFontBitmap( &slot->bitmap, slot->bitmap_left, h - slot->bitmap_top);
+		drawFontBitmap( &slot->bitmap, slot->bitmap_left, dpHeight - slot->bitmap_top);
 
 		// increment pen position
 		pen.x += slot->advance.x;
@@ -787,7 +814,10 @@ void imageFilm_t::drawRenderSettings()
 	// Cleanup
 	FT_Done_Face    ( face );
 	FT_Done_FreeType( library );
+	
+	Y_INFO << "ImageOverly: Rendering parameters badge created." << yendl;
 }
+
 #endif
 
 __END_YAFRAY

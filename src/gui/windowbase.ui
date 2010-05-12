@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>630</width>
-    <height>406</height>
+    <width>1040</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,8 +51,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>624</width>
-           <height>294</height>
+           <width>1030</width>
+           <height>369</height>
           </rect>
          </property>
         </widget>
@@ -138,8 +138,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>630</width>
-     <height>25</height>
+     <width>1040</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -158,6 +158,7 @@
     <addaction name="actionZoom_Out"/>
     <addaction name="separator"/>
     <addaction name="actionSaveAlpha"/>
+    <addaction name="actionSaveDepth"/>
    </widget>
    <widget class="QMenu" name="menuRender_Oprions">
     <property name="title">
@@ -169,6 +170,8 @@
     <addaction name="actionShowRGB"/>
     <addaction name="actionShowAlpha"/>
     <addaction name="actionShowDepth"/>
+    <addaction name="separator"/>
+    <addaction name="actionDrawParams"/>
    </widget>
    <widget class="QMenu" name="menuOptions">
     <property name="title">
@@ -223,10 +226,13 @@
    <addaction name="separator"/>
    <addaction name="actionSave_As"/>
    <addaction name="actionSaveAlpha"/>
+   <addaction name="actionSaveDepth"/>
    <addaction name="separator"/>
    <addaction name="actionShowRGB"/>
    <addaction name="actionShowAlpha"/>
    <addaction name="actionShowDepth"/>
+   <addaction name="separator"/>
+   <addaction name="actionDrawParams"/>
   </widget>
   <action name="actionQuit">
    <property name="text">
@@ -353,6 +359,31 @@
    </property>
    <property name="toolTip">
     <string>Enable/disable ask before closing dialog</string>
+   </property>
+  </action>
+  <action name="actionSaveDepth">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Save with Z-Buffer</string>
+   </property>
+   <property name="toolTip">
+    <string>Save with Z-Buffer</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+Z</string>
+   </property>
+  </action>
+  <action name="actionDrawParams">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Add render parameters badge</string>
+   </property>
+   <property name="toolTip">
+    <string>Add a badge with the parameters of the render</string>
    </property>
   </action>
  </widget>

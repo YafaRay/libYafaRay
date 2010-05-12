@@ -370,7 +370,7 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 	return 0;
 }
 
-imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params)
+imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params, bool addToTable)
 {
 	std::string pname = "ImageHandler";
 	std::stringstream newname;
@@ -378,19 +378,22 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	
 	newname << name;
 	
-	while(true)
+	if(addToTable)
 	{
-		if(imagehandler_table.find(newname.str()) != imagehandler_table.end() )
+		while(true)
 		{
-			newname.seekg(0, std::ios::beg);
-			newname << name << ".";
-			newname.width(3);
-			newname.fill('0');
-			newname.flags(std::ios::right);
-			newname << sufixCount;
-			sufixCount++;
+			if(imagehandler_table.find(newname.str()) != imagehandler_table.end() )
+			{
+				newname.seekg(0, std::ios::beg);
+				newname << name << ".";
+				newname.width(3);
+				newname.fill('0');
+				newname.flags(std::ios::right);
+				newname << sufixCount;
+				sufixCount++;
+			}
+			else break;
 		}
-		else break;
 	}
 	
 	std::string type;
@@ -403,15 +406,21 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	imageHandler_t* ih = 0;
 	std::map<std::string, imagehandler_factory_t *>::iterator i=imagehandler_factory.find(type);
 	
-	if(i!=imagehandler_factory.end()) ih = i->second(params,*this);
+	if(i!=imagehandler_factory.end())
+	{
+		ih = i->second(params,*this);
+	}
 	else
 	{
 		ErrUnkType(type); return 0;
 	}
+	
 	if(ih)
 	{
-		imagehandler_table[newname.str()] = ih;
+		if(addToTable) imagehandler_table[newname.str()] = ih;
+		
 		InfoSucces(newname.str(), type);
+		
 		return ih;
 	}
 	

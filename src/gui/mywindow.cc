@@ -30,7 +30,7 @@
 #include "animworking.h"
 #include <interface/yafrayinterface.h>
 #include <core_api/params.h>
-#include <yafraycore/EXR_io.h>
+#include <yafraycore/imageOutput.h>
 #include <yafraycore/memoryIO.h>
 
 // Embeded Resources:
@@ -44,6 +44,8 @@
 #include "toolbar_render_icon.h"
 #include "toolbar_show_alpha_icon.h"
 #include "toolbar_colorbuffer_icon.h"
+#include "toolbar_drawparams_icon.h"
+#include "toolbar_savedepth_icon.h"
 
 // GUI Font
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
@@ -83,7 +85,8 @@ void initGui()
 
 	if(!QApplication::instance())
 	{
-		std::cout << "creating new QApplication\n";
+		using namespace yafaray;
+		Y_INFO << "Starting Qt graphical interface..." << yendl;
 		app = new QApplication(argc, 0);
 	}
 	else app = static_cast<QApplication*>(QApplication::instance());
@@ -119,6 +122,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QPixmap renderIcon;
 	QPixmap showAlphaIcon;
 	QPixmap showColorIcon;
+	QPixmap saveDepthIcon;
+	QPixmap drawParamsIcon;
 
 	yafIcon.loadFromData(yafarayicon, yafarayicon_size);
 	zbuffIcon.loadFromData(z_buf_icon, z_buf_icon_size);
@@ -128,6 +133,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	renderIcon.loadFromData(render_icon, render_icon_size);
 	showAlphaIcon.loadFromData(show_alpha_icon, show_alpha_icon_size);
 	showColorIcon.loadFromData(rgb_icon, rgb_icon_size);
+	saveDepthIcon.loadFromData(save_z_buf_icon, save_z_buf_icon_size);
+	drawParamsIcon.loadFromData(drawparams_icon, drawparams_icon_size);
 	
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char*)guifont, guifont_size));
@@ -197,6 +204,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->actionRender->setIcon(QIcon(renderIcon));
 	m_ui->actionShowAlpha->setIcon(QIcon(showAlphaIcon));
 	m_ui->actionShowRGB->setIcon(QIcon(showColorIcon));
+	m_ui->actionSaveDepth->setIcon(QIcon(saveDepthIcon));
+	m_ui->actionDrawParams->setIcon(QIcon(drawParamsIcon));
 	
 	// actions
 	connect(m_ui->actionRender, SIGNAL(triggered(bool)),
@@ -313,13 +322,14 @@ void MainWindow::slotRender()
 
 void MainWindow::slotFinished()
 {
+	using namespace yafaray;
 	QString rt = "";
 
 	if (autoSave)
 	{
-		std::cout << "INFO: Image saved to " << fileName;
-		if (autoSaveAlpha) std::cout << " with alpha" << std::endl;
-		else std::cout << " without alpha" << std::endl;
+		Y_INFO << " Image saved to " << fileName;
+		if (autoSaveAlpha) std::cout << " with alpha" << yendl;
+		else std::cout << " without alpha" << yendl;
 		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
 		renderSaved = true;
 		rt = QString("Image Auto-saved. ");
@@ -368,7 +378,7 @@ void MainWindow::slotFinished()
 
 	rt.append(QString("Render time: %1 [%2s.]").arg(timeStr).arg(timeSec, 5));
 	m_ui->yafLabel->setText(rt);
-	std::cout << "finished, setting pixmap" << std::endl;
+	Y_INFO << setColor(Green, true) << " Render completed!" << setColor() << std::endl;
 	
 	m_render->finishRendering();
 	update();
@@ -472,22 +482,14 @@ void MainWindow::slotSaveAs()
 bool MainWindow::saveDlg()
 {
 	QString formats;
-	QList<QByteArray> formatList;
-	QList<QByteArray> formatDesc;
-	formatList << "png" << "tga" << "jpeg" << "tiff" << "bmp";
-	formatDesc << "PNG" << "TGA" << "JPEG" << "TIFF" << "BMP"; // could be actual descriptions, but who knows them anyway ;-)
-	QList<QByteArray> qtFormats = QImageWriter::supportedImageFormats();
-	for (int i = 0; i < formatList.size(); ++i) {
-		QByteArray format = formatList.at(i);
-		QByteArray desc = formatDesc.at(i);
-		if (qtFormats.contains(format)) {
-			formats += QString(desc) + " (*." + QString(format) + ")";
-			if(i<formatList.size()-1) formats += ";;";
-		}
+	std::vector<std::string> formatList = interf->listImageHandlers();
+	std::vector<std::string> formatDesc = interf->listImageHandlersFullName();
+
+	for (size_t i = 0; i < formatList.size(); ++i)
+	{
+		formats += QString::fromStdString(formatDesc[i]) + " (*." + QString::fromStdString(formatList[i]) + ")";
+		if(i < formatList.size() - 1 ) formats += ";;";
 	}
-#if HAVE_EXR
-	formats += ";;EXR (*.exr)";
-#endif
 
 	if (m_lastPath.isNull())
 		m_lastPath = QDir::currentPath();
@@ -500,75 +502,44 @@ bool MainWindow::saveDlg()
 	// "re"extract the actual file ending
 	selectedFilter.remove(0, selectedFilter.indexOf("."));
 	selectedFilter.remove(selectedFilter.indexOf(")"), 2);
+	
 	if (!fileName.endsWith(selectedFilter, Qt::CaseInsensitive))
-		fileName += selectedFilter.toLower();
+	{
+		fileName.append(selectedFilter.toLower());
+	}
+
+	selectedFilter.remove(0, 1); // Remove the dot "."
 
 	if (!fileName.isNull())
 	{
+		using namespace yafaray;
+		interf->paramsClearAll();
+		interf->paramsSetString("type", selectedFilter.toStdString().c_str());
+		interf->paramsSetInt("width", res_x);
+		interf->paramsSetInt("height", res_y);
+		interf->paramsSetBool("alpha_channel", saveWithAlpha);
+		interf->paramsSetBool("z_channel", use_zbuf);
+		
 		m_lastPath = QDir(fileName).absolutePath();
-		if(fileName.endsWith(".exr", Qt::CaseInsensitive))
-		{
-#if HAVE_EXR
-			std::string fname = m_lastPath.toStdString();
-			yafaray::outEXR_t exrout(res_x, res_y, fname.c_str(), ( (use_zbuf) ? "zbuf" : "" ) );
-			interf->getRenderedImage(exrout);
-			renderSaved = true;
-			
-			QString savemesg;
-			savemesg.append("Render ");
-			savemesg.append(( (use_zbuf) ? "(RGBA + Z) " : "(RGBA) " ));
-			savemesg.append("saved on EXR format.");
-			
-			m_ui->yafLabel->setText(savemesg);
-#else
-			errorMessage->showMessage(tr("This build has been compiled without OpenEXR."));
-			m_ui->yafLabel->setText(tr("Render couldn't be saved."));
-#endif
-		}
-		else 
-		{
-			if(m_ui->actionShowDepth->isChecked())
-			{
-				if(m_render->saveDepthImage(fileName))
-				{
-					m_outputPath = fileName;
-					renderSaved = true;
-					m_ui->yafLabel->setText(tr("Depth channel saved."));
-				}
-				else
-				{
-					m_ui->yafLabel->setText(tr("Depth channel couldn't be saved."));
-				}
-			}
-			else if(m_ui->actionShowAlpha->isChecked())
-			{
-				if(m_render->saveAlphaImage(fileName))
-				{
-					m_outputPath = fileName;
-					renderSaved = true;
-					m_ui->yafLabel->setText(tr("Alpha channel saved."));
-					
-				}
-				else
-				{
-					m_ui->yafLabel->setText(tr("Alpha channel couldn't be saved."));
-				}
-			}
-			else
-			{
-				if(m_render->saveImage(fileName, saveWithAlpha))
-				{
-					m_outputPath = fileName;
-					renderSaved = true;
-					m_ui->yafLabel->setText(tr("Render saved."));
-					
-				}
-				else
-				{
-					m_ui->yafLabel->setText(tr("Render couldn't be saved."));
-				}
-			}
-		}
+		
+		imageHandler_t *ih = interf->createImageHandler("saver", false);
+		imageOutput_t *out = new imageOutput_t(ih, m_lastPath.toStdString());
+		
+		interf->paramsClearAll();
+
+		interf->getRenderedImage(*out);
+		
+		renderSaved = true;
+		
+		QString savemesg;
+		savemesg.append("Render ");
+		savemesg.append(( (use_zbuf) ? "(RGBA + Z) " : "(RGBA) " ));
+		savemesg.append("saved.");
+		
+		m_ui->yafLabel->setText(savemesg);
+		
+		delete ih;
+		delete out;
 	}
 	
 	return renderSaved;

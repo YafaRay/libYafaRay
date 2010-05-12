@@ -77,7 +77,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual background_t* 	createBackground	(const char* name);
 		virtual integrator_t* 	createIntegrator	(const char* name);
 		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
-		virtual imageHandler_t*	createImageHandler	(const char* name);
+		virtual imageHandler_t*	createImageHandler	(const char* name, bool addToTable = true);
 		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...

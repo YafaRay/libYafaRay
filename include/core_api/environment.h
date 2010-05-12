@@ -79,7 +79,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		volumeHandler_t* createVolumeH(const std::string &name, const paraMap_t &params);
 		VolumeRegion*	createVolumeRegion(const std::string &name, paraMap_t &params);
 		imageFilm_t*	createImageFilm(const paraMap_t &params, colorOutput_t &output);
-		imageHandler_t* createImageHandler(const std::string &name, paraMap_t &params);
+		imageHandler_t* createImageHandler(const std::string &name, paraMap_t &params, bool addToTable = true);
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
 		void clearAll();
