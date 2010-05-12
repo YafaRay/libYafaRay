@@ -136,6 +136,11 @@ class yafrayInterface_t
 
 		//Versioning stuff
 		virtual char* getVersion() const;
+		
+		//Console Printing wrappers to report in color with yafaray's own coloring mechanic
+		void printInfo(const std::string &msg);
+		void printWarning(const std::string &msg);
+		void printError(const std::string &msg);
 	
 	protected:
 		paraMap_t *params;

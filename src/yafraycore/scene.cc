@@ -317,7 +317,7 @@ bool scene_t::endTriMesh()
 		{
 			if( state.curObj->obj->uv_offsets.size() != 3*state.curObj->obj->triangles.size() )
 			{
-				std::cerr << "[FATAL ERROR]: UV-offsets mismatch!\n";
+				Y_ERROR << "Scene: UV-offsets mismatch!" << yendl;
 				return false;
 			}
 		}
@@ -346,7 +346,7 @@ void scene_t::setNumThreads(int threads)
 	
 	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_INFO << "Automatic Detection of Threads: Active.\n";
+		Y_INFO << "Automatic Detection of Threads: Active." << yendl;
 
 #ifdef WIN32
 		SYSTEM_INFO info;
@@ -368,14 +368,14 @@ void scene_t::setNumThreads(int threads)
 	#	endif
 #endif
 
-		Y_INFO << "Number of Threads supported: [" << nthreads << "].\n";
+		Y_INFO << "Number of Threads supported: [" << nthreads << "]." << yendl;
 	}
 	else
 	{
-		Y_INFO << "Automatic Detection of Threads: Inactive.\n";
+		Y_INFO << "Automatic Detection of Threads: Inactive." << yendl;
 	}
 	
-	Y_INFO << "Using [" << nthreads << "] Threads.\n";
+	Y_INFO << "Using [" << nthreads << "] Threads." << yendl;
 }	
 
 /* currently not fully implemented! id=0 means state.curObj, other than 0 not supported yet. */
@@ -478,12 +478,16 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 				if	   (f->pa == i) f->na = n_idx;
 				else if(f->pb == i) f->nb = n_idx;
 				else if(f->pc == i) f->nc = n_idx;
-				else{ std::cout << "!! mesh smoothing error!\n"; return false; }
+				else
+				{
+					Y_ERROR << "Scene: Mesh smoothing error!" << yendl;
+					return false;
+				}
 			}
 			vnormals.clear();
 			vn_index.clear();
 		}
-		//std::cout << "vertices:" << points.size() << ", vertex normals:" << normals.size() << std::endl;
+
 		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
 		odat->obj->is_smooth = true;
 	}
@@ -645,7 +649,6 @@ void scene_t::setImageFilm(imageFilm_t *film)
 void scene_t::setBackground(background_t *bg)
 {
 	background = bg;
-//	std::cout << "scene_t: background pointer is: " << (void*)background<<"\n";
 }
 
 void scene_t::setSurfIntegrator(surfaceIntegrator_t *s)
@@ -708,7 +711,7 @@ void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, dou
 */
 bool scene_t::update()
 {
-	std::cout << "scene mode:" << mode << std::endl;
+	Y_INFO << "Scene: Mode \"" << ((mode == 0) ? "Triangle" : "Universal" ) << "\"" << yendl;
 	if(!camera || !imageFilm) return false;
 	if(state.changes & C_GEOM)
 	{
@@ -737,10 +740,11 @@ bool scene_t::update()
 				tree = new triKdTree_t(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
 				delete [] tris;
 				sceneBound = tree->getBound();
-				std::cout << "scene_t::update(): new scene bound is \n\t("<<sceneBound.a.x<<", "<<sceneBound.a.y<<", "<<sceneBound.a.z<<"), ("<<
-						sceneBound.g.x<<", "<<sceneBound.g.y<<", "<<sceneBound.g.z<<")\n";
+				Y_INFO << "Scene: New scene bound is:" << 
+				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
+				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 			}
-			else std::cout << "scene is empty...\n";
+			else Y_ERROR << "Scene: Scene is empty..." << yendl;
 		}
 		else
 		{
@@ -770,19 +774,28 @@ bool scene_t::update()
 				vtree = new kdTree_t<primitive_t>(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
 				delete [] tris;
 				sceneBound = vtree->getBound();
-				std::cout << "scene_t::update(): new scene bound is \n\t("<<sceneBound.a.x<<", "<<sceneBound.a.y<<", "<<sceneBound.a.z<<"), ("<<
-						sceneBound.g.x<<", "<<sceneBound.g.y<<", "<<sceneBound.g.z<<")\n";
+				Y_INFO << "Scene: New scene bound is:" << yendl <<
+				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
+				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 			}
-			else std::cout << "scene is empty...\n";
+			else Y_ERROR << "Scene: Scene is empty..." << yendl;
 		}
 	}
+	
 	for(unsigned int i=0; i<lights.size(); ++i) lights[i]->init(*this);
+	
 	if(background)
 	{
 		light_t *bgl = background->getLight();
 		if(bgl) bgl->init(*this);
 	}
-	if(!surfIntegrator){ std::cout << "no surface integrator!\n"; return false; }
+	
+	if(!surfIntegrator)
+	{
+		Y_ERROR << "Scene: No surface integrator, bailing out..." << yendl;
+		return false;
+	}
+	
 	if(state.changes != C_NONE)
 	{
 		std::stringstream inteSettings;
@@ -794,7 +807,9 @@ bool scene_t::update()
 
 		if(!success) return false;
 	}
+	
 	state.changes = C_NONE;
+	
 	return true;
 }
 
@@ -896,22 +911,27 @@ bool scene_t::render()
 //! does not do anything yet...maybe never will
 bool scene_t::addMaterial(material_t *m, const char* name) { return false; }
 
-objID_t scene_t::getNextFreeID() {
+objID_t scene_t::getNextFreeID()
+{
 	objID_t id;
 	id = state.nextFreeID;
+	
 	//create new entry for object, assert that no ID collision happens:
 	if(meshes.find(id) != meshes.end())
 	{
-		std::cerr << "program error! ID already in use!\n"; return 0;
+		Y_ERROR << "Scene: ID already in use!" << yendl;
+		return 0;
 	}
+	
 	++state.nextFreeID;
+	
 	return id;
 }
 
 bool scene_t::addObject(object3d_t *obj, objID_t &id)
 {
 	id = getNextFreeID();
-	if( id>0 )
+	if( id > 0 )
 	{
 		//create new triangle object:
 		objects[id] = obj;

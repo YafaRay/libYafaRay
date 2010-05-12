@@ -48,7 +48,7 @@
 #include <sstream>
 
 __BEGIN_YAFRAY
-#define ENV_TAG << " [Environment] "
+#define ENV_TAG << "Environment: "
 #define Y_INFO_ENV Y_INFO ENV_TAG
 #define Y_ERROR_ENV Y_ERROR ENV_TAG
 #define Y_WARN_ENV Y_WARNING ENV_TAG
@@ -550,7 +550,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		else if(*name == "lanczos") type = imageFilm_t::LANCZOS;
 		else type = imageFilm_t::BOX;
 	}
-	else Y_WARN_ENV << "No AA filter defined defaulting to Box!\n";
+	else Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
 
 	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::LINEAR;
 	if(tiles_order)
@@ -558,7 +558,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
 		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
 	}
-	else Y_INFO_ENV << "Defaulting to Linear tiles order.\n"; // this is info imho not a warning
+	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 	
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
 

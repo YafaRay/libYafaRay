@@ -53,17 +53,18 @@ void yafrayInterface_t::loadPlugins(const char *path)
 
 void yafrayInterface_t::clearAll()
 {
-	std::cout << "clearing data...\n";
+	Y_INFO << "Interface: Cleaning environment..." << yendl;
 	env->clearAll();
-	std::cout << "delete scene...";
+	Y_INFO << "Interface: Deleteing scene..." << yendl;
 	if(scene) delete scene;
-	std::cout << "done\n";
+	Y_INFO << "Interface: Clearing film and parameter maps scene..." << yendl;
 	scene = 0;//new scene_t();
 	if(film) delete film;
 	film = 0;
 	params->clear();
 	eparams->clear();
 	cparams = params;
+	Y_INFO << "Interface: Cleanup done." << yendl;
 }
 
 bool yafrayInterface_t::startScene(int type)
@@ -304,6 +305,21 @@ char* yafrayInterface_t::getVersion() const
 #else
 	return (char*)std::string(YAF_SVN_REV).c_str();
 #endif
+}
+
+void yafrayInterface_t::printInfo(const std::string &msg)
+{
+	Y_INFO << msg << yendl;
+}
+
+void yafrayInterface_t::printWarning(const std::string &msg)
+{
+	Y_WARNING << msg << yendl;
+}
+
+void yafrayInterface_t::printError(const std::string &msg)
+{
+	Y_ERROR << msg << yendl;
 }
 
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)

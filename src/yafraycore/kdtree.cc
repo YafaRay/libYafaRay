@@ -65,7 +65,7 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 			float cost_ratio, float emptyBonus)
 	: costRatio(cost_ratio), eBonus(emptyBonus), maxDepth(depth)
 {
-	std::cout << "starting build of kd-tree ("<<np<<" prims, cr:"<<costRatio<<" eb:"<<eBonus<<")\n";
+	Y_INFO << "Kd-Tree: Starting build (" << np << " prims, cr:" << costRatio << " eb:" << eBonus << ")" << yendl;
 	clock_t c_start, c_end;
 	c_start = clock();
 	Kd_inodes=0, Kd_leaves=0, _emptyKd_leaves=0, Kd_prims=0, depthLimitReached=0, NumBadSplits=0,
@@ -88,7 +88,7 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if( logLeaves > 16.0 ) costRatio += 0.25*( logLeaves - 16.0 );
 	allBounds = new bound_t[totalPrims + TRI_CLIP_THRESH+1];
-	std::cout << "getting triangle bounds...";
+	Y_INFO << "Kd-Tree: Getting triangle bounds..." << yendl;
 	for(u_int32 i=0; i<totalPrims; i++)
 	{
 		allBounds[i] = v[i]->getBound();
@@ -103,7 +103,7 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 		double foo = (treeBound.g[i] - treeBound.a[i])*0.001;
 		treeBound.a[i] -= foo, treeBound.g[i] += foo;
 	}
-	std::cout << "done!\n";
+	Y_INFO << "Kd-Tree: Done." << yendl;
 	// get working memory for tree construction
 	boundEdge *edges[3];
 	u_int32 rMemSize = 3*totalPrims; // (maxDepth+1)*totalPrims;
@@ -120,7 +120,7 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 	
 	/* build tree */
 	prims = v;
-	std::cout << "starting recursive build...\n";
+	Y_INFO << "Kd-Tree: Starting recursive build..." << yendl;
 	buildTree(totalPrims, treeBound, leftPrims,
 			  leftPrims, rightPrims, edges, // <= working memory
 			  rMemSize, 0, 0 );
@@ -134,26 +134,23 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 	y_free(cdata);
 	//print some stats:
 	c_end = clock() - c_start;
-	std::cout << "\n=== kd-tree stats ("<< float(c_end) / (float)CLOCKS_PER_SEC <<"s) ===\n";
-	std::cout << "used/allocated kd-tree nodes: " << nextFreeNode << "/" << allocatedNodesCount
-		<< " (" << 100.f * float(nextFreeNode)/allocatedNodesCount << "%)\n";
-	std::cout << "primitives in tree: " << totalPrims << std::endl;
-	std::cout << "interior nodes: " << Kd_inodes << " / " << "leaf nodes: " << Kd_leaves
-		<< " (empty: " << _emptyKd_leaves << " = " << 100.f * float(_emptyKd_leaves)/Kd_leaves << "%)\n";
-	std::cout << "leaf prims: " << Kd_prims << " (" << float(Kd_prims)/totalPrims << "x prims in tree, leaf size:"<< maxLeafSize<<")\n";
-	std::cout << "   => " << float(Kd_prims)/ (Kd_leaves-_emptyKd_leaves) << " prims per non-empty leaf\n";
-	std::cout << "leaves due to depth limit/bad splits: " << depthLimitReached << "/" << NumBadSplits << "\n";
-	std::cout << "clipped triangles: " << _clip << " (" <<_bad_clip << " bad clips, "<<_null_clip
-		<<" null clips)\n";
-	//std::cout << "early outs: " << _early_out << "\n\n";
+	Y_INFO << "Kd-Tree: Stats ("<< float(c_end) / (float)CLOCKS_PER_SEC <<"s)" << yendl;
+	Y_INFO << "Kd-Tree: used/allocated nodes: " << nextFreeNode << "/" << allocatedNodesCount
+		<< " (" << 100.f * float(nextFreeNode)/allocatedNodesCount << "%)" << yendl;
+	Y_INFO << "Kd-Tree: Primitives in tree: " << totalPrims << yendl;
+	Y_INFO << "Kd-Tree: Interior nodes: " << Kd_inodes << " / " << "leaf nodes: " << Kd_leaves
+		<< " (empty: " << _emptyKd_leaves << " = " << 100.f * float(_emptyKd_leaves)/Kd_leaves << "%)" << yendl;
+	Y_INFO << "Kd-Tree: Leaf prims: " << Kd_prims << " (" << float(Kd_prims) / totalPrims << " x prims in tree, leaf size: " << maxLeafSize << ")" << yendl;
+	Y_INFO << "Kd-Tree: => " << float(Kd_prims)/ (Kd_leaves-_emptyKd_leaves) << " prims per non-empty leaf" << yendl;
+	Y_INFO << "Kd-Tree: Leaves due to depth limit/bad splits: " << depthLimitReached << "/" << NumBadSplits << yendl;
+	Y_INFO << "Kd-Tree: clipped triangles: " << _clip << " (" <<_bad_clip << " bad clips, " << _null_clip << " null clips)" << yendl;
 }
 
 triKdTree_t::~triKdTree_t()
 {
-//	std::cout << "kd-tree destructor: freeing nodes...";
+	Y_INFO << "Kd-Tree: Freeing nodes..." << yendl;
 	y_free(nodes);
-//	std::cout << "done!\n";
-	//y_free(prims); //überflüssig?
+	Y_INFO << "Kd-Tree: Done" << yendl;
 }
 
 // ============================================================
@@ -566,7 +563,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 			}
 		}
 		splitPos = split.t;
-		if (n0!= split.nBelow || n1 != split.nAbove) std::cout << "oops!\n";
+		//if (n0!= split.nBelow || n1 != split.nAbove) std::cout << "oops!\n";
 /*		static int foo=0;
 		if(foo<10)
 		{
