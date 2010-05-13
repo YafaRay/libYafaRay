@@ -256,6 +256,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->renderArea->installEventFilter(this);
 	
 	m_ui->actionShowDepth->setEnabled(use_zbuf);
+	m_ui->actionSaveDepth->setEnabled(use_zbuf);
 }
 
 MainWindow::~MainWindow()
