@@ -331,10 +331,30 @@ void MainWindow::slotFinished()
 		Y_INFO << " Image saved to " << fileName;
 		if (autoSaveAlpha) std::cout << " with alpha" << yendl;
 		else std::cout << " without alpha" << yendl;
-		//TODO: fix here ************************************************************************
-//		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
+
+		using namespace yafaray;
+
+		interf->paramsClearAll();
+		interf->paramsSetString("type", "png");
+		interf->paramsSetInt("width", res_x);
+		interf->paramsSetInt("height", res_y);
+		interf->paramsSetBool("alpha_channel", autoSaveAlpha);
+		interf->paramsSetBool("z_channel", use_zbuf);
+		
+		imageHandler_t *ih = interf->createImageHandler("saver", false);
+		imageOutput_t *out = new imageOutput_t(ih, fileName);
+		
+		interf->paramsClearAll();
+		
+		interf->getRenderedImage(*out);
+
 		renderSaved = true;
+
 		rt = QString("Image Auto-saved. ");
+
+		delete ih;
+		delete out;
+
 		if (autoClose)
 		{
 			if(renderCancelled) app->exit(1);
