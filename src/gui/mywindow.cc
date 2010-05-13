@@ -56,6 +56,7 @@
 // Standard Headers
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 // Qt Headers
 #include <QtGui/QHBoxLayout>
@@ -524,6 +525,9 @@ bool MainWindow::saveDlg()
 	QString formats;
 	std::vector<std::string> formatList = interf->listImageHandlers();
 	std::vector<std::string> formatDesc = interf->listImageHandlersFullName();
+	
+	std::sort(formatList.begin(), formatList.end());
+	std::sort(formatDesc.begin(), formatDesc.end());
 
 	for (size_t i = 0; i < formatList.size(); ++i)
 	{
