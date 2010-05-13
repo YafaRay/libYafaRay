@@ -77,7 +77,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual background_t* 	createBackground	(const char* name);
 		virtual integrator_t* 	createIntegrator	(const char* name);
 		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
-		virtual imageHandler_t*	createImageHandler	(const char* name, bool addToTable = true);
+		virtual imageHandler_t*	createImageHandler	(const char* name, bool addToTable = true); //!< The addToTable parameter, if true, allows to avoid the interface from taking ownership of the image handler
 		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
@@ -90,11 +90,13 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
-
-		//Versioning stuff
-		virtual char* getVersion() const;
 		
-		//Console Printing wrappers to report in color with yafaray's own coloring mechanic
+		virtual void setDrawParams(bool on = true);
+		virtual bool getDrawParams();
+
+		virtual char* getVersion() const; //!< Get version to check aginst the exporters
+		
+		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 		void printInfo(const std::string &msg);
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);

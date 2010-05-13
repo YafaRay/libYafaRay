@@ -444,7 +444,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("jpg", "jpg jpeg", "JPEG (Joint Photographic Experts Group)", jpgHandler_t::factory);
+		render.registerImageHandler("jpg", "jpg jpeg", "JPEG [Joint Photographic Experts Group]", jpgHandler_t::factory);
 	}
 
 }

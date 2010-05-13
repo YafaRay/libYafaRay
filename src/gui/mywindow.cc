@@ -31,7 +31,6 @@
 #include <interface/yafrayinterface.h>
 #include <core_api/params.h>
 #include <yafraycore/imageOutput.h>
-#include <yafraycore/memoryIO.h>
 
 // Embeded Resources:
 
@@ -166,7 +165,6 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_render = new RenderWidget(m_ui->renderArea, use_zbuf);
 	m_output = new QtOutput(m_render);
 	m_worker = new Worker(interf, this, m_output);
-	errorMessage = new QErrorMessage(this);
 
 	m_output->setRenderSize(QSize(resx, resy));
 
@@ -230,21 +228,25 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 			this, SLOT(showColor(bool)));
 	connect(m_ui->actionAskSave, SIGNAL(triggered(bool)),
 			this, SLOT(setAskSave(bool)));
+	connect(m_ui->actionSaveDepth, SIGNAL(triggered(bool)),
+			this, SLOT(setSaveDepth(bool)));
+	connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
+			this, SLOT(setDrawParams(bool)));
 			
 	m_ui->actionShowRGB->setChecked(true);
-			
+	useDrawParams = interf->getDrawParams();
+	m_ui->actionDrawParams->setChecked(useDrawParams);
+	
 	// offset when using border rendering
 	m_render->setRenderBorderStart( QPoint(bStartX, bStartY) );
 
-	memIO = NULL;
-	if (settings.mem)
-		memIO = new yafaray::memoryIO_t(resx, resy, settings.mem);
 	autoSave = settings.autoSave;
 	autoSaveAlpha = settings.autoSaveAlpha;
 	autoClose = settings.closeAfterFinish;
 	saveWithAlpha = autoSaveAlpha;
 
-	if (autoSave) {
+	if (autoSave)
+	{
 		this->fileName = settings.fileName;
 		this->setWindowTitle(this->windowTitle() + QString(" (") + QString(fileName.c_str()) + QString(")"));
 	}
@@ -261,7 +263,6 @@ MainWindow::~MainWindow()
 	delete m_render;
 	delete m_worker;
 	delete m_ui;
-	delete errorMessage;
 }
 
 bool MainWindow::event(QEvent *e)
@@ -330,7 +331,8 @@ void MainWindow::slotFinished()
 		Y_INFO << " Image saved to " << fileName;
 		if (autoSaveAlpha) std::cout << " with alpha" << yendl;
 		else std::cout << " without alpha" << yendl;
-		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
+		//TODO: fix here ************************************************************************
+//		m_render->saveImage(QString(fileName.c_str()), autoSaveAlpha);
 		renderSaved = true;
 		rt = QString("Image Auto-saved. ");
 		if (autoClose)
@@ -393,6 +395,7 @@ void MainWindow::slotFinished()
 	}
 
 	m_ui->progressbar->hide();
+	
 	QApplication::alert(this);
 }
 
@@ -404,6 +407,7 @@ void MainWindow::slotEnableDisable(bool enable)
 	m_ui->actionCancel->setVisible(!enable);
  	m_ui->actionZoom_In->setEnabled(enable);
  	m_ui->actionZoom_Out->setEnabled(enable);
+ 	m_ui->actionDrawParams->setEnabled(enable);
 }
 
 void MainWindow::setAlpha(bool checked)
@@ -449,6 +453,22 @@ void MainWindow::setAskSave(bool checked)
 	QSettings set;
 	askUnsaved = checked;
 	set.setValue("qtGui/askSave", askUnsaved);
+}
+
+void MainWindow::setSaveDepth(bool checked)
+{
+	saveWithDepth = checked;
+}
+
+void MainWindow::setDrawParams(bool checked)
+{
+	useDrawParams = checked;
+	if(!m_render->isRendering())
+	{
+		interf->setDrawParams(useDrawParams);
+		interf->getRenderedImage(*m_output);
+		showColor(true);
+	}
 }
 
 /*void MainWindow::slotOpen()
@@ -518,7 +538,7 @@ bool MainWindow::saveDlg()
 		interf->paramsSetInt("width", res_x);
 		interf->paramsSetInt("height", res_y);
 		interf->paramsSetBool("alpha_channel", saveWithAlpha);
-		interf->paramsSetBool("z_channel", use_zbuf);
+		interf->paramsSetBool("z_channel", saveWithDepth);
 		
 		m_lastPath = QDir(fileName).absolutePath();
 		
@@ -526,6 +546,8 @@ bool MainWindow::saveDlg()
 		imageOutput_t *out = new imageOutput_t(ih, m_lastPath.toStdString());
 		
 		interf->paramsClearAll();
+		
+		interf->setDrawParams(useDrawParams);
 
 		interf->getRenderedImage(*out);
 		
@@ -574,11 +596,6 @@ void MainWindow::slotCancel()
 
 	interf->abort();
 	m_worker->wait();
-
-	// before closing, transfer the render result into the memory buffer
-	// if it exists
-	if (memIO)
-		interf->getRenderedImage(*memIO);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)

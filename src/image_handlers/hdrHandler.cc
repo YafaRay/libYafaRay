@@ -630,7 +630,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("hdr", "hdr pic", "HDR (Radiance RGBE)", hdrHandler_t::factory);
+		render.registerImageHandler("hdr", "hdr pic", "HDR [Radiance RGBE]", hdrHandler_t::factory);
 	}
 
 }

@@ -27,7 +27,6 @@
 #include <QtCore/QTime>
 #include <string>
 
-#include <yafraycore/memoryIO.h>
 #include "yafqtapi.h"
 
 namespace Ui
@@ -74,6 +73,8 @@ public slots:
 	void showAlpha(bool checked);
 	void showDepth(bool checked);
 	void setAskSave(bool checked);
+	void setSaveDepth(bool checked);
+	void setDrawParams(bool checked);
 	void zoomIn();
 	void zoomOut();
 
@@ -82,7 +83,6 @@ private:
 	RenderWidget *m_render;
 	QtOutput *m_output;
 	Worker *m_worker;
-	QErrorMessage *errorMessage;
 	yafaray::yafrayInterface_t *interf;
 	QString m_outputPath;
 	QString m_lastPath;
@@ -92,7 +92,8 @@ private:
 	bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened
 	bool autoSaveAlpha;	// if true, the automatically saved image contains no alpha channel
 	bool saveWithAlpha;
-	yafaray::memoryIO_t* memIO;	// if not NULL, the image also is saved into this memory buffer
+	bool saveWithDepth;
+	bool useDrawParams;
 	QTime timeMeasure;		// time measure for the render
 	AnimWorking* anim;
 	bool renderSaved;

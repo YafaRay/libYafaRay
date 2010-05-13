@@ -114,7 +114,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				wi = refdir;
 				if(debug)
 				{
-					Y_DEBUG(1) << "Glass: flags:" << s.flags << ", matches:" << (bool)(matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) << yendl;
+					Y_INFO << "Glass: flags:" << s.flags << ", matches:" << (bool)(matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) << yendl;
 					debug = false;
 				}
 				s.pdf = (matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) ? pKt : 1.f;

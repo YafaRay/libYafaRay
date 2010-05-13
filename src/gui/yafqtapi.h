@@ -15,7 +15,6 @@ namespace yafaray
 }
 
 struct YAFARAY_QT_EXPORT Settings {
-	float* mem;
 	bool autoSave;
 	bool autoSaveAlpha;
 	bool closeAfterFinish;

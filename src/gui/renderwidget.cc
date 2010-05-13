@@ -143,25 +143,6 @@ void RenderWidget::paintDepth()
 	}
 }
 
-bool RenderWidget::saveImage(const QString &path, bool alpha)
-{
-	QImage image(colorBuffer);
-	if (alpha) image.setAlphaChannel(alphaChannel);
-	return image.save(path);
-}
-
-bool RenderWidget::saveAlphaImage(const QString &path)
-{
-	QImage image(alphaChannel);
-	return image.save(path);
-}
-
-bool RenderWidget::saveDepthImage(const QString &path)
-{
-	QImage image(depthChannel);
-	return image.save(path);
-}
-
 void RenderWidget::zoom(float f, QPoint mPos)
 {
 	scaleFactor *= f;
@@ -195,7 +176,7 @@ void RenderWidget::zoomOut(QPoint mPos)
 
 bool RenderWidget::event(QEvent *e)
 {
-	if (e->type() == (QEvent::Type)GuiUpdate)
+	if (e->type() == (QEvent::Type)GuiUpdate && rendering)
 	{
 		GuiUpdateEvent *ge = (GuiUpdateEvent*)e;
 
@@ -221,7 +202,7 @@ bool RenderWidget::event(QEvent *e)
 
 		return true;
 	}
-	else if (e->type() == (QEvent::Type)GuiAreaHighlite)
+	else if (e->type() == (QEvent::Type)GuiAreaHighlite && rendering)
 	{
 		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent*)e;
 		bufferMutex.lock();

@@ -83,7 +83,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(renderArea_t &a);
 		/*! Output all pixels to the color output */
-		void flush(int flags = IF_ALL, colorOutput_t *out = 0, bool addParamsBadge = true);
+		void flush(int flags = IF_ALL, colorOutput_t *out = 0);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -119,6 +119,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setAAParams(const std::string &aa_params);
 		void setIntegParams(const std::string &integ_params);
 		void setCustomString(const std::string &custom);
+		void setUseParamsBadge(bool on = true) { drawParams = on; }
+		bool getUseParamsBadge() { return drawParams; }
 
 #if HAVE_FREETYPE
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed for this */

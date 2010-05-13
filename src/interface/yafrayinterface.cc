@@ -239,7 +239,7 @@ void yafrayInterface_t::paramsEndList()
 	cparams = params;
 }
 
-light_t* 		yafrayInterface_t::createLight(const char* name)
+light_t* yafrayInterface_t::createLight(const char* name)
 {
 	light_t* light = env->createLight(name, *params);
 	if(light) scene->addLight(light);
@@ -252,15 +252,16 @@ camera_t* 		yafrayInterface_t::createCamera(const char* name) { return env->crea
 background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }
 integrator_t* 	yafrayInterface_t::createIntegrator(const char* name) { return env->createIntegrator(name, *params); }
 imageHandler_t* yafrayInterface_t::createImageHandler(const char* name, bool addToTable) { return env->createImageHandler(name, *params, addToTable); }
-VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name) { 
-	//return env->createVolumeRegion(name, *params);
+
+VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name)
+{
 	VolumeRegion* vr = env->createVolumeRegion(name, *params);
 	if (!vr) return 0;
 	scene->addVolumeRegion(vr);
 	return 0;
 }
 
-unsigned int 	yafrayInterface_t::createObject	(const char* name)
+unsigned int yafrayInterface_t::createObject	(const char* name)
 {
 	object3d_t *object = env->createObject(name, *params);
 	if(!object) return 0;
@@ -328,6 +329,22 @@ void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 	scene->render();
 	film = scene->getImageFilm();
 	//delete film;
+}
+
+void yafrayInterface_t::setDrawParams(bool on)
+{
+	(*params)["drawParams"] = on;
+	if(film) film->setUseParamsBadge(on);
+}
+
+bool yafrayInterface_t::getDrawParams()
+{
+	bool dp = false;
+	
+	if(film) dp = film->getUseParamsBadge();
+	else params->getParam("drawParams", dp);
+	
+	return dp;
 }
 
 // export "factory"...

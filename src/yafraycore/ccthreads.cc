@@ -146,7 +146,8 @@ conditionVar_t::~conditionVar_t()
 #if HAVE_PTHREAD
 void * wrapper(void *data)
 {
-	thread_t *obj=(thread_t *)data;
+	using namespace yafaray;
+	thread_t *obj = (thread_t *)data;
 	try{ obj->body(); }
 	catch(std::exception &e)
 	{

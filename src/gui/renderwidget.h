@@ -55,10 +55,6 @@ public:
 	void paintAlpha();
 	void paintDepth();
 
-	bool saveImage(const QString &path, bool alpha);
-	bool saveAlphaImage(const QString &path);
-	bool saveDepthImage(const QString &path);
-
 private:
 	void zoom(float f, QPoint mPos);
 public:

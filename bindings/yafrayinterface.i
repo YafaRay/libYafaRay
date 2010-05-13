@@ -134,6 +134,9 @@ class yafrayInterface_t
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
+		virtual void setDrawParams(bool on = true);
+		virtual bool getDrawParams();
+
 		//Versioning stuff
 		virtual char* getVersion() const;
 		

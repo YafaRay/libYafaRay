@@ -229,7 +229,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerImageHandler("exr", "exr", "EXR (IL&M OpenEXR)", exrHandler_t::factory);
+		render.registerImageHandler("exr", "exr", "EXR [IL&M OpenEXR]", exrHandler_t::factory);
 	}
 
 }

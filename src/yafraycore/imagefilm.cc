@@ -365,7 +365,7 @@ void imageFilm_t::finishArea(renderArea_t &a)
 	outMutex.unlock();
 }
 
-void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
+void imageFilm_t::flush(int flags, colorOutput_t *out)
 {
 	outMutex.lock();
 
@@ -398,10 +398,10 @@ void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
 			
 			if(correctGamma) col.gammaAdjust(gamma);
 			
-			if(drawParams && addParamsBadge && h - j <= dpHeight)
+			if(drawParams && h - j <= dpHeight)
 			{
 				colorA_t &dpcol = (*dpimage)(i, k);
-				col = colorA_t( alphaBlend(col, dpcol, dpcol.getA()), std::max( col.getA(), dpcol.getA() ) );
+				col = colorA_t( alphaBlend(col, dpcol, dpcol.getA()), std::max(col.getA(), dpcol.getA()) );
 			}
 			
 			if(depthMap)
@@ -414,7 +414,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
 			}
 		}
 		
-		if(drawParams && addParamsBadge && h - j <= dpHeight) k++;
+		if(drawParams && h - j <= dpHeight) k++;
 	}
 
 	colout->flush();
@@ -659,7 +659,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 			{
 				colorA_t &col = (*dpimage)(i, j);
 				alpha = (float)tmpBuf/255.0;
-				col = alphaBlend(col, colorA_t(textColor, alpha), alpha);
+				col = colorA_t(alphaBlend((color_t)col, textColor, alpha), std::max(col.getA(), alpha));
 			}
 		}
 	}
@@ -690,7 +690,7 @@ void imageFilm_t::drawRenderSettings()
 	
 	ss << "YafaRay (" << version << ")";
 	
-	ss << std::setprecision(4);
+	ss << std::setprecision(2);
 	double times = gTimer.getTime("rendert");
 	int timem, timeh;
 	gTimer.splitTime(times, &times, &timem, &timeh);
@@ -710,7 +710,7 @@ void imageFilm_t::drawRenderSettings()
 
 	Y_INFO << "ImageOverly: render settings" << yendl << text << yendl;
 
-	// use 10pt at default dpi
+	// set font size at default dpi
 	float fontsize = 9.5f;
 
 	// initialize library

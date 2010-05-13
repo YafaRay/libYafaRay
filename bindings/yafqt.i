@@ -16,7 +16,6 @@
 %}
 
 struct Settings {
-    float* mem;
     bool autoSave;
     bool autoSaveAlpha;
     bool closeAfterFinish;
