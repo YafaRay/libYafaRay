@@ -378,7 +378,7 @@ void MainWindow::slotFinished()
 
 	rt.append(QString("Render time: %1 [%2s.]").arg(timeStr).arg(timeSec, 5));
 	m_ui->yafLabel->setText(rt);
-	Y_INFO << setColor(Green, true) << " Render completed!" << setColor() << std::endl;
+	Y_INFO << setColor(Green, true) << "Render completed!" << setColor() << yendl;
 	
 	m_render->finishRendering();
 	update();

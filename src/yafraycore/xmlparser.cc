@@ -32,12 +32,12 @@ __BEGIN_YAFRAY
 #if HAVE_XML
 void startDocument(void *user_data)
 {
-	//std::cout<< "Start Docunent"<< std::endl;
+	//Empty
 }
 
 void endDocument(void *user_data)
 {
-	//std::cout<< "End Docunent"<< std::endl;
+	//Empty
 }
 
 void startElement(void * user_data, const xmlChar * name, const xmlChar **attrs)
@@ -114,12 +114,12 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 	xmlParser_t parser(env, scene, render);
 	if (xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
 	{
-		std::cout << "Error parsing the file " << filename << std::endl;
+		Y_ERROR << "XMLParser: Parsing the file " << filename << yendl;
 		return false;
 	}
 	return true;
 #else
-	std::cout << "Warning, yafray was compiled without XML support, cannot parse file.\n";
+	Y_WARNING << "XMLParser: yafray was compiled without XML support, cannot parse file." << yendl;
 	return false;
 #endif
 }
@@ -168,7 +168,7 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 		{
 			if(attrs[0][1] == 0 || attrs[0][2] != 0)
 			{
-				std::cout << "Ignored wrong attr " << attrs[0] << " in point (1)"<< std::endl;
+				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (1)" << yendl;
 				continue; //it is not a single character
 			}
 			switch(attrs[0][1])
@@ -176,13 +176,13 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 				case 'x' : op.x = atof(attrs[1]); break;
 				case 'y' : op.y = atof(attrs[1]); break;
 				case 'z' : op.z = atof(attrs[1]); break;
-				default: std::cout << "Ignored wrong attr " << attrs[0] << " in point (2)"<< std::endl;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (2)" << yendl;
 			}
 			continue;
 		}
 		else if(attrs[0][1] != 0)
 		{
-			std::cout << "Ignored wrong attr " << attrs[0] << " in point (3)"<< std::endl;
+			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (3)" << yendl;
 			continue; //it is not a single character
 		}
 		switch(attrs[0][0])
@@ -190,10 +190,10 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 			case 'x' : p.x = atof(attrs[1]); break;
 			case 'y' : p.y = atof(attrs[1]); break;
 			case 'z' : p.z = atof(attrs[1]); break;
-			default: std::cout << "Ignored wrong attr " << attrs[0] << " in point"<< std::endl;
+			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << yendl;
 		}
 	}
-	//cout << "GOT point "<< p <<endl;
+
 	return true;
 }
 
@@ -245,7 +245,7 @@ void startEl_dummy(xmlParser_t &parser, const char *element, const char **attrs)
 
 void startEl_document(xmlParser_t &parser, const char *element, const char **attrs)
 {
-	if( strcmp(element, "scene") ) std::cout << "skipping <"<<element<<">" << std::endl; /* parser.error("Expected scene definition"); */
+	if( strcmp(element, "scene") ) Y_WARNING << "XMLParser: skipping <" << element << ">" << yendl; /* parser.error("Expected scene definition"); */
 	else
 	{
 		for( ;attrs && attrs[0]; attrs += 2)
@@ -258,13 +258,12 @@ void startEl_document(xmlParser_t &parser, const char *element, const char **att
 			}
 		}
 		parser.pushState(startEl_scene, endEl_scene);
-		//std::cout << "starting <scene>" << std::endl;
 	}
 }
 
 void endEl_document(xmlParser_t &parser, const char *element)
 {
-	std::cout << "finished document\n";
+	Y_INFO << "XMLParser: Finished document" << yendl;
 }
 
 struct mesh_dat_t
@@ -286,11 +285,18 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	if( el == "material" || el == "integrator" || el == "light" || el == "texture" ||
 		el == "camera" || el == "background" || el == "object" || el == "volumeregion")
 	{
-		if(!attrs[0]){ std::cerr << "error: no attributes for scene element given!" << std::endl; return; }
+		if(!attrs[0])
+		{
+			Y_ERROR << "XMLParser: No attributes for scene element given!" << yendl;
+			return;
+		}
 		else if(!strcmp(attrs[0], "name")) name = new std::string(attrs[1]);
-		else{ std::cerr << "error: attribute for scene element does not match 'name'!" << std::endl; return; }
+		else
+		{
+			Y_ERROR << "XMLParser: Attribute for scene element does not match 'name'!" << yendl;
+			return;
+		}
 		parser.pushState(startEl_parammap, endEl_parammap, name);
-		//std::cout << "starting <" << el << ">" << std::endl;
 	}
 	else if(el == "mesh")
 	{
@@ -303,16 +309,18 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 			else if(name == "has_uv") md->has_uv = str2bool(attrs[n+1]);
 			else if(name == "vertices") vertices = atoi(attrs[n+1]);
 			else if(name == "faces") triangles = atoi(attrs[n+1]);
-			//else if(name == "smooth"){ md->smooth=true; md->smooth_angle = atof(attrs[n+1]); }
 			else if(name == "type")	type = atoi(attrs[n+1]);
 		}
 		parser.pushState(startEl_mesh, endEl_mesh, md);
-		if(!parser.scene->startGeometry()) std::cerr << "invalid scene state on startGeometry()!" << std::endl;
+		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
+
 		// Get a new object ID
 		md->ID = parser.scene->getNextFreeID();
+
 		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type))
-		{	std::cerr << "invalid scene state on startTriMesh()!" << std::endl; }
-		//std::cout << "starting <" << el << ">" << std::endl;
+		{
+			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
+		}
 	}
 	else if(el == "smooth")
 	{
@@ -327,7 +335,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		//not optimal to take ID blind...
 		parser.scene->startGeometry();
 		bool success = parser.scene->smoothMesh(ID, angle);
-		if(!success) std::cout << "couldn't smooth mesh ID=" << ID << ", angle=" << angle << std::endl;
+		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh ID = " << ID << ", angle = " << angle << yendl;
 		parser.scene->endGeometry();
 		parser.pushState(startEl_dummy, endEl_dummy);
 	}
@@ -335,14 +343,13 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	{
 		parser.cparams = &parser.render;
 		parser.pushState(startEl_parammap, endEl_render);
-		//std::cout << "skipping <" << el << ">" << std::endl;
 	}
-	else std::cout << "skipping unrecognized scene element" << std::endl;
+	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << yendl;
 }
 
 void endEl_scene(xmlParser_t &parser, const char *element)
 {
-	if(strcmp(element, "scene")) std::cerr << "warning: expected </scene> tag!" << std::endl;
+	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: : expected </scene> tag!" << yendl;
 	else
 	{
 		//std::cout << "finished </scene>\n";
@@ -374,7 +381,7 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 				case 'a' : a = atoi(attrs[1]); break;
 				case 'b' : b = atoi(attrs[1]); break;
 				case 'c' : c = atoi(attrs[1]); break;
-				default: std::cout << "Ignored wrong attr " << attrs[0] << " in face"<< std::endl;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << yendl;
 			}
 			else
 			{
@@ -395,7 +402,7 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 			{
 				case 'u': u = atof(attrs[1]); break;
 				case 'v': v = atof(attrs[1]); break;
-				default: std::cout << "Ignored wrong attr " << attrs[0] << " in uv"<< std::endl;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in uv" << yendl;
 			}
 		}
 		parser.scene->addUV(u, v);
@@ -404,7 +411,7 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 	{
 		std::string mat_name(attrs[1]);
 		dat->mat = parser.env->getMaterial(mat_name);
-		if(!dat->mat) std::cerr << "unkown material!" << std::endl;
+		if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
 	}
 }
 
@@ -413,9 +420,8 @@ void endEl_mesh(xmlParser_t &parser, const char *element)
 	if(std::string(element) == "mesh")
 	{
 		mesh_dat_t *md = (mesh_dat_t *)parser.stateData();
-		if(!parser.scene->endTriMesh()) std::cerr << "invalid scene state on endTriMesh()!" << std::endl;
-//		if(md->smooth) parser.scene->smoothMesh(md->ID, md->smooth_angle);
-		if(!parser.scene->endGeometry()) std::cerr << "invalid scene state on endGeometry()!" << std::endl;
+		if(!parser.scene->endTriMesh()) Y_ERROR << "XMLParser: Invalid scene state on endTriMesh()!" << yendl;
+		if(!parser.scene->endGeometry()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
 		delete md;
 		parser.popState();
 	}
@@ -438,7 +444,6 @@ void startEl_parammap(xmlParser_t &parser, const char *element, const char **att
 	parameter_t p;
 	parseParam(attrs, p);
 	parser.setParam(std::string(element), p);
-	//std::cout << "adding parameter '" << element << "'" << std::endl;
 }
 
 void endEl_parammap(xmlParser_t &p, const char *element)
@@ -448,7 +453,7 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 	{
 		std::string el(element);
 		std::string *name = (std::string *)p.stateData();
-		if(!name) std::cerr << "error! no name for scene element available!" << std::endl;
+		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << yendl;
 		else
 		{
 			if(el == "material")
@@ -477,12 +482,11 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 				VolumeRegion* vr = p.env->createVolumeRegion(*name, p.params);
 				if (vr) p.scene->addVolumeRegion(vr);
 			}
-			else std::cerr << "warning: unexpected end-tag of scene element!\n";
+			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << yendl;
 		}
 		
 		if(name) delete name;
 		p.popState(); p.params.clear(); p.eparams.clear();
-		//std::cout << "ending <" << el << ">" << std::endl;
 	}
 }
 
@@ -491,7 +495,6 @@ void startEl_paramlist(xmlParser_t &parser, const char *element, const char **at
 	parameter_t p;
 	parseParam(attrs, p);
 	parser.setParam(std::string(element), p);
-	//std::cout << "adding parameter '" << element << "'" << std::endl;
 }
 
 void endEl_paramlist(xmlParser_t &p, const char *element)
@@ -509,7 +512,6 @@ void endEl_render(xmlParser_t &p, const char *element)
 	{
 		p.cparams = &p.params;
 		p.popState();
-		//std::cout << "ending <render>" << std::endl;
 	}
 }
 

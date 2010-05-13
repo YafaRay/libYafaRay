@@ -78,11 +78,11 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	thetaS = acos(sunDir.z);
 	
 	act = (nightSky)?"ON":"OFF";
-	Y_INFO << "DarkSky: Night mode [ " << act << " ]" << std::endl;
-	Y_INFO << "DarkSky: Solar Declination in Degrees (" << radToDeg(thetaS) << ")" << std::endl;
+	Y_INFO << "DarkSky: Night mode [ " << act << " ]" << yendl;
+	Y_INFO << "DarkSky: Solar Declination in Degrees (" << radToDeg(thetaS) << ")" << yendl;
 	act = (clamp)?"active.":"inactive.";
-	Y_INFO << "DarkSky: RGB Clamping " << act << std::endl;
-	Y_INFO << "DarkSky: Altitude " << alt << std::endl;
+	Y_INFO << "DarkSky: RGB Clamping " << act << yendl;
+	Y_INFO << "DarkSky: Altitude " << alt << yendl;
 
 	cosThetaS = fCos(thetaS);
 	cosTheta2 = cosThetaS * cosThetaS;
@@ -288,7 +288,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	std::string cs = "CIE (E)";
 	float exp = 1.f;
 
-	Y_INFO << "DarkSky: Begin" << std::endl;
+	Y_INFO << "DarkSky: Begin" << yendl;
 
 	params.getParam("from", dir);
 	params.getParam("turbidity", turb);
@@ -341,7 +341,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		color_t suncol = new_sunsky->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d.z);
 
-		Y_INFO << "DarkSky: SunColor = " << suncol << std::endl;
+		Y_INFO << "DarkSky: SunColor = " << suncol << yendl;
 
 		paraMap_t p;
 		p["type"] = std::string("sunlight");
@@ -351,7 +351,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		p["power"] = parameter_t(pw);
 		p["samples"] = bgl_samples;
 
-		Y_INFO << "DarkSky: Adding a \"Real Sun\"";
+		Y_INFO << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
 		light_t *light = render.createLight("DarkSky_RealSun", p);
 		if(light)
@@ -360,7 +360,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		}
 	}
 
-	Y_INFO << "DarkSky: End" << std::endl;
+	Y_INFO << "DarkSky: End" << yendl;
 
 	return (background_t *)new_sunsky;
 }

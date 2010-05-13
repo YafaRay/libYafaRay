@@ -101,7 +101,7 @@ bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices)
 
 bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
-	Y_WARNING << "This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << std::endl;
+	Y_WARNING << "This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << yendl;
 	objID_t _id;
 	_id = scene->getNextFreeID();
 	if ( _id > 0 )

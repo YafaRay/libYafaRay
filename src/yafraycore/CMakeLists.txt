@@ -7,7 +7,7 @@ set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc color_consol
 					triangle.cc vector3d.cc photon.cc
 					xmlparser.cc spectrum.cc volume.cc
 					surface.cc integrator.cc ccthreads.cc
-					imageOutput.cc EXR_io.cc tga_io.cc memoryIO.cc)
+					imageOutput.cc memoryIO.cc)
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 

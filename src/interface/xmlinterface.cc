@@ -16,7 +16,7 @@ void xmlInterface_t::loadPlugins(const char *path) { }
 
 void xmlInterface_t::clearAll()
 {
-	Y_INFO << "XMLInterface: cleaning up..." << std::endl;
+	Y_INFO << "XMLInterface: cleaning up..." << yendl;
 	env->clearAll();
 	materials.clear();
 	if(xmlFile.is_open())
@@ -36,16 +36,16 @@ bool xmlInterface_t::startScene(int type)
 	xmlFile.open(xmlName.c_str());
 	if(!xmlFile.is_open())
 	{
-		Y_ERROR << "XMLInterface: Couldn't open " << xmlName << std::endl;
+		Y_ERROR << "XMLInterface: Couldn't open " << xmlName << yendl;
 		return false;
 	}
-	else Y_INFO << "XMLInterface: Writing scene to: " << xmlName << std::endl;
+	else Y_INFO << "XMLInterface: Writing scene to: " << xmlName << yendl;
 	xmlFile << std::boolalpha;
-	xmlFile << "<?xml version=\"1.0\"?>" << std::endl;
+	xmlFile << "<?xml version=\"1.0\"?>" << yendl;
 	xmlFile << "<scene type=\"";
 	if(type==0) xmlFile << "triangle";
 	else 		xmlFile << "universal";
-	xmlFile << "\">" << std::endl;
+	xmlFile << "\">" << yendl;
 	return true;
 }
 
@@ -291,7 +291,7 @@ void xmlInterface_t::render(colorOutput_t &output)
 	xmlFile << "\n<render>\n";
 	writeParamMap(*params);
 	xmlFile << "</render>\n";
-	xmlFile << "</scene>" << std::endl;
+	xmlFile << "</scene>" << yendl;
 	xmlFile.flush();
 	xmlFile.close();
 }

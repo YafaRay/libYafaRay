@@ -94,7 +94,7 @@ colorA_t tifHandler_t::getPixel(int x, int y)
 
 bool tifHandler_t::saveToFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
 
 	TIFF *out = TIFFOpen(name.c_str(), "w");
 	int channels;
@@ -132,7 +132,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
     	
 		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{
-			Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << std::endl;
+			Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << yendl;
 			TIFFClose(out);
 			_TIFFfree(scanline);
 
@@ -146,7 +146,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.tif";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\" (16Bits grayscale)..." << std::endl;
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\" (16Bits grayscale)..." << yendl;
 
 		out = TIFFOpen(zbufname.c_str(), "w");
 		
@@ -174,7 +174,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
 			
 			if(TIFFWriteScanline(out, scanline16, y, 0) < 0)
 			{
-				Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << std::endl;
+				Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << yendl;
 				TIFFClose(out);
 				_TIFFfree(scanline16);
 
@@ -187,14 +187,14 @@ bool tifHandler_t::saveToFile(const std::string &name)
 
 	}
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }
 
 bool tifHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	uint32 w, h;
 	
@@ -207,7 +207,7 @@ bool tifHandler_t::loadFromFile(const std::string &name)
            
 	if(!TIFFReadRGBAImage(tif, w, h, tiffData, 0))
 	{
-		Y_ERROR << handlerName << ": Error reading TIFF file" << std::endl;
+		Y_ERROR << handlerName << ": Error reading TIFF file" << yendl;
 		return false;
 	}
 	
@@ -238,7 +238,7 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	
 	TIFFClose(tif);
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }

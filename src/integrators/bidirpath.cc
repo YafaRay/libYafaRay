@@ -7,7 +7,6 @@
 #include <core_api/light.h>
 #include <core_api/camera.h>
 #include <core_api/imagefilm.h>
-#include <yafraycore/EXR_io.h>
 #include <integrators/integr_utils.h>
 #include <utilities/mcqmc.h>
 
@@ -25,7 +24,6 @@ __BEGIN_YAFRAY
 #define MIN_PATH_LENGTH 3
 
 #define _BIDIR_DEBUG 0
-#define _BIDIR_DEBUG_IMG 0
 #define _DO_LIGHTIMAGE 1
 
 /*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)
@@ -150,12 +148,11 @@ class YAFRAYPLUGIN_EXPORT biDirIntegrator_t: public tiledIntegrator_t
 		pdf1D_t *lightPowerD;
 		float fNumLights;
 		std::map <const light_t*, CFLOAT> invLightPowerD;
-		outEXR_t *lightOut;
 		imageFilm_t *lightImage;
 };
 
 biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(transpShad), sDepth(shadowDepth),
-		lightPowerD(0), lightOut(0), lightImage(0)
+		lightPowerD(0), lightImage(0)
 {
 	type = SURFACE;
 	intpb = 0;
@@ -207,9 +204,6 @@ bool biDirIntegrator_t::preprocess()
 	
 	cam = scene->getCamera();
 	//nPaths = 0;
-#if _BIDIR_DEBUG_IMG
-	lightOut = new outEXR_t(cam->resX()+2, cam->resY()+2, "/home/lynx/light_image.exr", "");
-#endif
 	lightImage = scene->getImageFilm();// new imageFilm_t(cam->resX(), cam->resY(), 0, 0, *lightOut, 1.5f);
 	lightImage->setDensityEstimation(true);
 	//lightImage->setInteractive(false);
@@ -262,9 +256,6 @@ void biDirIntegrator_t::cleanup()
 		for(int i=0; i<MAX_PATH_LENGTH; ++i) free(pathData.eyePath[i].userdata);
 	}
 	lightImage->setNumSamples(nPaths); //dirty hack...
-#if _BIDIR_DEBUG_IMG
-	lightImage->flush(IF_DENSITYIMAGE, lightOut);
-#endif
 }
 
 /* ============================================================

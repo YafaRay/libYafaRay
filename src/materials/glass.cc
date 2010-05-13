@@ -112,13 +112,15 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 			if( !(s.flags & BSDF_SPECULAR) || s.s1 < pKt)
 			{
 				wi = refdir;
-				if(debug){ std::cout << "flags:"<<s.flags<<", matches:"<<(bool)(matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT))<<std::endl; debug=false; }
+				if(debug)
+				{
+					Y_DEBUG(1) << "Glass: flags:" << s.flags << ", matches:" << (bool)(matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) << yendl;
+					debug = false;
+				}
 				s.pdf = (matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) ? pKt : 1.f;
 				s.sampledFlags = BSDF_DISPERSIVE | BSDF_TRANSMIT;
-				//color_t wl_col;
-				//wl2rgb(state.wavelength, wl_col);
-//				if(debug){ std::cout << "wl_col:"<<wl_col<<", wavelen.:"<<state.wavelength<<std::endl; debug=false; }
-				return filterCol*/* wl_col* */(Kt/std::fabs(sp.N*wi));
+
+				return filterCol * (Kt/std::fabs(sp.N*wi));
 			}
 			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )
 			{

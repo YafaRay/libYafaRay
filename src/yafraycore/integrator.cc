@@ -18,7 +18,9 @@ class renderWorker_t: public yafthreads::thread_t
 	public:
 		renderWorker_t(tiledIntegrator_t *it, scene_t *s, imageFilm_t *f, threadControl_t *c, int id, int smpls, int offs=0, bool adptv=false):
 			integrator(it), scene(s), imageFilm(f), control(c), samples(smpls), offset(offs), threadID(id), adaptive(adptv)
-		{ /* std::cout << "renderWorker_t::renderWorker_t(): *this="<<(void*)this<<std::endl; */ };
+		{
+			//Empty
+		}
 		virtual void body();
 	protected:
 		tiledIntegrator_t *integrator;
@@ -37,7 +39,6 @@ void renderWorker_t::body()
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		integrator->renderTile(a, samples, offset, adaptive, threadID);
-//		imageFilm->finishArea(a);
 		control->countCV.lock();
 		control->areas.push_back(a);
 		control->countCV.signal();
@@ -56,12 +57,12 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
 	iAA_passes = 1.f / (float) AA_passes;
-	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << std::endl;
-	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << std::endl;
-	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << std::endl;
-	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << std::endl;
+	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
+	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
+	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
+	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
-	Y_INFO << integratorName << ": " << passString.str() << std::endl;
+	Y_INFO << integratorName << ": " << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
 
 	gTimer.addEvent("rendert");
@@ -103,7 +104,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
-	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
+	Y_INFO << integratorName << ": Overall rendertime: " << gTimer.getTime("rendert") << "s" << yendl;
 
 	return true;
 }

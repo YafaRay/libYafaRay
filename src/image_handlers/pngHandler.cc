@@ -105,7 +105,7 @@ colorA_t pngHandler_t::getPixel(int x, int y)
 
 bool pngHandler_t::saveToFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
 
 	FILE *fp;
 	png_structp pngPtr;
@@ -117,7 +117,7 @@ bool pngHandler_t::saveToFile(const std::string &name)
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << std::endl;
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
 		return false;
 	}
 
@@ -173,13 +173,13 @@ bool pngHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.png";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << std::endl;
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << yendl;
 
 		fp = fopen(zbufname.c_str(), "wb");
 
 		if(!fp)
 		{
-			Y_ERROR << handlerName << ": Cannot open file " << zbufname << std::endl;
+			Y_ERROR << handlerName << ": Cannot open file " << zbufname << yendl;
 			return false;
 		}
 
@@ -224,14 +224,14 @@ bool pngHandler_t::saveToFile(const std::string &name)
 		delete[] rowPointers;
 	}
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }
 
 bool pngHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	png_structp pngPtr = NULL;
 	png_infop infoPtr = NULL;
@@ -240,7 +240,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << std::endl;
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
     if(fread(signature, 1, 8, fp) != 8)
     {
-    	 Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << std::endl;
+    	 Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << yendl;
     	 return false;
     }
 
@@ -266,7 +266,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	fclose(fp);
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }
@@ -281,7 +281,7 @@ bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
 
     if(reader->read(signature, 8) < 8)
     {
-    	 Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << std::endl;
+    	 Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << yendl;
     	 return false;
     }
 
@@ -306,27 +306,27 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 {
     if(png_sig_cmp(sig, 0, 8))
     {
-		Y_ERROR << handlerName << ": Data is not from a PNG image!" << std::endl;
+		Y_ERROR << handlerName << ": Data is not from a PNG image!" << yendl;
     	return false;
     }
 
 	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 	{
-		Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
+		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
 		return false;
 	}
 
 	if(!(infoPtr = png_create_info_struct(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, NULL, NULL);
-		Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
+		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
 		return false;
 	}
 
 	if(setjmp(png_jmpbuf(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
-		Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
+		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
 		return false;
 	}
 
@@ -337,21 +337,21 @@ bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_struct
 {
 	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 	{
-		Y_ERROR << handlerName << ": Allocation of png struct failed!" << std::endl;
+		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
 		return false;
 	}
 
 	if(!(infoPtr = png_create_info_struct(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, NULL, NULL);
-		Y_ERROR << handlerName << ": Allocation of png info failed!" << std::endl;
+		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
 		return false;
 	}
 
 	if(setjmp(png_jmpbuf(pngPtr)))
 	{
 		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
-		Y_ERROR << handlerName << ": Long jump triggered error!" << std::endl;
+		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
 		return false;
 	}
 
@@ -407,7 +407,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 			break;
 
 		default:
-			Y_ERROR << handlerName << ": PNG type is not supported!" << std::endl;
+			Y_ERROR << handlerName << ": PNG type is not supported!" << yendl;
 			longjmp(png_jmpbuf(pngPtr), 1);
 	}
 

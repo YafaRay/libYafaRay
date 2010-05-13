@@ -103,20 +103,6 @@ void timer_t::splitTime(double t, double *secs, int *mins, int *hours, int *days
 		times -= m*60;
 	}
 	*secs = t - double(s - times);
-	//std::cout << "splitTime: " << d << "d " << h << "h " << m << "m " << times << "s (" << *secs << "s)" << std::endl;
 }
 
 __END_YAFRAY
-
-//testing:
-/*
-int main()
-{
-	timer_t myTimer;
-	myTimer.addEvent("waiting");
-	myTimer.start("waiting");
-	Sleep(1800);
-	myTimer.stop("waiting");
-	std::cout << "The waiting time was: "<<myTimer.getTime("waiting")<<"s!\n";
-}
-*/

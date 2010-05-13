@@ -99,7 +99,7 @@ exrHandler_t::~exrHandler_t()
 
 bool exrHandler_t::saveToFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << ( m_hasDepth ? "Z" : "" ) << " file as \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << ( m_hasDepth ? "Z" : "" ) << " file as \"" << name << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -131,12 +131,12 @@ bool exrHandler_t::saveToFile(const std::string &name)
 	try
 	{
 		file.writePixels(m_height);
-		Y_INFO << handlerName << ": Done." << std::endl;
+		Y_INFO << handlerName << ": Done." << yendl;
 		return true;
 	}
 	catch (const std::exception &exc)
 	{
-		Y_ERROR << handlerName << ": " << exc.what() << std::endl;
+		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
 	}
 }
@@ -194,7 +194,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 	}
 	catch (const std::exception &exc)
 	{
-		Y_ERROR << handlerName << ": " << exc.what() << std::endl;
+		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
 	}
 }

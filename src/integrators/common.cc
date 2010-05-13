@@ -219,20 +219,20 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		for(int i=0;i<numLights;++i) energies[i] = lights[i]->totalEnergy().energy();
 		pdf1D_t *lightPowerD = new pdf1D_t(energies, numLights);
 		
-		Y_INFO << intName << ": Light(s) photon color testing for caustics map:\n";
+		Y_INFO << intName << ": Light(s) photon color testing for caustics map:" << yendl;
 		color_t pcol(0.f);
 		for(int i=0;i<numLights;++i)
 		{
 			pcol = lights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_INFO << intName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
+			Y_INFO << intName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 		}
 		
 		delete[] energies;
 
 		int pbStep;
-		Y_INFO << intName << ": Building caustics photon map...\n";
+		Y_INFO << intName << ": Building caustics photon map..." << yendl;
 		pb->init(128);
 		pbStep = std::max(1U, nPhotons / 128);
 		pb->setTag("Building caustics photon map...");
@@ -252,15 +252,22 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 			s2 = scrHalton(2, curr);
 			s3 = scrHalton(3, curr);
 			s4 = scrHalton(4, curr);
-			//sL = RI_S(curr);
-			sL = float(curr) / float(nPhotons);//std::fabs(fSin((float)curr * 0.01f)); testing code for experiment please don't remove. DarkTide
+			
+			sL = float(curr) / float(nPhotons);
+			
 			int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
-			if(lightNum >= numLights){ std::cout << "lightPDF sample error! "<<sL<<"/"<<lightNum<<"\n"; delete lightPowerD; return false; }
+			
+			if(lightNum >= numLights)
+			{
+				Y_ERROR << intName << ": lightPDF sample error! " << sL << "/" << lightNum << yendl;
+				delete lightPowerD;
+				return false;
+			}
 			
 			color_t pcol = lights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 			ray.tmin = MIN_RAYDIST;
 			ray.tmax = -1.0;
-			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
+			pcol *= fNumLights * lightPdf / lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 			if(pcol.isBlack())
 			{
 				++curr;
@@ -277,7 +284,10 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 			while( scene.intersect(ray, *hit2) )
 			{
 				if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
-				{ std::cout << "NaN WARNING (photon color)" << std::endl; break; }
+				{
+					Y_WARNING << intName << ": NaN (photon color)" << yendl;
+					break;
+				}
 				color_t transm(1.f), vcol;
 				// check for volumetric effects
 				if(material)
@@ -344,9 +354,9 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		}
 		pb->done();
 		pb->setTag("Caustic photon map built.");
-		Y_INFO << intName << ": Done.\n";
-		Y_INFO << intName << ": Shot "<<curr<<" caustic photons from " << numLights <<" light(s).\n";
-		Y_INFO << intName << ": Stored caustic photons: "<<cMap.nPhotons()<<"\n";
+		Y_INFO << intName << ": Done." << yendl;
+		Y_INFO << intName << ": Shot " << curr << " caustic photons from " << numLights <<" light(s)." << yendl;
+		Y_INFO << intName << ": Stored caustic photons: " << cMap.nPhotons() << yendl;
 		
 		delete lightPowerD;
 		
@@ -354,12 +364,12 @@ bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_li
 		{
 			pb->setTag("Building caustic photons kd-tree...");
 			cMap.updateTree();
-			Y_INFO << intName << ": Done.\n";
+			Y_INFO << intName << ": Done." << yendl;
 		}
 	}
 	else
 	{
-		Y_INFO << intName << ": No caustic source lights found, skiping caustic map building...\n";
+		Y_INFO << intName << ": No caustic source lights found, skiping caustic map building..." << yendl;
 	}
 	return true;
 }

@@ -111,7 +111,7 @@ tgaHandler_t::~tgaHandler_t()
 
 bool tgaHandler_t::saveToFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << name << "\"..." << yendl;
 
 	std::string imageId = "Image rendered with YafaRay";
 	tgaHeader_t header;
@@ -163,7 +163,7 @@ bool tgaHandler_t::saveToFile(const std::string &name)
 	{
 		std::string depthName = name.substr(0, name.size() - 4) + "_zbuffer.tga";
 		
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << depthName << "\"..." << std::endl;
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << depthName << "\"..." << yendl;
 		
 		header.idLength = imageId.size();
 		header.imageType = uncGray;
@@ -195,7 +195,7 @@ bool tgaHandler_t::saveToFile(const std::string &name)
 			
 	}
 	
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 	
 	return true;
 }
@@ -338,14 +338,14 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 	switch(header.imageType)
 	{
 		case noData:
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has no image data!" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has no image data!" << yendl;
 			return false;
 			break;
 			
 		case uncColorMap:
 			if(!header.ColorMapType)
 			{
-				Y_ERROR << handlerName << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << std::endl;
+				Y_ERROR << handlerName << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << yendl;
 				return false;
 			}
 			hasColorMap = true;
@@ -358,7 +358,7 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 		case rleColorMap:
 			if(!header.ColorMapType)
 			{
-				Y_ERROR << handlerName << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << std::endl;
+				Y_ERROR << handlerName << ": TGA file \"" << name << "\" has ColorMap type and no color map embedded!" << yendl;
 				return false;
 			}
 			hasColorMap = true;
@@ -382,7 +382,7 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 	{
 		if(header.cmEntryBitDepth != 15 && header.cmEntryBitDepth != 16 && header.cmEntryBitDepth != 24 && header.cmEntryBitDepth != 32)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has a ColorMap bit depth not supported! (BitDepth:" << (int)header.cmEntryBitDepth << ")" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has a ColorMap bit depth not supported! (BitDepth:" << (int)header.cmEntryBitDepth << ")" << yendl;
 			return false;
 		}
 	}
@@ -391,12 +391,12 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 	{
 		if (header.bitDepth != 8 && header.bitDepth != 16)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 8 bit depth gray images are supported" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 8 bit depth gray images are supported" << yendl;
 			return false;
 		}
 		if(alphaBitDepth != 8 && header.bitDepth == 16)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit gray image" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit gray image" << yendl;
 			return false;
 		}
 	}
@@ -404,7 +404,7 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 	{
 		if(header.bitDepth > 16)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 8 and 16 bit depth indexed images are supported" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 8 and 16 bit depth indexed images are supported" << yendl;
 			return false;
 		}
 	}
@@ -412,17 +412,17 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 	{
 		if(header.bitDepth != 15 && header.bitDepth != 16 && header.bitDepth != 24 && header.bitDepth != 32)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 15/16, 24 and 32 bit depth true color images are supported (BitDepth: " << (int)header.bitDepth << ")" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" has an invalid bit depth only 15/16, 24 and 32 bit depth true color images are supported (BitDepth: " << (int)header.bitDepth << ")" << yendl;
 			return false;
 		}
 		if(alphaBitDepth != 1 && header.bitDepth == 16)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit color image" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 16 bit color image" << yendl;
 			return false;
 		}
 		if(alphaBitDepth != 8 && header.bitDepth == 32)
 		{
-			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 32 bit color image" << std::endl;
+			Y_ERROR << handlerName << ": TGA file \"" << name << "\" an invalid alpha bit depth for 32 bit color image" << yendl;
 			return false;
 		}
 	}
@@ -432,12 +432,12 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 
 bool tgaHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	FILE *fp = fopen(name.c_str(), "rb");
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << std::endl;
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
 		return false;
 	}
 	
@@ -586,7 +586,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	if (ColorMap) delete ColorMap;
 	ColorMap = NULL;
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }

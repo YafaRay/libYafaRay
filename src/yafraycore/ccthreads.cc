@@ -150,7 +150,7 @@ void * wrapper(void *data)
 	try{ obj->body(); }
 	catch(std::exception &e)
 	{
-		std::cout << "exception occured: " << e.what() << std::endl;
+		Y_ERROR << "Threads: Exception occured: " << e.what() << yendl;
 	}
 	obj->running=false;
 	pthread_exit(0);

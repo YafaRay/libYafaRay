@@ -203,25 +203,10 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 				dv = norm.y*NF;
 			}
 			else du = dv = 0.f;
-			/*if(debug)
-			{
-				std::cout << "deltaU:" << deltaU << ", deltaV:" << deltaV << std::endl;
-				std::cout << "dfdu:" << dfdu << ", dfdv:" << dfdv << std::endl;
-				std::cout << "vecU:" << vecU << ", vecV:" << vecV << ", norm:" << norm << std::endl;
-				std::cout << "du:" << du << ", dv:" << dv << std::endl;
-			}*/
 		}
 	}
 	else
 	{
-		/* point3d_t pT1, pT2;
-		vector3d_t tNU = vecToTexspace(sp.P, sp.NU);
-		vector3d_t tNV = vecToTexspace(sp.P, sp.NV);
-		PFLOAT l1 = tNU.length();
-		PFLOAT l2 = tNV.length();
-		PFLOAT d1 = delta/l1, d2 = delta/l2;
-		tNU *= d1;
-		tNV *= d2; */
 		// todo: handle out-of-range from doRawMapping!
 		// TODO: Remove redundant code
 		point3d_t texpt;
@@ -264,13 +249,13 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	matrix4x4_t mtx(1);
 	if( !params.getParam("texture", texname) )
 	{
-		Y_ERROR << " TextureMapper: No texture given for texture mapper!";
+		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
 		return 0;
 	}
 	tex = render.getTexture(*texname);
 	if(!tex)
 	{
-		Y_ERROR << " TextureMapper: texture '" << texname << "' does not exist!";
+		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << yendl;
 		return 0;
 	}
 	textureMapper_t *tm = new textureMapper_t(tex);
@@ -394,23 +379,48 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 	if( params.getParam("input1", name) )
 	{
 		input1 = find(*name);
-		if(!input1){ std::cout << "mixNode_t::configInputs: couldn't get input1 " << *name << std::endl; return false; }
+		if(!input1)
+		{
+			Y_ERROR << "MixNode: Couldn't get input1 " << *name << yendl;
+			return false;
+		}
 	}
-	else if(!params.getParam("color1", col1)){ std::cout << "mixNode_t::configInputs: color1 not set\n"; return false; }
+	else if(!params.getParam("color1", col1))
+	{
+		Y_ERROR << "MixNode: Color1 not set" << yendl;
+		return false;
+	}
 	
 	if( params.getParam("input2", name) )
 	{
 		input2 = find(*name);
-		if(!input2){ std::cout << "mixNode_t::configInputs: couldn't get input2 " << *name << std::endl; return false; }
+		if(!input2)
+		{
+			Y_ERROR << "MixNode: Couldn't get input2 " << *name << yendl;
+			return false;
+		}
 	}
-	else if(!params.getParam("color2", col2)){ std::cout << "mixNode_t::configInputs: color2 not set\n"; return false; }
+	else if(!params.getParam("color2", col2))
+	{
+		Y_ERROR << "MixNode: Color2 not set" << yendl;
+		return false;
+	}
 	
 	if( params.getParam("factor", name) )
 	{
 		factor = find(*name);
-		if(!factor){ std::cout << "mixNode_t::configInputs: couldn't get factor " << *name << std::endl; return false; }
+		if(!factor)
+		{
+			Y_ERROR << "MixNode: Couldn't get factor " << *name << yendl;
+			return false;
+		}
 	}
-	else if(!params.getParam("value", cfactor)){ std::cout << "mixNode_t::configInputs: value not set\n"; return false; }
+	else if(!params.getParam("value", cfactor))
+	{
+		Y_ERROR << "MixNode: Value not set" << yendl;
+		return false;
+	}
+	
 	return true;
 }
 

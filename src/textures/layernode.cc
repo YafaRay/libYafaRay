@@ -19,14 +19,13 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	
 	// == get texture input color ==
 	bool TEX_RGB = color_input;
+	
 	if(color_input)
 	{
 		texcolor = input->getColor(stack);
-		//Tin=texcolor.energy();
-		Ta=texcolor.A;
+		Ta = texcolor.A;
 	}
 	else Tin = input->getScalar(stack);
-	//bool Talpha = true;
 	
 	if(texflag & TXF_RGBTOINT)
 	{
@@ -79,8 +78,9 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 				if(texflag & TXF_NEGATIVE) Tin = 1.f - Tin;
 			}
 			else
-				//Tin = 0.35f*texcolor.getR() + 0.45f*texcolor.getG() + 0.2f*texcolor.getB();
+			{
 				Tin = texcolor.col2bri();
+			}
 		}
 		
 		rval = texture_value_blend(default_val, rval, Tin, stencilTin * valfac, mode, (do_scalar<0));
@@ -100,6 +100,7 @@ void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state,
 	colorA_t texcolor;
 	CFLOAT rdu=0.f, rdv=0.f, tdu, tdv;
 	CFLOAT stencilTin = 1.f;
+
 	// == get result of upper layer (or base values) ==
 	if(upperLayer)
 	{
@@ -118,31 +119,11 @@ void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state,
 		tdu = -tdu;
 		tdv = -tdv;
 	}
-	/* if(texflag & TXF_STENCIL)
-	{
-		CFLOAT fact;
-		if(TEX_RGB) // only scalar input affects stencil...?
-		{
-			fact = Ta;
-			Ta *= stencilTin;
-			stencilTin *= fact;
-		}
-		else
-		{
-			fact = Tin;
-			Tin *= stencilTin;
-			stencilTin *= fact;
-		}
-	} */
-	
 	// derivative modulation
 	
-	//rdu = texture_value_blend(default_val, rdu, Tin, stencilTin * valfac, mode, (do_scalar<0));
-	//rdv = texture_value_blend(default_val, rdv, Tin, stencilTin * valfac, mode, (do_scalar<0));
 	rdu += tdu;
 	rdv += tdv;
 	
-	//rcol.A = stencilTin;
 	stack[this->ID] = nodeResult_t(colorA_t(rdu, rdv, 0.f, stencilTin), 0.f);
 }
 
@@ -160,26 +141,36 @@ bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find
 	if( params.getParam("input", name) )
 	{
 		input = find(*name);
-		if(!input){ std::cout << "layerNode_t::configInputs: couldn't get input " << *name << std::endl; return false; }
+		if(!input)
+		{
+			Y_INFO << "LayerNode: Couldn't get input " << *name << yendl;
+			return false;
+		}
 	}
-	else { std::cout << "layerNode_t::configInputs: input not set\n"; return false; }
+	else
+	{
+		Y_INFO << "LayerNode: input not set" << yendl;
+		return false;
+	}
 	
 	if( params.getParam("upper_layer", name) )
 	{
 		upperLayer = find(*name);
-		if(!upperLayer){ std::cout << "layerNode_t::configInputs: couldn't get upper_layer " << *name << std::endl; return false; }
+		if(!upperLayer)
+		{
+			Y_INFO << "LayerNode: Couldn't get upper_layer " << *name << yendl;
+			return false;
+		}
 	}
 	else
 	{
 		if(!params.getParam("upper_color", upper_col))
 		{
 			upper_col = color_t(0.f);
-			//std::cout << "layerNode_t::configInputs: warning, neither input nor color set for layer input\n";
 		}
 		if(!params.getParam("upper_value", upper_val))
 		{
 			upper_val = 0.f;
-			//std::cout << "layerNode_t::configInputs: warning, neither input nor value set for layer input\n";
 		}
 	}
 	return true;
@@ -192,8 +183,6 @@ bool layerNode_t::getDependencies(std::vector<const shaderNode_t*> &dep) const
 	if(upperLayer) dep.push_back(upperLayer);
 	return !dep.empty();
 }
-
-// void layerNode_t::getDerivative(const surfacePoint_t &sp, float &du, float &dv)const;
 
 shaderNode_t* layerNode_t::factory(const paraMap_t &params,renderEnvironment_t &render)
 {
@@ -230,4 +219,5 @@ shaderNode_t* layerNode_t::factory(const paraMap_t &params,renderEnvironment_t &
 	
 	return node;
 }
+
 __END_YAFRAY

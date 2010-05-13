@@ -15,8 +15,6 @@
 #include <core_api/environment.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
-#include <yafraycore/tga_io.h>
-#include <yafraycore/EXR_io.h>
 #include <yafraycore/xmlparser.h>
 #include <yaf_revision.h>
 #include <utilities/console_utils.h>
@@ -45,12 +43,12 @@ int main(int argc, char *argv[])
 	
 	if (env->getPluginPath(ppath))
 	{
-		Y_DEBUG(1) << "The plugin path is: " << ppath << std::endl;
+		Y_DEBUG(1) << "The plugin path is: " << ppath << yendl;
 		env->loadPlugins(ppath);
 	}
 	else
 	{
-		Y_ERROR << "Getting plugin path from render environment failed!" << std::endl;
+		Y_ERROR << "Getting plugin path from render environment failed!" << yendl;
 		return 1;
 	}
 	
@@ -89,7 +87,7 @@ int main(int argc, char *argv[])
 	
 	if(parse.getFlag("v"))
 	{
-		Y_INFO << xmlLoaderVersion << std::endl << "Built with YafaRay version " << version << std::endl;
+		Y_INFO << xmlLoaderVersion << yendl << "Built with YafaRay version " << version << yendl;
 		return 0;
 	}
 	
@@ -120,7 +118,7 @@ int main(int argc, char *argv[])
 	
 	if(!formatValid)
 	{
-		Y_ERROR << "Couldn't find any valid image format, image handlers missing?" << std::endl;
+		Y_ERROR << "Couldn't find any valid image format, image handlers missing?" << yendl;
 		return 1;
 	}
 	

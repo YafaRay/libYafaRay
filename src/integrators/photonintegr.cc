@@ -537,12 +537,12 @@ bool photonIntegrator_t::preprocess()
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_INFO << integratorName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
+			Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 		}
 		
 		delete[] energies;
 
-		Y_INFO << integratorName << ": Building caustics photon map...\n";
+		Y_INFO << integratorName << ": Building caustics photon map..." << yendl;
 		pb->init(128);
 		pbStep = std::max(1U, nCausPhotons / 128);
 		pb->setTag("Building caustics photon map...");
@@ -563,7 +563,13 @@ bool photonIntegrator_t::preprocess()
 
 			sL = float(curr) * invCaustPhotons;
 			int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
-			if(lightNum >= numCLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return false; }
+			
+			if(lightNum >= numCLights)
+			{
+				Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now." << yendl;
+				delete lightPowerD;
+				return false;
+			}
 
 			pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 			ray.tmin = MIN_RAYDIST;
@@ -722,7 +728,7 @@ bool photonIntegrator_t::preprocess()
 		if(!intpb) delete pgdat.pbar;
 #else
 		if(radianceMap.nPhotons() != 0){ Y_WARNING << integratorName << ": radianceMap not empty!\n"; radianceMap.clear(); }
-		Y_INFO << integratorName << ": Creating radiance map..." << std::endl;
+		Y_INFO << integratorName << ": Creating radiance map..." << yendl;
 		progressBar_t *pbar;
 		if(intpb) pbar = intpb;
 		else pbar = new ConsoleProgressBar_t(80);
@@ -739,7 +745,13 @@ bool photonIntegrator_t::preprocess()
 				color_t surfCol = pgdat.rad_points[n].refl;
 				vector3d_t rnorm = pgdat.rad_points[n].normal;
 				float scale = 1.f / ( float(diffuseMap.nPaths()) * radius * M_PI);
-				if(isnan(scale)){ Y_WARNING << integratorName << ": NaN on (scale)" << std::endl; break; }
+				
+				if(isnan(scale))
+				{
+					Y_WARNING << integratorName << ": NaN on (scale)" << yendl;
+					break;
+				}
+				
 				for(int i=0; i<nGathered; ++i)
 				{
 					vector3d_t pdir = gathered[i].photon->direction();
@@ -756,13 +768,13 @@ bool photonIntegrator_t::preprocess()
 		if(!pbar) delete pbar;
 		free(gathered);
 #endif
-		Y_INFO << integratorName << ": Radiance tree built... Updating the tree..." << std::endl;
+		Y_INFO << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
 		radianceMap.updateTree();
-		Y_INFO << integratorName << ": Done.\n";
+		Y_INFO << integratorName << ": Done." << yendl;
 	}
 
 	gTimer.stop("prepass");
-	Y_INFO << integratorName << ": Photonmap building time: " << gTimer.getTime("prepass") << "\n";
+	Y_INFO << integratorName << ": Photonmap building time: " << gTimer.getTime("prepass") << yendl;
 
 	return true;
 }

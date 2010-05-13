@@ -244,7 +244,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		CFLOAT invpdf = (2.f * M_PI * (1.f - cosAngle));
 		suncol *= invpdf * power;
 
-		std::cout << "sunsky: sun color = " << suncol << std::endl;
+		Y_INFO << "Sunsky: sun color = " << suncol << yendl;
+		
 		paraMap_t p;
 		p["type"] = std::string("sunlight");
 		p["direction"] = point3d_t(dir[0], dir[1], dir[2]);

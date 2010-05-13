@@ -229,24 +229,24 @@ void cliParser_t::setAppName(const ystring name, const ystring bUsage)
 }
 void cliParser_t::printUsage() const
 {
-	Y_INFO << appName << std::endl
-	<< "Usage: " << binName << " " << basicUsage << std::endl
-	<< "OPTIONS:\n";
+	Y_INFO << appName << yendl
+	<< "Usage: " << binName << " " << basicUsage << yendl
+	<< "OPTIONS:" << yendl;
 	for(size_t i = 0; i < regOptions.size(); i++)
 	{
 		ysstream name;
-		name << regOptions[i]->shortOpt << ", " << regOptions[i]->longOpt << (regOptions[i]->isFlag?"":" <value>");
+		name << regOptions[i]->shortOpt << ", " << regOptions[i]->longOpt << (regOptions[i]->isFlag ? "" : " <value>");
 		std::cout << "    "
 		<< std::setiosflags(std::ios::left) << std::setw(35)
 		<< name.str()
-		<< regOptions[i]->desc << std::endl;
+		<< regOptions[i]->desc << yendl;
 	}
-	Y_INFO << "Usage instructions end." << std::endl;
+	Y_INFO << "Usage instructions end." << yendl;
 }
 
 void cliParser_t::printError() const
 {
-	Y_ERROR << parseError << std::endl;
+	Y_ERROR << parseError << yendl;
 }
 
 void cliParser_t::clearOptions()

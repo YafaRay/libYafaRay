@@ -449,7 +449,6 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 		u_int32 *leftPrims, u_int32 *rightPrims, boundEdge *edges[3], //working memory
 		u_int32 rightMemSize, int depth, int badRefines ) // status
 {
-//	std::cout << "tree level: " << depth << std::endl;
 	if (nextFreeNode == allocatedNodesCount) {
 		int newCount = 2*allocatedNodesCount;
 		newCount = (newCount > 0x100000) ? allocatedNodesCount+0x80000 : newCount;
@@ -463,18 +462,15 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 #if _TRI_CLIP > 0
 	if(nPrims <= TRI_CLIP_THRESH)
 	{
-//		exBound_t ebound(nodeBound);
 		int oPrims[TRI_CLIP_THRESH], nOverl=0;
 		double bHalfSize[3];
 		double b_ext[2][3];
 		for(int i=0; i<3; ++i)
 		{
-//			bCenter[i]   = ((double)nodeBound.a[i] + (double)nodeBound.g[i])*0.5;
 			bHalfSize[i] = ((double)nodeBound.g[i] - (double)nodeBound.a[i]);
 			double temp  = ((double)treeBound.g[i] - (double)treeBound.a[i]);
 			b_ext[0][i] = nodeBound.a[i] - 0.021*bHalfSize[i] - 0.00001*temp;
 			b_ext[1][i] = nodeBound.g[i] + 0.021*bHalfSize[i] + 0.00001*temp;
-//			ebound.halfSize[i] *= 1.01;
 		}
 		char *c_old = cdata + (TRI_CLIP_THRESH * CLIP_DATA_SIZE * depth);
 		char *c_new = cdata + (TRI_CLIP_THRESH * CLIP_DATA_SIZE * (depth+1));
@@ -483,8 +479,6 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 			const triangle_t *ct = prims[ primNums[i] ];
 			u_int32 old_idx=0;
 			if(clip[depth] >= 0) old_idx = primNums[i+nPrims];
-//			if(old_idx > TRI_CLIP_THRESH){ std::cout << "ouch!\n"; }
-//			std::cout << "parent idx: " << old_idx << std::endl;
 			if( ct->clipToBound(b_ext, clip[depth], allBounds[totalPrims+nOverl],
 				c_old + old_idx*CLIP_DATA_SIZE, c_new + nOverl*CLIP_DATA_SIZE) )
 			{
@@ -501,7 +495,6 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	//	<< check if leaf criteria met >>
 	if(nPrims <= maxLeafSize || depth >= maxDepth)
 	{
-//		std::cout << "leaf\n";
 		nodes[nextFreeNode].createLeaf(primNums, nPrims, prims, primsArena);
 		nextFreeNode++;
 		if( depth >= maxDepth ) depthLimitReached++; //stat

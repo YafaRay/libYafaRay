@@ -20,7 +20,8 @@ class pSample_t;
 class GridVolume : public DensityVolume {
 	public:
 	
-		GridVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax) {
+		GridVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax)
+		{
 			bBox = bound_t(pmin, pmax);
 			s_a = sa;
 			s_s = ss;
@@ -32,9 +33,7 @@ class GridVolume : public DensityVolume {
 			
 			std::ifstream inputStream;
  			inputStream.open("/home/public/3dkram/cloud2_3.df3");
- 			if(!inputStream) {
-   				std::cerr << "Error opening input stream" << std::endl;
- 			}
+ 			if(!inputStream) Y_ERROR << "GridVolume: Error opening input stream" << yendl;
 
 			inputStream.seekg(0, std::ios_base::beg);
 			std::ifstream::pos_type begin_pos = inputStream.tellg();
@@ -48,13 +47,13 @@ class GridVolume : public DensityVolume {
 				short i0 = 0, i1 = 0;
 				inputStream.read( (char*)&i0, 1 );
 				inputStream.read( (char*)&i1, 1 );
-				std::cout << i0 << " " << i1 << std::endl;
+				Y_INFO << "GridVolume: " << i0 << " " << i1 << yendl;
 				dim[i] = (((unsigned short)i0 << 8) | (unsigned short)i1);
 			}
 			
 			int sizePerVoxel = fileSize / (dim[0] * dim[1] * dim[2]);
 
-			std::cout <<  dim[0] <<  " " << dim[1] <<  " " << dim[2] << " " << fileSize << " " << sizePerVoxel << std::endl;
+			Y_INFO << "GridVolume: " <<  dim[0] <<  " " << dim[1] <<  " " << dim[2] << " " << fileSize << " " << sizePerVoxel << yendl;
 
 			sizeX = dim[0];
 			sizeY = dim[1];
@@ -90,11 +89,11 @@ class GridVolume : public DensityVolume {
 				}
 			}
 			
-			std::cout << "GridVolume  vol: " << s_a << " " << s_s << " " << l_e << std::endl;
+			Y_INFO << "GridVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << "]" << yendl;
 		}
 		
 		~GridVolume() {
-			std::cout << "freeing grid data" << std::endl;
+			Y_INFO << "GridVolume: Freeing grid data" << yendl;
 			
 			for (int x = 0; x < sizeX; ++x) {
 				for (int y = 0; y < sizeY; ++y) {
@@ -135,8 +134,6 @@ float GridVolume::Density(const point3d_t p) {
 	float yd = y - y0;
 	float zd = z - z0;
 	
-	//std::cout << x0 << " " << y0 << " " << z0 << " " << x1 << " " << y1 << " " << z1 << std::endl;
-	
 	float i1 = grid[x0][y0][z0] * (1-zd) + grid[x0][y0][z1] * zd;
 	float i2 = grid[x0][y1][z0] * (1-zd) + grid[x0][y1][z1] * zd;
 	float j1 = grid[x1][y0][z0] * (1-zd) + grid[x1][y0][z1] * zd;
@@ -147,12 +144,6 @@ float GridVolume::Density(const point3d_t p) {
 	
 	float dens = w1 * (1 - xd) + w2 * xd;
 
-	//dens *= 15.f;
-
-//	float dens = grid[x0][y0][z0];
-
-	//std::cout << "dens at " << p << ": " << dens << std::endl;
-	
 	return dens;
 }
 

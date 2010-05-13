@@ -84,7 +84,7 @@ void bgPortalLight_t::init(scene_t &scene)
 		mesh->setVisibility(false);
 
 		initIS();
-		Y_INFO << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << std::endl;
+		Y_INFO << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << yendl;
 		mesh->setLight(this);
 	}
 }
@@ -93,7 +93,11 @@ void bgPortalLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float
 {
 	float primPdf;
 	int primNum = areaDist->DSample(s1, &primPdf);
-	if(primNum >= areaDist->count){ std::cout << "meshLight sampling error!\n"; return; }
+	if(primNum >= areaDist->count)
+	{
+		Y_INFO << "bgPortalLight: Sampling error!" << yendl;
+		return;
+	}
 	float ss1, delta = areaDist->cdf[primNum+1];
 	if(primNum > 0)
 	{
@@ -119,10 +123,8 @@ color_t bgPortalLight_t::totalEnergy() const
 			if(cos_n > 0) energy += col*cos_n*tris[j]->surfaceArea();
 		}
 	}
-	//energy = bg->eval(ray_t(point3d_t(0,0,0), vector3d_t(0.5, 0.5, 0.5))) * M_2PI;
-	return energy * M_1_PI * 0.001f;
-	//return energy;
 
+	return energy * M_1_PI * 0.001f;
 }
 
 bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const

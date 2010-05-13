@@ -50,7 +50,7 @@ areaLight_t::areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3
 
 areaLight_t::~areaLight_t()
 {
-//	std::cout <<"\n%%% ~areaLight_t()\nhit_t1:"<<hit_t1<<", hit_t2:"<<hit_t2<<std::endl;
+	// Empty
 }
 
 void areaLight_t::init(scene_t &scene)
@@ -59,7 +59,7 @@ void areaLight_t::init(scene_t &scene)
 	{
 		object3d_t *obj = scene.getObject(objID);
 		if(obj) obj->setLight(this);
-		else Y_INFO << "AreaLight: Invalid object ID given!\n";
+		else Y_INFO << "AreaLight: Invalid object ID given!" << yendl;
 	}
 }
 

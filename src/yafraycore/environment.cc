@@ -53,22 +53,22 @@ __BEGIN_YAFRAY
 #define Y_ERROR_ENV Y_ERROR ENV_TAG
 #define Y_WARN_ENV Y_WARNING ENV_TAG
 
-#define WarnExist Y_WARN_ENV << "Sorry, " << pname << " already exists!\n"
+#define WarnExist Y_WARN_ENV << "Sorry, " << pname << " already exists!" << yendl
 
-#define ErrNoType Y_ERROR_ENV << "Type of " << pname << " not specified!\n";
-#define ErrUnkType(t) Y_ERROR_ENV << "Don't know how to create " << pname << " of type '" << t << "'!\n"
-#define ErrOnCreate(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!\n"
+#define ErrNoType Y_ERROR_ENV << "Type of " << pname << " not specified!" << yendl
+#define ErrUnkType(t) Y_ERROR_ENV << "Don't know how to create " << pname << " of type '" << t << "'!" << yendl
+#define ErrOnCreate(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!" << yendl
 
-#define InfoSucces(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!\n"
+#define InfoSucces(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
 
-#define SuccessReg(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'\n"
+#define SuccessReg(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'" << yendl
 
 renderEnvironment_t::renderEnvironment_t()
 {
 #ifdef RELEASE
-	std::cout << PACKAGE << " " << VERSION << std::endl;
+	std::cout << PACKAGE << " " << VERSION << yendl;
 #else
-	std::cout << PACKAGE << " (" << YAF_SVN_REV << ")" << std::endl;
+	std::cout << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
@@ -781,7 +781,7 @@ std::vector<std::string> renderEnvironment_t::listImageHandlers()
 			ret.push_back(i->first);
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
 	
 	return ret;
 }
@@ -796,7 +796,7 @@ std::vector<std::string> renderEnvironment_t::listImageHandlersFullName()
 			ret.push_back(i->second);
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
 	
 	return ret;
 }
@@ -811,7 +811,7 @@ std::string renderEnvironment_t::getImageFormatFromFullName(const std::string &f
 			if(i->second == fullname) ret = i->first;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
 	
 	return ret;
 }
@@ -829,7 +829,7 @@ std::string renderEnvironment_t::getImageFormatFromExtension(const std::string &
 			if(i->second.find(ext) != std::string::npos) ret = i->first;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
 	
 	return ret;
 }
@@ -844,7 +844,7 @@ std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &f
 			if(i->first == format) ret = i->second;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << std::endl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
 	
 	return ret;
 }

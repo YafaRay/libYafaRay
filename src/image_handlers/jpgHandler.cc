@@ -42,7 +42,7 @@ METHODDEF(void) jpgErrorMessage(j_common_ptr info)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*info->err->format_message)(info, buffer);
-	Y_ERROR << "JPEG Library Error: " << buffer << std::endl;
+	Y_ERROR << "JPEG Library Error: " << buffer << yendl;
 }
 
 struct jpgErrorManager
@@ -126,7 +126,7 @@ colorA_t jpgHandler_t::getPixel(int x, int y)
 
 bool jpgHandler_t::saveToFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << yendl;
 
 	FILE * fp;
 	struct jpeg_compress_struct info;
@@ -138,7 +138,7 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 	
 	if (!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file for writing " << name << std::endl;
+		Y_ERROR << handlerName << ": Cannot open file for writing " << name << yendl;
 		return false;
 	}
 	
@@ -188,13 +188,13 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 	if(m_hasAlpha)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
-		Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << std::endl;
+		Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << yendl;
 
 		fp = fopen(alphaname.c_str(), "wb");
 		
 		if (!fp)
 		{
-			Y_ERROR << handlerName << ": Cannot open file for writing " << alphaname << std::endl;
+			Y_ERROR << handlerName << ": Cannot open file for writing " << alphaname << yendl;
 			return false;
 		}
 		
@@ -242,13 +242,13 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 	if(m_hasDepth)
 	{
 		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.jpg";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << std::endl;
+		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << yendl;
 
 		fp = fopen(zbufname.c_str(), "wb");
 		
 		if (!fp)
 		{
-			Y_ERROR << handlerName << ": Cannot open file for writing " << zbufname << std::endl;
+			Y_ERROR << handlerName << ": Cannot open file for writing " << zbufname << yendl;
 			return false;
 		}
 		
@@ -293,14 +293,14 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 		fclose(fp);
 	}
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }
 
 bool jpgHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << std::endl;
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	FILE *fp;
 	jpeg_decompress_struct info;
@@ -310,7 +310,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << std::endl;
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
 		return false;
 	}
 
@@ -339,7 +339,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 
 	if ((!isGray) && (!isRGB) && (!isCMYK))
 	{
-		Y_ERROR << handlerName << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << std::endl;
+		Y_ERROR << handlerName << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << yendl;
 		
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
@@ -413,7 +413,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	
 	fclose(fp);
 
-	Y_INFO << handlerName << ": Done." << std::endl;
+	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
 }

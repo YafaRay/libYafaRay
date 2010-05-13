@@ -213,8 +213,10 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 	params.getParam("hard", hrd);
 	params.getParam("wood_type", wtype);
 	params.getParam("shape", shape);
+	
 	if (params.getParam("ringscale_x", old_rxy) || params.getParam("ringscale_y", old_rxy))
-		std::cerr << "[texturewood]: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead" << std::endl;
+		Y_WARNING << "TextureWood: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead" << yendl;
+		
 	return new textureWood_t(oct, sz, col1, col2, turb, hrd, *ntype, *wtype, *shape);
 }
 

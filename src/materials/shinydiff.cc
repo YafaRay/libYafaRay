@@ -19,10 +19,7 @@ shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &col, const color_t &srcol, f
 
 shinyDiffuseMat_t::~shinyDiffuseMat_t()
 {
-	//already done in ~nodeMaterial_t();
-	//clear nodes map:
-	//for(std::map<std::string,shaderNode_t *>::iterator i=shader_table.begin();i!=shader_table.end();++i) delete i->second;
-	//shader_table.clear();
+	// Empty
 }
 
 /*! ATTENTION! You *MUST* call this function before using the material, no matter
@@ -47,7 +44,6 @@ void shinyDiffuseMat_t::config(shaderNode_t *diff, shaderNode_t *refl, shaderNod
 		bsdfFlags |= BSDF_SPECULAR | BSDF_REFLECT;
 		cFlags[nBSDF] = BSDF_SPECULAR | BSDF_REFLECT;
 		cIndex[nBSDF] = 0;
-//		std::cout << "(mSpecRefl:" << mSpecRefl << ", node:" << (bool)(specReflS!=0) << ")";
 		++nBSDF;
 	}
 	if(mTransp*acc > 0.00001f || transpS)
@@ -58,7 +54,6 @@ void shinyDiffuseMat_t::config(shaderNode_t *diff, shaderNode_t *refl, shaderNod
 		bsdfFlags |= BSDF_TRANSMIT | BSDF_FILTER;
 		cFlags[nBSDF] = BSDF_TRANSMIT | BSDF_FILTER;
 		cIndex[nBSDF] = 1;
-//		std::cout << "(mTransp:" << mTransp << ", node:" << (bool)(transpS!=0) << ")";
 		++nBSDF;
 	}
 	if(mTransl*acc > 0.00001f || translS)
@@ -69,7 +64,6 @@ void shinyDiffuseMat_t::config(shaderNode_t *diff, shaderNode_t *refl, shaderNod
 		bsdfFlags |= BSDF_DIFFUSE | BSDF_TRANSMIT;
 		cFlags[nBSDF] = BSDF_DIFFUSE | BSDF_TRANSMIT;
 		cIndex[nBSDF] = 2;
-//		std::cout << "(mTransl:" << mTransl << ", node:" << (bool)(translS!=0) << ")";
 		++nBSDF;
 	}
 	if(mDiffuse*acc > 0.00001f)
@@ -79,11 +73,9 @@ void shinyDiffuseMat_t::config(shaderNode_t *diff, shaderNode_t *refl, shaderNod
 		bsdfFlags |= BSDF_DIFFUSE | BSDF_REFLECT;
 		cFlags[nBSDF] = BSDF_DIFFUSE | BSDF_REFLECT;
 		cIndex[nBSDF] = 3;
-//		std::cout << "(mDiffuse:" << mDiffuse << ")";
 		++nBSDF;
 	}
 	reqMem = reqNodeMem + sizeof(SDDat_t);
-//	std::cout << std::endl;
 }
 
 // component should be initialized with mSpecRefl, mTransp, mTransl, mDiffuse
@@ -252,7 +244,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 {
 	float accumC[4];
 	PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi, cos_N;
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
@@ -307,17 +299,12 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 			scolor = accumC[1] * (filter*(diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter) );
 			cos_N = std::fabs(wi*N);
 			if(cos_N < 1e-6) s.pdf = 0.f;
-			else
-			{
-				//scolor *= 1.f/CFLOAT(cos_N);
-				s.pdf = width[pick];
-			}
+			else s.pdf = width[pick];
 			break;
 		case (BSDF_DIFFUSE | BSDF_TRANSMIT): // translucency (diffuse transmitt)
 			wi = SampleCosHemisphere(-N, sp.NU, sp.NV, s1, s.s2);
 			cos_Ng_wi = sp.Ng*wi;
 			if(cos_Ng_wo*cos_Ng_wi < 0) scolor = accumC[2] * (diffuseS ? diffuseS->getColor(stack) : color);
-			//else if(isDiffuse) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
 			s.pdf = std::fabs(wi*N) * width[pick]; break;
 		case (BSDF_DIFFUSE | BSDF_REFLECT): // diffuse reflect
 		default:
@@ -325,7 +312,6 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 			cos_Ng_wi = sp.Ng*wi;
 			if(cos_Ng_wo*cos_Ng_wi > 0) scolor = accumC[3] * (diffuseS ? diffuseS->getColor(stack) : color);
 			if(orenNayar) scolor *= OrenNayar(wo, wi, N);
-			//else if(isTransluc) scolor = accumC[2] * (diffuseS ? diffuseS->getColor(stack) : color);
 			s.pdf = std::fabs(wi*N) * width[pick]; break;
 	}
 	s.sampledFlags = choice[pick];
@@ -341,7 +327,7 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 	float pdf=0.f;
 	float accumC[4];
 	PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi;
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float Kr;
 	getFresnel(wo, N, Kr);
 
@@ -359,11 +345,13 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 			{
 				case (BSDF_DIFFUSE | BSDF_TRANSMIT): // translucency (diffuse transmitt)
 					cos_Ng_wi = sp.Ng*wi;
-					if(cos_Ng_wo*cos_Ng_wi < 0) pdf += std::fabs(wi*N) * width; break;
+					if(cos_Ng_wo*cos_Ng_wi < 0) pdf += std::fabs(wi*N) * width;
+					break;
 				
 				case (BSDF_DIFFUSE | BSDF_REFLECT): // lambertian
 					cos_Ng_wi = sp.Ng*wi;
-					/*if(cos_Ng_wo*cos_Ng_wi > 0)*/ pdf += std::fabs(wi*N) * width; break;
+					pdf += std::fabs(wi*N) * width;
+					break;
 			}
 			++nMatch;
 		}
@@ -506,50 +494,50 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 		{
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ diffuseS = i->second; roots.push_back(diffuseS); }
-			else std::cout << "[WARNING]: diffuse shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: Diffuse shader node '" << *name << "' does not exist!" << yendl;
 		}
 		if(params.getParam("mirror_color_shader", name))
 		{
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ mat->mirColS = i->second; roots.push_back(mat->mirColS); }
-			else std::cout << "[WARNING]: mirror col. shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: Mirror color shader node '"<<*name<<"' does not exist!" << yendl;
 		}
 		if(params.getParam("bump_shader", name))
 		{
-			std::cout << "bump_shader: " << name << std::endl;
+			Y_INFO << "ShinyDiffuse: Bump shader: " << name << yendl;
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ bumpS = i->second; roots.push_back(bumpS); }
-			else std::cout << "[WARNING]: bump shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: bump shader node '"<<*name<<"' does not exist!" << yendl;
 		}
 		if(params.getParam("mirror_shader", name))
 		{
-			std::cout << "mirror_shader: " << name << std::endl;
+			Y_INFO << "ShinyDiffuse: Mirror shader: " << name << yendl;
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ specReflS = i->second; roots.push_back(specReflS); }
-			else std::cout << "[WARNING]: mirror shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: mirror shader node '"<<*name<<"' does not exist!" << yendl;
 		}
 		if(params.getParam("transparency_shader", name))
 		{
-			std::cout << "transparency_shader: " << name << std::endl;
+			Y_INFO << "ShinyDiffuse: Transparency shader: " << name << yendl;
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ transpS = i->second; roots.push_back(transpS); }
-			else std::cout << "[WARNING]: transparency shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: transparency shader node '"<<*name<<"' does not exist!" << yendl;
 		}
 		if(params.getParam("translucency_shader", name))
 		{
-			std::cout << "translucency_shader: " << name << std::endl;
+			Y_INFO << "ShinyDiffuse: Translucency shader: " << name << yendl;
 			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
 			if(i!=mat->shader_table.end()){ translS = i->second; roots.push_back(translS); }
-			else std::cout << "[WARNING]: transparency shader node '"<<*name<<"' does not exist!\n";
+			else Y_WARNING << "ShinyDiffuse: transparency shader node '"<<*name<<"' does not exist!" << yendl;
 		}
 	}
-	else std::cout << "creating nodes failed!" << std::endl;
+	else Y_WARNING << "ShinyDiffuse: Creating nodes failed!" << yendl;
 	// solve nodes order
 	if(!roots.empty())
 	{
 		mat->solveNodesOrder(roots);
-		std::cout << "evaluation order:\n";
-		for(unsigned int k=0; k<mat->allSorted.size(); ++k) std::cout << (void*)mat->allSorted[k]<<"\n";
+		Y_INFO << "ShinyDiffuse: Evaluation order:" << yendl;
+		for(unsigned int k=0; k<mat->allSorted.size(); ++k) Y_WARNING << "ShinyDiffuse: " << (void*)mat->allSorted[k] << yendl;
 		std::vector<shaderNode_t *> colorNodes;
 		if(diffuseS) mat->getNodeList(diffuseS, colorNodes);
 		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
@@ -564,10 +552,10 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 		}
 	}
 	mat->config(diffuseS, specReflS, transpS, translS, bumpS);
-	//===!!!=== test
+
+	//===!!!=== test <<< This test should go, is useless, DT
 	if(params.getParam("name", name))
 	{
-		//std::cout << name->substr(0, 6) << std::endl;
 		if(name->substr(0, 6) == "MAsss_")
 		{
 			paraMap_t map;
@@ -578,9 +566,9 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 			mat->volI = render.createVolumeH(*name, map);
 			mat->bsdfFlags |= BSDF_VOLUMETRIC;
 		}
-		//else std::cout << "not creating volume\n";
 	}
 	//===!!!=== end of test
+
 	return mat;
 }
 

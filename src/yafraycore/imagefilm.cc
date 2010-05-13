@@ -401,7 +401,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
 			if(drawParams && addParamsBadge && h - j <= dpHeight)
 			{
 				colorA_t &dpcol = (*dpimage)(i, k);
-				col = alphaBlend(col, dpcol, dpcol.getA());
+				col = colorA_t( alphaBlend(col, dpcol, dpcol.getA()), std::max( col.getA(), dpcol.getA() ) );
 			}
 			
 			if(depthMap)
@@ -421,7 +421,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out, bool addParamsBadge)
 
 	outMutex.unlock();
 
-	Y_INFO << "imageFilm: Done.\n";
+	Y_INFO << "imageFilm: Done." << yendl;
 }
 
 bool imageFilm_t::doMoreSamples(int x, int y) const

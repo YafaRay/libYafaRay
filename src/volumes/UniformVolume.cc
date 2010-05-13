@@ -16,7 +16,7 @@ class UniformVolume : public VolumeRegion {
 	
 		UniformVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale) :
 			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgridScale) {
-			std::cout << "uniform vol: " << s_a << " " << s_s << " " << l_e << " " << pmin << " " << pmax << " " << attgridScale << std::endl;
+			Y_INFO << "UniformVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << ", " << pmin << ", " << pmax << ", " << attgridScale << "]" << yendl;
 		}
 	
 		virtual color_t sigma_a(const point3d_t &p, const vector3d_t &v);
@@ -51,11 +51,8 @@ color_t UniformVolume::tau(const ray_t &ray, float step, float offset) {
 	
 	// ray doesn't hit the BB
 	if (!intersect(ray, t0, t1)) {
-		//std::cout << "no hit of BB " << t0 << " " << t1 << std::endl;
 		return color_t(0.f);
 	}
-	
-	//std::cout << " ray.from: " << ray.from << " ray.dir: " << ray.dir << " ray.tmax: " << ray.tmax << " t0: " << t0 << " t1: " << t1 << std::endl;
 	
 	if (ray.tmax < t0 && ! (ray.tmax < 0)) return color_t(0.f);
 	
@@ -66,8 +63,6 @@ color_t UniformVolume::tau(const ray_t &ray, float step, float offset) {
 	
 	// distance travelled in the volume
 	float dist = t1 - t0;
-	
-	//std::cout << "dist " << dist << " t0: " << t0 << " t1: " << t1 << std::endl;
 	
 	return dist * (s_s + s_a);
 }

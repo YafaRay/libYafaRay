@@ -26,7 +26,7 @@ class SkyVolume : public VolumeRegion {
 			s_s = color_t(0.f);
 			l_e = le;
 			g = 0.f;
-			std::cout << "SkyVolume vol: " << s_ray << " " << s_mie << " " << l_e << std::endl;
+			Y_INFO << "SkyVolume: Vol. [" << s_ray << ", " << s_mie << ", " << l_e << "]" << yendl;
 		}
 		
 		virtual float p(const vector3d_t &w_l, const vector3d_t &w_s);
@@ -65,11 +65,8 @@ color_t SkyVolume::tau(const ray_t &ray, float step, float offset) {
 	
 	// ray doesn't hit the BB
 	if (!intersect(ray, t0, t1)) {
-		//std::cout << "no hit of BB " << t0 << " " << t1 << std::endl;
 		return color_t(0.f);
 	}
-	
-	//std::cout << " ray.from: " << ray.from << " ray.dir: " << ray.dir << " ray.tmax: " << ray.tmax << " t0: " << t0 << " t1: " << t1 << std::endl;
 	
 	if (ray.tmax < t0 && ! (ray.tmax < 0)) return color_t(0.f);
 	
@@ -80,8 +77,6 @@ color_t SkyVolume::tau(const ray_t &ray, float step, float offset) {
 	
 	// distance travelled in the volume
 	float dist = t1 - t0;
-	
-	//std::cout << "dist " << dist << " t0: " << t0 << " t1: " << t1 << std::endl;
 	
 	return (s_ray + s_mie) * dist;
 }

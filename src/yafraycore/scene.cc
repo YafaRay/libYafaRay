@@ -426,7 +426,6 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 	else if(angle>0.1)// angle dependant smoothing
 	{
 		PFLOAT thresh = fCos(degToRad(angle));
-		//std::cout << "smoothing angle:" << angle << " (thresh = "<< thresh << ")" << std::endl;
 		std::vector<vector3d_t> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex
