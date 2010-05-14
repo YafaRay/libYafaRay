@@ -38,6 +38,7 @@ void renderWorker_t::body()
 	while(imageFilm->nextArea(a))
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
+		integrator->preTile(a, samples, offset, adaptive, threadID);
 		integrator->renderTile(a, samples, offset, adaptive, threadID);
 		control->countCV.lock();
 		control->areas.push_back(a);
@@ -50,6 +51,46 @@ void renderWorker_t::body()
 	control->countCV.unlock();
 }
 #endif
+
+void tiledIntegrator_t::preRender()
+{
+	// Empty
+}
+
+void tiledIntegrator_t::prePass(int samples, int offset, bool adaptive)
+{
+	// Empty
+}
+
+void tiledIntegrator_t::preTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID)
+{
+	// Empty
+}
+
+void tiledIntegrator_t::precalcDepths()
+{
+	const camera_t* camera = scene->getCamera();
+	diffRay_t ray;
+	// We sample the scene at render resolution to get the precision required for AA
+	int w = camera->resX();
+	int h = camera->resY();
+	float wt = 0.f; // Dummy variable
+	surfacePoint_t sp;
+	
+	for(int i=0; i<h; ++i)
+	{
+		for(int j=0; j<w; ++j)
+		{
+			ray.tmax = -1.f;
+			ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
+			scene->intersect(ray, sp);
+			if(ray.tmax > maxDepth) maxDepth = ray.tmax;
+			if(ray.tmax < minDepth && ray.tmax >= 0.f) minDepth = ray.tmax;
+		}
+	}
+	// we use the inverse multiplicative of the value aquired
+	if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
+}
 
 bool tiledIntegrator_t::render(imageFilm_t *image)
 {
@@ -72,27 +113,9 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
-	if(scene->doDepth())
-	{
-		const camera_t* camera = scene->getCamera();
-		diffRay_t c_ray;
-		int end_x=camera->resX(), end_y=camera->resY();
-		float wt = 0.f;
-		surfacePoint_t sp;
-		
-		for(int i=0; i<end_y; ++i)
-		{
-			for(int j=0; j<end_x; ++j)
-			{
-				c_ray.tmax = -1.f;
-				c_ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				scene->intersect(c_ray, sp);
-				if(c_ray.tmax > maxDepth) maxDepth = c_ray.tmax;
-				if(c_ray.tmax < minDepth && c_ray.tmax >= 0.f) minDepth = c_ray.tmax;
-			}
-		}
-		if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
-	}
+	if(scene->doDepth()) precalcDepths();
+	
+	preRender();
 
 	renderPass(AA_samples, 0, false);
 	for(int i=1; i<AA_passes; ++i)
@@ -112,7 +135,10 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 
 bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 {
+	prePass(samples, offset, adaptive);
+	
 	int nthreads = scene->getNumThreads();
+	
 #ifdef USING_THREADS
 	if(nthreads>1)
 	{
@@ -142,7 +168,8 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 		while(imageFilm->nextArea(a))
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
-			renderTile(a, samples, offset, adaptive,0);
+			preTile(a, samples, offset, adaptive, 0);
+			renderTile(a, samples, offset, adaptive, 0);
 			imageFilm->finishArea(a);
 		}
 #ifdef USING_THREADS

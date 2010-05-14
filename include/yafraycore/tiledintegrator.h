@@ -10,6 +10,11 @@ __BEGIN_YAFRAY
 class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 {
 	public:
+		/*! Rendering prepasses to precalc suff in case needed */
+		virtual void preRender(); //!< Called before the render starts and after the minDepth and maxDepth are calculated
+		virtual void prePass(int samples, int offset, bool adaptive); //!< Called before the proper rendering of all the tiles starts
+		virtual void preTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID); //!< Called brfore each tile is rendered
+		
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
 		virtual bool render(imageFilm_t *imageFilm);
@@ -17,6 +22,9 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		virtual bool renderPass(int samples, int offset, bool adaptive);
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
+		
+		virtual void precalcDepths();
+	
 	protected:
 		int AA_samples, AA_passes, AA_inc_samples;
 		float iAA_passes; //!< Inverse of AA_passes used for depth map
@@ -31,9 +39,8 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 
 struct threadControl_t
 {
-	threadControl_t():/* output(false),  */finishedThreads(0) {};
+	threadControl_t() : finishedThreads(0) {}
 	yafthreads::conditionVar_t countCV; //!< condition variable to signal main thread
-//	bool output; //!< indicate if area needs to be output (if not the thread just finished)
 	std::vector<renderArea_t> areas; //!< area to be output to e.g. blender, if any
 	volatile int finishedThreads; //!< number of finished threads, lock countCV when increasing/reading!
 };

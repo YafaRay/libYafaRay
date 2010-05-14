@@ -26,7 +26,6 @@
 #include "scene.h"
 #include <yafraycore/monitor.h>
 #include <string>
-// #include "sampling.h"
 
 __BEGIN_YAFRAY
 
@@ -49,7 +48,7 @@ class YAFRAYCORE_EXPORT integrator_t
 		virtual std::string getShortName() const { return integratorShortName; }
 		virtual std::string getName() const { return integratorName; }
 		virtual ~integrator_t() {}
-		enum TYPE{ SURFACE, VOLUME };
+		enum TYPE { SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
 	protected:
 		TYPE type;
@@ -63,7 +62,6 @@ class YAFRAYCORE_EXPORT integrator_t
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 {
 	public:
-//		virtual ~surfaceIntegrator_t() {}
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
 		virtual bool preprocess() { return true; };
