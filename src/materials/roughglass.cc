@@ -294,24 +294,37 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 			}
 		}
 	}
+
 	std::vector<shaderNode_t *> roots;
+	std::map<std::string, shaderNode_t *> nodeList;
+	std::map<std::string, shaderNode_t *>::iterator actNode;
+	
+	// Prepare our node list
+	nodeList["mirror_color_shader"] = NULL;
+	nodeList["bump_shader"] = NULL;
+	
 	if(mat->loadNodes(paramList, render))
 	{
-		if(params.getParam("mirror_color_shader", name))
+		for(actNode = nodeList.begin(); actNode != nodeList.end(); actNode++)
 		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->mirColS = i->second; roots.push_back(mat->mirColS); }
-			else std::cout << "[WARNING]: mirror col. shader node '"<<*name<<"' does not exist!\n";
-		}
-		if(params.getParam("bump_shader", name))
-		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->bumpS = i->second; roots.push_back(mat->bumpS); }
-			else std::cout << "[WARNING]: bump shader node '"<<*name<<"' does not exist!\n";
-			std::cout << "bump shader: " << name << "(" << (void*)mat->bumpS << ")\n";
+			if(params.getParam(actNode->first, name))
+			{
+				std::map<std::string,shaderNode_t *>::const_iterator i = mat->shader_table.find(*name);
+				
+				if(i!=mat->shader_table.end())
+				{
+					actNode->second = i->second;
+					roots.push_back(actNode->second);
+				}
+				else Y_WARNING << "RoughGlass: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
+			}
 		}
 	}
-	else std::cout << "loadNodes() failed!\n";
+	else Y_ERROR << "RoughGlass: loadNodes() failed!" << yendl;
+
+	mat->mirColS = nodeList["mirror_color_shader"];
+	mat->bumpS = nodeList["bump_shader"];
+
 	// solve nodes order
 	if(!roots.empty())
 	{

@@ -431,13 +431,11 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 					actNode->second = i->second;
 					roots.push_back(actNode->second);
 				}
-				else Y_WARNING << "GlossyMaterial: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
-				
-				Y_INFO << "GlossyMaterial: Shader " << actNode->first << " " << *name << "(" << (void*)actNode->second << ")" << yendl;
+				else Y_WARNING << "Glossy: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
 			}
 		}
 	}
-	else Y_ERROR << "GlossyMaterial: loadNodes() failed!" << yendl;
+	else Y_ERROR << "Glossy: loadNodes() failed!" << yendl;
 
 	mat->diffuseS = nodeList["diffuse_shader"];
 	mat->glossyS = nodeList["glossy_shader"];

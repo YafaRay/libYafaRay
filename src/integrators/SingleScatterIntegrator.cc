@@ -13,34 +13,39 @@
 
 __BEGIN_YAFRAY
 
-class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
-	private:
-		bool adaptive;
-		bool optimize;
-		float adaptiveStepSize;
-		std::vector<VolumeRegion*> listVR;
-		std::vector<light_t*> lights;
-		unsigned int VRSize;
-		float iVRSize;
+class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t
+{
+private:
+	bool adaptive;
+	bool optimize;
+	float adaptiveStepSize;
+	std::vector<VolumeRegion*> listVR;
+	std::vector<light_t*> lights;
+	unsigned int VRSize;
+	float iVRSize;
 
-	public:
-	SingleScatterIntegrator(float sSize, bool adapt, bool opt) {
+public:
+
+	SingleScatterIntegrator(float sSize, bool adapt, bool opt)
+	{
 		adaptive = adapt;
 		stepSize = sSize;
 		optimize = opt;
 		adaptiveStepSize = sSize * 100.0f;
 
-		Y_INFO << "[SingleScatterIntegrator] stepSize: " << stepSize << " adaptive: " << adaptive 
-			<< " optimize: " << optimize << std::endl;
+		Y_INFO << "SingleScatter: stepSize: " << stepSize << " adaptive: " << adaptive << " optimize: " << optimize << yendl;
 	}
 
-	virtual bool preprocess() {
-		Y_INFO << "[SingleScatterIntegrator] Preprocessing..." << std::endl;
+	virtual bool preprocess()
+	{
+		Y_INFO << "SingleScatter: Preprocessing..." << yendl;
 
-		for(unsigned int i=0;i<scene->lights.size();++i) {
+		for(unsigned int i=0;i<scene->lights.size();++i)
+		{
 			lights.push_back(scene->lights[i]);
 		}
-		if (scene->getBackground()) {
+		if (scene->getBackground())
+		{
 			light_t *bgl = scene->getBackground()->getLight();
 			if (bgl) lights.push_back(bgl);
 		}
@@ -49,9 +54,10 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		VRSize = listVR.size();
 		iVRSize = 1.f / (float)VRSize;
 		
-		if (optimize) {
-			for (unsigned int i = 0; i < VRSize; i++) {
-			//std::cout << "using vr" << std::endl;
+		if (optimize)
+		{
+			for (unsigned int i = 0; i < VRSize; i++)
+			{
 				VolumeRegion* vr = listVR.at(i);
 				bound_t bb = vr->getBB();
 
@@ -63,18 +69,21 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 				float ySizeInv = 1.f/(float)ySize;
 				float zSizeInv = 1.f/(float)zSize;
 
-				Y_INFO << "[SingleScatterIntegrator] volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
+				Y_INFO << "SingleScatter: volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
 			
-				for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l) {
+				for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
+				{
 					color_t lcol(0.0);
 
 					float* attenuationGrid = (float*)malloc(xSize * ySize * zSize * sizeof(float));
 					vr->attenuationGridMap[(*l)] = attenuationGrid;
 
-					for (int z = 0; z < zSize; ++z) {
-						for (int y = 0; y < ySize; ++y) {
-							for (int x = 0; x < xSize; ++x) {
-								// std::cout << "volume " << x << " " << y << " " << x << std::endl;
+					for (int z = 0; z < zSize; ++z)
+					{
+						for (int y = 0; y < ySize; ++y)
+						{
+							for (int x = 0; x < xSize; ++x)
+							{
 								// generate the world position inside the grid
 								point3d_t p(bb.longX() * xSizeInv * x + bb.a.x,
 											bb.longY() * ySizeInv * y + bb.a.y,
@@ -88,28 +97,25 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 								lightRay.from = sp.P;
 
 								// handle lights with delta distribution, e.g. point and directional lights
-								if( (*l)->diracLight() ) {
+								if( (*l)->diracLight() )
+								{
 									bool ill = (*l)->illuminate(sp, lcol, lightRay);
 									lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 									if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-									//color_t lightstepTau = vr->tau(lightRay, stepSize, 0.5f /* (*state.prng)() */);
-
 									color_t lightstepTau(0.f);
-									if (ill) {
-										for (unsigned int j = 0; j < VRSize; j++) {
+									if (ill)
+									{
+										for (unsigned int j = 0; j < VRSize; j++)
+										{
 											VolumeRegion* vr2 = listVR.at(j);
 											lightstepTau += vr2->tau(lightRay, stepSize, 0.0f);
 										}
 									}
 
 									float lightTr = fExp(-lightstepTau.energy());
-									//float lightTr = exp(-lightstepTau.energy());
 									attenuationGrid[x + y * xSize + ySize * xSize * z] = lightTr;
-
-									//std::cout << "gridpos: " << (x + y * xSize + ySize * xSize * z) << " " << lightstepTau.energy() << " " << lightRay.dir << " " << lightRay.tmax << " lightTr: " << lightTr << std::endl;
-
 								}
 								else // area light and suchlike
 								{
@@ -127,9 +133,9 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 										if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 										// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-										//color_t lightstepTau = vr->tau(lightRay, stepSize, 0.5f);
 										color_t lightstepTau(0.f);
-										for (unsigned int j = 0; j < VRSize; j++) {
+										for (unsigned int j = 0; j < VRSize; j++)
+										{
 											VolumeRegion* vr2 = listVR.at(j);
 											lightstepTau += vr2->tau(lightRay, stepSize, 0.0f);
 										}
@@ -148,9 +154,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		return true;
 	}
 	
-
-
-	color_t getInScatter(renderState_t& state, ray_t& stepRay, float currentStep) const {
+	color_t getInScatter(renderState_t& state, ray_t& stepRay, float currentStep) const
+	{
 		color_t inScatter(0.f);
 		surfacePoint_t sp;
 		sp.P = stepRay.from;
@@ -158,11 +163,13 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		ray_t lightRay;
 		lightRay.from = sp.P;
 
-		for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l) {
+		for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
+		{
 			color_t lcol(0.0);
 
 			// handle lights with delta distribution, e.g. point and directional lights
-			if( (*l)->diracLight() ) {
+			if( (*l)->diracLight() )
+			{
 				if( (*l)->illuminate(sp, lcol, lightRay) )
 				{
 					// ...shadowed...
@@ -173,26 +180,26 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 					{
 						float lightTr = 0.0f;
 						// replace lightTr with precalculated attenuation
-						if (optimize) {
-							//lightTr = vr->attenuation(sp.P, (*l));
+						if (optimize)
+						{
 							// replaced by
-							for (unsigned int i = 0; i < VRSize; i++) {
+							for (unsigned int i = 0; i < VRSize; i++)
+							{
 								VolumeRegion* vr = listVR.at(i);
 								float t0Tmp = -1, t1Tmp = -1;
-								if (vr->intersect(lightRay, t0Tmp, t1Tmp)) {
-									lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
-								}
+								if (vr->intersect(lightRay, t0Tmp, t1Tmp)) lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
 							}
 						}
-						else {
+						else
+						{
 							// replaced by
 							color_t lightstepTau(0.f);
-							for (unsigned int i = 0; i < VRSize; i++) {
+							for (unsigned int i = 0; i < VRSize; i++)
+							{
 								VolumeRegion* vr = listVR.at(i);
 								float t0Tmp = -1, t1Tmp = -1;
-								if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp)) {
-									//lightstepTau += vr->tau(lightRay, currentStep * 4.f, (*state.prng)());
-									//lightstepTau += vr->tau(lightRay, currentStep, (*state.prng)() * currentStep);
+								if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp))
+								{
 									lightstepTau += vr->tau(lightRay, currentStep, 0.f) * iVRSize;
 								}
 							}
@@ -201,8 +208,7 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 						}
 						lightTr *= iVRSize;
 
-						//std::cout << "stepSample: " << stepSample << " " << sigma_s << " " << lcol.energy() << " " << lightTr << std::endl;
-						inScatter += lightTr * lcol; // * vr->p(lightRay.dir, -ray.dir);
+						inScatter += lightTr * lcol;
 					}
 				}
 			}
@@ -231,27 +237,30 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 							ccol += ls.col / ls.pdf;
 
 							// replace lightTr with precalculated attenuation
-							if (optimize) {
-								//lightTr = vr->attenuation(sp.P, (*l));
+							if (optimize)
+							{
 								// replaced by
-								for (unsigned int i = 0; i < VRSize; i++) {
+								for (unsigned int i = 0; i < VRSize; i++)
+								{
 									VolumeRegion* vr = listVR.at(i);
 									float t0Tmp = -1, t1Tmp = -1;
-									if (vr->intersect(lightRay, t0Tmp, t1Tmp)) {
-										//lightTr *= vr->attenuation(sp.P, (*l));
+									if (vr->intersect(lightRay, t0Tmp, t1Tmp))
+									{
 										lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
 										break;
 									}
 								}
 							}
-							else {
-								//color_t lightstepTau = vr->tau(lightRay, step * 4.f,(*state.prng)());
+							else
+							{
 								// replaced by
 								color_t lightstepTau(0.f);
-								for (unsigned int i = 0; i < VRSize; i++) {
+								for (unsigned int i = 0; i < VRSize; i++)
+								{
 									VolumeRegion* vr = listVR.at(i);
 									float t0Tmp = -1, t1Tmp = -1;
-									if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp)) {
+									if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp))
+									{
 										lightstepTau += vr->tau(lightRay, currentStep * 4.f, 0.0f);
 									}
 								}
@@ -266,9 +275,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 				lightTr *= iN;
 
-				ccol = ccol /* * vr->p(lightRay.dir, -ray.dir) */ * iN;
+				ccol = ccol * iN;
 				inScatter += lightTr * ccol;
-				//inScatter += trTmp * lightTr * sigma_s * ccol;
 			} // end of area lights loop
 		}
 
@@ -277,16 +285,19 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 
 	// optical thickness, absorption, attenuation, extinction
-	virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const {
+	virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const
+	{
 		colorA_t Tr(1.f);
 		//return Tr;
 		
 		if (VRSize == 0) return Tr;
 		
-		for (unsigned int i = 0; i < VRSize; i++) {
+		for (unsigned int i = 0; i < VRSize; i++)
+		{
 			VolumeRegion* vr = listVR.at(i);
 			float t0 = -1, t1 = -1;
-			if (vr->intersect(ray, t0, t1)) {
+			if (vr->intersect(ray, t0, t1))
+			{
 				float random = (*state.prng)();
 				color_t opticalThickness = vr->tau(ray, stepSize, random);
 				Tr *= colorA_t(fExp(-opticalThickness.energy()));
@@ -297,7 +308,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 	}
 	
 	// emission and in-scattering
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray) const {
+	virtual colorA_t integrate(renderState_t &state, ray_t &ray) const
+	{
 		float t0 = 1e10f, t1 = -1e10f;
 
 		colorA_t result(0.f);
@@ -308,7 +320,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		bool hit = (ray.tmax > 0.f);
 
 		// find min t0 and max t1
-		for (unsigned int i = 0; i < VRSize; i++) {
+		for (unsigned int i = 0; i < VRSize; i++)
+		{
 			float t0Tmp, t1Tmp;
 			VolumeRegion* vr = listVR.at(i);
 
@@ -337,19 +350,21 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		std::vector<float> accumDensity;
 		int adaptiveResolution = 1;
 		
-		if (adaptive) {
+		if (adaptive)
+		{
 			adaptiveResolution = adaptiveStepSize / stepSize;
 
 			densitySamples.resize(samples);
 			accumDensity.resize(samples);
-			//std::vector<ray_t> stepRays(samples);
 
 			accumDensity.at(0) = 0.f;
-			for (int i = 0; i < samples; ++i) {
+			for (int i = 0; i < samples; ++i)
+			{
 				point3d_t p = ray.from + (stepSize * i + pos) * ray.dir;
 
 				float density = 0;
-				for (unsigned int j = 0; j < VRSize; j++) {
+				for (unsigned int j = 0; j < VRSize; j++)
+				{
 					VolumeRegion* vr = listVR.at(j);
 					density += vr->sigma_t(p, vector3d_t()).energy();
 				}
@@ -357,13 +372,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 				densitySamples.at(i) = density;
 				if (i > 0)
 					accumDensity.at(i) = accumDensity.at(i - 1) + density * stepSize;
-
-				//std::cout << i << " " << stepSize * i + pos << " " << p << " " << densitySamples.at(i) << " " << accumDensity.at(i) << std::endl;
 			}
 		}
-
-
-		//std::cout << "singleScat, dist: " << (t1 - t0) << " " << t0 << " " << t1 << std::endl;
 
 		float adaptThresh = .01f;
 		bool adaptNow = false;
@@ -372,7 +382,8 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		int stepToStopAdapt = -1;
 		color_t trTmp(1.f); // transmissivity during ray marching
 
-		if (adaptive) {
+		if (adaptive)
+		{
 			currentStep = adaptiveStepSize;
 			stepLength = adaptiveResolution;
 		}
@@ -380,13 +391,15 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 		color_t stepTau(0.f);
 		int lookaheadSamples = adaptiveResolution / 10;
 
-		for (int stepSample = 0; stepSample < samples; stepSample += stepLength) {
-			if (adaptive) {
-				if (!adaptNow) {
+		for (int stepSample = 0; stepSample < samples; stepSample += stepLength)
+		{
+			if (adaptive)
+			{
+				if (!adaptNow)
+				{
 					int nextSample = (stepSample + adaptiveResolution > samples - 1) ? samples - 1 : stepSample + adaptiveResolution;
-					//std::cout << "stepSample: " << stepSample << " " << accumDensity.at(stepSample) << " " << accumDensity.at(nextSample) << std::endl;
-					if (std::fabs(accumDensity.at(stepSample) - accumDensity.at(nextSample)) > adaptThresh) {
-						//std::cout << "stepSample: " << stepSample << " starting adaptive" << std::endl;
+					if (std::fabs(accumDensity.at(stepSample) - accumDensity.at(nextSample)) > adaptThresh)
+					{
 						adaptNow = true;
 						stepLength = 1;
 						stepToStopAdapt = stepSample + lookaheadSamples;
@@ -396,19 +409,19 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 			}
 
 			ray_t stepRay(ray.from + (ray.dir * pos), ray.dir, 0, currentStep, 0);
-			//std::cout << "*** stepSample: " << stepSample << " stepTau: " << stepTau << " pos: " << pos << " " << stepRay.from << std::endl;
 
-			if (adaptive) {
-				//stepTau += densitySamples.at(stepSample) * currentStep;
+			if (adaptive)
+			{
 				stepTau = accumDensity.at(stepSample);
-				//std::cout << densitySamples.at(stepSample) * currentStep << std::endl;
 			}
-			else {
-				for (unsigned int j = 0; j < VRSize; j++) {
+			else
+			{
+				for (unsigned int j = 0; j < VRSize; j++)
+				{
 					VolumeRegion* vr = listVR.at(j);
 					float t0Tmp = -1, t1Tmp = -1;
-					if (vr->intersect(stepRay, t0Tmp, t1Tmp)) {
-						//std::cout << vr->sigma_t(stepRay.from, stepRay.dir) * currentStep << std::endl;
+					if (vr->intersect(stepRay, t0Tmp, t1Tmp))
+					{
 						stepTau += vr->sigma_t(stepRay.from, stepRay.dir) * currentStep;
 					}
 				}
@@ -416,42 +429,34 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 			trTmp = fExp(-stepTau.energy());
 
-			//std::cout << stepSample << " trTmp: " << trTmp << " sr: " << stepRay.from << std::endl;
-
-			if (optimize && trTmp.energy() < 1e-3f) {
-			//if (trTmp.energy() < 1e-3f) {
+			if (optimize && trTmp.energy() < 1e-3f)
+			{
 				float random = (*state.prng)();
-				//std::cout << "breaking: " << stepSample << " " << accumDensity.at(stepSample) << " " << densitySamples.at(stepSample)
-				//	<< " " << stepTau << std::endl;
-				if (random < 0.5f) { 
-					// result.R = 0; result.G = 1; result.B = 0;
+				if (random < 0.5f)
+				{ 
 					break;
 				}
 				trTmp = trTmp / random;
 			}
 
-			//std::cout << "emission: " << stepRay.from << std::endl;
-			//resultTmp = trTmp * vr->emission(stepRay.from, stepRay.dir);
-
 			float sigma_s = 0.0f;
-			for (unsigned int i = 0; i < VRSize; i++) {
+			for (unsigned int i = 0; i < VRSize; i++)
+			{
 				VolumeRegion* vr = listVR.at(i);
 				float t0Tmp = -1, t1Tmp = -1;
-				if (listVR.at(i)->intersect(stepRay, t0Tmp, t1Tmp)) {
+				if (listVR.at(i)->intersect(stepRay, t0Tmp, t1Tmp))
+				{
 					sigma_s += vr->sigma_s(stepRay.from, stepRay.dir).energy();
 				}
 			}
 			
-			//std::cout << "stepSample: " << stepSample << " " << sigma_s << std::endl;
-
 			// with a sigma_s close to 0, no light can be scattered -> computation can be skipped
-
-			if (optimize && sigma_s < 1e-3f) {
-			//if (sigma_s < 1e-3) {
+			
+			if (optimize && sigma_s < 1e-3f)
+			{
 				float random = (*state.prng)();
-				if (random < 0.5f) {
-					//std::cout << "throwing away because ss < 1e-3" << std::endl;
-					//stepSample += stepLength;
+				if (random < 0.5f)
+				{
 					pos += currentStep;
 					continue;
 				}
@@ -460,18 +465,18 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 			result += trTmp * getInScatter(state, stepRay, currentStep) * sigma_s * currentStep;
 
-			//std::cout << "stepSample: " << stepSample << " " << trTmp << " " << stepTau.energy() << " " << result << std::endl;
-
-			if (adaptive) {
-				if (adaptNow && stepSample >= stepToStopAdapt) {
+			if (adaptive)
+			{
+				if (adaptNow && stepSample >= stepToStopAdapt)
+				{
 					int nextSample = (stepSample + adaptiveResolution > samples - 1) ? samples - 1 : stepSample + adaptiveResolution;
-					if (std::fabs(accumDensity.at(stepSample) - accumDensity.at(nextSample)) > adaptThresh) {
+					if (std::fabs(accumDensity.at(stepSample) - accumDensity.at(nextSample)) > adaptThresh)
+					{
 						// continue moving slowly ahead until the discontinuity is found
 						stepToStopAdapt = stepSample + lookaheadSamples;
-						//std::cout << "stepSample: " << stepSample << " continuing adaptive" << std::endl;
 					}
-					else {
-						//std::cout << "stepSample: " << stepSample << " stopping adaptive" << std::endl;
+					else
+					{
 						adaptNow = false;
 						stepLength = adaptiveResolution;
 						currentStep = adaptiveStepSize;
@@ -481,15 +486,6 @@ class YAFRAYPLUGIN_EXPORT SingleScatterIntegrator : public volumeIntegrator_t {
 
 			pos += currentStep;
 		}
-
-		//std::cout << "done" << std::endl;
-		//std::cout << "samples: " << samples << " " << trTmp << " " << stepTau.energy() << std::endl;
-
-		/*
-		if (trTmp.energy() > 0.95f) {
-			result.R = 1; result.G = result.B = 0;
-		}
-		*/
 		result.A = 1.0f; // FIXME: get correct alpha value, does it even matter?
 		return result;
 	}

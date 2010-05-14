@@ -268,7 +268,7 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
-	Y_INFO << integratorName << ": " << passString.str() << "\n";
+	Y_INFO << integratorName << ": " << passString.str() << yendl;
 	
 	if(pbar)
 	{
@@ -730,7 +730,7 @@ void imageFilm_t::drawRenderSettings()
 	// set character size
 	if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
 	{
-		Y_ERROR << "ImageOverly: FreeType couldn't set the character size!\n";
+		Y_ERROR << "ImageOverly: FreeType couldn't set the character size!" << yendl;
 		return;
 	}
 
@@ -765,7 +765,7 @@ void imageFilm_t::drawRenderSettings()
 	}
 
 	// Draw the dark bar at the bottom
-	float bgAlpha = 0.3f;
+	float bgAlpha = 0.4f;
 	color_t bgColor(0.f);
 	
 	for ( int x = logoWidth; x < w; x++ )

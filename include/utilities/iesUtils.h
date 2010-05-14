@@ -171,7 +171,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	{
 		if(line == "TILT=INCLUDE")
 		{
-			Y_INFO << "IES Parser: Tilt data included in IES file.\nSkiping..." << yendl;
+			Y_INFO << "IES Parser: Tilt data included in IES file." << yendl << "Skiping..." << yendl;
 			
 			int pairs = 0;
 			

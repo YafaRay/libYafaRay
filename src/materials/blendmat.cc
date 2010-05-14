@@ -430,7 +430,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 				}
 			else
 			{
-				Y_ERROR << "[Blend Material] Blend shader node '"<<*name<<"' does not exist!\n";
+				Y_ERROR << "Blend: Blend shader node '" << *name << "' does not exist!" << yendl;
 				delete mat;
 				return 0;
 			}
@@ -438,12 +438,11 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	}
 	else
 	{
-		Y_ERROR << "[Blend Material] loadNodes() failed!\n";
+		Y_ERROR << "Blend: loadNodes() failed!" << yendl;
 		delete mat;
 		return 0;
 	}
 	mat->solveNodesOrder(roots);
-	//size_t inputReq = std::max(m1->getReqMem(), m2->getReqMem());
 	mat->reqMem = sizeof(bool) + mat->reqNodeMem;
 	return mat;
 }

@@ -122,7 +122,7 @@ void renderEnvironment_t::clearAll()
 void renderEnvironment_t::loadPlugins(const std::string &path)
 {
 	typedef void (reg_t)(renderEnvironment_t &);
-	Y_INFO_ENV << "Loading plugins ...\n";
+	Y_INFO_ENV << "Loading plugins ..." << yendl;
 	std::list<std::string> plugins=listDir(path);
 	
 	for(std::list<std::string>::iterator i=plugins.begin();i!=plugins.end();++i)
@@ -639,15 +639,45 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	const std::string *custString = 0;
 	std::stringstream aaSettings;
 	
-	if(! params.getParam("camera_name", name) ){ Y_ERROR_ENV << "Specify a Camera!!" << yendl; return false; }
+	if(! params.getParam("camera_name", name) )
+	{
+		Y_ERROR_ENV << "Specify a Camera!!" << yendl;
+		return false;
+	}
 	camera_t *cam = this->getCamera(*name);
-	if(! cam){ Y_ERROR_ENV << "Specify an _existing_ Camera!!" << yendl; return false; }
-	if(! params.getParam("integrator_name", name) ){ Y_ERROR_ENV << "Specify an Integrator!!" << yendl; return false; }
+	
+	if(!cam)
+	{
+		Y_ERROR_ENV << "Specify an _existing_ Camera!!" << yendl;
+		return false;
+	}
+	
+	if(!params.getParam("integrator_name", name) )
+	{
+		Y_ERROR_ENV << "Specify an Integrator!!" << yendl;
+		return false;
+	}
+	
 	integrator_t *inte = this->getIntegrator(*name);
-	if(! inte){ Y_ERROR_ENV << "Specify an _existing_ Integrator!!\n"; return false; }
-	if(inte->integratorType() != integrator_t::SURFACE){ Y_ERROR_ENV << "Integrator is no surface integrator!" << yendl; return false; }
+	
+	if(!inte)
+	{
+		Y_ERROR_ENV << "Specify an _existing_ Integrator!!" << yendl;
+		return false;
+	}
+	
+	if(inte->integratorType() != integrator_t::SURFACE)
+	{
+		Y_ERROR_ENV << "Integrator is no surface integrator!" << yendl;
+		return false;
+	}
 
-	if(! params.getParam("volintegrator_name", name) ){ Y_ERROR_ENV << "Specify a Volume Integrator!" << yendl; return false; }
+	if(! params.getParam("volintegrator_name", name) )
+	{
+		Y_ERROR_ENV << "Specify a Volume Integrator!" << yendl;
+		return false;
+	}
+	
 	integrator_t *volInte = this->getIntegrator(*name);
 
 	background_t *backg = 0;
@@ -656,6 +686,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		backg = this->getBackground(*name);
 		if(!backg) Y_ERROR_ENV << "please specify an _existing_ Background!!" << yendl;
 	}
+	
 	params.getParam("AA_passes", AA_passes);
 	params.getParam("AA_minsamples", AA_samples);
 	AA_inc_samples = AA_samples;

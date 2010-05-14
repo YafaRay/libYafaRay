@@ -129,13 +129,13 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	
 	if( !params.getParam("texture", texname) )
 	{
-		Y_ERROR << "TextureBackground: No texture given for texture background!";
+		Y_ERROR << "TextureBackground: No texture given for texture background!" << yendl;
 		return NULL;
 	}
 	tex = render.getTexture(*texname);
 	if( !tex )
 	{
-		Y_ERROR << "TextureBackground: Texture '"<<*texname<<"' for textureback not existant!\n";
+		Y_ERROR << "TextureBackground: Texture '" << *texname << "' for textureback not existant!" << yendl;
 		return NULL;
 	}
 	if( params.getParam("mapping", mapping) )

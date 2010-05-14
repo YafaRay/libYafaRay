@@ -118,11 +118,9 @@ class YAFRAYCORE_EXPORT scene_t
 	public:
 		scene_t();
 		~scene_t();
-		explicit scene_t(const scene_t &s){ std::cerr<<"you may not use the copy constructor (yet)!\n"; }
+		explicit scene_t(const scene_t &s){ Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
 		bool render();
 		void abort();
-		//bool renderPass(int samples, int offset, bool adaptive);
-		//bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
 		bool startGeometry();
 		bool endGeometry();
 		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);

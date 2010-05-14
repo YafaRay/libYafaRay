@@ -156,7 +156,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 			if(i!=mat->shader_table.end()){ mat->mask = i->second; roots.push_back(mat->mask); }
 			else
 			{
-				std::cout << "[ERROR]: mask shader node '"<<*name<<"' does not exist!\n";
+				Y_ERROR << "MaskMat: Mask shader node '" << *name << "' does not exist!" << yendl;
 				delete mat;
 				return 0;
 			}
@@ -164,7 +164,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	}
 	else
 	{
-		std::cout << "[ERROR]: loadNodes() failed!\n";
+		Y_ERROR << "MaskMat: loadNodes() failed!" << yendl;
 		delete mat;
 		return 0;
 	}

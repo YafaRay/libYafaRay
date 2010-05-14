@@ -83,15 +83,28 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 	Y_LOOKUPS=0; Y_PROCS=0;
 	nextFreeNode = 0;
 	nElements = dat.size();
-	if(nElements == 0){ Y_ERROR << "pointKdTree: Empty vector!\n"; return; }
+	
+	if(nElements == 0)
+	{
+		Y_ERROR << "pointKdTree: Empty vector!" << yendl;
+		return;
+	}
+	
 	nodes = (kdNode<T> *)y_memalign(64, 4*nElements*sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
 	const T **elements = new const T*[nElements];
+	
 	for(u_int32 i=0; i<nElements; ++i) elements[i] = &dat[i];
+	
 	treeBound.set(dat[0].pos, dat[0].pos);
+	
 	for(u_int32 i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
-	Y_INFO << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements...\n";
+	
+	Y_INFO << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements..." << yendl;
+	
 	buildTree(0, nElements, treeBound, elements);
-	Y_INFO << "pointKdTree: Tree built.\n";
+	
+	Y_INFO << "pointKdTree: Tree built." << yendl;
+	
 	delete[] elements;
 }
 
@@ -100,12 +113,10 @@ void pointKdTree<T>::buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, c
 {
 	if(end - start == 1)
 	{
-//		std::cout << "creating leaf node, element "<<start<<"\n";
 		nodes[nextFreeNode].createLeaf(prims[start]);
 		nextFreeNode++;
 		return;
 	}
-//	std::cout << "creating interior node, "<<end - start<<" left ("<<start<<" - "<<end<<")\n";
 	int splitAxis = nodeBound.largestAxis();
 	int splitEl = (start+end)/2;
 	std::nth_element(&prims[start], &prims[splitEl],
@@ -132,13 +143,12 @@ void pointKdTree<T>::buildTree2(u_int32 start, u_int32 end, bound_t &nodeBound, 
 {
 	if(end - start == 1)
 	{
-//		std::cout << "creating leaf node, element "<<start<<"\n";
 		nodes[nextFreeNode].createLeaf(prims[start]);
 		nextFreeNode++;
 		return;
 	}
-//	std::cout << "creating interior node, "<<end - start<<" left ("<<start<<" - "<<end<<")\n";
-	int splitAxis = axis;//nodeBound.largestAxis();
+
+	int splitAxis = axis;
 	int splitEl = (start+end)/2;
 	std::nth_element(&prims[start], &prims[splitEl],
 					&prims[end], CompareNode<T>(splitAxis));
@@ -171,7 +181,7 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 	int stackPtr = 1;
 	stack[stackPtr].node = 0; // "nowhere", termination flag
 	
-	while (true /*currNode != NULL*/)
+	while (true)
 	{
 		while( !currNode->IsLeaf() )
 		{
@@ -193,10 +203,11 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 			stack[stackPtr].axis = axis;
 			stack[stackPtr].s = splitVal;
 		}
+
 		// Hand leaf-data kd-tree to processing function
 		vector3d_t v = currNode->data->pos - p;
 		PFLOAT dist2 = v.lengthSqr();
-//		std::cout << "processing leaf! r="<<maxDistSquared<<"\n";
+
 		if (dist2 < maxDistSquared)
 		{
 			++Y_PROCS;
@@ -208,25 +219,24 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 		int axis = stack[stackPtr].axis;
 		dist2 = p[axis] - stack[stackPtr].s;
 		dist2 *= dist2;
-//		std::cout << "testing stack pop! r="<<maxDistSquared<<"\n";
+
 		while(dist2 > maxDistSquared)
 		{
 			--stackPtr;
-			if(!stack[stackPtr].node){ /*std::cout<<"work done\n"; */return; } // stack empty, done.
+			if(!stack[stackPtr].node) return;// stack empty, done.
 			axis = stack[stackPtr].axis;
 			dist2 = p[axis] - stack[stackPtr].s;
 			dist2 *= dist2;
 		}
 		currNode = stack[stackPtr].node;
 		--stackPtr;
-//		if(!stack[stackPtr].node){ /*std::cout<<"work done (2)\n";*/ return; } // stack empty, done.
 	}
 #else
 	recursiveLookup(p, proc, maxDistSquared, 0);
 	++Y_LOOKUPS;
 	if(Y_LOOKUPS == 159999)
 	{
-		std::cout << "average photons tested per lookup:" << double(Y_PROCS)/double(Y_LOOKUPS);
+		Y_INFO << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS)/double(Y_LOOKUPS) << yendl;
 	}
 #endif
 }

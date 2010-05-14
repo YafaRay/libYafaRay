@@ -224,73 +224,13 @@ inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const
 	return col*nLights;
 }
 
-/*bool photonIntegrator_t::render(imageFilm_t *image)
-{
-	std::stringstream passString;
-	imageFilm = image;
-	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
-	iAA_passes = 1.f / (float) AA_passes;
-	Y_INFO << integratorName << ": Rendering "<<AA_passes<<" passes\n";
-	Y_INFO << integratorName << ": Min. " << AA_samples << " samples\n";
-	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass\n";
-	Y_INFO << integratorName << ": Max. "<<AA_samples + std::max(0,AA_passes-1)*AA_inc_samples<<" total samples\n";
-	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
-	if(intpb) intpb->setTag(passString.str().c_str());
-	
-	gTimer.addEvent("rendert");
-	gTimer.start("rendert");
-	imageFilm->init(AA_passes);
-	
-	maxDepth = 0.f;
-
-	if(scene->doDepth())
-	{
-		const camera_t* camera = scene->getCamera();
-		diffRay_t c_ray;
-		int end_x=camera->resX(), end_y=camera->resY();
-		float wt = 0.f;
-		surfacePoint_t sp;
-		
-		for(int i=0; i<end_y; ++i)
-		{
-			for(int j=0; j<end_x; ++j)
-			{
-				c_ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-				scene->intersect(c_ray, sp);
-				if(c_ray.tmax > maxDepth) maxDepth = c_ray.tmax;
-			}
-		}
-		if(maxDepth > 0.f) maxDepth = 1.f / maxDepth;
-	}
-
-	this->prepass = false;
-	if(cacheIrrad)
-	{
-		renderIrradPass();
-		imageFilm->init(AA_passes);
-	}
-	renderPass(AA_samples, 0, false);
-	for(int i=1; i<AA_passes; ++i)
-	{
-		if(scene->getSignals() & Y_SIG_ABORT) break;
-		imageFilm->setAAThreshold(AA_threshold);
-		imageFilm->nextPass(true);
-		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
-	}
-
-	gTimer.stop("rendert");
-	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert")<<"s\n";
-
-	return true;
-}*/
-
 bool photonIntegrator_t::preprocess()
 {
 	std::stringstream set;
 	gTimer.addEvent("prepass");
 	gTimer.start("prepass");
 
-	Y_INFO << integratorName << ": Starting preprocess...\n";
+	Y_INFO << integratorName << ": Starting preprocess..." << yendl;
 
 	if(trShad)
 	{
@@ -354,13 +294,13 @@ bool photonIntegrator_t::preprocess()
 
 	lightPowerD = new pdf1D_t(energies, numDLights);
 	
-	Y_INFO << integratorName << ": Light(s) photon color testing for diffuse map:\n";
+	Y_INFO << integratorName << ": Light(s) photon color testing for diffuse map:" << yendl;
 	for(int i=0;i<numDLights;++i)
 	{
 		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 		lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		Y_INFO << integratorName << ": Light ["<<i+1<<"] Photon col:"<<pcol<<" | lnpdf: "<<lightNumPdf<<"\n";
+		Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 	}
 	
 	delete[] energies;
@@ -381,7 +321,7 @@ bool photonIntegrator_t::preprocess()
 	if(intpb) pb = intpb;
 	else pb = new ConsoleProgressBar_t(80);
 	
-	Y_INFO << integratorName << ": Building diffuse photon map...\n";
+	Y_INFO << integratorName << ": Building diffuse photon map..." << yendl;
 	
 	pb->init(128);
 	pbStep = std::max(1U, nPhotons/128);
@@ -393,8 +333,6 @@ bool photonIntegrator_t::preprocess()
 	while(!done)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb) delete pb; return false; }
-		//state.chromatic = true;
-		//state.wavelength = scrHalton(5, curr);
 
 		s1 = RI_vdC(curr);
 		s2 = scrHalton(2, curr);
@@ -403,7 +341,12 @@ bool photonIntegrator_t::preprocess()
 
 		sL = float(curr) * invDiffPhotons;
 		int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
-		if(lightNum >= numDLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return false; }
+		if(lightNum >= numDLights)
+		{
+			Y_ERROR << integratorName << ": lightPDF sample error! " << sL << "/" << lightNum << "... stopping now." << yendl;
+			delete lightPowerD;
+			return false;
+		}
 
 		pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 		ray.tmin = MIN_RAYDIST;
@@ -426,7 +369,10 @@ bool photonIntegrator_t::preprocess()
 		while( scene->intersect(ray, sp) )
 		{
 			if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
-			{ Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << ".\n"; continue; }
+			{
+				Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << "." << yendl;
+				continue;
+			}
 			
 			color_t transm(1.f);
 			color_t vcol(0.f);
@@ -483,13 +429,7 @@ bool photonIntegrator_t::preprocess()
 			causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
 							((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
 			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
-			/*if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
-			{
-				state.chromatic=false;
-				color_t wl_col;
-				wl2rgb(state.wavelength, wl_col);
-				pcol *= wl_col;
-			}*/
+
 			ray.from = sp.P;
 			ray.dir = wo;
 			ray.tmin = MIN_RAYDIST;
@@ -502,8 +442,8 @@ bool photonIntegrator_t::preprocess()
 	}
 	pb->done();
 	pb->setTag("Diffuse photon map built.");
-	Y_INFO << integratorName << ": Diffuse photon map built.\n";
-	Y_INFO << integratorName << ": Shot "<<curr<<" photons from " << numDLights << " light(s)\n";
+	Y_INFO << integratorName << ": Diffuse photon map built." << yendl;
+	Y_INFO << integratorName << ": Shot "<<curr<<" photons from " << numDLights << " light(s)" << yendl;
 
 	delete lightPowerD;
 
@@ -531,7 +471,7 @@ bool photonIntegrator_t::preprocess()
 
 		lightPowerD = new pdf1D_t(energies, numCLights);
 		
-		Y_INFO << integratorName << ": Light(s) photon color testing for caustics map:\n";
+		Y_INFO << integratorName << ": Light(s) photon color testing for caustics map:" << yendl;
 		for(int i=0;i<numCLights;++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
@@ -590,7 +530,10 @@ bool photonIntegrator_t::preprocess()
 			while( scene->intersect(ray, sp) )
 			{
 				if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
-				{ Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << ".\n"; continue; }
+				{
+					Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << "." << yendl;
+					continue;
+				}
 				
 				color_t transm(1.f);
 				color_t vcol(0.f);
@@ -617,6 +560,7 @@ bool photonIntegrator_t::preprocess()
 						causticMap.setNumPaths(curr);
 					}
 				}
+				
 				// need to break in the middle otherwise we scatter the photon and then discard it => redundant
 				if(nBounces == maxBounces) break;
 				// scatter photon
@@ -636,6 +580,7 @@ bool photonIntegrator_t::preprocess()
 				causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
 								((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
 				directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
+				
 				if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
 				{
 					state.chromatic=false;
@@ -643,6 +588,7 @@ bool photonIntegrator_t::preprocess()
 					wl2rgb(state.wavelength, wl_col);
 					pcol *= wl_col;
 				}
+				
 				ray.from = sp.P;
 				ray.dir = wo;
 				ray.tmin = MIN_RAYDIST;
@@ -660,30 +606,34 @@ bool photonIntegrator_t::preprocess()
 	}
 	else
 	{
-		Y_INFO << integratorName << ": No caustic source lights found, skiping caustic gathering...\n";		
+		Y_INFO << integratorName << ": No caustic source lights found, skiping caustic gathering..." << yendl;
 	}
 	
-	Y_INFO << integratorName << ": Shot "<<curr<<" caustic photons from " << numCLights <<" light(s).\n";
-	Y_INFO << integratorName << ": Stored caustic photons: "<<causticMap.nPhotons()<<"\n";
-	Y_INFO << integratorName << ": Stored diffuse photons: "<<diffuseMap.nPhotons()<<"\n";
+	Y_INFO << integratorName << ": Shot "<<curr<<" caustic photons from " << numCLights <<" light(s)." << yendl;
+	Y_INFO << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
+	Y_INFO << integratorName << ": Stored diffuse photons: " << diffuseMap.nPhotons() << yendl;
 	
 	if(diffuseMap.nPhotons() > 0)
 	{
-		Y_INFO << integratorName << ": Building diffuse photons kd-tree:\n";
+		Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
 		pb->setTag("Building diffuse photons kd-tree...");
 		diffuseMap.updateTree();
-		Y_INFO << integratorName << ": Done.\n";
+		Y_INFO << integratorName << ": Done." << yendl;
 	}
 
 	if(causticMap.nPhotons() > 0)
 	{
-		Y_INFO << integratorName << ": Building caustic photons kd-tree:\n";
+		Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
 		pb->setTag("Building caustic photons kd-tree...");
 		causticMap.updateTree();
-		Y_INFO << integratorName << ": Done.\n";
+		Y_INFO << integratorName << ": Done." << yendl;
 	}
 
-	if(diffuseMap.nPhotons() < 50) { Y_ERROR << integratorName << ": Too few diffuse photons, stopping now.\n"; return false; }
+	if(diffuseMap.nPhotons() < 50)
+	{
+		Y_ERROR << integratorName << ": Too few diffuse photons, stopping now." << yendl;
+		return false;
+	}
 	
 	lookupRad = 4*dsRadius*dsRadius;
 	
@@ -727,7 +677,12 @@ bool photonIntegrator_t::preprocess()
 		pgdat.pbar->setTag("Pregathering radiance data done...");
 		if(!intpb) delete pgdat.pbar;
 #else
-		if(radianceMap.nPhotons() != 0){ Y_WARNING << integratorName << ": radianceMap not empty!\n"; radianceMap.clear(); }
+		if(radianceMap.nPhotons() != 0)
+		{
+			Y_WARNING << integratorName << ": radianceMap not empty!" << yendl;
+			radianceMap.clear();
+		}
+		
 		Y_INFO << integratorName << ": Creating radiance map..." << yendl;
 		progressBar_t *pbar;
 		if(intpb) pbar = intpb;
@@ -954,6 +909,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		col += material->emit(state, sp, wo);
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
+		
 		if(finalGather)
 		{
 			if(showMap)
@@ -983,27 +939,20 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			color_t sum(0.0);
 			if(nGathered > 0)
 			{
-				if(nGathered > _nMax)
-				{
-					_nMax = nGathered;
-					std::cout << "maximum Photons: "<<_nMax<<", radius: "<<radius<<"\n";
-					if(_nMax == 10) for(int j=0; j<nGathered; ++j) std::cout<<"col:"<<gathered[j].photon->color()<<"\n";
-				}
+				if(nGathered > _nMax) _nMax = nGathered;
 
 				float scale = 1.f / ( float(diffuseMap.nPaths()) * radius * M_PI);
 				for(int i=0; i<nGathered; ++i)
 				{
 					vector3d_t pdir = gathered[i].photon->direction();
 					color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
-					col += surfCol * scale * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
+					col += surfCol * scale * gathered[i].photon->color();
 				}
 			}
 		}
+		
 		// add caustics
-		if(bsdfs & (BSDF_DIFFUSE))
-		{
-			col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, cRadius);
-		}
+		if(bsdfs & (BSDF_DIFFUSE)) col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, cRadius);
 		
 		state.raylevel++;
 		
@@ -1195,7 +1144,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	params.getParam("finalGather", finalGather);
 	params.getParam("fg_samples", fgPaths);
 	params.getParam("fg_bounces", fgBounces);
-	gatherDist = /* 2.f* */dsRad;
+	gatherDist = dsRad;
 	params.getParam("fg_min_pathlen", gatherDist);
 	params.getParam("show_map", show_map);
 	

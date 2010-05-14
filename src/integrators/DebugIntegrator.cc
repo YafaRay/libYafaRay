@@ -18,7 +18,6 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//#include <mcqmc.h>
 #include <yafray_config.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
@@ -91,7 +90,6 @@ colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray/*, samp
 	surfacePoint_t sp;
 	void *o_udat = state.userdata;
 	bool oldIncludeLights = state.includeLights;
-//	std::cout << "directLighting::integrate()\n";
 	//shoot ray into scene
 	if(scene->intersect(ray, sp))
 	{
@@ -102,8 +100,6 @@ colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray/*, samp
 			state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 			
 			BSDF_t bsdfs;
-			//bool shadowed;
-			//unsigned int l_offs = 0;
 			const material_t *material = sp.material;
 			material->initBSDF(state, sp, bsdfs);
 		}
