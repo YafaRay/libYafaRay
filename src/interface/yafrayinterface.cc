@@ -9,12 +9,7 @@ __BEGIN_YAFRAY
 
 yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), gcInput(false)
 {
-//	scene = new scene_t();
 	env = new renderEnvironment_t();
-//	std::string plugPath;
-//	bool ok = env->getPluginPath(plugPath);
-//	if(ok) env->loadPlugins(plugPath);
-//	else std::cout << "error: could not get plugin path!\n";
 	params = new paraMap_t;
 	eparams = new std::list<paraMap_t>;
 	cparams = params;
@@ -22,11 +17,11 @@ yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), gcIn
 
 yafrayInterface_t::~yafrayInterface_t()
 {
-	std::cout << "~yafrayInterface_t()\tdelete scene...";
+	Y_INFO << "Interface: Deleting scene..." << yendl;
 	if(scene) delete scene;
-	std::cout << "delete environment...";
+	Y_INFO << "Interface: Deleting environment..." << yendl;
 	if(env) delete env;
-	std::cout << "done\n";
+	Y_INFO << "Interface: Done." << yendl;
 	if(film) delete film;
 	delete params;
 	delete eparams;

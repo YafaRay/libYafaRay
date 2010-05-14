@@ -72,7 +72,7 @@ void directionalLight_t::init(scene_t &scene)
 		radius = worldRadius;
 	}
 	areaPdf = 1.f/ (radius*radius); // Pi cancels out with our weird conventions :p
-	std::cout << "directional light: pos " << position << " world radius: " << worldRadius << "\n";
+	Y_INFO << "DirectionalLight: pos " << position << " world radius: " << worldRadius << yendl;
 }
 
 
@@ -137,7 +137,6 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	color_t color(1.0);
 	CFLOAT power = 1.0;
 	float rad = 1.0;
-//	bool shadow = true;
 	bool inf = true;
 	
 	params.getParam("direction",dir);
@@ -148,11 +147,10 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	{
 		if(!params.getParam("from",from))
 		{
-			if(params.getParam("position",from)) std::cout << "warning: deprecated parameter 'position', use 'from' instead\n";
+			if(params.getParam("position",from)) Y_INFO << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << yendl;
 		}
 		params.getParam("radius",rad);
 	}
-//	params.getParam("cast_shadows",shadow);
 
 	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad);
 }

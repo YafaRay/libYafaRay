@@ -41,9 +41,6 @@ meshLight_t::~meshLight_t()
 	delete areaDist;
 	areaDist = 0;
 	delete[] tris;
-//	std::cout << "meshLight stats:\n";
-//	for(int i=0; i<nTris; ++i) std::cout << stats[i] << " ";
-//	delete[] stats;
 	if(tree) delete tree;
 }
 
@@ -62,7 +59,6 @@ void meshLight_t::initIS()
 	areaDist = new pdf1D_t(areas, nTris);
 	area = (float)totalArea;
 	invArea = (float)(1.0/totalArea);
-	//delete[] tris;
 	delete[] areas;
 	if(tree) delete tree;
 	tree = new triKdTree_t(tris, nTris, -1, 1, 0.8, 0.33);
@@ -216,7 +212,6 @@ void meshLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float 
 {
 	areaPdf = invArea * M_PI;
 	cos_wo = wo*sp.N;
-	//if(sp.N * normal < 0.95f) std::cout << "whow!\n";
 	dirPdf = cos_wo > 0.f ? (doubleSided ? cos_wo * 0.5f : cos_wo ) : ( doubleSided ?  -cos_wo * 0.5f : 0.f);
 }
 

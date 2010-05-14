@@ -4,11 +4,6 @@
 #include <yafray_config.h>
 
 #include "params.h"
-//#include "light.h"
-//#include "material.h"
-//#include "texture.h"
-//#include "background.h"
-//#include "camera.h"
 #include "yafsystem.h"
 #include <list>
 #include <vector>
@@ -48,17 +43,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		typedef volumeHandler_t *volume_factory_t(const paraMap_t &,renderEnvironment_t &);
 		typedef VolumeRegion	*volumeregion_factory_t(paraMap_t &,renderEnvironment_t &);
 		typedef imageHandler_t	*imagehandler_factory_t(paraMap_t &,renderEnvironment_t &);
-//		typedef filter_t 	*filter_factory_t(paraMap_t &,renderEnvironment_t &);
-//		typedef pluginInfo_t info_t();
-		
-/*		template <class T>
-		T* getParam(const std::string &name, T &val)
-		{
-			std::map<std::string,parameter_t>::iterator i=dicc.find(name);
-			if(i != dicc.end() ) return i->second.getVal(val);
-			return false;
-		}
-*/		
+
 		virtual material_t *getMaterial(const std::string &name)const;
 		virtual texture_t *getTexture(const std::string &name)const;
 		virtual shaderNode_t *getShaderNode(const std::string &name)const;
@@ -89,7 +74,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual void registerFactory(const std::string &name,texture_factory_t *f);
 		virtual void registerFactory(const std::string &name,object_factory_t *f);
 		virtual void registerFactory(const std::string &name,camera_factory_t *f);
-//		virtual void registerFactory(const std::string &name,filter_factory_t *f);
 		virtual void registerFactory(const std::string &name,background_factory_t *f);
 		virtual void registerFactory(const std::string &name,integrator_factory_t *f);
 		virtual void registerFactory(const std::string &name,shader_factory_t *f);
@@ -115,7 +99,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,texture_factory_t *> 	texture_factory;
 		std::map<std::string,object_factory_t *> 	object_factory;
 		std::map<std::string,camera_factory_t *> 	camera_factory;
-//		std::map<std::string,filter_factory_t *> filter_factory;
 		std::map<std::string,background_factory_t *> background_factory;
 		std::map<std::string,integrator_factory_t *> integrator_factory;
 		std::map<std::string,shader_factory_t *> 	shader_factory;
@@ -128,7 +111,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,texture_t *> 	texture_table;
 		std::map<std::string,object3d_t *> 	object_table;
 		std::map<std::string,camera_t *> 	camera_table;
-//		std::map<std::string,filter_t *> filter_table;
 		std::map<std::string,background_t *> background_table;
 		std::map<std::string,integrator_t *> integrator_table;
 		std::map<std::string,shaderNode_t *> shader_table;

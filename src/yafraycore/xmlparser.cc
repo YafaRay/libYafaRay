@@ -352,7 +352,6 @@ void endEl_scene(xmlParser_t &parser, const char *element)
 	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: : expected </scene> tag!" << yendl;
 	else
 	{
-		//std::cout << "finished </scene>\n";
 		parser.popState();
 	}
 }

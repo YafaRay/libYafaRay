@@ -128,13 +128,10 @@ light_t *pointLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 
 extern "C"
 {
-	
-YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
-{
-	render.registerFactory("pointlight",pointLight_t::factory);
-//	std::cout<<"Registered pointlight\n";
-}
-
+	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	{
+		render.registerFactory("pointlight",pointLight_t::factory);
+	}
 }
 
 __END_YAFRAY

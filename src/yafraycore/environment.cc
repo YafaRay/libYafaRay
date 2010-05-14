@@ -66,9 +66,9 @@ __BEGIN_YAFRAY
 renderEnvironment_t::renderEnvironment_t()
 {
 #ifdef RELEASE
-	std::cout << PACKAGE << " " << VERSION << yendl;
+	Y_INFO << PACKAGE << " " << VERSION << yendl;
 #else
-	std::cout << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
+	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
@@ -88,7 +88,6 @@ renderEnvironment_t::~renderEnvironment_t()
 	freeMap(material_table);
 	freeMap(object_table);
 	freeMap(camera_table);
-//	FREEMAP(filter_t,filter_table);
 	freeMap(background_table);
 	freeMap(integrator_table);
 	freeMap(volume_table);
@@ -141,8 +140,8 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 bool renderEnvironment_t::getPluginPath(std::string &path)
 {
 #ifdef _WIN32
-	HKEY	hkey;
-	DWORD 	dwType, dwSize;
+	HKEY hkey;
+	DWORD dwType, dwSize;
 	
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,"Software\\YafRay Team\\YafaRay",0,KEY_READ,&hkey)==ERROR_SUCCESS)
 	{
@@ -152,8 +151,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 
 		char *pInstallDir=(char *)malloc(MAX_PATH);
 
-  		dwStat=RegQueryValueEx(hkey, TEXT("InstallDir"), 
-			NULL, NULL,(LPBYTE)pInstallDir, &dwSize);
+  		dwStat = RegQueryValueEx(hkey, TEXT("InstallDir"), NULL, NULL, (LPBYTE)pInstallDir, &dwSize);
 		
 		if (dwStat == NO_ERROR)
 		{
@@ -162,17 +160,17 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 			RegCloseKey(hkey);
 			return true;
 		}
-		Y_ERROR_ENV << "Couldn't READ \'InstallDir\' value.\n";
+		
+		Y_ERROR_ENV << "Couldn't READ \'InstallDir\' value." << yendl;
 		free(pInstallDir);
 		RegCloseKey(hkey);
 	}
-	else Y_ERROR_ENV << "Couldn't find registry key.\n";
+	else Y_ERROR_ENV << "Couldn't find registry key." << yendl;
 
-	std::cout <<"\n\nPlease fix your registry. Maybe you need add/modify\n\n" 
-				<< " HKEY_LOCAL_MACHINE\\Software\\YafRay Team\\YafRay\\InstallDir\n\n"
-				<< "key at registry. You can use \"regedit.exe\" to adjust it at "
-				<< "your own risk.\n"
-				<< "If you are unsure, reinstall YafRay\n";
+	Y_ERROR << "Please fix your registry. Maybe you need add/modify" << yendl; 
+	Y_ERROR << "HKEY_LOCAL_MACHINE\\Software\\YafRay Team\\YafRay\\InstallDir" << yendl;
+	Y_ERROR << "key at registry. You can use \"regedit.exe\" to adjust it at" << yendl;
+	Y_ERROR << "your own risk. If you are unsure, reinstall YafaRay" << yendl;
 
 	return false;
 #else
@@ -512,7 +510,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 		InfoSucces(name, type);
 		return integrator;
 	}
-	std::cout << "error: no integrator was constructed by plugin '"<<type<<"'!\n";
+	ErrOnCreate(type);
 	return 0;
 }
 
@@ -732,12 +730,6 @@ void renderEnvironment_t::registerFactory(const std::string &name,camera_factory
 	camera_factory[name]=f;
 	SuccessReg("Camera", name);
 }
-/*
-void render_t::registerFactory(const std::string &name,filter_factory_t *f)
-{
-	filter_factory[name]=f;
-	SuccessReg(<filter type>, name);
-}*/
 
 void renderEnvironment_t::registerFactory(const std::string &name,background_factory_t *f)
 {

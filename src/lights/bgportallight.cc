@@ -222,7 +222,6 @@ void bgPortalLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, fl
 {
 	areaPdf = invArea * M_PI;
 	cos_wo = wo*sp.N;
-	//if(sp.N * normal < 0.95f) std::cout << "whow!\n";
 	dirPdf = cos_wo > 0.f ? cos_wo  : 0.f;
 }
 

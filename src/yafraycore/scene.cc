@@ -101,13 +101,13 @@ bool scene_t::endGeometry()
 	if(state.stack.front() != GEOMETRY) return false;
 	// in case objects share arrays, so they all need to be updated
 	// after each object change, uncomment the below block again:
-//	// don't forget to update the mesh object iterators!
-//	for(std::map<objID_t, objData_t>::iterator i=meshes.begin();
-//		 i!=meshes.end(); ++i)
-//	{
-//		objData_t &dat = (*i).second;
-//		dat.obj->setContext(dat.points.begin(), dat.normals.begin() );
-//	}
+	// don't forget to update the mesh object iterators!
+/*	for(std::map<objID_t, objData_t>::iterator i=meshes.begin();
+		 i!=meshes.end(); ++i)
+	{
+		objData_t &dat = (*i).second;
+		dat.obj->setContext(dat.points.begin(), dat.normals.begin() );
+	}*/
 	state.stack.pop_front();
 	return true;
 }
@@ -116,14 +116,12 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = 0 & 0xFF;
-	//if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
 
 	objData_t &nObj = meshes[id];
 
 	//TODO: switch?
 	// Allocate triangles to render the curve
 	nObj.obj = new triangleObject_t( 2 * (vertices-1) , true, false);
-	//nObj.obj->setVisibility( !(0 & INVISIBLEM) );
 	nObj.type = ptype;
 	state.stack.push_front(OBJECT);
 	state.changes |= C_GEOM;
@@ -167,7 +165,6 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 			createCS(N,u,v);
 		}
 		// TODO: thikness?
-		// points[i] += v * r;
 		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3.f) * u;
 		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3.f) * u;
 		
@@ -186,10 +183,6 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		sv = su + 1. / (n-1);
 		iu = addUV(su,su);
 		iv = addUV(sv,sv);
-		/*state.curObj->obj->uv_values.push_back(uv_t(su, su));
-		iu = (int)state.curObj->obj->uv_values.size()-1;
-		state.curObj->obj->uv_values.push_back(uv_t(sv, sv));
-		iv = (int)state.curObj->obj->uv_values.size()-1;*/
 		a1 = i;
 		a2 = 2*i+n;
 		a3 = a2 +1;
@@ -289,19 +282,16 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 	state.stack.push_front(OBJECT);
 	state.changes |= C_GEOM;
 	state.orco=hasOrco;
-	//state.smooth_angle = smooth;
 	state.curObj = &nObj;
 	
 	//reserve points
 	if(hasOrco)
 	{
-//		geometry.points.reserve(geometry.points.size() + 2*vertices);
 		//decided against shared point vector...
 		nObj.points.reserve(2*vertices);
 	}
 	else
 	{
-		//geometry.points.reserve(geometry.points.size() + vertices);
 		nObj.points.reserve(vertices);
 	}
 	return true;
@@ -326,7 +316,6 @@ bool scene_t::endTriMesh()
 		state.curObj->obj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
 		
 		//calculate geometric normals of tris
-	//	std::cout << "scene_t: calling triangleObject_t::finish()...\n";
 		state.curObj->obj->finish();
 	}
 	else
@@ -336,7 +325,6 @@ bool scene_t::endTriMesh()
 	}
 	
 	state.stack.pop_front();
-	//if(state.smooth_angle > 0.f) smoothMesh(0, state.smooth_angle);
 	return true;
 }
 
@@ -493,49 +481,6 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 	return true;
 }
 
-/* bool tangentsFromUV(objID_t id)
-{
-	if( state.stack.front() != GEOMETRY ) return false;
-	objData_t *odat;
-	if(id)
-	{
-		std::map<objID_t, objData_t>::iterator it = meshes.find(id);
-		if(it == meshes.end() ) return false;
-		odat = &(it->second);
-	}
-	else
-	{
-		//cannot get ID yet... :/
-		return false;
-		//odat = state.curObj;
-		//if(!odat) return false;
-	}
-	//start vmap; on success sets cur_vmap and modifies state to VMAP!
-	if(!startVmap(4, VM_FLOAT, 3)) return false;
-	
-	if(odat->type == 0)
-	{
-		std::vector<triangle_t> &triangles = odat->obj->triangles;
-		std::vector<triangle_t>::iterator tri;
-		std::vector<normal_t> tangent;
-		for(tri = triangles.begin(); i!=triangles.end(); ++i)
-		{
-			i1 = tri->pa;
-			i2 = tri->pb;
-			i3 = tri->pc;
-			// hm somehow it was a stupid idea not allowing calculation with normal_t class
-			vector3d_t normal = (vector3d_t)tri->normal;
-			tangent[i1] = normal_t( (vector3d_t)normals[i1] + normal );
-			tangent[i2] = normal_t( (vector3d_t)normals[i2] + normal );
-			tangent[i3] = normal_t( (vector3d_t)normals[i3] + normal );
-		}
-		for (i1=0;i1<tangent.size();i1++)
-			tangent[i1] = normal_t( vector3d_t(tangent[i1]).normalize() );
-	}
-	endVmap();
-	return true;
-} */
-
 int scene_t::addVertex(const point3d_t &p)
 {
 	if(state.stack.front() != OBJECT) return -1;
@@ -576,7 +521,7 @@ bool scene_t::addTriangle(int a, int b, int c, const material_t *mat)
 		if(state.orco) a*=2, b*=2, c*=2;
 		vTriangle_t tri(a, b, c, state.curObj->mobj);
 		tri.setMaterial(mat);
-		/* state.curTri =  */state.curObj->mobj->addTriangle(tri);
+		state.curObj->mobj->addTriangle(tri);
 	}
 	else
 	{
@@ -918,7 +863,7 @@ objID_t scene_t::getNextFreeID()
 	//create new entry for object, assert that no ID collision happens:
 	if(meshes.find(id) != meshes.end())
 	{
-		Y_ERROR << "Scene: ID already in use!" << yendl;
+		Y_ERROR << "Scene: Object ID already in use!" << yendl;
 		return 0;
 	}
 	

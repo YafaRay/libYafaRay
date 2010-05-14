@@ -263,7 +263,8 @@ void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *pri
 					else eb = 0.0f;
 					float cost = costRatio + invTotalSA * (rawCosts - eb);
 					// Update best split if this is lowest cost so far
-					if (cost < split.bestCost)  {
+					if (cost < split.bestCost)
+					{
 						split.t = edget;
 						split.bestCost = cost;
 						split.bestAxis = axis;

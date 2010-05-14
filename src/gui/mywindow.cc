@@ -45,6 +45,9 @@
 #include "toolbar_colorbuffer_icon.h"
 #include "toolbar_drawparams_icon.h"
 #include "toolbar_savedepth_icon.h"
+#include "toolbar_zoomin_icon.h"
+#include "toolbar_zoomout_icon.h"
+#include "toolbar_quit_icon.h"
 
 // GUI Font
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
@@ -124,6 +127,9 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QPixmap showColorIcon;
 	QPixmap saveDepthIcon;
 	QPixmap drawParamsIcon;
+	QPixmap zoomInIcon;
+	QPixmap zoomOutIcon;
+	QPixmap quitIcon;
 
 	yafIcon.loadFromData(yafarayicon, yafarayicon_size);
 	zbuffIcon.loadFromData(z_buf_icon, z_buf_icon_size);
@@ -135,6 +141,9 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	showColorIcon.loadFromData(rgb_icon, rgb_icon_size);
 	saveDepthIcon.loadFromData(save_z_buf_icon, save_z_buf_icon_size);
 	drawParamsIcon.loadFromData(drawparams_icon, drawparams_icon_size);
+	zoomInIcon.loadFromData(zoomin_icon, zoomin_icon_size);
+	zoomOutIcon.loadFromData(zoomout_icon, zoomout_icon_size);
+	quitIcon.loadFromData(quit_icon, quit_icon_size);
 	
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char*)guifont, guifont_size));
@@ -205,6 +214,9 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->actionShowRGB->setIcon(QIcon(showColorIcon));
 	m_ui->actionSaveDepth->setIcon(QIcon(saveDepthIcon));
 	m_ui->actionDrawParams->setIcon(QIcon(drawParamsIcon));
+	m_ui->actionZoom_In->setIcon(QIcon(zoomInIcon));
+	m_ui->actionZoom_Out->setIcon(QIcon(zoomOutIcon));
+	m_ui->actionQuit->setIcon(QIcon(quitIcon));
 	
 	// actions
 	connect(m_ui->actionRender, SIGNAL(triggered(bool)),

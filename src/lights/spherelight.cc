@@ -46,7 +46,7 @@ class sphereLight_t : public light_t
 		virtual bool diracLight() const { return false; }
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
-		virtual bool canIntersect() const{ return true; }
+		virtual bool canIntersect() const{ return false; }
 		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
@@ -79,7 +79,7 @@ void sphereLight_t::init(scene_t &scene)
 	{
 		object3d_t *obj = scene.getObject(objID);
 		if(obj) obj->setLight(this);
-		else std::cout << "areaLight_t::init(): invalid object ID given!\n";
+		else Y_ERROR << "SphereLight: Invalid object ID given!" << yendl;
 	}
 }
 
@@ -120,7 +120,6 @@ bool sphereLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &w
 	}
 	wi.tmax = d1;
 	
-	// pdf = 1.f / (2.f * M_PI * (1.f - cos(cone_angle)));
 	s.pdf = 1.f / (2.f * (1.f - cosAlpha));
 	s.col = color;
 	s.flags = flags;
@@ -140,7 +139,6 @@ bool sphereLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &
 		vector3d_t cdir = center - ray.from;
 		PFLOAT dist_sqr = cdir.lengthSqr();
 		if(dist_sqr <= square_radius) return false; //only emit light on the outside!
-		// PFLOAT dist = sqrt(dist_sqr);
 		PFLOAT idist_sqr = 1.f/(dist_sqr);
 		PFLOAT cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
 		ipdf = 2.f * (1.f - cosAlpha);
@@ -182,7 +180,7 @@ color_t sphereLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t 
 color_t sphereLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 {
 	vector3d_t sdir = SampleSphere(s.s3, s.s4);
-	s.sp->P = center + radius*sdir;
+	s.sp->P = center + radius * sdir;
 	s.sp->N = s.sp->Ng = sdir;
 	vector3d_t du, dv;
 	createCS(sdir, du, dv);

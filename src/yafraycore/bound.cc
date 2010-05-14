@@ -19,9 +19,7 @@ bound_t::bound_t(const bound_t &r,const bound_t &l)
 GFLOAT bound_t::vol() const
 {
 	GFLOAT ret=(g.y-a.y)*(g.x-a.x)*(g.z-a.z);
-	#ifdef DEBUG
-	if( ret<0 ) std::cout<<"warning usorted bounding points\n";
-	#endif
+
 	return ret;
 }
 

@@ -62,7 +62,7 @@ void nodeMaterial_t::solveNodesOrder(const std::vector<shaderNode_t *> &roots)
 	//set all IDs = 0 to indicate "not tested yet"
 	for(unsigned int i=0; i<allNodes.size(); ++i) allNodes[i]->ID=0;
 	for(unsigned int i=0; i<roots.size(); ++i) recursiveSolver(roots[i], allSorted);
-	if(allNodes.size() != allSorted.size()) std::cout << "warning, unreachable nodes!\n";
+	if(allNodes.size() != allSorted.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << yendl;
 	//give the nodes an index to be used as the "stack"-index. 
 	//using the order of evaluation can't hurt, can it?
 	for(unsigned int i=0; i<allSorted.size(); ++i)
@@ -117,48 +117,61 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &eparams, renderEnviro
 	bool error=false;
 	const std::string *type=0, *name=0, *el=0;
 	std::list<paraMap_t>::const_iterator i=eparams.begin();
+	
 	for(; i!=eparams.end(); ++i)
 	{
 		if( i->getParam("element", el))
 		{
 			if(*el != "shader_node") continue;
 		}
-		else std::cout << "warning: no element type given; assuming shader node\n";
+		else Y_WARNING << "NodeMaterial: No element type given; assuming shader node" << yendl;
+		
 		if(! i->getParam("name", name) )
 		{
-			std::cout << "[ERROR]: name of shader node not specified!\n";
-			error=true; break;
+			Y_ERROR << "NodeMaterial: Name of shader node not specified!" << yendl;
+			error = true;
+			break;
 		}
+		
 		if(shader_table.find(*name) != shader_table.end() )
 		{
-			std::cout << "[ERROR]: multiple nodes with identically names!\n";
-			error=true; break;
+			Y_ERROR << "NodeMaterial: Multiple nodes with identically names!" << yendl;
+			error = true;
+			break;
 		}
+		
 		if(! i->getParam("type", type) )
 		{
-			std::cout << "[ERROR]: type of shader node not specified!\n";
-			error=true; break;
+			Y_ERROR << "NodeMaterial: Type of shader node not specified!" << yendl;
+			error = true;
+			break;
 		}
+		
 		renderEnvironment_t::shader_factory_t *fac = render.getShaderNodeFactory(*type);
 		shaderNode_t *shader=0;
+		
 		if(fac) shader = fac(*i, render);
 		else
 		{
-			std::cout << "[ERROR]: don't know how to create shader node of type '"<<*type<<"'!\n";
-			error=true; break;
+			Y_ERROR << "NodeMaterial: Don't know how to create shader node of type '"<<*type<<"'!" << yendl;
+			error = true;
+			break;
 		}
+		
 		if(shader)
 		{
 			shader_table[*name] = shader;
 			allNodes.push_back(shader);
-			std::cout << "added ShaderNode '"<<*name<<"'! ("<<(void*)shader<<")\n";
+			Y_INFO << "NodeMaterial: Added ShaderNode '"<<*name<<"'! ("<<(void*)shader<<")" << yendl;
 		}
 		else
 		{
-			std::cout << "[ERROR]: no shader node was constructed by plugin '"<<*type<<"'!\n";
-			error=true; break;
+			Y_ERROR << "NodeMaterial: No shader node was constructed by plugin '"<<*type<<"'!" << yendl;
+			error = true;
+			break;
 		}
 	}
+	
 	if(!error) //configure node inputs
 	{
 		sNodeFinder_t finder(shader_table);
@@ -167,17 +180,19 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &eparams, renderEnviro
 		{
 			if( !allNodes[n]->configInputs(*i, finder) )
 			{
-				std::cout << "[ERROR]: shader node configuration failed! (n="<<n<<")\n";
+				Y_ERROR << "NodeMaterial: Shader node configuration failed! (n="<<n<<")" << yendl;
 				error=true; break;
 			}
 		}
 	}
+	
 	if(error)
 	{
 		//clear nodes map:
 		for(std::map<std::string,shaderNode_t *>::iterator i=shader_table.begin();i!=shader_table.end();++i) delete i->second;
 		shader_table.clear();
 	}
+	
 	return !error;
 }
 

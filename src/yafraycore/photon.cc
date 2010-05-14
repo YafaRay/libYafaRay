@@ -59,17 +59,6 @@ void photonMap_t::updateTree()
 	else tree=0;
 }
 
-/*
-void photonMap_t::gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, PFLOAT &sqRadius) const
-{
-	photonGather_t proc(K, P);
-	proc.photons = new foundPhoton_t[K];
-//	std::cout << "performing lookup\n";
-	tree->lookup(P, proc, sqRadius);
-	for(u_int32 i=0; i<proc.foundPhotons; ++i) found.push_back(proc.photons[i]);
-	delete[] proc.photons;
-}*/
-
 int photonMap_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT &sqRadius) const
 {
 	photonGather_t proc(K, P);
