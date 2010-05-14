@@ -387,6 +387,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
 	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff);
+	
 	if(aniso)
 	{
 		float e_u=50.0, e_v=50.0;
@@ -407,47 +408,49 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		}
 	}
 	
-	//shaderNode_t *diffuseS=0, *glossyS=0, *bumpS=0;
 	std::vector<shaderNode_t *> roots;
+	std::map<std::string, shaderNode_t *> nodeList;
+	std::map<std::string, shaderNode_t *>::iterator actNode;
+	
+	// Prepare our node list
+	nodeList["diffuse_shader"] = NULL;
+	nodeList["glossy_shader"] = NULL;
+	nodeList["glossy_reflect_shader"] = NULL;
+	nodeList["bump_shader"] = NULL;
+	
 	if(mat->loadNodes(paramList, render))
 	{
-		if(params.getParam("diffuse_shader", name))
+		for(actNode = nodeList.begin(); actNode != nodeList.end(); actNode++)
 		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->diffuseS = i->second; roots.push_back(mat->diffuseS); }
-			else std::cout << "[WARNING]: diffuse shader node '"<<*name<<"' does not exist!\n";
-			std::cout << "diffuse shader: " << name << "(" << (void*)mat->diffuseS << ")\n";
-		}
-		if(params.getParam("glossy_shader", name))
-		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->glossyS = i->second; roots.push_back(mat->glossyS); }
-			else std::cout << "[WARNING]: glossy shader node '"<<*name<<"' does not exist!\n";
-			std::cout << "glossy shader: " << name << "(" << (void*)mat->glossyS << ")\n";
-		}
-		if(params.getParam("glossy_reflect_shader", name))
-		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->glossyRefS = i->second; roots.push_back(mat->glossyRefS); }
-			else std::cout << "[WARNING]: glossy ref. shader node '"<<*name<<"' does not exist!\n";
-			std::cout << "glossy ref. shader: " << name << "(" << (void*)mat->glossyRefS << ")\n";
-		}
-		if(params.getParam("bump_shader", name))
-		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-			if(i!=mat->shader_table.end()){ mat->bumpS = i->second; roots.push_back(mat->bumpS); }
-			else std::cout << "[WARNING]: bump shader node '"<<*name<<"' does not exist!\n";
-			std::cout << "bump shader: " << name << "(" << (void*)mat->bumpS << ")\n";
+			if(params.getParam(actNode->first, name))
+			{
+				std::map<std::string,shaderNode_t *>::const_iterator i = mat->shader_table.find(*name);
+				
+				if(i!=mat->shader_table.end())
+				{
+					actNode->second = i->second;
+					roots.push_back(actNode->second);
+				}
+				else Y_WARNING << "GlossyMaterial: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
+				
+				Y_INFO << "GlossyMaterial: Shader " << actNode->first << " " << *name << "(" << (void*)actNode->second << ")" << yendl;
+			}
 		}
 	}
-	else std::cout << "loadNodes() failed!\n";
+	else Y_ERROR << "GlossyMaterial: loadNodes() failed!" << yendl;
+
+	mat->diffuseS = nodeList["diffuse_shader"];
+	mat->glossyS = nodeList["glossy_shader"];
+	mat->glossyRefS = nodeList["glossy_reflect_shader"];
+	mat->bumpS = nodeList["bump_shader"];
+
 	// solve nodes order
 	if(!roots.empty())
 	{
-		mat->solveNodesOrder(roots);
-		std::cout << "evaluation order:\n";
-		for(unsigned int k=0; k<mat->allSorted.size(); ++k) std::cout << (void*)mat->allSorted[k]<<"\n";
 		std::vector<shaderNode_t *> colorNodes;
+
+		mat->solveNodesOrder(roots);
+
 		if(mat->diffuseS) mat->getNodeList(mat->diffuseS, colorNodes);
 		if(mat->glossyS) mat->getNodeList(mat->glossyS, colorNodes);
 		if(mat->glossyRefS) mat->getNodeList(mat->glossyRefS, colorNodes);
@@ -455,7 +458,9 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);
 	}
+	
 	mat->reqMem = mat->reqNodeMem + sizeof(MDat_t);
+	
 	return mat;
 }
 
