@@ -4,6 +4,7 @@
 
 #include <core_api/integrator.h>
 #include <core_api/imagesplitter.h>
+#include <core_api/material.h>
 
 __BEGIN_YAFRAY
 
@@ -23,6 +24,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
 		
+		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
 		virtual void precalcDepths();
 	
 	protected:
