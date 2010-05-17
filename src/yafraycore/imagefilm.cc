@@ -25,8 +25,8 @@
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
-#include <utilities/guifont.h>
-#include <utilities/yafLogoTiny.h>
+#include <resources/guifont.h>
+#include <resources/yafLogoTiny.h>
 
 #include <yaf_revision.h>
 #include <cstring>

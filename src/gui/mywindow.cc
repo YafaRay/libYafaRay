@@ -35,23 +35,23 @@
 // Embeded Resources:
 
 // Images
-#include "yafarayicon.h"
-#include "toolbar_z_buffer_icon.h"
-#include "toolbar_alpha_icon.h"
-#include "toolbar_cancel_icon.h"
-#include "toolbar_save_as_icon.h"
-#include "toolbar_render_icon.h"
-#include "toolbar_show_alpha_icon.h"
-#include "toolbar_colorbuffer_icon.h"
-#include "toolbar_drawparams_icon.h"
-#include "toolbar_savedepth_icon.h"
-#include "toolbar_zoomin_icon.h"
-#include "toolbar_zoomout_icon.h"
-#include "toolbar_quit_icon.h"
+#include <resources/yafarayicon.h>
+#include <resources/toolbar_z_buffer_icon.h>
+#include <resources/toolbar_alpha_icon.h>
+#include <resources/toolbar_cancel_icon.h>
+#include <resources/toolbar_save_as_icon.h>
+#include <resources/toolbar_render_icon.h>
+#include <resources/toolbar_show_alpha_icon.h>
+#include <resources/toolbar_colorbuffer_icon.h>
+#include <resources/toolbar_drawparams_icon.h>
+#include <resources/toolbar_savedepth_icon.h>
+#include <resources/toolbar_zoomin_icon.h>
+#include <resources/toolbar_zoomout_icon.h>
+#include <resources/toolbar_quit_icon.h>
 
 // GUI Font
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-	#include <utilities/guifont.h>
+	#include <resources/guifont.h>
 #endif
 
 // End of resources inclusion
