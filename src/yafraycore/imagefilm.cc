@@ -706,9 +706,7 @@ void imageFilm_t::drawRenderSettings()
 		ss << " | " << customString;
 	}
 
-	std::string text = ss.str();//"Testing text free of exporter dependencies";
-
-	Y_INFO << "ImageOverly: render settings" << yendl << text << yendl;
+	std::string text = ss.str();
 
 	// set font size at default dpi
 	float fontsize = 9.5f;
@@ -716,21 +714,21 @@ void imageFilm_t::drawRenderSettings()
 	// initialize library
 	if (FT_Init_FreeType( &library ))
 	{
-		Y_ERROR << "ImageOverly: FreeType lib couldn't be initialized!" << yendl;
+		Y_ERROR << "imageFilm: FreeType lib couldn't be initialized!" << yendl;
 		return;
 	}
 
 	// create face object
 	if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
 	{
-		Y_ERROR << "ImageOverly: FreeType couldn't load the font!" << yendl;
+		Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
 		return;
 	}
 
 	// set character size
 	if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
 	{
-		Y_ERROR << "ImageOverly: FreeType couldn't set the character size!" << yendl;
+		Y_ERROR << "imageFilm: FreeType couldn't set the character size!" << yendl;
 		return;
 	}
 
@@ -796,7 +794,7 @@ void imageFilm_t::drawRenderSettings()
 		// Load glyph image into the slot (erase previous one)
 		if (FT_Load_Char( face, text[n], FT_LOAD_DEFAULT ))
 		{
-			Y_ERROR << "ImageOverly: FreeType Couldn't load the glyph image for: '" << text[n] << "'!" << yendl;
+			Y_ERROR << "imageFilm: FreeType Couldn't load the glyph image for: '" << text[n] << "'!" << yendl;
 			continue;
 		}
 		
@@ -815,7 +813,7 @@ void imageFilm_t::drawRenderSettings()
 	FT_Done_Face    ( face );
 	FT_Done_FreeType( library );
 	
-	Y_INFO << "ImageOverly: Rendering parameters badge created." << yendl;
+	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
 }
 
 #endif
