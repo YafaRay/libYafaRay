@@ -22,6 +22,7 @@
 #define Y_BACKGROUNDLIGHT_H
 
 #include <core_api/light.h>
+#include <core_api/environment.h>
 
 __BEGIN_YAFRAY
 
@@ -31,7 +32,7 @@ class pdf1D_t;
 class bgLight_t : public light_t
 {
 	public:
-		bgLight_t(background_t *bg, int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false);
+		bgLight_t(int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false);
 		virtual ~bgLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -44,13 +45,12 @@ class bgLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }
 		virtual bool canIntersect() const{ return true; }
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		virtual bool shootsCausticP() const { return shootCaustic; }
 		virtual bool shootsDiffuseP() const { return shootDiffuse; }
+		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
-//	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		void initIS();
 		void sample_dir(float s1, float s2, vector3d_t &dir, float &pdf, bool inv = false) const;
 		float dir_pdf(const vector3d_t dir) const;
 		float CalcFromSample(float s1, float s2, float &u, float &v, bool inv = false) const;
@@ -61,10 +61,9 @@ class bgLight_t : public light_t
 		float worldRadius;
 		float aPdf, iaPdf;
 		float worldPIFactor;
-		background_t *background;
 		bool shootCaustic;
 		bool shootDiffuse;
-		bool iInter;
+		bool absInter;
 };
 
 __END_YAFRAY

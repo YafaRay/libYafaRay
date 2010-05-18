@@ -23,7 +23,8 @@
 #include <core_api/environment.h>
 #include <core_api/background.h>
 #include <core_api/params.h>
-#include <lights/bglight.h>
+#include <core_api/scene.h>
+#include <core_api/light.h>
 
 __BEGIN_YAFRAY
 
@@ -37,31 +38,25 @@ color_t ComputeAttenuatedSunlight(float theta, int turbidity);
 class sunskyBackground_t: public background_t
 {
 	public:
-		sunskyBackground_t(const point3d_t dir, PFLOAT turb,
-			PFLOAT a_var, PFLOAT b_var, PFLOAT c_var, PFLOAT d_var, PFLOAT e_var,
-			bool bgl, int bgsamples, CFLOAT pwr);
+		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
-		virtual light_t* getLight() const { return envLight; }
 		virtual ~sunskyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 	protected:
 		color_t getSkyCol(const ray_t &ray) const;
 		vector3d_t sunDir;
-		PFLOAT turbidity;
+		float turbidity;
 		double thetaS, phiS;	// sun coords
 		double theta2, theta3, T, T2;
 		double zenith_Y, zenith_x, zenith_y;
 		double perez_Y[5], perez_x[5], perez_y[5];
 		double AngleBetween(double thetav, double phiv) const;
 		double PerezFunction(const double *lam, double theta, double gamma, double lvz) const;
-		light_t *envLight;
-		CFLOAT power;
+		float power;
 };
 
-sunskyBackground_t::sunskyBackground_t(const point3d_t dir, PFLOAT turb,
-		PFLOAT a_var, PFLOAT b_var, PFLOAT c_var, PFLOAT d_var, PFLOAT e_var, bool bgl, int bgsamples, CFLOAT pwr):
-		envLight(0), power(pwr)
+sunskyBackground_t::sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr): power(pwr)
 {
 	sunDir.set(dir.x, dir.y, dir.z);
 	sunDir.normalize();
@@ -100,13 +95,11 @@ sunskyBackground_t::sunskyBackground_t(const point3d_t dir, PFLOAT turb,
 	perez_y[2] = (-0.00792 * T + 0.21023) * c_var;
 	perez_y[3] = (-0.04405 * T - 1.65369) * d_var;
 	perez_y[4] = (-0.01092 * T + 0.05291) * e_var;
-	
-	if(bgl) envLight = new bgLight_t(this, bgsamples);
 };
 
 sunskyBackground_t::~sunskyBackground_t()
 {
-	if(envLight) delete envLight;
+	// Empty
 }
 
 double sunskyBackground_t::PerezFunction(const double *lam, double theta, double gamma, double lvz) const
@@ -207,13 +200,13 @@ color_t sunskyBackground_t::eval(const ray_t &ray, bool filtered) const
 background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
 	point3d_t dir(1,1,1);	// same as sunlight, position interpreted as direction
-	CFLOAT turb = 4.0;	// turbidity of atmosphere
+	float turb = 4.0;	// turbidity of atmosphere
 	bool add_sun = false;	// automatically add real sunlight
 	bool bgl = false;
 	int bgl_samples = 8;
 	double power = 1.0;
-	PFLOAT pw = 1.0;	// sunlight power
-	PFLOAT av, bv, cv, dv, ev;
+	float pw = 1.0;	// sunlight power
+	float av, bv, cv, dv, ev;
 	av = bv = cv = dv = ev = 1.0;	// color variation parameters, default is normal
 
 	params.getParam("from", dir);
@@ -233,15 +226,28 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 	
 	params.getParam("background_light", bgl);
 	params.getParam("light_samples", bgl_samples);
+	
+	background_t *new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, power);
 
-	background_t * new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, bgl, bgl_samples, power);
+	if(bgl)
+	{
+		paraMap_t bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = bgl_samples;
+		
+		light_t *bglight = render.createLight("sunsky_bgLight", bgp);
+		
+		bglight->setBackground(new_sunsky);
+		
+		if(bglight) render.getScene()->addLight(bglight);
+	}
 	
 	if (add_sun)
 	{
 		color_t suncol = ComputeAttenuatedSunlight(acos(std::fabs(dir.z)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
 		double cosAngle = cos(degToRad(angle));
-		CFLOAT invpdf = (2.f * M_PI * (1.f - cosAngle));
+		float invpdf = (2.f * M_PI * (1.f - cosAngle));
 		suncol *= invpdf * power;
 
 		Y_INFO << "Sunsky: sun color = " << suncol << yendl;
@@ -254,10 +260,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		p["power"] = parameter_t(pw);
 		
 		light_t *light = render.createLight("sunsky_SUN", p);
-		if(light)
-		{
-			(*render.getScene()).addLight(light);
-		}
+		
+		if(light) render.getScene()->addLight(light);
 	}
 	
 	return new_sunsky;

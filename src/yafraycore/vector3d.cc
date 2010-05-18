@@ -22,8 +22,6 @@
 
 #include <core_api/vector3d.h>
 #include <core_api/matrix4.h>
-//#include<cmath>
-
 
 __BEGIN_YAFRAY
 

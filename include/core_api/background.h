@@ -21,7 +21,6 @@ class YAFRAYCORE_EXPORT background_t
 			\return the light source that reproduces background lighting, or NULL if background
 					shall only be sampled from BSDFs
 		*/
-		virtual light_t* getLight() const { return 0; }
 		virtual ~background_t() {};
 };
 

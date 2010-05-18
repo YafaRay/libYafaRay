@@ -1,9 +1,9 @@
 /****************************************************************************
- * 			directlight.cc: an integrator for direct lighting only
- *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *		directlight.cc: an integrator for direct lighting only
+ *		This is part of the yafray package
+ *		Copyright (C) 2006  Mathias Wein
  *
- *      This library is free software; you can redistribute it and/or
+ *		This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
  *      License as published by the Free Software Foundation; either
  *      version 2.1 of the License, or (at your option) any later version.
@@ -79,21 +79,8 @@ bool directLighting_t::preprocess()
 	set << "RayDepth: [" << rDepth << "]";
 	
 	background = scene->getBackground();
-	lights.clear();
-	for(unsigned int i=0;i<scene->lights.size();++i)
-	{
-		lights.push_back(scene->lights[i]);
-	}
-	if(background)
-	{
-		light_t *bgl = background->getLight();
-		if(bgl)
-		{
-			lights.push_back(bgl);
-			if(!set.str().empty()) set << "+";
-			set << "IBL";
-		}
-	}
+	lights = scene->lights;
+
 	if(caustics)
 	{
 		progressBar_t *pb;
@@ -119,47 +106,40 @@ bool directLighting_t::preprocess()
 colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 {
 	color_t col(0.0);
-	CFLOAT alpha=0.0;
+	float alpha = 0.0;
 	surfacePoint_t sp;
 	void *o_udat = state.userdata;
 	bool oldIncludeLights = state.includeLights;
 
-	//shoot ray into scene
-	if(scene->intersect(ray, sp))
+	// Shoot ray into scene
+	
+	if(scene->intersect(ray, sp)) // If it hits
 	{
-		// if camera ray:
-		if(state.raylevel == 0)
-		{
-			state.includeLights = true;
-		}
-		
-		//Halton hal3(3);
-		unsigned char userdata[USER_DATA_SIZE];//+7];
-		//userdata[0] = 0;
-		state.userdata = (void *) userdata;//(void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+		unsigned char userdata[USER_DATA_SIZE];
+		const material_t *material = sp.material;
 		BSDF_t bsdfs;
 
-		const material_t *material = sp.material;
-		material->initBSDF(state, sp, bsdfs);
+		state.userdata = (void *) userdata;
 		vector3d_t wo = -ray.dir;
+		if(state.raylevel == 0) state.includeLights = true;
 		
-		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);		
+		material->initBSDF(state, sp, bsdfs);
+		
+		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 		if(bsdfs & BSDF_DIFFUSE) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
 		if(bsdfs & BSDF_DIFFUSE) col += estimatePhotons(state, sp, causticMap, wo, nSearch, cRadius);
 		if((bsdfs & BSDF_DIFFUSE) && do_AO) col += sampleAO(state, sp, wo);
 		
-		recursiveRaytrace(state, ray, (int)rDepth, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
 		
-		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
-		alpha = m_alpha + (1.f-m_alpha)*alpha;
+		float m_alpha = material->getAlpha(state, sp, wo);
+		alpha = m_alpha + (1.f - m_alpha) * alpha;
 	}
-	else //nothing hit, return background
+	else // Nothing hit, return background if any
 	{
-		if(background)
-		{
-			col += (*background)(ray, state, false);
-		}
+		if(background) col += (*background)(ray, state, false);
 	}
+	
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
 	return colorA_t(col, alpha);
@@ -167,43 +147,55 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 
 color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
-	color_t col(0.f);
+	color_t col(0.f), surfCol(0.f), scol(0.f);
 	bool shadowed;
 	const material_t *material = sp.material;
-	Halton hal3(3);
 	ray_t lightRay;
 	lightRay.from = sp.P;
 	
 	int n = AO_samples;
-	if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
 	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+	Halton hal3(3);
+
 	hal3.setStart(offs-1);
-	color_t surfCol(0.f), scol(0.f);
-	for(int i=0; i<n; ++i)
+
+	for(int i = 0; i < n; ++i)
 	{
 		float s1 = RI_vdC(offs+i);
 		float s2 = hal3.getNext();
+		
 		if(state.rayDivision > 1)
 		{
 			s1 = addMod1(s1, state.dc1);
 			s2 = addMod1(s2, state.dc2);
 		}
+		
 		lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is still bad...
 		lightRay.tmax = AO_dist;
 		
 		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
 		surfCol = material->sample(state, sp, wo, lightRay.dir, s);
+		
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+		
 		if(s.pdf > 1e-6f)
 		{
 			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+			
 			if(!shadowed)
 			{
-				CFLOAT cos = std::fabs(sp.N*lightRay.dir);
+				float cos = std::fabs(sp.N * lightRay.dir);
 				if(trShad) col += AO_col * scol * surfCol * cos / s.pdf;
 				else col += AO_col * surfCol * cos / s.pdf;
 			}
 		}
 	}
+	
 	return col / (float)n;
 }
 

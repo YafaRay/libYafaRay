@@ -22,40 +22,34 @@
 
 #include <core_api/environment.h>
 #include <core_api/background.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 #include <core_api/light.h>
-//#include <utilities/sample_utils.h>
-#include <lights/bglight.h>
 
 __BEGIN_YAFRAY
 
 class gradientBackground_t: public background_t
 {
 	public:
-		enum PROJECTION { spherical=0, angular };
-		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, int samples);
+		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
-		virtual light_t* getLight() const { return envLight; }
 		virtual ~gradientBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 	protected:
 
 		color_t gzenith,  ghoriz, szenith, shoriz;
-		light_t *envLight;
 };
 
-gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, int samples):
-						gzenith(gzcol),  ghoriz(ghcol), szenith(szcol), shoriz(shcol), envLight(0)
+gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol):
+gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol)
 {
-	if(ibl)
-	{
-		envLight = new bgLight_t(this, samples);
-	}
+	// Empty
 }
 
 gradientBackground_t::~gradientBackground_t()
 {
-	if(envLight) delete envLight;
+	// Empty
 }
 
 color_t gradientBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
@@ -71,15 +65,15 @@ color_t gradientBackground_t::eval(const ray_t &ray, bool filtered) const
 	
 	if(blend >= 0.f)
 	{
-		color = blend*szenith + (1.f-blend)*shoriz;
+		color = blend * szenith + (1.f - blend) * shoriz;
 	}
 	else 
 	{
 		blend = -blend;
-		color = blend*gzenith + (1.f-blend)*ghoriz;
+		color = blend * gzenith + (1.f - blend) * ghoriz;
 	}
 
-	if(color.minimum() < 0.000001) color = color_t(0.00001);
+	if(color.minimum() < 1e-6f) color = color_t(1e-5f);
 
 	return color;
 }
@@ -89,7 +83,7 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	color_t gzenith,  ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
 	bool bgl = false;
-	int bglSam = 8; //standard wild guess :P
+	int bglSam = 16;
 	params.getParam("horizon_color", shoriz);
 	params.getParam("zenith_color", szenith);
 	gzenith = szenith;
@@ -99,8 +93,25 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	params.getParam("ibl", bgl);
 	params.getParam("ibl_samples", bglSam);
 	params.getParam("power", p);
+
+	background_t *gradBG = new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p);
 	
-	return new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p, bgl, bglSam);
+	if(bgl)
+	{
+		paraMap_t bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = bglSam;
+		bgp["shoot_caustics"] = true;
+		bgp["shoot_diffuse"] = true;
+		
+		light_t *bglight = render.createLight("GradientBackground_bgLight", bgp);
+		
+		bglight->setBackground(gradBG);
+		
+		if(bglight) render.getScene()->addLight(bglight);
+	}
+	
+	return gradBG;
 }
 
 extern "C"

@@ -55,7 +55,6 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public tiledIntegrator_t
 		PFLOAT cRadius; //!< radius to search for caustic photons
 		std::vector<light_t*> lights;
 		photonMap_t causticMap;
-		bool hasBGLight;
 };
 
 pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
@@ -69,7 +68,6 @@ pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
 	no_recursive = false;
 	integratorName = "PathTracer";
 	integratorShortName = "PT";
-	hasBGLight = false;
 }
 
 bool pathIntegrator_t::preprocess()
@@ -85,18 +83,6 @@ bool pathIntegrator_t::preprocess()
 	if(!set.str().empty()) set << "+";
 	set << "RayDepth: [" << rDepth << "]";
 
-	if(background)
-	{
-		light_t *bgl = background->getLight();
-		if(bgl)
-		{
-			lights.push_back(bgl);
-			hasBGLight = true;
-			set << "IBL";
-		}
-	}
-	
-	// create caustics photon map, if requested
 
 	bool success = true;
 	traceCaustics = false;
@@ -363,7 +349,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if((caustic && hasBGLight))
+						if((caustic && background))
 						{
 							pathCol += throughput * (*background)(pRay, state);
 						}
@@ -395,7 +381,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
 
-		recursiveRaytrace(state, ray, (int)rDepth, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
 
 		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f-m_alpha)*alpha;

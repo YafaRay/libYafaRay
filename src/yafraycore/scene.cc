@@ -728,12 +728,6 @@ bool scene_t::update()
 	
 	for(unsigned int i=0; i<lights.size(); ++i) lights[i]->init(*this);
 	
-	if(background)
-	{
-		light_t *bgl = background->getLight();
-		if(bgl) bgl->init(*this);
-	}
-	
 	if(!surfIntegrator)
 	{
 		Y_ERROR << "Scene: No surface integrator, bailing out..." << yendl;

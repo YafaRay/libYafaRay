@@ -172,11 +172,7 @@ bool biDirIntegrator_t::preprocess()
 {
 	background = scene->getBackground();
 	lights = scene->lights;
-	if(background)
-	{
-		light_t *bgl = background->getLight();
-		if(bgl) lights.push_back(bgl);
-	}
+
 	threadData.resize(scene->getNumThreads());
 	for(int t=0; t<scene->getNumThreads(); ++t)
 	{

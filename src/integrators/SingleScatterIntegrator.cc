@@ -44,11 +44,6 @@ public:
 		{
 			lights.push_back(scene->lights[i]);
 		}
-		if (scene->getBackground())
-		{
-			light_t *bgl = scene->getBackground()->getLight();
-			if (bgl) lights.push_back(bgl);
-		}
 
 		listVR = scene->getVolumes();
 		VRSize = listVR.size();

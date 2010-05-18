@@ -659,7 +659,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 			{
 				colorA_t &col = (*dpimage)(i, j);
 				alpha = (float) tmpBuf / 255.0;
-				col = colorA_t(alphaBlend((color_t)col, textColor, alpha), std::max(col.getA(), alpha));
+				col = colorA_t(alphaBlend((color_t)col, textColor, alpha), col.getA());
 			}
 		}
 	}
@@ -711,7 +711,7 @@ void imageFilm_t::drawRenderSettings()
 	Y_INFO << "ImageOverly: render settings" << yendl << text << yendl;
 
 	// set font size at default dpi
-	float fontsize = 10.5f;
+	float fontsize = 9.5f;
 
 	// initialize library
 	if (FT_Init_FreeType( &library ))

@@ -8,6 +8,7 @@
 __BEGIN_YAFRAY
 
 class surfacePoint_t;
+class background_t;
 
 enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1<<1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!
 typedef unsigned int LIGHTF_t;
@@ -29,7 +30,7 @@ class light_t
 {
 	public:
 		//! allow for preprocessing when scene loading has finished
-		virtual void init(scene_t &scene){};
+		virtual void init(scene_t &scene) {}
 		//! total energy emmitted during whole frame
 		virtual color_t totalEnergy() const = 0;
 		//! emit a photon
@@ -60,13 +61,18 @@ class light_t
 		//! checks if the light can shoot diffuse photons (photonmap integrator)
 		virtual bool shootsDiffuseP() const { return true;}
 		//! (preferred) number of samples for direct lighting
-		virtual int nSamples() const { return 1; }
-		virtual ~light_t() {};
-		light_t(): flags(LIGHT_NONE){}
-		light_t(LIGHTF_t _flags): flags(_flags){}
+		virtual int nSamples() const { return 8; }
+		virtual ~light_t() {}
+		//! This method must be called right after the factory is called on a background light or the light will fail
+		virtual void setBackground(background_t *bg) { background = bg; }
+
+		light_t(): flags(LIGHT_NONE) {}
+		light_t(LIGHTF_t _flags): flags(_flags) {}
 		LIGHTF_t getFlags() const { return flags; }
+
 	protected:
 		LIGHTF_t flags;
+		background_t* background;
 };
 
 __END_YAFRAY

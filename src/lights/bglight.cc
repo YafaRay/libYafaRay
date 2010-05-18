@@ -51,10 +51,10 @@ inline float sinSample(float s)
 	return fSin(s * M_PI);
 }
 
-bgLight_t::bgLight_t(background_t *bg, int sampl, bool shootC, bool shootD, bool invertIntersect):
-light_t(LIGHT_NONE), samples(sampl), background(bg), shootCaustic(shootC), shootDiffuse(shootD), iInter(invertIntersect)
+bgLight_t::bgLight_t(int sampl, bool shootC, bool shootD, bool absIntersect):
+light_t(LIGHT_NONE), samples(sampl), shootCaustic(shootC), shootDiffuse(shootD), absInter(absIntersect)
 {
-	initIS();
+	background = NULL;
 }
 
 bgLight_t::~bgLight_t()
@@ -64,7 +64,7 @@ bgLight_t::~bgLight_t()
 	delete vDist;
 }
 
-void bgLight_t::initIS()
+void bgLight_t::init(scene_t &scene)
 {
 	float *fu = new float[MAX_USAMPLES];
 	float *fv = new float[MAX_VSAMPLES];
@@ -107,10 +107,7 @@ void bgLight_t::initIS()
 	
 	delete[] fv;
 	delete[] fu;
-}
 
-void bgLight_t::init(scene_t &scene)
-{
 	bound_t w=scene.getSceneBound();
 	worldCenter = 0.5 * (w.a + w.g);
 	worldRadius = 0.5 * (w.g - w.a).length();
@@ -143,7 +140,7 @@ inline float bgLight_t::CalcFromDir(const vector3d_t &dir, float &u, float &v, b
 	int iv, iu;
 	float pdf1 = 0.f, pdf2 = 0.f;
 	
-	spheremap(dir, u, v);//returns u,v pair in [0,1] range
+	spheremap(dir, u, v); // Returns u,v pair in [0,1] range
 
 	iv = clampSample(addOff(v * vDist->count), vDist->count);
 	iu = clampSample(addOff(u * uDist[iv]->count), uDist[iv]->count);
@@ -190,13 +187,16 @@ bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) c
 	return true;
 }
 
-bool bgLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
+bool bgLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
 {
 	float u = 0.f, v = 0.f;
 	ray_t tr = ray;
-	if(iInter) ipdf = CalcFromDir(-tr.dir, u, v, true);
-	else ipdf = CalcFromDir(tr.dir, u, v, true);
+	vector3d_t absDir = tr.dir;
 	
+	if(absInter) absDir = -absDir;
+	
+	ipdf = CalcFromDir(absDir, u, v, true);
+
 	invSpheremap(u, v, tr.dir);
 
 	col = background->eval(tr);
@@ -271,6 +271,31 @@ void bgLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &a
 	wi = -wi;
 	dirPdf = dir_pdf(wi);
 	areaPdf = 1.f;
+}
+
+light_t* bgLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+{
+	int samples = 16;
+	bool shootD = true;
+	bool shootC = true;
+	bool absInt = false;
+	
+	params.getParam("samples", samples);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
+	params.getParam("abs_intersect", absInt);
+
+	bgLight_t *light = new bgLight_t(samples, shootC, shootD, absInt);
+
+	return light;
+}
+
+extern "C"
+{
+	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	{
+		render.registerFactory("bglight", bgLight_t::factory);
+	}
 }
 
 __END_YAFRAY

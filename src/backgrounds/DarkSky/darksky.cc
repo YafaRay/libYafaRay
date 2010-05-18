@@ -18,7 +18,8 @@
 #include <core_api/environment.h>
 #include <core_api/background.h>
 #include <core_api/params.h>
-#include <lights/bglight.h>
+#include <core_api/scene.h>
+#include <core_api/light.h>
 
 #include "ColorConv.h"
 #include "spectralData.h"
@@ -29,12 +30,10 @@ __BEGIN_YAFRAY
 class darkSkyBackground_t: public background_t
 {
 	public:
-		darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-						   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff,
-						   float exp, bool genc, ColorSpaces cs);
+		darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
+							float altitude, bool night, float exp, bool genc, ColorSpaces cs);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
-		virtual light_t* getLight() const { return envLight; }
 		virtual ~darkSkyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 		color_t getAttenuatedSunColor();
@@ -54,18 +53,16 @@ class darkSkyBackground_t: public background_t
 		double T, T2;
 		double zenith_Y, zenith_x, zenith_y;
 		double perez_Y[6], perez_x[6], perez_y[6];
-		light_t *envLight;
-		CFLOAT power;
-		PFLOAT skyBrightness;
+		float power;
+		float skyBrightness;
 		ColorConv convert;
-		PFLOAT alt;
+		float alt;
 		bool nightSky;
 };
 
-darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool bgl, int bgsamples, CFLOAT pwr, PFLOAT skyBright, bool clamp,
-									   float av, float bv, float cv, float dv, float ev, PFLOAT altitude, bool night, bool caus, bool diff,
-									   float exp, bool genc, ColorSpaces cs):
-									   envLight(0), power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night)
+darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp,float av, float bv, float cv, float dv, float ev,
+										float altitude, bool night, float exp, bool genc, ColorSpaces cs):
+									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night)
 {
 	
 	
@@ -129,8 +126,6 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, PFLOAT turb, bool 
 	perez_y[3] = ((-0.04405 * T) - 1.65369);
 	perez_y[4] = ((-0.01092 * T) + 0.05291);
 	perez_y[5] = prePerez(perez_y);
-
-	if(bgl) envLight = new bgLight_t(this, bgsamples, caus, diff);
 };
 
 color_t darkSkyBackground_t::getAttenuatedSunColor()
@@ -207,7 +202,7 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 
 darkSkyBackground_t::~darkSkyBackground_t()
 {
-	if(envLight) delete envLight;
+	// Empty
 }
 
 double darkSkyBackground_t::prePerez(const double *perez)
@@ -220,8 +215,8 @@ double darkSkyBackground_t::prePerez(const double *perez)
 
 double darkSkyBackground_t::PerezFunction(const double *lam, double cosTheta, double gamma, double cosGamma2, double lvz) const
 {
-  double num = ( (1 + lam[0] * fExp(lam[1]/cosTheta) ) * (1 + lam[2] * fExp(lam[3]*gamma)  + lam[4] * cosGamma2));
-  return lvz * num * lam[5];
+	double num = ( (1 + lam[0] * fExp(lam[1]/cosTheta) ) * (1 + lam[2] * fExp(lam[3]*gamma)  + lam[4] * cosGamma2));
+	return lvz * num * lam[5];
 }
 
 inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
@@ -270,12 +265,12 @@ color_t darkSkyBackground_t::eval(const ray_t &ray, bool filtered) const
 background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
 	point3d_t dir(1,1,1);
-	CFLOAT turb = 4.0;
-	PFLOAT altitude = 0.0;
+	float turb = 4.0;
+	float altitude = 0.0;
 	int bgl_samples = 8;
-	PFLOAT power = 1.0; //bgLight Power
-	PFLOAT pw = 1.0;// sunLight power
-	PFLOAT bright = 1.0;
+	float power = 1.0; //bgLight Power
+	float pw = 1.0;// sunLight power
+	float bright = 1.0;
 	bool add_sun = false;
 	bool bgl = false;
 	bool clamp = false;
@@ -329,16 +324,15 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		pw *= 0.5;
 	}
 
-	darkSkyBackground_t * new_sunsky = new darkSkyBackground_t(dir, turb, bgl, bgl_samples, power, bright, clamp,
-															   av, bv, cv, dv, ev, altitude, night, caus, diff,
-															   exp, gammaEnc, colorS);
+	darkSkyBackground_t *darkSky = new darkSkyBackground_t(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
+																altitude, night, exp, gammaEnc, colorS);
 
 	if (add_sun && radToDeg(acos(dir.z)) < 100.0)
 	{
 		vector3d_t d(dir);
 		d.normalize();
 
-		color_t suncol = new_sunsky->getAttenuatedSunColor();
+		color_t suncol = darkSky->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d.z);
 
 		Y_INFO << "DarkSky: SunColor = " << suncol << yendl;
@@ -354,15 +348,30 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		Y_INFO << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
 		light_t *light = render.createLight("DarkSky_RealSun", p);
-		if(light)
-		{
-			render.getScene()->addLight(light);
-		}
+		
+		if(light) render.getScene()->addLight(light);
+	}
+
+	if(bgl)
+	{
+		paraMap_t bgp;
+		bgp["type"] = std::string("bglight");
+		bgp["samples"] = bgl_samples;
+		bgp["shoot_caustics"] = caus;
+		bgp["shoot_diffuse"] = diff;
+		
+		Y_INFO << "DarkSky: Adding background light" << yendl;
+
+		light_t *bglight = render.createLight("DarkSky_bgLight", bgp);
+		
+		bglight->setBackground(darkSky);
+		
+		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	Y_INFO << "DarkSky: End" << yendl;
 
-	return (background_t *)new_sunsky;
+	return darkSky;
 }
 
 extern "C"

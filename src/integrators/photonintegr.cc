@@ -245,18 +245,6 @@ bool photonIntegrator_t::preprocess()
 	lights = scene->lights;
 	std::vector<light_t*> tmplights;
 
-	if(background)
-	{
-		light_t *bgl = background->getLight();
-		if(bgl)
-		{
-			lights.push_back(bgl);
-			hasBGLight = true;
-			if(!set.str().empty()) set << "+";
-			set << "IBL";
-		}
-	}
-	
 	if(!set.str().empty()) set << "+";
 	
 	set << "DiffPhotons [" << nPhotons << "]+CausPhotons[" << nCausPhotons << "]";
@@ -954,7 +942,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		// add caustics
 		if(bsdfs & (BSDF_DIFFUSE)) col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, cRadius);
 		
-		recursiveRaytrace(state, ray, (int)rDepth, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
 
 		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f-m_alpha)*alpha;
