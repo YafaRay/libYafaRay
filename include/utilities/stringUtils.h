@@ -26,6 +26,7 @@
 
 #include <string>
 #include <sstream>
+#include <cctype>
 
 __BEGIN_YAFRAY
 
