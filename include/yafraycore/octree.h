@@ -2,6 +2,7 @@
 #ifndef Y_OCTREE_H
 #define Y_OCTREE_H
 
+#include <yafraycore/ccthreads.h>
 #include <core_api/bound.h>
 #include <iostream>
 
@@ -28,14 +29,18 @@ public:
 	}
 	void add(const NodeData &dat, const bound_t &bound)
 	{
+		lock.writeLock();
 		recursiveAdd(&root, treeBound, dat, bound,
 			(bound.a - bound.g).lengthSqr() );
+		lock.unlock();
 	}
 	template <class LookupProc>
 	void lookup(const point3d_t &p, LookupProc &process)
 	{
+		lock.readLock();
 		if (!treeBound.includes(p)) return;
 		recursiveLookup(&root, treeBound, p, process);
+		lock.unlock();
 	}
 private:
 	void recursiveAdd(octNode_t<NodeData> *node, const bound_t &nodeBound,
@@ -48,6 +53,7 @@ private:
 	int maxDepth;
 	bound_t treeBound;
 	octNode_t<NodeData> root;
+	rwlock_t lock;
 };
 
 // octree_t Method Definitions
