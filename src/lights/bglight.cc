@@ -1,7 +1,8 @@
 /****************************************************************************
- * 			bglight.cc: a light source using the background
- *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *		bglight.cc: a light source using the background
+ *      This is part of the yafaray package
+ *      Copyright (C) 2006 Mathias Wein (Lynx)
+ *      Copyright (C) 2009 Rodrigo Placencia (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

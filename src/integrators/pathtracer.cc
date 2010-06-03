@@ -1,41 +1,42 @@
 /****************************************************************************
- * 			pathtracer.cc: a rather simple QMC path integrator
- *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *		pathtracer.cc: A rather simple MC path integrator
+ *		This is part of the yafaray package
+ *		Copyright (C) 2006  Mathias Wein (Lynx)
+ *		Copyright (C) 2009  Rodrigo Placencia (DarkTide)
  *
- *      This library is free software; you can redistribute it and/or
- *      modify it under the terms of the GNU Lesser General Public
- *      License as published by the Free Software Foundation; either
- *      version 2.1 of the License, or (at your option) any later version.
+ *		This library is free software; you can redistribute it and/or
+ *		modify it under the terms of the GNU Lesser General Public
+ *		License as published by the Free Software Foundation; either
+ *		version 2.1 of the License, or (at your option) any later version.
  *
- *      This library is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      Lesser General Public License for more details.
+ *		This library is distributed in the hope that it will be useful,
+ *		but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *		Lesser General Public License for more details.
  *
- *      You should have received a copy of the GNU Lesser General Public
- *      License along with this library; if not, write to the Free Software
- *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *		You should have received a copy of the GNU Lesser General Public
+ *		License along with this library; if not, write to the Free Software
+ *		Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
  
-//#include <mcqmc.h>
-#include <yafray_config.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
 #include <core_api/volume.h>
-#include <yafraycore/tiledintegrator.h>
+#include <core_api/mcintegrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
-#include <utilities/mcqmc.h>
+
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/spectrum.h>
-#include <integrators/integr_utils.h>
+
+#include <utilities/mcqmc.h>
+//#include <integrators/integr_utils.h>
 #include <sstream>
 
 __BEGIN_YAFRAY
 
-class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public tiledIntegrator_t
+class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 {
 	public:
 		pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
@@ -44,25 +45,20 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public tiledIntegrator_t
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		enum { NONE, PATH, PHOTON, BOTH };
 	protected:
-		color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n) const;
-		background_t *background;
-		bool trShad;
 		bool traceCaustics; //!< use path tracing for caustics (determined by causticType)
 		bool no_recursive;
-		int sDepth, rDepth, bounces, nPaths;
 		float invNPaths;
-		int causticType, nPhotons, cDepth, nSearch;
-		PFLOAT cRadius; //!< radius to search for caustic photons
-		std::vector<light_t*> lights;
-		photonMap_t causticMap;
+		int causticType;
 };
 
-pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth):
-	trShad(transpShad), sDepth(shadowDepth), causticType(PATH)
+pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth)
 {
 	type = SURFACE;
+	trShad = transpShad;
+	sDepth = shadowDepth;
+	causticType = PATH;
 	rDepth = 6;
-	bounces = 5;
+	maxBounces = 5;
 	nPaths = 64;
 	invNPaths = 1.f/64.f;
 	no_recursive = false;
@@ -76,24 +72,17 @@ bool pathIntegrator_t::preprocess()
 	background = scene->getBackground();
 	lights = scene->lights;
 	
-	if(trShad)
-	{
-		set << "ShadowDepth: [" << sDepth << "]";
-	}
+	if(trShad) set << "ShadowDepth: [" << sDepth << "]"; 
+
 	if(!set.str().empty()) set << "+";
 	set << "RayDepth: [" << rDepth << "]";
-
 
 	bool success = true;
 	traceCaustics = false;
 	
 	if(causticType == PHOTON || causticType == BOTH)
 	{
-		progressBar_t *pb;
-		if(intpb) pb = intpb;
-		else pb = new ConsoleProgressBar_t(80);
-		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, integratorName);
-		if(!intpb) delete pb;
+		success = createCausticMap();
 	}
 
 	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
@@ -106,118 +95,17 @@ bool pathIntegrator_t::preprocess()
 	else if(causticType == PHOTON)
 	{
 		if(!set.str().empty()) set << "+";
-		set << "Caustics: Photon(" << nPhotons << ")";
+		set << "Caustics: Photon(" << nCausPhotons << ")";
 	}
 	else if(causticType == BOTH)
 	{
 		if(!set.str().empty()) set << "+";
-		set << "Caustics: Path+Photon(" << nPhotons << ")";
+		set << "Caustics: Path+Photon(" << nCausPhotons << ")";
 	}
 	
 	settings = set.str();
 	
 	return success;
-}
-
-inline color_t pathIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo,
-												   const std::vector<light_t *>  &lights, int d1, int n)const
-{
-	color_t lcol(0.0), scol, col(0.0);
-	ray_t lightRay;
-	float lightPdf;
-	bool shadowed;
-	const material_t *oneMat = sp.material;
-	lightRay.from = sp.P;
-	int nLightsI = lights.size();
-	if(nLightsI == 0) return color_t(0.f);
-	float nLights = float(nLightsI);
-	float s1;
-
-	s1 = scrHalton(d1, n) * nLights;
-	int lnum = std::min((int)(s1), nLightsI-1);
-	const light_t *light = lights[lnum];
-	s1 = s1 - (float)lnum;
-
-	// handle lights with delta distribution, e.g. point and directional lights
-	if( light->diracLight() )
-	{
-		if( light->illuminate(sp, lcol, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed)
-			{
-				if(trShad) lcol *= scol;
-				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				col = surfCol * lcol * std::fabs(sp.N*lightRay.dir);
-			}
-		}
-	}
-	else // area light and suchlike
-	{
-		// ...get sample val...
-		lSample_t ls;
-		ls.s1 = s1;
-		ls.s2 = scrHalton(d1+1, n);
-
-		bool canIntersect=light->canIntersect();
-		
-		if( light->illumSample (sp, ls, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed && ls.pdf > 1e-6f)
-			{
-				if(trShad) ls.col *= scol;
-
-				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				
-				if( canIntersect )
-				{
-					float mPdf = oneMat->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-					float l2 = ls.pdf * ls.pdf;
-					float m2 = mPdf * mPdf + 0.1f;
-					float w = l2 / (l2 + m2);
-					//test! limit lightPdf...
-					if(ls.pdf < 1e-5f) ls.pdf = 1e-5f;
-					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
-				}
-				else
-				{
-					//test! limit lightPdf...
-					if(ls.pdf < 1e-5f) ls.pdf = 1e-5f;
-					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
-				}
-			}
-		}
-		if(canIntersect) // sample from BSDF to complete MIS
-		{
-			ray_t bRay;
-			bRay.tmin = MIN_RAYDIST;
-			bRay.from = sp.P;
-
-			sample_t s(ls.s1, ls.s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-			color_t surfCol = oneMat->sample(state, sp, wo, bRay.dir, s);
-
-			if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
-			{
-				shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
-				if(!shadowed)
-				{
-					if(trShad) lcol *= scol;
-					float lPdf = 1.f/lightPdf;
-					float l2 = lPdf * lPdf;
-					float m2 = s.pdf * s.pdf + 0.1f;
-					float w = m2 / (l2 + m2);
-					float cos2 = std::fabs(sp.N*bRay.dir);
-					col += surfCol * lcol * cos2 * w / s.pdf;
-				}
-			}
-		}
-	}
-	return col*nLights;
 }
 
 colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const
@@ -250,9 +138,11 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		// contribution of light emitting surfaces		
 		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 		
-		if(bsdfs & BSDF_DIFFUSE) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-		
-		if((bsdfs & BSDF_DIFFUSE) && (causticType == PHOTON || causticType == BOTH)) col += estimatePhotons(state, sp, causticMap, wo, nSearch, cRadius);
+		if(bsdfs & BSDF_DIFFUSE)
+		{
+			col += estimateAllDirectLight(state, sp, wo);
+			if(causticType == PHOTON || causticType == BOTH) col += estimateCausticPhotons(state, sp, wo);
+		}
 				
 		// path tracing:
 		// the first path segment is "unrolled" from the loop because for the spot the camera hit
@@ -311,14 +201,14 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				BSDF_t matBSDFs;
 				p_mat->initBSDF(state, *hit, matBSDFs);
 				pwo = -pRay.dir;
-				lcol = estimateOneDirect(state, *hit, pwo, lights, 3, offs);
+				lcol = estimateOneDirectLight(state, *hit, pwo, offs);
 				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
 
 				pathCol += lcol*throughput;
 				
 				bool caustic = false;
 				
-				for(int depth=1; depth<bounces; ++depth)
+				for(int depth = 1; depth < maxBounces; ++depth)
 				{
 					int d4 = 4*depth;
 					s.s1 = scrHalton(d4+3, offs); //ourRandom();//
@@ -361,7 +251,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					p_mat->initBSDF(state, *hit, matBSDFs);
 					pwo = -pRay.dir;
 
-					if(matBSDFs & BSDF_DIFFUSE) lcol = estimateOneDirect(state, *hit, pwo, lights, d4+3, offs);
+					if(matBSDFs & BSDF_DIFFUSE) lcol = estimateOneDirectLight(state, *hit, pwo, offs);
 					else lcol = color_t(0.f);
 
 					if((matBSDFs & BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit->N * pwo < 0)))
@@ -381,7 +271,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
 
-		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
 
 		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f-m_alpha)*alpha;
@@ -393,7 +283,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 			col += (*background)(ray, state, false);
 		}
 	}
-	//dbg = false;
+
 	state.userdata = o_udat;
 	return colorA_t(col, alpha);
 }
@@ -429,16 +319,16 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 			params.getParam("caustic_mix", search);
 			params.getParam("caustic_depth", cDepth);
 			params.getParam("caustic_radius", cRad);
-			inte->nPhotons = photons;
-			inte->nSearch = search;
-			inte->cDepth = cDepth;
-			inte->cRadius = cRad;
+			inte->nCausPhotons = photons;
+			inte->nCausPhotons = search;
+			inte->causDepth = cDepth;
+			inte->causRadius = cRad;
 		}
 	}
 	inte->rDepth = raydepth;
 	inte->nPaths = path_samples;
 	inte->invNPaths = 1.f / (float)path_samples;
-	inte->bounces = bounces;
+	inte->maxBounces = bounces;
 	inte->no_recursive = noRec;
 	return inte;
 }

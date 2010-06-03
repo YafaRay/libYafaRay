@@ -36,19 +36,6 @@ color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const ph
 
 bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb = 0, std::string intName = "None");
 
-//! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
-inline float kernel(float r_photon2, float ir_gather2)
-{
-	float s = (1.f - r_photon2 * ir_gather2);
-	return 3.f * ir_gather2 * M_1_PI * s * s;
-}
-
-inline float ckernel(float r_photon2, float r_gather2, float ir_gather2)
-{
-	float r_p=fSqrt(r_photon2), ir_g=fISqrt(r_gather2);
-	return 3.f * (1.f - r_p*ir_g) * ir_gather2 * M_1_PI;
-}
-
 __END_YAFRAY
 
 #endif // Y_INTEGR_UTILS_H

@@ -8,6 +8,19 @@
 
 __BEGIN_YAFRAY
 
+//! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
+inline float kernel(float r_photon2, float ir_gather2)
+{
+	float s = (1.f - r_photon2 * ir_gather2);
+	return 3.f * ir_gather2 * M_1_PI * s * s;
+}
+
+inline float ckernel(float r_photon2, float r_gather2, float ir_gather2)
+{
+	float r_p=fSqrt(r_photon2), ir_g=fISqrt(r_gather2);
+	return 3.f * (1.f - r_p*ir_g) * ir_gather2 * M_1_PI;
+}
+
 //! Sample a cosine-weighted hemisphere given the the coordinate system built by N, Ru, Rv.
 
 vector3d_t inline SampleCosHemisphere(const vector3d_t &N,const vector3d_t &Ru,const vector3d_t &Rv, float s1, float s2)

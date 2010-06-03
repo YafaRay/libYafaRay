@@ -1,7 +1,8 @@
 /****************************************************************************
  *      photonintegr.cc: integrator for photon mapping and final gather
- *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *      This is part of the yafaray package
+ *      Copyright (C) 2006  Mathias Wein (Lynx)
+ *		Copyright (C) 2009  Rodrigo Placencia (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -19,22 +20,12 @@
  */
 
 #include <integrators/photonintegr.h>
+#include <utilities/mcqmc.h>
+#include <yafraycore/scr_halton.h>
+
 #include <sstream>
 
 __BEGIN_YAFRAY
-
-photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad):
-	trShad(transpShad), finalGather(true), nPhotons(dPhotons), nCausPhotons(cPhotons), sDepth(shadowDepth), dsRadius(dsRad), cRadius(cRad)
-{
-	type = SURFACE;
-	rDepth = 6;
-	maxBounces = 5;
-	allBSDFIntersect = BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT;
-	intpb = 0;
-	integratorName = "PhotonMap";
-	integratorShortName = "PM";
-	hasBGLight = false;
-}
 
 struct preGatherData_t
 {
@@ -111,117 +102,26 @@ void preGatherWorker_t::body()
 	delete[] gathered;
 }
 
-photonIntegrator_t::~photonIntegrator_t()
+photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad)
 {
+	type = SURFACE;
+	trShad = transpShad;
+	finalGather = true;
+	nDiffusePhotons = dPhotons;
+	nCausPhotons = cPhotons;
+	sDepth = shadowDepth;
+	dsRadius = dsRad;
+	causRadius = cRad;
+	rDepth = 6;
+	maxBounces = 5;
+	intpb = 0;
+	integratorName = "PhotonMap";
+	integratorShortName = "PM";
 }
 
-inline color_t photonIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, const std::vector<light_t *>  &lights, int d1, int n)const
+photonIntegrator_t::~photonIntegrator_t()
 {
-	color_t lcol(0.0), scol, col(0.0);
-	ray_t lightRay;
-	float lightPdf;
-	bool shadowed;
-	const material_t *oneMat = sp.material;
-	lightRay.from = sp.P;
-	int nLightsI = lights.size();
-	
-	if(nLightsI == 0) return color_t(0.f);
-	
-	float nLights = float(nLightsI);
-	float s1;
-	
-	s1 = scrHalton(d1, n) * nLights;
-	
-	int lnum = std::min((int)(s1), nLightsI - 1);
-	
-	const light_t *light = lights[lnum];
-
-	s1 = s1 - (float)lnum;
-	
-	// handle lights with delta distribution, e.g. point and directional lights
-	if( light->diracLight() )
-	{
-		if( light->illuminate(sp, lcol, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed)
-			{
-				if(trShad) lcol *= scol;
-				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				col = surfCol * lcol * std::fabs(sp.N*lightRay.dir);
-
-			}
-		}
-	}
-	else // area light and suchlike
-	{
-		// ...get sample val...
-		lSample_t ls;
-		ls.s1 = s1;
-		ls.s2 = scrHalton(d1+1, n);
-		
-		bool canIntersect = light->canIntersect();
-		
-		if( light->illumSample (sp, ls, lightRay) )
-		{
-			// ...shadowed...
-			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed && ls.pdf > 1e-6f)
-			{
-				if(trShad) ls.col *= scol;
-				color_t surfCol = oneMat->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
-				
-				if( canIntersect ) // bound samples and compensate by sampling from BSDF later
-				{
-					float mPdf = oneMat->pdf(state, sp, wo, lightRay.dir, allBSDFIntersect);
-					if(mPdf > 1e-6f)
-					{
-						float l2 = ls.pdf * ls.pdf;
-						float m2 = mPdf * mPdf;
-						float w = l2 / (l2 + m2);
-						col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
-					}
-					else col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
-				}
-				else
-				{
-					col = surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
-				}
-			}
-		}
-		if(canIntersect) // sample from BSDF to complete MIS
-		{
-			ray_t bRay;
-			bRay.tmin = YAF_SHADOW_BIAS;
-			bRay.from = sp.P;
-			sample_t s(ls.s1, ls.s2, allBSDFIntersect);
-			color_t surfCol = oneMat->sample(state, sp, wo, bRay.dir, s);
-			if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
-			{
-				shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
-				if(!shadowed)
-				{
-					if(trShad) lcol *= scol;
-					color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
-					ls.col *= transmitCol;
-					float cos2 = std::fabs(sp.N*bRay.dir);
-					if(lightPdf > 1e-6f)
-					{
-						float lPdf = 1.f/lightPdf;
-						float l2 = lPdf * lPdf;
-						float m2 = s.pdf * s.pdf;
-						float w = m2 / (l2 + m2);
-						col += surfCol * lcol * cos2 * w / s.pdf;
-					}
-					else col += surfCol * lcol * cos2 / s.pdf;
-				}
-			}
-		}
-	}
-	return col*nLights;
+	// Empty
 }
 
 bool photonIntegrator_t::preprocess()
@@ -247,7 +147,7 @@ bool photonIntegrator_t::preprocess()
 
 	if(!set.str().empty()) set << "+";
 	
-	set << "DiffPhotons [" << nPhotons << "]+CausPhotons[" << nCausPhotons << "]";
+	set << "DiffPhotons [" << nDiffusePhotons << "]+CausPhotons[" << nCausPhotons << "]";
 	
 	if(finalGather)
 	{
@@ -312,11 +212,11 @@ bool photonIntegrator_t::preprocess()
 	Y_INFO << integratorName << ": Building diffuse photon map..." << yendl;
 	
 	pb->init(128);
-	pbStep = std::max(1U, nPhotons/128);
+	pbStep = std::max(1U, nDiffusePhotons / 128);
 	pb->setTag("Building diffuse photon map...");
 	//Pregather diffuse photons
 
-	float invDiffPhotons = 1.f / (float)nPhotons;
+	float invDiffPhotons = 1.f / (float)nDiffusePhotons;
 	
 	while(!done)
 	{
@@ -344,7 +244,7 @@ bool photonIntegrator_t::preprocess()
 		if(pcol.isBlack())
 		{
 			++curr;
-			done = (curr >= nPhotons);
+			done = (curr >= nDiffusePhotons);
 			continue;
 		}
 
@@ -426,7 +326,7 @@ bool photonIntegrator_t::preprocess()
 		}
 		++curr;
 		if(curr % pbStep == 0) pb->update();
-		done = (curr >= nPhotons);
+		done = (curr >= nDiffusePhotons);
 	}
 	pb->done();
 	pb->setTag("Diffuse photon map built.");
@@ -654,7 +554,7 @@ bool photonIntegrator_t::preprocess()
 		pgdat.pbar->init(pgdat.rad_points.size());
 		pgdat.pbar->setTag("Pregathering radiance data for final gathering...");
 		std::vector<preGatherWorker_t *> workers;
-		for(int i=0; i<nThreads; ++i) workers.push_back(new preGatherWorker_t(&pgdat, dsRadius, nSearch));
+		for(int i=0; i<nThreads; ++i) workers.push_back(new preGatherWorker_t(&pgdat, dsRadius, nDiffuseSearch));
 		
 		for(int i=0;i<nThreads;++i) workers[i]->run();
 		for(int i=0;i<nThreads;++i)	workers[i]->wait();
@@ -676,12 +576,12 @@ bool photonIntegrator_t::preprocess()
 		if(intpb) pbar = intpb;
 		else pbar = new ConsoleProgressBar_t(80);
 		pbar->init(pgdat.rad_points.size());
-		foundPhoton_t *gathered = (foundPhoton_t *)malloc(nSearch * sizeof(foundPhoton_t));
+		foundPhoton_t *gathered = (foundPhoton_t *)malloc(nDifuseSearch * sizeof(foundPhoton_t));
 		PFLOAT dsRadius_2 = dsRadius*dsRadius;
 		for(unsigned int n=0; n< pgdat.rad_points.size(); ++n)
 		{
 			PFLOAT radius = dsRadius_2; //actually the square radius...
-			int nGathered = diffuseMap.gather(pgdat.rad_points[n].pos, gathered, nSearch, radius);
+			int nGathered = diffuseMap.gather(pgdat.rad_points[n].pos, gathered, nDifuseSearch, radius);
 			color_t sum(0.0);
 			if(nGathered > 0)
 			{
@@ -794,7 +694,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			{
 				if(close)
 				{
-					lcol = estimateOneDirect(state, hit, pwo, lights, d4+5, offs);
+					lcol = estimateOneDirectLight(state, hit, pwo, offs);
 				}
 				else if(caustic)
 				{
@@ -838,7 +738,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			
 			if(!did_hit) //hit background
 			{
-				 if(caustic && hasBGLight)
+				 if(caustic && background)
 				 {
 					pathCol += throughput * (*background)(pRay, state);
 				 }
@@ -911,19 +811,21 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 				// contribution of light emitting surfaces
 				if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
 				
-				if(bsdfs & BSDF_DIFFUSE) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-				
-				if(bsdfs & BSDF_DIFFUSE) col += finalGathering(state, sp, wo);
+				if(bsdfs & BSDF_DIFFUSE)
+				{
+					col += estimateAllDirectLight(state, sp, wo);
+					col += finalGathering(state, sp, wo);
+				}
 			}
 		}
 		else
 		{
-			foundPhoton_t *gathered = (foundPhoton_t *)alloca(nSearch * sizeof(foundPhoton_t));
+			foundPhoton_t *gathered = (foundPhoton_t *)alloca(nDiffuseSearch * sizeof(foundPhoton_t));
 			PFLOAT radius = dsRadius; //actually the square radius...
 
 			int nGathered=0;
 			
-			if(diffuseMap.nPhotons() > 0) nGathered = diffuseMap.gather(sp.P, gathered, nSearch, radius);
+			if(diffuseMap.nPhotons() > 0) nGathered = diffuseMap.gather(sp.P, gathered, nDiffuseSearch, radius);
 			color_t sum(0.0);
 			if(nGathered > 0)
 			{
@@ -940,22 +842,21 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		}
 		
 		// add caustics
-		if(bsdfs & (BSDF_DIFFUSE)) col += estimatePhotons(state, sp, causticMap, wo, nCausSearch, cRadius);
+		if(bsdfs & BSDF_DIFFUSE) col += estimateCausticPhotons(state, sp, wo);
 		
-		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
 
 		CFLOAT m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f-m_alpha)*alpha;
 	}
 	else //nothing hit, return background
 	{
-		if(background)
-		{
-			col += (*background)(ray, state, false);
-		}
+		if(background) col += (*background)(ray, state, false);
 	}
+	
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
+	
 	return colorA_t(col, alpha);
 }
 
@@ -997,10 +898,11 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	
 	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	ite->rDepth = raydepth;
-	ite->nSearch = search;
+	ite->nDiffuseSearch = search;
 	ite->nCausSearch = caustic_mix;
 	ite->finalGather = finalGather;
 	ite->maxBounces = bounces;
+	ite->causDepth = bounces;
 	ite->nPaths = fgPaths;
 	ite->gatherBounces = fgBounces;
 	ite->showMap = show_map;

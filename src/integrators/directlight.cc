@@ -1,7 +1,8 @@
 /****************************************************************************
  *		directlight.cc: an integrator for direct lighting only
- *		This is part of the yafray package
- *		Copyright (C) 2006  Mathias Wein
+ *		This is part of the yafaray package
+ *		Copyright (C) 2006  Mathias Wein (Lynx)
+ *		Copyright (C) 2009  Rodrigo Placencia (DarkTide)
  *
  *		This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -21,45 +22,33 @@
 #include <yafray_config.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
-#include <yafraycore/tiledintegrator.h>
+#include <core_api/mcintegrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
-#include <integrators/integr_utils.h>
-#include <yafraycore/photon.h>
-#include <utilities/mcqmc.h>
-#include <yafraycore/scr_halton.h>
-#include <yafraycore/spectrum.h>
 #include <sstream>
 
 __BEGIN_YAFRAY
 
-class YAFRAYPLUGIN_EXPORT directLighting_t: public tiledIntegrator_t
+class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
 {
 	public:
 		directLighting_t(bool transpShad=false, int shadowDepth=4, int rayDepth=6);
 		virtual bool preprocess();
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		color_t sampleAO(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		background_t *background;
-		bool trShad, caustics, do_AO;
-		int sDepth, rDepth, cDepth;
-		int nPhotons, nSearch, AO_samples;
-		PFLOAT cRadius, AO_dist;
-		color_t AO_col;
-		std::vector<light_t*> lights;
-		photonMap_t causticMap;
 };
 
-directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDepth):
-	trShad(transpShad), caustics(false), sDepth(shadowDepth), rDepth(rayDepth)
+directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDepth)
 {
 	type = SURFACE;
-	cRadius = 0.25;
-	cDepth = 10;
-	nPhotons = 100000;
-	nSearch = 100;
+	causRadius = 0.25;
+	causDepth = 10;
+	nCausPhotons = 100000;
+	nCausSearch = 100;
+	trShad = transpShad;
+	usePhotonCaustics = false;
+	sDepth = shadowDepth;
+	rDepth = rayDepth;
 	intpb = 0;
 	integratorName = "DirectLight";
 	integratorShortName = "DL";
@@ -81,18 +70,14 @@ bool directLighting_t::preprocess()
 	background = scene->getBackground();
 	lights = scene->lights;
 
-	if(caustics)
+	if(usePhotonCaustics)
 	{
-		progressBar_t *pb;
-		if(intpb) pb = intpb;
-		else pb = new ConsoleProgressBar_t(80);
-		success = createCausticMap(*scene, lights, causticMap, cDepth, nPhotons, pb, integratorName);
-		if(!intpb) delete pb;
+		success = createCausticMap();
 		if(!set.str().empty()) set << "+";
-		set << "Caustics:" << nPhotons << " photons. ";
+		set << "Caustics:" << nCausPhotons << " photons. ";
 	}
 	
-	if(do_AO)
+	if(useAmbientOcclusion)
 	{
 		if(!set.str().empty()) set << "+";
 		set << "AO";
@@ -126,11 +111,15 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 		material->initBSDF(state, sp, bsdfs);
 		
 		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
-		if(bsdfs & BSDF_DIFFUSE) col += estimateDirect_PH(state, sp, lights, scene, wo, trShad, sDepth);
-		if(bsdfs & BSDF_DIFFUSE) col += estimatePhotons(state, sp, causticMap, wo, nSearch, cRadius);
-		if((bsdfs & BSDF_DIFFUSE) && do_AO) col += sampleAO(state, sp, wo);
 		
-		recursiveRaytrace(state, ray, rDepth, bsdfs, sp, wo, col, alpha);
+		if(bsdfs & BSDF_DIFFUSE)
+		{
+			col += estimateAllDirectLight(state, sp, wo);
+			col += estimateCausticPhotons(state, sp, wo);
+			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
+		}
+		
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
 		
 		float m_alpha = material->getAlpha(state, sp, wo);
 		alpha = m_alpha + (1.f - m_alpha) * alpha;
@@ -143,60 +132,6 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
 	return colorA_t(col, alpha);
-}
-
-color_t directLighting_t::sampleAO(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
-{
-	color_t col(0.f), surfCol(0.f), scol(0.f);
-	bool shadowed;
-	const material_t *material = sp.material;
-	ray_t lightRay;
-	lightRay.from = sp.P;
-	
-	int n = AO_samples;
-	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
-
-	unsigned int offs = n * state.pixelSample + state.samplingOffs;
-	Halton hal3(3);
-
-	hal3.setStart(offs-1);
-
-	for(int i = 0; i < n; ++i)
-	{
-		float s1 = RI_vdC(offs+i);
-		float s2 = hal3.getNext();
-		
-		if(state.rayDivision > 1)
-		{
-			s1 = addMod1(s1, state.dc1);
-			s2 = addMod1(s2, state.dc2);
-		}
-		
-		lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is still bad...
-		lightRay.tmax = AO_dist;
-		
-		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
-		surfCol = material->sample(state, sp, wo, lightRay.dir, s);
-		
-		if(material->getFlags() & BSDF_EMIT)
-		{
-			col += material->emit(state, sp, wo) * s.pdf;
-		}
-		
-		if(s.pdf > 1e-6f)
-		{
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			
-			if(!shadowed)
-			{
-				float cos = std::fabs(sp.N * lightRay.dir);
-				if(trShad) col += AO_col * scol * surfCol * cos / s.pdf;
-				else col += AO_col * surfCol * cos / s.pdf;
-			}
-		}
-	}
-	
-	return col / (float)n;
 }
 
 integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -227,16 +162,16 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	
 	directLighting_t *inte = new directLighting_t(transpShad, shadowDepth, raydepth);
 	// caustic settings
-	inte->caustics = caustics;
-	inte->nPhotons = photons;
-	inte->nSearch = search;
-	inte->cDepth = cDepth;
-	inte->cRadius = cRad;
+	inte->usePhotonCaustics = caustics;
+	inte->nCausPhotons = photons;
+	inte->nCausSearch = search;
+	inte->causDepth = cDepth;
+	inte->causRadius = cRad;
 	// AO settings
-	inte->do_AO = do_AO;
-	inte->AO_samples = AO_samples;
-	inte->AO_dist = (PFLOAT)AO_dist;
-	inte->AO_col = AO_col;
+	inte->useAmbientOcclusion = do_AO;
+	inte->aoSamples = AO_samples;
+	inte->aoDist = (PFLOAT)AO_dist;
+	inte->aoCol = AO_col;
 	return inte;
 }
 

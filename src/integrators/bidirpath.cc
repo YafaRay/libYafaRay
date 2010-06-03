@@ -2,7 +2,7 @@
 //#include <mcqmc.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
-#include <yafraycore/tiledintegrator.h>
+#include <core_api/tiledintegrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
 #include <core_api/camera.h>

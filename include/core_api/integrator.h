@@ -1,7 +1,8 @@
 /****************************************************************************
- * 			integrator.h: the interface definition for light integrators
+ *		integrator.h: the interface definition for light integrators
  *      This is part of the yafray package
- *      Copyright (C) 2006  Mathias Wein
+ *      Copyright (C) 2006  Mathias Wein (Lynx)
+ *      Copyright (C) 2010  Rodrigo Placencia (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -67,20 +68,20 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		virtual bool preprocess() { return true; };
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
-		virtual void cleanup() { };
+		virtual void cleanup() {}
 //		virtual bool setupSampler(sampler_t &sam);
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const = 0;
 	protected:
-		surfaceIntegrator_t(){}; //don't use...
+		surfaceIntegrator_t() {} //don't use...
 };
 
 class YAFRAYCORE_EXPORT volumeIntegrator_t: public integrator_t
 {
 	public:
-		volumeIntegrator_t() {};
+		volumeIntegrator_t() {}
 		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const = 0;
 		virtual colorA_t integrate(renderState_t &state, ray_t &ray) const = 0;
-		virtual bool preprocess() { return true; };
+		virtual bool preprocess() { return true; }
 	
 	protected:
 };

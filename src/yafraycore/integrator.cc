@@ -1,9 +1,33 @@
+/****************************************************************************
+ *      integrator.cc: Basic tile based surface integrator
+ *      This is part of the yafaray package
+ *      Copyright (C) 2006  Mathias Wein (Lynx)
+ *		Copyright (C) 2009  Rodrigo Placencia (DarkTide)
+ *		Previous code might belong to:
+ *		Alejandro Conty (jandro)
+ *		Alfredo Greef (eshlo)
+ *		Others?
+ *
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2.1 of the License, or (at your option) any later version.
+ *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library; if not, write to the Free Software
+ *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
 
-#include <yafraycore/tiledintegrator.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
 
+#include <core_api/tiledintegrator.h>
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
 #include <core_api/surface.h>
@@ -95,150 +119,6 @@ void tiledIntegrator_t::precalcDepths()
 	}
 	// we use the inverse multiplicative of the value aquired
 	if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
-}
-
-void tiledIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const
-{
-	const material_t *material = sp.material;
-	
-	++state.raylevel;
-	
-	if(state.raylevel <= rDepth)
-	{
-		// dispersive effects with recursive raytracing:
-		if( (bsdfs & BSDF_DISPERSIVE) && state.chromatic )
-		{
-			state.includeLights = true; //debatable...
-			int dsam = 8;
-			int oldDivision = state.rayDivision;
-			int oldOffset = state.rayOffset;
-			float old_dc1 = state.dc1, old_dc2 = state.dc2;
-			if(state.rayDivision > 1) dsam = std::max(1, dsam/oldDivision);
-			state.rayDivision *= dsam;
-			int branch = state.rayDivision*oldOffset;
-			float d_1 = 1.f/(float)dsam;
-			float ss1 = RI_S(state.pixelSample + state.samplingOffs);
-			color_t dcol(0.f), vcol(1.f);
-			vector3d_t wi;
-			const volumeHandler_t* vol;
-			diffRay_t refRay;
-			for(int ns=0; ns<dsam; ++ns)
-			{
-				state.wavelength = (ns + ss1)*d_1;
-				state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
-				state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
-				if(oldDivision > 1)	state.wavelength = addMod1(state.wavelength, old_dc1);
-				state.rayOffset = branch;
-				++branch;
-				sample_t s(0.5f, 0.5f, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_DISPERSIVE);
-				color_t mcol = material->sample(state, sp, wo, wi, s);
-				if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_DISPERSIVE))
-				{
-					mcol *= std::fabs(wi*sp.N)/s.pdf;
-					color_t wl_col;
-					wl2rgb(state.wavelength, wl_col);
-					state.chromatic = false;
-					refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
-					dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
-					state.chromatic = true;
-				}
-			}
-			if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
-			{
-				vol->transmittance(state, refRay, vcol);
-				dcol *= vcol;
-			}
-			col += dcol * d_1;
-
-			state.rayDivision = oldDivision;
-			state.rayOffset = oldOffset;
-			state.dc1 = old_dc1; state.dc2 = old_dc2;
-		}
-		
-		// glossy reflection with recursive raytracing:
-		if( bsdfs & (BSDF_GLOSSY))
-		{
-			state.includeLights = false;
-			int gsam = 8;
-			int oldDivision = state.rayDivision;
-			int oldOffset = state.rayOffset;
-			float old_dc1 = state.dc1, old_dc2 = state.dc2;
-			if(state.rayDivision > 1) gsam = std::max(1, gsam/oldDivision);
-			state.rayDivision *= gsam;
-			int branch = state.rayDivision*oldOffset;
-			int offs = gsam * state.pixelSample + state.samplingOffs;
-			float d_1 = 1.f/(float)gsam;
-			color_t gcol(0.f), vcol(1.f);
-			vector3d_t wi;
-			const volumeHandler_t* vol;
-			diffRay_t refRay;
-			for(int ns=0; ns<gsam; ++ns)
-			{
-				state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
-				state.dc2 = scrHalton(2*state.raylevel+2, branch + state.samplingOffs);
-				state.rayOffset = branch;
-				++branch;
-				float s1 = RI_vdC(offs + ns);
-				float s2 = scrHalton(2, offs + ns);
-				if(oldDivision > 1) // create generalized halton sequence
-				{
-					s1 = addMod1(s1, old_dc1);
-					s2 = addMod1(s2, old_dc2);
-				}
-				sample_t s(s1, s2, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_GLOSSY);
-				color_t mcol = material->sample(state, sp, wo, wi, s);
-				if(s.pdf > 1.0e-5f && (s.sampledFlags & BSDF_GLOSSY))
-				{
-					mcol *= std::fabs(wi*sp.N)/s.pdf;
-					refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
-					gcol += (color_t)integrate(state, refRay) * mcol;
-				}
-				
-				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
-				{
-					if(vol->transmittance(state, refRay, vcol)) gcol *= vcol;
-				}
-			}
-			col += gcol * d_1;
-			//restore renderstate
-			state.rayDivision = oldDivision;
-			state.rayOffset = oldOffset;
-			state.dc1 = old_dc1; state.dc2 = old_dc2;
-		}
-		
-		//...perfect specular reflection/refraction with recursive raytracing...
-		if( bsdfs & (BSDF_SPECULAR | BSDF_FILTER) )
-		{
-			bool reflect=false, refract=false;
-			state.includeLights = true;
-			vector3d_t dir[2];
-			color_t rcol[2], vcol;
-			const volumeHandler_t *vol;
-			material->getSpecular(state, sp, wo, reflect, refract, &dir[0], &rcol[0]);
-			if(reflect)
-			{
-				diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
-				color_t integ = color_t(integrate(state, refRay) );
-				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
-				{
-					if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
-				}
-				col += color_t(integ) * rcol[0];
-			}
-			if(refract)
-			{
-				diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
-				colorA_t integ = integrate(state, refRay);
-				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
-				{
-					if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
-				}
-				col += color_t(integ) * rcol[1];
-				alpha = integ.A;
-			}
-		}
-	}
-	--state.raylevel;
 }
 
 bool tiledIntegrator_t::render(imageFilm_t *image)
