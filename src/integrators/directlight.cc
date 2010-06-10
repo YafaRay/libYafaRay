@@ -170,7 +170,7 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	// AO settings
 	inte->useAmbientOcclusion = do_AO;
 	inte->aoSamples = AO_samples;
-	inte->aoDist = (PFLOAT)AO_dist;
+	inte->aoDist = AO_dist;
 	inte->aoCol = AO_col;
 	return inte;
 }
