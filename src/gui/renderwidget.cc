@@ -55,9 +55,9 @@ RenderWidget::~RenderWidget()
 void RenderWidget::setup(const QSize &s)
 {
 	imageSize = s;
-	
+
 	initBuffers();
-	
+
 	QPalette palette;
 	palette.setColor(QPalette::Background, QColor(0, 0, 0));
 	setPalette(palette);
@@ -67,20 +67,20 @@ void RenderWidget::initBuffers()
 {
 	colorBuffer = QImage(imageSize, QImage::Format_RGB32);
 	colorBuffer.fill(0);
-	
+
 	alphaChannel = QImage(imageSize, QImage::Format_RGB32);
 	alphaChannel.fill(0);
-	
+
 	if(use_zbuf)
 	{
 		depthChannel = QImage(imageSize, QImage::Format_RGB32);
 		depthChannel.fill(0);
 	}
-	
+
 	resize(imageSize);
-	
+
 	activeBuffer = &colorBuffer;
-	
+
 	pix = QPixmap::fromImage(*activeBuffer);
 	setPixmap(pix);
 }
@@ -104,9 +104,9 @@ void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, QRgb depth, bo
 {
 	int ix = x + borderStart.x();
 	int iy = y + borderStart.y();
-	
+
 	colorBuffer.setPixel(ix, iy, color);
-	if (withAlpha) alphaChannel.setPixel(ix, iy, alpha);	
+	if (withAlpha) alphaChannel.setPixel(ix, iy, alpha);
 	if (withDepth) depthChannel.setPixel(ix, iy, depth);
 }
 
@@ -146,13 +146,13 @@ void RenderWidget::paintDepth()
 void RenderWidget::zoom(float f, QPoint mPos)
 {
 	scaleFactor *= f;
-	
+
 	QSize newSize = scaleFactor * activeBuffer->size();
 	resize(newSize);
 	update(owner->viewport()->geometry());
 
 	QPoint m = (mPos * f) - mPos;
-	
+
 	int dh = hBar->value() + (m.x());
 	int dv = vBar->value() + (m.y());
 
@@ -163,14 +163,14 @@ void RenderWidget::zoom(float f, QPoint mPos)
 void RenderWidget::zoomIn(QPoint mPos)
 {
 	if(scaleFactor > 5.0) return;
-	
+
 	zoom(1.25, mPos);
 }
 
 void RenderWidget::zoomOut(QPoint mPos)
 {
 	if(scaleFactor < 0.2) return;
-	
+
 	zoom(0.8, mPos);
 }
 
@@ -207,7 +207,7 @@ bool RenderWidget::event(QEvent *e)
 		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent*)e;
 		bufferMutex.lock();
 		QPainter p(&pix);
-		
+
 		ge->accept();
 
 		int lineL = std::min( 4, std::min( ge->rect().height()-1, ge->rect().width()-1 ) );
@@ -215,7 +215,7 @@ bool RenderWidget::event(QEvent *e)
 		QPoint tl(ge->rect().topLeft());
 		QPoint br(ge->rect().bottomRight());
 		QPoint bl(ge->rect().bottomLeft());
-		
+
 		p.setPen(QColor(160, 0, 0));
 
 		//top-left corner
@@ -233,29 +233,22 @@ bool RenderWidget::event(QEvent *e)
 		//bottom-right corner
 		p.drawLine(br, QPoint(br.x() - lineL, br.y()));
 		p.drawLine(br, QPoint(br.x(), br.y() - lineL));
-		
+
 		bufferMutex.unlock();
 		update(ge->rect());
 
 		return true;
 	}
-	
+
 	return QLabel::event(e);
 }
 
 void RenderWidget::paintEvent(QPaintEvent *e)
 {
-	if (rendering)
-	{
-		QRect r = e->rect();
-		QPainter painter(this);
-		painter.setClipRegion(e->region());
-		painter.drawPixmap(r, pix, r);
-	}
-	else
-	{
-		QLabel::paintEvent(e);
-	}
+    QRect r = e->rect();
+    QPainter painter(this);
+    painter.setClipRegion(e->region());
+    painter.drawPixmap(r, pix, r);
 }
 
 void RenderWidget::wheelEvent(QWheelEvent* e)

@@ -112,11 +112,11 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QCoreApplication::setOrganizationName("YafaRay Team");
 	QCoreApplication::setOrganizationDomain("yafaray.org");
 	QCoreApplication::setApplicationName("YafaRay Qt Gui");
-	
+
 	QSettings set;
-	
+
 	askUnsaved = set.value("qtGui/askSave", true).toBool();
-	
+
 	QPixmap yafIcon;
 	QPixmap zbuffIcon;
 	QPixmap alphaIcon;
@@ -144,7 +144,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	zoomInIcon.loadFromData(zoomin_icon, zoomin_icon_size);
 	zoomOutIcon.loadFromData(zoomout_icon, zoomout_icon_size);
 	quitIcon.loadFromData(quit_icon, quit_icon_size);
-	
+
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char*)guifont, guifont_size));
 	QStringList fam = QFontDatabase::applicationFontFamilies(fId);
@@ -158,20 +158,20 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QApplication::setFont(gFont);
 	#endif
 #endif
-	
+
 	m_ui = new Ui::WindowBase();
 	m_ui->setupUi(this);
-	
+
 	setWindowIcon(QIcon(yafIcon));
-	
+
 	renderSaved = false;
 	renderCancelled = false;
-	
+
 	m_ui->actionAskSave->setChecked(askUnsaved);
 
 	yafaray::paraMap_t *p = interf->getRenderParameters();
 	p->getParam("z_channel", use_zbuf);
-	
+
 	m_render = new RenderWidget(m_ui->renderArea, use_zbuf);
 	m_output = new QtOutput(m_render);
 	m_worker = new Worker(interf, this, m_output);
@@ -191,11 +191,11 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QPalette renderAreaPal;
 	renderAreaPal = m_ui->renderArea->viewport()->palette();
 	renderAreaPal.setColor(QPalette::Window, Qt::black);
-	
+
 	m_ui->renderArea->viewport()->setPalette(renderAreaPal);
-	
+
 	m_ui->cancelButton->setIcon(QIcon(cancelIcon));
-	
+
 	connect(m_ui->cancelButton, SIGNAL(clicked()), this, SLOT(slotCancel()));
 	connect(m_worker, SIGNAL(finished()), this, SLOT(slotFinished()));
 
@@ -203,7 +203,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	QRect r = anim->rect();
 	r.moveCenter(m_ui->renderArea->rect().center());
 	anim->move(r.topLeft());
-	
+
 	// Set toolbar icons
 	m_ui->actionShowDepth->setIcon(QIcon(zbuffIcon));
 	m_ui->actionSaveAlpha->setIcon(QIcon(alphaIcon));
@@ -217,7 +217,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->actionZoom_In->setIcon(QIcon(zoomInIcon));
 	m_ui->actionZoom_Out->setIcon(QIcon(zoomOutIcon));
 	m_ui->actionQuit->setIcon(QIcon(quitIcon));
-	
+
 	// actions
 	connect(m_ui->actionRender, SIGNAL(triggered(bool)),
 			this, SLOT(slotRender()));
@@ -245,11 +245,11 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 			this, SLOT(setSaveDepth(bool)));
 	connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
 			this, SLOT(setDrawParams(bool)));
-			
+
 	m_ui->actionShowRGB->setChecked(true);
 	useDrawParams = interf->getDrawParams();
 	m_ui->actionDrawParams->setChecked(useDrawParams);
-	
+
 	// offset when using border rendering
 	m_render->setRenderBorderStart( QPoint(bStartX, bStartY) );
 
@@ -266,7 +266,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	// filter the resize events of the render area to center the animation widget
 	m_ui->renderArea->installEventFilter(this);
-	
+
 	m_ui->actionShowDepth->setEnabled(use_zbuf);
 	m_ui->actionSaveDepth->setEnabled(use_zbuf);
 }
@@ -313,7 +313,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	else
 	{
 		slotCancel();
-		
+
 		if(renderCancelled) app->exit(1); //check if a render was stopped and exit with the appropiate code
 		e->accept();
 	}
@@ -354,12 +354,12 @@ void MainWindow::slotFinished()
 		interf->paramsSetInt("height", res_y);
 		interf->paramsSetBool("alpha_channel", autoSaveAlpha);
 		interf->paramsSetBool("z_channel", use_zbuf);
-		
+
 		imageHandler_t *ih = interf->createImageHandler("saver", false);
 		imageOutput_t *out = new imageOutput_t(ih, fileName);
-		
+
 		interf->paramsClearAll();
-		
+
 		interf->getRenderedImage(*out);
 
 		renderSaved = true;
@@ -376,51 +376,51 @@ void MainWindow::slotFinished()
 			return;
 		}
 	}
-	
+
 	int renderTime = timeMeasure.elapsed();
 	float timeSec = renderTime / 1000.f;
-	
+
 	int ms = renderTime % 1000;
 	renderTime = renderTime / 1000;
 	int s = renderTime % 60;
 	renderTime = renderTime / 60;
 	int m = renderTime % 60;
 	int h = renderTime / 60;
-	
+
 	QString timeStr = "";
 	QChar fill = '0';
 	QString suffix = "";
-	
+
 	if(h > 0)
 	{
 		timeStr.append(QString("%1:").arg(h));
 		suffix = "h.";
 	}
-	
+
 	if(m > 0 || h > 0)
 	{
 		if(h > 0) timeStr.append(QString("%1:").arg(m, 2, 10, fill));
 		else timeStr.append(QString("%1:").arg(m));
-		
+
 		if(suffix == "") suffix = "m.";
 	}
-	
+
 	if(s < 10 && m == 0 && h == 0) timeStr.append(QString("%1.%2").arg(s).arg(ms, 2, 10, fill));
 	else timeStr.append(QString("%1.%2").arg(s, 2, 10, fill).arg(ms, 2, 10, fill));
 
 	if(suffix == "") suffix = "s.";
-	
+
 	timeStr.append(QString(" %1").arg(suffix));
 
 	rt.append(QString("Render time: %1 [%2s.]").arg(timeStr).arg(timeSec, 5));
 	m_ui->yafLabel->setText(rt);
 	Y_INFO << setColor(Green, true) << "Render completed!" << setColor() << yendl;
-	
+
 	m_render->finishRendering();
 	update();
-	
+
 	slotEnableDisable(true);
-	
+
 	if (autoClose)
 	{
 		if(renderCancelled) app->exit(1);
@@ -429,7 +429,7 @@ void MainWindow::slotFinished()
 	}
 
 	m_ui->progressbar->hide();
-	
+
 	QApplication::alert(this);
 }
 
@@ -538,7 +538,7 @@ bool MainWindow::saveDlg()
 	QString formats;
 	std::vector<std::string> formatList = interf->listImageHandlers();
 	std::vector<std::string> formatDesc = interf->listImageHandlersFullName();
-	
+
 	std::sort(formatList.begin(), formatList.end());
 	std::sort(formatDesc.begin(), formatDesc.end());
 
@@ -559,7 +559,7 @@ bool MainWindow::saveDlg()
 	// "re"extract the actual file ending
 	selectedFilter.remove(0, selectedFilter.indexOf("."));
 	selectedFilter.remove(selectedFilter.indexOf(")"), 2);
-	
+
 	if (!fileName.endsWith(selectedFilter, Qt::CaseInsensitive))
 	{
 		fileName.append(selectedFilter.toLower());
@@ -576,31 +576,31 @@ bool MainWindow::saveDlg()
 		interf->paramsSetInt("height", res_y);
 		interf->paramsSetBool("alpha_channel", saveWithAlpha);
 		interf->paramsSetBool("z_channel", saveWithDepth);
-		
+
 		m_lastPath = QDir(fileName).absolutePath();
-		
+
 		imageHandler_t *ih = interf->createImageHandler("saver", false);
 		imageOutput_t *out = new imageOutput_t(ih, m_lastPath.toStdString());
-		
+
 		interf->paramsClearAll();
-		
+
 		interf->setDrawParams(useDrawParams);
 
 		interf->getRenderedImage(*out);
-		
+
 		renderSaved = true;
-		
+
 		QString savemesg;
 		savemesg.append("Render ");
 		savemesg.append(( (use_zbuf) ? "(RGBA + Z) " : "(RGBA) " ));
 		savemesg.append("saved.");
-		
+
 		m_ui->yafLabel->setText(savemesg);
-		
+
 		delete ih;
 		delete out;
 	}
-	
+
 	return renderSaved;
 }
 
@@ -668,13 +668,13 @@ void MainWindow::adjustWindow()
 
 	int w = std::min(res_x + 10, scrGeom.width()-60);
 	int h = std::min(res_y + 10, scrGeom.height()-160);
-	
+
 	m_ui->renderArea->setMaximumSize(w, h);
 	m_ui->renderArea->setMinimumSize(w, h);
 
 	adjustSize();
 	resize(minimumSize());
-	
+
 	m_ui->renderArea->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 	m_ui->renderArea->setMinimumSize(0, 0);
 }
