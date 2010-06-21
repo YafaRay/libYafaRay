@@ -149,6 +149,7 @@ void RenderWidget::zoom(float f, QPoint mPos)
 
 	QSize newSize = scaleFactor * activeBuffer->size();
 	resize(newSize);
+	pix = QPixmap::fromImage(activeBuffer->scaled(newSize));
 	update(owner->viewport()->geometry());
 
 	QPoint m = (mPos * f) - mPos;
