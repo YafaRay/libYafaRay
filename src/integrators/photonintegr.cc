@@ -264,7 +264,7 @@ bool photonIntegrator_t::preprocess()
 			
 			color_t transm(1.f);
 			color_t vcol(0.f);
-			const volumeHandler_t* vol;
+			const volumeHandler_t* vol = NULL;
 			
 			if(material)
 			{
@@ -425,7 +425,7 @@ bool photonIntegrator_t::preprocess()
 				
 				color_t transm(1.f);
 				color_t vcol(0.f);
-				const volumeHandler_t* vol;
+				const volumeHandler_t* vol = NULL;
 				
 				if(material)
 				{

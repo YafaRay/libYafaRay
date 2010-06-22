@@ -317,7 +317,7 @@ public:
 		// find min t0 and max t1
 		for (unsigned int i = 0; i < VRSize; i++)
 		{
-			float t0Tmp, t1Tmp;
+			float t0Tmp = 0.f, t1Tmp = 0.f;
 			VolumeRegion* vr = listVR.at(i);
 
 			if (!vr->intersect(ray, t0Tmp, t1Tmp)) continue;

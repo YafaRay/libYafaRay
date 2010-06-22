@@ -201,7 +201,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 	float cos_Ng_wo = sp.Ng*wo;
 	float cos_Ng_wi;
 	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
-	vector3d_t Hs;
+	vector3d_t Hs(0.f);
 	s.pdf = 0.f;
 	float Kr, Kt;
 	float wiN = 0.f , woN = 0.f;
