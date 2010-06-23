@@ -23,6 +23,9 @@
 #define ANIMWORKING_H
 
 #include <QtGui/QWidget>
+#include <vector>
+
+#define topFrame 50
 
 class AnimWorking : public QWidget
 {
@@ -35,8 +38,8 @@ protected:
 	void paintEvent(QPaintEvent *e);
 	void timerEvent(QTimerEvent *e);
 private:
-	QPixmap m_gradientPix;
-	qreal m_rotation;
+	std::vector<QPixmap> mSprites;
+	size_t mActFrame;
 	int m_timerId;
 };
 

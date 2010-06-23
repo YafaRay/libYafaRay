@@ -180,7 +180,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	// animation widget
 	anim = new AnimWorking(m_ui->renderArea);
-	anim->resize(70,70);
+	anim->resize(200,87);
 
 	this->move(20, 20);
 
@@ -283,8 +283,6 @@ bool MainWindow::event(QEvent *e)
 {
 	if (e->type() == (QEvent::Type)ProgressUpdate)
 	{
-		anim->hide();
-
 		ProgressUpdateEvent *p = static_cast<ProgressUpdateEvent*>(e);
 		if (p->min() >= 0)
 			m_ui->progressbar->setMinimum(p->min());
@@ -297,6 +295,7 @@ bool MainWindow::event(QEvent *e)
 	if (e->type() == (QEvent::Type)ProgressUpdateTag)
 	{
 		ProgressUpdateTagEvent *p = static_cast<ProgressUpdateTagEvent*>(e);
+		if(p->tag().contains("Rendering")) anim->hide();
 		m_ui->yafLabel->setText(p->tag());
 		return true;
 	}
