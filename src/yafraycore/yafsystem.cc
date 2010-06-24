@@ -27,9 +27,15 @@ void sharedlibrary_t::open(const std::string &lib)
 {
 	handle = LoadLibrary(lib.c_str());
 
-	if (handle == NULL)
-		cerr << "LoadLibrary error: " << GetLastError() << endl;
-	else
+	if (handle == NULL) {
+		DWORD err_code = GetLastError();
+		const size_t err_buf_size = 64000;
+		char err_buf[err_buf_size] = {0};
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, err_code, 0, err_buf, err_buf_size, 0);
+
+		cerr << "failed to open " << lib << ", LoadLibrary error: ";
+		cerr << err_buf <<  " (" << err_code << ")" << endl;
+	} else
 		refcount=new int(1);
 }
 
