@@ -29,9 +29,6 @@
 #set(USER_RELFLAGS "")
 #set(USER_DBGFLAGS "")
 
-# Uncomment next line if you want to disable QT Gui build
-#set(WITH_YF_QT OFF)
-
 # Uncomment next line if you want to embed the font for QT Gui
 #set(EMBED_FONT_QT ON)
 
