@@ -19,8 +19,8 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual colorA_t getColor(int x, int y, int z) const { return colorA_t(0.f); }
 		virtual colorA_t getNoGammaColor(const point3d_t &p) const { return getColor(p); }
 		virtual colorA_t getNoGammaColor(int x, int y, int z) const { return getColor(x, y, z); }
-		virtual CFLOAT getFloat(const point3d_t &p) const { return getNoGammaColor(p).energy(); }
-		virtual CFLOAT getFloat(int x, int y, int z) const { return getNoGammaColor(x, y, z).energy(); }
+		virtual CFLOAT getFloat(const point3d_t &p) const { return getNoGammaColor(p).col2bri(); }
+		virtual CFLOAT getFloat(int x, int y, int z) const { return getNoGammaColor(x, y, z).col2bri(); }
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
 		virtual ~texture_t() {}
