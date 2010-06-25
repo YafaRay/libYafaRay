@@ -225,7 +225,10 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
-	
+
+	Halton halU(3);
+	Halton halV(5);
+
 	for(int i=a.Y; i<end_y; ++i)
 	{
 		for(int j=a.X; j<end_x; ++j)
@@ -240,18 +243,22 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 			rstate.pixelNumber = x*i+j;
 			rstate.samplingOffs = fnv_32a_buf(i*fnv_32a_buf(j));//fnv_32a_buf(rstate.pixelNumber);
 			float toff = scrHalton(5, pass_offs+rstate.samplingOffs); // **shall be just the pass number...**
+			
+			halU.setStart(pass_offs+rstate.samplingOffs);
+			halV.setStart(pass_offs+rstate.samplingOffs);
 
 			for(int sample=0; sample<n_samples; ++sample)
 			{
 				rstate.setDefaults();
 				rstate.pixelSample = pass_offs+sample;
 				rstate.time = addMod1((PFLOAT)sample*d1, toff);//(0.5+(PFLOAT)sample)*d1;
+				
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
 				if(AA_passes>1)
 				{
-					dx = RI_S(rstate.pixelSample, rstate.samplingOffs);
-					dy = RI_vdC(rstate.pixelSample, rstate.samplingOffs);
+					dx = RI_vdC(rstate.pixelSample, rstate.samplingOffs);
+					dy = RI_S(rstate.pixelSample, rstate.samplingOffs);
 				}
 				else if(n_samples > 1)
 				{
@@ -260,8 +267,8 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				}
 				if(sampleLns)
 				{
-					lens_u = scrHalton(3, rstate.pixelSample+rstate.samplingOffs);
-					lens_v = scrHalton(4, rstate.pixelSample+rstate.samplingOffs);
+					lens_u = halU.getNext();
+					lens_v = halV.getNext();
 				}
 				c_ray = camera->shootRay(j+dx, i+dy, lens_u, lens_v, wt);
 				if(wt==0.0)
