@@ -22,7 +22,7 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 		sp.N = u*va + v*vb + w*vc;
 		sp.N.normalize();
 	}
-	else sp.N = vector3d_t(normal);
+	else sp.N = sp.Ng;
 	
 	if(mesh->has_orco)
 	{
@@ -74,6 +74,10 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 		sp.dPdU = mesh->points[pb] - mesh->points[pa];
 		sp.dPdV = mesh->points[pc] - mesh->points[pa];
 	}
+
+	sp.dPdU.normalize();
+	sp.dPdV.normalize();
+
 	sp.object = mesh;
 	sp.sU = u;
 	sp.sV = v;
@@ -81,13 +85,17 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 	sp.material = material;
 	sp.P = hit;
 	createCS(sp.N, sp.NU, sp.NV);
+	vector3d_t U, V;
+	createCS(sp.Ng, U, V);
 	// transform dPdU and dPdV in shading space
-	sp.dSdU.x = sp.NU * sp.dPdU;
-	sp.dSdU.y = sp.NV * sp.dPdU;
-	sp.dSdU.z = sp.N  * sp.dPdU;
-	sp.dSdV.x = sp.NU * sp.dPdV;
-	sp.dSdV.y = sp.NV * sp.dPdV;
-	sp.dSdV.z = sp.N  * sp.dPdV;
+	sp.dSdU.x = U * sp.dPdU;
+	sp.dSdU.y = V * sp.dPdU;
+	sp.dSdU.z = sp.Ng * sp.dPdU;
+	sp.dSdV.x = U * sp.dPdV;
+	sp.dSdV.y = V * sp.dPdV;
+	sp.dSdV.z = sp.Ng * sp.dPdV;
+	sp.dSdU.normalize();
+	sp.dSdV.normalize();
 	sp.light = mesh->light;
 }
 
