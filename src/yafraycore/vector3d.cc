@@ -83,12 +83,12 @@ bool  operator != ( const vector3d_t &a,const vector3d_t &b)
 				medium in which n points. E.g. "outside" is air, "inside" is water, the normal points outside,
 				IOR = eta_air / eta_water = 1.33
 */
-bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, PFLOAT IOR)
+bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, float IOR)
 {
 	vector3d_t N=n,I,T;
-	PFLOAT eta=IOR;
+	float eta=IOR;
 	I=-wi;
-	PFLOAT cos_v_n = wi*n;
+	float cos_v_n = wi*n;
 	if((cos_v_n)<0)
 	{
 		N=-n;
@@ -98,35 +98,36 @@ bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, PFLOAT IO
 	{
 		eta=1.0/IOR;
 	}
-	PFLOAT k = 1 - eta*eta*(1 - cos_v_n*cos_v_n);
+	float k = 1 - eta*eta*(1 - cos_v_n*cos_v_n);
 	if(k<= 0.f) return false;
+	
 	wo = eta*I + (eta*cos_v_n - fSqrt(k))*N;
 	wo.normalize();
+	
 	return true;
 }
 
-bool refract_test(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, PFLOAT IOR)
+bool refract_test(const vector3d_t &n,const vector3d_t &wi, float IOR)
 {
-	PFLOAT eta = IOR;
-	PFLOAT cos_v_n = wi*n;
+	float eta = IOR;
+	float cos_v_n = wi*n;
 	
 	if((cos_v_n) < 0.f)	cos_v_n = -cos_v_n;
 	else eta = 1.f / IOR;
 	
-	PFLOAT k = 1 - eta*eta*(1 - cos_v_n*cos_v_n);
+	float k = 1 - eta*eta*(1 - cos_v_n*cos_v_n);
 	
 	return (k > 0.f);
 }
 
-bool inv_refract_test(vector3d_t &n,const vector3d_t &wi, const vector3d_t &wo, PFLOAT IOR)
+bool inv_refract_test(vector3d_t &n,const vector3d_t &wi, const vector3d_t &wo, float IOR)
 {
 	n = (wi + IOR*wo).normalize();
 	if(IOR > 1.f) n = -n;
 	return (wi*n)*(wo*n) < 0.f;
 }
 
-void fresnel(const vector3d_t & I, const vector3d_t & n, PFLOAT IOR,
-						CFLOAT &Kr,CFLOAT &Kt)
+void fresnel(const vector3d_t & I, const vector3d_t & n, float IOR, float &Kr, float &Kt)
 {
 	PFLOAT eta;
 	vector3d_t N;
