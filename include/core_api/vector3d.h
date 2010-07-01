@@ -267,13 +267,11 @@ inline vector3d_t toVector(const point3d_t &p)
 }
 
 /* YAFRAYCORE_EXPORT vector3d_t refract(const vector3d_t &n,const vector3d_t &v,PFLOAT IOR); */
-YAFRAYCORE_EXPORT bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, PFLOAT IOR);
-YAFRAYCORE_EXPORT bool refract_test(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, PFLOAT IOR);
-YAFRAYCORE_EXPORT bool inv_refract_test(vector3d_t &n,const vector3d_t &wi, const vector3d_t &wo, PFLOAT IOR);
-YAFRAYCORE_EXPORT void fresnel(const vector3d_t & I, const vector3d_t & n, PFLOAT IOR,
-						CFLOAT &Kr,CFLOAT &Kt);
-YAFRAYCORE_EXPORT void fast_fresnel(const vector3d_t & I, const vector3d_t & n, PFLOAT IORF,
-						CFLOAT &Kr,CFLOAT &Kt);
+YAFRAYCORE_EXPORT bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, float IOR);
+YAFRAYCORE_EXPORT bool refract_test(const vector3d_t &n,const vector3d_t &wi, float IOR);
+YAFRAYCORE_EXPORT bool inv_refract_test(vector3d_t &n,const vector3d_t &wi, const vector3d_t &wo, float IOR);
+YAFRAYCORE_EXPORT void fresnel(const vector3d_t & I, const vector3d_t & n, float IOR, float &Kr, float &Kt);
+YAFRAYCORE_EXPORT void fast_fresnel(const vector3d_t & I, const vector3d_t & n, float IORF, float &Kr, float &Kt);
 
 inline void createCS(const vector3d_t &N, vector3d_t &u, vector3d_t &v)
 {
