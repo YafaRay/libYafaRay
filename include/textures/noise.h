@@ -1,7 +1,6 @@
 #ifndef __NOISE_H
 #define __NOISE_H
 
-//#include <math.h>
 #include <core_api/vector3d.h>
 #include <core_api/color.h>
 
