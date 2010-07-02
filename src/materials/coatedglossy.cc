@@ -178,13 +178,11 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 		if(anisotropic)
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, H*N);
-			glossy = Kt * AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = Kt * AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
 		}
 		else
 		{
-			glossy = Kt * Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / 
-							( 8.f * std::fabs(cos_wi_H) * std::max(woN, wiN) );
+			glossy = Kt * Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
 		}
 		col = (CFLOAT)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 	}
@@ -309,14 +307,12 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			if(anisotropic)
 			{
 				s.pdf += AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * width[rcIndex[C_GLOSSY]];
-				glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-									( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+				glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
 			}
 			else
 			{
 				s.pdf += Blinn_Pdf(Hs.z, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
-				glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / 
-									( 8.f * std::fabs(cos_wo_H) * std::max(woN, wiN) );
+				glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
 			}
 			scolor = (CFLOAT)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
 		}
@@ -447,6 +443,8 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
 	params.getParam("IOR", ior);
+	
+	if(ior == 1.f) ior = 1.0000001f;
 
 	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol , refl, diff, ior, exponent, as_diff);
 	if(aniso)
