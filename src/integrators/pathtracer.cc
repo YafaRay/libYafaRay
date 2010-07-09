@@ -320,7 +320,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 			params.getParam("caustic_depth", cDepth);
 			params.getParam("caustic_radius", cRad);
 			inte->nCausPhotons = photons;
-			inte->nCausPhotons = search;
+			inte->nCausSearch = search;
 			inte->causDepth = cDepth;
 			inte->causRadius = cRad;
 		}
