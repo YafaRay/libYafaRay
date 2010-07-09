@@ -266,7 +266,6 @@ inline vector3d_t toVector(const point3d_t &p)
 	return vector3d_t(p.x,p.y,p.z);
 }
 
-/* YAFRAYCORE_EXPORT vector3d_t refract(const vector3d_t &n,const vector3d_t &v,PFLOAT IOR); */
 YAFRAYCORE_EXPORT bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, float IOR);
 YAFRAYCORE_EXPORT bool refract_test(const vector3d_t &n,const vector3d_t &wi, float IOR);
 YAFRAYCORE_EXPORT bool inv_refract_test(vector3d_t &n,const vector3d_t &wi, const vector3d_t &wo, float IOR);
