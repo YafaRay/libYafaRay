@@ -23,11 +23,13 @@ class textureMapper_t: public shaderNode_t
 		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
 	protected:
 		void setup();
+		void getCoords(point3d_t &texpt, vector3d_t &Ng, const surfacePoint_t &sp, const renderState_t &state) const;
 		point3d_t doMapping(const point3d_t &p, const vector3d_t &N)const;
 		TEX_COORDS 	tex_coords;
 		TEX_PROJ tex_maptype;
 		int map_x, map_y, map_z; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
-		PFLOAT deltaU, deltaV, deltaW, delta;
+		point3d_t pDU, pDV, pDW;
+		float dU, dV, dW;
 		const texture_t *tex;
 		vector3d_t scale;
 		vector3d_t offset;

@@ -17,25 +17,22 @@ void textureMapper_t::setup()
 	{
 		int u, v, w;
 		tex->resolution(u, v, w);
-		deltaU = 1.0/(PFLOAT)u;
-		deltaV = 1.0/(PFLOAT)v;
-		if(tex->isThreeD())
-		{
-			deltaW = 1.0/(PFLOAT)w;
-			delta = fSqrt(deltaU*deltaU + deltaV*deltaV + deltaW*deltaW);
-		}
-		else delta = fSqrt(deltaU*deltaU + deltaV*deltaV);
+		dU = 1.f/(float)u;
+		dV = 1.f/(float)v;
+		if(tex->isThreeD()) dW = 1.f/(float)w;
+		else dW = 0.f;
 	}
 	else
 	{
-		deltaU = 0.0002;
-		deltaV = 0.0002;
-		deltaW = 0.0002;
-		delta  = 0.0002;
+		//0.00048828125 = 1.f / 2048.f
+		dU = dV = dW = 0.00048828125;
 	}
-	PFLOAT mapScale = scale.length();
-	delta /= mapScale;
-	bumpStr /= mapScale;
+
+	pDU = point3d_t(dU, 0, 0);
+	pDV = point3d_t(0, dV, 0);
+	pDW = point3d_t(0, 0, dW);
+	
+	bumpStr /= scale.length();
 }
 
 // Map the texture to a cylinder
@@ -111,29 +108,35 @@ point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)con
 
 point3d_t eval_uv(const surfacePoint_t &sp)
 {
-		return point3d_t(sp.U, sp.V, 0.f);
+	return point3d_t(sp.U, sp.V, 0.f);
 }
 
-void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfacePoint_t &sp, const renderState_t &state) const
 {
-	point3d_t texpt;
-	vector3d_t Ng;
-	// Switch texture coordinates
 	switch(tex_coords)
 	{
 		case TXC_UV:	texpt = eval_uv(sp); Ng = sp.Ng; break;
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 		case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
-		case TXC_WIN:   texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
+		case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
 		case TXC_STICK:	// Not implemented yet use GLOB
 		case TXC_STRESS:// Not implemented yet use GLOB
 		case TXC_TAN:	// Not implemented yet use GLOB
 		case TXC_NOR:	// Not implemented yet use GLOB
 		case TXC_REFL:	// Not implemented yet use GLOB
-		case TXC_GLOB:	// Nothing to do for GLOB
-		default: 	texpt = sp.P; Ng = sp.Ng; break;
+		case TXC_GLOB:	// GLOB mapped as default
+		default:		texpt = sp.P; Ng = sp.Ng; break;
 	}
-	texpt = doMapping(texpt,Ng);
+}
+
+void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+{
+	point3d_t texpt(0.f);
+	vector3d_t Ng(0.f);
+
+	getCoords(texpt, Ng, sp,state);
+
+	texpt = doMapping(texpt, Ng);
 	
 	stack[this->ID] = nodeResult_t(tex->getColor(texpt), (doScalar) ? tex->getFloat(texpt) : 0.f );
 }
@@ -145,95 +148,42 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 }
 
 // Normal perturbation
+#define colToVec(col) ( (2.f * col) - 1.f )
+#define getHeight(a0, a1, d) ( (tex->getFloat(a0) - tex->getFloat(a1)) )
+
 void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
-	static bool debug=true;
-	CFLOAT du, dv;
-	if(tex_coords == TXC_UV)
+	point3d_t texpt(0.f);
+	vector3d_t Ng(0.f);
+	float du, dv;
+	vector3d_t norm(0.f);
+
+	getCoords(texpt, Ng, sp,state);
+
+	texpt = doMapping(texpt, Ng);
+
+	if (tex->isNormalmap())
 	{
-		if (tex->isNormalmap())
-                {
-			point3d_t p = point3d_t(sp.U, sp.V, 0.f);
-			p = doMapping(p,sp.Ng);
-			CFLOAT dfdu = 2*tex->getColor(p).R -1.0f;
-			CFLOAT dfdv = 2*tex->getColor(p).G -1.0f;
-			CFLOAT dfdw = 2*tex->getColor(p).B -1.0f;
-			vector3d_t t = vector3d_t(1,0,0);
-			vector3d_t b = vector3d_t(0,1,0);
-			vector3d_t n = vector3d_t(0,0,1);
-			vector3d_t norm = dfdu*t + dfdv*b + dfdw*n;
-			// Convert norm into shading space
-			vector3d_t vecU,vecV;
-			createCS(sp.Ng,vecU,vecV);
-			vector3d_t dSdU,dSdV;
-			dSdU.x = vecU  * sp.dPdU;
-			dSdU.y = vecV  * sp.dPdU;
-			dSdU.z = sp.Ng * sp.dPdU;
-			dSdV.x = vecU  * sp.dPdV;
-			dSdV.y = vecV  * sp.dPdV;
-			dSdV.z = sp.Ng * sp.dPdV;
-			du = (norm * dSdU.normalize())*bumpStr;
-			dv = -(norm * dSdV.normalize())*bumpStr;
-		}
-		else
-		{
-			point3d_t p1 = point3d_t(sp.U+deltaU, sp.V, 0.f);
-			point3d_t p2 = point3d_t(sp.U-deltaU, sp.V, 0.f);
-			p1 = doMapping(p1,sp.Ng);
-			p2 = doMapping(p2,sp.Ng);
-			CFLOAT dfdu = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaU;
-			p1 = point3d_t(sp.U, sp.V+deltaV, 0.f);
-			p2 = point3d_t(sp.U, sp.V-deltaV, 0.f);
-			p1 = doMapping(p1,sp.Ng);
-			p2 = doMapping(p2,sp.Ng);
-			CFLOAT dfdv = ( tex->getFloat(p1) - tex->getFloat(p2) ) / deltaV;
-			// now we got the derivative in UV-space, but need it in shading space:
-			vector3d_t vecU = /* deltaU * */ sp.dSdU;
-			vector3d_t vecV = /* deltaV * */ sp.dSdV;
-			vecU.normalize();
-			vecV.normalize();
-			vecU.z = dfdu;
-			vecV.z = dfdv;
-			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
-			vector3d_t norm = vecU ^ vecV;
-			if(std::fabs(norm.z) > 1e-30f)
-			{
-				PFLOAT NF = 1.0/norm.z * bumpStr * 0.01f;
-				du = norm.x*NF;
-				dv = norm.y*NF;
-			}
-			else du = dv = 0.f;
-		}
+		color_t UVW = colToVec(tex->getNoGammaColor(texpt));
+		norm = vector3d_t(UVW.getR() * bumpStr, UVW.getG() * bumpStr, -UVW.getB());
 	}
 	else
 	{
-		// todo: handle out-of-range from doRawMapping!
-		// TODO: Remove redundant code
-		point3d_t texpt;
-		vector3d_t Ng;
-		// Switch texture coordinates
-		switch(tex_coords)
-		{
-			case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
-			case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
-			case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
-			case TXC_STICK:	// Not implemented yet use GLOB
-			case TXC_STRESS:// Not implemented yet use GLOB
-			case TXC_TAN:	// Not implemented yet use GLOB
-			case TXC_NOR:	// Not implemented yet use GLOB
-			case TXC_REFL:	// Not implemented yet use GLOB
-			case TXC_GLOB:	// Nothing to do for GLOB
-			default:	texpt = sp.P; Ng = sp.Ng; break;
-		}
-		//doMapping(...)
-		//placeholder!
-		du = bumpStr * ((  tex->getFloat(doMapping(texpt+delta*sp.NU, Ng))
-						- tex->getFloat(doMapping(texpt-delta*sp.NU, Ng)) ) / delta);
-		dv = bumpStr * ((  tex->getFloat(doMapping(texpt+delta*sp.NV, Ng))
-						- tex->getFloat(doMapping(texpt-delta*sp.NV, Ng)) ) / delta);
+		point3d_t i0(texpt + pDU);
+		point3d_t i1(texpt - pDU);
+		point3d_t j0(texpt + pDV);
+		point3d_t j1(texpt - pDV);
+
+		norm = vector3d_t(-getHeight(i0, i1, dU) * bumpStr, -getHeight(j0, j1, dV) * bumpStr, 1);
 	}
+
+	norm.normalize();
+
+	// Convert norm into shading space
+	du = norm * sp.dSdU;
+	dv = norm * sp.dSdV;
+
 	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f );
-	debug=false;
 }
 
 shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment_t &render)
