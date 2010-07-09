@@ -315,33 +315,6 @@ CFLOAT blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp
 	return 1.0;
 }
 
-bool blendMat_t::volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col) const
-{
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
-	color_t col1(0.0), col2(0.0);
-	void *old_udat = state.userdata;
-	bool ret = false;
-
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(ival > 0.f)
-	ret = ret || mat1->volumeTransmittance(state, sp, ray, col1);
-	
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(val > 0.f)
-	ret = ret || mat2->volumeTransmittance(state, sp, ray, col2);
-		
-	
-	col1.clampRGB01();
-	col2.clampRGB01();
-	
-	col1 = addColors(col1, col2, ival, val);
-		
-	state.userdata = old_udat;
-	return ret;
-}
-
 color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
 	float val, ival;

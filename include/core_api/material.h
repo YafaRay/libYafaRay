@@ -123,15 +123,6 @@ class YAFRAYCORE_EXPORT material_t
 			default implementation returns black obviously.	*/
 		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return color_t(0.0); }
 		
-		/*! allow attenuation (or even amplification) due to intra-object volumetric effects,
-			e.g. "beer's law"; should only be called by surface integrators when entering an object.
-			@param sp the point the current ray hit
-			@param ray the ray that hit sp, tmax shall be sett accordingly, the direction is pointing from origin to sp
-			@param col the filter spectrum that gets applied to the exitant radiance computed for sp
-			@return return true when light gets modified, false otherwise. The global volume integrator may be used in the latter case
-		*/
-		virtual bool volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const { return false; }
-		
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
 		const volumeHandler_t* getVolumeHandler(bool inside)const { return inside ? volI : volO; }

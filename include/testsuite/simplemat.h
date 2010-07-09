@@ -34,7 +34,6 @@ class simplemat_t: public material_t
 	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
 	virtual bool isTransparent() const { return transparent; }
 	virtual color_t getTransparency(const vector3d_t &wo, const surfacePoint_t &sp)const { return trCol; }
-	virtual color_t volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const;
 	virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return emitCol; }
 	virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, 
 							bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const;

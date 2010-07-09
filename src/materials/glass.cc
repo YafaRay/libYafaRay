@@ -39,7 +39,6 @@ class glassMat_t: public nodeMaterial_t
 		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
-		virtual bool volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const;
 		virtual float getMatIOR() const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 	protected:
@@ -85,7 +84,6 @@ void glassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, 
 
 color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {
-	static bool debug=true;
 	nodeStack_t stack(state.userdata);
 	if( !(s.flags & BSDF_SPECULAR) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic) )
 	{
@@ -111,11 +109,6 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 			if( !(s.flags & BSDF_SPECULAR) || s.s1 < pKt)
 			{
 				wi = refdir;
-				if(debug)
-				{
-					Y_INFO << "Glass: flags:" << s.flags << ", matches:" << (bool)(matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) << yendl;
-					debug = false;
-				}
 				s.pdf = (matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) ? pKt : 1.f;
 				s.sampledFlags = BSDF_DISPERSIVE | BSDF_TRANSMIT;
 
@@ -249,29 +242,6 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	}
 }
 
-bool glassMat_t::volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp, const ray_t &ray, color_t &col)const
-{
-	// absorption due to beer's law (simple RGB based)
-	if(absorb)
-	{
-		// outgoing dir is -ray.dir, we check if it coming from backside (i.e. wo*Ng < 0)
-		// so ray.dir*Ng needs to be larger than 0...
-		if( (ray.dir * sp.Ng) < 0.f )
-		{
-			if(ray.tmax < 0.f || ray.tmax > 1e30f) //infinity check...
-			{
-				col = color_t( 0.f, 0.f, 0.f);
-				return true;
-			}
-			CFLOAT dist = ray.tmax; // maybe substract ray.tmin...
-			color_t be(-dist*beer_sigma_a);
-			col = color_t( fExp(be.getR()), fExp(be.getG()), fExp(be.getB()) );
-			return true;
-		}
-	}
-	return false;
-}
-
 float glassMat_t::getMatIOR() const
 {
 	return ior;
@@ -388,7 +358,6 @@ class mirrorMat_t: public material_t
 	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
 	virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 							 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
-	virtual color_t volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const;
 	virtual bool scatterPhoton(const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, float s1, float s2,
 								BSDF_t bsdfs, BSDF_t &sampledBSDF, color_t &col) const;
 	static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
@@ -413,11 +382,6 @@ void mirrorMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &
 	dir[0] = reflect_dir(N, wo);
 	refl = true;
 	refr = false;
-}
-
-color_t mirrorMat_t::volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const
-{
-	return color_t(1.,1.,1.);
 }
 
 bool mirrorMat_t::scatterPhoton(const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, float s1, float s2,
@@ -456,16 +420,8 @@ class nullMat_t: public material_t
 	virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=BSDF_NONE; }
 	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
 	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
-//	virtual void getSpecular(const renderState_t &state, const vector3d_t &wo, const surfacePoint_t &sp,
-//							 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
-	virtual color_t volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const;
 	static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 };
-
-color_t nullMat_t::volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const
-{
-	return color_t(1.,1.,1.);
-}
 
 color_t nullMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
 {

@@ -24,11 +24,6 @@ simplemat_t::simplemat_t(const color_t &col, float transp, float emit, texture_t
 	}
 }
 
-color_t simplemat_t::volumeTransmittance(const renderState_t &state, const surfacePoint_t &sp1, const surfacePoint_t &sp2) const
-{
-	return color_t(1.,1.,1.);
-}
-
 void simplemat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 							  bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
 {
