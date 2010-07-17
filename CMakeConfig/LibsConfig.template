@@ -25,8 +25,8 @@
 
 ############################ Path setting variables ############################
 
-set(YAF_USER_INCLUDE_DIRS "")
-set(YAF_USER_LIBRARY_DIRS "")
+#set(YAF_USER_INCLUDE_DIRS "")
+#set(YAF_USER_LIBRARY_DIRS "")
 
 ######################## Executable location variables #########################
 # Here you can set the paths to search for executables, you can leave blank    #
@@ -34,18 +34,23 @@ set(YAF_USER_LIBRARY_DIRS "")
 #                                                                              #
 # Path to qmake executable                                                     #
 
-set(YAF_USER_QT_BIN_DIR "")
+#set(YAF_USER_QT_BIN_DIR "")
 
 # Path to swig executable                                                      #
 
-set(YAF_USER_SWIG_BIN_DIR "")
+#set(YAF_USER_SWIG_BIN_DIR "")
 
 ########################### Extra linking variables ############################
 
-set(YAF_USER_EXTRA_LIBS "")
+#set(YAF_USER_EXTRA_LIBS "")
 
 ############################ Extra defines variable ############################
 
-set(YAF_USER_EXTRA_DEFS "")
+#set(YAF_USER_EXTRA_DEFS "")
+
+########################### Required Python version ############################
+
+#set(YAF_PY_VERSION 3.1)
 
 ################################# End of file ##################################
+
