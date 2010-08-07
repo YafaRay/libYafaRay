@@ -13,8 +13,8 @@ __BEGIN_YAFRAY
 #define RAW_VMAP 3
 
 #define DIFFUSE_RATIO 1.21739130434782608696 // (28 / 23)
-#define pdfDivisor(cos) (float)(8.f * cos)
-#define ASDivisor(cos1, cosI, cosO) ( 8.f * cos1 * std::max(cosI, cosO) )
+#define pdfDivisor(cos) ((8.f * cos) * 0.99f + 0.01f)
+#define ASDivisor(cos1, cosI, cosO) ( (8.f * cos1 * std::max(cosI, cosO)) * 0.99f + 0.01f )
 
 inline void sample_quadrant_aniso(vector3d_t &H, float s1, float s2, float e_u, float e_v)
 {
@@ -94,7 +94,7 @@ inline void GGX_Sample(vector3d_t &H, float alpha2, float s1, float s2)
 {
 	// using the flollowing identity:
 	// cosTheta == 1 / sqrt(1 + tanTheta2)
-	float tanTheta2 = alpha2 * (s1 / (1.f - s1));
+	float tanTheta2 = alpha2 * (s1 / ((1.f - s1) * 0.99f + 0.01f));
 	float cosTheta = 1.f / fSqrt(1.f + tanTheta2);
 	float sinTheta  = fSqrt(1 - (cosTheta*cosTheta));
 	float phi = M_2PI * s2;
@@ -102,22 +102,25 @@ inline void GGX_Sample(vector3d_t &H, float alpha2, float s1, float s2)
 	H = vector3d_t(sinTheta*fCos(phi), sinTheta*fSin(phi), cosTheta);
 }
 
-inline float GGX_D(float alpha2, float cosTheta, float tanTheta2)
+inline float GGX_D(float alpha2, float cosTheta2, float tanTheta2)
 {
-	float cosTheta2 = cosTheta * cosTheta;
 	float cosTheta4 = cosTheta2 * cosTheta2;
 	float aTan = alpha2 + tanTheta2;
-	return alpha2 / (M_PI * cosTheta4 * aTan * aTan);
+	float div = (M_PI * cosTheta4 * aTan * aTan);
+	return alpha2 / div;
 }
 
 inline float GGX_G(float alpha2, float woN, float wiN)
 {
+	// 2.f / (1.f + fSqrt(1.f + alpha2 * ( tanTheta^2 ));
 	float woN2 = woN * woN;
 	float wiN2 = wiN * wiN;
-	// 2.f / (1.f + fSqrt(1.f + alpha2 * ( tanTheta^2 ));
-	// By trigonometric identities: tanTheta^2  = sinTheta^2 / cosTheta^2 and sinTheta^2 = 1-cosTheta^2
-	float G1wo = 2.f / (1.f + fSqrt(1.f + alpha2 * ( (1.f - woN2) / woN2 ) ));
-	float G1wi = 2.f / (1.f + fSqrt(1.f + alpha2 * ( (1.f - wiN2) / wiN2 ) ));
+
+	float sqrTerm1 = fSqrt(1.f + alpha2 * ( (1.f - woN2) / woN2 ));
+	float sqrTerm2 = fSqrt(1.f + alpha2 * ( (1.f - wiN2) / wiN2 ));
+
+	float G1wo = 2.f / (1.f + (sqrTerm1));
+	float G1wi = 2.f / (1.f + (sqrTerm2));
 	return G1wo * G1wi;
 }
 
@@ -126,66 +129,42 @@ inline float GGX_Pdf(float D, float cosTheta, float Jacobian)
 	return D * cosTheta * Jacobian;
 }
 
-inline float dielectricFresnel(float cosWiN, float ior)
+inline float microfacetFresnel(float woH, float ior)
 {
-    float c = std::fabs(cosWiN);
-    float g = ior * ior - 1 + c * c;
-    if (g > 0)
-    {
-        g = fSqrt(g);
-        float A = (g - c) / (g + c);
-        float B = (c * (g + c) - 1) / (c * (g - c) + 1);
-        return 0.5f * A * A * (1 + B * B);
-    }
-    return 1.0f; // TIR
+	float c = std::fabs(woH);
+	float g = ior * ior - 1 + c * c;
+	if (g > 0)
+	{
+		g = fSqrt(g);
+		float A = (g - c) / (g + c);
+		float B = (c * (g + c) - 1) / (c * (g - c) + 1);
+		return 0.5f * A * A * (1 + B * B);
+	}
+	return 1.0f; // TIR
 }
 
-inline bool dielectricFresnelRefract(float rIor, float fIor, const vector3d_t &N, const vector3d_t &wo, vector3d_t &Refl, vector3d_t& Trans, bool &outside,float &Ft, float &Fr)
+inline bool refractMicrofacet(float eta, const vector3d_t &wo, vector3d_t &wi, const vector3d_t &H, float woH, float woN, float &Kr, float &Kt)
 {
-    float cos = N*wo, neta;
-    vector3d_t Nn(0.f);
+	wi = vector3d_t(0.f);
+	float c = -wo * H;
+	float sign = (c > 0.f) ? 1 : -1;
+	float t1 = 1 - (eta * eta * (1 - c*c));
+	if(t1 < 0.f) return false;
+	wi = eta * wo + (eta * c - sign * fSqrt(t1)) * H;
+	wi = -wi;
+	
+	Kr = 0.f;
+	Kt = 0.f;
+	Kr = microfacetFresnel(woH, 1.f / eta);
+	if(Kr == 1.f) return false;
+	Kt = 1 - Kr;
+	return true;
+}
 
-    // check which side of the surface we are on
-    if (cos > 0.f)
-    {
-        neta = 1.f / rIor;
-        Nn = N;
-        outside = true;
-    }
-    else
-    {
-        cos  = -cos;
-        neta = rIor;
-        Nn = -N;
-        outside = false;
-    }
-    
-    // compute reflection
-    Refl = (2 * cos) * Nn - wo;
-
-    float arg = 1 - (neta * neta * (1 - (cos * cos)));
-    
-    if (arg < 0)
-    {
-        Trans = vector3d_t(0.f);
-        Ft = 0.f;
-        Fr = 1.f;
-        return false; // total internal reflection
-    }
-    else
-    {
-		float dnp = fSqrt(arg);
-		float nK = (neta * cos) - dnp;
-		Trans = -(neta * wo) + (nK * Nn);
-		float cosTheta2 = -Nn * Trans;
-		float pPara = (cos - fIor * cosTheta2) / (cos + fIor * cosTheta2);
-		float pPerp = (fIor * cos - cosTheta2) / (fIor * cos + cosTheta2);
-		Fr = 0.5f * (pPara * pPara + pPerp * pPerp);
-//		Fr = dielectricFresnel(cos, fIor);
-		Ft = 1.f - Fr;
-    }
-    
-    return true;
+inline void reflectMicrofacet(const vector3d_t &wo, vector3d_t &wi, const vector3d_t &H, float woH)
+{
+	wi = wo + (2.f * (H * -wo) * H);
+	wi = -wi;
 }
 
 inline float SchlickFresnel(PFLOAT costheta, PFLOAT R)

@@ -1,5 +1,5 @@
 /****************************************************************************
- * 			roughglass.cc: a dielectric material with rough surface
+ * 		roughglass.cc: a dielectric material with rough surface
  *      This is part of the yafray package
  *      Copyright (C) 2006  Mathias Wein
  *
@@ -31,7 +31,7 @@ roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol,
 		bumpS(0), mirColS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
 		disperse(false), fakeShadow(fakeS)
 {
-	bsdfFlags = BSDF_ALL_GLOSSY;
+	bsdfFlags = BSDF_ALL_GLOSSY | BSDF_DIFFUSE;
 	if(fakeS) bsdfFlags |= BSDF_FILTER;
 	if(disp_pow > 0.0)
 	{
@@ -41,7 +41,7 @@ roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol,
 	}
 }
 
-void roughGlassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void roughGlassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	nodeStack_t stack(state.userdata);
 	if(bumpS) evalBump(stack, state, sp, bumpS);
@@ -51,240 +51,267 @@ void roughGlassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t 
 	for(iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
 	bsdfTypes=bsdfFlags;
 }
-
 /*
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
 	nodeStack_t stack(state.userdata);
-	if( !(s.flags & BSDF_GLOSSY) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic) )
-	{
-		s.pdf = 0.f;
-		return color_t(0.f);
-	}
 	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	bool outside = sp.Ng*wo > 0;
+	float woNg = sp.Ng * wo;
+	bool outside = woNg > 0;
+	bool transmit = ( woNg * (wi * sp.Ng) ) < 0;
+
+	float alpha2 = a2;
+	float cosTheta, tanTheta2;
+	
+	vector3d_t H(0.f);
+	
+	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+	float glossy;
+	float glossy_D = 0.f;
+	float glossy_G = 0.f;
+	float wiN, woN, wiH, woH;
+	float Jacobian = 0.f;
+	float cosTheta2 = 0.f;
+
+	float IORwi = 1.f;
+	float IORwo = 1.f;
+
+	woN = wo*N;
+	wiN = wi*N;
+
+	if(transmit)
+	{
+		float Kr, Kt;
+
+		if(outside)	IORwi = ior;
+		else IORwo = ior;
+		H = (IORwi * wi + IORwo * wo).normalize();
+		woH = wi*H;
+		wiH = wi*H;
+
+		if((Kr = microfacetFresnel(woH, cur_ior)) < 1.f)
+		{
+			Kt = 1.f - Kr;
+			cosTheta = H * N;
+			cosTheta2 = cosTheta * cosTheta;
+			tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+
+			if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+			else return 0.f;
+
+			
+			if((wiH*wiN) > 0.f && (woH*woN) > 0.f && std::fabs(woN) > 0.f && std::fabs(wiN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+			else return 0.f;
+
+			float ht = IORwo * woH + IORwi * wiH;
+			Jacobian = (IORwi * IORwi) / (ht * ht);
+
+			glossy = std::fabs( (woH * wiH) / (wiN * woN) ) * Kt * glossy_G * glossy_D * Jacobian;
+
+			return (glossy * filterCol);
+		}
+		else // TIR
+		{
+			glossy = 1.f / (std::fabs(wiN) * 0.99f + 0.01f);
+			return glossy;
+		}
+	}
+	else
+	{
+		if(outside)	IORwi = ior;
+		else IORwo = ior;
+		H = ((wiN / std::fabs(wiN))*(wi + wo)).normalize();
+		cosTheta = H * N;
+		cosTheta2 = cosTheta * cosTheta;
+		tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+
+		if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+		else return 0.f;
+
+		woH = wo*H;
+		wiH = wi*H;
+		
+		if((wiH*wiN) > 0.f && (woH*woN) > 0.f && std::fabs(woN) > 0.f && std::fabs(wiN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+		else return 0.f;
+		
+		Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
+		glossy = (microfacetFresnel(wiH, cur_ior) * glossy_G * glossy_D) / ((4.f * std::fabs((woN) * (wiN)))*0.99f + 0.01f);
+		
+		return (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
+	}
+
+	return 0.f;
+}
+
+float roughGlassMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
+{
+	nodeStack_t stack(state.userdata);
+	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	float woNg = sp.Ng * wo;
+	bool outside = woNg > 0;
+	bool transmit = ( woNg * (wi * sp.Ng) ) < 0;
+
+	float alpha2 = a2;
+	float cosTheta, tanTheta2;
+	
+	vector3d_t H(0.f);
+	
+	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+	float glossy_D = 0.f;
+	float glossy_G = 0.f;
+	float wiN, woN, wiH, woH;
+	float Jacobian = 0.f;
+	float cosTheta2 = 0.f;
+	float IORwi = 1.f;
+	float IORwo = 1.f;
+
+	woN = wo*N;
+	wiN = wi*N;
+
+	if(transmit)
+	{
+		if(outside)	IORwi = ior;
+		else IORwo = ior;
+		H = (IORwi * wi + IORwo * wo).normalize();
+		woH = wi*H;
+		wiH = wi*H;
+
+		if(microfacetFresnel(woH, cur_ior) < 1.f)
+		{
+			cosTheta = H * N;
+			cosTheta2 = cosTheta * cosTheta;
+			tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+
+			if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+
+			
+			if((wiH*wiN) > 0.f && (woH*woN) > 0.f && std::fabs(woN) > 0.f && std::fabs(wiN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+
+			float ht = IORwo * woH + IORwi * wiH;
+			Jacobian = (IORwi * IORwi) / (ht * ht);
+
+			return GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
+		}
+		else // TIR
+		{
+			return 1.f;
+		}
+	}
+	else
+	{
+		if(outside)	IORwi = ior;
+		else IORwo = ior;
+		H = ((wiN / std::fabs(wiN))*(wi + wo)).normalize();
+		cosTheta = H * N;
+		cosTheta2 = cosTheta * cosTheta;
+		tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+
+		if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+
+		woH = wo*H;
+		wiH = wi*H;
+		
+		if((wiH*wiN) > 0.f && (woH*woN) > 0.f && std::fabs(woN) > 0.f && std::fabs(wiN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+		
+		Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
+		
+		return GGX_Pdf(glossy_D, cosTheta, Jacobian);
+	}
+
+	return 0.f;
+}
+*/
+color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+{
+	nodeStack_t stack(state.userdata);
+	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	bool outside = sp.Ng * wo > 0.f;
+
 	s.pdf = 1.f;
 
 	float alpha2 = a2;
 	float cosTheta, tanTheta2;
-	vector3d_t Hs;
-	GGX_Sample(Hs, alpha2, cosTheta, tanTheta2, s.s1, s.s2);
-	vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
-	cosTheta = H*N;
+	
+	vector3d_t H(0.f);
+	GGX_Sample(H, alpha2, s.s1, s.s2);
+	H = H.x*sp.NU + H.y*sp.NV + H.z*N;
+	H.normalize();
 	
 	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-	float glossy, glossy_D, Ht2;
-	float wiN;
-	float wiH;
-	float woN = wo*N;
-	float woH = wo*H;
+	float glossy;
+	float glossy_D = 0.f;
+	float glossy_G = 0.f;
+	float wiN, woN, wiH, woH;
+	float Jacobian = 0.f;
 	
-	glossy_D = GGX_D(alpha2, cosTheta, tanTheta2);
+	cosTheta = H * N;
+	float cosTheta2 = cosTheta * cosTheta;
+	tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+
+	if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+
+	woH = wo*H;
+	woN = wo*N;
+
+	float Kr, Kt;
 	
-	if( refract(H, wo, refdir, cur_ior) )
+	color_t ret(0.f);
+	
+	if(refractMicrofacet(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, H, woH, woN, Kr, Kt) )
 	{
-		CFLOAT Kr, Kt;
-		fresnel(wo, H, cur_ior, Kr, Kt);
-		float pKr = 0.01+0.99*Kr, pKt = 0.01+0.99*Kt;
-		if( true )
+		if(Kt > s.s1 && (s.flags & BSDF_TRANSMIT))
 		{
-			wi = refdir;
 			wiN = wi*N;
 			wiH = wi*H;
-			glossy = ((std::fabs(woH * wiH)) * pKt * GGX_G(alpha2, wiN, woN) * glossy_D);
-			if(outside)
-			{
-				Ht2 = ior * woH + wiH;
-				glossy *= (ior * ior) / (woN * Ht2);
-			}
-			else
-			{
-				Ht2 = woH + ior * wiH;
-				glossy /= (woN * Ht2);
-			}
-			s.pdf = GGX_Pdf_refracted(glossy_D, cosTheta, wiH, ior, Ht2, outside);
+			
+			if((wiH*wiN) > 0.f && (woH*woN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+
+			float IORwi = 1.f;
+			float IORwo = 1.f;
+
+			if(outside)	IORwi = ior;
+			else IORwo = ior;
+			
+			float ht = IORwo * woH + IORwi * wiH;
+			Jacobian = (IORwi * IORwi) / (ht * ht);
+
+			glossy = std::fabs( (woH * wiH) / (wiN * woN) ) * Kt * glossy_G * glossy_D * Jacobian;
+
+			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
 			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
-			return filterCol * glossy;//(Kt/std::fabs(sp.N*wi));
+
+			ret = (glossy * filterCol);
+			W = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
 		}
-		else // Reflection
+		else if(s.flags & BSDF_REFLECT)
 		{
-			wi = reflect_plane(H, wo);
+			reflectMicrofacet(wo, wi, H, woH);
+			
 			wiN = wi*N;
 			wiH = wi*H;
-			s.pdf = GGX_Pdf_reflected(glossy_D, cosTheta, wiH);
+
+			glossy_G = GGX_G(alpha2, wiN, woN);
+			
+			Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
+			glossy = (Kr * glossy_G * glossy_D) / ((4.f * std::fabs(woN * wiN) ) * 0.99f + 0.01f);
+			
+			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
 			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-			glossy = (pKr * GGX_G(alpha2, woH, wiH) * glossy_D) / (4.f * std::fabs(woN) * std::fabs(wiN));
-			return (mirColS ? mirColS->getColor(stack) : specRefCol) * glossy; // * (Kr/std::fabs(sp.N*wi));
+			
+			ret = (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
+
+			W = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
 		}
 	}
 	else // TIR
 	{
 		wi = reflect_plane(H, wo);
-		wiN = wi*N;
-		wiH = wi*H;
 		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-		color_t tir_col(1.f/std::fabs(sp.N*wi));
-		return tir_col;
-	}
-	
-	s.pdf = 0.f;
-	return color_t(0.f);
-}
-*/
-/*
-
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
-{
-	nodeStack_t stack(state.userdata);
-	if( !(s.flags & BSDF_GLOSSY) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic) )
-	{
-		s.pdf = 0.f;
-		return color_t(0.f);
-	}
-	vector3d_t refdir, N;
-	bool outside = sp.Ng*wo > 0;
-	PFLOAT cos_wo_N = sp.N*wo;
-	if(outside)	N = (cos_wo_N >= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
-	else		N = (cos_wo_N <= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
-	s.pdf = 1.f;
-
-	float alpha2 = a2;
-	float cosTheta, tanTheta2;
-	vector3d_t Hs;
-	GGX_Sample(Hs, cosTheta, tanTheta2, alpha2, s.s1, s.s2);
-	vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
-	
-	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-	float glossy, glossy_D, Ht2;
-	float wiN, woN, wiH, WoH;
-	
-	if( refract(H, wo, refdir, cur_ior) )
-	{
-		CFLOAT Kr, Kt;
-		fresnel(wo, H, cur_ior, Kr, Kt);
-		float pKr = 0.01+0.99*Kr, pKt = 0.01+0.99*Kt;
-		if(s.s1 < pKt)
-		{
-			wi = refdir;
-			s.pdf = pKt;
-			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
-			return filterCol*(Kt/std::fabs(sp.N*wi));
-		}
-		else //total inner reflection
-		{
-			wi = reflect_plane(H, wo);
-			s.pdf = pKr;
-			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-			return (mirColS ? mirColS->getColor(stack) : specRefCol) * (Kr/std::fabs(sp.N*wi));
-		}
-	}
-	else//total inner reflection
-	{
-		wi = reflect_plane(H, wo);
-		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-		color_t tir_col(1.f/std::fabs(sp.N*wi));
-		return tir_col;
-	}
-	s.pdf = 0.f;
-	return color_t(0.f);
-}
-
-
-*/
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
-{
-	color_t col(0.f);
-	s.pdf = 1.f;
-	if( !(s.flags & BSDF_GLOSSY) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic) ) return col;
-	
-	nodeStack_t stack(state.userdata);
-	
-	vector3d_t N = sp.N;//FACE_FORWARD(sp.Ng, sp.N, wo);//
-	float woH, wiH, woN, wiN;
-	bool outside;
-	float alpha2 = a2;
-	float cosTheta, tanTheta2;
-	vector3d_t Hs, H, refdir, transdir;
-	float glossy, glossy_D, glossy_G, Jacobian;
-	float Ft, Fr;
-	float cur_ior;
-	float s1 = s.s1;
-	
-	GGX_Sample(Hs, alpha2, s1, s.s2);
-	vector3d_t NU, NV;
-	createCS(N, NU, NV);
-	H = Hs.x*NU + Hs.y*NV + Hs.z*N;
-	
-	cosTheta = H*N;
-	
-	if(cosTheta <= 0.f) return col;
-	
-	float cosTheta2 = cosTheta * cosTheta;
-	tanTheta2 = (1.f - cosTheta2) / cosTheta2;
-	
-	cur_ior = disperse ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-	
-	if(cosTheta > 0) glossy_D = GGX_D(alpha2, cosTheta, tanTheta2);
-	else glossy_D = 0.f;
-	
-	woN = wo*N;
-	woH = wo*H;
-	
-	Jacobian = 0.f;
-	
-	if(dielectricFresnelRefract(cur_ior, cur_ior, H, wo, refdir, transdir, outside, Ft, Fr))
-	{
-		if(s1 < Ft)
-		{
-			wi = transdir;
-			wiH = wi*H;
-			wiN = wi*N;
-			
-			if(outside)
-			{
-				float ht = (ior * woH) + wiH;
-				Jacobian = 1.f / (ht * ht);
-			}
-			else
-			{
-				float ht = woH + (ior * wiH);
-				Jacobian = (ior * ior) / (ht * ht);
-			}
-			
-			if((wiH/wiN) > 0 && (woH/woN) > 0) glossy_G = GGX_G(alpha2, wiN, woN);
-			else glossy_G = 0.f;
-			glossy = std::fabs( (woH * wiH) / (wiN * woN) ) * Ft * glossy_G * glossy_D * Jacobian;
-			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY)| BSDF_TRANSMIT;
-			col = filterCol * glossy;
-		}
-		else
-		{
-			wi = refdir;
-			wiH = wi*H;
-			wiN = wi*N;
-			if((wiH/wiN) > 0 && (woH/woN) > 0) glossy_G = GGX_G(alpha2, wiN, woN);
-			else glossy_G = 0.f;
-			Jacobian = 1.f / (4.f * std::fabs(woH));
-			glossy = (Fr * glossy_G * glossy_D ) / (4.f * std::fabs(woN * wiN));
-			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-			col = glossy * specRefCol;
-		}
-	}
-	else
-	{
-		wi = refdir;
-		wiH = wi*H;
-		wiN = wi*N;
-		if((wiH/wiN) > 0 && (woH/woN) > 0) glossy_G = GGX_G(alpha2, wiN, woN);
-		else glossy_G = 0.f;
-		Jacobian = 1.f / (4.f * std::fabs(woH));
-		glossy = (Fr * glossy_G * glossy_D) / (4.f * std::fabs(woN * wiN));
-		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
-		col = glossy;
+		ret = 1.f;
+		W = 1.f;
 	}
 
-	s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
-	return col;
+	return ret;
 }
 
 color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const

@@ -24,11 +24,11 @@
 #include <core_api/environment.h>
 
 #ifdef _WIN32
-#ifndef __MINGW32__
-#define NOMINMAX
-#endif
-#include <io.h>
-#include <windows.h>
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <io.h>
+	#include <windows.h>
 #endif
 
 #include <core_api/light.h>
