@@ -1,5 +1,5 @@
 /****************************************************************************
- * 			glossymat.cc: a glossy material based on Ashikhmin&Shirley's Paper
+ * 		glossy_mat.cc: a glossy material based on Ashikhmin&Shirley's Paper
  *      This is part of the yafray package
  *      Copyright (C) 2006  Mathias Wein
  *
@@ -33,9 +33,8 @@ class glossyMat_t: public nodeMaterial_t
 		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse);
 		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
-		virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 		
 		struct MDat_t
@@ -176,7 +175,7 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 }
 
 
-color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	float cos_Ng_wo = sp.Ng*wo;
@@ -238,7 +237,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			scolor = glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 
 			if(use_diffuse) scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
-
+			W = wiN / (s.pdf*0.99f + 0.01f);
 			return scolor;
 
 		}
@@ -300,6 +299,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 		s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
 		scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
+
+	W = wiN / (s.pdf*0.99f + 0.01f);
 	
 	return scolor;
 }
@@ -348,26 +349,6 @@ float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, con
 		else pdf = Blinn_Pdf(cos_N_H, cos_wo_H, exponent);
 	}
 	return pdf;
-}
-
-
-bool glossyMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi,
-								vector3d_t &wo, pSample_t &s) const
-{
-	color_t scol = sample(state, sp, wi, wo, s);
-	if(s.pdf > 1.0e-6f)
-	{
-		color_t cnew = s.lcol * s.alpha * scol * (std::fabs(wo*sp.N)/s.pdf);
-		CFLOAT new_max = cnew.maximum();
-		CFLOAT old_max = s.lcol.maximum();
-		float prob = std::min(1.f, new_max/old_max);
-		if(s.s3 <= prob)
-		{
-			s.color = cnew / prob;
-			return true;
-		}
-	}
-	return false;
 }
 
 material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &paramList, renderEnvironment_t &render)

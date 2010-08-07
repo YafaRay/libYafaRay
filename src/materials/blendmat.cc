@@ -115,7 +115,7 @@ color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, c
 	return col1;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
@@ -127,18 +127,19 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	s2.pdf = s1.pdf = s.pdf = 0.f;
 	wi = wo;
 	vector3d_t wi1 = wi, wi2 = wi;
+	float W1, W2;
 
 	state.userdata = PTR_ADD(state.userdata, reqMem);
 	if(ival > 0.f)
 	{
-		col1 = mat1->sample(state, sp, wo, wi1, s1);
+		col1 = mat1->sample(state, sp, wo, wi1, s1, W1);
 		col1.clampRGB01();
 	}
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
 	if(val > 0.f)
 	{
-		col2 = mat2->sample(state, sp, wo, wi2, s2);
+		col2 = mat2->sample(state, sp, wo, wi2, s2, W2);
 		col2.clampRGB01();
 	}
 	
@@ -153,6 +154,7 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 		s.col_back = addColors(s1.col_back, s2.col_back, ival, val);
 	}
 	col1 = addColors(col1, col2, ival, val);
+	W = W1*ival + W2*val;
 
 	state.userdata = old_udat;
 	return col1;

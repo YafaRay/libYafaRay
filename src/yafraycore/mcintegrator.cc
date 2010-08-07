@@ -158,9 +158,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 				float s1 = hal2.getNext();
 				float s2 = hal3.getNext();
+				float W = 0.f;
 
 				sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-				color_t surfCol = material->sample(state, sp, wo, bRay.dir, s);
+				color_t surfCol = material->sample(state, sp, wo, bRay.dir, s, W);
 				if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 				{
 					shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
@@ -173,8 +174,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 						float l2 = lPdf * lPdf;
 						float m2 = s.pdf * s.pdf;
 						float w = m2 / (l2 + m2);
-						CFLOAT cos2 = std::fabs(sp.N*bRay.dir);
-						ccol2 += surfCol * lcol * cos2 * w / s.pdf;
+						ccol2 += surfCol * lcol * w * W;
 					}
 				}
 			}
@@ -438,6 +438,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			vector3d_t wi;
 			const volumeHandler_t *vol;
 			diffRay_t refRay;
+			float W = 0.f;
 			
 			for(int ns=0; ns<dsam; ++ns)
 			{
@@ -448,16 +449,15 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 				state.rayOffset = branch;
 				++branch;
 				sample_t s(0.5f, 0.5f, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_DISPERSIVE);
-				color_t mcol = material->sample(state, sp, wo, wi, s);
+				color_t mcol = material->sample(state, sp, wo, wi, s, W);
 				
 				if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_DISPERSIVE))
 				{
-					mcol *= std::fabs(wi*sp.N)/s.pdf;
 					state.chromatic = false;
 					color_t wl_col;
 					wl2rgb(state.wavelength, wl_col);
 					refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
-					dcol += (color_t)integrate(state, refRay) * mcol * wl_col;
+					dcol += (color_t)integrate(state, refRay) * mcol * wl_col * W;
 					state.chromatic = true;
 				}
 			}
@@ -504,17 +504,20 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 				++offs;
 				++branch;
 
-				float s1 = hal2.getNext();//RI_vdC(offs);
-				float s2 = hal3.getNext();//scrHalton(2, offs);
+				float s1 = RI_vdC(offs);
+				float s2 = hal2.getNext();//scrHalton(2, offs);
+				
+				float W = 0.f;
 
-				sample_t s(s1, s2, BSDF_REFLECT|BSDF_TRANSMIT|BSDF_FILTER|BSDF_GLOSSY);
-				color_t mcol = material->sample(state, sp, wo, wi, s);
+				sample_t s(s1, s2, BSDF_ALL_GLOSSY);
+				color_t mcol = material->sample(state, sp, wo, wi, s, W);
 
-				if(s.pdf > 1.0e-6f && (s.sampledFlags & BSDF_GLOSSY))
+				if(s.sampledFlags & BSDF_GLOSSY)
 				{
-					mcol *= std::fabs(wi*sp.N)/s.pdf;
 					refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
-					gcol += (color_t)integrate(state, refRay) * mcol;
+					if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
+					else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
+					gcol += (color_t)integrate(state, refRay) * mcol * W;
 				}
 
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
@@ -603,25 +606,25 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 		}
 		
 		lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is still bad...
-		lightRay.tmax = aoDist;		
+		lightRay.tmax = aoDist;
+		
+		float W = 0.f;
+		
 		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
-		surfCol = material->sample(state, sp, wo, lightRay.dir, s);
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
 		
 		if(material->getFlags() & BSDF_EMIT)
 		{
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 		
-		if(s.pdf > 1e-6f)
+		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+		
+		if(!shadowed)
 		{
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			
-			if(!shadowed)
-			{
-				float cos = std::fabs(sp.N * lightRay.dir);
-				if(trShad) col += aoCol * scol * surfCol * cos / s.pdf;
-				else col += aoCol * surfCol * cos / s.pdf;
-			}
+			float cos = std::fabs(sp.N * lightRay.dir);
+			if(trShad) col += aoCol * scol * surfCol * cos * W;
+			else col += aoCol * surfCol * cos * W;
 		}
 	}
 	

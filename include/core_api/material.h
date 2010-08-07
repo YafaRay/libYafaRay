@@ -90,8 +90,9 @@ class YAFRAYCORE_EXPORT material_t
 		
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
+			\param W returns the weight for importance sampling
 		*/
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const = 0;// {return color_t(0.f);}
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const = 0;// {return color_t(0.f);}
 		
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/

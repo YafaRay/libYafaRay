@@ -31,7 +31,7 @@ class simplemat_t: public material_t
 //	virtual BSDF_t* getBSDF(const surfacePoint_t &sp, void* userdata)const { return &bsdf; }
 	virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const { bsdfTypes=bsdfFlags; }
 	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const;
-	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
+	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 	virtual bool isTransparent() const { return transparent; }
 	virtual color_t getTransparency(const vector3d_t &wo, const surfacePoint_t &sp)const { return trCol; }
 	virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return emitCol; }

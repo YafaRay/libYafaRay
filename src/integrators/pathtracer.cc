@@ -116,6 +116,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	CFLOAT alpha=0.0;
 	surfacePoint_t sp;
 	void *o_udat = state.userdata;
+	float W = 0.f;
 	//shoot ray into scene
 	if(scene->intersect(ray, sp))
 	{
@@ -182,11 +183,9 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				}
 				// do proper sampling now...
 				sample_t s(s1, s2, path_flags);
-				scol = material->sample(state, sp, pwo, pRay.dir, s);
+				scol = material->sample(state, sp, pwo, pRay.dir, s, W);
 				
-				if(s.pdf <= 1e-6f) continue;
-				
-				scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
+				scol *= W;
 				throughput = scol;
 				state.includeLights = false;
 
@@ -222,10 +221,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					s.flags = BSDF_ALL;
 					
-					scol = p_mat->sample(state, *hit, pwo, pRay.dir, s);
-					if(s.pdf <= 1.0e-6f) break;
-
-					scol *= (std::fabs(pRay.dir*hit->N)/s.pdf);
+					scol = p_mat->sample(state, *hit, pwo, pRay.dir, s, W);
+					scol *= W;
 					
 					if(scol.isBlack()) break;
 					

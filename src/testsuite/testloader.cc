@@ -5,13 +5,13 @@
 #include <algorithm>
 
 #ifdef WIN32
-#ifndef __MINGW32__
-#define NOMINMAX
-#endif
-#include <windows.h>
-#include <utilities/winunistd.h>
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <windows.h>
+	#include <utilities/winunistd.h>
 #else
-#include<unistd.h>
+	#include<unistd.h>
 #endif
 
 #include <core_api/scene.h>

@@ -32,7 +32,7 @@ class glassMat_t: public nodeMaterial_t
 		glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS);
 		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
@@ -82,7 +82,7 @@ void glassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t &sp, 
 
 #define matches(bits, flags) ((bits & (flags)) == (flags))
 
-color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	nodeStack_t stack(state.userdata);
 	if( !(s.flags & BSDF_SPECULAR) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic) )
@@ -111,22 +111,24 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				wi = refdir;
 				s.pdf = (matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) ? pKt : 1.f;
 				s.sampledFlags = BSDF_DISPERSIVE | BSDF_TRANSMIT;
-
-				return filterCol * (Kt/std::fabs(sp.N*wi));
+				W = 1.f;
+				return filterCol; // * (Kt/std::fabs(sp.N*wi));
 			}
 			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )
 			{
 				wi = reflect_plane(N, wo);
 				s.pdf = pKr;
 				s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-				return (mirColS ? mirColS->getColor(stack) : specRefCol) * (Kr/std::fabs(sp.N*wi));
+				W = 1.f;
+				return (mirColS ? mirColS->getColor(stack) : specRefCol); // * (Kr/std::fabs(sp.N*wi));
 			}
 		}
 		else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) ) //total inner reflection
 		{
 			wi = reflect_plane(N, wo);
 			s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-			return color_t(1.f/std::fabs(sp.N*wi));
+			W = 1.f;
+			return 1.f; //color_t(1.f/std::fabs(sp.N*wi));
 		}
 	}
 	else // no dispersion calculation necessary, regardless of material settings
@@ -145,9 +147,10 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				if(s.reverse)
 				{
 					s.pdf_back = s.pdf; //wrong...need to calc fresnel explicitly!
-					s.col_back = filterCol*(Kt/std::fabs(sp.N*wo));
+					s.col_back = filterCol;//*(Kt/std::fabs(sp.N*wo));
 				}
-				return filterCol*(Kt/std::fabs(sp.N*wi));
+				W = 1.f;
+				return filterCol;//*(Kt/std::fabs(sp.N*wi));
 			}
 			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) ) //total inner reflection
 			{
@@ -157,22 +160,24 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				if(s.reverse)
 				{
 					s.pdf_back = s.pdf; //wrong...need to calc fresnel explicitly!
-					s.col_back = (mirColS ? mirColS->getColor(stack) : specRefCol) * (Kr/std::fabs(sp.N*wo));
+					s.col_back = (mirColS ? mirColS->getColor(stack) : specRefCol);// * (Kr/std::fabs(sp.N*wo));
 				}
-				return (mirColS ? mirColS->getColor(stack) : specRefCol) * (Kr/std::fabs(sp.N*wi));
+				W = 1.f;
+				return (mirColS ? mirColS->getColor(stack) : specRefCol);// * (Kr/std::fabs(sp.N*wi));
 			}
 		}
 		else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )//total inner reflection
 		{
 			wi = reflect_plane(N, wo);
 			s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
-			color_t tir_col(1.f/std::fabs(sp.N*wi));
+			//color_t tir_col(1.f/std::fabs(sp.N*wi));
 			if(s.reverse)
 			{
 				s.pdf_back = s.pdf;
-				s.col_back = tir_col;
+				s.col_back = 1.f;//tir_col;
 			}
-			return tir_col;
+			W = 1.f;
+			return 1.f;//tir_col;
 		}
 	}
 	s.pdf = 0.f;
@@ -355,21 +360,20 @@ class mirrorMat_t: public material_t
 	}
 	virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=bsdfFlags; }
 	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
-	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
+	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 	virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 							 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
-	virtual bool scatterPhoton(const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, float s1, float s2,
-								BSDF_t bsdfs, BSDF_t &sampledBSDF, color_t &col) const;
 	static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 	protected:
 	color_t refCol;
 	float ref;
 };
 
-color_t mirrorMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t mirrorMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	wi = reflect_dir(sp.N, wo);
 	s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
+	W = 1.f;
 	return refCol * (1.f/std::fabs(sp.N*wi));
 }
 
@@ -382,20 +386,6 @@ void mirrorMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &
 	dir[0] = reflect_dir(N, wo);
 	refl = true;
 	refr = false;
-}
-
-bool mirrorMat_t::scatterPhoton(const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, float s1, float s2,
-								BSDF_t bsdfs, BSDF_t &sampledBSDF, color_t &col) const 
-{
-	if(!(bsdfs & BSDF_SPECULAR)) return false;
-	if(s1>ref) return false;
-	s1 /= ref;
-	col = refCol*(1.0f/ref);
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	wi = reflect_dir(N, wo);
-
-	sampledBSDF = BSDF_SPECULAR;
-	return true;
 }
 
 material_t* mirrorMat_t::factory(paraMap_t &params, std::list< paraMap_t > &paramList, renderEnvironment_t &render)
@@ -419,13 +409,14 @@ class nullMat_t: public material_t
 	nullMat_t() { }
 	virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=BSDF_NONE; }
 	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
-	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const;
+	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 	static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 };
 
-color_t nullMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t nullMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	s.pdf = 0.f;
+	W = 0.f;
 	return color_t(0.f);
 }
 

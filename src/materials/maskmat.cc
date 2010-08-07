@@ -60,13 +60,13 @@ color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, co
 	return col;
 }
 
-color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s)const
+color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
 	bool mv = *(bool*)state.userdata;
 	color_t col;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) col = mat2->sample(state, sp, wo, wi, s);
-	else   col = mat1->sample(state, sp, wo, wi, s);
+	if(mv) col = mat2->sample(state, sp, wo, wi, s, W);
+	else   col = mat1->sample(state, sp, wo, wi, s, W);
 	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
 	return col;
 }

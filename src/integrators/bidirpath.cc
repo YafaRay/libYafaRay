@@ -449,10 +449,11 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 		mat->initBSDF(state, v.sp, mBSDF);
 		// create tentative sample for next path segment
 		sample_t s(prng(), prng(), BSDF_ALL, true);
-		v.f_s = mat->sample(state, v.sp, v.wi, ray.dir, s);
-		if(s.pdf < 1e-6f || v.f_s.isBlack()) break;
+		float W = 0.f;
+		v.f_s = mat->sample(state, v.sp, v.wi, ray.dir, s, W);
+		if(v.f_s.isBlack()) break;
 		v.pdf_wo = s.pdf;
-		v.cos_wo = std::fabs(ray.dir * v.sp.N);
+		v.cos_wo = W * s.pdf;
 		// use russian roulette on tentative sample to decide on path termination, unless path is too short
 		if(nVert > MIN_PATH_LENGTH)
 		{

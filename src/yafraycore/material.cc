@@ -28,16 +28,17 @@ __BEGIN_YAFRAY
 
 bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
 {
-	color_t scol = sample(state, sp, wi, wo, s);
+	float W = 0.f;
+	color_t scol = sample(state, sp, wi, wo, s, W);
 	if(s.pdf > 1.0e-6f)
 	{
-		color_t cnew = s.lcol * s.alpha * scol * (std::fabs(wo*sp.N)/s.pdf);
+		color_t cnew = s.lcol * s.alpha * scol * W;
 		CFLOAT new_max = cnew.maximum();
 		CFLOAT old_max = s.lcol.maximum();
 		float prob = std::min(1.f, new_max/old_max);
 		if(s.s3 <= prob)
 		{
-			s.color = cnew*(1.f/prob);
+			s.color = cnew / prob;
 			return true;
 		}
 	}
@@ -47,7 +48,7 @@ bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 color_t material_t::getReflectivity(const renderState_t &state, const surfacePoint_t &sp, BSDF_t flags)const
 {
 	if(! (flags & (BSDF_TRANSMIT | BSDF_REFLECT) & bsdfFlags) ) return color_t(0.f);
-	float s1, s2, s3, s4;
+	float s1, s2, s3, s4, W = 0.f;
 	color_t total(0.f), col;
 	vector3d_t wi, wo;
 	for(int i=0; i<16; ++i)
@@ -58,11 +59,8 @@ color_t material_t::getReflectivity(const renderState_t &state, const surfacePoi
 		s4 = scrHalton(3, i);
 		wo = SampleCosHemisphere(sp.N, sp.NU, sp.NV, s1, s2);
 		sample_t s(s3, s4, flags);
-		col = sample(state, sp, wo, wi, s);
-		if(s.pdf > 1.0e-6f)
-		{
-			total += col * std::fabs(wi * sp.N) / s.pdf;
-		}
+		col = sample(state, sp, wo, wi, s, W);
+		total += col * W;
 	}
 	return total * 0.0625; //total / 16.f
 }

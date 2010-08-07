@@ -439,7 +439,7 @@ bool photonIntegrator_t::preprocess()
 				material = sp.material;
 				material->initBSDF(state, sp, bsdfs);
 
-				if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
+				if(bsdfs & BSDF_DIFFUSE)
 				{
 					if(causticPhoton)
 					{
@@ -633,6 +633,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	void *n_udat = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 	const volumeHandler_t *vol;
 	color_t vcol(0.f);
+	float W = 0.f;
 	
 	int nSampl = std::max(1, nPaths/state.rayDivision);
 	for(int i=0; i<nSampl; ++i)
@@ -657,10 +658,9 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 		}
 
 		sample_t s(s1, s2, BSDF_DIFFUSE|BSDF_REFLECT|BSDF_TRANSMIT); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(state, hit, pwo, pRay.dir, s);
+		scol = p_mat->sample(state, hit, pwo, pRay.dir, s, W);
 
-		if(s.pdf <= 1.0e-6f) continue;
-		scol *= (std::fabs(pRay.dir*sp.N)/s.pdf);
+		scol *= W;
 		if(scol.isBlack()) continue;
 
 		pRay.tmin = MIN_RAYDIST;
@@ -720,7 +720,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			}
 			
 			sample_t sb(s1, s2, (close) ? BSDF_ALL : BSDF_ALL_SPECULAR | BSDF_FILTER);
-			scol = p_mat->sample(state, hit, pwo, pRay.dir, sb);
+			scol = p_mat->sample(state, hit, pwo, pRay.dir, sb, W);
 			
 			if( sb.pdf <= 1.0e-6f)
 			{
@@ -728,7 +728,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				break;
 			}
 
-			scol *= (std::fabs(pRay.dir*hit.N)/sb.pdf);
+			scol *= W;
 
 			pRay.tmin = MIN_RAYDIST;
 			pRay.tmax = -1.0;
@@ -820,23 +820,38 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		}
 		else
 		{
-			foundPhoton_t *gathered = (foundPhoton_t *)alloca(nDiffuseSearch * sizeof(foundPhoton_t));
-			PFLOAT radius = dsRadius; //actually the square radius...
-
-			int nGathered=0;
-			
-			if(diffuseMap.nPhotons() > 0) nGathered = diffuseMap.gather(sp.P, gathered, nDiffuseSearch, radius);
-			color_t sum(0.0);
-			if(nGathered > 0)
+			if(showMap)
 			{
-				if(nGathered > _nMax) _nMax = nGathered;
-
-				float scale = 1.f / ( float(diffuseMap.nPaths()) * radius * M_PI);
-				for(int i=0; i<nGathered; ++i)
+				vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+				const photon_t *nearest = diffuseMap.findNearest(sp.P, N, dsRadius);
+				if(nearest) col += nearest->color();
+			}
+			else
+			{
+				if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+				
+				if(bsdfs & BSDF_DIFFUSE)
 				{
-					vector3d_t pdir = gathered[i].photon->direction();
-					color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
-					col += surfCol * scale * gathered[i].photon->color();
+					col += estimateAllDirectLight(state, sp, wo);
+				}
+				foundPhoton_t *gathered = (foundPhoton_t *)alloca(nDiffuseSearch * sizeof(foundPhoton_t));
+				PFLOAT radius = dsRadius; //actually the square radius...
+
+				int nGathered=0;
+				
+				if(diffuseMap.nPhotons() > 0) nGathered = diffuseMap.gather(sp.P, gathered, nDiffuseSearch, radius);
+				color_t sum(0.0);
+				if(nGathered > 0)
+				{
+					if(nGathered > _nMax) _nMax = nGathered;
+
+					float scale = 1.f / ( (float)diffuseMap.nPaths() * radius * M_PI);
+					for(int i=0; i<nGathered; ++i)
+					{
+						vector3d_t pdir = gathered[i].photon->direction();
+						color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
+						col += surfCol * scale * gathered[i].photon->color();
+					}
 				}
 			}
 		}

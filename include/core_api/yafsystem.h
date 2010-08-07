@@ -4,11 +4,11 @@
 #include<yafray_config.h>
 
 #ifdef WIN32
-#ifndef __MINGW32__
-#define NOMINMAX
-#endif
-#include <io.h>
-#include <windows.h>
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <io.h>
+	#include <windows.h>
 #endif
 
 #include <list>
