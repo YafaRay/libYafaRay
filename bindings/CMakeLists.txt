@@ -1,11 +1,7 @@
 include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_PATH})
 include(${SWIG_USE_FILE})
 
-if(YAF_PY_VERSION EQUAL 3.1)
-	set(CMAKE_SWIG_FLAGS "-c++ -py3")
-else(YAF_PY_VERSION EQUAL 3.1)
-	set(CMAKE_SWIG_FLAGS "-c++")
-endif(YAF_PY_VERSION EQUAL 3.1)
+set(CMAKE_SWIG_FLAGS "-c++")
 
 set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
