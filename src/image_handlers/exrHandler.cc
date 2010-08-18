@@ -44,7 +44,7 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
+	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);

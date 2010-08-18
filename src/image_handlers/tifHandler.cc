@@ -36,7 +36,7 @@ class tifHandler_t: public imageHandler_t
 public:
 	tifHandler_t();
 	~tifHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
+	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name);
 	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);

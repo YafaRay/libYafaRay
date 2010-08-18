@@ -42,7 +42,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true);
+	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name);
