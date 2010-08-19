@@ -54,6 +54,7 @@ void roughGlassMat_t::initBSDF(const renderState_t &state, const surfacePoint_t 
 /*
 color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
+	if(!(bsdfs & BSDF_DIFFUSE)) return 0.f;
 	nodeStack_t stack(state.userdata);
 	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float woNg = sp.Ng * wo;
@@ -135,7 +136,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 		else return 0.f;
 		
 		Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
-		glossy = (microfacetFresnel(wiH, cur_ior) * glossy_G * glossy_D) / ((4.f * std::fabs((woN) * (wiN)))*0.99f + 0.01f);
+		glossy = (microfacetFresnel(woH, cur_ior) * glossy_G * glossy_D) / ((4.f * std::fabs((woN) * (wiN)))*0.99f + 0.01f);
 		
 		return (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
 	}
@@ -145,6 +146,7 @@ color_t roughGlassMat_t::eval(const renderState_t &state, const surfacePoint_t &
 
 float roughGlassMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
+	if(!(bsdfs & BSDF_DIFFUSE)) return 0.f;
 	nodeStack_t stack(state.userdata);
 	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float woNg = sp.Ng * wo;
@@ -433,8 +435,6 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	return mat;
 }
 
-
-/* 
 extern "C"
 {
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
@@ -442,5 +442,5 @@ extern "C"
 		render.registerFactory("rough_glass", roughGlassMat_t::factory);
 	}
 }
- */
+
 __END_YAFRAY

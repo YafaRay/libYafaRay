@@ -19,7 +19,6 @@
  */
 #include <yafray_config.h>
 #include <yafraycore/nodematerial.h>
-#include <materials/roughglass.h>
 #include <core_api/environment.h>
 #include <yafraycore/spectrum.h>
 
@@ -432,7 +431,6 @@ extern "C"
 		render.registerFactory("glass", glassMat_t::factory);
 		render.registerFactory("mirror", mirrorMat_t::factory);
 		render.registerFactory("null", nullMat_t::factory);
-		render.registerFactory("rough_glass", roughGlassMat_t::factory);
 	}
 }
 
