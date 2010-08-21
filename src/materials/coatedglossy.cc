@@ -39,7 +39,7 @@ __BEGIN_YAFRAY
 class coatedGlossyMat_t: public nodeMaterial_t
 {
 	public:
-		coatedGlossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, PFLOAT ior, float expo, bool as_diff);
+		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float reflect, float diff, PFLOAT ior, float expo, bool as_diff);
 		virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
@@ -64,7 +64,7 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		shaderNode_t* glossyS;
 		shaderNode_t* glossyRefS;
 		shaderNode_t* bumpS;
-		color_t gloss_color, diff_color; //!< color of glossy base
+		color_t gloss_color, diff_color, mirror_color; //!< color of glossy base
 		PFLOAT IOR;
 		float exponent, exp_u, exp_v;
 		float reflectivity;
@@ -77,8 +77,8 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		float orenA, orenB;
 };
 
-coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, PFLOAT ior, float expo, bool as_diff):
-	diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), gloss_color(col), diff_color(dcol), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
+coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float reflect, float diff, PFLOAT ior, float expo, bool as_diff):
+	diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), gloss_color(col), diff_color(dcol), mirror_color(mirCol), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
 	as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	cFlags[C_SPECULAR] = (BSDF_SPECULAR | BSDF_REFLECT);
@@ -163,7 +163,7 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	
 	nodeStack_t stack(dat->stack);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	CFLOAT Kr, Kt;
+	float Kr, Kt;
 	float wiN = std::fabs(wi * N);
 	float woN = std::fabs(wo * N);
 	
@@ -172,8 +172,8 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	if( (as_diffuse && diffuse_flag) || (!as_diffuse && (bsdfs & BSDF_GLOSSY)) )
 	{
 		vector3d_t H = (wo + wi).normalize(); // half-angle
-		PFLOAT cos_wi_H = wi*H;
-		PFLOAT glossy;
+		float cos_wi_H = wi*H;
+		float glossy;
 		if(anisotropic)
 		{
 			vector3d_t Hs(H*sp.NU, H*sp.NV, H*N);
@@ -197,7 +197,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 	MDat_t *dat = (MDat_t *)state.userdata;
 	float cos_Ng_wo = sp.Ng*wo;
 	float cos_Ng_wi;
-	vector3d_t N = (cos_Ng_wo<0) ? -sp.N : sp.N;
+	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	vector3d_t Hs(0.f);
 	s.pdf = 0.f;
 	float Kr, Kt;
@@ -251,12 +251,12 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 	{
 		case C_SPECULAR: // specular reflect
 			wi = reflect_dir(N, wo);
-			scolor = color_t(Kr)/std::fabs(N*wi);
+			scolor = mirror_color;//color_t(Kr)/std::fabs(N*wi);
 			s.pdf = width[pick];
 			if(s.reverse)
 			{
 				s.pdf_back = s.pdf; // mirror is symmetrical
-				s.col_back = color_t(Kr)/std::fabs(N*wo);
+				s.col_back = mirror_color;//color_t(Kr)/std::fabs(N*wo);
 			}
 			break;
 		case C_GLOSSY: // glossy
@@ -278,17 +278,18 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 		// evaluate BSDFs and PDFs...
 		if(use[C_GLOSSY])
 		{
-			PFLOAT glossy;
-			PFLOAT cos_wo_H;
+			float glossy;
+			float cos_wo_H;
+			vector3d_t H(0.f);
 			if(cIndex[pick] != C_GLOSSY)
 			{
-				vector3d_t H = (wi+wo).normalize();
+				H = (wi+wo).normalize();
 				Hs = vector3d_t(H*sp.NU, H*sp.NV, H*N);
-				cos_wo_H = wo*H;
+				cos_wo_H = wo*Hs;
 			}
 			else
 			{
-				vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
+				H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
 				cos_wo_H = wo*H;
 				if ( cos_wo_H < 0.f )
 				{
@@ -310,8 +311,8 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			}
 			else
 			{
-				s.pdf += Blinn_Pdf(Hs.z, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
-				glossy = Blinn_D(Hs.z, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
+				s.pdf += Blinn_Pdf(H*N, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
+				glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
 			}
 			scolor = (CFLOAT)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
 		}
@@ -321,9 +322,15 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			scolor += diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 			s.pdf += wiN * width[rcIndex[C_DIFFUSE]];
 		}
+		W = wiN / (s.pdf * 0.99f + 0.01f);
 	}
+	else
+	{
+		W = 1.f;
+	}
+	
 	s.sampledFlags = cFlags[cIndex[pick]];
-	W = wiN / (s.pdf * 0.99f + 0.01f);
+	
 	return scolor;
 }
 
@@ -334,7 +341,7 @@ float coatedGlossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 	if(transmit) return 0.f;
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float pdf = 0.f;
-	CFLOAT Kr, Kt;
+	float Kr, Kt;
 	
 	fresnel(wo, N, IOR, Kr, Kt);
 	
@@ -353,8 +360,8 @@ float coatedGlossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 			if(i == C_GLOSSY)
 			{
 				vector3d_t H = (wi+wo).normalize();
-				PFLOAT cos_wo_H = wo*H;
-				PFLOAT cos_N_H = N*H;
+				float cos_wo_H = wo*H;
+				float cos_N_H = N*H;
 				if(anisotropic)
 				{
 					vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
@@ -378,7 +385,7 @@ void coatedGlossyMat_t::getSpecular(const renderState_t &state, const surfacePoi
 {
 	bool outside = sp.Ng*wo >= 0;
 	vector3d_t N, Ng;
-	PFLOAT cos_wo_N = sp.N*wo;
+	float cos_wo_N = sp.N*wo;
 	if(outside)
 	{
 		N = (cos_wo_N >= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
@@ -390,13 +397,16 @@ void coatedGlossyMat_t::getSpecular(const renderState_t &state, const surfacePoi
 		Ng = -sp.Ng;
 	}
 	
-	CFLOAT Kr, Kt;
+	float Kr, Kt;
 	fresnel(wo, N, IOR, Kr, Kt);
 	
 	refr = false;
+	
+	if(state.raylevel > 5) return;
+	
 	dir[0] = reflect_plane(N, wo);
-	col[0] = color_t(Kr);
-	PFLOAT cos_wi_Ng = dir[0]*Ng;
+	col[0] = Kr * mirror_color;
+	float cos_wi_Ng = dir[0]*Ng;
 	if(cos_wi_Ng < 0.01)
 	{
 		dir[0] += (0.01-cos_wi_Ng)*Ng;
@@ -407,7 +417,7 @@ void coatedGlossyMat_t::getSpecular(const renderState_t &state, const surfacePoi
 
 material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &paramList, renderEnvironment_t &render)
 {
-	color_t col(1.f), dcol(1.f);
+	color_t col(1.f), dcol(1.f), mirCol(1.f);
 	float refl=1.f;
 	float diff=0.f;
 	float exponent=50.f; //wild guess, do sth better
@@ -415,6 +425,7 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	bool as_diff=true;
 	bool aniso=false;
 	const std::string *name=0;
+
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
 	params.getParam("diffuse_reflect", diff);
@@ -423,10 +434,11 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
 	params.getParam("IOR", ior);
+	params.getParam("mirror_color", mirCol);
 	
 	if(ior == 1.f) ior = 1.0000001f;
 
-	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol , refl, diff, ior, exponent, as_diff);
+	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol, mirCol, refl, diff, ior, exponent, as_diff);
 	if(aniso)
 	{
 		double e_u=50.0, e_v=50.0;

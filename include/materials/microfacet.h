@@ -13,8 +13,8 @@ __BEGIN_YAFRAY
 #define RAW_VMAP 3
 
 #define DIFFUSE_RATIO 1.21739130434782608696 // (28 / 23)
-#define pdfDivisor(cos) ((8.f * cos) * 0.99f + 0.01f)
-#define ASDivisor(cos1, cosI, cosO) ( (8.f * cos1 * std::max(cosI, cosO)) * 0.99f + 0.01f )
+#define pdfDivisor(cos) ( 8.f * (cos * 0.99f + 0.01f) )
+#define ASDivisor(cos1, cosI, cosO) ( 8.f * (cos1 * std::max(cosI, cosO) * 0.99f + 0.01f) )
 
 inline void sample_quadrant_aniso(vector3d_t &H, float s1, float s2, float e_u, float e_v)
 {
@@ -36,7 +36,7 @@ inline float AS_Aniso_D(vector3d_t h, float e_u, float e_v)
 {
 	if(h.z <= 0.f) return 0.f;
 	float exponent = (e_u * h.x*h.x + e_v * h.y*h.y)/(1.f - h.z*h.z);
-	return fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * M_1_2PI * fPow(std::max(0.f, h.z), exponent);
+	return fSqrt( (e_u + 1.f)*(e_v + 1.f) ) * fPow(std::max(0.f, h.z), exponent);
 }
 
 inline float AS_Aniso_Pdf(vector3d_t h, float cos_w_H, float e_u, float e_v)
@@ -70,7 +70,7 @@ inline void AS_Aniso_Sample(vector3d_t &H, float s1, float s2, float e_u, float 
 
 inline float Blinn_D(float cos_h, float e)
 {
-	return (e + 1.f) * M_1_2PI * fPow(std::max(0.f, cos_h), e);
+	return (e + 1.f) * fPow(std::max(0.f, cos_h), e);
 }
 
 inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
