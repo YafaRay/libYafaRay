@@ -15,7 +15,7 @@
  *
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
- *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
  
 #include <yafray_config.h>
@@ -251,12 +251,12 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 	{
 		case C_SPECULAR: // specular reflect
 			wi = reflect_dir(N, wo);
-			scolor = mirror_color;//color_t(Kr)/std::fabs(N*wi);
+			scolor = mirror_color * Kr;//)/std::fabs(N*wi);
 			s.pdf = width[pick];
 			if(s.reverse)
 			{
 				s.pdf_back = s.pdf; // mirror is symmetrical
-				s.col_back = mirror_color;//color_t(Kr)/std::fabs(N*wo);
+				s.col_back = mirror_color * Kr;//)/std::fabs(N*wo);
 			}
 			break;
 		case C_GLOSSY: // glossy
