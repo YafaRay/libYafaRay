@@ -285,7 +285,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			{
 				H = (wi+wo).normalize();
 				Hs = vector3d_t(H*sp.NU, H*sp.NV, H*N);
-				cos_wo_H = wo*Hs;
+				cos_wo_H = wo*H;
 			}
 			else
 			{
@@ -311,8 +311,9 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			}
 			else
 			{
-				s.pdf += Blinn_Pdf(H*N, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
-				glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
+				float cosHN = H*N;
+				s.pdf += Blinn_Pdf(cosHN, cos_wo_H, exponent) * width[rcIndex[C_GLOSSY]];
+				glossy = Blinn_D(cosHN, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
 			}
 			scolor = (CFLOAT)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
 		}
