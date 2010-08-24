@@ -1,22 +1,15 @@
-
 #include <core_api/yafsystem.h>
 
-#ifdef WIN32
-
-//#include <io.h>
-//#include <windows.h>
-
-#else
-
-#include <dirent.h>
-#include <dlfcn.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
+#ifndef WIN32
+	#include <dirent.h>
+	#include <dlfcn.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 #endif
 
 #include <iostream>
+
 using namespace std;
 
 __BEGIN_YAFRAY

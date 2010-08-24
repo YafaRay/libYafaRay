@@ -1,10 +1,5 @@
-
 #include <yafraycore/meshtypes.h>
 #include <cstdlib>
-
-#ifdef __MINGW32__ //Added by DarkTide to enable mingw32 compliation
-	void *alloca(size_t);
-#endif
 
 __BEGIN_YAFRAY
 

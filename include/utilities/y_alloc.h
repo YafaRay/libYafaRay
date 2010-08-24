@@ -10,8 +10,6 @@
 	#include <alloca.h>
 #elif defined (__MINGW32__) //Added by DarkTide to enable mingw32 compliation
 	#include <malloc.h>
-	#define _aligned_malloc(size, bound) __mingw_aligned_malloc(size, bound)
-	#define _aligned_free(ptr) __mingw_aligned_free(ptr)
 #endif
 
 __BEGIN_YAFRAY
