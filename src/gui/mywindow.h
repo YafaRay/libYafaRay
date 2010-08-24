@@ -86,7 +86,7 @@ private:
 	yafaray::yafrayInterface_t *interf;
 	QString m_outputPath;
 	QString m_lastPath;
-	int res_x, res_y;
+	int res_x, res_y, b_x, b_y;
 	std::string fileName;
 	bool autoClose;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
 	bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened

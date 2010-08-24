@@ -25,7 +25,7 @@
 
 __BEGIN_YAFRAY
 
-imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name) : image(handle), fname(name)
+imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
 	//empty
 }
@@ -37,7 +37,7 @@ imageOutput_t::imageOutput_t()
 
 imageOutput_t::~imageOutput_t()
 {
-	//empty
+	image = NULL;
 }
 
 bool imageOutput_t::putPixel(int x, int y, const float *c, bool alpha, bool depth, float z)
@@ -46,7 +46,7 @@ bool imageOutput_t::putPixel(int x, int y, const float *c, bool alpha, bool dept
 	{
 		colorA_t col(0.f);
 		col.set(c[0], c[1], c[2], ( (alpha) ? c[3] : 1.f ) );
-		image->putPixel(x , y, col, z);
+		image->putPixel(x + bX , y + bY, col, z);
 	}
 	return true;
 }

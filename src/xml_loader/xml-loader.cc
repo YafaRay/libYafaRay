@@ -159,8 +159,11 @@ int main(int argc, char *argv[])
 	if(!success) exit(1);
 	
 	int width=320, height=240;
+	int bx = 0, by = 0;
 	render.getParam("width", width); // width of rendered image
 	render.getParam("height", height); // height of rendered image
+	render.getParam("xstart", bx); // border render x start
+	render.getParam("ystart", by); // border render y start
 	
 	if(threads >= -1) render["threads"] = threads;
 	
@@ -192,7 +195,7 @@ int main(int argc, char *argv[])
 
 	if(ih)
 	{
-		out = new imageOutput_t(ih, outputPath);
+		out = new imageOutput_t(ih, outputPath, bx, by);
 		if(!out) return 1;				
 	}
 	else return 1;

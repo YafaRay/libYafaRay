@@ -107,7 +107,7 @@ int createRenderWidget(yafaray::yafrayInterface_t *interf, int xsize, int ysize,
 
 
 MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings)
-: QMainWindow(), interf(env), res_x(resx), res_y(resy), use_zbuf(false)
+: QMainWindow(), interf(env), res_x(resx), res_y(resy), b_x(bStartX), b_y(bStartY), use_zbuf(false)
 {
 	QCoreApplication::setOrganizationName("YafaRay Team");
 	QCoreApplication::setOrganizationDomain("yafaray.org");
@@ -166,6 +166,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	renderSaved = false;
 	renderCancelled = false;
+	saveWithAlpha = false;
+	saveWithDepth = false;
 
 	m_ui->actionAskSave->setChecked(askUnsaved);
 
@@ -355,7 +357,7 @@ void MainWindow::slotFinished()
 		interf->paramsSetBool("z_channel", use_zbuf);
 
 		imageHandler_t *ih = interf->createImageHandler("saver", false);
-		imageOutput_t *out = new imageOutput_t(ih, fileName);
+		imageOutput_t *out = new imageOutput_t(ih, fileName, b_x, b_y);
 
 		interf->paramsClearAll();
 
@@ -579,7 +581,7 @@ bool MainWindow::saveDlg()
 		m_lastPath = QDir(fileName).absolutePath();
 
 		imageHandler_t *ih = interf->createImageHandler("saver", false);
-		imageOutput_t *out = new imageOutput_t(ih, m_lastPath.toStdString());
+		imageOutput_t *out = new imageOutput_t(ih, m_lastPath.toStdString(), b_x, b_y);
 
 		interf->paramsClearAll();
 
