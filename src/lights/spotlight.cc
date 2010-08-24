@@ -29,6 +29,7 @@ class spotLight_t : public light_t
 {
 	public:
 		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy);
+		virtual ~spotLight_t();
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
@@ -71,25 +72,37 @@ spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color
 	cosStart = fCos(rad_inner_angle);
 	cosEnd = fCos(rad_angle);
 	icosDiff = 1.0/(cosStart-cosEnd);
-	float func[65];
-	for(int i=0; i<65; ++i)
+	
+	float *f = new float[65];
+	
+	for(int i = 0; i < 65; i++)
 	{
-		float v = (float)i/64.0;
-		func[i] = v*v*(3.f - 2.f*v);
+		float v = (float)i / 64.f;
+		f[i] = v*v*(3.f - 2.f*v);
 	}
-	pdf = new pdf1D_t(func, 65);
+	
+	pdf = new pdf1D_t(f, 65);
+	
+	delete [] f;
+
 	/* the integral of the smoothstep is 0.5, and since it gets applied to the cos, and each delta cos
 		corresponds to a constant surface are of the (partial) emitting sphere, we can actually simply
 		compute the energie emitted from both areas, the constant and blending one...
 		1  cosStart  cosEnd              -1
 		|------|--------|-----------------|
 	*/
+	
 	interv1 = (1.0 - cosStart);
 	interv2 = 0.5*(cosStart - cosEnd); // as said, energy linear to delta cos, integral is 0.5;
 	float sum = std::fabs(interv1) + std::fabs(interv2);
 	if(sum > 0.f) sum = 1.0/sum;
 	interv1 *= sum;
 	interv2 *= sum;
+}
+
+spotLight_t::~spotLight_t()
+{
+	if(pdf) delete pdf;
 }
 
 color_t spotLight_t::totalEnergy() const
@@ -288,7 +301,7 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("soft_shadows",softShadows);
 	params.getParam("shadowFuzzyness",ssfuzzy);
 	params.getParam("samples",smpl);
-
+	
 	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy);
 }
 
@@ -302,4 +315,3 @@ extern "C"
 }
 
 __END_YAFRAY
-
