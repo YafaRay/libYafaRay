@@ -216,7 +216,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			{
 				vector3d_t H = (wi+wo).normalize();
 				cos_wo_H = wo*H;
-				float cos_wi_H = std::max(0.f, wi*H);
+				float cos_wi_H = std::fabs(wi*H);
 				float cos_N_H = N*H;
 				if(anisotropic)
 				{
@@ -250,7 +250,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 		if(anisotropic)
 		{
 			AS_Aniso_Sample(Hs, s1, s.s2, exp_u, exp_v);
-			vector3d_t H = Hs.x*sp.dSdU + Hs.y*sp.dSdV + Hs.z*N;
+			vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
 			cos_wo_H = wo*H;
 			if ( cos_wo_H < 0.f )
 			{
@@ -285,9 +285,10 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			if(cos_Ng_wo*cos_Ng_wi < 0.f) return color_t(0.f);
 			
 			wiN = std::fabs(wi * N);
+			float cosHN = H*N;
 
-			s.pdf = Blinn_Pdf(H*N, cos_wo_H, exponent);
-			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ASDivisor(cos_wo_H, woN, wiN);
+			s.pdf = Blinn_Pdf(cosHN, cos_wo_H, exponent);
+			glossy = Blinn_D(cosHN, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ASDivisor(cos_wo_H, woN, wiN);
 		}
 		
 		scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);

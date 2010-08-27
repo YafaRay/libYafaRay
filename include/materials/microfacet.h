@@ -81,9 +81,9 @@ inline float Blinn_Pdf(float costheta, float cos_w_H, float e)
 inline void Blinn_Sample(vector3d_t &H, float s1, float s2, float exponent)
 {
 	// Compute sampled half-angle vector H for Blinn distribution
-	float cosTheta = fPow(1.f - s1, 1.f / (exponent + 1.f));
+	float cosTheta = fPow(s2, 1.f / (exponent + 1.f));
 	float sinTheta = fSqrt(1.f - cosTheta*cosTheta);
-	float phi = s2 * M_2PI;
+	float phi = s1 * M_2PI;
 	H = vector3d_t(sinTheta*fCos(phi), sinTheta*fSin(phi), cosTheta);
 }
 
