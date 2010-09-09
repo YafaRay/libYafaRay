@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 
 #define MAX_VSAMPLES 360
 #define MAX_USAMPLES 720
-#define MIN_SAMPLES 4
+#define MIN_SAMPLES 16
 
 #define SMPL_OFF 0.4999f
 
