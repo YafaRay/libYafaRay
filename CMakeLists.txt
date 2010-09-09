@@ -8,9 +8,14 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 ####### Options ########
 option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
 option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
+option(WITH_QT "Enable Qt Gui build" ON)
+option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
+option(WITH_JPEG "Build JPEG image I/O plugin" ON)
+option(WITH_PNG "Build PNG image I/O plugin" ON)
+option(WITH_TIFF "Build TIFF image I/O plugin" ON)
 option(BUILDRELEASE "Enable release mode building of YafaRay" OFF)
-option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installations)" OFF)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
+option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installations)" OFF)
 
 ###### Packages and Definitions #########
 
@@ -36,16 +41,35 @@ endif(YAF_USER_EXTRA_LIBS)
 # find the required libs
 find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(OpenEXR REQUIRED)
-find_package(JPEG REQUIRED)
-find_package(PNG REQUIRED)
-find_package(TIFF REQUIRED)
-find_package(Freetype REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
 
-# Qt enabling header
-include(${QT_USE_FILE})
+# Find optional libs
+if(WITH_Freetype)
+	find_package(Freetype REQUIRED)
+endif(WITH_Freetype)
+
+if(WITH_OpenEXR)
+	find_package(OpenEXR REQUIRED)
+endif(WITH_OpenEXR)
+
+if(WITH_JPEG)
+	find_package(JPEG REQUIRED)
+endif(WITH_JPEG)
+
+if(WITH_PNG)
+	find_package(PNG REQUIRED)
+endif(WITH_PNG)
+
+if(WITH_TIFF)
+	find_package(TIFF REQUIRED)
+endif(WITH_TIFF)
+
+if(WITH_QT)
+	find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
+	# Qt enabling header
+	include(${QT_USE_FILE})
+endif(WITH_QT)
+
 
 #check for swig if needed
 if (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
@@ -150,18 +174,6 @@ endif(NOT WIN32)
 if(CMAKE_HAVE_PTHREAD_H)
 	add_definitions(-DHAVE_PTHREAD)
 endif(CMAKE_HAVE_PTHREAD_H)
-
-if(JPEG_FOUND)
-	add_definitions(-DHAVE_JPEG)
-endif(JPEG_FOUND)
-
-if(PNG_FOUND)
-	add_definitions(-DHAVE_PNG)
-endif(PNG_FOUND)
-
-if(OPENEXR_FOUND)
-	add_definitions(-DHAVE_EXR)
-endif(OPENEXR_FOUND)
 
 if(LIBXML2_FOUND)
 	add_definitions(-DHAVE_XML)
