@@ -514,20 +514,24 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 		}
 	}
 	else Y_WARNING << "ShinyDiffuse: Creating nodes failed!" << yendl;
+
 	// solve nodes order
 	if(!roots.empty())
 	{
 		mat->solveNodesOrder(roots);
 		Y_INFO << "ShinyDiffuse: Evaluation order:" << yendl;
-		for(unsigned int k=0; k<mat->allSorted.size(); ++k) Y_WARNING << "ShinyDiffuse: " << (void*)mat->allSorted[k] << yendl;
+
 		std::vector<shaderNode_t *> colorNodes;
+
 		if(diffuseS) mat->getNodeList(diffuseS, colorNodes);
 		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
 		if(specReflS) mat->getNodeList(specReflS, colorNodes);
 		if(transpS) mat->getNodeList(transpS, colorNodes);
 		if(translS) mat->getNodeList(translS, colorNodes);
+
 		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
+
 		if(bumpS)
 		{
 			mat->getNodeList(bumpS, mat->bumpNodes);
