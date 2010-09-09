@@ -504,8 +504,8 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 				++offs;
 				++branch;
 
-				float s1 = RI_vdC(offs);
-				float s2 = hal2.getNext();//scrHalton(2, offs);
+				float s1 = hal2.getNext();
+				float s2 = hal3.getNext();
 				
 				float W = 0.f;
 
