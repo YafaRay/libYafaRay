@@ -25,7 +25,6 @@
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
-#include <resources/guifont.h>
 #include <resources/yafLogoTiny.h>
 
 #include <yaf_revision.h>
@@ -37,6 +36,7 @@
 #include <iomanip>
 
 #if HAVE_FREETYPE
+#include <resources/guifont.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #endif
@@ -373,10 +373,11 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 
 	colorOutput_t *colout = out ? out : output;
 	
-#if HAVE_FREETYPE
 	if (drawParams) drawRenderSettings();
-#else
-	if (drawParams) Y_WARNING << "imageFilm: compiled without freetype support overlay feature not available" << yendl;
+
+#ifndef HAVE_FREETYPE
+	Y_WARNING << "imageFilm: Compiled without FreeType support." << yendl;
+	Y_WARNING << "imageFilm: Text on the parameters badge won't be available." << yendl;
 #endif
 
 	float multi = 0.f;
@@ -398,7 +399,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 			
 			if(correctGamma) col.gammaAdjust(gamma);
 			
-			if(drawParams && h - j <= dpHeight)
+			if(drawParams && h - j <= dpHeight && dpimage)
 			{
 				colorA_t &dpcol = (*dpimage)(i, k);
 				col = colorA_t( alphaBlend(col, dpcol, dpcol.getA()), std::max(col.getA(), dpcol.getA()) );
@@ -665,6 +666,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 	}
 }
 
+#endif
 
 void imageFilm_t::drawRenderSettings()
 {
@@ -673,7 +675,7 @@ void imageFilm_t::drawRenderSettings()
 	dpHeight = 30;
 	
 	dpimage = new rgba2DImage_nw_t(w, dpHeight);
-	
+#ifdef HAVE_FREETYPE
 	FT_Library library;
 	FT_Face face;
 
@@ -734,10 +736,11 @@ void imageFilm_t::drawRenderSettings()
 
 	slot = face->glyph;
 
-	// offsets
-	int textOffsetX = 4;
 	int textOffsetY = 18;
 	int textInterlineOffset = 13;
+#endif
+	// offsets
+	int textOffsetX = 4;
 	int logoWidth = 0;
 
 	// Draw logo image
@@ -773,7 +776,7 @@ void imageFilm_t::drawRenderSettings()
 			(*dpimage)(x, y) = colorA_t(bgColor, bgAlpha);
 		}
 	}
-	
+#ifdef HAVE_FREETYPE	
 	// The pen position in 26.6 cartesian space coordinates
 	pen.x = textOffsetX * 64;
 	pen.y = textOffsetY * 64;
@@ -812,10 +815,8 @@ void imageFilm_t::drawRenderSettings()
 	// Cleanup
 	FT_Done_Face    ( face );
 	FT_Done_FreeType( library );
-	
+#endif
 	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
 }
-
-#endif
 
 __END_YAFRAY

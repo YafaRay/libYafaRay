@@ -122,9 +122,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setUseParamsBadge(bool on = true) { drawParams = on; }
 		bool getUseParamsBadge() { return drawParams; }
 
-#if HAVE_FREETYPE
-		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed for this */
+		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings();
+
+#if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
 #endif
 
