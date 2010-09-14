@@ -6,22 +6,22 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
-option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
-option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
-option(WITH_QT "Enable Qt Gui build" ON)
+option(WITH_Freetype "Build font rendering with FreeType" ON)
 option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
 option(WITH_JPEG "Build JPEG image I/O plugin" ON)
 option(WITH_PNG "Build PNG image I/O plugin" ON)
 option(WITH_TIFF "Build TIFF image I/O plugin" ON)
-option(WITH_Freetype "Build font rendering with FreeType" ON)
+option(WITH_QT "Enable Qt Gui build" ON)
+option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
+option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(BUILDRELEASE "Enable release mode building of YafaRay" OFF)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
 option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installations)" OFF)
 
 ###### Packages and Definitions #########
 
-# Load a library config file if any
-include(CMakeConfig/LibsConfig.txt OPTIONAL)
+# Load user configurations if available
+include(CMakeConfig/UserConfig.txt OPTIONAL)
 
 if(YAF_USER_INCLUDE_DIRS)
 	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
@@ -47,28 +47,46 @@ find_package(Threads REQUIRED)
 # Find optional libs
 if(WITH_Freetype)
 	find_package(Freetype REQUIRED)
+	message("Using FreeType: yes")
+else(WITH_Freetype)
+	message("Using FreeType: no")
 endif(WITH_Freetype)
 
 if(WITH_OpenEXR)
 	find_package(OpenEXR REQUIRED)
+	message("Using OpenEXR: yes")
+else(WITH_OpenEXR)
+	message("Using OpenEXR: no")
 endif(WITH_OpenEXR)
 
 if(WITH_JPEG)
 	find_package(JPEG REQUIRED)
+	message("Using JPEG: yes")
+else(WITH_JPEG)
+	message("Using JPEG: no")
 endif(WITH_JPEG)
 
 if(WITH_PNG)
 	find_package(PNG REQUIRED)
+	message("Using PNG: yes")
+else(WITH_PNG)
+	message("Using PNG: no")
 endif(WITH_PNG)
 
 if(WITH_TIFF)
 	find_package(TIFF REQUIRED)
+	message("Using TIFF: yes")
+else(WITH_TIFF)
+	message("Using TIFF: no")
 endif(WITH_TIFF)
 
 if(WITH_QT)
 	find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
 	# Qt enabling header
 	include(${QT_USE_FILE})
+	message("Using Qt: yes")
+else(WITH_QT)
+	message("Using Qt: no")
 endif(WITH_QT)
 
 
@@ -193,8 +211,6 @@ if (BUILDRELEASE)
 endif (BUILDRELEASE)
 
 # Paths and flags configuration
-
-include(CMakeConfig/UserConfig.txt OPTIONAL)
 
 if(NOT WIN32)
 	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
