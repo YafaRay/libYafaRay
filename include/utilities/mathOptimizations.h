@@ -144,6 +144,15 @@ inline float fPow(float a, float b)
 #endif
 }
 
+inline float fLog(float a)
+{
+#ifdef FAST_MATH
+	return fLog2(a) * M_LN2;
+#else
+	return log(a);
+#endif
+}
+
 inline float fExp(float a)
 {
 #ifdef FAST_MATH

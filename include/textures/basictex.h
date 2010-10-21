@@ -17,6 +17,8 @@ class textureClouds_t : public texture_t
 		virtual ~textureClouds_t();
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 	protected:
@@ -43,6 +45,8 @@ class textureMarble_t : public texture_t
 
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 	protected:
@@ -69,6 +73,8 @@ class textureWood_t : public texture_t
 
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 	protected:
@@ -92,6 +98,8 @@ class textureVoronoi_t : public texture_t
 
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
@@ -115,6 +123,8 @@ class textureMusgrave_t : public texture_t
 
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
 
@@ -135,6 +145,8 @@ class textureDistortedNoise_t : public texture_t
 		
 		virtual colorA_t getColor(const point3d_t &p) const;
 		virtual CFLOAT getFloat(const point3d_t &p) const;
+		
+		virtual void getInterpolationStep(float &step) const { step = size; };
 
 		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
 

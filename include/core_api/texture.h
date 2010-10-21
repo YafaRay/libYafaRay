@@ -23,6 +23,7 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual CFLOAT getFloat(int x, int y, int z) const { return getNoGammaColor(x, y, z).col2bri(); }
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
+		virtual void getInterpolationStep(float &step) const { step = 0.f; };
 		virtual ~texture_t() {}
 };
 

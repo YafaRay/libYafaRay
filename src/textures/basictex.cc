@@ -68,7 +68,6 @@ colorA_t textureClouds_t::getColor(const point3d_t &p) const
 	return color1 + getFloat(p)*(color2 - color1);
 }
 
-
 texture_t *textureClouds_t::factory(paraMap_t &params,
 		renderEnvironment_t &render)
 {

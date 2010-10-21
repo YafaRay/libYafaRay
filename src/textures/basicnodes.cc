@@ -24,8 +24,9 @@ void textureMapper_t::setup()
 	}
 	else
 	{
-		//0.00048828125 = 1.f / 2048.f
-		dU = dV = dW = 0.00048828125;
+		float step = 0.f;
+		tex->getInterpolationStep(step);
+		dU = dV = dW = step;
 	}
 
 	pDU = point3d_t(dU, 0, 0);
@@ -169,12 +170,12 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 	}
 	else
 	{
-		point3d_t i0(texpt + pDU);
-		point3d_t i1(texpt - pDU);
-		point3d_t j0(texpt + pDV);
-		point3d_t j1(texpt - pDV);
+		point3d_t i0 = (texpt + pDU);
+		point3d_t i1 = (texpt - pDU);
+		point3d_t j0 = (texpt + pDV);
+		point3d_t j1 = (texpt - pDV);
 
-		norm = vector3d_t(-getHeight(i0, i1, dU) * bumpStr, -getHeight(j0, j1, dV) * bumpStr, 1);
+		norm = vector3d_t(getHeight(i0, i1, dU) * bumpStr, getHeight(j0, j1, dV) * bumpStr, 1);
 	}
 
 	norm.normalize();
