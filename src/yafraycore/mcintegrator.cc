@@ -57,7 +57,7 @@ inline color_t mcIntegrator_t::estimateOneDirectLight(renderState_t &state, cons
 	
 	int lnum = std::min((int)(hal2.getNext() * (float)lightNum), lightNum - 1);
 	
-	return doLightEstimation(state, lights[lnum], sp, wo, lnum);
+	return doLightEstimation(state, lights[lnum], sp, wo, lnum) * lightNum;
 	//return col * nLights;
 }
 
