@@ -16,6 +16,8 @@ namespace std
 	%template(StrVector) vector<string>;
 }
 
+%include "blenderhelpers.i"
+
 %{
 #include <interface/yafrayinterface.h>
 #include <interface/xmlinterface.h>
