@@ -12,4 +12,4 @@ if(WITH_QT)
 	add_subdirectory(gui)
 endif(WITH_QT)
 add_subdirectory(xml_loader)
-
+add_subdirectory(bindings)

@@ -27,7 +27,7 @@
 #include <QtCore/QTime>
 #include <string>
 
-#include "yafqtapi.h"
+#include <gui/yafqtapi.h>
 
 namespace Ui
 {

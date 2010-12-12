@@ -137,16 +137,28 @@ set(EMBED_FONT_QT OFF)
 #set(YAF_LIB_DIR lib)
 
 #                                                                              #
-# The bindings instalation dir
+# The Python Bindings Installation Path                                        #
 #                                                                              #
-# Default: ${CMAKE_SOURCE_DIR}/bindings/python
+# Default: ${CMAKE_SOURCE_DIR}/install/bindings/python                         #
 #                                                                              #
-# this will install the Python bindings on ${CMAKE_SOURCE_DIR}/bindings/python
+# this will install the Python bindings on ${CMAKE_SOURCE_DIR}/bindings/python #
 # you can set this path to your local blender scripts directory
-# or what ever suits you best
+# or whatever suits you best
 #                                                                              #
 
-#set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
+#set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/install/bindings/python)
+
+#                                                                              #
+# The Ruby Bindings Installation Path                                          #
+#                                                                              #
+# Default: ${CMAKE_SOURCE_DIR}/install/bindings/ruby                           #
+#                                                                              #
+# this will install the Ruby bindings once                                     #
+# ${CMAKE_SOURCE_DIR}/install/bindings/ruby                                    #
+# you can set this path to whatever suits you best                             #
+#                                                                              #
+
+#set(YAF_BINDINGS_RUBY_DIR ${CMAKE_SOURCE_DIR}/install/bindings/ruby)
 
 #                                                                              #
 # More than one path can be set separated by spaces ie.                        #

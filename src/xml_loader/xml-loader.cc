@@ -20,7 +20,7 @@
 #include <utilities/console_utils.h>
 #include <yafraycore/imageOutput.h>
 
-#include "../gui/yafqtapi.h"
+#include <gui/yafqtapi.h>
 
 using namespace::yafaray;
 

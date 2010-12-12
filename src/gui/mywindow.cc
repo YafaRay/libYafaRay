@@ -20,7 +20,7 @@
  */
 
 // YafaRay Headers
-#include "yafqtapi.h"
+#include <gui/yafqtapi.h>
 #include "mywindow.h"
 #include "worker.h"
 #include "qtoutput.h"
