@@ -12,7 +12,7 @@
 
 %{
 #include <yafray_constants.h>
-#include <src/gui/yafqtapi.h>
+#include <gui/yafqtapi.h>
 %}
 
 struct Settings {

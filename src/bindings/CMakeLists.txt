@@ -57,9 +57,6 @@ endif (WITH_YAF_RUBY_BINDINGS)
 
 if (WITH_YAF_PY_BINDINGS)
 	
-	include(${SWIG_USE_FILE})
-	add_subdirectory(blender-python)
-	
 	if(NOT WIN32)
 
 		if(NOT YAF_BINDINGS_PY_DIR)
@@ -74,13 +71,12 @@ if (WITH_YAF_PY_BINDINGS)
 
 	endif(NOT WIN32)
 	
+	add_subdirectory(blender-python)
+
 endif (WITH_YAF_PY_BINDINGS)
 
 if (WITH_YAF_RUBY_BINDINGS)
 	
-	include(${SWIG_USE_FILE})
-	add_subdirectory(sketchup-ruby)
-
 	if(NOT WIN32)
 
 		if(NOT YAF_BINDINGS_RUBY_DIR)
@@ -94,6 +90,8 @@ if (WITH_YAF_RUBY_BINDINGS)
 		endif(NOT YAF_BINDINGS_RUBY_DIR)
 
 	endif(NOT WIN32)
+
+	add_subdirectory(sketchup-ruby)
 	
 endif (WITH_YAF_RUBY_BINDINGS)
 
