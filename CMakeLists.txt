@@ -109,10 +109,6 @@ if(NOT WIN32)
 		set(YAF_LIB_DIR lib)
 	endif(NOT YAF_LIB_DIR)
 
-	if(NOT YAF_BINDINGS_PY_DIR)
-		set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
-	endif(NOT YAF_BINDINGS_PY_DIR)
-
 	# build flags
 	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
@@ -126,10 +122,6 @@ else(NOT WIN32)
 	endif(NOT YAF_BIN_DIR)
 
 	set(YAF_LIB_DIR ${YAF_BIN_DIR})
-
-	if(NOT YAF_BINDINGS_PY_DIR)
-		set(YAF_BINDINGS_PY_DIR ${YAF_BIN_DIR}/python)
-	endif(NOT YAF_BINDINGS_PY_DIR)
 
 	# build flags
 	if(MINGW)
