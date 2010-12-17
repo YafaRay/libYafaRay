@@ -16,7 +16,328 @@ namespace std
 	%template(StrVector) vector<string>;
 }
 
-%include "blenderhelpers.i"
+%{
+#include <yafraycore/monitor.h>
+#include <core_api/output.h>
+#include <interface/yafrayinterface.h>
+
+struct yafTilePixel_t
+{
+	float r;
+	float g;
+	float b;
+	float a;
+};
+
+struct YafTileObject_t
+{
+	PyObject_HEAD
+	int resx, resy;
+	int x0, x1, y0, y1;
+	int w, h;
+	yafTilePixel_t *mem;
+};
+
+static Py_ssize_t yaf_tile_length(YafTileObject_t *self)
+{
+	self->w = (self->x1 - self->x0);
+	self->h = (self->y1 - self->y0);
+	
+	return self->w * self->h;
+}
+
+static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
+{
+	// Check boundaries and fill w and h
+	if (keynum >= yaf_tile_length(self))
+		return NULL;
+	
+	// Calc position on tile
+	int vy = keynum / self->w;
+	int vx = keynum - vy * self->w;
+	
+	// Map tile position to image buffer
+	vx = self->x0 + vx;
+	vy = (self->y0 + self->h - 1) - vy;
+	
+	// Get pixel
+	yafTilePixel_t &pix = self->mem[ self->resx * vy + vx ];
+
+	return Py_BuildValue("ffff", 
+		pix.r,
+		pix.g,
+		pix.b,
+		pix.a);
+}
+
+static void yaf_tile_dealloc(YafTileObject_t *self)
+{
+	PyObject_Del(self);
+}
+
+PySequenceMethods sequence_methods =
+{
+	( lenfunc ) yaf_tile_length,
+	NULL,
+	NULL,
+	( ssizeargfunc ) yaf_tile_subscript_int
+};
+
+PyTypeObject yafTile_Type =
+{
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"yaf_tile",							/* tp_name */
+	sizeof(YafTileObject_t),			/* tp_basicsize */
+	0,									/* tp_itemsize */
+	( destructor ) yaf_tile_dealloc,	/* tp_dealloc */
+	NULL,                       		/* printfunc tp_print; */
+	NULL,								/* getattrfunc tp_getattr; */
+	NULL,								/* setattrfunc tp_setattr; */
+	NULL,								/* tp_compare */ /* DEPRECATED in python 3.0! */
+	NULL,								/* tp_repr */
+	NULL,                       		/* PyNumberMethods *tp_as_number; */
+	&sequence_methods,					/* PySequenceMethods *tp_as_sequence; */
+	NULL,								/* PyMappingMethods *tp_as_mapping; */
+	NULL,								/* hashfunc tp_hash; */
+	NULL,								/* ternaryfunc tp_call; */
+	NULL,                       		/* reprfunc tp_str; */
+	NULL,								/* getattrofunc tp_getattro; */
+	NULL,								/* setattrofunc tp_setattro; */
+	NULL,                       		/* PyBufferProcs *tp_as_buffer; */
+	Py_TPFLAGS_DEFAULT,         		/* long tp_flags; */
+};
+
+
+class pyOutput_t : public yafaray::colorOutput_t
+{
+
+public:
+
+	pyOutput_t(int x, int y, PyObject *callback) : resx(x), resy(y), callb(callback)
+	{
+		tile = PyObject_NEW(YafTileObject_t, &yafTile_Type);
+		tile->mem = new yafTilePixel_t[x*y];
+		tile->resx = x;
+		tile->resy = y;
+	}
+	
+	virtual ~pyOutput_t()
+	{
+		delete [] tile->mem;
+		Py_DECREF(tile);
+	}
+	
+	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)
+	{
+		yafTilePixel_t &pix= tile->mem[resx * y + x]; 
+		pix.r = c[0];
+		pix.g = c[1];
+		pix.b = c[2];
+		pix.a = alpha ? c[3] : 1.0f;
+		return true;
+	}
+	
+	virtual void flush()
+	{
+		tile->x0 = 0;
+		tile->x1 = resx;
+		tile->y0 = 0;
+		tile->y1 = resy;
+		
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyEval_CallObject(callb, Py_BuildValue("siiO", "flush", resx, resy, tile));
+		PyGILState_Release(gstate);
+	}
+
+	virtual void flushArea(int x0, int y0, int x1, int y1)
+	{
+		tile->x0 = x0;
+		tile->x1 = x1;
+		tile->y0 = y0;
+		tile->y1 = y1;
+		
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyEval_CallObject(callb, Py_BuildValue("siiiiO", "flushArea", x0, resy - y1, x1, resy - y0, tile));
+		PyGILState_Release(gstate);
+	}
+
+	virtual void highliteArea(int x0, int y0, int x1, int y1)
+	{
+		tile->x0 = x0;
+		tile->x1 = x1;
+		tile->y0 = y0;
+		tile->y1 = y1;
+		
+		int w = x1 - x0;
+		int h = y1 - y0;
+		int lineL = std::min( 4, std::min( h - 1, w - 1 ) );
+		
+		drawCorner(x0, y0, lineL, TL_CORNER);
+		drawCorner(x1, y0, lineL, TR_CORNER);
+		drawCorner(x0, y1, lineL, BL_CORNER);
+		drawCorner(x1, y1, lineL, BR_CORNER);
+		
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyEval_CallObject(callb, Py_BuildValue("siiiiO", "highliteArea", x0, resy - y1, x1, resy - y0, tile));
+		PyGILState_Release(gstate);
+
+	}
+	
+private:
+	
+	enum corner
+	{
+		TL_CORNER,
+		TR_CORNER,
+		BL_CORNER,
+		BR_CORNER
+	};
+	
+	void drawCorner(int x, int y, int len, corner pos)
+	{
+		int minX = 0;
+		int minY = 0;
+		int maxX = 0;
+		int maxY = 0;
+		
+		switch(pos)
+		{
+			case TL_CORNER:
+				minX = x;
+				minY = y;
+				maxX = x + len;
+				maxY = y + len;
+				break;
+			
+			case TR_CORNER:
+				minX = x - len - 1;
+				minY = y;
+				maxX = x - 1;
+				maxY = y + len;
+				x--;
+				break;
+			
+			case BL_CORNER:
+				minX = x;
+				minY = y - len - 1;
+				maxX = x + len;
+				maxY = y - 1;
+				y--;
+				break;
+			
+			case BR_CORNER:
+				minX = x - len - 1;
+				minY = y - len - 1;
+				maxX = x - 1;
+				maxY = y - 1;
+				x--;
+				y--;
+				break;
+		}
+
+		for(int i = minX; i < maxX; i++)
+		{
+			tile->mem[resx * y + i].r = 0.625f;
+		}
+		
+		for(int j = minY; j < maxY; j++)
+		{
+			tile->mem[resx * j + x].r = 0.625f;
+		}
+	}
+
+	int resx, resy;
+	PyObject *callb;
+	YafTileObject_t *tile;
+};
+
+class pyProgress : public yafaray::progressBar_t
+{
+
+public:
+
+	pyProgress(PyObject *callback) : callb(callback) {}
+	
+	void report_progress(float percent)
+	{
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyEval_CallObject(callb, Py_BuildValue("sf", "progress", percent));
+		PyGILState_Release(gstate);
+	}
+	
+	virtual void init(int totalSteps)
+	{
+		steps_to_percent = 100.f / (float) totalSteps;
+		doneSteps = 0;
+		report_progress(0.f);
+	}
+	
+	virtual void update(int steps = 1)
+	{
+		doneSteps += steps;
+		report_progress(doneSteps * steps_to_percent);		
+	}
+	
+	virtual void done()
+	{
+		report_progress(100.f);
+	}
+	
+	virtual void setTag(const char* text)
+	{
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyEval_CallObject(callb, Py_BuildValue("ss", "tag", text));
+		PyGILState_Release(gstate);
+	}
+	
+private:
+
+	PyObject *callb;
+	float steps_to_percent;
+	int doneSteps;
+};
+
+%}
+
+%init %{
+	PyType_Ready(&yafTile_Type);
+%}
+
+%typemap(in) PyObject *pyfunc
+{
+  if (!PyCallable_Check($input))
+  {
+      PyErr_SetString(PyExc_TypeError, "Need a callback method.");
+      return NULL;
+  }
+  
+  $1 = $input;
+}
+
+%extend yafaray::yafrayInterface_t
+{
+	void render(int x, int y, PyObject *outputCallBack, PyObject *progressCallback)
+	{
+  		pyOutput_t output_wrap(x, y, outputCallBack);
+  		pyProgress *pbar_wrap = new pyProgress(progressCallback);
+  		
+  		Py_BEGIN_ALLOW_THREADS;
+  		self->render(output_wrap, pbar_wrap);
+		Py_END_ALLOW_THREADS;
+	}
+}
+
+%exception yafaray::yafrayInterface_t::loadPlugins
+{
+	Py_BEGIN_ALLOW_THREADS
+	$action
+	Py_END_ALLOW_THREADS
+}
 
 %{
 #include <interface/yafrayinterface.h>
