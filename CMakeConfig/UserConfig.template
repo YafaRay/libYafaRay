@@ -54,6 +54,14 @@ set(WITH_PNG ON)
 set(WITH_TIFF ON)
 
 #                                                                              #
+# Enable XML Loader build                                                      #
+#                                                                              #
+# Default: ON                                                                  #
+#                                                                              #
+
+set(WITH_XML_LOADER ON)
+
+#                                                                              #
 # Enable Qt Gui build                                                          #
 #                                                                              #
 # Default: ON                                                                  #
@@ -111,7 +119,7 @@ set(EMBED_FONT_QT OFF)
 #          "/usr/local"               on *NIX platforms                        #
 #          "C:\<Program_Files_Dir>"   on Windows platforms                     #
 
-#set(USER_INSTALL_PREFFIX "")
+#set(USER_INSTALL_PREFIX "")
 
 #                                                                              #
 # The executables instalation dir                                              #

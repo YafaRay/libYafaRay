@@ -1,7 +1,11 @@
 include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_PATH})
 include(${SWIG_USE_FILE})
 
-set(CMAKE_SWIG_FLAGS "-c++")
+if(YAF_PY_VERSION GREATER 3)
+	set(CMAKE_SWIG_FLAGS -c++ -py3)
+else(YAF_PY_VERSION GREATER 3)
+	set(CMAKE_SWIG_FLAGS -c++)
+endif(YAF_PY_VERSION GREATER 3)
 
 set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
 

@@ -8,8 +8,13 @@ add_subdirectory(lights)
 add_subdirectory(materials)
 add_subdirectory(textures)
 add_subdirectory(volumes)
+
+if(WITH_XML_LOADER)
+	add_subdirectory(xml_loader)
+endif(WITH_XML_LOADER)
+
 if(WITH_QT)
 	add_subdirectory(gui)
 endif(WITH_QT)
-add_subdirectory(xml_loader)
+
 add_subdirectory(bindings)
