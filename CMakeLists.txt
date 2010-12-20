@@ -23,6 +23,12 @@ option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installat
 
 # Load user configurations if available
 include(CMakeConfig/UserConfig.txt OPTIONAL)
+if(NOT YAF_USER_CONFIG)
+	include(${CMAKE_BINARY_DIR}/UserConfig.txt OPTIONAL)
+endif(NOT YAF_USER_CONFIG)
+if(NOT YAF_USER_CONFIG)
+	include(${CMAKE_SOURCE_DIR}/UserConfig.txt OPTIONAL)
+endif(NOT YAF_USER_CONFIG)
 
 if(YAF_USER_INCLUDE_DIRS)
 	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
@@ -43,12 +49,27 @@ endif(YAF_USER_EXTRA_LIBS)
 # find the required libs
 find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
+
+if(LIBXML2_FOUND)
+	add_definitions(-DHAVE_XML)
+endif(LIBXML2_FOUND)
+
 find_package(Threads REQUIRED)
 
 # Find optional libs
+if(CMAKE_HAVE_PTHREAD_H)
+	add_definitions(-DHAVE_PTHREAD)
+	message("Using Posix Threads: yes")
+else(CMAKE_HAVE_PTHREAD_H)
+	message("Using Posix Threads: no")
+endif(CMAKE_HAVE_PTHREAD_H)
+
 if(WITH_Freetype)
 	find_package(Freetype REQUIRED)
 	message("Using FreeType: yes")
+	if(FREETYPE_FOUND)
+		add_definitions(-DHAVE_FREETYPE)
+	endif(FREETYPE_FOUND)
 else(WITH_Freetype)
 	message("Using FreeType: no")
 endif(WITH_Freetype)
@@ -98,6 +119,9 @@ endif(DEBUG_BUILD)
 
 set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
 
+if (USER_INSTALL_PREFIX)
+	set(CMAKE_INSTALL_PREFIX ${USER_INSTALL_PREFIX})
+endif (USER_INSTALL_PREFIX)
 
 if(NOT WIN32)
 	# installation directories
@@ -134,21 +158,8 @@ else(NOT WIN32)
 		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
 		set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1")
 	endif(MINGW)
-	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${YAF_BIN_DIR}/linklibs RUNTIME)
+	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/linklibs RUNTIME)
 endif(NOT WIN32)
-
-# definitions
-if(CMAKE_HAVE_PTHREAD_H)
-	add_definitions(-DHAVE_PTHREAD)
-endif(CMAKE_HAVE_PTHREAD_H)
-
-if(LIBXML2_FOUND)
-	add_definitions(-DHAVE_XML)
-endif(LIBXML2_FOUND)
-
-if(FREETYPE_FOUND)
-	add_definitions(-DHAVE_FREETYPE)
-endif(FREETYPE_FOUND)
 
 if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})
@@ -165,10 +176,6 @@ if(NOT WIN32)
 else(NOT WIN32)
 	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/plugins)
 endif(NOT WIN32)
-
-if (USER_INSTALL_PREFIX)
-	set(CMAKE_INSTALL_PREFIX ${USER_INSTALL_PREFIX})
-endif (USER_INSTALL_PREFIX)
 
 if (USER_RELFLAGS)
 	set(CMAKE_CXX_FLAGS_RELEASE "${YAF_CXX_FLAGS_RELEASE} ${USER_RELFLAGS}" CACHE STRING "Release compiler flags" FORCE)

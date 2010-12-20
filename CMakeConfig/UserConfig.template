@@ -9,6 +9,8 @@
 #                                                                              #
 # NOTE: the defaults work perfectly on most cases                              #
 # don't change anything unless you know what you're doing                      #
+# WARNING: DON'T TOUCH THE NEXT LINE                                           #
+set(YAF_USER_CONFIG ON)
 #                                                                              #
 ################################################################################
 

@@ -71,7 +71,7 @@ if (WITH_YAF_PY_BINDINGS)
 
 	endif(NOT WIN32)
 	
-	add_subdirectory(blender-python)
+	add_subdirectory(python)
 
 endif (WITH_YAF_PY_BINDINGS)
 
@@ -91,7 +91,7 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	endif(NOT WIN32)
 
-	add_subdirectory(sketchup-ruby)
+	add_subdirectory(ruby)
 	
 endif (WITH_YAF_RUBY_BINDINGS)
 
