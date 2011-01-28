@@ -147,6 +147,16 @@ set(EMBED_FONT_QT OFF)
 #set(YAF_LIB_DIR lib)
 
 #                                                                              #
+# The plugin instalation dir                                                   #
+#                                                                              #
+# Default:                                                                     #
+#          ${YAF_LIB_DIR}/yafaray (on *NIX platforms)                          #
+#          ${YAF_LIB_DIR}/plugins (on Windows platforms)                       #
+#                                                                              #
+
+#set(YAF_PLUGIN_DIR "")
+
+#                                                                              #
 # The Python Bindings Installation Path                                        #
 #                                                                              #
 # Default: ${CMAKE_SOURCE_DIR}/install/bindings/python                         #
