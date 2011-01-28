@@ -172,9 +172,13 @@ endif (BUILDRELEASE)
 # Paths and flags configuration
 
 if(NOT WIN32)
-	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
+	if(NOT YAF_PLUGIN_DIR)
+		set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
+	endif(NOT YAF_PLUGIN_DIR)
 else(NOT WIN32)
-	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/plugins)
+	if(NOT YAF_PLUGIN_DIR)
+		set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/plugins)
+	endif(NOT YAF_PLUGIN_DIR)
 endif(NOT WIN32)
 
 if (USER_RELFLAGS)
