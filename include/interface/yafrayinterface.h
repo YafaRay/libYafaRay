@@ -2,7 +2,6 @@
 #ifndef Y_YAFRAYINTERFACE_H
 #define Y_YAFRAYINTERFACE_H
 
-//#include <core_api/params.h>
 #include <yafray_constants.h>
 #include <yaf_revision.h>
 #include <list>
@@ -90,6 +89,12 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
+		
+		virtual void setVerbosityLevel(int vlevel);
+		virtual void setVerbosityInfo();
+		virtual void setVerbosityWarning();
+		virtual void setVerbosityError();
+		virtual void setVerbosityMute();
 		
 		virtual void setDrawParams(bool on = true);
 		virtual bool getDrawParams();

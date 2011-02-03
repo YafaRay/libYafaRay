@@ -3,6 +3,6 @@ if(NOT YAF_REVISION)
 	set(YAF_REVISION "None")
 endif(NOT YAF_REVISION)
 
-configure_file(CMakeConfig/templates/yaf_revision.h.cmake yaf_revision.h)
-configure_file(CMakeConfig/templates/yafray_config.h.cmake yafray_config.h)
+configure_file(CMakeConfig/templates/yaf_revision.h.cmake ${CMAKE_BINARY_DIR}/yaf_revision.h)
+configure_file(CMakeConfig/templates/yafray_config.h.cmake ${CMAKE_BINARY_DIR}/yafray_config.h)
 

@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	
 	if (env->getPluginPath(ppath))
 	{
-		Y_DEBUG(1) << "The plugin path is: " << ppath << yendl;
+		Y_INFO << "The plugin path is: " << ppath << yendl;
 		env->loadPlugins(ppath);
 	}
 	else

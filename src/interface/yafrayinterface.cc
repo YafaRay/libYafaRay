@@ -341,6 +341,30 @@ bool yafrayInterface_t::getDrawParams()
 	
 	return dp;
 }
+void yafrayInterface_t::setVerbosityLevel(int vlevel)
+{
+	yafout.setMasterVerbosity(vlevel);
+}
+
+void yafrayInterface_t::setVerbosityInfo()
+{
+	yafout.setMasterVerbosity(VL_INFO);
+}
+
+void yafrayInterface_t::setVerbosityWarning()
+{
+	yafout.setMasterVerbosity(VL_WARNING);
+}
+
+void yafrayInterface_t::setVerbosityError()
+{
+	yafout.setMasterVerbosity(VL_ERROR);
+}
+
+void yafrayInterface_t::setVerbosityMute()
+{
+	yafout.setMasterVerbosity(VL_MUTE);
+}
 
 // export "factory"...
 

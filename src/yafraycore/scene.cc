@@ -688,7 +688,7 @@ bool scene_t::update()
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 			}
-			else Y_ERROR << "Scene: Scene is empty..." << yendl;
+			else Y_WARNING << "Scene: Scene is empty..." << yendl;
 		}
 		else
 		{

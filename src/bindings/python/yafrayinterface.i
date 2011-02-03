@@ -42,17 +42,17 @@ static Py_ssize_t yaf_tile_length(YafTileObject_t *self)
 {
 	self->w = (self->x1 - self->x0);
 	self->h = (self->y1 - self->y0);
-	
+
 	return self->w * self->h;
 }
 
 static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 {
 	// Check boundaries and fill w and h
-	if (keynum >= yaf_tile_length(self))
+	if (keynum >= yaf_tile_length(self) || keynum < 0)
 		return NULL;
 	
-	// Calc position on tile
+	// Calc position of the tile in the image region
 	int vy = keynum / self->w;
 	int vx = keynum - vy * self->w;
 	
@@ -113,7 +113,14 @@ class pyOutput_t : public yafaray::colorOutput_t
 
 public:
 
-	pyOutput_t(int x, int y, PyObject *callback) : resx(x), resy(y), callb(callback)
+	pyOutput_t(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallback, PyObject *flushCallback) :
+	resx(x),
+	resy(y),
+	bsX(borderStartX),
+	bsY(borderStartY),
+	preview(prev),
+	mDrawArea(drawAreaCallback),
+	mFlush(flushCallback)
 	{
 		tile = PyObject_NEW(YafTileObject_t, &yafTile_Type);
 		tile->mem = new yafTilePixel_t[x*y];
@@ -134,56 +141,65 @@ public:
 		pix.g = c[1];
 		pix.b = c[2];
 		pix.a = alpha ? c[3] : 1.0f;
+		
 		return true;
 	}
 	
 	virtual void flush()
 	{
-		tile->x0 = 0;
+		tile->x0 = bsX;
 		tile->x1 = resx;
-		tile->y0 = 0;
+		tile->y0 = bsY;
 		tile->y1 = resy;
 		
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("siiO", "flush", resx, resy, tile));
+		PyEval_CallObject(mFlush, Py_BuildValue("iiO", resx, resy, tile));
 		PyGILState_Release(gstate);
 	}
 
 	virtual void flushArea(int x0, int y0, int x1, int y1)
 	{
-		tile->x0 = x0;
-		tile->x1 = x1;
-		tile->y0 = y0;
-		tile->y1 = y1;
+		// Do nothing if we are rendering preview renders
+		if(preview) return;
+
+		tile->x0 = x0 - bsX;
+		tile->x1 = x1 - bsX;
+		tile->y0 = y0 - bsY;
+		tile->y1 = y1 - bsY;
 		
+		int w = x1 - x0;
+		int h = y1 - y0;
+
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("siiiiO", "flushArea", x0, resy - y1, x1, resy - y0, tile));
+		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiO", tile->x0, resy - tile->y1, w, h, tile));
 		PyGILState_Release(gstate);
 	}
 
 	virtual void highliteArea(int x0, int y0, int x1, int y1)
 	{
-		tile->x0 = x0;
-		tile->x1 = x1;
-		tile->y0 = y0;
-		tile->y1 = y1;
+		// Do nothing if we are rendering preview renders
+		if(preview) return;
+		
+		tile->x0 = x0 - bsX;
+		tile->x1 = x1 - bsX;
+		tile->y0 = y0 - bsY;
+		tile->y1 = y1 - bsY;
 		
 		int w = x1 - x0;
 		int h = y1 - y0;
 		int lineL = std::min( 4, std::min( h - 1, w - 1 ) );
 		
-		drawCorner(x0, y0, lineL, TL_CORNER);
-		drawCorner(x1, y0, lineL, TR_CORNER);
-		drawCorner(x0, y1, lineL, BL_CORNER);
-		drawCorner(x1, y1, lineL, BR_CORNER);
+		drawCorner(tile->x0, tile->y0, lineL, TL_CORNER);
+		drawCorner(tile->x1, tile->y0, lineL, TR_CORNER);
+		drawCorner(tile->x0, tile->y1, lineL, BL_CORNER);
+		drawCorner(tile->x1, tile->y1, lineL, BR_CORNER);
 		
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("siiiiO", "highliteArea", x0, resy - y1, x1, resy - y0, tile));
+		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiO", tile->x0, resy - tile->y1, w, h, tile));
 		PyGILState_Release(gstate);
-
 	}
 	
 private:
@@ -231,7 +247,7 @@ private:
 			case BR_CORNER:
 				minX = x - len - 1;
 				minY = y - len - 1;
-				maxX = x - 1;
+				maxX = x;
 				maxY = y - 1;
 				x--;
 				y--;
@@ -240,17 +256,28 @@ private:
 
 		for(int i = minX; i < maxX; i++)
 		{
-			tile->mem[resx * y + i].r = 0.625f;
+			yafTilePixel_t &pix = tile->mem[resx * y + i];
+			pix.r = 0.625f;
+			pix.g = 0.f;
+			pix.b = 0.f;
+			pix.a = 1.f;
 		}
 		
 		for(int j = minY; j < maxY; j++)
 		{
-			tile->mem[resx * j + x].r = 0.625f;
+			yafTilePixel_t &pix = tile->mem[resx * j + x];
+			pix.r = 0.625f;
+			pix.g = 0.f;
+			pix.b = 0.f;
+			pix.a = 1.f;
 		}
 	}
 
 	int resx, resy;
-	PyObject *callb;
+	int bsX, bsY;
+	bool preview;
+	PyObject *mDrawArea;
+	PyObject *mFlush;
 	YafTileObject_t *tile;
 };
 
@@ -321,9 +348,9 @@ private:
 
 %extend yafaray::yafrayInterface_t
 {
-	void render(int x, int y, PyObject *outputCallBack, PyObject *progressCallback)
+	void render(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallBack, PyObject *flushCallBack, PyObject *progressCallback)
 	{
-  		pyOutput_t output_wrap(x, y, outputCallBack);
+  		pyOutput_t output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack);
   		pyProgress *pbar_wrap = new pyProgress(progressCallback);
   		
   		Py_BEGIN_ALLOW_THREADS;
@@ -443,7 +470,7 @@ class yafrayInterface_t
 		virtual background_t* 	createBackground	(const char* name);
 		virtual integrator_t* 	createIntegrator	(const char* name);
 		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
-		virtual imageHandler_t*	createImageHandler	(const char* name);
+		virtual imageHandler_t*	createImageHandler	(const char* name, bool addToTable = true); //!< The addToTable parameter, if true, allows to avoid the interface from taking ownership of the image handler
 		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
@@ -456,14 +483,19 @@ class yafrayInterface_t
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
-
+		
+		virtual void setVerbosityLevel(int vlevel);
+		virtual void setVerbosityInfo();
+		virtual void setVerbosityWarning();
+		virtual void setVerbosityError();
+		virtual void setVerbosityMute();
+		
 		virtual void setDrawParams(bool on = true);
 		virtual bool getDrawParams();
 
-		//Versioning stuff
-		virtual char* getVersion() const;
+		virtual char* getVersion() const; //!< Get version to check aginst the exporters
 		
-		//Console Printing wrappers to report in color with yafaray's own coloring mechanic
+		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 		void printInfo(const std::string &msg);
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);
