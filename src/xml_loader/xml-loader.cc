@@ -26,7 +26,16 @@ using namespace::yafaray;
 
 int main(int argc, char *argv[])
 {
+	std::string xmlLoaderVersion = "YafaRay XML loader version 0.2";
+
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
+
+	parse.setAppName(xmlLoaderVersion,
+	"[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
+	
+	parse.setOption("pp","plugin-path", false, "Path to load plugins.");
+	parse.setOption("vl","verbosity-level", false, "Set verbosity level, options are:\n                                       0 - MUTE (Prints nothing)\n                                       1 - ERROR (Prints only errors)\n                                       2 - WARNING (Prints only errors and warnings)\n                                       3 - INFO (Prints all messages)\n");
+	parse.parseCommandLine();
 	
 #ifdef RELEASE
 	std::string version = std::string(VERSION);
@@ -34,14 +43,17 @@ int main(int argc, char *argv[])
 	std::string version = std::string(YAF_SVN_REV);
 #endif
 
-	std::string xmlLoaderVersion = "YafaRay XML loader version 0.2";
-
 	renderEnvironment_t *env = new renderEnvironment_t();
 	
 	// Plugin load
-	std::string ppath = "";
+	std::string ppath = parse.getOptionString("pp");
+	int verbLevel = parse.getOptionInteger("vl");
 	
-	if (env->getPluginPath(ppath))
+	if(verbLevel >= 0) yafout.setMasterVerbosity(verbLevel);
+	
+	if(ppath.empty()) env->getPluginPath(ppath);
+	
+	if (!ppath.empty())
 	{
 		Y_INFO << "The plugin path is: " << ppath << yendl;
 		env->loadPlugins(ppath);
@@ -61,10 +73,6 @@ int main(int argc, char *argv[])
 		if(i < formats.size() - 1) formatString.append("\n");
 	}
 
-	parse.setAppName(xmlLoaderVersion,
-	"[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
-	// Configuration of valid flags
-	
 	parse.setOption("v","version", true, "Displays this program's version.");
 	parse.setOption("h","help", true, "Displays this help text.");
 	parse.setOption("op","output-path", false, "Uses the path in <value> as rendered image output path.");
