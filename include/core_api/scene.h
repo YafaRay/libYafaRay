@@ -129,6 +129,7 @@ class YAFRAYCORE_EXPORT scene_t
 		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 		int  addVertex(const point3d_t &p);
 		int  addVertex(const point3d_t &p, const point3d_t &orco);
+		void addNormal(const normal_t &n);
 		bool addTriangle(int a, int b, int c, const material_t *mat);
 		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 		int  addUV(GFLOAT u, GFLOAT v);
@@ -186,6 +187,7 @@ class YAFRAYCORE_EXPORT scene_t
 			std::vector<point3d_t> points;
 			std::vector<normal_t> normals;
 			int type;
+			int lastVertId;
 		};
 		struct scState_t
 		{

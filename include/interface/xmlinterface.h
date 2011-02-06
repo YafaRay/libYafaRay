@@ -23,8 +23,9 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		//virtual bool startCurveMesh(unsigned int id, int vertices);
 		virtual bool endTriMesh();
 		//virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
-		virtual int  addVertex(double x, double y, double z);
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz);
+		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
+		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+		virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat);
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 		virtual int  addUV(float u, float v);

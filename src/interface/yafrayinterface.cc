@@ -118,7 +118,12 @@ int  yafrayInterface_t::addVertex(double x, double y, double z) { return scene->
 
 int  yafrayInterface_t::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
-	return scene->addVertex( point3d_t(x,y,z), point3d_t(ox,oy,oz) );
+	return scene->addVertex(point3d_t(x,y,z), point3d_t(ox,oy,oz));
+}
+
+void yafrayInterface_t::addNormal(double x, double y, double z)
+{
+	scene->addNormal( normal_t(x,y,z) );
 }
 
 bool yafrayInterface_t::addTriangle(int a, int b, int c, const material_t *mat) { return scene->addTriangle(a, b, c, mat); }

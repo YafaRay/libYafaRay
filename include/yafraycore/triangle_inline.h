@@ -22,7 +22,7 @@ inline bool triangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) c
 	*t = (vector3d_t(normal)*(a-ray.from))/(vector3d_t(normal)*ray.dir);
 	return true;
 #else
-	//Tomas Möller and Ben Trumbore ray intersection scheme
+	//Tomas MÃ¶ller and Ben Trumbore ray intersection scheme
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
 	PFLOAT det, inv_det, u, v;

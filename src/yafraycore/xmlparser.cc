@@ -168,7 +168,7 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 		{
 			if(attrs[0][1] == 0 || attrs[0][2] != 0)
 			{
-				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (1)" << yendl;
+				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (1)" << yendl;
 				continue; //it is not a single character
 			}
 			switch(attrs[0][1])
@@ -176,13 +176,13 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 				case 'x' : op.x = atof(attrs[1]); break;
 				case 'y' : op.y = atof(attrs[1]); break;
 				case 'z' : op.z = atof(attrs[1]); break;
-				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (2)" << yendl;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (2)" << yendl;
 			}
 			continue;
 		}
 		else if(attrs[0][1] != 0)
 		{
-			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point (3)" << yendl;
+			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << yendl;
 			continue; //it is not a single character
 		}
 		switch(attrs[0][0])
@@ -195,6 +195,28 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 	}
 
 	return true;
+}
+
+static bool parseNormal(const char **attrs, normal_t &n)
+{
+	int compoRead = 0;
+	for( ;attrs && attrs[0]; attrs += 2)
+	{
+		if(attrs[0][1] != 0)
+		{
+			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal" << yendl;
+			continue; //it is not a single character
+		}
+		switch(attrs[0][0])
+		{
+			case 'x' : n.x = atof(attrs[1]); compoRead++; break;
+			case 'y' : n.y = atof(attrs[1]); compoRead++; break;
+			case 'z' : n.z = atof(attrs[1]); compoRead++; break;
+			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal." << yendl;
+		}
+	}
+
+	return (compoRead == 3);
 }
 
 void parseParam(const char **attrs, parameter_t &param)
@@ -358,7 +380,6 @@ void endEl_scene(xmlParser_t &parser, const char *element)
 
 // mesh-state, i.e. expect only points (vertices), faces and material settings
 // since we're supposed to be inside a mesh block, exit state on "mesh" element
-
 void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	std::string el(element);
@@ -369,6 +390,12 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 		if(!parsePoint(attrs, p, op)) return;
 		if(dat->has_orco)	parser.scene->addVertex(p, op);
 		else 				parser.scene->addVertex(p);
+	}
+	else if(el == "n")
+	{
+		normal_t n(0.0, 0.0, 0.0);
+		if(!parseNormal(attrs, n)) return;
+		parser.scene->addNormal(n);
 	}
 	else if(el == "f")
 	{

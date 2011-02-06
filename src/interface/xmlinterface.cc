@@ -91,14 +91,19 @@ bool xmlInterface_t::endTriMesh()
 int  xmlInterface_t::addVertex(double x, double y, double z)
 {
 	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
-	return true;
+	return 0;
 }
 
 int  xmlInterface_t::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
 	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
 			<< "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
-	return true;
+	return 0;
+}
+
+void xmlInterface_t::addNormal(double x, double y, double z)
+{
+	xmlFile << "\t\t\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
 bool xmlInterface_t::addTriangle(int a, int b, int c, const material_t *mat)

@@ -496,7 +496,10 @@ int scene_t::addVertex(const point3d_t &p)
 		}
 		return (n-1)/3;
 	}
-	return state.curObj->points.size()-1;
+	
+	state.curObj->lastVertId = state.curObj->points.size()-1;
+	
+	return state.curObj->lastVertId;
 }
 
 int scene_t::addVertex(const point3d_t &p, const point3d_t &orco)
@@ -504,7 +507,20 @@ int scene_t::addVertex(const point3d_t &p, const point3d_t &orco)
 	if(state.stack.front() != OBJECT) return -1;
 	state.curObj->points.push_back(p);
 	state.curObj->points.push_back(orco);
-	return (state.curObj->points.size()-1)/2;
+	state.curObj->lastVertId = (state.curObj->points.size()-1) / 2;
+	
+	return state.curObj->lastVertId;
+}
+
+void scene_t::addNormal(const normal_t& n)
+{
+	if(state.curObj->points.size() > (unsigned int) state.curObj->lastVertId && state.curObj->points.size() > state.curObj->normals.size())
+	{
+		if(state.curObj->normals.size() < state.curObj->points.size())
+			state.curObj->normals.resize(state.curObj->points.size());
+		
+		state.curObj->normals[state.curObj->lastVertId] = n;
+	}
 }
 
 bool scene_t::addTriangle(int a, int b, int c, const material_t *mat)
