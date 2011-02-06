@@ -664,7 +664,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 	{ return false; }
 	
 	unsigned char udat1[PRIM_DAT_SIZE], udat2[PRIM_DAT_SIZE];
-	void *c_udat=(void*)&udat1[0], *t_udat=(void*)&udat2[0];
+	void *c_udat=(void*)udat1, *t_udat=(void*)udat2;
 	vector3d_t invDir(1.0/ray.dir.x, 1.0/ray.dir.y, 1.0/ray.dir.z); //was 1.f!
 	bool hit = false;
 	
@@ -757,7 +757,9 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 				{
 					Z = t_hit;
 					*tr = mp;
-					std::swap(t_udat, c_udat);
+					void *swap = t_udat;
+					t_udat = c_udat;
+					c_udat = swap;
 					hit = true;
 				}
 			}
@@ -776,14 +778,24 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 					{
 						Z = t_hit;
 						*tr = mp;
-						std::swap(t_udat, c_udat);
+						void *swap = t_udat;
+						t_udat = c_udat;
+						c_udat = swap;
 						hit = true;
 					}
 				}
 			}
 		}
 		
-		if(hit && Z <= stack[exPt].t){ memcpy(udat, c_udat, PRIM_DAT_SIZE); return true;}
+		if(hit && Z <= stack[exPt].t)
+		{
+			float nu = ((float*)c_udat)[0];
+			float nv = ((float*)c_udat)[1];
+			float *temp = (float*)udat;
+			temp[0] = nu;
+			temp[1] = nv;
+			return true;
+		}
 		
 		enPt = exPt;
 		currNode = stack[exPt].node;
@@ -791,7 +803,11 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 				
 	} // while
 
-	memcpy(udat, c_udat, PRIM_DAT_SIZE);
+	float nu = ((float*)c_udat)[0];
+	float nv = ((float*)c_udat)[1];
+	float *temp = (float*)udat;
+	temp[0] = nu;
+	temp[1] = nv;
 
 	return hit; //false;
 }
