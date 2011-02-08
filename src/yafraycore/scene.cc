@@ -366,7 +366,6 @@ void scene_t::setNumThreads(int threads)
 	Y_INFO << "Using [" << nthreads << "] Threads." << yendl;
 }	
 
-/* currently not fully implemented! id=0 means state.curObj, other than 0 not supported yet. */
 bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 {
 	if( state.stack.front() != GEOMETRY ) return false;
@@ -382,6 +381,13 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 		odat = state.curObj;
 		if(!odat) return false;
 	}
+	
+	if(odat->obj->normals_exported && odat->points.size() == odat->normals.size())
+	{
+		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
+		return true;
+	}
+	
 	// cannot smooth other mesh types yet...
 	if(odat->type > 0) return false;
 	unsigned int i1, i2, i3;
@@ -520,6 +526,7 @@ void scene_t::addNormal(const normal_t& n)
 			state.curObj->normals.resize(state.curObj->points.size());
 		
 		state.curObj->normals[state.curObj->lastVertId] = n;
+		state.curObj->obj->normals_exported = true;
 	}
 }
 
@@ -544,6 +551,23 @@ bool scene_t::addTriangle(int a, int b, int c, const material_t *mat)
 		if(state.orco) a*=2, b*=2, c*=2;
 		triangle_t tri(a, b, c, state.curObj->obj);
 		tri.setMaterial(mat);
+		if(state.curObj->obj->normals_exported)
+		{
+			if(state.orco)
+			{
+				// Since the vertex indexes are duplicated with orco
+				// we divide by 2: a / 2 == a >> 1 since is an integer division
+				tri.na = a >> 1;
+				tri.nb = b >> 1;
+				tri.nc = c >> 1;
+			}
+			else
+			{
+				tri.na = a;
+				tri.nb = b;
+				tri.nc = c;
+			}
+		}
 		state.curTri = state.curObj->obj->addTriangle(tri);
 	}
 	return true;

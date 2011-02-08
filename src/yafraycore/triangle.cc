@@ -16,7 +16,7 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
 	PFLOAT v=dat[0], w=dat[1];
 	PFLOAT u=1.0 - v - w;
-	if(mesh->is_smooth)
+	if(mesh->is_smooth || mesh->normals_exported)
 	{
 		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
 		sp.N = u*va + v*vb + w*vc;
@@ -159,7 +159,7 @@ void triangle_t::sample(float s1, float s2, point3d_t &p, vector3d_t &n) const
 
 bool vTriangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
 {
-	//Tomas Möller and Ben Trumbore ray intersection scheme
+	//Tomas MÃ¶ller and Ben Trumbore ray intersection scheme
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
 	PFLOAT det, inv_det, u, v;

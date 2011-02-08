@@ -4,7 +4,7 @@
 __BEGIN_YAFRAY
 
 triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
-	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false)
+	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false), normals_exported(false)
 {
 	triangles.reserve(ntris);
 	if(hasUV)

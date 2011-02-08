@@ -86,6 +86,7 @@ class YAFRAYCORE_EXPORT triangleObject_t: public object3d_t
 		bool has_uv;
 		bool has_vcol;
 		bool is_smooth;
+		bool normals_exported;
 		const matrix4x4_t world2obj; //!< transformation from world to object coordinates
 };
 
