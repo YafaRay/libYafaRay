@@ -4,13 +4,6 @@
 #include <cctype>
 #include <algorithm>
 
-#ifdef WIN32
-	#ifndef __MINGW32__
-		#define NOMINMAX
-	#endif
-	#include <windows.h>
-#endif
-
 #include <core_api/scene.h>
 #include <core_api/environment.h>
 #include <core_api/integrator.h>

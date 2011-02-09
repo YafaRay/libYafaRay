@@ -224,8 +224,8 @@ set(EMBED_FONT_QT OFF)
 #    or                                                                        #
 #    set(YAF_USER_EXTRA_LIBS libiconv.lib)      *Syntax for MSVC linker        #
 #                                                                              #
-# to add iconv to the library linkage list, again you can specify several libs #
-# at once in a list separated by spaces ie.                                    #
+# to add iconv to the library linkage list, again you can specify several      #
+# libs at once in a list separated by spaces ie.                               #
 #                                                                              #
 #    set(YAF_USER_EXTRA_LIBS -lmylib1 -lmylib2 -lmylib2)                       #
 #    or                                                                        #
@@ -248,6 +248,21 @@ set(EMBED_FONT_QT OFF)
 #                                                                              #
 
 #set(YAF_PY_VERSION 3.1)
+
+############################# Misc. Configurations #############################
+#                                                                              #
+# Minimal ray distance                                                         #
+# Default: 0.00005                                                             #
+#                                                                              #
+
+#set(YAF_MIN_RAY_DIST 0.00005)
+
+#                                                                              #
+# Shadow bias                                                                  #
+# Default: 0.00005                                                             #
+#                                                                              #
+
+#set(YAF_SHADOW_BIAS 0.00005)
 
 ################################# End of file ##################################
 

@@ -5,12 +5,21 @@
 #include <core_api/color_console.h>
 #include <core_api/console_verbosity.h>
 
-#define MIN_RAYDIST 0.00005
-#define YAF_SHADOW_BIAS 0.0005
+#ifdef _WIN32
+	#ifndef __MINGW32__
+		#define NOMINMAX
+	#endif
+	#include <io.h>
+	#include <windows.h>
+#endif
+
+#define MIN_RAYDIST @YAF_MIN_RAY_DIST@
+#define YAF_SHADOW_BIAS @YAF_SHADOW_BIAS@
 
 #define Y_INFO yafout.info() << setColor(Green) << "INFO: " << setColor()
 #define Y_WARNING yafout.warning() << setColor(Yellow) << "WARNING: " << setColor()
 #define Y_ERROR yafout.error() << setColor(Red) << "ERROR: " << setColor()
+#define Y_LOG yafout.error() << setColor(Cyan) << "LOG: " << setColor()
 #define yendl std::endl
 
 __BEGIN_YAFRAY

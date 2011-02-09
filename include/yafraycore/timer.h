@@ -13,8 +13,6 @@ extern "C" struct timeval;
 #endif
 
 __BEGIN_YAFRAY
-// #define YAFRAYCORE_EXPORT
-
 
 class YAFRAYCORE_EXPORT timer_t
 {

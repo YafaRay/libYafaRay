@@ -11,10 +11,6 @@
 	#include<pthread.h>
 	#define USING_THREADS
 #elif defined(WIN32)
-	#ifndef __MINGW32__
-		#define NOMINMAX
-	#endif
-	#include <windows.h>
 	#define USING_THREADS
 	#define WIN32_THREADS
 #endif

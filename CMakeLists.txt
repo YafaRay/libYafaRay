@@ -23,12 +23,21 @@ option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installat
 
 # Load user configurations if available
 include(CMakeConfig/UserConfig.txt OPTIONAL)
+
 if(NOT YAF_USER_CONFIG)
 	include(${CMAKE_BINARY_DIR}/UserConfig.txt OPTIONAL)
 endif(NOT YAF_USER_CONFIG)
 if(NOT YAF_USER_CONFIG)
 	include(${CMAKE_SOURCE_DIR}/UserConfig.txt OPTIONAL)
 endif(NOT YAF_USER_CONFIG)
+
+if(NOT YAF_MIN_RAY_DIST)
+	set(YAF_MIN_RAY_DIST 0.00005)
+endif(NOT YAF_MIN_RAY_DIST)
+
+if(NOT YAF_SHADOW_BIAS)
+	set(YAF_SHADOW_BIAS 0.00005)
+endif(NOT YAF_SHADOW_BIAS)
 
 if(YAF_USER_INCLUDE_DIRS)
 	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
@@ -52,6 +61,9 @@ find_package(LibXml2 REQUIRED)
 
 if(LIBXML2_FOUND)
 	add_definitions(-DHAVE_XML)
+	message("Using LibXML: yes")
+else(LIBXML2_FOUND)
+	message("Using LibXML: no")
 endif(LIBXML2_FOUND)
 
 find_package(Threads REQUIRED)
@@ -110,6 +122,12 @@ if(WITH_QT)
 else(WITH_QT)
 	message("Using Qt: no")
 endif(WITH_QT)
+
+if(WITH_XML_LOADER)
+	message("Building XML loader: yes")
+else(WITH_XML_LOADER)
+	message("Building XML loader: no")
+endif(WITH_XML_LOADER)
 
 if(DEBUG_BUILD)
 	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build mode" FORCE)

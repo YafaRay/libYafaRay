@@ -1,15 +1,7 @@
 #ifndef __YAFSYSTEM_H
 #define __YAFSYSTEM_H
 
-#include<yafray_config.h>
-
-#ifdef WIN32
-	#ifndef __MINGW32__
-		#define NOMINMAX
-	#endif
-	#include <io.h>
-	#include <windows.h>
-#endif
+#include <yafray_config.h>
 
 #include <list>
 #include <string>

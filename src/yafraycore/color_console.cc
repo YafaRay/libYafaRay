@@ -20,12 +20,6 @@
  */
  
 #include <yafray_config.h>
-#ifdef _WIN32
-	#ifndef __MINGW32__
-		#define NOMINMAX
-	#endif
-	#include <windows.h>
-#endif
 
 __BEGIN_YAFRAY
 
