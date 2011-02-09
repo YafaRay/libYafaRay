@@ -6,8 +6,6 @@
 #include <AvailabilityMacros.h>
 #endif
 
-using namespace std;
-
 namespace yafthreads {
 
 mutex_t::mutex_t() 

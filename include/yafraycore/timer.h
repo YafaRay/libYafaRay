@@ -7,7 +7,7 @@
 #include <string>
 #include <map>
 
-#ifndef WIN32
+#ifndef _WIN32
 extern "C" struct timeval;
 #include <sys/time.h>
 #endif

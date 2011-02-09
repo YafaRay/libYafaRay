@@ -1,8 +1,11 @@
 #include <yafray_config.h>
 #include <cstdlib>
-#include <iostream>
 #include <cctype>
 #include <algorithm>
+
+#ifdef WIN32
+	#include <windows.h>
+#endif
 
 #include <core_api/scene.h>
 #include <core_api/environment.h>

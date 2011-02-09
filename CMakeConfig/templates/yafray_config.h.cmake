@@ -5,12 +5,8 @@
 #include <core_api/color_console.h>
 #include <core_api/console_verbosity.h>
 
-#ifdef _WIN32
-	#ifndef __MINGW32__
-		#define NOMINMAX
-	#endif
-	#include <io.h>
-	#include <windows.h>
+#if defined(_WIN32) and !defined(__MINGW32__)
+	#define NOMINMAX
 #endif
 
 #define MIN_RAYDIST @YAF_MIN_RAY_DIST@

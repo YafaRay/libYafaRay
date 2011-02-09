@@ -1,16 +1,15 @@
 #ifndef Y_CCTHREADS_H
 #define Y_CCTHREADS_H
 
-#include<iostream>
+#include <yafray_config.h>
 
-#include<yafray_config.h>
-
-#include<errno.h>
+#include <errno.h>
 
 #if HAVE_PTHREAD
-	#include<pthread.h>
+	#include <pthread.h>
 	#define USING_THREADS
 #elif defined(WIN32)
+	#include <windows.h>
 	#define USING_THREADS
 	#define WIN32_THREADS
 #endif

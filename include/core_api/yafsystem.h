@@ -3,6 +3,11 @@
 
 #include <yafray_config.h>
 
+#ifdef WIN32
+	#include <io.h>
+	#include <windows.h>
+#endif
+
 #include <list>
 #include <string>
 

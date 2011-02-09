@@ -23,6 +23,11 @@
 
 #include <core_api/environment.h>
 
+#ifdef _WIN32
+	#include <io.h>
+	#include <windows.h>
+#endif
+
 #include <core_api/light.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
