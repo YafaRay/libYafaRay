@@ -21,12 +21,13 @@ void textureMapper_t::setup()
 		dV = 1.f/(float)v;
 		if(tex->isThreeD()) dW = 1.f/(float)w;
 		else dW = 0.f;
+		dUV = dU * dV;
 	}
 	else
 	{
-		float step = 0.f;
-		tex->getInterpolationStep(step);
+		float step = 0.001f;
 		dU = dV = dW = step;
+		dUV = step * step;
 	}
 
 	pDU = point3d_t(dU, 0, 0);
@@ -34,6 +35,8 @@ void textureMapper_t::setup()
 	pDW = point3d_t(0, 0, dW);
 	
 	bumpStr /= scale.length();
+	dU *= bumpStr / 100.f;
+	dV *= bumpStr / 100.f;
 }
 
 // Map the texture to a cylinder
@@ -150,7 +153,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 
 // Normal perturbation
 #define colToVec(col) ( (2.f * col) - 1.f )
-#define getHeight(a0, a1, d) ( (tex->getFloat(a0) - tex->getFloat(a1)) )
+#define getHeight(a0, a1, d) ( (tex->getFloat(a1) - tex->getFloat(a0)) * d )
 
 void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
@@ -175,7 +178,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		point3d_t j0 = (texpt + pDV);
 		point3d_t j1 = (texpt - pDV);
 
-		norm = vector3d_t(getHeight(i0, i1, dU) * bumpStr, getHeight(j0, j1, dV) * bumpStr, 1);
+		norm = vector3d_t(getHeight(i0, i1, dV), getHeight(j0, j1, dU), dUV);
 	}
 
 	norm.normalize();
