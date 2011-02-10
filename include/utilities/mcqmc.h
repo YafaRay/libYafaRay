@@ -8,49 +8,71 @@
 __BEGIN_YAFRAY
 // fast incremental Halton sequence generator
 // calculation of value must be double prec.
-class /*YAFRAYCORE_EXPORT*/ Halton
+class Halton
 {
 public:
-	Halton() {}
-	Halton(int base) { setBase(base); }
+	
+	Halton()
+	{
+		//Empty
+	}
+	
+	Halton(int base)
+	{
+		setBase(base);
+	}
+	
 	void setBase(int base)
 	{
-		_base = base;
-		invBase = 1.0/double(base);
-		value = 0;
+		mBase = base;
+		mInvBase = 1.0 / (double) base;
+		mValue = 0;
 	}
-	~Halton() {}
-	void reset() { value=0.0; }
-	void setStart(unsigned int i)
+	
+	void reset()
 	{
-		value = 0.0;
-		double f, factor;
-		f = factor = invBase;
-		while (i>0) {
-			value += double(i % _base) * factor;
-			i /= _base;
-			factor *= f;
+		mValue=0.0;
+	}
+	
+	inline void setStart(unsigned int i)
+	{
+		double factor = mInvBase;
+
+		mValue = 0.0;
+
+		while (i > 0)
+		{
+			mValue += (double) (i % mBase) * factor;
+			i /= mBase;
+			factor *= mInvBase;
 		}
 	}
-	PFLOAT getNext() const
+	
+	inline float getNext()
 	{
-		double r = 1.0 - value - 0.0000000001;
-		if (invBase < r)
-			value += invBase;
-		else {
-			double hh, h=invBase;
-			do {
+		double r = 0.9999999999 - mValue;
+		if (mInvBase < r)
+		{
+			mValue += mInvBase;
+		}
+		else
+		{
+			double hh, h = mInvBase;
+			while (h >= r)
+			{
 				hh = h;
-				h *= invBase;
-			} while (h >= r);
-			value += hh + h - 1.0;
+				h *= mInvBase;
+			} 
+			
+			mValue += hh + h - 1.0;
 		}
-		return value;
+		return mValue;
 	}
+	
 private:
-	unsigned int _base;
-	double invBase;
-	mutable double value;
+	unsigned int mBase;
+	double mInvBase;
+	double mValue;
 };
 
 
