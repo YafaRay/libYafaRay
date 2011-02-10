@@ -7,43 +7,38 @@
 	"triangle.h" and "triangle_inline.h" directly.
 */
 
-inline bool triangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
+inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
 {
-#ifdef _OLD_TRIINTERSECT
-	//"old" intersect code
-	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
-	const vector3d_t va=(a)-ray.from,vb=(b)-ray.from,vc=(c)-ray.from;
-	vector3d_t r;
-	if((ray.dir*vector3d_t(normal))<0) r=-ray.dir;
-	else r=ray.dir;
-	if( ((va^vb)*r)<0 ) return false;
-	if( ((vb^vc)*r)<0 ) return false;
-	if( ((vc^va)*r)<0 ) return false;
-	*t = (vector3d_t(normal)*(a-ray.from))/(vector3d_t(normal)*ray.dir);
-	return true;
-#else
-	//Tomas Möller and Ben Trumbore ray intersection scheme
+	// Tomas Möller and Ben Trumbore ray intersection scheme
+	// Getting the barycentric coordinates of the hit point
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
-	PFLOAT det, inv_det, u, v;
+	float det, inv_det, u, v;
 	edge1 = b - a;
 	edge2 = c - a;
 	pvec = ray.dir ^ edge2;
 	det = edge1 * pvec;
-	if (/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
+	
+	if(det == 0.0) return false;
+	
 	inv_det = 1.0 / det;
 	tvec = ray.from - a;
 	u = (tvec*pvec) * inv_det;
+	
 	if (u < 0.0 || u > 1.0) return false;
+	
 	qvec = tvec^edge1;
 	v = (ray.dir*qvec) * inv_det;
+	
 	if ((v<0.0) || ((u+v)>1.0) ) return false;
+	
 	*t = edge2 * qvec * inv_det;
-	PFLOAT *dat = (PFLOAT*)userdata;
-	dat[0]=u; dat[1]=v;
+
+	data.b1 = u;
+	data.b2 = v;
 	return true;
-#endif
 }
+
 inline bound_t triangle_t::getBound() const
 {
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];

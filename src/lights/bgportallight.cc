@@ -193,12 +193,12 @@ bool bgPortalLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float
 {
 	if(!tree) return false;
 	PFLOAT dis;
-	unsigned char udat[PRIM_DAT_SIZE];
+	intersectData_t bary;
 	triangle_t *hitt=0;
 	if(ray.tmax<0) dis=std::numeric_limits<PFLOAT>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:
-	if( ! tree->Intersect(ray, dis, &hitt, t, (void*)&udat[0]) ){ return false; }
+	if( ! tree->Intersect(ray, dis, &hitt, t, bary) ){ return false; }
 	
 	vector3d_t n = hitt->getNormal();
 	PFLOAT cos_angle = ray.dir*(-n);

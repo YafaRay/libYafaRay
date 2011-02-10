@@ -29,14 +29,14 @@ class YAFRAYCORE_EXPORT triangle_t
 		triangle_t(){};
 		triangle_t(int ia, int ib, int ic, triangleObject_t* m): pa(ia), pb(ib), pc(ic),
 						na(-1), nb(-1), nc(-1), mesh(m){ /*recNormal();*/ };
-		inline bool intersect(const ray_t &ray, PFLOAT *t, void *userdata) const;
+		inline bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const;
 		inline bound_t getBound() const;
 		inline bool intersectsBound(exBound_t &eb) const;
 		inline bool clippingSupport() const{ return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
 		const material_t* getMaterial() const { return material; }	
-		void getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const;
+		void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
 		vector3d_t getNormal() const{ return vector3d_t(normal); }
 		PFLOAT surfaceArea() const;
 		void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
@@ -65,14 +65,14 @@ class YAFRAYCORE_EXPORT vTriangle_t: public primitive_t
 		vTriangle_t(){};
 		vTriangle_t(int ia, int ib, int ic, meshObject_t* m): pa(ia), pb(ib), pc(ic),
 					na(-1), nb(-1), nc(-1), mesh(m){ /*recNormal();*/ };
-		virtual bool intersect(const ray_t &ray, PFLOAT *t, void *userdata) const;
+		virtual bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;
 		virtual bool intersectsBound(exBound_t &eb) const;
 		virtual bool clippingSupport() const { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
 		virtual const material_t* getMaterial() const { return material; }	
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const;
+		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
 		
 		// following are methods which are not part of primitive interface:
 		void setMaterial(const material_t *m) { material = m; }
@@ -98,13 +98,13 @@ class YAFRAYCORE_EXPORT bsTriangle_t: public primitive_t
 		bsTriangle_t(){};
 		bsTriangle_t(int ia, int ib, int ic, meshObject_t* m): pa(ia), pb(ib), pc(ic),
 					na(-1), nb(-1), nc(-1), mesh(m){ };
-		virtual bool intersect(const ray_t &ray, PFLOAT *t, void *userdata) const;
+		virtual bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;
 		//virtual bool intersectsBound(exBound_t &eb) const;
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		//virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
 		virtual const material_t* getMaterial() const { return material; }	
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const;
+		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
 		
 		// following are methods which are not part of primitive interface:
 		void setMaterial(const material_t *m) { material = m; }

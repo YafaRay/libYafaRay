@@ -32,9 +32,9 @@ class YAFRAYCORE_EXPORT primitive_t
 		The caller decides wether t matters or not.
 		\return false if ray misses primitive, true otherwise
 		\param t set this to raydepth where hit occurs */
-	virtual bool intersect(const ray_t &ray, PFLOAT *t, void *userdata) const = 0;
+	virtual bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const = 0;
 	/* fill in surfacePoint_t */
-	virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const = 0;
+	virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const = 0;
 	/* return the material */
 	virtual const material_t* getMaterial() const = 0;
 	virtual ~primitive_t(){};

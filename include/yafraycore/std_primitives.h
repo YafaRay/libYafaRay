@@ -18,8 +18,8 @@ class YAFRAYCORE_EXPORT sphere_t: public primitive_t
 		virtual bool intersectsBound(exBound_t &b) const { return true; };
 		//virtual bool clippingSupport() const { return false; }
 		//virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const {return false;}
-		virtual bool intersect(const ray_t &ray, PFLOAT *t, void *userdata) const;
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const;
+		virtual bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const;
+		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
 		virtual const material_t* getMaterial() const { return material; }
 	protected:
 		point3d_t center;

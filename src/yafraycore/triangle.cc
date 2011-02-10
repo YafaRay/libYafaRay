@@ -3,22 +3,17 @@
 
 __BEGIN_YAFRAY
 
-void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const
+void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const
 {
-	sp.Ng = vector3d_t(normal);
-#ifdef _OLD_TRIINTERSECT
-#error "_OLD_TRIINTERSECT currently not supported. Please remove #define"
-#endif
-	PFLOAT *dat = (PFLOAT*)userdata;
-	// gives the index in triangle array, according to my latest informations
-	// it _should be_ safe to rely on array-like contiguous memory in std::vector<>!
+	sp.Ng = vector3d_t(normal).normalize();
+	data.calcB0();
+
 	int tri_index = this - &(mesh->triangles.front());
-	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	PFLOAT v=dat[0], w=dat[1];
-	PFLOAT u=1.0 - v - w;
+	float u = data.b0, v = data.b1, w = data.b2;
+	
 	if(mesh->is_smooth || mesh->normals_exported)
 	{
-		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
+		vector3d_t va( (na > 0) ? mesh->normals[na] : normal ), vb( (nb > 0) ? mesh->normals[nb] : normal ), vc( (nc > 0) ? mesh->normals[nc] : normal );
 		sp.N = u*va + v*vb + w*vc;
 		sp.N.normalize();
 	}
@@ -36,6 +31,7 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 		sp.hasOrco = false;
 		sp.orcoNg = sp.Ng;
 	}
+	
 	if(mesh->has_uv)
 	{
 		std::vector<int>::const_iterator uvi = mesh->uv_offsets.begin() + 3*tri_index;
@@ -57,30 +53,31 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *user
 			invdet = 1.f/det;
 			vector3d_t dp1 = mesh->points[pa] - mesh->points[pc];
 			vector3d_t dp2 = mesh->points[pb] - mesh->points[pc];
-			sp.dPdU = (dv2 * invdet) * dp1 - (dv1 * invdet) * dp2;
-			sp.dPdV = (du1 * invdet) * dp2 - (du2 * invdet) * dp1;
+			sp.dPdU = (dv2 * dp1 - dv1 * dp2) * invdet;
+			sp.dPdV = (du1 * dp2 - du2 * dp1) * invdet;
 		}
 		else
 		{
-			sp.dPdU = vector3d_t(0.f);
-			sp.dPdV = vector3d_t(0.f);
+			vector3d_t dp1 = mesh->points[pb] - mesh->points[pa];
+			vector3d_t dp2 = mesh->points[pc] - mesh->points[pa];
+			createCS((dp2 ^ dp1).normalize(), sp.dPdU, sp.dPdV);
 		}
 	}
 	else
 	{
 		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
-		sp.U = u;
-		sp.V = v;
-		sp.dPdU = mesh->points[pb] - mesh->points[pa];
-		sp.dPdV = mesh->points[pc] - mesh->points[pa];
+		vector3d_t dp1 = mesh->points[pa] - mesh->points[pc];
+		vector3d_t dp2 = mesh->points[pb] - mesh->points[pc];
+		sp.U = v + w;
+		sp.V = w;
+		sp.dPdU = dp2 - dp1;
+		sp.dPdV = -dp2;
 	}
 
 	sp.dPdU.normalize();
 	sp.dPdV.normalize();
 
 	sp.object = mesh;
-	sp.sU = u;
-	sp.sV = v;
 	sp.primNum = tri_index;
 	sp.material = material;
 	sp.P = hit;
@@ -157,7 +154,7 @@ void triangle_t::sample(float s1, float s2, point3d_t &p, vector3d_t &n) const
 // vTriangle_t methods, mosty c&p...
 //==========================================
 
-bool vTriangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
+bool vTriangle_t::intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const
 {
 	//Tomas Möller and Ben Trumbore ray intersection scheme
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
@@ -176,8 +173,8 @@ bool vTriangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
 	v = (ray.dir*qvec) * inv_det;
 	if ((v<0.0) || ((u+v)>1.0) ) return false;
 	*t = edge2 * qvec * inv_det;
-	PFLOAT *dat = (PFLOAT*)userdata;
-	dat[0]=u; dat[1]=v;
+	data.b1 = u;
+	data.b2 = v;
 	return true;
 }
 
@@ -194,16 +191,16 @@ bound_t vTriangle_t::getBound() const
 	return bound_t(l, h);
 }
 
-void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const
+void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const
 {
 	sp.Ng = vector3d_t(normal);
-	PFLOAT *dat = (PFLOAT*)userdata;
+	data.calcB0();
 	// gives the index in triangle array, according to my latest informations
 	// it _should be_ safe to rely on array-like contiguous memory in std::vector<>!
 	int tri_index= this - &(mesh->triangles.front());
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	PFLOAT v=dat[0], w=dat[1];
-	PFLOAT u=1.0 - v - w;
+	float u = data.b0, v = data.b1, w = data.b2;
+
 	if(mesh->is_smooth)
 	{
 		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
@@ -262,8 +259,7 @@ void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *use
 		sp.dPdU = mesh->points[pb] - mesh->points[pa];
 		sp.dPdV = mesh->points[pc] - mesh->points[pa];
 	}
-	sp.sU = u;
-	sp.sV = v;
+
 	sp.primNum = tri_index;
 	sp.material = material;
 	sp.P = hit;
@@ -352,7 +348,7 @@ void vTriangle_t::recNormal()
 // bsTriangle_t methods
 //==========================================
 
-bool bsTriangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
+bool bsTriangle_t::intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const
 {
 	const point3d_t *an=&mesh->points[pa], *bn=&mesh->points[pb], *cn=&mesh->points[pc];
 	PFLOAT tc = 1.f - ray.time;
@@ -376,9 +372,10 @@ bool bsTriangle_t::intersect(const ray_t &ray, PFLOAT *t, void *userdata) const
 	v = (ray.dir*qvec) * inv_det;
 	if ((v<0.0) || ((u+v)>1.0) ) return false;
 	*t = edge2 * qvec * inv_det;
-	PFLOAT *dat = (PFLOAT*)userdata;
-	dat[0]=u; dat[1]=v;
-	dat[3]=ray.time;
+	
+	data.b1 = u;
+	data.b1 = v;
+	data.t = ray.time;
 	return true;
 }
 
@@ -414,22 +411,22 @@ bound_t bsTriangle_t::getBound() const
 	return bound_t(l, h);
 }
 
-void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, void *userdata) const
+void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const
 {
-	PFLOAT *dat = (PFLOAT*)userdata;
+	data.calcB0();
 	// recalculating the points is not really the nicest solution...
 	const point3d_t *an=&mesh->points[pa], *bn=&mesh->points[pb], *cn=&mesh->points[pc];
-	PFLOAT time = dat[3];
-	PFLOAT tc = 1.f - time;
-	PFLOAT b1 = tc*tc, b2 = 2.f*time*tc, b3 = time*time;
+	float time = data.t;
+	float tc = 1.f - time;
+	float b1 = tc*tc, b2 = 2.f*time*tc, b3 = time*time;
 	const point3d_t a = b1*an[0] + b2*an[1] + b3*an[2];
 	const point3d_t b = b1*bn[0] + b2*bn[1] + b3*bn[2];
 	const point3d_t c = b1*cn[0] + b2*cn[1] + b3*cn[2];
 	
 	sp.Ng = ((b-a)^(c-a)).normalize();
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	PFLOAT v=dat[0], w=dat[1];
-	PFLOAT u=1.0 - v - w;
+	float u = data.b0, v = data.b1, w = data.b2;
+
 	//todo: calculate smoothed normal...
 	/* if(mesh->is_smooth)
 	{

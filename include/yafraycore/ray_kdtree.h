@@ -82,7 +82,7 @@ template<class T> class YAFRAYCORE_EXPORT kdTree_t
 public:
 	kdTree_t(const T **v, int np, int depth=-1, int leafSize=2,
 			float cost_ratio=0.35, float emptyBonus=0.33);
-	bool Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, void *udat) const;
+	bool Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, intersectData_t &data) const;
 //	bool IntersectDBG(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
 	bool IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const;
 	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, T **tr, color_t &filt) const;

@@ -654,17 +654,15 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	returns the closest hit within dist
 */
 
-bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, void *udat) const
+bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, intersectData_t &data) const
 {
 	Z=dist;
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
 	
-	if (!treeBound.cross(ray, a, b, dist))
-	{ return false; }
+	if( !treeBound.cross(ray, a, b, dist) ) { return false; }
 	
-	unsigned char udat1[PRIM_DAT_SIZE], udat2[PRIM_DAT_SIZE];
-	void *c_udat=(void*)udat1, *t_udat=(void*)udat2;
+	intersectData_t currentData, tempData;
 	vector3d_t invDir(1.0/ray.dir.x, 1.0/ray.dir.y, 1.0/ray.dir.z); //was 1.f!
 	bool hit = false;
 	
@@ -751,15 +749,13 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 		{
 			triangle_t *mp = currNode->onePrimitive;
 
-			if (mp->intersect(ray, &t_hit, t_udat))
+			if (mp->intersect(ray, &t_hit, tempData))
 			{
 				if(t_hit < Z && t_hit >= ray.tmin)
 				{
 					Z = t_hit;
 					*tr = mp;
-					void *swap = t_udat;
-					t_udat = c_udat;
-					c_udat = swap;
+					currentData = tempData;
 					hit = true;
 				}
 			}
@@ -772,15 +768,13 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 			{
 				triangle_t *mp = prims[i];
 
-				if (mp->intersect(ray, &t_hit, t_udat))
+				if (mp->intersect(ray, &t_hit, tempData))
 				{
 					if(t_hit < Z && t_hit >= ray.tmin)
 					{
 						Z = t_hit;
 						*tr = mp;
-						void *swap = t_udat;
-						t_udat = c_udat;
-						c_udat = swap;
+						currentData = tempData;
 						hit = true;
 					}
 				}
@@ -789,11 +783,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 		
 		if(hit && Z <= stack[exPt].t)
 		{
-			float nu = ((float*)c_udat)[0];
-			float nv = ((float*)c_udat)[1];
-			float *temp = (float*)udat;
-			temp[0] = nu;
-			temp[1] = nv;
+			data = currentData;
 			return true;
 		}
 		
@@ -803,11 +793,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 				
 	} // while
 
-	float nu = ((float*)c_udat)[0];
-	float nv = ((float*)c_udat)[1];
-	float *temp = (float*)udat;
-	temp[0] = nu;
-	temp[1] = nv;
+	data = currentData;
 
 	return hit; //false;
 }
@@ -821,7 +807,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
-	unsigned char udat[PRIM_DAT_SIZE];
+	intersectData_t bary;
 	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
 	
 	KdStack stack[KD_MAX_STACK];
@@ -907,7 +893,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 		if (nPrimitives == 1)
 		{
 			triangle_t *mp = currNode->onePrimitive;
-			if (mp->intersect(ray, &t_hit, (void*)udat))
+			if (mp->intersect(ray, &t_hit, bary))
 			{
 				if(t_hit < dist && t_hit >= 0.f ) // '>=' ?
 				{
@@ -922,7 +908,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 			for (u_int32 i = 0; i < nPrimitives; ++i)
 			{
 				triangle_t *mp = prims[i];
-				if (mp->intersect(ray, &t_hit, (void*)udat))
+				if (mp->intersect(ray, &t_hit, bary))
 				{
 					if(t_hit < dist && t_hit >= 0.f )
 					{
@@ -954,7 +940,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
-	double udat[PRIM_DAT_SIZE];
+	intersectData_t bary;
 	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
 	int depth=0;
 
@@ -1046,7 +1032,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 		if (nPrimitives == 1)
 		{
 			triangle_t *mp = currNode->onePrimitive;
-			if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+			if (mp->intersect(ray, &t_hit, bary))
 			{
 				if(t_hit < dist && t_hit >= ray.tmin ) // '>=' ?
 				{
@@ -1059,7 +1045,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 						if(depth>=maxDepth) return true;
 						point3d_t h=ray.from + t_hit*ray.dir;
 						surfacePoint_t sp;
-						mp->getSurface(sp, h, (void*)&udat[0]);
+						mp->getSurface(sp, h, bary);
 						filt *= mat->getTransparency(state, sp, ray.dir);
 						++depth;
 					}
@@ -1072,7 +1058,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			for (u_int32 i = 0; i < nPrimitives; ++i)
 			{
 				triangle_t *mp = prims[i];
-				if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+				if (mp->intersect(ray, &t_hit, bary))
 				{
 					if(t_hit < dist && t_hit >= ray.tmin)
 					{
@@ -1085,7 +1071,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 							if(depth>=maxDepth) return true;
 							point3d_t h=ray.from + t_hit*ray.dir;
 							surfacePoint_t sp;
-							mp->getSurface(sp, h, (void*)&udat[0]);
+							mp->getSurface(sp, h, bary);
 							filt *= mat->getTransparency(state, sp, ray.dir);
 							++depth;
 						}

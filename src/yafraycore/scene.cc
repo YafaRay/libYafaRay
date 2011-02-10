@@ -794,7 +794,7 @@ bool scene_t::update()
 bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 {
 	PFLOAT dis, Z;
-	unsigned char udat[PRIM_DAT_SIZE];
+	intersectData_t data;
 	if(ray.tmax<0) dis=std::numeric_limits<PFLOAT>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:
@@ -802,18 +802,18 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 	{
 		if(!tree) return false;
 		triangle_t *hitt=0;
-		if( ! tree->Intersect(ray, dis, &hitt, Z, (void*)&udat[0]) ){ return false; }
+		if( ! tree->Intersect(ray, dis, &hitt, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
-		hitt->getSurface(sp, h, (void*)&udat[0]);
+		hitt->getSurface(sp, h, data);
 		sp.origin = hitt;
 	}
 	else
 	{
 		if(!vtree) return false;
 		primitive_t *hitprim=0;
-		if( ! vtree->Intersect(ray, dis, &hitprim, Z, (void*)&udat[0]) ){ return false; }
+		if( ! vtree->Intersect(ray, dis, &hitprim, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
-		hitprim->getSurface(sp, h, (void*)&udat[0]);
+		hitprim->getSurface(sp, h, data);
 		sp.origin = hitprim;
 	}
 	ray.tmax = Z;

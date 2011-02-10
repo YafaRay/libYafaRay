@@ -129,7 +129,7 @@ class YAFRAYCORE_EXPORT triKdTree_t
 public:
 	triKdTree_t(const triangle_t **v, int np, int depth=-1, int leafSize=2,
 			float cost_ratio=0.35, float emptyBonus=0.33);
-	bool Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, void *udat) const;
+	bool Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, intersectData_t &data) const;
 //	bool IntersectDBG(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
 	bool IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) const;
 	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt) const;

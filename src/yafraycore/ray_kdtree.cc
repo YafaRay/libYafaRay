@@ -156,7 +156,7 @@ kdTree_t<T>::~kdTree_t()
 //	std::cout << "kd-tree destructor: freeing nodes...";
 	y_free(nodes);
 //	std::cout << "done!\n";
-	//y_free(prims); //überflüssig?
+	//y_free(prims); //Ã¼berflÃ¼ssig?
 }
 
 // ============================================================
@@ -688,18 +688,17 @@ int kdTree_t<T>::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	returns the closest hit within dist
 */
 template<class T>
-bool kdTree_t<T>::Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, void *udat) const
+bool kdTree_t<T>::Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, intersectData_t &data) const
 {
 	Z=dist;
-//	std::cout << "kdTree_t::Intersect: Z="<<Z<<"\n";
+	
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
 	
 	if (!treeBound.cross(ray, a, b, dist))
 	{ return false; }
 	
-	unsigned char udat1[PRIM_DAT_SIZE], udat2[PRIM_DAT_SIZE];
-	void *c_udat=(void*)&udat1[0], *t_udat=(void*)&udat2[0];
+	intersectData_t currentData, tempData;
 	vector3d_t invDir(1.0/ray.dir.x, 1.0/ray.dir.y, 1.0/ray.dir.z); //was 1.f!
 //	int rayId = curMailboxId++;
 	bool hit = false;
@@ -780,56 +779,54 @@ bool kdTree_t<T>::Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, vo
 			stack[exPt].pb[prevAxis] = ray.from[prevAxis] + t * ray.dir[prevAxis];
 		}
 				 
-		// Check for intersections inside leaf node
 		u_int32 nPrimitives = currNode->nPrimitives();
-		if (nPrimitives == 1) {
+		if (nPrimitives == 1)
+		{
 			T *mp = currNode->onePrimitive;
-//			if (mp->lastMailboxId != rayId) {
-//				mp->lastMailboxId = rayId;
-				if (mp->intersect(ray, &t_hit, t_udat))
+			if (mp->intersect(ray, &t_hit, tempData))
+			{
+				if(t_hit < Z && t_hit >= ray.tmin)
 				{
-//					std::cout<<"kdTree_t: hit! t="<<t_hit<<" Z="<<Z<<"\n";
-					if(t_hit < Z && t_hit >= ray.tmin /*0.f*/ /*stack[enPt].t*/)
-					{
-						Z = t_hit;
-						*tr = mp;
-						std::swap(t_udat, c_udat);
-						hit = true;
-					}
+					Z = t_hit;
+					*tr = mp;
+					currentData = tempData;
+					hit = true;
 				}
-//			}
+			}
 		}
-		else {
+		else
+		{
 			T **prims = currNode->primitives;
 			for (u_int32 i = 0; i < nPrimitives; ++i) {
 				T *mp = prims[i];
-//				if (mp->lastMailboxId != rayId) {
-//					mp->lastMailboxId = rayId;
-					if (mp->intersect(ray, &t_hit, t_udat))
+				if (mp->intersect(ray, &t_hit, tempData))
+				{
+					if(t_hit < Z && t_hit >= ray.tmin)
 					{
-//						std::cout<<"kdTree_t: hit! t="<<t_hit<<" Z="<<Z<<"\n";
-						if(t_hit < Z && t_hit >= ray.tmin /*0.f*/ /*stack[enPt].t*/)
-						{
-							Z = t_hit;
-							*tr = mp;
-							std::swap(t_udat, c_udat);
-							hit = true;
-						}
+						Z = t_hit;
+						*tr = mp;
+						currentData = tempData;
+						hit = true;
 					}
-//				}
+				}
 			}
 		}
 		
-		if(hit && Z <= stack[exPt].t){ memcpy(udat, c_udat, PRIM_DAT_SIZE); return true;}
+		if(hit && Z <= stack[exPt].t)
+		{
+			data = currentData;
+			return true;
+		}
 		
 		enPt = exPt;
 		currNode = stack[exPt].node;
 		exPt = stack[enPt].prev;
 				
 	} // while
-//	if(hit) return true;
-	memcpy(udat, c_udat, PRIM_DAT_SIZE);
-	return hit; //false;
+
+	data = currentData;
+	
+	return hit;
 }
 
 template<class T>
@@ -841,10 +838,8 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
-	unsigned char udat[PRIM_DAT_SIZE];
+	intersectData_t bary;
 	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
-//	int rayId = curMailboxId++;
-//	bool hit = false;
 	
 	rKdStack<T> stack[KD_MAX_STACK];
 	const rkdTreeNode<T> *farChild, *currNode;
@@ -924,48 +919,41 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
 				 
 		// Check for intersections inside leaf node
 		u_int32 nPrimitives = currNode->nPrimitives();
-		if (nPrimitives == 1) {
+		if (nPrimitives == 1)
+		{
 			T *mp = currNode->onePrimitive;
-//			if (mp->lastMailboxId != rayId) {
-//				mp->lastMailboxId = rayId;
-				if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+			if (mp->intersect(ray, &t_hit, bary))
+			{
+				if(t_hit < dist && t_hit > ray.tmin )
 				{
-//					hit = true;
-					if(t_hit < dist && t_hit > 0.f ) // '>=' ?
-					{
-						*tr = mp;
-						return true;
-					}
+					*tr = mp;
+					return true;
 				}
-//			}
+			}
 		}
-		else {
+		else
+		{
 			T **prims = currNode->primitives;
-			for (u_int32 i = 0; i < nPrimitives; ++i) {
+			for (u_int32 i = 0; i < nPrimitives; ++i)
+			{
 				T *mp = prims[i];
-//				if (mp->lastMailboxId != rayId) {
-//					mp->lastMailboxId = rayId;
-					if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+					if (mp->intersect(ray, &t_hit, bary))
 					{
-						if(t_hit < dist && t_hit > 0.f )
+						if(t_hit < dist && t_hit > ray.tmin )
 						{
-//							hit = true;
 							*tr = mp;
 							return true;
 						}
 					}
-//				}
 			}
 		}
-		
-//		if(hit && dist <= stack[exPt].t) return true;
 		
 		enPt = exPt;
 		currNode = stack[exPt].node;
 		exPt = stack[enPt].prev;
 				
 	} // while
-//	if(hit) return true;
+
 	return false;
 }
 
@@ -982,12 +970,10 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
 	
-	/* unsigned char */double udat[PRIM_DAT_SIZE];
+	intersectData_t bary;
 	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
-//	int rayId = curMailboxId++;
-//	bool hit = false;
+
 	int depth=0;
-//	filt = color_t(1.0);
 #if ( HAVE_PTHREAD && defined (__GNUC__) )
 	std::set<const T *, std::less<const T *>, __gnu_cxx::__mt_alloc<const T *> > filtered;
 #else
@@ -1071,15 +1057,13 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				 
 		// Check for intersections inside leaf node
 		u_int32 nPrimitives = currNode->nPrimitives();
-//		PFLOAT tmax = (stack[exPt].t < dist) ? stack[exPt].t : dist;
-//		PFLOAT tmin = (stack[enPt].t > ray.tmin) ? stack[enPt].t : ray.tmin;
-		if (nPrimitives == 1) {
+		if (nPrimitives == 1)
+		{
 			T *mp = currNode->onePrimitive;
-			if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < /* tmax */ dist && t_hit >= /* tmin */ ray.tmin ) // '>=' ?
+				if(t_hit < dist && t_hit >= ray.tmin )
 				{
-//					*tr = mp;
 					const material_t *mat = mp->getMaterial();
 					if(!mat->isTransparent() ) return true;
 					if(filtered.insert(mp).second)
@@ -1087,22 +1071,22 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 						if(depth>=maxDepth) return true;
 						point3d_t h=ray.from + t_hit*ray.dir;
 						surfacePoint_t sp;
-						mp->getSurface(sp, h, (void*)&udat[0]);
+						mp->getSurface(sp, h, bary);
 						filt *= mat->getTransparency(state, sp, ray.dir);
 						++depth;
 					}
 				}
 			}
 		}
-		else {
+		else 
+		{
 			T **prims = currNode->primitives;
 			for (u_int32 i = 0; i < nPrimitives; ++i) {
 				T *mp = prims[i];
-				if (mp->intersect(ray, &t_hit, (void*)&udat[0]))
+				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < /* tmax */ dist && t_hit >= /* tmin */ ray.tmin )
+					if(t_hit < dist && t_hit >= ray.tmin )
 					{
-//						*tr = mp;
 						const material_t *mat = mp->getMaterial();
 						if(!mat->isTransparent() ) return true;
 						if(filtered.insert(mp).second)
@@ -1110,7 +1094,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 							if(depth>=maxDepth) return true;
 							point3d_t h=ray.from + t_hit*ray.dir;
 							surfacePoint_t sp;
-							mp->getSurface(sp, h, (void*)&udat[0]);
+							mp->getSurface(sp, h, bary);
 							filt *= mat->getTransparency(state, sp, ray.dir);
 							++depth;
 						}
@@ -1119,14 +1103,12 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			}
 		}
 		
-//		if(hit && dist <= stack[exPt].t) return true;
-		
 		enPt = exPt;
 		currNode = stack[exPt].node;
 		exPt = stack[enPt].prev;
 				
 	} // while
-//	if(hit) return true;
+
 	return false;
 }
 
