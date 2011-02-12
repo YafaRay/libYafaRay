@@ -46,7 +46,11 @@ endif (WITH_YAF_PY_BINDINGS)
 
 if (WITH_YAF_RUBY_BINDINGS)
 	
-	find_package(Ruby REQUIRED)
+	find_package(Ruby 1.8 REQUIRED)
+	
+	message("Ruby version found: ${RUBY_VERSION}")
+	message("Ruby headers at: ${RUBY_INCLUDE_DIR}")
+	message("Ruby library at: ${RUBY_LIBRARY}")
 
 	if (NOT SWIG_FOUND OR NOT RUBY_FOUND)
 		set(WITH_YAF_RUBY_BINDINGS OFF)
@@ -60,7 +64,7 @@ if (WITH_YAF_PY_BINDINGS)
 	if(NOT WIN32)
 
 		if(NOT YAF_BINDINGS_PY_DIR)
-			set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/install/bindings/python)
+			set(YAF_BINDINGS_PY_DIR ${CMAKE_SOURCE_DIR}/bindings/python)
 		endif(NOT YAF_BINDINGS_PY_DIR)
 		
 	else(NOT WIN32)
@@ -71,7 +75,41 @@ if (WITH_YAF_PY_BINDINGS)
 
 	endif(NOT WIN32)
 	
-	add_subdirectory(python)
+	include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+	include(${SWIG_USE_FILE})
+
+	if(YAF_PY_VERSION GREATER 3)
+		set(CMAKE_SWIG_FLAGS -c++ -py3)
+	else(YAF_PY_VERSION GREATER 3)
+		set(CMAKE_SWIG_FLAGS -c++)
+	endif(YAF_PY_VERSION GREATER 3)
+
+	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
+
+	if(WITH_QT)
+		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
+	endif(WITH_QT)
+
+	SWIG_ADD_MODULE(yafrayinterface PYTHON yafrayinterface.i)
+
+	if(WITH_QT)
+		SWIG_ADD_MODULE(yafqt PYTHON yafqt.i)
+	endif(WITH_QT)
+
+	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${PYTHON_LIBRARIES})
+
+	if(WITH_QT)
+		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${PYTHON_LIBRARIES})
+	endif(WITH_QT)
+
+
+	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafrayinterface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+
+	if(WITH_QT)
+		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafqt.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+	endif(WITH_QT)
 
 endif (WITH_YAF_PY_BINDINGS)
 
@@ -80,7 +118,7 @@ if (WITH_YAF_RUBY_BINDINGS)
 	if(NOT WIN32)
 
 		if(NOT YAF_BINDINGS_RUBY_DIR)
-			set(YAF_BINDINGS_RUBY_DIR ${CMAKE_SOURCE_DIR}/install/bindings/ruby)
+			set(YAF_BINDINGS_RUBY_DIR ${CMAKE_SOURCE_DIR}/bindings/ruby)
 		endif(NOT YAF_BINDINGS_RUBY_DIR)
 		
 	else(NOT WIN32)
@@ -91,7 +129,22 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	endif(NOT WIN32)
 
-	add_subdirectory(ruby)
-	
+	include_directories(${YAF_INCLUDE_DIRS} ${RUBY_INCLUDE_DIR})
+	include(${SWIG_USE_FILE})
+
+	set(CMAKE_SWIG_FLAGS -c++ -w-801)
+
+	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
+	SWIG_ADD_MODULE(yafrayinterface RUBY yafrayinterface.i)
+	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${RUBY_LIBRARY})
+	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+
+	if(WITH_QT)
+		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
+		SWIG_ADD_MODULE(yafqt RUBY yafqt.i)
+		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${RUBY_LIBRARY})
+		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+	endif(WITH_QT)
+
 endif (WITH_YAF_RUBY_BINDINGS)
 

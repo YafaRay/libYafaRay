@@ -129,6 +129,18 @@ else(WITH_XML_LOADER)
 	message("Building XML loader: no")
 endif(WITH_XML_LOADER)
 
+if(WITH_YAF_PY_BINDINGS)
+	message("Building Python bindings: yes")
+else(WITH_YAF_PY_BINDINGS)
+	message("Building Python bindings: no")
+endif(WITH_YAF_PY_BINDINGS)
+
+if(WITH_YAF_RUBY_BINDINGS)
+	message("Building Ruby bindings: yes")
+else(WITH_YAF_RUBY_BINDINGS)
+	message("Building Ruby bindings: no")
+endif(WITH_YAF_RUBY_BINDINGS)
+
 if(DEBUG_BUILD)
 	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build mode" FORCE)
 else(DEBUG_BUILD)
