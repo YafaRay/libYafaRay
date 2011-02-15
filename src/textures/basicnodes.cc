@@ -177,11 +177,21 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		point3d_t i1 = (texpt - pDU);
 		point3d_t j0 = (texpt + pDV);
 		point3d_t j1 = (texpt - pDV);
-
-		norm = vector3d_t(getHeight(i0, i1, dV), getHeight(j0, j1, dU), dUV);
+		if(!tex->discrete())
+		{
+			norm = vector3d_t(getHeight(j0, j1, dU), getHeight(i0, i1, dV), -dUV);
+			norm.normalize();
+		}
+		else
+		{
+			sp.N = sp.N + sp.dPdU * getHeight(i0, i1, bumpStr) + sp.dPdV * getHeight(j0, j1, bumpStr);//vector3d_t(getHeight(j0, j1, dU), getHeight(i0, i1, dV), -dUV);
+			sp.N.normalize();
+			sp.N = ((sp.N * sp.Ng) < 0.f) ? -sp.N : sp.N;
+			createCS(sp.N, sp.NU, sp.NV);
+			
+		}
 	}
 
-	norm.normalize();
 
 	// Convert norm into shading space
 	du = norm * sp.dSdU;
