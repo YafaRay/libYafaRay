@@ -1,11 +1,6 @@
 #ifndef Y_CONSTANTS_H
 #define Y_CONSTANTS_H
 
-// We don't want min max redefined by windows.h
-#if defined(_WIN32) && !defined(__MINGW32__)
-	#define NOMINMAX
-#endif
-
 #define __BEGIN_YAFRAY namespace yafaray {
 #define __END_YAFRAY }
 

@@ -190,11 +190,26 @@ set(EMBED_FONT_QT OFF)
 #set(YAF_USER_LIBRARY_DIRS "")
 
 #                                                                              #
-# Set this variables if you wish to append extra compiler flags to your build  #
+# Set this variables if you wish to override the default optimization flags    #
+#                                                                              #
+# Defaults:                                                                    #
+# On *nix platforms:                                                           #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS -O3 -ffast-math) *nix platforms          #
+# set(USER_DEBUG_OPTIMIZATION_FLAGS -ggdb)                                     #
+# On windows platforms:                                                        #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS /Ot /Ox) *nix platforms                  #
+# set(USER_DEBUG_OPTIMIZATION_FLAGS /Zi /GS /RTC1)                             #
 #                                                                              #
 
-#set(USER_RELFLAGS "")
-#set(USER_DBGFLAGS "")
+#set(USER_RELEASE_OPTIMIZATION_FLAGS "")
+#set(USER_DEBUG_OPTIMIZATION_FLAGS "")
+
+#                                                                              #
+# Set this variables if you wish to append extra compiler flags to your build  #
+# this ones will be appended, won't override defaults                          #
+
+#set(USER_RELEASE_EXTRA_FLAGS "")
+#set(USER_DEBUG_EXTRA_FLAGS "")
 
 ######################## Executable location variables #########################
 #                                                                              #
@@ -259,10 +274,10 @@ set(EMBED_FONT_QT OFF)
 
 #                                                                              #
 # Shadow bias                                                                  #
-# Default: 0.00005                                                             #
+# Default: 0.0005                                                              #
 #                                                                              #
 
-#set(YAF_SHADOW_BIAS 0.00005)
+#set(YAF_SHADOW_BIAS 0.0005)
 
 ################################# End of file ##################################
 
