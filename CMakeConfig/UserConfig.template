@@ -194,11 +194,13 @@ set(EMBED_FONT_QT OFF)
 #                                                                              #
 # Defaults:                                                                    #
 # On *nix platforms:                                                           #
-# set(USER_RELEASE_OPTIMIZATION_FLAGS -O3 -ffast-math) *nix platforms          #
-# set(USER_DEBUG_OPTIMIZATION_FLAGS -ggdb)                                     #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS "-O3 -ffast-math")                       #
+# set(USER_DEBUG_OPTIMIZATION_FLAGS "-ggdb")                                   #
 # On windows platforms:                                                        #
-# set(USER_RELEASE_OPTIMIZATION_FLAGS /Ot /Ox) *nix platforms                  #
-# set(USER_DEBUG_OPTIMIZATION_FLAGS /Zi /GS /RTC1)                             #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS "/Ot /Ox"s)                              #
+# set(USER_DEBUG_OPTIMIZATION_FLAGS "/Zi /GS /RTC1")                           #
+#                                                                              #
+# IMPORTANT NOTE: USE QUOTATION MARKS ON THE FLAGS                             #
 #                                                                              #
 
 #set(USER_RELEASE_OPTIMIZATION_FLAGS "")
@@ -207,6 +209,9 @@ set(EMBED_FONT_QT OFF)
 #                                                                              #
 # Set this variables if you wish to append extra compiler flags to your build  #
 # this ones will be appended, won't override defaults                          #
+#                                                                              #
+# IMPORTANT NOTE: USE QUOTATION MARKS ON THE FLAGS                             #
+#                                                                              #
 
 #set(USER_RELEASE_EXTRA_FLAGS "")
 #set(USER_DEBUG_EXTRA_FLAGS "")
