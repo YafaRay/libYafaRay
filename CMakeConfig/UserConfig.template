@@ -16,6 +16,17 @@ set(YAF_USER_CONFIG ON)
 
 ############################## Build configuration #############################
 #                                                                              #
+# Build with POSIX threads (pthreads) wrapper instead of                       #
+# native threads wrapper on windows platforms                                  #
+#                                                                              #
+# NOTE: This option is ignored on *nix platforms                               #
+#                                                                              #
+# Default: OFF                                                                 #
+#                                                                              #
+
+set(WITH_Pthreads OFF)
+
+#                                                                              #
 # Build font rendering with FreeType                                           #
 #                                                                              #
 # Default: ON                                                                  #
@@ -197,7 +208,7 @@ set(EMBED_FONT_QT OFF)
 # set(USER_RELEASE_OPTIMIZATION_FLAGS "-O3 -ffast-math")                       #
 # set(USER_DEBUG_OPTIMIZATION_FLAGS "-ggdb")                                   #
 # On windows platforms:                                                        #
-# set(USER_RELEASE_OPTIMIZATION_FLAGS "/Ot /Ox"s)                              #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS "/Ot /Ox")                              #
 # set(USER_DEBUG_OPTIMIZATION_FLAGS "/Zi /GS /RTC1")                           #
 #                                                                              #
 # IMPORTANT NOTE: USE QUOTATION MARKS ON THE FLAGS                             #
