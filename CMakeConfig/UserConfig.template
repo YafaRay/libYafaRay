@@ -208,7 +208,7 @@ set(EMBED_FONT_QT OFF)
 # set(USER_RELEASE_OPTIMIZATION_FLAGS "-O3 -ffast-math")                       #
 # set(USER_DEBUG_OPTIMIZATION_FLAGS "-ggdb")                                   #
 # On windows platforms:                                                        #
-# set(USER_RELEASE_OPTIMIZATION_FLAGS "/Ot /Ox")                              #
+# set(USER_RELEASE_OPTIMIZATION_FLAGS "/Ot /Ox")                               #
 # set(USER_DEBUG_OPTIMIZATION_FLAGS "/Zi /GS /RTC1")                           #
 #                                                                              #
 # IMPORTANT NOTE: USE QUOTATION MARKS ON THE FLAGS                             #

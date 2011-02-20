@@ -195,7 +195,7 @@ else(NOT WIN32)
 	# installation directories
 
 	if(NOT YAF_BIN_DIR)
-		set(YAF_BIN_DIR Win32Pak)
+		set(YAF_BIN_DIR bin)
 	endif(NOT YAF_BIN_DIR)
 
 	set(YAF_LIB_DIR ${YAF_BIN_DIR})
