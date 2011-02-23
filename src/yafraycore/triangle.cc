@@ -5,7 +5,7 @@ __BEGIN_YAFRAY
 
 void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const
 {
-	sp.Ng = vector3d_t(normal).normalize();
+	sp.Ng = vector3d_t(normal);
 	data.calcB0();
 
 	int tri_index = this - &(mesh->triangles.front());
@@ -48,9 +48,9 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectD
 		float dv2 = it[uvi2].v - it[uvi3].v;
 		float invdet, det = du1 * dv2 - dv1 * du2;
 		
-		if(std::fabs(det) > 1e-30f)
+		if(det != 0.f)
 		{
-			invdet = 1.f/det;
+			invdet = 1.f / det;
 			vector3d_t dp1 = mesh->points[pa] - mesh->points[pc];
 			vector3d_t dp2 = mesh->points[pb] - mesh->points[pc];
 			sp.dPdU = (dv2 * dp1 - dv1 * dp2) * invdet;
