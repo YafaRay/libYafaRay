@@ -376,6 +376,7 @@ private:
 #include <interface/xmlinterface.h>
 #include <yafraycore/imageOutput.h>
 #include <yafraycore/memoryIO.h>
+#include <core_api/matrix4.h>
 using namespace yafaray;
 %}
 
@@ -448,6 +449,46 @@ namespace yafaray
 			float* imageMem;
 	};
 	
+	// Utility classes
+	
+	class matrix4x4_t
+	{
+	public:
+		matrix4x4_t() {};
+		matrix4x4_t(const PFLOAT init);
+		matrix4x4_t(const matrix4x4_t & source);
+		matrix4x4_t(const float source[4][4]);
+		matrix4x4_t(const double source[4][4]);
+		~matrix4x4_t() {};
+		/*! attention, this function can cause the matrix to become invalid!
+			unless you are sure the matrix is invertible, check invalid() afterwards! */
+		matrix4x4_t & inverse();
+		matrix4x4_t & transpose();
+		void identity();
+		void translate(PFLOAT dx,PFLOAT dy,PFLOAT dz);
+		void rotateX(PFLOAT degrees);
+		void rotateY(PFLOAT degrees);
+		void rotateZ(PFLOAT degrees);
+		void scale(PFLOAT sx, PFLOAT sy, PFLOAT sz);
+		int invalid() const { return _invalid; }
+		// ignored by swig
+		//const PFLOAT * operator [] (int i) const { return matrix[i]; }
+		//PFLOAT * operator [] (int i) { return matrix[i]; }
+		void setVal(int row, int col, float val)
+		{
+			matrix[row][col] = val;
+		};
+		
+		float getVal(int row, int col)
+		{
+			return matrix[row][col];
+		};
+
+	protected:
+
+		PFLOAT  matrix[4][4];
+		int _invalid;
+	};
 	// Interfaces
 
 	class yafrayInterface_t
@@ -476,6 +517,7 @@ namespace yafaray
 			virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat); //!< add a triangle given vertex and uv indices and material pointer
 			virtual int  addUV(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
 			virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+			virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
 			// functions to build paramMaps instead of passing them from Blender
 			// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 			virtual void paramsSetPoint(const char* name, double x, double y, double z);
@@ -530,6 +572,7 @@ namespace yafaray
 			void printInfo(const std::string &msg);
 			void printWarning(const std::string &msg);
 			void printError(const std::string &msg);
+			void printLog(const std::string &msg);
 	
 		protected:
 			paraMap_t *params;
@@ -563,9 +606,6 @@ namespace yafaray
 			virtual bool addTriangle(int a, int b, int c, const material_t *mat);
 			virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 			virtual int  addUV(float u, float v);
-			virtual bool startVmap(int id, int type, int dimensions);
-			virtual bool endVmap();
-			virtual bool addVmapValues(float *val);
 			virtual bool smoothMesh(unsigned int id, double angle);
 		
 			// functions directly related to renderEnvironment_t

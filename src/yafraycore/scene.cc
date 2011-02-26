@@ -128,7 +128,7 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 	state.orco=false;
 	state.curObj = &nObj;
 
-	nObj.points.reserve(2*vertices);
+	nObj.obj->points.reserve(2*vertices);
 	return true;
 }
 
@@ -140,7 +140,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	// TODO: math optimizations
 	
 	// extrude vertices and create faces
-	std::vector<point3d_t> &points = state.curObj->points;
+	std::vector<point3d_t> &points = state.curObj->obj->points;
 	float r;	//current radius
 	int i;
 	point3d_t o,a,b;
@@ -168,8 +168,8 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3.f) * u;
 		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3.f) * u;
 		
-		state.curObj->points.push_back(a);
-		state.curObj->points.push_back(b);
+		state.curObj->obj->points.push_back(a);
+		state.curObj->obj->points.push_back(b);
 	}
 
 	// Face fill
@@ -253,7 +253,6 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	state.curObj->obj->uv_offsets.push_back(iv);
 	state.curObj->obj->uv_offsets.push_back(iv);
 
-	state.curObj->obj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
 	state.curObj->obj->finish();
 
 	state.stack.pop_front();
@@ -271,6 +270,7 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 	{
 		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco); 
 					nObj.obj->setVisibility( !(type & INVISIBLEM) );
+					nObj.obj->useAsBaseObject( (type & BASEMESH) );
 					break;
 		case VTRIM:
 		case MTRIM:	nObj.mobj = new meshObject_t(triangles, hasUV, hasOrco);
@@ -284,16 +284,6 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 	state.orco=hasOrco;
 	state.curObj = &nObj;
 	
-	//reserve points
-	if(hasOrco)
-	{
-		//decided against shared point vector...
-		nObj.points.reserve(2*vertices);
-	}
-	else
-	{
-		nObj.points.reserve(vertices);
-	}
 	return true;
 }
 
@@ -311,16 +301,12 @@ bool scene_t::endTriMesh()
 				return false;
 			}
 		}
-		
-		//update mesh context (iterators for points and normals)
-		state.curObj->obj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
-		
+
 		//calculate geometric normals of tris
 		state.curObj->obj->finish();
 	}
 	else
 	{
-		state.curObj->mobj->setContext(state.curObj->points.begin(), state.curObj->normals.begin() );
 		state.curObj->mobj->finish();
 	}
 	
@@ -382,18 +368,17 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 		if(!odat) return false;
 	}
 	
-	if(odat->obj->normals_exported && odat->points.size() == odat->normals.size())
+	if(odat->obj->normals_exported && odat->obj->points.size() == odat->obj->normals.size())
 	{
-		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
 		return true;
 	}
 	
 	// cannot smooth other mesh types yet...
 	if(odat->type > 0) return false;
 	unsigned int i1, i2, i3;
-	std::vector<normal_t> &normals = odat->normals;
+	std::vector<normal_t> &normals = odat->obj->normals;
 	std::vector<triangle_t> &triangles = odat->obj->triangles;
-	std::vector<point3d_t> &points = odat->points;
+	std::vector<point3d_t> &points = odat->obj->points;
 	std::vector<triangle_t>::iterator tri;
 	if (angle>=180)
 	{
@@ -405,16 +390,16 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 			i2 = tri->pb;
 			i3 = tri->pc;
 			// hm somehow it was a stupid idea not allowing calculation with normal_t class
-			vector3d_t normal = (vector3d_t)tri->normal;
+			vector3d_t normal = (vector3d_t)tri->getNormal();
 			normals[i1] = normal_t( (vector3d_t)normals[i1] + normal );
 			normals[i2] = normal_t( (vector3d_t)normals[i2] + normal );
 			normals[i3] = normal_t( (vector3d_t)normals[i3] + normal );
 			tri->setNormals(i1, i2, i3);
 		}
+
 		for (i1=0;i1<normals.size();i1++)
 			normals[i1] = normal_t( vector3d_t(normals[i1]).normalize() );
-		//don't forget to refresh context as the normals memory may be reallocated...or rather will be.
-		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
+
 		odat->obj->is_smooth = true;
 	}
 	else if(angle>0.1)// angle dependant smoothing
@@ -438,11 +423,14 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 				triangle_t* f = *fi;
 				bool smooth = false;
 				// calculate vertex normal for face
-				vector3d_t vnorm(f->normal), fnorm(f->normal);
+				vector3d_t vnorm, fnorm;
+				
+				vnorm = fnorm = f->getNormal();
+				
 				for(std::vector<triangle_t*>::iterator f2=tris.begin(); f2!=tris.end(); ++f2)
 				{
 					if(fi == f2) continue;
-					vector3d_t f2norm((*f2)->normal);
+					vector3d_t f2norm = (*f2)->getNormal();
 					if((fnorm * f2norm) > thresh)
 					{
 						smooth = true;
@@ -481,7 +469,6 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 			vn_index.clear();
 		}
 
-		odat->obj->setContext(odat->points.begin(), odat->normals.begin() );
 		odat->obj->is_smooth = true;
 	}
 	return true;
@@ -490,10 +477,10 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 int scene_t::addVertex(const point3d_t &p)
 {
 	if(state.stack.front() != OBJECT) return -1;
-	state.curObj->points.push_back(p);
+	state.curObj->obj->points.push_back(p);
 	if(state.curObj->type == MTRIM)
 	{
-		std::vector<point3d_t> &points = state.curObj->points;
+		std::vector<point3d_t> &points = state.curObj->mobj->points;
 		int n = points.size();
 		if(n%3==0)
 		{
@@ -503,7 +490,7 @@ int scene_t::addVertex(const point3d_t &p)
 		return (n-1)/3;
 	}
 	
-	state.curObj->lastVertId = state.curObj->points.size()-1;
+	state.curObj->lastVertId = state.curObj->obj->points.size()-1;
 	
 	return state.curObj->lastVertId;
 }
@@ -511,21 +498,41 @@ int scene_t::addVertex(const point3d_t &p)
 int scene_t::addVertex(const point3d_t &p, const point3d_t &orco)
 {
 	if(state.stack.front() != OBJECT) return -1;
-	state.curObj->points.push_back(p);
-	state.curObj->points.push_back(orco);
-	state.curObj->lastVertId = (state.curObj->points.size()-1) / 2;
+
+	switch(state.curObj->type)
+	{
+		case TRIM:
+			state.curObj->obj->points.push_back(p);
+			state.curObj->obj->points.push_back(orco);
+			state.curObj->lastVertId = (state.curObj->obj->points.size()-1) / 2;
+			break;
+			
+		case VTRIM:
+			state.curObj->mobj->points.push_back(p);
+			state.curObj->mobj->points.push_back(orco);
+			state.curObj->lastVertId = (state.curObj->mobj->points.size()-1) / 2;
+			break;
+			
+		case MTRIM:
+			return addVertex(p);
+	}
 	
 	return state.curObj->lastVertId;
 }
 
 void scene_t::addNormal(const normal_t& n)
 {
-	if(state.curObj->points.size() > (unsigned int) state.curObj->lastVertId && state.curObj->points.size() > state.curObj->normals.size())
+	if(mode != 0)
 	{
-		if(state.curObj->normals.size() < state.curObj->points.size())
-			state.curObj->normals.resize(state.curObj->points.size());
+		Y_WARNING << "Normal exporting is only supported for triangle mode" << yendl;
+		return;
+	}
+	if(state.curObj->obj->points.size() > state.curObj->lastVertId && state.curObj->obj->points.size() > state.curObj->obj->normals.size())
+	{
+		if(state.curObj->obj->normals.size() < state.curObj->obj->points.size())
+			state.curObj->obj->normals.resize(state.curObj->obj->points.size());
 		
-		state.curObj->normals[state.curObj->lastVertId] = n;
+		state.curObj->obj->normals[state.curObj->lastVertId] = n;
 		state.curObj->obj->normals_exported = true;
 	}
 }
@@ -707,8 +714,11 @@ bool scene_t::update()
 		{
 			for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
 			{
-				objData_t &dat = (*i).second;
-				if(!dat.obj->isVisible()) continue;
+                objData_t &dat = (*i).second;
+
+                if (!dat.obj->isVisible()) continue;
+                if (dat.obj->isBaseObject()) continue;
+
 				if(dat.type == TRIM) nprims += dat.obj->numPrimitives();
 			}
 			if(nprims > 0)
@@ -718,7 +728,10 @@ bool scene_t::update()
 				for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
 				{
 					objData_t &dat = (*i).second;
-					if(!dat.obj->isVisible()) continue;
+
+					if (!dat.obj->isVisible()) continue;
+					if (dat.obj->isBaseObject()) continue;
+					
 					if(dat.type == TRIM) insert += dat.obj->getPrimitives(insert);
 				}
 				tree = new triKdTree_t(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
@@ -919,6 +932,33 @@ bool scene_t::addObject(object3d_t *obj, objID_t &id)
 	{
 		return false;
 	}
+}
+
+bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
+{
+    if(mode != 0) return false;
+    
+    if (meshes.find(baseObjectId) == meshes.end())
+    {
+        Y_ERROR << "Base mesh for instance doesn't exist" << yendl;
+        return false;
+    }
+
+    int id = getNextFreeID();
+
+    if (id > 0)
+    {
+        objData_t &od = meshes[id];
+        objData_t &base = meshes[baseObjectId];
+
+        od.obj = new triangleObjectInstance_t(base.obj, objToWorld);
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 __END_YAFRAY

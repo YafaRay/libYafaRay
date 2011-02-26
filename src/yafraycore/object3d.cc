@@ -4,12 +4,21 @@
 __BEGIN_YAFRAY
 
 triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
-	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false), normals_exported(false)
+    has_orco(hasOrco), has_uv(hasUV), is_smooth(false), normals_exported(false)
 {
 	triangles.reserve(ntris);
 	if(hasUV)
 	{
 		uv_offsets.reserve(ntris);
+	}
+	
+	if(hasOrco)
+	{
+		points.reserve(2 * 3 * ntris);
+	}
+	else
+	{
+		points.reserve(3 * ntris);
 	}
 }
 
@@ -25,13 +34,8 @@ int triangleObject_t::getPrimitives(const triangle_t **prims)
 triangle_t* triangleObject_t::addTriangle(const triangle_t &t)
 {
 	triangles.push_back(t);
+	triangles.back().selfIndex = triangles.size() - 1;
 	return &(triangles.back());
-}
-
-void triangleObject_t::setContext(std::vector<point3d_t>::iterator p, std::vector<normal_t>::iterator n)
-{
-	points = p;
-	normals = n;
 }
 
 void triangleObject_t::finish()
@@ -40,6 +44,41 @@ void triangleObject_t::finish()
 	{
 		(*i).recNormal();
 	}
+}
+
+// triangleObjectInstance_t Methods
+
+triangleObjectInstance_t::triangleObjectInstance_t(triangleObject_t *base, matrix4x4_t obj2World)
+{
+	objToWorld = obj2World;
+	mBase = base;
+	has_orco = mBase->has_orco;
+	has_uv = mBase->has_uv;
+	is_smooth = mBase->is_smooth;
+	normals_exported = mBase->normals_exported;
+	visible = true;
+	is_base_mesh = false;
+
+	triangles.reserve(mBase->triangles.size());
+	
+	for(size_t i = 0; i < mBase->triangles.size(); i++)
+	{
+		triangles.push_back(triangleInstance_t(&mBase->triangles[i], this));
+	}
+}
+
+int triangleObjectInstance_t::getPrimitives(const triangle_t **prims)
+{
+	for(size_t i = 0; i < triangles.size(); i++)
+	{
+		prims[i] = &triangles[i];
+	}
+	return triangles.size();
+}
+
+void triangleObjectInstance_t::finish()
+{
+	// Empty
 }
 
 /*===================
@@ -80,12 +119,6 @@ primitive_t* meshObject_t::addBsTriangle(const bsTriangle_t &t)
 {
 	s_triangles.push_back(t);
 	return &(triangles.back());
-}
-
-void meshObject_t::setContext(std::vector<point3d_t>::iterator p, std::vector<normal_t>::iterator n)
-{
-	points = p;
-	normals = n;
 }
 
 void meshObject_t::finish()

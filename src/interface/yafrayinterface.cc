@@ -4,6 +4,7 @@
 #include <core_api/scene.h>
 #include <core_api/imagefilm.h>
 #include <core_api/integrator.h>
+#include <core_api/matrix4.h>
 
 __BEGIN_YAFRAY
 
@@ -137,6 +138,10 @@ int yafrayInterface_t::addUV(float u, float v) { return scene->addUV(u, v); }
 
 bool yafrayInterface_t::smoothMesh(unsigned int id, double angle) { return scene->smoothMesh(id, angle); }
 
+bool yafrayInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
+{
+	return scene->addInstance(baseObjectId, objToWorld);
+}
 // paraMap_t related functions:
 void yafrayInterface_t::paramsSetPoint(const char* name, double x, double y, double z)
 {
@@ -321,6 +326,11 @@ void yafrayInterface_t::printWarning(const std::string &msg)
 void yafrayInterface_t::printError(const std::string &msg)
 {
 	Y_ERROR << msg << yendl;
+}
+
+void yafrayInterface_t::printLog(const std::string &msg)
+{
+	Y_LOG << msg << yendl;
 }
 
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
