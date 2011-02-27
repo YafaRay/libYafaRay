@@ -52,9 +52,10 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 	
 	if(mesh->has_uv)
 	{
-		const uv_t &uv1 = mesh->uv_values[mesh->uv_offsets[selfIndex]];
-		const uv_t &uv2 = mesh->uv_values[mesh->uv_offsets[selfIndex + 1]];
-		const uv_t &uv3 = mesh->uv_values[mesh->uv_offsets[selfIndex + 2]];
+		size_t uvi = selfIndex * 3;
+		const uv_t &uv1 = mesh->uv_values[mesh->uv_offsets[uvi]];
+		const uv_t &uv2 = mesh->uv_values[mesh->uv_offsets[uvi + 1]];
+		const uv_t &uv3 = mesh->uv_values[mesh->uv_offsets[uvi + 2]];
 		
 		//eh...u, v and w are actually the barycentric coords, not some UVs...quite annoying, i know...
 		sp.U = u * uv1.u + v * uv2.u + w * uv3.u;
@@ -231,9 +232,10 @@ inline void triangleInstance_t::getSurface(surfacePoint_t &sp, const point3d_t &
 	
 	if(mesh->has_uv)
 	{
-		const uv_t &uv1 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[selfIndex]];
-		const uv_t &uv2 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[selfIndex + 1]];
-		const uv_t &uv3 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[selfIndex + 2]];
+		size_t uvi = selfIndex * 3;
+		const uv_t &uv1 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[uvi]];
+		const uv_t &uv2 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[uvi + 1]];
+		const uv_t &uv3 = mesh->mBase->uv_values[mesh->mBase->uv_offsets[uvi + 2]];
 		
 		//eh...u, v and w are actually the barycentric coords, not some UVs...quite annoying, i know...
 		sp.U = u * uv1.u + v * uv2.u + w * uv3.u;

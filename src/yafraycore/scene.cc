@@ -600,7 +600,7 @@ bool scene_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, con
 	return true;
 }
 
-int scene_t::addUV(GFLOAT u, GFLOAT v)
+int scene_t::addUV(float u, float v)
 {
 	if(state.stack.front() != OBJECT) return false;
 	if(state.curObj->type == TRIM)
