@@ -141,13 +141,6 @@ int xmlInterface_t::addUV(float u, float v)
 	return n_uvs++;
 }
 
-bool xmlInterface_t::startVmap(int id, int type, int dimensions)
-{
-	return false;
-}
-bool xmlInterface_t::endVmap(){ return false; }
-bool xmlInterface_t::addVmapValues(float *val){ return false; }
-
 bool xmlInterface_t::smoothMesh(unsigned int id, double angle)
 {
 	xmlFile << "<smooth ID=\"" << id << "\" angle=\"" << angle << "\"/>\n";

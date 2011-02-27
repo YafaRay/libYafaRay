@@ -29,9 +29,6 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		virtual bool addTriangle(int a, int b, int c, const material_t *mat);
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 		virtual int  addUV(float u, float v);
-		virtual bool startVmap(int id, int type, int dimensions);
-		virtual bool endVmap();
-		virtual bool addVmapValues(float *val);
 		virtual bool smoothMesh(unsigned int id, double angle);
 		
 		// functions directly related to renderEnvironment_t

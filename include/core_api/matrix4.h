@@ -2,7 +2,7 @@
  *
  * 			matrix4.h: Transformation matrix api 
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Estévez
+ *      Copyright (C) 2002  Alejandro Conty EstÃ©vez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -52,11 +52,15 @@ public:
 	int invalid() const { return _invalid; }
 	const PFLOAT * operator [] (int i) const { return matrix[i]; }
 	PFLOAT * operator [] (int i) { return matrix[i]; }
-
-	// only used for rotation matrix in mesh, sets matrix[i] from a vector (elem0-2) and a float (elem3)
-	// maybe a bit clumsy this
-	void setRow(int i, const vector3d_t &v, PFLOAT e3) { matrix[i][0]=v.x;  matrix[i][1]=v.y;  matrix[i][2]=v.z;  matrix[i][3]=e3; }
-	void setColumn(int i, const vector3d_t &v, PFLOAT e3) { matrix[0][i]=v.x;  matrix[1][i]=v.y;  matrix[2][i]=v.z;  matrix[3][i]=e3; }
+	void setVal(int row, int col, float val)
+	{
+		matrix[row][col] = val;
+	}
+	
+	float getVal(int row, int col)
+	{
+		return matrix[row][col];
+	}
 
 protected:
 
@@ -81,16 +85,24 @@ inline matrix4x4_t  operator * (const matrix4x4_t &a,const matrix4x4_t &b)
 inline vector3d_t  operator * (const matrix4x4_t &a, const vector3d_t &b)
 {
 	return vector3d_t(a[0][0]*b.x+a[0][1]*b.y+a[0][2]*b.z,
-										a[1][0]*b.x+a[1][1]*b.y+a[1][2]*b.z,
-										a[2][0]*b.x+a[2][1]*b.y+a[2][2]*b.z);
+                      a[1][0]*b.x+a[1][1]*b.y+a[1][2]*b.z,
+                      a[2][0]*b.x+a[2][1]*b.y+a[2][2]*b.z);
 }
 
 inline point3d_t  operator * (const matrix4x4_t &a, const point3d_t &b)
 {
-	return  point3d_t(a[0][0]*b.x+a[0][1]*b.y+a[0][2]*b.z+a[0][3],
-										a[1][0]*b.x+a[1][1]*b.y+a[1][2]*b.z+a[1][3],
-										a[2][0]*b.x+a[2][1]*b.y+a[2][2]*b.z+a[2][3]);
+    return  point3d_t(a[0][0] * b.x + a[0][1] * b.y + a[0][2] * b.z + a[0][3],
+                      a[1][0] * b.x + a[1][1] * b.y + a[1][2] * b.z + a[1][3],
+                      a[2][0] * b.x + a[2][1] * b.y + a[2][2] * b.z + a[2][3]);
 }
+
+inline normal_t  operator * (const matrix4x4_t &a, const normal_t &b)
+{
+    return normal_t(a[0][0]*b.x+a[0][1]*b.y+a[0][2]*b.z,
+                    a[1][0]*b.x+a[1][1]*b.y+a[1][2]*b.z,
+                    a[2][0]*b.x+a[2][1]*b.y+a[2][2]*b.z);
+}
+
 //matrix4x4_t rayToZ(const point3d_t &from,const vector3d_t & ray);
 YAFRAYCORE_EXPORT std::ostream & operator << (std::ostream &out,matrix4x4_t &m);
 

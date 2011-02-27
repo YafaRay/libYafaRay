@@ -6,6 +6,7 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
+option(WITH_Pthreads "Build with POSIX threads wrapper on windows platforms" OFF)
 option(WITH_Freetype "Build font rendering with FreeType" ON)
 option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
 option(WITH_JPEG "Build JPEG image I/O plugin" ON)
@@ -36,7 +37,7 @@ if(NOT YAF_MIN_RAY_DIST)
 endif(NOT YAF_MIN_RAY_DIST)
 
 if(NOT YAF_SHADOW_BIAS)
-	set(YAF_SHADOW_BIAS 0.00005)
+	set(YAF_SHADOW_BIAS 0.0005)
 endif(NOT YAF_SHADOW_BIAS)
 
 if(YAF_USER_INCLUDE_DIRS)
@@ -70,10 +71,19 @@ find_package(Threads REQUIRED)
 
 # Find optional libs
 if(CMAKE_HAVE_PTHREAD_H)
-	add_definitions(-DHAVE_PTHREAD)
-	message("Using Posix Threads: yes")
+	if(WIN32)
+		if(WITH_Pthreads)
+			add_definitions(-DHAVE_PTHREAD)
+			message("Using Posix Threads: yes")
+		else(WITH_Pthreads)
+			message("Using Posix Threads: no (disabled by user)")
+		endif(WITH_Pthreads)
+	else(WIN32)
+		add_definitions(-DHAVE_PTHREAD)
+		message("Using Posix Threads: yes")
+	endif(WIN32)
 else(CMAKE_HAVE_PTHREAD_H)
-	message("Using Posix Threads: no")
+	message("Using Posix Threads: no (not found)")
 endif(CMAKE_HAVE_PTHREAD_H)
 
 if(WITH_Freetype)
@@ -166,14 +176,26 @@ if(NOT WIN32)
 
 	# build flags
 	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
-	set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
-	set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+	
+	if(USER_RELEASE_OPTIMIZATION_FLAGS)
+		set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
+	else(USER_RELEASE_OPTIMIZATION_FLAGS)
+		set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
+	endif(USER_RELEASE_OPTIMIZATION_FLAGS)
+	
+	if(USER_DEBUG_OPTIMIZATION_FLAGS)
+		set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
+	else(USER_DEBUG_OPTIMIZATION_FLAGS)
+		set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+	endif(USER_DEBUG_OPTIMIZATION_FLAGS)
+	
 	set(YAF_TARGET_TYPE LIBRARY)
+	
 else(NOT WIN32)
 	# installation directories
 
 	if(NOT YAF_BIN_DIR)
-		set(YAF_BIN_DIR Win32Pak)
+		set(YAF_BIN_DIR bin)
 	endif(NOT YAF_BIN_DIR)
 
 	set(YAF_LIB_DIR ${YAF_BIN_DIR})
@@ -181,15 +203,45 @@ else(NOT WIN32)
 	# build flags
 	if(MINGW)
 		set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
-		set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
-		set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+
+		if(USER_RELEASE_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
+		else(USER_RELEASE_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_RELEASE "-O3 -ffast-math")
+		endif(USER_RELEASE_OPTIMIZATION_FLAGS)
+		
+		if(USER_DEBUG_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
+		else(USER_DEBUG_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_DEBUG "-ggdb")
+		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
+
 	else(MINGW)
-		set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
-		set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
-		set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1")
+		set(CMAKE_CXX_FLAGS "/DWIN32 /D_WIN32 /D_USE_MATH_DEFINES /DNOMINMAX /EHsc /MD /nologo" CACHE STRING "Default compiler flags" FORCE)
+
+		if(USER_RELEASE_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
+		else(USER_RELEASE_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_RELEASE "/Ot /Ox")
+		endif(USER_RELEASE_OPTIMIZATION_FLAGS)
+		
+		if(USER_DEBUG_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
+		else(USER_DEBUG_OPTIMIZATION_FLAGS)
+			set(YAF_CXX_FLAGS_DEBUG "/Zi /GS /RTC1")
+		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
+
 	endif(MINGW)
 	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/linklibs RUNTIME)
 endif(NOT WIN32)
+
+if(USER_RELEASE_EXTRA_FLAGS)
+	set(YAF_CXX_FLAGS_RELEASE "${YAF_CXX_FLAGS_RELEASE} ${USER_RELEASE_EXTRA_FLAGS}")
+endif(USER_RELEASE_EXTRA_FLAGS)
+
+if(USER_DEBUG_EXTRA_FLAGS)
+	set(YAF_CXX_FLAGS_DEBUG "${YAF_CXX_FLAGS_DEBUG} ${USER_DEBUG_EXTRA_FLAGS}")
+endif(USER_DEBUG_EXTRA_FLAGS)
 
 if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})

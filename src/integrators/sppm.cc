@@ -241,7 +241,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
-	int numCLights = 0;
+//	int numCLights = 0;
 	int numDLights = 0;
 	float fNumLights = 0.f;
 	float *energies = NULL;
@@ -299,7 +299,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	float invDiffPhotons = 1.f / (float)nPhotons;
 
 	unsigned int ndPhotonStored = 0;
-	unsigned int ncPhotonStored = 0;
+//	unsigned int ncPhotonStored = 0;
 	
 	while(!done)
 	{
@@ -825,7 +825,7 @@ void SPPM::initializePPM()
 	// initialize SPPM statistics
 	float initialRadius = ((bBox.longX() + bBox.longY() + bBox.longZ()) / 3.f) / ((camera->resX() + camera->resY()) / 2.0f) * 2.f ;
 	initialRadius = std::min(initialRadius, 1.f); //Fix the overflow bug
-	for(int i = 0; i < resolution; i++)
+	for(unsigned int i = 0; i < resolution; i++)
 	{
 		HitPoint hp;
 		hp.accPhotonFlux  = colorA_t(0.f);

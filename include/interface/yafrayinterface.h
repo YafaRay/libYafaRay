@@ -25,6 +25,7 @@ class paraMap_t;
 class imageFilm_t;
 class imageHandler_t;
 class progressBar_t;
+class matrix4x4_t;
 
 class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 {
@@ -52,6 +53,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUV(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
 		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+		virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char* name, double x, double y, double z);
@@ -106,6 +108,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		void printInfo(const std::string &msg);
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);
+		void printLog(const std::string &msg);
 	
 	protected:
 		paraMap_t *params;
