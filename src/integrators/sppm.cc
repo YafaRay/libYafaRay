@@ -1,4 +1,4 @@
-﻿ //Quesions:  1.  Now just want to use visual importance to speed the render
+ //Quesions:  1.  Now just want to use visual importance to speed the render
 
 
 #include <integrators/sppm.h>
