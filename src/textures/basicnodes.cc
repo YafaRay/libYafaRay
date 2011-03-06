@@ -21,13 +21,11 @@ void textureMapper_t::setup()
 		dV = 1.f/(float)v;
 		if(tex->isThreeD()) dW = 1.f/(float)w;
 		else dW = 0.f;
-		dUV = dU * dV;
 	}
 	else
 	{
-		float step = 0.001f;
+        float step = 0.0002f;
 		dU = dV = dW = step;
-		dUV = step * step;
 	}
 
 	pDU = point3d_t(dU, 0, 0);
@@ -35,8 +33,9 @@ void textureMapper_t::setup()
 	pDW = point3d_t(0, 0, dW);
 	
 	bumpStr /= scale.length();
-	dU *= bumpStr / 100.f;
-	dV *= bumpStr / 100.f;
+
+    if (!tex->isNormalmap())
+        bumpStr /= 100.0f;
 }
 
 // Map the texture to a cylinder
@@ -152,50 +151,84 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 }
 
 // Normal perturbation
-#define colToVec(col) ( (2.f * col) - 1.f )
-#define getHeight(a0, a1, d) ( (tex->getFloat(a1) - tex->getFloat(a0)) * d )
+
+// RGB normal map color to vector normal
+inline vector3d_t colorToVector(colorA_t const& c)
+{
+    vector3d_t v(c.getR(), c.getG(), c.getB());
+    v = (2.0f * v) - 1.0f;
+    return v;
+}
 
 void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
-	float du, dv;
-	vector3d_t norm(0.f);
+    float du = 0.0f, dv = 0.0f;
 
-	getCoords(texpt, Ng, sp,state);
+    getCoords(texpt, Ng, sp, state);
 
-	texpt = doMapping(texpt, Ng);
+    if (tex->discrete())
+    {
+        texpt = doMapping(texpt, Ng);
 
-	if (tex->isNormalmap())
-	{
-		color_t UVW = colToVec(tex->getNoGammaColor(texpt));
-		norm = vector3d_t(UVW.getR() * bumpStr, UVW.getG() * bumpStr, -UVW.getB());
-	}
+        vector3d_t norm;
+
+        if (tex->isNormalmap())
+        {
+            // needs some odd transforms, not sure about them, rather empirical than logically :/
+            vector3d_t tmpNorm = colorToVector(tex->getNoGammaColor(texpt));
+
+            tmpNorm.y *= -1.0f;
+
+            norm.x = tmpNorm * sp.dSdU;
+            norm.x *= -1.0f;
+            norm.y = tmpNorm * sp.dSdV;
+
+            norm.z = tmpNorm.z;
+        }
+        else
+        {
+            point3d_t i0 = (texpt - pDU);
+            point3d_t i1 = (texpt + pDU);
+            point3d_t j0 = (texpt - pDV);
+            point3d_t j1 = (texpt + pDV);
+            float dfdu = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
+            float dfdv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+
+            // now we got the derivative in UV-space, but need it in shading space:
+            vector3d_t vecU = sp.dSdU;
+            vector3d_t vecV = sp.dSdV;
+            vecU.z = dfdu;
+            vecV.z = dfdv;
+            // now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
+            norm = vecU ^ vecV;
+        }
+
+        norm.normalize();
+
+        if(std::fabs(norm.z) > 1e-30f)
+        {
+            float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
+            du = norm.x*NF;
+            dv = norm.y*NF;
+        }
+        else du = dv = 0.f;
+    }
 	else
 	{
-		point3d_t i0 = (texpt + pDU);
-		point3d_t i1 = (texpt - pDU);
-		point3d_t j0 = (texpt + pDV);
-		point3d_t j1 = (texpt - pDV);
-		if(!tex->discrete())
-		{
-			norm = vector3d_t(getHeight(j0, j1, dU), getHeight(i0, i1, dV), -dUV);
-			norm.normalize();
-		}
-		else
-		{
-			sp.N = sp.N + sp.dPdU * getHeight(i0, i1, bumpStr) + sp.dPdV * getHeight(j0, j1, bumpStr);//vector3d_t(getHeight(j0, j1, dU), getHeight(i0, i1, dV), -dUV);
-			sp.N.normalize();
-			sp.N = ((sp.N * sp.Ng) < 0.f) ? -sp.N : sp.N;
-			createCS(sp.N, sp.NU, sp.NV);
-			
-		}
+        // no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
+        // weird things may happen when objects are rotated, i.e. incorrect bump change
+        point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
+        point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
+        point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
+        point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
+
+        du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
+        dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+        du *= bumpStr;
+        dv *= bumpStr;
 	}
-
-
-	// Convert norm into shading space
-	du = norm * sp.dSdU;
-	dv = norm * sp.dSdV;
 
 	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f );
 }
