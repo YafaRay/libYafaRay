@@ -78,20 +78,15 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 		}
 		else
 		{
-            vector3d_t dp1 = p0 - p2;
-            vector3d_t dp2 = p1 - p2;
-			createCS((dp2 ^ dp1).normalize(), sp.dPdU, sp.dPdV);
-		}
+            sp.dPdU = p0 - p2;
+            sp.dPdV = p1 - p2;
+        }
 	}
 	else
 	{
 		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
-        vector3d_t dp1 = p0 - p2;
-        vector3d_t dp2 = p1 - p2;
-		sp.U = v + w;
-		sp.V = w;
-		sp.dPdU = dp2 - dp1;
-		sp.dPdV = -dp2;
+		sp.dPdU = p0 - p2;
+        sp.dPdV = p1 - p2;
 	}
 
 	sp.dPdU.normalize();
@@ -102,17 +97,13 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 	sp.material = material;
 	sp.P = hit;
 	createCS(sp.N, sp.NU, sp.NV);
-	vector3d_t U, V;
-	createCS(sp.Ng, U, V);
 	// transform dPdU and dPdV in shading space
-	sp.dSdU.x = U * sp.dPdU;
-	sp.dSdU.y = V * sp.dPdU;
-	sp.dSdU.z = sp.Ng * sp.dPdU;
-	sp.dSdV.x = U * sp.dPdV;
-	sp.dSdV.y = V * sp.dPdV;
-	sp.dSdV.z = sp.Ng * sp.dPdV;
-	sp.dSdU.normalize();
-	sp.dSdV.normalize();
+    sp.dSdU.x = sp.NU * sp.dPdU;
+    sp.dSdU.y = sp.NV * sp.dPdU;
+    sp.dSdU.z = sp.N * sp.dPdU;
+    sp.dSdV.x = sp.NU * sp.dPdV;
+    sp.dSdV.y = sp.NV * sp.dPdV;
+    sp.dSdV.z = sp.N * sp.dPdV;
 	sp.light = mesh->light;
 }
 
@@ -375,7 +366,7 @@ inline void triangleInstance_t::sample(float s1, float s2, point3d_t &p, vector3
 
 bool vTriangle_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
 {
-	//Tomas Möller and Ben Trumbore ray intersection scheme
+	//Tomas M??ller and Ben Trumbore ray intersection scheme
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
 	float det, inv_det, u, v;
