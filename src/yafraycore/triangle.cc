@@ -58,20 +58,15 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectD
 		}
 		else
 		{
-			vector3d_t dp1 = mesh->points[pb] - mesh->points[pa];
-			vector3d_t dp2 = mesh->points[pc] - mesh->points[pa];
-			createCS((dp2 ^ dp1).normalize(), sp.dPdU, sp.dPdV);
-		}
+            sp.dPdU = mesh->points[pa] - mesh->points[pc];
+            sp.dPdV = mesh->points[pb] - mesh->points[pc];
+        }
 	}
 	else
 	{
 		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
-		vector3d_t dp1 = mesh->points[pa] - mesh->points[pc];
-		vector3d_t dp2 = mesh->points[pb] - mesh->points[pc];
-		sp.U = v + w;
-		sp.V = w;
-		sp.dPdU = dp2 - dp1;
-		sp.dPdV = -dp2;
+        sp.dPdU = mesh->points[pa] - mesh->points[pc];
+        sp.dPdV = mesh->points[pb] - mesh->points[pc];
 	}
 
 	sp.dPdU.normalize();
@@ -82,17 +77,13 @@ void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectD
 	sp.material = material;
 	sp.P = hit;
 	createCS(sp.N, sp.NU, sp.NV);
-	vector3d_t U, V;
-	createCS(sp.Ng, U, V);
 	// transform dPdU and dPdV in shading space
-	sp.dSdU.x = U * sp.dPdU;
-	sp.dSdU.y = V * sp.dPdU;
-	sp.dSdU.z = sp.Ng * sp.dPdU;
-	sp.dSdV.x = U * sp.dPdV;
-	sp.dSdV.y = V * sp.dPdV;
-	sp.dSdV.z = sp.Ng * sp.dPdV;
-	sp.dSdU.normalize();
-	sp.dSdV.normalize();
+    sp.dSdU.x = sp.NU * sp.dPdU;
+    sp.dSdU.y = sp.NV * sp.dPdU;
+    sp.dSdU.z = sp.N * sp.dPdU;
+    sp.dSdV.x = sp.NU * sp.dPdV;
+    sp.dSdV.y = sp.NV * sp.dPdV;
+    sp.dSdV.z = sp.N * sp.dPdV;
 	sp.light = mesh->light;
 }
 
