@@ -11,7 +11,7 @@ target_link_libraries(textureback yafaraycore)
 add_library(gradientback SHARED gradientback.cc)
 target_link_libraries(gradientback yafaraycore)
 
-add_library(DarkSky SHARED DarkSky/darksky.cc)
-target_link_libraries(DarkSky yafaraycore)
+add_library(SunSky2 SHARED darksky.cc)
+target_link_libraries(SunSky2 yafaraycore)
 
-install (TARGETS gradientback textureback sunsky DarkSky ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
+install (TARGETS gradientback textureback sunsky SunSky2 ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
