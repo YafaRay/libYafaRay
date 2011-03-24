@@ -52,7 +52,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 {
 	// Check boundaries and fill w and h
 	if (keynum >= yaf_tile_length(self) || keynum < 0)
-		return NULL;
+		return Py_BuildValue("ffff", 1, 0, 0, 1);
 	
 	// Calc position of the tile in the image region
 	int vy = keynum / self->w;
@@ -65,11 +65,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 	// Get pixel
 	yafTilePixel_t &pix = self->mem[ self->resx * vy + vx ];
 
-	return Py_BuildValue("ffff", 
-		pix.r,
-		pix.g,
-		pix.b,
-		pix.a);
+	return Py_BuildValue("ffff", pix.r, pix.g, pix.b, pix.a);
 }
 
 static void yaf_tile_dealloc(YafTileObject_t *self)
@@ -124,7 +120,7 @@ public:
 	mDrawArea(drawAreaCallback),
 	mFlush(flushCallback)
 	{
-		tile = PyObject_NEW(YafTileObject_t, &yafTile_Type);
+		tile = PyObject_New(YafTileObject_t, &yafTile_Type);
 		tile->mem = new yafTilePixel_t[x*y];
 		tile->resx = x;
 		tile->resy = y;
@@ -133,7 +129,7 @@ public:
 	virtual ~pyOutput_t()
 	{
 		delete [] tile->mem;
-		Py_DECREF(tile);
+		PyObject_Del(tile);
 	}
 	
 	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)
