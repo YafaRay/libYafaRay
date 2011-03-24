@@ -1,32 +1,41 @@
 #check for swig if needed
 
-if (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
+IF (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
 	
-	find_package(SWIG REQUIRED)
-	set(YAF_SWIG_MIN_VERSION 1.3.36)
+	FIND_PACKAGE(YafSWIG REQUIRED)
 	
-	if(NOT SWIG_FOUND)
-		message("Swig not found, please install it to build script bindings")
-		set(WITH_YAF_PY_BINDINGS OFF)
-		set(WITH_YAF_RUBY_BINDINGS OFF)
-	else(NOT SWIG_FOUND)
-		if(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
-			message("Swig version < ${YAF_SWIG_MIN_VERSION}, please update or bindings can't be built")
+	IF(YAF_PY_VERSION GREATER 3.1)
+		SET(YAF_SWIG_MIN_VERSION 2.0.0)
+	ELSE(YAF_PY_VERSION GREATER 3.1)
+		SET(YAF_SWIG_MIN_VERSION 1.3.36)
+	ENDIF(YAF_PY_VERSION GREATER 3.1)
+	
+	IF(NOT SWIG_FOUND)
+		MESSAGE("Swig not found, please install it to build script bindings")
+		SET(WITH_YAF_PY_BINDINGS OFF)
+		SET(WITH_YAF_RUBY_BINDINGS OFF)
+	ELSE(NOT SWIG_FOUND)
+		IF(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
+			IF(YAF_PY_VERSION GREATER 3.1)
+				message("Swig version < ${YAF_SWIG_MIN_VERSION}, to build with Python 3.2 you need an adecuately patched version of swig. Please set the path to your patched swig version in your UserConfig.txt file on the YAF_USER_SWIG_BIN_DIR variable. The patches required can be found on the SupportFiles folder on yafaray's source path.'")
+			ELSE(YAF_PY_VERSION GREATER 3.1)
+				message("Swig version < ${YAF_SWIG_MIN_VERSION}, please update or bindings can't be built")
+			ENDIF(YAF_PY_VERSION GREATER 3.1)
 			set(WITH_YAF_PY_BINDINGS OFF)
 			set(WITH_YAF_RUBY_BINDINGS OFF)
-		endif(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
-	endif(NOT SWIG_FOUND)
+		ENDIF(SWIG_VERSION VERSION_LESS ${YAF_SWIG_MIN_VERSION})
+	ENDIF(NOT SWIG_FOUND)
 	
-	include(${SWIG_USE_FILE})
-endif (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
+	INCLUDE(${SWIG_USE_FILE})
+ENDIF (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
 
 # Python bindings 
 
-if (WITH_YAF_PY_BINDINGS)
+IF (WITH_YAF_PY_BINDINGS)
 	
-	if(YAF_PY_VERSION)
+	IF(YAF_PY_VERSION)
 		set(REQUIRED_PYTHON_VERSION ${YAF_PY_VERSION})
-	else(YAF_PY_VERSION)
+	ELSE(YAF_PY_VERSION)
 		set(REQUIRED_PYTHON_VERSION 2.6)
 	endif(YAF_PY_VERSION)
 	
@@ -75,7 +84,8 @@ if (WITH_YAF_PY_BINDINGS)
 
 	endif(NOT WIN32)
 	
-	include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+	message("Python header path: ${PYTHON_INCLUDE_DIR}")
+	include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR})
 	include(${SWIG_USE_FILE})
 
 	if(YAF_PY_VERSION GREATER 3)
