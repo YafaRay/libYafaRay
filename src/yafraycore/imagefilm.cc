@@ -250,7 +250,7 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 					
 					if(interactive && showMask)
 					{
-						color_t pixcol(c);
+						color_t pixcol(0.7f, c, c);
 						output->putPixel(x, y, (const float *)&pixcol, false);
 					}
 					
