@@ -25,12 +25,10 @@ __BEGIN_YAFRAY
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
 
-#define screenColors(c1,c2) (1.0 - ((1.0 - (c1)) * (1.0 - (c2))))
 #define sumColors(c1, c2) ((c1) + (c2))
-#define multColors(c1,c2) ((c1) * (c2))
 #define addColors(c1, c2, v1, v2) sumColors(c1*v1, c2*v2)
 
-#define addPdf(p1, p2) std::max(p1, p2)//((p1+p2) * 0.5f)
+#define addPdf(p1, p2) std::max(p1, p2)//((p1 + p2) * 0.5)
 
 blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval):
 	mat1(m1), mat2(m2), blendS(0)
@@ -108,9 +106,6 @@ color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, c
 	
 	state.userdata = old_udat;
 
-	col1.clampRGB01();
-	col2.clampRGB01();
-
 	col1 = addColors(col1, col2, ival, val);
 	return col1;
 }
@@ -133,21 +128,19 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	if(ival > 0.f)
 	{
 		col1 = mat1->sample(state, sp, wo, wi1, s1, W1);
-		col1.clampRGB01();
 	}
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
 	if(val > 0.f)
 	{
 		col2 = mat2->sample(state, sp, wo, wi2, s2, W2);
-		col2.clampRGB01();
 	}
 	
 	wi = (wi2 + wi1).normalize();
 	
 	s.pdf = addPdf(s1.pdf, s2.pdf);
-	s.sampledFlags = s1.sampledFlags || s2.sampledFlags;
-	s.reverse = s1.reverse || s2.reverse;
+	s.sampledFlags = s1.sampledFlags | s2.sampledFlags;
+	s.reverse = s1.reverse | s2.reverse;
 	if(s.reverse)
 	{
 		s.pdf_back = addPdf(s1.pdf_back, s2.pdf_back);
@@ -213,11 +206,6 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	
 	state.userdata = old_udat;
 	
-	m1_col[0].clampRGB01();
-	m1_col[1].clampRGB01();
-	col[0].clampRGB01();
-	col[1].clampRGB01();
-
 	if(reflect && m1_reflect)
 	{
 		col[0] = addColors(m1_col[0], col[0], ival, val);
@@ -279,9 +267,6 @@ color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	if(val > 0.f)
 	col2 = mat2->getTransparency(state, sp, wo);
 
-	col1.clampRGB01();
-	col2.clampRGB01();
-
 	col1 = addColors(col1, col2, ival, val);
 	
 	state.userdata = old_udat;
@@ -295,7 +280,7 @@ CFLOAT blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp
 		float val, ival;
 		getBlendVal(state, sp, val, ival);
 		
-		float al1 = 0.f, al2 = 0.f;
+		float al1 = 1.f, al2 = 1.f;
 		
 		void *old_udat = state.userdata;
 		
@@ -307,7 +292,7 @@ CFLOAT blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp
 		if(val > 0.f)
 		al2 = mat2->getAlpha(state, sp, wo);
 	
-		al1 = (al1 * ival) + (al2 * val);
+		al1 = std::min(al1, al2);
 		
 		state.userdata = old_udat;
 		
@@ -333,9 +318,6 @@ color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 	if(val > 0.f)
 	col2 = mat2->emit(state, sp, wo);
 	
-	col1.clampRGB01();
-	col2.clampRGB01();
-
 	col1 = addColors(col1, col2, ival, val);
 		
 	state.userdata = old_udat;
@@ -351,12 +333,14 @@ bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	bool ret = false;
 	
 	color_t col1(0.f), col2(0.f);
+	float pdf1 = 0.f, pdf2 = 0.f;
 
 	state.userdata = PTR_ADD(state.userdata, reqMem);
 	if(ival > 0.f)
 	{
 		ret = ret || mat1->scatterPhoton(state, sp, wi, wo, s);
 		col1 = s.color;
+		pdf1 = s.pdf;
 	}
 	
 	state.userdata = PTR_ADD(state.userdata, mmem1);
@@ -364,12 +348,11 @@ bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	{
 		ret = ret || mat2->scatterPhoton(state, sp, wi, wo, s);
 		col2 = s.color;
+		pdf2 = s.pdf;
 	}
 	
-	col1.clampRGB01();
-	col2.clampRGB01();
-	
 	s.color = addColors(col1, col2, ival, val);
+	s.pdf = addPdf(pdf1, pdf2);
 		
 	state.userdata = old_udat;
 	return ret;
