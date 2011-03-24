@@ -79,6 +79,8 @@ class YAFRAYCORE_EXPORT camera_t
 		vector3d_t vright;
 		
 		float aspect_ratio;	//<! Aspect ratio of camera (not image in pixel units!)
+
+        float nearClippingDistance, farClippingDistance;
 };
 
 __END_YAFRAY

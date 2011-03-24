@@ -61,6 +61,10 @@ ray_t angularCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &w
 	PFLOAT phi = radius * hor_phi;
 	//PFLOAT sp = sin(phi);
 	ray.dir = fSin(phi)*(fCos(theta)*vright + fSin(theta)*vup ) + fCos(phi)*vto;
+
+    ray.tmin = nearClippingDistance;
+    ray.tmax = farClippingDistance;
+
 	return ray;
 }
 
@@ -70,6 +74,8 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	int resx=320, resy=200;
 	double aspect=1.0, angle=90, max_angle=90;
 	bool circular = true, mirrored = false;
+    float nearClip = 0.0f, farClip = -1.0f;
+
 	params.getParam("from", from);
 	params.getParam("to", to);
 	params.getParam("up", up);
@@ -81,10 +87,14 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("max_angle", max_angle);
 	params.getParam("circular", circular);
 	params.getParam("mirrored", mirrored);
+    params.getParam("nearClip", nearClip);
+    params.getParam("farClip", farClip);
 	
 	angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle, circular);
 	if(mirrored) cam->vright *= -1.0;
 	cam->max_r = max_angle/angle;
+    cam->nearClippingDistance = nearClip;
+    cam->farClippingDistance = farClip;
 	
 	return cam;
 }
