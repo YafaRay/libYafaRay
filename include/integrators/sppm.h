@@ -27,7 +27,6 @@ typedef struct _HitPoint // actually are per-pixel variable, use to record the s
 	colorA_t accPhotonFlux; // accumulated flux
 	colorA_t constantRandiance; // record the direct light for this pixel
 
-	bool consNeedUpdate; // use to dertermine is constantRandiance need to estimate
 	bool radiusSetted; // used by IRE to direct whether the initial radius is set or not.
 }HitPoint;
 
