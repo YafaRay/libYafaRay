@@ -2,7 +2,7 @@
  *
  * 			camera.cc: Camera implementation
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Estévez
+ *      Copyright (C) 2002  Alejandro Conty Est??vez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -97,6 +97,8 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	point3d_t from(0,1,0), to(0,0,0), up(0,1,1);
 	int resx=320, resy=200;
 	float aspect=1, dfocal=1, apt=0, dofd=0, bkhrot=0;
+    float nearClip = 0.0f, farClip = -1.0f;
+
 	params.getParam("from", from);
 	params.getParam("to", to);
 	params.getParam("up", up);
@@ -109,6 +111,9 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	params.getParam("bokeh_bias", bkhbias);
 	params.getParam("bokeh_rotation", bkhrot);
 	params.getParam("aspect_ratio", aspect);
+    params.getParam("nearClip", nearClip);
+    params.getParam("farClip", farClip);
+
 	bokehType bt = BK_DISK1;
 	if (*bkhtype=="disk2")			bt = BK_DISK2;
 	else if (*bkhtype=="triangle")	bt = BK_TRI;
@@ -120,7 +125,12 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	bkhBiasType bbt = BB_NONE;
 	if (*bkhbias=="center") 		bbt = BB_CENTER;
 	else if (*bkhbias=="edge") 		bbt = BB_EDGE;
-	return new architectCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot);
+    architectCam_t* cam = new architectCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot);
+
+    cam->nearClippingDistance = nearClip;
+    cam->farClippingDistance = farClip;
+
+    return cam;
 }
 
 extern "C"

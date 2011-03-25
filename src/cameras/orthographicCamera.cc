@@ -54,6 +54,10 @@ ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt)
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
 	ray.from = pos + vright*px + vup*py;
 	ray.dir = vto;
+
+    ray.tmin = nearClippingDistance;
+    ray.tmax = farClippingDistance;
+
 	return ray;
 }
 
@@ -79,6 +83,8 @@ camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	point3d_t from(0,1,0), to(0,0,0), up(0,1,1);
 	int resx=320, resy=200;
 	double aspect=1.0, scale=1.0;
+    float nearClip = 0.0f, farClip = -1.0f;
+
 	params.getParam("from", from);
 	params.getParam("to", to);
 	params.getParam("up", up);
@@ -86,8 +92,15 @@ camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("resy", resy);
 	params.getParam("scale", scale);
 	params.getParam("aspect_ratio", aspect);
+    params.getParam("nearClip", nearClip);
+    params.getParam("farClip", farClip);
 
-	return new orthoCam_t(from, to, up, resx, resy, aspect, scale);
+    orthoCam_t* cam = new orthoCam_t(from, to, up, resx, resy, aspect, scale);
+
+    cam->nearClippingDistance = nearClip;
+    cam->farClippingDistance = farClip;
+
+    return cam;
 }
 
 extern "C"
