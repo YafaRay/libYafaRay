@@ -18,6 +18,10 @@ else (UNIX)
 	set (DLLOAD_LIB "")
 endif (UNIX)
 
+if(APPLE) # set rpath - Jens
+	add_custom_command(TARGET yafaraycore POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaraycore.dylib)
+endif(APPLE)
+
 target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
 install (TARGETS yafaraycore ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
