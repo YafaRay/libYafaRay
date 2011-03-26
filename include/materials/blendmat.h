@@ -43,6 +43,7 @@ class blendMat_t: public nodeMaterial_t
 		size_t mmem1;
 		bool recalcBlend;
 		float blendedIOR;
+		mutable BSDF_t mat1Flags, mat2Flags;
 	private:
 		void getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const;
 };
