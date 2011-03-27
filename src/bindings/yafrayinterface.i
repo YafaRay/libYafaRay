@@ -129,7 +129,7 @@ public:
 	virtual ~pyOutput_t()
 	{
 		delete [] tile->mem;
-		PyObject_Del(tile);
+		Py_DECREF(tile);
 	}
 	
 	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)
