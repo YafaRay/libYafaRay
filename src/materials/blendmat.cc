@@ -124,12 +124,14 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	{
 		state.userdata = PTR_ADD(state.userdata, reqMem);
 		col1 = mat1->sample(state, sp, wo, wi1, s1, W1);
+		mat1Sampled = true;
 	}
 	
 	if(s.flags & mat2Flags)
 	{
 		state.userdata = PTR_ADD(state.userdata, mmem1);
 		col2 = mat2->sample(state, sp, wo, wi2, s2, W2);
+		mat2Sampled = true;
 	}
 	
 	if(mat1Sampled && mat2Sampled)
@@ -142,10 +144,10 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 		if(s.reverse)
 		{
 			s.pdf_back = addPdf(s1.pdf_back, s2.pdf_back);
-			s.col_back = addColors(s1.col_back, s2.col_back, ival, val);
+			s.col_back = addColors((s1.col_back * W1), (s2.col_back * W2), ival, val);
 		}
-		col1 = addColors(col1, col2, ival, val);
-		W = addPdf(W1, W2);
+		col1 = addColors((col1 * W1), (col2 * W2), ival, val);
+		W = 1.f;//addPdf(W1, W2);
 	}
 	else if(mat1Sampled && !mat2Sampled)
 	{
