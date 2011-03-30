@@ -153,31 +153,31 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	{
 		wi = wi1;
 		
-		s.pdf = s1.pdf * ival;
+		s.pdf = s1.pdf;
 		s.sampledFlags = s1.sampledFlags;
 		s.reverse = s1.reverse;
 		if(s.reverse)
 		{
-			s.pdf_back = s1.pdf_back * ival;
-			s.col_back = s1.col_back * ival;
+			s.pdf_back = s1.pdf_back;
+			s.col_back = s1.col_back;
 		}
-		col1 = col1 * ival;
-		W = W1 * ival;
+		col1 = col1;
+		W = W1;
 	}
 	else if(!mat1Sampled && mat2Sampled)
 	{
 		wi = wi2;
 		
-		s.pdf = s2.pdf * val;
+		s.pdf = s2.pdf;
 		s.sampledFlags = s2.sampledFlags;
 		s.reverse = s2.reverse;
 		if(s.reverse)
 		{
-			s.pdf_back = s2.pdf_back * val;
-			s.col_back = s2.col_back * val;
+			s.pdf_back = s2.pdf_back;
+			s.col_back = s2.col_back;
 		}
-		col1 = col2 * val;
-		W = W2 * val;
+		col1 = col2;
+		W = W2;
 	}
 
 	state.userdata = old_udat;
