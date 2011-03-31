@@ -224,23 +224,23 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 	{
 		for(int y=0; y<h-1; ++y)
 		{
-			for(int x=0; x<w-1; ++x)
+			for(int x = 0; x < w-1; ++x)
 			{
-				bool needAA=false;
-				float c=(*image)(x, y).normalized().abscol2bri();
-				if(std::fabs(c-(*image)(x+1, y).normalized().col2bri()) >= AA_thesh)
+				bool needAA = false;
+				float c = (*image)(x, y).normalized().abscol2bri();
+				if(std::fabs(c - (*image)(x+1, y).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x+1, y);
 				}
-				if(std::fabs(c-(*image)(x, y+1).normalized().col2bri()) >= AA_thesh)
+				if(std::fabs(c - (*image)(x, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x, y+1);
 				}
-				if(std::fabs(c-(*image)(x+1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(std::fabs(c - (*image)(x+1, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x+1, y+1);
 				}
-				if(x > 0 && std::fabs(c-(*image)(x-1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(x > 0 && std::fabs(c - (*image)(x-1, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x-1, y+1);
 				}
@@ -250,7 +250,13 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 					
 					if(interactive && showMask)
 					{
-						color_t pixcol(0.7f, c, c);
+						color_t pix = (*image)(x, y).normalized();
+						color_t pixcol(0.f);
+						
+						if(pix.R < pix.G && pix.R < pix.B)
+							pixcol.set(0.7f, c, c);
+						else
+							pixcol.set(c, 0.7f, c);
 						output->putPixel(x, y, (const float *)&pixcol, false);
 					}
 					
