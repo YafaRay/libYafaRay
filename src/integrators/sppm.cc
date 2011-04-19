@@ -654,7 +654,8 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			}
 			
 			// glossy reflection with recursive raytracing:  Pure GLOSSY material doesn't hold photons?
-			if( bsdfs & (BSDF_GLOSSY))
+			
+			if( bsdfs & BSDF_GLOSSY )
 			{
 				state.includeLights = false;
 				int gsam = 8;
@@ -666,7 +667,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				int branch = state.rayDivision*oldOffset;
 				unsigned int offs = gsam * state.pixelSample + state.samplingOffs;
 				float d_1 = 1.f/(float)gsam;
-				color_t gcol(0.f), vcol(1.f);
+				color_t vcol(1.f);
 				vector3d_t wi;
 				const volumeHandler_t *vol;
 				diffRay_t refRay;
@@ -675,7 +676,6 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 
 				hal2.setStart(offs);
 				hal3.setStart(offs);
-				
 
 				for(int ns=0; ns<gsam; ++ns)
 				{
@@ -685,8 +685,8 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 					++offs;
 					++branch;
 
-					float s1 = RI_vdC(offs);
-					float s2 = hal2.getNext();//scrHalton(2, offs);
+					float s1 = hal2.getNext();
+					float s2 = hal3.getNext();
 					
 					float W = 0.f;
 
@@ -703,27 +703,28 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 						t_ging.photonFlux *=mcol * W;
 						t_ging.constantRandiance *= mcol * W;
 					}
-					
+
 					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
 					{
-						if(vol->transmittance(state, refRay, vcol)) 
+						if(vol->transmittance(state, refRay, vcol))
 						{
 							t_ging.photonFlux *= vcol;
 							t_ging.constantRandiance *= vcol;
-						}
+						} 
 					}
 					ging += t_ging;
 				}
+
 				gInfo.constantRandiance += ging.constantRandiance * d_1;
 				gInfo.photonFlux += ging.photonFlux * d_1;
 				gInfo.photonCount += ging.photonCount * d_1;
 
-				//restore renderstate
 				state.rayDivision = oldDivision;
 				state.rayOffset = oldOffset;
 				state.dc1 = old_dc1;
 				state.dc2 = old_dc2;
-			}			
+			}
+
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs & (BSDF_SPECULAR | BSDF_FILTER))
 			{
