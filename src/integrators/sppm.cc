@@ -64,7 +64,6 @@ bool SPPM::render(yafaray::imageFilm_t *image)
 
 	if(scene->doDepth()) precalcDepths();
 
-	nDireCompt = 10; // only the first 10 pass need compute direct light. save some time for huge pass used in sppm
 	initializePPM(); // seems could integrate into the preRender
 	renderPass(1, 0, false);
 	PM_IRE = false;

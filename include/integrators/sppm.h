@@ -84,7 +84,6 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 	unsigned int totalnPhotons; // amount of total photons that have been emited, used to normalize photon energy
 	bool PM_IRE; // flag to  say if using PM for initial radius estimate
 	bool bHashgrid; // flag to choose using hashgrid or not.
-	int nDireCompt; // passNum to doing direct light estimate;
 
 	Halton hal1,hal2,hal3,hal4,hal7, hal8,hal9,hal10; // halton sequence to do 
 
