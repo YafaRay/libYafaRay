@@ -69,7 +69,21 @@ inline point3d_t spheremap(const point3d_t &p)
 inline point3d_t cubemap(const point3d_t &p, const vector3d_t &n)
 {
 	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
-	int axis = std::fabs(n.x) > std::fabs(n.y) ? (std::fabs(n.x) > std::fabs(n.z) ? 0 : 2) : (std::fabs(n.y) > std::fabs(n.z) ? 1 : 2);
+	// int axis = std::fabs(n.x) > std::fabs(n.y) ? (std::fabs(n.x) > std::fabs(n.z) ? 0 : 2) : (std::fabs(n.y) > std::fabs(n.z) ? 1 : 2);
+	// no functionality changes, just more readable code
+
+	int axis;
+
+	if (std::fabs(n.z) >= std::fabs(n.x) && std::fabs(n.z) >= std::fabs(n.y)) {
+		axis= 2;
+	}
+	else if (std::fabs(n.y) >= std::fabs(n.x) && std::fabs(n.y) >= std::fabs(n.z)) {
+		axis= 1;
+	}
+	else {
+		axis= 0;
+	}
+
 	return point3d_t(p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]]);
 }
 
@@ -120,7 +134,7 @@ void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfaceP
 	{
 		case TXC_UV:	texpt = eval_uv(sp); Ng = sp.Ng; break;
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
-		case TXC_TRAN:	texpt = mtx * sp.P; Ng = sp.Ng; break;
+		case TXC_TRAN:	texpt = mtx * sp.P; Ng = mtx * sp.Ng; break;  // apply 4x4 matrix of object for mapping also to true surface normals
 		case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
 		case TXC_STICK:	// Not implemented yet use GLOB
 		case TXC_STRESS:// Not implemented yet use GLOB
@@ -137,7 +151,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
 
-	getCoords(texpt, Ng, sp,state);
+	getCoords(texpt, Ng, sp, state);
 
 	texpt = doMapping(texpt, Ng);
 	
