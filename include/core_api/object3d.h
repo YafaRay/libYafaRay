@@ -25,7 +25,7 @@ class YAFRAYCORE_EXPORT object3d_t
 		virtual int numPrimitives() const = 0;
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
-		virtual int getPrimitives(const primitive_t **prims) const { return NULL; }
+		virtual int getPrimitives(const primitive_t **prims) const { return 0; }
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const light_t *l){ light=l; }
 		/*! query whether object surface can be sampled right now */
