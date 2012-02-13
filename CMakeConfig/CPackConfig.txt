@@ -1,4 +1,4 @@
-option(BLENDER_ADDON "Build YafaRay as a self-contained blender add on" ON)
+option(BLENDER_ADDON "Build YafaRay as a self-contained blender add on" OFF)
 if (BLENDER_ADDON)
     set(YAF_BIN_DIR .)
     set(YAF_LIB_DIR bin)
