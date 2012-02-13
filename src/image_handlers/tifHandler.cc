@@ -132,7 +132,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
     	
 		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{
-			Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << yendl;
+			Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
 			TIFFClose(out);
 			_TIFFfree(scanline);
 
@@ -174,7 +174,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
 			
 			if(TIFFWriteScanline(out, scanline16, y, 0) < 0)
 			{
-				Y_ERROR << handlerName << ": An error ocurred while writting TIFF file" << yendl;
+				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
 				TIFFClose(out);
 				_TIFFfree(scanline16);
 
