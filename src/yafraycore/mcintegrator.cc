@@ -70,6 +70,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	ray_t lightRay;
 	lightRay.from = sp.P;
 	color_t lcol(0.f), scol;
+	float lightPdf;
 
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
@@ -142,6 +143,43 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		}
 
 		col += ccol * invNS;
+
+		if(canIntersect) // sample from BSDF to complete MIS
+		{
+			color_t ccol2(0.f);
+
+			hal2.setStart(offs-1);
+			hal3.setStart(offs-1);
+
+			for(int i=0; i<n; ++i)
+			{
+				ray_t bRay;
+				bRay.tmin = MIN_RAYDIST; bRay.from = sp.P;
+
+				float s1 = hal2.getNext();
+				float s2 = hal3.getNext();
+				float W = 0.f;
+
+				sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
+				color_t surfCol = material->sample(state, sp, wo, bRay.dir, s, W);
+				if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
+				{
+					shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
+					if(!shadowed && lightPdf > 1e-6f)
+					{
+						if(trShad) lcol *= scol;
+						color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
+						lcol *= transmitCol;
+						float lPdf = 1.f/lightPdf;
+						float l2 = lPdf * lPdf;
+						float m2 = s.pdf * s.pdf;
+						float w = m2 / (l2 + m2);
+						ccol2 += surfCol * lcol * w * W;
+					}
+				}
+			}
+			col += ccol2 * invNS;
+		}
 	}
 	return col;
 }
