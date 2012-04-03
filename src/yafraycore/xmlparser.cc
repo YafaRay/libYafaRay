@@ -370,14 +370,14 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	}
     else if(el == "instance")
 	{
-		int base_object_id = -1;
-        int * boi_p = &base_object_id;
+		objID_t * base_object_id = new objID_t();
+        *base_object_id = -1;
 		for(int n=0; attrs[n]; n++)
 		{
 			std::string name(attrs[n]);
-			if(name == "base_object_id") base_object_id = atoi(attrs[n+1]);
+			if(name == "base_object_id") *base_object_id = atoi(attrs[n+1]);
 		}
-		parser.pushState(startEl_instance,endEl_instance, boi_p);	
+		parser.pushState(startEl_instance,endEl_instance, base_object_id);	
 	}
 	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << yendl;
 }
@@ -469,7 +469,7 @@ void endEl_mesh(xmlParser_t &parser, const char *element)
 void startEl_instance(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	std::string el(element);
-	int * boi_p = (int *)parser.stateData();
+	objID_t boi = *(objID_t *)parser.stateData();
 	if(el == "transform")
 	{
 		float m[4][4];
@@ -494,7 +494,6 @@ void startEl_instance(xmlParser_t &parser, const char *element, const char **att
             else if(name ==  "m33") m[3][3] = atof(attrs[n+1]); 
 		}
         matrix4x4_t *m4 = new matrix4x4_t(m);
-		objID_t boi = *boi_p;
         parser.scene->addInstance(boi,*m4);
 	}
 }
