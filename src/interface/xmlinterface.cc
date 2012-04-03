@@ -88,6 +88,12 @@ bool xmlInterface_t::endTriMesh()
 	return true;
 }
 
+bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
+{
+    xmlFile << "<!-- INSTANCE " << baseObjectId << " : " << objToWorld << "-->\n";
+    return true;
+}
+
 int  xmlInterface_t::addVertex(double x, double y, double z)
 {
 	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
