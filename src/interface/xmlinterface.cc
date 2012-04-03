@@ -67,7 +67,7 @@ bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, 
 {
 	last_mat = 0;
 	n_uvs = 0;
-	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
+	xmlFile << "\n<mesh id=\"" << id "\" vertices=\"" << vertices << "\" faces=\"" << triangles
 			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type <<"\">\n";
 	return true;
 }
