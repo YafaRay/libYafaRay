@@ -339,7 +339,8 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 
 		// Get a new object ID if we did not get one
 		if(id == -1) md->ID = parser.scene->getNextFreeID();
-
+		else md->ID = id;
+		
 		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
