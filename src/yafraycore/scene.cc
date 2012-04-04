@@ -911,7 +911,8 @@ objID_t scene_t::getNextFreeID()
 	if(meshes.find(id) != meshes.end())
 	{
 		Y_ERROR << "Scene: Object ID already in use!" << yendl;
-		return 0;
+    	++state.nextFreeID;
+		return getNextFreeID();
 	}
 	
 	++state.nextFreeID;
@@ -940,7 +941,7 @@ bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
     
     if (meshes.find(baseObjectId) == meshes.end())
     {
-        Y_ERROR << "Base mesh for instance doesn't exist" << yendl;
+        Y_ERROR << "Base mesh for instance doesn't exist " << baseObjectId << yendl;
         return false;
     }
 

@@ -88,12 +88,6 @@ bool xmlInterface_t::endTriMesh()
 	return true;
 }
 
-bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
-{
-    xmlFile << "<!-- INSTANCE " << baseObjectId << " : " << objToWorld << "-->\n";
-    return true;
-}
-
 int  xmlInterface_t::addVertex(double x, double y, double z)
 {
 	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
@@ -193,6 +187,14 @@ void writeMatrix(const std::string &name, const matrix4x4_t &m, std::ofstream &x
 						   << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2]  << "\" m13=\"" << m[1][3] << "\""
 						   << " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2]  << "\" m23=\"" << m[2][3] << "\""
 						   << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2]  << "\" m33=\"" << m[3][3] << "\"/>";
+}
+
+bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
+{
+    xmlFile << "\n<instance base_object_id=\"" << baseObjectId << "\" >\n\t";
+    writeMatrix("transform",objToWorld,xmlFile);
+    xmlFile << "\n</instance>\n";
+    return true;
 }
 
 void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
