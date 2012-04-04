@@ -39,6 +39,7 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <limits>
 
 __BEGIN_YAFRAY
 
@@ -47,7 +48,7 @@ scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
-	state.nextFreeID = 1;
+	state.nextFreeID = std::numeric_limits<int>::min();
 	state.curObj = 0;
 }
 
