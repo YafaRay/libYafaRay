@@ -166,14 +166,6 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 
 // Normal perturbation
 
-// RGB normal map color to vector normal
-inline vector3d_t colorToVector(colorA_t const& c)
-{
-    vector3d_t v(c.getR(), c.getG(), c.getB());
-    v = (2.0f * v) - 1.0f;
-    return v;
-}
-
 void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
 	point3d_t texpt(0.f);
@@ -182,24 +174,26 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
     getCoords(texpt, Ng, sp, state);
 
-    if (tex->discrete())
-    {
-        texpt = doMapping(texpt, Ng);
+	if (tex->discrete())
+	{
+		texpt = doMapping(texpt, Ng);
+		colorA_t color(0.f);
+		vector3d_t norm(0.f);
 
-        vector3d_t norm;
+		if (tex->isNormalmap())
+		{
+			// Get color from normal map texture
+			color = tex->getNoGammaColor(texpt);
 
-        if (tex->isNormalmap())
-        {
-            // needs some odd transforms, not sure about them, rather empirical than logically :/
-            vector3d_t tmpNorm = colorToVector(tex->getNoGammaColor(texpt));
+			// Assign normal map RGB colors to vector norm
+			norm.x = color.getR();
+			norm.y = color.getG();
+			norm.z = color.getB();
+			norm = (2.f * norm) - 1.f;
 
-            tmpNorm.y *= -1.0f;
-
-            norm.x = tmpNorm * sp.dSdU;
-            norm.x *= -1.0f;
-            norm.y = tmpNorm * sp.dSdV;
-
-            norm.z = tmpNorm.z;
+			// Convert norm into shading space
+			du = norm * sp.dSdU;
+			dv = norm * sp.dSdV;
         }
         else
         {
@@ -224,8 +218,8 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
         if(std::fabs(norm.z) > 1e-30f)
         {
             float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
-            du = norm.x*NF;
-            dv = norm.y*NF;
+            du = norm.x * NF;
+            dv = norm.y * NF;
         }
         else du = dv = 0.f;
     }
