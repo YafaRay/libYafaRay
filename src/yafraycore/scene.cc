@@ -48,7 +48,7 @@ scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
-	state.nextFreeID = std::numeric_limits<int>::min();
+	state.nextFreeID = std::numeric_limits<int>::max();
 	state.curObj = 0;
 }
 
@@ -912,11 +912,11 @@ objID_t scene_t::getNextFreeID()
 	if(meshes.find(id) != meshes.end())
 	{
 		Y_ERROR << "Scene: Object ID already in use!" << yendl;
-    	++state.nextFreeID;
+    	--state.nextFreeID;
 		return getNextFreeID();
 	}
 	
-	++state.nextFreeID;
+	--state.nextFreeID;
 	
 	return id;
 }
