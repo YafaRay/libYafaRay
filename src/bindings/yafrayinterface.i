@@ -53,15 +53,15 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 	// Check boundaries and fill w and h
 	if (keynum >= yaf_tile_length(self) || keynum < 0)
 		return Py_BuildValue("ffff", 1, 0, 0, 1);
-	
+
 	// Calc position of the tile in the image region
 	int vy = keynum / self->w;
 	int vx = keynum - vy * self->w;
-	
+
 	// Map tile position to image buffer
 	vx = self->x0 + vx;
 	vy = (self->y0 + self->h - 1) - vy;
-	
+
 	// Get pixel
 	yafTilePixel_t &pix = self->mem[ self->resx * vy + vx ];
 
@@ -125,31 +125,31 @@ public:
 		tile->resx = x;
 		tile->resy = y;
 	}
-	
+
 	virtual ~pyOutput_t()
 	{
 		delete [] tile->mem;
-		Py_DECREF(tile);
+		Py_XDECREF(tile);
 	}
-	
+
 	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)
 	{
-		yafTilePixel_t &pix= tile->mem[resx * y + x]; 
+		yafTilePixel_t &pix= tile->mem[resx * y + x];
 		pix.r = c[0];
 		pix.g = c[1];
 		pix.b = c[2];
 		pix.a = alpha ? c[3] : 1.0f;
-		
+
 		return true;
 	}
-	
+
 	virtual void flush()
 	{
 		tile->x0 = bsX;
 		tile->x1 = resx;
 		tile->y0 = bsY;
 		tile->y1 = resy;
-		
+
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		PyEval_CallObject(mFlush, Py_BuildValue("iiO", resx, resy, tile));
@@ -165,7 +165,7 @@ public:
 		tile->x1 = x1 - bsX;
 		tile->y0 = y0 - bsY;
 		tile->y1 = y1 - bsY;
-		
+
 		int w = x1 - x0;
 		int h = y1 - y0;
 
@@ -179,29 +179,29 @@ public:
 	{
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
-		
+
 		tile->x0 = x0 - bsX;
 		tile->x1 = x1 - bsX;
 		tile->y0 = y0 - bsY;
 		tile->y1 = y1 - bsY;
-		
+
 		int w = x1 - x0;
 		int h = y1 - y0;
 		int lineL = std::min( 4, std::min( h - 1, w - 1 ) );
-		
+
 		drawCorner(tile->x0, tile->y0, lineL, TL_CORNER);
 		drawCorner(tile->x1, tile->y0, lineL, TR_CORNER);
 		drawCorner(tile->x0, tile->y1, lineL, BL_CORNER);
 		drawCorner(tile->x1, tile->y1, lineL, BR_CORNER);
-		
+
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiO", tile->x0, resy - tile->y1, w, h, tile));
 		PyGILState_Release(gstate);
 	}
-	
+
 private:
-	
+
 	enum corner
 	{
 		TL_CORNER,
@@ -209,14 +209,14 @@ private:
 		BL_CORNER,
 		BR_CORNER
 	};
-	
+
 	void drawCorner(int x, int y, int len, corner pos)
 	{
 		int minX = 0;
 		int minY = 0;
 		int maxX = 0;
 		int maxY = 0;
-		
+
 		switch(pos)
 		{
 			case TL_CORNER:
@@ -225,7 +225,7 @@ private:
 				maxX = x + len;
 				maxY = y + len;
 				break;
-			
+
 			case TR_CORNER:
 				minX = x - len - 1;
 				minY = y;
@@ -233,7 +233,7 @@ private:
 				maxY = y + len;
 				x--;
 				break;
-			
+
 			case BL_CORNER:
 				minX = x;
 				minY = y - len - 1;
@@ -241,7 +241,7 @@ private:
 				maxY = y - 1;
 				y--;
 				break;
-			
+
 			case BR_CORNER:
 				minX = x - len - 1;
 				minY = y - len - 1;
@@ -260,7 +260,7 @@ private:
 			pix.b = 0.f;
 			pix.a = 1.f;
 		}
-		
+
 		for(int j = minY; j < maxY; j++)
 		{
 			yafTilePixel_t &pix = tile->mem[resx * j + x];
@@ -285,7 +285,7 @@ class pyProgress : public yafaray::progressBar_t
 public:
 
 	pyProgress(PyObject *callback) : callb(callback) {}
-	
+
 	void report_progress(float percent)
 	{
 		PyGILState_STATE gstate;
@@ -293,25 +293,25 @@ public:
 		PyEval_CallObject(callb, Py_BuildValue("sf", "progress", percent));
 		PyGILState_Release(gstate);
 	}
-	
+
 	virtual void init(int totalSteps)
 	{
 		steps_to_percent = 100.f / (float) totalSteps;
 		doneSteps = 0;
 		report_progress(0.f);
 	}
-	
+
 	virtual void update(int steps = 1)
 	{
 		doneSteps += steps;
-		report_progress(doneSteps * steps_to_percent);		
+		report_progress(doneSteps * steps_to_percent);
 	}
-	
+
 	virtual void done()
 	{
 		report_progress(100.f);
 	}
-	
+
 	virtual void setTag(const char* text)
 	{
 		PyGILState_STATE gstate;
@@ -319,7 +319,7 @@ public:
 		PyEval_CallObject(callb, Py_BuildValue("ss", "tag", text));
 		PyGILState_Release(gstate);
 	}
-	
+
 private:
 
 	PyObject *callb;
@@ -335,24 +335,24 @@ private:
 
 %typemap(in) PyObject *pyfunc
 {
-  if (!PyCallable_Check($input))
-  {
-      PyErr_SetString(PyExc_TypeError, "Need a callback method.");
-      return NULL;
-  }
-  
-  $1 = $input;
+	if (!PyCallable_Check($input))
+	{
+		PyErr_SetString(PyExc_TypeError, "Need a callback method.");
+		return NULL;
+	}
+
+	$1 = $input;
 }
 
 %extend yafaray::yafrayInterface_t
 {
 	void render(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallBack, PyObject *flushCallBack, PyObject *progressCallback)
 	{
-  		pyOutput_t output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack);
-  		pyProgress *pbar_wrap = new pyProgress(progressCallback);
-  		
-  		Py_BEGIN_ALLOW_THREADS;
-  		self->render(output_wrap, pbar_wrap);
+		pyOutput_t output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack);
+		pyProgress *pbar_wrap = new pyProgress(progressCallback);
+
+		Py_BEGIN_ALLOW_THREADS;
+		self->render(output_wrap, pbar_wrap);
 		Py_END_ALLOW_THREADS;
 	}
 }
@@ -394,30 +394,30 @@ namespace yafaray
 			virtual void flush()=0;
 			virtual void flushArea(int x0, int y0, int x1, int y1)=0;
 	};
-	
+
 	class imageHandler_t
 	{
-	public:
-		virtual void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true) = 0;
-		virtual ~imageHandler_t() {};
-		virtual bool loadFromFile(const std::string &name) = 0;
-		virtual bool loadFromMemory(const yByte *data, size_t size) {return false; };
-		virtual bool saveToFile(const std::string &name) = 0;
-		virtual void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f) = 0;
-		virtual colorA_t getPixel(int x, int y) = 0;
-	
-	protected:
-		std::string handlerName;
-		int m_width;
-		int m_height;
-		bool m_hasAlpha;
-		bool m_hasDepth;
-		rgba2DImage_nw_t *m_rgba;
-		gray2DImage_nw_t *m_depth;
+		public:
+			virtual void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true) = 0;
+			virtual ~imageHandler_t() {};
+			virtual bool loadFromFile(const std::string &name) = 0;
+			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; };
+			virtual bool saveToFile(const std::string &name) = 0;
+			virtual void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f) = 0;
+			virtual colorA_t getPixel(int x, int y) = 0;
+
+		protected:
+			std::string handlerName;
+			int m_width;
+			int m_height;
+			bool m_hasAlpha;
+			bool m_hasDepth;
+			rgba2DImage_nw_t *m_rgba;
+			gray2DImage_nw_t *m_depth;
 	};
-	
+
 	// Outputs
-	
+
 	class imageOutput_t : public colorOutput_t
 	{
 		public:
@@ -444,48 +444,49 @@ namespace yafaray
 			int sizex, sizey;
 			float* imageMem;
 	};
-	
+
 	// Utility classes
-	
+
 	class matrix4x4_t
 	{
-	public:
-		matrix4x4_t() {};
-		matrix4x4_t(const PFLOAT init);
-		matrix4x4_t(const matrix4x4_t & source);
-		matrix4x4_t(const float source[4][4]);
-		matrix4x4_t(const double source[4][4]);
-		~matrix4x4_t() {};
-		/*! attention, this function can cause the matrix to become invalid!
-			unless you are sure the matrix is invertible, check invalid() afterwards! */
-		matrix4x4_t & inverse();
-		matrix4x4_t & transpose();
-		void identity();
-		void translate(PFLOAT dx,PFLOAT dy,PFLOAT dz);
-		void rotateX(PFLOAT degrees);
-		void rotateY(PFLOAT degrees);
-		void rotateZ(PFLOAT degrees);
-		void scale(PFLOAT sx, PFLOAT sy, PFLOAT sz);
-		int invalid() const { return _invalid; }
-		// ignored by swig
-		//const PFLOAT * operator [] (int i) const { return matrix[i]; }
-		//PFLOAT * operator [] (int i) { return matrix[i]; }
-		void setVal(int row, int col, float val)
-		{
-			matrix[row][col] = val;
-		};
-		
-		float getVal(int row, int col)
-		{
-			return matrix[row][col];
+		public:
+			matrix4x4_t() {};
+			matrix4x4_t(const PFLOAT init);
+			matrix4x4_t(const matrix4x4_t & source);
+			matrix4x4_t(const float source[4][4]);
+			matrix4x4_t(const double source[4][4]);
+			~matrix4x4_t() {};
+			/*! attention, this function can cause the matrix to become invalid!
+				unless you are sure the matrix is invertible, check invalid() afterwards! */
+			matrix4x4_t & inverse();
+			matrix4x4_t & transpose();
+			void identity();
+			void translate(PFLOAT dx,PFLOAT dy,PFLOAT dz);
+			void rotateX(PFLOAT degrees);
+			void rotateY(PFLOAT degrees);
+			void rotateZ(PFLOAT degrees);
+			void scale(PFLOAT sx, PFLOAT sy, PFLOAT sz);
+			int invalid() const { return _invalid; }
+			// ignored by swig
+			//const PFLOAT * operator [] (int i) const { return matrix[i]; }
+			//PFLOAT * operator [] (int i) { return matrix[i]; }
+			void setVal(int row, int col, float val)
+			{
+				matrix[row][col] = val;
+			};
+
+			float getVal(int row, int col)
+			{
+				return matrix[row][col];
+			};
+
+		protected:
+
+			PFLOAT  matrix[4][4];
+			int _invalid;
 		};
 
-	protected:
-
-		PFLOAT  matrix[4][4];
-		int _invalid;
-	};
-	// Interfaces
+		// Interfaces
 
 	class yafrayInterface_t
 	{
@@ -552,24 +553,24 @@ namespace yafaray
 			virtual std::vector<std::string> listImageHandlersFullName();
 			virtual std::string getImageFormatFromFullName(const std::string &fullname);
 			virtual std::string getImageFullNameFromFormat(const std::string &format);
-		
+
 			virtual void setVerbosityLevel(int vlevel);
 			virtual void setVerbosityInfo();
 			virtual void setVerbosityWarning();
 			virtual void setVerbosityError();
 			virtual void setVerbosityMute();
-		
+
 			virtual void setDrawParams(bool on = true);
 			virtual bool getDrawParams();
 
 			virtual char* getVersion() const; //!< Get version to check aginst the exporters
-		
+
 			/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 			void printInfo(const std::string &msg);
 			void printWarning(const std::string &msg);
 			void printError(const std::string &msg);
 			void printLog(const std::string &msg);
-	
+
 		protected:
 			paraMap_t *params;
 			std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
@@ -603,7 +604,7 @@ namespace yafaray
 			virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 			virtual int  addUV(float u, float v);
 			virtual bool smoothMesh(unsigned int id, double angle);
-		
+
 			// functions directly related to renderEnvironment_t
 			virtual light_t* 		createLight		(const char* name);
 			virtual texture_t* 		createTexture	(const char* name);
@@ -615,12 +616,12 @@ namespace yafaray
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-		
+
 			virtual void setOutfile(const char *fname);
 		protected:
 			void writeParamMap(const paramMap_t &pmap, int indent=1);
 			void writeParamList(int indent);
-		
+
 			std::map<const material_t *, std::string> materials;
 			std::ofstream xmlFile;
 			std::string xmlName;
@@ -631,4 +632,3 @@ namespace yafaray
 	};
 
 }
-
