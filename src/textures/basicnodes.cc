@@ -24,18 +24,18 @@ void textureMapper_t::setup()
 	}
 	else
 	{
-        float step = 0.0002f;
+		float step = 0.0002f;
 		dU = dV = dW = step;
 	}
 
 	pDU = point3d_t(dU, 0, 0);
 	pDV = point3d_t(0, dV, 0);
 	pDW = point3d_t(0, 0, dW);
-	
+
 	bumpStr /= scale.length();
 
-    if (!tex->isNormalmap())
-        bumpStr /= 100.0f;
+	if (!tex->isNormalmap())
+		bumpStr /= 100.0f;
 }
 
 // Map the texture to a cylinder
@@ -113,12 +113,12 @@ point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)con
 		case TXP_TUBE:	texpt = tubemap(texpt); break;
 		case TXP_SPHERE:texpt = spheremap(texpt); break;
 		case TXP_CUBE:	texpt = cubemap(texpt, N); break;
-		case TXP_PLAIN:	// texpt = flatmap(texpt); break; 
+		case TXP_PLAIN:	// texpt = flatmap(texpt); break;
 		default: break;
 	}
 	// Texture scale and offset
 	texpt = mult(texpt,scale) + offset;
-	
+
 	return texpt;
 }
 
@@ -154,7 +154,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 	getCoords(texpt, Ng, sp, state);
 
 	texpt = doMapping(texpt, Ng);
-	
+
 	stack[this->ID] = nodeResult_t(tex->getColor(texpt), (doScalar) ? tex->getFloat(texpt) : 0.f );
 }
 
@@ -166,82 +166,76 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 
 // Normal perturbation
 
-// RGB normal map color to vector normal
-inline vector3d_t colorToVector(colorA_t const& c)
-{
-    vector3d_t v(c.getR(), c.getG(), c.getB());
-    v = (2.0f * v) - 1.0f;
-    return v;
-}
-
 void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
-    float du = 0.0f, dv = 0.0f;
+	float du = 0.0f, dv = 0.0f;
 
-    getCoords(texpt, Ng, sp, state);
+	getCoords(texpt, Ng, sp, state);
 
-    if (tex->discrete())
-    {
-        texpt = doMapping(texpt, Ng);
+	if (tex->discrete())
+	{
+		texpt = doMapping(texpt, Ng);
+		colorA_t color(0.f);
+		vector3d_t norm(0.f);
 
-        vector3d_t norm;
+		if (tex->isNormalmap())
+		{
+			// Get color from normal map texture
+			color = tex->getNoGammaColor(texpt);
 
-        if (tex->isNormalmap())
-        {
-            // needs some odd transforms, not sure about them, rather empirical than logically :/
-            vector3d_t tmpNorm = colorToVector(tex->getNoGammaColor(texpt));
+			// Assign normal map RGB colors to vector norm
+			norm.x = color.getR();
+			norm.y = color.getG();
+			norm.z = color.getB();
+			norm = (2.f * norm) - 1.f;
 
-            tmpNorm.y *= -1.0f;
+			// Convert norm into shading space
+			du = norm * sp.dSdU;
+			dv = norm * sp.dSdV;
+		}
+		else
+		{
+			point3d_t i0 = (texpt - pDU);
+			point3d_t i1 = (texpt + pDU);
+			point3d_t j0 = (texpt - pDV);
+			point3d_t j1 = (texpt + pDV);
+			float dfdu = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
+			float dfdv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
 
-            norm.x = tmpNorm * sp.dSdU;
-            norm.x *= -1.0f;
-            norm.y = tmpNorm * sp.dSdV;
+			// now we got the derivative in UV-space, but need it in shading space:
+			vector3d_t vecU = sp.dSdU;
+			vector3d_t vecV = sp.dSdV;
+			vecU.z = dfdu;
+			vecV.z = dfdv;
+			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
+			norm = vecU ^ vecV;
+		}
 
-            norm.z = tmpNorm.z;
-        }
-        else
-        {
-            point3d_t i0 = (texpt - pDU);
-            point3d_t i1 = (texpt + pDU);
-            point3d_t j0 = (texpt - pDV);
-            point3d_t j1 = (texpt + pDV);
-            float dfdu = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-            float dfdv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+		norm.normalize();
 
-            // now we got the derivative in UV-space, but need it in shading space:
-            vector3d_t vecU = sp.dSdU;
-            vector3d_t vecV = sp.dSdV;
-            vecU.z = dfdu;
-            vecV.z = dfdv;
-            // now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
-            norm = vecU ^ vecV;
-        }
-
-        norm.normalize();
-
-        if(std::fabs(norm.z) > 1e-30f)
-        {
-            float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
-            du = norm.x*NF;
-            dv = norm.y*NF;
-        }
-        else du = dv = 0.f;
-    }
+		if(std::fabs(norm.z) > 1e-30f)
+		{
+			float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
+			du = norm.x * NF;
+			dv = norm.y * NF;
+		}
+		else du = dv = 0.f;
+	}
 	else
 	{
-        // no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
-        // weird things may happen when objects are rotated, i.e. incorrect bump change
-        point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
-        point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
-        point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
-        point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
+		// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
+		// weird things may happen when objects are rotated, i.e. incorrect bump change
+		point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
+		point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
+		point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
+		point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
 
-        du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-        dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
-        du *= bumpStr;
-        dv *= bumpStr;
+		du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
+		dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+		du *= bumpStr;
+		dv *= bumpStr;
 	}
 
 	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f );
@@ -373,7 +367,7 @@ void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfa
 		cin2 = col2;
 		fin2 = val2;
 	}
-	
+
 	colorA_t color = f1 * cin1 + f2 * cin2;
 	float   scalar = f1 * fin1 + f2 * fin2;
 	stack[this->ID] = nodeResult_t(color, scalar);
@@ -401,7 +395,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 		Y_ERROR << "MixNode: Color1 not set" << yendl;
 		return false;
 	}
-	
+
 	if( params.getParam("input2", name) )
 	{
 		input2 = find(*name);
@@ -416,7 +410,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 		Y_ERROR << "MixNode: Color2 not set" << yendl;
 		return false;
 	}
-	
+
 	if( params.getParam("factor", name) )
 	{
 		factor = find(*name);
@@ -431,7 +425,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 		Y_ERROR << "MixNode: Value not set" << yendl;
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -451,7 +445,7 @@ class addNode_t: public mixNode_t
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			
+
 			cin1 += f2 * cin2;
 			fin1 += f2 * fin2;
 			stack[this->ID] = nodeResult_t(cin1, fin1);
@@ -467,7 +461,7 @@ class multNode_t: public mixNode_t
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
 			f1 = 1.f - f2;
-			
+
 			cin1 *= colorA_t(f1) + f2 * cin2;
 			fin2 *= f1 + f2 * fin2;
 			stack[this->ID] = nodeResult_t(cin1, fin1);
@@ -482,7 +476,7 @@ class subNode_t: public mixNode_t
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			
+
 			cin1 -= f2 * cin2;
 			fin1 -= f2 * fin2;
 			stack[this->ID] = nodeResult_t(cin1, fin1);
@@ -498,7 +492,7 @@ class screenNode_t: public mixNode_t
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
 			f1 = 1.f - f2;
-			
+
 			colorA_t color = colorA_t(1.f) - (colorA_t(f1) + f2 * (1.f - cin2)) * (1.f - cin1);
 			CFLOAT scalar   = 1.0 - (f1 + f2*(1.f - fin2)) * (1.f -  fin1);
 			stack[this->ID] = nodeResult_t(color, scalar);
@@ -514,7 +508,7 @@ class diffNode_t: public mixNode_t
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
 			f1 = 1.f - f2;
-			
+
 			cin1.R = f1*cin1.R + f2*std::fabs(cin1.R - cin2.R);
 			cin1.G = f1*cin1.G + f2*std::fabs(cin1.G - cin2.G);
 			cin1.B = f1*cin1.B + f2*std::fabs(cin1.B - cin2.B);
@@ -532,7 +526,7 @@ class darkNode_t: public mixNode_t
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			
+
 			cin2 *= f2;
 			if(cin2.R < cin1.R) cin1.R = cin2.R;
 			if(cin2.G < cin1.G) cin1.G = cin2.G;
@@ -552,7 +546,7 @@ class lightNode_t: public mixNode_t
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			
+
 			cin2 *= f2;
 			if(cin2.R > cin1.R) cin1.R = cin2.R;
 			if(cin2.G > cin1.G) cin1.G = cin2.G;
@@ -573,7 +567,7 @@ class overlayNode_t: public mixNode_t
 			colorA_t cin1, cin2;
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
 			f1 = 1.f - f2;
-			
+
 			colorA_t color;
 			color.R = (cin1.R < 0.5f) ? cin1.R * (f1 + 2.0f*f2*cin2.R) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.R)) * (1.0 - cin1.R);
 			color.G = (cin1.G < 0.5f) ? cin1.G * (f1 + 2.0f*f2*cin2.G) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.G)) * (1.0 - cin1.G);
@@ -591,7 +585,7 @@ shaderNode_t* mixNode_t::factory(const paraMap_t &params,renderEnvironment_t &re
 	int mode=0;
 	params.getParam("cfactor", val);
 	params.getParam("mode", mode);
-	
+
 	switch(mode)
 	{
 		case MN_MIX: 		return new mixNode_t(val);
