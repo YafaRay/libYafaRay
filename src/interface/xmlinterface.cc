@@ -72,6 +72,12 @@ bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, 
 	return true;
 }
 
+bool xmlInterface_t::startCurveMesh(unsigned int id, int vertices)
+{
+	xmlFile << "\n<curve id=\"" << id << "\" vertices=\"" << vertices <<"\">\n";
+	return true;
+}
+
 bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
 {
 	*id = ++nextObj;
@@ -85,6 +91,19 @@ bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangl
 bool xmlInterface_t::endTriMesh()
 {
 	xmlFile << "</mesh>\n";
+	return true;
+}
+
+bool xmlInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape)
+{
+	std::map<const material_t *, std::string>::const_iterator i;
+	i = materials.find(mat);
+	if(i == materials.end()) return false;
+	xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n"
+			<< "\t\t\t<strand_start fval=\"" << strandStart << "\"/>\n"
+			<< "\t\t\t<strand_end fval=\"" << strandEnd << "\"/>\n"
+			<< "\t\t\t<strand_shape fval=\"" << strandShape << "\"/>\n"
+			<< "</curve>\n"; 
 	return true;
 }
 
