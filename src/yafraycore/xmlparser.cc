@@ -473,28 +473,28 @@ void startEl_instance(xmlParser_t &parser, const char *element, const char **att
 	if(el == "transform")
 	{
 		float m[4][4];
-        for(int n=0; attrs[n]; ++n)
+		for(int n=0; attrs[n]; ++n)
 		{
-            std::string name(attrs[n]);
-            if(name ==  "m00") m[0][0] = atof(attrs[n+1]); 
-            else if(name ==  "m01") m[0][1] = atof(attrs[n+1]); 
-            else if(name ==  "m02") m[0][2] = atof(attrs[n+1]); 
-            else if(name ==  "m03") m[0][3] = atof(attrs[n+1]); 
-            else if(name ==  "m10") m[1][0] = atof(attrs[n+1]); 
-            else if(name ==  "m11") m[1][1] = atof(attrs[n+1]); 
-            else if(name ==  "m12") m[1][2] = atof(attrs[n+1]); 
-            else if(name ==  "m13") m[1][3] = atof(attrs[n+1]); 
-            else if(name ==  "m20") m[2][0] = atof(attrs[n+1]); 
-            else if(name ==  "m21") m[2][1] = atof(attrs[n+1]); 
-            else if(name ==  "m22") m[2][2] = atof(attrs[n+1]); 
-            else if(name ==  "m23") m[2][3] = atof(attrs[n+1]); 
-            else if(name ==  "m30") m[3][0] = atof(attrs[n+1]); 
-            else if(name ==  "m31") m[3][1] = atof(attrs[n+1]); 
-            else if(name ==  "m32") m[3][2] = atof(attrs[n+1]); 
-            else if(name ==  "m33") m[3][3] = atof(attrs[n+1]); 
+			std::string name(attrs[n]);
+			if(name ==  "m00") m[0][0] = atof(attrs[n+1]); 
+			else if(name ==  "m01") m[0][1] = atof(attrs[n+1]); 
+			else if(name ==  "m02") m[0][2] = atof(attrs[n+1]); 
+			else if(name ==  "m03") m[0][3] = atof(attrs[n+1]); 
+			else if(name ==  "m10") m[1][0] = atof(attrs[n+1]); 
+			else if(name ==  "m11") m[1][1] = atof(attrs[n+1]); 
+			else if(name ==  "m12") m[1][2] = atof(attrs[n+1]); 
+			else if(name ==  "m13") m[1][3] = atof(attrs[n+1]); 
+			else if(name ==  "m20") m[2][0] = atof(attrs[n+1]); 
+			else if(name ==  "m21") m[2][1] = atof(attrs[n+1]); 
+			else if(name ==  "m22") m[2][2] = atof(attrs[n+1]); 
+			else if(name ==  "m23") m[2][3] = atof(attrs[n+1]); 
+			else if(name ==  "m30") m[3][0] = atof(attrs[n+1]); 
+			else if(name ==  "m31") m[3][1] = atof(attrs[n+1]); 
+			else if(name ==  "m32") m[3][2] = atof(attrs[n+1]); 
+			else if(name ==  "m33") m[3][3] = atof(attrs[n+1]); 
 		}
-        matrix4x4_t *m4 = new matrix4x4_t(m);
-        parser.scene->addInstance(boi,*m4);
+		matrix4x4_t *m4 = new matrix4x4_t(m);
+		parser.scene->addInstance(boi,*m4);
 	}
 }
 
