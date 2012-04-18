@@ -59,7 +59,7 @@ bool xmlInterface_t::startGeometry() { return true; }
 bool xmlInterface_t::endGeometry() { return true; }
 
 unsigned int xmlInterface_t::getNextFreeID() {
-        return ++nextObj;
+	return ++nextObj;
 }
 
 
@@ -210,10 +210,10 @@ void writeMatrix(const std::string &name, const matrix4x4_t &m, std::ofstream &x
 
 bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
 {
-    xmlFile << "\n<instance base_object_id=\"" << baseObjectId << "\" >\n\t";
-    writeMatrix("transform",objToWorld,xmlFile);
-    xmlFile << "\n</instance>\n";
-    return true;
+	xmlFile << "\n<instance base_object_id=\"" << baseObjectId << "\" >\n\t";
+	writeMatrix("transform",objToWorld,xmlFile);
+	xmlFile << "\n</instance>\n";
+	return true;
 }
 
 void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
