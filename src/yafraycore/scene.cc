@@ -912,7 +912,7 @@ objID_t scene_t::getNextFreeID()
 	if(meshes.find(id) != meshes.end())
 	{
 		Y_ERROR << "Scene: Object ID already in use!" << yendl;
-    	--state.nextFreeID;
+		--state.nextFreeID;
 		return getNextFreeID();
 	}
 	
@@ -938,29 +938,29 @@ bool scene_t::addObject(object3d_t *obj, objID_t &id)
 
 bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
 {
-    if(mode != 0) return false;
-    
-    if (meshes.find(baseObjectId) == meshes.end())
-    {
-        Y_ERROR << "Base mesh for instance doesn't exist " << baseObjectId << yendl;
-        return false;
-    }
+	if(mode != 0) return false;
 
-    int id = getNextFreeID();
+	if (meshes.find(baseObjectId) == meshes.end())
+	{
+		Y_ERROR << "Base mesh for instance doesn't exist " << baseObjectId << yendl;
+		return false;
+	}
 
-    if (id > 0)
-    {
-        objData_t &od = meshes[id];
-        objData_t &base = meshes[baseObjectId];
+	int id = getNextFreeID();
 
-        od.obj = new triangleObjectInstance_t(base.obj, objToWorld);
+	if (id > 0)
+	{
+		objData_t &od = meshes[id];
+		objData_t &base = meshes[baseObjectId];
 
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+		od.obj = new triangleObjectInstance_t(base.obj, objToWorld);
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 __END_YAFRAY
