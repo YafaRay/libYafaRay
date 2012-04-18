@@ -39,7 +39,6 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include <limits>
 
 __BEGIN_YAFRAY
 
