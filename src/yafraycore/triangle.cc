@@ -172,8 +172,8 @@ inline void triangleInstance_t::getSurface(surfacePoint_t &sp, const point3d_t &
 {
 	sp.Ng = getNormal();
     int pa = mBase->pa;
-    int pb = mBase->pa;
-    int pc = mBase->pa;
+    int pb = mBase->pb;
+    int pc = mBase->pc;
     int na = mBase->na;
     int nb = mBase->nb;
     int nc = mBase->nc;
@@ -201,9 +201,9 @@ inline void triangleInstance_t::getSurface(surfacePoint_t &sp, const point3d_t &
 	if(mesh->has_orco)
 	{
         // if the object is an instance, the vertex positions are the orcos
-        point3d_t const& p0 = mesh->getVertex(pa + 1);
-        point3d_t const& p1 = mesh->getVertex(pb + 1);
-        point3d_t const& p2 = mesh->getVertex(pc + 1);
+        point3d_t const& p0 = mBase->mesh->getVertex(pa + 1);
+        point3d_t const& p1 = mBase->mesh->getVertex(pb + 1);
+        point3d_t const& p2 = mBase->mesh->getVertex(pc + 1);
 
         sp.orcoP = u * p0 + v * p1 + w * p2;
 
