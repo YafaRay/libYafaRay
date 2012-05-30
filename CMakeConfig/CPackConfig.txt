@@ -10,7 +10,7 @@ if (BLENDER_ADDON)
     endif (NOT BLENDER_EXPORTER_BRANCH)
 
     add_custom_target(blender_export ALL rm -rf blender_exporter
-        COMMAND git clone -b ${BLENDER_EXPORTER_BRANCH} git://github.com/YafaRay/Blender-2.5-Exporter blender_exporter
+        COMMAND git clone -b ${BLENDER_EXPORTER_BRANCH} git://github.com/YafaRay/Blender-Exporter blender_exporter
         COMMAND rm -rf blender_exporter/.git
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
