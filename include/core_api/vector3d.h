@@ -361,11 +361,6 @@ inline vector3d_t RandomSpherical()
 	return v;
 }
 
-inline GFLOAT dot( const normal_t &a,const normal_t &b)
-{
-	return (a.x*b.x+a.y*b.y+a.z*b.z);
-}
-
 YAFRAYCORE_EXPORT vector3d_t randomVectorCone(const vector3d_t &D, const vector3d_t &U, const vector3d_t &V,
 						PFLOAT cosang, PFLOAT z1, PFLOAT z2);
 YAFRAYCORE_EXPORT vector3d_t randomVectorCone(const vector3d_t &dir, PFLOAT cosangle, PFLOAT r1, PFLOAT r2);
