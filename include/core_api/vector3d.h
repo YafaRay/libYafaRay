@@ -255,10 +255,10 @@ inline vector3d_t& vector3d_t::normalize()
 }
 
 /** Reflects the vector into a surface whose normal is \a n
-     \brief Vector reflection
-     \param n Surface normal
-     \warning n must be unit vector!
-     \note Lynn's formula R = 2*(V dot N)*N -V (http://www.3dkingdoms.com/weekly/weekly.php?a=2)
+     \brief	Vector reflection
+     \param	n Surface normal
+     \warning	\a n must be unit vector!
+     \note	Lynn's formula: R = 2*(V dot N)*N -V (http://www.3dkingdoms.com/weekly/weekly.php?a=2)
   */
 inline vector3d_t& vector3d_t::reflect(const vector3d_t &n)
 {
