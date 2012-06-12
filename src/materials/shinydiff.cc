@@ -361,34 +361,57 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 }
 
 
-
-// todo!
-
-void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-							  bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
+/** Perfect specular reflection.
+ *  Calculate perfect specular reflection and refraction from the material for
+ *  a given surface point \a sp and a given incoming ray direction \a wo
+ *  @param	state Render state
+ *  @param	sp Surface point
+ *  @param	wo Incoming ray direction
+ *  @param	doReflect Boolean value which is true if you have a reflection, false otherwise
+ *  @param	doRefract Boolean value which is true if you have a refraction, false otherwise
+ *  @param	wi Array of two vectors to record reflected ray direction (wi[0]) and refracted ray direction (wi[1])
+ *  @param	col Array of two colors to record reflected ray color (col[0]) and refracted ray color (col[1])
+ */
+void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &doReflect, bool &doRefract, vector3d_t *const wi, color_t *const col)const
 {
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
-	bool backface = sp.Ng * wo < 0;
-	vector3d_t N = backface ? -sp.N : sp.N;
-	vector3d_t Ng = backface ? -sp.Ng : sp.Ng;
+
+	const bool backface = wo * sp.Ng < 0.f;
+	const vector3d_t N  = backface ? -sp.N  : sp.N;
+	const vector3d_t Ng = backface ? -sp.Ng : sp.Ng;
+
 	float Kr;
 	getFresnel(wo, N, Kr);
-	refract = isTranspar;
+
 	if(isTranspar)
 	{
-		dir[1] = -wo;
+		doRefract = true;
+		wi[1] = -wo;
 		color_t tcol = filter * (diffuseS ? diffuseS->getColor(stack) : color) + color_t(1.f-filter);
 		col[1] = (1.f - dat->component[0]*Kr) * dat->component[1] * tcol;
 	}
-	reflect=isReflective;
+	else
+	{
+		doRefract = false;
+	}
+
 	if(isReflective)
 	{
-		dir[0] = wo;
-		dir[0].reflect(N);
-		PFLOAT cos_wi_Ng = dir[0]*Ng;
-		if(cos_wi_Ng < 0.01){ dir[0] += (0.01-cos_wi_Ng)*Ng; dir[0].normalize(); }
+		doReflect = true;
+		wi[0] = wo;
+		wi[0].reflect(N);
+		PFLOAT cos_wi_Ng = wi[0]*Ng;
+		if(cos_wi_Ng < 0.01)
+		{
+			wi[0] += (0.01-cos_wi_Ng)*Ng;
+			wi[0].normalize();
+		}
 		col[0] = (mirColS ? mirColS->getColor(stack) : specRefCol) * (dat->component[0]*Kr);
+	}
+	else
+	{
+		doReflect = false;
 	}
 }
 
