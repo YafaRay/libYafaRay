@@ -305,7 +305,6 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 
 	std::vector<shaderNode_t *> roots;
 	std::map<std::string, shaderNode_t *> nodeList;
-	std::map<std::string, shaderNode_t *>::iterator actNode;
 	
 	// Prepare our node list
 	nodeList["mirror_color_shader"] = NULL;
@@ -313,13 +312,14 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	
 	if(mat->loadNodes(paramList, render))
 	{
+        std::map<std::string, shaderNode_t *>::iterator actNode;
 		for(actNode = nodeList.begin(); actNode != nodeList.end(); ++actNode)
 		{
 			if(params.getParam(actNode->first, name))
 			{
-				std::map<std::string,shaderNode_t *>::const_iterator i = mat->shader_table.find(*name);
+				std::map<std::string,shaderNode_t *>::const_iterator i = mat->mShadersTable.find(*name);
 				
-				if(i!=mat->shader_table.end())
+				if(i!=mat->mShadersTable.end())
 				{
 					actNode->second = i->second;
 					roots.push_back(actNode->second);
