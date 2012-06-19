@@ -465,7 +465,7 @@ CFLOAT shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoin
     return 1.f;
 }
 
-material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &render)
+material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &paramsList, renderEnvironment_t &render)
 {
     shinyDiffuseMat_t *mat;
     color_t col=1.f, srCol=1.f;
@@ -504,81 +504,68 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
             mat->initOrenNayar(sigma);
         }
     }
-    shaderNode_t *mDiffuseShader=0, *mBumpShader=0, *mMirrorShader=0, *mTransparencyShader=0, *mTranslucencyShader=0;
+
     std::vector<shaderNode_t *> roots;
-    // create shader nodes:
-    bool success = mat->loadNodes(eparams, render);
-    if(success)
+    std::map<std::string, shaderNode_t *> nodeList;
+    std::map<std::string, shaderNode_t *>::iterator actNode;
+
+    // Prepare our shader nodes list
+    nodeList["diffuse_shader"]      = NULL;
+    nodeList["mirror_color_shader"] = NULL;
+    nodeList["bump_shader"]         = NULL;
+    nodeList["mirror_shader"]       = NULL;
+    nodeList["transparency_shader"] = NULL;
+    nodeList["translucency_shader"] = NULL;
+    
+    // load shader nodes:
+    if(mat->loadNodes(paramsList, render))
     {
-        if(params.getParam("diffuse_shader", name))
+        for(actNode = nodeList.begin(); actNode != nodeList.end(); ++actNode)
         {
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mDiffuseShader = i->second; roots.push_back(mDiffuseShader); }
-            else Y_WARNING << "ShinyDiffuse: Diffuse shader node '" << *name << "' does not exist!" << yendl;
-        }
-        if(params.getParam("mirror_color_shader", name))
-        {
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mat->mMirrorColorShader = i->second; roots.push_back(mat->mMirrorColorShader); }
-            else Y_WARNING << "ShinyDiffuse: Mirror color shader node '"<<*name<<"' does not exist!" << yendl;
-        }
-        if(params.getParam("bump_shader", name))
-        {
-            Y_INFO << "ShinyDiffuse: Bump shader: " << name << yendl;
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mBumpShader = i->second; roots.push_back(mBumpShader); }
-            else Y_WARNING << "ShinyDiffuse: bump shader node '"<<*name<<"' does not exist!" << yendl;
-        }
-        if(params.getParam("mirror_shader", name))
-        {
-            Y_INFO << "ShinyDiffuse: Mirror shader: " << name << yendl;
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mMirrorShader = i->second; roots.push_back(mMirrorShader); }
-            else Y_WARNING << "ShinyDiffuse: mirror shader node '"<<*name<<"' does not exist!" << yendl;
-        }
-        if(params.getParam("transparency_shader", name))
-        {
-            Y_INFO << "ShinyDiffuse: Transparency shader: " << name << yendl;
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mTransparencyShader = i->second; roots.push_back(mTransparencyShader); }
-            else Y_WARNING << "ShinyDiffuse: transparency shader node '"<<*name<<"' does not exist!" << yendl;
-        }
-        if(params.getParam("translucency_shader", name))
-        {
-            Y_INFO << "ShinyDiffuse: Translucency shader: " << name << yendl;
-            std::map<std::string,shaderNode_t *>::const_iterator i=mat->shader_table.find(*name);
-            if(i!=mat->shader_table.end()){ mTranslucencyShader = i->second; roots.push_back(mTranslucencyShader); }
-            else Y_WARNING << "ShinyDiffuse: transparency shader node '"<<*name<<"' does not exist!" << yendl;
+            if(params.getParam(actNode->first, name))
+            {
+                std::map<std::string,shaderNode_t *>::const_iterator i = mat->shader_table.find(*name);
+                
+                if(i!=mat->shader_table.end())
+                {
+                    actNode->second = i->second;
+                    roots.push_back(actNode->second);
+                }
+                else Y_WARNING << "ShinyDiffuse: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
+            }
         }
     }
-    else Y_WARNING << "ShinyDiffuse: Creating nodes failed!" << yendl;
+    else Y_ERROR << "ShinyDiffuse: Loading shader nodes failed!" << yendl;
+
+    mat->mDiffuseShader      = nodeList["diffuse_shader"];
+    mat->mMirrorColorShader  = nodeList["mirror_color_shader"];
+    mat->mBumpShader         = nodeList["bump_shader"];
+    mat->mMirrorShader       = nodeList["mirror_shader"];
+    mat->mTransparencyShader = nodeList["transparency_shader"];
+    mat->mTranslucencyShader = nodeList["translucency_shader"];
 
     // solve nodes order
     if(!roots.empty())
     {
         mat->solveNodesOrder(roots);
-        Y_INFO << "ShinyDiffuse: Evaluation order:" << yendl;
 
         std::vector<shaderNode_t *> colorNodes;
 
-        if(mDiffuseShader) mat->getNodeList(mDiffuseShader, colorNodes);
-        if(mat->mMirrorColorShader) mat->getNodeList(mat->mMirrorColorShader, colorNodes);
-        if(mMirrorShader) mat->getNodeList(mMirrorShader, colorNodes);
-        if(mTransparencyShader) mat->getNodeList(mTransparencyShader, colorNodes);
-        if(mTranslucencyShader) mat->getNodeList(mTranslucencyShader, colorNodes);
+        if(mat->mDiffuseShader)      mat->getNodeList(mat->mDiffuseShader, colorNodes);
+        if(mat->mMirrorColorShader)  mat->getNodeList(mat->mMirrorColorShader, colorNodes);
+        if(mat->mMirrorShader)       mat->getNodeList(mat->mMirrorShader, colorNodes);
+        if(mat->mTransparencyShader) mat->getNodeList(mat->mTransparencyShader, colorNodes);
+        if(mat->mTranslucencyShader) mat->getNodeList(mat->mTranslucencyShader, colorNodes);
 
         mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
         mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 
-        if(mBumpShader)
-        {
-            mat->getNodeList(mBumpShader, mat->bumpNodes);
-        }
+        if(mat->mBumpShader)         mat->getNodeList(mat->mBumpShader, mat->bumpNodes);
     }
-    mat->config(mDiffuseShader, mMirrorShader, mTransparencyShader, mTranslucencyShader, mBumpShader);
+    mat->config(mat->mDiffuseShader, mat->mMirrorShader, mat->mTransparencyShader, mat->mTranslucencyShader, mat->mBumpShader);
 
     //===!!!=== test <<< This test should go, is useless, DT
-    if(params.getParam("name", name))
+    /*if(params.getParam("name", name))
     {
         if(name->substr(0, 6) == "MAsss_")
         {
@@ -590,7 +577,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
             mat->volI = render.createVolumeH(*name, map);
             mat->bsdfFlags |= BSDF_VOLUMETRIC;
         }
-    }
+    }*/
     //===!!!=== end of test
 
     return mat;
