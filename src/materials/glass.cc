@@ -312,21 +312,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	
 	if(mat->loadNodes(paramList, render))
 	{
-        std::map<std::string, shaderNode_t *>::iterator actNode;
-		for(actNode = nodeList.begin(); actNode != nodeList.end(); ++actNode)
-		{
-			if(params.getParam(actNode->first, name))
-			{
-				std::map<std::string,shaderNode_t *>::const_iterator i = mat->mShadersTable.find(*name);
-				
-				if(i!=mat->mShadersTable.end())
-				{
-					actNode->second = i->second;
-					roots.push_back(actNode->second);
-				}
-				else Y_WARNING << "Glass: Shader node " << actNode->first << " '" << *name << "' does not exist!" << yendl;
-			}
-		}
+       mat->parseNodes(params, roots, nodeList);
 	}
 	else Y_ERROR << "Glass: loadNodes() failed!" << yendl;
 

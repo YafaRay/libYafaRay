@@ -19,6 +19,8 @@ class YAFRAYCORE_EXPORT nodeMaterial_t: public material_t
 	protected:
 		/*! load nodes from parameter map list */
 		bool loadNodes(const std::list<paraMap_t> &paramsList, renderEnvironment_t &render);
+        /** parse node shaders to fill nodeList */
+        void parseNodes(const paraMap_t &params, std::vector<shaderNode_t *> &roots, std::map<std::string, shaderNode_t *> &nodeList);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
 		void solveNodesOrder(const std::vector<shaderNode_t *> &roots);

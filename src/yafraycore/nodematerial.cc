@@ -202,4 +202,25 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 	return !error;
 }
 
+void nodeMaterial_t::parseNodes(const paraMap_t &params, std::vector<shaderNode_t *> &roots, std::map<std::string, shaderNode_t *> &nodeList)
+{
+    const std::string *name=0;
+    std::map<std::string, shaderNode_t *>::iterator currentNode;
+
+    for(currentNode = nodeList.begin(); currentNode != nodeList.end(); ++currentNode)
+    {
+        if(params.getParam(currentNode->first, name))
+        {
+            std::map<std::string,shaderNode_t *>::const_iterator i = mShadersTable.find(*name);
+         
+            if(i!=mShadersTable.end())
+            {
+                currentNode->second = i->second;
+                roots.push_back(currentNode->second);
+            }
+            else Y_WARNING << "Shader node " << currentNode->first << " '" << *name << "' does not exist!" << yendl;
+        }
+    }
+}
+
 __END_YAFRAY
