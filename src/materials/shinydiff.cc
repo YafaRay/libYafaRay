@@ -24,14 +24,8 @@ shinyDiffuseMat_t::~shinyDiffuseMat_t()
 /*! ATTENTION! You *MUST* call this function before using the material, no matter
     if you want to use shaderNodes or not!
 */
-void shinyDiffuseMat_t::config(shaderNode_t *diffuseShader, shaderNode_t *mirrorShader, shaderNode_t *transparencyShader, shaderNode_t *translucencyShader, shaderNode_t *bumpShader)
+void shinyDiffuseMat_t::config()
 {
-    mDiffuseShader      = diffuseShader;
-    mBumpShader         = bumpShader;
-    mTransparencyShader = transparencyShader;
-    mTranslucencyShader = translucencyShader;
-    mMirrorShader       = mirrorShader;
-
     nBSDF=0;
     viNodes[0] = viNodes[1] = viNodes[2] = viNodes[3] = false;
     vdNodes[0] = vdNodes[1] = vdNodes[2] = vdNodes[3] = false;
@@ -562,7 +556,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 
         if(mat->mBumpShader)         mat->getNodeList(mat->mBumpShader, mat->bumpNodes);
     }
-    mat->config(mat->mDiffuseShader, mat->mMirrorShader, mat->mTransparencyShader, mat->mTranslucencyShader, mat->mBumpShader);
+
+    mat->config();
 
     //===!!!=== test <<< This test should go, is useless, DT
     /*if(params.getParam("name", name))

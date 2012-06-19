@@ -46,7 +46,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         };
 
     protected:
-        void config(shaderNode_t *diff, shaderNode_t *refl, shaderNode_t *transp, shaderNode_t *transl, shaderNode_t *bump);
+        void config();
         int getComponents(const bool *useNode, nodeStack_t &stack, float *component) const;
         void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr) const;
 
