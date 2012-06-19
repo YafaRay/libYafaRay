@@ -25,7 +25,7 @@ __BEGIN_YAFRAY
 class shinyDiffuseMat_t: public nodeMaterial_t
 {
     public:
-        shinyDiffuseMat_t(const color_t &col, const color_t &srcol, float diffuse, float transp=0.0, float transl=0.0, float sp_refl=0.0, float emit=0.0);
+        shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength);
         virtual ~shinyDiffuseMat_t();
         virtual void initBSDF(const renderState_t &state, const surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
         virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const;

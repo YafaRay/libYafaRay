@@ -5,13 +5,13 @@
 
 __BEGIN_YAFRAY
 
-shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &col, const color_t &srcol, float diffuse, float transp, float transl, float sp_refl, float emit):
+shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transp, float transl, float mirrorStrength, float emitStrength):
             mIsTransparent(false), mIsTranslucent(false), mIsMirror(false), mIsDiffuse(false), mHasFresnelEffect(false),
-            mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mDiffuseColor(col), mMirrorColor(srcol),
-            mMirrorStrength(sp_refl), mTransparencyStrength(transp), mTranslucencyStrength(transl), mDiffuseStrength(diffuse), mUseOrenNayar(false), nBSDF(0)
+            mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
+            mMirrorStrength(mirrorStrength), mTransparencyStrength(transp), mTranslucencyStrength(transl), mDiffuseStrength(diffuseStrength), mUseOrenNayar(false), nBSDF(0)
 {
-    mEmitColor = emit*col;
-    mEmitStrength = emit;
+    mEmitColor = emitStrength * diffuseColor;
+    mEmitStrength = emitStrength;
     bsdfFlags = BSDF_NONE;
     if(mEmitStrength > 0.f) bsdfFlags |= BSDF_EMIT;
 }
@@ -461,34 +461,37 @@ CFLOAT shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoin
 
 material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &paramsList, renderEnvironment_t &render)
 {
-    shinyDiffuseMat_t *mat;
-    color_t col=1.f, srCol=1.f;
-    const std::string *name=0;
-    float transparency=0.f, emit=0.f, translucency=0.f;
-    float sp_refl=0.f;
-    bool fresnEff=false;
+    /// Material Parameters
+    color_t diffuseColor=1.f;
+    color_t mirrorColor=1.f;
+    CFLOAT diffuseStrength=1.f;
+    float transparencyStrength=0.f;
+    float translucencyStrength=0.f;
+    float mirrorStrength=0.f;
+    float emitStrength = 0.f;
+    bool fresnelEffect=false;
     double IOR = 1.33, filt=1.0;
-    CFLOAT diffuse=1.f;
-    //bool error=false;
-    params.getParam("color", col);
-    params.getParam("mirror_color", srCol);
-    params.getParam("transparency", transparency);
-    params.getParam("translucency", translucency);
-    params.getParam("diffuse_reflect", diffuse);
-    params.getParam("specular_reflect", sp_refl);
-    params.getParam("emit", emit);
+    params.getParam("color", diffuseColor);
+    params.getParam("mirror_color", mirrorColor);
+    params.getParam("transparency", transparencyStrength);
+    params.getParam("translucency", translucencyStrength);
+    params.getParam("diffuse_reflect", diffuseStrength);
+    params.getParam("specular_reflect", mirrorStrength);
+    params.getParam("emit", emitStrength);
     params.getParam("IOR", IOR);
-    params.getParam("fresnel_effect", fresnEff);
+    params.getParam("fresnel_effect", fresnelEffect);
     params.getParam("transmit_filter", filt);
     // !!remember to put diffuse multiplier in material itself!
-    mat = new shinyDiffuseMat_t(col, srCol, diffuse, transparency, translucency, sp_refl, emit);
+    shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength);
     mat->mTransmitFilterStrength = filt;
     
-    if(fresnEff)
+    if(fresnelEffect)
     {
         mat->mIOR_Squared = IOR * IOR;
         mat->mHasFresnelEffect = true;
     }
+
+    const std::string *name=0;
     if(params.getParam("diffuse_brdf", name))
     {
         if(*name == "oren_nayar")
@@ -499,6 +502,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
         }
     }
 
+    /// Material Shader Nodes
     std::vector<shaderNode_t *> roots;
     std::map<std::string, shaderNode_t *> nodeList;
 
@@ -537,11 +541,12 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
         if(mat->mTransparencyShader) mat->getNodeList(mat->mTransparencyShader, colorNodes);
         if(mat->mTranslucencyShader) mat->getNodeList(mat->mTranslucencyShader, colorNodes);
 
-        mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
+        mat->filterNodes(colorNodes, mat->allViewdep,   VIEW_DEP);
         mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 
         if(mat->mBumpShader)         mat->getNodeList(mat->mBumpShader, mat->bumpNodes);
     }
+
 
     mat->config();
 
