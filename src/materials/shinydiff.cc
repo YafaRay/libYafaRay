@@ -5,10 +5,10 @@
 
 __BEGIN_YAFRAY
 
-shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transp, float transl, float mirrorStrength, float emitStrength):
+shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength, float transmitFilterStrength):
             mIsTransparent(false), mIsTranslucent(false), mIsMirror(false), mIsDiffuse(false), mHasFresnelEffect(false),
             mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
-            mMirrorStrength(mirrorStrength), mTransparencyStrength(transp), mTranslucencyStrength(transl), mDiffuseStrength(diffuseStrength), mUseOrenNayar(false), nBSDF(0)
+            mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength), mUseOrenNayar(false), nBSDF(0)
 {
     mEmitColor = emitStrength * diffuseColor;
     mEmitStrength = emitStrength;
@@ -469,23 +469,25 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     float translucencyStrength=0.f;
     float mirrorStrength=0.f;
     float emitStrength = 0.f;
-    bool fresnelEffect=false;
-    double IOR = 1.33, filt=1.0;
-    params.getParam("color", diffuseColor);
-    params.getParam("mirror_color", mirrorColor);
-    params.getParam("transparency", transparencyStrength);
-    params.getParam("translucency", translucencyStrength);
-    params.getParam("diffuse_reflect", diffuseStrength);
+    bool hasFresnelEffect=false;
+    double IOR = 1.33;
+    double transmitFilterStrength=1.0;
+
+    params.getParam("color",            diffuseColor);
+    params.getParam("mirror_color",     mirrorColor);
+    params.getParam("transparency",     transparencyStrength);
+    params.getParam("translucency",     translucencyStrength);
+    params.getParam("diffuse_reflect",  diffuseStrength);
     params.getParam("specular_reflect", mirrorStrength);
-    params.getParam("emit", emitStrength);
-    params.getParam("IOR", IOR);
-    params.getParam("fresnel_effect", fresnelEffect);
-    params.getParam("transmit_filter", filt);
+    params.getParam("emit",             emitStrength);
+    params.getParam("IOR",              IOR);
+    params.getParam("fresnel_effect",   hasFresnelEffect);
+    params.getParam("transmit_filter",  transmitFilterStrength);
+
     // !!remember to put diffuse multiplier in material itself!
-    shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength);
-    mat->mTransmitFilterStrength = filt;
+    shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength, transmitFilterStrength);
     
-    if(fresnelEffect)
+    if(hasFresnelEffect)
     {
         mat->mIOR_Squared = IOR * IOR;
         mat->mHasFresnelEffect = true;
@@ -506,7 +508,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     std::vector<shaderNode_t *> roots;
     std::map<std::string, shaderNode_t *> nodeList;
 
-    // Prepare our shader nodes list
+    // prepare shader nodes list
     nodeList["diffuse_shader"]      = NULL;
     nodeList["mirror_color_shader"] = NULL;
     nodeList["bump_shader"]         = NULL;
