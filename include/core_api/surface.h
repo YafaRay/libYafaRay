@@ -100,7 +100,7 @@ struct YAFRAYCORE_EXPORT surfacePoint_t
 	//GFLOAT dvdNV;
 };
 
-surfacePoint_t blend_surface_points(surfacePoint_t const& sp_0, surfacePoint_t const& sp_1, float const alpha);
+YAFRAYCORE_EXPORT surfacePoint_t blend_surface_points(surfacePoint_t const& sp_0, surfacePoint_t const& sp_1, float const alpha);
 
 /*! computes and stores the additional data for surface intersections for
 	differential rays */
