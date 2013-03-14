@@ -8,7 +8,7 @@
  *		fPow() based on the polynomials approach form Jose Fonséca's blog entry:
  *		Fast SSE2 pow: tables or polynomials?
  *		http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
- *		
+ *
  *		fSin(), fCos() and fTan() based on Fast and Accurate sine/cosine
  *		thread on DevMaster.net forum, posted by Nick
  *		http://www.devmaster.net/forums/showthread.php?t=5784
@@ -114,7 +114,14 @@ inline float fLog2(float x)
 inline float asmSqrt(float n)
 {
     float r = n;
-    
+#ifdef _MSC_VER
+    __asm
+    {
+		fld r
+		fsqrt
+		fstp r
+    }
+#elif __GNUC__
     asm(
 		"fld %0;"
 		"fsqrt;"
@@ -122,9 +129,11 @@ inline float asmSqrt(float n)
 		:"=m" (r)
 		:"m" (r)
 		);
-    
+#else
+    r = fsqrt(n);
+#endif
     return r;
-} 
+}
 
 inline float iSqrt(float x)
 {
