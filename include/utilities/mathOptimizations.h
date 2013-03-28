@@ -9,7 +9,7 @@
  *		Fast SSE2 pow: tables or polynomials?
  *		http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
  *
- *		fSin(), fCos() and fTan() based on Fast and Accurate sine/cosine
+ *		fSin() and fCos() based on Fast and Accurate sine/cosine
  *		thread on DevMaster.net forum, posted by Nick
  *		http://www.devmaster.net/forums/showthread.php?t=5784
  *
@@ -228,14 +228,6 @@ inline float fCos(float x)
 #endif
 }
 
-inline float fTan(float x)
-{
-#ifdef FAST_TRIG
-	return fSin(x) / fCos(x);
-#else
-	return tan(x);
-#endif
-}
 __END_YAFRAY
 
 #endif
