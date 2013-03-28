@@ -125,7 +125,7 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float 
 	perez_y[3] = ((-0.04405 * T) - 1.65369);
 	perez_y[4] = ((-0.01092 * T) + 0.05291);
 	perez_y[5] = prePerez(perez_y);
-};
+}
 
 color_t darkSkyBackground_t::getAttenuatedSunColor()
 {
