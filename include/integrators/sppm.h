@@ -24,7 +24,7 @@ __BEGIN_YAFRAY
 typedef struct _HitPoint // actually are per-pixel variable, use to record the sppm's shared statistics
 {
 	float radius2; // square search-radius, shrink during the passes
-	unsigned long long accPhotonCount; // record the total photon this pixel gathered
+	unsigned long accPhotonCount; // record the total photon this pixel gathered
 	colorA_t accPhotonFlux; // accumulated flux
 	colorA_t constantRandiance; // record the direct light for this pixel
 
