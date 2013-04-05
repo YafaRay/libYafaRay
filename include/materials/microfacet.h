@@ -18,7 +18,7 @@ __BEGIN_YAFRAY
 
 inline void sample_quadrant_aniso(vector3d_t &H, float s1, float s2, float e_u, float e_v)
 {
-	float phi = atan(fSqrt((e_u + 1.f)/(e_v + 1.f)) * std::max(1e-6f, tanf(M_PI_2 * s1)));
+	float phi = atan(fSqrt((e_u + 1.f)/(e_v + 1.f)) * tanf(M_PI_2 * s1));
 	float cosPhi = fCos(phi);
 	float sinPhi = fSin(phi);
 	float cosTheta, sinTheta;
