@@ -17,7 +17,7 @@ inline float kernel(float r_photon2, float ir_gather2)
 
 inline float ckernel(float r_photon2, float r_gather2, float ir_gather2)
 {
-	float r_p=fSqrt(r_photon2), ir_g=fISqrt(r_gather2);
+	float r_p=fSqrt(r_photon2), ir_g=1.f/fSqrt(r_gather2);
 	return 3.f * (1.f - r_p*ir_g) * ir_gather2 * M_1_PI;
 }
 
@@ -54,12 +54,12 @@ vector3d_t inline SampleSphere(float s1, float s2)
 
 //! uniformly sample a cone. Using doubles because for small cone angles the cosine is very close to one...
 
-vector3d_t inline sampleCone(const vector3d_t &D, const vector3d_t &U, const vector3d_t &V, double maxCosAng, PFLOAT s1, PFLOAT s2)
+vector3d_t inline sampleCone(const vector3d_t &D, const vector3d_t &U, const vector3d_t &V, float maxCosAng, float s1, float s2)
 {
-	double cosAng = 1.0 - (1.0-(double)maxCosAng) * (double)s2;
-	double sinAng = fSqrt(1.0 - cosAng*cosAng);
-	PFLOAT t1 = M_2PI*s1;
-	return (U*fCos(t1) + V*fSin(t1))*(PFLOAT)sinAng + D*(PFLOAT)cosAng;
+	float cosAng = 1.f - (1.f - maxCosAng) * s2;
+	float sinAng = fSqrt(1.f - cosAng * cosAng);
+	float t1 = M_2PI * s1;
+	return (U * fCos(t1) + V * fSin(t1)) * sinAng + D * cosAng;
 }
 
 
