@@ -11,29 +11,29 @@ __BEGIN_YAFRAY
 class Halton
 {
 public:
-	
+
 	Halton()
 	{
 		//Empty
 	}
-	
+
 	Halton(int base)
 	{
 		setBase(base);
 	}
-	
+
 	void setBase(int base)
 	{
 		mBase = base;
 		mInvBase = 1.0 / (double) base;
 		mValue = 0;
 	}
-	
+
 	void reset()
 	{
 		mValue=0.0;
 	}
-	
+
 	inline void setStart(unsigned int i)
 	{
 		double factor = mInvBase;
@@ -47,7 +47,7 @@ public:
 			factor *= mInvBase;
 		}
 	}
-	
+
 	inline float getNext()
 	{
 		double r = 0.9999999999 - mValue;
@@ -62,13 +62,13 @@ public:
 			{
 				hh = h;
 				h *= mInvBase;
-			} 
-			
+			}
+
 			mValue += hh + h - 1.0;
 		}
-		return mValue;
+		return std::max(0.f, std::min(1.f, (float)mValue));
 	}
-	
+
 private:
 	unsigned int mBase;
 	double mInvBase;
@@ -122,7 +122,7 @@ inline int nextPrime(int lastPrime)
 /* The fnv - Fowler/Noll/Vo- hash code
    unrolled for the special case of hashing 32bit unsigned integers
    very easy but fast
-   more details on http://www.isthe.com/chongo/tech/comp/fnv/ 
+   more details on http://www.isthe.com/chongo/tech/comp/fnv/
 */
 
 union Fnv32_u
