@@ -1,4 +1,3 @@
-
 #ifndef Y_SAMPLEUTILS_H
 #define Y_SAMPLEUTILS_H
 
@@ -85,9 +84,10 @@ void inline CumulateStep1dDF(const float *f, int nSteps, float *integral, float 
 
 class pdf1D_t
 {
-	public:
+public:
 	pdf1D_t() {}
-	pdf1D_t(float *f, int n) {
+	pdf1D_t(float *f, int n)
+	{
 		func = new float[n];
 		cdf = new float[n+1];
 		count = n;
@@ -96,13 +96,21 @@ class pdf1D_t
 		invIntegral = 1.f / integral;
 		invCount = 1.f / count;
 	}
-	~pdf1D_t(){ delete[] func, delete[] cdf; }
+	~pdf1D_t()
+	{
+		delete[] func, delete[] cdf;
+	}
 	float Sample(float u, float *pdf)const
 	{
 		// Find surrounding cdf segments
 		float *ptr = std::lower_bound(cdf, cdf+count+1, u);
 		int index = (int) (ptr-cdf-1);
-		if(index<0) index=0; //FIXME: this is one of the fixes for the white dots. Sometimes for some reason this index was -1, causing an access outside the array and an invalid value->NaN, inf, etc. Now, we ensure the index does not move <0, but we should look for a better solution to prevent the index to go <0 in the first place.
+		if(index<0)
+		{
+		    Y_ERROR << "Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = " << index << ", " << u << ", " << ptr << ", " << cdf << yendl;
+		    index=0;
+		}
+             //FIXME: this is one of the fixes for the white dots. Sometimes for some reason this index was -1, causing an access outside the array and an invalid value->NaN, inf, etc. Now, we ensure the index does not move <0, but we should look for a better solution to prevent the index to go <0 in the first place.
 		// Return offset along current cdf segment
 		float delta = (u - cdf[index]) / (cdf[index+1] - cdf[index]);
 		if(pdf) *pdf = func[index] * invIntegral;
@@ -112,9 +120,18 @@ class pdf1D_t
 	// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
 	int DSample(float u, float *pdf)const
 	{
-		if(u == 0.f){ *pdf = func[0] * invIntegral; return 0; }
+		if(u == 0.f)
+		{
+			*pdf = func[0] * invIntegral;
+			return 0;
+		}
 		float *ptr = std::lower_bound(cdf, cdf+count+1, u);
 		int index = (int) (ptr-cdf-1);
+		if(index<0)
+		{
+		    Y_ERROR << "Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = " << index << ", " << u << ", " << ptr << ", " << cdf << yendl;
+		    index=0;
+		}
 		if(pdf) *pdf = func[index] * invIntegral;
 		return index;
 	}
