@@ -24,9 +24,13 @@ inline float ckernel(float r_photon2, float r_gather2, float ir_gather2)
 
 vector3d_t inline SampleCosHemisphere(const vector3d_t &N,const vector3d_t &Ru,const vector3d_t &Rv, float s1, float s2)
 {
-	PFLOAT z1 = s1;
-	PFLOAT z2 = s2*M_2PI;
-	return (Ru*fCos(z2) + Rv*fSin(z2))*fSqrt(1.0-z1) + N*fSqrt(z1);
+	if(s1>=1.0f) return N; //Fix for some white/black dots when s1>1.0. Also, this returns a fast trivial value when s1=1.0.
+	else
+	{
+		PFLOAT z1 = s1;
+		PFLOAT z2 = s2*M_2PI;
+		return (Ru*fCos(z2) + Rv*fSin(z2))*fSqrt(1.0-z1) + N*fSqrt(z1);
+	}
 }
 
 //! Uniform sample a sphere
