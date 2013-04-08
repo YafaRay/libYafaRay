@@ -79,28 +79,28 @@ private:
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
 #define multRatio (0.00000000023283064365386962890625)
-inline PFLOAT RI_vdC(unsigned int bits, unsigned int r=0)
+inline float RI_vdC(unsigned int bits, unsigned int r=0)
 {
 	bits = ( bits << 16) | ( bits >> 16);
 	bits = ((bits & 0x00ff00ff) << 8) | ((bits & 0xff00ff00) >> 8);
 	bits = ((bits & 0x0f0f0f0f) << 4) | ((bits & 0xf0f0f0f0) >> 4);
 	bits = ((bits & 0x33333333) << 2) | ((bits & 0xcccccccc) >> 2);
 	bits = ((bits & 0x55555555) << 1) | ((bits & 0xaaaaaaaa) >> 1);
-	return (PFLOAT)((double)(bits^r) * multRatio);
+	return std::max(0.f,std::min(1.f,(float)((double)(bits^r) * multRatio)));
 }
 
-inline PFLOAT RI_S(unsigned int i, unsigned int r=0)
+inline float RI_S(unsigned int i, unsigned int r=0)
 {
 	for (unsigned int v=1<<31; i; i>>=1, v^=v>>1)
 		if (i & 1) r ^= v;
-	return (PFLOAT)((double) r * multRatio);
+	return std::max(0.f,std::min(1.f,((float)((double) r * multRatio))));
 }
 
-inline PFLOAT RI_LP(unsigned int i, unsigned int r=0)
+inline float RI_LP(unsigned int i, unsigned int r=0)
 {
 	for (unsigned int v=1<<31; i; i>>=1, v|=v>>1)
 		if (i & 1) r ^= v;
-	return (PFLOAT)((double)r * multRatio);
+	return std::max(0.f,std::min(1.f,((float)((double)r * multRatio))));
 }
 
 
