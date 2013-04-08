@@ -478,7 +478,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 		// glossy reflection with recursive raytracing:
 		if( bsdfs & BSDF_GLOSSY && state.raylevel < 20)
 		{
-			state.includeLights = false;
+			state.includeLights = true;
 			int gsam = 8;
 			int oldDivision = state.rayDivision;
 			int oldOffset = state.rayOffset;

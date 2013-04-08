@@ -281,7 +281,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
 
-	alpha = std::max(1e-6f, std::min(alpha, 1.f));
+	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
 	roughGlassMat_t *mat = new roughGlassMat_t(IOR, filt*filtCol + color_t(1.f-filt), srCol, fake_shad, alpha, disp_power);
 
