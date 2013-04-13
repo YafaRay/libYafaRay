@@ -104,7 +104,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			else IORwo = ior;
 
 			float ht = IORwo * woH + IORwi * wiH;
-			Jacobian = (IORwi * IORwi) / (ht * ht);
+			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
 
 			glossy = std::fabs( (woH * wiH) / (wiN * woN) ) * Kt * glossy_G * glossy_D * Jacobian;
 
@@ -199,7 +199,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			else IORwo = ior;
 
 			float ht = IORwo * woH + IORwi * wiH;
-			Jacobian = (IORwi * IORwi) / (ht * ht);
+			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
 
 			glossy = std::fabs( (woH * wiH) / (wiN * woN) ) * Kt * glossy_G * glossy_D * Jacobian;
 
