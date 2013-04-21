@@ -17,7 +17,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 
 #include <core_api/scene.h>
 #include <core_api/object3d.h>
@@ -141,7 +141,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 
 	// TODO: Check if we have at least 2 vertex...
 	// TODO: math optimizations
-	
+
 	// extrude vertices and create faces
 	std::vector<point3d_t> &points = state.curObj->obj->points;
 	float r;	//current radius
@@ -170,7 +170,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		// TODO: thikness?
 		a = o - (0.5 * r *v) - 1.5 * r / sqrt(3.f) * u;
 		b = o - (0.5 * r *v) + 1.5 * r / sqrt(3.f) * u;
-		
+
 		state.curObj->obj->points.push_back(a);
 		state.curObj->obj->points.push_back(b);
 	}
@@ -202,7 +202,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 			state.curObj->obj->uv_offsets.push_back(iu);
 			state.curObj->obj->uv_offsets.push_back(iu);
 		}
-		
+
 		// Fill
 		tri = triangle_t(a1, b2, b1, state.curObj->obj);
 		tri.setMaterial(mat);
@@ -218,7 +218,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		state.curObj->obj->uv_offsets.push_back(iu);
 		state.curObj->obj->uv_offsets.push_back(iu);
 		state.curObj->obj->uv_offsets.push_back(iv);
-		
+
 		tri = triangle_t(a2, b3, b2, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
@@ -232,7 +232,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		state.curObj->obj->uv_offsets.push_back(iu);
 		state.curObj->obj->uv_offsets.push_back(iu);
 		state.curObj->obj->uv_offsets.push_back(iv);
-		
+
 		tri = triangle_t(b3, a3, a1, state.curObj->obj);
 		tri.setMaterial(mat);
 		state.curTri = state.curObj->obj->addTriangle(tri);
@@ -246,7 +246,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		state.curObj->obj->uv_offsets.push_back(iv);
 		state.curObj->obj->uv_offsets.push_back(iu);
 		state.curObj->obj->uv_offsets.push_back(iv);
-		
+
 	}
 	// Close top
 	tri = triangle_t(i, 2*i+n, 2*i+n+1, state.curObj->obj);
@@ -267,11 +267,11 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = type & 0xFF;
 	if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
-	
+
 	objData_t &nObj = meshes[id];
 	switch(ptype)
 	{
-		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco); 
+		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco);
 					nObj.obj->setVisibility( !(type & INVISIBLEM) );
 					nObj.obj->useAsBaseObject( (type & BASEMESH) );
 					break;
@@ -286,14 +286,14 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 	state.changes |= C_GEOM;
 	state.orco=hasOrco;
 	state.curObj = &nObj;
-	
+
 	return true;
 }
 
 bool scene_t::endTriMesh()
 {
 	if(state.stack.front() != OBJECT) return false;
-	
+
 	if(state.curObj->type == TRIM)
 	{
 		if(state.curObj->obj->has_uv)
@@ -312,7 +312,7 @@ bool scene_t::endTriMesh()
 	{
 		state.curObj->mobj->finish();
 	}
-	
+
 	state.stack.pop_front();
 	return true;
 }
@@ -320,7 +320,7 @@ bool scene_t::endTriMesh()
 void scene_t::setNumThreads(int threads)
 {
 	nthreads = threads;
-	
+
 	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		Y_INFO << "Automatic Detection of Threads: Active." << yendl;
@@ -329,11 +329,11 @@ void scene_t::setNumThreads(int threads)
 		SYSTEM_INFO info;
 		GetSystemInfo(&info);
 		nthreads = (int) info.dwNumberOfProcessors;
-#else 
+#else
 	#	ifdef __APPLE__
 		int mib[2];
 		size_t len;
-		
+
 		mib[0] = CTL_HW;
 		mib[1] = HW_NCPU;
 		len = sizeof(int);
@@ -351,9 +351,9 @@ void scene_t::setNumThreads(int threads)
 	{
 		Y_INFO << "Automatic Detection of Threads: Inactive." << yendl;
 	}
-	
+
 	Y_INFO << "Using [" << nthreads << "] Threads." << yendl;
-}	
+}
 
 bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 {
@@ -370,53 +370,83 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 		odat = state.curObj;
 		if(!odat) return false;
 	}
-	
+
 	if(odat->obj->normals_exported && odat->obj->points.size() == odat->obj->normals.size())
 	{
+		odat->obj->is_smooth = true;
 		return true;
 	}
-	
+
 	// cannot smooth other mesh types yet...
 	if(odat->type > 0) return false;
-	unsigned int i1, i2, i3;
+	unsigned int idx = 0;
 	std::vector<normal_t> &normals = odat->obj->normals;
 	std::vector<triangle_t> &triangles = odat->obj->triangles;
-	std::vector<point3d_t> &points = odat->obj->points;
+	size_t points = odat->obj->points.size();
 	std::vector<triangle_t>::iterator tri;
+	std::vector<point3d_t> const &vertices = odat->obj->points;
+
+    normals.reserve(points);
+    normals.resize(points, normal_t(0,0,0));
+
 	if (angle>=180)
 	{
-		normals.reserve(points.size());
-		normals.resize(points.size(), normal_t(0,0,0));
 		for (tri=triangles.begin(); tri!=triangles.end(); ++tri)
 		{
-			i1 = tri->pa;
-			i2 = tri->pb;
-			i3 = tri->pc;
-			// hm somehow it was a stupid idea not allowing calculation with normal_t class
-			vector3d_t normal = (vector3d_t)tri->getNormal();
-			normals[i1] = normal_t( (vector3d_t)normals[i1] + normal );
-			normals[i2] = normal_t( (vector3d_t)normals[i2] + normal );
-			normals[i3] = normal_t( (vector3d_t)normals[i3] + normal );
-			tri->setNormals(i1, i2, i3);
-		}
 
-		for (i1=0;i1<normals.size();i1++)
-			normals[i1] = normal_t( vector3d_t(normals[i1]).normalize() );
+			vector3d_t n = tri->getNormal();
+			vector3d_t e1, e2;
+			float alpha = 0;
+
+			e1 = vertices[tri->pb] - vertices[tri->pa];
+			e2 = vertices[tri->pc] - vertices[tri->pa];
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+
+            normals[tri->pa] += n * alpha;
+
+			e1 = vertices[tri->pa] - vertices[tri->pb];
+			e2 = vertices[tri->pc] - vertices[tri->pb];
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+
+            normals[tri->pb] += n * alpha;
+
+			e1 = vertices[tri->pa] - vertices[tri->pc];
+			e2 = vertices[tri->pb] - vertices[tri->pc];
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+
+            normals[tri->pc] += n * alpha;
+
+            tri->setNormals(tri->pa, tri->pb, tri->pc);
+  		}
+
+		for (idx=0;idx<normals.size();++idx) normals[idx].normalize();
 
 		odat->obj->is_smooth = true;
 	}
 	else if(angle>0.1)// angle dependant smoothing
 	{
 		PFLOAT thresh = fCos(degToRad(angle));
-		std::vector<vector3d_t> vnormals;
-		std::vector<int> vn_index;
 		// create list of faces that include given vertex
-		std::vector<std::vector<triangle_t*> > vface(points.size());
+		std::vector<std::vector<triangle_t*> > vface(points);
+		std::vector<std::vector<float> > alphas(points);
 		for (tri=triangles.begin(); tri!=triangles.end(); ++tri)
 		{
-			vface[tri->pa].push_back(&(*tri));
+			vector3d_t e1, e2;
+
+			e1 = vertices[tri->pb] - vertices[tri->pa];
+			e2 = vertices[tri->pc] - vertices[tri->pa];
+            alphas[tri->pa].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
+            vface[tri->pa].push_back(&(*tri));
+
+			e1 = vertices[tri->pa] - vertices[tri->pb];
+			e2 = vertices[tri->pc] - vertices[tri->pb];
+            alphas[tri->pb].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
 			vface[tri->pb].push_back(&(*tri));
-			vface[tri->pc].push_back(&(*tri));
+
+			e1 = vertices[tri->pa] - vertices[tri->pc];
+			e2 = vertices[tri->pb] - vertices[tri->pc];
+            alphas[tri->pc].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
+            vface[tri->pc].push_back(&(*tri));
 		}
 		for(int i=0; i<(int)vface.size(); ++i)
 		{
@@ -427,49 +457,37 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 				bool smooth = false;
 				// calculate vertex normal for face
 				vector3d_t vnorm, fnorm;
-				
+
 				vnorm = fnorm = f->getNormal();
-				
+
+				int j = 0;
+
 				for(std::vector<triangle_t*>::iterator f2=tris.begin(); f2!=tris.end(); ++f2)
 				{
-					if(fi == f2) continue;
+					if(*fi == *f2) continue;
 					vector3d_t f2norm = (*f2)->getNormal();
 					if((fnorm * f2norm) > thresh)
 					{
 						smooth = true;
-						vnorm += f2norm;
+						vnorm += f2norm * alphas[i][j];
 					}
+					j++;
 				}
-				int n_idx = -1;
 				if(smooth)
 				{
 					vnorm.normalize();
-					//search for existing normal
-					for(unsigned int j=0; j<vnormals.size(); ++j)
-					{
-						if(vnorm*vnormals[j] > 0.999){ n_idx = vn_index[j]; break; }
-					}
-					// create new if none found
-					if(n_idx == -1)
-					{
-						n_idx = normals.size();
-						vnormals.push_back(vnorm);
-						vn_index.push_back(n_idx);
-						normals.push_back( normal_t(vnorm) );
-					}
+                    normals[i] = vnorm;
 				}
 				// set vertex normal to idx
-				if	   (f->pa == i) f->na = n_idx;
-				else if(f->pb == i) f->nb = n_idx;
-				else if(f->pc == i) f->nc = n_idx;
+				if	   (f->pa == i) f->na = i;
+				else if(f->pb == i) f->nb = i;
+				else if(f->pc == i) f->nc = i;
 				else
 				{
 					Y_ERROR << "Scene: Mesh smoothing error!" << yendl;
 					return false;
 				}
 			}
-			vnormals.clear();
-			vn_index.clear();
 		}
 
 		odat->obj->is_smooth = true;
@@ -492,9 +510,9 @@ int scene_t::addVertex(const point3d_t &p)
 		}
 		return (n-1)/3;
 	}
-	
+
 	state.curObj->lastVertId = state.curObj->obj->points.size()-1;
-	
+
 	return state.curObj->lastVertId;
 }
 
@@ -509,17 +527,17 @@ int scene_t::addVertex(const point3d_t &p, const point3d_t &orco)
 			state.curObj->obj->points.push_back(orco);
 			state.curObj->lastVertId = (state.curObj->obj->points.size()-1) / 2;
 			break;
-			
+
 		case VTRIM:
 			state.curObj->mobj->points.push_back(p);
 			state.curObj->mobj->points.push_back(orco);
 			state.curObj->lastVertId = (state.curObj->mobj->points.size()-1) / 2;
 			break;
-			
+
 		case MTRIM:
 			return addVertex(p);
 	}
-	
+
 	return state.curObj->lastVertId;
 }
 
@@ -534,7 +552,7 @@ void scene_t::addNormal(const normal_t& n)
 	{
 		if(state.curObj->obj->normals.size() < state.curObj->obj->points.size())
 			state.curObj->obj->normals.resize(state.curObj->obj->points.size());
-		
+
 		state.curObj->obj->normals[state.curObj->lastVertId] = n;
 		state.curObj->obj->normals_exported = true;
 	}
@@ -586,7 +604,7 @@ bool scene_t::addTriangle(int a, int b, int c, const material_t *mat)
 bool scene_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat)
 {
 	if(!addTriangle(a, b, c, mat)) return false;
-	
+
 	if(state.curObj->type == TRIM)
 	{
 		state.curObj->obj->uv_offsets.push_back(uv_a);
@@ -599,7 +617,7 @@ bool scene_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, con
 		state.curObj->mobj->uv_offsets.push_back(uv_b);
 		state.curObj->mobj->uv_offsets.push_back(uv_c);
 	}
-	
+
 	return true;
 }
 
@@ -734,13 +752,13 @@ bool scene_t::update()
 
 					if (!dat.obj->isVisible()) continue;
 					if (dat.obj->isBaseObject()) continue;
-					
+
 					if(dat.type == TRIM) insert += dat.obj->getPrimitives(insert);
 				}
 				tree = new triKdTree_t(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
 				delete [] tris;
 				sceneBound = tree->getBound();
-				Y_INFO << "Scene: New scene bound is:" << 
+				Y_INFO << "Scene: New scene bound is:" <<
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 			}
@@ -781,29 +799,29 @@ bool scene_t::update()
 			else Y_ERROR << "Scene: Scene is empty..." << yendl;
 		}
 	}
-	
+
 	for(unsigned int i=0; i<lights.size(); ++i) lights[i]->init(*this);
-	
+
 	if(!surfIntegrator)
 	{
 		Y_ERROR << "Scene: No surface integrator, bailing out..." << yendl;
 		return false;
 	}
-	
+
 	if(state.changes != C_NONE)
 	{
 		std::stringstream inteSettings;
 
 		bool success = (surfIntegrator->preprocess() && volIntegrator->preprocess());
-		
+
 		inteSettings << surfIntegrator->getName() << " (" << surfIntegrator->getSettings() << ")";
 		imageFilm->setIntegParams(inteSettings.str());
 
 		if(!success) return false;
 	}
-	
+
 	state.changes = C_NONE;
-	
+
 	return true;
 }
 
@@ -838,7 +856,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 
 bool scene_t::isShadowed(renderState_t &state, const ray_t &ray) const
 {
-	
+
 	ray_t sray(ray);
 	sray.from += sray.dir * sray.tmin; //argh...kill that!
 	sray.time = state.time;
@@ -909,7 +927,7 @@ objID_t scene_t::getNextFreeID()
 {
 	objID_t id;
 	id = state.nextFreeID;
-	
+
 	//create new entry for object, assert that no ID collision happens:
 	if(meshes.find(id) != meshes.end())
 	{
@@ -917,9 +935,9 @@ objID_t scene_t::getNextFreeID()
 		--state.nextFreeID;
 		return getNextFreeID();
 	}
-	
+
 	--state.nextFreeID;
-	
+
 	return id;
 }
 
@@ -931,7 +949,7 @@ bool scene_t::addObject(object3d_t *obj, objID_t &id)
 		//create new triangle object:
 		objects[id] = obj;
 		return true;
-	} 
+	}
 	else
 	{
 		return false;
