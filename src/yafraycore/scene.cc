@@ -400,19 +400,19 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 
 			e1 = vertices[tri->pb] - vertices[tri->pa];
 			e2 = vertices[tri->pc] - vertices[tri->pa];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
 
             normals[tri->pa] += n * alpha;
 
 			e1 = vertices[tri->pa] - vertices[tri->pb];
 			e2 = vertices[tri->pc] - vertices[tri->pb];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
 
             normals[tri->pb] += n * alpha;
 
 			e1 = vertices[tri->pa] - vertices[tri->pc];
 			e2 = vertices[tri->pb] - vertices[tri->pc];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f);
+            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
 
             normals[tri->pc] += n * alpha;
 
@@ -421,11 +421,12 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 
 		for (idx=0;idx<normals.size();++idx) normals[idx].normalize();
 
-		odat->obj->is_smooth = true;
 	}
 	else if(angle>0.1)// angle dependant smoothing
 	{
 		PFLOAT thresh = fCos(degToRad(angle));
+		std::vector<vector3d_t> vnormals;
+		std::vector<int> vn_index;
 		// create list of faces that include given vertex
 		std::vector<std::vector<triangle_t*> > vface(points);
 		std::vector<std::vector<float> > alphas(points);
@@ -435,22 +436,23 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 
 			e1 = vertices[tri->pb] - vertices[tri->pa];
 			e2 = vertices[tri->pc] - vertices[tri->pa];
-            alphas[tri->pa].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
+            alphas[tri->pa].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
             vface[tri->pa].push_back(&(*tri));
 
 			e1 = vertices[tri->pa] - vertices[tri->pb];
 			e2 = vertices[tri->pc] - vertices[tri->pb];
-            alphas[tri->pb].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
+            alphas[tri->pb].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
 			vface[tri->pb].push_back(&(*tri));
 
 			e1 = vertices[tri->pa] - vertices[tri->pc];
 			e2 = vertices[tri->pb] - vertices[tri->pc];
-            alphas[tri->pc].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.9999999f));
+            alphas[tri->pc].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
             vface[tri->pc].push_back(&(*tri));
 		}
 		for(int i=0; i<(int)vface.size(); ++i)
 		{
 			std::vector<triangle_t*> &tris = vface[i];
+			int j = 0;
 			for(std::vector<triangle_t*>::iterator fi=tris.begin(); fi!=tris.end(); ++fi)
 			{
 				triangle_t* f = *fi;
@@ -458,40 +460,64 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 				// calculate vertex normal for face
 				vector3d_t vnorm, fnorm;
 
-				vnorm = fnorm = f->getNormal();
-
-				int j = 0;
-
+				fnorm = f->getNormal();
+				vnorm = fnorm * alphas[i][j];
+                int k = 0;
 				for(std::vector<triangle_t*>::iterator f2=tris.begin(); f2!=tris.end(); ++f2)
 				{
-					if(*fi == *f2) continue;
+					if(**fi == **f2)
+					{
+                        k++;
+                        continue;
+					}
 					vector3d_t f2norm = (*f2)->getNormal();
 					if((fnorm * f2norm) > thresh)
 					{
 						smooth = true;
-						vnorm += f2norm * alphas[i][j];
+						vnorm += f2norm * alphas[i][k];
 					}
-					j++;
+					k++;
 				}
+				int n_idx = -1;
 				if(smooth)
 				{
 					vnorm.normalize();
-                    normals[i] = vnorm;
+					//search for existing normal
+					for(unsigned int l=0; l<vnormals.size(); ++l)
+					{
+						if(vnorm*vnormals[l] > 0.999)
+                        {
+                            n_idx = vn_index[l];
+                            break;
+                        }
+					}
+					// create new if none found
+					if(n_idx == -1)
+					{
+						n_idx = normals.size();
+						vnormals.push_back(vnorm);
+						vn_index.push_back(n_idx);
+						normals.push_back( normal_t(vnorm) );
+					}
 				}
 				// set vertex normal to idx
-				if	   (f->pa == i) f->na = i;
-				else if(f->pb == i) f->nb = i;
-				else if(f->pc == i) f->nc = i;
+				if	   (f->pa == i) f->na = n_idx;
+				else if(f->pb == i) f->nb = n_idx;
+				else if(f->pc == i) f->nc = n_idx;
 				else
 				{
 					Y_ERROR << "Scene: Mesh smoothing error!" << yendl;
 					return false;
 				}
+				j++;
 			}
+			vnormals.clear();
+			vn_index.clear();
 		}
-
-		odat->obj->is_smooth = true;
 	}
+
+    odat->obj->is_smooth = true;
+
 	return true;
 }
 
