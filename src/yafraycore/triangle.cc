@@ -14,9 +14,9 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 
 	if(mesh->is_smooth)
 	{
-		vector3d_t va = mesh->getVertexNormal(na);
-		vector3d_t vb = mesh->getVertexNormal(nb);
-		vector3d_t vc = mesh->getVertexNormal(nc);
+		vector3d_t va = (na >= 0) ? mesh->getVertexNormal(na) : sp.Ng;
+		vector3d_t vb = (nb >= 0) ? mesh->getVertexNormal(nb) : sp.Ng;
+		vector3d_t vc = (nc >= 0) ? mesh->getVertexNormal(nc) : sp.Ng;
 
 		sp.N = u*va + v*vb + w*vc;
 		sp.N.normalize();
