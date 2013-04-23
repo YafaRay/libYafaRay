@@ -355,6 +355,9 @@ void scene_t::setNumThreads(int threads)
 	Y_INFO << "Using [" << nthreads << "] Threads." << yendl;
 }
 
+#define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
+			e2 = vertices[v2] - vertices[q];
+
 bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 {
 	if( state.stack.front() != GEOMETRY ) return false;
@@ -398,21 +401,18 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 			vector3d_t e1, e2;
 			float alpha = 0;
 
-			e1 = vertices[tri->pb] - vertices[tri->pa];
-			e2 = vertices[tri->pc] - vertices[tri->pa];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
+			prepareEdges(tri->pa, tri->pb, tri->pc)
+            alpha = e1.sinFromVectors(e2);
 
             normals[tri->pa] += n * alpha;
 
-			e1 = vertices[tri->pa] - vertices[tri->pb];
-			e2 = vertices[tri->pc] - vertices[tri->pb];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
+			prepareEdges(tri->pb, tri->pa, tri->pc)
+            alpha = e1.sinFromVectors(e2);
 
             normals[tri->pb] += n * alpha;
 
-			e1 = vertices[tri->pa] - vertices[tri->pc];
-			e2 = vertices[tri->pb] - vertices[tri->pc];
-            alpha = asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f);
+			prepareEdges(tri->pc, tri->pa, tri->pb)
+            alpha = e1.sinFromVectors(e2);
 
             normals[tri->pc] += n * alpha;
 
@@ -434,19 +434,16 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 		{
 			vector3d_t e1, e2;
 
-			e1 = vertices[tri->pb] - vertices[tri->pa];
-			e2 = vertices[tri->pc] - vertices[tri->pa];
-            alphas[tri->pa].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
+			prepareEdges(tri->pa, tri->pb, tri->pc)
+            alphas[tri->pa].push_back(e1.sinFromVectors(e2));
             vface[tri->pa].push_back(&(*tri));
 
-			e1 = vertices[tri->pa] - vertices[tri->pb];
-			e2 = vertices[tri->pc] - vertices[tri->pb];
-            alphas[tri->pb].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
+			prepareEdges(tri->pb, tri->pa, tri->pc)
+            alphas[tri->pb].push_back(e1.sinFromVectors(e2));
 			vface[tri->pb].push_back(&(*tri));
 
-			e1 = vertices[tri->pa] - vertices[tri->pc];
-			e2 = vertices[tri->pb] - vertices[tri->pc];
-            alphas[tri->pc].push_back(asin(((e1^e2).length() / (e1.length() * e2.length())) * 0.99999f));
+			prepareEdges(tri->pc, tri->pa, tri->pb)
+            alphas[tri->pc].push_back(e1.sinFromVectors(e2));
             vface[tri->pc].push_back(&(*tri));
 		}
 		for(int i=0; i<(int)vface.size(); ++i)

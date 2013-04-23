@@ -86,6 +86,7 @@ class YAFRAYCORE_EXPORT vector3d_t
 		PFLOAT length() const;
 		PFLOAT lengthSqr() const{ return x*x+y*y+z*z; }
 		bool null()const { return ((x==0) && (y==0) && (z==0)); }
+		float sinFromVectors(const vector3d_t &v);
 		vector3d_t& operator = (const vector3d_t &s) { x=s.x;  y=s.y;  z=s.z;  return *this;}
 		vector3d_t& operator +=(const vector3d_t &s) { x+=s.x;  y+=s.y;  z+=s.z;  return *this;}
 		vector3d_t& operator -=(const vector3d_t &s) { x-=s.x;  y-=s.y;  z-=s.z;  return *this;}
@@ -255,6 +256,13 @@ inline vector3d_t& vector3d_t::normalize()
 		z *= len;
 	}
 	return *this;
+}
+
+
+inline float vector3d_t::sinFromVectors(const vector3d_t& v)
+{
+    float div = ( length() * v.length() ) * 0.99999f + 0.00001f;
+    return asin( ( (*this ^ v ).length() / div) * 0.99999f );
 }
 
 inline normal_t& normal_t::normalize()
