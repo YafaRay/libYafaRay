@@ -150,7 +150,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
-	if(scene->doDepth()) precalcDepths();
+	if(scene->doDepth() && scene->normalizedDepth()) precalcDepths();
 
 	preRender();
 
@@ -220,6 +220,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	int x;
 	const camera_t* camera = scene->getCamera();
 	bool do_depth = scene->doDepth();
+	bool normalizedDepth = scene->normalizedDepth();
 	x=camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
@@ -300,13 +301,20 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 
 				if(do_depth)
 				{
-					float depth = 0.f;
-					if(c_ray.tmax > 0.f)
-					{
-						depth = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
-					}
+					if(normalizedDepth)
+                    {
+                        float depth = 0.f;
+                        if(c_ray.tmax > 0.f)
+                        {
+                            depth = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
+                        }
 
-					imageFilm->addDepthSample(0, depth, j, i, dx, dy);
+                        imageFilm->addDepthSample(0, depth, j, i, dx, dy);
+                    }
+                    else
+                    {
+                        imageFilm->addDepthSample(0, c_ray.tmax, j, i, dx, dy);
+                    }
 				}
 			}
 		}
