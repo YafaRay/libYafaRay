@@ -31,18 +31,18 @@ __BEGIN_YAFRAY
 class pathVertex_t
 {
 	public:
-		surfacePoint_t sp; //!< surface point at which the path vertex lies
-		BSDF_t flags; //!< flags of the sampled BSDF component (not all components of the sp!)
-		color_t alpha; //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
-		color_t f_s; //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
-		vector3d_t wi, wo; //!< sampled direction for next vertex (if available)
-		float ds; //!< squared distance between x_i-1 and x_i
-		float G; //!< geometric factor G(x_i-1, x_i), required for MIS
-		float qi_wo; //!< russian roulette probability for terminating path
-		float qi_wi; //!< russian roulette probability for terminating path when generating path in opposite direction
+		surfacePoint_t sp;  //!< surface point at which the path vertex lies
+		BSDF_t flags;       //!< flags of the sampled BSDF component (not all components of the sp!)
+		color_t alpha;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
+		color_t f_s;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
+		vector3d_t wi, wo;  //!< sampled direction for next vertex (if available)
+		float ds;           //!< squared distance between x_i-1 and x_i
+		float G;            //!< geometric factor G(x_i-1, x_i), required for MIS
+		float qi_wo;        //!< russian roulette probability for terminating path
+		float qi_wi;        //!< russian roulette probability for terminating path when generating path in opposite direction
 		float cos_wi, cos_wo; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
 		float pdf_wi, pdf_wo; //!< the pdf for sampling wi from wo and wo from wi respectively
-		void *userdata; //!< user data of the material at sp (required for sampling and evaluating)
+		void *userdata;     //!< user data of the material at sp (required for sampling and evaluating)
 };
 
 /*! vertices of a connected path going forward from light to eye;
@@ -53,13 +53,13 @@ struct pathEvalVert_t
 	bool specular; //!< indicate that the ingoing direction determines the outgoing one (and vice versa)
 	union
 	{
-		float pdf_f; //!< pdf of sampling forward direction (x_i->x_i+1) given the backward direction
-		float pdf_A_k; //!< in case of lense vertex we have area pdf here, there is no forward path segment
+		float pdf_f;    //!< pdf of sampling forward direction (x_i->x_i+1) given the backward direction
+		float pdf_A_k;  //!< in case of lense vertex we have area pdf here, there is no forward path segment
 	};
 	union
 	{
-		float pdf_b; //!< pdf of sampling backward direction (x_i-1->x_i) given forward direction
-		float pdf_A_0; //!< in case of light vertex we have area pdf here, there is no backward path segment
+		float pdf_b;    //!< pdf of sampling backward direction (x_i-1->x_i) given forward direction
+		float pdf_A_0;  //!< in case of light vertex we have area pdf here, there is no backward path segment
 	};
 	float G; //!< geometric term G(x_i-1, x_i)
 };
@@ -101,10 +101,10 @@ class pathData_t
 		std::vector<pathEvalVert_t> path;
 		//pathCon_t pc;
 		// additional information for current path connection:
-		vector3d_t w_l_e; //!< direction of edge from light to eye vertex, i.e. y_s to z_t
-		color_t f_y, f_z; //!< f for light and eye vertex that are connected
-		PFLOAT u, v; //!< current position on image plane
-		float d_yz; //!< distance between y_s to z_t
+		vector3d_t w_l_e;   //!< direction of edge from light to eye vertex, i.e. y_s to z_t
+		color_t f_y, f_z;   //!< f for light and eye vertex that are connected
+		PFLOAT u, v;        //!< current position on image plane
+		float d_yz;         //!< distance between y_s to z_t
 		const light_t *light; //!< the light source to which the current path is connected
 		//float pdf_Ad_0; //!< pdf for direct lighting strategy
 		float pdf_emit, pdf_illum; //!< light pdfs required to calculate p1 for direct lighting strategy
@@ -205,8 +205,8 @@ bool biDirIntegrator_t::preprocess()
 	//lightImage->init();
 
 	// test...
-
-	/* PFLOAT wt, u, v;
+	/* 
+    PFLOAT wt, u, v;
 	float pdf;
 	ray_t wo = cam->shootRay(10.25, 10.25, 0, 0, wt);
 	bool proj = cam->project(wo, 0, 0, u, v, pdf);
@@ -234,7 +234,8 @@ bool biDirIntegrator_t::preprocess()
 		lights[0]->emitPdf(sp, wo.dir, Apdf, dirPdf, cos_wo);
 		integral += dirPdf;
 	}
-	std::cout << "Light pdf integral: " << integral/10000.f << std::endl; */
+	std::cout << "Light pdf integral: " << integral/10000.f << std::endl; 
+    */
 
 	return true;
 }
@@ -348,7 +349,6 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 				idx = std::modf(pathData.u, &ix);
 				idy = std::modf(pathData.v, &iy);
 				lightImage->addDensitySample(li_col, ix, iy, idx, idy);
-
 			}
 		}
 	#endif
@@ -915,8 +915,7 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 
 integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	biDirIntegrator_t *inte;
-	inte = new biDirIntegrator_t();
+    biDirIntegrator_t *inte = new biDirIntegrator_t();
 	return inte;
 }
 
