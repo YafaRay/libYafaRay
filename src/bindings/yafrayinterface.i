@@ -643,7 +643,6 @@ namespace yafaray
 	{
 		public:
 			matrix4x4_t() {};
-			// povman: matrix4x4_t(const PFLOAT init);
 			matrix4x4_t(const float init);
 			matrix4x4_t(const matrix4x4_t & source);
 			matrix4x4_t(const float source[4][4]);
@@ -654,13 +653,6 @@ namespace yafaray
 			matrix4x4_t & inverse();
 			matrix4x4_t & transpose();
 			void identity();
-			/* povman: orgin
-			void translate(PFLOAT dx,PFLOAT dy,PFLOAT dz);
-			void rotateX(PFLOAT degrees);
-			void rotateY(PFLOAT degrees);
-			void rotateZ(PFLOAT degrees);
-			void scale(PFLOAT sx, PFLOAT sy, PFLOAT sz);
-			*/
 			void translate(float dx,float dy,float dz);
 			void rotateX(float degrees);
 			void rotateY(float degrees);
@@ -682,7 +674,7 @@ namespace yafaray
 
 		protected:
 
-			PFLOAT  matrix[4][4];
+			float  matrix[4][4];
 			int _invalid;
 		};
 
