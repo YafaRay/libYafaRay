@@ -101,15 +101,15 @@ class pathData_t
 		std::vector<pathEvalVert_t> path;
 		//pathCon_t pc;
 		// additional information for current path connection:
-		vector3d_t w_l_e;   //!< direction of edge from light to eye vertex, i.e. y_s to z_t
-		color_t f_y, f_z;   //!< f for light and eye vertex that are connected
-		PFLOAT u, v;        //!< current position on image plane
-		float d_yz;         //!< distance between y_s to z_t
-		const light_t *light; //!< the light source to which the current path is connected
-		//float pdf_Ad_0; //!< pdf for direct lighting strategy
-		float pdf_emit, pdf_illum; //!< light pdfs required to calculate p1 for direct lighting strategy
-		bool singularL; //!< true if light has zero area (point lights for example)
-		int nPaths; //!< number of paths that have been sampled (for current thread and image)
+		vector3d_t w_l_e;		//!< direction of edge from light to eye vertex, i.e. y_s to z_t
+		color_t f_y, f_z;		//!< f for light and eye vertex that are connected
+		PFLOAT u, v;			//!< current position on image plane
+		float d_yz;				//!< distance between y_s to z_t
+		const light_t *light;	//!< the light source to which the current path is connected
+		//float pdf_Ad_0;		//!< pdf for direct lighting strategy
+		float pdf_emit, pdf_illum;	//!< light pdfs required to calculate p1 for direct lighting strategy
+		bool singularL;			//!< true if light has zero area (point lights for example)
+		int nPaths;				//!< number of paths that have been sampled (for current thread and image)
 };
 
 class YAFRAYPLUGIN_EXPORT biDirIntegrator_t: public tiledIntegrator_t
@@ -135,10 +135,10 @@ class YAFRAYPLUGIN_EXPORT biDirIntegrator_t: public tiledIntegrator_t
 
 		background_t *background;
 		const camera_t *cam;
-		bool trShad;
-		bool use_bg; //!< configuration; include background for GI
-		bool ibl; //!< configuration; use background light, if available
-		bool include_bg; //!< determined on precrocess;
+		bool trShad;		//!< calculate transparent shadows for transparent objects
+		bool use_bg;		//!< configuration; include background for GI
+		bool ibl;			//!< configuration; use background light, if available
+		bool include_bg;	//!< determined on precrocess;
 		int sDepth, rDepth, bounces;
 		std::vector<light_t*> lights;
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;
