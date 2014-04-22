@@ -114,7 +114,7 @@ int planeBoxOverlap(double normal[3], double vert[3], double maxbox[3])	// -NJMP
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Y];   \
 	if(min>rad || max<-rad) return 0;
 
-/*DLLEXPORT*/ int triBoxOverlap(double boxcenter[3],double boxhalfsize[3],double triverts[3][3])
+YAFRAYCORE_EXPORT int triBoxOverlap(double boxcenter[3],double boxhalfsize[3],double triverts[3][3])
 {
 
   /*    use separating axis theorem to test overlap between triangle and box */
