@@ -298,6 +298,14 @@ struct mesh_dat_t
 	const material_t *mat;
 };
 
+struct curve_dat_t
+{
+    curve_dat_t(): ID(0), mat(0), strandStart(0), strandEnd(0), strandShape(0) {};
+    objID_t ID;
+    const material_t *mat;
+    float strandStart, strandEnd, strandShape;
+};
+
 // scene-state, i.e. expect only primary elements
 // such as light, material, texture, object, integrator, render...
 
@@ -379,6 +387,29 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		}
 		parser.pushState(startEl_instance,endEl_instance, base_object_id);	
 	}
+	else if(el == "curve")
+    {
+        curve_dat_t *cvd = new curve_dat_t();
+        int vertex = 0, idc = -1;
+        // attribute's loop
+        for(int n=0; attrs[n]; ++n)
+        {
+            std::string name(attrs[n]);
+            if(name == "vertices") vertex = atoi(attrs[n+1]);
+            else if(name == "id" ) idc = atoi(attrs[n+1]);
+        }
+        parser.pushState(startEl_curve, endEl_curve, cvd);
+        if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
+
+        // Get a new object ID if we did not get one
+        if(idc == -1) cvd->ID = parser.scene->getNextFreeID();
+        else cvd->ID = idc;
+
+        if(!parser.scene->startCurveMesh(cvd->ID, vertex))
+        {
+            Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << yendl;
+        }
+    }
 	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << yendl;
 }
 
@@ -389,6 +420,54 @@ void endEl_scene(xmlParser_t &parser, const char *element)
 	{
 		parser.popState();
 	}
+}
+void startEl_curve(xmlParser_t &parser, const char *element, const char **attrs)
+{
+    std::string el(element);
+    curve_dat_t *dat = (curve_dat_t *)parser.stateData();
+
+    if(el == "p")
+    {
+        point3d_t p, op;
+        if(!parsePoint(attrs, p, op)) return;
+        parser.scene->addVertex(p);
+    }
+    else if(el == "strand_start")
+    {
+        dat->strandStart = atof(attrs[1]);
+    }
+    else if(el == "strand_end")
+    {
+        dat->strandEnd = atof(attrs[1]);
+    }
+    else if(el == "strand_shape")
+    {
+        dat->strandShape = atof(attrs[1]);
+
+    }
+    else if(el == "set_material")
+    {
+        std::string mat_name(attrs[1]);
+        dat->mat = parser.env->getMaterial(mat_name);
+        if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
+    }
+}
+void endEl_curve(xmlParser_t &parser, const char *element)
+{
+    if(std::string(element) == "curve")
+    {
+        curve_dat_t *cd = (curve_dat_t *)parser.stateData();
+        if(!parser.scene->endCurveMesh(cd->mat, cd->strandStart, cd->strandEnd, cd->strandShape))
+        {
+            Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << yendl;
+        }
+        if(!parser.scene->endGeometry())
+        {
+            Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
+        }
+        delete cd;
+        parser.popState();
+    }
 }
 
 // mesh-state, i.e. expect only points (vertices), faces and material settings

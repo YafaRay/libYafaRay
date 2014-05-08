@@ -63,6 +63,8 @@ void endEl_parammap(xmlParser_t &p, const char *element);
 void startEl_paramlist(xmlParser_t &p, const char *element, const char **attrs);
 void endEl_paramlist(xmlParser_t &p, const char *element);
 void endEl_render(xmlParser_t &p, const char *element);
+void startEl_curve(xmlParser_t &p, const char *element, const char **attrs);
+void endEl_curve(xmlParser_t &p, const char *element);
 
 #endif // HAVE_XML
 
