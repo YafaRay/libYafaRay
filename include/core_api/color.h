@@ -29,6 +29,16 @@
 
 #define COLOR_SIZE 3
 
+// ensure isnan and isinf are available. I *hope* it works with OSX w. gcc 4.x too
+#ifdef _MSC_VER
+#include <float.h>
+#define isnan _isnan
+#define isinf _isinf
+#else
+using std::isnan; // from cmath
+using std::isinf; // from cmath
+#endif
+
 __BEGIN_YAFRAY
 
 class YAFRAYCORE_EXPORT color_t
