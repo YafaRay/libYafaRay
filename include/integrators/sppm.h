@@ -18,6 +18,7 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/hashgrid.h>
+#include <stdint.h>
 
 __BEGIN_YAFRAY
 

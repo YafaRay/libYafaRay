@@ -143,7 +143,8 @@ const std::list<std::string> & listDir(const std::string &dir)
     if (pattern[i] == '/') pattern[i] = '\\';
 
   _finddata_t    FindData;
-  int            hFind, Result;
+  intptr_t       hFind;
+  int			 Result;
 
   hFind = _findfirst(pattern.c_str(), &FindData);
   if (hFind != -1)
