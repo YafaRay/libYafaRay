@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
 	if(ih)
 	{
-		out = new imageOutput_t(ih, outputPath, bx, by);
+		out = new imageOutput_t(ih, outputPath, 0, 0);
 		if(!out) return 1;				
 	}
 	else return 1;
