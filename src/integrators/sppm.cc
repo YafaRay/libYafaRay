@@ -158,12 +158,16 @@ bool SPPM::renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive,
 				int index = i*camera->resX() + j;
 				HitPoint &hp = hitPoints[index];
 
-				GatherInfo gInfo = traceGatherRay(rstate, c_ray, hp);
+				GatherInfo gInfo = traceGatherRay(rstate, c_ray, hp); // L_o
 				gInfo.photonFlux *= scene->volIntegrator->transmittance(rstate, c_ray);
-
-				gInfo.constantRandiance *= scene->volIntegrator->transmittance(rstate, c_ray);
-				gInfo.constantRandiance += scene->volIntegrator->integrate(rstate, c_ray); // Now using it to simulate for volIntegrator not using PPM, need more tests
-				hp.constantRandiance += gInfo.constantRandiance; // accumalate the constant randiance for later useage.
+				//needed fix for a volumetric boundary alpha issue because
+				// when col.A = T.A * L_o.A + L_v.A, col.A amount is > 1.0
+				colorA_t volTransmitt = scene->volIntegrator->transmittance(rstate, c_ray);
+				colorA_t volIntegrate = scene->volIntegrator->integrate(rstate, c_ray); // Now using it to simulate for volIntegrator not using PPM, need more tests
+				volIntegrate.A = 1.f - volTransmitt.A;
+				gInfo.constantRandiance *= volTransmitt; // T
+				gInfo.constantRandiance += volIntegrate; // L_v
+				hp.constantRandiance += gInfo.constantRandiance; // accumulate the constant radiance for later usage.
 
 				// progressive refinement
 				const float _alpha = 0.7f; // another common choice is 0.8, seems not changed much.
