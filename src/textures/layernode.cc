@@ -62,8 +62,13 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	{
 		if(!TEX_RGB)	texcolor = default_col;
 		else			Tin = Ta;
+        
+        CFLOAT Tin_non_negative;
+        
+        if(Tin<0.f) Tin_non_negative = 0.f;
+        else Tin_non_negative = Tin;
 		
-		rcol = texture_rgb_blend(texcolor, rcol, Tin, stencilTin * colfac, mode);
+		rcol = texture_rgb_blend(texcolor, rcol, Tin_non_negative, stencilTin * colfac, mode);
 		rcol.clampRGB0();
 	}
 	
