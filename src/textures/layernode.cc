@@ -62,8 +62,14 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	{
 		if(!TEX_RGB)	texcolor = default_col;
 		else			Tin = Ta;
+        
+        CFLOAT Tin_truncated_range;
+        
+        if(Tin>1.f) Tin_truncated_range=1.f;
+        else if(Tin<0.f) Tin_truncated_range=0.f;
+        else Tin_truncated_range = Tin;
 		
-		rcol = texture_rgb_blend(texcolor, rcol, Tin, stencilTin * colfac, mode);
+		rcol = texture_rgb_blend(texcolor, rcol, Tin_truncated_range, stencilTin * colfac, mode);
 		rcol.clampRGB0();
 	}
 	
