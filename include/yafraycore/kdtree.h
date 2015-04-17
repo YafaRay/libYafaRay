@@ -131,8 +131,8 @@ public:
 			float cost_ratio=0.35, float emptyBonus=0.33);
 	bool Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, intersectData_t &data) const;
 //	bool IntersectDBG(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
-	bool IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) const;
-	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt) const;
+	bool IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT shadow_bias) const;
+	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt, PFLOAT shadow_bias) const;
 //	bool IntersectO(const point3d_t &from, const vector3d_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
 	bound_t getBound(){ return treeBound; }
 	~triKdTree_t();

@@ -784,6 +784,15 @@ bool scene_t::update()
 				Y_INFO << "Scene: New scene bound is:" <<
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
+
+                //Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
+                shadowBias = sceneBound.longX();
+                if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
+                if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
+                shadowBias = YAF_SHADOW_BIAS * shadowBias;
+                rayMinDist = 0.5*shadowBias;
+               
+                Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
 			}
 			else Y_WARNING << "Scene: Scene is empty..." << yendl;
 		}
@@ -818,6 +827,16 @@ bool scene_t::update()
 				Y_INFO << "Scene: New scene bound is:" << yendl <<
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
+
+                //Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
+                shadowBias = sceneBound.longX();
+                if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
+                if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
+                shadowBias = YAF_SHADOW_BIAS * shadowBias;
+                rayMinDist = 0.5f * shadowBias;
+               
+                Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
+				
 			}
 			else Y_ERROR << "Scene: Scene is empty..." << yendl;
 		}
@@ -881,32 +900,30 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray) const
 {
 
 	ray_t sray(ray);
-	sray.from += sray.dir * sray.tmin; //argh...kill that!
 	sray.time = state.time;
 	PFLOAT dis;
 	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
-	else  dis = sray.tmax - 2*sray.tmin;
+	else  dis = sray.tmax - shadowBias;
 	if(mode==0)
 	{
 		triangle_t *hitt=0;
 		if(!tree) return false;
-		return tree->IntersectS(sray, dis, &hitt);
+		return tree->IntersectS(sray, dis, &hitt, shadowBias);
 	}
 	else
 	{
 		primitive_t *hitt=0;
 		if(!vtree) return false;
-		return vtree->IntersectS(sray, dis, &hitt);
+		return vtree->IntersectS(sray, dis, &hitt, shadowBias);
 	}
 }
 
 bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt) const
 {
 	ray_t sray(ray);
-	sray.from += sray.dir * sray.tmin; //argh...kill that!
 	PFLOAT dis;
 	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
-	else  dis = sray.tmax - 2*sray.tmin;
+	else  dis = sray.tmax - shadowBias;
 	filt = color_t(1.0);
 	void *odat = state.userdata;
 	unsigned char userdata[USER_DATA_SIZE+7];
@@ -915,12 +932,12 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	if(mode==0)
 	{
 		triangle_t *hitt=0;
-		if(tree) isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt);
+		if(tree) isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
 	}
 	else
 	{
 		primitive_t *hitt=0;
-		if(vtree) isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt);
+		if(vtree) isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
 	}
 	state.userdata = odat;
 	return isect;

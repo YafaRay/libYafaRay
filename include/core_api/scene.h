@@ -207,6 +207,10 @@ class YAFRAYCORE_EXPORT scene_t
 		std::vector<light_t *> lights;
 		volumeIntegrator_t *volIntegrator;
 
+        PFLOAT shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+        PFLOAT rayMinDist;  //ray minimum distance
+
+
 	protected:
 
 		sceneGeometryState_t state;

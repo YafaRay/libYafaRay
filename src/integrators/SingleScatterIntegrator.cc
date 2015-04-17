@@ -95,7 +95,7 @@ public:
 								if( (*l)->diracLight() )
 								{
 									bool ill = (*l)->illuminate(sp, lcol, lightRay);
-									lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
+									lightRay.tmin = scene->shadowBias;
 									if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -124,7 +124,7 @@ public:
 										ls.s2 = 0.5f; //(*state.prng)();
 
 										(*l)->illumSample(sp, ls, lightRay);
-										lightRay.tmin = YAF_SHADOW_BIAS;
+										lightRay.tmin = scene->shadowBias;
 										if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 
 										// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -168,7 +168,6 @@ public:
 				if( (*l)->illuminate(sp, lcol, lightRay) )
 				{
 					// ...shadowed...
-					lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 					if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 					bool shadowed = scene->isShadowed(state, lightRay);
 					if (!shadowed)
@@ -225,7 +224,6 @@ public:
 					if((*l)->illumSample(sp, ls, lightRay))
 					{
 						// ...shadowed...
-						lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 						if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
 						bool shadowed = scene->isShadowed(state, lightRay);
 						if(!shadowed) {
