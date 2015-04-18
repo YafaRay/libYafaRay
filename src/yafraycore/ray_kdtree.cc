@@ -830,7 +830,7 @@ bool kdTree_t<T>::Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, in
 }
 
 template<class T>
-bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
+bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT shadow_bias) const
 {
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
@@ -924,7 +924,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
 			T *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit > ray.tmin )
+				if(t_hit < dist && t_hit > shadow_bias )
 				{
 					*tr = mp;
 					return true;
@@ -939,7 +939,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
 				T *mp = prims[i];
 					if (mp->intersect(ray, &t_hit, bary))
 					{
-						if(t_hit < dist && t_hit > ray.tmin )
+						if(t_hit < dist && t_hit > shadow_bias )
 						{
 							*tr = mp;
 							return true;
@@ -962,7 +962,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr) const
 =============================================================*/
 
 template<class T>
-bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, T **tr, color_t &filt) const
+bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, T **tr, color_t &filt, PFLOAT shadow_bias) const
 {
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
@@ -1062,7 +1062,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			T *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= ray.tmin )
+				if(t_hit < dist && t_hit >= shadow_bias )
 				{
 					const material_t *mat = mp->getMaterial();
 					if(!mat->isTransparent() ) return true;
@@ -1085,7 +1085,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				T *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= ray.tmin )
+					if(t_hit < dist && t_hit >= shadow_bias )
 					{
 						const material_t *mat = mp->getMaterial();
 						if(!mat->isTransparent() ) return true;
