@@ -789,7 +789,7 @@ bool scene_t::update()
                 shadowBias = sceneBound.longX();
                 if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
                 if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-                shadowBias = YAF_SHADOW_BIAS * 0.1f * shadowBias;
+                shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
                 rayMinDist = 0.1f * shadowBias;
                
                 Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
@@ -832,7 +832,7 @@ bool scene_t::update()
                 shadowBias = sceneBound.longX();
                 if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
                 if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-                shadowBias = YAF_SHADOW_BIAS * 0.1f * shadowBias;
+                shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
                 rayMinDist = 0.1f * shadowBias;
                
                 Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
