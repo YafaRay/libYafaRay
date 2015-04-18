@@ -78,7 +78,6 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		if( light->illuminate(sp, lcol, lightRay) )
 		{
 			// ...shadowed...
-			lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
 			if(!shadowed)
 			{
@@ -113,7 +112,6 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if( light->illumSample (sp, ls, lightRay) )
 			{
 				// ...shadowed...
-				lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is bad.
 				shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
 
 				if(!shadowed && ls.pdf > 1e-6f)
@@ -154,7 +152,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			for(int i=0; i<n; ++i)
 			{
 				ray_t bRay;
-				bRay.tmin = MIN_RAYDIST; bRay.from = sp.P;
+				bRay.tmin = scene->rayMinDist; bRay.from = sp.P;
 
 				float s1 = hal2.getNext();
 				float s2 = hal3.getNext();
@@ -259,7 +257,7 @@ bool mcIntegrator_t::createCausticMap()
 			}
 
 			color_t pcol = causLights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
-			ray.tmin = MIN_RAYDIST;
+			ray.tmin = scene->rayMinDist;
 			ray.tmax = -1.0;
 			pcol *= fNumLights * lightPdf / lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 			if(pcol.isBlack())
@@ -338,7 +336,7 @@ bool mcIntegrator_t::createCausticMap()
 				}
 				ray.from = hit->P;
 				ray.dir = wo;
-				ray.tmin = MIN_RAYDIST;
+				ray.tmin = scene->rayMinDist;
 				ray.tmax = -1.0;
 				++nBounces;
 			}
@@ -456,7 +454,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 					state.chromatic = false;
 					color_t wl_col;
 					wl2rgb(state.wavelength, wl_col);
-					refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
+					refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
 					dcol += (color_t)integrate(state, refRay) * mcol * wl_col * W;
 					state.chromatic = true;
 				}
@@ -518,7 +516,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
                         sample_t s(s1, s2, BSDF_GLOSSY | BSDF_REFLECT);
                         color_t mcol = material->sample(state, sp, wo, wi, s, W);
                         colorA_t integ = 0.f;
-                        refRay = diffRay_t(sp.P, wi, MIN_RAYDIST);
+                        refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
                         if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
                         else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
                         integ = (color_t)integrate(state, refRay);
@@ -541,7 +539,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 
                         if(s.sampledFlags & BSDF_REFLECT)
                         {
-                            refRay = diffRay_t(sp.P, dir[0], MIN_RAYDIST);
+                            refRay = diffRay_t(sp.P, dir[0], scene->rayMinDist);
                             spDiff.reflectedRay(ray, refRay);
                             integ = integrate(state, refRay);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
@@ -553,7 +551,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 
                         if(s.sampledFlags & BSDF_TRANSMIT)
                         {
-                            refRay = diffRay_t(sp.P, dir[1], MIN_RAYDIST);
+                            refRay = diffRay_t(sp.P, dir[1], scene->rayMinDist);
                             spDiff.refractedRay(ray, refRay, material->getMatIOR());
                             integ = integrate(state, refRay);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
@@ -586,7 +584,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			const volumeHandler_t *vol;
 			if(reflect)
 			{
-				diffRay_t refRay(sp.P, dir[0], MIN_RAYDIST);
+				diffRay_t refRay(sp.P, dir[0], scene->rayMinDist);
 				spDiff.reflectedRay(ray, refRay);
 				color_t integ = integrate(state, refRay);
 
@@ -599,7 +597,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			}
 			if(refract)
 			{
-				diffRay_t refRay(sp.P, dir[1], MIN_RAYDIST);
+				diffRay_t refRay(sp.P, dir[1], scene->rayMinDist);
 				spDiff.refractedRay(ray, refRay, material->getMatIOR());
 				colorA_t integ = integrate(state, refRay);
 
@@ -647,7 +645,6 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 			s2 = addMod1(s2, state.dc2);
 		}
 
-		lightRay.tmin = YAF_SHADOW_BIAS; // < better add some _smart_ self-bias value...this is still bad...
 		lightRay.tmax = aoDist;
 
 		float W = 0.f;

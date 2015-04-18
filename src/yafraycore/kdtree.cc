@@ -799,7 +799,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 }
 
 
-bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) const
+bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT shadow_bias) const
 {
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
@@ -895,7 +895,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 			triangle_t *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= 0.f ) // '>=' ?
+				if(t_hit < dist && t_hit >= shadow_bias ) // '>=' ?
 				{
 					*tr = mp;
 					return true;
@@ -910,7 +910,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= 0.f )
+					if(t_hit < dist && t_hit >= shadow_bias )
 					{
 						*tr = mp;
 						return true;
@@ -932,7 +932,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr) con
 	allow for transparent shadows.
 =============================================================*/
 
-bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt) const
+bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt, PFLOAT shadow_bias) const
 {
 	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
 	PFLOAT t_hit;
@@ -1034,7 +1034,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			triangle_t *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= ray.tmin ) // '>=' ?
+				if(t_hit < dist && t_hit >= shadow_bias ) // '>=' ?
 				{
 					const material_t *mat = mp->getMaterial();
 					
@@ -1060,7 +1060,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= ray.tmin)
+					if(t_hit < dist && t_hit >= shadow_bias)
 					{
 						const material_t *mat = mp->getMaterial();
 
