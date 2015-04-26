@@ -282,6 +282,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 		PFLOAT cu, cv;
 		float camPdf = 0.0;
 		cam->project(ray, 0, 0, cu, cv, camPdf);
+        if(camPdf == 0.f) camPdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway. 
 		ve.pdf_wo = camPdf;
 		ve.f_s = color_t(camPdf);
 		// /temporary
