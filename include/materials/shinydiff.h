@@ -67,7 +67,8 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         shaderNode_t *mTranslucencyShader;  //!< Shader node for translucency strength (float)
         shaderNode_t *mMirrorShader;        //!< Shader node for specular reflection strength (float)
         shaderNode_t *mMirrorColorShader;   //!< Shader node for specular reflection color
-        shaderNode_t *mSigmaOrenShader;   //!< Shader node for sigma in Oren Nayar material
+        shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
+        shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)
 
         color_t mDiffuseColor;              //!< BSDF Diffuse component color
         color_t mEmitColor;                 //!< Emit color

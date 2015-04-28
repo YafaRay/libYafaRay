@@ -7,7 +7,7 @@ __BEGIN_YAFRAY
 
 shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength, float transmitFilterStrength):
             mIsTransparent(false), mIsTranslucent(false), mIsMirror(false), mIsDiffuse(false), mHasFresnelEffect(false),
-            mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
+            mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
             mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength), mUseOrenNayar(false), nBSDF(0)
 {
     mEmitColor = emitStrength * diffuseColor;
@@ -255,6 +255,9 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
         bool useTextureSigma=(mSigmaOrenShader ? true : false);
         if(mUseOrenNayar) mD *= OrenNayar(wo, wl, N, useTextureSigma, textureSigma);
     }
+
+    if(mDiffuseReflShader) mD *= mDiffuseReflShader->getScalar(stack);
+
     return mD * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
 }
 
@@ -541,7 +544,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     nodeList["mirror_shader"]       = NULL;
     nodeList["transparency_shader"] = NULL;
     nodeList["translucency_shader"] = NULL;
-    nodeList["sigma_oren_shader"] = NULL;    
+    nodeList["sigma_oren_shader"]   = NULL;
+    nodeList["diffuse_refl_shader"] = NULL;
 
     // load shader nodes:
     if(mat->loadNodes(paramsList, render))
@@ -556,8 +560,9 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     mat->mMirrorShader       = nodeList["mirror_shader"];
     mat->mTransparencyShader = nodeList["transparency_shader"];
     mat->mTranslucencyShader = nodeList["translucency_shader"];
-    mat->mSigmaOrenShader = nodeList["sigma_oren_shader"];
-    
+    mat->mSigmaOrenShader    = nodeList["sigma_oren_shader"];
+    mat->mDiffuseReflShader  = nodeList["diffuse_refl_shader"];
+
     // solve nodes order
     if(!roots.empty())
     {
@@ -571,7 +576,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
         if(mat->mTransparencyShader) mat->getNodeList(mat->mTransparencyShader, colorNodes);
         if(mat->mTranslucencyShader) mat->getNodeList(mat->mTranslucencyShader, colorNodes);
         if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
-        
+        if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);
+
         mat->filterNodes(colorNodes, mat->allViewdep,   VIEW_DEP);
         mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 
