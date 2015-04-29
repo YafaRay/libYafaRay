@@ -60,7 +60,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	s.pdf = 1.f;
 
-    float alpha_texture = roughnessS ? roughnessS->getScalar(stack) : 0.f;
+    float alpha_texture = roughnessS ? roughnessS->getScalar(stack)+0.001f : 0.001f;
 	float alpha2 = roughnessS ? alpha_texture*alpha_texture : a2;
 	float cosTheta, tanTheta2;
 
@@ -155,7 +155,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	s.pdf = 1.f;
 
-    float alpha_texture = roughnessS ? roughnessS->getScalar(stack) : 0.f;
+    float alpha_texture = roughnessS ? roughnessS->getScalar(stack)+0.001f : 0.001f;
 	float alpha2 = roughnessS ? alpha_texture*alpha_texture : a2;
 	float cosTheta, tanTheta2;
 
