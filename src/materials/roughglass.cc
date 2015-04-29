@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 
 
 roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow):
-		bumpS(0), mirColS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
+		bumpS(0), mirColS(0), roughnessS(0), iorS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
 		disperse(false), fakeShadow(fakeS)
 {
 	bsdfFlags = BSDF_ALL_GLOSSY;
@@ -60,7 +60,8 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	s.pdf = 1.f;
 
-	float alpha2 = a2;
+    float alpha_texture = roughnessS ? roughnessS->getScalar(stack) : 0.f;
+	float alpha2 = roughnessS ? alpha_texture*alpha_texture : a2;
 	float cosTheta, tanTheta2;
 
 	vector3d_t H(0.f);
@@ -69,6 +70,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	H.normalize();
 
 	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
 	float glossy;
 	float glossy_D = 0.f;
 	float glossy_G = 0.f;
@@ -111,7 +113,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
 			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
 
-			ret = (glossy * filterCol);
+			ret = (glossy * (filterColS ? filterColS->getColor(stack) : filterCol));
 			W = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
 		}
 		else if(s.flags & BSDF_REFLECT)
@@ -153,7 +155,8 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	s.pdf = 1.f;
 
-	float alpha2 = a2;
+    float alpha_texture = roughnessS ? roughnessS->getScalar(stack) : 0.f;
+	float alpha2 = roughnessS ? alpha_texture*alpha_texture : a2;
 	float cosTheta, tanTheta2;
 
 	vector3d_t H(0.f);
@@ -163,6 +166,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	H.normalize();
 
 	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
 	float glossy;
 	float glossy_D = 0.f;
 	float glossy_G = 0.f;
@@ -206,7 +210,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
 			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
 
-			ret = (glossy * filterCol);
+			ret = (glossy * (filterColS ? filterColS->getColor(stack) : filterCol));
 			W[0] = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
 			dir[0] = wi;
 
@@ -247,10 +251,11 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+	nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float Kr, Kt;
 	fresnel(wo, N, ior, Kr, Kt);
-	return Kt*filterCol;
+	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 }
 
 float roughGlassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -322,7 +327,10 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	// Prepare our node list
 	nodeList["mirror_color_shader"] = NULL;
 	nodeList["bump_shader"] = NULL;
-
+    nodeList["filter_color_shader"] = NULL;
+    nodeList["IOR_shader"] = NULL;
+    nodeList["roughness_shader"] = NULL;
+    
 	if(mat->loadNodes(paramList, render))
 	{
         mat->parseNodes(params, roots, nodeList);
@@ -331,6 +339,9 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 
 	mat->mirColS = nodeList["mirror_color_shader"];
 	mat->bumpS = nodeList["bump_shader"];
+    mat->filterColS = nodeList["filter_color_shader"];
+    mat->iorS = nodeList["IOR_shader"];
+    mat->roughnessS = nodeList["roughness_shader"];
 
 	// solve nodes order
 	if(!roots.empty())
@@ -338,6 +349,9 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 		mat->solveNodesOrder(roots);
 		std::vector<shaderNode_t *> colorNodes;
 		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
+        if(mat->roughnessS) mat->getNodeList(mat->roughnessS, colorNodes);
+        if(mat->iorS) mat->getNodeList(mat->iorS, colorNodes);
+        if(mat->filterColS) mat->getNodeList(mat->filterColS, colorNodes);
 		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS)

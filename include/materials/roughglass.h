@@ -24,6 +24,9 @@ class roughGlassMat_t: public nodeMaterial_t
 	protected:
 		shaderNode_t* bumpS;
 		shaderNode_t *mirColS;
+        shaderNode_t *roughnessS;
+        shaderNode_t *iorS;
+        shaderNode_t *filterColS;
 		color_t filterCol, specRefCol;
 		color_t beer_sigma_a;
 		float ior;
