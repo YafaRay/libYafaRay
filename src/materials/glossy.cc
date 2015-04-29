@@ -46,13 +46,14 @@ class glossyMat_t: public nodeMaterial_t
 		void initOrenNayar(double sigma);
 
 	private:
-		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const;
+		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
 
 	protected:
 		shaderNode_t* diffuseS;
 		shaderNode_t* glossyS;
 		shaderNode_t* glossyRefS;
 		shaderNode_t* bumpS;
+        shaderNode_t* mSigmaOrenShader;
 		color_t gloss_color, diff_color;
 		float exponent, exp_u, exp_v;
 		float reflectivity;
@@ -63,7 +64,7 @@ class glossyMat_t: public nodeMaterial_t
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff):
-			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), gloss_color(col), diff_color(dcol), exponent(expo),
+			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), mSigmaOrenShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
 			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	bsdfFlags = BSDF_NONE;
@@ -102,7 +103,7 @@ void glossyMat_t::initOrenNayar(double sigma)
 	orenNayar = true;
 }
 
-float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N) const
+float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const
 {
 	float cos_ti = std::max(-1.f,std::min(1.f,N*wi));
 	float cos_to = std::max(-1.f,std::min(1.f,N*wo));
@@ -128,7 +129,17 @@ float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const v
 		tan_beta = fSqrt(1.f - cos_ti*cos_ti) / ((cos_ti == 0.f)?1e-8f:cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
-	return orenA + orenB * maxcos_f * sin_alpha * tan_beta;
+    if (useTextureSigma)
+    {
+        double sigma_squared = textureSigma * textureSigma;
+        double mOrenNayar_TextureA = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
+        double mOrenNayar_TextureB = 0.45 * sigma_squared / (sigma_squared + 0.09);     
+        return mOrenNayar_TextureA + mOrenNayar_TextureB * maxcos_f * sin_alpha * tan_beta;
+    }
+    else
+    {
+        return orenA + orenB * maxcos_f * sin_alpha * tan_beta;
+    }
 }
 
 color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
@@ -168,7 +179,19 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 
 	if(with_diffuse && diffuse_flag)
 	{
-		col += dat->mDiffuse * (1.f - dat->mGlossy) * (diffuseS ? diffuseS->getColor(stack) : diff_color) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);//diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
+        color_t addCol = dat->mDiffuse * (1.f - dat->mGlossy) * (diffuseS ? diffuseS->getColor(stack) : diff_color);
+        
+        if(orenNayar)
+        {
+            double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
+            bool useTextureSigma=(mSigmaOrenShader ? true : false);
+    
+            addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+        }
+		
+        col += addCol;
+        
+        //diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 
 	return col;
@@ -236,7 +259,19 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 
 			scolor = glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 
-			if(use_diffuse) scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
+			if(use_diffuse)
+            {
+                color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+        
+                if(orenNayar)
+                {
+                    double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
+                    bool useTextureSigma=(mSigmaOrenShader ? true : false);
+            
+                    addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+                }
+                scolor += addCol;
+            }
 			W = wiN / (s.pdf*0.99f + 0.01f);
 			return scolor;
 
@@ -297,8 +332,17 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 
 	if(use_diffuse)
 	{
+        color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+
+        if(orenNayar)
+        {
+            double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
+            bool useTextureSigma=(mSigmaOrenShader ? true : false);
+    
+            addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+        }
 		s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f-cur_pDiffuse);
-		scolor += diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
+        scolor += addCol;
 	}
 
 	W = wiN / (s.pdf*0.99f + 0.01f);
@@ -398,6 +442,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	nodeList["glossy_shader"] = NULL;
 	nodeList["glossy_reflect_shader"] = NULL;
 	nodeList["bump_shader"] = NULL;
+    nodeList["sigma_oren_shader"]   = NULL;
 
 	if(mat->loadNodes(paramList, render))
 	{
@@ -409,6 +454,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	mat->glossyS = nodeList["glossy_shader"];
 	mat->glossyRefS = nodeList["glossy_reflect_shader"];
 	mat->bumpS = nodeList["bump_shader"];
+    mat->mSigmaOrenShader = nodeList["sigma_oren_shader"];
 
 	// solve nodes order
 	if(!roots.empty())
@@ -420,6 +466,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		if(mat->diffuseS) mat->getNodeList(mat->diffuseS, colorNodes);
 		if(mat->glossyS) mat->getNodeList(mat->glossyS, colorNodes);
 		if(mat->glossyRefS) mat->getNodeList(mat->glossyRefS, colorNodes);
+        if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
 		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);
