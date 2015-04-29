@@ -43,6 +43,8 @@ class glassMat_t: public nodeMaterial_t
 	protected:
 		shaderNode_t* bumpS;
 		shaderNode_t *mirColS;
+        shaderNode_t *filterColS;
+        shaderNode_t *iorS;
 		color_t filterCol, specRefCol;
 		color_t beer_sigma_a;
 		float ior;
@@ -53,7 +55,7 @@ class glassMat_t: public nodeMaterial_t
 };
 
 glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS):
-		bumpS(0), mirColS(0), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
+		bumpS(0), mirColS(0), filterColS(0), iorS(0), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
 		fakeShadow(fakeS), dispersion_power(disp_pow)
 {
 	ior=IOR;
@@ -111,7 +113,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				s.pdf = (matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT)) ? pKt : 1.f;
 				s.sampledFlags = BSDF_DISPERSIVE | BSDF_TRANSMIT;
 				W = 1.f;
-				return filterCol; // * (Kt/std::fabs(sp.N*wi));
+				return (filterColS ? filterColS->getColor(stack) : filterCol); // * (Kt/std::fabs(sp.N*wi));
 			}
 			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) )
 			{
@@ -135,6 +137,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	else // no dispersion calculation necessary, regardless of material settings
 	{
 		PFLOAT cur_ior = disperse ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+        cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
 		if( refract(N, wo, refdir, cur_ior) )
 		{
 			CFLOAT Kr, Kt;
@@ -148,10 +151,10 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 				if(s.reverse)
 				{
 					s.pdf_back = s.pdf; //wrong...need to calc fresnel explicitly!
-					s.col_back = filterCol;//*(Kt/std::fabs(sp.N*wo));
+					s.col_back = (filterColS ? filterColS->getColor(stack) : filterCol);//*(Kt/std::fabs(sp.N*wo));
 				}
 				W = 1.f;
-				return filterCol;//*(Kt/std::fabs(sp.N*wi));
+				return (filterColS ? filterColS->getColor(stack) : filterCol);//*(Kt/std::fabs(sp.N*wi));
 			}
 			else if( matches(s.flags, BSDF_SPECULAR|BSDF_REFLECT) ) //total inner reflection
 			{
@@ -189,10 +192,11 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 
 color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+    nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	CFLOAT Kr, Kt;
 	fresnel(wo, N, ior, Kr, Kt);
-	return Kt*filterCol;
+	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 }
 
 CFLOAT glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const {
@@ -220,13 +224,14 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	vector3d_t refdir;
 	
 	PFLOAT cur_ior = disperse ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
+    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
 	if( refract(N, wo, refdir, cur_ior) )
 	{
 		CFLOAT Kr, Kt;
 		fresnel(wo, N, cur_ior, Kr, Kt);
 		if(!state.chromatic || !disperse)
 		{
-			col[1] = Kt*filterCol;
+			col[1] = Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 			dir[1] = refdir;
 			refr = true;
 		}
@@ -309,6 +314,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	// Prepare our node list
 	nodeList["mirror_color_shader"] = NULL;
 	nodeList["bump_shader"] = NULL;
+    nodeList["filter_color_shader"] = NULL;
+    nodeList["IOR_shader"] = NULL;
 	
 	if(mat->loadNodes(paramList, render))
 	{
@@ -318,6 +325,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 
 	mat->mirColS = nodeList["mirror_color_shader"];
 	mat->bumpS = nodeList["bump_shader"];
+    mat->filterColS = nodeList["filter_color_shader"];
+    mat->iorS = nodeList["IOR_shader"];
 
 	// solve nodes order
 	if(!roots.empty())
@@ -325,6 +334,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 		mat->solveNodesOrder(roots);
 		std::vector<shaderNode_t *> colorNodes;
 		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
+        if(mat->filterColS) mat->getNodeList(mat->filterColS, colorNodes);
+        if(mat->iorS) mat->getNodeList(mat->iorS, colorNodes);
 		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS)
