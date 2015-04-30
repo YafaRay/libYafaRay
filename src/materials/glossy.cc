@@ -53,7 +53,11 @@ class glossyMat_t: public nodeMaterial_t
 		shaderNode_t* glossyS;
 		shaderNode_t* glossyRefS;
 		shaderNode_t* bumpS;
-        shaderNode_t* mSigmaOrenShader;
+        shaderNode_t* exponentS;
+        shaderNode_t *mMirrorShader;        //!< Shader node for specular reflection strength (float)
+        shaderNode_t *mMirrorColorShader;   //!< Shader node for specular reflection color
+        shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
+        shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)                
 		color_t gloss_color, diff_color;
 		float exponent, exp_u, exp_v;
 		float reflectivity;
@@ -64,7 +68,7 @@ class glossyMat_t: public nodeMaterial_t
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff):
-			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), mSigmaOrenShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
+			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), mSigmaOrenShader(0), exponentS(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
 			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	bsdfFlags = BSDF_NONE;
@@ -170,7 +174,7 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 		}
 		else
 		{
-			glossy = Blinn_D(H*N, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+			glossy = Blinn_D(H*N, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
 
 		}
 
@@ -249,8 +253,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 				}
 				else
 				{
-					s.pdf = s.pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, exponent)*(1.f-cur_pDiffuse);
-					glossy = Blinn_D(cos_N_H, exponent) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+					s.pdf = s.pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent))*(1.f-cur_pDiffuse);
+					glossy = Blinn_D(cos_N_H, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
 				}
 			}
 			s.sampledFlags = BSDF_DIFFUSE | BSDF_REFLECT;
@@ -305,7 +309,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 		}
 		else
 		{
- 			Blinn_Sample(Hs, s1, s.s2, exponent);
+ 			Blinn_Sample(Hs, s1, s.s2, (exponentS ? exponentS->getScalar(stack) : exponent));
 			vector3d_t H = Hs.x*sp.NU + Hs.y*sp.NV + Hs.z*N;
 			cos_wo_H = wo*H;
 			if ( cos_wo_H < 0.f )
@@ -322,8 +326,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wiN = std::fabs(wi * N);
 			float cosHN = H*N;
 
-			s.pdf = Blinn_Pdf(cosHN, cos_wo_H, exponent);
-			glossy = Blinn_D(cosHN, exponent) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ASDivisor(cos_wo_H, woN, wiN);
+			s.pdf = Blinn_Pdf(cosHN, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent));
+			glossy = Blinn_D(cosHN, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ASDivisor(cos_wo_H, woN, wiN);
 		}
 
 		scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
@@ -353,6 +357,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags)const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
+    nodeStack_t stack(dat->stack);
+
 	if((sp.Ng * wo) * (sp.Ng * wi) < 0.f) return 0.f;
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float pdf = 0.f;
@@ -376,7 +382,7 @@ float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, con
 				vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
 				pdf = pdf*cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v)*(1.f-cur_pDiffuse);
 			}
-			else pdf = pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, exponent)*(1.f-cur_pDiffuse);
+			else pdf = pdf*cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent))*(1.f-cur_pDiffuse);
 		}
 		return pdf;
 	}
@@ -391,7 +397,7 @@ float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, con
 			vector3d_t Hs(H*sp.NU, H*sp.NV, cos_N_H);
 			pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
 		}
-		else pdf = Blinn_Pdf(cos_N_H, cos_wo_H, exponent);
+		else pdf = Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent));
 	}
 	return pdf;
 }
@@ -443,6 +449,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	nodeList["glossy_reflect_shader"] = NULL;
 	nodeList["bump_shader"] = NULL;
     nodeList["sigma_oren_shader"]   = NULL;
+    nodeList["exponent_shader"] = NULL;
+    nodeList["diffuse_refl_shader"] = NULL;    
 
 	if(mat->loadNodes(paramList, render))
 	{
@@ -455,6 +463,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	mat->glossyRefS = nodeList["glossy_reflect_shader"];
 	mat->bumpS = nodeList["bump_shader"];
     mat->mSigmaOrenShader = nodeList["sigma_oren_shader"];
+    mat->exponentS = nodeList["exponent_shader"];
+    mat->mDiffuseReflShader  = nodeList["diffuse_refl_shader"];    
 
 	// solve nodes order
 	if(!roots.empty())
@@ -467,7 +477,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		if(mat->glossyS) mat->getNodeList(mat->glossyS, colorNodes);
 		if(mat->glossyRefS) mat->getNodeList(mat->glossyRefS, colorNodes);
         if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
-		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
+		if(mat->exponentS) mat->getNodeList(mat->exponentS, colorNodes);       
+        if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);
 	}

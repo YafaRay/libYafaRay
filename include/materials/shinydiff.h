@@ -47,7 +47,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
     protected:
         void config();
         int getComponents(const bool *useNode, nodeStack_t &stack, float *component) const;
-        void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr) const;
+        void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr, float &currentIORSquared) const;
 
         void initOrenNayar(double sigma);
         CFLOAT OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
@@ -58,6 +58,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         bool mIsDiffuse;                    //!< Boolean value which is true if you have diffuse component
 
         bool mHasFresnelEffect;             //!< Boolean value which is true if you have Fresnel specular effect
+        float IOR;                          //!< IOR
         float mIOR_Squared;                 //!< Squared IOR
 
         bool viNodes[4], vdNodes[4];        //!< describes if the nodes are viewdependant or not (if available)
@@ -69,6 +70,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         shaderNode_t *mMirrorColorShader;   //!< Shader node for specular reflection color
         shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
         shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)
+        shaderNode_t *iorS;                 //!< Shader node for diffuse reflection strength (float)
 
         color_t mDiffuseColor;              //!< BSDF Diffuse component color
         color_t mEmitColor;                 //!< Emit color
