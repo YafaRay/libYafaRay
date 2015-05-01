@@ -68,7 +68,7 @@ class glossyMat_t: public nodeMaterial_t
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff):
-			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), mSigmaOrenShader(0), exponentS(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
+			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
 			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	bsdfFlags = BSDF_NONE;
@@ -185,6 +185,8 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 	{
         color_t addCol = dat->mDiffuse * (1.f - dat->mGlossy) * (diffuseS ? diffuseS->getColor(stack) : diff_color);
         
+        if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+        
         if(orenNayar)
         {
             double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
@@ -266,7 +268,9 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			if(use_diffuse)
             {
                 color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
-        
+                
+                if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+                
                 if(orenNayar)
                 {
                     double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
@@ -337,6 +341,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 	if(use_diffuse)
 	{
         color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+
+        if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
 
         if(orenNayar)
         {

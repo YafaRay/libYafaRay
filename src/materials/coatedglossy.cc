@@ -206,6 +206,8 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	{
         color_t addCol = dat->mDiffuse * (1.f - dat->mGlossy) * (diffuseS ? diffuseS->getColor(stack) : diff_color) * Kt;
         
+        if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+        
         if(orenNayar)
         {
             double textureSigma=(mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
@@ -358,6 +360,8 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 		if(use[C_DIFFUSE])
 		{
             color_t addCol = diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt);
+            
+            if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
             
             if(orenNayar)
             {

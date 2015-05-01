@@ -101,7 +101,11 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	// we need to sample dispersion
 	if(disperse && state.chromatic)
 	{
-		PFLOAT cur_ior = getIOR(state.wavelength, CauchyA, CauchyB);
+        PFLOAT cur_ior = ior;
+		if(iorS) cur_ior += iorS->getScalar(stack);
+        PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
+        cur_ior += disp_ior;    
+
 		if( refract(N, wo, refdir, cur_ior) )
 		{
 			CFLOAT Kr, Kt;
@@ -136,8 +140,15 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	}
 	else // no dispersion calculation necessary, regardless of material settings
 	{
-		PFLOAT cur_ior = disperse ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-        cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
+        PFLOAT cur_ior = ior;
+		if(iorS) cur_ior += iorS->getScalar(stack);
+        
+        if(disperse)
+        {
+            PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
+            cur_ior += disp_ior;    
+        }
+        
 		if( refract(N, wo, refdir, cur_ior) )
 		{
 			CFLOAT Kr, Kt;
@@ -223,8 +234,15 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 //	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	vector3d_t refdir;
 	
-	PFLOAT cur_ior = disperse ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
+    PFLOAT cur_ior = ior;
+    if(iorS) cur_ior += iorS->getScalar(stack);
+    
+    if(disperse)
+    {
+        PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
+        cur_ior += disp_ior;    
+    }
+    
 	if( refract(N, wo, refdir, cur_ior) )
 	{
 		CFLOAT Kr, Kt;
