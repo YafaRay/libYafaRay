@@ -18,6 +18,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+//NOTE: I don't know why we keep glossy.cc and glossy2.cc if the two files are identical. I had a very strange problem because I made changes only to glossy.cc and it worked in Linux builds, but the changes did not appear in Windows builds. Unless some decision is made, KEEP THE TWO FILES WITH THE SAME CONTENTS to avoid that kind of discrepancies.
+
 #include <yafray_config.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
@@ -54,8 +56,6 @@ class glossyMat_t: public nodeMaterial_t
 		shaderNode_t* glossyRefS;
 		shaderNode_t* bumpS;
         shaderNode_t* exponentS;
-        shaderNode_t *mMirrorShader;        //!< Shader node for specular reflection strength (float)
-        shaderNode_t *mMirrorColorShader;   //!< Shader node for specular reflection color
         shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
         shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)                
 		color_t gloss_color, diff_color;
@@ -68,7 +68,7 @@ class glossyMat_t: public nodeMaterial_t
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff):
-			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
+			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
 			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	bsdfFlags = BSDF_NONE;
