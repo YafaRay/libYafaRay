@@ -33,6 +33,7 @@ class roughGlassMat_t: public nodeMaterial_t
 		float a2;
 		float a;
 		bool absorb, disperse, fakeShadow;
+        float dispersion_power;
 		float CauchyA, CauchyB;
 };
 

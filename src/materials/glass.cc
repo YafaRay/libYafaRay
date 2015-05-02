@@ -101,10 +101,18 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	// we need to sample dispersion
 	if(disperse && state.chromatic)
 	{
-        PFLOAT cur_ior = ior;
-		if(iorS) cur_ior += iorS->getScalar(stack);
-        PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
-        cur_ior += disp_ior;    
+    float cur_ior = ior;
+
+        if(iorS)
+        {
+            cur_ior += iorS->getScalar(stack);
+        }
+
+        float cur_cauchyA = CauchyA;
+        float cur_cauchyB = CauchyB;
+
+        if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
+        cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
 
 		if( refract(N, wo, refdir, cur_ior) )
 		{
@@ -140,19 +148,26 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	}
 	else // no dispersion calculation necessary, regardless of material settings
 	{
-        PFLOAT cur_ior = ior;
-		if(iorS) cur_ior += iorS->getScalar(stack);
-        
-        if(disperse)
+        float cur_ior = ior;
+
+        if(iorS)
         {
-            PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
-            cur_ior += disp_ior;    
+            cur_ior += iorS->getScalar(stack);
+        }
+
+        if(disperse && state.chromatic)
+        {   
+            float cur_cauchyA = CauchyA;
+            float cur_cauchyB = CauchyB;
+
+            if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
+            cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
         }
         
 		if( refract(N, wo, refdir, cur_ior) )
 		{
 			CFLOAT Kr, Kt;
-			fresnel(wo, N, ior, Kr, Kt);
+			fresnel(wo, N, cur_ior, Kr, Kt);
 			float pKr = 0.01+0.99*Kr, pKt = 0.01+0.99*Kt;
 			if(s.s1 < pKt && matches(s.flags, tmFlags))
 			{
@@ -206,7 +221,7 @@ color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoi
     nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	CFLOAT Kr, Kt;
-	fresnel(wo, N, ior, Kr, Kt);
+	fresnel(wo, N, (iorS ? iorS->getScalar(stack):ior), Kr, Kt);
 	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 }
 
@@ -234,13 +249,20 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 //	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	vector3d_t refdir;
 	
-    PFLOAT cur_ior = ior;
-    if(iorS) cur_ior += iorS->getScalar(stack);
-    
-    if(disperse)
+    float cur_ior = ior;
+
+    if(iorS)
     {
-        PFLOAT disp_ior = getIOR(state.wavelength, CauchyA, CauchyB);
-        cur_ior += disp_ior;    
+        cur_ior += iorS->getScalar(stack);
+    }
+
+    if(disperse && state.chromatic)
+    {   
+        float cur_cauchyA = CauchyA;
+        float cur_cauchyB = CauchyB;
+
+        if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
+        cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
     }
     
 	if( refract(N, wo, refdir, cur_ior) )

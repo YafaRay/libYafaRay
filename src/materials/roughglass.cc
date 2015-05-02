@@ -29,7 +29,7 @@ __BEGIN_YAFRAY
 
 roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow):
 		bumpS(0), mirColS(0), roughnessS(0), iorS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
-		disperse(false), fakeShadow(fakeS)
+		disperse(false), fakeShadow(fakeS), dispersion_power(disp_pow)
 {
 	bsdfFlags = BSDF_ALL_GLOSSY;
 	if(fakeS) bsdfFlags |= BSDF_FILTER;
@@ -69,8 +69,22 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	H = H.x*sp.NU + H.y*sp.NV + H.z*N;
 	H.normalize();
 
-	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
+    float cur_ior = ior;
+
+    if(iorS)
+    {
+        cur_ior += iorS->getScalar(stack);
+    }
+
+    if(disperse && state.chromatic)
+    {   
+        float cur_cauchyA = CauchyA;
+        float cur_cauchyB = CauchyB;
+
+        if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
+        cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
+    }
+
 	float glossy;
 	float glossy_D = 0.f;
 	float glossy_G = 0.f;
@@ -102,8 +116,8 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			float IORwi = 1.f;
 			float IORwo = 1.f;
 
-			if(outside)	IORwi = ior;
-			else IORwo = ior;
+			if(outside)	IORwi = cur_ior;
+			else IORwo = cur_ior;
 
 			float ht = IORwo * woH + IORwi * wiH;
 			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
@@ -165,8 +179,22 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	H = H.x*sp.NU + H.y*sp.NV + H.z*N;
 	H.normalize();
 
-	float cur_ior = (disperse && state.chromatic) ? getIOR(state.wavelength, CauchyA, CauchyB) : ior;
-    cur_ior += iorS ? iorS->getScalar(stack) : 0.f;
+    float cur_ior = ior;
+
+    if(iorS)
+    {
+        cur_ior += iorS->getScalar(stack);
+    }
+
+    if(disperse && state.chromatic)
+    {   
+        float cur_cauchyA = CauchyA;
+        float cur_cauchyB = CauchyB;
+
+        if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
+        cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
+    }
+    
 	float glossy;
 	float glossy_D = 0.f;
 	float glossy_G = 0.f;
@@ -199,8 +227,8 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			float IORwi = 1.f;
 			float IORwo = 1.f;
 
-			if(outside)	IORwi = ior;
-			else IORwo = ior;
+			if(outside)	IORwi = cur_ior;
+			else IORwo = cur_ior;
 
 			float ht = IORwo * woH + IORwi * wiH;
 			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
@@ -254,7 +282,7 @@ color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfa
 	nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float Kr, Kt;
-	fresnel(wo, N, ior, Kr, Kt);
+	fresnel(wo, N, (iorS ? iorS->getScalar(stack):ior), Kr, Kt);
 	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 }
 
