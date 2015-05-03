@@ -566,6 +566,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			}
 
 			col += gcol * d_1;
+            if((bsdfs & BSDF_DISPERSIVE) && state.chromatic) col *= 0.5f; //Fix to avoid extra brightness in Rough Glass when dispersion is enabled, as I believe surface points are evaluated twice. Does it make sense?
             //if(col.maximum() > 1.f) Y_WARNING << col << " | " << d_1 << yendl;
 			state.rayDivision = oldDivision;
 			state.rayOffset = oldOffset;
