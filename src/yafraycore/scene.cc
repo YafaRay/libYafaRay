@@ -785,14 +785,22 @@ bool scene_t::update()
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 
-                //Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
-                shadowBias = sceneBound.longX();
-                if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
-                if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-                shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
-                rayMinDist = 0.1f * shadowBias;
-               
-                Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
+				if(shadowBiasAuto)
+				{
+					//Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
+					shadowBias = sceneBound.longX();
+					if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
+					if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
+					shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
+				}
+				
+				if(rayMinDistAuto)
+				{
+					//Automatic Min Ray Dist calculation, based on the currently used Shadow Bias value. The factor 0.1 is based on the original ratio between YAF_SHADOW_BIAS (typically 0.0005) and MIN_RAYDIST (0.00005)
+					rayMinDist = 0.1f * shadowBias;
+				}
+
+				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << ", Ray Min Dist=" << rayMinDist << yendl;
 			}
 			else Y_WARNING << "Scene: Scene is empty..." << yendl;
 		}
@@ -828,14 +836,22 @@ bool scene_t::update()
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 
-                //Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
-                shadowBias = sceneBound.longX();
-                if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
-                if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-                shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
-                rayMinDist = 0.1f * shadowBias;
-               
-                Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", calculated Shadow Bias=" << shadowBias << ", calculated Ray Min Dist=" << rayMinDist << yendl;
+				if(shadowBiasAuto)
+				{
+					//Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
+					shadowBias = sceneBound.longX();
+					if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
+					if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
+					shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
+				}
+				
+				if(rayMinDistAuto)
+				{
+					//Automatic Min Ray Dist calculation, based on the currently used Shadow Bias value. The factor 0.1 is based on the original ratio between YAF_SHADOW_BIAS (typically 0.0005) and MIN_RAYDIST (0.00005)
+					rayMinDist = 0.1f * shadowBias;
+				}
+
+				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << ", Ray Min Dist=" << rayMinDist << yendl;
 				
 			}
 			else Y_ERROR << "Scene: Scene is empty..." << yendl;

@@ -634,6 +634,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	bool z_chan = false;
 	bool norm_z_chan = true;
 	bool drawParams = false;
+	bool adv_auto_shadow_bias_enabled=true;
+	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
+	bool adv_auto_min_raydist_enabled=true;
+	float adv_min_raydist_value=MIN_RAYDIST;        
 	const std::string *custString = 0;
 	std::stringstream aaSettings;
 
@@ -695,6 +699,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("normalize_z_channel", norm_z_chan); // normalize values of z-buffer in range [0,1]
 	params.getParam("drawParams", drawParams);
 	params.getParam("customString", custString);
+	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
+	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
+	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
+	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 
 	imageFilm_t *film = createImageFilm(params, output);
 
@@ -722,6 +730,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
 	scene.setNumThreads(nthreads);
 	if(backg) scene.setBackground(backg);
+	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;
+	scene.shadowBias = adv_shadow_bias_value;
+	scene.rayMinDistAuto = adv_auto_min_raydist_enabled;
+	scene.rayMinDist = adv_min_raydist_value;
 
 	return true;
 }
