@@ -737,7 +737,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			
 			if(!did_hit) //hit background
 			{
-				 if(caustic && background)
+				 if(caustic && background && background->hasIBL() && background->shootsCaustic())
 				 {
 					pathCol += throughput * (*background)(pRay, state);
 				 }

@@ -240,7 +240,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 
 					if(!scene->intersect(pRay, *hit2)) //hit background
 					{
-						if((caustic && background))
+						if((caustic && background && background->hasIBL() && background->shootsCaustic()))
 						{
 							pathCol += throughput * (*background)(pRay, state);
 						}

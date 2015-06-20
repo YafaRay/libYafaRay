@@ -40,18 +40,21 @@ class textureBackground_t: public background_t
 			angular
 		};
 
-		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot);
+		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~textureBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
-
+		bool hasIBL() { return withIBL; }
+		bool shootsCaustic() { return shootCaustic; }
+		
 	protected:
 		const texture_t *tex;
 		PROJECTION project;
 		float power;
 		float rotation;
 		float sin_r, cos_r;
+		bool withIBL;
 		bool shootCaustic;
 		bool shootDiffuse;
 };
@@ -59,18 +62,23 @@ class textureBackground_t: public background_t
 class constBackground_t: public background_t
 {
 	public:
-		constBackground_t(color_t col);
+		constBackground_t(color_t col, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~constBackground_t();
 		static background_t *factory(paraMap_t &params,renderEnvironment_t &render);
+		bool hasIBL() { return withIBL; }
+		bool shootsCaustic() { return shootCaustic; }
 	protected:
 		color_t color;
+		bool withIBL;
+		bool shootCaustic;
+		bool shootDiffuse;
 };
 
 
-textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot):
-	tex(texture), project(proj), power(bpower)
+textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, bool with_caustic):
+	tex(texture), project(proj), power(bpower), withIBL(ibl), shootCaustic(with_caustic)
 {
 	rotation = 2.0f * rot / 360.f;
 	sin_r = fSin(M_PI*rotation);
@@ -149,7 +157,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("with_caustic", caust);
 	params.getParam("with_diffuse", diffuse);
 	
-	background_t *texBG = new textureBackground_t(tex, pr, power, rot);
+	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, caust);
 	
 	if(IBL)
 	{
@@ -174,7 +182,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 / minimalistic background...
 / ========================================= */
 
-constBackground_t::constBackground_t(color_t col) : color(col)
+constBackground_t::constBackground_t(color_t col, bool ibl, bool with_caustic) : color(col), withIBL(ibl), shootCaustic(with_caustic)
 {
 	// Empty
 }
@@ -205,7 +213,7 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 	params.getParam("ibl", IBL);
 	params.getParam("ibl_samples", IBL_sam);
 	
-	background_t *constBG = new constBackground_t(col*power);
+	background_t *constBG = new constBackground_t(col*power, IBL, true);
 	
 	if(IBL)
 	{

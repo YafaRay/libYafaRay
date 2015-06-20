@@ -31,11 +31,13 @@ class darkSkyBackground_t: public background_t
 {
 	public:
 		darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
-							float altitude, bool night, float exp, bool genc, ColorSpaces cs);
+							float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~darkSkyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
+		bool hasIBL() { return withIBL; }
+		bool shootsCaustic() { return shootCaustic; }
 		color_t getAttenuatedSunColor();
 
 	protected:
@@ -57,11 +59,14 @@ class darkSkyBackground_t: public background_t
 		ColorConv convert;
 		float alt;
 		bool nightSky;
+		bool withIBL;
+		bool shootCaustic;
+		bool shootDiffuse;
 };
 
 darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp,float av, float bv, float cv, float dv, float ev,
-										float altitude, bool night, float exp, bool genc, ColorSpaces cs):
-									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night)
+										float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic):
+									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night), withIBL(ibl), shootCaustic(with_caustic)
 {
 
 
@@ -310,7 +315,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	}
 
 	darkSkyBackground_t *darkSky = new darkSkyBackground_t(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
-																altitude, night, exp, gammaEnc, colorS);
+																altitude, night, exp, gammaEnc, colorS, bgl, caus);
 
 	if (add_sun && radToDeg(fAcos(dir.z)) < 100.0)
 	{
