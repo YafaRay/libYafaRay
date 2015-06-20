@@ -38,11 +38,13 @@ color_t ComputeAttenuatedSunlight(float theta, int turbidity);
 class sunskyBackground_t: public background_t
 {
 	public:
-		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr);
+		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~sunskyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
+		bool hasIBL() { return withIBL; }
+		bool shootsCaustic() { return shootCaustic; }
 	protected:
 		color_t getSkyCol(const ray_t &ray) const;
 		vector3d_t sunDir;
@@ -54,9 +56,12 @@ class sunskyBackground_t: public background_t
 		double AngleBetween(double thetav, double phiv) const;
 		double PerezFunction(const double *lam, double theta, double gamma, double lvz) const;
 		float power;
+		bool withIBL;
+		bool shootCaustic;
+		bool shootDiffuse;
 };
 
-sunskyBackground_t::sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr): power(pwr)
+sunskyBackground_t::sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): power(pwr), withIBL(ibl), shootCaustic(with_caustic)
 {
 	sunDir.set(dir.x, dir.y, dir.z);
 	sunDir.normalize();
@@ -227,7 +232,7 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 	params.getParam("background_light", bgl);
 	params.getParam("light_samples", bgl_samples);
 
-	background_t *new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, power);
+	background_t *new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, power, bgl, true);
 
 	if(bgl)
 	{
