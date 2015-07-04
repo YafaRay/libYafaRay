@@ -263,9 +263,8 @@ inline float vector3d_t::sinFromVectors(const vector3d_t& v)
 {
     float div = ( length() * v.length() ) * 0.99999f + 0.00001f;
     float asin_argument =  ( (*this ^ v ).length() / div) * 0.99999f;
-    //Fix to avoid black "nan" areas when this argument goes slightly outside the valid domain [-1.0 .. +1.0]. Why that values goes outside the range in the first place, maybe floating point rounding errors?
+    //Fix to avoid black "nan" areas when this argument goes slightly over +1.0. Why that happens in the first place, maybe floating point rounding errors?
     if(asin_argument > 1.f) asin_argument = 1.f;
-    else if(asin_argument < -1.f) asin_argument = -1.f;
     return asin(asin_argument);
 }
 
