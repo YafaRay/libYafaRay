@@ -31,18 +31,22 @@ __BEGIN_YAFRAY
 class gradientBackground_t: public background_t
 {
 	public:
-		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol);
+		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~gradientBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
+		bool hasIBL() { return withIBL; }
+		bool shootsCaustic() { return shootCaustic; }
 	protected:
-
 		color_t gzenith,  ghoriz, szenith, shoriz;
+		bool withIBL;
+		bool shootCaustic;
+		bool shootDiffuse;
 };
 
-gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol):
-gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol)
+gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic):
+gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol), withIBL(ibl), shootCaustic(with_caustic)
 {
 	// Empty
 }
@@ -94,7 +98,7 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	params.getParam("ibl_samples", bglSam);
 	params.getParam("power", p);
 
-	background_t *gradBG = new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p);
+	background_t *gradBG = new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p, bgl, true);
 	
 	if(bgl)
 	{

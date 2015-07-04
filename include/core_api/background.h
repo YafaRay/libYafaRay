@@ -21,6 +21,8 @@ class YAFRAYCORE_EXPORT background_t
 			\return the light source that reproduces background lighting, or NULL if background
 					shall only be sampled from BSDFs
 		*/
+		virtual bool hasIBL() { return false; }
+		virtual bool shootsCaustic() { return false; }
 		virtual ~background_t() {};
 };
 
