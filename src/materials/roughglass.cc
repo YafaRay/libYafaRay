@@ -77,7 +77,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	cosTheta = H * N;
 	float cosTheta2 = cosTheta * cosTheta;
-	tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+	tanTheta2 = (1.f - cosTheta2) / std::max(1.0e-8f,cosTheta2);
 
 	if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
 
@@ -112,7 +112,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
 
 			ret = (glossy * filterCol);
-			W = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
+			W = std::fabs(wiN) / std::max(0.1f,s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 		else if(s.flags & BSDF_REFLECT)
 		{
@@ -123,15 +123,15 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 			glossy_G = GGX_G(alpha2, wiN, woN);
 
-			Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
-			glossy = (Kr * glossy_G * glossy_D) / ((4.f * std::fabs(woN * wiN) ) * 0.99f + 0.01f);
+			Jacobian = 1.f / std::max(1.0e-8f,(4.f * std::fabs(wiH)));
+			glossy = (Kr * glossy_G * glossy_D) / std::max(1.0e-8f,(4.f * std::fabs(woN * wiN)));
 
 			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
 			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
 
 			ret = (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
 
-			W = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
+			W = std::fabs(wiN) / std::max(0.1f,s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 	}
 	else // TIR
@@ -171,7 +171,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	cosTheta = H * N;
 	float cosTheta2 = cosTheta * cosTheta;
-	tanTheta2 = (1.f - cosTheta2) / (cosTheta2 * 0.99f + 0.01f);
+	tanTheta2 = (1.f - cosTheta2) / std::max(1.0e-8f,cosTheta2);
 
 	if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
 
@@ -207,7 +207,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
 
 			ret = (glossy * filterCol);
-			W[0] = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
+			W[0] = std::fabs(wiN) / std::max(0.1f,s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
 		}
@@ -220,15 +220,15 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 			glossy_G = GGX_G(alpha2, wiN, woN);
 
-			Jacobian = 1.f / ((4.f * std::fabs(wiH)) * 0.99f + 0.01f);
-			glossy = (Kr * glossy_G * glossy_D) / ((4.f * std::fabs(woN * wiN) ) * 0.99f + 0.01f);
+			Jacobian = 1.f / std::max(1.0e-8f,(4.f * std::fabs(wiH)));
+			glossy = (Kr * glossy_G * glossy_D) / std::max(1.0e-8f,(4.f * std::fabs(woN * wiN)));
 
 			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
 			s.sampledFlags |= BSDF_GLOSSY | BSDF_REFLECT;
 
 			tcol = (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
 
-			W[1] = std::fabs(wiN) / (s.pdf * 0.99f + 0.01f);
+			W[1] = std::fabs(wiN) / std::max(0.1f,s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[1] = wi;
 		}
 	}
