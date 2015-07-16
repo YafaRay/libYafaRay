@@ -203,7 +203,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				const material_t *p_mat = hit->material;
 				BSDF_t matBSDFs;
 				p_mat->initBSDF(state, *hit, matBSDFs);
-				pwo = -pRay.dir;
+				if(s.sampledFlags != BSDF_NONE) pwo = -pRay.dir; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(state, *hit, pwo, offs);
 				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
 
