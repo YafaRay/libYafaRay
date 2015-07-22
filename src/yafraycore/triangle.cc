@@ -74,16 +74,18 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 		}
 		else
 		{
-			// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
+			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => U = u, V = v; (arbitrary choice)
 			sp.dPdU = p1 - p0;
 			sp.dPdV = p2 - p1;
 		}
 	}
 	else
 	{
-		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => U = u, V = v; (arbitrary choice)
 		sp.dPdU = p1 - p0;
 		sp.dPdV = p2 - p1;
+		sp.U = 0.f;  //fix for nan black dots using glossy with bump mapping without UV map associated. Forcing initialization to avoid non-initialized values in that case.
+		sp.V = 0.f;  //fix for nan black dots using glossy with bump mapping without UV map associated. Forcing initialization to avoid non-initialized values in that case.
 	}
 
 	sp.dPdU.normalize();
@@ -102,6 +104,7 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 	sp.dSdV.y = sp.NV * sp.dPdV;
 	sp.dSdV.z = sp.N * sp.dPdV;
 	sp.light = mesh->light;
+	sp.hasUV = mesh->has_uv;
 }
 
 inline bool triangle_t::clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const
@@ -251,7 +254,7 @@ inline void triangleInstance_t::getSurface(surfacePoint_t &sp, const point3d_t &
 	}
 	else
 	{
-		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => U = u, V = v; (arbitrary choice)
 		vector3d_t dp1 = p0 - p2;
 		vector3d_t dp2 = p1 - p2;
 		sp.U = v + w;
@@ -280,6 +283,7 @@ inline void triangleInstance_t::getSurface(surfacePoint_t &sp, const point3d_t &
 	sp.dSdU.normalize();
 	sp.dSdV.normalize();
 	sp.light = mesh->mBase->light;
+	sp.hasUV = mesh->has_uv;
 }
 
 inline bool triangleInstance_t::clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const
@@ -290,7 +294,7 @@ inline bool triangleInstance_t::clipToBound(double bound[2][3], int axis, bound_
 		int _axis = axis & 3;
 		double split = lower ? bound[0][_axis] : bound[1][_axis];
 		int res=triPlaneClip(split, _axis, lower, clipped, d_old, d_new);
-		// if an error occured due to precision limits...ugly solution i admitt
+		// if an error occured due to precision limits...ugly solution i admit
 		if(res>1)
 		{
 			double tPoints[3][3];
@@ -361,7 +365,7 @@ inline void triangleInstance_t::sample(float s1, float s2, point3d_t &p, vector3
 
 bool vTriangle_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
 {
-	//Tomas M??ller and Ben Trumbore ray intersection scheme
+	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
 	float det, inv_det, u, v;
@@ -457,7 +461,7 @@ void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersect
 	}
 	else
 	{
-		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => U = u, V = v; (arbitrary choice)
 		sp.U = u;
 		sp.V = v;
 		sp.dPdU = mesh->points[pb] - mesh->points[pa];
@@ -476,6 +480,7 @@ void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersect
 	sp.dSdV.y = sp.NV * sp.dPdV;
 	sp.dSdV.z = sp.N  * sp.dPdV;
 	sp.light = mesh->light;
+	sp.hasUV = mesh->has_uv;
 }
 
 bool vTriangle_t::intersectsBound(exBound_t &eb) const
@@ -688,7 +693,7 @@ void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersec
 	}
 	else
 	{
-		// implicit mapping, p1 = 0/0, p2 = 1/0, p3 = 0/1 => U = u, V = v; (arbitrary choice)
+		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => U = u, V = v; (arbitrary choice)
 		sp.U = u;
 		sp.V = v;
 		sp.dPdU = mesh->points[pb] - mesh->points[pa];
@@ -705,6 +710,7 @@ void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersec
 	sp.dSdV.y = sp.NV * sp.dPdV;
 	sp.dSdV.z = sp.N  * sp.dPdV;
 	sp.light = mesh->light;
+	sp.hasUV = mesh->has_uv;
 }
 
 

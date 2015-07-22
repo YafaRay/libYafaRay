@@ -174,7 +174,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
 	getCoords(texpt, Ng, sp, state);
 
-	if (tex->discrete())
+	if (tex->discrete() && sp.hasUV && tex_coords == TXC_UV)  
 	{
 		texpt = doMapping(texpt, Ng);
 		colorA_t color(0.f);
@@ -225,17 +225,55 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 	}
 	else
 	{
-		// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
-		// weird things may happen when objects are rotated, i.e. incorrect bump change
-		point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
-		point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
-		point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
-		point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
+		if (tex->isNormalmap())
+		{
+			texpt = doMapping(texpt, Ng);
+			colorA_t color(0.f);
+			vector3d_t norm(0.f);
 
-		du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-		dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
-		du *= bumpStr;
-		dv *= bumpStr;
+			// Get color from normal map texture
+			color = tex->getNoGammaColor(texpt);
+
+			// Assign normal map RGB colors to vector norm
+			norm.x = color.getR();
+			norm.y = color.getG();
+			norm.z = color.getB();
+			norm = (2.f * norm) - 1.f;
+
+			// Convert norm into shading space
+			du = norm * sp.dSdU;
+			dv = norm * sp.dSdV;
+			
+			norm.normalize();
+
+			if(std::fabs(norm.z) > 1e-30f)
+			{
+				float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
+				du = norm.x * NF;
+				dv = norm.y * NF;
+			}
+			else du = dv = 0.f;
+		}
+		else
+		{
+			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
+			// weird things may happen when objects are rotated, i.e. incorrect bump change
+			point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
+			point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
+			point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
+			point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
+
+			du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
+			dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+			du *= bumpStr;
+			dv *= bumpStr;
+			
+			if(tex_coords != TXC_UV)
+			{
+				du = -du;
+				dv = -dv;
+			}
+		}
 	}
 
 	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f );
