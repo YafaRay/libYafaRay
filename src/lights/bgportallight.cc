@@ -29,8 +29,8 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly):
-	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly)
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled):
+	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly), lLightEnabled(bLightEnabled)
 {
 	mesh = NULL;
 	aPdf = 0.f;
@@ -234,6 +234,7 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool caus = true;
 	bool diff = true;
 	bool ponly = false;
+	bool lightEnabled = true;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
@@ -241,7 +242,8 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 	params.getParam("photon_only", ponly);
+	params.getParam("light_enabled", lightEnabled);
 	
-	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly);
+	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly, lightEnabled);
 }
 __END_YAFRAY

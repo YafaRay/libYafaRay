@@ -27,7 +27,7 @@ __BEGIN_YAFRAY
 class sunLight_t : public light_t
 {
   public:
-	sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples);
+	sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled);
 	virtual void init(scene_t &scene);
 	virtual color_t totalEnergy() const { return color * ePdf; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -37,6 +37,7 @@ class sunLight_t : public light_t
 	virtual bool canIntersect() const{ return true; }
 	virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 	virtual int nSamples() const { return samples; }
+	virtual bool lightEnabled() const { return lLightEnabled;}
 	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
   protected:
 	point3d_t worldCenter;
@@ -47,10 +48,11 @@ class sunLight_t : public light_t
 	int samples;
 	float worldRadius;
 	float ePdf;
+	bool lLightEnabled; //!< enable/disable light
 };
 
-sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples):
-	direction(dir), samples(nSamples)
+sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled):
+	direction(dir), samples(nSamples), lLightEnabled(bLightEnabled)
 {
 	color = col * inte;
 	direction.normalize();
@@ -119,14 +121,16 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	CFLOAT power = 1.0;
 	float angle = 0.27; //angular (half-)size of the real sun;
 	int samples = 4;
+	bool lightEnabled = true;
 
 	params.getParam("direction",dir);
 	params.getParam("color",color);
 	params.getParam("power",power);
 	params.getParam("angle",angle);
 	params.getParam("samples",samples);
+	params.getParam("light_enabled", lightEnabled);
 
-	return new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples);
+	return new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled);
 }
 
 extern "C"
