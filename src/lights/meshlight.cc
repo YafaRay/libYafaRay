@@ -29,8 +29,8 @@
 
 __BEGIN_YAFRAY
 
-meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s):
-	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(0)
+meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s, bool bLightEnabled):
+	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(0), lLightEnabled(bLightEnabled)
 {
 	mesh = 0;
 	//initIS();
@@ -225,13 +225,15 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	double power = 1.0;
 	int samples = 4;
 	int object = 0;
+	bool lightEnabled = true;
 
 	params.getParam("object", object);
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("samples", samples);
 	params.getParam("double_sided", doubleS);
+	params.getParam("light_enabled", lightEnabled);
 
-	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS);
+	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled);
 }
 __END_YAFRAY

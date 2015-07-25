@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class directionalLight_t : public light_t
 {
   public:
-	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad);
+	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled);
 	virtual void init(scene_t &scene);
 	virtual color_t totalEnergy() const { return color * radius*radius * M_PI; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -36,6 +36,7 @@ class directionalLight_t : public light_t
 	virtual bool diracLight() const { return true; }
 	virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 	virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
+	virtual bool lightEnabled() const { return lLightEnabled;}
 	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
   protected:
 	point3d_t position;
@@ -47,10 +48,11 @@ class directionalLight_t : public light_t
 	PFLOAT worldRadius;
 	bool infinite;
 	int majorAxis; //!< the largest component of direction
+	bool lLightEnabled; //!< enable/disable light
 };
 
-directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad):
-	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf)
+directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled):
+	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf), lLightEnabled(bLightEnabled)
 {
 	color = col * inte;
 	intensity = color.energy();
@@ -138,11 +140,14 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	CFLOAT power = 1.0;
 	float rad = 1.0;
 	bool inf = true;
+	bool lightEnabled = true;
 	
 	params.getParam("direction",dir);
 	params.getParam("color",color);
 	params.getParam("power",power);
 	params.getParam("infinite", inf);
+	params.getParam("light_enabled", lightEnabled);
+	
 	if(!inf)
 	{
 		if(!params.getParam("from",from))
@@ -152,7 +157,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 		params.getParam("radius",rad);
 	}
 
-	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad);
+	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled);
 }
 
 extern "C"

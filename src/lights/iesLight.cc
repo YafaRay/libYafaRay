@@ -32,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -50,6 +50,7 @@ class iesLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		
 		bool isIESOk(){ return IESOk; };
+		virtual bool lightEnabled() const { return lLightEnabled;}
 		
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
@@ -73,10 +74,11 @@ class iesLight_t : public light_t
 		IESData_t *iesData;
 		
 		bool IESOk;
+		bool lLightEnabled; //!< enable/disable light
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang):
-	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled):
+	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha), lLightEnabled(bLightEnabled)
 {
 	iesData = new IESData_t();
 	
@@ -239,6 +241,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int sam = 16; //wild goose... sorry guess :D
 	bool sSha = false;
 	float ang = 180.f; //full hemi
+	bool lightEnabled = true;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -248,8 +251,9 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples", sam);
 	params.getParam("soft_shadows", sSha);
 	params.getParam("cone_angle", ang);
+	params.getParam("light_enabled", lightEnabled);
 
-	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang);
+	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled);
 
 	if (!light->isIESOk())
 	{

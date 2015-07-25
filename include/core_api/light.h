@@ -65,6 +65,8 @@ class light_t
 		virtual ~light_t() {}
 		//! This method must be called right after the factory is called on a background light or the light will fail
 		virtual void setBackground(background_t *bg) { background = bg; }
+		//! Enable/disable entire light source
+		virtual bool lightEnabled() const { return true;}
 
 		light_t(): flags(LIGHT_NONE) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}

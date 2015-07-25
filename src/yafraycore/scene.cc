@@ -664,6 +664,7 @@ bool scene_t::addLight(light_t *l)
 {
 	if(l != 0)
 	{
+		if(!l->lightEnabled()) return false; //if a light is disabled, don't add it to the list of lights
 		lights.push_back(l);
 		state.changes |= C_LIGHT;
 		return true;

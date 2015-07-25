@@ -31,8 +31,8 @@ __BEGIN_YAFRAY
 //int hit_t1=0, hit_t2=0;
 
 areaLight_t::areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-				const color_t &col,CFLOAT inte, int nsam):
-				corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte)
+				const color_t &col,CFLOAT inte, int nsam, bool bLightEnabled):
+				corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte), lLightEnabled(bLightEnabled)
 {
 	fnormal = toY^toX; //f normal is "flipped" normal direction...
 	color = col*inte * M_PI;
@@ -177,6 +177,7 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	CFLOAT power = 1.0;
 	int samples = 4;
 	int object = 0;
+	bool lightEnabled = true;
 
 	params.getParam("corner",corner);
 	params.getParam("point1",p1);
@@ -185,8 +186,9 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("power",power);
 	params.getParam("samples",samples);
 	params.getParam("object", object);
+	params.getParam("light_enabled", lightEnabled);
 
-	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples);
+	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples, lightEnabled);
 	light->objID = (unsigned int)object;
 	return light;
 }

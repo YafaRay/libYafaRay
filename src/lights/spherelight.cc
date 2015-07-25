@@ -37,7 +37,7 @@ __BEGIN_YAFRAY
 class sphereLight_t : public light_t
 {
 	public:
-		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam);
+		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled);
 		~sphereLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -51,6 +51,7 @@ class sphereLight_t : public light_t
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }
+		virtual bool lightEnabled() const { return lLightEnabled;}
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		point3d_t center;
@@ -59,10 +60,11 @@ class sphereLight_t : public light_t
 		int samples;
 		unsigned int objID;
 		float area, invArea;
+		bool lLightEnabled; //!< enable/disable light
 };
 
-sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam):
-	center(c), radius(rad), samples(nsam)
+sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled):
+	center(c), radius(rad), samples(nsam), lLightEnabled(bLightEnabled)
 {
 	color = col*inte;
 	square_radius = radius*radius;
@@ -199,6 +201,7 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	float radius = 1.f;
 	int samples = 4;
 	int object = 0;
+	bool lightEnabled = true;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -206,8 +209,9 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("radius",radius);
 	params.getParam("samples",samples);
 	params.getParam("object", object);
+	params.getParam("light_enabled", lightEnabled);
 	
-	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples);
+	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled);
 	light->objID = (unsigned int)object;
 	return light;
 }
