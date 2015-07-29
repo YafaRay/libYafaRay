@@ -37,7 +37,7 @@ __BEGIN_YAFRAY
 class sphereLight_t : public light_t
 {
 	public:
-		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled);
+		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
 		~sphereLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -52,6 +52,7 @@ class sphereLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }
 		virtual bool lightEnabled() const { return lLightEnabled;}
+		virtual bool castShadows() const { return lCastShadows; }
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		point3d_t center;
@@ -61,10 +62,11 @@ class sphereLight_t : public light_t
 		unsigned int objID;
 		float area, invArea;
 		bool lLightEnabled; //!< enable/disable light
+		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled):
-	center(c), radius(rad), samples(nsam), lLightEnabled(bLightEnabled)
+sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows):
+	center(c), radius(rad), samples(nsam), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
 {
 	color = col*inte;
 	square_radius = radius*radius;
@@ -202,6 +204,7 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int samples = 4;
 	int object = 0;
 	bool lightEnabled = true;
+	bool castShadows = true;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -210,8 +213,9 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples",samples);
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 	
-	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled);
+	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);
 	light->objID = (unsigned int)object;
 	return light;
 }

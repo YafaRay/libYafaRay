@@ -748,10 +748,11 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 		if (nPrimitives == 1)
 		{
 			triangle_t *mp = currNode->onePrimitive;
+			const material_t *mat = mp->getMaterial();
 
 			if (mp->intersect(ray, &t_hit, tempData))
 			{
-				if(t_hit < Z && t_hit >= ray.tmin)
+				if(t_hit < Z && t_hit >= ray.tmin && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == VISIBLE_NO_SHADOWS) )
 				{
 					Z = t_hit;
 					*tr = mp;
@@ -770,7 +771,9 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 
 				if (mp->intersect(ray, &t_hit, tempData))
 				{
-					if(t_hit < Z && t_hit >= ray.tmin)
+					const material_t *mat = mp->getMaterial();
+					
+					if(t_hit < Z && t_hit >= ray.tmin && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == VISIBLE_NO_SHADOWS) )
 					{
 						Z = t_hit;
 						*tr = mp;
@@ -896,7 +899,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 			if (mp->intersect(ray, &t_hit, bary))
 			{
 				const material_t *mat = mp->getMaterial();
-				if(t_hit < dist && t_hit >= shadow_bias && mat->castShadows() ) // '>=' ?
+				if(t_hit < dist && t_hit >= shadow_bias && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == INVISIBLE_SHADOWS_ONLY) ) // '>=' ?
 				{
 					*tr = mp;
 					return true;
@@ -912,7 +915,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 				if (mp->intersect(ray, &t_hit, bary))
 				{
 					const material_t *mat = mp->getMaterial();
-					if(t_hit < dist && t_hit >= shadow_bias && mat->castShadows() )
+					if(t_hit < dist && t_hit >= shadow_bias && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == INVISIBLE_SHADOWS_ONLY) )
 					{
 						*tr = mp;
 						return true;
@@ -1036,10 +1039,9 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			triangle_t *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= shadow_bias ) // '>=' ?
+				const material_t *mat = mp->getMaterial();
+				if(t_hit < dist && t_hit >= shadow_bias && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == INVISIBLE_SHADOWS_ONLY) ) // '>=' ?
 				{
-					const material_t *mat = mp->getMaterial();
-					if(!mat->castShadows() ) return false;
 					if(!mat->isTransparent() ) return true;
 					
 					if(filtered.insert(mp).second)
@@ -1062,10 +1064,9 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= shadow_bias)
+					const material_t *mat = mp->getMaterial();
+					if(t_hit < dist && t_hit >= shadow_bias && (mat->getVisibility() == NORMAL_VISIBLE || mat->getVisibility() == INVISIBLE_SHADOWS_ONLY) )
 					{
-						const material_t *mat = mp->getMaterial();
-						if(!mat->castShadows() ) return false;
 						if(!mat->isTransparent() ) return true;
 
 						if(filtered.insert(mp).second)

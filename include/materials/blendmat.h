@@ -18,7 +18,7 @@ __BEGIN_YAFRAY
 class blendMat_t: public nodeMaterial_t
 {
 	public:
-		blendMat_t(const material_t *m1, const material_t *m2, float blendv, bool bCastShadows=true);
+		blendMat_t(const material_t *m1, const material_t *m2, float blendv, visibility_t eVisibility=NORMAL_VISIBLE);
 		virtual ~blendMat_t();
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const;
@@ -26,7 +26,7 @@ class blendMat_t: public nodeMaterial_t
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		virtual float getMatIOR ()const;
 		virtual bool isTransparent() const;
-		virtual bool castShadows() const { return mCastShadows; }
+		virtual visibility_t getVisibility() const { return mVisibility; }
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
@@ -45,7 +45,7 @@ class blendMat_t: public nodeMaterial_t
 		bool recalcBlend;
 		float blendedIOR;
 		mutable BSDF_t mat1Flags, mat2Flags;
-		bool mCastShadows; //!< enables/disables casting shadows. It should always be enabled except in specific cases.
+		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 	private:
 		void getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const;
 };
