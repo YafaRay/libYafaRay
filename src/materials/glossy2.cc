@@ -32,13 +32,13 @@ __BEGIN_YAFRAY
 class glossyMat_t: public nodeMaterial_t
 {
 	public:
-		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse, bool bCastShadows);
+		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual bool castShadows() const { return mCastShadows; }
+		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		struct MDat_t
 		{
@@ -66,12 +66,12 @@ class glossyMat_t: public nodeMaterial_t
 		bool as_diffuse, with_diffuse, anisotropic;
 		bool orenNayar;
 		float orenA, orenB;
-		bool mCastShadows; //!< enables/disables casting shadows. It should always be enabled except in specific cases.
+		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
-glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, bool bCastShadows):
+glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
 			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
-			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mCastShadows(bCastShadows)
+			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mVisibility(eVisibility)
 {
 	bsdfFlags = BSDF_NONE;
 
@@ -418,7 +418,9 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	float exponent=50.f; //wild guess, do sth better
 	bool as_diff=true;
 	bool aniso=false;
-	bool bCastShadows=true;
+	std::string sVisibility = "normal";
+	visibility_t visibility = NORMAL_VISIBLE;
+	
 	const std::string *name=0;
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
@@ -427,8 +429,15 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("as_diffuse", as_diff);
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
-	params.getParam("cast_shadows",     bCastShadows);
-	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff, bCastShadows);
+	params.getParam("visibility", sVisibility);
+	
+	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
+	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
+	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
+	else if(sVisibility == "invisible") visibility = INVISIBLE;
+	else visibility = NORMAL_VISIBLE;
+	
+	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff, visibility);
 
 	if(aniso)
 	{

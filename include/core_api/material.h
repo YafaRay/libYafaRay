@@ -70,6 +70,15 @@ struct pSample_t: public sample_t // << whats with the public?? structs inherit 
 	color_t color; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
 
+enum visibility_t
+{
+	NORMAL_VISIBLE			= 0,
+	VISIBLE_NO_SHADOWS		= 1,
+	INVISIBLE_SHADOWS_ONLY	= 2,
+	INVISIBLE				= 3
+};
+
+
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
@@ -105,7 +114,7 @@ class YAFRAYCORE_EXPORT material_t
 			used to trace transparent shadows. Note that in this case, initBSDF was NOT called before!
 		*/
 		virtual bool isTransparent() const { return false; }
-		virtual bool castShadows() const { return true; }
+		virtual visibility_t getVisibility() const { return NORMAL_VISIBLE; }
 
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/

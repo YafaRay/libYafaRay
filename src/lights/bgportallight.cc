@@ -29,8 +29,8 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled):
-	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly), lLightEnabled(bLightEnabled)
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled, bool bCastShadows):
+	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
 {
 	mesh = NULL;
 	aPdf = 0.f;
@@ -235,6 +235,7 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool diff = true;
 	bool ponly = false;
 	bool lightEnabled = true;
+	bool castShadows = true;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
@@ -243,7 +244,8 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("with_diffuse", diff);
 	params.getParam("photon_only", ponly);
 	params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 	
-	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly, lightEnabled);
+	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly, lightEnabled, castShadows);
 }
 __END_YAFRAY

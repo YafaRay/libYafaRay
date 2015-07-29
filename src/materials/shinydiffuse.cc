@@ -5,10 +5,10 @@
 
 __BEGIN_YAFRAY
 
-shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength, float transmitFilterStrength, bool bCastShadows):
+shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength, float transmitFilterStrength, visibility_t eVisibility):
             mIsTransparent(false), mIsTranslucent(false), mIsMirror(false), mIsDiffuse(false), mHasFresnelEffect(false),
             mDiffuseShader(0), mBumpShader(0), mTransparencyShader(0), mTranslucencyShader(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), iorS(0), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
-            mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength), mUseOrenNayar(false), nBSDF(0), mCastShadows(bCastShadows)
+            mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength), mUseOrenNayar(false), nBSDF(0), mVisibility(eVisibility)
 {
     mEmitColor = emitStrength * diffuseColor;
     mEmitStrength = emitStrength;
@@ -557,7 +557,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     float mirrorStrength=0.f;
     float emitStrength = 0.f;
     bool hasFresnelEffect=false;
-    bool bCastShadows=true;
+    std::string sVisibility = "normal";
+	visibility_t visibility = NORMAL_VISIBLE;
     float IOR = 1.33f;
     double transmitFilterStrength=1.0;
 
@@ -571,10 +572,16 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     params.getParam("IOR",              IOR);
     params.getParam("fresnel_effect",   hasFresnelEffect);
     params.getParam("transmit_filter",  transmitFilterStrength);
-    params.getParam("cast_shadows",     bCastShadows);
+    params.getParam("visibility",       sVisibility);
+	
+	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
+	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
+	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
+	else if(sVisibility == "invisible") visibility = INVISIBLE;
+	else visibility = NORMAL_VISIBLE;
 
     // !!remember to put diffuse multiplier in material itself!
-    shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength, transmitFilterStrength, bCastShadows);
+    shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength, transmitFilterStrength, visibility);
 
     if(hasFresnelEffect)
     {
