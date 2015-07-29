@@ -29,8 +29,8 @@
 
 __BEGIN_YAFRAY
 
-meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s, bool bLightEnabled):
-	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(0), lLightEnabled(bLightEnabled)
+meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s, bool bLightEnabled, bool bCastShadows):
+	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(0), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
 {
 	mesh = 0;
 	//initIS();
@@ -226,6 +226,7 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int samples = 4;
 	int object = 0;
 	bool lightEnabled = true;
+	bool castShadows = true;
 
 	params.getParam("object", object);
 	params.getParam("color", color);
@@ -233,7 +234,8 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples", samples);
 	params.getParam("double_sided", doubleS);
 	params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 
-	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled);
+	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled, castShadows);
 }
 __END_YAFRAY

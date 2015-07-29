@@ -39,7 +39,7 @@ __BEGIN_YAFRAY
 class coatedGlossyMat_t: public nodeMaterial_t
 {
 	public:
-		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, bool bCastShadows);
+		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
@@ -47,7 +47,7 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual bool castShadows() const { return mCastShadows; }
+		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		struct MDat_t
 		{
@@ -83,12 +83,12 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		int nBSDF;
 		bool orenNayar;
 		float orenA, orenB;
-		bool mCastShadows; //!< enables/disables casting shadows. It should always be enabled except in specific cases.
+		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
-coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, bool bCastShadows):
+coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility):
 	diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), iorS(0), exponentS(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), mirror_color(mirCol), mMirrorStrength(mirrorStrength), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
-	as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mCastShadows(bCastShadows)
+	as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mVisibility(eVisibility)
 {
 	cFlags[C_SPECULAR] = (BSDF_SPECULAR | BSDF_REFLECT);
 	cFlags[C_GLOSSY] = as_diffuse? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
@@ -490,7 +490,8 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	bool as_diff=true;
 	bool aniso=false;
 	const std::string *name=0;
-	bool bCastShadows = true;
+	std::string sVisibility = "normal";
+	visibility_t visibility = NORMAL_VISIBLE;
 
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
@@ -502,11 +503,17 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	params.getParam("IOR", ior);
 	params.getParam("mirror_color", mirCol);
     params.getParam("specular_reflect", mirrorStrength);
-	params.getParam("cast_shadows",     bCastShadows);
+	params.getParam("visibility", sVisibility);
+	
+	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
+	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
+	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
+	else if(sVisibility == "invisible") visibility = INVISIBLE;
+	else visibility = NORMAL_VISIBLE;
 
 	if(ior == 1.f) ior = 1.0000001f;
 
-	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol, mirCol, mirrorStrength, refl, diff, ior, exponent, as_diff, bCastShadows);
+	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol, mirCol, mirrorStrength, refl, diff, ior, exponent, as_diff, visibility);
 	if(aniso)
 	{
 		double e_u=50.0, e_v=50.0;

@@ -72,16 +72,19 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	color_t lcol(0.f), scol;
 	float lightPdf;
 
+	bool castShadows = light->castShadows();
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{
 		if( light->illuminate(sp, lcol, lightRay) )
 		{
 			// ...shadowed...
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+			if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+			else shadowed = false;
+			
 			if(!shadowed)
 			{
-				if(trShad) lcol *= scol;
+				if(trShad && castShadows) lcol *= scol;
 				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 				col += surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
@@ -112,11 +115,12 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if( light->illumSample (sp, ls, lightRay) )
 			{
 				// ...shadowed...
-				shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+				if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+				else shadowed = false;
 
 				if(!shadowed && ls.pdf > 1e-6f)
 				{
-					if(trShad) ls.col *= scol;
+					if(trShad && castShadows) ls.col *= scol;
 					color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 					ls.col *= transmitCol;
 					color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
@@ -162,10 +166,12 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 				color_t surfCol = material->sample(state, sp, wo, bRay.dir, s, W);
 				if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 				{
-					shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
+					if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
+					else shadowed = false;
+					
 					if(!shadowed && lightPdf > 1e-6f)
 					{
-						if(trShad) lcol *= scol;
+						if(trShad && castShadows) lcol *= scol;
 						color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 						lcol *= transmitCol;
 						float lPdf = 1.f/lightPdf;

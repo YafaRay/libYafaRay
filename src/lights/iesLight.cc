@@ -32,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled=true, bool bCastShadows=true);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -51,6 +51,7 @@ class iesLight_t : public light_t
 		
 		bool isIESOk(){ return IESOk; };
 		virtual bool lightEnabled() const { return lLightEnabled;}
+		virtual bool castShadows() const { return lCastShadows; }
 		
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
@@ -75,10 +76,11 @@ class iesLight_t : public light_t
 		
 		bool IESOk;
 		bool lLightEnabled; //!< enable/disable light
+		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled):
-	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha), lLightEnabled(bLightEnabled)
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows):
+	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
 {
 	iesData = new IESData_t();
 	
@@ -242,6 +244,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool sSha = false;
 	float ang = 180.f; //full hemi
 	bool lightEnabled = true;
+	bool castShadows = true;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -252,8 +255,9 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("soft_shadows", sSha);
 	params.getParam("cone_angle", ang);
 	params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 
-	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled);
+	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);
 
 	if (!light->isIESOk())
 	{

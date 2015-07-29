@@ -67,6 +67,8 @@ class light_t
 		virtual void setBackground(background_t *bg) { background = bg; }
 		//! Enable/disable entire light source
 		virtual bool lightEnabled() const { return true;}
+		//! return true if the light should cast direct shadows
+		virtual bool castShadows() const { return true; }
 
 		light_t(): flags(LIGHT_NONE) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
