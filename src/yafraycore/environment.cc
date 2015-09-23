@@ -57,6 +57,7 @@ __BEGIN_YAFRAY
 #define ErrOnCreate(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!" << yendl
 
 #define InfoSucces(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
+#define InfoSuccesDisabled(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
 
 #define SuccessReg(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'" << yendl
 
@@ -241,7 +242,10 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 	if(light)
 	{
 		light_table[name] = light;
-		InfoSucces(name, type);
+		
+		if(light->lightEnabled()) InfoSucces(name, type);
+		else InfoSuccesDisabled(name, type);
+		
 		return light;
 	}
 	ErrOnCreate(type);
