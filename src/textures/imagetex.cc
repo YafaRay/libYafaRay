@@ -318,7 +318,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 
 	if(ih->isHDR())
 	{
-		if(color_space_string != "linear") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
+		if(color_space_string != "LinearRGB") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
 		color_space = LINEAR_RGB;
 	}
 	else
