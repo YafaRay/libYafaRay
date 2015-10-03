@@ -3,7 +3,7 @@
  *      environment.cc: Yafray environment for plugin loading and
  *      object instatiation
  *      This is part of the yafray package
- *      Copyright (C) 2005  Alejandro Conty Est�vez, Mathias Wein
+ *      Copyright (C) 2005  Alejandro Conty Estévez, Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -520,6 +520,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	const std::string *name=0;
 	const std::string *tiles_order=0;
 	int width=320, height=240, xstart=0, ystart=0;
+	std::string color_space_string = "sRGB";
+	colorSpaces_t color_space = SRGB;
 	float filt_sz = 1.5, gamma=1.f;
 	bool clamp = false;
 	bool showSampledPixels = false;
@@ -527,6 +529,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	bool premult = false;
 	bool drawParams = false;
 
+	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
 	params.getParam("clamp_rgb", clamp);
 	params.getParam("AA_pixelwidth", filt_sz);
@@ -540,6 +543,12 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("drawParams", drawParams);
+
+	if(color_space_string == "sRGB") color_space = SRGB;
+	else if(color_space_string == "XYZ") color_space = XYZ_D65;
+	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
+	else if(color_space_string == "Raw_manual_Gamma") color_space = RAW_MANUAL_GAMMA;
+	else color_space = SRGB;
 
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -562,7 +571,13 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
 
 	film->setClamp(clamp);
-	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
+	
+	if(color_space == RAW_MANUAL_GAMMA)
+	{
+		if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setColorSpace(color_space, gamma);
+		else film->setColorSpace(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+	}
+	else film->setColorSpace(color_space, gamma);
 
 	return film;
 }

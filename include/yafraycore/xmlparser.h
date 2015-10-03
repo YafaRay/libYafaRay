@@ -11,7 +11,7 @@ class scene_t;
 class renderEnvironment_t;
 class xmlParser_t;
 
-YAFRAYCORE_EXPORT bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render);
+YAFRAYCORE_EXPORT bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma);
 
 typedef void (*startElement_cb)(xmlParser_t &p, const char *element, const char **attrs);
 typedef void (*endElement_cb)(xmlParser_t &p, const char *element);
@@ -28,7 +28,7 @@ struct parserState_t
 class xmlParser_t
 {
 	public:
-		xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r);
+		xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma);
 		void pushState(startElement_cb start, endElement_cb end, void *userdata=0);
 		void popState();
 		void startElement(const char *element, const char **attrs){ ++level; if(current) current->start(*this, element, attrs); }
@@ -37,6 +37,8 @@ class xmlParser_t
 		void setParam(const std::string &name, parameter_t &param){ (*cparams)[name] = param; }
 		int currLevel() const{ return level; }
 		int stateLevel() const { return current ? current->level : -1; }
+		colorSpaces_t getInputColorSpace() const { return inputColorSpace; }
+		float getInputGamma() const { return inputGamma; }
 		
 		renderEnvironment_t *env;
 		scene_t *scene;
@@ -47,6 +49,8 @@ class xmlParser_t
 		std::vector<parserState_t> state_stack;
 		parserState_t *current;
 		int level;
+		float inputGamma;
+		colorSpaces_t inputColorSpace;
 };
 
 // state callbacks:

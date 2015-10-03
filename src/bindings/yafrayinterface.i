@@ -676,9 +676,9 @@ namespace yafaray
 
 			float  matrix[4][4];
 			int _invalid;
-		};
+	};
 
-		// Interfaces
+	// Interfaces
 
 	class yafrayInterface_t
 	{
@@ -737,7 +737,6 @@ namespace yafaray
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-			virtual void setInputGamma(float gammaVal, bool enable);
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }
 			virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
@@ -762,7 +761,9 @@ namespace yafaray
 			void printWarning(const std::string &msg);
 			void printError(const std::string &msg);
 			void printLog(const std::string &msg);
-
+			
+			void setInputColorSpace(std::string color_space_string, float gammaVal);
+		
 		protected:
 			paraMap_t *params;
 			std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
@@ -771,7 +772,7 @@ namespace yafaray
 			scene_t *scene;
 			imageFilm_t *film;
 			float inputGamma;
-			bool gcInput;
+			colorSpaces_t inputColorSpace;
 	};
 
 
@@ -785,10 +786,11 @@ namespace yafaray
 			virtual bool endGeometry();
 			virtual unsigned int getNextFreeID();
 			virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-			virtual bool startCurveMesh(unsigned int id, int vertices);
 			virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+			virtual bool startCurveMesh(unsigned int id, int vertices);
 			virtual bool endTriMesh();
-			virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
+			virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
+			virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 			virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 			virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 			virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
@@ -798,20 +800,21 @@ namespace yafaray
 			virtual bool smoothMesh(unsigned int id, double angle);
 
 			// functions directly related to renderEnvironment_t
-			virtual light_t* 		createLight		(const char* name);
-			virtual texture_t* 		createTexture	(const char* name);
-			virtual material_t* 	createMaterial	(const char* name);
-			virtual camera_t* 		createCamera	(const char* name);
-			virtual background_t* 	createBackground(const char* name);
-			virtual integrator_t* 	createIntegrator(const char* name);
-			virtual unsigned int 	createObject	(const char* name);
+			virtual light_t* 		createLight			(const char* name);
+			virtual texture_t* 		createTexture		(const char* name);
+			virtual material_t* 	createMaterial		(const char* name);
+			virtual camera_t* 		createCamera		(const char* name);
+			virtual background_t* 	createBackground	(const char* name);
+			virtual integrator_t* 	createIntegrator	(const char* name);
+			virtual VolumeRegion* 	createVolumeRegion	(const char* name);
+			virtual unsigned int 	createObject		(const char* name);
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-
 			virtual void setOutfile(const char *fname);
+			void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal);
 		protected:
-			void writeParamMap(const paramMap_t &pmap, int indent=1);
+			void writeParamMap(const paraMap_t &pmap, int indent=1);
 			void writeParamList(int indent);
 
 			std::map<const material_t *, std::string> materials;
@@ -821,6 +824,8 @@ namespace yafaray
 			size_t nmat;
 			int n_uvs;
 			unsigned int nextObj;
+			float XMLGamma;
+			colorSpaces_t XMLColorSpace;
 	};
 
 }

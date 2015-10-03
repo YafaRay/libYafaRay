@@ -5,7 +5,7 @@
 
 __BEGIN_YAFRAY
 
-xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0)
+xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(SRGB)
 {
 	xmlName = "yafaray.xml";
 }
@@ -166,7 +166,7 @@ bool xmlInterface_t::smoothMesh(unsigned int id, double angle)
 	return true;
 }
 
-inline void writeParam(const std::string &name, const parameter_t &param, std::ofstream &xmlFile)
+inline void writeParam(const std::string &name, const parameter_t &param, std::ofstream &xmlFile, colorSpaces_t XMLColorSpace, float XMLGamma)
 {
 	int i=0;
 	bool b=false;
@@ -194,6 +194,7 @@ inline void writeParam(const std::string &name, const parameter_t &param, std::o
 			xmlFile << "<" << name << " x=\"" << p.x << "\" y=\"" << p.y << "\" z=\"" << p.z << "\"/>\n"; break;
 		case TYPE_COLOR:
 			param.getVal(c);
+			c.ColorSpace_from_linearRGB(XMLColorSpace, XMLGamma);	//Color values are encoded to the desired color space before saving them to the XML file
 			xmlFile << "<" << name << " r=\"" << c.R << "\" g=\"" << c.G << "\" b=\"" << c.B << "\" a=\"" << c.A << "\"/>\n"; break;
 		default:
 			std::cerr << "unknown parameter type!\n";
@@ -224,7 +225,7 @@ void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
 	for(ip = dict->begin(); ip!= dict->end(); ++ip)
 	{
 		xmlFile << tabs;
-		writeParam(ip->first, ip->second, xmlFile);
+		writeParam(ip->first, ip->second, xmlFile, XMLColorSpace, XMLGamma);
 	}
 	const std::map< std::string, matrix4x4_t > *mdict = pmap.getMDict();
 	std::map< std::string, matrix4x4_t >::const_iterator im;
@@ -319,6 +320,17 @@ void xmlInterface_t::render(colorOutput_t &output)
 	xmlFile << "</scene>" << yendl;
 	xmlFile.flush();
 	xmlFile.close();
+}
+
+void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal)
+{
+	if(color_space_string == "sRGB") XMLColorSpace = SRGB;
+	else if(color_space_string == "XYZ") XMLColorSpace = XYZ_D65;
+	else if(color_space_string == "LinearRGB") XMLColorSpace = LINEAR_RGB;
+	else if(color_space_string == "Raw_manual_Gamma") XMLColorSpace = RAW_MANUAL_GAMMA;
+	else XMLColorSpace = SRGB;
+	
+	XMLGamma = gammaVal;
 }
 
 extern "C"

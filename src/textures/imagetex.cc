@@ -26,8 +26,8 @@
 
 __BEGIN_YAFRAY
 
-textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma):
-				image(ih), intp_type(intp), gamma(gamma)
+textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, colorSpaces_t color_space, float gamma):
+				image(ih), intp_type(intp), colorSpace(color_space), gamma(gamma)
 {
 	// Empty
 }
@@ -122,14 +122,12 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
 
 colorA_t textureImage_t::getColor(const point3d_t &p) const
 {
-	colorA_t ret = getNoGammaColor(p);
-	
-	if(gamma != 1.f && !image->isHDR()) ret.gammaAdjust(gamma);
-	
+	colorA_t ret = getRawColor(p);
+	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	return ret;
 }
 
-colorA_t textureImage_t::getNoGammaColor(const point3d_t &p) const
+colorA_t textureImage_t::getRawColor(const point3d_t &p) const
 {
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
 	colorA_t ret(0.f);
@@ -145,14 +143,12 @@ colorA_t textureImage_t::getNoGammaColor(const point3d_t &p) const
 
 colorA_t textureImage_t::getColor(int x, int y, int z) const
 {
-	colorA_t ret = getNoGammaColor(x, y, z);
-	
-	if(gamma != 1.f && !image->isHDR()) ret.gammaAdjust(gamma);
-	
+	colorA_t ret = getRawColor(x, y, z);
+	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	return ret;
 }
 
-colorA_t textureImage_t::getNoGammaColor(int x, int y, int z) const
+colorA_t textureImage_t::getRawColor(int x, int y, int z) const
 {
 	int resx=image->getWidth();
 	int resy=image->getHeight();
@@ -261,9 +257,12 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
+	std::string color_space_string = "sRGB";
+	colorSpaces_t color_space = SRGB;
 	textureImage_t *tex = NULL;
 	imageHandler_t *ih = NULL;
 	params.getParam("interpolate", intpstr);
+	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
@@ -316,8 +315,22 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
 		return NULL;
 	}
+
+	if(ih->isHDR())
+	{
+		if(color_space_string != "LinearRGB") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
+		color_space = LINEAR_RGB;
+	}
+	else
+	{
+		if(color_space_string == "sRGB") color_space = SRGB;
+		else if(color_space_string == "XYZ") color_space = XYZ_D65;
+		else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
+		else if(color_space_string == "Raw_manual_Gamma") color_space = RAW_MANUAL_GAMMA;
+		else color_space = SRGB;
+	}
 	
-	tex = new textureImage_t(ih, intp, gamma);
+	tex = new textureImage_t(ih, intp, color_space, gamma);
 
 	if(!tex)
 	{

@@ -8,7 +8,7 @@
 
 __BEGIN_YAFRAY
 
-yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), gcInput(false)
+yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inputColorSpace(LINEAR_RGB)
 {
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
@@ -171,14 +171,14 @@ void yafrayInterface_t::paramsSetFloat(const char* name, double f)
 void yafrayInterface_t::paramsSetColor(const char* name, float r, float g, float b, float a)
 {
 	colorA_t col(r,g,b,a);
-	if(gcInput) col.gammaAdjust(inputGamma);
+	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
 void yafrayInterface_t::paramsSetColor(const char* name, float *rgb, bool with_alpha)
 {
 	colorA_t col(rgb[0],rgb[1],rgb[2], (with_alpha ? rgb[3] : 1.f));
-	if(gcInput) col.gammaAdjust(inputGamma);
+	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
@@ -214,10 +214,15 @@ void yafrayInterface_t::paramsSetMemMatrix(const char* name, double* matrix, boo
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void yafrayInterface_t::setInputGamma(float gammaVal, bool enable)
+void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float gammaVal)
 {
-	gcInput = enable;
-	if(gammaVal > 0) inputGamma = gammaVal;
+	if(color_space_string == "sRGB") inputColorSpace = SRGB;
+	else if(color_space_string == "XYZ") inputColorSpace = XYZ_D65;
+	else if(color_space_string == "LinearRGB") inputColorSpace = LINEAR_RGB;
+	else if(color_space_string == "Raw_manual_Gamma") inputColorSpace = RAW_MANUAL_GAMMA;
+	else inputColorSpace = SRGB;
+	
+	inputGamma = gammaVal;
 }
 
 void yafrayInterface_t::paramsClearAll()
