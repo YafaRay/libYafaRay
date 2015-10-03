@@ -2,7 +2,8 @@
  *
  * 			color.h: Color type and operators api
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Est�vez
+ *      Copyright (C) 2002  Alejandro Conty Estévez
+ *		Copyright (C) 2015  David Bluecame for Color Space additions
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -40,6 +41,14 @@ using std::isinf; // from cmath
 #endif
 
 __BEGIN_YAFRAY
+
+enum colorSpaces_t
+{
+	LINEAR_RGB,
+	SRGB,
+	XYZ_D65,
+	RAW_MANUAL_GAMMA
+};
 
 class YAFRAYCORE_EXPORT color_t
 {
@@ -121,6 +130,13 @@ class YAFRAYCORE_EXPORT color_t
 			if (G<0.0) G=0.0; else if (G>1.0) G=1.0;
 			if (B<0.0) B=0.0; else if (B>1.0) B=1.0;
 		}
+		
+		CFLOAT linearRGB_from_sRGB(CFLOAT value_sRGB);
+		CFLOAT sRGB_from_linearRGB(CFLOAT value_linearRGB);
+		
+		void linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma);
+		void ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma);		
+		
 //	protected:
 		CFLOAT R, G, B;
 };
@@ -330,6 +346,82 @@ inline CFLOAT maxAbsDiff(const color_t &a,const color_t &b)
 }
 
 YAFRAYCORE_EXPORT color_t convergenceAccell(const color_t &cn_1,const color_t &cn0,const color_t &cn1);
+
+//Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
+static float linearRGB_from_XYZ_D65[3][3] =
+{
+	 { 3.2406255, -1.537208,  -0.4986286 },
+	 {-0.9689307,  1.8757561,  0.0415175 },
+	 { 0.0557101, -0.2040211,  1.0569959 }
+};
+
+//Inverse matrices
+static float XYZ_D65_from_linearRGB[3][3] =
+{
+	{ 0.412400,   0.357600,   0.180500 },
+	{ 0.212600,   0.715200,   0.072200 },
+	{ 0.019300,   0.119200,   0.950500 }
+};
+
+inline CFLOAT color_t::linearRGB_from_sRGB(CFLOAT value_sRGB)
+{
+	//Calculations from http://www.color.org/chardata/rgb/sRGB.pdf
+	if(value_sRGB <= 0.04045f) return (value_sRGB / 12.92f);
+	else return fPow(((value_sRGB + 0.055f) / 1.055f), 2.4f);
+}
+
+inline CFLOAT color_t::sRGB_from_linearRGB(CFLOAT value_linearRGB)
+{
+	//Calculations from http://www.color.org/chardata/rgb/sRGB.pdf
+	if(value_linearRGB <= 0.0031308f) return (value_linearRGB * 12.92f);
+	else return ((1.055f * fPow(value_linearRGB, 0.416667f)) - 0.055f); //0,416667f = 1/2.4
+}
+
+inline void color_t::linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma)
+{
+	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
+	if(colorSpace == SRGB)
+	{
+		R = linearRGB_from_sRGB(R);
+		G = linearRGB_from_sRGB(G);
+		B = linearRGB_from_sRGB(B);
+	}
+	else if(colorSpace == XYZ_D65)
+	{
+		float oldR = R, oldG = G, oldB = B;
+		R = linearRGB_from_XYZ_D65[0][0] * oldR + linearRGB_from_XYZ_D65[0][1] * oldG + linearRGB_from_XYZ_D65[0][2] * oldB;
+		G = linearRGB_from_XYZ_D65[1][0] * oldR + linearRGB_from_XYZ_D65[1][1] * oldG + linearRGB_from_XYZ_D65[1][2] * oldB;
+		B = linearRGB_from_XYZ_D65[2][0] * oldR + linearRGB_from_XYZ_D65[2][1] * oldG + linearRGB_from_XYZ_D65[2][2] * oldB;
+	}
+	else if(colorSpace == RAW_MANUAL_GAMMA && gamma != 1.f)
+	{
+		gammaAdjust(gamma);
+	}
+}
+
+inline void color_t::ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma)
+{
+	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
+	if(colorSpace == SRGB)
+	{
+		R = sRGB_from_linearRGB(R);
+		G = sRGB_from_linearRGB(G);
+		B = sRGB_from_linearRGB(B);
+	}
+	else if(colorSpace == XYZ_D65)
+	{
+		float oldR = R, oldG = G, oldB = B;
+		R = XYZ_D65_from_linearRGB[0][0] * oldR + XYZ_D65_from_linearRGB[0][1] * oldG + XYZ_D65_from_linearRGB[0][2] * oldB;
+		G = XYZ_D65_from_linearRGB[1][0] * oldR + XYZ_D65_from_linearRGB[1][1] * oldG + XYZ_D65_from_linearRGB[1][2] * oldB;
+		B = XYZ_D65_from_linearRGB[2][0] * oldR + XYZ_D65_from_linearRGB[2][1] * oldG + XYZ_D65_from_linearRGB[2][2] * oldB;
+	}
+	else if(colorSpace == RAW_MANUAL_GAMMA && gamma != 1.f)
+	{
+		if(gamma <= 0.f) gamma = 1.0e-2f;	//Arbitrary lower boundary limit for the output gamma, to avoid division by 0
+		float invGamma = 1.f / gamma;
+		gammaAdjust(invGamma);
+	}
+}
 
 __END_YAFRAY
 

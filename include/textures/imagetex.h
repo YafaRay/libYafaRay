@@ -49,15 +49,15 @@ enum interpolationType
 class textureImage_t : public texture_t
 {
 	public:
-		textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma);
+		textureImage_t(imageHandler_t *ih, interpolationType intp, colorSpaces_t color_space, float gamma);
 		virtual ~textureImage_t();
 		virtual bool discrete() const { return true; }
 		virtual bool isThreeD() const { return false; }
 		virtual bool isNormalmap() const { return normalmap; }
 		virtual colorA_t getColor(const point3d_t &sp) const;
 		virtual colorA_t getColor(int x, int y, int z) const;
-		virtual colorA_t getNoGammaColor(const point3d_t &p) const;
-		virtual colorA_t getNoGammaColor(int x, int y, int z) const;
+		virtual colorA_t getRawColor(const point3d_t &p) const;
+		virtual colorA_t getRawColor(int x, int y, int z) const;
 		virtual void resolution(int &x, int &y, int &z) const;
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 
@@ -74,6 +74,7 @@ class textureImage_t : public texture_t
 		int tex_clipmode;
 		imageHandler_t *image;
 		interpolationType intp_type;
+		colorSpaces_t colorSpace;
 		float gamma;
 };
 
