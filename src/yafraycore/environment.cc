@@ -547,7 +547,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
-	else if(color_space_string == "Raw_manual_Gamma") color_space = RAW_MANUAL_GAMMA;
+	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
 
 	imageFilm_t::filterType type=imageFilm_t::BOX;
