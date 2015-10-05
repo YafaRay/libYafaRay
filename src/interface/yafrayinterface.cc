@@ -219,7 +219,7 @@ void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float
 	if(color_space_string == "sRGB") inputColorSpace = SRGB;
 	else if(color_space_string == "XYZ") inputColorSpace = XYZ_D65;
 	else if(color_space_string == "LinearRGB") inputColorSpace = LINEAR_RGB;
-	else if(color_space_string == "Raw_manual_Gamma") inputColorSpace = RAW_MANUAL_GAMMA;
+	else if(color_space_string == "Raw_Manual_Gamma") inputColorSpace = RAW_MANUAL_GAMMA;
 	else inputColorSpace = SRGB;
 	
 	inputGamma = gammaVal;

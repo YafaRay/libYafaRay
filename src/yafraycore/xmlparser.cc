@@ -117,7 +117,7 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 	if(color_space_string == "sRGB") input_color_space = SRGB;
 	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") input_color_space = LINEAR_RGB;
-	//else if(color_space_string == "Raw_manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
+	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
 	else input_color_space = SRGB;
 
 	xmlParser_t parser(env, scene, render, input_color_space, input_gamma);

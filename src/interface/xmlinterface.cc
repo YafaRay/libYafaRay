@@ -327,7 +327,7 @@ void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gamm
 	if(color_space_string == "sRGB") XMLColorSpace = SRGB;
 	else if(color_space_string == "XYZ") XMLColorSpace = XYZ_D65;
 	else if(color_space_string == "LinearRGB") XMLColorSpace = LINEAR_RGB;
-	else if(color_space_string == "Raw_manual_Gamma") XMLColorSpace = RAW_MANUAL_GAMMA;
+	else if(color_space_string == "Raw_Manual_Gamma") XMLColorSpace = RAW_MANUAL_GAMMA;
 	else XMLColorSpace = SRGB;
 	
 	XMLGamma = gammaVal;
