@@ -3,8 +3,7 @@
  * 			color.h: Color type and operators api
  *      This is part of the yafray package
  *      Copyright (C) 2002  Alejandro Conty Estévez
- *		Copyright (C) 2015  David Bluecame for Color Space additions
- *      Copyright (C) 2015  David Bluecame (additions for Render Passes)
+ *		Copyright (C) 2015  David Bluecame for Color Space and Render Passes
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
