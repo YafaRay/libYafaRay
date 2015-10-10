@@ -26,7 +26,7 @@
 
 __BEGIN_YAFRAY
 
-textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, colorSpaces_t color_space, float gamma):
+textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma, colorSpaces_t color_space):
 				image(ih), intp_type(intp), colorSpace(color_space), gamma(gamma)
 {
 	// Empty
@@ -257,8 +257,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
-	std::string color_space_string = "sRGB";
-	colorSpaces_t color_space = SRGB;
+	std::string color_space_string = "Raw_Manual_Gamma";
+	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	textureImage_t *tex = NULL;
 	imageHandler_t *ih = NULL;
 	params.getParam("interpolate", intpstr);
@@ -330,7 +330,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else color_space = SRGB;
 	}
 	
-	tex = new textureImage_t(ih, intp, color_space, gamma);
+	tex = new textureImage_t(ih, intp, gamma, color_space);
 
 	if(!tex)
 	{

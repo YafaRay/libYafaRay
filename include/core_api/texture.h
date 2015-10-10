@@ -17,6 +17,8 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual bool isNormalmap() const { return false; }
 		virtual colorA_t getColor(const point3d_t &p) const = 0;
 		virtual colorA_t getColor(int x, int y, int z) const { return colorA_t(0.f); }
+		virtual colorA_t getNoGammaColor(const point3d_t &p) const { return getColor(p); }	//deprecated: use getRawColor instead
+		virtual colorA_t getNoGammaColor(int x, int y, int z) const { return getColor(x, y, z); }	//deprecated: use getRawColor instead
 		virtual colorA_t getRawColor(const point3d_t &p) const { return getColor(p); }
 		virtual colorA_t getRawColor(int x, int y, int z) const { return getColor(x, y, z); }
 		virtual CFLOAT getFloat(const point3d_t &p) const { return getRawColor(p).col2bri(); }

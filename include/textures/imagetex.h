@@ -49,7 +49,7 @@ enum interpolationType
 class textureImage_t : public texture_t
 {
 	public:
-		textureImage_t(imageHandler_t *ih, interpolationType intp, colorSpaces_t color_space, float gamma);
+		textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma, colorSpaces_t color_space = RAW_MANUAL_GAMMA);
 		virtual ~textureImage_t();
 		virtual bool discrete() const { return true; }
 		virtual bool isThreeD() const { return false; }

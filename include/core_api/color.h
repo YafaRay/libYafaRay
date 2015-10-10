@@ -3,7 +3,7 @@
  * 			color.h: Color type and operators api
  *      This is part of the yafray package
  *      Copyright (C) 2002  Alejandro Conty Estévez
- *		Copyright (C) 2015  David Bluecame for Color Space additions
+ *      Copyright (C) 2015  David Bluecame for Color Space additions
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -44,10 +44,10 @@ __BEGIN_YAFRAY
 
 enum colorSpaces_t
 {
-	LINEAR_RGB,
-	SRGB,
-	XYZ_D65,
-	RAW_MANUAL_GAMMA
+	RAW_MANUAL_GAMMA	= 1,
+	LINEAR_RGB		= 2,
+	SRGB			= 3,
+	XYZ_D65			= 4	
 };
 
 class YAFRAYCORE_EXPORT color_t

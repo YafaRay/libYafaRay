@@ -5,7 +5,7 @@
 
 __BEGIN_YAFRAY
 
-xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(SRGB)
+xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(RAW_MANUAL_GAMMA)
 {
 	xmlName = "yafaray.xml";
 }

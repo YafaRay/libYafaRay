@@ -8,7 +8,7 @@
 
 __BEGIN_YAFRAY
 
-yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inputColorSpace(LINEAR_RGB)
+yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
@@ -212,6 +212,12 @@ void yafrayInterface_t::paramsSetMemMatrix(const char* name, double* matrix, boo
 		for(j= 0; j < 4; j++)
 			mat[i][j] = *(matrix+i*4+j);
 	paramsSetMatrix(name, mat, transpose);
+}
+
+void yafrayInterface_t::setInputGamma(float gammaVal, bool enable)
+//deprecated: use setInputColorSpace instead
+{
+	setInputColorSpace("Raw_Manual_Gamma", gammaVal);
 }
 
 void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float gammaVal)

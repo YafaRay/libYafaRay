@@ -107,6 +107,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setNumSamples(int n){ numSamples = n; }
 		/*! Enables/disables color clamping */
 		void setClamp(bool c){ clamp = c; }
+		/*! (Deprecated, use setColorSpace instead) Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
+		void setGamma(float gammaVal, bool enable);
 		/*! Sets the film color space and gamma correction */
 		void setColorSpace(colorSpaces_t color_space, float gammaVal);
 		/*! Sets the adaptative AA sampling threshold */

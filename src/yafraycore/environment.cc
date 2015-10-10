@@ -520,8 +520,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	const std::string *name=0;
 	const std::string *tiles_order=0;
 	int width=320, height=240, xstart=0, ystart=0;
-	std::string color_space_string = "sRGB";
-	colorSpaces_t color_space = SRGB;
+	std::string color_space_string = "Raw_Manual_Gamma";
+	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	float filt_sz = 1.5, gamma=1.f;
 	bool clamp = false;
 	bool showSampledPixels = false;
