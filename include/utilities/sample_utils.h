@@ -109,12 +109,11 @@ public:
 		// Find surrounding cdf segments
 		float *ptr = std::lower_bound(cdf, cdf+count+1, u);
 		int index = (int) (ptr-cdf-1);
-		if(index<0)
+		if(index<0) //Hopefully this should no longer be necessary from now on, as a minimum value slightly over 0.f has been set to the scrHalton function to avoid ptr and cdf to coincide (which caused index = -1)
 		{
 		    Y_ERROR << "Index out of bounds in pdf1D_t::Sample: index, u, ptr, cdf = " << index << ", " << u << ", " << ptr << ", " << cdf << yendl;
 		    index=0;
 		}
-             //FIXME: this is one of the fixes for the white dots. Sometimes for some reason this index was -1, causing an access outside the array and an invalid value->NaN, inf, etc. Now, we ensure the index does not move <0, but we should look for a better solution to prevent the index to go <0 in the first place.
 		// Return offset along current cdf segment
 		float delta = (u - cdf[index]) / (cdf[index+1] - cdf[index]);
 		if(pdf) *pdf = func[index] * invIntegral;
