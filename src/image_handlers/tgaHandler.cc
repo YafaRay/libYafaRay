@@ -38,13 +38,13 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
+	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name);
-	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
-	colorA_t getPixel(int x, int y);
+	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
+	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 
 private:
@@ -77,39 +77,39 @@ tgaHandler_t::tgaHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-	m_hasDepth = false;
 	
-	m_rgba = NULL;
-	m_depth = NULL;
-	
+	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		imagePasses.at(idx) = NULL;
+	}
+
 	handlerName = "TGAHandler";
 }
 
-void tgaHandler_t::initForOutput(int width, int height, bool withAlpha, bool withDepth)
+void tgaHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-	m_hasDepth = withDepth;
+    m_MultiLayer = multi_layer;
 	
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
-	
-	if(m_hasDepth)
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
-		m_depth = new gray2DImage_nw_t(m_width, m_height);
+		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
 	}
 }
 
 tgaHandler_t::~tgaHandler_t()
 {
-	if(m_rgba) delete m_rgba;
-	if(m_depth) delete m_depth;
-	m_rgba = NULL;
-	m_depth = NULL;
-
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		imagePasses.at(idx) = NULL;
+	}
 }
 
-bool tgaHandler_t::saveToFile(const std::string &name)
+bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << name << "\"..." << yendl;
 
@@ -139,17 +139,17 @@ bool tgaHandler_t::saveToFile(const std::string &name)
 		{
 			for (int x = 0; x < m_width; x++) 
 			{
-				(*m_rgba)(x, y).clampRGBA01();
+				(*imagePasses.at(imagePassNumber))(x, y).clampRGBA01();
 				if(!m_hasAlpha)
 				{
 					tgaPixelRGB_t rgb;
-					rgb = (color_t)(*m_rgba)(x, y);
+					rgb = (color_t)(*imagePasses.at(imagePassNumber))(x, y);
 					fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
 				}
 				else
 				{
 					tgaPixelRGBA_t rgba;
-					rgba = (*m_rgba)(x, y);
+					rgba = (*imagePasses.at(imagePassNumber))(x, y);
 					fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
 				}
 			}
@@ -159,56 +159,19 @@ bool tgaHandler_t::saveToFile(const std::string &name)
 		fclose(fp);
 	}
 	
-	if(m_hasDepth)
-	{
-		std::string depthName = name.substr(0, name.size() - 4) + "_zbuffer.tga";
-		
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << depthName << "\"..." << yendl;
-		
-		header.idLength = imageId.size();
-		header.imageType = uncGray;
-		header.width = m_width;
-		header.height = m_height;
-		header.bitDepth = 8;
-		header.desc = TL | noAlpha;
-		
-		fp = fopen(depthName.c_str(), "wb");
-
-		if (fp == NULL)
-			return false;
-		else 
-		{
-			fwrite(&header, sizeof(tgaHeader_t), 1, fp);
-			fwrite(imageId.c_str(), (size_t)header.idLength, 1, fp);
-			for (int y = 0; y < m_height; y++) 
-			{
-				for (int x = 0; x < m_width; x++) 
-				{
-					yByte depth = (yByte)(std::max(0.f, std::min(1.f, (*m_depth)(x, y))) * 255.f);
-					fwrite(&depth, sizeof(yByte), 1, fp);
-				}
-			}
-
-			fwrite(&footer, sizeof(tgaFooter_t), 1, fp);
-			fclose(fp);
-		}
-			
-	}
-	
 	Y_INFO << handlerName << ": Done." << yendl;
 	
 	return true;
 }
 
-void tgaHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
+void tgaHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
 {
-	(*m_rgba)(x, y) = rgba;
-	if(m_hasDepth) (*m_depth)(x, y) = depth;
+	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
 }
 
-colorA_t tgaHandler_t::getPixel(int x, int y)
+colorA_t tgaHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*m_rgba)(x, y);
+	return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
 template <class ColorType> void tgaHandler_t::readColorMap(FILE *fp, tgaHeader_t &header, colorProcessor cp)
@@ -246,7 +209,7 @@ template <class ColorType> void tgaHandler_t::readRLEImage(FILE *fp, colorProces
 		{
 			if(!rlePack)  fread(&color, sizeof(ColorType), 1, fp);
 
-			(*m_rgba)(x, y) = (this->*cp)(&color);
+			(*imagePasses.at(0))(x, y) = (this->*cp)(&color);
 					  
 			x += stepX;
 
@@ -271,7 +234,7 @@ template <class ColorType> void tgaHandler_t::readDirectImage(FILE *fp, colorPro
 	{
 		for(size_t x = minX; x != maxX; x += stepX)
 		{
-			(*m_rgba)(x, y) = (this->*cp)(&color[i]);
+			(*imagePasses.at(0))(x, y) = (this->*cp)(&color[i]);
 			i++;
 		}
 	}
@@ -452,7 +415,6 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	m_width = header.width;
 	m_height = header.height;
 	m_hasAlpha = (alphaBitDepth != 0 || header.cmEntryBitDepth == 32);
-	m_hasDepth = false;
 
 	bool isRLE = false;
 	bool hasColorMap = false;
@@ -469,8 +431,8 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	// Jump over any image Id
 	fseek(fp, header.idLength, SEEK_CUR);
 	
-	if(m_rgba) delete m_rgba;
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
+	if(imagePasses.at(0)) delete imagePasses.at(0);
+	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
 	
 	ColorMap = NULL;
 	
@@ -598,18 +560,16 @@ imageHandler_t *tgaHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
-	bool withDepth = false;
 	bool forOutput = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
-	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
 	
 	imageHandler_t *ih = new tgaHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
+	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
 	
 	return ih;
 }

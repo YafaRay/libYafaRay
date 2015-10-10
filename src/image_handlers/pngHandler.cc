@@ -42,12 +42,12 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
+	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
-	bool saveToFile(const std::string &name);
-	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
-	colorA_t getPixel(int x, int y);
+	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
+	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 private:
 	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
@@ -60,50 +60,49 @@ pngHandler_t::pngHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-	m_hasDepth = false;
 
-	m_rgba = NULL;
-	m_depth = NULL;
+	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		imagePasses.at(idx) = NULL;
+	}
 
 	handlerName = "PNGHandler";
 }
 
-void pngHandler_t::initForOutput(int width, int height, bool withAlpha, bool withDepth)
+void pngHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-	m_hasDepth = withDepth;
+    m_MultiLayer = multi_layer;
 
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
-
-	if(m_hasDepth)
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
-		m_depth = new gray2DImage_nw_t(m_width, m_height);
+		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
 	}
 }
 
 pngHandler_t::~pngHandler_t()
 {
-	if(m_rgba) delete m_rgba;
-	if(m_depth) delete m_depth;
-	m_rgba = NULL;
-	m_depth = NULL;
-
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		imagePasses.at(idx) = NULL;
+	}
 }
 
-void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
+void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
 {
-	(*m_rgba)(x, y) = rgba;
-	if(m_hasDepth) (*m_depth)(x, y) = depth;
+	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
 }
 
-colorA_t pngHandler_t::getPixel(int x, int y)
+colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*m_rgba)(x, y);
+	return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
-bool pngHandler_t::saveToFile(const std::string &name)
+bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
 
@@ -142,7 +141,7 @@ bool pngHandler_t::saveToFile(const std::string &name)
 	{
 		for(int x = 0; x < m_width; x++)
 		{
-			colorA_t &color = (*m_rgba)(x, y);
+			colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
 			color.clampRGBA01();
 
 			int i = x * channels;
@@ -169,60 +168,6 @@ bool pngHandler_t::saveToFile(const std::string &name)
 	}
 
 	delete[] rowPointers;
-
-	if(m_hasDepth)
-	{
-		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.png";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << yendl;
-
-		fp = fopen(zbufname.c_str(), "wb");
-
-		if(!fp)
-		{
-			Y_ERROR << handlerName << ": Cannot open file " << zbufname << yendl;
-			return false;
-		}
-
-		if(!fillWriteStructs(fp, PNG_COLOR_TYPE_GRAY, pngPtr, infoPtr))
-		{
-			fclose(fp);
-			return false;
-		}
-
-		rowPointers = new png_bytep[m_height];
-
-		for(int i = 0; i < m_height; i++)
-		{
-			rowPointers[i] = new yByte[ m_width ];
-		}
-
-
-		for(int y = 0; y < m_height; y++)
-		{
-			for(int x = 0; x < m_width; x++)
-			{
-				float color = std::max(0.f, std::min(1.f, (*m_depth)(x, y)));
-
-				rowPointers[y][x] = (yByte)(color * 255.f);
-			}
-		}
-
-		png_write_image(pngPtr, rowPointers);
-
-		png_write_end(pngPtr, NULL);
-
-		png_destroy_write_struct(&pngPtr, &infoPtr);
-
-		fclose(fp);
-
-		// cleanup:
-		for(int i = 0; i < m_height; i++)
-		{
-			delete [] rowPointers[i];
-		}
-
-		delete[] rowPointers;
-	}
 
 	Y_INFO << handlerName << ": Done." << yendl;
 
@@ -372,8 +317,6 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 
 	int bitDepth, colorType;
 
-	m_hasDepth = false;
-
 	png_read_info(pngPtr, infoPtr);
 
 	png_get_IHDR(pngPtr, infoPtr, &w, &h, &bitDepth, &colorType, NULL, NULL, NULL);
@@ -415,8 +358,8 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	m_width = (int)w;
 	m_height = (int)h;
 
-	if(m_rgba) delete m_rgba;
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
+	if(imagePasses.at(0)) delete imagePasses.at(0);
+	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
 
 	png_bytepp rowPointers = new png_bytep[m_height];
 
@@ -438,7 +381,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	{
 		for(int y = 0; y < m_height; y++)
 		{
-			colorA_t &color = (*m_rgba)(x, y);
+			colorA_t &color = (*imagePasses.at(0))(x, y);
 
 			int i = x * numChan * bitMult;
 			float c = 0.f;
@@ -516,18 +459,16 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
-	bool withDepth = false;
 	bool forOutput = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
-	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
 
 	imageHandler_t *ih = new pngHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
+	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
 
 	return ih;
 }

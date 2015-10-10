@@ -39,7 +39,7 @@ class YAFRAYCORE_EXPORT camera_t
 	public:
 		camera_t() { }
         camera_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up, int _resx, int _resy, float aspect, float const near_clip_distance, float const far_clip_distance) :
-            position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (PFLOAT)resy / (PFLOAT)resx)
+            position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (PFLOAT)resy / (PFLOAT)resx), light_group_filter(0), camera_name(""), view_name("")
 		{
 			// Calculate and store camera axis
 			camY = up - position;
@@ -76,6 +76,10 @@ class YAFRAYCORE_EXPORT camera_t
 		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const { return false; }
 		virtual float getNearClip() const { return nearClip; }
 		virtual float getFarClip() const { return farClip; }
+		int get_light_group_filter() const { return light_group_filter; }
+		void set_camera_name(std::string name) { camera_name = name; }
+		std::string get_camera_name() const { return camera_name; }
+		std::string get_view_name() const { return view_name; }
 	protected:
 		point3d_t position;	//!< Camera position
 
@@ -91,9 +95,21 @@ class YAFRAYCORE_EXPORT camera_t
 		vector3d_t vright;
 
 		float aspect_ratio;	//<! Aspect ratio of camera (not image in pixel units!)
+		int light_group_filter; //<! Light group filter. It will only render lights from that light group
+		std::string camera_name;       //<! Camera name
+		std::string view_name;       //<! View name for file saving and Blender MultiView environment
 
         Plane near_plane, far_plane;
         float nearClip, farClip;
+};
+
+
+struct camera_sort_by_lightgroup
+{
+	inline bool operator() (const camera_t* camera1, const camera_t* camera2)
+	{
+		return (camera1->get_light_group_filter() < camera2->get_light_group_filter());
+	}
 };
 
 __END_YAFRAY

@@ -34,11 +34,10 @@ class glossyMat_t: public nodeMaterial_t
 	public:
 		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		struct MDat_t
 		{
@@ -47,6 +46,22 @@ class glossyMat_t: public nodeMaterial_t
 		};
 
 		void initOrenNayar(double sigma);
+
+        virtual color_t getDiffuseColor(const renderState_t &state) const
+        {
+			MDat_t *dat = (MDat_t *)state.userdata;
+			nodeStack_t stack(dat->stack);
+			
+			if(as_diffuse || with_diffuse) return (mDiffuseReflShader ? mDiffuseReflShader->getScalar(stack) : 1.f) * (diffuseS ? diffuseS->getColor(stack) : diff_color);
+			else return color_t(0.f);
+        }
+        virtual color_t getGlossyColor(const renderState_t &state) const
+        {
+			MDat_t *dat = (MDat_t *)state.userdata;
+			nodeStack_t stack(dat->stack);
+
+			return (glossyRefS ? glossyRefS->getScalar(stack) : reflectivity) * (glossyS ? glossyS->getColor(stack) : gloss_color);
+        }
 
 	private:
 		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
@@ -66,13 +81,13 @@ class glossyMat_t: public nodeMaterial_t
 		bool as_diffuse, with_diffuse, anisotropic;
 		bool orenNayar;
 		float orenA, orenB;
-		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
 			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
-			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mVisibility(eVisibility)
+			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
+    mVisibility = eVisibility;
 	bsdfFlags = BSDF_NONE;
 
 	if(diff > 0)
@@ -148,9 +163,12 @@ float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const v
     }
 }
 
-color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
 {
-	if( !(bsdfs & BSDF_DIFFUSE) || ((sp.Ng*wi)*(sp.Ng*wo)) < 0.f ) return color_t(0.f);
+	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass 
+	{
+		if( !(bsdfs & BSDF_DIFFUSE) || ((sp.Ng*wi)*(sp.Ng*wo)) < 0.f ) return color_t(0.f);
+	}
 
 	MDat_t *dat = (MDat_t *)state.userdata;
 	color_t col(0.f);
@@ -420,6 +438,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	bool aniso=false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	int mat_pass_index = 0;
 	
 	const std::string *name=0;
 	params.getParam("color", col);
@@ -430,6 +449,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
 	params.getParam("visibility", sVisibility);
+	params.getParam("mat_pass_index",   mat_pass_index);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
@@ -438,6 +458,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	else visibility = NORMAL_VISIBLE;
 	
 	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff, visibility);
+
+	mat->setMaterialIndex(mat_pass_index);
 
 	if(aniso)
 	{

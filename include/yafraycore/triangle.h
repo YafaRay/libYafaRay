@@ -59,6 +59,7 @@ class YAFRAYCORE_EXPORT triangle_t
             out << "[ idx = " << t.selfIndex << " (" << t.pa << "," << t.pb << "," << t.pc << ")]";
             return out;
         }
+        virtual const triangleObject_t* getMesh() const { return mesh; }
 
 	private:
 		int pa, pb, pc; //!< indices in point array, referenced in mesh.

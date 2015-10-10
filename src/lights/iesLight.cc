@@ -32,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled=true, bool bCastShadows=true);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -50,9 +50,7 @@ class iesLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		
 		bool isIESOk(){ return IESOk; };
-		virtual bool lightEnabled() const { return lLightEnabled;}
-		virtual bool castShadows() const { return lCastShadows; }
-		
+
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
 
@@ -75,13 +73,14 @@ class iesLight_t : public light_t
 		IESData_t *iesData;
 		
 		bool IESOk;
-		bool lLightEnabled; //!< enable/disable light
-		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
 {
+    lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
+    lLightGroup = iLightGroup;
 	iesData = new IESData_t();
 	
 	if((IESOk = iesData->parseIESFile(iesFile)))
@@ -245,6 +244,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	float ang = 180.f; //full hemi
 	bool lightEnabled = true;
 	bool castShadows = true;
+    int light_group = 1;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -256,8 +256,9 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cone_angle", ang);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+    params.getParam("light_group", light_group);
 
-	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);
+	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows, light_group);
 
 	if (!light->isIESOk())
 	{

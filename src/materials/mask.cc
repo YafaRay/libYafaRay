@@ -30,8 +30,9 @@
 __BEGIN_YAFRAY
 
 maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh, visibility_t eVisibility):
-	mat1(m1), mat2(m2), threshold(thresh), mVisibility(eVisibility)
+	mat1(m1), mat2(m2), threshold(thresh)
 {
+    mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
 }
 
@@ -49,7 +50,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
 }
 
-color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
 {
 	bool mv = *(bool*)state.userdata;
 	color_t col;

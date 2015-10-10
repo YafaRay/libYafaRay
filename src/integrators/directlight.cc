@@ -34,7 +34,7 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
 	public:
 		directLighting_t(bool transpShad=false, int shadowDepth=4, int rayDepth=6);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -87,7 +87,7 @@ bool directLighting_t::preprocess()
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
+colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
 {
 	color_t col(0.0);
 	float alpha;
@@ -112,17 +112,35 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 
 		material->initBSDF(state, sp, bsdfs);
 
-		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+		if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) 
+		{
+			col += colorPasses.probe_set(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		}
 
 		if(bsdfs & BSDF_DIFFUSE)
 		{
-			col += estimateAllDirectLight(state, sp, wo);
-			if(usePhotonCaustics) col += estimateCausticPhotons(state, sp, wo);
+			col += estimateAllDirectLight(state, sp, wo, colorPasses);
+			
+			if(usePhotonCaustics)
+			{
+				col += colorPasses.probe_add(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+			}
+			
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
+		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		{
+			generateCommonRenderPasses(colorPasses, state, sp);
+			
+			if(colorPasses.enabled(PASS_YAF_AO))
+			{
+				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+			}
+		}
+		
 		if(transpRefractedBackground)
 		{
 			float m_alpha = material->getAlpha(state, sp, wo);
@@ -132,7 +150,10 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background) col += (*background)(ray, state, false);
+		if(background)
+		{
+			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+		}
 	}
 
 	state.userdata = o_udat;

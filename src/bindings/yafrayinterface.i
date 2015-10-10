@@ -19,11 +19,12 @@ namespace std
 #ifdef SWIGPYTHON  // Begining of python specific code
 
 %{
+#include <sstream>
 #include <yafraycore/monitor.h>
 #include <core_api/output.h>
 #include <interface/yafrayinterface.h>
 
-struct yafTilePixel4_t
+struct yafTilePixel_t
 {
 	float r;
 	float g;
@@ -31,47 +32,18 @@ struct yafTilePixel4_t
 	float a;
 };
 
-struct yafTilePixel3_t
-{
-	float x;
-	float y;
-	float z;
-};
-
-struct yafTilePixel1_t
-{
-	float v;
-};
-
-struct YafTile4Object_t
+struct YafTileObject_t
 {
 	PyObject_HEAD
 	int resx, resy;
 	int x0, x1, y0, y1;
 	int w, h;
-	yafTilePixel4_t *mem;
-};
-
-struct YafTile3Object_t
-{
-	PyObject_HEAD
-	int resx, resy;
-	int x0, x1, y0, y1;
-	int w, h;
-	yafTilePixel3_t *mem;
-};
-
-struct YafTile1Object_t
-{
-	PyObject_HEAD
-	int resx, resy;
-	int x0, x1, y0, y1;
-	int w, h;
-	yafTilePixel1_t *mem;
+	yafTilePixel_t *mem;
+	int tileType; //RGBA (4), RGB (3) or Grayscale (1). Grayscale would use component "r" only for the grayscale value.
 };
 
 
-static Py_ssize_t yaf_tile_4_length(YafTile4Object_t *self)
+static Py_ssize_t yaf_tile_length(YafTileObject_t *self)
 {
 	self->w = (self->x1 - self->x0);
 	self->h = (self->y1 - self->y0);
@@ -79,11 +51,51 @@ static Py_ssize_t yaf_tile_4_length(YafTile4Object_t *self)
 	return self->w * self->h;
 }
 
-static PyObject *yaf_tile_4_subscript_int(YafTile4Object_t *self, int keynum)
+
+static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 {
 	// Check boundaries and fill w and h
-	if (keynum >= yaf_tile_4_length(self) || keynum < 0)
-		return Py_BuildValue("[f,f,f,f]", 1, 0, 0, 1);
+	if (keynum >= yaf_tile_length(self) || keynum < 0)
+	{
+		if(self->tileType == yafaray::PASS_EXT_TILE_1_GRAYSCALE) 
+		{
+			PyObject* groupPix = PyTuple_New(1);
+			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
+			
+			PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+			Py_XDECREF(groupPix);
+			
+			return MyResult;
+		}
+		else if(self->tileType == yafaray::PASS_EXT_TILE_3_RGB) 
+		{
+			PyObject* groupPix = PyTuple_New(3);
+			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
+			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
+			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
+			
+			PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+			Py_XDECREF(groupPix);
+			
+			return MyResult;
+		}
+		else
+		{
+			PyObject* groupPix = PyTuple_New(4);
+			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
+			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
+			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
+			PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(1.f));
+			
+			PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+			Py_XDECREF(groupPix);
+			
+			return MyResult;
+		}
+	}
 
 	// Calc position of the tile in the image region
 	int vy = keynum / self->w;
@@ -94,170 +106,75 @@ static PyObject *yaf_tile_4_subscript_int(YafTile4Object_t *self, int keynum)
 	vy = (self->y0 + self->h - 1) - vy;
 
 	// Get pixel
-	yafTilePixel4_t &pix = self->mem[ self->resx * vy + vx ];
+	yafTilePixel_t &pix = self->mem[ self->resx * vy + vx ];
 
-	return Py_BuildValue("[f,f,f,f]", pix.r, pix.g, pix.b, pix.a);
+	if(self->tileType == yafaray::PASS_EXT_TILE_1_GRAYSCALE) 
+	{
+		PyObject* groupPix = PyTuple_New(1);
+		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
+		
+		PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+		Py_XDECREF(groupPix);
+		
+		return MyResult;
+	}
+	else if(self->tileType == yafaray::PASS_EXT_TILE_3_RGB) 
+	{
+		PyObject* groupPix = PyTuple_New(3);
+		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
+		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
+		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
+		
+		PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+		Py_XDECREF(groupPix);
+		
+		return MyResult;
+	}
+	else
+	{
+		PyObject* groupPix = PyTuple_New(4);
+		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
+		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
+		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
+		PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(pix.a));
+		
+		PyObject *MyResult = Py_BuildValue("O", groupPix);
+
+		Py_XDECREF(groupPix);
+		
+		return MyResult;
+	}
 }
 
-static void yaf_tile_4_dealloc(YafTile4Object_t *self)
+static void yaf_tile_dealloc(YafTileObject_t *self)
 {
 	PyObject_Del(self);
 }
 
-PySequenceMethods sequence_methods_4 =
+PySequenceMethods sequence_methods =
 {
-	( lenfunc ) yaf_tile_4_length,
+	( lenfunc ) yaf_tile_length,
 	NULL,
 	NULL,
-	( ssizeargfunc ) yaf_tile_4_subscript_int
+	( ssizeargfunc ) yaf_tile_subscript_int
 };
 
-PyTypeObject yafTile4_Type =
+PyTypeObject yafTile_Type =
 {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"yaf_tile_4",							/* tp_name */
-	sizeof(YafTile4Object_t),			/* tp_basicsize */
+	"yaf_tile",							/* tp_name */
+	sizeof(YafTileObject_t),			/* tp_basicsize */
 	0,									/* tp_itemsize */
-	( destructor ) yaf_tile_4_dealloc,	/* tp_dealloc */
+	( destructor ) yaf_tile_dealloc,	/* tp_dealloc */
 	NULL,                       		/* printfunc tp_print; */
 	NULL,								/* getattrfunc tp_getattr; */
 	NULL,								/* setattrfunc tp_setattr; */
 	NULL,								/* tp_compare */ /* DEPRECATED in python 3.0! */
 	NULL,								/* tp_repr */
 	NULL,                       		/* PyNumberMethods *tp_as_number; */
-	&sequence_methods_4,					/* PySequenceMethods *tp_as_sequence; */
-	NULL,								/* PyMappingMethods *tp_as_mapping; */
-	NULL,								/* hashfunc tp_hash; */
-	NULL,								/* ternaryfunc tp_call; */
-	NULL,                       		/* reprfunc tp_str; */
-	NULL,								/* getattrofunc tp_getattro; */
-	NULL,								/* setattrofunc tp_setattro; */
-	NULL,                       		/* PyBufferProcs *tp_as_buffer; */
-	Py_TPFLAGS_DEFAULT,         		/* long tp_flags; */
-};
-
-
-static Py_ssize_t yaf_tile_1_length(YafTile1Object_t *self)
-{
-	self->w = (self->x1 - self->x0);
-	self->h = (self->y1 - self->y0);
-
-	return self->w * self->h;
-}
-
-static PyObject *yaf_tile_1_subscript_int(YafTile1Object_t *self, int keynum)
-{
-	// Check boundaries and fill w and h
-	if (keynum >= yaf_tile_1_length(self) || keynum < 0)
-		return Py_BuildValue("[f]", 0);
-
-	// Calc position of the tile in the image region
-	int vy = keynum / self->w;
-	int vx = keynum - vy * self->w;
-
-	// Map tile position to image buffer
-	vx = self->x0 + vx;
-	vy = (self->y0 + self->h - 1) - vy;
-
-	// Get pixel
-	yafTilePixel1_t &pix = self->mem[ self->resx * vy + vx ];
-
-	return Py_BuildValue("[f]", pix.v);
-}
-
-static void yaf_tile_1_dealloc(YafTile1Object_t *self)
-{
-	PyObject_Del(self);
-}
-
-PySequenceMethods sequence_methods_1 =
-{
-	( lenfunc ) yaf_tile_1_length,
-	NULL,
-	NULL,
-	( ssizeargfunc ) yaf_tile_1_subscript_int
-};
-
-PyTypeObject yafTile1_Type =
-{
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"yaf_tile_1",							/* tp_name */
-	sizeof(YafTile1Object_t),			/* tp_basicsize */
-	0,									/* tp_itemsize */
-	( destructor ) yaf_tile_1_dealloc,	/* tp_dealloc */
-	NULL,                       		/* printfunc tp_print; */
-	NULL,								/* getattrfunc tp_getattr; */
-	NULL,								/* setattrfunc tp_setattr; */
-	NULL,								/* tp_compare */ /* DEPRECATED in python 3.0! */
-	NULL,								/* tp_repr */
-	NULL,                       		/* PyNumberMethods *tp_as_number; */
-	&sequence_methods_1,					/* PySequenceMethods *tp_as_sequence; */
-	NULL,								/* PyMappingMethods *tp_as_mapping; */
-	NULL,								/* hashfunc tp_hash; */
-	NULL,								/* ternaryfunc tp_call; */
-	NULL,                       		/* reprfunc tp_str; */
-	NULL,								/* getattrofunc tp_getattro; */
-	NULL,								/* setattrofunc tp_setattro; */
-	NULL,                       		/* PyBufferProcs *tp_as_buffer; */
-	Py_TPFLAGS_DEFAULT,         		/* long tp_flags; */
-};
-
-
-static Py_ssize_t yaf_tile_3_length(YafTile3Object_t *self)
-{
-	self->w = (self->x1 - self->x0);
-	self->h = (self->y1 - self->y0);
-
-	return self->w * self->h;
-}
-
-static PyObject *yaf_tile_3_subscript_int(YafTile3Object_t *self, int keynum)
-{
-	// Check boundaries and fill w and h
-	if (keynum >= yaf_tile_3_length(self) || keynum < 0)
-		return Py_BuildValue("[f,f,f]", 0, 0, 0);
-
-	// Calc position of the tile in the image region
-	int vy = keynum / self->w;
-	int vx = keynum - vy * self->w;
-
-	// Map tile position to image buffer
-	vx = self->x0 + vx;
-	vy = (self->y0 + self->h - 1) - vy;
-
-	// Get pixel
-	yafTilePixel3_t &pix = self->mem[ self->resx * vy + vx ];
-
-	return Py_BuildValue("[f,f,f]", pix.x, pix.y, pix.z);
-}
-
-static void yaf_tile_3_dealloc(YafTile3Object_t *self)
-{
-	PyObject_Del(self);
-}
-
-PySequenceMethods sequence_methods_3 =
-{
-	( lenfunc ) yaf_tile_3_length,
-	NULL,
-	NULL,
-	( ssizeargfunc ) yaf_tile_3_subscript_int
-};
-
-PyTypeObject yafTile3_Type =
-{
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"yaf_tile_3",							/* tp_name */
-	sizeof(YafTile3Object_t),			/* tp_basicsize */
-	0,									/* tp_itemsize */
-	( destructor ) yaf_tile_3_dealloc,	/* tp_dealloc */
-	NULL,                       		/* printfunc tp_print; */
-	NULL,								/* getattrfunc tp_getattr; */
-	NULL,								/* setattrfunc tp_setattr; */
-	NULL,								/* tp_compare */ /* DEPRECATED in python 3.0! */
-	NULL,								/* tp_repr */
-	NULL,                       		/* PyNumberMethods *tp_as_number; */
-	&sequence_methods_3,					/* PySequenceMethods *tp_as_sequence; */
+	&sequence_methods,					/* PySequenceMethods *tp_as_sequence; */
 	NULL,								/* PyMappingMethods *tp_as_mapping; */
 	NULL,								/* hashfunc tp_hash; */
 	NULL,								/* ternaryfunc tp_call; */
@@ -283,109 +200,171 @@ public:
 	mDrawArea(drawAreaCallback),
 	mFlush(flushCallback)
 	{
-		tile = PyObject_New(YafTile4Object_t, &yafTile4_Type);
-		dTile = PyObject_New(YafTile1Object_t, &yafTile1_Type);
-
-		tile->mem = new yafTilePixel4_t[x*y];
-		tile->resx = x;
-		tile->resy = y;
-
-		dTile->mem = new yafTilePixel1_t[x*y];
-		dTile->resx = x;
-		dTile->resy = y;
 	}
+
+    virtual void initTilesPasses(int totalViews, int numExtPasses)
+    { 
+		tilesPasses.resize(totalViews);
+    
+        for(size_t view = 0; view < tilesPasses.size(); ++view)
+		{
+			//tilesPasses.at(view).resize(numExtPasses, PyObject_New(YafTileObject_t, &yafTile_Type));
+			
+			for(int idx = 0; idx < numExtPasses; ++idx)
+			{
+				tilesPasses.at(view).push_back(PyObject_New(YafTileObject_t, &yafTile_Type));
+				Py_XINCREF(tilesPasses.at(view)[idx]);
+				tilesPasses.at(view)[idx]->mem = new yafTilePixel_t[resx*resy];
+				tilesPasses.at(view)[idx]->resx = resx;
+				tilesPasses.at(view)[idx]->resy = resy;
+			}
+		}
+    }
 
 	virtual ~pyOutput_t()
 	{
-		delete [] tile->mem;
-		delete [] dTile->mem;
-		Py_XDECREF(tile);
-		Py_XDECREF(dTile);
+		for(size_t view = 0; view < tilesPasses.size(); ++view)
+		{
+			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
+			{
+				delete [] tilesPasses.at(view)[idx]->mem;
+				Py_XDECREF(tilesPasses.at(view)[idx]);
+			}
+			tilesPasses.at(view).clear();
+		}
+		tilesPasses.clear();
 	}
 
-	virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)
+	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t &renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true)
 	{
-		yafTilePixel4_t &pix= tile->mem[resx * y + x];
-		pix.r = c[0];
-		pix.g = c[1];
-		pix.b = c[2];
-		pix.a = alpha ? c[3] : 1.0f;
-
-        yafTilePixel1_t &dpix = dTile->mem[resx * y + x];
-        dpix.v = depth ? z : 1.f;
-
+		for(size_t idx = 0; idx < tilesPasses.at(numView).size(); ++idx)
+		{
+			//std::cout << "DAVID PUTPIXEL: view=" << numView << ", pass=" << idx << " (x=" << x <<", y=" << y << "), color=" << colExtPasses[idx] << std::endl;
+			yafTilePixel_t &pix= tilesPasses.at(numView)[idx]->mem[resx * y + x];
+			pix.r = colExtPasses[idx].R;
+			pix.g = colExtPasses[idx].G;
+			pix.b = colExtPasses[idx].B;
+			pix.a = (alpha || idx > 0) ? colExtPasses[idx].A : 1.0f;
+		}
+        
 		return true;
 	}
 
-	virtual void flush()
+	virtual void flush(int numView_unused, const yafaray::renderPasses_t &renderPasses)
 	{
-		tile->x0 = 0;
-		tile->x1 = resx;
-		tile->y0 = 0;
-		tile->y1 = resy;
-
-		dTile->x0 = 0;
-		dTile->x1 = resx;
-		dTile->y0 = 0;
-		dTile->y1 = resy;
-
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(mFlush, Py_BuildValue("ii(OO)", resx, resy, tile, dTile));
+		
+		PyObject* groupTile = PyTuple_New(tilesPasses.size() * tilesPasses.at(0).size());
+
+		for(size_t view = 0; view < tilesPasses.size(); ++view)
+		{
+			//std::cout << "DAVID FLUSH: view=" << view << ", get_view_name(view)=" << get_view_name(view) << std::endl;
+			
+			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
+			{
+				Py_INCREF(tilesPasses.at(view)[idx]);
+				
+				tilesPasses.at(view)[idx]->x0 = 0;
+				tilesPasses.at(view)[idx]->x1 = resx;
+				tilesPasses.at(view)[idx]->y0 = 0;
+				tilesPasses.at(view)[idx]->y1 = resy;
+				
+				tilesPasses.at(view)[idx]->tileType = renderPasses.externalTyleType(idx);
+				
+				std::stringstream extPassName;
+				extPassName << renderPasses.externalPassTypeString(idx);
+				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);
+				
+				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
+			}
+		}
+		
+		PyEval_CallObject(mFlush, Py_BuildValue("iiiO", resx, resy, 0, groupTile));
+
+		Py_XDECREF(groupTile);
+
 		PyGILState_Release(gstate);
 	}
 
-	virtual void flushArea(int x0, int y0, int x1, int y1)
+	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)
 	{
+		//std::cout << "DAVID FLUSHAREA: view=" << numView << ", get_view_name(numView)=" << get_view_name(numView) << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
+	
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
-
-		tile->x0 = x0 - bsX;
-		tile->x1 = x1 - bsX;
-		tile->y0 = y0 - bsY;
-		tile->y1 = y1 - bsY;
-
-		dTile->x0 = x0 - bsX;
-		dTile->x1 = x1 - bsX;
-		dTile->y0 = y0 - bsY;
-		dTile->y1 = y1 - bsY;
 
 		int w = x1 - x0;
 		int h = y1 - y0;
 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiii(OO)", tile->x0, resy - tile->y1, w, h, tile, dTile));
+
+		PyObject* groupTile = PyTuple_New(tilesPasses.at(numView).size());
+
+		for(size_t idx = 0; idx < tilesPasses.at(numView).size(); ++idx)
+		{
+			Py_INCREF(tilesPasses.at(numView)[idx]);
+			
+			tilesPasses.at(numView)[idx]->x0 = x0 - bsX;
+			tilesPasses.at(numView)[idx]->x1 = x1 - bsX;
+			tilesPasses.at(numView)[idx]->y0 = y0 - bsY;
+			tilesPasses.at(numView)[idx]->y1 = y1 - bsY;
+			
+			tilesPasses.at(numView)[idx]->tileType = renderPasses.externalTyleType(idx);
+			
+			std::stringstream extPassName;
+			extPassName << renderPasses.externalPassTypeString(idx);
+			PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
+			
+			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
+		}
+
+		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		
+		Py_XDECREF(groupTile);
+		
 		PyGILState_Release(gstate);
 	}
 
-	virtual void highliteArea(int x0, int y0, int x1, int y1)
+	virtual void highliteArea(int numView, int x0, int y0, int x1, int y1)
 	{
+		//std::cout << "DAVID HIGHLITEAREA: view=" << numView << ", get_view_name(numView)=" << get_view_name(numView) << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
 
-		tile->x0 = x0 - bsX;
-		tile->x1 = x1 - bsX;
-		tile->y0 = y0 - bsY;
-		tile->y1 = y1 - bsY;
-
-		dTile->x0 = x0 - bsX;
-		dTile->x1 = x1 - bsX;
-		dTile->y0 = y0 - bsY;
-		dTile->y1 = y1 - bsY;
+		tilesPasses.at(numView)[0]->x0 = x0 - bsX;
+		tilesPasses.at(numView)[0]->x1 = x1 - bsX;
+		tilesPasses.at(numView)[0]->y0 = y0 - bsY;
+		tilesPasses.at(numView)[0]->y1 = y1 - bsY;
 
 		int w = x1 - x0;
 		int h = y1 - y0;
 		int lineL = std::min( 4, std::min( h - 1, w - 1 ) );
 
-		drawCorner(tile->x0, tile->y0, lineL, TL_CORNER);
-		drawCorner(tile->x1, tile->y0, lineL, TR_CORNER);
-		drawCorner(tile->x0, tile->y1, lineL, BL_CORNER);
-		drawCorner(tile->x1, tile->y1, lineL, BR_CORNER);
+		drawCorner(numView, tilesPasses.at(numView)[0]->x0, tilesPasses.at(numView)[0]->y0, lineL, TL_CORNER);
+		drawCorner(numView, tilesPasses.at(numView)[0]->x1, tilesPasses.at(numView)[0]->y0, lineL, TR_CORNER);
+		drawCorner(numView, tilesPasses.at(numView)[0]->x0, tilesPasses.at(numView)[0]->y1, lineL, BL_CORNER);
+		drawCorner(numView, tilesPasses.at(numView)[0]->x1, tilesPasses.at(numView)[0]->y1, lineL, BR_CORNER);
 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiii(OO)", tile->x0, resy - tile->y1, w, h, tile, dTile));
+		
+
+		PyObject* groupTile = PyTuple_New(1);
+
+		Py_INCREF(tilesPasses.at(numView)[0]);
+			
+		tilesPasses.at(numView)[0]->tileType = yafaray::PASS_EXT_TILE_4_RGBA;
+		
+		PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), "Combined", tilesPasses.at(numView)[0]);
+		
+		PyTuple_SET_ITEM(groupTile, 0, (PyObject*) groupItem);
+		
+		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		
+		Py_XDECREF(groupTile);
+
 		PyGILState_Release(gstate);
 	}
 
@@ -399,7 +378,7 @@ private:
 		BR_CORNER
 	};
 
-	void drawCorner(int x, int y, int len, corner pos)
+	void drawCorner(int numView, int x, int y, int len, corner pos)
 	{
 		int minX = 0;
 		int minY = 0;
@@ -443,7 +422,7 @@ private:
 
 		for(int i = minX; i < maxX; ++i)
 		{
-			yafTilePixel4_t &pix = tile->mem[resx * y + i];
+			yafTilePixel_t &pix = tilesPasses.at(numView)[0]->mem[resx * y + i];
 			pix.r = 0.625f;
 			pix.g = 0.f;
 			pix.b = 0.f;
@@ -452,7 +431,7 @@ private:
 
 		for(int j = minY; j < maxY; ++j)
 		{
-			yafTilePixel4_t &pix = tile->mem[resx * j + x];
+			yafTilePixel_t &pix = tilesPasses.at(numView)[0]->mem[resx * j + x]; 
 			pix.r = 0.625f;
 			pix.g = 0.f;
 			pix.b = 0.f;
@@ -465,8 +444,7 @@ private:
 	bool preview;
 	PyObject *mDrawArea;
 	PyObject *mFlush;
-	YafTile4Object_t *tile;
-	YafTile1Object_t *dTile;
+	std::vector< std::vector<YafTileObject_t*> > tilesPasses;
 };
 
 class pyProgress : public yafaray::progressBar_t
@@ -520,9 +498,7 @@ private:
 %}
 
 %init %{
-	PyType_Ready(&yafTile4_Type);
-	PyType_Ready(&yafTile1_Type);
-	PyType_Ready(&yafTile3_Type);
+	PyType_Ready(&yafTile_Type);
 %}
 
 %typemap(in) PyObject *pyfunc
@@ -582,30 +558,33 @@ namespace yafaray
 	{
 		public:
 			virtual ~colorOutput_t() {};
-			virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)=0;
-			virtual void flush()=0;
-			virtual void flushArea(int x0, int y0, int x1, int y1)=0;
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
+			virtual void flush(int numView, const renderPasses_t &renderPasses)=0;
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)=0;
+			virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
 	};
 
 	class imageHandler_t
 	{
 		public:
-			virtual void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = true) = 0;
+			virtual void initForOutput(int width, int height, bool withAlpha = false) = 0;
 			virtual ~imageHandler_t() {};
 			virtual bool loadFromFile(const std::string &name) = 0;
-			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; };
-			virtual bool saveToFile(const std::string &name) = 0;
-			virtual void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f) = 0;
-			virtual colorA_t getPixel(int x, int y) = 0;
-
+			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
+			virtual bool saveToFile(const std::string &name, int imagePassNumber = 0) = 0;
+			virtual void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0) = 0;
+			virtual colorA_t getPixel(int x, int y, int imagePassNumber = 0) = 0;
+			virtual int getWidth() { return m_width; }
+			virtual int getHeight() { return m_height; }
+			virtual bool isHDR() { return false; }
+			
 		protected:
 			std::string handlerName;
 			int m_width;
 			int m_height;
 			bool m_hasAlpha;
-			bool m_hasDepth;
+			std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
 			rgba2DImage_nw_t *m_rgba;
-			gray2DImage_nw_t *m_depth;
 	};
 
 	// Outputs
@@ -616,21 +595,23 @@ namespace yafaray
 			imageOutput_t(imageHandler_t *handle, const std::string &name, int bx, int by);
 			imageOutput_t(); //!< Dummy initializer
 			virtual ~imageOutput_t();
-			virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
-			virtual void flush();
-			virtual void flushArea(int x0, int y0, int x1, int y1) {}; // not used by images... yet
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
+			virtual void flush(int numView, const renderPasses_t &renderPasses);
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // not used by images... yet
 		private:
 			imageHandler_t *image;
 			std::string fname;
+			float bX;
+			float bY;
 	};
 
 	class memoryIO_t : public colorOutput_t
 	{
 		public:
 			memoryIO_t(int resx, int resy, float* iMem);
-			virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
-			void flush();
-			virtual void flushArea(int x0, int y0, int x1, int y1) {}; // no tiled file format used...yet
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
+			void flush(int numView, const renderPasses_t &renderPasses);
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // no tiled file format used...yet
 			virtual ~memoryIO_t();
 		protected:
 			int sizex, sizey;
@@ -676,9 +657,9 @@ namespace yafaray
 
 			float  matrix[4][4];
 			int _invalid;
-		};
+	};
 
-		// Interfaces
+	// Interfaces
 
 	class yafrayInterface_t
 	{
@@ -694,9 +675,9 @@ namespace yafaray
 				\param id returns the ID of the created mesh
 			*/
 			virtual unsigned int getNextFreeID();
-			virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-			virtual bool startCurveMesh(unsigned int id, int vertices);
-			virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+			virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+			virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index=0);
+			virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
 			virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 			virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
 			virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
@@ -737,32 +718,34 @@ namespace yafaray
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-			virtual void setInputGamma(float gammaVal, bool enable);
+			virtual void setInputGamma(float gammaVal, bool enable);	//deprecated: use setInputColorSpace instead
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }
-			virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
+			virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output
 			virtual std::vector<std::string> listImageHandlers();
 			virtual std::vector<std::string> listImageHandlersFullName();
 			virtual std::string getImageFormatFromFullName(const std::string &fullname);
 			virtual std::string getImageFullNameFromFormat(const std::string &format);
-
+			
 			virtual void setVerbosityLevel(int vlevel);
 			virtual void setVerbosityInfo();
 			virtual void setVerbosityWarning();
 			virtual void setVerbosityError();
 			virtual void setVerbosityMute();
-
+			
 			virtual void setDrawParams(bool on = true);
 			virtual bool getDrawParams();
 
 			virtual char* getVersion() const; //!< Get version to check aginst the exporters
-
+			
 			/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 			void printInfo(const std::string &msg);
 			void printWarning(const std::string &msg);
 			void printError(const std::string &msg);
 			void printLog(const std::string &msg);
-
+			
+			void setInputColorSpace(std::string color_space_string, float gammaVal);
+		
 		protected:
 			paraMap_t *params;
 			std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
@@ -771,9 +754,8 @@ namespace yafaray
 			scene_t *scene;
 			imageFilm_t *film;
 			float inputGamma;
-			bool gcInput;
+			colorSpaces_t inputColorSpace;
 	};
-
 
 	class xmlInterface_t: public yafrayInterface_t
 	{
@@ -784,11 +766,12 @@ namespace yafaray
 			virtual bool startGeometry();
 			virtual bool endGeometry();
 			virtual unsigned int getNextFreeID();
-			virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-			virtual bool startCurveMesh(unsigned int id, int vertices);
-			virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+			virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+			virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+			virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index=0);
 			virtual bool endTriMesh();
-			virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
+			virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
+			virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 			virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 			virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 			virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
@@ -796,24 +779,25 @@ namespace yafaray
 			virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 			virtual int  addUV(float u, float v);
 			virtual bool smoothMesh(unsigned int id, double angle);
-
+			
 			// functions directly related to renderEnvironment_t
-			virtual light_t* 		createLight		(const char* name);
-			virtual texture_t* 		createTexture	(const char* name);
-			virtual material_t* 	createMaterial	(const char* name);
-			virtual camera_t* 		createCamera	(const char* name);
-			virtual background_t* 	createBackground(const char* name);
-			virtual integrator_t* 	createIntegrator(const char* name);
-			virtual unsigned int 	createObject	(const char* name);
+			virtual light_t* 		createLight			(const char* name);
+			virtual texture_t* 		createTexture		(const char* name);
+			virtual material_t* 	createMaterial		(const char* name);
+			virtual camera_t* 		createCamera		(const char* name);
+			virtual background_t* 	createBackground	(const char* name);
+			virtual integrator_t* 	createIntegrator	(const char* name);
+			virtual VolumeRegion* 	createVolumeRegion	(const char* name);
+			virtual unsigned int 	createObject		(const char* name);
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-
 			virtual void setOutfile(const char *fname);
+			void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal);
 		protected:
-			void writeParamMap(const paramMap_t &pmap, int indent=1);
+			void writeParamMap(const paraMap_t &pmap, int indent=1);
 			void writeParamList(int indent);
-
+			
 			std::map<const material_t *, std::string> materials;
 			std::ofstream xmlFile;
 			std::string xmlName;
@@ -821,6 +805,8 @@ namespace yafaray
 			size_t nmat;
 			int n_uvs;
 			unsigned int nextObj;
+			float XMLGamma;
+			colorSpaces_t XMLColorSpace;
 	};
 
 }

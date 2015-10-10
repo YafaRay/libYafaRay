@@ -27,15 +27,54 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength=0.0, float translucencyStrength=0.0, float mirrorStrength=0.0, float emitStrength=0.0, float transmitFilterStrength=1.0, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual ~shinyDiffuseMat_t();
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
-        virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const;
+        virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const;
         virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
         virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
         virtual bool isTransparent() const { return mIsTransparent; }
-        virtual visibility_t getVisibility() const { return mVisibility; }
         virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
         virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const; // { return emitCol; }
         virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const;
         virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
+        virtual color_t getDiffuseColor(const renderState_t &state) const
+        {
+                SDDat_t *dat = (SDDat_t *)state.userdata;
+                nodeStack_t stack(dat->nodeStack);
+                
+                if(mIsDiffuse) return (mDiffuseReflShader ? mDiffuseReflShader->getScalar(stack) : mDiffuseStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
+                else return color_t(0.f);
+        }
+        virtual color_t getGlossyColor(const renderState_t &state) const
+        {
+                SDDat_t *dat = (SDDat_t *)state.userdata;
+                nodeStack_t stack(dat->nodeStack);
+                
+                if(mIsMirror) return (mMirrorShader ? mMirrorShader->getScalar(stack) : mMirrorStrength) * (mMirrorColorShader ? mMirrorColorShader->getColor(stack) : mMirrorColor);
+                else return color_t(0.f);
+        }
+        virtual color_t getTransColor(const renderState_t &state) const
+        {
+                SDDat_t *dat = (SDDat_t *)state.userdata;
+                nodeStack_t stack(dat->nodeStack);
+                
+                if(mIsTransparent) return (mTransparencyShader ? mTransparencyShader->getScalar(stack) : mTransparencyStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
+                else return color_t(0.f);
+        }
+        virtual color_t getMirrorColor(const renderState_t &state) const
+        {
+                SDDat_t *dat = (SDDat_t *)state.userdata;
+                nodeStack_t stack(dat->nodeStack);
+                
+                if(mIsMirror) return (mMirrorShader ? mMirrorShader->getScalar(stack) : mMirrorStrength) * (mMirrorColorShader ? mMirrorColorShader->getColor(stack) : mMirrorColor);
+                else return color_t(0.f);
+        }
+        virtual color_t getSubSurfaceColor(const renderState_t &state) const
+        {
+                SDDat_t *dat = (SDDat_t *)state.userdata;
+                nodeStack_t stack(dat->nodeStack);
+                
+                if(mIsTranslucent) return (mTranslucencyShader ? mTranslucencyShader->getScalar(stack) : mTranslucencyStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
+                else return color_t(0.f);
+        }
 
         static material_t* factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &render);
 
@@ -88,7 +127,6 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         float mOrenNayar_B;                 //!< Oren Nayar B coefficient
 
         int nBSDF;
-        visibility_t mVisibility ;          //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
         BSDF_t cFlags[4];                   //!< list the BSDF components that are present
         int cIndex[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)

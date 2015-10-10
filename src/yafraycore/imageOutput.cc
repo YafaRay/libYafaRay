@@ -22,6 +22,8 @@
  */
 
 #include <yafraycore/imageOutput.h>
+#include <sstream>
+#include <iomanip>
 
 __BEGIN_YAFRAY
 
@@ -40,23 +42,82 @@ imageOutput_t::~imageOutput_t()
 	image = NULL;
 }
 
-bool imageOutput_t::putPixel(int x, int y, const float *c, bool alpha, bool depth, float z)
+bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
 {
 	if(image)
 	{
-		colorA_t col(0.f);
-		col.set(c[0], c[1], c[2], ( (alpha) ? c[3] : 1.f ) );
-		image->putPixel(x + bX , y + bY, col, z);
+		for(size_t idx = 0; idx < colExtPasses.size(); ++idx)
+		{
+			colorA_t col(0.f);
+			col.set(colExtPasses[idx].R, colExtPasses[idx].G, colExtPasses[idx].B, ( (alpha || idx > 0) ? colExtPasses[idx].A : 1.f ) );
+			image->putPixel(x + bX , y + bY, col, idx); //FIXME DAVID VIEWS
+		}
 	}
 	return true;
 }
 
-void imageOutput_t::flush()
+void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
 {
-	if(image)
+    std::string fnamePass, path, name, base_name, ext, num_view="";
+
+    size_t sep = fname.find_last_of("\\/");
+    if (sep != std::string::npos)
+        name = fname.substr(sep + 1, fname.size() - sep - 1);
+
+    path = fname.substr(0, sep+1);
+
+    if(path == "") name = fname;
+
+    size_t dot = name.find_last_of(".");
+
+    if (dot != std::string::npos)
+    {
+        base_name = name.substr(0, dot);
+        ext  = name.substr(dot, name.size() - dot);
+    }
+    else
+    {
+        base_name = name;
+        ext  = "";
+    }
+                
+    std::ostringstream numViewOstring;
+
+    numViewOstring  << " (view " << std::setw(2) << std::setfill('0') << numView << ") ";
+
+    if(numView > 0) num_view = numViewOstring.str();
+    
+    base_name += num_view;
+
+    if(image)
 	{
-		image->saveToFile(fname);
-	}
+        if(image->isMultiLayer())
+        {
+            if(numView == 0) image->saveToFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+         
+            fnamePass = path + base_name + " (" + "multilayer" + ")"+ ext;
+         
+            image->saveToFileMultiChannel(fnamePass, renderPasses);
+        }
+        else
+        {
+            for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
+            {
+                std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.externalPassType(idx));
+                
+                if(numView == 0 && idx == PASS_EXT_COMBINED) image->saveToFile(fname, idx);
+		else if(extPassMapIterator != renderPasses.extPassMapIntString.end())
+                {
+                    fnamePass = path + base_name + " (" + extPassMapIterator->second + ")"+ ext;
+                    image->saveToFile(fnamePass, idx);
+                }
+                else
+                {
+                }
+                
+            }
+        }
+    }
 }
 
 __END_YAFRAY

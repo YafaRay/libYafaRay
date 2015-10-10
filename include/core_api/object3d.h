@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <map>
+#include "color.h"
 
 __BEGIN_YAFRAY
 
@@ -19,7 +20,20 @@ class surfacePoint_t;
 class YAFRAYCORE_EXPORT object3d_t
 {
 	public:
-        object3d_t(): light(0), visible(true), is_base_mesh(false) {}
+        object3d_t(): light(0), visible(true), is_base_mesh(false)
+        {
+			objectIndexAuto++;
+			srand(objectIndexAuto);		
+			float R,G,B;
+			do
+			{
+				R = (float) (rand() % 8) / 8.f;
+				G = (float) (rand() % 8) / 8.f;
+				B = (float) (rand() % 8) / 8.f;
+			}
+			while (R+G+B < 0.5f);
+			objectIndexAutoColor = color_t(R,G,B);
+		}
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		virtual int numPrimitives() const = 0;
@@ -42,13 +56,38 @@ class YAFRAYCORE_EXPORT object3d_t
 		bool isVisible() const { return visible; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const { return is_base_mesh; }
-		virtual ~object3d_t(){};
-
+		virtual ~object3d_t(){ resetObjectIndex(); }
+        void setObjectIndex(const float &newObjIndex)
+        {
+			objectIndex = newObjIndex;
+			if(highestObjectIndex < objectIndex) highestObjectIndex = objectIndex;
+		}
+        void resetObjectIndex() { highestObjectIndex = 1.f; objectIndexAuto = 0; }
+        void setObjectIndex(const int &newObjIndex) { setObjectIndex((float) newObjIndex); }
+        float getAbsObjectIndex() const { return objectIndex; }
+        float getNormObjectIndex() const { return (objectIndex / highestObjectIndex); }
+        color_t getAbsObjectIndexColor() const
+		{
+			return color_t(objectIndex);
+		}
+		color_t getNormObjectIndexColor() const
+		{
+			float normalizedObjectIndex = getNormObjectIndex();
+			return color_t(normalizedObjectIndex);
+		}
+        color_t getAutoObjectIndexColor() const
+		{
+			return objectIndexAutoColor;
+		}
 
 	protected:
 		const light_t *light;
 		bool visible; //!< toggle whether geometry is visible or only guidance for other stuff
         bool is_base_mesh;
+		float objectIndex;	//!< Object Index for the object-index render pass
+		static unsigned int objectIndexAuto;	//!< Object Index automatically generated for the object-index-auto render pass
+		color_t objectIndexAutoColor;	//!< Object Index color automatically generated for the object-index-auto render pass
+		static float highestObjectIndex;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
 };
 
 

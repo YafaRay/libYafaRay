@@ -3,7 +3,7 @@
  *      environment.cc: Yafray environment for plugin loading and
  *      object instatiation
  *      This is part of the yafray package
- *      Copyright (C) 2005  Alejandro Conty Est�vez, Mathias Wein
+ *      Copyright (C) 2005  Alejandro Conty Estévez, Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -243,7 +243,11 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 	{
 		light_table[name] = light;
 		
-		if(light->lightEnabled()) InfoSucces(name, type);
+        std::stringstream lightGroupStreamString;
+        lightGroupStreamString << light->getLightGroup();
+        std::string lightGroupString = lightGroupStreamString.str();
+        
+		if(light->lightEnabled()) InfoSucces(name+" (light group: "+lightGroupString+")", type);
 		else InfoSuccesDisabled(name, type);
 		
 		return light;
@@ -520,13 +524,21 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	const std::string *name=0;
 	const std::string *tiles_order=0;
 	int width=320, height=240, xstart=0, ystart=0;
+	std::string color_space_string = "Raw_Manual_Gamma";
+	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	float filt_sz = 1.5, gamma=1.f;
 	bool clamp = false;
 	bool showSampledPixels = false;
 	int tileSize = 32;
 	bool premult = false;
 	bool drawParams = false;
+	renderPasses_t renderPasses;
+	std::string externalPass, internalPass;
+	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
+	bool pass_mask_invert = false;
+	bool pass_mask_only = false;
 
+	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
 	params.getParam("clamp_rgb", clamp);
 	params.getParam("AA_pixelwidth", filt_sz);
@@ -540,7 +552,31 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("drawParams", drawParams);
+	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
+	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
+	params.getParam("pass_mask_invert", pass_mask_invert);
+	params.getParam("pass_mask_only", pass_mask_only);
 
+	if(color_space_string == "sRGB") color_space = SRGB;
+	else if(color_space_string == "XYZ") color_space = XYZ_D65;
+	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
+	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
+	else color_space = SRGB;
+
+	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
+	for(std::map<int, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
+		{
+			externalPass = it->second;
+			params.getParam("pass_" + externalPass, internalPass);
+			renderPasses.pass_add(externalPass, internalPass);
+		}
+	renderPasses.colorPassesTemplate.pass_mask_obj_index = (float) pass_mask_obj_index;
+	renderPasses.colorPassesTemplate.pass_mask_mat_index = (float) pass_mask_mat_index;
+	renderPasses.colorPassesTemplate.pass_mask_invert = pass_mask_invert;
+	renderPasses.colorPassesTemplate.pass_mask_only = pass_mask_only;
+	
+    output.initTilesPasses(camera_table.size(), renderPasses.numExtPasses());
+    
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
@@ -559,10 +595,16 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, renderPasses, 0, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams); //FIXME DAVID RENDER VIEWS
 
 	film->setClamp(clamp);
-	if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setGamma(gamma, true);
+	
+	if(color_space == RAW_MANUAL_GAMMA)
+	{
+		if(gamma > 0 && std::fabs(1.f-gamma) > 0.001) film->setColorSpace(color_space, gamma);
+		else film->setColorSpace(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+	}
+	else film->setColorSpace(color_space, gamma);
 
 	return film;
 }
@@ -635,8 +677,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	const std::string *name=0;
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1;
 	double AA_threshold=0.05;
-	bool z_chan = false;
-	bool norm_z_chan = true;
 	bool drawParams = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
@@ -650,13 +690,15 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		Y_ERROR_ENV << "Specify a Camera!!" << yendl;
 		return false;
 	}
-	camera_t *cam = this->getCamera(*name);
+	
+    //FIXME DAVID
+    /*camera_t *cam = this->getCamera(*name);
 
 	if(!cam)
 	{
 		Y_ERROR_ENV << "Specify an _existing_ Camera!!" << yendl;
 		return false;
-	}
+	}*/ 
 
 	if(!params.getParam("integrator_name", name) )
 	{
@@ -699,8 +741,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_inc_samples", AA_inc_samples);
 	params.getParam("AA_threshold", AA_threshold);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	params.getParam("z_channel", z_chan); // render z-buffer
-	params.getParam("normalize_z_channel", norm_z_chan); // normalize values of z-buffer in range [0,1]
 	params.getParam("drawParams", drawParams);
 	params.getParam("customString", custString);
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
@@ -716,8 +756,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		inte->setProgressBar(pb);
 	}
 
-	if(z_chan) film->initDepthMap();
-
 	params.getParam("filter_type", name); // AA filter type
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples;
 
@@ -726,9 +764,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	//setup scene and render.
 	scene.setImageFilm(film);
-	scene.depthChannel(z_chan);
-	scene.setNormalizeDepthChannel(norm_z_chan);
-	scene.setCamera(cam);
+	//scene.setCamera(cam); FIXME DAVID
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
 	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold);

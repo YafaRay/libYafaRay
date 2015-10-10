@@ -10,6 +10,7 @@
 #include <yafraycore/ccthreads.h>
 #include <vector>
 #include <core_api/matrix4.h>
+#include <core_api/material.h>
 
 
 #define USER_DATA_SIZE 1024
@@ -28,7 +29,7 @@
 __BEGIN_YAFRAY
 class scene_t;
 class camera_t;
-class material_t;
+//class material_t;
 class object3d_t;
 class triangleObject_t;
 class meshObject_t;
@@ -149,9 +150,9 @@ class YAFRAYCORE_EXPORT scene_t
 		void abort();
 		bool startGeometry();
 		bool endGeometry();
-		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int object_pass_index=0);
 		bool endTriMesh();
-		bool startCurveMesh(objID_t id, int vertices);
+		bool startCurveMesh(objID_t id, int vertices, int object_pass_index=0);
 		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 		int  addVertex(const point3d_t &p);
 		int  addVertex(const point3d_t &p, const point3d_t &orco);
@@ -172,6 +173,7 @@ class YAFRAYCORE_EXPORT scene_t
         bool addInstance(objID_t baseObjectId, matrix4x4_t objToWorld);
 		void addVolumeRegion(VolumeRegion* vr) { volumes.push_back(vr); }
 		void setCamera(camera_t *cam);
+        bool addCamera(camera_t *cam, std::string name);
 		void setImageFilm(imageFilm_t *film);
 		void setBackground(background_t *bg);
 		void setSurfIntegrator(surfaceIntegrator_t *s);
@@ -179,9 +181,6 @@ class YAFRAYCORE_EXPORT scene_t
 		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold);
 		void setNumThreads(int threads);
 		void setMode(int m){ mode = m; }
-		void depthChannel(bool enable){ do_depth=enable; }
-		void setNormalizeDepthChannel(bool enable){ norm_depth=enable; }
-
 		background_t* getBackground() const;
 		triangleObject_t* getMesh(objID_t id) const;
 		object3d_t* getObject(objID_t id) const;
@@ -193,18 +192,17 @@ class YAFRAYCORE_EXPORT scene_t
 		int getSignals() const;
 		//! only for backward compatibility!
 		void getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold) const;
-		bool doDepth() const { return do_depth; }
-		bool normalizedDepth() const { return norm_depth; }
-
 		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
-		bool isShadowed(renderState_t &state, const ray_t &ray) const;
-		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt) const;
+		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
+		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
+        void setLightGroupFilter(int light_group_filter);
 
 		enum sceneState { READY, GEOMETRY, OBJECT, VMAP };
 		enum changeFlags { C_NONE=0, C_GEOM=1, C_LIGHT= 1<<1, C_OTHER=1<<2,
 							C_ALL=C_GEOM|C_LIGHT|C_OTHER };
 
-		std::vector<light_t *> lights;
+		std::vector<light_t *> unfiltered_lights;
+        std::vector<light_t *> lights;
 		volumeIntegrator_t *volIntegrator;
 
 		PFLOAT shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -220,7 +218,8 @@ class YAFRAYCORE_EXPORT scene_t
 		std::map<objID_t, objData_t> meshes;
         std::map< std::string, material_t * > materials;
 		std::vector<VolumeRegion *> volumes;
-		camera_t *camera;
+        camera_t *camera;
+		std::vector<camera_t *> cameras;
 		imageFilm_t *imageFilm;
 		triKdTree_t *tree; //!< kdTree for triangle-only mode
 		kdTree_t<primitive_t> *vtree; //!< kdTree for universal mode
@@ -233,8 +232,6 @@ class YAFRAYCORE_EXPORT scene_t
 		CFLOAT AA_threshold;
 		int nthreads;
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
-		bool do_depth;
-		bool norm_depth;
 		int signals;
 		mutable yafthreads::mutex_t sig_mutex;
 };

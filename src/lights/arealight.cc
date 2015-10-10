@@ -31,10 +31,14 @@ __BEGIN_YAFRAY
 //int hit_t1=0, hit_t2=0;
 
 areaLight_t::areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-				const color_t &col,CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows):
-				corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
+				const color_t &col,CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+				corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte)
 {
-	fnormal = toY^toX; //f normal is "flipped" normal direction...
+	lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
+    lLightGroup = iLightGroup;
+    
+    fnormal = toY^toX; //f normal is "flipped" normal direction...
 	color = col*inte * M_PI;
 	area = fnormal.normLen();
 	invArea = 1.0/area;
@@ -179,6 +183,7 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int object = 0;
 	bool lightEnabled = true;
 	bool castShadows = true;
+    int light_group = 1;
 
 	params.getParam("corner",corner);
 	params.getParam("point1",p1);
@@ -189,8 +194,9 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+    params.getParam("light_group", light_group);
 
-	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples, lightEnabled, castShadows);
+	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples, lightEnabled, castShadows, light_group);
 	light->objID = (unsigned int)object;
 	return light;
 }

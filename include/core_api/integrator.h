@@ -40,15 +40,23 @@ class renderArea_t;
 class YAFRAYCORE_EXPORT integrator_t
 {
 	public:
-		integrator_t() { scene = 0; intpb = 0; }
+		integrator_t():lightGroupFilter(0) { scene = 0; intpb = 0; }
+        integrator_t(int light_group_filter):lightGroupFilter(light_group_filter) { scene = 0; intpb = 0; }
 		//! this MUST be called before any other member function!
 		void setScene(scene_t *s) { scene=s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		virtual bool render(imageFilm_t *imageFilm) { return false; }
+		virtual bool render(int numView, imageFilm_t *imageFilm) { return false; }
 		virtual void setProgressBar(progressBar_t *pb) { intpb = pb; }
 		virtual std::string getSettings() const { return settings; }
 		virtual std::string getShortName() const { return integratorShortName; }
 		virtual std::string getName() const { return integratorName; }
+		void setLightGroupFilter(int light_group_filter) { lightGroupFilter = light_group_filter; }
+		int getLightGroupFilter() const { return lightGroupFilter; }
+		bool isLightGroupEnabledByFilter(int light_group_to_be_checked) const
+		{
+			 if(lightGroupFilter == 0 || lightGroupFilter == light_group_to_be_checked) return true;
+			 else return false;	//False means the light group has to be filtered out (disabled) during rendering 
+		}
 		virtual ~integrator_t() {}
 		enum TYPE { SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
@@ -59,6 +67,7 @@ class YAFRAYCORE_EXPORT integrator_t
 		std::string integratorName;
 		std::string integratorShortName;
 		std::string settings;
+        int lightGroupFilter; //lightGroupFilter = 0 means all light groups will be rendered. A positive number will cause the integrator to integrate only the lights belonging to the light group selected by this variable
 };
 
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
@@ -71,7 +80,7 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
 //		virtual bool setupSampler(sampler_t &sam);
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const = 0;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colPasses /*, sampler_t &sam*/) const = 0;
 	protected:
 		surfaceIntegrator_t() {} //don't use...
 };
@@ -81,7 +90,7 @@ class YAFRAYCORE_EXPORT volumeIntegrator_t: public integrator_t
 	public:
 		volumeIntegrator_t() {}
 		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const = 0;
-		virtual colorA_t integrate(renderState_t &state, ray_t &ray) const = 0;
+		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorIntPasses_t &colPasses) const = 0;
 		virtual bool preprocess() { return true; }
 	
 	protected:

@@ -46,7 +46,7 @@
 __BEGIN_YAFRAY
 
 scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),
-					AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), do_depth(false), norm_depth(false), signals(0)
+					AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
@@ -115,7 +115,7 @@ bool scene_t::endGeometry()
 	return true;
 }
 
-bool scene_t::startCurveMesh(objID_t id, int vertices)
+bool scene_t::startCurveMesh(objID_t id, int vertices, int obj_pass_index)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = 0 & 0xFF;
@@ -125,7 +125,9 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 	//TODO: switch?
 	// Allocate triangles to render the curve
 	nObj.obj = new triangleObject_t( 2 * (vertices-1) , true, false);
+	nObj.obj->setObjectIndex(obj_pass_index);
 	nObj.type = ptype;
+
 	state.stack.push_front(OBJECT);
 	state.changes |= C_GEOM;
 	state.orco=false;
@@ -262,7 +264,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	return true;
 }
 
-bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = type & 0xFF;
@@ -274,10 +276,12 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco);
 					nObj.obj->setVisibility( !(type & INVISIBLEM) );
 					nObj.obj->useAsBaseObject( (type & BASEMESH) );
+					nObj.obj->setObjectIndex(obj_pass_index);
 					break;
 		case VTRIM:
 		case MTRIM:	nObj.mobj = new meshObject_t(triangles, hasUV, hasOrco);
 					nObj.mobj->setVisibility( !(type & INVISIBLEM) );
+					nObj.obj->setObjectIndex(obj_pass_index);
 					break;
 		default: return false;
 	}
@@ -665,8 +669,40 @@ bool scene_t::addLight(light_t *l)
 	if(l != 0)
 	{
 		if(!l->lightEnabled()) return false; //if a light is disabled, don't add it to the list of lights
-		lights.push_back(l);
+		unfiltered_lights.push_back(l);
+        lights.push_back(l);
 		state.changes |= C_LIGHT;
+		return true;
+	}
+	return false;
+}
+
+void scene_t::setLightGroupFilter(int light_group_filter)
+{
+	if(!imageFilm)
+	{
+		Y_ERROR << "Scene: trying to set the integrator light group filter but the integrator object does not exist yet!" << yendl;
+		return;
+	}
+	
+	surfIntegrator->setLightGroupFilter(light_group_filter);
+	
+    lights.clear();
+    
+	std::vector<light_t *>::iterator i;
+	for(i = unfiltered_lights.begin(); i != unfiltered_lights.end(); ++i)
+    {
+        if(surfIntegrator->isLightGroupEnabledByFilter((*i)->getLightGroup())) lights.push_back(*i); 
+    }
+    state.changes |= C_LIGHT;
+}
+
+bool scene_t::addCamera(camera_t *cam, std::string name)
+{
+	if(cam != 0)
+	{
+		cam->set_camera_name(name);
+        cameras.push_back(cam);
 		return true;
 	}
 	return false;
@@ -913,7 +949,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 	return true;
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray) const
+bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const
 {
 
 	ray_t sray(ray);
@@ -925,17 +961,28 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray) const
 	{
 		triangle_t *hitt=0;
 		if(!tree) return false;
-		return tree->IntersectS(sray, dis, &hitt, shadowBias);
+		bool shadowed = tree->IntersectS(sray, dis, &hitt, shadowBias);
+		if(hitt)
+		{
+			obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+			mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+		}
+		return shadowed;
 	}
 	else
 	{
 		primitive_t *hitt=0;
 		if(!vtree) return false;
-		return vtree->IntersectS(sray, dis, &hitt, shadowBias);
+		bool shadowed = vtree->IntersectS(sray, dis, &hitt, shadowBias);
+		if(hitt)
+		{
+			mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+		}
+		return shadowed;
 	}
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt) const
+bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const
 {
 	ray_t sray(ray);
 	PFLOAT dis;
@@ -949,17 +996,31 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	if(mode==0)
 	{
 		triangle_t *hitt=0;
-		if(tree) isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+		if(tree) 
+		{
+			isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			if(hitt)
+			{
+				obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+				mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			}
+		}
 	}
 	else
 	{
 		primitive_t *hitt=0;
-		if(vtree) isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+		if(vtree)
+		{
+			isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			if(hitt)
+			{
+				mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			}
+		}
 	}
 	state.userdata = odat;
 	return isect;
 }
-
 
 bool scene_t::render()
 {
@@ -967,13 +1028,52 @@ bool scene_t::render()
 	signals = 0;
 	sig_mutex.unlock();
 
-	if(!update()) return false;
+    bool success = false;
+	
+	if(cameras.size() == 0)
+	{
+		Y_ERROR << "No cameras/views found, exiting." << yendl;
+		return false;
+	}
+	
+	Y_INFO << "Scene: Sorting cameras/views by light group filter to reduce the need for recalculating photon maps, etc" << yendl;
+			
+	std::sort(cameras.begin(), cameras.end(), camera_sort_by_lightgroup());
 
-	bool success = surfIntegrator->render(imageFilm);
+    std::vector<camera_t *>::iterator cam;
+	int numView = 0;
+	
+	std::map<int, std::string> view_names_map;
+	
+	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
+    {
+		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << ", camera name: '" << (*cam)->get_camera_name() << "', light group=" << (*cam)->get_light_group_filter()  << yendl;
+		
+		view_names_map[numView] = (*cam)->get_view_name();
+	}
+		
+	int lightGroup = 0;
+	setLightGroupFilter(lightGroup);
+	imageFilm->set_view_names_map(view_names_map);
+	
+	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
+    {
+		setCamera(*cam);
+        
+        if((*cam)->get_light_group_filter() != lightGroup) //If the light group of this view is not the same as the previous view, trigger update of photon maps. Otherwise (only using a different camera) we can reuse the previous photon map and speed up the rendering.
+        {
+			lightGroup = (*cam)->get_light_group_filter();
+			setLightGroupFilter(lightGroup);
+		}
+		
+        if(!update()) return false;
 
-	surfIntegrator->cleanup();
-	imageFilm->flush();
+        success = surfIntegrator->render(numView, imageFilm);
 
+		imageFilm->flush(numView);
+		surfIntegrator->cleanup();
+    } //DAVID FIXME TESTS PUT IN CORRECT PLACES FOR FLUSH/FILE OUTPUT!!
+		
 	return success;
 }
 

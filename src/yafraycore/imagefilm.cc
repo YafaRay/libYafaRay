@@ -115,20 +115,26 @@ float Lanczos2(float dx, float dy)
 	return 0.f;
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
-						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
-	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
-	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), splitter(0), pbar(0),
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t render_passes, int render_view_number, float filterSize, filterType filt,
+						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams, int light_group_filter):
+	renderPasses(render_passes), flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
+ gamma(1.0), filterw(filterSize*0.5), output(&out),
+	clamp(false), split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 
-	image = new rgba2DImage_t(width, height);
+
+	//Creation of the image buffers for the render passes
+	for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
+	{
+		imagePasses.push_back(new rgba2DImage_t(width, height));
+	}
+
 	densityImage = NULL;
 	estimateDensity = false;
-	depthMap = NULL;
 	dpimage = NULL;
 
 	// fill filter table:
@@ -164,8 +170,14 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 
 imageFilm_t::~imageFilm_t ()
 {
-	delete image;
-	if(depthMap) delete depthMap;
+	
+	//Deletion of the image buffers for the additional render passes
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		delete(imagePasses[idx]);
+	}
+	imagePasses.clear();
+	
 	if(densityImage) delete densityImage;
 	delete[] filterTable;
 	if(splitter) delete splitter;
@@ -175,8 +187,11 @@ imageFilm_t::~imageFilm_t ()
 
 void imageFilm_t::init(int numPasses)
 {
-	// Clear color buffer
-	image->clear();
+	// Clear color buffers
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		imagePasses[idx]->clear();
+	}
 
 	// Clear density image
 	if(estimateDensity)
@@ -202,12 +217,7 @@ void imageFilm_t::init(int numPasses)
 	nPasses = numPasses;
 }
 
-void imageFilm_t::initDepthMap()
-{
-	if(!depthMap) depthMap = new gray2DImage_t(w, h);
-	else depthMap->clear();
-}
-void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
+void imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
 {
 	int n_resample=0;
 
@@ -220,27 +230,30 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
 
+    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
+
 	if(adaptive_AA && AA_thesh > 0.f)
 	{
 		for(int y=0; y<h-1; ++y)
 		{
 			for(int x = 0; x < w-1; ++x)
 			{
+                //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 				bool needAA = false;
-				float c = (*image)(x, y).normalized().abscol2bri();
-				if(std::fabs(c - (*image)(x+1, y).normalized().col2bri()) >= AA_thesh)
+				float c = (*imagePasses.at(0))(x, y).normalized().abscol2bri();
+				if(std::fabs(c - (*imagePasses.at(0))(x+1, y).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x+1, y);
 				}
-				if(std::fabs(c - (*image)(x, y+1).normalized().col2bri()) >= AA_thesh)
+				if(std::fabs(c - (*imagePasses.at(0))(x, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x, y+1);
 				}
-				if(std::fabs(c - (*image)(x+1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(std::fabs(c - (*imagePasses.at(0))(x+1, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x+1, y+1);
 				}
-				if(x > 0 && std::fabs(c - (*image)(x-1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(x > 0 && std::fabs(c - (*imagePasses.at(0))(x-1, y+1).normalized().col2bri()) >= AA_thesh)
 				{
 					needAA=true; flags->setBit(x-1, y+1);
 				}
@@ -250,15 +263,16 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 
 					if(interactive && showMask)
 					{
-						color_t pix = (*image)(x, y).normalized();
-						color_t pixcol(0.f);
+						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+                        {
+							color_t pix = (*imagePasses[idx])(x, y).normalized();
 
-						if(pix.R < pix.G && pix.R < pix.B)
-							pixcol.set(0.7f, c, c);
-						else
-							pixcol.set(c, 0.7f, c);
-
-						output->putPixel(x, y, (const float *)&pixcol, false);
+							if(pix.R < pix.G && pix.R < pix.B)
+								colExtPasses[idx].set(0.7f, c, c);
+							else
+								colExtPasses[idx].set(c, 0.7f, c);
+						}
+						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
 					}
 
 					++n_resample;
@@ -271,7 +285,8 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 		n_resample = h*w;
 	}
 
-	if(interactive) output->flush();
+	//if(interactive) //FIXME DAVID, SHOULD I PUT THIS BACK?, TEST WITH BLENDER AND XML+MULTILAYER
+	output->flush(numView, renderPasses);
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
@@ -285,7 +300,7 @@ void imageFilm_t::nextPass(bool adaptive_AA, std::string integratorName)
 	completed_cnt = 0;
 }
 
-bool imageFilm_t::nextArea(renderArea_t &a)
+bool imageFilm_t::nextArea(int numView, renderArea_t &a)
 {
 	if(abort) return false;
 
@@ -309,7 +324,7 @@ bool imageFilm_t::nextArea(renderArea_t &a)
 			{
 				outMutex.lock();
 				int end_x = a.X+a.W, end_y = a.Y+a.H;
-				output->highliteArea(a.X, a.Y, end_x, end_y);
+				output->highliteArea(numView, a.X, a.Y, end_x, end_y);
 				outMutex.unlock();
 			}
 
@@ -333,52 +348,69 @@ bool imageFilm_t::nextArea(renderArea_t &a)
 	return false;
 }
 
-void imageFilm_t::finishArea(renderArea_t &a)
+void imageFilm_t::finishArea(int numView, renderArea_t &a)
 {
 	outMutex.lock();
 
 	int end_x = a.X+a.W-cx0, end_y = a.Y+a.H-cy0;
-	colorA_t col;
+
+    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 
 	for(int j=a.Y-cy0; j<end_y; ++j)
 	{
 		for(int i=a.X-cx0; i<end_x; ++i)
 		{
-			col = (*image)(i, j).normalized();
-			col.clampRGB0();
-
-			if(correctGamma) col.gammaAdjust(gamma);
-
-			if(premultAlpha) col.alphaPremultiply();
-
-			if(depthMap)
+			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				if( !output->putPixel(i, j, (const float*)&col, true, true, (*depthMap)(i, j).normalized()) ) abort=true;
-			}
-			else
-			{
-				if( !output->putPixel(i, j, (const float *)&col) ) abort=true;
+				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+                
+				if(renderPasses.internalYafPassType(idx) == PASS_YAF_AA_SAMPLES)
+				{
+					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
+				}
+				
+				colExtPasses[idx].clampRGB0();
+				colExtPasses[idx].ColorSpace_from_linearRGB(colorSpace, gamma);//FIXME DAVID: what passes must be corrected and what do not?
+				if(premultAlpha && idx == 0) colExtPasses[idx].alphaPremultiply();
+
+				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+				if(colExtPasses[idx].A < 0.f) colExtPasses[idx].A = 0.f;
+				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
+			if( !output->putPixel(numView, i, j, renderPasses, colExtPasses) ) abort=true;
 		}
 	}
 
-	if(interactive) output->flushArea(a.X, a.Y, end_x+cx0, end_y+cy0);
+	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, renderPasses);
+    
+    else
+    { 
+        gTimer.stop("image_area_flush");
+        accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
+        gTimer.start("image_area_flush");
+        
+        if((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
+        {
+             output->flush(numView, renderPasses);
+             reset_accumulated_image_area_flush_time();
+        }
+    }
 
-	if(pbar)
-	{
-		if(++completed_cnt == area_cnt) pbar->done();
-		else pbar->update(1);
-	}
-
+    if(pbar)
+    {
+        if(++completed_cnt == area_cnt) pbar->done();
+        else pbar->update(1);
+    }
+    
 	outMutex.unlock();
 }
 
-void imageFilm_t::flush(int flags, colorOutput_t *out)
+void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 {
 	outMutex.lock();
 
-	Y_INFO << "imageFilm: Flushing buffer..." << yendl;
+	Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
 
 	colorOutput_t *colout = out ? out : output;
 
@@ -390,46 +422,50 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 #endif
 
 	float multi = 0.f;
-	colorA_t col;
 	int k = 0;
 
 	if(estimateDensity) multi = (float) (w * h) / (float) numSamples;
+
+    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 
 	for(int j = 0; j < h; j++)
 	{
 		for(int i = 0; i < w; i++)
 		{
-			if(flags & IF_IMAGE) col = (*image)(i, j).normalized();
-			else col = colorA_t(0.f);
-
-			if(estimateDensity && (flags & IF_DENSITYIMAGE)) col += (*densityImage)(i, j) * multi;
-
-			col.clampRGB0();
-
-			if(correctGamma) col.gammaAdjust(gamma);
-
-			if(drawParams && h - j <= dpHeight && dpimage)
+			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colorA_t &dpcol = (*dpimage)(i, k);
-				col = colorA_t( alphaBlend(col, dpcol, dpcol.getA()), std::max(col.getA(), dpcol.getA()) );
+				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+				else colExtPasses[idx] = colorA_t(0.f);
+				
+				if(renderPasses.internalYafPassType(idx) == PASS_YAF_AA_SAMPLES)
+				{
+					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
+				}
+								
+				//FIXME DAVID if(estimateDensity && (flags & IF_DENSITYIMAGE)) colExtPasses[idx] += (*densityImage)(i, j) * multi;
+				colExtPasses[idx].clampRGB0();
+				colExtPasses[idx].ColorSpace_from_linearRGB(colorSpace, gamma);//FIXME DAVID: what passes must be corrected and what do not?
+
+				if(idx == 0 && drawParams && h - j <= dpHeight && dpimage) //Parameters only shown in first render pass (idx=0)
+				{
+					colorA_t &dpcol = (*dpimage)(i, k);
+					colExtPasses[idx] = colorA_t( alphaBlend(colExtPasses[idx], dpcol, dpcol.getA()), std::max(colExtPasses[idx].getA(), dpcol.getA()) );
+				}
+
+				if(premultAlpha && idx == 0) colExtPasses[idx].alphaPremultiply();
+
+				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+				if(colExtPasses[idx].A < 0.f) colExtPasses[idx].A = 0.f;
+				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			if(premultAlpha) col.alphaPremultiply();
-
-			if(depthMap)
-			{
-				colout->putPixel(i, j, (const float*)&col, true, true, (*depthMap)(i, j).normalized());
-			}
-			else
-			{
-				colout->putPixel(i, j, (const float*)&col);
-			}
+			colout->putPixel(numView, i, j, renderPasses, colExtPasses);
 		}
 
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
-	colout->flush();
+	colout->flush(numView, renderPasses);
 
 	outMutex.unlock();
 
@@ -444,12 +480,8 @@ bool imageFilm_t::doMoreSamples(int x, int y) const
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
 	contribute to pixels outside the area a AND pixels that might get
 	contributions from outside area a! (yes, really!) */
-void imageFilm_t::addSample(const colorA_t &c, int x, int y, float dx, float dy, const renderArea_t *a)
+void imageFilm_t::addSample(colorIntPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a, int numSample, int AA_pass_number, float inv_AA_max_possible_samples)
 {
-	colorA_t col = c;
-
-	if(clamp) col.clampRGB01();
-
 	int dx0, dx1, dy0, dy1, x0, x1, y0, y1;
 
 	// get filter extent and make sure we don't leave image area:
@@ -491,73 +523,34 @@ void imageFilm_t::addSample(const colorA_t &c, int x, int y, float dx, float dy,
 			int offset = yIndex[j-y0]*FILTER_TABLE_SIZE + xIndex[i-x0];
 			float filterWt = filterTable[offset];
 			// update pixel values with filtered sample contribution
-			pixel_t &pixel = (*image)(i - cx0, j - cy0);
 
-            if(premultAlpha) col.alphaPremultiply();
+			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+			{
+				colorA_t col = colorPasses(renderPasses.internalYafPassType(idx));
+				
+				if(clamp) col.clampRGB01();
 
-            pixel.col += (col * filterWt);
+				pixel_t &pixel = (*imagePasses[idx])(i - cx0, j - cy0);
 
-			pixel.weight += filterWt;
+				if(premultAlpha) col.alphaPremultiply();
+
+				if(renderPasses.internalYafPassType(idx) == PASS_YAF_AA_SAMPLES)
+				{
+					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
+				}
+				else
+				{
+					pixel.col += (col * filterWt);
+					pixel.weight += filterWt;
+				}
+			}
 		}
 	}
 
 	imageMutex.unlock();
 }
 
-void imageFilm_t::addDepthSample(int chan, float val, int x, int y, float dx, float dy)
-{
-	int dx0, dx1, dy0, dy1, x0, x1, y0, y1;
-
-	// get filter extent and make sure we don't leave image area:
-
-	dx0 = std::max(cx0-x,   Round2Int( (double)dx - filterw));
-	dx1 = std::min(cx1-x-1, Round2Int( (double)dx + filterw - 1.0));
-	dy0 = std::max(cy0-y,   Round2Int( (double)dy - filterw));
-	dy1 = std::min(cy1-y-1, Round2Int( (double)dy + filterw - 1.0));
-
-	// get indizes in filter table
-	double x_offs = dx - 0.5;
-
-	int xIndex[MAX_FILTER_SIZE+1], yIndex[MAX_FILTER_SIZE+1];
-
-	for (int i=dx0, n=0; i <= dx1; ++i, ++n)
-	{
-		double d = std::fabs( (double(i) - x_offs) * tableScale);
-		xIndex[n] = Floor2Int(d);
-	}
-
-	double y_offs = dy - 0.5;
-
-	for (int i=dy0, n=0; i <= dy1; ++i, ++n)
-	{
-		double d = std::fabs( (double(i) - y_offs) * tableScale);
-		yIndex[n] = Floor2Int(d);
-	}
-
-	x0 = x+dx0; x1 = x+dx1;
-	y0 = y+dy0; y1 = y+dy1;
-
-	depthMapMutex.lock();
-
-	for (int j = y0; j <= y1; ++j)
-	{
-		for (int i = x0; i <= x1; ++i)
-		{
-			// get filter value at pixel (x,y)
-			int offset = yIndex[j-y0]*FILTER_TABLE_SIZE + xIndex[i-x0];
-			float filterWt = filterTable[offset];
-			// update pixel values with filtered sample contribution
-			pixelGray_t &pixel = (*depthMap)(i - cx0, j - cy0);
-
-			pixel.val += (val * filterWt);
-			pixel.weight += filterWt;
-		}
-	}
-
-	depthMapMutex.unlock();
-}
-
-void imageFilm_t::addDensitySample(const color_t &c, int x, int y, float dx, float dy, const renderArea_t *a)
+void imageFilm_t::addDensitySample(const color_t& c, int x, int y, float dx, float dy, const renderArea_t *a)
 {
 	if(!estimateDensity) return;
 
@@ -622,10 +615,10 @@ void imageFilm_t::setDensityEstimation(bool enable)
 	estimateDensity = enable;
 }
 
-void imageFilm_t::setGamma(float gammaVal, bool enable)
+void imageFilm_t::setColorSpace(colorSpaces_t color_space, float gammaVal)
 {
-	correctGamma = enable;
-	if(gammaVal > 0) gamma = 1.f/gammaVal; //gamma correction means applying gamma curve with 1/gamma
+	colorSpace = color_space;
+	gamma = gammaVal;
 }
 
 void imageFilm_t::setProgressBar(progressBar_t *pb)

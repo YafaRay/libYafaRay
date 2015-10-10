@@ -2,7 +2,7 @@
  *
  * 		output.h: Output base class
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Est�vez
+ *      Copyright (C) 2002  Alejandro Conty Estévez
  *		Modifyed by Rodrigo Placencia Vazquez (2009)
  *
  *      This library is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #define Y_COUTPUT_H
 
 #include "yafray_constants.h"
-
+#include <core_api/color.h>
 __BEGIN_YAFRAY
 
 /*! Base class for rendering output containers */
@@ -33,10 +33,22 @@ class colorOutput_t
 {
 	public:
 		virtual ~colorOutput_t() {};
-		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f)=0;
-		virtual void flush()=0;
-		virtual void flushArea(int x0, int y0, int x1, int y1)=0;
-		virtual void highliteArea(int x0, int y0, int x1, int y1){};
+        virtual void initTilesPasses(int totalViews, int numExtPasses) {};
+		virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
+		virtual void flush(int numView, const renderPasses_t &renderPasses)=0;
+		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)=0;
+		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
+		void set_view_names_map(const std::map<int, std::string>& viewNamesMap) { view_names_map = viewNamesMap; }
+		std::string get_view_name(int numView)
+		{
+			std::string viewName="";
+			std::map<int, std::string>::const_iterator iView = view_names_map.find(numView);
+			if(iView != view_names_map.end()) viewName = iView->second;
+			return viewName; 
+		}
+			
+	protected:
+		std::map<int, std::string> view_names_map;
 };
 
 __END_YAFRAY

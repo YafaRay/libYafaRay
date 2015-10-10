@@ -49,7 +49,6 @@ RenderWidget::~RenderWidget()
 {
 	colorBuffer = QImage();
 	alphaChannel = QImage();
-	depthChannel = QImage();
 }
 
 void RenderWidget::setup(const QSize &s)
@@ -70,12 +69,6 @@ void RenderWidget::initBuffers()
 
 	alphaChannel = QImage(imageSize, QImage::Format_RGB32);
 	alphaChannel.fill(0);
-
-	if(use_zbuf)
-	{
-		depthChannel = QImage(imageSize, QImage::Format_RGB32);
-		depthChannel.fill(0);
-	}
 
 	resize(imageSize);
 
@@ -100,14 +93,13 @@ void RenderWidget::finishRendering()
 	update();
 }
 
-void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, QRgb depth, bool withAlpha, bool withDepth)
+void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha)
 {
 	int ix = x + borderStart.x();
 	int iy = y + borderStart.y();
 
 	colorBuffer.setPixel(ix, iy, color);
 	if (withAlpha) alphaChannel.setPixel(ix, iy, alpha);
-	if (withDepth) depthChannel.setPixel(ix, iy, depth);
 }
 
 void RenderWidget::paintColorBuffer()
@@ -128,19 +120,6 @@ void RenderWidget::paintAlpha()
 	activeBuffer = &alphaChannel;
 	bufferMutex.unlock();
 	if(!rendering) zoom(1.f, QPoint(0, 0));
-}
-
-void RenderWidget::paintDepth()
-{
-	if(use_zbuf)
-	{
-		bufferMutex.lock();
-		pix = QPixmap::fromImage(depthChannel);
-		setPixmap(pix);
-		activeBuffer = &depthChannel;
-		bufferMutex.unlock();
-		if(!rendering) zoom(1.f, QPoint(0, 0));
-	}
 }
 
 void RenderWidget::zoom(float f, QPoint mPos)

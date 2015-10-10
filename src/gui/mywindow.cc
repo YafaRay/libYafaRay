@@ -171,7 +171,6 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	renderSaved = false;
 	renderCancelled = false;
 	saveWithAlpha = false;
-	saveWithDepth = false;
 
 	m_ui->actionAskSave->setChecked(askUnsaved);
 
@@ -211,14 +210,12 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	anim->move(r.topLeft());
 
 	// Set toolbar icons
-	m_ui->actionShowDepth->setIcon(QIcon(zbuffIcon));
 	m_ui->actionSaveAlpha->setIcon(QIcon(alphaIcon));
 	m_ui->actionCancel->setIcon(QIcon(cancelIcon));
 	m_ui->actionSave_As->setIcon(QIcon(saveAsIcon));
 	m_ui->actionRender->setIcon(QIcon(renderIcon));
 	m_ui->actionShowAlpha->setIcon(QIcon(showAlphaIcon));
 	m_ui->actionShowRGB->setIcon(QIcon(showColorIcon));
-	m_ui->actionSaveDepth->setIcon(QIcon(saveDepthIcon));
 	m_ui->actionDrawParams->setIcon(QIcon(drawParamsIcon));
 	m_ui->actionZoom_In->setIcon(QIcon(zoomInIcon));
 	m_ui->actionZoom_Out->setIcon(QIcon(zoomOutIcon));
@@ -239,16 +236,12 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 			this, SLOT(zoomOut()));
 	connect(m_ui->actionSaveAlpha, SIGNAL(triggered(bool)),
 			this, SLOT(setAlpha(bool)));
-	connect(m_ui->actionShowDepth, SIGNAL(triggered(bool)),
-			this, SLOT(showDepth(bool)));
 	connect(m_ui->actionShowAlpha, SIGNAL(triggered(bool)),
 			this, SLOT(showAlpha(bool)));
 	connect(m_ui->actionShowRGB, SIGNAL(triggered(bool)),
 			this, SLOT(showColor(bool)));
 	connect(m_ui->actionAskSave, SIGNAL(triggered(bool)),
 			this, SLOT(setAskSave(bool)));
-	connect(m_ui->actionSaveDepth, SIGNAL(triggered(bool)),
-			this, SLOT(setSaveDepth(bool)));
 	connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
 			this, SLOT(setDrawParams(bool)));
 
@@ -272,9 +265,6 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	// filter the resize events of the render area to center the animation widget
 	m_ui->renderArea->installEventFilter(this);
-
-	m_ui->actionShowDepth->setEnabled(use_zbuf);
-	m_ui->actionSaveDepth->setEnabled(use_zbuf);
 }
 
 MainWindow::~MainWindow()
@@ -333,7 +323,6 @@ void MainWindow::slotRender()
 	m_ui->yafLabel->setText(tr("Rendering image..."));
 	m_render->startRendering();
 	m_ui->actionShowRGB->setChecked(true);
-	m_ui->actionShowDepth->setChecked(false);
 	m_ui->actionShowAlpha->setChecked(false);
 	renderSaved = false;
 	renderCancelled = false;
@@ -365,7 +354,7 @@ void MainWindow::slotFinished()
 
 		interf->paramsClearAll();
 
-		interf->getRenderedImage(*out);
+		interf->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
 		renderSaved = true;
 
@@ -459,7 +448,6 @@ void MainWindow::showColor(bool checked)
 	if(checked)
 	{
 		m_render->paintColorBuffer();
-		m_ui->actionShowDepth->setChecked(false);
 		m_ui->actionShowAlpha->setChecked(false);
 	}
 	else m_ui->actionShowRGB->setChecked(true);
@@ -470,21 +458,9 @@ void MainWindow::showAlpha(bool checked)
 	if(checked)
 	{
 		m_render->paintAlpha();
-		m_ui->actionShowDepth->setChecked(false);
 		m_ui->actionShowRGB->setChecked(false);
 	}
 	else m_ui->actionShowAlpha->setChecked(true);
-}
-
-void MainWindow::showDepth(bool checked)
-{
-	if(checked)
-	{
-		m_render->paintDepth();
-		m_ui->actionShowAlpha->setChecked(false);
-		m_ui->actionShowRGB->setChecked(false);
-	}
-	else m_ui->actionShowDepth->setChecked(true);
 }
 
 void MainWindow::setAskSave(bool checked)
@@ -494,18 +470,13 @@ void MainWindow::setAskSave(bool checked)
 	set.setValue("qtGui/askSave", askUnsaved);
 }
 
-void MainWindow::setSaveDepth(bool checked)
-{
-	saveWithDepth = checked;
-}
-
 void MainWindow::setDrawParams(bool checked)
 {
 	useDrawParams = checked;
 	if(!m_render->isRendering())
 	{
 		interf->setDrawParams(useDrawParams);
-		interf->getRenderedImage(*m_output);
+		interf->getRenderedImage(0, *m_output); //FIXME DAVID VIEWS!!
 		showColor(true);
 	}
 }
@@ -580,7 +551,6 @@ bool MainWindow::saveDlg()
 		interf->paramsSetInt("width", res_x);
 		interf->paramsSetInt("height", res_y);
 		interf->paramsSetBool("alpha_channel", saveWithAlpha);
-		interf->paramsSetBool("z_channel", saveWithDepth);
 
 		m_lastPath = QDir(fileName).absolutePath();
 
@@ -591,7 +561,7 @@ bool MainWindow::saveDlg()
 
 		interf->setDrawParams(useDrawParams);
 
-		interf->getRenderedImage(*out);
+		interf->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
 		renderSaved = true;
 

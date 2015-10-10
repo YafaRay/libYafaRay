@@ -38,11 +38,11 @@ class hdrHandler_t: public imageHandler_t
 public:
 	hdrHandler_t();
 	~hdrHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
+	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name);
-	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
-	colorA_t getPixel(int x, int y);
+	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
+	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	bool isHDR() { return true; }
 
@@ -61,34 +61,35 @@ hdrHandler_t::hdrHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-	m_hasDepth = false;
 
-	m_rgba = NULL;
-	m_depth = NULL;
+	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		imagePasses.at(idx) = NULL;
+	}
 
 	handlerName = "hdrHandler";
 }
 
 hdrHandler_t::~hdrHandler_t()
 {
-	if(m_rgba) delete m_rgba;
-	if(m_depth) delete m_depth;
-	m_rgba = NULL;
-	m_depth = NULL;
-
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	{
+		if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		imagePasses.at(idx) = NULL;
+	}
 }
-void hdrHandler_t::initForOutput(int width, int height, bool withAlpha, bool withDepth)
+
+void hdrHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-	m_hasDepth = withDepth;
+    m_MultiLayer = multi_layer;
 
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
-
-	if(m_hasDepth)
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
-		m_depth = new gray2DImage_nw_t(m_width, m_height);
+		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
 	}
 }
 
@@ -112,10 +113,9 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	}
 
 	// discard old image data
-	if(m_rgba) delete m_rgba;
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
-	if(m_depth) delete m_depth;
-	m_hasDepth = false;
+	if(imagePasses.at(0)) delete imagePasses.at(0);
+	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
+
 	m_hasAlpha = false;
 
 	int scanWidth = (header.yFirst) ? m_width : m_height;
@@ -332,8 +332,8 @@ bool hdrHandler_t::readORLE(std::ifstream &file, int y, int scanWidth)
 	// put the pixels on the main buffer
 	for(int x = header.min[1]; x != header.max[1]; x += header.max[1])
 	{
-		if(header.yFirst) (*m_rgba)(x, y) = scanline[j].getRGBA();
-		else (*m_rgba)(y, x) = scanline[j].getRGBA();
+		if(header.yFirst) (*imagePasses.at(0))(x, y) = scanline[j].getRGBA();
+		else (*imagePasses.at(0))(y, x) = scanline[j].getRGBA();
 		j++;
 	}
 
@@ -406,8 +406,8 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 	// put the pixels on the main buffer
 	for(int x = header.min[1]; x != header.max[1]; x += header.step[1])
 	{
-		if(header.yFirst) (*m_rgba)(x, y) = scanline[j].getRGBA();
-		else (*m_rgba)(y, x) = scanline[j].getRGBA();
+		if(header.yFirst) (*imagePasses.at(0))(x, y) = scanline[j].getRGBA();
+		else (*imagePasses.at(0))(y, x) = scanline[j].getRGBA();
 		j++;
 	}
 
@@ -417,7 +417,7 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 	return true;
 }
 
-bool hdrHandler_t::saveToFile(const std::string &name)
+bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	std::ofstream file(name.c_str(), std::ios::out | std::ios::binary);
 
@@ -446,7 +446,7 @@ bool hdrHandler_t::saveToFile(const std::string &name)
 			// fill the scanline buffer
 			for (int x = 0; x < m_width; x++)
 			{
-				scanline[x] = getPixel(x, y);
+				scanline[x] = getPixel(x, y, imagePassNumber);
 			}
 
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
@@ -458,50 +458,6 @@ bool hdrHandler_t::saveToFile(const std::string &name)
 		}
 		delete [] scanline;
 		file.close();
-	}
-
-	if(m_hasDepth)
-	{
-		std::string depthName = name.substr(0, name.size() - 4) + "_zbuffer.hdr";
-		std::ofstream file(depthName.c_str(), std::ios::out | std::ios::binary);
-		if (!file.is_open())
-		{
-			Y_ERROR << handlerName << ": Couldn't open file \"" << depthName << "\"..." << yendl;
-			return false;
-		}
-		else
-		{
-			Y_INFO << handlerName << ": Saving Z-Buffer as \"" << depthName << "\"..." << yendl;
-			writeHeader(file);
-			rgbePixel_t signature; //scanline start signature for adaptative RLE
-			signature.setScanlineStart(m_width); //setup the signature
-
-			rgbePixel_t *scanline = new rgbePixel_t[m_width];
-
-			// write using adaptive-rle encoding
-			for (int y = 0; y < m_height; y++)
-			{
-				// write scanline start signature
-				file.write((char *)&signature, sizeof(rgbePixel_t));
-
-				// fill the scanline buffer with converted colors
-				for (int x = 0; x < m_width; x++)
-				{
-					scanline[x] = color_t((*m_depth)(x, y));
-				}
-
-				// write the scanline RLE compressed
-				if (!writeScanline(file, scanline))
-				{
-					Y_ERROR << handlerName << ": An error has occurred during scanline saving..." << yendl;
-					return false;
-				}
-			}
-
-			delete [] scanline;
-
-			file.close();
-		}
 	}
 
 	Y_INFO << handlerName << ": Done." << yendl;
@@ -593,15 +549,14 @@ bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline)
 	return true;
 }
 
-void hdrHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
+void hdrHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
 {
-	(*m_rgba)(x, y) = rgba;
-	if(m_hasDepth) (*m_depth)(x, y) = depth;
+	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
 }
 
-colorA_t hdrHandler_t::getPixel(int x, int y)
+colorA_t hdrHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*m_rgba)(x, y);
+	return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
 imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &render)
@@ -609,18 +564,16 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
-	bool withDepth = false;
 	bool forOutput = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
-	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
 
 	imageHandler_t *ih = new hdrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
+	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
 
 	return ih;
 }

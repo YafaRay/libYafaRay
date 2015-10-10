@@ -30,17 +30,38 @@ class glassMat_t: public nodeMaterial_t
 	public:
 		glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
-		virtual visibility_t getVisibility() const { return mVisibility; }
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		virtual float getMatIOR() const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
+		virtual color_t getGlossyColor(const renderState_t &state) const
+		{
+			nodeStack_t stack(state.userdata);
+			return (mirColS ? mirColS->getColor(stack) : specRefCol);
+		}
+		virtual color_t getTransColor(const renderState_t &state) const
+		{
+			nodeStack_t stack(state.userdata);
+			if(filterColS || filterCol.minimum() < .99f)	return (filterColS ? filterColS->getColor(stack) : filterCol);
+			else
+			{
+				color_t tmpCol = beer_sigma_a;
+				tmpCol.clampRGB01();
+				return color_t(1.f)-tmpCol;
+			}
+		}
+		virtual color_t getMirrorColor(const renderState_t &state) const
+		{
+			nodeStack_t stack(state.userdata);
+			return (mirColS ? mirColS->getColor(stack) : specRefCol);
+		}
+
 	protected:
 		shaderNode_t* bumpS;
 		shaderNode_t *mirColS;
@@ -53,13 +74,13 @@ class glassMat_t: public nodeMaterial_t
 		BSDF_t tmFlags;
 		PFLOAT dispersion_power;
 		PFLOAT CauchyA, CauchyB;
-		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
 glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility):
 		bumpS(0), mirColS(0), filterColS(0), iorS(0), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
-		fakeShadow(fakeS), dispersion_power(disp_pow), mVisibility(eVisibility)
+		fakeShadow(fakeS), dispersion_power(disp_pow)
 {
+    mVisibility = eVisibility;
 	ior=IOR;
 	bsdfFlags = BSDF_ALL_SPECULAR;
 	if(fakeS) bsdfFlags |= BSDF_FILTER;
@@ -314,6 +335,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	bool fake_shad = false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	int mat_pass_index = 0;
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -322,6 +344,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
 	params.getParam("visibility", sVisibility);
+	params.getParam("mat_pass_index",   mat_pass_index);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
@@ -330,6 +353,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	else visibility = NORMAL_VISIBLE;
 
 	glassMat_t *mat = new glassMat_t(IOR, filt*filtCol + color_t(1.f-filt), srCol, disp_power, fake_shad, visibility);
+	
+	mat->setMaterialIndex(mat_pass_index);
 	
 	if( params.getParam("absorption", absorp) )
 	{
@@ -415,7 +440,7 @@ class mirrorMat_t: public material_t
 		bsdfFlags = BSDF_SPECULAR;
 	}
     virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=bsdfFlags; }
-	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
+	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
 	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 	virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 							 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
@@ -464,7 +489,7 @@ class nullMat_t: public material_t
 	public:
 	nullMat_t() { }
     virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes=BSDF_NONE; }
-	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const {return color_t(0.0);}
+	virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
 	virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 	static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 };

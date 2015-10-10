@@ -7,6 +7,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <core_api/color.h>
 
 
 __BEGIN_YAFRAY
@@ -41,9 +42,9 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 			\param id returns the ID of the created mesh
 		*/
 		virtual unsigned int getNextFreeID();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-		virtual bool startCurveMesh(unsigned int id, int vertices);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index=0);
+		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
@@ -84,10 +85,10 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-		virtual void setInputGamma(float gammaVal, bool enable);
+		virtual void setInputGamma(float gammaVal, bool enable);	//deprecated: use setInputColorSpace instead
 		virtual void abort();
 		virtual paraMap_t* getRenderParameters() { return params; }
-		virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
+		virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output
 		virtual std::vector<std::string> listImageHandlers();
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
@@ -109,6 +110,8 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);
 		void printLog(const std::string &msg);
+		
+		void setInputColorSpace(std::string color_space_string, float gammaVal);
 	
 	protected:
 		paraMap_t *params;
@@ -118,7 +121,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		scene_t *scene;
 		imageFilm_t *film;
 		float inputGamma;
-		bool gcInput;
+		colorSpaces_t inputColorSpace;
 };
 
 typedef yafrayInterface_t * interfaceConstructor();

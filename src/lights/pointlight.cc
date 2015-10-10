@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class pointLight_t : public light_t
 {
   public:
-	pointLight_t(const point3d_t &pos, const color_t &col, CFLOAT inte, bool bLightEnabled=true, bool bCastShadows=true);
+	pointLight_t(const point3d_t &pos, const color_t &col, CFLOAT inte, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
 	virtual color_t totalEnergy() const { return color * 4.0f * M_PI; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 	virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
@@ -36,21 +36,20 @@ class pointLight_t : public light_t
 	virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 	virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
 	virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
-	virtual bool lightEnabled() const { return lLightEnabled;}
-	virtual bool castShadows() const { return lCastShadows; }
 	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
   protected:
 	point3d_t position;
 	color_t color;
 	float intensity;
-	bool lLightEnabled; //!< enable/disable light
-	bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-pointLight_t::pointLight_t(const point3d_t &pos, const color_t &col, CFLOAT inte, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_SINGULAR), position(pos), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
+pointLight_t::pointLight_t(const point3d_t &pos, const color_t &col, CFLOAT inte, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+	light_t(LIGHT_SINGULAR), position(pos)
 {
-	color = col * inte;
+	lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
+    lLightGroup = iLightGroup;
+    color = col * inte;
 	intensity = color.energy();
 }
 
@@ -123,14 +122,16 @@ light_t *pointLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	CFLOAT power = 1.0;
 	bool lightEnabled = true;
 	bool castShadows = true;
+    int lightGroup = 1;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
 	params.getParam("power",power);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+    params.getParam("light_group", lightGroup);
 
-	return new pointLight_t(from, color, power, lightEnabled, castShadows);
+	return new pointLight_t(from, color, power, lightEnabled, castShadows, lightGroup);
 }
 
 extern "C"

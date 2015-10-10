@@ -624,7 +624,7 @@ bool photonIntegrator_t::preprocess()
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorIntPasses_t &colorPasses) const
 {
 	color_t pathCol(0.0);
 	void *first_udat = state.userdata;
@@ -633,6 +633,8 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	const volumeHandler_t *vol;
 	color_t vcol(0.f);
 	float W = 0.f;
+
+	colorIntPasses_t tmpColorPasses;
 	
 	int nSampl = std::max(1, nPaths/state.rayDivision);
 	for(int i=0; i<nSampl; ++i)
@@ -693,7 +695,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(state, hit, pwo, offs);
+					lcol = estimateOneDirectLight(state, hit, pwo, offs, tmpColorPasses);
 				}
 				else if(caustic)
 				{
@@ -704,7 +706,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				
 				if(close || caustic)
 				{
-					if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, pwo);
+					if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += p_mat->emit(state, hit, pwo);
 					pathCol += lcol*throughput;
 				}
 			}
@@ -759,7 +761,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, -pRay.dir);
 				const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
 				if(nearest) lcol = nearest->color();
-				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, -pRay.dir);
+				if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += p_mat->emit(state, hit, -pRay.dir);
 				pathCol += lcol * throughput;
 			}
 		}
@@ -768,7 +770,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	return pathCol / (float)nSampl;
 }
 
-colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) const
+colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
 {
 	static int _nMax=0;
 	static int calls=0;
@@ -797,7 +799,9 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 		vector3d_t wo = -ray.dir;
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
-		col += material->emit(state, sp, wo);
+		
+		if(isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
 		
@@ -811,13 +815,21 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			}
 			else
 			{
+				if(state.raylevel == 0 && colorPasses.enabled(PASS_YAF_RADIANCE))
+				{
+					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+					const photon_t *nearest = radianceMap.findNearest(sp.P, N, lookupRad);
+					if(nearest) colorPasses(PASS_YAF_RADIANCE) = nearest->color();
+				}
+				
 				// contribution of light emitting surfaces
-				if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{
-					col += estimateAllDirectLight(state, sp, wo);
-					col += finalGathering(state, sp, wo);
+					col += estimateAllDirectLight(state, sp, wo, colorPasses);;
+					
+					col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, finalGathering(state, sp, wo, colorPasses), state.raylevel == 0);
 				}
 			}
 		}
@@ -831,12 +843,20 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 			}
 			else
 			{
-				if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+				if(state.raylevel == 0 && colorPasses.enabled(PASS_YAF_RADIANCE))
+				{
+					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+					const photon_t *nearest = radianceMap.findNearest(sp.P, N, lookupRad);
+					if(nearest) colorPasses(PASS_YAF_RADIANCE) = nearest->color();
+				}
+
+				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{
-					col += estimateAllDirectLight(state, sp, wo);
+					col += estimateAllDirectLight(state, sp, wo, colorPasses);
 				}
+				
 				foundPhoton_t *gathered = (foundPhoton_t *)alloca(nDiffuseSearch * sizeof(foundPhoton_t));
 				PFLOAT radius = dsRadius; //actually the square radius...
 
@@ -853,17 +873,31 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 					{
 						vector3d_t pdir = gathered[i].photon->direction();
 						color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
-						col += surfCol * scale * gathered[i].photon->color();
+
+						col += colorPasses.probe_add(PASS_YAF_DIFFUSE_INDIRECT, surfCol * scale * gathered[i].photon->color(), state.raylevel == 0);
 					}
 				}
 			}
 		}
 		
 		// add caustics
-		if(bsdfs & BSDF_DIFFUSE) col += estimateCausticPhotons(state, sp, wo);
+		if(bsdfs & BSDF_DIFFUSE)
+		{
+			col += colorPasses.probe_set(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+		}
 		
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
+		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		{
+			generateCommonRenderPasses(colorPasses, state, sp);
+			
+			if(colorPasses.enabled(PASS_YAF_AO))
+			{
+				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+			}
+		}
+		
 		if(transpRefractedBackground)
 		{
 			CFLOAT m_alpha = material->getAlpha(state, sp, wo);
@@ -873,7 +907,10 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 	}
 	else //nothing hit, return background
 	{
-		if(background) col += (*background)(ray, state, false);
+		if(background)
+		{
+			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+		}
 	}
 	
 	state.userdata = o_udat;
@@ -901,6 +938,10 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	float gatherDist=0.2;
 	bool bg_transp = true;
 	bool bg_transp_refract = true;
+	bool do_AO=false;
+	int AO_samples = 32;
+	double AO_dist = 1.0;
+	color_t AO_col(1.f);
 	
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
@@ -921,6 +962,10 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	params.getParam("show_map", show_map);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
+	params.getParam("do_AO", do_AO);
+	params.getParam("AO_samples", AO_samples);
+	params.getParam("AO_distance", AO_dist);
+	params.getParam("AO_color", AO_col);
 	
 	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	ite->rDepth = raydepth;
@@ -936,6 +981,11 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	// Background settings
 	ite->transpBackground = bg_transp;
 	ite->transpRefractedBackground = bg_transp_refract;
+	// AO settings
+    ite->useAmbientOcclusion = do_AO;
+	ite->aoSamples = AO_samples;
+	ite->aoDist = AO_dist;
+	ite->aoCol = AO_col;
 	return ite;
 }
 

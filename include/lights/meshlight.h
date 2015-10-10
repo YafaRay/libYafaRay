@@ -35,7 +35,7 @@ class triKdTree_t;
 class meshLight_t : public light_t
 {
 	public:
-		meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s=false, bool bLightEnabled=true, bool bCastShadows=true);
+		meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s=false, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
 		virtual ~meshLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -49,8 +49,6 @@ class meshLight_t : public light_t
 		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
-		virtual bool lightEnabled() const { return lLightEnabled;}
-		virtual bool castShadows() const { return lCastShadows; }
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void initIS();
@@ -67,8 +65,6 @@ class meshLight_t : public light_t
 		triKdTree_t *tree;
 		//debug stuff:
 		int *stats;
-		bool lLightEnabled; //!< enable/disable light
-		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
 __END_YAFRAY

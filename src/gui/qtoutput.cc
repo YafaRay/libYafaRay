@@ -38,43 +38,37 @@ void QtOutput::setRenderSize(const QSize &s)
 / colorOutput_t implementations
 =====================================*/
 
-bool QtOutput::putPixel(int x, int y, const float *c, bool alpha, bool depth, float z)
+bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t &renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha)
 {
-	int r = std::max(0,std::min(255, (int)(c[0] * 255.f)));
-	int g = std::max(0,std::min(255, (int)(c[1] * 255.f)));	
-	int b = std::max(0,std::min(255, (int)(c[2] * 255.f)));
+	int r = std::max(0,std::min(255, (int)(colExtPasses.at(0).R * 255.f)));
+	int g = std::max(0,std::min(255, (int)(colExtPasses.at(0).G * 255.f)));	
+	int b = std::max(0,std::min(255, (int)(colExtPasses.at(0).B * 255.f)));
 	QRgb aval = Qt::white;
 	QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if (alpha)
 	{
-		int a = std::max(0,std::min(255, (int)(c[3] * 255.f)));
+		int a = std::max(0,std::min(255, (int)(colExtPasses.at(0).A * 255.f)));
 		aval = qRgb(a, a, a);
 	}
 	
-	if (depth)
-	{
-		int d = std::max(0,std::min(255, (int)(z * 255.f)));
-		zval = qRgb(d, d, d);
-	}
-
-	renderBuffer->setPixel(x, y, rgb, aval, zval, alpha, depth);
+	renderBuffer->setPixel(x, y, rgb, aval, alpha);
 
 	return true;
 }
 
-void QtOutput::flush()
+void QtOutput::flush(int numView, const yafaray::renderPasses_t &renderPasses)
 {
 	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(), true));
 }
 
-void QtOutput::flushArea(int x0, int y0, int x1, int y1)
+void QtOutput::flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)
 {
 	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(x0,y0,x1-x0,y1-y0)));
 }
 
-void QtOutput::highliteArea(int x0, int y0, int x1, int y1)
+void QtOutput::highliteArea(int numView, int x0, int y0, int x1, int y1)
 {
 	QCoreApplication::postEvent(renderBuffer, new GuiAreaHighliteEvent(QRect(x0,y0,x1-x0,y1-y0)));
 }

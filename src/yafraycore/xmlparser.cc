@@ -108,10 +108,20 @@ static xmlSAXHandler my_handler =
 };
 #endif // HAVE_XML
 
-bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render)
+bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma)
 {
 #if HAVE_XML
-	xmlParser_t parser(env, scene, render);
+	
+	colorSpaces_t input_color_space = RAW_MANUAL_GAMMA;
+	
+	if(color_space_string == "sRGB") input_color_space = SRGB;
+	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;
+	else if(color_space_string == "LinearRGB") input_color_space = LINEAR_RGB;
+	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
+	else input_color_space = SRGB;
+
+	xmlParser_t parser(env, scene, render, input_color_space, input_gamma);
+	
 	if (xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
 	{
 		Y_ERROR << "XMLParser: Parsing the file " << filename << yendl;
@@ -129,8 +139,8 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 / parser functions
 =============================================================*/
 
-xmlParser_t::xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r):
-	env(renv), scene(sc), render(r), current(0), level(0)
+xmlParser_t::xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma):
+	env(renv), scene(sc), render(r), current(0), level(0), inputGamma(input_gamma), inputColorSpace(input_color_space)
 {
 	cparams = &params;
 	pushState(startEl_document, endEl_document);
@@ -219,7 +229,7 @@ static bool parseNormal(const char **attrs, normal_t &n)
 	return (compoRead == 3);
 }
 
-void parseParam(const char **attrs, parameter_t &param)
+void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
 {
 	if(!attrs[0]) return;
 	if(!attrs[2]) // only one attribute => bool, integer or float value
@@ -251,7 +261,10 @@ void parseParam(const char **attrs, parameter_t &param)
 	switch(type)
 	{
 		case TYPE_POINT: param = parameter_t(p); break;
-		case TYPE_COLOR: param = parameter_t(c); break;
+		case TYPE_COLOR: 
+			c.linearRGB_from_ColorSpace(parser.getInputColorSpace(), parser.getInputGamma());
+			param = parameter_t(c);
+			break;
 	}
 }
 
@@ -331,7 +344,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	else if(el == "mesh")
 	{
 		mesh_dat_t *md = new mesh_dat_t();
-		int vertices=0, triangles=0, type=0, id=-1;
+		int vertices=0, triangles=0, type=0, id=-1, obj_pass_index=0;
 		for(int n=0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
@@ -341,6 +354,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 			else if(name == "faces") triangles = atoi(attrs[n+1]);
 			else if(name == "type")	type = atoi(attrs[n+1]);
 			else if(name == "id" ) id = atoi(attrs[n+1]);
+			else if(name == "obj_pass_index" ) obj_pass_index = atoi(attrs[n+1]);
 		}
 		parser.pushState(startEl_mesh, endEl_mesh, md);
 		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
@@ -349,7 +363,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		if(id == -1) md->ID = parser.scene->getNextFreeID();
 		else md->ID = id;
 		
-		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type))
+		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type, obj_pass_index))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
 		}
@@ -599,7 +613,7 @@ void startEl_parammap(xmlParser_t &parser, const char *element, const char **att
 		return;
 	}
 	parameter_t p;
-	parseParam(attrs, p);
+	parseParam(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 
@@ -625,7 +639,10 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			else if(el == "texture")
 			{ p.env->createTexture(*name, p.params); }
 			else if(el == "camera")
-			{ p.env->createCamera(*name, p.params); }
+			{ 
+				camera_t *camera = p.env->createCamera(*name, p.params);
+				if(camera) p.scene->addCamera(camera, std::string(*name));
+			}
 			else if(el == "background")
 			{ p.env->createBackground(*name, p.params); }
 			else if(el == "object")
@@ -650,7 +667,7 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 void startEl_paramlist(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	parameter_t p;
-	parseParam(attrs, p);
+	parseParam(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 

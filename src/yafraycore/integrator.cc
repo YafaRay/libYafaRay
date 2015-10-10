@@ -45,8 +45,8 @@ __BEGIN_YAFRAY
 class renderWorker_t: public yafthreads::thread_t
 {
 	public:
-		renderWorker_t(tiledIntegrator_t *it, scene_t *s, imageFilm_t *f, threadControl_t *c, int id, int smpls, int offs=0, bool adptv=false):
-			integrator(it), scene(s), imageFilm(f), control(c), samples(smpls), offset(offs), threadID(id), adaptive(adptv)
+		renderWorker_t(int numView, tiledIntegrator_t *it, scene_t *s, imageFilm_t *f, threadControl_t *c, int id, int smpls, int offs=0, bool adptv=false, int AA_pass_number=0):
+			integrator(it), scene(s), imageFilm(f), control(c), samples(smpls), mNumView(numView), offset(offs), threadID(id), adaptive(adptv), AA_pass(AA_pass_number)
 		{
 			//Empty
 		}
@@ -56,19 +56,22 @@ class renderWorker_t: public yafthreads::thread_t
 		scene_t *scene;
 		imageFilm_t *imageFilm;
 		threadControl_t *control;
-		int samples, offset;
+		int samples;
+        int mNumView;
+        int offset;
 		int threadID;
 		bool adaptive;
+		int AA_pass;
 };
 
 void renderWorker_t::body()
 {
 	renderArea_t a;
-	while(imageFilm->nextArea(a))
+	while(imageFilm->nextArea(mNumView, a))
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		integrator->preTile(a, samples, offset, adaptive, threadID);
-		integrator->renderTile(a, samples, offset, adaptive, threadID);
+		integrator->renderTile(mNumView, a, samples, offset, adaptive, threadID, AA_pass);
 		control->countCV.lock();
 		control->areas.push_back(a);
 		control->countCV.signal();
@@ -129,13 +132,14 @@ void tiledIntegrator_t::precalcDepths()
 	if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
 }
 
-bool tiledIntegrator_t::render(imageFilm_t *image)
+bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 {
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
 	iAA_passes = 1.f / (float) AA_passes;
 	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
+	if(getLightGroupFilter() > 0) Y_INFO << integratorName << ": Rendering only lights from light group: " << getLightGroupFilter() << yendl;
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
 	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
@@ -145,22 +149,26 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
+
+	imageFilm->reset_accumulated_image_area_flush_time();
+	gTimer.addEvent("image_area_flush");
+
 	imageFilm->init(AA_passes);
 
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
-	if(scene->doDepth() && scene->normalizedDepth()) precalcDepths();
+	if(imageFilm->passEnabled(PASS_YAF_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_YAF_MIST)) precalcDepths();
 
 	preRender();
 
-	renderPass(AA_samples, 0, false);
+	renderPass(numView, AA_samples, 0, false, 0);
 	for(int i=1; i<AA_passes; ++i)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		imageFilm->setAAThreshold(AA_threshold);
-		imageFilm->nextPass(true, integratorName);
-		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
+		imageFilm->nextPass(numView, true, integratorName);
+		renderPass(numView, AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true, i);
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
@@ -170,7 +178,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 }
 
 
-bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
+bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number)
 {
 	prePass(samples, offset, adaptive);
 
@@ -181,7 +189,7 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 	{
 		threadControl_t tc;
 		std::vector<renderWorker_t *> workers;
-		for(int i=0;i<nthreads;++i) workers.push_back(new renderWorker_t(this, scene, imageFilm, &tc, i, samples, offset, adaptive));
+		for(int i=0;i<nthreads;++i) workers.push_back(new renderWorker_t(numView, this, scene, imageFilm, &tc, i, samples, offset, adaptive, AA_pass_number));
 		for(int i=0;i<nthreads;++i)
 		{
 			workers[i]->run();
@@ -191,7 +199,7 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 		while(tc.finishedThreads < nthreads)
 		{
 			tc.countCV.wait();
-			for(size_t i=0; i<tc.areas.size(); ++i) imageFilm->finishArea(tc.areas[i]);
+			for(size_t i=0; i<tc.areas.size(); ++i) imageFilm->finishArea(numView, tc.areas[i]);
 			tc.areas.clear();
 		}
 		tc.countCV.unlock();
@@ -202,12 +210,12 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 	{
 #endif
 		renderArea_t a;
-		while(imageFilm->nextArea(a))
+		while(imageFilm->nextArea(numView, a))
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
 			preTile(a, samples, offset, adaptive, 0);
-			renderTile(a, samples, offset, adaptive, 0);
-			imageFilm->finishArea(a);
+			renderTile(numView, a, samples, offset, adaptive, 0);
+			imageFilm->finishArea(numView, a);
 		}
 #ifdef USING_THREADS
 	}
@@ -215,12 +223,10 @@ bool tiledIntegrator_t::renderPass(int samples, int offset, bool adaptive)
 	return true; //hm...quite useless the return value :)
 }
 
-bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID)
+bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number)
 {
 	int x;
 	const camera_t* camera = scene->getCamera();
-	bool do_depth = scene->doDepth();
-	bool normalizedDepth = scene->normalizedDepth();
 	x=camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
@@ -233,10 +239,15 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
+	float inv_AA_max_possible_samples = 1.f / ((float) AA_samples + ((float) (AA_passes-1) * (float) AA_inc_samples));
 
 	Halton halU(3);
 	Halton halV(5);
 
+	colorIntPasses_t colorPasses = imageFilm->get_RenderPasses().colorPassesTemplate;
+ 
+	colorIntPasses_t tmpPassesZero = imageFilm->get_RenderPasses().colorPassesTemplate;
+	
 	for(int i=a.Y; i<end_y; ++i)
 	{
 		for(int j=a.X; j<end_x; ++j)
@@ -257,6 +268,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 
 			for(int sample=0; sample<n_samples; ++sample)
 			{
+				colorPasses.reset_colors();
 				rstate.setDefaults();
 				rstate.pixelSample = pass_offs+sample;
 				rstate.time = addMod1((PFLOAT)sample*d1, toff);//(0.5+(PFLOAT)sample)*d1;
@@ -281,7 +293,7 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				c_ray = camera->shootRay(j+dx, i+dy, lens_u, lens_v, wt);
 				if(wt==0.0)
 				{
-					imageFilm->addSample(colorA_t(0.f), j, i, dx, dy, &a);
+					imageFilm->addSample(tmpPassesZero, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
 					continue;
 				}
 				//setup ray differentials
@@ -294,39 +306,161 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 				c_ray.time = rstate.time;
 				c_ray.hasDifferentials = true;
 				// col = T * L_o + L_v
-				colorA_t colIntegration = integrate(rstate, c_ray); // L_o
+				colorA_t colIntegration = integrate(rstate, c_ray, colorPasses); // L_o
+				colorPasses.probe_set(PASS_YAF_SURFACE_INTEGRATION, colIntegration);
+				
 				colorA_t colVolTransmittance = scene->volIntegrator->transmittance(rstate, c_ray); // T
-				colorA_t colVolIntegration = scene->volIntegrator->integrate(rstate, c_ray); // L_v
+				colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
+				
+				colorA_t colVolIntegration = scene->volIntegrator->integrate(rstate, c_ray, colorPasses); // L_v
+				colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+				
 				colVolIntegration.A = 1.f-colVolTransmittance.A; //Fix for Volumetrics Alpha artifacts. For the Alpha of the volume itself, I will use the inverse of the Aplha calculated by the transmittance calculation. It seems to give good results for volumes rendered on top of other objects, volumes rendered on top of an opaque background and volumes rendered on top of transparent background (for later compositing). 
-				colorA_t col = (colIntegration*colVolTransmittance)+colVolIntegration;
-				imageFilm->addSample(wt * col, j, i, dx, dy, &a);
-
-				if(do_depth)
+				colorPasses(PASS_YAF_COMBINED) = (colIntegration*colVolTransmittance)+colVolIntegration;
+				
+				if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS) || colorPasses.enabled(PASS_YAF_MIST))
 				{
-					float depth = 0.f;
+					float depth_abs = 0.f, depth_norm = 0.f;
 
-					if(normalizedDepth)
-                    {
-                        if(c_ray.tmax > 0.f)
-                        {
-                            depth = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
-                        }
-                    }
-                    else
-                    {
-                        depth = c_ray.tmax;
-                        if(depth <= 0.f)
-                        {
-                            depth = 99999997952.f;
-                        }
-                    }
-
-                    imageFilm->addDepthSample(0, depth, j, i, dx, dy);
+					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_MIST))
+					{
+						if(c_ray.tmax > 0.f)
+						{
+							depth_norm = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
+						}
+						colorPasses.probe_set(PASS_YAF_Z_DEPTH_NORM, colorA_t(depth_norm));
+						colorPasses.probe_set(PASS_YAF_MIST, colorA_t(1.f-depth_norm));
+					}
+					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS))
+					{
+						depth_abs = c_ray.tmax;
+						if(depth_abs <= 0.f)
+						{
+							depth_abs = 99999997952.f;
+						}
+						colorPasses.probe_set(PASS_YAF_Z_DEPTH_ABS, colorA_t(depth_abs));
+					}
 				}
+				
+				for(int idx = PASS_YAF_COMBINED; idx <= colorPasses.get_highest_internal_pass_used(); ++idx)
+				{
+					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
+										
+					switch(idx)
+					{
+                    case PASS_YAF_Z_DEPTH_NORM: break;
+                    case PASS_YAF_Z_DEPTH_ABS: break;
+                    case PASS_YAF_MIST: break;
+                    case PASS_YAF_NORMAL_SMOOTH: break;
+                    case PASS_YAF_NORMAL_GEOM: break;
+                    case PASS_YAF_AO: break;
+                    case PASS_YAF_UV: break;
+                    case PASS_YAF_DEBUG_NU: break;
+                    case PASS_YAF_DEBUG_NV: break;
+                    case PASS_YAF_DEBUG_DPDU: break;
+                    case PASS_YAF_DEBUG_DPDV: break;
+                    case PASS_YAF_DEBUG_DSDU: break;
+                    case PASS_YAF_DEBUG_DSDV: break;
+                    case PASS_YAF_OBJ_INDEX_ABS: break;
+                    case PASS_YAF_OBJ_INDEX_NORM: break;
+                    case PASS_YAF_OBJ_INDEX_AUTO: break;
+                    case PASS_YAF_MAT_INDEX_ABS: break;
+                    case PASS_YAF_MAT_INDEX_NORM: break;
+                    case PASS_YAF_MAT_INDEX_AUTO: break;
+                    case PASS_YAF_AA_SAMPLES: break;
+                    
+                    //Processing of mask render passes:
+                    case PASS_YAF_OBJ_INDEX_MASK: 
+                    case PASS_YAF_OBJ_INDEX_MASK_SHADOW: 
+                    case PASS_YAF_OBJ_INDEX_MASK_ALL: 
+                    case PASS_YAF_MAT_INDEX_MASK: 
+                    case PASS_YAF_MAT_INDEX_MASK_SHADOW:
+                    case PASS_YAF_MAT_INDEX_MASK_ALL: 
+                        
+                        if(colorPasses.pass_mask_invert)
+                        {
+                            colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
+                        }
+                        
+                        if(!colorPasses.pass_mask_only)
+                        {
+                            colorA_t colCombined = colorPasses(PASS_YAF_COMBINED);
+                            colCombined.A = 1.f;	
+                            colorPasses(idx) *= colCombined;
+                        }
+                        break;
+                        
+                    default: colorPasses(idx) *= wt; break;
+					}
+				}
+
+				imageFilm->addSample(colorPasses, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
 			}
 		}
 	}
 	return true;
 }
+
+inline void tiledIntegrator_t::generateCommonRenderPasses(colorIntPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
+{
+	colorPasses.probe_set(PASS_YAF_UV, colorA_t(sp.U, sp.V, 0.f, 1.f));
+	colorPasses.probe_set(PASS_YAF_NORMAL_SMOOTH, colorA_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_NORMAL_GEOM, colorA_t((sp.Ng.x + 1.f) * .5f, (sp.Ng.y + 1.f) * .5f, (sp.Ng.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_DPDU, colorA_t((sp.dPdU.x + 1.f) * .5f, (sp.dPdU.y + 1.f) * .5f, (sp.dPdU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_DPDV, colorA_t((sp.dPdV.x + 1.f) * .5f, (sp.dPdV.y + 1.f) * .5f, (sp.dPdV.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_DSDU, colorA_t((sp.dSdU.x + 1.f) * .5f, (sp.dSdU.y + 1.f) * .5f, (sp.dSdU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_DSDV, colorA_t((sp.dSdV.x + 1.f) * .5f, (sp.dSdV.y + 1.f) * .5f, (sp.dSdV.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_NU, colorA_t((sp.NU.x + 1.f) * .5f, (sp.NU.y + 1.f) * .5f, (sp.NU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_YAF_DEBUG_NV, colorA_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f, 1.f));
+
+	if(colorPasses.enabled(PASS_YAF_REFLECT_ALL))
+    {
+        colorPasses(PASS_YAF_REFLECT_ALL) = colorPasses(PASS_YAF_REFLECT_PERFECT) + colorPasses(PASS_YAF_GLOSSY) + colorPasses(PASS_YAF_GLOSSY_INDIRECT);
+    }
+    
+	if(colorPasses.enabled(PASS_YAF_REFRACT_ALL))
+    {
+        colorPasses(PASS_YAF_REFRACT_ALL) = colorPasses(PASS_YAF_REFRACT_PERFECT) + colorPasses(PASS_YAF_TRANS) + colorPasses(PASS_YAF_TRANS_INDIRECT);
+    }
+        
+    if(colorPasses.enabled(PASS_YAF_INDIRECT_ALL))
+    {
+        colorPasses(PASS_YAF_INDIRECT_ALL) = colorPasses(PASS_YAF_INDIRECT) + colorPasses(PASS_YAF_DIFFUSE_INDIRECT);
+    }
+
+	colorPasses.probe_set(PASS_YAF_DIFFUSE_COLOR, sp.material->getDiffuseColor(state));
+	colorPasses.probe_set(PASS_YAF_GLOSSY_COLOR, sp.material->getGlossyColor(state));
+	colorPasses.probe_set(PASS_YAF_TRANS_COLOR, sp.material->getTransColor(state));
+	colorPasses.probe_set(PASS_YAF_SUBSURFACE_COLOR, sp.material->getSubSurfaceColor(state));
+
+	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_ABS, sp.object->getAbsObjectIndexColor());
+	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_NORM, sp.object->getNormObjectIndexColor());
+	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_AUTO, sp.object->getAutoObjectIndexColor());
+	
+	colorPasses.probe_set(PASS_YAF_MAT_INDEX_ABS, sp.material->getAbsMaterialIndexColor());
+	colorPasses.probe_set(PASS_YAF_MAT_INDEX_NORM, sp.material->getNormMaterialIndexColor());
+	colorPasses.probe_set(PASS_YAF_MAT_INDEX_AUTO, sp.material->getAutoMaterialIndexColor());
+	
+	if(colorPasses.enabled(PASS_YAF_OBJ_INDEX_MASK))
+	{
+        if(sp.object->getAbsObjectIndex() == colorPasses.pass_mask_obj_index) colorPasses(PASS_YAF_OBJ_INDEX_MASK) = colorA_t(1.f);
+    }
+
+	if(colorPasses.enabled(PASS_YAF_OBJ_INDEX_MASK_ALL))
+	{
+        colorPasses(PASS_YAF_OBJ_INDEX_MASK_ALL) = colorPasses(PASS_YAF_OBJ_INDEX_MASK) + colorPasses(PASS_YAF_OBJ_INDEX_MASK_SHADOW);
+	}
+
+	if(colorPasses.enabled(PASS_YAF_MAT_INDEX_MASK))
+	{
+        if(sp.material->getAbsMaterialIndex() == colorPasses.pass_mask_mat_index) colorPasses(PASS_YAF_MAT_INDEX_MASK) = colorA_t(1.f);
+	}
+
+	if(colorPasses.enabled(PASS_YAF_MAT_INDEX_MASK_ALL))
+	{
+        colorPasses(PASS_YAF_MAT_INDEX_MASK_ALL) = colorPasses(PASS_YAF_MAT_INDEX_MASK) + colorPasses(PASS_YAF_MAT_INDEX_MASK_SHADOW);
+	}
+}
+
 
 __END_YAFRAY

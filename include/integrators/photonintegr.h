@@ -26,10 +26,10 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public mcIntegrator_t
 		photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad=false, int shadowDepth = 4, float dsRad = 0.1f, float cRad = 0.01f);
 		~photonIntegrator_t();
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		color_t finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		color_t finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorIntPasses_t &colorPasses) const;
 		
 		bool finalGather, showMap;
 		bool prepass;

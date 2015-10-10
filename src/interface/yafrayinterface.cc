@@ -8,7 +8,7 @@
 
 __BEGIN_YAFRAY
 
-yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), gcInput(false)
+yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
@@ -82,27 +82,27 @@ unsigned int yafrayInterface_t::getNextFreeID() {
 	return id;
 }
 
-bool yafrayInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool yafrayInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
-	bool success = scene->startTriMesh(id, vertices, triangles, hasOrco, hasUV, type);
+	bool success = scene->startTriMesh(id, vertices, triangles, hasOrco, hasUV, type, obj_pass_index);
 	return success;
 }
 
-bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices)
+bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
 {
-        bool success = scene->startCurveMesh(id, vertices);
+        bool success = scene->startCurveMesh(id, vertices, obj_pass_index);
         return success;
 }
 
 
-bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	Y_WARNING << "Interface: This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << yendl;
 	objID_t _id;
 	_id = scene->getNextFreeID();
 	if ( _id > 0 )
 	{
-		bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type);
+		bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type, obj_pass_index);
 		*id = _id;
 		return success;
 	}
@@ -171,14 +171,14 @@ void yafrayInterface_t::paramsSetFloat(const char* name, double f)
 void yafrayInterface_t::paramsSetColor(const char* name, float r, float g, float b, float a)
 {
 	colorA_t col(r,g,b,a);
-	if(gcInput) col.gammaAdjust(inputGamma);
+	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
 void yafrayInterface_t::paramsSetColor(const char* name, float *rgb, bool with_alpha)
 {
 	colorA_t col(rgb[0],rgb[1],rgb[2], (with_alpha ? rgb[3] : 1.f));
-	if(gcInput) col.gammaAdjust(inputGamma);
+	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
@@ -215,9 +215,20 @@ void yafrayInterface_t::paramsSetMemMatrix(const char* name, double* matrix, boo
 }
 
 void yafrayInterface_t::setInputGamma(float gammaVal, bool enable)
+//deprecated: use setInputColorSpace instead
 {
-	gcInput = enable;
-	if(gammaVal > 0) inputGamma = gammaVal;
+	setInputColorSpace("Raw_Manual_Gamma", gammaVal);
+}
+
+void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float gammaVal)
+{
+	if(color_space_string == "sRGB") inputColorSpace = SRGB;
+	else if(color_space_string == "XYZ") inputColorSpace = XYZ_D65;
+	else if(color_space_string == "LinearRGB") inputColorSpace = LINEAR_RGB;
+	else if(color_space_string == "Raw_Manual_Gamma") inputColorSpace = RAW_MANUAL_GAMMA;
+	else inputColorSpace = SRGB;
+	
+	inputGamma = gammaVal;
 }
 
 void yafrayInterface_t::paramsClearAll()
@@ -253,7 +264,12 @@ light_t* yafrayInterface_t::createLight(const char* name)
 
 texture_t* 		yafrayInterface_t::createTexture(const char* name) { return env->createTexture(name, *params); }
 material_t* 	yafrayInterface_t::createMaterial(const char* name) { return env->createMaterial(name, *params, *eparams); }
-camera_t* 		yafrayInterface_t::createCamera(const char* name) { return env->createCamera(name, *params); }
+camera_t* 		yafrayInterface_t::createCamera(const char* name)
+{
+	camera_t *camera = env->createCamera(name, *params);
+	if(camera) scene->addCamera(camera, std::string(name));
+	return camera;
+}
 background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }
 integrator_t* 	yafrayInterface_t::createIntegrator(const char* name) { return env->createIntegrator(name, *params); }
 imageHandler_t* yafrayInterface_t::createImageHandler(const char* name, bool addToTable) { return env->createImageHandler(name, *params, addToTable); }
@@ -277,10 +293,10 @@ unsigned int yafrayInterface_t::createObject	(const char* name)
 
 void yafrayInterface_t::abort(){ if(scene) scene->abort(); }
 
-bool yafrayInterface_t::getRenderedImage(colorOutput_t &output)
+bool yafrayInterface_t::getRenderedImage(int numView, colorOutput_t &output)
 {
 	if(!film) return false;
-	film->flush(IF_ALL, &output);
+	film->flush(numView, IF_ALL, &output);
 	return true;
 }
 

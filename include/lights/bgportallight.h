@@ -36,7 +36,7 @@ class background_t;
 class bgPortalLight_t : public light_t
 {
 	public:
-		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled=true, bool bCastShadows=true);
+		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
 		virtual ~bgPortalLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -53,8 +53,6 @@ class bgPortalLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual bool shootsCausticP() const { return shootCaustic; }
 		virtual bool shootsDiffuseP() const { return shootDiffuse; }
-		virtual bool lightEnabled() const { return lLightEnabled;}
-		virtual bool castShadows() const { return lCastShadows; }
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void initIS();
@@ -74,8 +72,6 @@ class bgPortalLight_t : public light_t
 		bool shootCaustic;
 		bool shootDiffuse;
 		bool photonOnly;
-		bool lLightEnabled; //!< enable/disable light
-		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
 __END_YAFRAY

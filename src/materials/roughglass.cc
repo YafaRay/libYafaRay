@@ -29,8 +29,9 @@ __BEGIN_YAFRAY
 
 roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow, visibility_t eVisibility):
 		bumpS(0), mirColS(0), roughnessS(0), iorS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
-		disperse(false), fakeShadow(fakeS), dispersion_power(disp_pow), mVisibility(eVisibility)
+		disperse(false), fakeShadow(fakeS), dispersion_power(disp_pow)
 {
+    mVisibility = eVisibility;
 	bsdfFlags = BSDF_ALL_GLOSSY;
 	if(fakeS) bsdfFlags |= BSDF_FILTER;
 	if(disp_pow > 0.0)
@@ -217,7 +218,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 
 	if(refractMicrofacet(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, H, woH, woN, Kr, Kt) )
 	{
-		if((s.flags & BSDF_TRANSMIT))
+		if(s.flags & BSDF_TRANSMIT)
 		{
 			wiN = wi*N;
 			wiH = wi*H;
@@ -308,6 +309,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	bool fake_shad = false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	int mat_pass_index = 0;
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -317,6 +319,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
 	params.getParam("visibility", sVisibility);
+	params.getParam("mat_pass_index",   mat_pass_index);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
@@ -327,6 +330,8 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
 	roughGlassMat_t *mat = new roughGlassMat_t(IOR, filt*filtCol + color_t(1.f-filt), srCol, fake_shad, alpha, disp_power, visibility);
+
+	mat->setMaterialIndex(mat_pass_index);
 
 	if( params.getParam("absorption", absorp) )
 	{

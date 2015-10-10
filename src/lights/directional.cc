@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class directionalLight_t : public light_t
 {
   public:
-	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled=true, bool bCastShadows=true);
+	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
 	virtual void init(scene_t &scene);
 	virtual color_t totalEnergy() const { return color * radius*radius * M_PI; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -36,8 +36,6 @@ class directionalLight_t : public light_t
 	virtual bool diracLight() const { return true; }
 	virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 	virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
-	virtual bool lightEnabled() const { return lLightEnabled;}
-	virtual bool castShadows() const { return lCastShadows; }
 	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
   protected:
 	point3d_t position;
@@ -49,13 +47,14 @@ class directionalLight_t : public light_t
 	PFLOAT worldRadius;
 	bool infinite;
 	int majorAxis; //!< the largest component of direction
-	bool lLightEnabled; //!< enable/disable light
-	bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
+directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf)
 {
+    lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
+    lLightGroup = iLightGroup;
 	color = col * inte;
 	intensity = color.energy();
 	direction.normalize();
@@ -144,6 +143,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	bool inf = true;
 	bool lightEnabled = true;
 	bool castShadows = true;
+    int light_group = 1;
 	
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -151,6 +151,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	params.getParam("infinite", inf);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+    params.getParam("light_group", light_group);
 	
 	if(!inf)
 	{
@@ -161,7 +162,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 		params.getParam("radius",rad);
 	}
 
-	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled, castShadows);
+	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled, castShadows, light_group);
 }
 
 extern "C"

@@ -18,14 +18,15 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		virtual bool render(imageFilm_t *imageFilm);
+		virtual bool render(int numView, imageFilm_t *imageFilm);
 		/*! render a pass; only required by the default implementation of render() */
-		virtual bool renderPass(int samples, int offset, bool adaptive);
+		virtual bool renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
+		virtual bool renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
 		
 //		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
 		virtual void precalcDepths();
+		virtual void generateCommonRenderPasses(colorIntPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const; //!< Generates render passes common to all integrators
 	
 	protected:
 		int AA_samples, AA_passes, AA_inc_samples;

@@ -34,9 +34,10 @@ class YAFRAYCORE_EXPORT imageOutput_t : public colorOutput_t
 		imageOutput_t(imageHandler_t *handle, const std::string &name, int bx, int by);
 		imageOutput_t(); //!< Dummy initializer
 		virtual ~imageOutput_t();
-		virtual bool putPixel(int x, int y, const float *c, bool alpha = true, bool depth = false, float z = 0.f);
-		virtual void flush();
-		virtual void flushArea(int x0, int y0, int x1, int y1) {}; // not used by images... yet
+		virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
+		virtual void flush(int numView, const renderPasses_t &renderPasses);
+		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {} // not used by images... yet
+
 	private:
 		imageHandler_t *image;
 		std::string fname;

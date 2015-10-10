@@ -56,19 +56,19 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 	public:
 		SPPM(unsigned int dPhotons, int passnum, bool transpShad, int shadowDepth);
 		~SPPM();
-		virtual bool render(imageFilm_t *imageFilm);
+		virtual bool render(int numView, imageFilm_t *imageFilm);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID);
+		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
 		virtual bool preprocess(); //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive);
 		/*! not used now, use traceGatherRay instead*/
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePPM();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp);
+		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp, colorIntPasses_t &colorPasses);
 	protected:
 		hashGrid_t  photonGrid; // the hashgrid for holding photons
 		photonMap_t diffuseMap,causticMap; // photonmap

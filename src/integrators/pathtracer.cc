@@ -41,7 +41,7 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 	public:
 		pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		enum { NONE, PATH, PHOTON, BOTH };
 	protected:
@@ -108,7 +108,7 @@ bool pathIntegrator_t::preprocess()
 	return success;
 }
 
-colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const
+colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const
 {
 	static int calls=0;
 	++calls;
@@ -120,6 +120,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	
 	if(transpBackground) alpha=0.0;
 	else alpha=1.0;
+	
+	colorIntPasses_t tmpColorPasses = colorPasses;
 	
 	//shoot ray into scene
 	if(scene->intersect(ray, sp))
@@ -141,12 +143,13 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		color_t vcol(0.f);
 
 		// contribution of light emitting surfaces		
-		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+		if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
 		if(bsdfs & BSDF_DIFFUSE)
 		{
-			col += estimateAllDirectLight(state, sp, wo);
-			if(causticType == PHOTON || causticType == BOTH) col += estimateCausticPhotons(state, sp, wo);
+			col += estimateAllDirectLight(state, sp, wo, colorPasses);;
+			
+			if(causticType == PHOTON || causticType == BOTH) col += colorPasses.probe_set(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0); 
 		}
 				
 		// path tracing:
@@ -204,8 +207,8 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 				BSDF_t matBSDFs;
 				p_mat->initBSDF(state, *hit, matBSDFs);
 				if(s.sampledFlags != BSDF_NONE) pwo = -pRay.dir; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(state, *hit, pwo, offs);
-				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, *hit, pwo);
+				lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmpColorPasses);
+				if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += colorPasses.probe_add(PASS_YAF_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
 
 				pathCol += lcol*throughput;
 				
@@ -252,7 +255,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 					p_mat->initBSDF(state, *hit, matBSDFs);
 					pwo = -pRay.dir;
 
-					if(matBSDFs & BSDF_DIFFUSE) lcol = estimateOneDirectLight(state, *hit, pwo, offs);
+					if(matBSDFs & BSDF_DIFFUSE) lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmpColorPasses);
 					else lcol = color_t(0.f);
 
 					if((matBSDFs & BSDF_VOLUMETRIC) && (vol=p_mat->getVolumeHandler(hit->N * pwo < 0)))
@@ -260,7 +263,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 						if(vol->transmittance(state, pRay, vcol)) throughput *= vcol;
 					}
 					
-					if (matBSDFs & BSDF_EMIT && caustic) lcol += p_mat->emit(state, *hit, pwo);
+					if ((matBSDFs & BSDF_EMIT) && caustic && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += colorPasses.probe_add(PASS_YAF_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
 					
 					pathCol += lcol*throughput;
 				}
@@ -272,7 +275,17 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
+
+		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		{
+			generateCommonRenderPasses(colorPasses, state, sp);
+			
+			if(colorPasses.enabled(PASS_YAF_AO))
+			{
+				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+			}
+		}
 
 		if(transpRefractedBackground)
 		{
@@ -285,7 +298,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	{
 		if(background)
 		{
-			col += (*background)(ray, state, false);
+			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 
@@ -303,6 +316,10 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	const std::string *cMethod=0;
 	bool bg_transp = true;
 	bool bg_transp_refract = true;
+	bool do_AO=false;
+	int AO_samples = 32;
+	double AO_dist = 1.0;
+	color_t AO_col(1.f);
 	
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);
@@ -312,6 +329,10 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("no_recursive", noRec);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
+	params.getParam("do_AO", do_AO);
+	params.getParam("AO_samples", AO_samples);
+	params.getParam("AO_distance", AO_dist);
+	params.getParam("AO_color", AO_col);
 	
 	pathIntegrator_t* inte = new pathIntegrator_t(transpShad, shadowDepth);
 	if(params.getParam("caustic_type", cMethod))
@@ -342,6 +363,11 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	// Background settings
 	inte->transpBackground = bg_transp;
 	inte->transpRefractedBackground = bg_transp_refract;
+	// AO settings
+	inte->useAmbientOcclusion = do_AO;
+	inte->aoSamples = AO_samples;
+	inte->aoDist = AO_dist;
+	inte->aoCol = AO_col;
 	return inte;
 }
 

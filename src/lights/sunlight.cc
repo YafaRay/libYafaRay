@@ -27,7 +27,7 @@ __BEGIN_YAFRAY
 class sunLight_t : public light_t
 {
   public:
-	sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled=true, bool bCastShadows=true);
+	sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=0);
 	virtual void init(scene_t &scene);
 	virtual color_t totalEnergy() const { return color * ePdf; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -37,8 +37,6 @@ class sunLight_t : public light_t
 	virtual bool canIntersect() const{ return true; }
 	virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 	virtual int nSamples() const { return samples; }
-	virtual bool lightEnabled() const { return lLightEnabled;}
-	virtual bool castShadows() const { return lCastShadows; }
 	static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
   protected:
 	point3d_t worldCenter;
@@ -49,14 +47,15 @@ class sunLight_t : public light_t
 	int samples;
 	float worldRadius;
 	float ePdf;
-	bool lLightEnabled; //!< enable/disable light
-	bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
-sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled, bool bCastShadows):
-	direction(dir), samples(nSamples), lLightEnabled(bLightEnabled), lCastShadows(bCastShadows)
+sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, CFLOAT inte, float angle, int nSamples, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+	direction(dir), samples(nSamples)
 {
-	color = col * inte;
+	lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
+    lLightGroup = iLightGroup;
+    color = col * inte;
 	direction.normalize();
 	createCS(dir, du, dv);
 	if(angle > 80.f) angle = 80.f;
@@ -125,6 +124,7 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int samples = 4;
 	bool lightEnabled = true;
 	bool castShadows = true;
+    int lightGroup = 1;
 
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -133,8 +133,9 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples",samples);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+    params.getParam("light_group", lightGroup);
 
-	return new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);
+	return new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows, lightGroup);
 }
 
 extern "C"

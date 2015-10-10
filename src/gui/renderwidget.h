@@ -43,17 +43,15 @@ private:
 	void initBuffers();
 public:
 	void setRenderBorderStart(const QPoint &start) { borderStart = start; }
-	void setRenderDepthMap(bool use_depth) { use_zbuf = use_depth; }
 
 	void startRendering();
 	bool isRendering() { return rendering; }
 	void finishRendering();
 
-	void setPixel(int x, int y, QRgb color, QRgb alpha, QRgb depth, bool withAlpha, bool withDepth);
+	void setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha);
 
 	void paintColorBuffer();
 	void paintAlpha();
-	void paintDepth();
 
 private:
 	void zoom(float f, QPoint mPos);
@@ -89,7 +87,6 @@ private:
 
 	QImage colorBuffer;
 	QImage alphaChannel;
-	QImage depthChannel;
 	QImage *activeBuffer;
 };
 
