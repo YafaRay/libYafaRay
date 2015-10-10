@@ -737,6 +737,7 @@ namespace yafaray
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
+			virtual void setInputGamma(float gammaVal, bool enable);	//deprecated: use setInputColorSpace instead
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }
 			virtual bool getRenderedImage(colorOutput_t &output); //!< put the rendered image to output
@@ -744,18 +745,18 @@ namespace yafaray
 			virtual std::vector<std::string> listImageHandlersFullName();
 			virtual std::string getImageFormatFromFullName(const std::string &fullname);
 			virtual std::string getImageFullNameFromFormat(const std::string &format);
-
+			
 			virtual void setVerbosityLevel(int vlevel);
 			virtual void setVerbosityInfo();
 			virtual void setVerbosityWarning();
 			virtual void setVerbosityError();
 			virtual void setVerbosityMute();
-
+			
 			virtual void setDrawParams(bool on = true);
 			virtual bool getDrawParams();
 
 			virtual char* getVersion() const; //!< Get version to check aginst the exporters
-
+			
 			/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 			void printInfo(const std::string &msg);
 			void printWarning(const std::string &msg);
@@ -774,7 +775,6 @@ namespace yafaray
 			float inputGamma;
 			colorSpaces_t inputColorSpace;
 	};
-
 
 	class xmlInterface_t: public yafrayInterface_t
 	{
@@ -798,7 +798,7 @@ namespace yafaray
 			virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
 			virtual int  addUV(float u, float v);
 			virtual bool smoothMesh(unsigned int id, double angle);
-
+			
 			// functions directly related to renderEnvironment_t
 			virtual light_t* 		createLight			(const char* name);
 			virtual texture_t* 		createTexture		(const char* name);
@@ -816,7 +816,7 @@ namespace yafaray
 		protected:
 			void writeParamMap(const paraMap_t &pmap, int indent=1);
 			void writeParamList(int indent);
-
+			
 			std::map<const material_t *, std::string> materials;
 			std::ofstream xmlFile;
 			std::string xmlName;

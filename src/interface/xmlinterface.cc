@@ -5,7 +5,11 @@
 
 __BEGIN_YAFRAY
 
+<<<<<<< HEAD
 xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(SRGB)
+=======
+xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(RAW_MANUAL_GAMMA)
+>>>>>>> origin/linear_workflow
 {
 	xmlName = "yafaray.xml";
 }

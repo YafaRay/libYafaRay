@@ -112,7 +112,7 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 {
 #if HAVE_XML
 	
-	colorSpaces_t input_color_space = LINEAR_RGB;
+	colorSpaces_t input_color_space = RAW_MANUAL_GAMMA;
 	
 	if(color_space_string == "sRGB") input_color_space = SRGB;
 	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;

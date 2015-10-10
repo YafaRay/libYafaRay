@@ -117,7 +117,11 @@ float Lanczos2(float dx, float dy)
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
+<<<<<<< HEAD
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(SRGB), gamma(1.0), filterw(filterSize*0.5), output(&out),
+=======
+	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA), gamma(1.0), filterw(filterSize*0.5), output(&out),
+>>>>>>> origin/linear_workflow
 	clamp(false), split(true), interactive(true), abort(false), splitter(0), pbar(0),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
 {
