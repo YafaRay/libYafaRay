@@ -182,7 +182,7 @@ public:
 							{
 								VolumeRegion* vr = listVR.at(i);
 								float t0Tmp = -1, t1Tmp = -1;
-								if (vr->intersect(lightRay, t0Tmp, t1Tmp)) lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
+								if (vr->intersect(lightRay, t0Tmp, t1Tmp)) lightTr += vr->attenuation(sp.P, (*l));
 							}
 						}
 						else
@@ -195,14 +195,12 @@ public:
 								float t0Tmp = -1, t1Tmp = -1;
 								if (listVR.at(i)->intersect(lightRay, t0Tmp, t1Tmp))
 								{
-									lightstepTau += vr->tau(lightRay, currentStep, 0.f) * iVRSize;
+									lightstepTau += vr->tau(lightRay, currentStep, 0.f);
 								}
 							}
 							// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 							lightTr = fExp(-lightstepTau.energy());
 						}
-						lightTr *= iVRSize;
-
 						inScatter += lightTr * lcol;
 					}
 				}
@@ -240,7 +238,7 @@ public:
 									float t0Tmp = -1, t1Tmp = -1;
 									if (vr->intersect(lightRay, t0Tmp, t1Tmp))
 									{
-										lightTr += vr->attenuation(sp.P, (*l)) * iVRSize;
+										lightTr += vr->attenuation(sp.P, (*l));
 										break;
 									}
 								}
@@ -259,12 +257,11 @@ public:
 									}
 								}
 								// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
-								lightTr += fExp(-lightstepTau.energy()) * iVRSize;
+								lightTr += fExp(-lightstepTau.energy());
 							}
 
 						}
 					}
-					lightTr *= iVRSize;
 				} // end of area light sample loop
 
 				lightTr *= iN;
