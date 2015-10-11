@@ -150,7 +150,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background)
+		if(background && !transpRefractedBackground)
 		{
 			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
@@ -158,6 +158,17 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
+
+	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
+
+	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+	
+	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+
+	col = (col * colVolTransmittance) + colVolIntegration;
+	
 	return colorA_t(col, alpha);
 }
 

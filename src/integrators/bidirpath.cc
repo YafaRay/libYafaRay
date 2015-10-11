@@ -155,7 +155,8 @@ protected:
 	int aoSamples; //! Ambient occlusion samples
 	float aoDist; //! Ambient occlusion distance
 	color_t aoCol; //! Ambient occlusion color
-
+	bool transpBackground; //! Render background as transparent
+	bool transpRefractedBackground; //! Render refractions of background as transparent
 };
 
 biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(transpShad), sDepth(shadowDepth),
@@ -269,7 +270,11 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	color_t col(0.f);
 	surfacePoint_t sp;
 	ray_t testray = ray;
-
+	float alpha;
+		
+	if(transpBackground) alpha=0.0;
+	else alpha=1.0;
+	
 	if(scene->intersect(testray, sp))
 	{
 		vector3d_t wo = -ray.dir;
@@ -428,13 +433,23 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	}
 	else
 	{
-		if(background)
+		if(background && !transpRefractedBackground)
 		{
 			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 	
-	return col;
+	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
+
+	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+
+	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+	
+	col = (col * colVolTransmittance) + colVolIntegration;	
+	
+	return colorA_t(col, alpha);
 }
 
 /* ============================================================
@@ -1011,12 +1026,16 @@ integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t 
 	int AO_samples = 32;
 	double AO_dist = 1.0;
 	color_t AO_col(1.f);
+	bool bg_transp = true;
+	bool bg_transp_refract = true;
 
 	params.getParam("do_AO", do_AO);
 	params.getParam("AO_samples", AO_samples);
 	params.getParam("AO_distance", AO_dist);
 	params.getParam("AO_color", AO_col);
-
+	params.getParam("bg_transp", bg_transp);
+	params.getParam("bg_transp_refract", bg_transp_refract);
+	
 	biDirIntegrator_t *inte = new biDirIntegrator_t();
 
 	// AO settings
@@ -1024,6 +1043,10 @@ integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t 
 	inte->aoSamples = AO_samples;
 	inte->aoDist = AO_dist;
 	inte->aoCol = AO_col;
+
+	// Background settings
+	inte->transpBackground = bg_transp;
+	inte->transpRefractedBackground = bg_transp_refract;
 
 	return inte;
 }

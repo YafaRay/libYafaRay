@@ -305,18 +305,8 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				c_ray.ydir = d_ray.dir;
 				c_ray.time = rstate.time;
 				c_ray.hasDifferentials = true;
-				// col = T * L_o + L_v
-				colorA_t colIntegration = integrate(rstate, c_ray, colorPasses); // L_o
-				colorPasses.probe_set(PASS_YAF_SURFACE_INTEGRATION, colIntegration);
-				
-				colorA_t colVolTransmittance = scene->volIntegrator->transmittance(rstate, c_ray); // T
-				colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
-				
-				colorA_t colVolIntegration = scene->volIntegrator->integrate(rstate, c_ray, colorPasses); // L_v
-				colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
-				
-				colVolIntegration.A = 1.f-colVolTransmittance.A; //Fix for Volumetrics Alpha artifacts. For the Alpha of the volume itself, I will use the inverse of the Aplha calculated by the transmittance calculation. It seems to give good results for volumes rendered on top of other objects, volumes rendered on top of an opaque background and volumes rendered on top of transparent background (for later compositing). 
-				colorPasses(PASS_YAF_COMBINED) = (colIntegration*colVolTransmittance)+colVolIntegration;
+
+				colorPasses(PASS_YAF_COMBINED) = integrate(rstate, c_ray, colorPasses);
 				
 				if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS) || colorPasses.enabled(PASS_YAF_MIST))
 				{
