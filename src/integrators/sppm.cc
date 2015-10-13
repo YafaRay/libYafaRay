@@ -1043,12 +1043,12 @@ integrator_t* SPPM::factory(paraMap_t &params, renderEnvironment_t &render)
 	float times = 1.f;
 	int searchNum = 100;
 	float dsRad = 1.0f;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
 	bool do_AO=false;
 	int AO_samples = 32;
 	double AO_dist = 1.0;
 	color_t AO_col(1.f);
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
