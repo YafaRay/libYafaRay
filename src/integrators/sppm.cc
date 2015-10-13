@@ -867,8 +867,8 @@ integrator_t* SPPM::factory(paraMap_t &params, renderEnvironment_t &render)
 	float times = 1.f;
 	int searchNum = 100;
 	float dsRad = 1.0f;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
