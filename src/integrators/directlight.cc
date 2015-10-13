@@ -160,8 +160,8 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	double cRad = 0.25;
 	double AO_dist = 1.0;
 	color_t AO_col(1.f);
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);

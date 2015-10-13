@@ -309,8 +309,8 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	int bounces = 3;
 	int raydepth = 5;
 	const std::string *cMethod=0;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 	
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);

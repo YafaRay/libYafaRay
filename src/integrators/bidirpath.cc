@@ -941,8 +941,8 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 
 integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);

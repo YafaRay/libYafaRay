@@ -906,8 +906,8 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	float dsRad=0.1;
 	float cRad=0.01;
 	float gatherDist=0.2;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 	
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
