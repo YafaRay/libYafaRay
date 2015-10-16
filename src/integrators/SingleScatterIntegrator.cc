@@ -40,6 +40,8 @@ public:
 	{
 		Y_INFO << "SingleScatter: Preprocessing..." << yendl;
 
+		lights.clear();
+
 		for(unsigned int i=0;i<scene->lights.size();++i)
 		{
 			lights.push_back(scene->lights[i]);

@@ -692,7 +692,7 @@ void scene_t::setLightGroupFilter(int light_group_filter)
 	std::vector<light_t *>::iterator i;
 	for(i = unfiltered_lights.begin(); i != unfiltered_lights.end(); ++i)
     {
-        if(surfIntegrator->isLightGroupEnabledByFilter((*i)->getLightGroup())) lights.push_back(*i); 
+        if(surfIntegrator->isLightGroupEnabledByFilter((*i)->getLightGroup())) lights.push_back(*i);
     }
     state.changes |= C_LIGHT;
 }
