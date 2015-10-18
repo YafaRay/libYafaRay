@@ -1070,10 +1070,10 @@ bool scene_t::render()
 
         success = surfIntegrator->render(numView, imageFilm);
 
-		imageFilm->flush(numView);
 		surfIntegrator->cleanup();
-    } //DAVID FIXME TESTS PUT IN CORRECT PLACES FOR FLUSH/FILE OUTPUT!!
-		
+		imageFilm->flush(numView);
+    }
+    	
 	return success;
 }
 
