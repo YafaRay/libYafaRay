@@ -47,7 +47,6 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		struct MDat_t
 		{
@@ -83,12 +82,11 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		int nBSDF;
 		bool orenNayar;
 		float orenA, orenB;
-		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
 coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility):
 	diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), iorS(0), exponentS(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), mirror_color(mirCol), mMirrorStrength(mirrorStrength), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
-	as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mVisibility(eVisibility)
+	as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	cFlags[C_SPECULAR] = (BSDF_SPECULAR | BSDF_REFLECT);
 	cFlags[C_GLOSSY] = as_diffuse? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
@@ -108,6 +106,8 @@ coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, co
 	orenNayar = false;
 
 	bsdfFlags = cFlags[C_SPECULAR] | cFlags[C_GLOSSY] | cFlags[C_DIFFUSE];
+	
+	mVisibility = eVisibility;
 }
 
 void coatedGlossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const

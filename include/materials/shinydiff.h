@@ -31,7 +31,6 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
         virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
         virtual bool isTransparent() const { return mIsTransparent; }
-        virtual visibility_t getVisibility() const { return mVisibility; }
         virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
         virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const; // { return emitCol; }
         virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const;
@@ -88,7 +87,6 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         float mOrenNayar_B;                 //!< Oren Nayar B coefficient
 
         int nBSDF;
-        visibility_t mVisibility ;          //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
         BSDF_t cFlags[4];                   //!< list the BSDF components that are present
         int cIndex[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)

@@ -34,7 +34,6 @@ class glassMat_t: public nodeMaterial_t
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
-		virtual visibility_t getVisibility() const { return mVisibility; }
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
@@ -53,12 +52,11 @@ class glassMat_t: public nodeMaterial_t
 		BSDF_t tmFlags;
 		PFLOAT dispersion_power;
 		PFLOAT CauchyA, CauchyB;
-		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
 glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility):
 		bumpS(0), mirColS(0), filterColS(0), iorS(0), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
-		fakeShadow(fakeS), dispersion_power(disp_pow), mVisibility(eVisibility)
+		fakeShadow(fakeS), dispersion_power(disp_pow)
 {
 	ior=IOR;
 	bsdfFlags = BSDF_ALL_SPECULAR;
@@ -70,6 +68,8 @@ glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double di
 		CauchyCoefficients(IOR, disp_pow, CauchyA, CauchyB);
 		bsdfFlags |= BSDF_DISPERSIVE;
 	}
+	
+	mVisibility = eVisibility;
 }
 
 void glassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const

@@ -30,9 +30,11 @@
 __BEGIN_YAFRAY
 
 maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh, visibility_t eVisibility):
-	mat1(m1), mat2(m2), threshold(thresh), mVisibility(eVisibility)
+	mat1(m1), mat2(m2), threshold(thresh)
 {
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
+	
+	mVisibility = eVisibility;
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))

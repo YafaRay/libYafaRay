@@ -31,13 +31,14 @@ __BEGIN_YAFRAY
 #define addPdf(p1, p2) (p1*ival + p2*val)
 
 blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, visibility_t eVisibility):
-	mat1(m1), mat2(m2), blendS(0), mVisibility(eVisibility)
+	mat1(m1), mat2(m2), blendS(0)
 {
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
 	mmem1 = mat1->getReqMem();
 	recalcBlend = false;
 	blendVal = bval;
 	blendedIOR = (mat1->getMatIOR() + mat2->getMatIOR()) * 0.5f;
+	mVisibility = eVisibility;
 }
 
 blendMat_t::~blendMat_t()

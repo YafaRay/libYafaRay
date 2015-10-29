@@ -38,7 +38,6 @@ class glossyMat_t: public nodeMaterial_t
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		struct MDat_t
 		{
@@ -66,12 +65,11 @@ class glossyMat_t: public nodeMaterial_t
 		bool as_diffuse, with_diffuse, anisotropic;
 		bool orenNayar;
 		float orenA, orenB;
-		visibility_t mVisibility ; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
 			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
-			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false), mVisibility(eVisibility)
+			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
 	bsdfFlags = BSDF_NONE;
 
@@ -84,6 +82,8 @@ glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect,
 	orenNayar = false;
 
 	bsdfFlags |= as_diffuse ? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
+
+	mVisibility = eVisibility;
 }
 
 void glossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
