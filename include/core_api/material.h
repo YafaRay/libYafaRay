@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), reqMem(0), volI(0), volO(0) {}
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0) {}
 		virtual ~material_t() {}
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
@@ -155,6 +155,7 @@ class YAFRAYCORE_EXPORT material_t
 		virtual float getMatIOR() const { return 1.5f; }
 
 		visibility_t getVisibility() const { return mVisibility; }
+		bool getReceiveShadows() const { return mReceiveShadows; }
 
 	protected:
 		/* small function to apply bump mapping to a surface point
@@ -164,6 +165,8 @@ class YAFRAYCORE_EXPORT material_t
 		BSDF_t bsdfFlags;
 		
 		visibility_t mVisibility; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
+
+		bool mReceiveShadows; //!< enables/disables material reception of shadows.
 		
 		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		volumeHandler_t* volI; //!< volumetric handler for space inside material (opposed to surface normal)

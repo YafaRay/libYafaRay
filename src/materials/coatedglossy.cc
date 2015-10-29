@@ -492,6 +492,7 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	const std::string *name=0;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
@@ -503,6 +504,8 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	params.getParam("IOR", ior);
 	params.getParam("mirror_color", mirCol);
     params.getParam("specular_reflect", mirrorStrength);
+    
+    params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
@@ -514,6 +517,9 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	if(ior == 1.f) ior = 1.0000001f;
 
 	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol, mirCol, mirrorStrength, refl, diff, ior, exponent, as_diff, visibility);
+	
+	mat->mReceiveShadows = receive_shadows;
+	
 	if(aniso)
 	{
 		double e_u=50.0, e_v=50.0;

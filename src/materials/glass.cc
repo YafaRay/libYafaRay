@@ -314,6 +314,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	bool fake_shad = false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -321,6 +322,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	params.getParam("mirror_color", srCol);
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
@@ -330,6 +333,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	else visibility = NORMAL_VISIBLE;
 
 	glassMat_t *mat = new glassMat_t(IOR, filt*filtCol + color_t(1.f-filt), srCol, disp_power, fake_shad, visibility);
+	
+	mat->mReceiveShadows = receive_shadows;
 	
 	if( params.getParam("absorption", absorp) )
 	{

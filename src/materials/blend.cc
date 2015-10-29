@@ -392,12 +392,15 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	double blend_val = 0.5;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 	
 	if(! params.getParam("material1", name) ) return 0;
 	m1 = env.getMaterial(*name);
 	if(! params.getParam("material2", name) ) return 0;
 	m2 = env.getMaterial(*name);
 	params.getParam("blend_value", blend_val);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
@@ -409,6 +412,8 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	if(m1==0 || m2==0 ) return 0;
 	
 	blendMat_t *mat = new blendMat_t(m1, m2, blend_val, visibility);
+	
+	mat->mReceiveShadows = receive_shadows;
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

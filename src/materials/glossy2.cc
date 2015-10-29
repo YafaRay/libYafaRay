@@ -420,6 +420,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	bool aniso=false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 	
 	const std::string *name=0;
 	params.getParam("color", col);
@@ -429,6 +430,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("as_diffuse", as_diff);
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
@@ -438,6 +441,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	else visibility = NORMAL_VISIBLE;
 	
 	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff, visibility);
+
+	mat->mReceiveShadows = receive_shadows;
 
 	if(aniso)
 	{
