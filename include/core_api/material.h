@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), reqMem(0), volI(0), volO(0), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), lLightGroup(1)
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0), lLightGroup(1)
 		{
 			materialIndexAuto++;
 			srand(materialIndexAuto);
@@ -221,7 +221,6 @@ class YAFRAYCORE_EXPORT material_t
 		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		volumeHandler_t* volI; //!< volumetric handler for space inside material (opposed to surface normal)
 		volumeHandler_t* volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-        visibility_t mVisibility ;          //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
         float materialIndex;	//!< Material Index for the material-index render pass
 		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
 		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
