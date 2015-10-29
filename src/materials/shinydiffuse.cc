@@ -15,6 +15,7 @@ shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t 
     mEmitStrength = emitStrength;
     bsdfFlags = BSDF_NONE;
     if(mEmitStrength > 0.f) bsdfFlags |= BSDF_EMIT;
+    mVisibility = eVisibility;
 }
 
 shinyDiffuseMat_t::~shinyDiffuseMat_t()
@@ -560,6 +561,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     bool hasFresnelEffect=false;
     std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+    bool receive_shadows = true;
     float IOR = 1.33f;
     double transmitFilterStrength=1.0;
     int mat_pass_index = 0;
@@ -574,6 +576,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     params.getParam("IOR",              IOR);
     params.getParam("fresnel_effect",   hasFresnelEffect);
     params.getParam("transmit_filter",  transmitFilterStrength);
+    
+    params.getParam("receive_shadows",  receive_shadows);
     params.getParam("visibility",       sVisibility);
     params.getParam("mat_pass_index",   mat_pass_index);
 	
@@ -587,6 +591,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     shinyDiffuseMat_t *mat = new shinyDiffuseMat_t(diffuseColor, mirrorColor, diffuseStrength, transparencyStrength, translucencyStrength, mirrorStrength, emitStrength, transmitFilterStrength, visibility);
 
     mat->setMaterialIndex(mat_pass_index);
+    mat->mReceiveShadows = receive_shadows;
 
     if(hasFresnelEffect)
     {

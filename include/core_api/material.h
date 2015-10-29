@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), reqMem(0), volI(0), volO(0), mVisibility(NORMAL_VISIBLE), lLightGroup(1)
+		material_t(): bsdfFlags(BSDF_NONE), reqMem(0), volI(0), volO(0), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), lLightGroup(1)
 		{
 			materialIndexAuto++;
 			srand(materialIndexAuto);
@@ -135,7 +135,6 @@ class YAFRAYCORE_EXPORT material_t
 			used to trace transparent shadows. Note that in this case, initBSDF was NOT called before!
 		*/
 		virtual bool isTransparent() const { return false; }
-		virtual visibility_t getVisibility() const { return mVisibility; }
 
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/
@@ -205,12 +204,20 @@ class YAFRAYCORE_EXPORT material_t
 		int getLightGroup() const { return lLightGroup; }
 		void setLightGroup(int light_group) { lLightGroup = light_group; }
 
+		visibility_t getVisibility() const { return mVisibility; }
+		bool getReceiveShadows() const { return mReceiveShadows; }
+
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
         void applyBump(surfacePoint_t &sp, PFLOAT dfdNU, PFLOAT dfdNV) const;
 
 		BSDF_t bsdfFlags;
+		
+		visibility_t mVisibility; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
+
+		bool mReceiveShadows; //!< enables/disables material reception of shadows.
+		
 		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		volumeHandler_t* volI; //!< volumetric handler for space inside material (opposed to surface normal)
 		volumeHandler_t* volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)

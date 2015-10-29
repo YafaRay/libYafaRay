@@ -34,6 +34,8 @@ maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh, 
 {
     mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
+	
+	mVisibility = eVisibility;
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
@@ -137,6 +139,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	double thresh = 0.5;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 	
 	params.getParam("threshold", thresh);
 	if(! params.getParam("material1", name) ) return 0;
@@ -145,6 +148,8 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	m2 = env.getMaterial(*name);
 	//if(! params.getParam("mask", name) ) return 0;
 	//mask = env.getTexture(*name);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
@@ -156,6 +161,8 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	if(m1==0 || m2==0 ) return 0;
 	
 	maskMat_t *mat = new maskMat_t(m1, m2, thresh, visibility);
+
+	mat->mReceiveShadows = receive_shadows;
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

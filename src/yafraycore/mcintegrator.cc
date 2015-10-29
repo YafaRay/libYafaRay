@@ -76,7 +76,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	float lightPdf;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
-	bool castShadows = light->castShadows();
+	bool castShadows = light->castShadows() && material->getReceiveShadows();
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{

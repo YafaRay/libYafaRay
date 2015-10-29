@@ -47,6 +47,7 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		static material_t* factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
+
         virtual color_t getDiffuseColor(const renderState_t &state) const
         {
 			MDat_t *dat = (MDat_t *)state.userdata;
@@ -129,6 +130,8 @@ coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, co
 	orenNayar = false;
 
 	bsdfFlags = cFlags[C_SPECULAR] | cFlags[C_GLOSSY] | cFlags[C_DIFFUSE];
+	
+	mVisibility = eVisibility;
 }
 
 void coatedGlossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
@@ -517,6 +520,7 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
+	bool receive_shadows = true;
 
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
@@ -528,6 +532,8 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	params.getParam("IOR", ior);
 	params.getParam("mirror_color", mirCol);
     params.getParam("specular_reflect", mirrorStrength);
+    
+    params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	
@@ -542,6 +548,7 @@ material_t* coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	coatedGlossyMat_t *mat = new coatedGlossyMat_t(col, dcol, mirCol, mirrorStrength, refl, diff, ior, exponent, as_diff, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
+	mat->mReceiveShadows = receive_shadows;
 
 	if(aniso)
 	{

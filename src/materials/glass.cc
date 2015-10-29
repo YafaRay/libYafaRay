@@ -91,6 +91,8 @@ glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double di
 		CauchyCoefficients(IOR, disp_pow, CauchyA, CauchyB);
 		bsdfFlags |= BSDF_DISPERSIVE;
 	}
+	
+	mVisibility = eVisibility;
 }
 
 void glassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
@@ -336,6 +338,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
+	bool receive_shadows = true;
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -343,6 +346,8 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	params.getParam("mirror_color", srCol);
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	
@@ -355,6 +360,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	glassMat_t *mat = new glassMat_t(IOR, filt*filtCol + color_t(1.f-filt), srCol, disp_power, fake_shad, visibility);
 	
 	mat->setMaterialIndex(mat_pass_index);
+	mat->mReceiveShadows = receive_shadows;
 	
 	if( params.getParam("absorption", absorp) )
 	{

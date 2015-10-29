@@ -99,6 +99,8 @@ glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect,
 	orenNayar = false;
 
 	bsdfFlags |= as_diffuse ? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
+
+	mVisibility = eVisibility;
 }
 
 void glossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
@@ -439,6 +441,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
+	bool receive_shadows = true;
 	
 	const std::string *name=0;
 	params.getParam("color", col);
@@ -448,6 +451,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("as_diffuse", as_diff);
 	params.getParam("exponent", exponent);
 	params.getParam("anisotropic", aniso);
+	
+	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	
@@ -460,6 +465,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	glossyMat_t *mat = new glossyMat_t(col, dcol , refl, diff, exponent, as_diff, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
+	mat->mReceiveShadows = receive_shadows;
 
 	if(aniso)
 	{
