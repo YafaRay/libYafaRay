@@ -84,12 +84,13 @@ int scene_t::getSignals() const
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold) const
+void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, int &resampled_floor) const
 {
 	samples = AA_samples;
 	passes = AA_passes;
 	inc_samples = AA_inc_samples;
 	threshold = AA_threshold;
+	resampled_floor = AA_resampled_floor;
 }
 
 bool scene_t::startGeometry()
@@ -733,12 +734,13 @@ bound_t scene_t::getSceneBound() const
 	return sceneBound;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold)
+void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, int resampled_floor)
 {
 	AA_samples = std::max(1, numSamples);
 	AA_passes = numPasses;
 	AA_inc_samples = (incSamples > 0) ? incSamples : AA_samples;
 	AA_threshold = (CFLOAT)threshold;
+	AA_resampled_floor = resampled_floor;
 }
 
 /*! update scene state to prepare for rendering.

@@ -133,11 +133,12 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 {
 	std::stringstream passString;
 	imageFilm = image;
-	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
+	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor);
 	iAA_passes = 1.f / (float) AA_passes;
 	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
+	Y_INFO << integratorName << ": Resampled pixels floor: "<< AA_resampled_floor << yendl;
 	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -159,8 +160,14 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		imageFilm->setAAThreshold(AA_threshold);
-		imageFilm->nextPass(true, integratorName);
+		int resampled_pixels = imageFilm->nextPass(true, integratorName);
 		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
+
+		if(resampled_pixels < AA_resampled_floor)
+		{
+			AA_threshold *= 0.9f;
+			Y_INFO << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor << "): new AA Threshold for next pass = " << AA_threshold << yendl;
+		} 
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
