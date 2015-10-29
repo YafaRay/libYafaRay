@@ -217,7 +217,7 @@ void imageFilm_t::init(int numPasses)
 	nPasses = numPasses;
 }
 
-void imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
+int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
 {
 	int n_resample=0;
 
@@ -298,6 +298,8 @@ void imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integrator
 		pbar->setTag(passString.str().c_str());
 	}
 	completed_cnt = 0;
+	
+	return n_resample;
 }
 
 bool imageFilm_t::nextArea(int numView, renderArea_t &a)

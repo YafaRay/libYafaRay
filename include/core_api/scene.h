@@ -178,7 +178,7 @@ class YAFRAYCORE_EXPORT scene_t
 		void setBackground(background_t *bg);
 		void setSurfIntegrator(surfaceIntegrator_t *s);
 		void setVolIntegrator(volumeIntegrator_t *v);
-		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold);
+		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, int AA_resampled_floor);
 		void setNumThreads(int threads);
 		void setMode(int m){ mode = m; }
 		background_t* getBackground() const;
@@ -191,7 +191,7 @@ class YAFRAYCORE_EXPORT scene_t
 		int getNumThreads() const { return nthreads; }
 		int getSignals() const;
 		//! only for backward compatibility!
-		void getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold) const;
+		void getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, int &resampled_floor) const;
 		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
@@ -230,6 +230,8 @@ class YAFRAYCORE_EXPORT scene_t
 		int AA_samples, AA_passes;
 		int AA_inc_samples; //!< sample count for additional passes
 		CFLOAT AA_threshold;
+		int AA_resampled_floor; //!< minimum amount of resampled pixels below which we will automatically decrease the AA_threshold value for the next pass
+		
 		int nthreads;
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
 		int signals;

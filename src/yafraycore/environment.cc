@@ -677,6 +677,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	const std::string *name=0;
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1;
 	double AA_threshold=0.05;
+	int AA_resampled_floor=0;
 	bool drawParams = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
@@ -740,6 +741,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	AA_inc_samples = AA_samples;
 	params.getParam("AA_inc_samples", AA_inc_samples);
 	params.getParam("AA_threshold", AA_threshold);
+	params.getParam("AA_resampled_floor", AA_resampled_floor);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("drawParams", drawParams);
 	params.getParam("customString", custString);
@@ -757,7 +759,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	}
 
 	params.getParam("filter_type", name); // AA filter type
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples;
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor;
 
 	film->setAAParams(aaSettings.str());
 	if(custString) film->setCustomString(*custString);
@@ -767,7 +769,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	//scene.setCamera(cam); FIXME DAVID
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold);
+	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor);
 	scene.setNumThreads(nthreads);
 	if(backg) scene.setBackground(backg);
 	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;
