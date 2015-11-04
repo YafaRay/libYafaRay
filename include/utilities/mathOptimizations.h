@@ -120,11 +120,19 @@ inline float asmSqrt(float n)
 		fsqrt
 		fstp r
     }
-#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#elif defined(__GNUC__) && !(defined(__i386__) || defined(__x86_64__))
     asm(
 		"fld %0;"
 		"fsqrt;"
 		"fstp %0"
+		:"=m" (r)
+		:"m" (r)
+		);
+#elif defined __clang__
+	asm(
+		"flds %0;"
+		"fsqrt;"
+		"fstps %0"
 		:"=m" (r)
 		:"m" (r)
 		);

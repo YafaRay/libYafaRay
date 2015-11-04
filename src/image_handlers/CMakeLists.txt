@@ -35,7 +35,7 @@ endif(WITH_PNG)
 
 if(WITH_TIFF)
 add_library(tifHandler SHARED tifHandler.cc)
-target_link_libraries(tifHandler yafaraycore ${TIFF_LIBRARY})
+target_link_libraries(tifHandler yafaraycore -Wl,-undefined -Wl,dynamic_lookup ${TIFF_LIBRARY})
 endif(WITH_TIFF)
 
 add_library(tgaHandler SHARED tgaHandler.cc)
