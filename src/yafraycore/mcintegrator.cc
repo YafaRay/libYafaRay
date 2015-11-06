@@ -28,6 +28,10 @@
 #include <yafraycore/spectrum.h>
 #include <utilities/mcqmc.h>
 
+#ifdef __clang__
+#define inline  // aka inline removal
+#endif
+
 __BEGIN_YAFRAY
 
 #define allBSDFIntersect (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
