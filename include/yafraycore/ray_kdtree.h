@@ -15,7 +15,7 @@ __BEGIN_YAFRAY
 
 extern int Kd_inodes, Kd_leaves, _emptyKd_leaves, Kd_prims, _clip, _bad_clip, _null_clip, _early_out;
 
-class renderState_t;
+struct renderState_t;
 
 #define PRIM_DAT_SIZE 32
 
