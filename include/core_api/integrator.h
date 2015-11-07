@@ -35,7 +35,7 @@ __BEGIN_YAFRAY
 */
 
 class imageFilm_t;
-class renderArea_t;
+struct renderArea_t;
 
 class YAFRAYCORE_EXPORT integrator_t
 {

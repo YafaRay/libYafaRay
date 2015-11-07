@@ -33,7 +33,7 @@ class camera_t;
 class object3d_t;
 class triangleObject_t;
 class meshObject_t;
-class surfacePoint_t;
+struct surfacePoint_t;
 class ray_t;
 class primitive_t;
 class triKdTree_t;
@@ -44,7 +44,7 @@ class light_t;
 class surfaceIntegrator_t;
 class volumeIntegrator_t;
 class imageFilm_t;
-class renderArea_t;
+struct renderArea_t;
 class random_t;
 
 typedef unsigned int objID_t;
