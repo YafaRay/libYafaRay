@@ -75,10 +75,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_AA if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		void nextPass(bool adaptive_AA, std::string integratorName);
+		int nextPass(bool adaptive_AA, std::string integratorName);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
-			\return false if no area is left to be handed out, true otherwise */
+			\return number of resampled pixels */
 		bool nextArea(renderArea_t &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(renderArea_t &a);
