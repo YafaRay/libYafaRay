@@ -14,8 +14,8 @@
 
 __BEGIN_YAFRAY
 
-class renderState_t;
-class pSample_t;
+struct renderState_t;
+struct pSample_t;
 
 class NoiseVolume : public DensityVolume {
 	public:

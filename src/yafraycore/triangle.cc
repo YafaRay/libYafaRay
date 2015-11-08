@@ -1,6 +1,10 @@
 #include <cassert>
 #include <yafraycore/meshtypes.h>
 
+#ifdef __clang__
+#define inline  // aka inline removal
+#endif
+
 __BEGIN_YAFRAY
 
 int triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], bound_t &box, void* n_dat);

@@ -23,6 +23,8 @@ option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
 
 ###### Packages and Definitions #########
 
+SET(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk")
+
 # Load user configurations if available
 include(CMakeConfig/UserConfig.txt OPTIONAL)
 
