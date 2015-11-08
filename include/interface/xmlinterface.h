@@ -46,6 +46,9 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		
 		virtual void setOutfile(const char *fname);
+		
+		void setXMLColorSpace(std::string color_space_string, float gammaVal);
+		
 	protected:
 		void writeParamMap(const paraMap_t &pmap, int indent=1);
 		void writeParamList(int indent);
@@ -57,6 +60,8 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		size_t nmat;
 		int n_uvs;
 		unsigned int nextObj;
+		float XMLGamma;
+		colorSpaces_t XMLColorSpace;
 };
 
 typedef xmlInterface_t * xmlInterfaceConstructor();

@@ -183,7 +183,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		if (tex->isNormalmap())
 		{
 			// Get color from normal map texture
-			color = tex->getNoGammaColor(texpt);
+			color = tex->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();

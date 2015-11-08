@@ -108,10 +108,20 @@ static xmlSAXHandler my_handler =
 };
 #endif // HAVE_XML
 
-bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render)
+bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma)
 {
 #if HAVE_XML
-	xmlParser_t parser(env, scene, render);
+	
+	colorSpaces_t input_color_space = RAW_MANUAL_GAMMA;
+	
+	if(color_space_string == "sRGB") input_color_space = SRGB;
+	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;
+	else if(color_space_string == "LinearRGB") input_color_space = LINEAR_RGB;
+	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
+	else input_color_space = SRGB;
+
+	xmlParser_t parser(env, scene, render, input_color_space, input_gamma);
+	
 	if (xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
 	{
 		Y_ERROR << "XMLParser: Parsing the file " << filename << yendl;
@@ -129,8 +139,8 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 / parser functions
 =============================================================*/
 
-xmlParser_t::xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r):
-	env(renv), scene(sc), render(r), current(0), level(0)
+xmlParser_t::xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma):
+	env(renv), scene(sc), render(r), current(0), level(0), inputGamma(input_gamma), inputColorSpace(input_color_space)
 {
 	cparams = &params;
 	pushState(startEl_document, endEl_document);
@@ -219,7 +229,7 @@ static bool parseNormal(const char **attrs, normal_t &n)
 	return (compoRead == 3);
 }
 
-void parseParam(const char **attrs, parameter_t &param)
+void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
 {
 	if(!attrs[0]) return;
 	if(!attrs[2]) // only one attribute => bool, integer or float value
@@ -251,7 +261,10 @@ void parseParam(const char **attrs, parameter_t &param)
 	switch(type)
 	{
 		case TYPE_POINT: param = parameter_t(p); break;
-		case TYPE_COLOR: param = parameter_t(c); break;
+		case TYPE_COLOR: 
+			c.linearRGB_from_ColorSpace(parser.getInputColorSpace(), parser.getInputGamma());
+			param = parameter_t(c);
+			break;
 	}
 }
 
@@ -599,7 +612,7 @@ void startEl_parammap(xmlParser_t &parser, const char *element, const char **att
 		return;
 	}
 	parameter_t p;
-	parseParam(attrs, p);
+	parseParam(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 
@@ -650,7 +663,7 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 void startEl_paramlist(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	parameter_t p;
-	parseParam(attrs, p);
+	parseParam(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 

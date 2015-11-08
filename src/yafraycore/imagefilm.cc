@@ -117,8 +117,8 @@ float Lanczos2(float dx, float dy)
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
-	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), gamma(1.0), filterw(filterSize*0.5), output(&out),
-	clamp(false), split(true), interactive(true), abort(false), correctGamma(false), splitter(0), pbar(0),
+	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA), gamma(1.0), filterw(filterSize*0.5), output(&out),
+	clamp(false), split(true), interactive(true), abort(false), splitter(0), pbar(0),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
 {
 	cx1 = xstart + width;
@@ -349,7 +349,7 @@ void imageFilm_t::finishArea(renderArea_t &a)
 			col = (*image)(i, j).normalized();
 			col.clampRGB0();
 
-			if(correctGamma) col.gammaAdjust(gamma);
+			col.ColorSpace_from_linearRGB(colorSpace, gamma);
 
 			if(premultAlpha) col.alphaPremultiply();
 
@@ -408,7 +408,7 @@ void imageFilm_t::flush(int flags, colorOutput_t *out)
 
 			col.clampRGB0();
 
-			if(correctGamma) col.gammaAdjust(gamma);
+			col.ColorSpace_from_linearRGB(colorSpace, gamma);
 
 			if(drawParams && h - j <= dpHeight && dpimage)
 			{
@@ -624,10 +624,10 @@ void imageFilm_t::setDensityEstimation(bool enable)
 	estimateDensity = enable;
 }
 
-void imageFilm_t::setGamma(float gammaVal, bool enable)
+void imageFilm_t::setColorSpace(colorSpaces_t color_space, float gammaVal)
 {
-	correctGamma = enable;
-	if(gammaVal > 0) gamma = 1.f/gammaVal; //gamma correction means applying gamma curve with 1/gamma
+	colorSpace = color_space;
+	gamma = gammaVal;
 }
 
 void imageFilm_t::setProgressBar(progressBar_t *pb)

@@ -107,8 +107,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setNumSamples(int n){ numSamples = n; }
 		/*! Enables/disables color clamping */
 		void setClamp(bool c){ clamp = c; }
-		/*! Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
+		/*! (Deprecated, use setColorSpace instead) Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
 		void setGamma(float gammaVal, bool enable);
+		/*! Sets the film color space and gamma correction */
+		void setColorSpace(colorSpaces_t color_space, float gammaVal);
 		/*! Sets the adaptative AA sampling threshold */
 		void setAAThreshold(CFLOAT thresh){ AA_thesh=thresh; }
 		/*! Enables interactive color buffer output for preview during render */
@@ -139,6 +141,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		int w, h, cx0, cx1, cy0, cy1;
 		int area_cnt, completed_cnt;
 		volatile int next_area;
+		colorSpaces_t colorSpace;
 		float gamma;
 		CFLOAT AA_thesh;
 		float filterw, tableScale;
@@ -146,7 +149,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorOutput_t *output;
 		// Thread mutes for shared access
 		yafthreads::mutex_t imageMutex, splitterMutex, outMutex, depthMapMutex, densityImageMutex;
-		bool clamp, split, interactive, abort, correctGamma;
+		bool clamp, split, interactive, abort;
 		bool estimateDensity;
 		int numSamples;
 		imageSpliter_t *splitter;
