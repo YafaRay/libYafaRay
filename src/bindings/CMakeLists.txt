@@ -96,29 +96,13 @@ if (WITH_YAF_PY_BINDINGS)
 
 	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
 
-	if(WITH_QT)
-		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
-	endif(WITH_QT)
-
 	SWIG_ADD_MODULE(yafrayinterface PYTHON yafrayinterface.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
 		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafrayinterface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 	endif(APPLE)
-	
-	if(WITH_QT)
-		SWIG_ADD_MODULE(yafqt PYTHON yafqt.i)
-		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-		endif(APPLE)
-
-	endif(WITH_QT)
 
 	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${PYTHON_LIBRARIES})
-
-	if(WITH_QT)
-		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${PYTHON_LIBRARIES})
-	endif(WITH_QT)
 
 if(APPLE) # set rpath - Jens
 	add_custom_command(TARGET ${SWIG_MODULE_yafrayinterface_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafrayinterface.so)
@@ -126,11 +110,6 @@ endif(APPLE)
 
 	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafrayinterface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
-
-	if(WITH_QT)
-		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
-		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafqt.py DESTINATION ${YAF_BINDINGS_PY_DIR})
-	endif(WITH_QT)
 
 endif (WITH_YAF_PY_BINDINGS)
 
@@ -159,13 +138,6 @@ if (WITH_YAF_RUBY_BINDINGS)
 	SWIG_ADD_MODULE(yafrayinterface RUBY yafrayinterface.i)
 	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${RUBY_LIBRARY})
 	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
-
-	if(WITH_QT)
-		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
-		SWIG_ADD_MODULE(yafqt RUBY yafqt.i)
-		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${RUBY_LIBRARY})
-		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
-	endif(WITH_QT)
 
 endif (WITH_YAF_RUBY_BINDINGS)
 

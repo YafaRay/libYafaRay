@@ -16,8 +16,6 @@
 #include <utilities/console_utils.h>
 #include <yafraycore/imageOutput.h>
 
-#include <gui/yafqtapi.h>
-
 using namespace::yafaray;
 
 int main(int argc, char *argv[])

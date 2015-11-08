@@ -74,14 +74,6 @@ set(WITH_TIFF ON)
 set(WITH_XML_LOADER ON)
 
 #                                                                              #
-# Enable Qt Gui build                                                          #
-#                                                                              #
-# Default: ON                                                                  #
-#                                                                              #
-
-set(WITH_QT ON)
-
-#                                                                              #
 # Enable the YafaRay Python bindings                                           #
 #                                                                              #
 # Default: ON                                                                  #
@@ -114,14 +106,6 @@ set(BUILDRELEASE OFF)
 #                                                                              #
 
 set(DEBUG_BUILD OFF)
-
-#                                                                              #
-# Embed font for QT GUI (useful for some buggy QT installations)               #
-#                                                                              #
-# Default: OFF                                                                 #
-#                                                                              #
-
-set(EMBED_FONT_QT OFF)
 
 ############################ Path setting variables ############################
 #                                                                              #
@@ -230,12 +214,6 @@ set(EMBED_FONT_QT OFF)
 #                                                                              #
 # Here you can set the paths to search for executables, you can leave blank    #
 # the ones you don't need                                                      #
-#                                                                              #
-# Path to qmake executable                                                     #
-#                                                                              #
-
-#set(YAF_USER_QT_BIN_DIR "")
-
 #                                                                              #
 # Path to swig executable                                                      #
 #                                                                              #
