@@ -283,13 +283,21 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 	}
 	else //nothing hit, return background
 	{
-		if(background)
+		if(background && !transpRefractedBackground)
 		{
 			col += (*background)(ray, state, false);
 		}
 	}
 
 	state.userdata = o_udat;
+	
+	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray);
+
+	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+	
+	col = (col * colVolTransmittance) + colVolIntegration;
+	
 	return colorA_t(col, alpha);
 }
 
@@ -301,8 +309,8 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	int bounces = 3;
 	int raydepth = 5;
 	const std::string *cMethod=0;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 	
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);

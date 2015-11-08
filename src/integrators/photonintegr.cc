@@ -873,11 +873,18 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) con
 	}
 	else //nothing hit, return background
 	{
-		if(background) col += (*background)(ray, state, false);
+		if(background && !transpRefractedBackground) col += (*background)(ray, state, false);
 	}
 	
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
+	
+	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray);
+
+	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+	
+	col = (col * colVolTransmittance) + colVolIntegration;
 	
 	return colorA_t(col, alpha);
 }
@@ -899,8 +906,8 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	float dsRad=0.1;
 	float cRad=0.01;
 	float gatherDist=0.2;
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 	
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);

@@ -132,11 +132,19 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background) col += (*background)(ray, state, false);
+		if(background && !transpRefractedBackground) col += (*background)(ray, state, false);
 	}
 
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
+
+	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray);
+
+	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+	
+	col = (col * colVolTransmittance) + colVolIntegration;
+	
 	return colorA_t(col, alpha);
 }
 
@@ -152,8 +160,8 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	double cRad = 0.25;
 	double AO_dist = 1.0;
 	color_t AO_col(1.f);
-	bool bg_transp = true;
-	bool bg_transp_refract = true;
+	bool bg_transp = false;
+	bool bg_transp_refract = false;
 
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);
