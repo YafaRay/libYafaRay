@@ -42,7 +42,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		/*! Estimates caustic photons for a given surface point */
 		virtual color_t estimateCausticPhotons(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;	
 		
 		int rDepth; //! Ray depth
 		bool trShad; //! Use transparent shadows
