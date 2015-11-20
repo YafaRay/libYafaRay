@@ -52,6 +52,17 @@ scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0
 	state.stack.push_front(READY);
 	state.nextFreeID = std::numeric_limits<int>::max();
 	state.curObj = 0;
+
+	AA_resampled_floor = 0.f;
+	AA_sample_multiplier_factor = 1.f;
+	AA_light_sample_multiplier_factor = 1.f;
+	AA_indirect_sample_multiplier_factor = 1.f;
+	AA_detect_color_noise = false;
+	AA_dark_threshold_factor = 0.f;
+	AA_variance_edge_size = 10;
+	AA_variance_pixels = 0;
+	AA_clamp_samples = 0.f;
+	AA_clamp_indirect = 0.f;
 }
 
 scene_t::~scene_t()
@@ -84,13 +95,22 @@ int scene_t::getSignals() const
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, int &resampled_floor) const
+void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
 {
 	samples = AA_samples;
 	passes = AA_passes;
 	inc_samples = AA_inc_samples;
 	threshold = AA_threshold;
 	resampled_floor = AA_resampled_floor;
+	sample_multiplier_factor = AA_sample_multiplier_factor;
+	light_sample_multiplier_factor = AA_light_sample_multiplier_factor;
+	indirect_sample_multiplier_factor = AA_indirect_sample_multiplier_factor;
+	detect_color_noise = AA_detect_color_noise;
+	dark_threshold_factor = AA_dark_threshold_factor;
+	variance_edge_size = AA_variance_edge_size;
+	variance_pixels = AA_variance_pixels;
+	clamp_samples = AA_clamp_samples;
+	clamp_indirect = AA_clamp_indirect;
 }
 
 bool scene_t::startGeometry()
@@ -770,13 +790,22 @@ bound_t scene_t::getSceneBound() const
 	return sceneBound;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, int resampled_floor)
+void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
 {
 	AA_samples = std::max(1, numSamples);
 	AA_passes = numPasses;
 	AA_inc_samples = (incSamples > 0) ? incSamples : AA_samples;
 	AA_threshold = (CFLOAT)threshold;
 	AA_resampled_floor = resampled_floor;
+	AA_sample_multiplier_factor = sample_multiplier_factor;
+	AA_light_sample_multiplier_factor = light_sample_multiplier_factor;
+	AA_indirect_sample_multiplier_factor = indirect_sample_multiplier_factor;
+	AA_detect_color_noise = detect_color_noise;
+	AA_dark_threshold_factor = dark_threshold_factor;
+	AA_variance_edge_size = variance_edge_size;
+	AA_variance_pixels = variance_pixels;
+	AA_clamp_samples = clamp_samples;
+	AA_clamp_indirect = clamp_indirect;
 }
 
 /*! update scene state to prepare for rendering.

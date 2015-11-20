@@ -38,6 +38,7 @@ class pixel_t
 		if(weight > 0.f) return col / weight;
 		else return colorA_t(0.f);
 	}
+	
 	colorA_t col;
 	float weight;
 };

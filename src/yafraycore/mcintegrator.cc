@@ -135,7 +135,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	{
 		Halton hal2(2);
 		Halton hal3(3);
-		int n = light->nSamples();
+		int n = (int) ceilf(light->nSamples()*AA_light_sample_multiplier);
 		if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
 		float invNS = 1.f / (float)n;
 		unsigned int offs = n * state.pixelSample + state.samplingOffs + l_offs;
@@ -804,7 +804,7 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 	lightRay.from = sp.P;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
-	int n = aoSamples;
+	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
 
 	unsigned int offs = n * state.pixelSample + state.samplingOffs;

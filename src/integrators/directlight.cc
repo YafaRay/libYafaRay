@@ -123,9 +123,15 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 			
 			if(usePhotonCaustics)
 			{
-				col += colorPasses.probe_add(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+				if(AA_clamp_indirect>0)
+				{
+					color_t tmpCol = estimateCausticPhotons(state, sp, wo)
+					tmpCol.clampProportionalRGB(AA_clamp_indirect);
+					col += colorPasses.probe_add(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);;
+				}
+				else col += colorPasses.probe_add(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 			}
-			
+
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 

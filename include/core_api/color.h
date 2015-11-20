@@ -134,6 +134,8 @@ class YAFRAYCORE_EXPORT color_t
 			if (B<0.0) B=0.0; else if (B>1.0) B=1.0;
 		}
 		
+		void clampProportionalRGB(float maxValue);
+		
 		CFLOAT linearRGB_from_sRGB(CFLOAT value_sRGB);
 		CFLOAT sRGB_from_linearRGB(CFLOAT value_linearRGB);
 		
@@ -188,6 +190,8 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 			clampRGB01();
 			if (A<0.0) A=0.0; else if (A>1.0) A=1.0;
 		}
+
+		CFLOAT colorDifference(colorA_t color2, bool useRGBcomponents = false);
 
 //	protected:
 		CFLOAT A;
@@ -950,6 +954,61 @@ inline void renderPasses_t::pass_add(const std::string& sExternalPass, const std
             colorPassesTemplate.enable_pass(PASS_YAF_MAT_INDEX_MASK_SHADOW);
             break;
     }
+}
+
+inline void color_t::clampProportionalRGB(float maxValue)	//Function to clamp the current color to a maximum value, but keeping the relationship between the color components. So it will find the R,G,B component with the highest value, clamp it to the maxValue, and adjust proportionally the other two components 
+{
+	if(maxValue > 0.f)	//If maxValue is 0, no clamping is done at all.
+	{
+		//If we have to clamp the result, calculate the maximum RGB component, clamp it and scale the other components acordingly to preserve color information.
+		
+		float maxRGB = std::max(R, std::max(G, B));
+		float proportionalAdjustment = maxValue / maxRGB;
+		
+		if(maxRGB > maxValue)
+		{
+			if(R >= maxRGB)
+			{
+				R = maxValue;
+				G *= proportionalAdjustment;
+				B *= proportionalAdjustment;
+			}
+			
+			else if(G >= maxRGB)
+			{
+				G = maxValue;
+				R *= proportionalAdjustment;
+				B *= proportionalAdjustment;
+			}
+
+			else
+			{
+				B = maxValue;
+				R *= proportionalAdjustment;
+				G *= proportionalAdjustment;
+			}
+		}
+	}
+}
+
+inline CFLOAT colorA_t::colorDifference(colorA_t color2, bool useRGBcomponents)
+{	
+	float colorDifference = std::fabs(color2.col2bri() - col2bri());
+
+	if(useRGBcomponents)
+	{
+		float Rdiff = std::fabs(color2.R - R);
+		float Gdiff = std::fabs(color2.G - G);
+		float Bdiff = std::fabs(color2.B - B);
+		float Adiff = std::fabs(color2.A - A);
+		
+		if(colorDifference < Rdiff) colorDifference = Rdiff; 
+		if(colorDifference < Gdiff) colorDifference = Gdiff; 
+		if(colorDifference < Bdiff) colorDifference = Bdiff; 
+		if(colorDifference < Adiff) colorDifference = Adiff; 
+	}
+	
+	return colorDifference;
 }
 
 __END_YAFRAY

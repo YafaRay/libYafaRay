@@ -32,7 +32,19 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		int AA_samples, AA_passes, AA_inc_samples;
 		float iAA_passes; //!< Inverse of AA_passes used for depth map
 		float AA_threshold;
-		int AA_resampled_floor; //!< minimum amount of resampled pixels below which we will automatically decrease the AA_threshold value for the next pass
+		float AA_resampled_floor; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
+		float AA_sample_multiplier_factor;
+		float AA_light_sample_multiplier_factor;
+		float AA_indirect_sample_multiplier_factor;
+		bool AA_detect_color_noise;
+		float AA_dark_threshold_factor;
+		int AA_variance_edge_size;
+		int AA_variance_pixels;
+		float AA_clamp_samples;
+		float AA_clamp_indirect;
+		float AA_sample_multiplier;
+		float AA_light_sample_multiplier;
+		float AA_indirect_sample_multiplier;
 		imageFilm_t *imageFilm;
 		float maxDepth; //!< Inverse of max depth from camera within the scene boundaries
 		float minDepth; //!< Distance between camera and the closest object on the scene

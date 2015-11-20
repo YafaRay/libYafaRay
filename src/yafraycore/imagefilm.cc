@@ -166,6 +166,12 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	area_cnt = 0;
 
 	pbar = new ConsoleProgressBar_t(80);
+	
+	AA_detect_color_noise = false;
+	AA_dark_threshold_factor = 0.f;
+	AA_variance_edge_size = 10;
+	AA_variance_pixels = 0;
+	AA_clamp_samples = 0.f;
 }
 
 imageFilm_t::~imageFilm_t ()
@@ -229,8 +235,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
-
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
+	int variance_half_edge = AA_variance_edge_size / 2;
 
 	if(adaptive_AA && AA_thesh > 0.f)
 	{
@@ -240,20 +246,25 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 			{
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 				bool needAA = false;
-				float c = (*imagePasses.at(0))(x, y).normalized().abscol2bri();
-				if(std::fabs(c - (*imagePasses.at(0))(x+1, y).normalized().col2bri()) >= AA_thesh)
+
+				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
+				float pixColBri = pixCol.abscol2bri();
+				
+				float AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+				
+				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					needAA=true; flags->setBit(x+1, y);
 				}
-				if(std::fabs(c - (*imagePasses.at(0))(x, y+1).normalized().col2bri()) >= AA_thesh)
+				if(pixCol.colorDifference((*imagePasses.at(0))(x, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					needAA=true; flags->setBit(x, y+1);
 				}
-				if(std::fabs(c - (*imagePasses.at(0))(x+1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					needAA=true; flags->setBit(x+1, y+1);
 				}
-				if(x > 0 && std::fabs(c - (*imagePasses.at(0))(x-1, y+1).normalized().col2bri()) >= AA_thesh)
+				if(x > 0 && pixCol.colorDifference((*imagePasses.at(0))(x-1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					needAA=true; flags->setBit(x-1, y+1);
 				}
@@ -268,14 +279,82 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 							color_t pix = (*imagePasses[idx])(x, y).normalized();
 
 							if(pix.R < pix.G && pix.R < pix.B)
-								colExtPasses[idx].set(0.7f, c, c);
+								colExtPasses[idx].set(0.7f, pixColBri, pixColBri);
 							else
-								colExtPasses[idx].set(c, 0.7f, c);
+								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
 						}
 						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
 					}
 
 					++n_resample;
+				}
+				
+				if(AA_variance_pixels > 0)
+				{
+					int variance_x = 0, variance_y = 0;//, pixelcount = 0;
+					
+					//float window_accum = 0.f, window_avg = 0.f;
+					
+					for(int xd = -variance_half_edge; xd < variance_half_edge - 1 ; ++xd)
+					{
+						int xi = x + xd;
+						if(xi<0) xi = 0;
+						else if(xi>=w-1) xi = w-2;
+						
+						colorA_t cx0 = (*image)(xi, y).normalized();
+						colorA_t cx1 = (*image)(xi+1, y).normalized();
+						
+						if(cx0.colorDifference(cx1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_x;
+					}
+					
+					for(int yd = -variance_half_edge; yd < variance_half_edge - 1 ; ++yd)
+					{
+						int yi = y + yd;
+						if(yi<0) yi = 0;
+						else if(yi>=h-1) yi = h-2;
+						
+						colorA_t cy0 = (*image)(x, yi).normalized();
+						colorA_t cy1 = (*image)(x, yi+1).normalized();
+						
+						if(cy0.colorDifference(cy1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_y;
+					}
+
+					if(variance_x + variance_y >= AA_variance_pixels)
+					{
+						for(int xd = -variance_half_edge; xd < variance_half_edge; ++xd)
+						{
+							for(int yd = -variance_half_edge; yd < variance_half_edge; ++yd)
+							{
+								int xi = x + xd;
+								if(xi<0) xi = 0;
+								else if(xi>=w) xi = w-1;
+
+								int yi = y + yd;
+								if(yi<0) yi = 0;
+								else if(yi>=h) yi = h-1;
+
+								if(!flags->getBit(xi, yi))
+								{
+									flags->setBit(xi, yi);
+									++n_resample;
+								}
+
+								if(interactive && showMask)
+								{
+									color_t pix = (*image)(xi, yi).normalized();
+									float pixcol = pix.abscol2bri();
+									color_t highlightCol(0.f);
+
+									if(pix.R < pix.G && pix.R < pix.B)
+										highlightCol.set(0.7f, pixcol, pixcol);
+									else
+										highlightCol.set(pixcol, 0.7f, pixcol);
+
+									output->putPixel(xi, yi, (const float *)&highlightCol, false);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -530,7 +609,7 @@ void imageFilm_t::addSample(colorIntPasses_t &colorPasses, int x, int y, float d
 			{
 				colorA_t col = colorPasses(renderPasses.internalYafPassType(idx));
 				
-				if(clamp) col.clampRGB01();
+				col.clampProportionalRGB(AA_clamp_samples);
 
 				pixel_t &pixel = (*imagePasses[idx])(i - cx0, j - cy0);
 
@@ -642,6 +721,15 @@ void imageFilm_t::setIntegParams(const std::string &integ_params)
 void imageFilm_t::setCustomString(const std::string &custom)
 {
 	customString = custom;
+}
+
+void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
+{
+	AA_detect_color_noise = detect_color_noise;
+	AA_dark_threshold_factor = dark_threshold_factor;
+	AA_variance_edge_size = variance_edge_size;
+	AA_variance_pixels = variance_pixels;
+	AA_clamp_samples = clamp_samples;
 }
 
 #if HAVE_FREETYPE

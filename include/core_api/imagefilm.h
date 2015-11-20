@@ -121,6 +121,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setUseParamsBadge(bool on = true) { drawParams = on; }
 		bool getUseParamsBadge() { return drawParams; }
 		renderPasses_t &get_RenderPasses() { return renderPasses; }
+		int getTotalPixels() const { return w*h; };
+		void setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings();
@@ -149,6 +151,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorSpaces_t colorSpace;
 		float gamma;
 		CFLOAT AA_thesh;
+		bool AA_detect_color_noise;
+		float AA_dark_threshold_factor;
+		int AA_variance_edge_size;
+		int AA_variance_pixels;
+		float AA_clamp_samples;
 		float filterw, tableScale;
 		float *filterTable;
 		colorOutput_t *output;

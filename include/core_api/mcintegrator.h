@@ -44,7 +44,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		/*! Samples ambient occlusion for a given surface point */
 		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		
+
 		int rDepth; //! Ray depth
 		bool trShad; //! Use transparent shadows
 		int sDepth; //! Shadow depth for transparent shadows

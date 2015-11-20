@@ -636,7 +636,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 
 	colorIntPasses_t tmpColorPasses;
 	
-	int nSampl = std::max(1, nPaths/state.rayDivision);
+	int nSampl = (int) ceilf(std::max(1, nPaths/state.rayDivision)*AA_indirect_sample_multiplier);
 	for(int i=0; i<nSampl; ++i)
 	{
 		color_t throughput( 1.0 );
@@ -829,7 +829,13 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 				{
 					col += estimateAllDirectLight(state, sp, wo, colorPasses);;
 					
-					col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, finalGathering(state, sp, wo, colorPasses), state.raylevel == 0);
+					if(AA_clamp_indirect>0.f)
+					{
+						color_t tmpCol = finalGathering(state, sp, wo, colorPasses);
+						tmpCol.clampProportionalRGB(AA_clamp_indirect);
+						col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, tmpCol, state.raylevel == 0);
+					}
+					else col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, finalGathering(state, sp, wo, colorPasses), state.raylevel == 0);
 				}
 			}
 		}
@@ -883,7 +889,13 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		// add caustics
 		if(bsdfs & BSDF_DIFFUSE)
 		{
-			col += colorPasses.probe_set(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+			if(AA_clamp_indirect>0.f)
+			{
+				color_t tmpCol = estimateCausticPhotons(state, sp, wo);
+				tmpCol.clampProportionalRGB(AA_clamp_indirect);
+				col += colorPasses.probe_set(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);
+			}
+			else col += colorPasses.probe_set(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 		}
 		
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
