@@ -125,9 +125,9 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 			{
 				if(AA_clamp_indirect>0)
 				{
-					color_t tmpCol = estimateCausticPhotons(state, sp, wo)
+					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
 					tmpCol.clampProportionalRGB(AA_clamp_indirect);
-					col += colorPasses.probe_add(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);;
+					col += colorPasses.probe_add(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);
 				}
 				else col += colorPasses.probe_add(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 			}

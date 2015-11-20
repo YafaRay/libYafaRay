@@ -225,8 +225,6 @@ void imageFilm_t::init(int numPasses)
 
 int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
 {
-	int n_resample=0;
-
 	splitterMutex.lock();
 	next_area = 0;
 	splitterMutex.unlock();
@@ -238,14 +236,23 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 	int variance_half_edge = AA_variance_edge_size / 2;
 
+	int n_resample=0;
+	
 	if(adaptive_AA && AA_thesh > 0.f)
 	{
 		for(int y=0; y<h-1; ++y)
 		{
 			for(int x = 0; x < w-1; ++x)
 			{
+				flags->clearBit(x, y);
+			}
+		}
+		
+		for(int y=0; y<h-1; ++y)
+		{
+			for(int x = 0; x < w-1; ++x)
+			{
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
-				bool needAA = false;
 
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
@@ -254,39 +261,19 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				
 				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
-					needAA=true; flags->setBit(x+1, y);
+					flags->setBit(x, y); flags->setBit(x+1, y);
 				}
 				if(pixCol.colorDifference((*imagePasses.at(0))(x, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
-					needAA=true; flags->setBit(x, y+1);
+					flags->setBit(x, y); flags->setBit(x, y+1);
 				}
 				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
-					needAA=true; flags->setBit(x+1, y+1);
+					flags->setBit(x, y); flags->setBit(x+1, y+1);
 				}
 				if(x > 0 && pixCol.colorDifference((*imagePasses.at(0))(x-1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
-					needAA=true; flags->setBit(x-1, y+1);
-				}
-				if(needAA)
-				{
-					flags->setBit(x, y);
-
-					if(interactive && showMask)
-					{
-						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-                        {
-							color_t pix = (*imagePasses[idx])(x, y).normalized();
-
-							if(pix.R < pix.G && pix.R < pix.B)
-								colExtPasses[idx].set(0.7f, pixColBri, pixColBri);
-							else
-								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
-						}
-						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
-					}
-
-					++n_resample;
+					flags->setBit(x, y); flags->setBit(x-1, y+1);
 				}
 				
 				if(AA_variance_pixels > 0)
@@ -301,8 +288,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 						if(xi<0) xi = 0;
 						else if(xi>=w-1) xi = w-2;
 						
-						colorA_t cx0 = (*image)(xi, y).normalized();
-						colorA_t cx1 = (*image)(xi+1, y).normalized();
+						colorA_t cx0 = (*imagePasses.at(0))(xi, y).normalized();
+						colorA_t cx1 = (*imagePasses.at(0))(xi+1, y).normalized();
 						
 						if(cx0.colorDifference(cx1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_x;
 					}
@@ -313,8 +300,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 						if(yi<0) yi = 0;
 						else if(yi>=h-1) yi = h-2;
 						
-						colorA_t cy0 = (*image)(x, yi).normalized();
-						colorA_t cy1 = (*image)(x, yi+1).normalized();
+						colorA_t cy0 = (*imagePasses.at(0))(x, yi).normalized();
+						colorA_t cy1 = (*imagePasses.at(0))(x, yi+1).normalized();
 						
 						if(cy0.colorDifference(cy1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_y;
 					}
@@ -333,27 +320,35 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 								if(yi<0) yi = 0;
 								else if(yi>=h) yi = h-1;
 
-								if(!flags->getBit(xi, yi))
-								{
-									flags->setBit(xi, yi);
-									++n_resample;
-								}
-
-								if(interactive && showMask)
-								{
-									color_t pix = (*image)(xi, yi).normalized();
-									float pixcol = pix.abscol2bri();
-									color_t highlightCol(0.f);
-
-									if(pix.R < pix.G && pix.R < pix.B)
-										highlightCol.set(0.7f, pixcol, pixcol);
-									else
-										highlightCol.set(pixcol, 0.7f, pixcol);
-
-									output->putPixel(xi, yi, (const float *)&highlightCol, false);
-								}
+								flags->setBit(xi, yi);
 							}
 						}
+					}
+				}
+			}
+		}
+
+		for(int y=0; y<h; ++y)
+		{
+			for(int x = 0; x < w; ++x)
+			{
+				if(flags->getBit(x, y))
+				{	
+					++n_resample;
+												
+					if(interactive && showMask)
+					{
+						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+						{
+							color_t pix = (*imagePasses[idx])(x, y).normalized();
+							float pixColBri = pix.abscol2bri();
+
+							if(pix.R < pix.G && pix.R < pix.B)
+								colExtPasses[idx].set(0.7f, pixColBri, pixColBri);
+							else
+								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
+						}
+						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
 					}
 				}
 			}
