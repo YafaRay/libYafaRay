@@ -292,7 +292,12 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 			
 			if(colorPasses.enabled(PASS_YAF_AO))
 			{
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+			}
+
+			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			{
+				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 

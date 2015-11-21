@@ -490,6 +490,7 @@ enum internalYafPassTypes_t
 	PASS_YAF_DIFFUSE,
 	PASS_YAF_DIFFUSE_NO_SHADOW,
 	PASS_YAF_AO,
+	PASS_YAF_AO_CLAY,
 	PASS_YAF_ENV,
     PASS_YAF_MIST,
     PASS_YAF_INDIRECT,
@@ -847,6 +848,7 @@ inline void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["diffuse"] = PASS_YAF_DIFFUSE;
 	intPassMapStringInt["diffuse-noshadow"] = PASS_YAF_DIFFUSE_NO_SHADOW;
 	intPassMapStringInt["ao"] = PASS_YAF_AO;
+	intPassMapStringInt["ao-clay"] = PASS_YAF_AO_CLAY;
 	intPassMapStringInt["env"] = PASS_YAF_ENV;
 	intPassMapStringInt["indirect"] = PASS_YAF_INDIRECT_ALL;
 	intPassMapStringInt["adv-indirect"] = PASS_YAF_INDIRECT;

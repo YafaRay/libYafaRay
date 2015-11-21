@@ -225,6 +225,7 @@ bool SPPM::renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive,
                     case PASS_YAF_NORMAL_SMOOTH: break;
                     case PASS_YAF_NORMAL_GEOM: break;
                     case PASS_YAF_AO: break;
+                    case PASS_YAF_AO_CLAY: break;
                     case PASS_YAF_UV: break;
                     case PASS_YAF_DEBUG_NU: break;
                     case PASS_YAF_DEBUG_NV: break;
@@ -966,7 +967,12 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			
 			if(colorPasses.enabled(PASS_YAF_AO))
 			{
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+			}
+
+			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			{
+				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 

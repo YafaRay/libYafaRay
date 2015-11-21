@@ -396,6 +396,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
                     case PASS_YAF_NORMAL_SMOOTH: break;
                     case PASS_YAF_NORMAL_GEOM: break;
                     case PASS_YAF_AO: break;
+		    case PASS_YAF_AO_CLAY: break;
                     case PASS_YAF_UV: break;
                     case PASS_YAF_DEBUG_NU: break;
                     case PASS_YAF_DEBUG_NV: break;
