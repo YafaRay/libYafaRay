@@ -48,6 +48,10 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	std::stringstream passString;
 	std::stringstream SettingsSPPM;
 	imageFilm = image;
+	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+
+	Y_INFO << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
+	Y_INFO << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 
 	passString << "Rendering pass 1 of " << std::max(1, passNum) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -56,6 +60,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
 	imageFilm->init(passNum);
+	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 	const camera_t* camera = scene->getCamera();
 
@@ -91,7 +96,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 }
 
 
-bool SPPM::renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number)
+bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number)
 {
 	int x;
 	const camera_t* camera = scene->getCamera();
@@ -107,7 +112,15 @@ bool SPPM::renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive,
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
-	float inv_AA_max_possible_samples = 1.f / ((float) AA_samples + ((float) (AA_passes-1) * (float) AA_inc_samples));
+	
+	int AA_max_possible_samples = AA_samples;
+	
+	for(int i=1; i<AA_passes; ++i)
+	{
+		AA_max_possible_samples += ceilf(AA_inc_samples * pow(AA_sample_multiplier_factor, i));
+	}
+	
+	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
 	colorIntPasses_t colorPasses = imageFilm->get_RenderPasses().colorPassesTemplate;
 

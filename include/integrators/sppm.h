@@ -58,7 +58,7 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		~SPPM();
 		virtual bool render(int numView, imageFilm_t *imageFilm);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
+		virtual bool renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
 		virtual bool preprocess(); //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive);
