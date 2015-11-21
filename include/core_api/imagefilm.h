@@ -100,8 +100,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
 		void setNumSamples(int n){ numSamples = n; }
-		/*! Enables/disables color clamping */
-		void setClamp(bool c){ clamp = c; }
 		/*! (Deprecated, use setColorSpace instead) Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
 		void setGamma(float gammaVal, bool enable);
 		/*! Sets the film color space and gamma correction */
@@ -161,7 +159,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorOutput_t *output;
 		// Thread mutes for shared access
 		yafthreads::mutex_t imageMutex, splitterMutex, outMutex, densityImageMutex;
-		bool clamp, split, interactive, abort;
+		bool split, interactive, abort;
         double imageOutputPartialSaveTimeInterval;
 		bool estimateDensity;
 		int numSamples;

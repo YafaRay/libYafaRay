@@ -119,7 +119,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams, int light_group_filter):
 	renderPasses(render_passes), flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), filterw(filterSize*0.5), output(&out),
-	clamp(false), split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
+	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
 {
 	cx1 = xstart + width;

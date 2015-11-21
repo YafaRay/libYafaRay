@@ -527,7 +527,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	float filt_sz = 1.5, gamma=1.f;
-	bool clamp = false;
 	bool showSampledPixels = false;
 	int tileSize = 32;
 	bool premult = false;
@@ -540,7 +539,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
-	params.getParam("clamp_rgb", clamp);
 	params.getParam("AA_pixelwidth", filt_sz);
 	params.getParam("width", width); // width of rendered image
 	params.getParam("height", height); // height of rendered image
@@ -596,8 +594,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, renderPasses, 0, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams); //FIXME DAVID RENDER VIEWS
-
-	film->setClamp(clamp);
 	
 	if(color_space == RAW_MANUAL_GAMMA)
 	{
