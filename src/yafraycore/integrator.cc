@@ -283,7 +283,15 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
 	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
-	float inv_AA_max_possible_samples = 1.f / ((float) AA_samples + ((float) (AA_passes-1) * (float) AA_inc_samples));
+	
+	int AA_max_possible_samples = AA_samples;
+	
+	for(int i=1; i<AA_passes; ++i)
+	{
+		AA_max_possible_samples += ceilf(AA_inc_samples * pow(AA_sample_multiplier_factor, i));
+	}
+	
+	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
 	Halton halU(3);
 	Halton halV(5);
