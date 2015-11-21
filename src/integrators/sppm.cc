@@ -50,6 +50,10 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 
+	AA_sample_multiplier = 1.f;
+	AA_light_sample_multiplier = 1.f;
+	AA_indirect_sample_multiplier = 1.f;
+
 	Y_INFO << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
 	Y_INFO << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 
