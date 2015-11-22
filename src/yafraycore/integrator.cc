@@ -302,9 +302,10 @@ bool tiledIntegrator_t::renderTile(renderArea_t &a, int n_samples, int offset, b
 					d_ray = camera->shootRay(j+dx, i+1+dy, lens_u, lens_v, wt_dummy);
 					c_ray.yfrom = d_ray.from;
 					c_ray.ydir = d_ray.dir;
-					c_ray.time = rstate.time;
 					c_ray.hasDifferentials = true;
 				}
+				
+				c_ray.time = rstate.time;
 
 				colorA_t col = integrate(rstate, c_ray);
 				imageFilm->addSample(wt * col, j, i, dx, dy, &a);
