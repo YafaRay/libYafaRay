@@ -359,9 +359,10 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					d_ray = camera->shootRay(j+dx, i+1+dy, lens_u, lens_v, wt_dummy);
 					c_ray.yfrom = d_ray.from;
 					c_ray.ydir = d_ray.dir;
-					c_ray.time = rstate.time;
 					c_ray.hasDifferentials = true;
 				}
+				
+				c_ray.time = rstate.time;
 
 				colorPasses(PASS_YAF_COMBINED) = integrate(rstate, c_ray, colorPasses);
 				
