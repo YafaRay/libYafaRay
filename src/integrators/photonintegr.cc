@@ -803,7 +803,6 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		if(isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
 		state.includeLights = false;
-		spDifferentials_t spDiff(sp, ray);
 		
 		if(finalGather)
 		{

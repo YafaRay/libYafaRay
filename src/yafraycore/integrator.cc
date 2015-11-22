@@ -176,6 +176,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
+	diffRaysEnabled = false;	//always false for now, reserved for future motion blur and interference features
+
 	if(imageFilm->passEnabled(PASS_YAF_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_YAF_MIST)) precalcDepths();
 
 	preRender();
@@ -348,15 +350,18 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					imageFilm->addSample(tmpPassesZero, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
 					continue;
 				}
-				//setup ray differentials
-				d_ray = camera->shootRay(j+1+dx, i+dy, lens_u, lens_v, wt_dummy);
-				c_ray.xfrom = d_ray.from;
-				c_ray.xdir = d_ray.dir;
-				d_ray = camera->shootRay(j+dx, i+1+dy, lens_u, lens_v, wt_dummy);
-				c_ray.yfrom = d_ray.from;
-				c_ray.ydir = d_ray.dir;
-				c_ray.time = rstate.time;
-				c_ray.hasDifferentials = true;
+				if(diffRaysEnabled)
+				{
+					//setup ray differentials
+					d_ray = camera->shootRay(j+1+dx, i+dy, lens_u, lens_v, wt_dummy);
+					c_ray.xfrom = d_ray.from;
+					c_ray.xdir = d_ray.dir;
+					d_ray = camera->shootRay(j+dx, i+1+dy, lens_u, lens_v, wt_dummy);
+					c_ray.yfrom = d_ray.from;
+					c_ray.ydir = d_ray.dir;
+					c_ray.time = rstate.time;
+					c_ray.hasDifferentials = true;
+				}
 
 				colorPasses(PASS_YAF_COMBINED) = integrate(rstate, c_ray, colorPasses);
 				
