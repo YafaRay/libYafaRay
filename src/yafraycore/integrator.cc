@@ -133,12 +133,28 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 {
 	std::stringstream passString;
 	imageFilm = image;
-	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor);
+	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	iAA_passes = 1.f / (float) AA_passes;
+
+	AA_sample_multiplier = 1.f;
+	AA_light_sample_multiplier = 1.f;
+	AA_indirect_sample_multiplier = 1.f;
+
+	int AA_resampled_floor_pixels = (int) floorf(AA_resampled_floor * (float) imageFilm->getTotalPixels() / 100.f);
+
 	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
-	Y_INFO << integratorName << ": Resampled pixels floor: "<< AA_resampled_floor << yendl;
+	Y_INFO << integratorName << ": Resampled pixels floor: "<< AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;
+	Y_INFO << integratorName << ": AA_sample_multiplier_factor: "<< AA_sample_multiplier_factor << yendl;
+	Y_INFO << integratorName << ": AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
+	Y_INFO << integratorName << ": AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
+	Y_INFO << integratorName << ": AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
+	Y_INFO << integratorName << ": AA_dark_threshold_factor: "<< AA_dark_threshold_factor << yendl;
+	Y_INFO << integratorName << ": AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
+	Y_INFO << integratorName << ": AA_variance_pixels: "<< AA_variance_pixels << yendl;
+	Y_INFO << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
+	Y_INFO << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -147,6 +163,7 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
 	imageFilm->init(AA_passes);
+	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 	maxDepth = 0.f;
 	minDepth = 1e38f;
@@ -158,17 +175,38 @@ bool tiledIntegrator_t::render(imageFilm_t *image)
 	preRender();
 
 	renderPass(AA_samples, 0, false);
+	
+	int acumAASamples = AA_samples;
+	
 	for(int i=1; i<AA_passes; ++i)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
-		imageFilm->setAAThreshold(AA_threshold);
-		int resampled_pixels = imageFilm->nextPass(true, integratorName);
-		renderPass(AA_inc_samples, AA_samples + (i-1)*AA_inc_samples, true);
 
-		if(resampled_pixels < AA_resampled_floor)
+		//scene->getSurfIntegrator()->setSampleMultiplier(scene->getSurfIntegrator()->getSampleMultiplier() * AA_sample_multiplier_factor);
+		
+		AA_sample_multiplier *= AA_sample_multiplier_factor;
+		AA_light_sample_multiplier *= AA_light_sample_multiplier_factor;
+		AA_indirect_sample_multiplier *= AA_indirect_sample_multiplier_factor;
+		
+		Y_INFO << integratorName << ": Sample multiplier = " << AA_sample_multiplier << ", Light Sample multiplier = " << AA_light_sample_multiplier << ", Indirect Sample multiplier = " << AA_indirect_sample_multiplier << yendl;
+		
+		imageFilm->setAAThreshold(AA_threshold);
+		imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
+		
+		int resampled_pixels = imageFilm->nextPass(true, integratorName);
+
+		int AA_samples_mult = (int) ceilf(AA_inc_samples * AA_sample_multiplier);
+
+		renderPass(AA_samples_mult, acumAASamples, true);
+
+		acumAASamples += AA_samples_mult;
+
+		if(resampled_pixels < AA_resampled_floor_pixels)
 		{
-			AA_threshold *= 0.9f;
-			Y_INFO << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor << "): new AA Threshold for next pass = " << AA_threshold << yendl;
+			float AA_variation_ratio = std::min(8.f, ((float) AA_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal. 
+			AA_threshold *= (1.f - 0.1f * AA_variation_ratio);
+			
+			Y_INFO << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor_pixels << "): new AA Threshold (-" << AA_variation_ratio * 0.1f * 100.f << "%) for next pass = " << AA_threshold << yendl;
 		} 
 	}
 	maxDepth = 0.f;

@@ -117,7 +117,17 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 		if(bsdfs & BSDF_DIFFUSE)
 		{
 			col += estimateAllDirectLight(state, sp, wo);
-			if(usePhotonCaustics) col += estimateCausticPhotons(state, sp, wo);
+			if(usePhotonCaustics)
+			{
+				if(AA_clamp_indirect>0)
+				{
+					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
+					tmpCol.clampProportionalRGB(AA_clamp_indirect);
+					col += tmpCol;
+				}
+				else col += estimateCausticPhotons(state, sp, wo);
+			}
+
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 

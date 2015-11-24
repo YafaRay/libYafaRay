@@ -650,7 +650,16 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	const std::string *name=0;
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1;
 	double AA_threshold=0.05;
-	int AA_resampled_floor=0;
+	float AA_resampled_floor=0.f;
+	float AA_sample_multiplier_factor = 1.f;
+	float AA_light_sample_multiplier_factor = 1.f;
+	float AA_indirect_sample_multiplier_factor = 1.f;
+	bool AA_detect_color_noise = false;
+	float AA_dark_threshold_factor = 0.f;
+	int AA_variance_edge_size = 10;
+	int AA_variance_pixels = 0;
+	float AA_clamp_samples = 0.f;
+	float AA_clamp_indirect = 0.f;
 	bool z_chan = false;
 	bool norm_z_chan = true;
 	bool drawParams = false;
@@ -715,6 +724,15 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_inc_samples", AA_inc_samples);
 	params.getParam("AA_threshold", AA_threshold);
 	params.getParam("AA_resampled_floor", AA_resampled_floor);
+	params.getParam("AA_sample_multiplier_factor", AA_sample_multiplier_factor);
+	params.getParam("AA_light_sample_multiplier_factor", AA_light_sample_multiplier_factor);
+	params.getParam("AA_indirect_sample_multiplier_factor", AA_indirect_sample_multiplier_factor);
+	params.getParam("AA_detect_color_noise", AA_detect_color_noise);
+	params.getParam("AA_dark_threshold_factor", AA_dark_threshold_factor);
+	params.getParam("AA_variance_edge_size", AA_variance_edge_size);
+	params.getParam("AA_variance_pixels", AA_variance_pixels);
+	params.getParam("AA_clamp_samples", AA_clamp_samples);
+	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("z_channel", z_chan); // render z-buffer
 	params.getParam("normalize_z_channel", norm_z_chan); // normalize values of z-buffer in range [0,1]
@@ -736,7 +754,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	if(z_chan) film->initDepthMap();
 
 	params.getParam("filter_type", name); // AA filter type
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor;
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
 	film->setAAParams(aaSettings.str());
 	if(custString) film->setCustomString(*custString);
@@ -748,7 +766,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.setCamera(cam);
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor);
+	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	scene.setNumThreads(nthreads);
 	if(backg) scene.setBackground(backg);
 	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;

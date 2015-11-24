@@ -146,7 +146,16 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray/*, sam
 		if(bsdfs & BSDF_DIFFUSE)
 		{
 			col += estimateAllDirectLight(state, sp, wo);
-			if(causticType == PHOTON || causticType == BOTH) col += estimateCausticPhotons(state, sp, wo);
+			if(causticType == PHOTON || causticType == BOTH)
+			{
+				if(AA_clamp_indirect>0)
+				{
+					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
+					tmpCol.clampProportionalRGB(AA_clamp_indirect);
+					col += tmpCol;
+				}
+				else col += estimateCausticPhotons(state, sp, wo);
+			}
 		}
 				
 		// path tracing:
