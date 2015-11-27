@@ -568,10 +568,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 			params.getParam("pass_" + externalPass, internalPass);
 			renderPasses.pass_add(externalPass, internalPass);
 		}
-	renderPasses.colorPassesTemplate.pass_mask_obj_index = (float) pass_mask_obj_index;
-	renderPasses.colorPassesTemplate.pass_mask_mat_index = (float) pass_mask_mat_index;
-	renderPasses.colorPassesTemplate.pass_mask_invert = pass_mask_invert;
-	renderPasses.colorPassesTemplate.pass_mask_only = pass_mask_only;
 	
     output.initTilesPasses(camera_table.size(), renderPasses.numExtPasses());
     

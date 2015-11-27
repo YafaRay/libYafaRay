@@ -298,9 +298,9 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	Halton halU(3);
 	Halton halV(5);
 
-	colorIntPasses_t colorPasses = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorIntPasses_t colorPasses(imageFilm->get_RenderPasses());
  
-	colorIntPasses_t tmpPassesZero = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorIntPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
