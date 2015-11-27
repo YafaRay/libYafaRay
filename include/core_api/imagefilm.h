@@ -32,6 +32,7 @@
 #include <core_api/environment.h>
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
+#include <core_api/renderpasses.h>
 
 #if HAVE_FREETYPE
 struct FT_Bitmap_;
@@ -90,7 +91,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(colorIntPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
+		void addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
@@ -130,7 +131,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			if(output) output->set_view_names_map(viewNamesMap);
 			else Y_ERROR << "ImageFilm: error setting the view names map, color output does not exist yet." << yendl;
 		}
-		bool passEnabled(int pass) { return renderPasses.colorPassesTemplate.enabled(pass); }
+		bool passEnabled(int pass) { return false; }
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);

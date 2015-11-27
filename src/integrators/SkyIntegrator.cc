@@ -156,7 +156,7 @@ class YAFRAYPLUGIN_EXPORT SkyIntegrator : public volumeIntegrator_t {
 	}
 	
 	// emission and in-scattering
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorIntPasses_t &colorPasses) const {
+	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses) const {
 		//return colorA_t(0.f);
 		colorA_t I_r(0.f);
 		colorA_t I_m(0.f);

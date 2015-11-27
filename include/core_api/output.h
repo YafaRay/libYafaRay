@@ -25,7 +25,11 @@
 
 #include "yafray_constants.h"
 #include <core_api/color.h>
+#include <map>
+
 __BEGIN_YAFRAY
+
+class renderPasses_t;
 
 /*! Base class for rendering output containers */
 
@@ -36,7 +40,7 @@ class colorOutput_t
         virtual void initTilesPasses(int totalViews, int numExtPasses) {};
 		virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 		virtual void flush(int numView, const renderPasses_t &renderPasses)=0;
-		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)=0;
+		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses)=0;
 		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
 		void set_view_names_map(const std::map<int, std::string>& viewNamesMap) { view_names_map = viewNamesMap; }
 		std::string get_view_name(int numView)

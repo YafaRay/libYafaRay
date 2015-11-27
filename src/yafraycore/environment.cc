@@ -563,17 +563,18 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
 	for(std::map<int, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
-		{
-			externalPass = it->second;
-			params.getParam("pass_" + externalPass, internalPass);
-			renderPasses.pass_add(externalPass, internalPass);
-		}
-	renderPasses.colorPassesTemplate.pass_mask_obj_index = (float) pass_mask_obj_index;
-	renderPasses.colorPassesTemplate.pass_mask_mat_index = (float) pass_mask_mat_index;
-	renderPasses.colorPassesTemplate.pass_mask_invert = pass_mask_invert;
-	renderPasses.colorPassesTemplate.pass_mask_only = pass_mask_only;
+	{
+		externalPass = it->second;
+		params.getParam("pass_" + externalPass, internalPass);
+		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
+	}
+
+	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
+	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
+	renderPasses.set_pass_mask_invert(pass_mask_invert);
+	renderPasses.set_pass_mask_only(pass_mask_only);
 	
-    output.initTilesPasses(camera_table.size(), renderPasses.numExtPasses());
+    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -683,8 +684,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	int AA_variance_pixels = 0;
 	float AA_clamp_samples = 0.f;
 	float AA_clamp_indirect = 0.f;
-	bool z_chan = false;
-	bool norm_z_chan = true;
 	bool drawParams = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;

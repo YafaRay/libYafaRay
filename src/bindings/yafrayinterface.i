@@ -23,6 +23,7 @@ namespace std
 #include <yafraycore/monitor.h>
 #include <core_api/output.h>
 #include <interface/yafrayinterface.h>
+#include <core_api/renderpasses.h>
 
 struct yafTilePixel_t
 {
@@ -270,10 +271,10 @@ public:
 				tilesPasses.at(view)[idx]->y0 = 0;
 				tilesPasses.at(view)[idx]->y1 = resy;
 				
-				tilesPasses.at(view)[idx]->tileType = renderPasses.externalTyleType(idx);
+				tilesPasses.at(view)[idx]->tileType = renderPasses.tileType(idx);
 				
 				std::stringstream extPassName;
-				extPassName << renderPasses.externalPassTypeString(idx);
+				extPassName << renderPasses.extPassTypeStringFromNumber(idx);
 				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);
 				
 				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
@@ -311,10 +312,10 @@ public:
 			tilesPasses.at(numView)[idx]->y0 = y0 - bsY;
 			tilesPasses.at(numView)[idx]->y1 = y1 - bsY;
 			
-			tilesPasses.at(numView)[idx]->tileType = renderPasses.externalTyleType(idx);
+			tilesPasses.at(numView)[idx]->tileType = renderPasses.tileType(idx);
 			
 			std::stringstream extPassName;
-			extPassName << renderPasses.externalPassTypeString(idx);
+			extPassName << renderPasses.extPassTypeStringFromNumber(idx);
 			PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
 			
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
@@ -560,7 +561,7 @@ namespace yafaray
 			virtual ~colorOutput_t() {};
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t &renderPasses)=0;
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)=0;
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses)=0;
 			virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
 	};
 
@@ -597,7 +598,7 @@ namespace yafaray
 			virtual ~imageOutput_t();
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			virtual void flush(int numView, const renderPasses_t &renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // not used by images... yet
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses) {}; // not used by images... yet
 		private:
 			imageHandler_t *image;
 			std::string fname;
@@ -611,7 +612,7 @@ namespace yafaray
 			memoryIO_t(int resx, int resy, float* iMem);
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			void flush(int numView, const renderPasses_t &renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // no tiled file format used...yet
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses) {}; // no tiled file format used...yet
 			virtual ~memoryIO_t();
 		protected:
 			int sizex, sizey;

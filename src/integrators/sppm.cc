@@ -73,7 +73,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 
 	diffRaysEnabled = false;	//always false for now, reserved for future motion blur and interference features
 
-	if(imageFilm->passEnabled(PASS_YAF_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_YAF_MIST)) precalcDepths();
+	if(imageFilm->passEnabled(PASS_INT_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_INT_MIST)) precalcDepths();
 
 	initializePPM(); // seems could integrate into the preRender
 	renderPass(numView, 1, 0, false, 0);
@@ -128,9 +128,9 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	
 	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
-	colorIntPasses_t colorPasses = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
 
-	colorIntPasses_t tmpPassesZero = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -202,90 +202,93 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 				}
 
 				//radiance estimate
-				//colorPasses.probe_mult(PASS_YAF_DIFFUSE_INDIRECT, 1.f / (hp.radius2 * M_PI * totalnPhotons));
-				colorA_t color = colorPasses.probe_set(PASS_YAF_INDIRECT, hp.accPhotonFlux / (hp.radius2 * M_PI * totalnPhotons));
+				//colorPasses.probe_mult(PASS_INT_DIFFUSE_INDIRECT, 1.f / (hp.radius2 * M_PI * totalnPhotons));
+				colorA_t color = colorPasses.probe_set(PASS_INT_INDIRECT, hp.accPhotonFlux / (hp.radius2 * M_PI * totalnPhotons));
 				color += gInfo.constantRandiance;
 				color.A = gInfo.constantRandiance.A; //the alpha value is hold in the constantRadiance variable
-				if(colorPasses.enabled(PASS_YAF_INDIRECT)) colorPasses(PASS_YAF_INDIRECT).A = gInfo.constantRandiance.A;
+				if(colorPasses.enabled(PASS_INT_INDIRECT)) colorPasses(PASS_INT_INDIRECT).A = gInfo.constantRandiance.A;
 
-				colorPasses.probe_set(PASS_YAF_COMBINED, color);
+				colorPasses.probe_set(PASS_INT_COMBINED, color);
 
 
-				if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS) || colorPasses.enabled(PASS_YAF_MIST))
+				if(colorPasses.enabled(PASS_INT_Z_DEPTH_NORM) || colorPasses.enabled(PASS_INT_Z_DEPTH_ABS) || colorPasses.enabled(PASS_INT_MIST))
 				{
 					float depth_abs = 0.f, depth_norm = 0.f;
 
-					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_MIST))
+					if(colorPasses.enabled(PASS_INT_Z_DEPTH_NORM) || colorPasses.enabled(PASS_INT_MIST))
 					{
 						if(c_ray.tmax > 0.f)
 						{
 							depth_norm = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
 						}
-						colorPasses.probe_set(PASS_YAF_Z_DEPTH_NORM, colorA_t(depth_norm));
-						colorPasses.probe_set(PASS_YAF_MIST, colorA_t(1.f-depth_norm));
+						colorPasses.probe_set(PASS_INT_Z_DEPTH_NORM, colorA_t(depth_norm));
+						colorPasses.probe_set(PASS_INT_MIST, colorA_t(1.f-depth_norm));
 					}
-					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS))
+					if(colorPasses.enabled(PASS_INT_Z_DEPTH_ABS))
 					{
 						depth_abs = c_ray.tmax;
 						if(depth_abs <= 0.f)
 						{
 							depth_abs = 99999997952.f;
 						}
-						colorPasses.probe_set(PASS_YAF_Z_DEPTH_ABS, colorA_t(depth_abs));
+						colorPasses.probe_set(PASS_INT_Z_DEPTH_ABS, colorA_t(depth_abs));
 					}
 				}
 				
-				for(int idx = PASS_YAF_COMBINED; idx <= colorPasses.get_highest_internal_pass_used(); ++idx)
+				for(int idx = 0; idx <= colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
+					
+					int intPassType = colorPasses.intPassTypeFromNumber(idx);
 										
-					switch(idx)
+					switch(intPassType)
 					{
-                    case PASS_YAF_Z_DEPTH_NORM: break;
-                    case PASS_YAF_Z_DEPTH_ABS: break;
-                    case PASS_YAF_MIST: break;
-                    case PASS_YAF_NORMAL_SMOOTH: break;
-                    case PASS_YAF_NORMAL_GEOM: break;
-                    case PASS_YAF_AO: break;
-                    case PASS_YAF_AO_CLAY: break;
-                    case PASS_YAF_UV: break;
-                    case PASS_YAF_DEBUG_NU: break;
-                    case PASS_YAF_DEBUG_NV: break;
-                    case PASS_YAF_DEBUG_DPDU: break;
-                    case PASS_YAF_DEBUG_DPDV: break;
-                    case PASS_YAF_DEBUG_DSDU: break;
-                    case PASS_YAF_DEBUG_DSDV: break;
-                    case PASS_YAF_OBJ_INDEX_ABS: break;
-                    case PASS_YAF_OBJ_INDEX_NORM: break;
-                    case PASS_YAF_OBJ_INDEX_AUTO: break;
-                    case PASS_YAF_MAT_INDEX_ABS: break;
-                    case PASS_YAF_MAT_INDEX_NORM: break;
-                    case PASS_YAF_MAT_INDEX_AUTO: break;
-                    case PASS_YAF_AA_SAMPLES: break;
-                    
-                    //Processing of mask render passes:
-                    case PASS_YAF_OBJ_INDEX_MASK: 
-                    case PASS_YAF_OBJ_INDEX_MASK_SHADOW: 
-                    case PASS_YAF_OBJ_INDEX_MASK_ALL: 
-                    case PASS_YAF_MAT_INDEX_MASK: 
-                    case PASS_YAF_MAT_INDEX_MASK_SHADOW:
-                    case PASS_YAF_MAT_INDEX_MASK_ALL: 
+						case PASS_INT_Z_DEPTH_NORM: break;
+						case PASS_INT_Z_DEPTH_ABS: break;
+						case PASS_INT_MIST: break;
+						case PASS_INT_NORMAL_SMOOTH: break;
+						case PASS_INT_NORMAL_GEOM: break;
+						case PASS_INT_AO: break;
+						case PASS_INT_AO_CLAY: break;
+						case PASS_INT_UV: break;
+						case PASS_INT_DEBUG_NU: break;
+						case PASS_INT_DEBUG_NV: break;
+						case PASS_INT_DEBUG_DPDU: break;
+						case PASS_INT_DEBUG_DPDV: break;
+						case PASS_INT_DEBUG_DSDU: break;
+						case PASS_INT_DEBUG_DSDV: break;
+						case PASS_INT_OBJ_INDEX_ABS: break;
+						case PASS_INT_OBJ_INDEX_NORM: break;
+						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_ABS: break;
+						case PASS_INT_MAT_INDEX_NORM: break;
+						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_AA_SAMPLES: break;
+						
+						//Processing of mask render passes:
+						case PASS_INT_OBJ_INDEX_MASK: 
+						case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
+						case PASS_INT_OBJ_INDEX_MASK_ALL: 
+						case PASS_INT_MAT_INDEX_MASK: 
+						case PASS_INT_MAT_INDEX_MASK_SHADOW:
+						case PASS_INT_MAT_INDEX_MASK_ALL: 
                         
-                        if(colorPasses.pass_mask_invert)
+                        if(colorPasses.get_pass_mask_invert())
                         {
                             colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
                         }
                         
-                        if(!colorPasses.pass_mask_only)
+                        if(!colorPasses.get_pass_mask_only())
                         {
-                            colorA_t colCombined = colorPasses(PASS_YAF_COMBINED);
+                            colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
                             colCombined.A = 1.f;	
                             colorPasses(idx) *= colCombined;
                         }
                         break;
                         
                     default: colorPasses(idx) *= wt; break;
-					}				}
+					}				
+				}
 
 				imageFilm->addSample(colorPasses, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
             }
@@ -554,13 +557,13 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
 {
 	return colorA_t(0.f);
 }
 
 
-GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_t &ray, yafaray::HitPoint &hp, colorIntPasses_t &colorPasses)
+GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_t &ray, yafaray::HitPoint &hp, colorPasses_t &colorPasses)
 {
 	static int _nMax=0;
 	static int calls=0;
@@ -592,11 +595,11 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		vector3d_t wo = -ray.dir;
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
-		gInfo.constantRandiance += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0); //add only once, but FG seems add twice?
+		gInfo.constantRandiance += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0); //add only once, but FG seems add twice?
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
 		
-		colorIntPasses_t tmpColorPasses = colorPasses;
+		colorPasses_t tmpColorPasses = colorPasses;
 
 		if(bsdfs & BSDF_DIFFUSE)
 		{
@@ -690,7 +693,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 						vector3d_t pdir = gathered[i].photon->direction();
 						gInfo.photonCount++;
 						surfCol = material->eval(state, sp, wo, pdir, BSDF_ALL); // seems could speed up using rho, (something pbrt made)
-						gInfo.photonFlux += surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_YAF_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::fabs(sp.N*pdir); //< wrong!?
+						gInfo.photonFlux += surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::fabs(sp.N*pdir); //< wrong!?
 						//color_t  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 
 						////start refine here
@@ -751,7 +754,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 						t_cing.photonFlux *= mcol * wl_col * W;
 						t_cing.constantRandiance *= mcol * wl_col * W;
 						
-						tmpColorPasses.probe_add(PASS_YAF_TRANS, t_cing.constantRandiance, state.raylevel == 1);
+						tmpColorPasses.probe_add(PASS_INT_TRANS, t_cing.constantRandiance, state.raylevel == 1);
 						
 						state.chromatic = true;
 					}
@@ -768,7 +771,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				gInfo.photonFlux += cing.photonFlux * d_1;
 				gInfo.photonCount += cing.photonCount * d_1;
 
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0)
+				if(tmpColorPasses.size() > 1)
 				{
 					tmpColorPasses *= d_1;
 					colorPasses += tmpColorPasses;
@@ -803,7 +806,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				hal2.setStart(offs);
 				hal3.setStart(offs);
 				
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0) tmpColorPasses.reset_colors();
+				if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
 
 				for(int ns=0; ns<gsam; ++ns)
 				{
@@ -838,7 +841,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
                             if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
                         }
                         
-                        //gcol += tmpColorPasses.probe_add(PASS_YAF_GLOSSY_INDIRECT, (color_t)integ * mcol * W, state.raylevel == 1);
+                        //gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (color_t)integ * mcol * W, state.raylevel == 1);
                         t_ging = traceGatherRay(state, refRay, hp, tmpColorPasses);
 						t_ging.photonFlux *=mcol * W;
 						t_ging.constantRandiance *= mcol * W;
@@ -869,7 +872,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 							t_ging.photonFlux *= colReflectFactor;
 							t_ging.constantRandiance *= colReflectFactor;
 							
-							tmpColorPasses.probe_add(PASS_YAF_TRANS, (color_t)t_ging.constantRandiance, state.raylevel == 1);
+							tmpColorPasses.probe_add(PASS_INT_TRANS, (color_t)t_ging.constantRandiance, state.raylevel == 1);
 							ging += t_ging;
                         }
 
@@ -888,7 +891,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
                             t_ging = traceGatherRay(state, refRay, hp, tmpColorPasses);
 							t_ging.photonFlux *= colTransmitFactor;
 							t_ging.constantRandiance *= colTransmitFactor;
-							tmpColorPasses.probe_add(PASS_YAF_GLOSSY_INDIRECT, (color_t)t_ging.constantRandiance, state.raylevel == 1);
+							tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (color_t)t_ging.constantRandiance, state.raylevel == 1);
                             ging += t_ging;
                         }
                     }
@@ -905,7 +908,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 						t_ging = traceGatherRay(state, refRay, hp, tmpColorPasses);
 						t_ging.photonFlux *=mcol * W;
 						t_ging.constantRandiance *= mcol * W;
-						tmpColorPasses.probe_add(PASS_YAF_GLOSSY_INDIRECT, t_ging.constantRandiance, state.raylevel == 1);
+						tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, t_ging.constantRandiance, state.raylevel == 1);
 						ging += t_ging;
 					}
 
@@ -915,7 +918,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 						{
 							ging.photonFlux *= vcol;
 							ging.constantRandiance *= vcol;
-							//tmpColorPasses.probe_add(PASS_YAF_GLOSSY_INDIRECT, t_ging.constantRandiance, state.raylevel == 1);
+							//tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, t_ging.constantRandiance, state.raylevel == 1);
 						}
 					}
 					
@@ -925,7 +928,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				gInfo.photonFlux += ging.photonFlux * d_1;
 				gInfo.photonCount += ging.photonCount * d_1;
 
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0)
+				if(tmpColorPasses.size() > 1)
 				{
 					tmpColorPasses *= d_1;
 					colorPasses += tmpColorPasses;
@@ -960,7 +963,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 							refg.photonFlux *= vcol;
 						}
 					}
-					gInfo.constantRandiance += colorPasses.probe_add(PASS_YAF_REFLECT_PERFECT, refg.constantRandiance * colorA_t(rcol[0]), state.raylevel == 1);
+					gInfo.constantRandiance += colorPasses.probe_add(PASS_INT_REFLECT_PERFECT, refg.constantRandiance * colorA_t(rcol[0]), state.raylevel == 1);
 					gInfo.photonFlux += refg.photonFlux * colorA_t(rcol[0]);
 					gInfo.photonCount += refg.photonCount;
 				}
@@ -977,7 +980,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 							refg.photonFlux *= vcol;
 						}
 					}
-					gInfo.constantRandiance += colorPasses.probe_add(PASS_YAF_REFRACT_PERFECT, refg.constantRandiance * colorA_t(rcol[1]), state.raylevel == 1);
+					gInfo.constantRandiance += colorPasses.probe_add(PASS_INT_REFRACT_PERFECT, refg.constantRandiance * colorA_t(rcol[1]), state.raylevel == 1);
 					gInfo.photonFlux += refg.photonFlux * colorA_t(rcol[1]);
 					gInfo.photonCount += refg.photonCount;
 					alpha = refg.constantRandiance.A;
@@ -986,18 +989,18 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		}
 		--state.raylevel;
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			
-			if(colorPasses.enabled(PASS_YAF_AO))
+			if(colorPasses.enabled(PASS_INT_AO))
 			{
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
 			}
 
-			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 
@@ -1013,7 +1016,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 	{
 		if(background && !transpRefractedBackground)
 		{
-			gInfo.constantRandiance += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			gInfo.constantRandiance += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 
@@ -1025,8 +1028,8 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
 
-	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
-	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 		
 	gInfo.constantRandiance = (gInfo.constantRandiance * colVolTransmittance) + colVolIntegration;
 

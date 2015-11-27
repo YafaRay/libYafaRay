@@ -65,7 +65,7 @@ exrHandler_t::exrHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 
-	m_halfrgba.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.
+	m_halfrgba.resize(PASS_EXT_TOTAL_PASSES);	//FIXME DAVID: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.
 	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
 	{
 		m_halfrgba.at(idx) = NULL;
@@ -154,15 +154,10 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
     
-    for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
+    for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
     {
-        std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.externalPassType(idx));
-        
-        if(extPassMapIterator != renderPasses.extPassMapIntString.end())
-        {
-            extPassName = "RenderLayer."+extPassMapIterator->second + ".";        
-            Y_INFO << "    Writing EXR Layer: " << extPassMapIterator->second << yendl;
-        }
+		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromNumber(idx) + ".";        
+		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromNumber(idx) << yendl;
         
         header.channels().insert(extPassName+"R", Channel(HALF));
         header.channels().insert(extPassName+"G", Channel(HALF));

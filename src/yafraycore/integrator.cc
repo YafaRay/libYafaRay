@@ -178,7 +178,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 	diffRaysEnabled = false;	//always false for now, reserved for future motion blur and interference features
 
-	if(imageFilm->passEnabled(PASS_YAF_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_YAF_MIST)) precalcDepths();
+	if(imageFilm->passEnabled(PASS_INT_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_INT_MIST)) precalcDepths();
 
 	preRender();
 
@@ -298,9 +298,9 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	Halton halU(3);
 	Halton halV(5);
 
-	colorIntPasses_t colorPasses = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
  
-	colorIntPasses_t tmpPassesZero = imageFilm->get_RenderPasses().colorPassesTemplate;
+	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -364,82 +364,84 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				
 				c_ray.time = rstate.time;
 
-				colorPasses(PASS_YAF_COMBINED) = integrate(rstate, c_ray, colorPasses);
+				colorPasses(PASS_INT_COMBINED) = integrate(rstate, c_ray, colorPasses);
 				
-				if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS) || colorPasses.enabled(PASS_YAF_MIST))
+				if(colorPasses.enabled(PASS_INT_Z_DEPTH_NORM) || colorPasses.enabled(PASS_INT_Z_DEPTH_ABS) || colorPasses.enabled(PASS_INT_MIST))
 				{
 					float depth_abs = 0.f, depth_norm = 0.f;
 
-					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_NORM) || colorPasses.enabled(PASS_YAF_MIST))
+					if(colorPasses.enabled(PASS_INT_Z_DEPTH_NORM) || colorPasses.enabled(PASS_INT_MIST))
 					{
 						if(c_ray.tmax > 0.f)
 						{
 							depth_norm = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
 						}
-						colorPasses.probe_set(PASS_YAF_Z_DEPTH_NORM, colorA_t(depth_norm));
-						colorPasses.probe_set(PASS_YAF_MIST, colorA_t(1.f-depth_norm));
+						colorPasses.probe_set(PASS_INT_Z_DEPTH_NORM, colorA_t(depth_norm));
+						colorPasses.probe_set(PASS_INT_MIST, colorA_t(1.f-depth_norm));
 					}
-					if(colorPasses.enabled(PASS_YAF_Z_DEPTH_ABS))
+					if(colorPasses.enabled(PASS_INT_Z_DEPTH_ABS))
 					{
 						depth_abs = c_ray.tmax;
 						if(depth_abs <= 0.f)
 						{
 							depth_abs = 99999997952.f;
 						}
-						colorPasses.probe_set(PASS_YAF_Z_DEPTH_ABS, colorA_t(depth_abs));
+						colorPasses.probe_set(PASS_INT_Z_DEPTH_ABS, colorA_t(depth_abs));
 					}
 				}
 				
-				for(int idx = PASS_YAF_COMBINED; idx <= colorPasses.get_highest_internal_pass_used(); ++idx)
+				for(int idx = 0; idx <= colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
+					
+					int intPassType = colorPasses.intPassTypeFromNumber(idx);
 										
-					switch(idx)
+					switch(intPassType)
 					{
-                    case PASS_YAF_Z_DEPTH_NORM: break;
-                    case PASS_YAF_Z_DEPTH_ABS: break;
-                    case PASS_YAF_MIST: break;
-                    case PASS_YAF_NORMAL_SMOOTH: break;
-                    case PASS_YAF_NORMAL_GEOM: break;
-                    case PASS_YAF_AO: break;
-		    case PASS_YAF_AO_CLAY: break;
-                    case PASS_YAF_UV: break;
-                    case PASS_YAF_DEBUG_NU: break;
-                    case PASS_YAF_DEBUG_NV: break;
-                    case PASS_YAF_DEBUG_DPDU: break;
-                    case PASS_YAF_DEBUG_DPDV: break;
-                    case PASS_YAF_DEBUG_DSDU: break;
-                    case PASS_YAF_DEBUG_DSDV: break;
-                    case PASS_YAF_OBJ_INDEX_ABS: break;
-                    case PASS_YAF_OBJ_INDEX_NORM: break;
-                    case PASS_YAF_OBJ_INDEX_AUTO: break;
-                    case PASS_YAF_MAT_INDEX_ABS: break;
-                    case PASS_YAF_MAT_INDEX_NORM: break;
-                    case PASS_YAF_MAT_INDEX_AUTO: break;
-                    case PASS_YAF_AA_SAMPLES: break;
-                    
-                    //Processing of mask render passes:
-                    case PASS_YAF_OBJ_INDEX_MASK: 
-                    case PASS_YAF_OBJ_INDEX_MASK_SHADOW: 
-                    case PASS_YAF_OBJ_INDEX_MASK_ALL: 
-                    case PASS_YAF_MAT_INDEX_MASK: 
-                    case PASS_YAF_MAT_INDEX_MASK_SHADOW:
-                    case PASS_YAF_MAT_INDEX_MASK_ALL: 
-                        
-                        if(colorPasses.pass_mask_invert)
-                        {
-                            colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
-                        }
-                        
-                        if(!colorPasses.pass_mask_only)
-                        {
-                            colorA_t colCombined = colorPasses(PASS_YAF_COMBINED);
-                            colCombined.A = 1.f;	
-                            colorPasses(idx) *= colCombined;
-                        }
-                        break;
-                        
-                    default: colorPasses(idx) *= wt; break;
+						case PASS_INT_Z_DEPTH_NORM: break;
+						case PASS_INT_Z_DEPTH_ABS: break;
+						case PASS_INT_MIST: break;
+						case PASS_INT_NORMAL_SMOOTH: break;
+						case PASS_INT_NORMAL_GEOM: break;
+						case PASS_INT_AO: break;
+						case PASS_INT_AO_CLAY: break;
+						case PASS_INT_UV: break;
+						case PASS_INT_DEBUG_NU: break;
+						case PASS_INT_DEBUG_NV: break;
+						case PASS_INT_DEBUG_DPDU: break;
+						case PASS_INT_DEBUG_DPDV: break;
+						case PASS_INT_DEBUG_DSDU: break;
+						case PASS_INT_DEBUG_DSDV: break;
+						case PASS_INT_OBJ_INDEX_ABS: break;
+						case PASS_INT_OBJ_INDEX_NORM: break;
+						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_ABS: break;
+						case PASS_INT_MAT_INDEX_NORM: break;
+						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_AA_SAMPLES: break;
+
+						//Processing of mask render passes:
+						case PASS_INT_OBJ_INDEX_MASK: 
+						case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
+						case PASS_INT_OBJ_INDEX_MASK_ALL: 
+						case PASS_INT_MAT_INDEX_MASK: 
+						case PASS_INT_MAT_INDEX_MASK_SHADOW:
+						case PASS_INT_MAT_INDEX_MASK_ALL: 
+
+						if(colorPasses.get_pass_mask_invert())
+						{
+							colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
+						}
+
+						if(!colorPasses.get_pass_mask_only())
+						{
+							colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
+							colCombined.A = 1.f;	
+							colorPasses(idx) *= colCombined;
+						}
+						break;
+
+						default: colorPasses(idx) *= wt; break;
 					}
 				}
 
@@ -450,64 +452,64 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	return true;
 }
 
-inline void tiledIntegrator_t::generateCommonRenderPasses(colorIntPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
+inline void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
 {
-	colorPasses.probe_set(PASS_YAF_UV, colorA_t(sp.U, sp.V, 0.f, 1.f));
-	colorPasses.probe_set(PASS_YAF_NORMAL_SMOOTH, colorA_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_NORMAL_GEOM, colorA_t((sp.Ng.x + 1.f) * .5f, (sp.Ng.y + 1.f) * .5f, (sp.Ng.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_DPDU, colorA_t((sp.dPdU.x + 1.f) * .5f, (sp.dPdU.y + 1.f) * .5f, (sp.dPdU.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_DPDV, colorA_t((sp.dPdV.x + 1.f) * .5f, (sp.dPdV.y + 1.f) * .5f, (sp.dPdV.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_DSDU, colorA_t((sp.dSdU.x + 1.f) * .5f, (sp.dSdU.y + 1.f) * .5f, (sp.dSdU.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_DSDV, colorA_t((sp.dSdV.x + 1.f) * .5f, (sp.dSdV.y + 1.f) * .5f, (sp.dSdV.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_NU, colorA_t((sp.NU.x + 1.f) * .5f, (sp.NU.y + 1.f) * .5f, (sp.NU.z + 1.f) * .5f, 1.f));
-	colorPasses.probe_set(PASS_YAF_DEBUG_NV, colorA_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_UV, colorA_t(sp.U, sp.V, 0.f, 1.f));
+	colorPasses.probe_set(PASS_INT_NORMAL_SMOOTH, colorA_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_NORMAL_GEOM, colorA_t((sp.Ng.x + 1.f) * .5f, (sp.Ng.y + 1.f) * .5f, (sp.Ng.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_DPDU, colorA_t((sp.dPdU.x + 1.f) * .5f, (sp.dPdU.y + 1.f) * .5f, (sp.dPdU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_DPDV, colorA_t((sp.dPdV.x + 1.f) * .5f, (sp.dPdV.y + 1.f) * .5f, (sp.dPdV.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_DSDU, colorA_t((sp.dSdU.x + 1.f) * .5f, (sp.dSdU.y + 1.f) * .5f, (sp.dSdU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_DSDV, colorA_t((sp.dSdV.x + 1.f) * .5f, (sp.dSdV.y + 1.f) * .5f, (sp.dSdV.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_NU, colorA_t((sp.NU.x + 1.f) * .5f, (sp.NU.y + 1.f) * .5f, (sp.NU.z + 1.f) * .5f, 1.f));
+	colorPasses.probe_set(PASS_INT_DEBUG_NV, colorA_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f, 1.f));
 
-	if(colorPasses.enabled(PASS_YAF_REFLECT_ALL))
+	if(colorPasses.enabled(PASS_INT_REFLECT_ALL))
     {
-        colorPasses(PASS_YAF_REFLECT_ALL) = colorPasses(PASS_YAF_REFLECT_PERFECT) + colorPasses(PASS_YAF_GLOSSY) + colorPasses(PASS_YAF_GLOSSY_INDIRECT);
+        colorPasses(PASS_INT_REFLECT_ALL) = colorPasses(PASS_INT_REFLECT_PERFECT) + colorPasses(PASS_INT_GLOSSY) + colorPasses(PASS_INT_GLOSSY_INDIRECT);
     }
     
-	if(colorPasses.enabled(PASS_YAF_REFRACT_ALL))
+	if(colorPasses.enabled(PASS_INT_REFRACT_ALL))
     {
-        colorPasses(PASS_YAF_REFRACT_ALL) = colorPasses(PASS_YAF_REFRACT_PERFECT) + colorPasses(PASS_YAF_TRANS) + colorPasses(PASS_YAF_TRANS_INDIRECT);
+        colorPasses(PASS_INT_REFRACT_ALL) = colorPasses(PASS_INT_REFRACT_PERFECT) + colorPasses(PASS_INT_TRANS) + colorPasses(PASS_INT_TRANS_INDIRECT);
     }
         
-    if(colorPasses.enabled(PASS_YAF_INDIRECT_ALL))
+    if(colorPasses.enabled(PASS_INT_INDIRECT_ALL))
     {
-        colorPasses(PASS_YAF_INDIRECT_ALL) = colorPasses(PASS_YAF_INDIRECT) + colorPasses(PASS_YAF_DIFFUSE_INDIRECT);
+        colorPasses(PASS_INT_INDIRECT_ALL) = colorPasses(PASS_INT_INDIRECT) + colorPasses(PASS_INT_DIFFUSE_INDIRECT);
     }
 
-	colorPasses.probe_set(PASS_YAF_DIFFUSE_COLOR, sp.material->getDiffuseColor(state));
-	colorPasses.probe_set(PASS_YAF_GLOSSY_COLOR, sp.material->getGlossyColor(state));
-	colorPasses.probe_set(PASS_YAF_TRANS_COLOR, sp.material->getTransColor(state));
-	colorPasses.probe_set(PASS_YAF_SUBSURFACE_COLOR, sp.material->getSubSurfaceColor(state));
+	colorPasses.probe_set(PASS_INT_DIFFUSE_COLOR, sp.material->getDiffuseColor(state));
+	colorPasses.probe_set(PASS_INT_GLOSSY_COLOR, sp.material->getGlossyColor(state));
+	colorPasses.probe_set(PASS_INT_TRANS_COLOR, sp.material->getTransColor(state));
+	colorPasses.probe_set(PASS_INT_SUBSURFACE_COLOR, sp.material->getSubSurfaceColor(state));
 
-	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_ABS, sp.object->getAbsObjectIndexColor());
-	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_NORM, sp.object->getNormObjectIndexColor());
-	colorPasses.probe_set(PASS_YAF_OBJ_INDEX_AUTO, sp.object->getAutoObjectIndexColor());
+	colorPasses.probe_set(PASS_INT_OBJ_INDEX_ABS, sp.object->getAbsObjectIndexColor());
+	colorPasses.probe_set(PASS_INT_OBJ_INDEX_NORM, sp.object->getNormObjectIndexColor());
+	colorPasses.probe_set(PASS_INT_OBJ_INDEX_AUTO, sp.object->getAutoObjectIndexColor());
 	
-	colorPasses.probe_set(PASS_YAF_MAT_INDEX_ABS, sp.material->getAbsMaterialIndexColor());
-	colorPasses.probe_set(PASS_YAF_MAT_INDEX_NORM, sp.material->getNormMaterialIndexColor());
-	colorPasses.probe_set(PASS_YAF_MAT_INDEX_AUTO, sp.material->getAutoMaterialIndexColor());
+	colorPasses.probe_set(PASS_INT_MAT_INDEX_ABS, sp.material->getAbsMaterialIndexColor());
+	colorPasses.probe_set(PASS_INT_MAT_INDEX_NORM, sp.material->getNormMaterialIndexColor());
+	colorPasses.probe_set(PASS_INT_MAT_INDEX_AUTO, sp.material->getAutoMaterialIndexColor());
 	
-	if(colorPasses.enabled(PASS_YAF_OBJ_INDEX_MASK))
+	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK))
 	{
-        if(sp.object->getAbsObjectIndex() == colorPasses.pass_mask_obj_index) colorPasses(PASS_YAF_OBJ_INDEX_MASK) = colorA_t(1.f);
+        if(sp.object->getAbsObjectIndex() == colorPasses.get_pass_mask_obj_index()) colorPasses(PASS_INT_OBJ_INDEX_MASK) = colorA_t(1.f);
     }
 
-	if(colorPasses.enabled(PASS_YAF_OBJ_INDEX_MASK_ALL))
+	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_ALL))
 	{
-        colorPasses(PASS_YAF_OBJ_INDEX_MASK_ALL) = colorPasses(PASS_YAF_OBJ_INDEX_MASK) + colorPasses(PASS_YAF_OBJ_INDEX_MASK_SHADOW);
+        colorPasses(PASS_INT_OBJ_INDEX_MASK_ALL) = colorPasses(PASS_INT_OBJ_INDEX_MASK) + colorPasses(PASS_INT_OBJ_INDEX_MASK_SHADOW);
 	}
 
-	if(colorPasses.enabled(PASS_YAF_MAT_INDEX_MASK))
+	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK))
 	{
-        if(sp.material->getAbsMaterialIndex() == colorPasses.pass_mask_mat_index) colorPasses(PASS_YAF_MAT_INDEX_MASK) = colorA_t(1.f);
+        if(sp.material->getAbsMaterialIndex() == colorPasses.get_pass_mask_mat_index()) colorPasses(PASS_INT_MAT_INDEX_MASK) = colorA_t(1.f);
 	}
 
-	if(colorPasses.enabled(PASS_YAF_MAT_INDEX_MASK_ALL))
+	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_ALL))
 	{
-        colorPasses(PASS_YAF_MAT_INDEX_MASK_ALL) = colorPasses(PASS_YAF_MAT_INDEX_MASK) + colorPasses(PASS_YAF_MAT_INDEX_MASK_SHADOW);
+        colorPasses(PASS_INT_MAT_INDEX_MASK_ALL) = colorPasses(PASS_INT_MAT_INDEX_MASK) + colorPasses(PASS_INT_MAT_INDEX_MASK_SHADOW);
 	}
 }
 

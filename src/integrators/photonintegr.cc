@@ -624,7 +624,7 @@ bool photonIntegrator_t::preprocess()
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorIntPasses_t &colorPasses) const
+color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const
 {
 	color_t pathCol(0.0);
 	void *first_udat = state.userdata;
@@ -634,7 +634,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	color_t vcol(0.f);
 	float W = 0.f;
 
-	colorIntPasses_t tmpColorPasses;
+	colorPasses_t tmpColorPasses(imageFilm->get_RenderPasses());
 	
 	int nSampl = (int) ceilf(std::max(1, nPaths/state.rayDivision)*AA_indirect_sample_multiplier);
 	for(int i=0; i<nSampl; ++i)
@@ -770,7 +770,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	return pathCol / (float)nSampl;
 }
 
-colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
+colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	static int _nMax=0;
 	static int calls=0;
@@ -800,7 +800,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
 		
-		if(isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		if(isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
 		state.includeLights = false;
 		
@@ -814,15 +814,15 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			}
 			else
 			{
-				if(state.raylevel == 0 && colorPasses.enabled(PASS_YAF_RADIANCE))
+				if(state.raylevel == 0 && colorPasses.enabled(PASS_INT_RADIANCE))
 				{
 					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 					const photon_t *nearest = radianceMap.findNearest(sp.P, N, lookupRad);
-					if(nearest) colorPasses(PASS_YAF_RADIANCE) = nearest->color();
+					if(nearest) colorPasses(PASS_INT_RADIANCE) = nearest->color();
 				}
 				
 				// contribution of light emitting surfaces
-				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{
@@ -832,9 +832,9 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 					{
 						color_t tmpCol = finalGathering(state, sp, wo, colorPasses);
 						tmpCol.clampProportionalRGB(AA_clamp_indirect);
-						col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, tmpCol, state.raylevel == 0);
+						col += colorPasses.probe_set(PASS_INT_DIFFUSE_INDIRECT, tmpCol, state.raylevel == 0);
 					}
-					else col += colorPasses.probe_set(PASS_YAF_DIFFUSE_INDIRECT, finalGathering(state, sp, wo, colorPasses), state.raylevel == 0);
+					else col += colorPasses.probe_set(PASS_INT_DIFFUSE_INDIRECT, finalGathering(state, sp, wo, colorPasses), state.raylevel == 0);
 				}
 			}
 		}
@@ -848,14 +848,14 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			}
 			else
 			{
-				if(state.raylevel == 0 && colorPasses.enabled(PASS_YAF_RADIANCE))
+				if(state.raylevel == 0 && colorPasses.enabled(PASS_INT_RADIANCE))
 				{
 					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 					const photon_t *nearest = radianceMap.findNearest(sp.P, N, lookupRad);
-					if(nearest) colorPasses(PASS_YAF_RADIANCE) = nearest->color();
+					if(nearest) colorPasses(PASS_INT_RADIANCE) = nearest->color();
 				}
 
-				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{
@@ -879,7 +879,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 						vector3d_t pdir = gathered[i].photon->direction();
 						color_t surfCol = material->eval(state, sp, wo, pdir, BSDF_DIFFUSE);
 
-						col += colorPasses.probe_add(PASS_YAF_DIFFUSE_INDIRECT, surfCol * scale * gathered[i].photon->color(), state.raylevel == 0);
+						col += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * scale * gathered[i].photon->color(), state.raylevel == 0);
 					}
 				}
 			}
@@ -892,25 +892,25 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			{
 				color_t tmpCol = estimateCausticPhotons(state, sp, wo);
 				tmpCol.clampProportionalRGB(AA_clamp_indirect);
-				col += colorPasses.probe_set(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);
+				col += colorPasses.probe_set(PASS_INT_INDIRECT, tmpCol, state.raylevel == 0);
 			}
-			else col += colorPasses.probe_set(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+			else col += colorPasses.probe_set(PASS_INT_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 		}
 		
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			
-			if(colorPasses.enabled(PASS_YAF_AO))
+			if(colorPasses.enabled(PASS_INT_AO))
 			{
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
 			}
 
-			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 		
@@ -925,7 +925,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 	
@@ -937,8 +937,8 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
 
-	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
-	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 		
 	col = (col * colVolTransmittance) + colVolIntegration;
 	

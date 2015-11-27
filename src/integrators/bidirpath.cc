@@ -119,7 +119,7 @@ public:
 	virtual ~biDirIntegrator_t();
 	virtual bool preprocess();
 	virtual void cleanup();
-	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const;
+	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
@@ -266,7 +266,7 @@ void biDirIntegrator_t::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
+colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	color_t col(0.f);
 	surfacePoint_t sp;
@@ -422,22 +422,22 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 			}
 		}
 		
-		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			
-			if(colorPasses.enabled(PASS_YAF_AO))
+			if(colorPasses.enabled(PASS_INT_AO))
 			{
 				BSDF_t bsdfs;
 				
 				sp.material->initBSDF(state, sp, bsdfs);
 
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
 			}
 
-			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 	}
@@ -445,7 +445,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 	
@@ -454,8 +454,8 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
 
-	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
-	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 	
 	col = (col * colVolTransmittance) + colVolIntegration;	
 	
