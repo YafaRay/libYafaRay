@@ -320,36 +320,18 @@ colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):passDefinitions
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
 	intPasses.reserve(PASS_INT_TOTAL_PASSES);
-	enabledIntPasses.reserve(PASS_INT_TOTAL_PASSES);
-	
-	//by default, if no passes are explicitally enabled, we create the Combined pass by default
-	enable_pass(PASS_INT_COMBINED);
-}
-        
-bool colorIntPasses_t::enabled(int pass) const
-{
-	if(pass <= get_highest_internal_pass_used()) return enabledIntPasses[pass];
-	
-	else return false;
-}
-        
-void colorIntPasses_t::enable_pass(int pass)
-{
-	if(enabled(pass)) return;
-	
-	if(pass > get_highest_internal_pass_used())
+	intPasses.push_back(init_color(PASS_INT_COMBINED));
+	for(std::vector<int>::iterator it = passDefinitions.intPasses.begin(); it != passDefinitions.intPasses.end(); ++it)
 	{
-		for(int idx = get_highest_internal_pass_used()+1; idx <= pass; ++idx)
-		{
-			intPasses.push_back(init_color(idx));
-								
-			if(idx == pass) enabledIntPasses.push_back(true);
-			else enabledIntPasses.push_back(false);
-		}
+		intPasses.push_back(init_color(passDefinitions.intPassTypeFromNumber(it - passDefinitions.intPasses.begin())));
 	}
-	enabledIntPasses[pass] = true;
 }
         
+bool colorIntPasses_t::enabled(int intPassType) const
+{
+	return std::binary_search(passDefinitions.intPasses.begin(), passDefinitions.intPasses.end(), intPassType);
+}
+                
 colorA_t& colorIntPasses_t::color(int pass)
 {
 	return intPasses[pass];

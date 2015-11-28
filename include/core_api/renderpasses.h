@@ -53,6 +53,8 @@ bool extPassCompare(const extPass_t& a, const extPass_t& b);
 
 class YAFRAYCORE_EXPORT renderPasses_t
 {
+	friend class colorIntPasses_t;
+
 	public:
 		renderPasses_t();
 		void generate_pass_maps();	//Generate text strings <-> pass type maps
@@ -88,7 +90,6 @@ class YAFRAYCORE_EXPORT colorIntPasses_t  //Internal YafaRay color passes genera
 	public:
 		colorIntPasses_t(renderPasses_t &renderPasses);
 		bool enabled(int pass) const;
-		void enable_pass(int pass);
 		colorA_t& color(int pass);
 		colorA_t& operator()(int pass);
 		void reset_colors();
@@ -113,7 +114,6 @@ class YAFRAYCORE_EXPORT colorIntPasses_t  //Internal YafaRay color passes genera
 		bool pass_mask_only;	//False=rendered image is masked, True=only the mask is shown without rendered image
     
     protected:
-		std::vector <bool> enabledIntPasses;
 		std::vector <colorA_t> intPasses;
 		renderPasses_t &passDefinitions;
 };
