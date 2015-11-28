@@ -274,7 +274,7 @@ public:
 				tilesPasses.at(view)[idx]->tileType = renderPasses.tileType(idx);
 				
 				std::stringstream extPassName;
-				extPassName << renderPasses.extPassTypeString(idx);
+				extPassName << renderPasses.extPassTypeStringFromNumber(idx);
 				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);
 				
 				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
@@ -315,7 +315,7 @@ public:
 			tilesPasses.at(numView)[idx]->tileType = renderPasses.tileType(idx);
 			
 			std::stringstream extPassName;
-			extPassName << renderPasses.extPassTypeString(idx);
+			extPassName << renderPasses.extPassTypeStringFromNumber(idx);
 			PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
 			
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);

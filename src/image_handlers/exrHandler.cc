@@ -156,7 +156,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     
     for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
     {
-        std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.extPassType(idx));
+        std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.extPassTypeFromNumber(idx));
         
         if(extPassMapIterator != renderPasses.extPassMapIntString.end())
         {

@@ -146,41 +146,133 @@ void renderPasses_t::generate_pass_maps()
 
 void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::string& sInternalPass)
 {
-	//This function adds a new external pass, linked to a certain internal pass, based on the text strings indicated in the parameters.
-	
-	//Convert the string into the external pass type using the pass type maps
-	std::map<std::string, int>::const_iterator extPassMapIterator = extPassMapStringInt.find(sExternalPass);
-	if(extPassMapIterator == extPassMapStringInt.end())
+	int extPassType = extPassTypeFromString(sExternalPass);	
+	if(extPassType == -1)
 	{
 		Y_ERROR << "Render Passes: error creating external pass \"" << sExternalPass << "\" (linked to internal pass \"" << sInternalPass << "\")" << yendl;
 		return;
 	}
 	
-	//Convert the string into the internal pass type using the pass type maps
-	std::map<std::string, int>::const_iterator intPassMapIterator = intPassMapStringInt.find(sInternalPass);
-	if(intPassMapIterator == intPassMapStringInt.end())
+	int intPassType = intPassTypeFromString(sInternalPass);	
+	if(intPassType == -1)
 	{
 		Y_ERROR << "Render Passes: error creating internal pass \"" << sInternalPass << "\" (linked to external pass \"" << sExternalPass << "\")" << yendl;
 		return;
 	}
+
+/*	if(std::binary_search(extPasses.begin(), extPasses.end(), extPassType, extPassCompare))
+	{
+		Y_WARNING << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
+		return;
+	} */
 	
-	extPasses.push_back(extPass_t(extPassMapIterator->second, intPassMapIterator->second));
+	extPasses.push_back(extPass_t(extPassType, intPassType));
 	
-	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassMapIterator->second << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassMapIterator->second << "])" << yendl;
+	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
+    
+    intPass_add(intPassType);
     
     //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
+    
+        //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
+    switch(intPassType)
+    {
+        case PASS_INT_REFLECT_ALL:
+            intPass_add(PASS_INT_REFLECT_PERFECT, true);
+            intPass_add(PASS_INT_GLOSSY, true);
+            intPass_add(PASS_INT_GLOSSY_INDIRECT, true);
+            break;
+            
+        case PASS_INT_REFRACT_ALL:
+            intPass_add(PASS_INT_REFRACT_PERFECT, true);
+            intPass_add(PASS_INT_TRANS, true);
+            intPass_add(PASS_INT_TRANS_INDIRECT, true);
+            break;
+
+        case PASS_INT_INDIRECT_ALL:
+            intPass_add(PASS_INT_INDIRECT, true);
+            intPass_add(PASS_INT_DIFFUSE_INDIRECT, true);
+            break;
+
+        case PASS_INT_OBJ_INDEX_MASK_ALL:
+            intPass_add(PASS_INT_OBJ_INDEX_MASK, true);
+            intPass_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, true);
+            break;
+
+        case PASS_INT_MAT_INDEX_MASK_ALL:
+            intPass_add(PASS_INT_MAT_INDEX_MASK, true);
+            intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW, true);
+            break;
+    }
+
+}
+
+int renderPasses_t::intPassNumberFromType(int intPassType) const
+{
+	std::vector<int> iterator = std::lower_bound(intPasses.begin(), intPasses.end(), intPassType);
+}
+	
+
+void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_message /*=false*/)
+{
+	if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
+	{
+		if(!hide_duplicate_warning_message) Y_WARNING << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
+		return;
+	}
+	intPasses.push_back(intPassType);
+	std::sort(intPasses.begin(), intPasses.end());
+	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
 
 size_t renderPasses_t::numExtPasses() const { return extPasses.size(); }
         
-int renderPasses_t::extPassType(size_t pass_seq) const { return extPasses[pass_seq].extPassType; }
+int renderPasses_t::extPassTypeFromNumber(int extPassNumber) const { return extPasses[extPassNumber].extPassType; }
+int renderPasses_t::intPassTypeFromNumber(int intPassNumber) const { return intPasses[intPassNumber]; }
 	
-std::string renderPasses_t::extPassTypeString(size_t pass_seq) const { return extPassMapIntString.find(extPasses[pass_seq].extPassType)->second; }
+std::string renderPasses_t::extPassTypeStringFromNumber(int extPassNumber) const
+{
+	std::map<int, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPasses[extPassNumber].extPassType);
+	if(map_iterator == extPassMapIntString.end()) return "not found";
+	else return map_iterator->second;
+}
+
+std::string renderPasses_t::extPassTypeStringFromType(int extPassType) const
+{
+	std::map<int, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPassType);
+	if(map_iterator == extPassMapIntString.end()) return "not found";
+	else return map_iterator->second;
+}
+
+std::string renderPasses_t::intPassTypeStringFromType(int intPassType) const
+{
+	std::map<int, std::string>::const_iterator map_iterator = intPassMapIntString.find(intPassType);
+	if(map_iterator == intPassMapIntString.end()) return "not found";
+	else return map_iterator->second;
+}
+
+int renderPasses_t::extPassTypeFromString(std::string extPassTypeString) const
+{
+	std::map<std::string, int>::const_iterator map_iterator = extPassMapStringInt.find(extPassTypeString);
+	if(map_iterator == extPassMapStringInt.end()) return -1;	//-1 is returned if the string cannot be found
+	else return map_iterator->second;
+}
+
+int renderPasses_t::intPassTypeFromString(std::string intPassTypeString) const
+{
+	std::map<std::string, int>::const_iterator map_iterator = intPassMapStringInt.find(intPassTypeString);
+	if(map_iterator == intPassMapStringInt.end()) return -1;	//-1 is returned if the string cannot be found
+	else return map_iterator->second;
+}
         
-int renderPasses_t::tileType(size_t pass_seq) const { return extPasses[pass_seq].tileType; }
+int renderPasses_t::tileType(int extPassNumber) const { return extPasses[extPassNumber].tileType; }
 
-int renderPasses_t::intPassType(int pass) const { return extPasses[pass].intPassType; }
+int renderPasses_t::intPassType(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
 
+bool extPassCompare(const extPass_t& a, const extPass_t& b)
+{
+	return (a.extPassType < b.extPassType);
+}
 
 
 ////////////////////////////
@@ -201,6 +293,11 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 		case PASS_EXT_MAT_INDEX:	tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
 		default: 					tileType = PASS_EXT_TILE_3_RGB;			break;
 	}
+}
+
+bool extPass_t::operator < (const extPass_t& r)
+{
+	return (this->extPassType < r.extPassType);
 }
 
 
