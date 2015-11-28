@@ -67,6 +67,7 @@ class YAFRAYCORE_EXPORT renderPasses_t
 		std::string intPassTypeStringFromType(int intPassType) const;
 		int extPassTypeFromString(std::string extPassTypeString) const;
 		int intPassTypeFromString(std::string intPassTypeString) const;
+		int extPassNumberFromType(int extPassType) const;
 		int intPassNumberFromType(int intPassType) const;
 		
         int tileType(int extPassNumber) const;

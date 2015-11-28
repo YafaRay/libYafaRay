@@ -164,7 +164,7 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 	{
 		Y_WARNING << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
-	} */
+	} */  //FIXME DAVID
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
 	
@@ -206,12 +206,6 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
     }
 
 }
-
-int renderPasses_t::intPassNumberFromType(int intPassType) const
-{
-	std::vector<int> iterator = std::lower_bound(intPasses.begin(), intPasses.end(), intPassType);
-}
-	
 
 void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_message /*=false*/)
 {
@@ -268,6 +262,22 @@ int renderPasses_t::intPassTypeFromString(std::string intPassTypeString) const
 int renderPasses_t::tileType(int extPassNumber) const { return extPasses[extPassNumber].tileType; }
 
 int renderPasses_t::intPassType(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
+
+
+/*int renderPasses_t::extPassNumberFromType(int extPassType) const
+{
+	std::vector<int>::const_iterator low = std::lower_bound(extPasses.begin(), extPasses.end(), extPassType);
+	
+	return (low - extPasses.begin());
+}*/ //FIXME DAVID
+
+int renderPasses_t::intPassNumberFromType(int intPassType) const
+{
+	std::vector<int>::const_iterator low = std::lower_bound(intPasses.begin(), intPasses.end(), intPassType);
+	
+	return (low - intPasses.begin());
+}
+	
 
 bool extPassCompare(const extPass_t& a, const extPass_t& b)
 {
