@@ -23,27 +23,19 @@
 
 __BEGIN_YAFRAY
 
+
+////////////////////////////
+// --  renderPasses_t  -- //
+////////////////////////////
+
 renderPasses_t::renderPasses_t()
 { 
 	extPasses.reserve(PASS_EXT_TOTAL_PASSES);
 
 	extPasses.push_back(extPass_t(PASS_EXT_COMBINED, PASS_INT_COMBINED));	//by default we will have an external Combined pass
 	
-	this->generate_pass_maps();
+	generate_pass_maps();
 }
-
-       
-size_t renderPasses_t::numExtPasses() const { return extPasses.size(); }
-        
-int renderPasses_t::externalPassType(size_t pass_seq) const { return extPasses[pass_seq].externalPassType; }
-	
-std::string renderPasses_t::externalPassTypeString(size_t pass_seq) const { return extPassMapIntString.find(extPasses[pass_seq].externalPassType)->second; }
-        
-int renderPasses_t::externalTyleType(size_t pass_seq) const { return extPasses[pass_seq].externalTyleType; }
-
-int renderPasses_t::internalYafPassType(externalPassTypes_t pass) const { return extPasses[pass].internalYafPassType; }
-        
-int renderPasses_t::internalYafPassType(int pass) const { return extPasses[pass].internalYafPassType; }
 
 void renderPasses_t::generate_pass_maps()
 {
@@ -152,33 +144,50 @@ void renderPasses_t::generate_pass_maps()
 	}
 }
 
-void renderPasses_t::pass_add(const std::string& sExternalPass, const std::string& sInternalPass)
+void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::string& sInternalPass)
 {
 	//This function adds a new external pass, linked to a certain internal pass, based on the text strings indicated in the parameters.
 	
-	//By default, in case the strings are not found in the maps, set the types to "disabled"
-	int extPassType = PASS_EXT_DISABLED;
-	int intPassType = PASS_INT_DISABLED;
-	
 	//Convert the string into the external pass type using the pass type maps
 	std::map<std::string, int>::const_iterator extPassMapIterator = extPassMapStringInt.find(sExternalPass);
-	if(extPassMapIterator != extPassMapStringInt.end()) extPassType = extPassMapIterator->second;
+	if(extPassMapIterator == extPassMapStringInt.end())
+	{
+		Y_ERROR << "Render Passes: error creating external pass \"" << sExternalPass << "\" (linked to internal pass \"" << sInternalPass << "\")" << yendl;
+		return;
+	}
 	
 	//Convert the string into the internal pass type using the pass type maps
 	std::map<std::string, int>::const_iterator intPassMapIterator = intPassMapStringInt.find(sInternalPass);
-	if(intPassMapIterator != intPassMapStringInt.end()) intPassType = intPassMapIterator->second;
-	
-	if(extPassType != PASS_EXT_COMBINED && extPassType != PASS_EXT_DISABLED && intPassType != PASS_INT_DISABLED)
+	if(intPassMapIterator == intPassMapStringInt.end())
 	{
-		//If both external and internal pass types exist and are not disabled, then add the External Pass with the appropiate link to the associated internal pass
-		//Also, don't add another external Combined pass, as it's added by default, to avoid duplication of the Combined pass.
-		extPasses.push_back(extPass_t(extPassType, intPassType));
+		Y_ERROR << "Render Passes: error creating internal pass \"" << sInternalPass << "\" (linked to external pass \"" << sExternalPass << "\")" << yendl;
+		return;
 	}
+	
+	extPasses.push_back(extPass_t(extPassMapIterator->second, intPassMapIterator->second));
+	
+	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassMapIterator->second << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassMapIterator->second << "])" << yendl;
     
     //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
 }
 
+size_t renderPasses_t::numExtPasses() const { return extPasses.size(); }
+        
+int renderPasses_t::externalPassType(size_t pass_seq) const { return extPasses[pass_seq].externalPassType; }
+	
+std::string renderPasses_t::externalPassTypeString(size_t pass_seq) const { return extPassMapIntString.find(extPasses[pass_seq].externalPassType)->second; }
+        
+int renderPasses_t::externalTyleType(size_t pass_seq) const { return extPasses[pass_seq].externalTyleType; }
 
+int renderPasses_t::internalYafPassType(externalPassTypes_t pass) const { return extPasses[pass].internalYafPassType; }
+        
+int renderPasses_t::internalYafPassType(int pass) const { return extPasses[pass].internalYafPassType; }
+
+
+
+////////////////////////////
+// --    extPass_t     -- //
+////////////////////////////
 
 extPass_t::extPass_t(int extPassType, int intPassType):
 			externalPassType(extPassType), internalYafPassType(intPassType)
@@ -194,17 +203,16 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 		case PASS_EXT_MAT_INDEX:	externalTyleType = PASS_EXT_TILE_1_GRAYSCALE;	break;
 		default: 					externalTyleType = PASS_EXT_TILE_3_RGB;			break;
 	}
-	
-	enabled = ((extPassType == PASS_EXT_DISABLED || extPassType >= PASS_EXT_TOTAL_PASSES) ? false : true);
 }
 
 
 
+////////////////////////////
+// -- colorIntPasses_t -- //
+////////////////////////////
 
 colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):highestInternalPassUsed(PASS_INT_COMBINED), passDefinitions(renderPasses)
 {
-	highestInternalPassUsed = PASS_INT_DISABLED;
-	
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
 	intPasses.reserve(PASS_INT_TOTAL_PASSES);
 	enabledIntPasses.reserve(PASS_INT_TOTAL_PASSES);
@@ -222,7 +230,7 @@ bool colorIntPasses_t::enabled(int pass) const
         
 void colorIntPasses_t::enable_pass(int pass)
 {
-	if(enabled(pass) || pass == PASS_INT_DISABLED) return;
+	if(enabled(pass)) return;
 	
 	if(pass > highestInternalPassUsed)
 	{
