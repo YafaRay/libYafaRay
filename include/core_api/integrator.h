@@ -27,6 +27,7 @@
 #include "scene.h"
 #include <yafraycore/monitor.h>
 #include <string>
+#include <core_api/renderpasses.h>
 
 __BEGIN_YAFRAY
 

@@ -679,8 +679,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	int AA_variance_pixels = 0;
 	float AA_clamp_samples = 0.f;
 	float AA_clamp_indirect = 0.f;
-	bool z_chan = false;
-	bool norm_z_chan = true;
 	bool drawParams = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;

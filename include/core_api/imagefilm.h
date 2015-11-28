@@ -32,6 +32,7 @@
 #include <core_api/environment.h>
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
+#include <core_api/renderpasses.h>
 
 #if HAVE_FREETYPE
 struct FT_Bitmap_;

@@ -27,6 +27,7 @@
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/mcqmc.h>
+#include <core_api/renderpasses.h>
 
 #ifdef __clang__
 #define inline  // aka inline removal

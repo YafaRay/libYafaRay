@@ -23,6 +23,7 @@ namespace std
 #include <yafraycore/monitor.h>
 #include <core_api/output.h>
 #include <interface/yafrayinterface.h>
+#include <core_api/renderpasses.h>
 
 struct yafTilePixel_t
 {
@@ -560,7 +561,7 @@ namespace yafaray
 			virtual ~colorOutput_t() {};
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t &renderPasses)=0;
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses)=0;
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses)=0;
 			virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
 	};
 
@@ -597,7 +598,7 @@ namespace yafaray
 			virtual ~imageOutput_t();
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			virtual void flush(int numView, const renderPasses_t &renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // not used by images... yet
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses) {}; // not used by images... yet
 		private:
 			imageHandler_t *image;
 			std::string fname;
@@ -611,7 +612,7 @@ namespace yafaray
 			memoryIO_t(int resx, int resy, float* iMem);
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			void flush(int numView, const renderPasses_t &renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses) {}; // no tiled file format used...yet
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t &renderPasses) {}; // no tiled file format used...yet
 			virtual ~memoryIO_t();
 		protected:
 			int sizex, sizey;

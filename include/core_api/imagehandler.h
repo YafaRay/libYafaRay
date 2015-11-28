@@ -26,6 +26,7 @@
 #include "yafray_constants.h"
 #include <utilities/image_buffers.h>
 #include <string>
+#include <core_api/renderpasses.h>
 
 __BEGIN_YAFRAY
 

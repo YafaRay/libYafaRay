@@ -21,6 +21,7 @@
  *      
  */
 
+#include <core_api/renderpasses.h>
 #include <yafraycore/imageOutput.h>
 #include <sstream>
 #include <iomanip>
