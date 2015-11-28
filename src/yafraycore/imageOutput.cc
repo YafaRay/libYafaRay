@@ -104,7 +104,7 @@ void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
         {
             for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
             {
-                std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.externalPassType(idx));
+                std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.extPassType(idx));
                 
                 if(numView == 0 && idx == PASS_EXT_COMBINED) image->saveToFile(fname, idx);
 		else if(extPassMapIterator != renderPasses.extPassMapIntString.end())

@@ -173,15 +173,13 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 
 size_t renderPasses_t::numExtPasses() const { return extPasses.size(); }
         
-int renderPasses_t::externalPassType(size_t pass_seq) const { return extPasses[pass_seq].externalPassType; }
+int renderPasses_t::extPassType(size_t pass_seq) const { return extPasses[pass_seq].extPassType; }
 	
-std::string renderPasses_t::externalPassTypeString(size_t pass_seq) const { return extPassMapIntString.find(extPasses[pass_seq].externalPassType)->second; }
+std::string renderPasses_t::extPassTypeString(size_t pass_seq) const { return extPassMapIntString.find(extPasses[pass_seq].extPassType)->second; }
         
-int renderPasses_t::externalTyleType(size_t pass_seq) const { return extPasses[pass_seq].externalTyleType; }
+int renderPasses_t::tileType(size_t pass_seq) const { return extPasses[pass_seq].tileType; }
 
-int renderPasses_t::internalYafPassType(externalPassTypes_t pass) const { return extPasses[pass].internalYafPassType; }
-        
-int renderPasses_t::internalYafPassType(int pass) const { return extPasses[pass].internalYafPassType; }
+int renderPasses_t::intPassType(int pass) const { return extPasses[pass].intPassType; }
 
 
 
@@ -190,18 +188,18 @@ int renderPasses_t::internalYafPassType(int pass) const { return extPasses[pass]
 ////////////////////////////
 
 extPass_t::extPass_t(int extPassType, int intPassType):
-			externalPassType(extPassType), internalYafPassType(intPassType)
+			extPassType(extPassType), intPassType(intPassType)
 { 
 	switch(extPassType)  //These are the tyle types needed for Blender
 	{
-		case PASS_EXT_COMBINED:		externalTyleType = PASS_EXT_TILE_4_RGBA;		break;
-		case PASS_EXT_Z_DEPTH:		externalTyleType = PASS_EXT_TILE_1_GRAYSCALE;	break;
-		case PASS_EXT_VECTOR:		externalTyleType = PASS_EXT_TILE_4_RGBA;		break;
-		case PASS_EXT_COLOR:		externalTyleType = PASS_EXT_TILE_4_RGBA;		break;
-		case PASS_EXT_MIST:			externalTyleType = PASS_EXT_TILE_1_GRAYSCALE;	break;
-		case PASS_EXT_OBJ_INDEX:	externalTyleType = PASS_EXT_TILE_1_GRAYSCALE;	break;
-		case PASS_EXT_MAT_INDEX:	externalTyleType = PASS_EXT_TILE_1_GRAYSCALE;	break;
-		default: 					externalTyleType = PASS_EXT_TILE_3_RGB;			break;
+		case PASS_EXT_COMBINED:		tileType = PASS_EXT_TILE_4_RGBA;		break;
+		case PASS_EXT_Z_DEPTH:		tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
+		case PASS_EXT_VECTOR:		tileType = PASS_EXT_TILE_4_RGBA;		break;
+		case PASS_EXT_COLOR:		tileType = PASS_EXT_TILE_4_RGBA;		break;
+		case PASS_EXT_MIST:			tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
+		case PASS_EXT_OBJ_INDEX:	tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
+		case PASS_EXT_MAT_INDEX:	tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
+		default: 					tileType = PASS_EXT_TILE_3_RGB;			break;
 	}
 }
 
@@ -211,7 +209,7 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 // -- colorIntPasses_t -- //
 ////////////////////////////
 
-colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):highestInternalPassUsed(PASS_INT_COMBINED), passDefinitions(renderPasses)
+colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):passDefinitions(renderPasses)
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
 	intPasses.reserve(PASS_INT_TOTAL_PASSES);
@@ -223,7 +221,7 @@ colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):highestInternal
         
 bool colorIntPasses_t::enabled(int pass) const
 {
-	if(pass <= highestInternalPassUsed) return enabledIntPasses[pass];
+	if(pass <= get_highest_internal_pass_used()) return enabledIntPasses[pass];
 	
 	else return false;
 }
@@ -232,17 +230,15 @@ void colorIntPasses_t::enable_pass(int pass)
 {
 	if(enabled(pass)) return;
 	
-	if(pass > highestInternalPassUsed)
+	if(pass > get_highest_internal_pass_used())
 	{
-		for(int idx = highestInternalPassUsed+1; idx <= pass; ++idx)
+		for(int idx = get_highest_internal_pass_used()+1; idx <= pass; ++idx)
 		{
 			intPasses.push_back(init_color(idx));
 								
 			if(idx == pass) enabledIntPasses.push_back(true);
 			else enabledIntPasses.push_back(false);
 		}
-		
-		highestInternalPassUsed = pass;
 	}
 	enabledIntPasses[pass] = true;
 }
@@ -259,7 +255,7 @@ colorA_t& colorIntPasses_t::operator()(int pass)
 
 void colorIntPasses_t::reset_colors()
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) = init_color(idx);
 	}
@@ -282,7 +278,7 @@ colorA_t colorIntPasses_t::init_color(int pass)
 
 void colorIntPasses_t::multiply_colors(float factor)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) *= factor;
 	}
@@ -341,7 +337,7 @@ colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorIntPasses_t& c
 
 colorIntPasses_t & colorIntPasses_t::operator *=(CFLOAT f)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) *= f;
 	}
@@ -350,7 +346,7 @@ colorIntPasses_t & colorIntPasses_t::operator *=(CFLOAT f)
 
 colorIntPasses_t & colorIntPasses_t::operator *=(color_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) *= a;
 	}
@@ -359,7 +355,7 @@ colorIntPasses_t & colorIntPasses_t::operator *=(color_t &a)
 
 colorIntPasses_t & colorIntPasses_t::operator *=(colorA_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) *= a;
 	}
@@ -368,14 +364,14 @@ colorIntPasses_t & colorIntPasses_t::operator *=(colorA_t &a)
 
 colorIntPasses_t & colorIntPasses_t::operator +=(colorIntPasses_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
 	{
 		color(idx) += a.color(idx);
 	}
 	return *this;
 }
 
-int colorIntPasses_t::get_highest_internal_pass_used() const { return highestInternalPassUsed; }
+int colorIntPasses_t::get_highest_internal_pass_used() const { return intPasses.size(); }
 
 
 __END_YAFRAY

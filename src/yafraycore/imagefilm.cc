@@ -440,7 +440,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 			{
 				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                 
-				if(renderPasses.internalYafPassType(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses.intPassType(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -513,7 +513,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
 				else colExtPasses[idx] = colorA_t(0.f);
 				
-				if(renderPasses.internalYafPassType(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses.intPassType(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -602,7 +602,7 @@ void imageFilm_t::addSample(colorIntPasses_t &colorPasses, int x, int y, float d
 
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colorA_t col = colorPasses(renderPasses.internalYafPassType(idx));
+				colorA_t col = colorPasses(renderPasses.intPassType(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
@@ -610,7 +610,7 @@ void imageFilm_t::addSample(colorIntPasses_t &colorPasses, int x, int y, float d
 
 				if(premultAlpha) col.alphaPremultiply();
 
-				if(renderPasses.internalYafPassType(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses.intPassType(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}
