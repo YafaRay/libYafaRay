@@ -27,7 +27,7 @@ renderPasses_t::renderPasses_t()
 { 
 	extPasses.reserve(PASS_EXT_TOTAL_PASSES);
 
-	extPasses.push_back(extPass_t(PASS_EXT_COMBINED, PASS_YAF_COMBINED));	//by default we will have an external Combined pass
+	extPasses.push_back(extPass_t(PASS_EXT_COMBINED, PASS_INT_COMBINED));	//by default we will have an external Combined pass
 	
 	this->generate_pass_maps();
 }
@@ -88,62 +88,62 @@ void renderPasses_t::generate_pass_maps()
 
 	//Internal YafaRay Render passes - mapping String and Internal YafaRay Render passes
 	//IMPORTANT: the internal strings MUST MATCH the valid values for the pass properties in Blender Exporter
-	intPassMapStringInt["combined"] = PASS_YAF_COMBINED;
-	intPassMapStringInt["z-depth-norm"] = PASS_YAF_Z_DEPTH_NORM;
-	intPassMapStringInt["z-depth-abs"] = PASS_YAF_Z_DEPTH_ABS;
-	intPassMapStringInt["debug-normal-smooth"] = PASS_YAF_NORMAL_SMOOTH;
-	intPassMapStringInt["debug-normal-geom"] = PASS_YAF_NORMAL_GEOM;
-	intPassMapStringInt["adv-radiance"] = PASS_YAF_RADIANCE;
-	intPassMapStringInt["debug-uv"] = PASS_YAF_UV;
-	intPassMapStringInt["emit"] = PASS_YAF_EMIT;
-	intPassMapStringInt["mist"] = PASS_YAF_MIST;
-	intPassMapStringInt["diffuse"] = PASS_YAF_DIFFUSE;
-	intPassMapStringInt["diffuse-noshadow"] = PASS_YAF_DIFFUSE_NO_SHADOW;
-	intPassMapStringInt["ao"] = PASS_YAF_AO;
-	intPassMapStringInt["ao-clay"] = PASS_YAF_AO_CLAY;
-	intPassMapStringInt["env"] = PASS_YAF_ENV;
-	intPassMapStringInt["indirect"] = PASS_YAF_INDIRECT_ALL;
-	intPassMapStringInt["adv-indirect"] = PASS_YAF_INDIRECT;
-	intPassMapStringInt["shadow"] = PASS_YAF_SHADOW;
-	intPassMapStringInt["reflect"] = PASS_YAF_REFLECT_ALL;
-	intPassMapStringInt["refract"] = PASS_YAF_REFRACT_ALL;
-	intPassMapStringInt["adv-reflect"] = PASS_YAF_REFLECT_PERFECT;
-	intPassMapStringInt["adv-refract"] = PASS_YAF_REFRACT_PERFECT;
-	intPassMapStringInt["obj-index-abs"] = PASS_YAF_OBJ_INDEX_ABS;
-	intPassMapStringInt["obj-index-norm"] = PASS_YAF_OBJ_INDEX_NORM;
-	intPassMapStringInt["obj-index-auto"] = PASS_YAF_OBJ_INDEX_AUTO;
-	intPassMapStringInt["obj-index-mask"] = PASS_YAF_OBJ_INDEX_MASK;
-	intPassMapStringInt["obj-index-mask-shadow"] = PASS_YAF_OBJ_INDEX_MASK_SHADOW;
-	intPassMapStringInt["obj-index-mask-all"] = PASS_YAF_OBJ_INDEX_MASK_ALL;
-	intPassMapStringInt["mat-index-abs"] = PASS_YAF_MAT_INDEX_ABS;
-	intPassMapStringInt["mat-index-norm"] = PASS_YAF_MAT_INDEX_NORM;
-	intPassMapStringInt["mat-index-auto"] = PASS_YAF_MAT_INDEX_AUTO;
-	intPassMapStringInt["mat-index-mask"] = PASS_YAF_MAT_INDEX_MASK;
-	intPassMapStringInt["mat-index-mask-shadow"] = PASS_YAF_MAT_INDEX_MASK_SHADOW;
-	intPassMapStringInt["mat-index-mask-all"] = PASS_YAF_MAT_INDEX_MASK_ALL;
-	intPassMapStringInt["adv-diffuse-indirect"] = PASS_YAF_DIFFUSE_INDIRECT;
-	intPassMapStringInt["adv-diffuse-color"] = PASS_YAF_DIFFUSE_COLOR;
-	intPassMapStringInt["adv-glossy"] = PASS_YAF_GLOSSY;
-	intPassMapStringInt["adv-glossy-indirect"] = PASS_YAF_GLOSSY_INDIRECT;
-	intPassMapStringInt["adv-glossy-color"] = PASS_YAF_GLOSSY_COLOR;
-	intPassMapStringInt["adv-trans"] = PASS_YAF_TRANS;
-	intPassMapStringInt["adv-trans-indirect"] = PASS_YAF_TRANS_INDIRECT;
-	intPassMapStringInt["adv-trans-color"] = PASS_YAF_TRANS_COLOR;
-	intPassMapStringInt["adv-subsurface"] = PASS_YAF_SUBSURFACE;
-	intPassMapStringInt["adv-subsurface-indirect"] = PASS_YAF_SUBSURFACE_INDIRECT;
-	intPassMapStringInt["adv-subsurface-color"] = PASS_YAF_SUBSURFACE_COLOR;
-	intPassMapStringInt["debug-normal-smooth"] = PASS_YAF_NORMAL_SMOOTH;
-	intPassMapStringInt["debug-normal-geom"] = PASS_YAF_NORMAL_GEOM;
-	intPassMapStringInt["debug-nu"] = PASS_YAF_DEBUG_NU;
-	intPassMapStringInt["debug-nv"] = PASS_YAF_DEBUG_NV;
-	intPassMapStringInt["debug-dpdu"] = PASS_YAF_DEBUG_DPDU;
-	intPassMapStringInt["debug-dpdv"] = PASS_YAF_DEBUG_DPDV;
-	intPassMapStringInt["debug-dsdu"] = PASS_YAF_DEBUG_DSDU;
-	intPassMapStringInt["debug-dsdv"] = PASS_YAF_DEBUG_DSDV;
-	intPassMapStringInt["adv-surface-integration"] = PASS_YAF_SURFACE_INTEGRATION;
-	intPassMapStringInt["adv-volume-integration"] = PASS_YAF_VOLUME_INTEGRATION;
-	intPassMapStringInt["adv-volume-transmittance"] = PASS_YAF_VOLUME_TRANSMITTANCE;
-	intPassMapStringInt["debug-aa-samples"] = PASS_YAF_AA_SAMPLES;
+	intPassMapStringInt["combined"] = PASS_INT_COMBINED;
+	intPassMapStringInt["z-depth-norm"] = PASS_INT_Z_DEPTH_NORM;
+	intPassMapStringInt["z-depth-abs"] = PASS_INT_Z_DEPTH_ABS;
+	intPassMapStringInt["debug-normal-smooth"] = PASS_INT_NORMAL_SMOOTH;
+	intPassMapStringInt["debug-normal-geom"] = PASS_INT_NORMAL_GEOM;
+	intPassMapStringInt["adv-radiance"] = PASS_INT_RADIANCE;
+	intPassMapStringInt["debug-uv"] = PASS_INT_UV;
+	intPassMapStringInt["emit"] = PASS_INT_EMIT;
+	intPassMapStringInt["mist"] = PASS_INT_MIST;
+	intPassMapStringInt["diffuse"] = PASS_INT_DIFFUSE;
+	intPassMapStringInt["diffuse-noshadow"] = PASS_INT_DIFFUSE_NO_SHADOW;
+	intPassMapStringInt["ao"] = PASS_INT_AO;
+	intPassMapStringInt["ao-clay"] = PASS_INT_AO_CLAY;
+	intPassMapStringInt["env"] = PASS_INT_ENV;
+	intPassMapStringInt["indirect"] = PASS_INT_INDIRECT_ALL;
+	intPassMapStringInt["adv-indirect"] = PASS_INT_INDIRECT;
+	intPassMapStringInt["shadow"] = PASS_INT_SHADOW;
+	intPassMapStringInt["reflect"] = PASS_INT_REFLECT_ALL;
+	intPassMapStringInt["refract"] = PASS_INT_REFRACT_ALL;
+	intPassMapStringInt["adv-reflect"] = PASS_INT_REFLECT_PERFECT;
+	intPassMapStringInt["adv-refract"] = PASS_INT_REFRACT_PERFECT;
+	intPassMapStringInt["obj-index-abs"] = PASS_INT_OBJ_INDEX_ABS;
+	intPassMapStringInt["obj-index-norm"] = PASS_INT_OBJ_INDEX_NORM;
+	intPassMapStringInt["obj-index-auto"] = PASS_INT_OBJ_INDEX_AUTO;
+	intPassMapStringInt["obj-index-mask"] = PASS_INT_OBJ_INDEX_MASK;
+	intPassMapStringInt["obj-index-mask-shadow"] = PASS_INT_OBJ_INDEX_MASK_SHADOW;
+	intPassMapStringInt["obj-index-mask-all"] = PASS_INT_OBJ_INDEX_MASK_ALL;
+	intPassMapStringInt["mat-index-abs"] = PASS_INT_MAT_INDEX_ABS;
+	intPassMapStringInt["mat-index-norm"] = PASS_INT_MAT_INDEX_NORM;
+	intPassMapStringInt["mat-index-auto"] = PASS_INT_MAT_INDEX_AUTO;
+	intPassMapStringInt["mat-index-mask"] = PASS_INT_MAT_INDEX_MASK;
+	intPassMapStringInt["mat-index-mask-shadow"] = PASS_INT_MAT_INDEX_MASK_SHADOW;
+	intPassMapStringInt["mat-index-mask-all"] = PASS_INT_MAT_INDEX_MASK_ALL;
+	intPassMapStringInt["adv-diffuse-indirect"] = PASS_INT_DIFFUSE_INDIRECT;
+	intPassMapStringInt["adv-diffuse-color"] = PASS_INT_DIFFUSE_COLOR;
+	intPassMapStringInt["adv-glossy"] = PASS_INT_GLOSSY;
+	intPassMapStringInt["adv-glossy-indirect"] = PASS_INT_GLOSSY_INDIRECT;
+	intPassMapStringInt["adv-glossy-color"] = PASS_INT_GLOSSY_COLOR;
+	intPassMapStringInt["adv-trans"] = PASS_INT_TRANS;
+	intPassMapStringInt["adv-trans-indirect"] = PASS_INT_TRANS_INDIRECT;
+	intPassMapStringInt["adv-trans-color"] = PASS_INT_TRANS_COLOR;
+	intPassMapStringInt["adv-subsurface"] = PASS_INT_SUBSURFACE;
+	intPassMapStringInt["adv-subsurface-indirect"] = PASS_INT_SUBSURFACE_INDIRECT;
+	intPassMapStringInt["adv-subsurface-color"] = PASS_INT_SUBSURFACE_COLOR;
+	intPassMapStringInt["debug-normal-smooth"] = PASS_INT_NORMAL_SMOOTH;
+	intPassMapStringInt["debug-normal-geom"] = PASS_INT_NORMAL_GEOM;
+	intPassMapStringInt["debug-nu"] = PASS_INT_DEBUG_NU;
+	intPassMapStringInt["debug-nv"] = PASS_INT_DEBUG_NV;
+	intPassMapStringInt["debug-dpdu"] = PASS_INT_DEBUG_DPDU;
+	intPassMapStringInt["debug-dpdv"] = PASS_INT_DEBUG_DPDV;
+	intPassMapStringInt["debug-dsdu"] = PASS_INT_DEBUG_DSDU;
+	intPassMapStringInt["debug-dsdv"] = PASS_INT_DEBUG_DSDV;
+	intPassMapStringInt["adv-surface-integration"] = PASS_INT_SURFACE_INTEGRATION;
+	intPassMapStringInt["adv-volume-integration"] = PASS_INT_VOLUME_INTEGRATION;
+	intPassMapStringInt["adv-volume-transmittance"] = PASS_INT_VOLUME_TRANSMITTANCE;
+	intPassMapStringInt["debug-aa-samples"] = PASS_INT_AA_SAMPLES;
 
 	//Generation of reverse map (pass type -> pass_string)
 	for(std::map<std::string, int>::const_iterator it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
@@ -158,7 +158,7 @@ void renderPasses_t::pass_add(const std::string& sExternalPass, const std::strin
 	
 	//By default, in case the strings are not found in the maps, set the types to "disabled"
 	int extPassType = PASS_EXT_DISABLED;
-	int intPassType = PASS_YAF_DISABLED;
+	int intPassType = PASS_INT_DISABLED;
 	
 	//Convert the string into the external pass type using the pass type maps
 	std::map<std::string, int>::const_iterator extPassMapIterator = extPassMapStringInt.find(sExternalPass);
@@ -168,7 +168,7 @@ void renderPasses_t::pass_add(const std::string& sExternalPass, const std::strin
 	std::map<std::string, int>::const_iterator intPassMapIterator = intPassMapStringInt.find(sInternalPass);
 	if(intPassMapIterator != intPassMapStringInt.end()) intPassType = intPassMapIterator->second;
 	
-	if(extPassType != PASS_EXT_COMBINED && extPassType != PASS_EXT_DISABLED && intPassType != PASS_YAF_DISABLED)
+	if(extPassType != PASS_EXT_COMBINED && extPassType != PASS_EXT_DISABLED && intPassType != PASS_INT_DISABLED)
 	{
 		//If both external and internal pass types exist and are not disabled, then add the External Pass with the appropiate link to the associated internal pass
 		//Also, don't add another external Combined pass, as it's added by default, to avoid duplication of the Combined pass.
@@ -201,16 +201,16 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 
 
 
-colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):highestInternalPassUsed(PASS_YAF_COMBINED), passDefinitions(renderPasses)
+colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):highestInternalPassUsed(PASS_INT_COMBINED), passDefinitions(renderPasses)
 {
-	highestInternalPassUsed = PASS_YAF_DISABLED;
+	highestInternalPassUsed = PASS_INT_DISABLED;
 	
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
-	intPasses.reserve(PASS_YAF_TOTAL_PASSES);
-	enabledIntPasses.reserve(PASS_YAF_TOTAL_PASSES);
+	intPasses.reserve(PASS_INT_TOTAL_PASSES);
+	enabledIntPasses.reserve(PASS_INT_TOTAL_PASSES);
 	
 	//by default, if no passes are explicitally enabled, we create the Combined pass by default
-	enable_pass(PASS_YAF_COMBINED);
+	enable_pass(PASS_INT_COMBINED);
 }
         
 bool colorIntPasses_t::enabled(int pass) const
@@ -222,7 +222,7 @@ bool colorIntPasses_t::enabled(int pass) const
         
 void colorIntPasses_t::enable_pass(int pass)
 {
-	if(enabled(pass) || pass == PASS_YAF_DISABLED) return;
+	if(enabled(pass) || pass == PASS_INT_DISABLED) return;
 	
 	if(pass > highestInternalPassUsed)
 	{
@@ -251,7 +251,7 @@ colorA_t& colorIntPasses_t::operator()(int pass)
 
 void colorIntPasses_t::reset_colors()
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) = init_color(idx);
 	}
@@ -261,20 +261,20 @@ colorA_t colorIntPasses_t::init_color(int pass)
 {
 	switch(pass)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
 	{
-		case PASS_YAF_SHADOW:
-		case PASS_YAF_OBJ_INDEX_MASK:
-		case PASS_YAF_OBJ_INDEX_MASK_SHADOW:
-		case PASS_YAF_OBJ_INDEX_MASK_ALL:
-		case PASS_YAF_MAT_INDEX_MASK:
-		case PASS_YAF_MAT_INDEX_MASK_SHADOW:
-		case PASS_YAF_MAT_INDEX_MASK_ALL: return colorA_t(0.f, 0.f, 0.f, 0.f); break;
+		case PASS_INT_SHADOW:
+		case PASS_INT_OBJ_INDEX_MASK:
+		case PASS_INT_OBJ_INDEX_MASK_SHADOW:
+		case PASS_INT_OBJ_INDEX_MASK_ALL:
+		case PASS_INT_MAT_INDEX_MASK:
+		case PASS_INT_MAT_INDEX_MASK_SHADOW:
+		case PASS_INT_MAT_INDEX_MASK_ALL: return colorA_t(0.f, 0.f, 0.f, 0.f); break;
 		default: return colorA_t(0.f, 0.f, 0.f, 1.f); break;
 	}            
 }
 
 void colorIntPasses_t::multiply_colors(float factor)
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) *= factor;
 	}
@@ -333,7 +333,7 @@ colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorIntPasses_t& c
 
 colorIntPasses_t & colorIntPasses_t::operator *=(CFLOAT f)
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) *= f;
 	}
@@ -342,7 +342,7 @@ colorIntPasses_t & colorIntPasses_t::operator *=(CFLOAT f)
 
 colorIntPasses_t & colorIntPasses_t::operator *=(color_t &a)
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) *= a;
 	}
@@ -351,7 +351,7 @@ colorIntPasses_t & colorIntPasses_t::operator *=(color_t &a)
 
 colorIntPasses_t & colorIntPasses_t::operator *=(colorA_t &a)
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) *= a;
 	}
@@ -360,7 +360,7 @@ colorIntPasses_t & colorIntPasses_t::operator *=(colorA_t &a)
 
 colorIntPasses_t & colorIntPasses_t::operator +=(colorIntPasses_t &a)
 {
-	for(int idx = PASS_YAF_COMBINED; idx <= highestInternalPassUsed; ++idx)
+	for(int idx = PASS_INT_COMBINED; idx <= highestInternalPassUsed; ++idx)
 	{
 		color(idx) += a.color(idx);
 	}

@@ -114,7 +114,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) 
 		{
-			col += colorPasses.probe_set(PASS_YAF_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		}
 
 		if(bsdfs & BSDF_DIFFUSE)
@@ -127,9 +127,9 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 				{
 					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
 					tmpCol.clampProportionalRGB(AA_clamp_indirect);
-					col += colorPasses.probe_add(PASS_YAF_INDIRECT, tmpCol, state.raylevel == 0);
+					col += colorPasses.probe_add(PASS_INT_INDIRECT, tmpCol, state.raylevel == 0);
 				}
-				else col += colorPasses.probe_add(PASS_YAF_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+				else col += colorPasses.probe_add(PASS_INT_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 			}
 
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
@@ -137,18 +137,18 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_YAF_COMBINED && state.raylevel == 0)
+		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			
-			if(colorPasses.enabled(PASS_YAF_AO))
+			if(colorPasses.enabled(PASS_INT_AO))
 			{
-				colorPasses(PASS_YAF_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
 			}
 
-			if(colorPasses.enabled(PASS_YAF_AO_CLAY))
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_YAF_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 		}
 		
@@ -163,7 +163,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_YAF_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 
@@ -175,8 +175,8 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
 	
-	colorPasses.probe_set(PASS_YAF_VOLUME_TRANSMITTANCE, colVolTransmittance);
-	colorPasses.probe_set(PASS_YAF_VOLUME_INTEGRATION, colVolIntegration);
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 
 	col = (col * colVolTransmittance) + colVolIntegration;
 	
