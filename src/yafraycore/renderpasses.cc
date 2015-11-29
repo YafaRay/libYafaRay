@@ -32,7 +32,17 @@ renderPasses_t::renderPasses_t():indexExtPasses(std::vector<int>(PASS_EXT_TOTAL_
 { 
 	generate_pass_maps();
 	
-	extPass_add("Combined", "combined");	//by default we will have an external Combined pass
+	extPass_add("Combined", "combined");	//by default we will have an external/internal Combined pass
+}
+
+int renderPasses_t::extPassesSize() const
+{
+	return extPasses.size();
+}
+
+int renderPasses_t::intPassesSize() const
+{
+	return intPasses.size();
 }
 
 void renderPasses_t::generate_pass_maps()
@@ -166,7 +176,7 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
 	indexExtPasses[extPassType] = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) number of the external pass actually using that index 
-	Y_WARNING << "DAVID indexExtPasses["<<extPassType<<"] = " << indexExtPasses[extPassType] << ", extPassNumberFromType()=" << extPassNumberFromType(extPassType) << yendl;
+	//Y_WARNING << "DAVID indexExtPasses["<<extPassType<<"] = " << indexExtPasses[extPassType] << ", extPassNumberFromType()=" << extPassNumberFromType(extPassType) << yendl;
 
 	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
@@ -218,12 +228,10 @@ void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_me
 	intPasses.push_back(intPassType);
 	//std::sort(intPasses.begin(), intPasses.end());
 	indexIntPasses[intPassType] = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) number of the internal pass actually using that index 
-	Y_WARNING << "DAVID indexIntPasses["<<intPassType<<"] = " << indexIntPasses[intPassType] << ", intPassNumberFromType()=" << intPassNumberFromType(intPassType) << yendl;
+	//Y_WARNING << "DAVID indexIntPasses["<<intPassType<<"] = " << indexIntPasses[intPassType] << ", intPassNumberFromType()=" << intPassNumberFromType(intPassType) << yendl;
 	
 	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
-
-size_t renderPasses_t::numExtPasses() const { return extPasses.size(); }
         
 int renderPasses_t::extPassTypeFromNumber(int extPassNumber) const { return extPasses[extPassNumber].extPassType; }
 int renderPasses_t::intPassTypeFromNumber(int intPassNumber) const { return intPasses[intPassNumber]; }
@@ -327,14 +335,14 @@ int colorPasses_t::intPassTypeFromNumber(int intPassNumber) const
 	return passDefinitions.intPassTypeFromNumber(intPassNumber);
 }
                 
-colorA_t& colorPasses_t::color(int pass)
+colorA_t& colorPasses_t::color(int intPassType)
 {
-	return colVector[pass];
+	return colVector[intPassType];
 }
                 
-colorA_t& colorPasses_t::operator()(int pass)
+colorA_t& colorPasses_t::operator()(int intPassType)
 {
-	return color(pass);
+	return color(intPassType);
 }
 
 void colorPasses_t::reset_colors()
@@ -345,9 +353,9 @@ void colorPasses_t::reset_colors()
 	}
 }
         
-colorA_t colorPasses_t::init_color(int pass)
+colorA_t colorPasses_t::init_color(int intPassType)
 {
-	switch(pass)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
+	switch(intPassType)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
 	{
 		case PASS_INT_SHADOW:
 		case PASS_INT_OBJ_INDEX_MASK:
@@ -368,53 +376,53 @@ void colorPasses_t::multiply_colors(float factor)
 	}
 }
 
-colorA_t colorPasses_t::probe_set(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass)) color(pass) = renderedColor;
+	if(condition && enabled(intPassType)) color(intPassType) = renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_set(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const int& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[pass] = colorPasses.colVector[pass];	
-		return colorPasses.colVector[pass];
+		colVector[intPassType] = colorPasses.colVector[intPassType];	
+		return colorPasses.colVector[intPassType];
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorPasses_t::probe_add(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass)) color(pass) += renderedColor;
+	if(condition && enabled(intPassType)) color(intPassType) += renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_add(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const int& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[pass] += colorPasses.colVector[pass];	
-		return  colorPasses.colVector[pass];
+		colVector[intPassType] += colorPasses.colVector[intPassType];	
+		return  colorPasses.colVector[intPassType];
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorPasses_t::probe_mult(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass)) color(pass) *= renderedColor;
+	if(condition && enabled(intPassType)) color(intPassType) *= renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_mult(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const int& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[pass] *= colorPasses.colVector[pass];	
-		return colorPasses.colVector[pass];
+		colVector[intPassType] *= colorPasses.colVector[intPassType];	
+		return colorPasses.colVector[intPassType];
 	}
 	else return colorA_t(0.f);
 }

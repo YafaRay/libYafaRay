@@ -569,7 +569,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
 	}
 	
-    output.initTilesPasses(camera_table.size(), renderPasses.numExtPasses());
+    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)

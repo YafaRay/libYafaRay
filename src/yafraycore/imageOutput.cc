@@ -102,20 +102,20 @@ void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
         }
         else
         {
-            for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
+            for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
             {
-                std::map<int, std::string>::const_iterator extPassMapIterator = renderPasses.extPassMapIntString.find(renderPasses.extPassTypeFromNumber(idx));
+                std::string passName = renderPasses.extPassTypeStringFromNumber(idx);
                 
-                if(numView == 0 && idx == PASS_EXT_COMBINED) image->saveToFile(fname, idx);
-		else if(extPassMapIterator != renderPasses.extPassMapIntString.end())
+                if(numView == 0 && idx == 0) image->saveToFile(fname, idx);
+		else if(passName != "not found")
                 {
-                    fnamePass = path + base_name + " (" + extPassMapIterator->second + ")"+ ext;
+                    fnamePass = path + base_name + " (" + passName + ")"+ ext;
                     image->saveToFile(fnamePass, idx);
                 }
                 else
                 {
-                }
-                
+		    //if the above conditions do not happen, do nothing...
+                }                
             }
         }
     }

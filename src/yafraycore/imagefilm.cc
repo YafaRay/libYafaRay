@@ -128,7 +128,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 
 
 	//Creation of the image buffers for the render passes
-	for(size_t idx = 0; idx < renderPasses.numExtPasses(); ++idx)
+	for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
 	{
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
