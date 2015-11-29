@@ -28,13 +28,11 @@ __BEGIN_YAFRAY
 // --  renderPasses_t  -- //
 ////////////////////////////
 
-renderPasses_t::renderPasses_t()
+renderPasses_t::renderPasses_t():indexExtPasses(std::vector<int>(PASS_EXT_TOTAL_PASSES, -1)), indexIntPasses(std::vector<int>(PASS_INT_TOTAL_PASSES, -1)) //Creation of the external and internal passes indexes, initially all -1 (disabled)
 { 
-	extPasses.reserve(PASS_EXT_TOTAL_PASSES);
-
-	extPasses.push_back(extPass_t(PASS_EXT_COMBINED, PASS_INT_COMBINED));	//by default we will have an external Combined pass
-	
 	generate_pass_maps();
+	
+	extPass_add("Combined", "combined");	//by default we will have an external Combined pass
 }
 
 void renderPasses_t::generate_pass_maps()
@@ -160,14 +158,16 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 		return;
 	}
 
-/*	if(std::binary_search(extPasses.begin(), extPasses.end(), extPassType, extPassCompare))
+	if(indexExtPasses[extPassType] != -1)
 	{
 		Y_WARNING << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
-	} */  //FIXME DAVID
+	}
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
-	
+	indexExtPasses[extPassType] = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) number of the external pass actually using that index 
+	Y_WARNING << "DAVID indexExtPasses["<<extPassType<<"] = " << indexExtPasses[extPassType] << ", extPassNumberFromType()=" << extPassNumberFromType(extPassType) << yendl;
+
 	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
     intPass_add(intPassType);
@@ -209,13 +209,17 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 
 void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_message /*=false*/)
 {
-	if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
+	//if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
+	if(indexIntPasses[intPassType] != -1)
 	{
 		if(!hide_duplicate_warning_message) Y_WARNING << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
 		return;
 	}
 	intPasses.push_back(intPassType);
-	std::sort(intPasses.begin(), intPasses.end());
+	//std::sort(intPasses.begin(), intPasses.end());
+	indexIntPasses[intPassType] = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) number of the internal pass actually using that index 
+	Y_WARNING << "DAVID indexIntPasses["<<intPassType<<"] = " << indexIntPasses[intPassType] << ", intPassNumberFromType()=" << intPassNumberFromType(intPassType) << yendl;
+	
 	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
 
@@ -264,25 +268,16 @@ int renderPasses_t::tileType(int extPassNumber) const { return extPasses[extPass
 int renderPasses_t::intPassType(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
 
 
-/*int renderPasses_t::extPassNumberFromType(int extPassType) const
+int renderPasses_t::extPassNumberFromType(int extPassType) const
 {
-	std::vector<int>::const_iterator low = std::lower_bound(extPasses.begin(), extPasses.end(), extPassType);
-	
-	return (low - extPasses.begin());
-}*/ //FIXME DAVID
+	return indexExtPasses[extPassType];
+}
 
 int renderPasses_t::intPassNumberFromType(int intPassType) const
 {
-	std::vector<int>::const_iterator low = std::lower_bound(intPasses.begin(), intPasses.end(), intPassType);
-	
-	return (low - intPasses.begin());
+	return indexIntPasses[intPassType];
 }
-	
 
-bool extPassCompare(const extPass_t& a, const extPass_t& b)
-{
-	return (a.extPassType < b.extPassType);
-}
 
 
 ////////////////////////////
@@ -305,11 +300,6 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 	}
 }
 
-bool extPass_t::operator < (const extPass_t& r)
-{
-	return (this->extPassType < r.extPassType);
-}
-
 
 
 ////////////////////////////
@@ -319,22 +309,22 @@ bool extPass_t::operator < (const extPass_t& r)
 colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):passDefinitions(renderPasses)
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
-	intPasses.reserve(PASS_INT_TOTAL_PASSES);
-	intPasses.push_back(init_color(PASS_INT_COMBINED));
+	colorPasses.reserve(passDefinitions.intPasses.size());
 	for(std::vector<int>::iterator it = passDefinitions.intPasses.begin(); it != passDefinitions.intPasses.end(); ++it)
 	{
-		intPasses.push_back(init_color(passDefinitions.intPassTypeFromNumber(it - passDefinitions.intPasses.begin())));
+		colorPasses.push_back(init_color(passDefinitions.intPassTypeFromNumber(it - passDefinitions.intPasses.begin())));
 	}
 }
         
 bool colorIntPasses_t::enabled(int intPassType) const
 {
-	return std::binary_search(passDefinitions.intPasses.begin(), passDefinitions.intPasses.end(), intPassType);
+	if(passDefinitions.intPassNumberFromType(intPassType) == -1) return false;
+	else return true;
 }
                 
 colorA_t& colorIntPasses_t::color(int pass)
 {
-	return intPasses[pass];
+	return colorPasses[pass];
 }
                 
 colorA_t& colorIntPasses_t::operator()(int pass)
@@ -344,9 +334,9 @@ colorA_t& colorIntPasses_t::operator()(int pass)
 
 void colorIntPasses_t::reset_colors()
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colorPasses.begin(); it != colorPasses.end(); ++it)
 	{
-		color(idx) = init_color(idx);
+		*it = init_color(it - colorPasses.begin());
 	}
 }
         
@@ -380,12 +370,12 @@ colorA_t colorIntPasses_t::probe_set(const int& pass, const colorA_t& renderedCo
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_set(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorIntPasses_t::probe_set(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
 	{
-		intPasses[pass] = colorPasses.intPasses[pass];	
-		return  colorPasses.intPasses[pass];
+		colorPasses[pass] = colorIntPasses.colorPasses[pass];	
+		return colorIntPasses.colorPasses[pass];
 	}
 	else return colorA_t(0.f);
 }
@@ -397,12 +387,12 @@ colorA_t colorIntPasses_t::probe_add(const int& pass, const colorA_t& renderedCo
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_add(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorIntPasses_t::probe_add(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
 	{
-		intPasses[pass] += colorPasses.intPasses[pass];	
-		return  colorPasses.intPasses[pass];
+		colorPasses[pass] += colorIntPasses.colorPasses[pass];	
+		return  colorIntPasses.colorPasses[pass];
 	}
 	else return colorA_t(0.f);
 }
@@ -414,12 +404,12 @@ colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorA_t& renderedC
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorPasses.enabled(pass))
+	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
 	{
-		intPasses[pass] *= colorPasses.intPasses[pass];	
-		return  colorPasses.intPasses[pass];
+		colorPasses[pass] *= colorIntPasses.colorPasses[pass];	
+		return  colorIntPasses.colorPasses[pass];
 	}
 	else return colorA_t(0.f);
 }
@@ -460,7 +450,7 @@ colorIntPasses_t & colorIntPasses_t::operator +=(colorIntPasses_t &a)
 	return *this;
 }
 
-int colorIntPasses_t::get_highest_internal_pass_used() const { return intPasses.size(); }
+int colorIntPasses_t::get_highest_internal_pass_used() const { return colorPasses.size(); }
 
 
 __END_YAFRAY
