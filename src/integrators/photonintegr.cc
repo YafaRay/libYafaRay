@@ -624,7 +624,7 @@ bool photonIntegrator_t::preprocess()
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorIntPasses_t &colorPasses) const
+color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const
 {
 	color_t pathCol(0.0);
 	void *first_udat = state.userdata;
@@ -634,7 +634,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	color_t vcol(0.f);
 	float W = 0.f;
 
-	colorIntPasses_t tmpColorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t tmpColorPasses(imageFilm->get_RenderPasses());
 	
 	int nSampl = (int) ceilf(std::max(1, nPaths/state.rayDivision)*AA_indirect_sample_multiplier);
 	for(int i=0; i<nSampl; ++i)
@@ -770,7 +770,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	return pathCol / (float)nSampl;
 }
 
-colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
+colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	static int _nMax=0;
 	static int calls=0;
@@ -899,7 +899,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			

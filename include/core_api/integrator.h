@@ -81,7 +81,7 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
 //		virtual bool setupSampler(sampler_t &sam);
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colPasses /*, sampler_t &sam*/) const = 0;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colPasses /*, sampler_t &sam*/) const = 0;
 	protected:
 		surfaceIntegrator_t() {} //don't use...
 };
@@ -91,7 +91,7 @@ class YAFRAYCORE_EXPORT volumeIntegrator_t: public integrator_t
 	public:
 		volumeIntegrator_t() {}
 		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const = 0;
-		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorIntPasses_t &colPasses) const = 0;
+		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colPasses) const = 0;
 		virtual bool preprocess() { return true; }
 	
 	protected:

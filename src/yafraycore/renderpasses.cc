@@ -302,45 +302,50 @@ extPass_t::extPass_t(int extPassType, int intPassType):
 
 
 
-////////////////////////////
-// -- colorIntPasses_t -- //
-////////////////////////////
+/////////////////////////
+// -- colorPasses_t -- //
+/////////////////////////
 
-colorIntPasses_t::colorIntPasses_t(renderPasses_t &renderPasses):passDefinitions(renderPasses)
+colorPasses_t::colorPasses_t(renderPasses_t &renderPasses):passDefinitions(renderPasses)
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
-	colorPasses.reserve(passDefinitions.intPasses.size());
+	colVector.reserve(passDefinitions.intPasses.size());
 	for(std::vector<int>::iterator it = passDefinitions.intPasses.begin(); it != passDefinitions.intPasses.end(); ++it)
 	{
-		colorPasses.push_back(init_color(passDefinitions.intPassTypeFromNumber(it - passDefinitions.intPasses.begin())));
+		colVector.push_back(init_color(passDefinitions.intPassTypeFromNumber(it - passDefinitions.intPasses.begin())));
 	}
 }
         
-bool colorIntPasses_t::enabled(int intPassType) const
+bool colorPasses_t::enabled(int intPassType) const
 {
 	if(passDefinitions.intPassNumberFromType(intPassType) == -1) return false;
 	else return true;
 }
-                
-colorA_t& colorIntPasses_t::color(int pass)
+
+int colorPasses_t::intPassTypeFromNumber(int intPassNumber) const
 {
-	return colorPasses[pass];
+	return passDefinitions.intPassTypeFromNumber(intPassNumber);
 }
                 
-colorA_t& colorIntPasses_t::operator()(int pass)
+colorA_t& colorPasses_t::color(int pass)
+{
+	return colVector[pass];
+}
+                
+colorA_t& colorPasses_t::operator()(int pass)
 {
 	return color(pass);
 }
 
-void colorIntPasses_t::reset_colors()
+void colorPasses_t::reset_colors()
 {
-	for(std::vector<colorA_t>::iterator it = colorPasses.begin(); it != colorPasses.end(); ++it)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		*it = init_color(it - colorPasses.begin());
+		*it = init_color(it - colVector.begin());
 	}
 }
         
-colorA_t colorIntPasses_t::init_color(int pass)
+colorA_t colorPasses_t::init_color(int pass)
 {
 	switch(pass)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
 	{
@@ -355,102 +360,102 @@ colorA_t colorIntPasses_t::init_color(int pass)
 	}            
 }
 
-void colorIntPasses_t::multiply_colors(float factor)
+void colorPasses_t::multiply_colors(float factor)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		color(idx) *= factor;
+		*it *= factor;
 	}
 }
 
-colorA_t colorIntPasses_t::probe_set(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
 	if(condition && enabled(pass)) color(pass) = renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_set(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
+	if(condition && enabled(pass) && colorPasses.enabled(pass))
 	{
-		colorPasses[pass] = colorIntPasses.colorPasses[pass];	
-		return colorIntPasses.colorPasses[pass];
+		colVector[pass] = colorPasses.colVector[pass];	
+		return colorPasses.colVector[pass];
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorIntPasses_t::probe_add(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
 	if(condition && enabled(pass)) color(pass) += renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_add(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
+	if(condition && enabled(pass) && colorPasses.enabled(pass))
 	{
-		colorPasses[pass] += colorIntPasses.colorPasses[pass];	
-		return  colorIntPasses.colorPasses[pass];
+		colVector[pass] += colorPasses.colVector[pass];	
+		return  colorPasses.colVector[pass];
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const int& pass, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
 	if(condition && enabled(pass)) color(pass) *= renderedColor;
 	
 	return renderedColor;
 }
 
-colorA_t colorIntPasses_t::probe_mult(const int& pass, const colorIntPasses_t& colorIntPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const int& pass, const colorPasses_t& colorPasses, const bool& condition /*= true */)
 {
-	if(condition && enabled(pass) && colorIntPasses.enabled(pass))
+	if(condition && enabled(pass) && colorPasses.enabled(pass))
 	{
-		colorPasses[pass] *= colorIntPasses.colorPasses[pass];	
-		return  colorIntPasses.colorPasses[pass];
+		colVector[pass] *= colorPasses.colVector[pass];	
+		return colorPasses.colVector[pass];
 	}
 	else return colorA_t(0.f);
 }
 
-colorIntPasses_t & colorIntPasses_t::operator *=(CFLOAT f)
+colorPasses_t & colorPasses_t::operator *= (CFLOAT f)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		color(idx) *= f;
+		*it *= f;
 	}
 	return *this;
 }
 
-colorIntPasses_t & colorIntPasses_t::operator *=(color_t &a)
+colorPasses_t & colorPasses_t::operator *= (const color_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		color(idx) *= a;
+		*it *= a;
 	}
 	return *this;
 }
 
-colorIntPasses_t & colorIntPasses_t::operator *=(colorA_t &a)
+colorPasses_t & colorPasses_t::operator *= (const colorA_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		color(idx) *= a;
+		*it *= a;
 	}
 	return *this;
 }
 
-colorIntPasses_t & colorIntPasses_t::operator +=(colorIntPasses_t &a)
+colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
 {
-	for(int idx = PASS_INT_COMBINED; idx <= get_highest_internal_pass_used(); ++idx)
+	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		color(idx) += a.color(idx);
+		*it += a.colVector[it - colVector.begin()];
 	}
 	return *this;
 }
 
-int colorIntPasses_t::get_highest_internal_pass_used() const { return colorPasses.size(); }
+int colorPasses_t::size() const { return colVector.size(); }
 
 
 __END_YAFRAY

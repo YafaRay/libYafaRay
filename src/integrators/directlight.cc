@@ -34,7 +34,7 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
 	public:
 		directLighting_t(bool transpShad=false, int shadowDepth=4, int rayDepth=6);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -87,7 +87,7 @@ bool directLighting_t::preprocess()
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
+colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	color_t col(0.0);
 	float alpha;
@@ -137,7 +137,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			

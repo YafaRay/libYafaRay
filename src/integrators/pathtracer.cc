@@ -41,7 +41,7 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 	public:
 		pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		enum { NONE, PATH, PHOTON, BOTH };
 	protected:
@@ -108,7 +108,7 @@ bool pathIntegrator_t::preprocess()
 	return success;
 }
 
-colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
 {
 	static int calls=0;
 	++calls;
@@ -121,7 +121,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 	if(transpBackground) alpha=0.0;
 	else alpha=1.0;
 	
-	colorIntPasses_t tmpColorPasses = colorPasses;
+	colorPasses_t tmpColorPasses = colorPasses;
 	
 	//shoot ray into scene
 	if(scene->intersect(ray, sp))
@@ -286,7 +286,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			

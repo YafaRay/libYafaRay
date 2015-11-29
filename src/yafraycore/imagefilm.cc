@@ -556,7 +556,7 @@ bool imageFilm_t::doMoreSamples(int x, int y) const
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
 	contribute to pixels outside the area a AND pixels that might get
 	contributions from outside area a! (yes, really!) */
-void imageFilm_t::addSample(colorIntPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a, int numSample, int AA_pass_number, float inv_AA_max_possible_samples)
+void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a, int numSample, int AA_pass_number, float inv_AA_max_possible_samples)
 {
 	int dx0, dx1, dy0, dy1, x0, x1, y0, y1;
 

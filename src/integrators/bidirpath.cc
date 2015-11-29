@@ -119,7 +119,7 @@ public:
 	virtual ~biDirIntegrator_t();
 	virtual bool preprocess();
 	virtual void cleanup();
-	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const;
+	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
@@ -266,7 +266,7 @@ void biDirIntegrator_t::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses) const
+colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	color_t col(0.f);
 	surfacePoint_t sp;
@@ -422,7 +422,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 			}
 		}
 		
-		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			

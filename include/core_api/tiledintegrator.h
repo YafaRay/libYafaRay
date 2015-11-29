@@ -26,7 +26,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		
 //		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
 		virtual void precalcDepths();
-		virtual void generateCommonRenderPasses(colorIntPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const; //!< Generates render passes common to all integrators
+		virtual void generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const; //!< Generates render passes common to all integrators
 	
 	protected:
 		int AA_samples, AA_passes, AA_inc_samples;

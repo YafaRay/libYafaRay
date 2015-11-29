@@ -301,7 +301,7 @@ public:
 	}
 	
 	// emission and in-scattering
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorIntPasses_t &colorPasses) const
+	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses) const
 	{
 		float t0 = 1e10f, t1 = -1e10f;
 

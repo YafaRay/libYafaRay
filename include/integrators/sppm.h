@@ -63,12 +63,12 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive);
 		/*! not used now, use traceGatherRay instead*/
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePPM();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp, colorIntPasses_t &colorPasses);
+		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp, colorPasses_t &colorPasses);
 	protected:
 		hashGrid_t  photonGrid; // the hashgrid for holding photons
 		photonMap_t diffuseMap,causticMap; // photonmap

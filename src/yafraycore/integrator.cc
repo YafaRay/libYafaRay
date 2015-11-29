@@ -298,9 +298,9 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	Halton halU(3);
 	Halton halV(5);
 
-	colorIntPasses_t colorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
  
-	colorIntPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
+	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -390,56 +390,58 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					}
 				}
 				
-				for(int idx = PASS_INT_COMBINED; idx <= colorPasses.get_highest_internal_pass_used(); ++idx)
+				for(int idx = 0; idx <= colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
+					
+					int intPassType = colorPasses.intPassTypeFromNumber(idx);
 										
-					switch(idx)
+					switch(intPassType)
 					{
-                    case PASS_INT_Z_DEPTH_NORM: break;
-                    case PASS_INT_Z_DEPTH_ABS: break;
-                    case PASS_INT_MIST: break;
-                    case PASS_INT_NORMAL_SMOOTH: break;
-                    case PASS_INT_NORMAL_GEOM: break;
-                    case PASS_INT_AO: break;
-		    case PASS_INT_AO_CLAY: break;
-                    case PASS_INT_UV: break;
-                    case PASS_INT_DEBUG_NU: break;
-                    case PASS_INT_DEBUG_NV: break;
-                    case PASS_INT_DEBUG_DPDU: break;
-                    case PASS_INT_DEBUG_DPDV: break;
-                    case PASS_INT_DEBUG_DSDU: break;
-                    case PASS_INT_DEBUG_DSDV: break;
-                    case PASS_INT_OBJ_INDEX_ABS: break;
-                    case PASS_INT_OBJ_INDEX_NORM: break;
-                    case PASS_INT_OBJ_INDEX_AUTO: break;
-                    case PASS_INT_MAT_INDEX_ABS: break;
-                    case PASS_INT_MAT_INDEX_NORM: break;
-                    case PASS_INT_MAT_INDEX_AUTO: break;
-                    case PASS_INT_AA_SAMPLES: break;
-                    
-                    //Processing of mask render passes:
-                    case PASS_INT_OBJ_INDEX_MASK: 
-                    case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
-                    case PASS_INT_OBJ_INDEX_MASK_ALL: 
-                    case PASS_INT_MAT_INDEX_MASK: 
-                    case PASS_INT_MAT_INDEX_MASK_SHADOW:
-                    case PASS_INT_MAT_INDEX_MASK_ALL: 
-                        
-                        if(colorPasses.pass_mask_invert)
-                        {
-                            colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
-                        }
-                        
-                        if(!colorPasses.pass_mask_only)
-                        {
-                            colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
-                            colCombined.A = 1.f;	
-                            colorPasses(idx) *= colCombined;
-                        }
-                        break;
-                        
-                    default: colorPasses(idx) *= wt; break;
+						case PASS_INT_Z_DEPTH_NORM: break;
+						case PASS_INT_Z_DEPTH_ABS: break;
+						case PASS_INT_MIST: break;
+						case PASS_INT_NORMAL_SMOOTH: break;
+						case PASS_INT_NORMAL_GEOM: break;
+						case PASS_INT_AO: break;
+						case PASS_INT_AO_CLAY: break;
+						case PASS_INT_UV: break;
+						case PASS_INT_DEBUG_NU: break;
+						case PASS_INT_DEBUG_NV: break;
+						case PASS_INT_DEBUG_DPDU: break;
+						case PASS_INT_DEBUG_DPDV: break;
+						case PASS_INT_DEBUG_DSDU: break;
+						case PASS_INT_DEBUG_DSDV: break;
+						case PASS_INT_OBJ_INDEX_ABS: break;
+						case PASS_INT_OBJ_INDEX_NORM: break;
+						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_ABS: break;
+						case PASS_INT_MAT_INDEX_NORM: break;
+						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_AA_SAMPLES: break;
+
+						//Processing of mask render passes:
+						case PASS_INT_OBJ_INDEX_MASK: 
+						case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
+						case PASS_INT_OBJ_INDEX_MASK_ALL: 
+						case PASS_INT_MAT_INDEX_MASK: 
+						case PASS_INT_MAT_INDEX_MASK_SHADOW:
+						case PASS_INT_MAT_INDEX_MASK_ALL: 
+
+						if(colorPasses.pass_mask_invert)
+						{
+							colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
+						}
+
+						if(!colorPasses.pass_mask_only)
+						{
+							colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
+							colCombined.A = 1.f;	
+							colorPasses(idx) *= colCombined;
+						}
+						break;
+
+						default: colorPasses(idx) *= wt; break;
 					}
 				}
 
@@ -450,7 +452,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	return true;
 }
 
-inline void tiledIntegrator_t::generateCommonRenderPasses(colorIntPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
+inline void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
 {
 	colorPasses.probe_set(PASS_INT_UV, colorA_t(sp.U, sp.V, 0.f, 1.f));
 	colorPasses.probe_set(PASS_INT_NORMAL_SMOOTH, colorA_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f, 1.f));

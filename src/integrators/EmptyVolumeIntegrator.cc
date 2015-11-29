@@ -22,7 +22,7 @@ class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public volumeIntegrator_t {
 		return color_t(1.f);
 	}
 	
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorIntPasses_t &colorPasses) const {
+	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses) const {
 		return colorA_t(0.f);
 	}
 	

@@ -128,9 +128,9 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	
 	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
-	colorIntPasses_t colorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
 
-	colorIntPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
+	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -235,41 +235,43 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 					}
 				}
 				
-				for(int idx = PASS_INT_COMBINED; idx <= colorPasses.get_highest_internal_pass_used(); ++idx)
+				for(int idx = 0; idx <= colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
+					
+					int intPassType = colorPasses.intPassTypeFromNumber(idx);
 										
-					switch(idx)
+					switch(intPassType)
 					{
-                    case PASS_INT_Z_DEPTH_NORM: break;
-                    case PASS_INT_Z_DEPTH_ABS: break;
-                    case PASS_INT_MIST: break;
-                    case PASS_INT_NORMAL_SMOOTH: break;
-                    case PASS_INT_NORMAL_GEOM: break;
-                    case PASS_INT_AO: break;
-                    case PASS_INT_AO_CLAY: break;
-                    case PASS_INT_UV: break;
-                    case PASS_INT_DEBUG_NU: break;
-                    case PASS_INT_DEBUG_NV: break;
-                    case PASS_INT_DEBUG_DPDU: break;
-                    case PASS_INT_DEBUG_DPDV: break;
-                    case PASS_INT_DEBUG_DSDU: break;
-                    case PASS_INT_DEBUG_DSDV: break;
-                    case PASS_INT_OBJ_INDEX_ABS: break;
-                    case PASS_INT_OBJ_INDEX_NORM: break;
-                    case PASS_INT_OBJ_INDEX_AUTO: break;
-                    case PASS_INT_MAT_INDEX_ABS: break;
-                    case PASS_INT_MAT_INDEX_NORM: break;
-                    case PASS_INT_MAT_INDEX_AUTO: break;
-                    case PASS_INT_AA_SAMPLES: break;
-                    
-                    //Processing of mask render passes:
-                    case PASS_INT_OBJ_INDEX_MASK: 
-                    case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
-                    case PASS_INT_OBJ_INDEX_MASK_ALL: 
-                    case PASS_INT_MAT_INDEX_MASK: 
-                    case PASS_INT_MAT_INDEX_MASK_SHADOW:
-                    case PASS_INT_MAT_INDEX_MASK_ALL: 
+						case PASS_INT_Z_DEPTH_NORM: break;
+						case PASS_INT_Z_DEPTH_ABS: break;
+						case PASS_INT_MIST: break;
+						case PASS_INT_NORMAL_SMOOTH: break;
+						case PASS_INT_NORMAL_GEOM: break;
+						case PASS_INT_AO: break;
+						case PASS_INT_AO_CLAY: break;
+						case PASS_INT_UV: break;
+						case PASS_INT_DEBUG_NU: break;
+						case PASS_INT_DEBUG_NV: break;
+						case PASS_INT_DEBUG_DPDU: break;
+						case PASS_INT_DEBUG_DPDV: break;
+						case PASS_INT_DEBUG_DSDU: break;
+						case PASS_INT_DEBUG_DSDV: break;
+						case PASS_INT_OBJ_INDEX_ABS: break;
+						case PASS_INT_OBJ_INDEX_NORM: break;
+						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_ABS: break;
+						case PASS_INT_MAT_INDEX_NORM: break;
+						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_AA_SAMPLES: break;
+						
+						//Processing of mask render passes:
+						case PASS_INT_OBJ_INDEX_MASK: 
+						case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
+						case PASS_INT_OBJ_INDEX_MASK_ALL: 
+						case PASS_INT_MAT_INDEX_MASK: 
+						case PASS_INT_MAT_INDEX_MASK_SHADOW:
+						case PASS_INT_MAT_INDEX_MASK_ALL: 
                         
                         if(colorPasses.pass_mask_invert)
                         {
@@ -285,7 +287,8 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
                         break;
                         
                     default: colorPasses(idx) *= wt; break;
-					}				}
+					}				
+				}
 
 				imageFilm->addSample(colorPasses, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
             }
@@ -554,13 +557,13 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorIntPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
 {
 	return colorA_t(0.f);
 }
 
 
-GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_t &ray, yafaray::HitPoint &hp, colorIntPasses_t &colorPasses)
+GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_t &ray, yafaray::HitPoint &hp, colorPasses_t &colorPasses)
 {
 	static int _nMax=0;
 	static int calls=0;
@@ -596,7 +599,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
 		
-		colorIntPasses_t tmpColorPasses = colorPasses;
+		colorPasses_t tmpColorPasses = colorPasses;
 
 		if(bsdfs & BSDF_DIFFUSE)
 		{
@@ -768,7 +771,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				gInfo.photonFlux += cing.photonFlux * d_1;
 				gInfo.photonCount += cing.photonCount * d_1;
 
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0)
+				if(tmpColorPasses.size() > 1)
 				{
 					tmpColorPasses *= d_1;
 					colorPasses += tmpColorPasses;
@@ -803,7 +806,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				hal2.setStart(offs);
 				hal3.setStart(offs);
 				
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0) tmpColorPasses.reset_colors();
+				if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
 
 				for(int ns=0; ns<gsam; ++ns)
 				{
@@ -925,7 +928,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				gInfo.photonFlux += ging.photonFlux * d_1;
 				gInfo.photonCount += ging.photonCount * d_1;
 
-				if(tmpColorPasses.get_highest_internal_pass_used() > 0)
+				if(tmpColorPasses.size() > 1)
 				{
 					tmpColorPasses *= d_1;
 					colorPasses += tmpColorPasses;
@@ -986,7 +989,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		}
 		--state.raylevel;
 
-		if(colorPasses.get_highest_internal_pass_used() > PASS_INT_COMBINED && state.raylevel == 0)
+		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp);
 			

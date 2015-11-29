@@ -91,7 +91,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(colorIntPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
+		void addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!

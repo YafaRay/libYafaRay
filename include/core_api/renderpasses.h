@@ -53,7 +53,7 @@ bool extPassCompare(const extPass_t& a, const extPass_t& b);
 
 class YAFRAYCORE_EXPORT renderPasses_t
 {
-	friend class colorIntPasses_t;
+	friend class colorPasses_t;
 
 	public:
 		renderPasses_t();
@@ -87,28 +87,29 @@ class YAFRAYCORE_EXPORT renderPasses_t
 		std::vector<int> indexIntPasses;	//List with all possible internal passes and to which pass number are they mapped. -1 = pass disabled
 };
 
-class YAFRAYCORE_EXPORT colorIntPasses_t  //Internal YafaRay color passes generated in different points of the rendering process
+class YAFRAYCORE_EXPORT colorPasses_t  //Internal YafaRay color passes generated in different points of the rendering process
 {
 	public:
-		colorIntPasses_t(renderPasses_t &renderPasses);
+		colorPasses_t(renderPasses_t &renderPasses);
 		bool enabled(int pass) const;
+		int intPassTypeFromNumber(int intPassNumber) const;
 		colorA_t& color(int pass);
 		colorA_t& operator()(int pass);
 		void reset_colors();
 		colorA_t init_color(int pass);
 		void multiply_colors(float factor);
 		colorA_t probe_set(const int& pass, const colorA_t& renderedColor, const bool& condition = true);
-		colorA_t probe_set(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition = true);
+		colorA_t probe_set(const int& pass, const colorPasses_t& colorPasses, const bool& condition = true);
 		colorA_t probe_add(const int& pass, const colorA_t& renderedColor, const bool& condition = true);
-		colorA_t probe_add(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition = true);
+		colorA_t probe_add(const int& pass, const colorPasses_t& colorPasses, const bool& condition = true);
 		colorA_t probe_mult(const int& pass, const colorA_t& renderedColor, const bool& condition = true);
-		colorA_t probe_mult(const int& pass, const colorIntPasses_t& colorPasses, const bool& condition = true);
-		int get_highest_internal_pass_used() const;
+		colorA_t probe_mult(const int& pass, const colorPasses_t& colorPasses, const bool& condition = true);
+		int size() const;
 		
-		colorIntPasses_t & operator *=(CFLOAT f);
-		colorIntPasses_t & operator *=(color_t &a);
-		colorIntPasses_t & operator *=(colorA_t &a);
-		colorIntPasses_t & operator +=(colorIntPasses_t &a);
+		colorPasses_t & operator *= (CFLOAT f);
+		colorPasses_t & operator *= (const color_t &a);
+		colorPasses_t & operator *= (const colorA_t &a);
+		colorPasses_t & operator += (const colorPasses_t &a);
 
 		float pass_mask_obj_index;	//Object Index used for masking in/out in the Mask Render Passes
 		float pass_mask_mat_index;	//Material Index used for masking in/out in the Mask Render Passes
@@ -116,7 +117,7 @@ class YAFRAYCORE_EXPORT colorIntPasses_t  //Internal YafaRay color passes genera
 		bool pass_mask_only;	//False=rendered image is masked, True=only the mask is shown without rendered image
     
     protected:
-		std::vector <colorA_t> colorPasses;
+		std::vector <colorA_t> colVector;
 		renderPasses_t &passDefinitions;
 };
 
