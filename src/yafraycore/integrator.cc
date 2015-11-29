@@ -428,12 +428,12 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 						case PASS_INT_MAT_INDEX_MASK_SHADOW:
 						case PASS_INT_MAT_INDEX_MASK_ALL: 
 
-						if(colorPasses.pass_mask_invert)
+						if(colorPasses.get_pass_mask_invert())
 						{
 							colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
 						}
 
-						if(!colorPasses.pass_mask_only)
+						if(!colorPasses.get_pass_mask_only())
 						{
 							colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
 							colCombined.A = 1.f;	
@@ -494,7 +494,7 @@ inline void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPa
 	
 	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK))
 	{
-        if(sp.object->getAbsObjectIndex() == colorPasses.pass_mask_obj_index) colorPasses(PASS_INT_OBJ_INDEX_MASK) = colorA_t(1.f);
+        if(sp.object->getAbsObjectIndex() == colorPasses.get_pass_mask_obj_index()) colorPasses(PASS_INT_OBJ_INDEX_MASK) = colorA_t(1.f);
     }
 
 	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_ALL))
@@ -504,7 +504,7 @@ inline void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPa
 
 	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK))
 	{
-        if(sp.material->getAbsMaterialIndex() == colorPasses.pass_mask_mat_index) colorPasses(PASS_INT_MAT_INDEX_MASK) = colorA_t(1.f);
+        if(sp.material->getAbsMaterialIndex() == colorPasses.get_pass_mask_mat_index()) colorPasses(PASS_INT_MAT_INDEX_MASK) = colorA_t(1.f);
 	}
 
 	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_ALL))

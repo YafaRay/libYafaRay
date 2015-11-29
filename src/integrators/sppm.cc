@@ -273,12 +273,12 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 						case PASS_INT_MAT_INDEX_MASK_SHADOW:
 						case PASS_INT_MAT_INDEX_MASK_ALL: 
                         
-                        if(colorPasses.pass_mask_invert)
+                        if(colorPasses.get_pass_mask_invert())
                         {
                             colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
                         }
                         
-                        if(!colorPasses.pass_mask_only)
+                        if(!colorPasses.get_pass_mask_only())
                         {
                             colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
                             colCombined.A = 1.f;	

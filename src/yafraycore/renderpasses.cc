@@ -176,15 +176,12 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
 	indexExtPasses[extPassType] = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) number of the external pass actually using that index 
-	//Y_WARNING << "DAVID indexExtPasses["<<extPassType<<"] = " << indexExtPasses[extPassType] << ", extPassNumberFromType()=" << extPassNumberFromType(extPassType) << yendl;
 
 	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
     intPass_add(intPassType);
     
     //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
-    
-        //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
     switch(intPassType)
     {
         case PASS_INT_REFLECT_ALL:
@@ -214,7 +211,6 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
             intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW, true);
             break;
     }
-
 }
 
 void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_message /*=false*/)
@@ -228,7 +224,6 @@ void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_me
 	intPasses.push_back(intPassType);
 	//std::sort(intPasses.begin(), intPasses.end());
 	indexIntPasses[intPassType] = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) number of the internal pass actually using that index 
-	//Y_WARNING << "DAVID indexIntPasses["<<intPassType<<"] = " << indexIntPasses[intPassType] << ", intPassNumberFromType()=" << intPassNumberFromType(intPassType) << yendl;
 	
 	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
@@ -273,7 +268,7 @@ int renderPasses_t::intPassTypeFromString(std::string intPassTypeString) const
         
 int renderPasses_t::tileType(int extPassNumber) const { return extPasses[extPassNumber].tileType; }
 
-int renderPasses_t::intPassType(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
+int renderPasses_t::intPassTypeFromExtPassNumber(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
 
 
 int renderPasses_t::extPassNumberFromType(int extPassType) const
@@ -285,6 +280,11 @@ int renderPasses_t::intPassNumberFromType(int intPassType) const
 {
 	return indexIntPasses[intPassType];
 }
+
+void renderPasses_t::set_pass_mask_obj_index(float new_obj_index) { pass_mask_obj_index = new_obj_index; }
+void renderPasses_t::set_pass_mask_mat_index(float new_mat_index) { pass_mask_mat_index = new_mat_index; }
+void renderPasses_t::set_pass_mask_invert(bool mask_invert) { pass_mask_invert = mask_invert; }
+void renderPasses_t::set_pass_mask_only(bool mask_only) { pass_mask_only = mask_only; }
 
 
 
@@ -462,6 +462,13 @@ colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
 	}
 	return *this;
 }
+
+float colorPasses_t::get_pass_mask_obj_index() const { return passDefinitions.pass_mask_obj_index; }
+float colorPasses_t::get_pass_mask_mat_index() const { return passDefinitions.pass_mask_mat_index; }
+bool colorPasses_t::get_pass_mask_invert() const { return passDefinitions.pass_mask_invert; }
+bool colorPasses_t::get_pass_mask_only() const { return passDefinitions.pass_mask_only; }
+
+
 
 int colorPasses_t::size() const { return colVector.size(); }
 

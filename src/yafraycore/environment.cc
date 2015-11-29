@@ -568,6 +568,11 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		params.getParam("pass_" + externalPass, internalPass);
 		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
 	}
+
+	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
+	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
+	renderPasses.set_pass_mask_invert(pass_mask_invert);
+	renderPasses.set_pass_mask_only(pass_mask_only);
 	
     output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     

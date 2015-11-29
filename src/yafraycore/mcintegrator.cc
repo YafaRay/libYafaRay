@@ -119,10 +119,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if(shadowed)
 			{
 				if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
-					&& mask_mat_index == colorPasses.pass_mask_mat_index) colShadowMatMask += color_t(1.f);
+					&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
 				
 				if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
-					&& mask_obj_index == colorPasses.pass_mask_obj_index) colShadowObjMask += color_t(1.f);
+					&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
 			}
 		}
 		colorPasses.probe_add(PASS_INT_SHADOW, colShadow, state.raylevel == 0);
@@ -231,10 +231,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 				if(shadowed || ls.pdf <= 1e-6f)
 				{
 					if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
-						&& mask_mat_index == colorPasses.pass_mask_mat_index) colShadowMatMask += color_t(1.f);
+						&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
 				
 					if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
-						&& mask_obj_index == colorPasses.pass_mask_obj_index) colShadowObjMask += color_t(1.f);
+						&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
 				}
 			}
 		}
@@ -315,10 +315,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 					if(shadowed || lightPdf <= 1e-6f)
 					{
 						if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
-							&& mask_mat_index == colorPasses.pass_mask_mat_index) colShadowMatMask += color_t(1.f);
+							&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
 					
 						if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
-							&& mask_obj_index == colorPasses.pass_mask_obj_index) colShadowObjMask += color_t(1.f);
+							&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
 					}
 				}
 			}
