@@ -20,7 +20,7 @@ struct surfacePoint_t;
 class YAFRAYCORE_EXPORT object3d_t
 {
 	public:
-        object3d_t(): light(0), visible(true), is_base_mesh(false)
+        object3d_t(): light(0), visible(true), is_base_mesh(false), objectIndex(0.f)
         {
 			objectIndexAuto++;
 			srand(objectIndexAuto);		
