@@ -995,8 +995,8 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 		bool shadowed = tree->IntersectS(sray, dis, &hitt, shadowBias);
 		if(hitt)
 		{
-			obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
-			mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 		}
 		return shadowed;
 	}
@@ -1007,7 +1007,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 		bool shadowed = vtree->IntersectS(sray, dis, &hitt, shadowBias);
 		if(hitt)
 		{
-			mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 		}
 		return shadowed;
 	}
@@ -1032,8 +1032,8 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 			isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
 			if(hitt)
 			{
-				obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
-				mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+				if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 			}
 		}
 	}
@@ -1045,7 +1045,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 			isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
 			if(hitt)
 			{
-				mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 			}
 		}
 	}
