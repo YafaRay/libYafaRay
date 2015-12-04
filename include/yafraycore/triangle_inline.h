@@ -23,7 +23,9 @@ inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &d
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
 
-	if(det == 0.f) return false;
+	float epsilon = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	
+	if(det > -epsilon && det < epsilon) return false;
 
 	float inv_det = 1.f / det;
 	vector3d_t tvec = ray.from - a;
@@ -37,6 +39,8 @@ inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &d
 	if ((v<0.f) || ((u+v)>1.f) ) return false;
 
 	*t = edge2 * qvec * inv_det;
+
+	if(*t < epsilon) return false;
 
 	data.b1 = u;
 	data.b2 = v;
@@ -104,7 +108,9 @@ inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectD
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
 
-	if(det == 0.f) return false;
+	float epsilon = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	
+	if(det > -epsilon && det < epsilon) return false;
 
 	float inv_det = 1.f / det;
 	vector3d_t tvec = ray.from - a;
@@ -118,6 +124,8 @@ inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectD
 	if ((v<0.f) || ((u+v)>1.f) ) return false;
 
 	*t = edge2 * qvec * inv_det;
+
+	if(*t < epsilon) return false;
 
 	data.b1 = u;
 	data.b2 = v;

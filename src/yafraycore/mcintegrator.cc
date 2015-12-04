@@ -88,6 +88,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		if( light->illuminate(sp, lcol, lightRay) )
 		{
 			// ...shadowed...
+			if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+			else lightRay.tmin = scene->shadowBias;
+			
 			if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 			else shadowed = false;
 			
@@ -156,6 +159,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if( light->illumSample (sp, ls, lightRay) )
 			{
 				// ...shadowed...
+				if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+				else  lightRay.tmin = scene->shadowBias;
+				
 				if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 				else shadowed = false;
 
@@ -271,7 +277,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			for(int i=0; i<n; ++i)
 			{
 				ray_t bRay;
-				bRay.tmin = scene->rayMinDist; bRay.from = sp.P;
+				if(scene->rayMinDistAuto) bRay.tmin = scene->rayMinDist * std::max(1.f, vector3d_t(sp.P).length());
+				else bRay.tmin = scene->rayMinDist;
+				
+				bRay.from = sp.P;
 
 				float s1 = hal2.getNext();
 				float s2 = hal3.getNext();
@@ -830,6 +839,9 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 			s2 = addMod1(s2, state.dc2);
 		}
 
+		if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+		else lightRay.tmin = scene->shadowBias;
+		
 		lightRay.tmax = aoDist;
 
 		float W = 0.f;
