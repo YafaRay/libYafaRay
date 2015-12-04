@@ -905,7 +905,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 			triangle_t *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= shadow_bias)
+				if(t_hit < dist && t_hit >= 0.f ) // '>=' ?
 				{
 					const material_t *mat = mp->getMaterial();
 					
@@ -925,7 +925,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= shadow_bias)
+					if(t_hit < dist && t_hit >= 0.f )
 					{
 						const material_t *mat = mp->getMaterial();
 						
@@ -1054,7 +1054,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			triangle_t *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= shadow_bias)
+				if(t_hit < dist && t_hit >= ray.tmin ) // '>=' ?
 				{
 					const material_t *mat = mp->getMaterial();
 					
@@ -1085,7 +1085,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= shadow_bias)
+					if(t_hit < dist && t_hit >= ray.tmin)
 					{
 						const material_t *mat = mp->getMaterial();
 						
