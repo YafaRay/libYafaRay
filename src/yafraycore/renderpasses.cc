@@ -168,14 +168,14 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 		return;
 	}
 
-	if(indexExtPasses[extPassType] != -1)
+	if(indexExtPasses.at(extPassType) != -1)
 	{
 		Y_WARNING << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
 	}
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
-	indexExtPasses[extPassType] = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) number of the external pass actually using that index 
+	indexExtPasses.at(extPassType) = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) number of the external pass actually using that index 
 
 	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
@@ -216,24 +216,24 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 void renderPasses_t::intPass_add(int intPassType, bool hide_duplicate_warning_message /*=false*/)
 {
 	//if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
-	if(indexIntPasses[intPassType] != -1)
+	if(indexIntPasses.at(intPassType) != -1)
 	{
 		if(!hide_duplicate_warning_message) Y_WARNING << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
 		return;
 	}
 	intPasses.push_back(intPassType);
 	//std::sort(intPasses.begin(), intPasses.end());
-	indexIntPasses[intPassType] = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) number of the internal pass actually using that index 
+	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) number of the internal pass actually using that index 
 	
 	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
         
-int renderPasses_t::extPassTypeFromNumber(int extPassNumber) const { return extPasses[extPassNumber].extPassType; }
-int renderPasses_t::intPassTypeFromNumber(int intPassNumber) const { return intPasses[intPassNumber]; }
+int renderPasses_t::extPassTypeFromNumber(int extPassNumber) const { return extPasses.at(extPassNumber).extPassType; }
+int renderPasses_t::intPassTypeFromNumber(int intPassNumber) const { return intPasses.at(intPassNumber); }
 	
 std::string renderPasses_t::extPassTypeStringFromNumber(int extPassNumber) const
 {
-	std::map<int, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPasses[extPassNumber].extPassType);
+	std::map<int, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPasses.at(extPassNumber).extPassType);
 	if(map_iterator == extPassMapIntString.end()) return "not found";
 	else return map_iterator->second;
 }
@@ -266,19 +266,19 @@ int renderPasses_t::intPassTypeFromString(std::string intPassTypeString) const
 	else return map_iterator->second;
 }
         
-int renderPasses_t::tileType(int extPassNumber) const { return extPasses[extPassNumber].tileType; }
+int renderPasses_t::tileType(int extPassNumber) const { return extPasses.at(extPassNumber).tileType; }
 
-int renderPasses_t::intPassTypeFromExtPassNumber(int extPassNumber) const { return extPasses[extPassNumber].intPassType; }
+int renderPasses_t::intPassTypeFromExtPassNumber(int extPassNumber) const { return extPasses.at(extPassNumber).intPassType; }
 
 
 int renderPasses_t::extPassNumberFromType(int extPassType) const
 {
-	return indexExtPasses[extPassType];
+	return indexExtPasses.at(extPassType);
 }
 
 int renderPasses_t::intPassNumberFromType(int intPassType) const
 {
-	return indexIntPasses[intPassType];
+	return indexIntPasses.at(intPassType);
 }
 
 void renderPasses_t::set_pass_mask_obj_index(float new_obj_index) { pass_mask_obj_index = new_obj_index; }
@@ -337,7 +337,7 @@ int colorPasses_t::intPassTypeFromNumber(int intPassNumber) const
                 
 colorA_t& colorPasses_t::color(int intPassType)
 {
-	return colVector[intPassType];
+	return colVector.at(intPassType);
 }
                 
 colorA_t& colorPasses_t::operator()(int intPassType)
@@ -387,8 +387,8 @@ colorA_t colorPasses_t::probe_set(const int& intPassType, const colorPasses_t& c
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[intPassType] = colorPasses.colVector[intPassType];	
-		return colorPasses.colVector[intPassType];
+		colVector.at(intPassType) = colorPasses.colVector.at(intPassType);	
+		return colorPasses.colVector.at(intPassType);
 	}
 	else return colorA_t(0.f);
 }
@@ -404,8 +404,8 @@ colorA_t colorPasses_t::probe_add(const int& intPassType, const colorPasses_t& c
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[intPassType] += colorPasses.colVector[intPassType];	
-		return  colorPasses.colVector[intPassType];
+		colVector.at(intPassType) += colorPasses.colVector.at(intPassType);	
+		return  colorPasses.colVector.at(intPassType);
 	}
 	else return colorA_t(0.f);
 }
@@ -421,8 +421,8 @@ colorA_t colorPasses_t::probe_mult(const int& intPassType, const colorPasses_t& 
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector[intPassType] *= colorPasses.colVector[intPassType];	
-		return colorPasses.colVector[intPassType];
+		colVector.at(intPassType) *= colorPasses.colVector.at(intPassType);	
+		return colorPasses.colVector.at(intPassType);
 	}
 	else return colorA_t(0.f);
 }
@@ -458,7 +458,7 @@ colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
 {
 	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
 	{
-		*it += a.colVector[it - colVector.begin()];
+		*it += a.colVector.at(it - colVector.begin());
 	}
 	return *this;
 }
