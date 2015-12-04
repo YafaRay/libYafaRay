@@ -235,7 +235,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 					}
 				}
 				
-				for(int idx = 0; idx <= colorPasses.size(); ++idx)
+				for(int idx = 0; idx < colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
