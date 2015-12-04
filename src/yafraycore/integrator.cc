@@ -390,7 +390,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					}
 				}
 				
-				for(int idx = 0; idx <= colorPasses.size(); ++idx)
+				for(int idx = 0; idx < colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
