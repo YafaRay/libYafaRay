@@ -62,12 +62,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 		{
 			PyObject* groupPix = PyTuple_New(1);
 			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
-			
-			PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-			Py_XDECREF(groupPix);
-			
-			return MyResult;
+			return groupPix;
 		}
 		else if(self->tileType == yafaray::PASS_EXT_TILE_3_RGB) 
 		{
@@ -75,12 +70,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
 			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
 			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
-			
-			PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-			Py_XDECREF(groupPix);
-			
-			return MyResult;
+			return groupPix;
 		}
 		else
 		{
@@ -89,12 +79,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
 			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
 			PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(1.f));
-			
-			PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-			Py_XDECREF(groupPix);
-			
-			return MyResult;
+			return groupPix;
 		}
 	}
 
@@ -113,12 +98,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 	{
 		PyObject* groupPix = PyTuple_New(1);
 		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
-		
-		PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-		Py_XDECREF(groupPix);
-		
-		return MyResult;
+		return groupPix;
 	}
 	else if(self->tileType == yafaray::PASS_EXT_TILE_3_RGB) 
 	{
@@ -126,12 +106,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
 		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
 		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
-		
-		PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-		Py_XDECREF(groupPix);
-		
-		return MyResult;
+		return groupPix;
 	}
 	else
 	{
@@ -140,12 +115,7 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
 		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
 		PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(pix.a));
-		
-		PyObject *MyResult = Py_BuildValue("O", groupPix);
-
-		Py_XDECREF(groupPix);
-		
-		return MyResult;
+		return groupPix;
 	}
 }
 
@@ -209,12 +179,10 @@ public:
     
         for(size_t view = 0; view < tilesPasses.size(); ++view)
 		{
-			//tilesPasses.at(view).resize(numExtPasses, PyObject_New(YafTileObject_t, &yafTile_Type));
-			
 			for(int idx = 0; idx < numExtPasses; ++idx)
 			{
-				tilesPasses.at(view).push_back(PyObject_New(YafTileObject_t, &yafTile_Type));
-				Py_XINCREF(tilesPasses.at(view)[idx]);
+				YafTileObject_t* tile = PyObject_New(YafTileObject_t, &yafTile_Type);
+				tilesPasses.at(view).push_back(tile);
 				tilesPasses.at(view)[idx]->mem = new yafTilePixel_t[resx*resy];
 				tilesPasses.at(view)[idx]->resx = resx;
 				tilesPasses.at(view)[idx]->resy = resy;
@@ -229,7 +197,7 @@ public:
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
 				delete [] tilesPasses.at(view)[idx]->mem;
-				Py_XDECREF(tilesPasses.at(view)[idx]);
+				//Py_XDECREF(tilesPasses.at(view)[idx]);
 			}
 			tilesPasses.at(view).clear();
 		}
@@ -264,8 +232,6 @@ public:
 			
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
-				Py_INCREF(tilesPasses.at(view)[idx]);
-				
 				tilesPasses.at(view)[idx]->x0 = 0;
 				tilesPasses.at(view)[idx]->x1 = resx;
 				tilesPasses.at(view)[idx]->y0 = 0;
@@ -275,15 +241,19 @@ public:
 				
 				std::stringstream extPassName;
 				extPassName << renderPasses.extPassTypeStringFromIndex(idx);
-				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);
-				
+				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);				
 				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
-			}
-		}
-		
-		PyEval_CallObject(mFlush, Py_BuildValue("iiiO", resx, resy, 0, groupTile));
 
+				//std::cout << "flush: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
+			}
+		}		
+		PyObject* result = PyObject_CallFunction(mFlush, "iiiO", resx, resy, 0, groupTile);
+
+		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
+		
+		//std::cout << "flush: result->ob_refcnt=" << result->ob_refcnt << std::endl;
+		//std::cout << "flush: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 
 		PyGILState_Release(gstate);
 	}
@@ -305,8 +275,6 @@ public:
 
 		for(size_t idx = 0; idx < tilesPasses.at(numView).size(); ++idx)
 		{
-			Py_INCREF(tilesPasses.at(numView)[idx]);
-			
 			tilesPasses.at(numView)[idx]->x0 = x0 - bsX;
 			tilesPasses.at(numView)[idx]->x1 = x1 - bsX;
 			tilesPasses.at(numView)[idx]->y0 = y0 - bsY;
@@ -317,13 +285,17 @@ public:
 			std::stringstream extPassName;
 			extPassName << renderPasses.extPassTypeStringFromIndex(idx);
 			PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
-			
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
+
+			//std::cout << "flushArea: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
 		}
 
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		PyObject* result = PyObject_CallFunction(mDrawArea, "iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile);
 		
+		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
+		//std::cout << "flushArea: result->ob_refcnt=" << result->ob_refcnt << std::endl;
+		//std::cout << "flushArea: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 		
 		PyGILState_Release(gstate);
 	}
@@ -354,17 +326,20 @@ public:
 
 		PyObject* groupTile = PyTuple_New(1);
 
-		Py_INCREF(tilesPasses.at(numView)[0]);
-			
 		tilesPasses.at(numView)[0]->tileType = yafaray::PASS_EXT_TILE_4_RGBA;
 		
 		PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), "Combined", tilesPasses.at(numView)[0]);
-		
 		PyTuple_SET_ITEM(groupTile, 0, (PyObject*) groupItem);
+
+		//std::cout << "highliteArea: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
 		
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		PyObject* result = PyObject_CallFunction(mDrawArea, "iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile);
 		
+		Py_XDECREF(result);
 		Py_XDECREF(groupTile);
+
+		//std::cout << "highliteArea: result->ob_refcnt=" << result->ob_refcnt << std::endl;
+		//std::cout << "highliteArea: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 
 		PyGILState_Release(gstate);
 	}
@@ -459,7 +434,9 @@ public:
 	{
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("sf", "progress", percent));
+		PyObject* result = PyObject_CallFunction(callb, "sf", "progress", percent);
+		Py_XDECREF(result);
+		//std::cout << "report_progress: result->ob_refcnt=" << result->ob_refcnt << std::endl;
 		PyGILState_Release(gstate);
 	}
 
@@ -485,7 +462,9 @@ public:
 	{
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("ss", "tag", text));
+		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text);
+		Py_XDECREF(result);
+		//std::cout << "setTag: result->ob_refcnt=" << result->ob_refcnt << std::endl;
 		PyGILState_Release(gstate);
 	}
 
