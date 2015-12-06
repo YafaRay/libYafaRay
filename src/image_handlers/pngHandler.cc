@@ -40,7 +40,7 @@ __BEGIN_YAFRAY
 class pngHandler_t: public imageHandler_t
 {
 public:
-	pngHandler_t();
+	pngHandler_t(bool optimized_texture = false);
 	~pngHandler_t();
 	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
@@ -51,11 +51,12 @@ public:
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 private:
 	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
+	void readFromStructsOptimized(png_structp pngPtr, png_infop infoPtr);
 	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
 	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
 };
 
-pngHandler_t::pngHandler_t()
+pngHandler_t::pngHandler_t(bool optimized_texture /*=false*/)
 {
 	m_width = 0;
 	m_height = 0;
@@ -67,6 +68,8 @@ pngHandler_t::pngHandler_t()
 		imagePasses.at(idx) = NULL;
 	}
 
+	m_optimizedTexture = optimized_texture;
+	
 	handlerName = "PNGHandler";
 }
 
@@ -99,7 +102,24 @@ void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*imagePasses.at(imagePassNumber))(x, y);
+	if(isTextureOptimized())
+	{
+		float c[m_numchannels];
+		
+		for(int colorchannel=0; colorchannel < m_numchannels ; ++colorchannel)
+		{
+			c[colorchannel] = (float) optimizedTextureBuffer[((y*m_width + x) * m_numchannels * m_bytedepth) + colorchannel] / 255.f;
+		}
+		
+		colorA_t col;
+		
+		if(m_numchannels == 1 || m_numchannels == 2) col.set(c[0],c[0],c[0],1.f);
+		else if(m_numchannels == 3) col.set(c[0],c[1],c[2],1.f);
+		else col.set(c[0],c[1],c[2],c[3]);
+
+		return col;
+	}
+	else return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
 bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -207,7 +227,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	png_set_sig_bytes(pngPtr, 8);
 
-	readFromStructs(pngPtr, infoPtr);
+	if(isTextureOptimized()) readFromStructsOptimized(pngPtr, infoPtr);
+	else readFromStructs(pngPtr, infoPtr);
 
 	fclose(fp);
 
@@ -454,19 +475,113 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	delete[] rowPointers;
 }
 
+void pngHandler_t::readFromStructsOptimized(png_structp pngPtr, png_infop infoPtr)
+{
+	png_uint_32 w, h;
+
+	int bitDepth, colorType;
+
+	png_read_info(pngPtr, infoPtr);
+
+	png_get_IHDR(pngPtr, infoPtr, &w, &h, &bitDepth, &colorType, NULL, NULL, NULL);
+
+	int numChan = png_get_channels(pngPtr, infoPtr);
+
+	switch(colorType)
+	{
+		case PNG_COLOR_TYPE_RGB:
+			break;
+		case PNG_COLOR_TYPE_RGB_ALPHA:
+			m_hasAlpha = true;
+			break;
+
+		case PNG_COLOR_TYPE_PALETTE:
+			png_set_palette_to_rgb(pngPtr);
+			if (png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) numChan = 4;
+			else numChan = 3;
+			break;
+
+		case PNG_COLOR_TYPE_GRAY:
+		case PNG_COLOR_TYPE_GRAY_ALPHA:
+			if (bitDepth < 8)
+			{
+				png_set_gray_to_rgb(pngPtr);
+				bitDepth = 8;
+			}
+			break;
+
+		default:
+			Y_ERROR << handlerName << ": PNG type is not supported!" << yendl;
+			longjmp(png_jmpbuf(pngPtr), 1);
+	}
+	
+	// yes i know w and h are unsigned ints and the value can be much bigger, i'll think if a different memeber var is really needed since...
+	// an image of 4,294,967,295 (max value of unsigned int) pixels on one side?
+	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
+	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
+	m_width = (int)w;
+	m_height = (int)h;
+
+	
+	png_bytepp rowPointers = new png_bytep[m_height];
+
+	int bitMult = 1;
+	if(bitDepth == 16) bitMult = 2;
+
+	for(int i = 0; i < m_height; i++)
+	{
+		rowPointers[i] = new yByte[ m_width * numChan * bitMult ];
+	}
+
+	png_read_image(pngPtr, rowPointers);
+
+	m_numchannels = numChan;
+	m_bytedepth = bitMult;
+
+	optimizedTextureBuffer.resize(m_width * m_height * numChan * bitMult);
+
+	for(int x = 0; x < m_width; x++)
+	{
+		for(int y = 0; y < m_height; y++)
+		{
+			int i = x * numChan * bitMult;
+
+			for(int colorchannel=0; colorchannel < numChan ; ++colorchannel)
+			{
+				optimizedTextureBuffer[((y*m_width + x) * numChan * bitMult) + colorchannel] = rowPointers[y][i+colorchannel];
+			}
+		}
+	}
+
+	png_read_end(pngPtr, infoPtr);
+
+	png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+
+	// cleanup:
+	for(int i = 0; i < m_height; i++)
+	{
+		delete [] rowPointers[i];
+	}
+
+	delete[] rowPointers;
+}
+
+
 imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool optimized_texture = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("optimized_texture", optimized_texture);
 
-	imageHandler_t *ih = new pngHandler_t();
+	imageHandler_t *ih = new pngHandler_t(optimized_texture);
 
 	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
 

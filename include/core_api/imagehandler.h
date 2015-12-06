@@ -48,13 +48,18 @@ public:
 	virtual int getHeight() { return m_height; }
 	virtual bool isHDR() { return false; }
     virtual bool isMultiLayer() { return m_MultiLayer; }
+    bool isTextureOptimized() { return m_optimizedTexture; }
 	
 protected:
 	std::string handlerName;
 	int m_width;
 	int m_height;
+	int m_numchannels;
+	int m_bytedepth;	//!< size of each color component in bytes
 	bool m_hasAlpha;
+	bool m_optimizedTexture;
 	std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
+	std::vector<unsigned char> optimizedTextureBuffer; //!< Low dynamic range (optimized)texture to be saved in RAM 
     bool m_MultiLayer;
 };
 
