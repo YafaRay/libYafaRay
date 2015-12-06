@@ -183,7 +183,7 @@ public:
 			{
 				YafTileObject_t* tile = PyObject_New(YafTileObject_t, &yafTile_Type);
 				tilesPasses.at(view).push_back(tile);
-				Py_INCREF(tilesPasses.at(view)[idx]);
+				//Py_INCREF(tilesPasses.at(view)[idx]);
 				tilesPasses.at(view)[idx]->mem = new yafTilePixel_t[resx*resy];
 				tilesPasses.at(view)[idx]->resx = resx;
 				tilesPasses.at(view)[idx]->resy = resy;
@@ -198,7 +198,7 @@ public:
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
 				delete [] tilesPasses.at(view)[idx]->mem;
-				Py_DECREF(tilesPasses.at(view)[idx]);
+				Py_XDECREF(tilesPasses.at(view)[idx]);
 			}
 			tilesPasses.at(view).clear();
 		}
@@ -246,11 +246,13 @@ public:
 				
 				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
 			}
-		}
-		
-		PyEval_CallObject(mFlush, Py_BuildValue("iiiO", resx, resy, 0, groupTile));
+		}		
+		PyObject* tiledata = Py_BuildValue("iiiO", resx, resy, 0, groupTile);
+		PyObject* result = PyEval_CallObject(mFlush, tiledata);
 
-		Py_DECREF(groupTile);
+		Py_XDECREF(result);
+		Py_XDECREF(tiledata);
+		Py_XDECREF(groupTile);
 
 		PyGILState_Release(gstate);
 	}
@@ -288,9 +290,12 @@ public:
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
 		}
 
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		PyObject* tiledata = Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile);
+		PyObject* result = PyEval_CallObject(mDrawArea, tiledata);
 		
-		Py_DECREF(groupTile);
+		Py_XDECREF(result);
+		Py_XDECREF(tiledata);
+		Py_XDECREF(groupTile);
 		
 		PyGILState_Release(gstate);
 	}
@@ -329,9 +334,12 @@ public:
 		
 		PyTuple_SET_ITEM(groupTile, 0, (PyObject*) groupItem);
 		
-		PyEval_CallObject(mDrawArea, Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile));
+		PyObject* tiledata = Py_BuildValue("iiiiiO", tilesPasses.at(numView)[0]->x0, resy - tilesPasses.at(numView)[0]->y1, w, h, numView, groupTile);
+		PyObject* result = PyEval_CallObject(mDrawArea, tiledata);
 		
-		Py_DECREF(groupTile);
+		Py_XDECREF(result);
+		Py_XDECREF(tiledata);
+		Py_XDECREF(groupTile);
 
 		PyGILState_Release(gstate);
 	}
@@ -426,7 +434,10 @@ public:
 	{
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("sf", "progress", percent));
+		PyObject* progress = Py_BuildValue("sf", "progress", percent);
+		PyObject* result = PyEval_CallObject(callb, progress);
+		Py_XDECREF(result);
+		Py_XDECREF(progress);
 		PyGILState_Release(gstate);
 	}
 
@@ -452,7 +463,10 @@ public:
 	{
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyEval_CallObject(callb, Py_BuildValue("ss", "tag", text));
+		PyObject* tag = Py_BuildValue("ss", "tag", text);
+		PyObject* result = PyEval_CallObject(callb, tag);
+		Py_XDECREF(result);
+		Py_XDECREF(tag);
 		PyGILState_Release(gstate);
 	}
 
