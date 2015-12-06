@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -44,7 +45,7 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -65,22 +66,18 @@ exrHandler_t::exrHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 
-	m_halfrgba.resize(PASS_EXT_TOTAL_PASSES);	//FIXME DAVID: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.
-	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
-	{
-		m_halfrgba.at(idx) = NULL;
-	}
-	
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
-
+    
+	m_halfrgba.resize(renderPasses.extPassesSize());
+	
 	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
 	{
 		m_halfrgba.at(idx) = new halfRgbaScanlineImage_t(m_height, m_width);
@@ -156,8 +153,8 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     
     for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
     {
-		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromNumber(idx) + ".";        
-		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromNumber(idx) << yendl;
+		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromIndex(idx) + ".";        
+		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromIndex(idx) << yendl;
         
         header.channels().insert(extPassName+"R", Channel(HALF));
         header.channels().insert(extPassName+"G", Channel(HALF));
@@ -228,8 +225,16 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		m_height = dw.max.y - dw.min.y + 1;
 		m_hasAlpha = true;
 
-		if(m_halfrgba.at(0)) delete m_halfrgba.at(0);
-		m_halfrgba.at(0) = new halfRgbaScanlineImage_t(m_width, m_height);
+		if(!m_halfrgba.empty())
+		{
+			for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
+			{
+				if(m_halfrgba.at(idx)) delete m_halfrgba.at(idx);
+			}
+			m_halfrgba.clear();
+		}
+		
+		m_halfrgba.push_back(new halfRgbaScanlineImage_t(m_width, m_height));
 
 		file.setFrameBuffer(&(*m_halfrgba.at(0))(0, 0) - dw.min.y - dw.min.x * m_height, m_height, 1);
 		file.readPixels(dw.min.y, dw.max.y);
@@ -263,7 +268,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 
 	imageHandler_t *ih = new exrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, withAlpha, multiLayer);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
 
 	return ih;
 }

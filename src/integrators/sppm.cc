@@ -128,9 +128,9 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	
 	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
-	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t colorPasses(scene->getRenderPasses());
 
-	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
+	colorPasses_t tmpPassesZero(scene->getRenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -239,7 +239,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
-					int intPassType = colorPasses.intPassTypeFromNumber(idx);
+					int intPassType = colorPasses.intPassTypeFromIndex(idx);
 										
 					switch(intPassType)
 					{

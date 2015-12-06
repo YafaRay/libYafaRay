@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <cstdio>
 
@@ -68,7 +69,7 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -82,22 +83,21 @@ jpgHandler_t::jpgHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 	
-	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-	{
-		imagePasses.at(idx) = NULL;
-	}
-
 	handlerName = "JPEGHandler";
+	
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
-void jpgHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
+void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 
+	imagePasses.resize(renderPasses.extPassesSize());
+	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
 		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
@@ -106,11 +106,20 @@ void jpgHandler_t::initForOutput(int width, int height, bool withAlpha, bool mul
 
 jpgHandler_t::~jpgHandler_t()
 {
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	if(!imagePasses.empty())
 	{
-		if(imagePasses.at(idx)) delete imagePasses.at(idx);
-		imagePasses.at(idx) = NULL;
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
 	}
+
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
 void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -120,7 +129,10 @@ void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*imagePasses.at(imagePassNumber))(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
 bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -297,9 +309,19 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	m_hasAlpha = false;
 	m_width = info.output_width;
 	m_height = info.output_height;
+
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		}
+		imagePasses.clear();
+	}
 	
-	if(imagePasses.at(0)) delete imagePasses.at(0);
-	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED) rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED) rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
@@ -312,15 +334,17 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		
 		for (int x = 0; x < m_width; x++)
 		{
+			colorA_t color;
+			
 			if (isGray)
 			{
-				float color = scanline[x] * inv8;
-				(*imagePasses.at(0))(x, y).set(color, color, color, 1.f);
+				float colscan = scanline[x] * inv8;
+				color.set(colscan, colscan, colscan, 1.f);
 			}
 			else if(isRGB)
 			{
 				ix = x * 3;
-				(*imagePasses.at(0))(x, y).set( scanline[ix] * inv8,
+				color.set( scanline[ix] * inv8,
 									 scanline[ix+1] * inv8,
 									 scanline[ix+2] * inv8,
 									 1.f);
@@ -331,7 +355,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 				float K = scanline[ix+3] * inv8;
 				float iK = 1.f - K;
 				
-				(*imagePasses.at(0))(x, y).set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
+				color.set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
 									 1.f - std::max((scanline[ix+1] * inv8 * iK) + K, 1.f),
 									 1.f - std::max((scanline[ix+2] * inv8 * iK) + K, 1.f),
 									 1.f);
@@ -341,11 +365,15 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 				ix = x * 4;
 				float A = scanline[ix+3] * inv8;
 				float iA = 1.f - A;
-				(*imagePasses.at(0))(x, y).set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
+				color.set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
 									 std::max(0.f, std::min((scanline[ix+1] * inv8) - iA, 1.f)),
 									 std::max(0.f, std::min((scanline[ix+2] * inv8) - iA, 1.f)),
 									 A);
 			}
+			
+			if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;	
 		}
 		y++;
 	}
@@ -362,6 +390,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	return true;
 }
 
+
 imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	int width = 0;
@@ -376,7 +405,7 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	
 	imageHandler_t *ih = new jpgHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 	
 	return ih;
 }

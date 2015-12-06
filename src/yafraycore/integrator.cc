@@ -298,9 +298,9 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	Halton halU(3);
 	Halton halV(5);
 
-	colorPasses_t colorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t colorPasses(scene->getRenderPasses());
  
-	colorPasses_t tmpPassesZero(imageFilm->get_RenderPasses());
+	colorPasses_t tmpPassesZero(scene->getRenderPasses());
 	
 	for(int i=a.Y; i<end_y; ++i)
 	{
@@ -394,7 +394,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
-					int intPassType = colorPasses.intPassTypeFromNumber(idx);
+					intPassTypes_t intPassType = colorPasses.intPassTypeFromIndex(idx);
 										
 					switch(intPassType)
 					{

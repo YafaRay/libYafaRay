@@ -7,6 +7,7 @@
 #include "yafsystem.h"
 #include <list>
 #include <vector>
+#include <core_api/renderpasses.h>
 
 __BEGIN_YAFRAY
 class light_t;
@@ -67,6 +68,8 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		imageHandler_t* createImageHandler(const std::string &name, paraMap_t &params, bool addToTable = true);
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
+		void			setupRenderPasses(const paraMap_t &params);
+		renderPasses_t&	getRenderPasses() { return renderPasses; }
 		void clearAll();
 
 		virtual void registerFactory(const std::string &name,light_factory_t *f);
@@ -121,6 +124,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		std::map<std::string,std::string> imagehandler_fullnames;
 		std::map<std::string,std::string> imagehandler_extensions;
 		scene_t *curren_scene;
+		renderPasses_t renderPasses;
 };
 
 __END_YAFRAY

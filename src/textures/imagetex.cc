@@ -259,6 +259,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	bool normalmap = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
+	std::string texture_optimization_string = "none";
+	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
 	textureImage_t *tex = NULL;
 	imageHandler_t *ih = NULL;
 	params.getParam("interpolate", intpstr);
@@ -267,6 +269,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
+	params.getParam("texture_optimization", texture_optimization_string);
 	
 	if(!name)
 	{
@@ -310,16 +313,13 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		return NULL;
 	}
 	
-	if(!ih->loadFromFile(*name))
-	{
-		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
-		return NULL;
-	}
 
 	if(ih->isHDR())
 	{
 		if(color_space_string != "LinearRGB") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
 		color_space = LINEAR_RGB;
+		if(texture_optimization_string != "none") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string <<"'" << yendl;
+		texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
 	else
 	{
@@ -328,6 +328,19 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
 		else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 		else color_space = SRGB;
+		
+		if(texture_optimization_string == "none") texture_optimization = TEX_OPTIMIZATION_NONE;
+		else if(texture_optimization_string == "optimized") texture_optimization = TEX_OPTIMIZATION_OPTIMIZED;
+		else if(texture_optimization_string == "compressed") texture_optimization = TEX_OPTIMIZATION_COMPRESSED;
+		else texture_optimization = TEX_OPTIMIZATION_NONE;
+	}
+	
+	ih->setTextureOptimization(texture_optimization);
+
+	if(!ih->loadFromFile(*name))
+	{
+		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
+		return NULL;
 	}
 	
 	tex = new textureImage_t(ih, intp, gamma, color_space);

@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <png.h>
 
@@ -42,7 +43,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
@@ -51,6 +52,7 @@ public:
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 private:
 	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
+	void readFromStructsOptimized(png_structp pngPtr, png_infop infoPtr);
 	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
 	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
 };
@@ -60,23 +62,24 @@ pngHandler_t::pngHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-
-	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-	{
-		imagePasses.at(idx) = NULL;
-	}
-
+	
 	handlerName = "PNGHandler";
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;
 }
 
-void pngHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 
+	imagePasses.resize(renderPasses.extPassesSize());
+	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
 		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
@@ -85,11 +88,24 @@ void pngHandler_t::initForOutput(int width, int height, bool withAlpha, bool mul
 
 pngHandler_t::~pngHandler_t()
 {
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	if(!imagePasses.empty())
 	{
-		if(imagePasses.at(idx)) delete imagePasses.at(idx);
-		imagePasses.at(idx) = NULL;
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
 	}
+
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
+	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;	
 }
 
 void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -99,7 +115,12 @@ void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*imagePasses.at(imagePassNumber))(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(rgbaOptimizedBuffer) return (*rgbaOptimizedBuffer)(x, y).getColor();
+	else if(rgbaCompressedBuffer) return (*rgbaCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
 bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -358,9 +379,29 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	m_width = (int)w;
 	m_height = (int)h;
 
-	if(imagePasses.at(0)) delete imagePasses.at(0);
-	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		}
+		imagePasses.clear();
+	}
 
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED)
+	{
+		if(numChan == 4) rgbaOptimizedBuffer = new rgbaOptimizedImage_nw_t(m_width, m_height);
+		else rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);
+	}
+	
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED)
+	{
+		if(numChan == 4) rgbaCompressedBuffer = new rgbaCompressedImage_nw_t(m_width, m_height);
+		else rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
+	}
+
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+	
 	png_bytepp rowPointers = new png_bytep[m_height];
 
 	int bitMult = 1;
@@ -381,8 +422,8 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	{
 		for(int y = 0; y < m_height; y++)
 		{
-			colorA_t &color = (*imagePasses.at(0))(x, y);
-
+			colorA_t color;
+			
 			int i = x * numChan * bitMult;
 			float c = 0.f;
 
@@ -438,6 +479,12 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 						break;
 				}
 			}
+			
+			if(rgbaOptimizedBuffer) (*rgbaOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbaCompressedBuffer) (*rgbaCompressedBuffer)(x, y).setColor(color);
+			else if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;			
 		}
 	}
 
@@ -468,7 +515,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 
 	imageHandler_t *ih = new pngHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 
 	return ih;
 }

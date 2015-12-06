@@ -634,7 +634,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	color_t vcol(0.f);
 	float W = 0.f;
 
-	colorPasses_t tmpColorPasses(imageFilm->get_RenderPasses());
+	colorPasses_t tmpColorPasses(scene->getRenderPasses());
 	
 	int nSampl = (int) ceilf(std::max(1, nPaths/state.rayDivision)*AA_indirect_sample_multiplier);
 	for(int i=0; i<nSampl; ++i)

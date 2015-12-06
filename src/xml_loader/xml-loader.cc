@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 		outputPath += "/" + outName;
 	}
 	
-	scene_t *scene = new scene_t();
+	scene_t *scene = new scene_t(env->getRenderPasses());
 	env->setScene(scene);
 	paraMap_t render;
 	

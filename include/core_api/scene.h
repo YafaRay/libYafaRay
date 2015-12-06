@@ -46,6 +46,7 @@ class volumeIntegrator_t;
 class imageFilm_t;
 struct renderArea_t;
 class random_t;
+class renderPasses_t;
 
 typedef unsigned int objID_t;
 
@@ -143,9 +144,9 @@ struct sceneGeometryState_t
 class YAFRAYCORE_EXPORT scene_t
 {
 	public:
-		scene_t();
+		scene_t(renderPasses_t &render_passes);
 		~scene_t();
-		explicit scene_t(const scene_t &s){ Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
+		explicit scene_t(const scene_t &s):renderPasses(s.renderPasses) { Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
 		bool render();
 		void abort();
 		bool startGeometry();
@@ -197,6 +198,7 @@ class YAFRAYCORE_EXPORT scene_t
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
         void setLightGroupFilter(int light_group_filter);
+		renderPasses_t &getRenderPasses() { return renderPasses; }
 
 		enum sceneState { READY, GEOMETRY, OBJECT, VMAP };
 		enum changeFlags { C_NONE=0, C_GEOM=1, C_LIGHT= 1<<1, C_OTHER=1<<2,
@@ -244,6 +246,7 @@ class YAFRAYCORE_EXPORT scene_t
 		int nthreads;
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
 		int signals;
+		renderPasses_t &renderPasses;	//!< reference to the environment renderPasses object
 		mutable yafthreads::mutex_t sig_mutex;
 };
 

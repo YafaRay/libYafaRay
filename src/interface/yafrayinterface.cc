@@ -66,9 +66,15 @@ void yafrayInterface_t::clearAll()
 bool yafrayInterface_t::startScene(int type)
 {
 	if(scene) delete scene;
-	scene = new scene_t();
+	scene = new scene_t(env->getRenderPasses());
 	scene->setMode(type);
 	env->setScene(scene);
+	return true;
+}
+
+bool yafrayInterface_t::setupRenderPasses()
+{
+	env->setupRenderPasses(*params);
 	return true;
 }
 
