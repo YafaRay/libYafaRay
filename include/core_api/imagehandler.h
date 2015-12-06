@@ -49,6 +49,7 @@ public:
 	virtual bool isHDR() { return false; }
     virtual bool isMultiLayer() { return m_MultiLayer; }
     bool isTextureOptimized() { return m_optimizedTexture; }
+    void setTextureOptimized(bool optimized_texture) { m_optimizedTexture = optimized_texture; }
 	
 protected:
 	std::string handlerName;

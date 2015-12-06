@@ -40,7 +40,7 @@ __BEGIN_YAFRAY
 class pngHandler_t: public imageHandler_t
 {
 public:
-	pngHandler_t(bool optimized_texture = false);
+	pngHandler_t();
 	~pngHandler_t();
 	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
@@ -56,7 +56,7 @@ private:
 	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
 };
 
-pngHandler_t::pngHandler_t(bool optimized_texture /*=false*/)
+pngHandler_t::pngHandler_t()
 {
 	m_width = 0;
 	m_height = 0;
@@ -67,8 +67,6 @@ pngHandler_t::pngHandler_t(bool optimized_texture /*=false*/)
 	{
 		imagePasses.at(idx) = NULL;
 	}
-
-	m_optimizedTexture = optimized_texture;
 	
 	handlerName = "PNGHandler";
 }
@@ -573,15 +571,13 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
-	bool optimized_texture = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-	params.getParam("optimized_texture", optimized_texture);
 
-	imageHandler_t *ih = new pngHandler_t(optimized_texture);
+	imageHandler_t *ih = new pngHandler_t();
 
 	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
 

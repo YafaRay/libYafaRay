@@ -257,6 +257,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
+	bool optimized_texture = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	textureImage_t *tex = NULL;
@@ -267,6 +268,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
+	params.getParam("optimized_texture", optimized_texture);
 	
 	if(!name)
 	{
@@ -303,6 +305,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	ihname.append(toLower(name->substr(lSlash, lDot - lSlash - 1)));
 	
 	ih = render.createImageHandler(ihname, ihpm);
+	
+	ih->setTextureOptimized(optimized_texture);
 	
 	if(!ih)
 	{
