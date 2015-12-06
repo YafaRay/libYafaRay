@@ -106,7 +106,12 @@ colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 		
 		for(int colorchannel=0; colorchannel < m_numchannels ; ++colorchannel)
 		{
-			c[colorchannel] = (float) optimizedTextureBuffer[((y*m_width + x) * m_numchannels * m_bytedepth) + colorchannel] / 255.f;
+			if(m_bytedepth == 1) c[colorchannel] = (float) optimizedTextureBuffer[((y*m_width + x) * m_numchannels) + colorchannel] / 255.f;
+			else if(m_bytedepth == 2)
+			{
+				c[colorchannel] = (float) (optimizedTextureBuffer[((((y*m_width + x) * m_numchannels) + colorchannel) * m_bytedepth)] << 8 | optimizedTextureBuffer[((((y*m_width + x) * m_numchannels) + colorchannel) * m_bytedepth) + 1]) / 65535.f;
+			}
+			else c[colorchannel] = 0.f;
 		}
 		
 		colorA_t col;
@@ -546,7 +551,10 @@ void pngHandler_t::readFromStructsOptimized(png_structp pngPtr, png_infop infoPt
 
 			for(int colorchannel=0; colorchannel < numChan ; ++colorchannel)
 			{
-				optimizedTextureBuffer[((y*m_width + x) * numChan * bitMult) + colorchannel] = rowPointers[y][i+colorchannel];
+				for(int bytenum=0; bytenum < bitMult ; ++bytenum)
+				{
+					optimizedTextureBuffer[((((y*m_width + x) * numChan) + colorchannel) * bitMult) + bytenum] = rowPointers[y][((x * numChan + colorchannel) * bitMult) + bytenum];
+				}
 			}
 		}
 	}
