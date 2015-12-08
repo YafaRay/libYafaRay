@@ -120,7 +120,7 @@ void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	if(isTextureOptimized())
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
 	{
 		float c[m_numchannels];
 		
@@ -320,7 +320,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	m_width = info.output_width;
 	m_height = info.output_height;
 
-	if(isTextureOptimized())
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
 	{
 		m_numchannels = info.output_components;
 		m_bytedepth = 1;
@@ -344,7 +344,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		
 		for (int x = 0; x < m_width; x++)
 		{
-			if(isTextureOptimized())
+			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
 			{
 				for(int colorchannel=0; colorchannel < m_numchannels ; ++colorchannel)
 				{

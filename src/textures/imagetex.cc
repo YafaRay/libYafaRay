@@ -257,9 +257,10 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
-	bool optimized_texture = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
+	std::string texture_optimization_string = "none";
+	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
 	textureImage_t *tex = NULL;
 	imageHandler_t *ih = NULL;
 	params.getParam("interpolate", intpstr);
@@ -268,7 +269,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
-	params.getParam("optimized_texture", optimized_texture);
+	params.getParam("texture_optimization", texture_optimization_string);
 	
 	if(!name)
 	{
@@ -306,8 +307,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	
 	ih = render.createImageHandler(ihname, ihpm);
 	
-	ih->setTextureOptimized(optimized_texture);
-	
 	if(!ih)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << yendl;
@@ -324,6 +323,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	{
 		if(color_space_string != "LinearRGB") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
 		color_space = LINEAR_RGB;
+		if(texture_optimization_string != "None") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string <<"'" << yendl;
+		texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
 	else
 	{
@@ -332,7 +333,15 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
 		else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 		else color_space = SRGB;
+		
+		if(texture_optimization_string == "none") texture_optimization = TEX_OPTIMIZATION_NONE;
+		else if(texture_optimization_string == "basic") texture_optimization = TEX_OPTIMIZATION_BASIC;
+		else if(texture_optimization_string == "basic-noalpha") texture_optimization = TEX_OPTIMIZATION_BASIC_NOALPHA;
+		else if(texture_optimization_string == "compress-rgb565") texture_optimization = TEX_OPTIMIZATION_RGB565;
+		else texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
+	
+	ih->setTextureOptimization(texture_optimization);
 	
 	tex = new textureImage_t(ih, intp, gamma, color_space);
 

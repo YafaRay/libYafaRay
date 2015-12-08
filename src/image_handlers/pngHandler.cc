@@ -100,7 +100,7 @@ void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	if(isTextureOptimized())
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
 	{
 		float c[m_numchannels];
 		
@@ -230,7 +230,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	png_set_sig_bytes(pngPtr, 8);
 
-	if(isTextureOptimized()) readFromStructsOptimized(pngPtr, infoPtr);
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) readFromStructsOptimized(pngPtr, infoPtr);
 	else readFromStructs(pngPtr, infoPtr);
 
 	fclose(fp);
