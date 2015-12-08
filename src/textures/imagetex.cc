@@ -313,11 +313,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		return NULL;
 	}
 	
-	if(!ih->loadFromFile(*name))
-	{
-		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
-		return NULL;
-	}
 
 	if(ih->isHDR())
 	{
@@ -342,6 +337,12 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	}
 	
 	ih->setTextureOptimization(texture_optimization);
+
+	if(!ih->loadFromFile(*name))
+	{
+		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
+		return NULL;
+	}
 	
 	tex = new textureImage_t(ih, intp, gamma, color_space);
 
