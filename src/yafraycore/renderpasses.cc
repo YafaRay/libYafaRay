@@ -335,9 +335,10 @@ int colorPasses_t::intPassTypeFromNumber(int intPassNumber) const
 	return passDefinitions.intPassTypeFromNumber(intPassNumber);
 }
                 
-colorA_t& colorPasses_t::color(int intPassType)
+colorA_t& colorPasses_t::color(int intPassNumber)
 {
-	return colVector.at(passDefinitions.intPassNumberFromType(intPassType));
+	return colVector.at(intPassNumber);
+	//return colVector.at(passDefinitions.intPassNumberFromType(intPassType));
 //	return colVector[passDefinitions.intPassNumberFromType(intPassType)];
 }
                 
@@ -379,7 +380,7 @@ void colorPasses_t::multiply_colors(float factor)
 
 colorA_t colorPasses_t::probe_set(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(intPassType) = renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions.intPassNumberFromType(intPassType)) = renderedColor;
 	
 	return renderedColor;
 }
@@ -388,15 +389,16 @@ colorA_t colorPasses_t::probe_set(const int& intPassType, const colorPasses_t& c
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector.at(intPassType) = colorPasses.colVector.at(intPassType);	
-		return colorPasses.colVector.at(intPassType);
+		int intPassNumber = passDefinitions.intPassNumberFromType(intPassType);
+		colVector.at(intPassNumber) = colorPasses.colVector.at(intPassNumber);	
+		return colorPasses.colVector.at(intPassNumber);
 	}
 	else return colorA_t(0.f);
 }
 
 colorA_t colorPasses_t::probe_add(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(intPassType) += renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions.intPassNumberFromType(intPassType)) += renderedColor;
 	
 	return renderedColor;
 }
@@ -405,15 +407,16 @@ colorA_t colorPasses_t::probe_add(const int& intPassType, const colorPasses_t& c
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector.at(intPassType) += colorPasses.colVector.at(intPassType);	
-		return  colorPasses.colVector.at(intPassType);
+		int intPassNumber = passDefinitions.intPassNumberFromType(intPassType);
+		colVector.at(intPassNumber) += colorPasses.colVector.at(intPassNumber);	
+		return  colorPasses.colVector.at(intPassNumber);
 	}
 	else return colorA_t(0.f);
 }
 
 colorA_t colorPasses_t::probe_mult(const int& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(intPassType) *= renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions.intPassNumberFromType(intPassType)) *= renderedColor;
 	
 	return renderedColor;
 }
@@ -422,8 +425,9 @@ colorA_t colorPasses_t::probe_mult(const int& intPassType, const colorPasses_t& 
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		colVector.at(intPassType) *= colorPasses.colVector.at(intPassType);	
-		return colorPasses.colVector.at(intPassType);
+		int intPassNumber = passDefinitions.intPassNumberFromType(intPassType);
+		colVector.at(intPassNumber) *= colorPasses.colVector.at(intPassNumber);	
+		return colorPasses.colVector.at(intPassNumber);
 	}
 	else return colorA_t(0.f);
 }

@@ -101,7 +101,7 @@ class YAFRAYCORE_EXPORT colorPasses_t  //Internal YafaRay color passes generated
 		int size() const;
 		bool enabled(int intPassType) const;
 		int intPassTypeFromNumber(int intPassNumber) const;
-		colorA_t& color(int intPassType);
+		colorA_t& color(int intPassNumber);
 		colorA_t& operator()(int intPassType);
 		void reset_colors();
 		colorA_t init_color(int intPassType);
