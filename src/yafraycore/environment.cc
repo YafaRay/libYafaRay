@@ -531,7 +531,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool drawParams = false;
-	renderPasses_t renderPasses;
 	std::string externalPass, internalPass;
 	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
 	bool pass_mask_invert = false;

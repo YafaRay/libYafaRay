@@ -337,7 +337,8 @@ int colorPasses_t::intPassTypeFromNumber(int intPassNumber) const
                 
 colorA_t& colorPasses_t::color(int intPassType)
 {
-	return colVector.at(intPassType);
+	return colVector.at(passDefinitions.intPassNumberFromType(intPassType));
+//	return colVector[passDefinitions.intPassNumberFromType(intPassType)];
 }
                 
 colorA_t& colorPasses_t::operator()(int intPassType)

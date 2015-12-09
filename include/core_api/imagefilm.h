@@ -32,7 +32,6 @@
 #include <core_api/environment.h>
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
-#include <core_api/renderpasses.h>
 
 #if HAVE_FREETYPE
 struct FT_Bitmap_;
@@ -46,6 +45,7 @@ __BEGIN_YAFRAY
 */
 
 class progressBar_t;
+class renderPasses_t;
 
 // Image types define
 #define IF_IMAGE 1
@@ -64,7 +64,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		};
 
 		/*! imageFilm_t Constructor */
-		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t render_passes, int render_view_number, float filterSize=1.0, filterType filt=BOX,
+		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t& render_passes, int render_view_number, float filterSize=1.0, filterType filt=BOX,
 		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32,
 		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false, bool drawParams = false, int light_group_filter = 0);
 		/*! imageFilm_t Destructor */
@@ -138,7 +138,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 #endif
 
 	protected:
-		renderPasses_t renderPasses;
+		renderPasses_t &renderPasses;
 		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image

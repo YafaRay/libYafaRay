@@ -115,7 +115,7 @@ float Lanczos2(float dx, float dy)
 	return 0.f;
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t render_passes, int render_view_number, float filterSize, filterType filt,
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t& render_passes, int render_view_number, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams, int light_group_filter):
 	renderPasses(render_passes), flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), filterw(filterSize*0.5), output(&out),

@@ -38,7 +38,7 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -78,21 +78,17 @@ tgaHandler_t::tgaHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 	
-	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-	{
-		imagePasses.at(idx) = NULL;
-	}
-
 	handlerName = "TGAHandler";
 }
 
-void tgaHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
+void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	
+	imagePasses.resize(renderPasses.extPassesSize());
 	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
@@ -431,8 +427,14 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	// Jump over any image Id
 	fseek(fp, header.idLength, SEEK_CUR);
 	
-	if(imagePasses.at(0)) delete imagePasses.at(0);
-	imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		}
+		imagePasses.clear();
+	}
 	
 	ColorMap = NULL;
 	
@@ -569,7 +571,7 @@ imageHandler_t *tgaHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	
 	imageHandler_t *ih = new tgaHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.get_RenderPasses(), withAlpha, false);
 	
 	return ih;
 }

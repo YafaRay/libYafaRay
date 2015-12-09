@@ -68,7 +68,7 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -82,22 +82,18 @@ jpgHandler_t::jpgHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 	
-	imagePasses.resize(PASS_EXT_TOTAL_PASSES);	//FIXME: not ideal, this should be the actual size of the extPasses vector in the renderPasses object.;
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-	{
-		imagePasses.at(idx) = NULL;
-	}
-
 	handlerName = "JPEGHandler";
 }
 
-void jpgHandler_t::initForOutput(int width, int height, bool withAlpha, bool multi_layer)
+void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 
+	imagePasses.resize(renderPasses.extPassesSize());
+	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
 		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
@@ -329,8 +325,16 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	}
 	else
 	{
-		if(imagePasses.at(0)) delete imagePasses.at(0);
-		imagePasses.at(0) = new rgba2DImage_nw_t(m_width, m_height);
+		if(!imagePasses.empty())
+		{
+			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+			{
+				if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			}
+			imagePasses.clear();
+		}
+		
+		imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 	}
 
 	yByte* scanline = new yByte[m_width * info.output_components];
@@ -419,7 +423,7 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	
 	imageHandler_t *ih = new jpgHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.get_RenderPasses(), withAlpha, false);
 	
 	return ih;
 }
