@@ -435,6 +435,8 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 		}
 		imagePasses.clear();
 	}
+
+	imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 	
 	ColorMap = NULL;
 	

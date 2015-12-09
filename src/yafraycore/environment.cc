@@ -561,7 +561,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else color_space = SRGB;
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(std::map<int, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
+	for(std::map<extPassTypes_t, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
 	{
 		externalPass = it->second;
 		params.getParam("pass_" + externalPass, internalPass);

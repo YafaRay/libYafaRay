@@ -104,7 +104,7 @@ void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
         {
             for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
             {
-                std::string passName = renderPasses.extPassTypeStringFromNumber(idx);
+                std::string passName = renderPasses.extPassTypeStringFromIndex(idx);
                 
                 if(numView == 0 && idx == 0) image->saveToFile(fname, idx);
 		else if(passName != "not found")

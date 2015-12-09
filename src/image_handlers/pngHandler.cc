@@ -387,6 +387,8 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 		imagePasses.clear();
 	}
 
+	imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+
 	png_bytepp rowPointers = new png_bytep[m_height];
 
 	int bitMult = 1;

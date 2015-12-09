@@ -394,7 +394,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
-					int intPassType = colorPasses.intPassTypeFromNumber(idx);
+					intPassTypes_t intPassType = colorPasses.intPassTypeFromIndex(idx);
 										
 					switch(intPassType)
 					{

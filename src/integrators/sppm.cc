@@ -239,7 +239,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
 					
-					int intPassType = colorPasses.intPassTypeFromNumber(idx);
+					int intPassType = colorPasses.intPassTypeFromIndex(idx);
 										
 					switch(intPassType)
 					{

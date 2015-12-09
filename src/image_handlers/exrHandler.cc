@@ -152,8 +152,8 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     
     for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
     {
-		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromNumber(idx) + ".";        
-		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromNumber(idx) << yendl;
+		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromIndex(idx) + ".";        
+		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromIndex(idx) << yendl;
         
         header.channels().insert(extPassName+"R", Channel(HALF));
         header.channels().insert(extPassName+"G", Channel(HALF));
