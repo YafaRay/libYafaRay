@@ -24,6 +24,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <fstream>
 #include <iostream>
@@ -577,7 +578,7 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 
 	imageHandler_t *ih = new hdrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
 
 	return ih;
 }

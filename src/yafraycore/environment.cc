@@ -519,6 +519,32 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	return 0;
 }
 
+bool renderEnvironment_t::setupRenderPasses(scene_t &scene, const paraMap_t &params)
+{
+	std::string externalPass, internalPass;
+	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
+	bool pass_mask_invert = false;
+	bool pass_mask_only = false;
+
+	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
+	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
+	params.getParam("pass_mask_invert", pass_mask_invert);
+	params.getParam("pass_mask_only", pass_mask_only);
+
+	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
+	for(std::map<extPassTypes_t, std::string>::const_iterator it = scene.get_RenderPasses().extPassMapIntString.begin(); it != scene.get_RenderPasses().extPassMapIntString.end(); ++it)
+	{
+		externalPass = it->second;
+		params.getParam("pass_" + externalPass, internalPass);
+		if(internalPass != "disabled" && internalPass != "") scene.get_RenderPasses().extPass_add(externalPass, internalPass);
+	}
+
+	scene.get_RenderPasses().set_pass_mask_obj_index((float) pass_mask_obj_index);
+	scene.get_RenderPasses().set_pass_mask_mat_index((float) pass_mask_mat_index);
+	scene.get_RenderPasses().set_pass_mask_invert(pass_mask_invert);
+	scene.get_RenderPasses().set_pass_mask_only(pass_mask_only);
+}
+		
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
 {
 	const std::string *name=0;
@@ -531,10 +557,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool drawParams = false;
-	std::string externalPass, internalPass;
-	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
-	bool pass_mask_invert = false;
-	bool pass_mask_only = false;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -549,31 +571,14 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("drawParams", drawParams);
-	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
-	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
-	params.getParam("pass_mask_invert", pass_mask_invert);
-	params.getParam("pass_mask_only", pass_mask_only);
 
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
 	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
-
-	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(std::map<extPassTypes_t, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
-	{
-		externalPass = it->second;
-		params.getParam("pass_" + externalPass, internalPass);
-		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
-	}
-
-	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
-	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
-	renderPasses.set_pass_mask_invert(pass_mask_invert);
-	renderPasses.set_pass_mask_only(pass_mask_only);
 	
-    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+    output.initTilesPasses(camera_table.size(), getScene()->get_RenderPasses().extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -593,7 +598,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, renderPasses, 0, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams); //FIXME DAVID RENDER VIEWS
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, 0, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams); //FIXME DAVID RENDER VIEWS
 	
 	if(color_space == RAW_MANUAL_GAMMA)
 	{

@@ -22,6 +22,7 @@
 
 #include <core_api/imagefilm.h>
 #include <core_api/imagehandler.h>
+#include <core_api/scene.h>
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
@@ -115,9 +116,9 @@ float Lanczos2(float dx, float dy)
 	return 0.f;
 }
 
-imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, renderPasses_t& render_passes, int render_view_number, float filterSize, filterType filt,
+imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, int render_view_number, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams, int light_group_filter):
-	renderPasses(render_passes), flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
+	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), filterw(filterSize*0.5), output(&out),
 	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
@@ -128,7 +129,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 
 
 	//Creation of the image buffers for the render passes
-	for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
+	for(int idx = 0; idx < env->getScene()->get_RenderPasses().extPassesSize(); ++idx)
 	{
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
@@ -348,7 +349,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 							else
 								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
 						}
-						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
+						output->putPixel(numView, x, y, env->getScene()->get_RenderPasses(), colExtPasses, false);
 					}
 				}
 			}
@@ -360,7 +361,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	}
 
 	//if(interactive) //FIXME DAVID, SHOULD I PUT THIS BACK?, TEST WITH BLENDER AND XML+MULTILAYER
-	output->flush(numView, renderPasses);
+	output->flush(numView, env->getScene()->get_RenderPasses());
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
@@ -440,7 +441,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 			{
 				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                 
-				if(renderPasses.intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -454,11 +455,11 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			if( !output->putPixel(numView, i, j, renderPasses, colExtPasses) ) abort=true;
+			if( !output->putPixel(numView, i, j, env->getScene()->get_RenderPasses(), colExtPasses) ) abort=true;
 		}
 	}
 
-	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, renderPasses);
+	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getScene()->get_RenderPasses());
     
     else
     { 
@@ -468,7 +469,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
         
         if((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
         {
-             output->flush(numView, renderPasses);
+             output->flush(numView, env->getScene()->get_RenderPasses());
              reset_accumulated_image_area_flush_time();
         }
     }
@@ -513,7 +514,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
 				else colExtPasses[idx] = colorA_t(0.f);
 				
-				if(renderPasses.intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -535,13 +536,13 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			colout->putPixel(numView, i, j, renderPasses, colExtPasses);
+			colout->putPixel(numView, i, j, env->getScene()->get_RenderPasses(), colExtPasses);
 		}
 
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
-	colout->flush(numView, renderPasses);
+	colout->flush(numView, env->getScene()->get_RenderPasses());
 
 	outMutex.unlock();
 
@@ -602,7 +603,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colorA_t col = colorPasses(renderPasses.intPassTypeFromExtPassIndex(idx));
+				colorA_t col = colorPasses(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
@@ -610,7 +611,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 				if(premultAlpha) col.alphaPremultiply();
 
-				if(renderPasses.intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}

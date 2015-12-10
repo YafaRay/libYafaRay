@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <tiffio.h>
 
@@ -215,7 +216,7 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	
 	imageHandler_t *ih = new tifHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, render.get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
 	
 	return ih;
 }

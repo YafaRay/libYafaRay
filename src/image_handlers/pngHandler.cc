@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <png.h>
 
@@ -591,7 +592,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 
 	imageHandler_t *ih = new pngHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
 
 	return ih;
 }
