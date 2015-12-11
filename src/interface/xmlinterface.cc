@@ -51,7 +51,9 @@ bool xmlInterface_t::startScene(int type)
 
 bool xmlInterface_t::setupRenderPasses()
 {
-	env->setupRenderPasses(*params);
+	xmlFile << "\n<render_passes name=\"render_passes\">\n";
+	writeParamMap(*params);
+	xmlFile << "</render_passes>\n";
 	return true;
 }
 
