@@ -592,7 +592,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 
 	imageHandler_t *ih = new pngHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 
 	return ih;
 }

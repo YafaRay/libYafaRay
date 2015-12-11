@@ -424,7 +424,7 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	
 	imageHandler_t *ih = new jpgHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 	
 	return ih;
 }

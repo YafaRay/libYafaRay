@@ -578,7 +578,7 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 
 	imageHandler_t *ih = new hdrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, false);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 
 	return ih;
 }

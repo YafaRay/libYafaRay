@@ -268,7 +268,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 
 	imageHandler_t *ih = new exrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.getScene()->get_RenderPasses(), withAlpha, multiLayer);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
 
 	return ih;
 }

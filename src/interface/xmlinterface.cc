@@ -49,6 +49,12 @@ bool xmlInterface_t::startScene(int type)
 	return true;
 }
 
+bool xmlInterface_t::setupRenderPasses()
+{
+	env->setupRenderPasses(*params);
+	return true;
+}
+
 void xmlInterface_t::setOutfile(const char *fname)
 {
 	xmlName = std::string(fname);

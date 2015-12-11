@@ -129,7 +129,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 
 
 	//Creation of the image buffers for the render passes
-	for(int idx = 0; idx < env->getScene()->get_RenderPasses().extPassesSize(); ++idx)
+	for(int idx = 0; idx < env->getRenderPasses().extPassesSize(); ++idx)
 	{
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
@@ -349,7 +349,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 							else
 								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
 						}
-						output->putPixel(numView, x, y, env->getScene()->get_RenderPasses(), colExtPasses, false);
+						output->putPixel(numView, x, y, env->getRenderPasses(), colExtPasses, false);
 					}
 				}
 			}
@@ -361,7 +361,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	}
 
 	//if(interactive) //FIXME DAVID, SHOULD I PUT THIS BACK?, TEST WITH BLENDER AND XML+MULTILAYER
-	output->flush(numView, env->getScene()->get_RenderPasses());
+	output->flush(numView, env->getRenderPasses());
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
@@ -441,7 +441,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 			{
 				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                 
-				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getRenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -455,11 +455,11 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			if( !output->putPixel(numView, i, j, env->getScene()->get_RenderPasses(), colExtPasses) ) abort=true;
+			if( !output->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses) ) abort=true;
 		}
 	}
 
-	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getScene()->get_RenderPasses());
+	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
     
     else
     { 
@@ -469,7 +469,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
         
         if((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
         {
-             output->flush(numView, env->getScene()->get_RenderPasses());
+             output->flush(numView, env->getRenderPasses());
              reset_accumulated_image_area_flush_time();
         }
     }
@@ -514,7 +514,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
 				else colExtPasses[idx] = colorA_t(0.f);
 				
-				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getRenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -536,13 +536,13 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			colout->putPixel(numView, i, j, env->getScene()->get_RenderPasses(), colExtPasses);
+			colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 		}
 
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
-	colout->flush(numView, env->getScene()->get_RenderPasses());
+	colout->flush(numView, env->getRenderPasses());
 
 	outMutex.unlock();
 
@@ -603,7 +603,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colorA_t col = colorPasses(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx));
+				colorA_t col = colorPasses(env->getRenderPasses().intPassTypeFromExtPassIndex(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
@@ -611,7 +611,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 				if(premultAlpha) col.alphaPremultiply();
 
-				if(env->getScene()->get_RenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(env->getRenderPasses().intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}

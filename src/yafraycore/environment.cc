@@ -519,7 +519,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	return 0;
 }
 
-bool renderEnvironment_t::setupRenderPasses(scene_t &scene, const paraMap_t &params)
+void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 {
 	std::string externalPass, internalPass;
 	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
@@ -532,17 +532,17 @@ bool renderEnvironment_t::setupRenderPasses(scene_t &scene, const paraMap_t &par
 	params.getParam("pass_mask_only", pass_mask_only);
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(std::map<extPassTypes_t, std::string>::const_iterator it = scene.get_RenderPasses().extPassMapIntString.begin(); it != scene.get_RenderPasses().extPassMapIntString.end(); ++it)
+	for(std::map<extPassTypes_t, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
 	{
 		externalPass = it->second;
 		params.getParam("pass_" + externalPass, internalPass);
-		if(internalPass != "disabled" && internalPass != "") scene.get_RenderPasses().extPass_add(externalPass, internalPass);
+		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
 	}
 
-	scene.get_RenderPasses().set_pass_mask_obj_index((float) pass_mask_obj_index);
-	scene.get_RenderPasses().set_pass_mask_mat_index((float) pass_mask_mat_index);
-	scene.get_RenderPasses().set_pass_mask_invert(pass_mask_invert);
-	scene.get_RenderPasses().set_pass_mask_only(pass_mask_only);
+	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
+	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
+	renderPasses.set_pass_mask_invert(pass_mask_invert);
+	renderPasses.set_pass_mask_only(pass_mask_only);
 }
 		
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
@@ -578,7 +578,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
 	
-    output.initTilesPasses(camera_table.size(), getScene()->get_RenderPasses().extPassesSize());
+    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
