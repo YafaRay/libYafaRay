@@ -88,6 +88,7 @@ void renderPasses_t::generate_pass_maps()
 
 	//Internal YafaRay Render passes - mapping String and Internal YafaRay Render passes
 	//IMPORTANT: the internal strings MUST MATCH the valid values for the pass properties in Blender Exporter
+	intPassMapStringInt["disabled"] = PASS_INT_DISABLED;
 	intPassMapStringInt["combined"] = PASS_INT_COMBINED;
 	intPassMapStringInt["z-depth-norm"] = PASS_INT_Z_DEPTH_NORM;
 	intPassMapStringInt["z-depth-abs"] = PASS_INT_Z_DEPTH_ABS;
