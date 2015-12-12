@@ -55,9 +55,6 @@ private:
 	void readFromStructsOptimized(png_structp pngPtr, png_infop infoPtr);
 	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
 	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
-	rgba8888Image_nw_t rgba8888buffer;
-	rgb888Image_nw_t rgb888buffer;
-	rgb565Image_nw_t rgb565buffer;
 };
 
 pngHandler_t::pngHandler_t()
@@ -458,10 +455,10 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				}
 			}
 			
-		if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) *(rgba8888buffer)(x, y).setColor(color);
-		else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) *(rgb888buffer)(x, y).setColor(color);
-		else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) *(rgb565buffer)(x, y).setColor(color);
-		else (*imagePasses.at(0))(x, y) = color;			
+			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) (*rgba8888buffer)(x, y).setColor(color);
+			else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) (*rgb888buffer)(x, y).setColor(color);
+			else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) (*rgb565buffer)(x, y).setColor(color);
+			else (*imagePasses.at(0))(x, y) = color;			
 		}
 	}
 

@@ -68,6 +68,9 @@ protected:
 	bool m_hasAlpha;
 	int m_textureOptimization;
 	std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
+	rgba8888Image_nw_t *rgba8888buffer;	//!< optimized RGB8888 (32bit/pixel) with alpha buffer
+	rgb888Image_nw_t *rgb888buffer;	//!< optimized RGB888 (24bit/pixel) without alpha buffer
+	rgb565Image_nw_t *rgb565buffer;	//!< optimized RGB565 (16bit/pixel) LOSSY! without alpha buffer
 	bool m_MultiLayer;
 };
 

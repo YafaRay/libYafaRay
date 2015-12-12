@@ -108,6 +108,9 @@ jpgHandler_t::~jpgHandler_t()
 		if(imagePasses.at(idx)) delete imagePasses.at(idx);
 		imagePasses.at(idx) = NULL;
 	}
+
+	if(rgb888buffer) delete rgb888buffer;
+	if(rgb565buffer) delete rgb565buffer;
 }
 
 void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -117,28 +120,8 @@ void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
-	{
-		float c[m_numchannels];
-		
-		for(int colorchannel=0; colorchannel < m_numchannels ; ++colorchannel)
-		{
-			if(m_bytedepth == 1) c[colorchannel] = (float) optimizedTextureBuffer[((y*m_width + x) * m_numchannels) + colorchannel] / 255.f;
-			else if(m_bytedepth == 2)
-			{
-				c[colorchannel] = (float) (optimizedTextureBuffer[((((y*m_width + x) * m_numchannels) + colorchannel) * m_bytedepth)] << 8 | optimizedTextureBuffer[((((y*m_width + x) * m_numchannels) + colorchannel) * m_bytedepth) + 1]) / 65535.f;
-			}
-			else c[colorchannel] = 0.f;
-		}
-		
-		colorA_t col;
-		
-		if(m_numchannels == 1 || m_numchannels == 2) col.set(c[0],c[0],c[0],1.f);
-		else if(m_numchannels == 3) col.set(c[0],c[1],c[2],1.f);
-		else col.set(c[0],c[1],c[2],c[3]);
-
-		return col;
-	}
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) return (*rgb888buffer)(x, y).getColor();
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) return (*rgb565buffer)(x, y).getColor();
 	else return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
@@ -317,26 +300,18 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	m_width = info.output_width;
 	m_height = info.output_height;
 
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
+	if(!imagePasses.empty())
 	{
-		m_numchannels = info.output_components;
-		m_bytedepth = 1;
-
-		optimizedTextureBuffer.resize(m_width * m_height * m_numchannels * m_bytedepth);
-	}
-	else
-	{
-		if(!imagePasses.empty())
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 		{
-			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-			{
-				if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			}
-			imagePasses.clear();
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
 		}
-		
-		imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+		imagePasses.clear();
 	}
+	
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) rgb888buffer = new rgb888Image_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) rgb565buffer = new rgb565Image_nw_t(m_width, m_height);
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
@@ -349,50 +324,46 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		
 		for (int x = 0; x < m_width; x++)
 		{
-			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC)
+			colorA_t color;
+			
+			if (isGray)
 			{
-				for(int colorchannel=0; colorchannel < m_numchannels ; ++colorchannel)
-				{
-					optimizedTextureBuffer[((((y*m_width + x) * m_numchannels) + colorchannel))] = scanline[(x * m_numchannels) +colorchannel];
-				}
+				float colscan = scanline[x] * inv8;
+				color.set(colscan, colscan, colscan, 1.f);
 			}
-			else
+			else if(isRGB)
 			{
-				if (isGray)
-				{
-					float color = scanline[x] * inv8;
-					(*imagePasses.at(0))(x, y).set(color, color, color, 1.f);
-				}
-				else if(isRGB)
-				{
-					ix = x * 3;
-					(*imagePasses.at(0))(x, y).set( scanline[ix] * inv8,
-										 scanline[ix+1] * inv8,
-										 scanline[ix+2] * inv8,
-										 1.f);
-				}
-				else if(isCMYK)
-				{
-					ix = x * 4;
-					float K = scanline[ix+3] * inv8;
-					float iK = 1.f - K;
-					
-					(*imagePasses.at(0))(x, y).set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
-										 1.f - std::max((scanline[ix+1] * inv8 * iK) + K, 1.f),
-										 1.f - std::max((scanline[ix+2] * inv8 * iK) + K, 1.f),
-										 1.f);
-				}
-				else // this is probabbly (surely) never executed, i need to research further; this assumes blender non-standard jpeg + alpha
-				{
-					ix = x * 4;
-					float A = scanline[ix+3] * inv8;
-					float iA = 1.f - A;
-					(*imagePasses.at(0))(x, y).set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
-										 std::max(0.f, std::min((scanline[ix+1] * inv8) - iA, 1.f)),
-										 std::max(0.f, std::min((scanline[ix+2] * inv8) - iA, 1.f)),
-										 A);
-				}
+				ix = x * 3;
+				color.set( scanline[ix] * inv8,
+									 scanline[ix+1] * inv8,
+									 scanline[ix+2] * inv8,
+									 1.f);
 			}
+			else if(isCMYK)
+			{
+				ix = x * 4;
+				float K = scanline[ix+3] * inv8;
+				float iK = 1.f - K;
+				
+				color.set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
+									 1.f - std::max((scanline[ix+1] * inv8 * iK) + K, 1.f),
+									 1.f - std::max((scanline[ix+2] * inv8 * iK) + K, 1.f),
+									 1.f);
+			}
+			else // this is probabbly (surely) never executed, i need to research further; this assumes blender non-standard jpeg + alpha
+			{
+				ix = x * 4;
+				float A = scanline[ix+3] * inv8;
+				float iA = 1.f - A;
+				color.set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
+									 std::max(0.f, std::min((scanline[ix+1] * inv8) - iA, 1.f)),
+									 std::max(0.f, std::min((scanline[ix+2] * inv8) - iA, 1.f)),
+									 A);
+			}
+			
+			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) (*rgb888buffer)(x, y).setColor(color);
+			else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) (*rgb565buffer)(x, y).setColor(color);
+			else (*imagePasses.at(0))(x, y) = color;	
 		}
 		y++;
 	}

@@ -76,6 +76,10 @@ tifHandler_t::~tifHandler_t()
 		if(imagePasses.at(idx)) delete imagePasses.at(idx);
 		imagePasses.at(idx) = NULL;
 	}
+	
+	if(rgba8888buffer) delete rgba8888buffer;
+	if(rgb888buffer) delete rgb888buffer;
+	if(rgb565buffer) delete rgb565buffer;
 }
 
 void tifHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -85,7 +89,10 @@ void tifHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t tifHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*imagePasses.at(imagePassNumber))(x, y);
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) return (*rgba8888buffer)(x, y).getColor();
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) return (*rgb888buffer)(x, y).getColor();
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) return (*rgb565buffer)(x, y).getColor();
+	else return (*imagePasses.at(imagePassNumber))(x, y);
 }
 
 bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -176,7 +183,10 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 		imagePasses.clear();
 	}
 
-	imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) rgba8888buffer = new rgba8888Image_nw_t(m_width, m_height);
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) rgb888buffer = new rgb888Image_nw_t(m_width, m_height);
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) rgb565buffer = new rgb565Image_nw_t(m_width, m_height);
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 	
 	int i = 0;
 	
@@ -184,12 +194,17 @@ bool tifHandler_t::loadFromFile(const std::string &name)
     {
     	for( int x = 0; x < m_width; x++ )
     	{
-    		colorA_t &col = (*imagePasses.at(0))(x, y);
-    		col.set((float)TIFFGetR(tiffData[i]) * inv8,
+    		colorA_t color;
+    		color.set((float)TIFFGetR(tiffData[i]) * inv8,
 					(float)TIFFGetG(tiffData[i]) * inv8,
 					(float)TIFFGetB(tiffData[i]) * inv8,
 					(float)TIFFGetA(tiffData[i]) * inv8);
 			i++;
+			
+			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) (*rgba8888buffer)(x, y).setColor(color);
+			else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) (*rgb888buffer)(x, y).setColor(color);
+			else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) (*rgb565buffer)(x, y).setColor(color);
+			else (*imagePasses.at(0))(x, y) = color;
     	}
     }
 
