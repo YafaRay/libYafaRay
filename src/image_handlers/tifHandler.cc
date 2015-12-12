@@ -52,6 +52,10 @@ tifHandler_t::tifHandler_t()
 	m_hasAlpha = false;
 	
 	handlerName = "TIFFHandler";
+
+	rgba8888buffer = NULL;
+	rgb888buffer = NULL;
+	rgb565buffer = NULL;
 }
 
 void tifHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)

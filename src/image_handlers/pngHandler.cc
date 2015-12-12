@@ -64,6 +64,10 @@ pngHandler_t::pngHandler_t()
 	m_hasAlpha = false;
 	
 	handlerName = "PNGHandler";
+
+	rgba8888buffer = NULL;
+	rgb888buffer = NULL;
+	rgb565buffer = NULL;
 }
 
 void pngHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)

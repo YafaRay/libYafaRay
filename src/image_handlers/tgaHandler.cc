@@ -80,6 +80,10 @@ tgaHandler_t::tgaHandler_t()
 	m_hasAlpha = false;
 	
 	handlerName = "TGAHandler";
+
+	rgba8888buffer = NULL;
+	rgb888buffer = NULL;
+	rgb565buffer = NULL;
 }
 
 void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
