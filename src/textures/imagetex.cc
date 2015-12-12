@@ -318,7 +318,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	{
 		if(color_space_string != "LinearRGB") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
 		color_space = LINEAR_RGB;
-		if(texture_optimization_string != "None") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string <<"'" << yendl;
+		if(texture_optimization_string != "none") Y_INFO << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string <<"'" << yendl;
 		texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
 	else
