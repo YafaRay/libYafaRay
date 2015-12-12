@@ -36,9 +36,8 @@ typedef unsigned short yWord;
 enum textureOptimization_t
 {
 	TEX_OPTIMIZATION_NONE				= 1,
-	TEX_OPTIMIZATION_BASIC				= 2,
-	TEX_OPTIMIZATION_BASIC_NOALPHA		= 3,
-	TEX_OPTIMIZATION_RGB565				= 4	
+	TEX_OPTIMIZATION_OPTIMIZED			= 2,
+	TEX_OPTIMIZATION_COMPRESSED			= 3
 };
 
 class YAFRAYCORE_EXPORT imageHandler_t
@@ -63,16 +62,16 @@ protected:
 	std::string handlerName;
 	int m_width;
 	int m_height;
-	int m_numchannels;
-	int m_bytedepth;	//!< size of each color component in bytes
 	bool m_hasAlpha;
 	int m_textureOptimization;
 	std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
-	rgba8888Image_nw_t *rgba8888buffer;	//!< optimized RGB8888 (32bit/pixel) with alpha buffer
-	rgb888Image_nw_t *rgb888buffer;	//!< optimized RGB888 (24bit/pixel) without alpha buffer
-	rgb565Image_nw_t *rgb565buffer;	//!< optimized RGB565 (16bit/pixel) LOSSY! without alpha buffer
+	rgbaOptimizedImage_nw_t *rgbaOptimizedBuffer;	//!< optimized RGBA (32bit/pixel) with alpha buffer
+	rgbaCompressedImage_nw_t *rgbaCompressedBuffer;	//!< compressed RGBA (24bit/pixel) LOSSY! with alpha buffer
+	rgbOptimizedImage_nw_t *rgbOptimizedBuffer;	//!< optimized RGB (24bit/pixel) without alpha buffer
+	rgbCompressedImage_nw_t *rgbCompressedBuffer;	//!< compressed RGB (16bit/pixel) LOSSY! without alpha buffer
 	bool m_MultiLayer;
 };
+
 
 __END_YAFRAY
 

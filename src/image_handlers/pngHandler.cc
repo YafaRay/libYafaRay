@@ -65,9 +65,10 @@ pngHandler_t::pngHandler_t()
 	
 	handlerName = "PNGHandler";
 
-	rgba8888buffer = NULL;
-	rgb888buffer = NULL;
-	rgb565buffer = NULL;
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;
 }
 
 void pngHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
@@ -87,15 +88,24 @@ void pngHandler_t::initForOutput(int width, int height, const renderPasses_t &re
 
 pngHandler_t::~pngHandler_t()
 {
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	if(!imagePasses.empty())
 	{
-		if(imagePasses.at(idx)) delete imagePasses.at(idx);
-		imagePasses.at(idx) = NULL;
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
 	}
-	
-	if(rgba8888buffer) delete rgba8888buffer;
-	if(rgb888buffer) delete rgb888buffer;
-	if(rgb565buffer) delete rgb565buffer;
+
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
+	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;	
 }
 
 void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -105,10 +115,12 @@ void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) return (*rgba8888buffer)(x, y).getColor();
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) return (*rgb888buffer)(x, y).getColor();
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) return (*rgb565buffer)(x, y).getColor();
-	else return (*imagePasses.at(imagePassNumber))(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(rgbaOptimizedBuffer) return (*rgbaOptimizedBuffer)(x, y).getColor();
+	else if(rgbaCompressedBuffer) return (*rgbaCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
 bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -376,11 +388,20 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 		imagePasses.clear();
 	}
 
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) rgba8888buffer = new rgba8888Image_nw_t(m_width, m_height);
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) rgb888buffer = new rgb888Image_nw_t(m_width, m_height);
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) rgb565buffer = new rgb565Image_nw_t(m_width, m_height);
-	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED)
+	{
+		if(numChan == 4) rgbaOptimizedBuffer = new rgbaOptimizedImage_nw_t(m_width, m_height);
+		else rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);
+	}
+	
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED)
+	{
+		if(numChan == 4) rgbaCompressedBuffer = new rgbaCompressedImage_nw_t(m_width, m_height);
+		else rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
+	}
 
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+	
 	png_bytepp rowPointers = new png_bytep[m_height];
 
 	int bitMult = 1;
@@ -459,10 +480,11 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				}
 			}
 			
-			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC) (*rgba8888buffer)(x, y).setColor(color);
-			else if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) (*rgb888buffer)(x, y).setColor(color);
-			else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) (*rgb565buffer)(x, y).setColor(color);
-			else (*imagePasses.at(0))(x, y) = color;			
+			if(rgbaOptimizedBuffer) (*rgbaOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbaCompressedBuffer) (*rgbaCompressedBuffer)(x, y).setColor(color);
+			else if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;			
 		}
 	}
 

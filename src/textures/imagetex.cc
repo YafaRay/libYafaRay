@@ -330,9 +330,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else color_space = SRGB;
 		
 		if(texture_optimization_string == "none") texture_optimization = TEX_OPTIMIZATION_NONE;
-		else if(texture_optimization_string == "basic") texture_optimization = TEX_OPTIMIZATION_BASIC;
-		else if(texture_optimization_string == "basic-noalpha") texture_optimization = TEX_OPTIMIZATION_BASIC_NOALPHA;
-		else if(texture_optimization_string == "compress-rgb565") texture_optimization = TEX_OPTIMIZATION_RGB565;
+		else if(texture_optimization_string == "optimized") texture_optimization = TEX_OPTIMIZATION_OPTIMIZED;
+		else if(texture_optimization_string == "compressed") texture_optimization = TEX_OPTIMIZATION_COMPRESSED;
 		else texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
 	

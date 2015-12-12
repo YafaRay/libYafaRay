@@ -85,8 +85,8 @@ jpgHandler_t::jpgHandler_t()
 	
 	handlerName = "JPEGHandler";
 	
-	rgb888buffer = NULL;
-	rgb565buffer = NULL;
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
 void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
@@ -106,14 +106,20 @@ void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t &re
 
 jpgHandler_t::~jpgHandler_t()
 {
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	if(!imagePasses.empty())
 	{
-		if(imagePasses.at(idx)) delete imagePasses.at(idx);
-		imagePasses.at(idx) = NULL;
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
 	}
 
-	if(rgb888buffer) delete rgb888buffer;
-	if(rgb565buffer) delete rgb565buffer;
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
 void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -123,9 +129,10 @@ void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNum
 
 colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) return (*rgb888buffer)(x, y).getColor();
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) return (*rgb565buffer)(x, y).getColor();
-	else return (*imagePasses.at(imagePassNumber))(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
 bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -312,8 +319,8 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		imagePasses.clear();
 	}
 	
-	if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) rgb888buffer = new rgb888Image_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) rgb565buffer = new rgb565Image_nw_t(m_width, m_height);
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED) rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED) rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
 	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 
 	yByte* scanline = new yByte[m_width * info.output_components];
@@ -364,9 +371,9 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 									 A);
 			}
 			
-			if(getTextureOptimization() == TEX_OPTIMIZATION_BASIC || getTextureOptimization() == TEX_OPTIMIZATION_BASIC_NOALPHA) (*rgb888buffer)(x, y).setColor(color);
-			else if(getTextureOptimization() == TEX_OPTIMIZATION_RGB565) (*rgb565buffer)(x, y).setColor(color);
-			else (*imagePasses.at(0))(x, y) = color;	
+			if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;	
 		}
 		y++;
 	}
