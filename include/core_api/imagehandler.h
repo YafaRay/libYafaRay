@@ -68,7 +68,6 @@ protected:
 	bool m_hasAlpha;
 	int m_textureOptimization;
 	std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
-	std::vector<unsigned char> optimizedTextureBuffer; //!< Low dynamic range (optimized)texture to be saved in RAM 
 	bool m_MultiLayer;
 };
 
