@@ -131,7 +131,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			if(output) output->set_view_names_map(viewNamesMap);
 			else Y_ERROR << "ImageFilm: error setting the view names map, color output does not exist yet." << yendl;
 		}
-		bool passEnabled(int pass) { return false; }
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);

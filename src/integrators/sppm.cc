@@ -73,7 +73,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 
 	diffRaysEnabled = false;	//always false for now, reserved for future motion blur and interference features
 
-	if(imageFilm->passEnabled(PASS_INT_Z_DEPTH_NORM) || imageFilm->passEnabled(PASS_INT_MIST)) precalcDepths();
+	if(scene->pass_enabled(PASS_INT_Z_DEPTH_NORM) || scene->pass_enabled(PASS_INT_MIST)) precalcDepths();
 
 	initializePPM(); // seems could integrate into the preRender
 	renderPass(numView, 1, 0, false, 0);
