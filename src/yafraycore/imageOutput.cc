@@ -43,7 +43,7 @@ imageOutput_t::~imageOutput_t()
 	image = NULL;
 }
 
-bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t &renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
+bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
 {
 	if(image)
 	{
@@ -57,7 +57,7 @@ bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t &re
 	return true;
 }
 
-void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
+void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
 {
     std::string fnamePass, path, name, base_name, ext, num_view="";
 
@@ -102,9 +102,9 @@ void imageOutput_t::flush(int numView, const renderPasses_t &renderPasses)
         }
         else
         {
-            for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
+            for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
             {
-                std::string passName = renderPasses.extPassTypeStringFromIndex(idx);
+                std::string passName = renderPasses->extPassTypeStringFromIndex(idx);
                 
                 if(numView == 0 && idx == 0) image->saveToFile(fname, idx);
 		else if(passName != "not found")

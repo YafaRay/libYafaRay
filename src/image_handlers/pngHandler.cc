@@ -43,7 +43,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
@@ -71,14 +71,14 @@ pngHandler_t::pngHandler_t()
 	rgbaCompressedBuffer = NULL;
 }
 
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 
-	imagePasses.resize(renderPasses.extPassesSize());
+	imagePasses.resize(renderPasses->extPassesSize());
 	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{

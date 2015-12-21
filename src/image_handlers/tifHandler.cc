@@ -37,7 +37,7 @@ class tifHandler_t: public imageHandler_t
 public:
 	tifHandler_t();
 	~tifHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -59,14 +59,14 @@ tifHandler_t::tifHandler_t()
 	rgbaCompressedBuffer = NULL;
 }
 
-void tifHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
+void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
 	
-	imagePasses.resize(renderPasses.extPassesSize());
+	imagePasses.resize(renderPasses->extPassesSize());
 	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{

@@ -318,30 +318,30 @@ extPass_t::extPass_t(extPassTypes_t extPassType, intPassTypes_t intPassType):
 // -- colorPasses_t -- //
 /////////////////////////
 
-colorPasses_t::colorPasses_t(renderPasses_t &renderPasses):passDefinitions(renderPasses)
+colorPasses_t::colorPasses_t(const renderPasses_t *renderPasses):passDefinitions(renderPasses)
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
-	colVector.reserve(passDefinitions.intPasses.size());
-	for(std::vector<intPassTypes_t>::iterator it = passDefinitions.intPasses.begin(); it != passDefinitions.intPasses.end(); ++it)
+	colVector.reserve(passDefinitions->intPasses.size());
+	for(std::vector<intPassTypes_t>::const_iterator it = passDefinitions->intPasses.begin(); it != passDefinitions->intPasses.end(); ++it)
 	{
-		colVector.push_back(init_color(passDefinitions.intPassTypeFromIndex(it - passDefinitions.intPasses.begin())));
+		colVector.push_back(init_color(passDefinitions->intPassTypeFromIndex(it - passDefinitions->intPasses.begin())));
 	}
 }
         
 bool colorPasses_t::enabled(intPassTypes_t intPassType) const
 {
-	if(passDefinitions.intPassIndexFromType(intPassType) == -1) return false;
+	if(passDefinitions->intPassIndexFromType(intPassType) == -1) return false;
 	else return true;
 }
 
 intPassTypes_t colorPasses_t::intPassTypeFromIndex(int intPassIndex) const
 {
-	return passDefinitions.intPassTypeFromIndex(intPassIndex);
+	return passDefinitions->intPassTypeFromIndex(intPassIndex);
 }
 
 colorA_t& colorPasses_t::color(intPassTypes_t intPassType)
 {
-	return colVector.at(passDefinitions.intPassIndexFromType(intPassType));
+	return colVector.at(passDefinitions->intPassIndexFromType(intPassType));
 }
                 
 colorA_t& colorPasses_t::color(int intPassIndex)
@@ -392,7 +392,7 @@ void colorPasses_t::multiply_colors(float factor)
 
 colorA_t colorPasses_t::probe_set(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(passDefinitions.intPassIndexFromType(intPassType)) = renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) = renderedColor;
 	
 	return renderedColor;
 }
@@ -401,7 +401,7 @@ colorA_t colorPasses_t::probe_set(const intPassTypes_t& intPassType, const color
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		int intPassIndex = passDefinitions.intPassIndexFromType(intPassType);
+		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
 		colVector.at(intPassIndex) = colorPasses.colVector.at(intPassIndex);	
 		return colorPasses.colVector.at(intPassIndex);
 	}
@@ -410,7 +410,7 @@ colorA_t colorPasses_t::probe_set(const intPassTypes_t& intPassType, const color
 
 colorA_t colorPasses_t::probe_add(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(passDefinitions.intPassIndexFromType(intPassType)) += renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) += renderedColor;
 	
 	return renderedColor;
 }
@@ -419,7 +419,7 @@ colorA_t colorPasses_t::probe_add(const intPassTypes_t& intPassType, const color
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		int intPassIndex = passDefinitions.intPassIndexFromType(intPassType);
+		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
 		colVector.at(intPassIndex) += colorPasses.colVector.at(intPassIndex);	
 		return  colorPasses.colVector.at(intPassIndex);
 	}
@@ -428,7 +428,7 @@ colorA_t colorPasses_t::probe_add(const intPassTypes_t& intPassType, const color
 
 colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
 {
-	if(condition && enabled(intPassType)) color(passDefinitions.intPassIndexFromType(intPassType)) *= renderedColor;
+	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) *= renderedColor;
 	
 	return renderedColor;
 }
@@ -437,7 +437,7 @@ colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colo
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
-		int intPassIndex = passDefinitions.intPassIndexFromType(intPassType);
+		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
 		colVector.at(intPassIndex) *= colorPasses.colVector.at(intPassIndex);	
 		return colorPasses.colVector.at(intPassIndex);
 	}
@@ -480,10 +480,10 @@ colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
 	return *this;
 }
 
-float colorPasses_t::get_pass_mask_obj_index() const { return passDefinitions.pass_mask_obj_index; }
-float colorPasses_t::get_pass_mask_mat_index() const { return passDefinitions.pass_mask_mat_index; }
-bool colorPasses_t::get_pass_mask_invert() const { return passDefinitions.pass_mask_invert; }
-bool colorPasses_t::get_pass_mask_only() const { return passDefinitions.pass_mask_only; }
+float colorPasses_t::get_pass_mask_obj_index() const { return passDefinitions->pass_mask_obj_index; }
+float colorPasses_t::get_pass_mask_mat_index() const { return passDefinitions->pass_mask_mat_index; }
+bool colorPasses_t::get_pass_mask_invert() const { return passDefinitions->pass_mask_invert; }
+bool colorPasses_t::get_pass_mask_only() const { return passDefinitions->pass_mask_only; }
 
 
 

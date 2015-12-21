@@ -43,12 +43,12 @@ enum textureOptimization_t
 class YAFRAYCORE_EXPORT imageHandler_t
 {
 public:
-	virtual void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
+	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
 	virtual ~imageHandler_t() {};
 	virtual bool loadFromFile(const std::string &name) = 0;
 	virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
 	virtual bool saveToFile(const std::string &name, int imagePassNumber = 0) = 0;
-	virtual bool saveToFileMultiChannel(const std::string &name, const renderPasses_t &renderPasses) { return false; };
+	virtual bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses) { return false; };
 	virtual void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0) = 0;
 	virtual colorA_t getPixel(int x, int y, int imagePassNumber = 0) = 0;
 	virtual int getWidth() { return m_width; }

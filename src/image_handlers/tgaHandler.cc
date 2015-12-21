@@ -39,7 +39,7 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -87,14 +87,14 @@ tgaHandler_t::tgaHandler_t()
 	rgbaCompressedBuffer = NULL;
 }
 
-void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
+void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 	
-	imagePasses.resize(renderPasses.extPassesSize());
+	imagePasses.resize(renderPasses->extPassesSize());
 	
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{

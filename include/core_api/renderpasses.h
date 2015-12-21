@@ -205,7 +205,7 @@ class YAFRAYCORE_EXPORT renderPasses_t
 class YAFRAYCORE_EXPORT colorPasses_t  //Internal YafaRay color passes generated in different points of the rendering process
 {
 	public:
-		colorPasses_t(renderPasses_t &renderPasses);
+		colorPasses_t(const renderPasses_t *renderPasses);
 		int size() const;
 		bool enabled(intPassTypes_t intPassType) const;
 		intPassTypes_t intPassTypeFromIndex(int intPassIndex) const;
@@ -235,7 +235,7 @@ class YAFRAYCORE_EXPORT colorPasses_t  //Internal YafaRay color passes generated
     
     protected:
 		std::vector <colorA_t> colVector;
-		renderPasses_t &passDefinitions;
+		const renderPasses_t *passDefinitions;
 };
 
 __END_YAFRAY

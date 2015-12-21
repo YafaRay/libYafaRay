@@ -69,7 +69,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
 		void			setupRenderPasses(const paraMap_t &params);
-		renderPasses_t&	getRenderPasses() { return renderPasses; }
+		renderPasses_t*	getRenderPasses() { return &renderPasses; }
 		void clearAll();
 
 		virtual void registerFactory(const std::string &name,light_factory_t *f);

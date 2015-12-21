@@ -45,12 +45,12 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t &renderPasses);
+    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
 	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
@@ -69,14 +69,14 @@ exrHandler_t::exrHandler_t()
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t &renderPasses, bool withAlpha, bool multi_layer)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
     
-	m_halfrgba.resize(renderPasses.extPassesSize());
+	m_halfrgba.resize(renderPasses->extPassesSize());
 	
 	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
 	{
@@ -137,7 +137,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 }
 
-bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t &renderPasses)
+bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
     std::string extPassName;
     
@@ -151,10 +151,10 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
     
-    for(int idx = 0; idx < renderPasses.extPassesSize(); ++idx)
+    for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
     {
-		extPassName = "RenderLayer." + renderPasses.extPassTypeStringFromIndex(idx) + ".";        
-		Y_INFO << "    Writing EXR Layer: " << renderPasses.extPassTypeStringFromIndex(idx) << yendl;
+		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
+		Y_INFO << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
         
         header.channels().insert(extPassName+"R", Channel(HALF));
         header.channels().insert(extPassName+"G", Channel(HALF));
