@@ -7,6 +7,19 @@
 	"triangle.h" and "triangle_inline.h" directly.
 */
 
+inline void triangle_t::updateBiasFactor()
+{
+	point3d_t const& a = mesh->getVertex(pa);
+	point3d_t const& b = mesh->getVertex(pb);
+	point3d_t const& c = mesh->getVertex(pc);
+
+	vector3d_t edge1 = b - a;
+	vector3d_t edge2 = c - a;
+
+	intersectionBiasFactor = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+}
+
+
 inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
 {
 	// Tomas Möller and Ben Trumbore ray intersection scheme
@@ -23,7 +36,7 @@ inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &d
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
 
-	float epsilon = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	float epsilon = intersectionBiasFactor;
 	
 	if(det > -epsilon && det < epsilon) return false;
 
@@ -108,7 +121,7 @@ inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectD
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
 
-	float epsilon = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	float epsilon = intersectionBiasFactor;
 	
 	if(det > -epsilon && det < epsilon) return false;
 

@@ -31,8 +31,8 @@ class YAFRAYCORE_EXPORT triangle_t
 	friend class triangleInstance_t;
 
 	public:
-		triangle_t(): pa(-1), pb(-1), pc(-1), na(-1), nb(-1), nc(-1), mesh(NULL) { /* Empty */ }
-        triangle_t(int ia, int ib, int ic, triangleObject_t* m): pa(ia), pb(ib), pc(ic), na(-1), nb(-1), nc(-1), mesh(m) { /* Empty */ }
+		triangle_t(): pa(-1), pb(-1), pc(-1), na(-1), nb(-1), nc(-1), mesh(NULL), intersectionBiasFactor(0.f) { /* Empty */ }
+        triangle_t(int ia, int ib, int ic, triangleObject_t* m): pa(ia), pb(ib), pc(ic), na(-1), nb(-1), nc(-1), mesh(m), intersectionBiasFactor(0.f) {  updateBiasFactor(); }
 		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;
 		virtual bool intersectsBound(exBound_t &eb) const;
@@ -45,7 +45,7 @@ class YAFRAYCORE_EXPORT triangle_t
 		virtual void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
 
 		virtual vector3d_t getNormal() const{ return vector3d_t(normal); }
-		void setVertexIndices(int a, int b, int c){ pa=a, pb=b, pc=c; }
+		void setVertexIndices(int a, int b, int c){ pa=a, pb=b, pc=c; updateBiasFactor(); }
 		void setMaterial(const material_t *m) { material = m; }
 		void setNormals(int a, int b, int c){ na=a, nb=b, nc=c; }
 		virtual void recNormal();
@@ -60,6 +60,7 @@ class YAFRAYCORE_EXPORT triangle_t
             return out;
         }
         virtual const triangleObject_t* getMesh() const { return mesh; }
+        void updateBiasFactor();
 
 	private:
 		int pa, pb, pc; //!< indices in point array, referenced in mesh.
@@ -68,6 +69,7 @@ class YAFRAYCORE_EXPORT triangle_t
 		vector3d_t normal; //!< the geometric normal
         const triangleObject_t* mesh;
 		size_t selfIndex;
+		float intersectionBiasFactor;	//!< Intersection Bias factor based on longest edge to reduce 
 };
 
 class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
