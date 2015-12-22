@@ -7,14 +7,14 @@
 	"triangle.h" and "triangle_inline.h" directly.
 */
 
-inline void triangle_t::updateBiasFactor()
+inline void triangle_t::updateIntersectionCachedValues()
 {
 	point3d_t const& a = mesh->getVertex(pa);
 	point3d_t const& b = mesh->getVertex(pb);
 	point3d_t const& c = mesh->getVertex(pc);
 
-	vector3d_t edge1 = b - a;
-	vector3d_t edge2 = c - a;
+	edge1 = b - a;
+	edge2 = c - a;
 
 	intersectionBiasFactor = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
 }
@@ -26,12 +26,7 @@ inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &d
 	// Getting the barycentric coordinates of the hit point
     // const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 
-    point3d_t const& a = mesh->getVertex(pa);
-    point3d_t const& b = mesh->getVertex(pb);
-    point3d_t const& c = mesh->getVertex(pc);
-
-	vector3d_t edge1 = b - a;
-	vector3d_t edge2 = c - a;
+	point3d_t const& a = mesh->getVertex(pa);
 
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
@@ -111,12 +106,7 @@ inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectD
 	// Tomas Möller and Ben Trumbore ray intersection scheme
 	// Getting the barycentric coordinates of the hit point
 
-    point3d_t const& a = mesh->getVertex(mBase->pa);
-    point3d_t const& b = mesh->getVertex(mBase->pb);
-    point3d_t const& c = mesh->getVertex(mBase->pc);
-
-	vector3d_t edge1 = b - a;
-	vector3d_t edge2 = c - a;
+	point3d_t const& a = mesh->getVertex(mBase->pa);
 
 	vector3d_t pvec = ray.dir ^ edge2;
 	float det = edge1 * pvec;
