@@ -36,15 +36,19 @@ meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool d
     lCastShadows = bCastShadows;
     lLightGroup = iLightGroup;
     mesh = 0;
+    areaDist = 0;
+    tris = 0;
 	//initIS();
 }
 
 meshLight_t::~meshLight_t()
 {
-	delete areaDist;
+	if(areaDist) delete areaDist;
 	areaDist = 0;
-	delete[] tris;
+	if(tris) delete[] tris;
+	tris = 0;
 	if(tree) delete tree;
+	tree = 0;
 }
 
 void meshLight_t::initIS()

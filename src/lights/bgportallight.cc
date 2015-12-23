@@ -37,18 +37,20 @@ bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool ca
     lLightGroup = iLightGroup;
     mesh = NULL;
 	aPdf = 0.f;
+	areaDist = 0;
+	tris = 0;
 }
 
 bgPortalLight_t::~bgPortalLight_t()
 {
-	delete areaDist;
-	areaDist = NULL;
-	delete[] tris;
-	tris = NULL;
+	if(areaDist) delete areaDist;
+	areaDist = 0;
+	if(tris) delete[] tris;
+	tris = 0;
 	if(tree)
 	{
 		delete tree;
-		tree = NULL;
+		tree = 0;
 	}
 }
 

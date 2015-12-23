@@ -59,13 +59,17 @@ light_t(LIGHT_NONE), samples(sampl), shootCaustic(shootC), shootDiffuse(shootD),
     lCastShadows = bCastShadows;
     lLightGroup = iLightGroup;
 	background = NULL;
+	uDist = 0;
+	vDist = 0;
 }
 
 bgLight_t::~bgLight_t()
 {
 	for(int i = 0; i < vDist->count; i++) delete uDist[i];
-	delete[] uDist;
-	delete vDist;
+	if(uDist) delete[] uDist;
+	uDist = 0;
+	if(vDist) delete vDist;
+	vDist = 0;
 }
 
 void bgLight_t::init(scene_t &scene)
