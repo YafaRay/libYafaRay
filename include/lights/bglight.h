@@ -32,7 +32,7 @@ class pdf1D_t;
 class bgLight_t : public light_t
 {
 	public:
-		bgLight_t(int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
+		bgLight_t(int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~bgLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;

@@ -68,17 +68,15 @@ class light_t
 		//! Enable/disable entire light source
 		bool lightEnabled() const { return lLightEnabled;}
 		bool castShadows() const { return lCastShadows; }
-        int getLightGroup() const { return lLightGroup; }
-		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true),lLightGroup(0) {}
+		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
 		LIGHTF_t getFlags() const { return flags; }
 
 	protected:
 		LIGHTF_t flags;
 		background_t* background;
-        bool lLightEnabled; //!< enable/disable light
+	        bool lLightEnabled; //!< enable/disable light
 		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
-        int lLightGroup; //!< light group for the light group render views
 };
 
 __END_YAFRAY

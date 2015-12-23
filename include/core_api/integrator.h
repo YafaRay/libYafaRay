@@ -41,8 +41,7 @@ struct renderArea_t;
 class YAFRAYCORE_EXPORT integrator_t
 {
 	public:
-		integrator_t():lightGroupFilter(0) { scene = 0; intpb = 0; }
-        integrator_t(int light_group_filter):lightGroupFilter(light_group_filter) { scene = 0; intpb = 0; }
+		integrator_t() { scene = 0; intpb = 0; }
 		//! this MUST be called before any other member function!
 		void setScene(scene_t *s) { scene=s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
@@ -51,13 +50,6 @@ class YAFRAYCORE_EXPORT integrator_t
 		virtual std::string getSettings() const { return settings; }
 		virtual std::string getShortName() const { return integratorShortName; }
 		virtual std::string getName() const { return integratorName; }
-		void setLightGroupFilter(int light_group_filter) { lightGroupFilter = light_group_filter; }
-		int getLightGroupFilter() const { return lightGroupFilter; }
-		bool isLightGroupEnabledByFilter(int light_group_to_be_checked) const
-		{
-			 if(lightGroupFilter == 0 || lightGroupFilter == light_group_to_be_checked) return true;
-			 else return false;	//False means the light group has to be filtered out (disabled) during rendering 
-		}
 		virtual ~integrator_t() {}
 		enum TYPE { SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
@@ -68,7 +60,6 @@ class YAFRAYCORE_EXPORT integrator_t
 		std::string integratorName;
 		std::string integratorShortName;
 		std::string settings;
-        int lightGroupFilter; //lightGroupFilter = 0 means all light groups will be rendered. A positive number will cause the integrator to integrate only the lights belonging to the light group selected by this variable
 };
 
 class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t

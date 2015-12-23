@@ -98,7 +98,6 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	int resx=320, resy=200;
 	float aspect=1, dfocal=1, apt=0, dofd=0, bkhrot=0;
     float nearClip = 0.0f, farClip = -1.0f;
-    int lightGroupFilter = 0;
     std::string viewName = "";
 
 	params.getParam("from", from);
@@ -115,7 +114,6 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	params.getParam("aspect_ratio", aspect);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
-    params.getParam("light_group_filter", lightGroupFilter);
     params.getParam("view_name", viewName);
 
 	bokehType bt = BK_DISK1;
@@ -131,7 +129,6 @@ camera_t* architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	else if (*bkhbias=="edge") 		bbt = BB_EDGE;
     architectCam_t* cam = new architectCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, nearClip, farClip);
 
-	cam->light_group_filter = lightGroupFilter;
 	cam->view_name = viewName;
 
     return cam;

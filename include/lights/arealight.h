@@ -11,7 +11,7 @@ class areaLight_t : public light_t
 {
 	public:
 		areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-					const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
+					const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
 		~areaLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;

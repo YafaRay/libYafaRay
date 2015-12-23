@@ -29,12 +29,11 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled, bool bCastShadows):
 	objID(msh), samples(sampl), power(pow), tree(0), shootCaustic(caus), shootDiffuse(diff), photonOnly(pOnly)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
-    lLightGroup = iLightGroup;
     mesh = NULL;
 	aPdf = 0.f;
 	areaDist = 0;
@@ -241,7 +240,6 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool ponly = false;
 	bool lightEnabled = true;
 	bool castShadows = true;
-    int light_group = 1;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
@@ -251,8 +249,7 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("photon_only", ponly);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-    params.getParam("light_group", light_group);
 	
-	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly, lightEnabled, castShadows, light_group);
+	return new bgPortalLight_t(object, samples, pow, caus, diff, ponly, lightEnabled, castShadows);
 }
 __END_YAFRAY

@@ -706,7 +706,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				
 				if(close || caustic)
 				{
-					if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += p_mat->emit(state, hit, pwo);
+					if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, pwo);
 					pathCol += lcol*throughput;
 				}
 			}
@@ -761,7 +761,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 				vector3d_t sf = FACE_FORWARD(hit.Ng, hit.N, -pRay.dir);
 				const photon_t *nearest = radianceMap.findNearest(hit.P, sf, lookupRad);
 				if(nearest) lcol = nearest->color();
-				if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += p_mat->emit(state, hit, -pRay.dir);
+				if(matBSDFs & BSDF_EMIT) lcol += p_mat->emit(state, hit, -pRay.dir);
 				pathCol += lcol * throughput;
 			}
 		}
@@ -800,7 +800,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
 		
-		if(isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
 		state.includeLights = false;
 		
@@ -822,7 +822,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 				}
 				
 				// contribution of light emitting surfaces
-				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+				if(bsdfs & BSDF_EMIT) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{
@@ -855,7 +855,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 					if(nearest) colorPasses(PASS_INT_RADIANCE) = nearest->color();
 				}
 
-				if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+				if(bsdfs & BSDF_EMIT) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 				
 				if(bsdfs & BSDF_DIFFUSE)
 				{

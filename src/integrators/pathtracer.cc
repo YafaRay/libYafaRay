@@ -143,7 +143,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 		color_t vcol(0.f);
 
 		// contribution of light emitting surfaces		
-		if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		if(bsdfs & BSDF_EMIT) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
 		if(bsdfs & BSDF_DIFFUSE)
 		{
@@ -217,7 +217,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 				p_mat->initBSDF(state, *hit, matBSDFs);
 				if(s.sampledFlags != BSDF_NONE) pwo = -pRay.dir; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmpColorPasses);
-				if((matBSDFs & BSDF_EMIT) && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += colorPasses.probe_add(PASS_INT_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
+				if(matBSDFs & BSDF_EMIT) lcol += colorPasses.probe_add(PASS_INT_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
 
 				pathCol += lcol*throughput;
 				
@@ -272,7 +272,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 						if(vol->transmittance(state, pRay, vcol)) throughput *= vcol;
 					}
 					
-					if ((matBSDFs & BSDF_EMIT) && caustic && isLightGroupEnabledByFilter(p_mat->getLightGroup())) lcol += colorPasses.probe_add(PASS_INT_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
+					if ((matBSDFs & BSDF_EMIT) && caustic) lcol += colorPasses.probe_add(PASS_INT_EMIT, p_mat->emit(state, *hit, pwo), state.raylevel == 0);
 					
 					pathCol += lcol*throughput;
 				}

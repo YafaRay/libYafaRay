@@ -112,7 +112,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		material->initBSDF(state, sp, bsdfs);
 
-		if((bsdfs & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup())) 
+		if(bsdfs & BSDF_EMIT) 
 		{
 			col += colorPasses.probe_set(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		}

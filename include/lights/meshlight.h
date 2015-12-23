@@ -35,7 +35,7 @@ class triKdTree_t;
 class meshLight_t : public light_t
 {
 	public:
-		meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s=false, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
+		meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s=false, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~meshLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;

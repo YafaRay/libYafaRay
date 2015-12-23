@@ -146,7 +146,6 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	int AA_resampled_floor_pixels = (int) floorf(AA_resampled_floor * (float) imageFilm->getTotalPixels() / 100.f);
 
 	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
-	if(getLightGroupFilter() > 0) Y_INFO << integratorName << ": Rendering only lights from light group: " << getLightGroupFilter() << yendl;
 	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
 	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
 	Y_INFO << integratorName << ": Resampled pixels floor: "<< AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;

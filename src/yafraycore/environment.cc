@@ -243,11 +243,7 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 	{
 		light_table[name] = light;
 		
-        std::stringstream lightGroupStreamString;
-        lightGroupStreamString << light->getLightGroup();
-        std::string lightGroupString = lightGroupStreamString.str();
-        
-		if(light->lightEnabled()) InfoSucces(name+" (light group: "+lightGroupString+")", type);
+		if(light->lightEnabled()) InfoSucces(name, type);
 		else InfoSuccesDisabled(name, type);
 		
 		return light;
@@ -578,7 +574,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
 	
-    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+    	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)

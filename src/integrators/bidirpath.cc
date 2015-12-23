@@ -1010,7 +1010,7 @@ color_t biDirIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const su
 		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
 		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
 
-		if((material->getFlags() & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup()))
+		if(material->getFlags() & BSDF_EMIT)
 		{
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
@@ -1068,7 +1068,7 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, cons
 		surfCol = material->sampleClay(state, sp, wo, lightRay.dir, s, W);
 		s.pdf = 1.f;
 
-		if((material->getFlags() & BSDF_EMIT) && isLightGroupEnabledByFilter(material->getLightGroup()))
+		if(material->getFlags() & BSDF_EMIT)
 		{
 			col += material->emit(state, sp, wo) * s.pdf;
 		}

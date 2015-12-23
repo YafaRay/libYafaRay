@@ -75,9 +75,8 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	int resx=320, resy=200;
 	double aspect=1.0, angle=90, max_angle=90;
 	bool circular = true, mirrored = false;
-    float nearClip = 0.0f, farClip = -1.0f;
-    int lightGroupFilter = 0;
-    std::string viewName = "";
+	float nearClip = 0.0f, farClip = -1.0f;
+	std::string viewName = "";
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -92,14 +91,12 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("mirrored", mirrored);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
-    params.getParam("light_group_filter", lightGroupFilter);
     params.getParam("view_name", viewName);
 	
     angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle, circular, nearClip, farClip);
 	if(mirrored) cam->vright *= -1.0;
 	cam->max_r = max_angle/angle;
 	
-	cam->light_group_filter = lightGroupFilter;
 	cam->view_name = viewName;
 	
 	return cam;

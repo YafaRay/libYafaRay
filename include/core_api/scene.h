@@ -46,6 +46,7 @@ class volumeIntegrator_t;
 class imageFilm_t;
 struct renderArea_t;
 class random_t;
+class renderEnvironment_t;
 
 typedef unsigned int objID_t;
 
@@ -143,9 +144,9 @@ struct sceneGeometryState_t
 class YAFRAYCORE_EXPORT scene_t
 {
 	public:
-		scene_t(const renderPasses_t *render_passes);
+		scene_t(const renderEnvironment_t *render_environment);
 		~scene_t();
-		explicit scene_t(const scene_t &s):renderPasses(s.renderPasses) { Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
+		explicit scene_t(const scene_t &s) { Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
 		bool render();
 		void abort();
 		bool startGeometry();
@@ -196,17 +197,14 @@ class YAFRAYCORE_EXPORT scene_t
 		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
-        void setLightGroupFilter(int light_group_filter);
-		const renderPasses_t* getRenderPasses() const { return renderPasses; }
-		bool pass_enabled(intPassTypes_t intPassType) const { return renderPasses->pass_enabled(intPassType); }
-
+		const renderPasses_t* getRenderPasses() const;
+		bool pass_enabled(intPassTypes_t intPassType) const;
 
 		enum sceneState { READY, GEOMETRY, OBJECT, VMAP };
 		enum changeFlags { C_NONE=0, C_GEOM=1, C_LIGHT= 1<<1, C_OTHER=1<<2,
 							C_ALL=C_GEOM|C_LIGHT|C_OTHER };
 
-		std::vector<light_t *> unfiltered_lights;
-        std::vector<light_t *> lights;
+		std::vector<light_t *> lights;
 		volumeIntegrator_t *volIntegrator;
 
 		PFLOAT shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -247,7 +245,7 @@ class YAFRAYCORE_EXPORT scene_t
 		int nthreads;
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
 		int signals;
-		const renderPasses_t *renderPasses;	//!< reference to the environment renderPasses object
+		const renderEnvironment_t *env;	//!< reference to the environment to which this scene belongs to
 		mutable yafthreads::mutex_t sig_mutex;
 };
 

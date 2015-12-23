@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0), lLightGroup(1)
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0)
 		{
 			materialIndexAuto++;
 			srand(materialIndexAuto);
@@ -174,21 +174,21 @@ class YAFRAYCORE_EXPORT material_t
 		/*! Get materials IOR (for refracted photons) */
 
 		virtual float getMatIOR() const { return 1.5f; }
-        virtual color_t getDiffuseColor(const renderState_t &state) const { return color_t(0.f); }
-        virtual color_t getGlossyColor(const renderState_t &state) const { return color_t(0.f); }
-        virtual color_t getTransColor(const renderState_t &state) const { return color_t(0.f); }
-        virtual color_t getMirrorColor(const renderState_t &state) const { return color_t(0.f); }
-        virtual color_t getSubSurfaceColor(const renderState_t &state) const { return color_t(0.f); }
-        void setMaterialIndex(const float &newMatIndex)
-        {
+	        virtual color_t getDiffuseColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getGlossyColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getTransColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getMirrorColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getSubSurfaceColor(const renderState_t &state) const { return color_t(0.f); }
+	        void setMaterialIndex(const float &newMatIndex)
+	        {
 			materialIndex = newMatIndex;
 			if(highestMaterialIndex < materialIndex) highestMaterialIndex = materialIndex;
 		}
-        void resetMaterialIndex() { highestMaterialIndex = 1.f; materialIndexAuto = 0; }
-        void setMaterialIndex(const int &newMatIndex) { setMaterialIndex((float) newMatIndex); }
-        float getAbsMaterialIndex() const { return materialIndex; }
-        float getNormMaterialIndex() const { return (materialIndex / highestMaterialIndex); }
-        color_t getAbsMaterialIndexColor() const
+	        void resetMaterialIndex() { highestMaterialIndex = 1.f; materialIndexAuto = 0; }
+	        void setMaterialIndex(const int &newMatIndex) { setMaterialIndex((float) newMatIndex); }
+	        float getAbsMaterialIndex() const { return materialIndex; }
+	        float getNormMaterialIndex() const { return (materialIndex / highestMaterialIndex); }
+	        color_t getAbsMaterialIndexColor() const
 		{
 			return color_t(materialIndex);
 		}
@@ -201,8 +201,6 @@ class YAFRAYCORE_EXPORT material_t
 		{
 			return materialIndexAutoColor;
 		}
-		int getLightGroup() const { return lLightGroup; }
-		void setLightGroup(int light_group) { lLightGroup = light_group; }
 
 		visibility_t getVisibility() const { return mVisibility; }
 		bool getReceiveShadows() const { return mReceiveShadows; }
@@ -221,11 +219,10 @@ class YAFRAYCORE_EXPORT material_t
 		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		volumeHandler_t* volI; //!< volumetric handler for space inside material (opposed to surface normal)
 		volumeHandler_t* volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-        float materialIndex;	//!< Material Index for the material-index render pass
+	        float materialIndex;	//!< Material Index for the material-index render pass
 		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
 		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
 		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
-		int lLightGroup; //!< light group for the light group render views
 };
 
 __END_YAFRAY

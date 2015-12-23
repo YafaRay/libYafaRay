@@ -45,7 +45,7 @@
 
 __BEGIN_YAFRAY
 
-scene_t::scene_t(const renderPasses_t *render_passes):  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), renderPasses(render_passes)
+scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), env(render_environment)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
@@ -147,7 +147,6 @@ bool scene_t::startCurveMesh(objID_t id, int vertices, int obj_pass_index)
 	nObj.obj = new triangleObject_t( 2 * (vertices-1) , true, false);
 	nObj.obj->setObjectIndex(obj_pass_index);
 	nObj.type = ptype;
-
 	state.stack.push_front(OBJECT);
 	state.changes |= C_GEOM;
 	state.orco=false;
@@ -689,32 +688,11 @@ bool scene_t::addLight(light_t *l)
 	if(l != 0)
 	{
 		if(!l->lightEnabled()) return false; //if a light is disabled, don't add it to the list of lights
-		unfiltered_lights.push_back(l);
-        lights.push_back(l);
+		lights.push_back(l);
 		state.changes |= C_LIGHT;
 		return true;
 	}
 	return false;
-}
-
-void scene_t::setLightGroupFilter(int light_group_filter)
-{
-	if(!imageFilm)
-	{
-		Y_ERROR << "Scene: trying to set the integrator light group filter but the integrator object does not exist yet!" << yendl;
-		return;
-	}
-	
-	surfIntegrator->setLightGroupFilter(light_group_filter);
-	
-    lights.clear();
-    
-	std::vector<light_t *>::iterator i;
-	for(i = unfiltered_lights.begin(); i != unfiltered_lights.end(); ++i)
-    {
-        if(surfIntegrator->isLightGroupEnabledByFilter((*i)->getLightGroup())) lights.push_back(*i);
-    }
-    state.changes |= C_LIGHT;
 }
 
 bool scene_t::addCamera(camera_t *cam, std::string name)
@@ -722,7 +700,7 @@ bool scene_t::addCamera(camera_t *cam, std::string name)
 	if(cam != 0)
 	{
 		cam->set_camera_name(name);
-        cameras.push_back(cam);
+        	cameras.push_back(cam);
 		return true;
 	}
 	return false;
@@ -1036,7 +1014,7 @@ bool scene_t::render()
 	signals = 0;
 	sig_mutex.unlock();
 
-    bool success = false;
+	bool success = false;
 	
 	if(cameras.size() == 0)
 	{
@@ -1044,39 +1022,26 @@ bool scene_t::render()
 		return false;
 	}
 	
-	Y_INFO << "Scene: Sorting cameras/views by light group filter to reduce the need for recalculating photon maps, etc" << yendl;
-			
-	std::sort(cameras.begin(), cameras.end(), camera_sort_by_lightgroup());
-
-    std::vector<camera_t *>::iterator cam;
+	std::vector<camera_t *>::iterator cam;
 	int numView = 0;
 	
 	std::map<int, std::string> view_names_map;
 	
 	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
     {
-		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << ", camera name: '" << (*cam)->get_camera_name() << "', light group=" << (*cam)->get_light_group_filter()  << yendl;
+		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << ", camera name: '" << (*cam)->get_camera_name() << yendl;
 		
 		view_names_map[numView] = (*cam)->get_view_name();
 	}
 		
-	int lightGroup = 0;
-	setLightGroupFilter(lightGroup);
 	imageFilm->set_view_names_map(view_names_map);
 	
 	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
     {
 		setCamera(*cam);
-        
-        if((*cam)->get_light_group_filter() != lightGroup) //If the light group of this view is not the same as the previous view, trigger update of photon maps. Otherwise (only using a different camera) we can reuse the previous photon map and speed up the rendering.
-        {
-			lightGroup = (*cam)->get_light_group_filter();
-			setLightGroupFilter(lightGroup);
-		}
-		
-        if(!update()) return false;
+	        if(!update()) return false;
 
-        success = surfIntegrator->render(numView, imageFilm);
+	        success = surfIntegrator->render(numView, imageFilm);
 
 		surfIntegrator->cleanup();
 		imageFilm->flush(numView);
@@ -1147,5 +1112,9 @@ bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
 		return false;
 	}
 }
+
+const renderPasses_t* scene_t::getRenderPasses() const { return env->getRenderPasses(); }
+bool scene_t::pass_enabled(intPassTypes_t intPassType) const { return env->getRenderPasses()->pass_enabled(intPassType); }
+
 
 __END_YAFRAY

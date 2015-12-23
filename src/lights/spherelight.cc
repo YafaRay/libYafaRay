@@ -37,7 +37,7 @@ __BEGIN_YAFRAY
 class sphereLight_t : public light_t
 {
 	public:
-		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true, int iLightGroup=1);
+		sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
 		~sphereLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -61,12 +61,11 @@ class sphereLight_t : public light_t
 		float area, invArea;
 };
 
-sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows, int iLightGroup):
+sphereLight_t::sphereLight_t(const point3d_t &c, PFLOAT rad, const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows):
 	center(c), radius(rad), samples(nsam)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
-    lLightGroup = iLightGroup;
 	color = col*inte;
 	square_radius = radius*radius;
 	square_radius_epsilon = square_radius * 1.000003815; // ~0.2% larger radius squared
@@ -204,7 +203,6 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int object = 0;
 	bool lightEnabled = true;
 	bool castShadows = true;
-    int lightGroup = 1;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -214,9 +212,8 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-    params.getParam("light_group", lightGroup);
 	
-	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows, lightGroup);
+	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);
 	light->objID = (unsigned int)object;
 	return light;
 }
