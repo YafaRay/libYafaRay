@@ -126,11 +126,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings();
         void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
-        void set_view_names_map(const std::map<int, std::string>& viewNamesMap)
-		{
-			if(output) output->set_view_names_map(viewNamesMap);
-			else Y_ERROR << "ImageFilm: error setting the view names map, color output does not exist yet." << yendl;
-		}
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);

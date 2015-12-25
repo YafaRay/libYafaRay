@@ -228,7 +228,9 @@ public:
 
 		for(size_t view = 0; view < tilesPasses.size(); ++view)
 		{
-			//std::cout << "DAVID FLUSH: view=" << view << ", get_view_name(view)=" << get_view_name(view) << std::endl;
+			std::string view_name = renderPasses->view_names.at(view);
+
+			//std::cout << "DAVID FLUSH: view=" << view << ", view_name=" << view_name << std::endl;
 			
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
@@ -241,7 +243,7 @@ public:
 				
 				std::stringstream extPassName;
 				extPassName << renderPasses->extPassTypeStringFromIndex(idx);
-				PyObject* groupItem = Py_BuildValue("ssO", get_view_name(view).c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);				
+				PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tilesPasses.at(view)[idx]);				
 				PyTuple_SET_ITEM(groupTile, tilesPasses.at(view).size()*view + idx, (PyObject*) groupItem);
 
 				//std::cout << "flush: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
@@ -260,7 +262,9 @@ public:
 
 	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses)
 	{
-		//std::cout << "DAVID FLUSHAREA: view=" << numView << ", get_view_name(numView)=" << get_view_name(numView) << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
+		std::string view_name = renderPasses->view_names.at(numView);
+		
+		//std::cout << "DAVID FLUSHAREA: view=" << numView << ", view_name=" << view_name << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
 	
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
@@ -284,7 +288,7 @@ public:
 			
 			std::stringstream extPassName;
 			extPassName << renderPasses->extPassTypeStringFromIndex(idx);
-			PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
+			PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tilesPasses.at(numView)[idx]);
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
 
 			//std::cout << "flushArea: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
@@ -302,7 +306,9 @@ public:
 
 	virtual void highliteArea(int numView, int x0, int y0, int x1, int y1)
 	{
-		//std::cout << "DAVID HIGHLITEAREA: view=" << numView << ", get_view_name(numView)=" << get_view_name(numView) << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
+		std::string view_name = "";
+		
+		//std::cout << "DAVID HIGHLITEAREA: view=" << numView << ", view_name=" << view_name << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
 
@@ -328,7 +334,7 @@ public:
 
 		tilesPasses.at(numView)[0]->tileType = yafaray::PASS_EXT_TILE_4_RGBA;
 		
-		PyObject* groupItem = Py_BuildValue("ssO", get_view_name(numView).c_str(), "Combined", tilesPasses.at(numView)[0]);
+		PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), "Combined", tilesPasses.at(numView)[0]);
 		PyTuple_SET_ITEM(groupTile, 0, (PyObject*) groupItem);
 
 		//std::cout << "highliteArea: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;

@@ -480,6 +480,12 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 	{
 		camera_table[name] = camera;
 		InfoSucces(name, type);
+		int viewNumber = renderPasses.view_names.size();
+		camera->set_camera_name(name);
+		renderPasses.view_names.push_back(camera->get_view_name());
+		
+		Y_INFO << "Environment: View number=" << viewNumber << ", view name: '" << renderPasses.view_names[viewNumber] << "', camera name: '" << camera->get_camera_name() << "'" << yendl;
+
 		return camera;
 	}
 	ErrOnCreate(type);

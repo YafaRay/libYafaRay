@@ -174,7 +174,6 @@ class YAFRAYCORE_EXPORT scene_t
         bool addInstance(objID_t baseObjectId, matrix4x4_t objToWorld);
 		void addVolumeRegion(VolumeRegion* vr) { volumes.push_back(vr); }
 		void setCamera(camera_t *cam);
-        bool addCamera(camera_t *cam, std::string name);
 		void setImageFilm(imageFilm_t *film);
 		void setBackground(background_t *bg);
 		void setSurfIntegrator(surfaceIntegrator_t *s);
@@ -221,7 +220,6 @@ class YAFRAYCORE_EXPORT scene_t
         std::map< std::string, material_t * > materials;
 		std::vector<VolumeRegion *> volumes;
         camera_t *camera;
-		std::vector<camera_t *> cameras;
 		imageFilm_t *imageFilm;
 		triKdTree_t *tree; //!< kdTree for triangle-only mode
 		kdTree_t<primitive_t> *vtree; //!< kdTree for universal mode

@@ -70,6 +70,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
 		void			setupRenderPasses(const paraMap_t &params);
 		const renderPasses_t* getRenderPasses() const { return &renderPasses; }
+		const std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }
 		void clearAll();
 
 		virtual void registerFactory(const std::string &name,light_factory_t *f);

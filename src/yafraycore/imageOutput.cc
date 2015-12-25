@@ -82,21 +82,17 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
         ext  = "";
     }
                 
-    std::ostringstream numViewOstring;
-
-    numViewOstring  << " (view " << std::setw(2) << std::setfill('0') << numView << ") ";
-
-    if(numView > 0) num_view = numViewOstring.str();
+    std::string view_name = renderPasses->view_names.at(numView);
     
-    base_name += num_view;
+    if(view_name != "") base_name += " (view " + view_name + ")";
 
     if(image)
-	{
+    {
         if(image->isMultiLayer())
         {
             if(numView == 0) image->saveToFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
          
-            fnamePass = path + base_name + " (" + "multilayer" + ")"+ ext;
+            fnamePass = path + base_name + " [" + "multilayer" + "]"+ ext;
          
             image->saveToFileMultiChannel(fnamePass, renderPasses);
         }
@@ -104,18 +100,15 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
         {
             for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
             {
-                std::string passName = renderPasses->extPassTypeStringFromIndex(idx);
+                std::string passName = renderPasses->intPassTypeStringFromType(renderPasses->intPassTypeFromExtPassIndex(idx));
                 
-                if(numView == 0 && idx == 0) image->saveToFile(fname, idx);
-		else if(passName != "not found")
+                if(numView == 0 && idx == 0) image->saveToFile(fname, idx);	//default image filename, when not using views nor passes and for reloading into Blender
+		
+		if(passName != "not found" && (renderPasses->extPassesSize()>=2 || renderPasses->view_names.size() >= 2))
                 {
-                    fnamePass = path + base_name + " (" + passName + ")"+ ext;
+                    fnamePass = path + base_name + " [pass " + passName + "]"+ ext;
                     image->saveToFile(fnamePass, idx);
                 }
-                else
-                {
-		    //if the above conditions do not happen, do nothing...
-                }                
             }
         }
     }

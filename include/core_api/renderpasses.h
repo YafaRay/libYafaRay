@@ -187,6 +187,7 @@ class YAFRAYCORE_EXPORT renderPasses_t
 		std::map<std::string, extPassTypes_t> extPassMapStringInt; //Reverse map string-int for external passes
 		std::map<intPassTypes_t, std::string> intPassMapIntString; //Map int-string for internal passes
 		std::map<std::string, intPassTypes_t> intPassMapStringInt; //Reverse map string-int for internal passes
+		std::vector<std::string> view_names;	//Render Views names
         
     protected:
 		std::vector<extPass_t> extPasses;		//List of the external Render passes to be exported

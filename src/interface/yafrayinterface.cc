@@ -273,7 +273,6 @@ material_t* 	yafrayInterface_t::createMaterial(const char* name) { return env->c
 camera_t* 		yafrayInterface_t::createCamera(const char* name)
 {
 	camera_t *camera = env->createCamera(name, *params);
-	if(camera) scene->addCamera(camera, std::string(name));
 	return camera;
 }
 background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }

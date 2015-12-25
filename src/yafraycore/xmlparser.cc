@@ -639,10 +639,7 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			else if(el == "texture")
 			{ p.env->createTexture(*name, p.params); }
 			else if(el == "camera")
-			{ 
-				camera_t *camera = p.env->createCamera(*name, p.params);
-				if(camera) p.scene->addCamera(camera, std::string(*name));
-			}
+			{ p.env->createCamera(*name, p.params); }
 			else if(el == "background")
 			{ p.env->createBackground(*name, p.params); }
 			else if(el == "object")

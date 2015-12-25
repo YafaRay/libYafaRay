@@ -42,17 +42,6 @@ class colorOutput_t
 		virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
 		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
-		void set_view_names_map(const std::map<int, std::string>& viewNamesMap) { view_names_map = viewNamesMap; }
-		std::string get_view_name(int numView)
-		{
-			std::string viewName="";
-			std::map<int, std::string>::const_iterator iView = view_names_map.find(numView);
-			if(iView != view_names_map.end()) viewName = iView->second;
-			return viewName; 
-		}
-			
-	protected:
-		std::map<int, std::string> view_names_map;
 };
 
 __END_YAFRAY

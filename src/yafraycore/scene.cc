@@ -695,17 +695,6 @@ bool scene_t::addLight(light_t *l)
 	return false;
 }
 
-bool scene_t::addCamera(camera_t *cam, std::string name)
-{
-	if(cam != 0)
-	{
-		cam->set_camera_name(name);
-        	cameras.push_back(cam);
-		return true;
-	}
-	return false;
-}
-
 void scene_t::setCamera(camera_t *cam)
 {
 	camera = cam;
@@ -1016,32 +1005,24 @@ bool scene_t::render()
 
 	bool success = false;
 	
-	if(cameras.size() == 0)
+	const std::map<std::string,camera_t *> *camera_table = env->getCameraTable();
+
+	if(camera_table->size() == 0)
 	{
 		Y_ERROR << "No cameras/views found, exiting." << yendl;
 		return false;
 	}
-	
-	std::vector<camera_t *>::iterator cam;
-	int numView = 0;
-	
-	std::map<int, std::string> view_names_map;
-	
-	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
-    {
-		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << "', camera name: '" << (*cam)->get_camera_name() << "'" << yendl;
-		
-		view_names_map[numView] = (*cam)->get_view_name();
-	}
-		
-	imageFilm->set_view_names_map(view_names_map);
-	
-	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
-    {
-		setCamera(*cam);
-	        if(!update()) return false;
 
-	        success = surfIntegrator->render(numView, imageFilm);
+	std::map<std::string,camera_t *>::const_iterator cam_table_entry;
+	
+	for(cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
+    {
+		int numView = distance(camera_table->begin(), cam_table_entry);
+		camera_t* cam = cam_table_entry->second;
+		setCamera(cam);
+		if(!update()) return false;
+
+		success = surfIntegrator->render(numView, imageFilm);
 
 		surfIntegrator->cleanup();
 		imageFilm->flush(numView);
