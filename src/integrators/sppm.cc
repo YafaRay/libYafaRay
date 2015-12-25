@@ -995,12 +995,12 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{
-				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
 			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 

@@ -121,8 +121,8 @@ public:
 	virtual void cleanup();
 	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
-	color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+	color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 protected:
 	int createPath(renderState_t &state, ray_t &start, std::vector<pathVertex_t> &path, int maxLen) const;
 	color_t evalPath(renderState_t &state, int s, int t, pathData_t &pd) const;
@@ -432,12 +432,12 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 				
 				sp.material->initBSDF(state, sp, bsdfs);
 
-				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
 			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 	}
@@ -972,7 +972,7 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
     return col/lightNumPdf;
 } */
 
-color_t biDirIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	color_t col(0.f), surfCol(0.f), scol(0.f);
 	bool shadowed;
@@ -1015,13 +1015,14 @@ color_t biDirIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const su
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 
-		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		//shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
 			float cos = std::fabs(sp.N * lightRay.dir);
-			if(trShad) col += aoCol * scol * surfCol * cos * W;
-			else col += aoCol * surfCol * cos * W;
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
 		}
 	}
 
@@ -1029,7 +1030,7 @@ color_t biDirIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const su
 }
 
 
-color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+color_t biDirIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	color_t col(0.f), surfCol(0.f), scol(0.f);
 	bool shadowed;
@@ -1073,13 +1074,13 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, cons
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 
-		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
 			float cos = std::fabs(sp.N * lightRay.dir);
-			if(trShad) col += aoCol * scol * surfCol * cos * W;
-			else col += aoCol * surfCol * cos * W;
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
 		}
 	}
 

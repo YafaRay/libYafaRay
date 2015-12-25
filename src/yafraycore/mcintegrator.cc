@@ -98,15 +98,16 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			{
                 if(!shadowed && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
 
-				if(trShad && castShadows) lcol *= scol;
 				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
+				colorA_t tmpColNoShadow = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+				if(trShad && castShadows) lcol *= scol;
 				colorA_t tmpCol = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
 
 				if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 				{
 					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
-					colDiffNoShadow += tmpCol;
+					colDiffNoShadow += tmpColNoShadow;
 					if(!shadowed) colDiffDir += tmpCol;
 				}
 				
@@ -167,6 +168,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 				if((!shadowed && ls.pdf > 1e-6f) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 				{
+					color_t lsColNoShadow = ls.col;
 					if(trShad && castShadows) ls.col *= scol;
 					color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 					ls.col *= transmitCol;
@@ -185,9 +187,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 							
 							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 							{
-								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
-								colDiffNoShadow += tmpCol;
-								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpCol;
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 							}
 							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 							{
@@ -201,9 +203,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 						{
 							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 							{
-								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
-								colDiffNoShadow += tmpCol;
-								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpCol;
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 							}
 
 							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
@@ -219,9 +221,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 					{
 						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 						{
-							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
-							colDiffNoShadow += tmpCol;
-							if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpCol;
+							color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+							if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 						}
 
 						if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
@@ -867,8 +869,67 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 	return col / (float)n;
 }
 
-
 color_t mcIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+{
+	color_t col(0.f), surfCol(0.f), scol(0.f);
+	bool shadowed;
+	const material_t *material = sp.material;
+	ray_t lightRay;
+	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+
+	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
+	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+
+	Halton hal2(2);
+	Halton hal3(3);
+
+	hal2.setStart(offs-1);
+	hal3.setStart(offs-1);
+
+	for(int i = 0; i < n; ++i)
+	{
+		float s1 = hal2.getNext();
+		float s2 = hal3.getNext();
+
+		if(state.rayDivision > 1)
+		{
+			s1 = addMod1(s1, state.dc1);
+			s2 = addMod1(s2, state.dc2);
+		}
+
+		if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+		else lightRay.tmin = scene->shadowBias;
+		
+		lightRay.tmax = aoDist;
+
+		float W = 0.f;
+
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
+
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+
+		if(!shadowed)
+		{
+			float cos = std::fabs(sp.N * lightRay.dir);
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
+		}
+	}
+
+	return col / (float)n;
+}
+
+
+color_t mcIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	color_t col(0.f), surfCol(0.f), scol(0.f);
 	bool shadowed;
@@ -912,13 +973,13 @@ color_t mcIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const s
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 
-		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
 			float cos = std::fabs(sp.N * lightRay.dir);
-			if(trShad) col += aoCol * scol * surfCol * cos * W;
-			else col += aoCol * surfCol * cos * W;
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
 		}
 	}
 

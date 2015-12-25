@@ -905,12 +905,12 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{
-				colorPasses(PASS_INT_AO) = sampleAmbientOcclusion(state, sp, wo);
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
 			if(colorPasses.enabled(PASS_INT_AO_CLAY))
 			{
-				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPass(state, sp, wo);
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 		
