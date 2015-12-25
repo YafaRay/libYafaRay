@@ -1029,7 +1029,7 @@ bool scene_t::render()
 	
 	for(numView = 0, cam = cameras.begin(); cam != cameras.end(); ++cam, ++numView)
     {
-		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << ", camera name: '" << (*cam)->get_camera_name() << yendl;
+		Y_INFO << "Scene: View number=" << numView << ", view name: '" << (*cam)->get_view_name() << "', camera name: '" << (*cam)->get_camera_name() << "'" << yendl;
 		
 		view_names_map[numView] = (*cam)->get_view_name();
 	}
