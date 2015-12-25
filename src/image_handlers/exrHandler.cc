@@ -156,17 +156,27 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
 		Y_INFO << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
         
-        header.channels().insert(extPassName+"R", Channel(HALF));
-        header.channels().insert(extPassName+"G", Channel(HALF));
-        header.channels().insert(extPassName+"B", Channel(HALF));
-        header.channels().insert(extPassName+"A", Channel(HALF));
+        const std::string channelR_string = extPassName + "R";
+        const std::string channelG_string = extPassName + "G";
+        const std::string channelB_string = extPassName + "B";
+        const std::string channelA_string = extPassName + "A";
+        
+        const char* channelR = channelR_string.c_str();
+        const char* channelG = channelG_string.c_str();
+        const char* channelB = channelB_string.c_str();
+        const char* channelA = channelA_string.c_str();
+        
+        header.channels().insert(channelR, Channel(HALF));
+        header.channels().insert(channelG, Channel(HALF));
+        header.channels().insert(channelB, Channel(HALF));
+        header.channels().insert(channelA, Channel(HALF));
  
         char* data_ptr = (char *)&(*m_halfrgba.at(idx))(0, 0);
 
-        fb.insert(extPassName+"R", Slice(HALF, data_ptr              , totchan_size, m_width*totchan_size));
-        fb.insert(extPassName+"G", Slice(HALF, data_ptr +   chan_size, totchan_size, m_width*totchan_size));
-        fb.insert(extPassName+"B", Slice(HALF, data_ptr + 2*chan_size, totchan_size, m_width*totchan_size));
-        fb.insert(extPassName+"A", Slice(HALF, data_ptr + 3*chan_size, totchan_size, m_width*totchan_size));
+        fb.insert(channelR, Slice(HALF, data_ptr              , totchan_size, m_width*totchan_size));
+        fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, m_width*totchan_size));
+        fb.insert(channelB, Slice(HALF, data_ptr + 2*chan_size, totchan_size, m_width*totchan_size));
+        fb.insert(channelA, Slice(HALF, data_ptr + 3*chan_size, totchan_size, m_width*totchan_size));
     }
     
     OutputFile file(name.c_str(), header);    
