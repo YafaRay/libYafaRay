@@ -65,7 +65,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		};
 
 		/*! imageFilm_t Constructor */
-		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, int render_view_number, float filterSize=1.0, filterType filt=BOX,
+		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
 		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32,
 		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false, bool drawParams = false);
 		/*! imageFilm_t Destructor */

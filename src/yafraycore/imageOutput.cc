@@ -51,7 +51,7 @@ bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *re
 		{
 			colorA_t col(0.f);
 			col.set(colExtPasses[idx].R, colExtPasses[idx].G, colExtPasses[idx].B, ( (alpha || idx > 0) ? colExtPasses[idx].A : 1.f ) );
-			image->putPixel(x + bX , y + bY, col, idx); //FIXME DAVID VIEWS
+			image->putPixel(x + bX , y + bY, col, idx);
 		}
 	}
 	return true;

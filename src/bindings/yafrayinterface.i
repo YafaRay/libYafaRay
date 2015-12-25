@@ -208,7 +208,6 @@ public:
 	{
 		for(size_t idx = 0; idx < tilesPasses.at(numView).size(); ++idx)
 		{
-			//std::cout << "DAVID PUTPIXEL: view=" << numView << ", pass=" << idx << " (x=" << x <<", y=" << y << "), color=" << colExtPasses[idx] << std::endl;
 			yafTilePixel_t &pix= tilesPasses.at(numView)[idx]->mem[resx * y + x];
 			pix.r = colExtPasses[idx].R;
 			pix.g = colExtPasses[idx].G;
@@ -230,8 +229,6 @@ public:
 		{
 			std::string view_name = renderPasses->view_names.at(view);
 
-			//std::cout << "DAVID FLUSH: view=" << view << ", view_name=" << view_name << std::endl;
-			
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
 				tilesPasses.at(view)[idx]->x0 = 0;
@@ -264,8 +261,6 @@ public:
 	{
 		std::string view_name = renderPasses->view_names.at(numView);
 		
-		//std::cout << "DAVID FLUSHAREA: view=" << numView << ", view_name=" << view_name << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
-	
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
 
@@ -308,7 +303,6 @@ public:
 	{
 		std::string view_name = "";
 		
-		//std::cout << "DAVID HIGHLITEAREA: view=" << numView << ", view_name=" << view_name << ", (" << x0 <<","<<y0<<"), ("<<x1<<","<<y1<<")" << std::endl;
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
 

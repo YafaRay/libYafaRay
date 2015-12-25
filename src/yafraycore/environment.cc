@@ -600,7 +600,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, 0, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams); //FIXME DAVID RENDER VIEWS
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
 	
 	if(color_space == RAW_MANUAL_GAMMA)
 	{
@@ -704,15 +704,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		return false;
 	}
 	
-    //FIXME DAVID
-    /*camera_t *cam = this->getCamera(*name);
-
-	if(!cam)
-	{
-		Y_ERROR_ENV << "Specify an _existing_ Camera!!" << yendl;
-		return false;
-	}*/ 
-
 	if(!params.getParam("integrator_name", name) )
 	{
 		Y_ERROR_ENV << "Specify an Integrator!!" << yendl;
@@ -787,7 +778,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	//setup scene and render.
 	scene.setImageFilm(film);
-	//scene.setCamera(cam); FIXME DAVID
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
 	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);

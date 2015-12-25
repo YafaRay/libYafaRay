@@ -203,9 +203,6 @@ int main(int argc, char *argv[])
 	ihParams["z_channel"] = use_zbuf;
 	ihParams["img_multilayer"] = multilayer;
     
-    Y_WARNING << "DAVID multilayer=" << multilayer << yendl;
-    Y_WARNING << "DAVID XML SET INTERVAL = " << partial_save_timer << yendl;
-    
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 
 	if(ih)

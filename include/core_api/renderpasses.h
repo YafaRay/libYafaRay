@@ -195,7 +195,6 @@ class YAFRAYCORE_EXPORT renderPasses_t
 		std::vector<int> indexExtPasses;	//List with all possible external passes and to which pass index are they mapped. -1 = pass disabled
 		std::vector<int> indexIntPasses;	//List with all possible internal passes and to which pass index are they mapped. -1 = pass disabled
 
-		//DAVID FIXME ALL THESE BELOW
 		float pass_mask_obj_index;	//Object Index used for masking in/out in the Mask Render Passes
 		float pass_mask_mat_index;	//Material Index used for masking in/out in the Mask Render Passes
 		bool pass_mask_invert;	//False=mask in, True=mask out
