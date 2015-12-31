@@ -309,15 +309,15 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 						{
-							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * lcol * w * W;
+							color_t tmpCol = material->sample(state, sp, wo, bRay.dir, s, W) * lcol * w * W;
 							colDiffNoShadow += tmpCol;
-							if((!shadowed && lightPdf > 1e-6f)) colDiffDir += tmpCol;
+							if((!shadowed && lightPdf > 1e-6f) && ((s.sampledFlags & BSDF_DIFFUSE) == BSDF_DIFFUSE)) colDiffDir += tmpCol;
 						}
 
 						if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 						{
-							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * lcol * w * W;
-							if((!shadowed && lightPdf > 1e-6f)) colGlossyDir += tmpCol;
+							color_t tmpCol = material->sample(state, sp, wo, bRay.dir, s, W) * lcol * w * W;
+							if((!shadowed && lightPdf > 1e-6f) && ((s.sampledFlags & BSDF_GLOSSY) == BSDF_GLOSSY)) colGlossyDir += tmpCol;
 						}
 
 						if((!shadowed && lightPdf > 1e-6f)) ccol2 += surfCol * lcol * w * W;
