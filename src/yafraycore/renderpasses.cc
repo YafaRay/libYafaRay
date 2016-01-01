@@ -171,7 +171,7 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 
 	if(indexExtPasses.at(extPassType) != -1)
 	{
-		Y_WARNING << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
+		//Y_INFO << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
 	}
 	
@@ -186,30 +186,30 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
     switch(intPassType)
     {
         case PASS_INT_REFLECT_ALL:
-            intPass_add(PASS_INT_REFLECT_PERFECT, true);
-            intPass_add(PASS_INT_GLOSSY, true);
-            intPass_add(PASS_INT_GLOSSY_INDIRECT, true);
+            intPass_add(PASS_INT_REFLECT_PERFECT);
+            intPass_add(PASS_INT_GLOSSY);
+            intPass_add(PASS_INT_GLOSSY_INDIRECT);
             break;
             
         case PASS_INT_REFRACT_ALL:
-            intPass_add(PASS_INT_REFRACT_PERFECT, true);
-            intPass_add(PASS_INT_TRANS, true);
-            intPass_add(PASS_INT_TRANS_INDIRECT, true);
+            intPass_add(PASS_INT_REFRACT_PERFECT);
+            intPass_add(PASS_INT_TRANS);
+            intPass_add(PASS_INT_TRANS_INDIRECT);
             break;
 
         case PASS_INT_INDIRECT_ALL:
-            intPass_add(PASS_INT_INDIRECT, true);
-            intPass_add(PASS_INT_DIFFUSE_INDIRECT, true);
+            intPass_add(PASS_INT_INDIRECT);
+            intPass_add(PASS_INT_DIFFUSE_INDIRECT);
             break;
 
         case PASS_INT_OBJ_INDEX_MASK_ALL:
-            intPass_add(PASS_INT_OBJ_INDEX_MASK, true);
-            intPass_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, true);
+            intPass_add(PASS_INT_OBJ_INDEX_MASK);
+            intPass_add(PASS_INT_OBJ_INDEX_MASK_SHADOW);
             break;
 
         case PASS_INT_MAT_INDEX_MASK_ALL:
-            intPass_add(PASS_INT_MAT_INDEX_MASK, true);
-            intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW, true);
+            intPass_add(PASS_INT_MAT_INDEX_MASK);
+            intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW);
             break;
             
         default:
@@ -217,12 +217,12 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
     }
 }
 
-void renderPasses_t::intPass_add(intPassTypes_t intPassType, bool hide_duplicate_warning_message /*=false*/)
+void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 {
 	//if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
 	if(indexIntPasses.at(intPassType) != -1)
 	{
-		if(!hide_duplicate_warning_message) Y_WARNING << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
+		//Y_INFO << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
 		return;
 	}
 	intPasses.push_back(intPassType);
