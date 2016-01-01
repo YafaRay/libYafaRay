@@ -427,6 +427,8 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 						case PASS_INT_MAT_INDEX_MASK_SHADOW:
 						case PASS_INT_MAT_INDEX_MASK_ALL: 
 
+						colorPasses(idx).clampRGB01();
+
 						if(colorPasses.get_pass_mask_invert())
 						{
 							colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);

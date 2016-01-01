@@ -259,12 +259,6 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		{
 			color_t ccol2(0.f);
 			
-			if(colorPasses.enabled(PASS_INT_SHADOW)) colShadow = colorA_t(0.f);
-			
-			if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW)) colShadowMatMask = colorA_t(0.f);
-            
-			if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW)) colShadowObjMask = colorA_t(0.f);
-			
 			if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW)) 
 			{
 				colDiffNoShadow = colorA_t(0.f);
@@ -320,22 +314,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 						if((!shadowed && lightPdf > 1e-6f)) ccol2 += surfCol * lcol * w * W;
 					}
-					
-					if(shadowed || lightPdf <= 1e-6f)
-					{
-						if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
-							&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
-					
-						if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
-							&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
-					}
 				}
 			}
 			
 			col += ccol2 * invNS;
-			colorPasses.probe_add(PASS_INT_SHADOW, colShadow * invNS, state.raylevel == 0);
-			colorPasses.probe_add(PASS_INT_MAT_INDEX_MASK_SHADOW, colShadowMatMask * invNS, state.raylevel == 0);
-			colorPasses.probe_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, colShadowObjMask * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir * invNS, state.raylevel == 0);
