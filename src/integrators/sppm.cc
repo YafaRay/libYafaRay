@@ -272,6 +272,8 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 						case PASS_INT_MAT_INDEX_MASK: 
 						case PASS_INT_MAT_INDEX_MASK_SHADOW:
 						case PASS_INT_MAT_INDEX_MASK_ALL: 
+						
+						colorPasses(idx).clampRGB01();
                         
                         if(colorPasses.get_pass_mask_invert())
                         {
