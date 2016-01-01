@@ -305,8 +305,6 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 						float m2 = s.pdf * s.pdf;
 						float w = m2 / (l2 + m2);
 
-                        if((!shadowed && lightPdf > 1e-6f) && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
-
 						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 						{
 							color_t tmpCol = material->sample(state, sp, wo, bRay.dir, s, W) * lcol * w * W;
