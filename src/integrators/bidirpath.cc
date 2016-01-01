@@ -798,12 +798,13 @@ CFLOAT biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathDat
 	}
 	if(pd.singularL) p[0] = 0.f;
 	// correct p1 with direct lighting strategy:
-	else p[1] *= pd.pdf_illum / pd.pdf_emit; //test! workaround for incomplete pdf funcs of lights
+	else if(pd.pdf_emit < -1.0e-12 || pd.pdf_emit > +1.0e-12) p[1] *= pd.pdf_illum / pd.pdf_emit; //test! workaround for incomplete pdf funcs of lights
+	else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work. 
 	// do MIS...maximum heuristic, particularly simple, if there's a more likely sample method, weight is zero, otherwise 1
 	float weight = 1.f;
 
-	for(int i=s-1; i>=0; --i) if(p[i] > p[s]) weight=0.f;
-	for(int i=s+1; i<=k+1; ++i) if(p[i] > p[s]) weight=0.f;
+	for(int i=s-1; i>=0; --i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f;	//FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	for(int i=s+1; i<=k+1; ++i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
 
 	return weight;
 }
