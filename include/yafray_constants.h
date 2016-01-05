@@ -5,7 +5,7 @@
 #define __END_YAFRAY }
 
 #define PACKAGE "YafaRay"
-#define VERSION "Experimental 2.0.0"
+#define VERSION "Experimental 2.0.1"
 
 #if (__GNUC__ > 3)
         #define GCC_HASCLASSVISIBILITY
