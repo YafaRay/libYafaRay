@@ -60,7 +60,7 @@ class YAFRAYCORE_EXPORT triangle_t
             return out;
         }
         virtual const triangleObject_t* getMesh() const { return mesh; }
-        void updateIntersectionCachedValues();
+        virtual void updateIntersectionCachedValues();
 
 	private:
 		int pa, pb, pc; //!< indices in point array, referenced in mesh.
@@ -80,7 +80,7 @@ class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
 
 	public:
 		triangleInstance_t(): mBase(NULL), mesh(NULL) { }
-        triangleInstance_t(triangle_t* base, triangleObjectInstance_t* m): mBase(base), mesh(m) { }
+        triangleInstance_t(triangle_t* base, triangleObjectInstance_t* m): mBase(base), mesh(m) { updateIntersectionCachedValues();}
 		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;
 		virtual bool intersectsBound(exBound_t &eb) const;
@@ -94,6 +94,7 @@ class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
 
 		virtual vector3d_t getNormal() const;
 		virtual void recNormal() { /* Empty */ };
+		virtual void updateIntersectionCachedValues();
 
 	private:
         const triangle_t* mBase;
