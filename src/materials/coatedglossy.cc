@@ -288,7 +288,12 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 			++nMatch;
 		}
 	}
-	if(!nMatch || sum < 0.00001){ return color_t(0.f); }
+	if(!nMatch || sum < 0.00001)
+	{
+		wi = reflect_dir(N, wo);	//If the sampling is prematurely ended for some reason, we need to give wi a value or it will be undefinded causing unexpected problems as black dots. By default I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
+		return color_t(0.f);
+	}
+	
 	else if(nMatch==1){ pick=0; width[0]=1.f; }
 	else
 	{
