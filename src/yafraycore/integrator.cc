@@ -453,7 +453,10 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	return true;
 }
 
-inline void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
+#ifndef __clang__
+inline
+#endif
+void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp) const
 {
 	colorPasses.probe_set(PASS_INT_UV, colorA_t(sp.U, sp.V, 0.f, 1.f));
 	colorPasses.probe_set(PASS_INT_NORMAL_SMOOTH, colorA_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f, 1.f));
