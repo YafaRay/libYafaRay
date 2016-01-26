@@ -188,12 +188,13 @@ float coatedGlossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, c
         double sigma_squared = textureSigma * textureSigma;
         double mOrenNayar_TextureA = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
         double mOrenNayar_TextureB = 0.45 * sigma_squared / (sigma_squared + 0.09);     
-        return mOrenNayar_TextureA + mOrenNayar_TextureB * maxcos_f * sin_alpha * tan_beta;
+        return std::min(1.f, std::max(0.f, (float) (mOrenNayar_TextureA + mOrenNayar_TextureB * maxcos_f * sin_alpha * tan_beta)));
     }
     else
     {
-        return orenA + orenB * maxcos_f * sin_alpha * tan_beta;
+        return std::min(1.f, std::max(0.f, (float) (orenA + orenB * maxcos_f * sin_alpha * tan_beta)));
     }
+
 }
 
 color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
