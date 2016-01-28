@@ -18,8 +18,6 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//NOTE: I don't know why we keep glossy.cc and glossy2.cc if the two files are identical. I had a very strange problem because I made changes only to glossy.cc and it worked in Linux builds, but the changes did not appear in Windows builds. Unless some decision is made, KEEP THE TWO FILES WITH THE SAME CONTENTS to avoid that kind of discrepancies.
-
 #include <yafray_config.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
