@@ -175,6 +175,9 @@ public:
 
     virtual void initTilesPasses(int totalViews, int numExtPasses)
     { 
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+
 		tilesPasses.resize(totalViews);
     
         for(size_t view = 0; view < tilesPasses.size(); ++view)
@@ -188,20 +191,27 @@ public:
 				tilesPasses.at(view)[idx]->resy = resy;
 			}
 		}
+		
+		PyGILState_Release(gstate);
     }
 
 	virtual ~pyOutput_t()
 	{
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+
 		for(size_t view = 0; view < tilesPasses.size(); ++view)
 		{
 			for(size_t idx = 0; idx < tilesPasses.at(view).size(); ++idx)
 			{
-				delete [] tilesPasses.at(view)[idx]->mem;
+				if(tilesPasses.at(view)[idx]->mem) delete [] tilesPasses.at(view)[idx]->mem;
 				//Py_XDECREF(tilesPasses.at(view)[idx]);
 			}
 			tilesPasses.at(view).clear();
 		}
 		tilesPasses.clear();
+		
+		PyGILState_Release(gstate);
 	}
 
 	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true)
