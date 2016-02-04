@@ -599,8 +599,6 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 			// get filter value at pixel (x,y)
 			int offset = yIndex[j-y0]*FILTER_TABLE_SIZE + xIndex[i-x0];
 			float filterWt = filterTable[offset];
-			if(filterWt < 0.f) filterWt = 0.f;	//I've seen that Mitchell filter (among others) sometimes may output negative values which would cause issues in the color/weight calculation. So I'm clipping it.
-			// update pixel values with filtered sample contribution
 
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{

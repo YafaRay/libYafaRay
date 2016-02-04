@@ -38,7 +38,7 @@ class pixel_t
 	pixel_t() { col = colorA_t(0.f); weight = 0.f;}
 	colorA_t normalized() const
 	{
-		if(weight > 0.f) return col / weight;
+		if(weight != 0.f) return col / weight;	//Changed from if(weight > 0.f) to if(weight != 0.f) because lanczos and mitchell filters, as they have a negative lobe, sometimes generate pixels with all negative values and also negative weight. Having if(weight > 0.f) caused such pixels to be incorrectly set to 0,0,0,0 and were shown as black dots (with alpha=0). Options are: clipping the filter output to values >=0, but they would lose ability to sharpen the image. Other option (applied here) is to allow negative values and normalize them correctly. This solves a problem stated in http://yafaray.org/node/712 but perhaps could cause other artifacts? We have to keep an eye on this to decide the best option.
 		else return colorA_t(0.f);
 	}
 	
