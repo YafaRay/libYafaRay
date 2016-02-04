@@ -600,6 +600,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 			int offset = yIndex[j-y0]*FILTER_TABLE_SIZE + xIndex[i-x0];
 			float filterWt = filterTable[offset];
 
+			// update pixel values with filtered sample contribution
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
 				colorA_t col = colorPasses(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx));
