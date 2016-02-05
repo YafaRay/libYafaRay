@@ -16,7 +16,7 @@ inline void triangle_t::updateIntersectionCachedValues()
 	edge1 = b - a;
 	edge2 = c - a;
 
-	intersectionBiasFactor = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	intersectionBiasFactor = 0.1f * MIN_RAYDIST * std::max(edge1.length(), edge2.length());
 }
 
 
@@ -29,7 +29,7 @@ inline void triangleInstance_t::updateIntersectionCachedValues()
 	edge1 = b - a;
 	edge2 = c - a;
 
-	intersectionBiasFactor = MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	intersectionBiasFactor = 0.1f * MIN_RAYDIST * std::max(edge1.length(), edge2.length());
 }
 
 
