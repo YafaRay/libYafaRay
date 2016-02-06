@@ -377,6 +377,7 @@ bool mcIntegrator_t::createCausticMap()
 		surfacePoint_t sp1, sp2;
 		surfacePoint_t *hit=&sp1, *hit2=&sp2;
 		renderState_t state;
+		state.cam = scene->getCamera();
 		unsigned char userdata[USER_DATA_SIZE+7];
 		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 		while(!done)
