@@ -170,7 +170,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["samples"] = IBL_sam;
 		bgp["shoot_caustics"] = caust;
 		bgp["shoot_diffuse"] = diffuse;
-		bgp["abs_intersect"] = (pr == angular);
+		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
 		
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
 		
