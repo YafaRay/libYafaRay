@@ -318,7 +318,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		lSample_t ls;
 		ls.s1=prng(), ls.s2=prng(), ls.s3=prng(), ls.s4=prng();
 		ls.sp = &vl.sp;
-		color_t pcol = lights[lightNum]->emitSample(lray.dir, ls);
+		color_t pcol = lights.size() > 0 ? lights[lightNum]->emitSample(lray.dir, ls) : color_t(0.f);
 		lray.from = vl.sp.P;
 		// test!
 		ls.areaPdf *= lightNumPdf;
@@ -408,7 +408,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 			pathData.pdf_emit = o_pdf_emit;
 			// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
 			// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
-			pathData.light = lights[lightNum];
+			pathData.light = lights.size() > 0 ? lights[lightNum] : 0;
 			for(int s=2; s<=nLight; ++s)
 			{
 				clear_path(pathData.path, s, t);
