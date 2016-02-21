@@ -136,11 +136,15 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 		userdata[0] = 0;
 		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 		BSDF_t bsdfs;
+		int additionalDepth = 0;
+		
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
 		vector3d_t wo = -ray.dir;
 		const volumeHandler_t *vol;
 		color_t vcol(0.f);
+
+		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
 
 		// contribution of light emitting surfaces		
 		if(bsdfs & BSDF_EMIT) col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
@@ -284,7 +288,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 		//reset chromatic state:
 		state.chromatic = was_chromatic;
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses, additionalDepth);
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{

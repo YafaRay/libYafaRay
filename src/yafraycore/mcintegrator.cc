@@ -551,7 +551,7 @@ inline color_t mcIntegrator_t::estimateCausticPhotons(renderState_t &state, cons
 	return sum;
 }
 
-inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses) const
+inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses, int additionalDepth) const
 {
 	const material_t *material = sp.material;
 	spDifferentials_t spDiff(sp, ray);
@@ -560,7 +560,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 
     state.raylevel++;
 
-	if(state.raylevel <= rDepth)
+	if(state.raylevel <= (rDepth + additionalDepth))
 	{
 		Halton hal2(2);
 		Halton hal3(3);

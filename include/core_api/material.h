@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0)
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0),additionalDepth(0)
 		{
 			materialIndexAuto++;
 			srand(materialIndexAuto);
@@ -204,6 +204,7 @@ class YAFRAYCORE_EXPORT material_t
 
 		visibility_t getVisibility() const { return mVisibility; }
 		bool getReceiveShadows() const { return mReceiveShadows; }
+		int getAdditionalDepth() const { return additionalDepth; }
 
 	protected:
 		/* small function to apply bump mapping to a surface point
@@ -223,6 +224,7 @@ class YAFRAYCORE_EXPORT material_t
 		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
 		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
 		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
+		int additionalDepth;	//!< Per-material additional ray-depth
 };
 
 __END_YAFRAY

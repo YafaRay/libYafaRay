@@ -593,10 +593,15 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		}
 
 		BSDF_t bsdfs;
+		int additionalDepth = 0;
+		
 		vector3d_t N_nobump = sp.N;
 		vector3d_t wo = -ray.dir;
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
+		
+		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
+		
 		gInfo.constantRandiance += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0); //add only once, but FG seems add twice?
 		state.includeLights = false;
 		spDifferentials_t spDiff(sp, ray);
@@ -711,7 +716,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		delete [] gathered;
 
 		state.raylevel++;
-		if(state.raylevel <= rDepth)
+		if(state.raylevel <= (rDepth + additionalDepth))
 		{
 			Halton hal2(2);
 			Halton hal3(3);

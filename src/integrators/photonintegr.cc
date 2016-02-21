@@ -795,10 +795,14 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			state.includeLights = true;
 		}
 		BSDF_t bsdfs;
+		int additionalDepth = 0;
+		
 		vector3d_t N_nobump = sp.N;
 		vector3d_t wo = -ray.dir;
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);
+
+		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
 		
 		col += colorPasses.probe_add(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		
@@ -897,7 +901,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			else col += colorPasses.probe_set(PASS_INT_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
 		}
 		
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses, additionalDepth);
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{

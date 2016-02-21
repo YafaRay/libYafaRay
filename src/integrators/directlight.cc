@@ -105,12 +105,16 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 		unsigned char userdata[USER_DATA_SIZE];
 		const material_t *material = sp.material;
 		BSDF_t bsdfs;
+		int additionalDepth = 0;
 
 		state.userdata = (void *) userdata;
 		vector3d_t wo = -ray.dir;
 		if(state.raylevel == 0) state.includeLights = true;
-
+		
 		material->initBSDF(state, sp, bsdfs);
+
+		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
+
 
 		if(bsdfs & BSDF_EMIT) 
 		{
@@ -135,7 +139,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses, additionalDepth);
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{

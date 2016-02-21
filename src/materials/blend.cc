@@ -40,6 +40,7 @@ blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, v
 	blendVal = bval;
 	blendedIOR = (mat1->getMatIOR() + mat2->getMatIOR()) * 0.5f;
 	mVisibility = eVisibility;
+	additionalDepth = std::max(mat1->getAdditionalDepth(),mat2->getAdditionalDepth());
 }
 
 blendMat_t::~blendMat_t()

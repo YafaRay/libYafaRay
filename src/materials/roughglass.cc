@@ -313,6 +313,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
+	int additionaldepth = 0;
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -325,6 +326,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
+	params.getParam("additionaldepth",   additionaldepth);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
@@ -338,6 +340,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->mReceiveShadows = receive_shadows;
+	mat->additionalDepth = additionaldepth;
 
 	if( params.getParam("absorption", absorp) )
 	{

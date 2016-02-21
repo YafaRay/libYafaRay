@@ -36,7 +36,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		/*! Does the actual light estimation on a specific light for the given surface point */
 		virtual color_t doLightEstimation(renderState_t &state, light_t *light, const surfacePoint_t &sp, const vector3d_t &wo, const unsigned int &loffs, colorPasses_t &colorPasses) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses) const;
+		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses, int additionalDepth) const;
 		/*! Creates and prepares the caustic photon map */
 		virtual bool createCausticMap();
 		/*! Estimates caustic photons for a given surface point */
