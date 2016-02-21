@@ -515,6 +515,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	{
 		integrator_table[name] = integrator;
 		InfoSucces(name, type);
+		if(type == "bidirectional") Y_WARNING << "The Bidirectional integrator is DEPRECATED. It might give unexpected and perhaps even incorrect render results. This integrator is no longer supported, will not receive any fixes/updates in the short/medium term and might be removed in future versions. Use at your own risk." << yendl; 
 		return integrator;
 	}
 	ErrOnCreate(type);

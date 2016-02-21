@@ -1,3 +1,5 @@
+// The Bidirectional integrator is DEPRECATED. It might give unexpected and perhaps even incorrect render results. This integrator is no longer supported, will not receive any fixes/updates in the short/medium term and might be removed in future versions. Use at your own risk.
+
 
 //#include <mcqmc.h>
 #include <core_api/environment.h>
