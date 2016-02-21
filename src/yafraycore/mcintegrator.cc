@@ -604,7 +604,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 					wl2rgb(state.wavelength, wl_col);
 					refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
 					
-					dcol += tmpColorPasses.probe_add(PASS_INT_TRANS, (color_t) integrate(state, refRay, tmpColorPasses) * mcol * wl_col * W, state.raylevel == 1);
+					dcol += tmpColorPasses.probe_add(PASS_INT_TRANS, (color_t) integrate(state, refRay, tmpColorPasses, additionalDepth) * mcol * wl_col * W, state.raylevel == 1);
 					
 					state.chromatic = true;
 				}
@@ -681,7 +681,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			    if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
 			    else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
                         }
-                        integ = (color_t)integrate(state, refRay, tmpColorPasses);
+                        integ = (color_t)integrate(state, refRay, tmpColorPasses, additionalDepth);
 
                         if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                         {
@@ -704,7 +704,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
                         {
                             refRay = diffRay_t(sp.P, dir[0], scene->rayMinDist);
                             if(diffRaysEnabled) spDiff.reflectedRay(ray, refRay);
-                            integ = integrate(state, refRay, tmpColorPasses);
+                            integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
@@ -717,7 +717,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
                         {
                             refRay = diffRay_t(sp.P, dir[1], scene->rayMinDist);
                             if(diffRaysEnabled) spDiff.refractedRay(ray, refRay, material->getMatIOR());
-                            integ = integrate(state, refRay, tmpColorPasses);
+                            integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
@@ -760,7 +760,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			
 				diffRay_t refRay(sp.P, dir[0], scene->rayMinDist);
 				if(diffRaysEnabled) spDiff.reflectedRay(ray, refRay);
-				color_t integ = integrate(state, refRay, tmpColorPasses);
+				color_t integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
 
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
 				{
@@ -775,7 +775,7 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 
 				diffRay_t refRay(sp.P, dir[1], scene->rayMinDist);
 				if(diffRaysEnabled) spDiff.refractedRay(ray, refRay, material->getMatIOR());
-				colorA_t integ = integrate(state, refRay, tmpColorPasses);
+				colorA_t integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
 
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
 				{

@@ -559,7 +559,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
 {
 	return colorA_t(0.f);
 }
@@ -841,7 +841,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
                         refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
                         if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
                         else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
-                        integ = (color_t)integrate(state, refRay, tmpColorPasses);
+                        integ = (color_t)integrate(state, refRay, tmpColorPasses, additionalDepth);
 
                         if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                         {
@@ -868,7 +868,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
                         {
                             refRay = diffRay_t(sp.P, dir[0], scene->rayMinDist);
                             spDiff.reflectedRay(ray, refRay);
-                            integ = integrate(state, refRay, tmpColorPasses);
+                            integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
@@ -887,7 +887,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
                         {
                             refRay = diffRay_t(sp.P, dir[1], scene->rayMinDist);
                             spDiff.refractedRay(ray, refRay, material->getMatIOR());
-                            integ = integrate(state, refRay, tmpColorPasses);
+                            integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;

@@ -38,7 +38,7 @@ class YAFRAYPLUGIN_EXPORT DebugIntegrator : public tiledIntegrator_t
 	public:
 		DebugIntegrator(SurfaceProperties dt);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		std::vector<light_t*> lights;
@@ -83,7 +83,7 @@ bool DebugIntegrator::preprocess()
 	return true;
 }
 
-colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
 {
 	color_t col(0.0);
 	surfacePoint_t sp;

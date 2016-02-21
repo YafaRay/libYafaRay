@@ -34,7 +34,7 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
 	public:
 		directLighting_t(bool transpShad=false, int shadowDepth=4, int rayDepth=6);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -87,7 +87,7 @@ bool directLighting_t::preprocess()
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
+colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	color_t col(0.0);
 	float alpha;
@@ -105,7 +105,6 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 		unsigned char userdata[USER_DATA_SIZE];
 		const material_t *material = sp.material;
 		BSDF_t bsdfs;
-		int additionalDepth = 0;
 
 		state.userdata = (void *) userdata;
 		vector3d_t wo = -ray.dir;

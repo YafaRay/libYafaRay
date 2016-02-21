@@ -770,7 +770,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	return pathCol / (float)nSampl;
 }
 
-colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
+colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	static int _nMax=0;
 	static int calls=0;

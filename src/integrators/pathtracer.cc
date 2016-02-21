@@ -41,7 +41,7 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 	public:
 		pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0 /*, sampler_t &sam*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		enum { NONE, PATH, PHOTON, BOTH };
 	protected:
@@ -108,7 +108,7 @@ bool pathIntegrator_t::preprocess()
 	return success;
 }
 
-colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses /*, sampler_t &sam*/) const
+colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
 {
 	static int calls=0;
 	++calls;
@@ -136,7 +136,6 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 		userdata[0] = 0;
 		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 		BSDF_t bsdfs;
-		int additionalDepth = 0;
 		
 		const material_t *material = sp.material;
 		material->initBSDF(state, sp, bsdfs);

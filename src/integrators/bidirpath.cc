@@ -121,7 +121,7 @@ public:
 	virtual ~biDirIntegrator_t();
 	virtual bool preprocess();
 	virtual void cleanup();
-	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
+	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
 	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 	color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
@@ -268,7 +268,7 @@ void biDirIntegrator_t::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
+colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	color_t col(0.f);
 	surfacePoint_t sp;
