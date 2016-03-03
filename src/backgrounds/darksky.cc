@@ -272,6 +272,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	bool gammaEnc = true;
 	std::string cs = "CIE (E)";
 	float exp = 1.f;
+	bool castShadows = true;
+	bool castShadowsSun = true;
 
 	Y_INFO << "DarkSky: Begin" << yendl;
 
@@ -299,6 +301,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 	params.getParam("light_samples", bgl_samples);
+	params.getParam("cast_shadows", castShadows);
+	params.getParam("cast_shadows_sun", castShadowsSun);
 
 	params.getParam("night", night);
 
@@ -334,6 +338,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		p["angle"] = parameter_t(angle);
 		p["power"] = parameter_t(pw);
 		p["samples"] = bgl_samples;
+		p["cast_shadows"] = castShadowsSun;
 
 		Y_INFO << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
@@ -349,6 +354,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["samples"] = bgl_samples;
 		bgp["shoot_caustics"] = caus;
 		bgp["shoot_diffuse"] = diff;
+		bgp["cast_shadows"] = castShadows;
 
 		Y_INFO << "DarkSky: Adding background light" << yendl;
 

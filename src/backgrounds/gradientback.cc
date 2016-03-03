@@ -88,6 +88,8 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	float p = 1.0;
 	bool bgl = false;
 	int bglSam = 16;
+	bool castShadows = true;
+	
 	params.getParam("horizon_color", shoriz);
 	params.getParam("zenith_color", szenith);
 	gzenith = szenith;
@@ -97,6 +99,7 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	params.getParam("ibl", bgl);
 	params.getParam("ibl_samples", bglSam);
 	params.getParam("power", p);
+	params.getParam("cast_shadows", castShadows);
 
 	background_t *gradBG = new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p, bgl, true);
 	
@@ -107,6 +110,7 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 		bgp["samples"] = bglSam;
 		bgp["shoot_caustics"] = true;
 		bgp["shoot_diffuse"] = true;
+		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("GradientBackground_bgLight", bgp);
 		

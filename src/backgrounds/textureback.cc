@@ -138,6 +138,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	int IBL_sam = 16;
 	bool caust = true;
 	bool diffuse = true;
+	bool castShadows = true;
 	
 	if( !params.getParam("texture", texname) )
 	{
@@ -160,6 +161,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("rotation", rot);
 	params.getParam("with_caustic", caust);
 	params.getParam("with_diffuse", diffuse);
+	params.getParam("cast_shadows", castShadows);
 	
 	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, caust);
 	
@@ -171,6 +173,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["shoot_caustics"] = caust;
 		bgp["shoot_diffuse"] = diffuse;
 		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
+		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
 		
@@ -211,11 +214,13 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 	float power = 1.0;
 	int IBL_sam = 16;
 	bool IBL = false;
+	bool castShadows = true;
 	
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("ibl", IBL);
 	params.getParam("ibl_samples", IBL_sam);
+	params.getParam("cast_shadows", castShadows);
 	
 	background_t *constBG = new constBackground_t(col*power, IBL, true);
 	
@@ -226,6 +231,7 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 		bgp["samples"] = IBL_sam;
 		bgp["shoot_caustics"] = false;
 		bgp["shoot_diffuse"] = true;
+		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("constantBackground_bgLight", bgp);
 		

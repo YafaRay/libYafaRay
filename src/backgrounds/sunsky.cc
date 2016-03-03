@@ -213,6 +213,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 	float pw = 1.0;	// sunlight power
 	float av, bv, cv, dv, ev;
 	av = bv = cv = dv = ev = 1.0;	// color variation parameters, default is normal
+	bool castShadows = true;
+	bool castShadowsSun = true;
 
 	params.getParam("from", dir);
 	params.getParam("turbidity", turb);
@@ -231,6 +233,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 
 	params.getParam("background_light", bgl);
 	params.getParam("light_samples", bgl_samples);
+	params.getParam("cast_shadows", castShadows);
+	params.getParam("cast_shadows_sun", castShadowsSun);
 
 	background_t *new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, power, bgl, true);
 
@@ -239,6 +243,7 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = bgl_samples;
+		bgp["cast_shadows"] = castShadows;
 
 		light_t *bglight = render.createLight("sunsky_bgLight", bgp);
 
@@ -263,6 +268,7 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		p["color"] = suncol;
 		p["angle"] = parameter_t(angle);
 		p["power"] = parameter_t(pw);
+		p["cast_shadows"] = castShadowsSun;
 
 		light_t *light = render.createLight("sunsky_SUN", p);
 
