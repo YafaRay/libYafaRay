@@ -121,7 +121,9 @@ static PyObject *yaf_tile_subscript_int(YafTileObject_t *self, int keynum)
 
 static void yaf_tile_dealloc(YafTileObject_t *self)
 {
+	SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 	PyObject_Del(self);
+	SWIG_PYTHON_THREAD_END_BLOCK; 
 }
 
 PySequenceMethods sequence_methods =
@@ -175,6 +177,7 @@ public:
 
     virtual void initTilesPasses(int totalViews, int numExtPasses)
     { 
+		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 
@@ -193,10 +196,12 @@ public:
 		}
 		
 		PyGILState_Release(gstate);
+		SWIG_PYTHON_THREAD_END_BLOCK; 
     }
 
 	virtual ~pyOutput_t()
 	{
+		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 
@@ -212,6 +217,7 @@ public:
 		tilesPasses.clear();
 		
 		PyGILState_Release(gstate);
+		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
 	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true)
@@ -230,6 +236,7 @@ public:
 
 	virtual void flush(int numView_unused, const yafaray::renderPasses_t *renderPasses)
 	{
+		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		
@@ -265,10 +272,12 @@ public:
 		//std::cout << "flush: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 
 		PyGILState_Release(gstate);
+		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
 	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses)
 	{
+		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		std::string view_name = renderPasses->view_names.at(numView);
 		
 		// Do nothing if we are rendering preview renders
@@ -307,10 +316,12 @@ public:
 		//std::cout << "flushArea: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 		
 		PyGILState_Release(gstate);
+		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
 	virtual void highliteArea(int numView, int x0, int y0, int x1, int y1)
 	{
+		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		std::string view_name = "";
 		
 		// Do nothing if we are rendering preview renders
@@ -352,6 +363,7 @@ public:
 		//std::cout << "highliteArea: groupTile->ob_refcnt=" << groupTile->ob_refcnt << std::endl;
 
 		PyGILState_Release(gstate);
+		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
 private:
