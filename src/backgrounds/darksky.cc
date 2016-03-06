@@ -339,6 +339,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		p["power"] = parameter_t(pw);
 		p["samples"] = bgl_samples;
 		p["cast_shadows"] = castShadowsSun;
+		p["with_caustics"] = caus;
+		p["with_diffuse"] = diff;
 
 		Y_INFO << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
@@ -352,8 +354,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = bgl_samples;
-		bgp["shoot_caustics"] = caus;
-		bgp["shoot_diffuse"] = diff;
+		bgp["with_caustics"] = caus;
+		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 
 		Y_INFO << "DarkSky: Adding background light" << yendl;

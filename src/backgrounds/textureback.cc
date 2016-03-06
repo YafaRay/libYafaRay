@@ -215,12 +215,16 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 	int IBL_sam = 16;
 	bool IBL = false;
 	bool castShadows = true;
+	bool caus = true;
+	bool diff = true;
 	
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("ibl", IBL);
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("with_caustic", caus);
+	params.getParam("with_diffuse", diff);
 	
 	background_t *constBG = new constBackground_t(col*power, IBL, true);
 	
@@ -229,8 +233,8 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = IBL_sam;
-		bgp["shoot_caustics"] = false;
-		bgp["shoot_diffuse"] = true;
+		bgp["shoot_caustics"] = caus;
+		bgp["shoot_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("constantBackground_bgLight", bgp);
