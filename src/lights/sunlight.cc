@@ -123,6 +123,8 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int samples = 4;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -131,8 +133,15 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples",samples);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 
-	return new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);
+	sunLight_t *light = new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);
+	
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+
+	return light;
 }
 
 extern "C"

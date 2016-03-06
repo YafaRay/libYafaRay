@@ -233,6 +233,8 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int object = 0;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("object", object);
 	params.getParam("color", color);
@@ -241,7 +243,14 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("double_sided", doubleS);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 
-	return new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled, castShadows);
+	meshLight_t *light = new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled, castShadows);
+	
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+	
+	return light;
 }
 __END_YAFRAY

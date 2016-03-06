@@ -32,7 +32,7 @@ class pdf1D_t;
 class bgLight_t : public light_t
 {
 	public:
-		bgLight_t(int sampl, bool shootC = true, bool shootD = true, bool invertIntersect = false, bool bLightEnabled=true, bool bCastShadows=true);
+		bgLight_t(int sampl, bool invertIntersect = false, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~bgLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -46,8 +46,6 @@ class bgLight_t : public light_t
 		virtual int nSamples() const { return samples; }
 		virtual bool canIntersect() const{ return true; }
 		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		virtual bool shootsCausticP() const { return shootCaustic; }
-		virtual bool shootsDiffuseP() const { return shootDiffuse; }
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		
 	protected:
@@ -61,8 +59,6 @@ class bgLight_t : public light_t
 		float worldRadius;
 		float aPdf, iaPdf;
 		float worldPIFactor;
-		bool shootCaustic;
-		bool shootDiffuse;
 		bool absInter;
 };
 

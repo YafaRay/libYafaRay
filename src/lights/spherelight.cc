@@ -203,6 +203,8 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int object = 0;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -212,9 +214,15 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 	
 	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);
+
 	light->objID = (unsigned int)object;
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+
 	return light;
 }
 

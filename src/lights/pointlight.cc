@@ -121,14 +121,23 @@ light_t *pointLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	CFLOAT power = 1.0;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
 	params.getParam("power",power);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 
-	return new pointLight_t(from, color, power, lightEnabled, castShadows);
+	pointLight_t *light = new pointLight_t(from, color, power, lightEnabled, castShadows);
+
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+
+	return light;
 }
 
 extern "C"

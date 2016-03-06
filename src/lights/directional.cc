@@ -142,6 +142,8 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	bool inf = true;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 	
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -149,6 +151,8 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	params.getParam("infinite", inf);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 	
 	if(!inf)
 	{
@@ -159,7 +163,12 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 		params.getParam("radius",rad);
 	}
 
-	return new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled, castShadows);
+	directionalLight_t *light = new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled, castShadows);
+	
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+	
+	return light;
 }
 
 extern "C"

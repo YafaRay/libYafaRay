@@ -36,7 +36,7 @@ class background_t;
 class bgPortalLight_t : public light_t
 {
 	public:
-		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool caus, bool diff, bool pOnly, bool bLightEnabled=true, bool bCastShadows=true);
+		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool pOnly, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~bgPortalLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -51,8 +51,6 @@ class bgPortalLight_t : public light_t
 		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
-		virtual bool shootsCausticP() const { return shootCaustic; }
-		virtual bool shootsDiffuseP() const { return shootDiffuse; }
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void initIS();
@@ -69,8 +67,6 @@ class bgPortalLight_t : public light_t
 		background_t *bg;
 		point3d_t worldCenter;
 		float aPdf;
-		bool shootCaustic;
-		bool shootDiffuse;
 		bool photonOnly;
 };
 

@@ -243,6 +243,8 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	float ang = 180.f; //full hemi
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -254,6 +256,8 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cone_angle", ang);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 
 	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);
 
@@ -262,6 +266,9 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 		delete light;
 		return NULL;
 	}
+	
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
 
 	return light;
 }

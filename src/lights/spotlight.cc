@@ -301,6 +301,8 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	float ssfuzzy = 1.f;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool shootD = true;
+	bool shootC = true;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -314,8 +316,15 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples",smpl);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 	
-	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
+	spotLight_t *light = new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
+	
+	light->lShootCaustic = shootC;
+	light->lShootDiffuse = shootD;
+
+	return light;
 }
 
 

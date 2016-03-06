@@ -56,10 +56,6 @@ class light_t
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf=0.f; dirPdf=0.f; }
-		//! checks if the light can shoot caustic photons (photonmap integrator)
-		virtual bool shootsCausticP() const { return true;}
-		//! checks if the light can shoot diffuse photons (photonmap integrator)
-		virtual bool shootsDiffuseP() const { return true;}
 		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 8; }
 		virtual ~light_t() {}
@@ -68,15 +64,23 @@ class light_t
 		//! Enable/disable entire light source
 		bool lightEnabled() const { return lLightEnabled;}
 		bool castShadows() const { return lCastShadows; }
-		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true) {}
+		//! checks if the light can shoot caustic photons (photonmap integrator)
+		bool shootsCausticP() const { return lShootCaustic; }
+		//! checks if the light can shoot diffuse photons (photonmap integrator)
+		bool shootsDiffuseP() const { return lShootDiffuse; }
+
+		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true),lShootCaustic(true),lShootDiffuse(true) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
 		LIGHTF_t getFlags() const { return flags; }
 
 	protected:
 		LIGHTF_t flags;
 		background_t* background;
-	        bool lLightEnabled; //!< enable/disable light
+	    bool lLightEnabled; //!< enable/disable light
 		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
+		bool lShootCaustic; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
+		bool lShootDiffuse; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
+
 };
 
 __END_YAFRAY
