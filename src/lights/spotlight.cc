@@ -172,6 +172,14 @@ bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	
 	s.flags = flags;
 	s.pdf = dist_sqr;
+	
+	//FIXME: I don't quite understand how pdf is calculated in the spotlight, but something looks wrong when dist<1.f, so I'm applying a manual correction to keep s.pdf >= 1 always, and "move" the effect of the distance to the color itself. This is a horrible patch but at least solves a problem causing darker light when distance between spotlight and surface is less than 1.f
+	if(s.pdf < 1.f)
+	{
+		s.pdf = 1.f;
+		s.col = s.col / dist_sqr;
+	}
+	
 	return true;
 }
 
