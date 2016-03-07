@@ -79,7 +79,9 @@ void directionalLight_t::init(scene_t &scene)
 
 
 bool directionalLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
-{
+{	
+	if( photonOnly() ) return false;
+	
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
 	if(!infinite)
 	{
@@ -101,6 +103,8 @@ bool directionalLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_
 
 bool directionalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	s.pdf = 1.0;
 	return illuminate(sp, s.col, wi);
 }
@@ -144,6 +148,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 	
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -153,6 +158,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 	
 	if(!inf)
 	{
@@ -167,6 +173,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 	
 	return light;
 }

@@ -29,8 +29,8 @@
 
 __BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool pOnly, bool bLightEnabled, bool bCastShadows):
-	objID(msh), samples(sampl), power(pow), tree(0), photonOnly(pOnly)
+bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bLightEnabled, bool bCastShadows):
+	objID(msh), samples(sampl), power(pow), tree(0)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
@@ -133,7 +133,7 @@ color_t bgPortalLight_t::totalEnergy() const
 
 bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
-	if(photonOnly) return false;
+	if( photonOnly() ) return false;
 	
 	vector3d_t n;
 	point3d_t p;
@@ -237,23 +237,24 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	float pow = 1.0f;
 	bool shootD = true;
 	bool shootC = true;
-	bool ponly = false;
 	bool lightEnabled = true;
 	bool castShadows = true;
+	bool pOnly = false;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
 	params.getParam("power", pow);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
-	params.getParam("photon_only", ponly);
+	params.getParam("photon_only", pOnly);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
 	
-	bgPortalLight_t *light = new bgPortalLight_t(object, samples, pow, ponly, lightEnabled, castShadows);
+	bgPortalLight_t *light = new bgPortalLight_t(object, samples, pow, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 	
 	return light;
 }

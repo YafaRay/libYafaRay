@@ -75,6 +75,8 @@ void sunLight_t::init(scene_t &scene)
 
 bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	//sample direction uniformly inside cone:
 	wi.dir = sampleCone(direction, du, dv, cosAngle, s.s1, s.s2);
 	wi.tmax = -1.f;
@@ -125,6 +127,7 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("direction",dir);
 	params.getParam("color",color);
@@ -135,11 +138,13 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 
 	sunLight_t *light = new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }

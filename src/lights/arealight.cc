@@ -70,6 +70,8 @@ color_t areaLight_t::totalEnergy() const { return color * area; }
 
 bool areaLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	//get point on area light and vector to surface point:
 	point3d_t p = corner + s.s1*toX + s.s2*toY;
 	vector3d_t ldir = p - sp.P;
@@ -184,6 +186,7 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("corner",corner);
 	params.getParam("point1",p1);
@@ -196,12 +199,14 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 
 	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples, lightEnabled, castShadows);
 	
 	light->objID = (unsigned int)object;
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 	
 	return light;
 }

@@ -36,7 +36,7 @@ class background_t;
 class bgPortalLight_t : public light_t
 {
 	public:
-		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool pOnly, bool bLightEnabled=true, bool bCastShadows=true);
+		bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~bgPortalLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -67,7 +67,6 @@ class bgPortalLight_t : public light_t
 		background_t *bg;
 		point3d_t worldCenter;
 		float aPdf;
-		bool photonOnly;
 };
 
 __END_YAFRAY

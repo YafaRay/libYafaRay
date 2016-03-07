@@ -107,6 +107,8 @@ color_t meshLight_t::totalEnergy() const { return (doubleSided ? 2.f*color*area 
 
 bool meshLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	vector3d_t n;
 	point3d_t p;
 	sampleSurface(p, n, s.s1, s.s2);
@@ -235,6 +237,7 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("object", object);
 	params.getParam("color", color);
@@ -245,11 +248,13 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 
 	meshLight_t *light = new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 	
 	return light;
 }

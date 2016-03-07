@@ -180,6 +180,8 @@ float bgLight_t::dir_pdf(const vector3d_t dir) const
 
 bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	float u = 0.f, v = 0.f;
 	vector3d_t U, V;
 	
@@ -288,6 +290,7 @@ light_t* bgLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	bool absInt = false;
     bool lightEnabled = true;
 	bool castShadows = true;
+	bool pOnly = false;
 	
 	params.getParam("samples", samples);
 	params.getParam("shoot_caustics", shootC);
@@ -295,11 +298,13 @@ light_t* bgLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("abs_intersect", absInt);
     params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
+	params.getParam("photon_only",pOnly);
 
 	bgLight_t *light = new bgLight_t(samples, absInt, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }

@@ -53,7 +53,9 @@ pointLight_t::pointLight_t(const point3d_t &pos, const color_t &col, CFLOAT inte
 }
 
 bool pointLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
-{
+{	
+	if( photonOnly() ) return false;
+	
 	vector3d_t ldir(position - sp.P);
 	PFLOAT dist_sqr = ldir.x*ldir.x + ldir.y*ldir.y + ldir.z*ldir.z;
 	PFLOAT dist = fSqrt(dist_sqr);
@@ -72,6 +74,8 @@ bool pointLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)
 
 bool pointLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	// bleh...
 	vector3d_t ldir(position - sp.P);
 	PFLOAT dist_sqr = ldir.x*ldir.x + ldir.y*ldir.y + ldir.z*ldir.z;
@@ -123,6 +127,7 @@ light_t *pointLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -131,11 +136,14 @@ light_t *pointLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
+	
 
 	pointLight_t *light = new pointLight_t(from, color, power, lightEnabled, castShadows);
 
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }

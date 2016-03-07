@@ -110,6 +110,8 @@ void iesLight_t::getAngles(float &u, float &v, const vector3d_t &dir, const floa
 
 bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	vector3d_t ldir(position - sp.P);
 	float distSqrt = ldir.lengthSqr();
 	float dist = fSqrt(distSqrt);
@@ -136,6 +138,8 @@ bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) c
 
 bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	vector3d_t ldir(position - sp.P);
 	float distSqrt = ldir.lengthSqr();
 	float dist = fSqrt(distSqrt);
@@ -245,6 +249,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -258,6 +263,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 
 	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);
 
@@ -269,6 +275,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }

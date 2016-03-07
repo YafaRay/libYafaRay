@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class spotLight_t : public light_t
 {
 	public:
-		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled=true, bool bCastShadows=true);
+		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~spotLight_t();
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -52,15 +52,14 @@ class spotLight_t : public light_t
 		float intensity;
 		pdf1D_t *pdf;
 		float interv1, interv2;
-		
-		bool photonOnly;
+
 		bool softShadows;
 		float shadowFuzzy;
 		int samples;
 };
 
-spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_SINGULAR), position(from), intensity(power), photonOnly(ponly), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl)
+spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled, bool bCastShadows):
+	light_t(LIGHT_SINGULAR), position(from), intensity(power), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
@@ -113,7 +112,7 @@ color_t spotLight_t::totalEnergy() const
 
 bool spotLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
 {
-	if(photonOnly) return false;
+	if( photonOnly() ) return false;
 	
 	vector3d_t ldir(position - sp.P);
 	PFLOAT dist_sqr = ldir*ldir;
@@ -144,7 +143,7 @@ bool spotLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) 
 
 bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
-	if(photonOnly) return false;
+	if( photonOnly() ) return false;
 
 	vector3d_t ldir(position - sp.P);
 	float dist_sqr = ldir*ldir;
@@ -319,10 +318,11 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
 	
-	spotLight_t *light = new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
+	spotLight_t *light = new spotLight_t(from, to, color, power, angle, falloff, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }

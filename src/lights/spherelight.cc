@@ -103,6 +103,8 @@ inline bool sphereIntersect(const ray_t &ray, const point3d_t &c, PFLOAT R2, PFL
 
 bool sphereLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
 {
+	if( photonOnly() ) return false;
+	
 	vector3d_t cdir = center - sp.P;
 	PFLOAT dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius) return false; //only emit light on the outside!
@@ -205,6 +207,7 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	bool castShadows = true;
 	bool shootD = true;
 	bool shootC = true;
+	bool pOnly = false;
 
 	params.getParam("from",from);
 	params.getParam("color",color);
@@ -216,12 +219,14 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
+	params.getParam("photon_only",pOnly);
 	
 	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);
 
 	light->objID = (unsigned int)object;
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;
+	light->lPhotonOnly = pOnly;
 
 	return light;
 }
