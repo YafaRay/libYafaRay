@@ -244,8 +244,8 @@ light_t* bgPortalLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("samples", samples);
 	params.getParam("power", pow);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 	params.getParam("photon_only", ponly);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);

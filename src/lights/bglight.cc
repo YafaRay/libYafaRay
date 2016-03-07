@@ -290,8 +290,8 @@ light_t* bgLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	bool castShadows = true;
 	
 	params.getParam("samples", samples);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
+	params.getParam("shoot_caustics", shootC);
+	params.getParam("shoot_diffuse", shootD);
 	params.getParam("abs_intersect", absInt);
     params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);

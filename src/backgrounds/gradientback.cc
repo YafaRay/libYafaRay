@@ -31,7 +31,7 @@ __BEGIN_YAFRAY
 class gradientBackground_t: public background_t
 {
 	public:
-		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic);
+		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool shoot_caustics);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~gradientBackground_t();
@@ -45,8 +45,8 @@ class gradientBackground_t: public background_t
 		bool shootDiffuse;
 };
 
-gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic):
-gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol), withIBL(ibl), shootCaustic(with_caustic)
+gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool shoot_caustics):
+gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol), withIBL(ibl), shootCaustic(shoot_caustics)
 {
 	// Empty
 }
@@ -102,8 +102,8 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 	params.getParam("ibl_samples", bglSam);
 	params.getParam("power", p);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
+	params.getParam("shoot_caustics", caus);
+	params.getParam("shoot_diffuse", diff);
 
 	background_t *gradBG = new gradientBackground_t(gzenith*p,  ghoriz*p, szenith*p, shoriz*p, bgl, true);
 	
@@ -112,8 +112,8 @@ background_t* gradientBackground_t::factory(paraMap_t &params,renderEnvironment_
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = bglSam;
-		bgp["with_caustics"] = caus;
-		bgp["with_diffuse"] = diff;
+		bgp["shoot_caustics"] = caus;
+		bgp["shoot_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("GradientBackground_bgLight", bgp);

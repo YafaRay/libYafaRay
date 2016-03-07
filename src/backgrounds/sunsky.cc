@@ -38,7 +38,7 @@ color_t ComputeAttenuatedSunlight(float theta, int turbidity);
 class sunskyBackground_t: public background_t
 {
 	public:
-		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
+		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool shoot_caustics);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
 		virtual ~sunskyBackground_t();
@@ -61,7 +61,7 @@ class sunskyBackground_t: public background_t
 		bool shootDiffuse;
 };
 
-sunskyBackground_t::sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): power(pwr), withIBL(ibl), shootCaustic(with_caustic)
+sunskyBackground_t::sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool shoot_caustics): power(pwr), withIBL(ibl), shootCaustic(shoot_caustics)
 {
 	sunDir.set(dir.x, dir.y, dir.z);
 	sunDir.normalize();
@@ -238,8 +238,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("cast_shadows_sun", castShadowsSun);
 	
-	params.getParam("with_caustic", caus);
-	params.getParam("with_diffuse", diff);
+	params.getParam("shoot_caustics", caus);
+	params.getParam("shoot_diffuse", diff);
 
 	background_t *new_sunsky = new sunskyBackground_t(dir, turb, av, bv, cv, dv, ev, power, bgl, true);
 
@@ -249,8 +249,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = bgl_samples;
 		bgp["cast_shadows"] = castShadows;
-		bgp["with_caustics"] = caus;
-		bgp["with_diffuse"] = diff;
+		bgp["shoot_caustics"] = caus;
+		bgp["shoot_diffuse"] = diff;
 
 		light_t *bglight = render.createLight("sunsky_bgLight", bgp);
 
@@ -276,8 +276,8 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		p["angle"] = parameter_t(angle);
 		p["power"] = parameter_t(pw);
 		p["cast_shadows"] = castShadowsSun;
-		p["with_caustics"] = caus;
-		p["with_diffuse"] = diff;
+		p["shoot_caustics"] = caus;
+		p["shoot_diffuse"] = diff;
 
 		light_t *light = render.createLight("sunsky_SUN", p);
 
