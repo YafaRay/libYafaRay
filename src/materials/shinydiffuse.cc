@@ -337,9 +337,9 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
             if(s.reverse)
             {
                 s.pdf_back = s.pdf;
-                s.col_back = scolor/std::fabs(sp.N*wo);
+                s.col_back = scolor/std::max(std::fabs(sp.N*wo), 1.0e-6f);
             }
-            scolor *= 1.f/std::fabs(sp.N*wi);
+            scolor *= 1.f/std::max(std::fabs(sp.N*wi), 1.0e-6f);
             break;
         case (BSDF_TRANSMIT | BSDF_FILTER): // "specular" transmit
             wi = -wo;
