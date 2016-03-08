@@ -76,6 +76,8 @@ class textureImage_t : public texture_t
 		interpolationType intp_type;
 		colorSpaces_t colorSpace;
 		float gamma;
+		bool mirrorX;
+		bool mirrorY;
 };
 
 /*static inline colorA_t cubicInterpolate(const colorA_t &c1, const colorA_t &c2,

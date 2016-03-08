@@ -27,7 +27,7 @@
 __BEGIN_YAFRAY
 
 textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma, colorSpaces_t color_space):
-				image(ih), intp_type(intp), colorSpace(color_space), gamma(gamma)
+				image(ih), intp_type(intp), colorSpace(color_space), gamma(gamma), mirrorX(false), mirrorY(false)
 {
 	// Empty
 }
@@ -166,15 +166,24 @@ colorA_t textureImage_t::getRawColor(int x, int y, int z) const
 bool textureImage_t::doMapping(point3d_t &texpt) const
 {
 	bool outside = false;
+	
 	texpt = 0.5f*texpt + 0.5f;
 	// repeat, only valid for REPEAT clipmode
 	if (tex_clipmode==TCL_REPEAT) {
 		if (xrepeat>1) {
 			texpt.x *= (PFLOAT)xrepeat;
+			if (mirrorX && int(ceilf(texpt.x)) % 2 == 0)
+			{
+				texpt.x = -texpt.x;
+			}
 			if (texpt.x>1.0) texpt.x -= int(texpt.x); else if (texpt.x<0.0) texpt.x += 1-int(texpt.x);
 		}
 		if (yrepeat>1) {
 			texpt.y *= (PFLOAT)yrepeat;
+			if (mirrorY && int(ceilf(texpt.y)) % 2 == 0)
+			{
+				texpt.y = -texpt.y;
+			}
 			if (texpt.y>1.0) texpt.y -= int(texpt.y); else if (texpt.y<0.0) texpt.y += 1-int(texpt.y);
 		}
 	}
@@ -359,6 +368,9 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double minx=0.0, miny=0.0, maxx=1.0, maxy=1.0;
 	double cdist=0.0;
 	const std::string *clipmode=0;
+	bool mirror_x = false;
+	bool mirror_y = false;
+	
 	params.getParam("xrepeat", xrep);
 	params.getParam("yrepeat", yrep);
 	params.getParam("cropmin_x", minx);
@@ -372,6 +384,9 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("checker_dist", cdist);
 	params.getParam("use_alpha", use_alpha);
 	params.getParam("calc_alpha", calc_alpha);
+	params.getParam("mirror_x", mirror_x);
+	params.getParam("mirror_y", mirror_y);
+	
 	tex->xrepeat = xrep;
 	tex->yrepeat = yrep;
 	tex->rot90 = rot90;
@@ -383,6 +398,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->checker_even = even_tiles;
 	tex->checker_odd = odd_tiles;
 	tex->checker_dist = cdist;
+	tex->mirrorX = mirror_x;
+	tex->mirrorY = mirror_y;
 	
 	return tex;
 }
