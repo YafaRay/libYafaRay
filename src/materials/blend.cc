@@ -406,6 +406,20 @@ bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	return ret;
 }
 
+const volumeHandler_t* blendMat_t::getVolumeHandler(bool inside)const
+{
+	const volumeHandler_t* vol1 = mat1->getVolumeHandler(inside);
+	const volumeHandler_t* vol2 = mat2->getVolumeHandler(inside);
+
+	if(vol1 && vol2)
+	{
+		if(blendVal <= 0.5f) return vol1;
+		else return vol2;
+	}
+	else if(vol1) return vol1;
+	else return vol2;
+}
+
 material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &env)
 {
 	const std::string *name = 0;

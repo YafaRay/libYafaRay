@@ -157,7 +157,7 @@ class YAFRAYCORE_EXPORT material_t
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
-		const volumeHandler_t* getVolumeHandler(bool inside)const { return inside ? volI : volO; }
+		virtual const volumeHandler_t* getVolumeHandler(bool inside)const { return inside ? volI : volO; }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
 		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return 1.f; }

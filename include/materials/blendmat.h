@@ -33,6 +33,7 @@ class blendMat_t: public nodeMaterial_t
         bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const;
 		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
+		virtual const volumeHandler_t* getVolumeHandler(bool inside)const;
 		
 		static material_t* factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &render);
 	protected:
