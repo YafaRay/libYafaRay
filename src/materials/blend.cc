@@ -198,6 +198,25 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	return col1;
 }
 
+color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const
+{
+	
+	float val, ival;
+	getBlendVal(state, sp, val, ival);
+	
+	void *old_udat = state.userdata;
+
+	color_t col;
+	
+	if(val<=0.f) col = mat1->sample(state, sp, wo, dir, tcol, s, W);
+	else if(val>=1.f) col = mat2->sample(state, sp, wo, dir, tcol, s, W);
+	else col = mat1->sample(state, sp, wo, dir, tcol, s, W)*ival + mat2->sample(state, sp, wo, dir, tcol, s, W)*val;
+
+	state.userdata = old_udat;
+	return col;
+}
+
+
 float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
 {
 	float val, ival;
