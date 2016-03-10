@@ -492,6 +492,8 @@ void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoi
 
 color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+    if(!mIsTransparent) return color_t(0.f);
+    
     nodeStack_t stack(state.userdata);
     std::vector<shaderNode_t *>::const_iterator iter, end=allSorted.end();
     for(iter = allSorted.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
