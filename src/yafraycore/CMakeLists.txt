@@ -10,7 +10,7 @@ set(YF_CORE_SOURCES bound.cc yafsystem.cc environment.cc console.cc color_consol
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 
-add_library(yafaraycore SHARED ${YF_CORE_SOURCES})
+add_library(yafaraycore2 SHARED ${YF_CORE_SOURCES})
 
 if (UNIX)
 	set (DLLOAD_LIB "dl" )
@@ -19,9 +19,9 @@ else (UNIX)
 endif (UNIX)
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET yafaraycore POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaraycore.dylib)
+	add_custom_command(TARGET yafaraycore2 POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaraycore2.dylib)
 endif(APPLE)
 
-target_link_libraries(yafaraycore ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
+target_link_libraries(yafaraycore2 ${CMAKE_THREAD_LIBS_INIT} ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
-install (TARGETS yafaraycore ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafaraycore2 ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})

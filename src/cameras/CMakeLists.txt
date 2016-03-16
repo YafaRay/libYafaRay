@@ -3,12 +3,12 @@ include_directories(${YAF_INCLUDE_DIRS})
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 add_library(perspectiveCamera SHARED perspectiveCamera.cc architectCamera.cc)
-target_link_libraries(perspectiveCamera yafaraycore)
+target_link_libraries(perspectiveCamera yafaraycore2)
 
 add_library(orthographicCamera SHARED orthographicCamera.cc)
-target_link_libraries(orthographicCamera yafaraycore)
+target_link_libraries(orthographicCamera yafaraycore2)
 
 add_library(angularCamera SHARED angularCamera.cc)
-target_link_libraries(angularCamera yafaraycore)
+target_link_libraries(angularCamera yafaraycore2)
 
 install (TARGETS perspectiveCamera orthographicCamera angularCamera ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

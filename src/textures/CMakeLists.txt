@@ -4,9 +4,9 @@ add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 set(basictex_SRCS basictex.cc noise.cc imagetex.cc)
 add_library(basictex SHARED ${basictex_SRCS})
-target_link_libraries(basictex yafaraycore)
+target_link_libraries(basictex yafaraycore2)
 
 add_library(basicnodes SHARED basicnodes.cc layernode.cc)
-target_link_libraries(basicnodes yafaraycore)
+target_link_libraries(basicnodes yafaraycore2)
 
 install (TARGETS basictex basicnodes ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

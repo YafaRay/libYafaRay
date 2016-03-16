@@ -96,20 +96,20 @@ if (WITH_YAF_PY_BINDINGS)
 
 	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
 
-	SWIG_ADD_MODULE(yafrayinterface PYTHON yafrayinterface.i)
+	SWIG_ADD_MODULE(yafrayinterface2 PYTHON yafrayinterface.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafrayinterface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafrayinterface2_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 	endif(APPLE)
 
-	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${PYTHON_LIBRARIES})
+	SWIG_LINK_LIBRARIES(yafrayinterface2 yafaraycore2 yafarayplugin2 ${PYTHON_LIBRARIES})
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET ${SWIG_MODULE_yafrayinterface_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafrayinterface.so)
+	add_custom_command(TARGET ${SWIG_MODULE_yafrayinterface2_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafrayinterface2.so)
 endif(APPLE)
 
-	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafrayinterface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(TARGETS ${SWIG_MODULE_yafrayinterface2_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafrayinterface2.py DESTINATION ${YAF_BINDINGS_PY_DIR})
 
 endif (WITH_YAF_PY_BINDINGS)
 
@@ -135,9 +135,9 @@ if (WITH_YAF_RUBY_BINDINGS)
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)
 
 	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
-	SWIG_ADD_MODULE(yafrayinterface RUBY yafrayinterface.i)
-	SWIG_LINK_LIBRARIES(yafrayinterface yafaraycore yafarayplugin ${RUBY_LIBRARY})
-	install(TARGETS ${SWIG_MODULE_yafrayinterface_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+	SWIG_ADD_MODULE(yafrayinterface2 RUBY yafrayinterface.i)
+	SWIG_LINK_LIBRARIES(yafrayinterface2 yafaraycore2 yafarayplugin2 ${RUBY_LIBRARY})
+	install(TARGETS ${SWIG_MODULE_yafrayinterface2_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 endif (WITH_YAF_RUBY_BINDINGS)
 

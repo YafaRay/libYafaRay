@@ -20,29 +20,29 @@ add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 if(WITH_OpenEXR)
 add_library(exrHandler SHARED exrHandler.cc)
-target_link_libraries(exrHandler yafaraycore ${OPENEXR_LIBRARIES})
+target_link_libraries(exrHandler yafaraycore2 ${OPENEXR_LIBRARIES})
 endif(WITH_OpenEXR)
 
 if(WITH_JPEG)
 add_library(jpgHandler SHARED jpgHandler.cc)
-target_link_libraries(jpgHandler yafaraycore ${JPEG_LIBRARY})
+target_link_libraries(jpgHandler yafaraycore2 ${JPEG_LIBRARY})
 endif(WITH_JPEG)
 
 if(WITH_PNG)
 add_library(pngHandler SHARED pngHandler.cc)
-target_link_libraries(pngHandler yafaraycore ${PNG_LIBRARIES})
+target_link_libraries(pngHandler yafaraycore2 ${PNG_LIBRARIES})
 endif(WITH_PNG)
 
 if(WITH_TIFF)
 add_library(tifHandler SHARED tifHandler.cc)
-target_link_libraries(tifHandler yafaraycore -Wl,-undefined -Wl,dynamic_lookup ${TIFF_LIBRARY})
+target_link_libraries(tifHandler yafaraycore2 -Wl,-undefined -Wl,dynamic_lookup ${TIFF_LIBRARY})
 endif(WITH_TIFF)
 
 add_library(tgaHandler SHARED tgaHandler.cc)
-target_link_libraries(tgaHandler yafaraycore)
+target_link_libraries(tgaHandler yafaraycore2)
 
 add_library(hdrHandler SHARED hdrHandler.cc)
-target_link_libraries(hdrHandler yafaraycore)
+target_link_libraries(hdrHandler yafaraycore2)
 
 if(WITH_OpenEXR)
 	install (TARGETS exrHandler ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
