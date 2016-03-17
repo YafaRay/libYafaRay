@@ -94,9 +94,9 @@ if (WITH_YAF_PY_BINDINGS)
 		set(CMAKE_SWIG_FLAGS -c++)
 	endif(YAF_PY_VERSION GREATER 3)
 
-	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
+	set_source_files_properties(yafrayinterface2.i PROPERTIES CPLUSPLUS ON)
 
-	SWIG_ADD_MODULE(yafrayinterface2 PYTHON yafrayinterface.i)
+	SWIG_ADD_MODULE(yafrayinterface2 PYTHON yafrayinterface2.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
 		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafrayinterface2_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
@@ -134,8 +134,8 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)
 
-	set_source_files_properties(yafrayinterface.i PROPERTIES CPLUSPLUS ON)
-	SWIG_ADD_MODULE(yafrayinterface2 RUBY yafrayinterface.i)
+	set_source_files_properties(yafrayinterface2.i PROPERTIES CPLUSPLUS ON)
+	SWIG_ADD_MODULE(yafrayinterface2 RUBY yafrayinterface2.i)
 	SWIG_LINK_LIBRARIES(yafrayinterface2 yafaraycore2 yafarayplugin2 ${RUBY_LIBRARY})
 	install(TARGETS ${SWIG_MODULE_yafrayinterface2_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
