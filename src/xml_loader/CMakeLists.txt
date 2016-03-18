@@ -1,6 +1,6 @@
 include_directories(${YAF_INCLUDE_DIRS})
 
 add_executable(yafaray-xml xml-loader.cc)
-target_link_libraries(yafaray-xml yafaraycore2)
+target_link_libraries(yafaray-xml yafaray_e2_core)
 
 install (TARGETS yafaray-xml RUNTIME DESTINATION ${YAF_BIN_DIR})

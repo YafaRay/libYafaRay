@@ -94,22 +94,22 @@ if (WITH_YAF_PY_BINDINGS)
 		set(CMAKE_SWIG_FLAGS -c++)
 	endif(YAF_PY_VERSION GREATER 3)
 
-	set_source_files_properties(yafrayinterface2.i PROPERTIES CPLUSPLUS ON)
+	set_source_files_properties(yafaray_e2_interface.i PROPERTIES CPLUSPLUS ON)
 
-	SWIG_ADD_MODULE(yafrayinterface2 PYTHON yafrayinterface2.i)
+	SWIG_ADD_MODULE(yafaray_e2_interface PYTHON yafaray_e2_interface.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafrayinterface2_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray_e2_interface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 	endif(APPLE)
 
-	SWIG_LINK_LIBRARIES(yafrayinterface2 yafaraycore2 yafarayplugin2 ${PYTHON_LIBRARIES})
+	SWIG_LINK_LIBRARIES(yafaray_e2_interface yafaray_e2_core yafaray_e2_plugin ${PYTHON_LIBRARIES})
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET ${SWIG_MODULE_yafrayinterface2_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafrayinterface2.so)
+	add_custom_command(TARGET ${SWIG_MODULE_yafaray_e2_interface_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafaray_e2_interface.so)
 endif(APPLE)
 
-	install(TARGETS ${SWIG_MODULE_yafrayinterface2_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafrayinterface2.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(TARGETS ${SWIG_MODULE_yafaray_e2_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafaray_e2_interface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
 
 endif (WITH_YAF_PY_BINDINGS)
 
@@ -134,10 +134,10 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)
 
-	set_source_files_properties(yafrayinterface2.i PROPERTIES CPLUSPLUS ON)
-	SWIG_ADD_MODULE(yafrayinterface2 RUBY yafrayinterface2.i)
-	SWIG_LINK_LIBRARIES(yafrayinterface2 yafaraycore2 yafarayplugin2 ${RUBY_LIBRARY})
-	install(TARGETS ${SWIG_MODULE_yafrayinterface2_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+	set_source_files_properties(yafaray_e2_interface.i PROPERTIES CPLUSPLUS ON)
+	SWIG_ADD_MODULE(yafaray_e2_interface RUBY yafaray_e2_interface.i)
+	SWIG_LINK_LIBRARIES(yafaray_e2_interface yafaray_e2_core yafaray_e2_plugin ${RUBY_LIBRARY})
+	install(TARGETS ${SWIG_MODULE_yafaray_e2_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 endif (WITH_YAF_RUBY_BINDINGS)
 

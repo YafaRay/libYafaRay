@@ -2,11 +2,11 @@ include_directories(${YAF_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
 
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
-add_library(yafarayplugin2 SHARED yafrayinterface.cc xmlinterface.cc)
-target_link_libraries(yafarayplugin2 yafaraycore2 ${LIBXML2_LIBRARY})
+add_library(yafaray_e2_plugin SHARED yafrayinterface.cc xmlinterface.cc)
+target_link_libraries(yafaray_e2_plugin yafaray_e2_core ${LIBXML2_LIBRARY})
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET yafarayplugin2 POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafarayplugin2.dylib)
+	add_custom_command(TARGET yafaray_e2_plugin POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray_e2_plugin.dylib)
 endif(APPLE)
 
-install (TARGETS yafarayplugin2 ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafaray_e2_plugin ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
