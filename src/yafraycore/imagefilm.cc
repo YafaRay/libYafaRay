@@ -490,6 +490,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
 
 	colorOutput_t *colout = out ? out : output;
+	colorOutput_t *out2 = env->getOutput2();
 
 	if (drawParams) drawRenderSettings();
 
@@ -537,12 +538,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			}
 
 			colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+			if(out2) out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 		}
 
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
 	colout->flush(numView, env->getRenderPasses());
+	if(out2) out2->flush(numView, env->getRenderPasses());
 
 	outMutex.unlock();
 

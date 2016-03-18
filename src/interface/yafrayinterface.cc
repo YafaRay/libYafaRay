@@ -402,6 +402,11 @@ void yafrayInterface_t::setVerbosityMute()
 	yafout.setMasterVerbosity(VL_MUTE);
 }
 
+void yafrayInterface_t::setOutput2(colorOutput_t *out2)
+{
+	if(env) env->setOutput2(out2);
+}
+
 // export "factory"...
 
 extern "C"

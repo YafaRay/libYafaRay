@@ -70,6 +70,7 @@ renderEnvironment_t::renderEnvironment_t()
 #endif
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
+	output2 = NULL;
 }
 
 template <class T>

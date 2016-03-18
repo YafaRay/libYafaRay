@@ -748,6 +748,7 @@ namespace yafaray
 			void printLog(const std::string &msg);
 			
 			void setInputColorSpace(std::string color_space_string, float gammaVal);
+			void setOutput2(colorOutput_t *out2);
 		
 		protected:
 			paraMap_t *params;

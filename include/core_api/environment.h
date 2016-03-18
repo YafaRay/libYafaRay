@@ -69,8 +69,11 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
 		void			setupRenderPasses(const paraMap_t &params);
-		const renderPasses_t* getRenderPasses() const { return &renderPasses; }
-		const std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }
+		const			renderPasses_t* getRenderPasses() const { return &renderPasses; }
+		const 			std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }
+		void			setOutput2(colorOutput_t *out2) { output2 = out2; }
+		colorOutput_t*	getOutput2() { return output2; }
+		
 		void clearAll();
 
 		virtual void registerFactory(const std::string &name,light_factory_t *f);
@@ -92,6 +95,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
 		int Debug;
+		colorOutput_t *output2; //secondary color output to export to file at the same time it's exported to Blender
 
 		renderEnvironment_t();
 		virtual ~renderEnvironment_t();
