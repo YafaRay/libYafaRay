@@ -566,6 +566,23 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
+	if(out2 && drawParams && dpimage) //If secondary output enabled, draw params badge below the image (new non-invasive params badge)
+	{
+		for(int j = h; j < h+dpHeight; j++)
+		{
+			for(int i = 0; i < w; i++)
+			{
+				for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+				{
+					colorA_t &dpcol = (*dpimage)(i, j-h);
+					colExtPasses2[idx] = colorA_t(dpcol, 1.f);
+				}
+				out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
+			}
+		}
+	}
+
+
 	colout->flush(numView, env->getRenderPasses());
 	if(out2) out2->flush(numView, env->getRenderPasses());
 
