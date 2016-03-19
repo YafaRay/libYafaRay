@@ -119,9 +119,9 @@ float Lanczos2(float dx, float dy)
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
- gamma(1.0), filterw(filterSize*0.5), output(&out),
+ gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
 	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
-	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), drawParams(drawParams)
+	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false),drawParams(drawParams)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -506,6 +506,9 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 
+    std::vector<colorA_t> colExtPasses2;	//For secondary file output (when enabled)
+	if(out2) colExtPasses2.resize(imagePasses.size(), colorA_t(0.f));
+
 	for(int j = 0; j < h; j++)
 	{
 		for(int i = 0; i < w; i++)
@@ -522,7 +525,12 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 								
 				if(estimateDensity && (flags & IF_DENSITYIMAGE) && idx == 0) colExtPasses[idx] += (*densityImage)(i, j) * multi;
 				colExtPasses[idx].clampRGB0();
+				
+				if(out2) colExtPasses2[idx] = colExtPasses[idx];
+				
 				colExtPasses[idx].ColorSpace_from_linearRGB(colorSpace, gamma);//FIXME DAVID: what passes must be corrected and what do not?
+				
+				if(out2) colExtPasses2[idx].ColorSpace_from_linearRGB(colorSpace2, gamma2);
 
 				if(idx == 0 && drawParams && h - j <= dpHeight && dpimage) //Parameters only shown in first render pass (idx=0)
 				{
@@ -530,15 +538,29 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 					colExtPasses[idx] = colorA_t( alphaBlend(colExtPasses[idx], dpcol, dpcol.getA()), std::max(colExtPasses[idx].getA(), dpcol.getA()) );
 				}
 
-				if(premultAlpha && idx == 0) colExtPasses[idx].alphaPremultiply();
+				if(premultAlpha && idx == 0) 
+				{
+					colExtPasses[idx].alphaPremultiply();
+				}
+
+				if(out2 && premultAlpha2 && idx == 0) 
+				{
+					colExtPasses2[idx].alphaPremultiply();
+				}
 
 				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
 				if(colExtPasses[idx].A < 0.f) colExtPasses[idx].A = 0.f;
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
+
+				if(out2)
+				{
+					if(colExtPasses2[idx].A < 0.f) colExtPasses2[idx].A = 0.f;
+					else if(colExtPasses2[idx].A > 1.f) colExtPasses2[idx].A = 1.f;
+				}
 			}
 
 			colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
-			if(out2) out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+			if(out2) out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
 		}
 
 		if(drawParams && h - j <= dpHeight) k++;
@@ -699,6 +721,17 @@ void imageFilm_t::setColorSpace(colorSpaces_t color_space, float gammaVal)
 {
 	colorSpace = color_space;
 	gamma = gammaVal;
+}
+
+void imageFilm_t::setColorSpace2(colorSpaces_t color_space, float gammaVal)
+{
+	colorSpace2 = color_space;
+	gamma2 = gammaVal;
+}
+
+void imageFilm_t::setPremult2(bool premult)
+{
+	premultAlpha2 = premult;
 }
 
 void imageFilm_t::setProgressBar(progressBar_t *pb)

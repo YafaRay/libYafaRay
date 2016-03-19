@@ -106,6 +106,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setGamma(float gammaVal, bool enable);
 		/*! Sets the film color space and gamma correction */
 		void setColorSpace(colorSpaces_t color_space, float gammaVal);
+		/*! Sets the film color space and gamma correction for optional secondary file output */
+		void setColorSpace2(colorSpaces_t color_space, float gammaVal);
+		/*! Sets the film premultiply option for optional secondary file output */
+		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
 		void setAAThreshold(CFLOAT thresh){ AA_thesh=thresh; }
 		/*! Enables interactive color buffer output for preview during render */
@@ -142,6 +146,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		volatile int next_area;
 		colorSpaces_t colorSpace;
 		float gamma;
+		colorSpaces_t colorSpace2;	//For optional secondary file output
+		float gamma2;				//For optional secondary file output
 		CFLOAT AA_thesh;
 		bool AA_detect_color_noise;
 		float AA_dark_threshold_factor;
@@ -165,6 +171,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		int tileSize;
 		imageSpliter_t::tilesOrderType tilesOrder;
 		bool premultAlpha;
+		bool premultAlpha2;	//For optional secondary file output
 		int nPasses;
 		bool drawParams;
 		std::string aaSettings;

@@ -556,14 +556,19 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int width=320, height=240, xstart=0, ystart=0;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
-	float filt_sz = 1.5, gamma=1.f;
+	std::string color_space_string2 = "Raw_Manual_Gamma";
+	colorSpaces_t color_space2 = RAW_MANUAL_GAMMA;
+	float filt_sz = 1.5, gamma=1.f, gamma2=1.f;
 	bool showSampledPixels = false;
 	int tileSize = 32;
 	bool premult = false;
+	bool premult2 = false;
 	bool drawParams = false;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
+	params.getParam("color_space2", color_space_string2);
+	params.getParam("gamma2", gamma2);
 	params.getParam("AA_pixelwidth", filt_sz);
 	params.getParam("width", width); // width of rendered image
 	params.getParam("height", height); // height of rendered image
@@ -574,6 +579,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
+	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
 	params.getParam("drawParams", drawParams);
 
 	if(color_space_string == "sRGB") color_space = SRGB;
@@ -581,8 +587,14 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
 	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
+
+	if(color_space_string2 == "sRGB") color_space2 = SRGB;
+	else if(color_space_string2 == "XYZ") color_space2 = XYZ_D65;
+	else if(color_space_string2 == "LinearRGB") color_space2 = LINEAR_RGB;
+	else if(color_space_string2 == "Raw_Manual_Gamma") color_space2 = RAW_MANUAL_GAMMA;
+	else color_space2 = SRGB;
 	
-    	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+   	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -610,6 +622,15 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		else film->setColorSpace(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
 	}
 	else film->setColorSpace(color_space, gamma);
+
+	if(color_space2 == RAW_MANUAL_GAMMA)
+	{
+		if(gamma2 > 0 && std::fabs(1.f-gamma2) > 0.001) film->setColorSpace2(color_space2, gamma2);
+		else film->setColorSpace2(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+	}
+	else film->setColorSpace2(color_space2, gamma2);
+
+	film->setPremult2(premult2);
 
 	return film;
 }
