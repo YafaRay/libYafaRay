@@ -71,7 +71,7 @@ renderEnvironment_t::renderEnvironment_t()
 	object_factory["sphere"] = sphere_factory;
 	Debug=0;
 	output2 = NULL;
-	paramsBadgeHeight = 30;
+	paramsBadgeHeight = 100;	//Height of the parameters badge below the rendered area
 }
 
 template <class T>

@@ -898,46 +898,12 @@ void imageFilm_t::drawRenderSettings()
 
 	slot = face->glyph;
 
-	int textOffsetY = 18;
+	int textOffsetY = -12;
 	int textInterlineOffset = 13;
 #endif
 	// offsets
 	int textOffsetX = 4;
-	int logoWidth = 0;
 
-	// Draw logo image
-	paraMap_t ihParams;
-	ihParams["type"] = std::string("png");
-	ihParams["for_output"] = false;
-
-	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams, false);
-
-	if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size))
-	{
-		int lx, ly;
-		int imWidth = std::min(logo->getWidth(), w);
-		int imHeight = std::min(logo->getHeight(), dpHeight);
-		logoWidth = logo->getWidth();
-		textOffsetX += logoWidth;
-
-		for ( lx = 0; lx < imWidth; lx++ )
-			for ( ly = 0; ly < imHeight; ly++ )
-				(*dpimage)(lx, ly) = logo->getPixel(lx, ly);
-
-		delete logo;
-	}
-
-	// Draw the dark bar at the bottom
-	float bgAlpha = 0.4f;
-	color_t bgColor(0.f);
-
-	for ( int x = logoWidth; x < w; x++ )
-	{
-		for ( int y = 0; y < dpHeight; y++ )
-		{
-			(*dpimage)(x, y) = colorA_t(bgColor, bgAlpha);
-		}
-	}
 #ifdef HAVE_FREETYPE
 	// The pen position in 26.6 cartesian space coordinates
 	pen.x = textOffsetX * 64;
@@ -967,7 +933,7 @@ void imageFilm_t::drawRenderSettings()
 		FT_Render_Glyph( slot, FT_RENDER_MODE_NORMAL );
 
 		// Now, draw to our target surface (convert position)
-		drawFontBitmap( &slot->bitmap, slot->bitmap_left, dpHeight - slot->bitmap_top);
+		drawFontBitmap( &slot->bitmap, slot->bitmap_left, -slot->bitmap_top);
 
 		// increment pen position
 		pen.x += slot->advance.x;
@@ -978,6 +944,27 @@ void imageFilm_t::drawRenderSettings()
 	FT_Done_Face    ( face );
 	FT_Done_FreeType( library );
 #endif
+
+	// Draw logo image
+	paraMap_t ihParams;
+	ihParams["type"] = std::string("png");
+	ihParams["for_output"] = false;
+
+	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams, false);
+
+	if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size))
+	{
+		int lx, ly;
+		int imWidth = std::min(logo->getWidth(), w);
+		int imHeight = std::min(logo->getHeight(), dpHeight);
+
+		for ( lx = 0; lx < imWidth; lx++ )
+			for ( ly = 0; ly < imHeight; ly++ )
+				(*dpimage)(w-imWidth+lx, dpHeight-imHeight+ly) = logo->getPixel(lx, ly);
+
+		delete logo;
+	}
+
 	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
 }
 
