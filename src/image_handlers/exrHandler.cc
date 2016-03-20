@@ -45,7 +45,7 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false, bool draw_params = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -65,16 +65,19 @@ exrHandler_t::exrHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
+	m_MultiLayer = false;
+	m_DrawParams = false;
 
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer, bool draw_params)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-    m_MultiLayer = multi_layer;
+	m_MultiLayer = multi_layer;
+	m_DrawParams = draw_params;
     
 	m_halfrgba.resize(renderPasses->extPassesSize());
 	
@@ -266,7 +269,8 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
-    bool multiLayer = false;
+	bool multiLayer = false;
+	bool drawParams = false;
 
 	params.getParam("pixel_type", pixtype);
 	params.getParam("compression", compression);
@@ -274,11 +278,16 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-    params.getParam("img_multilayer", multiLayer);
+	params.getParam("img_multilayer", multiLayer);
+	params.getParam("img_draw_params_outside", drawParams);
 
 	imageHandler_t *ih = new exrHandler_t();
 
-	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
+	if(forOutput)
+	{
+		if(drawParams) height += render.getParamsBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer, drawParams);
+	}
 
 	return ih;
 }

@@ -493,6 +493,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	colorOutput_t *out2 = env->getOutput2();
 
 	if (drawParams) drawRenderSettings();
+	else if(out && out->imageFileDrawParams()) drawRenderSettings();
+	else if(out2 && out2->imageFileDrawParams()) drawRenderSettings();
 
 #ifndef HAVE_FREETYPE
 	Y_WARNING << "imageFilm: Compiled without FreeType support." << yendl;
@@ -532,7 +534,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				
 				if(out2) colExtPasses2[idx].ColorSpace_from_linearRGB(colorSpace2, gamma2);
 
-				if(idx == 0 && drawParams && h - j <= dpHeight && dpimage) //Parameters only shown in first render pass (idx=0)
+				if(idx == 0 && drawParams && dpimage && !colout->imageFileDrawParams() && h - j <= dpHeight) //Parameters only shown in first render pass (idx=0)
 				{
 					colorA_t &dpcol = (*dpimage)(i, k);
 					colExtPasses[idx] = colorA_t( alphaBlend(colExtPasses[idx], dpcol, dpcol.getA()), std::max(colExtPasses[idx].getA(), dpcol.getA()) );
@@ -566,7 +568,23 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(drawParams && h - j <= dpHeight) k++;
 	}
 
-	if(out2 && drawParams && dpimage) //If secondary output enabled, draw params badge below the image (new non-invasive params badge)
+	if(colout && drawParams && dpimage && colout->imageFileDrawParams()) //If image output slected, draw params badge below the image (new non-invasive params badge)
+	{
+		for(int j = h; j < h+dpHeight; j++)
+		{
+			for(int i = 0; i < w; i++)
+			{
+				for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+				{
+					colorA_t &dpcol = (*dpimage)(i, j-h);
+					colExtPasses[idx] = colorA_t(dpcol, 1.f);
+				}
+				colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+			}
+		}
+	}
+
+	if(out2 && dpimage && out2->imageFileDrawParams()) //If secondary output enabled, draw params badge below the image (new non-invasive params badge), even if the main "draw params" parameter is disabled (so we can get a primary output without params badge and the secondary with params badge if needed.
 	{
 		for(int j = h; j < h+dpHeight; j++)
 		{
@@ -816,7 +834,7 @@ void imageFilm_t::drawRenderSettings()
 {
 	if(dpimage) return;
 
-	dpHeight = 30;
+	dpHeight = env->getParamsBadgeHeight();
 
 	dpimage = new rgba2DImage_nw_t(w, dpHeight);
 #ifdef HAVE_FREETYPE

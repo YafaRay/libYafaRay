@@ -42,6 +42,7 @@ class colorOutput_t
 		virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
 		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
+		virtual bool imageFileDrawParams() { return false; }
 };
 
 __END_YAFRAY
