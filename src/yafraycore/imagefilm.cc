@@ -785,6 +785,21 @@ void imageFilm_t::setIntegParams(const std::string &integ_params)
 	integratorSettings = integ_params;
 }
 
+void imageFilm_t::setBadgeTitle(const std::string &title)
+{
+	mBadgeTitle = title;
+}
+
+void imageFilm_t::setBadgeAuthor(const std::string &author)
+{
+	mBadgeAuthor = author;
+}
+
+void imageFilm_t::setBadgeContact(const std::string &contact)
+{
+	mBadgeContact = contact;
+}
+
 void imageFilm_t::setBadgeComments(const std::string &comments)
 {
 	mBadgeComments = comments;
@@ -863,6 +878,12 @@ void imageFilm_t::drawRenderSettings()
 
 	std::stringstream ss;
 
+	if(!mBadgeTitle.empty()) ss << mBadgeTitle << "\n";
+	if(!mBadgeAuthor.empty() && !mBadgeContact.empty()) ss << mBadgeAuthor << " | " << mBadgeContact << "\n";
+	else if(!mBadgeAuthor.empty() && mBadgeContact.empty()) ss << mBadgeAuthor << "\n";
+	else if(mBadgeAuthor.empty() && !mBadgeContact.empty()) ss << mBadgeContact << "\n";
+	if(!mBadgeComments.empty()) ss << mBadgeComments << "\n";
+
 	ss << "YafaRay (" << version << ")";
 
 	ss << std::setprecision(2);
@@ -876,12 +897,9 @@ void imageFilm_t::drawRenderSettings()
 	ss << " | " << aaSettings;
 	ss << "\nLighting: " << integratorSettings;
 
-	if(!mBadgeComments.empty())
-	{
-		ss << " | " << mBadgeComments;
-	}
-
 	std::string text = ss.str();
+
+	std::cout << text << std::endl;
 
 	// set font size at default dpi
 	float fontsize = 9.5f;
@@ -894,12 +912,20 @@ void imageFilm_t::drawRenderSettings()
 	}
 
 	// create face object
-	if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
+	if (FT_New_Face( library, "/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf", 0, &face ))
 	{
-		Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
+		if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
+		{
+			Y_WARNING << "imageFilm: FreeType couldn't load the font, loading default font." << yendl;
+			return;
+		}
+		else Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
 		return;
 	}
+	
 
+	FT_Select_Charmap(face , ft_encoding_unicode);
+	
 	// set character size
 	if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
 	{
