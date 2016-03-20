@@ -785,10 +785,21 @@ void imageFilm_t::setIntegParams(const std::string &integ_params)
 	integratorSettings = integ_params;
 }
 
-void imageFilm_t::setCustomString(const std::string &custom)
+void imageFilm_t::setBadgeComments(const std::string &comments)
 {
-	customString = custom;
+	mBadgeComments = comments;
 }
+
+void imageFilm_t::setCustomString(const std::string &custom)	//DEPRECATED: this is kept only for compatibility purposes
+{
+	setBadgeComments(custom);
+}
+
+void imageFilm_t::setBadgeCustomIcon(const std::string &iconPath)
+{
+	mBadgeCustomIcon = iconPath;
+}
+
 
 void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
 {
@@ -865,9 +876,9 @@ void imageFilm_t::drawRenderSettings()
 	ss << " | " << aaSettings;
 	ss << "\nLighting: " << integratorSettings;
 
-	if(!customString.empty())
+	if(!mBadgeComments.empty())
 	{
-		ss << " | " << customString;
+		ss << " | " << mBadgeComments;
 	}
 
 	std::string text = ss.str();
@@ -952,7 +963,11 @@ void imageFilm_t::drawRenderSettings()
 
 	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams, false);
 
-	if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size))
+	bool logo_loaded = false;
+	if(logo && logo->loadFromFile(mBadgeCustomIcon)) logo_loaded = true;
+	else if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size)) logo_loaded = true;
+	
+	if(logo_loaded)
 	{
 		int lx, ly;
 		int imWidth = std::min(logo->getWidth(), w);

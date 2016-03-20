@@ -122,6 +122,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setAAParams(const std::string &aa_params);
 		void setIntegParams(const std::string &integ_params);
 		void setCustomString(const std::string &custom);
+		void setBadgeComments(const std::string &comments);
+		void setBadgeCustomIcon(const std::string &iconPath);
 		void setUseParamsBadge(bool on = true) { drawParams = on; }
 		bool getUseParamsBadge() { return drawParams; }
 		int getTotalPixels() const { return w*h; };
@@ -176,7 +178,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool drawParams;
 		std::string aaSettings;
 		std::string integratorSettings;
-		std::string customString;
+		std::string mBadgeComments;
+		std::string mBadgeCustomIcon;
         double accumulated_image_area_flush_time;
 };
 
