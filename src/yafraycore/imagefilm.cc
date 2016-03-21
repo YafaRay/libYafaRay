@@ -39,6 +39,7 @@
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
 #include <ft2build.h>
+#include <utilities/stringUtils.h>
 #include FT_FREETYPE_H
 #endif
 
@@ -897,9 +898,8 @@ void imageFilm_t::drawRenderSettings()
 	ss << " | " << aaSettings;
 	ss << "\nLighting: " << integratorSettings;
 
-	std::string text = ss.str();
-
-	std::cout << text << std::endl;
+	std::string text_utf8 = ss.str();
+	std::wstring wtext_utf16 = utf8_to_utf16(text_utf8);
 
 	// set font size at default dpi
 	float fontsize = 9.5f;
@@ -912,17 +912,17 @@ void imageFilm_t::drawRenderSettings()
 	}
 
 	// create face object
-	if (FT_New_Face( library, "/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf", 0, &face ))
+/*	std::string fontPath = "/usr/share/fonts/dejavu/DejaVuSansMono.ttf";
+	if (FT_New_Face( library, fontPath.c_str(), 0, &face ))
 	{
+		Y_WARNING << "imageFilm: FreeType couldn't load the font '" << fontPath<< "', loading default font." << yendl;*/
+			
 		if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
 		{
-			Y_WARNING << "imageFilm: FreeType couldn't load the font, loading default font." << yendl;
+			Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
 			return;
 		}
-		else Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
-		return;
-	}
-	
+	/*}*/
 
 	FT_Select_Charmap(face , ft_encoding_unicode);
 	
@@ -947,10 +947,10 @@ void imageFilm_t::drawRenderSettings()
 	pen.y = textOffsetY * 64;
 
 	// Draw the text
-	for ( size_t n = 0; n < text.size(); n++ )
+	for ( size_t n = 0; n < wtext_utf16.size(); n++ )
 	{
 		// Set Coordinates for the carrige return
-		if (text[n] == '\n') {
+		if (wtext_utf16[n] == '\n') {
 			pen.x = textOffsetX * 64;
 			pen.y -= textInterlineOffset * 64;
 			continue;
@@ -960,9 +960,9 @@ void imageFilm_t::drawRenderSettings()
 		FT_Set_Transform( face, 0, &pen );
 
 		// Load glyph image into the slot (erase previous one)
-		if (FT_Load_Char( face, text[n], FT_LOAD_DEFAULT ))
+		if (FT_Load_Char( face, wtext_utf16[n], FT_LOAD_DEFAULT ))
 		{
-			Y_ERROR << "imageFilm: FreeType Couldn't load the glyph image for: '" << text[n] << "'!" << yendl;
+			Y_ERROR << "imageFilm: FreeType Couldn't load the glyph image for: '" << wtext_utf16[n] << "'!" << yendl;
 			continue;
 		}
 
