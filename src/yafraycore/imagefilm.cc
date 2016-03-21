@@ -983,14 +983,35 @@ void imageFilm_t::drawRenderSettings()
 
 	// Draw logo image
 	paraMap_t ihParams;
-	ihParams["type"] = std::string("png");
+	
 	ihParams["for_output"] = false;
-
-	imageHandler_t *logo = env->createImageHandler("logoLoader", ihParams, false);
-
+	
 	bool logo_loaded = false;
-	if(logo && logo->loadFromFile(mBadgeCustomIcon)) logo_loaded = true;
-	else if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size)) logo_loaded = true;
+	imageHandler_t *logo = NULL;
+
+	if(!mBadgeCustomIcon.empty())
+	{
+		std::string iconExtension = mBadgeCustomIcon.substr(mBadgeCustomIcon.find_last_of(".") + 1);
+		std::transform(iconExtension.begin(), iconExtension.end(),iconExtension.begin(), ::tolower);
+		
+		std::string imageHandlerType = "png";
+		if(iconExtension == "jpeg") imageHandlerType = "jpg";
+		else imageHandlerType = iconExtension;
+
+		ihParams["type"] = imageHandlerType;
+		logo = env->createImageHandler("logoLoader", ihParams, false);
+	
+		if(logo && logo->loadFromFile(mBadgeCustomIcon)) logo_loaded = true;
+		else Y_WARNING << "imageFilm: custom params badge icon '" << mBadgeCustomIcon << "' could not be loaded. Using default YafaRay icon." << yendl;
+	}
+
+	if(!logo_loaded)
+	{
+		ihParams["type"] = std::string("png");
+		logo = env->createImageHandler("logoLoader", ihParams, false);		
+		if(logo && logo->loadFromMemory(yafLogoTiny, yafLogoTiny_size)) logo_loaded = true;
+		else Y_WARNING << "imageFilm: default YafaRay params badge icon could not be loaded. No icon will be shown." << yendl;
+	}
 	
 	if(logo_loaded)
 	{
