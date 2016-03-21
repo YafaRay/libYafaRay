@@ -885,7 +885,7 @@ void imageFilm_t::drawRenderSettings()
 	else if(mBadgeAuthor.empty() && !mBadgeContact.empty()) ss << mBadgeContact << "\n";
 	if(!mBadgeComments.empty()) ss << mBadgeComments << "\n";
 
-	ss << "YafaRay (" << version << ")";
+	ss << "\nYafaRay (" << version << ")";
 
 	ss << std::setprecision(2);
 	double times = gTimer.getTime("rendert");
@@ -902,7 +902,7 @@ void imageFilm_t::drawRenderSettings()
 	std::wstring wtext_utf16 = utf8_to_utf16(text_utf8);
 
 	// set font size at default dpi
-	float fontsize = 9.5f;
+	float fontsize = 12.5f;
 
 	// initialize library
 	if (FT_Init_FreeType( &library ))
@@ -953,6 +953,13 @@ void imageFilm_t::drawRenderSettings()
 		if (wtext_utf16[n] == '\n') {
 			pen.x = textOffsetX * 64;
 			pen.y -= textInterlineOffset * 64;
+			fontsize = 9.5f;
+			if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
+			{
+				Y_ERROR << "imageFilm: FreeType couldn't set the character size!" << yendl;
+				return;
+			}
+
 			continue;
 		}
 
