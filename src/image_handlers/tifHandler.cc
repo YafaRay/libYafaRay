@@ -248,7 +248,7 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-	params.getParam("img_draw_params_outside", drawParams);
+	params.getParam("img_draw_params", drawParams);
 
 	imageHandler_t *ih = new tifHandler_t();
 	

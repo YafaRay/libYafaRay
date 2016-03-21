@@ -406,7 +406,7 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-	params.getParam("img_draw_params_outside", drawParams);
+	params.getParam("img_draw_params", drawParams);
 
 	imageHandler_t *ih = new jpgHandler_t();
 	

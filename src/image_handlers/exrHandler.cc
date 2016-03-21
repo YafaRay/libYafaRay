@@ -279,7 +279,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
-	params.getParam("img_draw_params_outside", drawParams);
+	params.getParam("img_draw_params", drawParams);
 
 	imageHandler_t *ih = new exrHandler_t();
 

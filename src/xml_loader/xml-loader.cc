@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	ihParams["alpha_channel"] = alpha;
 	ihParams["z_channel"] = use_zbuf;
 	ihParams["img_multilayer"] = multilayer;
-	ihParams["img_draw_params_outside"] = imageFileDrawParams;
+	ihParams["img_draw_params"] = imageFileDrawParams;
     
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 
