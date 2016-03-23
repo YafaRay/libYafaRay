@@ -1015,6 +1015,7 @@ void imageFilm_t::drawRenderSettings()
 	
 	if(logo_loaded)
 	{
+		if(logo->getWidth() > 80 || logo->getHeight() > 45) Y_WARNING << "imageFilm: custom params badge logo is too big (" << logo->getWidth() << " x " << logo->getHeight() << "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example." << yendl;
 		int lx, ly;
 		int imWidth = std::min(logo->getWidth(), w);
 		int imHeight = std::min(logo->getHeight(), dpHeight);
