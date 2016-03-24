@@ -1,4 +1,4 @@
-%module yafaray_e2_interface
+%module yafaray_e3_interface
 
 %include "cpointer.i"
 %pointer_functions(float, floatp);
