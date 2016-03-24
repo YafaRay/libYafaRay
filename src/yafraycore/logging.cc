@@ -1,7 +1,9 @@
 /****************************************************************************
- *      console_verbosity.cc: Console verbosity control
+ *      logging.cc: YafaRay Logging control
  *      This is part of the yafray package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
+ *	Copyright (C) 2016 David Bluecame for changes to convert original
+ * 	console output classes/objects into full Logging classes/objects
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
