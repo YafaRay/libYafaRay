@@ -1,8 +1,8 @@
 /****************************************************************************
  *      logging.h: YafaRay Logging control
  *      This is part of the yafray package
- *      Copyright (C) 2010 Rodrigo Placencia Vazquez
- *		Copyright (C) 2016 David Bluecame for changes to convert original
+ *      Copyright (C) 2010 Rodrigo Placencia Vazquez for original Console_Verbosity file
+ *		Copyright (C) 2016 David Bluecame for all changes to convert original
  * 		console output classes/objects into full Logging classes/objects
  *
  *      This library is free software; you can redistribute it and/or
@@ -64,6 +64,9 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		
 		~yafarayLog_t() {}
 
+		void setConsoleMasterVerbosity(const std::string &strVLevel);
+		void setLogMasterVerbosity(const std::string &strVLevel);
+
 		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
 		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
 		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
@@ -82,9 +85,11 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
 		yafarayLog_t &out(int verbosity_level);
-		void setMasterVerbosity(int vlevel);
+		void setConsoleMasterVerbosity(int vlevel);
+		void setLogMasterVerbosity(int vlevel);
 		std::string printTime(std::time_t datetime) const;
 		std::string printDate(std::time_t datetime) const;
+		int vlevel_from_string(std::string strVLevel) const;
 
 		template <typename T>
 		yafarayLog_t & operator << ( const T &obj )
@@ -115,8 +120,9 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
 		std::string mImagePath;
 		int mParamsBadgeHeight;					//Height of the parameters badge
-		bool mSaveLog;
-		bool mSaveHTML;
+		bool mDrawParams;	//Enable/disable drawing params badge in exported images
+		bool mSaveLog;		//Enable/disable text log file saving with exported images
+		bool mSaveHTML;		//Enable/disable HTML file saving with exported images
 		std::string mLoggingTitle;
 		std::string mLoggingAuthor;
 		std::string mLoggingContact;

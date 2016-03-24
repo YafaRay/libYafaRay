@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	std::string ppath = parse.getOptionString("pp");
 	int verbLevel = parse.getOptionInteger("vl");
 	
-	if(verbLevel >= 0) yafLog.setMasterVerbosity(verbLevel);
+	if(verbLevel >= 0) yafLog.setConsoleMasterVerbosity("verbose");//FIXME DAVID!!
 	
 	if(ppath.empty()) env->getPluginPath(ppath);
 	

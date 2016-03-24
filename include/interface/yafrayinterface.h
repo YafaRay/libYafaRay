@@ -94,14 +94,8 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 		
-		virtual void setVerbosityLevel(int vlevel);
-		virtual void setVerbosityDebug();
-		virtual void setVerbosityVerbose();
-		virtual void setVerbosityInfo();
-		virtual void setVerbosityParams();
-		virtual void setVerbosityWarning();
-		virtual void setVerbosityError();
-		virtual void setVerbosityMute();
+		void setConsoleVerbosityLevel(const std::string &strVLevel);
+		void setLogVerbosityLevel(const std::string &strVLevel);
 		
 		virtual void setDrawParams(bool on = true);
 		virtual bool getDrawParams();

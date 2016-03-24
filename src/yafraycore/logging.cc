@@ -1,9 +1,9 @@
 /****************************************************************************
  *      logging.cc: YafaRay Logging control
  *      This is part of the yafray package
- *      Copyright (C) 2010 Rodrigo Placencia Vazquez
- *	Copyright (C) 2016 David Bluecame for changes to convert original
- * 	console output classes/objects into full Logging classes/objects
+ *      Copyright (C) 2010 Rodrigo Placencia Vazquez for original Console_Verbosity file
+ *		Copyright (C) 2016 David Bluecame for all changes to convert original
+ * 		console output classes/objects into full Logging classes/objects
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,8 @@ yafarayLog_t yafLog = yafarayLog_t();
 
 void yafarayLog_t::saveTxtLog(const std::string &name)
 {
+	if(!mSaveLog) return;
+	
 	std::ofstream txtLogFile;
 	txtLogFile.open(name.c_str());
 
@@ -59,6 +61,8 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 
 void yafarayLog_t::saveHtmlLog(const std::string &name)
 {
+	if(!mSaveHTML) return;
+	
 	std::ofstream htmlLogFile;
 	htmlLogFile.open(name.c_str());
 
@@ -121,9 +125,33 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 	return *this;
 }
 
-void yafarayLog_t::setMasterVerbosity(int vlevel)
+int yafarayLog_t::vlevel_from_string(std::string strVLevel) const
 {
+	int vlevel;
+	
+	if(strVLevel == "debug") vlevel = VL_DEBUG;
+	else if(strVLevel == "verbose") vlevel = VL_VERBOSE;
+	else if(strVLevel == "info") vlevel = VL_INFO;
+	else if(strVLevel == "params") vlevel = VL_PARAMS;
+	else if(strVLevel == "warning") vlevel = VL_WARNING;
+	else if(strVLevel == "error") vlevel = VL_ERROR;
+	else if(strVLevel == "mute") vlevel = VL_MUTE;
+	else if(strVLevel == "disabled") vlevel = VL_MUTE;
+	else vlevel = VL_VERBOSE;
+	
+	return vlevel;
+}
+
+void yafarayLog_t::setConsoleMasterVerbosity(const std::string &strVLevel)
+{
+	int vlevel = vlevel_from_string(strVLevel);
 	mConsoleMasterVerbLevel = std::max( (int)VL_MUTE , std::min( vlevel, (int)VL_DEBUG ) );
+}
+
+void yafarayLog_t::setLogMasterVerbosity(const std::string &strVLevel)
+{
+	int vlevel = vlevel_from_string(strVLevel);
+	mLogMasterVerbLevel = std::max( (int)VL_MUTE , std::min( vlevel, (int)VL_DEBUG ) );
 }
 
 std::string yafarayLog_t::printTime(std::time_t datetime) const

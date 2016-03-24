@@ -381,49 +381,20 @@ bool yafrayInterface_t::getDrawParams()
 	
 	return dp;
 }
-void yafrayInterface_t::setVerbosityLevel(int vlevel)
-{
-	yafLog.setMasterVerbosity(vlevel);
-}
-
-void yafrayInterface_t::setVerbosityDebug()
-{
-	yafLog.setMasterVerbosity(VL_DEBUG);
-}
-
-void yafrayInterface_t::setVerbosityVerbose()
-{
-	yafLog.setMasterVerbosity(VL_VERBOSE);
-}
-
-void yafrayInterface_t::setVerbosityInfo()
-{
-	yafLog.setMasterVerbosity(VL_INFO);
-}
-
-void yafrayInterface_t::setVerbosityParams()
-{
-	yafLog.setMasterVerbosity(VL_PARAMS);
-}
-
-void yafrayInterface_t::setVerbosityWarning()
-{
-	yafLog.setMasterVerbosity(VL_WARNING);
-}
-
-void yafrayInterface_t::setVerbosityError()
-{
-	yafLog.setMasterVerbosity(VL_ERROR);
-}
-
-void yafrayInterface_t::setVerbosityMute()
-{
-	yafLog.setMasterVerbosity(VL_MUTE);
-}
 
 void yafrayInterface_t::setOutput2(colorOutput_t *out2)
 {
 	if(env) env->setOutput2(out2);
+}
+
+void yafrayInterface_t::setConsoleVerbosityLevel(const std::string &strVLevel)
+{
+	yafLog.setConsoleMasterVerbosity(strVLevel);
+}
+
+void yafrayInterface_t::setLogVerbosityLevel(const std::string &strVLevel)
+{
+	yafLog.setLogMasterVerbosity(strVLevel);
 }
 
 // export "factory"...
