@@ -389,42 +389,42 @@ bool yafrayInterface_t::getDrawParams()
 }
 void yafrayInterface_t::setVerbosityLevel(int vlevel)
 {
-	yafout.setMasterVerbosity(vlevel);
+	yafLog.setMasterVerbosity(vlevel);
 }
 
 void yafrayInterface_t::setVerbosityDebug()
 {
-	yafout.setMasterVerbosity(VL_DEBUG);
+	yafLog.setMasterVerbosity(VL_DEBUG);
 }
 
 void yafrayInterface_t::setVerbosityVerbose()
 {
-	yafout.setMasterVerbosity(VL_VERBOSE);
+	yafLog.setMasterVerbosity(VL_VERBOSE);
 }
 
 void yafrayInterface_t::setVerbosityInfo()
 {
-	yafout.setMasterVerbosity(VL_INFO);
+	yafLog.setMasterVerbosity(VL_INFO);
 }
 
 void yafrayInterface_t::setVerbosityParams()
 {
-	yafout.setMasterVerbosity(VL_PARAMS);
+	yafLog.setMasterVerbosity(VL_PARAMS);
 }
 
 void yafrayInterface_t::setVerbosityWarning()
 {
-	yafout.setMasterVerbosity(VL_WARNING);
+	yafLog.setMasterVerbosity(VL_WARNING);
 }
 
 void yafrayInterface_t::setVerbosityError()
 {
-	yafout.setMasterVerbosity(VL_ERROR);
+	yafLog.setMasterVerbosity(VL_ERROR);
 }
 
 void yafrayInterface_t::setVerbosityMute()
 {
-	yafout.setMasterVerbosity(VL_MUTE);
+	yafLog.setMasterVerbosity(VL_MUTE);
 }
 
 void yafrayInterface_t::setOutput2(colorOutput_t *out2)

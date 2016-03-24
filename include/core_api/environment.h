@@ -76,7 +76,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		void			setOutput2(colorOutput_t *out2) { output2 = out2; }
 		colorOutput_t*	getOutput2() { return output2; }
 		int				getParamsBadgeHeight() { return paramsBadgeHeight; }
-		std::vector<logEntry> * getMemoryLog() { return &memoryLog; }
 		
 		void clearAll();
 
@@ -134,7 +133,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		renderPasses_t renderPasses;
 		colorOutput_t *output2; //secondary color output to export to file at the same time it's exported to Blender
 		int paramsBadgeHeight;	//Height of the parameters badge
-		std::vector<logEntry> memoryLog;	//Log stored in RAM	
 };
 
 __END_YAFRAY

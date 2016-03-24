@@ -69,8 +69,6 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-	yafout.setMemoryLog(&memoryLog);	//Initializes logging storage in memory
-
 #ifdef RELEASE
 	Y_PARAMS << PACKAGE << " " << VERSION << yendl;
 #else

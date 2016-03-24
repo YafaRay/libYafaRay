@@ -8,12 +8,12 @@
 #define MIN_RAYDIST @YAF_MIN_RAY_DIST@
 #define YAF_SHADOW_BIAS @YAF_SHADOW_BIAS@
 
-#define Y_DEBUG yafout.out(VL_DEBUG)
-#define Y_VERBOSE yafout.out(VL_VERBOSE)
-#define Y_INFO yafout.out(VL_INFO)
-#define Y_PARAMS yafout.out(VL_PARAMS)
-#define Y_WARNING yafout.out(VL_WARNING)
-#define Y_ERROR yafout.out(VL_ERROR)
+#define Y_DEBUG yafLog.out(VL_DEBUG)
+#define Y_VERBOSE yafLog.out(VL_VERBOSE)
+#define Y_INFO yafLog.out(VL_INFO)
+#define Y_PARAMS yafLog.out(VL_PARAMS)
+#define Y_WARNING yafLog.out(VL_WARNING)
+#define Y_ERROR yafLog.out(VL_ERROR)
 #define yendl std::endl
 
 #cmakedefine HAVE_UNISTD_H 1

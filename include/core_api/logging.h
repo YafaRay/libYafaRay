@@ -41,48 +41,43 @@ enum
 	VL_DEBUG,
 };
 
-class YAFRAYCORE_EXPORT logEntry
+class YAFRAYCORE_EXPORT logEntry_t
 {
 public:
-	logEntry(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
+	logEntry_t(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
 	std::time_t eventDateTime;
 	int mVerbLevel;
 	std::string eventDescription;
 };
 	
 
-class YAFRAYCORE_EXPORT OutputLevel
+class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	int mVerbLevel;
 	int mConsoleMasterVerbLevel;
 	int mLogMasterVerbLevel;
-	std::vector<logEntry> * m_MemoryLog;
+	std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
 	std::string imagePath;
 
 public:
 
-	OutputLevel(): mVerbLevel(VL_INFO), mConsoleMasterVerbLevel(VL_INFO), mLogMasterVerbLevel(VL_VERBOSE), m_MemoryLog(NULL), imagePath("") {}
+	yafarayLog_t(): mVerbLevel(VL_INFO), mConsoleMasterVerbLevel(VL_INFO), mLogMasterVerbLevel(VL_VERBOSE), imagePath("") {}
 	
-	~OutputLevel() {}
+	~yafarayLog_t() {}
 
-	void setMemoryLog(std::vector<logEntry> * memory_log)
-	{
-		m_MemoryLog = memory_log;
-	}
-
-	void setImagePath(std::string &path)
+	void setImagePath(const std::string &path)
 	{
 		imagePath = path;
 	}
 
-	void saveTxtLog(std::string &name)
+	void saveTxtLog(const std::string &name)
 	{
 		std::ofstream txtLogFile;
 		txtLogFile.open(name.c_str());
 
-		if(m_MemoryLog && !m_MemoryLog->empty()) 
+		if(!m_MemoryLog.empty()) 
 		{
-			for (std::vector<logEntry>::iterator it = m_MemoryLog->begin() ; it != m_MemoryLog->end(); ++it)
+			for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 			{
 				txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << "] ";
 
@@ -103,12 +98,12 @@ public:
 	}
 
 
-	void saveHtmlLog(std::string &name)
+	void saveHtmlLog(const std::string &name)
 	{
 		std::ofstream htmlLogFile;
 		htmlLogFile.open(name.c_str());
 
-		if(m_MemoryLog && !m_MemoryLog->empty()) 
+		if(!m_MemoryLog.empty()) 
 		{
 			htmlLogFile << "<!DOCTYPE html>" << std::endl;
 			htmlLogFile << "<html><head><meta charset=\"UTF-8\">" << std::endl;
@@ -117,7 +112,7 @@ public:
 			if(!imagePath.empty()) htmlLogFile << "<img src=\"" << imagePath << "\" width=\"500\"/>" << std::endl;
 			htmlLogFile << "<table><th>Date</th><th>Time</th><th>Severity</th><th>Description</th>" << std::endl;
 			
-			for (std::vector<logEntry>::iterator it = m_MemoryLog->begin() ; it != m_MemoryLog->end(); ++it)
+			for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 			{
 				htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td>";
 
@@ -140,16 +135,16 @@ public:
 
 	void clearMemoryLog()
 	{
-		m_MemoryLog->clear();
+		m_MemoryLog.clear();
 		imagePath = "";
 	}
 
-	OutputLevel &out(int verbosity_level)
+	yafarayLog_t &out(int verbosity_level)
 	{
 		mVerbLevel = verbosity_level;
 		
 		std::time_t current_datetime = std::time(NULL);
-		if(m_MemoryLog && mVerbLevel <= mLogMasterVerbLevel) m_MemoryLog->push_back(logEntry(current_datetime, mVerbLevel, ""));
+		if(mVerbLevel <= mLogMasterVerbLevel) m_MemoryLog.push_back(logEntry_t(current_datetime, mVerbLevel, ""));
 		
 		if(mVerbLevel <= mConsoleMasterVerbLevel) 
 		{
@@ -173,25 +168,25 @@ public:
 	}
 
 	template <typename T>
-	OutputLevel &operator << ( const T &obj )
+	yafarayLog_t &operator << ( const T &obj )
 	{
 		std::ostringstream tmpStream;
 		tmpStream << obj;
 
 		if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
 		//if(mLogOutput && mVerbLevel <= mLogMasterVerbLevel) (*mLogOutput) << obj;
-		if(m_MemoryLog && mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog->empty()) m_MemoryLog->back().eventDescription += tmpStream.str();
+		if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
 		return *this;
 	}
 
-	OutputLevel &operator << ( std::ostream& (obj)(std::ostream&) )
+	yafarayLog_t &operator << ( std::ostream& (obj)(std::ostream&) )
 	{
 		std::ostringstream tmpStream;
 		tmpStream << obj;
 
 		if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
 		//if(mLogOutput && mVerbLevel <= mLogMasterVerbLevel) (*mLogOutput) << obj;
-		if(m_MemoryLog && mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog->empty()) m_MemoryLog->back().eventDescription += tmpStream.str();
+		if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
 		return *this;
 	}
 	
@@ -211,7 +206,7 @@ public:
 
 };
 
-extern YAFRAYCORE_EXPORT OutputLevel yafout;
+extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;
 
 __END_YAFRAY
 

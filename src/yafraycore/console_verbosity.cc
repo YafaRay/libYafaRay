@@ -21,9 +21,9 @@
 
 __BEGIN_YAFRAY
 
-// We just init the master instance of yafout
+// We just init the master instance of yafLog
 
-OutputLevel yafout = OutputLevel();
+yafarayLog_t yafLog = yafarayLog_t();
 
 __END_YAFRAY
 
