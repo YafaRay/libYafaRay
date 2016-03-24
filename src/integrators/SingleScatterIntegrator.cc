@@ -33,7 +33,7 @@ public:
 		optimize = opt;
 		adaptiveStepSize = sSize * 100.0f;
 
-		Y_INFO << "SingleScatter: stepSize: " << stepSize << " adaptive: " << adaptive << " optimize: " << optimize << yendl;
+		Y_PARAMS << "SingleScatter: stepSize: " << stepSize << " adaptive: " << adaptive << " optimize: " << optimize << yendl;
 	}
 
 	virtual bool preprocess()
@@ -66,7 +66,7 @@ public:
 				float ySizeInv = 1.f/(float)ySize;
 				float zSizeInv = 1.f/(float)zSize;
 
-				Y_INFO << "SingleScatter: volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
+				Y_PARAMS << "SingleScatter: volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
 			
 				for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
 				{

@@ -79,7 +79,7 @@ void meshLight_t::init(scene_t &scene)
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
 		mesh->setLight(this);
 
-		Y_INFO << "MeshLight: triangles:" << nTris << ", double sided:" << doubleSided << ", area:" << area << " color:" << color << yendl;
+		Y_VERBOSE << "MeshLight: triangles:" << nTris << ", double sided:" << doubleSided << ", area:" << area << " color:" << color << yendl;
 	}
 }
 
@@ -89,7 +89,7 @@ void meshLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float s2)
 	int primNum = areaDist->DSample(s1, &primPdf);
 	if(primNum >= areaDist->count)
 	{
-		Y_INFO << "MeshLight: Sampling error!" << yendl;
+		Y_WARNING << "MeshLight: Sampling error!" << yendl;
 		return;
 	}
 	float ss1, delta = areaDist->cdf[primNum+1];

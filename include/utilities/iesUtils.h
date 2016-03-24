@@ -147,7 +147,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 {
 	using namespace std;
 	
-	Y_INFO << "IES Parser: Parsing IES file " << iesFile << yendl;
+	Y_VERBOSE << "IES Parser: Parsing IES file " << iesFile << yendl;
 	
 	ifstream fin(iesFile.c_str(), std::ios::in);
 	
@@ -171,7 +171,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	{
 		if(line == "TILT=INCLUDE")
 		{
-			Y_INFO << "IES Parser: Tilt data included in IES file." << yendl << "Skiping..." << yendl;
+			Y_VERBOSE << "IES Parser: Tilt data included in IES file." << yendl << "Skiping..." << yendl;
 			
 			int pairs = 0;
 			
@@ -180,22 +180,22 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 			
 			for(int i = 0; i < (pairs * 2); i++) fin >> line;
 			
-			Y_INFO << "IES Parser: Tilt data skipped." << yendl;
+			Y_VERBOSE << "IES Parser: Tilt data skipped." << yendl;
 		}
 		else if(line == "TILT=NONE")
 		{
-			Y_INFO << "IES Parser: No tilt data." << yendl;
+			Y_VERBOSE << "IES Parser: No tilt data." << yendl;
 		}
 		else if(line == "TILT=NONE")
 		{
-			Y_INFO << "IES Parser: Tilt data in another file." << yendl;
+			Y_VERBOSE << "IES Parser: Tilt data in another file." << yendl;
 		}
 	}
 	else
 	{
 		fin.close();
 	
-		Y_INFO << "IES Parser: Tilt not found IES invalid!" << yendl;
+		Y_WARNING << "IES Parser: Tilt not found IES invalid!" << yendl;
 		
 		return false;
 	}
@@ -203,21 +203,21 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	float candelaMult = 0.f;
 	
 	fin >> line;
-	Y_INFO << "IES Parser: Number of lamps: " << line << yendl;
+	Y_VERBOSE << "IES Parser: Number of lamps: " << line << yendl;
 	fin >> line;
-	Y_INFO << "IES Parser: lumens per lamp: " << line << yendl;
+	Y_VERBOSE << "IES Parser: lumens per lamp: " << line << yendl;
 	fin >> candelaMult;
 	candelaMult *= 0.001;
-	Y_INFO << "IES Parser: Candela multiplier (kcd): " << candelaMult << yendl;
+	Y_VERBOSE << "IES Parser: Candela multiplier (kcd): " << candelaMult << yendl;
 	fin >> vertAngles;
-	Y_INFO << "IES Parser: Vertical Angles: " << vertAngles << yendl;
+	Y_VERBOSE << "IES Parser: Vertical Angles: " << vertAngles << yendl;
 	fin >> horAngles;
-	Y_INFO << "IES Parser: Horizontal Angles: " << horAngles << yendl;
+	Y_VERBOSE << "IES Parser: Horizontal Angles: " << horAngles << yendl;
 	type = 0;
 	fin >> type;
-	Y_INFO << "IES Parser: Photometric Type: " << type << yendl;
+	Y_VERBOSE << "IES Parser: Photometric Type: " << type << yendl;
 	fin >> line;
-	Y_INFO << "IES Parser: Units Type: " << line << yendl;
+	Y_VERBOSE << "IES Parser: Units Type: " << line << yendl;
 	
 	float w = 0.f, l = 0.f, h = 0.f;
 	
@@ -225,68 +225,68 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	fin >> l;
 	fin >> h;
 
-	Y_INFO << "IES Parser: Luminous opening dimensions:" << yendl;
-	Y_INFO << "IES Parser: (Width, Length, Height) = (" << w << ", " << l << ", " << h << ")" << yendl;
-	Y_INFO << "IES Parser: Lamp Geometry: ";
+	Y_VERBOSE << "IES Parser: Luminous opening dimensions:" << yendl;
+	Y_VERBOSE << "IES Parser: (Width, Length, Height) = (" << w << ", " << l << ", " << h << ")" << yendl;
+	Y_VERBOSE << "IES Parser: Lamp Geometry: ";
 	
 	//Check geometry type
 	if(w == 0.f && l == 0.f && h == 0.f)
 	{
-		Y_INFO << "Point Light" << yendl;
+		Y_VERBOSE << "Point Light" << yendl;
 	}
 	else if(w >= 0.f && l >= 0.f && h >= 0.f)
 	{
-		Y_INFO << "Rectangular Light" << yendl;
+		Y_VERBOSE << "Rectangular Light" << yendl;
 	}
 	else if(w < 0.f && l == 0.f && h == 0.f)
 	{
-		Y_INFO << "Circular Light" << yendl;
+		Y_VERBOSE << "Circular Light" << yendl;
 	}
 	else if(w < 0.f && l == 0.f && h < 0.f)
 	{
-		Y_INFO << "Shpere Light" << yendl;
+		Y_VERBOSE << "Shpere Light" << yendl;
 	}
 	else if(w < 0.f && l == 0.f && h >= 0.f)
 	{
-		Y_INFO << "Vertical Cylindric Light" << yendl;
+		Y_VERBOSE << "Vertical Cylindric Light" << yendl;
 	}
 	else if(w == 0.f && l >= 0.f && h < 0.f)
 	{
-		Y_INFO << "Horizontal Cylindric Light (Along width)" << yendl;
+		Y_VERBOSE << "Horizontal Cylindric Light (Along width)" << yendl;
 	}
 	else if(w >= 0.f && l == 0.f && h < 0.f)
 	{
-		Y_INFO << "Horizontal Cylindric Light (Along length)" << yendl;
+		Y_VERBOSE << "Horizontal Cylindric Light (Along length)" << yendl;
 	}
 	else if(w < 0.f && l >= 0.f && h >= 0.f)
 	{
-		Y_INFO << "Elipse Light (Along width)" << yendl;
+		Y_VERBOSE << "Elipse Light (Along width)" << yendl;
 	}
 	else if(w >= 0.f && l < 0.f && h >= 0.f)
 	{
-		Y_INFO << "Elipse Light (Along length)" << yendl;
+		Y_VERBOSE << "Elipse Light (Along length)" << yendl;
 	}
 	else if(w < 0.f && l >= 0.f && h < 0.f)
 	{
-		Y_INFO << "Elipsoid Light (Along width)" << yendl;
+		Y_VERBOSE << "Elipsoid Light (Along width)" << yendl;
 	}
 	else if(w >= 0.f && l < 0.f && h < 0.f)
 	{
-		Y_INFO << "Elipsoid Light (Along length)" << yendl;
+		Y_VERBOSE << "Elipsoid Light (Along length)" << yendl;
 	}
 	
 	fin >> line;
-	Y_INFO << "IES Parser: Ballast Factor: " << line << yendl;
+	Y_VERBOSE << "IES Parser: Ballast Factor: " << line << yendl;
 	fin >> line;
-	Y_INFO << "IES Parser: Ballast-Lamp Photometric Factor: " << line << yendl;
+	Y_VERBOSE << "IES Parser: Ballast-Lamp Photometric Factor: " << line << yendl;
 	fin >> line;
-	Y_INFO << "IES Parser: Input Watts: " << line << yendl;
+	Y_VERBOSE << "IES Parser: Input Watts: " << line << yendl;
 
 	vertAngleMap = new float[vertAngles];
 	
 	maxVAngle = 0.f;
 
-	Y_INFO << "IES Parser: Vertical Angle Map:" << yendl;
+	Y_VERBOSE << "IES Parser: Vertical Angle Map:" << yendl;
 
 	for (int i = 0; i < vertAngles; ++i)
 	{
@@ -299,7 +299,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 
 	if(vertAngleMap[0] > 0.f)
 	{
-		Y_INFO << "IES Parser: Vertical Angle Map (transformed):" << yendl;
+		Y_VERBOSE << "IES Parser: Vertical Angle Map (transformed):" << yendl;
 		float minus = vertAngleMap[0];
 		maxVAngle -= minus;
 		for (int i = 0; i < vertAngles; ++i)
@@ -310,11 +310,11 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		std::cout << std::endl;
 	}
 	
-	Y_INFO << "IES Parser: Max vertical angle (degrees): " << maxVAngle << yendl;
+	Y_VERBOSE << "IES Parser: Max vertical angle (degrees): " << maxVAngle << yendl;
 	
 	maxVAngle = degToRad(maxVAngle);
 
-	Y_INFO << "IES Parser: Max vertical angle (radians): " << maxVAngle << yendl;
+	Y_VERBOSE << "IES Parser: Max vertical angle (radians): " << maxVAngle << yendl;
 	
 	bool hAdjust = false;
 	
@@ -326,7 +326,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	
 	horAngleMap = new float[horAngles];
 	
-	Y_INFO << "IES Parser: Horizontal Angle Map:" << yendl;
+	Y_VERBOSE << "IES Parser: Horizontal Angle Map:" << yendl;
 	
 	for (int i = 0; i < horAngles; ++i)
 	{
@@ -350,12 +350,12 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		}
 	}
 	
-	Y_INFO << "IES Parser: maxRad = " << maxRad << yendl;
+	Y_VERBOSE << "IES Parser: maxRad = " << maxRad << yendl;
 	maxRad = 1.f / maxRad;
 	
 	fin.close();
 	
-	Y_INFO << "IES Parser: IES File parsed successfully" << yendl;
+	Y_VERBOSE << "IES Parser: IES File parsed successfully" << yendl;
 	
 	return true;
 }

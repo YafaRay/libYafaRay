@@ -253,7 +253,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		fclose(fp);
 	}
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }
@@ -388,7 +388,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	
 	fclose(fp);
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }

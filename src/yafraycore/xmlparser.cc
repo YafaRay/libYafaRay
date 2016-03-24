@@ -298,7 +298,7 @@ void startEl_document(xmlParser_t &parser, const char *element, const char **att
 
 void endEl_document(xmlParser_t &parser, const char *element)
 {
-	Y_INFO << "XMLParser: Finished document" << yendl;
+	Y_VERBOSE << "XMLParser: Finished document" << yendl;
 }
 
 struct mesh_dat_t

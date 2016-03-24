@@ -72,7 +72,7 @@ void hashGrid_t::updateGrid()
 	{
 		if(!hashGrid[i] || hashGrid[i]->size() == 0) notused++;
 	}
-	Y_INFO<<"HashGrid: there are " << notused << " enties not used!"<<std::endl;
+	Y_VERBOSE<<"HashGrid: there are " << notused << " enties not used!"<<std::endl;
 }
 
 unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT sqRadius)

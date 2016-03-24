@@ -149,13 +149,13 @@ bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find
 		input = find(*name);
 		if(!input)
 		{
-			Y_INFO << "LayerNode: Couldn't get input " << *name << yendl;
+			Y_WARNING << "LayerNode: Couldn't get input " << *name << yendl;
 			return false;
 		}
 	}
 	else
 	{
-		Y_INFO << "LayerNode: input not set" << yendl;
+		Y_WARNING << "LayerNode: input not set" << yendl;
 		return false;
 	}
 	
@@ -164,7 +164,7 @@ bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find
 		upperLayer = find(*name);
 		if(!upperLayer)
 		{
-			Y_INFO << "LayerNode: Couldn't get upper_layer " << *name << yendl;
+			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << *name << yendl;
 			return false;
 		}
 	}

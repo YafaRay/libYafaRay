@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	
 	if (!ppath.empty())
 	{
-		Y_INFO << "The plugin path is: " << ppath << yendl;
+		Y_VERBOSE << "The plugin path is: " << ppath << yendl;
 		env->loadPlugins(ppath);
 	}
 	else

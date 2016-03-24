@@ -18,7 +18,7 @@ class ExpDensityVolume : public DensityVolume {
 				DensityVolume(sa, ss, le, gg, pmin, pmax, attgridScale) {
 			a = aa;
 			b = bb;
-			Y_INFO << "ExpDensityVolume vol: " << s_a << " " << s_s << " " << l_e << " " << a << " " << b << yendl;
+			Y_VERBOSE << "ExpDensityVolume vol: " << s_a << " " << s_s << " " << l_e << " " << a << " " << b << yendl;
 		}
 	
 		virtual float Density(point3d_t p);

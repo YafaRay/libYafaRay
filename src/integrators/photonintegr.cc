@@ -207,13 +207,13 @@ bool photonIntegrator_t::preprocess()
 
 		lightPowerD = new pdf1D_t(energies, numDLights);
 		
-		Y_INFO << integratorName << ": Light(s) photon color testing for diffuse map:" << yendl;
+		Y_VERBOSE << integratorName << ": Light(s) photon color testing for diffuse map:" << yendl;
 		for(int i=0;i<numDLights;++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
+			Y_VERBOSE << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 		}
 		
 		delete[] energies;
@@ -343,7 +343,7 @@ bool photonIntegrator_t::preprocess()
 		}
 		pb->done();
 		pb->setTag("Diffuse photon map built.");
-		Y_INFO << integratorName << ": Diffuse photon map built." << yendl;
+		Y_VERBOSE << integratorName << ": Diffuse photon map built." << yendl;
 		Y_INFO << integratorName << ": Shot "<<curr<<" photons from " << numDLights << " light(s)" << yendl;
 
 		delete lightPowerD;
@@ -356,14 +356,14 @@ bool photonIntegrator_t::preprocess()
 			return false;
 		}
 
-		Y_INFO << integratorName << ": Stored diffuse photons: " << diffuseMap.nPhotons() << yendl;
+		Y_VERBOSE << integratorName << ": Stored diffuse photons: " << diffuseMap.nPhotons() << yendl;
 		
 		if(diffuseMap.nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
 			pb->setTag("Building diffuse photons kd-tree...");
 			diffuseMap.updateTree();
-			Y_INFO << integratorName << ": Done." << yendl;
+			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
 	}
 	else
@@ -399,13 +399,13 @@ bool photonIntegrator_t::preprocess()
 
 		lightPowerD = new pdf1D_t(energies, numCLights);
 		
-		Y_INFO << integratorName << ": Light(s) photon color testing for caustics map:" << yendl;
+		Y_VERBOSE << integratorName << ": Light(s) photon color testing for caustics map:" << yendl;
 		for(int i=0;i<numCLights;++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
+			Y_VERBOSE << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 		}
 		
 		delete[] energies;
@@ -533,14 +533,14 @@ bool photonIntegrator_t::preprocess()
 		delete lightPowerD;
 		
 		Y_INFO << integratorName << ": Shot "<<curr<<" caustic photons from " << numCLights <<" light(s)." << yendl;
-		Y_INFO << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
+		Y_VERBOSE << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
 		
 		if(causticMap.nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
 			pb->setTag("Building caustic photons kd-tree...");
 			causticMap.updateTree();
-			Y_INFO << integratorName << ": Done." << yendl;
+			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
 	}
 	else
@@ -636,9 +636,9 @@ bool photonIntegrator_t::preprocess()
 		if(!pbar) delete pbar;
 		free(gathered);
 #endif
-		Y_INFO << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
+		Y_VERBOSE << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
 		radianceMap.updateTree();
-		Y_INFO << integratorName << ": Done." << yendl;
+		Y_VERBOSE << integratorName << ": Done." << yendl;
 	}
 
 	gTimer.stop("prepass");
@@ -1051,6 +1051,9 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	ite->aoSamples = AO_samples;
 	ite->aoDist = AO_dist;
 	ite->aoCol = AO_col;
+	
+	if(enable_caustics) Y_PARAMS << ite->integratorName << ": caustics: photons=" << numCPhotons << ", mix=" << caustic_mix << yendl;
+	
 	return ite;
 }
 

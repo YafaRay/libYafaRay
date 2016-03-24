@@ -145,22 +145,22 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 	int AA_resampled_floor_pixels = (int) floorf(AA_resampled_floor * (float) imageFilm->getTotalPixels() / 100.f);
 
-	Y_INFO << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
-	Y_INFO << integratorName << ": Min. " << AA_samples << " samples" << yendl;
-	Y_INFO << integratorName << ": "<< AA_inc_samples << " per additional pass" << yendl;
-	Y_INFO << integratorName << ": Resampled pixels floor: "<< AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;
-	Y_INFO << integratorName << ": AA_sample_multiplier_factor: "<< AA_sample_multiplier_factor << yendl;
-	Y_INFO << integratorName << ": AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
-	Y_INFO << integratorName << ": AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
-	Y_INFO << integratorName << ": AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
-	Y_INFO << integratorName << ": AA_dark_threshold_factor: "<< AA_dark_threshold_factor << yendl;
-	Y_INFO << integratorName << ": AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
-	Y_INFO << integratorName << ": AA_variance_pixels: "<< AA_variance_pixels << yendl;
-	Y_INFO << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
-	Y_INFO << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
-	Y_INFO << integratorName << ": Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
+	Y_PARAMS << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
+	Y_PARAMS << "Min. " << AA_samples << " samples" << yendl;
+	Y_PARAMS << AA_inc_samples << " per additional pass" << yendl;
+	Y_PARAMS << "Resampled pixels floor: "<< AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;
+	Y_PARAMS << "AA_sample_multiplier_factor: "<< AA_sample_multiplier_factor << yendl;
+	Y_PARAMS << "AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
+	Y_PARAMS << "AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
+	Y_PARAMS << "AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
+	Y_PARAMS << "AA_dark_threshold_factor: "<< AA_dark_threshold_factor << yendl;
+	Y_PARAMS << "AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
+	Y_PARAMS << "AA_variance_pixels: "<< AA_variance_pixels << yendl;
+	Y_PARAMS << "AA_clamp_samples: "<< AA_clamp_samples << yendl;
+	Y_PARAMS << "AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
+	Y_PARAMS << "Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
-	Y_INFO << integratorName << ": " << passString.str() << yendl;
+	Y_INFO << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
 
 	gTimer.addEvent("rendert");
@@ -212,7 +212,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 			float AA_variation_ratio = std::min(8.f, ((float) AA_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal. 
 			AA_threshold *= (1.f - 0.1f * AA_variation_ratio);
 			
-			Y_INFO << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor_pixels << "): new AA Threshold (-" << AA_variation_ratio * 0.1f * 100.f << "%) for next pass = " << AA_threshold << yendl;
+			Y_VERBOSE << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor_pixels << "): new AA Threshold (-" << AA_variation_ratio * 0.1f * 100.f << "%) for next pass = " << AA_threshold << yendl;
 		} 
 	}
 	maxDepth = 0.f;

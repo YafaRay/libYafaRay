@@ -177,7 +177,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		fclose(fp);
 	}
 	
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 	
 	return true;
 }
@@ -602,7 +602,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	if (ColorMap) delete ColorMap;
 	ColorMap = NULL;
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }

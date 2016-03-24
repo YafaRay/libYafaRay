@@ -599,7 +599,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	outMutex.unlock();
 
-	Y_INFO << "imageFilm: Done." << yendl;
+	Y_VERBOSE << "imageFilm: Done." << yendl;
 }
 
 bool imageFilm_t::doMoreSamples(int x, int y) const

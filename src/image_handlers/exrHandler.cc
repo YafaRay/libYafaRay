@@ -62,12 +62,6 @@ private:
 
 exrHandler_t::exrHandler_t()
 {
-	m_width = 0;
-	m_height = 0;
-	m_hasAlpha = false;
-	m_MultiLayer = false;
-	m_DrawParams = false;
-
 	handlerName = "EXRHandler";
 }
 
@@ -130,7 +124,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	try
 	{
 		file.writePixels(m_height);
-		Y_INFO << handlerName << ": Done." << yendl;
+		Y_VERBOSE << handlerName << ": Done." << yendl;
 		return true;
 	}
 	catch (const std::exception &exc)
@@ -157,7 +151,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
     {
 		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
-		Y_INFO << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
+		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
         
         const std::string channelR_string = extPassName + "R";
         const std::string channelG_string = extPassName + "G";
@@ -188,7 +182,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 	try
 	{
 		file.writePixels(m_height);
-		Y_INFO << handlerName << ": Done." << yendl;
+		Y_VERBOSE << handlerName << ": Done." << yendl;
 		return true;
 	}
 	catch (const std::exception &exc)

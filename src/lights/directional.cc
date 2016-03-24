@@ -74,7 +74,7 @@ void directionalLight_t::init(scene_t &scene)
 		radius = worldRadius;
 	}
 	areaPdf = 1.f/ (radius*radius); // Pi cancels out with our weird conventions :p
-	Y_INFO << "DirectionalLight: pos " << position << " world radius: " << worldRadius << yendl;
+	Y_VERBOSE << "DirectionalLight: pos " << position << " world radius: " << worldRadius << yendl;
 }
 
 
@@ -164,7 +164,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	{
 		if(!params.getParam("from",from))
 		{
-			if(params.getParam("position",from)) Y_INFO << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << yendl;
+			if(params.getParam("position",from)) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << yendl;
 		}
 		params.getParam("radius",rad);
 	}

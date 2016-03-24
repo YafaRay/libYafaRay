@@ -62,7 +62,7 @@ void areaLight_t::init(scene_t &scene)
 	{
 		object3d_t *obj = scene.getObject(objID);
 		if(obj) obj->setLight(this);
-		else Y_INFO << "AreaLight: Invalid object ID given!" << yendl;
+		else Y_WARNING << "AreaLight: Invalid object ID given!" << yendl;
 	}
 }
 

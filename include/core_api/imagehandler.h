@@ -25,6 +25,8 @@
 
 #include "yafray_constants.h"
 #include <utilities/image_buffers.h>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <core_api/renderpasses.h>
 
@@ -43,6 +45,8 @@ enum textureOptimization_t
 class YAFRAYCORE_EXPORT imageHandler_t
 {
 public:
+	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(NULL), rgbaCompressedBuffer(NULL), rgbOptimizedBuffer(NULL), rgbCompressedBuffer(NULL), m_MultiLayer(false), m_DrawParams(false) {};
+
 	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false, bool draw_params = false) = 0;
 	virtual ~imageHandler_t() {};
 	virtual bool loadFromFile(const std::string &name) = 0;

@@ -353,7 +353,7 @@ bool mcIntegrator_t::createCausticMap()
 		for(int i=0;i<numLights;++i) energies[i] = causLights[i]->totalEnergy().energy();
 		pdf1D_t *lightPowerD = new pdf1D_t(energies, numLights);
 
-		Y_INFO << integratorName << ": Light(s) photon color testing for caustics map:" << yendl;
+		Y_VERBOSE << integratorName << ": Light(s) photon color testing for caustics map:" << yendl;
 		color_t pcol(0.f);
 
 		for(int i=0;i<numLights;++i)
@@ -361,7 +361,7 @@ bool mcIntegrator_t::createCausticMap()
 			pcol = causLights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 			lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
+			Y_VERBOSE << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 		}
 
 		delete[] energies;
@@ -490,9 +490,9 @@ bool mcIntegrator_t::createCausticMap()
 		}
 		pb->done();
 		pb->setTag("Caustic photon map built.");
-		Y_INFO << integratorName << ": Done." << yendl;
+		Y_VERBOSE << integratorName << ": Done." << yendl;
 		Y_INFO << integratorName << ": Shot " << curr << " caustic photons from " << numLights <<" light(s)." << yendl;
-		Y_INFO << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
+		Y_VERBOSE << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
 
 		delete lightPowerD;
 
@@ -500,7 +500,7 @@ bool mcIntegrator_t::createCausticMap()
 		{
 			pb->setTag("Building caustic photons kd-tree...");
 			causticMap.updateTree();
-			Y_INFO << integratorName << ": Done." << yendl;
+			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
 
 		if(!intpb) delete pb;
@@ -508,7 +508,7 @@ bool mcIntegrator_t::createCausticMap()
 	}
 	else
 	{
-		Y_INFO << integratorName << ": No caustic source lights found, skiping caustic map building..." << yendl;
+		Y_VERBOSE << integratorName << ": No caustic source lights found, skiping caustic map building..." << yendl;
 	}
 
 	return true;

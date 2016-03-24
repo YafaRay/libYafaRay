@@ -87,9 +87,9 @@ void check_path(std::vector<pathEvalVert_t> &p, int s, int t)
 	for(int i=0; i<s+t; ++i)
 	{
 		pathEvalVert_t &v = p[i];
-		if(v.pdf_f == -1.f) std::cout << "path[" << i << "].pdf_f uninitialized! (s="<<s<<" t="<<t<<")\n";
-		if(v.pdf_b == -1.f)  std::cout << "path[" << i << "].pdf_b uninitialized! (s="<<s<<" t="<<t<<")\n";
-		if(v.G == -1.f)  std::cout << "path[" << i << "].G uninitialized! (s="<<s<<" t="<<t<<")\n";
+		if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
+		if(v.pdf_b == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
+		if(v.G == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
 	}
 #endif
 }
@@ -203,8 +203,8 @@ bool biDirIntegrator_t::preprocess()
 
 	for(int i=0; i<numLights; ++i) invLightPowerD[lights[i]] = lightPowerD->func[i] * lightPowerD->invIntegral;
 
-	for(int i=0; i<numLights; ++i) std::cout << energies[i] << " (" << lightPowerD->func[i] << ") ";
-	std::cout << "\n== preprocess(): lights: " << numLights << " invIntegral:" << lightPowerD->invIntegral << std::endl;
+	for(int i=0; i<numLights; ++i) Y_DEBUG << integratorName << ": " << energies[i] << " (" << lightPowerD->func[i] << ") " << yendl;
+	Y_DEBUG << integratorName << ": preprocess(): lights: " << numLights << " invIntegral:" << lightPowerD->invIntegral << yendl;
 
 	delete[] energies;
 
@@ -221,14 +221,14 @@ bool biDirIntegrator_t::preprocess()
 	float pdf;
 	ray_t wo = cam->shootRay(10.25, 10.25, 0, 0, wt);
 	bool proj = cam->project(wo, 0, 0, u, v, pdf);
-	std::cout << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")" << std::endl;
+	Y_DEBUG << integratorName << ": " << "camera u=" << u << " v=" << v << " pdf=" << pdf << " (returned " << proj << ")" << yendl;
 	float integral = 0.f;
 	for(int i=0; i<10000; ++i)
 	{
 	    wo.dir = SampleSphere((float)i/10000.f, RI_vdC(i));
 	    if( cam->project(wo, 0, 0, u, v, pdf) ) integral += pdf;
 	}
-	std::cout << "Camera pdf integral: " << integral/10000.f << std::endl;
+	Y_DEBUG << integratorName << ": " << "Camera pdf integral: " << integral/10000.f << yendl;
 
 
 	//test...
@@ -245,7 +245,7 @@ bool biDirIntegrator_t::preprocess()
 	    lights[0]->emitPdf(sp, wo.dir, Apdf, dirPdf, cos_wo);
 	    integral += dirPdf;
 	}
-	std::cout << "Light pdf integral: " << integral/10000.f << std::endl;
+	Y_DEBUG << integratorName << ": " << "Light pdf integral: " << integral/10000.f << yendl;
 	*/
 
 	return true;
@@ -253,7 +253,7 @@ bool biDirIntegrator_t::preprocess()
 
 void biDirIntegrator_t::cleanup()
 {
-//	std::cout << "cleanup: flushing light image" << std::endl;
+//	Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << yendl;
 	int nPaths=0;
 	for(int i=0; i<(int)threadData.size(); ++i)
 	{
@@ -325,7 +325,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		// test!
 		ls.areaPdf *= lightNumPdf;
 
-		if(dbg<10) std::cout << "lightNumPdf=" << lightNumPdf << std::endl;
+		if(dbg<10) Y_DEBUG << integratorName << ": " << "lightNumPdf=" << lightNumPdf << yendl;
 		++dbg;
 
 		// setup vl
@@ -491,7 +491,7 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 		v.G = v_prev.cos_wo * v.cos_wi / v.ds;
 		++nVert;
 		state.userdata = v.userdata;
-        //if(dbg<10) std::cout << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << std::endl;
+        //if(dbg<10) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << yendl;
 		mat->initBSDF(state, v.sp, mBSDF);
 		// create tentative sample for next path segment
 		sample_t s(prng(), prng(), BSDF_ALL, true);
@@ -520,8 +520,8 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 			v.pdf_wi = mat->pdf(state, v.sp, ray.dir, v.wi, BSDF_ALL); // all BSDFs? think so...
 			v.qi_wi = std::min( 0.98f, v.f_s.col2bri()*v.cos_wi / v.pdf_wi );
 		}
-		if(v.qi_wi < 0) std::cout << "v["<<nVert<<"].qi_wi="<<v.qi_wi<<" ("<<v.f_s.col2bri()<<" "<<v.cos_wi<<" "<<v.pdf_wi<<")\n"
-			                          <<"\t"<<v.pdf_wo<<"  flags:"<<s.sampledFlags<<std::endl;
+		if(v.qi_wi < 0) Y_DEBUG << integratorName << ": " << "v["<<nVert<<"].qi_wi="<<v.qi_wi<<" ("<<v.f_s.col2bri()<<" "<<v.cos_wi<<" "<<v.pdf_wi<<")\n"
+			                          <<"\t"<<v.pdf_wo<<"  flags:"<<s.sampledFlags<<yendl;
 
 		v.flags = s.sampledFlags;
 		v.wo = ray.dir;
@@ -897,7 +897,7 @@ color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd
 
 	color_t C_uw = lcol * pd.f_z * z.alpha * std::fabs(z.sp.N*lRay.dir); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	// hence c_st is only cos_x1_b * f_z...like path tracing
-	//if(dbg < 10) std::cout << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << std::endl;
+	//if(dbg < 10) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << yendl;
 	++dbg;
 	return C_uw;
 }

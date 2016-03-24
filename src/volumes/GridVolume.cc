@@ -47,13 +47,13 @@ class GridVolume : public DensityVolume {
 				short i0 = 0, i1 = 0;
 				inputStream.read( (char*)&i0, 1 );
 				inputStream.read( (char*)&i1, 1 );
-				Y_INFO << "GridVolume: " << i0 << " " << i1 << yendl;
+				Y_VERBOSE << "GridVolume: " << i0 << " " << i1 << yendl;
 				dim[i] = (((unsigned short)i0 << 8) | (unsigned short)i1);
 			}
 			
 			int sizePerVoxel = fileSize / (dim[0] * dim[1] * dim[2]);
 
-			Y_INFO << "GridVolume: " <<  dim[0] <<  " " << dim[1] <<  " " << dim[2] << " " << fileSize << " " << sizePerVoxel << yendl;
+			Y_VERBOSE << "GridVolume: " <<  dim[0] <<  " " << dim[1] <<  " " << dim[2] << " " << fileSize << " " << sizePerVoxel << yendl;
 
 			sizeX = dim[0];
 			sizeY = dim[1];
@@ -89,11 +89,11 @@ class GridVolume : public DensityVolume {
 				}
 			}
 			
-			Y_INFO << "GridVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << "]" << yendl;
+			Y_VERBOSE << "GridVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << "]" << yendl;
 		}
 		
 		~GridVolume() {
-			Y_INFO << "GridVolume: Freeing grid data" << yendl;
+			Y_VERBOSE << "GridVolume: Freeing grid data" << yendl;
 			
 			for (int x = 0; x < sizeX; ++x) {
 				for (int y = 0; y < sizeY; ++y) {

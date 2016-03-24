@@ -171,14 +171,14 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 
 	if(indexExtPasses.at(extPassType) != -1)
 	{
-		//Y_INFO << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
+		//Y_VERBOSE << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
 	}
 	
 	extPasses.push_back(extPass_t(extPassType, intPassType));
 	indexExtPasses.at(extPassType) = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) index of the external pass actually using that index 
 
-	Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
+	if(sExternalPass != "Combined") Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
     intPass_add(intPassType);
     
@@ -222,14 +222,14 @@ void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 	//if(std::binary_search(intPasses.begin(), intPasses.end(), intPassType))
 	if(indexIntPasses.at(intPassType) != -1)
 	{
-		//Y_INFO << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
+		//Y_VERBOSE << "Render Passes: internal pass \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "] already exists, skipping..." << yendl;
 		return;
 	}
 	intPasses.push_back(intPassType);
 	//std::sort(intPasses.begin(), intPasses.end());
 	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) index of the internal pass actually using that index 
 	
-	Y_INFO << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
+	Y_VERBOSE << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
         
 extPassTypes_t renderPasses_t::extPassTypeFromIndex(int extPassIndex) const { return extPasses.at(extPassIndex).extPassType; }

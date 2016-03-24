@@ -168,7 +168,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 		{
 			mShadersTable[*name] = shader;
 			allNodes.push_back(shader);
-			Y_INFO << "NodeMaterial: Added ShaderNode '"<<*name<<"'! ("<<(void*)shader<<")" << yendl;
+			Y_VERBOSE << "NodeMaterial: Added ShaderNode '"<<*name<<"'! ("<<(void*)shader<<")" << yendl;
 		}
 		else
 		{

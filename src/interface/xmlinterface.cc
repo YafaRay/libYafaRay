@@ -16,7 +16,7 @@ void xmlInterface_t::loadPlugins(const char *path) { }
 
 void xmlInterface_t::clearAll()
 {
-	Y_INFO << "XMLInterface: cleaning up..." << yendl;
+	Y_VERBOSE << "XMLInterface: cleaning up..." << yendl;
 	env->clearAll();
 	materials.clear();
 	if(xmlFile.is_open())

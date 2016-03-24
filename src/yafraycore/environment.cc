@@ -47,6 +47,7 @@
 __BEGIN_YAFRAY
 #define ENV_TAG << "Environment: "
 #define Y_INFO_ENV Y_INFO ENV_TAG
+#define Y_VERBOSE_ENV Y_VERBOSE ENV_TAG
 #define Y_ERROR_ENV Y_ERROR ENV_TAG
 #define Y_WARN_ENV Y_WARNING ENV_TAG
 
@@ -56,17 +57,24 @@ __BEGIN_YAFRAY
 #define ErrUnkType(t) Y_ERROR_ENV << "Don't know how to create " << pname << " of type '" << t << "'!" << yendl
 #define ErrOnCreate(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!" << yendl
 
-#define InfoSucces(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
-#define InfoSuccesDisabled(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
+#define InfoSuccess(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
+#define InfoSuccessDisabled(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
 
 #define SuccessReg(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'" << yendl
 
+#define InfoVerboseSuccess(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
+#define InfoVerboseSuccessDisabled(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
+
+#define SuccessVerboseReg(t, name) Y_VERBOSE_ENV << "Registered " << t << " type '" << name << "'" << yendl
+
 renderEnvironment_t::renderEnvironment_t()
-{
+{	
+	yafout.setMemoryLog(&memoryLog);	//Initializes logging storage in memory
+
 #ifdef RELEASE
-	Y_INFO << PACKAGE << " " << VERSION << yendl;
+	Y_PARAMS << PACKAGE << " " << VERSION << yendl;
 #else
-	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
+	Y_PARAMS << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
 	output2 = NULL;
@@ -244,8 +252,8 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 	{
 		light_table[name] = light;
 		
-		if(light->lightEnabled()) InfoSucces(name, type);
-		else InfoSuccesDisabled(name, type);
+		if(light->lightEnabled()) InfoVerboseSuccess(name, type);
+		else InfoVerboseSuccessDisabled(name, type);
 		
 		return light;
 	}
@@ -275,7 +283,7 @@ texture_t* renderEnvironment_t::createTexture(const std::string &name, paraMap_t
 	if(texture)
 	{
 		texture_table[name] = texture;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return texture;
 	}
 	ErrOnCreate(type);
@@ -304,7 +312,7 @@ shaderNode_t* renderEnvironment_t::createShaderNode(const std::string &name, par
 	if(shader)
 	{
 		shader_table[name] = shader;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return shader;
 	}
 	ErrOnCreate(type);
@@ -334,7 +342,7 @@ material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap
 	if(material)
 	{
 		material_table[name] = material;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return material;
 	}
 	ErrOnCreate(type);
@@ -363,7 +371,7 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 	if(background)
 	{
 		background_table[name] = background;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return background;
 	}
 	ErrOnCreate(type);
@@ -419,7 +427,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	{
 		if(addToTable) imagehandler_table[newname.str()] = ih;
 
-		InfoSucces(newname.str(), type);
+		InfoVerboseSuccess(newname.str(), type);
 
 		return ih;
 	}
@@ -451,7 +459,7 @@ object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t
 	if(object)
 	{
 		object_table[name] = object;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return object;
 	}
 	ErrOnCreate(type);
@@ -480,7 +488,7 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 	if(camera)
 	{
 		camera_table[name] = camera;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		int viewNumber = renderPasses.view_names.size();
 		camera->set_camera_name(name);
 		renderPasses.view_names.push_back(camera->get_view_name());
@@ -515,7 +523,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	if(integrator)
 	{
 		integrator_table[name] = integrator;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		if(type == "bidirectional") Y_WARNING << "The Bidirectional integrator is DEPRECATED. It might give unexpected and perhaps even incorrect render results. This integrator is no longer supported, will not receive any fixes/updates in the short/medium term and might be removed in future versions. Use at your own risk." << yendl; 
 		return integrator;
 	}
@@ -594,7 +602,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string2 == "Raw_Manual_Gamma") color_space2 = RAW_MANUAL_GAMMA;
 	else color_space2 = SRGB;
 	
-   	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+    output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
@@ -612,7 +620,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
 		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
 	}
-	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
+	else Y_VERBOSE_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
 	
@@ -657,7 +665,7 @@ volumeHandler_t* renderEnvironment_t::createVolumeH(const std::string &name, con
 	if(volume)
 	{
 		volume_table[name] = volume;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return volume;
 	}
 	ErrOnCreate(type);
@@ -686,7 +694,7 @@ VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, p
 	if(volumeregion)
 	{
 		volumeregion_table[name] = volumeregion;
-		InfoSucces(name, type);
+		InfoVerboseSuccess(name, type);
 		return volumeregion;
 	}
 	ErrOnCreate(type);
@@ -829,61 +837,61 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 void renderEnvironment_t::registerFactory(const std::string &name,light_factory_t *f)
 {
 	light_factory[name]=f;
-	SuccessReg("Light", name);
+	SuccessVerboseReg("Light", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,material_factory_t *f)
 {
 	material_factory[name]=f;
-	SuccessReg("Material", name);
+	SuccessVerboseReg("Material", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,texture_factory_t *f)
 {
 	texture_factory[name]=f;
-	SuccessReg("Texture", name);
+	SuccessVerboseReg("Texture", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,shader_factory_t *f)
 {
 	shader_factory[name]=f;
-	SuccessReg("ShaderNode", name);
+	SuccessVerboseReg("ShaderNode", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,object_factory_t *f)
 {
 	object_factory[name]=f;
-	SuccessReg("Object", name);
+	SuccessVerboseReg("Object", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,camera_factory_t *f)
 {
 	camera_factory[name]=f;
-	SuccessReg("Camera", name);
+	SuccessVerboseReg("Camera", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,background_factory_t *f)
 {
 	background_factory[name]=f;
-	SuccessReg("Background", name);
+	SuccessVerboseReg("Background", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,integrator_factory_t *f)
 {
 	integrator_factory[name]=f;
-	SuccessReg("Integrator", name);
+	SuccessVerboseReg("Integrator", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,volume_factory_t *f)
 {
 	volume_factory[name]=f;
-	SuccessReg("VolumetricHandler", name);
+	SuccessVerboseReg("VolumetricHandler", name);
 }
 
 void renderEnvironment_t::registerFactory(const std::string &name,volumeregion_factory_t *f)
 {
 	volumeregion_factory[name]=f;
-	SuccessReg("VolumeRegion", name);
+	SuccessVerboseReg("VolumeRegion", name);
 }
 
 void renderEnvironment_t::registerImageHandler(const std::string &name, const std::string &validExtensions, const std::string &fullName, imagehandler_factory_t *f)
@@ -891,7 +899,7 @@ void renderEnvironment_t::registerImageHandler(const std::string &name, const st
 	imagehandler_factory[name] = f;
 	imagehandler_fullnames[name] = fullName;
 	imagehandler_extensions[name] = validExtensions;
-	SuccessReg("ImageHandler", name);
+	SuccessVerboseReg("ImageHandler", name);
 }
 
 std::vector<std::string> renderEnvironment_t::listImageHandlers()

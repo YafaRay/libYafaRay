@@ -7,7 +7,7 @@
 __BEGIN_YAFRAY
 
 #define printBar(progEmpty, progFull, per) \
-std::cout << "\r" << setColor(Green) << "INFO: " << \
+std::cout << "\r" << setColor(Green) << "Progress: " << \
 setColor(Red, true) << "[" << setColor(Green, true) << std::string(progFull, '#') << std::string(progEmpty, ' ') << setColor(Red, true) << "] " << \
 setColor() << "(" << setColor(Yellow, true) << per << "%" << setColor() << ")" << std::flush
 

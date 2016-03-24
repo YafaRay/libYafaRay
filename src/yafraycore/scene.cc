@@ -346,7 +346,7 @@ void scene_t::setNumThreads(int threads)
 
 	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_INFO << "Automatic Detection of Threads: Active." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads: Active." << yendl;
 
 #ifdef WIN32
 		SYSTEM_INFO info;
@@ -368,14 +368,14 @@ void scene_t::setNumThreads(int threads)
 	#	endif
 #endif
 
-		Y_INFO << "Number of Threads supported: [" << nthreads << "]." << yendl;
+		Y_VERBOSE << "Number of Threads supported: [" << nthreads << "]." << yendl;
 	}
 	else
 	{
-		Y_INFO << "Automatic Detection of Threads: Inactive." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads: Inactive." << yendl;
 	}
 
-	Y_INFO << "Using [" << nthreads << "] Threads." << yendl;
+	Y_PARAMS << "Using [" << nthreads << "] Threads." << yendl;
 }
 
 #define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
@@ -780,7 +780,7 @@ void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, dou
 */
 bool scene_t::update()
 {
-	Y_INFO << "Scene: Mode \"" << ((mode == 0) ? "Triangle" : "Universal" ) << "\"" << yendl;
+	Y_VERBOSE << "Scene: Mode \"" << ((mode == 0) ? "Triangle" : "Universal" ) << "\"" << yendl;
 	if(!camera || !imageFilm) return false;
 	if(state.changes & C_GEOM)
 	{
@@ -815,7 +815,7 @@ bool scene_t::update()
 				tree = new triKdTree_t(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
 				delete [] tris;
 				sceneBound = tree->getBound();
-				Y_INFO << "Scene: New scene bound is:" <<
+				Y_VERBOSE << "Scene: New scene bound is:" <<
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 
@@ -854,7 +854,7 @@ bool scene_t::update()
 				vtree = new kdTree_t<primitive_t>(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */ );
 				delete [] tris;
 				sceneBound = vtree->getBound();
-				Y_INFO << "Scene: New scene bound is:" << yendl <<
+				Y_VERBOSE << "Scene: New scene bound is:" << yendl <<
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 

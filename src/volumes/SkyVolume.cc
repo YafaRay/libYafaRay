@@ -26,7 +26,7 @@ class SkyVolume : public VolumeRegion {
 			s_s = color_t(0.f);
 			l_e = le;
 			g = 0.f;
-			Y_INFO << "SkyVolume: Vol. [" << s_ray << ", " << s_mie << ", " << l_e << "]" << yendl;
+			Y_VERBOSE << "SkyVolume: Vol. [" << s_ray << ", " << s_mie << ", " << l_e << "]" << yendl;
 		}
 		
 		virtual float p(const vector3d_t &w_l, const vector3d_t &w_s);

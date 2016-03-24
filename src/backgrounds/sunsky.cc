@@ -267,7 +267,7 @@ background_t *sunskyBackground_t::factory(paraMap_t &params,renderEnvironment_t 
 		float invpdf = (2.f * M_PI * (1.f - cosAngle));
 		suncol *= invpdf * power;
 
-		Y_INFO << "Sunsky: sun color = " << suncol << yendl;
+		Y_VERBOSE << "Sunsky: sun color = " << suncol << yendl;
 
 		paraMap_t p;
 		p["type"] = std::string("sunlight");

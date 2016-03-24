@@ -165,7 +165,7 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	TIFFClose(out);
 	_TIFFfree(scanline);
 	
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }
@@ -231,7 +231,7 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	
 	TIFFClose(tif);
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }

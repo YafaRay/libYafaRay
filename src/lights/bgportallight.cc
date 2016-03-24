@@ -88,7 +88,7 @@ void bgPortalLight_t::init(scene_t &scene)
 		mesh->setVisibility(false);
 
 		initIS();
-		Y_INFO << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << yendl;
+		Y_VERBOSE << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << yendl;
 		mesh->setLight(this);
 	}
 }
@@ -99,7 +99,7 @@ void bgPortalLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float
 	int primNum = areaDist->DSample(s1, &primPdf);
 	if(primNum >= areaDist->count)
 	{
-		Y_INFO << "bgPortalLight: Sampling error!" << yendl;
+		Y_WARNING << "bgPortalLight: Sampling error!" << yendl;
 		return;
 	}
 	float ss1, delta = areaDist->cdf[primNum+1];

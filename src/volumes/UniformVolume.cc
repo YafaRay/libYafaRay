@@ -16,7 +16,7 @@ class UniformVolume : public VolumeRegion {
 	
 		UniformVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale) :
 			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgridScale) {
-			Y_INFO << "UniformVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << ", " << pmin << ", " << pmax << ", " << attgridScale << "]" << yendl;
+			Y_VERBOSE << "UniformVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << ", " << pmin << ", " << pmax << ", " << attgridScale << "]" << yendl;
 		}
 	
 		virtual color_t sigma_a(const point3d_t &p, const vector3d_t &v);

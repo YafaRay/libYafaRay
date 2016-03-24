@@ -96,7 +96,10 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 		
 		virtual void setVerbosityLevel(int vlevel);
+		virtual void setVerbosityDebug();
+		virtual void setVerbosityVerbose();
 		virtual void setVerbosityInfo();
+		virtual void setVerbosityParams();
 		virtual void setVerbosityWarning();
 		virtual void setVerbosityError();
 		virtual void setVerbosityMute();
@@ -107,10 +110,12 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual char* getVersion() const; //!< Get version to check aginst the exporters
 		
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
+		void printDebug(const std::string &msg);
+		void printVerbose(const std::string &msg);
 		void printInfo(const std::string &msg);
+		void printParams(const std::string &msg);
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);
-		void printLog(const std::string &msg);
 		
 		void setInputColorSpace(std::string color_space_string, float gammaVal);
 		void setOutput2(colorOutput_t *out2);

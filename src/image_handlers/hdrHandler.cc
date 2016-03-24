@@ -196,7 +196,7 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 
 	file.close();
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }
@@ -436,7 +436,7 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	else
 	{
 		Y_INFO << handlerName << ": Saving RGBE file as \"" << name << "\"..." << yendl;
-		if (m_hasAlpha) Y_INFO << handlerName << ": Ignoring alpha channel." << yendl;
+		if (m_hasAlpha) Y_VERBOSE << handlerName << ": Ignoring alpha channel." << yendl;
 
 		writeHeader(file);
 
@@ -468,7 +468,7 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		file.close();
 	}
 
-	Y_INFO << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }

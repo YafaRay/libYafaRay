@@ -99,11 +99,11 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 	
 	for(u_int32 i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
 	
-	Y_INFO << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements..." << yendl;
+	Y_VERBOSE << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements..." << yendl;
 	
 	buildTree(0, nElements, treeBound, elements);
 	
-	Y_INFO << "pointKdTree: Tree built." << yendl;
+	Y_VERBOSE << "pointKdTree: Tree built." << yendl;
 	
 	delete[] elements;
 }
@@ -236,7 +236,7 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 	++Y_LOOKUPS;
 	if(Y_LOOKUPS == 159999)
 	{
-		Y_INFO << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS)/double(Y_LOOKUPS) << yendl;
+		Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS)/double(Y_LOOKUPS) << yendl;
 	}
 #endif
 }

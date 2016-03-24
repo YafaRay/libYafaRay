@@ -54,8 +54,8 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	AA_light_sample_multiplier = 1.f;
 	AA_indirect_sample_multiplier = 1.f;
 
-	Y_INFO << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
-	Y_INFO << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
+	Y_PARAMS << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
+	Y_PARAMS << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 
 	passString << "Rendering pass 1 of " << std::max(1, passNum) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -347,14 +347,14 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 	lightPowerD = new pdf1D_t(energies, numDLights);
 
-	Y_INFO << integratorName << ": Light(s) photon color testing for photon map:" << yendl;
+	Y_VERBOSE << integratorName << ": Light(s) photon color testing for photon map:" << yendl;
 
 	for(int i=0;i<numDLights;++i)
 	{
 		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, lightPdf);
 		lightNumPdf = lightPowerD->func[i] * lightPowerD->invIntegral;
 		pcol *= fNumLights * lightPdf / lightNumPdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		Y_INFO << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
+		Y_VERBOSE << integratorName << ": Light [" << i+1 << "] Photon col:" << pcol << " | lnpdf: " << lightNumPdf << yendl;
 	}
 
 	delete[] energies;
@@ -509,19 +509,19 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	}
 	pb->done();
 	//pb->setTag("Photon map built.");
-	Y_INFO << integratorName << ":Photon map built." << yendl;
+	Y_VERBOSE << integratorName << ":Photon map built." << yendl;
 	Y_INFO << integratorName << ": Shot " << curr << " photons from " << numDLights << " light(s)" << yendl;
 	delete lightPowerD;
 
 	totalnPhotons +=  nPhotons;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	Y_INFO << integratorName << ": Stored photons: "<< diffuseMap.nPhotons() + causticMap.nPhotons() << yendl;
+	Y_VERBOSE << integratorName << ": Stored photons: "<< diffuseMap.nPhotons() + causticMap.nPhotons() << yendl;
 
 	if(bHashgrid)
 	{
 		Y_INFO << integratorName << ": Building photons hashgrid:" << yendl;
 		photonGrid.updateGrid();
-		Y_INFO << integratorName << ": Done." << yendl;
+		Y_VERBOSE << integratorName << ": Done." << yendl;
 	}
 	else
 	{
@@ -529,13 +529,13 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 		{
 			Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
 			diffuseMap.updateTree();
-			Y_INFO << integratorName << ": Done." << yendl;
+			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
 		if(causticMap.nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
 			causticMap.updateTree();
-			Y_INFO << integratorName << ": Done." << yendl;
+			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
 		if(diffuseMap.nPhotons() < 50)
 		{

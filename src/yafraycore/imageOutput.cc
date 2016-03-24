@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  * 		imageOutput.cc: generic color output based on imageHandlers
@@ -95,6 +94,7 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
             fnamePass = path + base_name + " [" + "multilayer" + "]"+ ext;
          
             image->saveToFileMultiChannel(fnamePass, renderPasses);
+	    yafout.setImagePath(fnamePass);		//to show the image in the HTML log output
         }
         else
         {
@@ -102,16 +102,29 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
             {
                 std::string passName = renderPasses->intPassTypeStringFromType(renderPasses->intPassTypeFromExtPassIndex(idx));
                 
-                if(numView == 0 && idx == 0) image->saveToFile(fname, idx);	//default image filename, when not using views nor passes and for reloading into Blender
+                if(numView == 0 && idx == 0)
+		{
+		    image->saveToFile(fname, idx);	//default image filename, when not using views nor passes and for reloading into Blender
+		    yafout.setImagePath(fname);		//to show the image in the HTML log output
+		}
 		
 		if(passName != "not found" && (renderPasses->extPassesSize()>=2 || renderPasses->view_names.size() >= 2))
                 {
                     fnamePass = path + base_name + " [pass " + passName + "]"+ ext;
                     image->saveToFile(fnamePass, idx);
+		    if(idx == 0) yafout.setImagePath(fnamePass);	//to show the image in the HTML log output
                 }
             }
         }
     }
+    
+    std::string fLogName = path + base_name + "_log.txt";
+    yafout.saveTxtLog(fLogName);
+    
+    std::string fLogHtmlName = path + base_name + "_log.html";
+    yafout.saveHtmlLog(fLogHtmlName);
+    
+    yafout.clearMemoryLog();
 }
 
 __END_YAFRAY

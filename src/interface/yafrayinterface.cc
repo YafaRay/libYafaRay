@@ -18,11 +18,11 @@ yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inpu
 
 yafrayInterface_t::~yafrayInterface_t()
 {
-	Y_INFO << "Interface: Deleting scene..." << yendl;
+	Y_VERBOSE << "Interface: Deleting scene..." << yendl;
 	if(scene) delete scene;
-	Y_INFO << "Interface: Deleting environment..." << yendl;
+	Y_VERBOSE << "Interface: Deleting environment..." << yendl;
 	if(env) delete env;
-	Y_INFO << "Interface: Done." << yendl;
+	Y_VERBOSE << "Interface: Done." << yendl;
 	if(film) delete film;
 	delete params;
 	delete eparams;
@@ -49,18 +49,18 @@ void yafrayInterface_t::loadPlugins(const char *path)
 
 void yafrayInterface_t::clearAll()
 {
-	Y_INFO << "Interface: Cleaning environment..." << yendl;
+	Y_VERBOSE << "Interface: Cleaning environment..." << yendl;
 	env->clearAll();
-	Y_INFO << "Interface: Deleteing scene..." << yendl;
+	Y_VERBOSE << "Interface: Deleting scene..." << yendl;
 	if(scene) delete scene;
-	Y_INFO << "Interface: Clearing film and parameter maps scene..." << yendl;
+	Y_VERBOSE << "Interface: Clearing film and parameter maps scene..." << yendl;
 	scene = 0;//new scene_t();
 	if(film) delete film;
 	film = 0;
 	params->clear();
 	eparams->clear();
 	cparams = params;
-	Y_INFO << "Interface: Cleanup done." << yendl;
+	Y_VERBOSE << "Interface: Cleanup done." << yendl;
 }
 
 bool yafrayInterface_t::startScene(int type)
@@ -334,9 +334,24 @@ char* yafrayInterface_t::getVersion() const
 #endif
 }
 
+void yafrayInterface_t::printDebug(const std::string &msg)
+{
+	Y_DEBUG << msg << yendl;
+}
+
+void yafrayInterface_t::printVerbose(const std::string &msg)
+{
+	Y_VERBOSE << msg << yendl;
+}
+
 void yafrayInterface_t::printInfo(const std::string &msg)
 {
 	Y_INFO << msg << yendl;
+}
+
+void yafrayInterface_t::printParams(const std::string &msg)
+{
+	Y_PARAMS << msg << yendl;
 }
 
 void yafrayInterface_t::printWarning(const std::string &msg)
@@ -347,11 +362,6 @@ void yafrayInterface_t::printWarning(const std::string &msg)
 void yafrayInterface_t::printError(const std::string &msg)
 {
 	Y_ERROR << msg << yendl;
-}
-
-void yafrayInterface_t::printLog(const std::string &msg)
-{
-	Y_LOG << msg << yendl;
 }
 
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
@@ -382,9 +392,24 @@ void yafrayInterface_t::setVerbosityLevel(int vlevel)
 	yafout.setMasterVerbosity(vlevel);
 }
 
+void yafrayInterface_t::setVerbosityDebug()
+{
+	yafout.setMasterVerbosity(VL_DEBUG);
+}
+
+void yafrayInterface_t::setVerbosityVerbose()
+{
+	yafout.setMasterVerbosity(VL_VERBOSE);
+}
+
 void yafrayInterface_t::setVerbosityInfo()
 {
 	yafout.setMasterVerbosity(VL_INFO);
+}
+
+void yafrayInterface_t::setVerbosityParams()
+{
+	yafout.setMasterVerbosity(VL_PARAMS);
 }
 
 void yafrayInterface_t::setVerbosityWarning()

@@ -79,11 +79,11 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float 
 	thetaS = fAcos(sunDir.z);
 
 	act = (nightSky)?"ON":"OFF";
-	Y_INFO << "DarkSky: Night mode [ " << act << " ]" << yendl;
-	Y_INFO << "DarkSky: Solar Declination in Degrees (" << radToDeg(thetaS) << ")" << yendl;
+	Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << yendl;
+	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << radToDeg(thetaS) << ")" << yendl;
 	act = (clamp)?"active.":"inactive.";
-	Y_INFO << "DarkSky: RGB Clamping " << act << yendl;
-	Y_INFO << "DarkSky: Altitude " << alt << yendl;
+	Y_VERBOSE << "DarkSky: RGB Clamping " << act << yendl;
+	Y_VERBOSE << "DarkSky: Altitude " << alt << yendl;
 
 	cosThetaS = fCos(thetaS);
 	cosTheta2 = cosThetaS * cosThetaS;
@@ -275,7 +275,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	bool castShadows = true;
 	bool castShadowsSun = true;
 
-	Y_INFO << "DarkSky: Begin" << yendl;
+	Y_VERBOSE << "DarkSky: Begin" << yendl;
 
 	params.getParam("from", dir);
 	params.getParam("turbidity", turb);
@@ -329,7 +329,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		color_t suncol = darkSky->getAttenuatedSunColor();
 		double angle = 0.5 * (2.0 - d.z);
 
-		Y_INFO << "DarkSky: SunColor = " << suncol << yendl;
+		Y_VERBOSE << "DarkSky: SunColor = " << suncol << yendl;
 
 		paraMap_t p;
 		p["type"] = std::string("sunlight");
@@ -342,7 +342,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		p["shoot_caustics"] = caus;
 		p["shoot_diffuse"] = diff;
 
-		Y_INFO << "DarkSky: Adding a \"Real Sun\"" << yendl;
+		Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
 		light_t *light = render.createLight("DarkSky_RealSun", p);
 
@@ -358,7 +358,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["shoot_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 
-		Y_INFO << "DarkSky: Adding background light" << yendl;
+		Y_VERBOSE << "DarkSky: Adding background light" << yendl;
 
 		light_t *bglight = render.createLight("DarkSky_bgLight", bgp);
 
@@ -367,7 +367,7 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		if(bglight) render.getScene()->addLight(bglight);
 	}
 
-	Y_INFO << "DarkSky: End" << yendl;
+	Y_VERBOSE << "DarkSky: End" << yendl;
 
 	return darkSky;
 }
