@@ -76,7 +76,6 @@ renderEnvironment_t::renderEnvironment_t()
 #endif
 	object_factory["sphere"] = sphere_factory;
 	output2 = NULL;
-	paramsBadgeHeight = 140;	//Height of the parameters badge below the rendered area
 }
 
 template <class T>
@@ -811,11 +810,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
 	film->setAAParams(aaSettings.str());
-	if(logging_title) film->setBadgeTitle(*logging_title);
-	if(logging_author) film->setBadgeAuthor(*logging_author);
-	if(logging_contact) film->setBadgeContact(*logging_contact);
-	if(logging_comments) film->setBadgeComments(*logging_comments);
-	if(logging_customIcon) film->setBadgeCustomIcon(*logging_customIcon);
+	if(logging_title) yafLog.setLoggingTitle(*logging_title);
+	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
+	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
+	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
+	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
 
 	//setup scene and render.
 	scene.setImageFilm(film);

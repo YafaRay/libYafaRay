@@ -778,32 +778,6 @@ void imageFilm_t::setIntegParams(const std::string &integ_params)
 	integratorSettings = integ_params;
 }
 
-void imageFilm_t::setBadgeTitle(const std::string &title)
-{
-	mBadgeTitle = title;
-}
-
-void imageFilm_t::setBadgeAuthor(const std::string &author)
-{
-	mBadgeAuthor = author;
-}
-
-void imageFilm_t::setBadgeContact(const std::string &contact)
-{
-	mBadgeContact = contact;
-}
-
-void imageFilm_t::setBadgeComments(const std::string &comments)
-{
-	mBadgeComments = comments;
-}
-
-void imageFilm_t::setBadgeCustomIcon(const std::string &iconPath)
-{
-	mBadgeCustomIcon = iconPath;
-}
-
-
 void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
 {
 	AA_detect_color_noise = detect_color_noise;
@@ -848,7 +822,7 @@ void imageFilm_t::drawRenderSettings()
 {
 	if(dpimage) return;
 
-	dpHeight = env->getParamsBadgeHeight();
+	dpHeight = yafLog.getBadgeHeight();
 
 	dpimage = new rgba2DImage_nw_t(w, dpHeight);
 #ifdef HAVE_FREETYPE
@@ -866,11 +840,11 @@ void imageFilm_t::drawRenderSettings()
 
 	std::stringstream ss;
 
-	if(!mBadgeTitle.empty()) ss << mBadgeTitle << "\n";
-	if(!mBadgeAuthor.empty() && !mBadgeContact.empty()) ss << mBadgeAuthor << " | " << mBadgeContact << "\n";
-	else if(!mBadgeAuthor.empty() && mBadgeContact.empty()) ss << mBadgeAuthor << "\n";
-	else if(mBadgeAuthor.empty() && !mBadgeContact.empty()) ss << mBadgeContact << "\n";
-	if(!mBadgeComments.empty()) ss << mBadgeComments << "\n";
+	if(!yafLog.getLoggingTitle().empty()) ss << yafLog.getLoggingTitle() << "\n";
+	if(!yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << " | " << yafLog.getLoggingContact() << "\n";
+	else if(!yafLog.getLoggingAuthor().empty() && yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << "\n";
+	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingContact() << "\n";
+	if(!yafLog.getLoggingComments().empty()) ss << yafLog.getLoggingComments() << "\n";
 
 	ss << "\nYafaRay (" << version << ")";
 
@@ -984,9 +958,9 @@ void imageFilm_t::drawRenderSettings()
 	bool logo_loaded = false;
 	imageHandler_t *logo = NULL;
 
-	if(!mBadgeCustomIcon.empty())
+	if(!yafLog.getLoggingCustomIcon().empty())
 	{
-		std::string iconExtension = mBadgeCustomIcon.substr(mBadgeCustomIcon.find_last_of(".") + 1);
+		std::string iconExtension = yafLog.getLoggingCustomIcon().substr(yafLog.getLoggingCustomIcon().find_last_of(".") + 1);
 		std::transform(iconExtension.begin(), iconExtension.end(),iconExtension.begin(), ::tolower);
 		
 		std::string imageHandlerType = "png";
@@ -996,8 +970,8 @@ void imageFilm_t::drawRenderSettings()
 		ihParams["type"] = imageHandlerType;
 		logo = env->createImageHandler("logoLoader", ihParams, false);
 	
-		if(logo && logo->loadFromFile(mBadgeCustomIcon)) logo_loaded = true;
-		else Y_WARNING << "imageFilm: custom params badge icon '" << mBadgeCustomIcon << "' could not be loaded. Using default YafaRay icon." << yendl;
+		if(logo && logo->loadFromFile(yafLog.getLoggingCustomIcon())) logo_loaded = true;
+		else Y_WARNING << "imageFilm: custom params badge icon '" << yafLog.getLoggingCustomIcon() << "' could not be loaded. Using default YafaRay icon." << yendl;
 	}
 
 	if(!logo_loaded)

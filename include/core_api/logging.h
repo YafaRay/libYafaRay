@@ -45,167 +45,83 @@ enum
 
 class YAFRAYCORE_EXPORT logEntry_t
 {
-public:
-	logEntry_t(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
-	std::time_t eventDateTime;
-	int mVerbLevel;
-	std::string eventDescription;
+	friend class yafarayLog_t;
+	
+	public:
+		logEntry_t(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
+
+	protected:
+		std::time_t eventDateTime;
+		int mVerbLevel;
+		std::string eventDescription;
 };
 	
 
 class YAFRAYCORE_EXPORT yafarayLog_t
 {
-	int mVerbLevel;
-	int mConsoleMasterVerbLevel;
-	int mLogMasterVerbLevel;
-	std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
-	std::string imagePath;
-
-public:
-
-	yafarayLog_t(): mVerbLevel(VL_INFO), mConsoleMasterVerbLevel(VL_INFO), mLogMasterVerbLevel(VL_VERBOSE), imagePath("") {}
-	
-	~yafarayLog_t() {}
-
-	void setImagePath(const std::string &path)
-	{
-		imagePath = path;
-	}
-
-	void saveTxtLog(const std::string &name)
-	{
-		std::ofstream txtLogFile;
-		txtLogFile.open(name.c_str());
-
-		if(!m_MemoryLog.empty()) 
-		{
-			for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
-			{
-				txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << "] ";
-
-				switch(it->mVerbLevel)
-				{
-					case VL_DEBUG:		txtLogFile << "**DEBUG**: "; break;
-					case VL_VERBOSE:	txtLogFile << "VERB: "; break;
-					case VL_INFO:		txtLogFile << "INFO: "; break;
-					case VL_PARAMS:		txtLogFile << "PARM: "; break;
-					case VL_WARNING:	txtLogFile << "WARNING: "; break;
-					case VL_ERROR:		txtLogFile << "ERROR: "; break;
-					default:			txtLogFile << "LOG: "; break;
-				}
-
-				txtLogFile << it->eventDescription;
-			}
-		}
-	}
-
-
-	void saveHtmlLog(const std::string &name)
-	{
-		std::ofstream htmlLogFile;
-		htmlLogFile.open(name.c_str());
-
-		if(!m_MemoryLog.empty()) 
-		{
-			htmlLogFile << "<!DOCTYPE html>" << std::endl;
-			htmlLogFile << "<html><head><meta charset=\"UTF-8\">" << std::endl;
-			htmlLogFile << "<title>YafaRay Log: " << name << "</title></head>" << std::endl;
-			htmlLogFile << "<body>" << std::endl;
-			if(!imagePath.empty()) htmlLogFile << "<img src=\"" << imagePath << "\" width=\"500\"/>" << std::endl;
-			htmlLogFile << "<table><th>Date</th><th>Time</th><th>Severity</th><th>Description</th>" << std::endl;
-			
-			for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
-			{
-				htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td>";
-
-				switch(it->mVerbLevel)
-				{
-					case VL_DEBUG:		htmlLogFile << "<td BGCOLOR=#ff80ff>**DEBUG**: "; break;
-					case VL_VERBOSE:	htmlLogFile << "<td BGCOLOR=#80ff80>VERB: "; break;
-					case VL_INFO:		htmlLogFile << "<td BGCOLOR=#40ff40>INFO: "; break;
-					case VL_PARAMS:		htmlLogFile << "<td BGCOLOR=#80ffff>PARM: "; break;
-					case VL_WARNING:	htmlLogFile << "<td BGCOLOR=#ffff00>WARNING: "; break;
-					case VL_ERROR:		htmlLogFile << "<td BGCOLOR=#ff4040>ERROR: "; break;
-					default:			htmlLogFile << "<td>LOG: "; break;
-				}
-
-				htmlLogFile << "</td><td>" << it->eventDescription << "</td></tr>";
-			}
-			htmlLogFile << std::endl << "</table></body></html>" << std::endl;
-		}
-	}
-
-	void clearMemoryLog()
-	{
-		m_MemoryLog.clear();
-		imagePath = "";
-	}
-
-	yafarayLog_t &out(int verbosity_level)
-	{
-		mVerbLevel = verbosity_level;
+	public:
+		yafarayLog_t(): mVerbLevel(VL_INFO), mConsoleMasterVerbLevel(VL_INFO), mLogMasterVerbLevel(VL_VERBOSE), mImagePath(""), mParamsBadgeHeight(150), mSaveLog(false), mSaveHTML(false) {}
 		
-		std::time_t current_datetime = std::time(NULL);
-		if(mVerbLevel <= mLogMasterVerbLevel) m_MemoryLog.push_back(logEntry_t(current_datetime, mVerbLevel, ""));
-		
-		if(mVerbLevel <= mConsoleMasterVerbLevel) 
+		~yafarayLog_t() {}
+
+		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
+		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
+		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
+		void setLoggingComments(const std::string &comments) { mLoggingComments = comments; }
+		void setLoggingCustomIcon(const std::string &iconPath) { mLoggingCustomIcon = iconPath; }
+		void setImagePath(const std::string &path) { mImagePath = path; }
+
+		int getBadgeHeight() const { return mParamsBadgeHeight; } 
+		std::string getLoggingTitle() const { return mLoggingTitle; }
+		std::string getLoggingAuthor() const { return mLoggingAuthor; }
+		std::string getLoggingContact() const { return mLoggingContact; }
+		std::string getLoggingComments() const { return mLoggingComments; }
+		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
+
+		void saveTxtLog(const std::string &name);
+		void saveHtmlLog(const std::string &name);
+		void clearMemoryLog();
+		yafarayLog_t &out(int verbosity_level);
+		void setMasterVerbosity(int vlevel);
+		std::string printTime(std::time_t datetime) const;
+		std::string printDate(std::time_t datetime) const;
+
+		template <typename T>
+		yafarayLog_t & operator << ( const T &obj )
 		{
-			switch(mVerbLevel)
-			{
-				case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] **DEBUG**: " << setColor(); break;
-				case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB: " << setColor(); break;
-				case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO: " << setColor(); break;
-				case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM: " << setColor(); break;
-				case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING: " << setColor(); break;
-				case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR: " << setColor(); break;
-				default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG: " << setColor(); break;
-			}
+			std::ostringstream tmpStream;
+			tmpStream << obj;
+
+			if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
+			if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
+			return *this;
 		}
-		return *this;
-	}
-	
-	void setMasterVerbosity(int vlevel)
-	{
-		mConsoleMasterVerbLevel = std::max( (int)VL_MUTE , std::min( vlevel, (int)VL_DEBUG ) );
-	}
 
-	template <typename T>
-	yafarayLog_t &operator << ( const T &obj )
-	{
-		std::ostringstream tmpStream;
-		tmpStream << obj;
+		yafarayLog_t & operator << ( std::ostream& (obj)(std::ostream&) )
+		{
+			std::ostringstream tmpStream;
+			tmpStream << obj;
 
-		if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
-		//if(mLogOutput && mVerbLevel <= mLogMasterVerbLevel) (*mLogOutput) << obj;
-		if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
-		return *this;
-	}
+			if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
+			if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
+			return *this;
+		}
 
-	yafarayLog_t &operator << ( std::ostream& (obj)(std::ostream&) )
-	{
-		std::ostringstream tmpStream;
-		tmpStream << obj;
 
-		if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
-		//if(mLogOutput && mVerbLevel <= mLogMasterVerbLevel) (*mLogOutput) << obj;
-		if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
-		return *this;
-	}
-	
-	std::string printTime(std::time_t datetime)
-	{
-		char mbstr[20];
-		std::strftime( mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime) );
-		return std::string(mbstr);
-	}
-
-	std::string printDate(std::time_t datetime)
-	{
-		char mbstr[20];
-		std::strftime( mbstr, sizeof(mbstr), "%F", std::localtime(&datetime) );
-		return std::string(mbstr);
-	}
-
+	protected:
+		int mVerbLevel;
+		int mConsoleMasterVerbLevel;
+		int mLogMasterVerbLevel;
+		std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
+		std::string mImagePath;
+		int mParamsBadgeHeight;					//Height of the parameters badge
+		bool mSaveLog;
+		bool mSaveHTML;
+		std::string mLoggingTitle;
+		std::string mLoggingAuthor;
+		std::string mLoggingContact;
+		std::string mLoggingComments;
+		std::string mLoggingCustomIcon;		
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

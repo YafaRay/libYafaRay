@@ -75,7 +75,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		const 			std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }
 		void			setOutput2(colorOutput_t *out2) { output2 = out2; }
 		colorOutput_t*	getOutput2() { return output2; }
-		int				getParamsBadgeHeight() { return paramsBadgeHeight; }
 		
 		void clearAll();
 
@@ -132,7 +131,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		scene_t *curren_scene;
 		renderPasses_t renderPasses;
 		colorOutput_t *output2; //secondary color output to export to file at the same time it's exported to Blender
-		int paramsBadgeHeight;	//Height of the parameters badge
 };
 
 __END_YAFRAY

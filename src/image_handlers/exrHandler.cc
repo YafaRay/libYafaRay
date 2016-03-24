@@ -279,7 +279,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 
 	if(forOutput)
 	{
-		if(drawParams) height += render.getParamsBadgeHeight();
+		if(drawParams) height += yafLog.getBadgeHeight();
 		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer, drawParams);
 	}
 
