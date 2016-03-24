@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 #include <core_api/renderpasses.h>
-#include <core_api/console_verbosity.h>
+#include <core_api/logging.h>
 
 __BEGIN_YAFRAY
 class light_t;

@@ -1,5 +1,5 @@
 /****************************************************************************
- *      console_verbosity.h: Console verbosity control
+ *      logging.h: Console verbosity control
  *      This is part of the yafray package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
