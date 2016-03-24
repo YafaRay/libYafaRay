@@ -102,8 +102,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
 		void setNumSamples(int n){ numSamples = n; }
-		/*! (Deprecated, use setColorSpace instead) Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
-		void setGamma(float gammaVal, bool enable);
 		/*! Sets the film color space and gamma correction */
 		void setColorSpace(colorSpaces_t color_space, float gammaVal);
 		/*! Sets the film color space and gamma correction for optional secondary file output */

@@ -798,11 +798,6 @@ void imageFilm_t::setBadgeComments(const std::string &comments)
 	mBadgeComments = comments;
 }
 
-void imageFilm_t::setCustomString(const std::string &custom)	//DEPRECATED: this is kept only for compatibility purposes
-{
-	setBadgeComments(custom);
-}
-
 void imageFilm_t::setBadgeCustomIcon(const std::string &iconPath)
 {
 	mBadgeCustomIcon = iconPath;

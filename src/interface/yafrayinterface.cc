@@ -220,12 +220,6 @@ void yafrayInterface_t::paramsSetMemMatrix(const char* name, double* matrix, boo
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void yafrayInterface_t::setInputGamma(float gammaVal, bool enable)
-//deprecated: use setInputColorSpace instead
-{
-	setInputColorSpace("Raw_Manual_Gamma", gammaVal);
-}
-
 void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float gammaVal)
 {
 	if(color_space_string == "sRGB") inputColorSpace = SRGB;
