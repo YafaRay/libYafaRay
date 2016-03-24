@@ -69,7 +69,6 @@ renderEnvironment_t::renderEnvironment_t()
 	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
-	Debug=0;
 	output2 = NULL;
 	paramsBadgeHeight = 140;	//Height of the parameters badge below the rendered area
 }

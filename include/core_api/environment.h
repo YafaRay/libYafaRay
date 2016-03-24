@@ -95,7 +95,6 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual std::string getImageFormatFromExtension(const std::string &extension);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
-		int Debug;
 		colorOutput_t *output2; //secondary color output to export to file at the same time it's exported to Blender
 		int paramsBadgeHeight;	//Height of the parameters badge
 

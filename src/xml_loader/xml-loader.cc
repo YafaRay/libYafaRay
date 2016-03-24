@@ -146,8 +146,6 @@ int main(int argc, char *argv[])
 	
 	std::string xmlFile = files[0];
 	
-	//env->Debug = debug; //disabled until proper debugging messages are set throughout the core
-
 	// Set the full output path with filename
 	if (outputPath.empty())
 	{
