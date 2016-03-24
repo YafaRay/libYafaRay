@@ -724,11 +724,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;        
-	const std::string *params_badge_title = 0;
-	const std::string *params_badge_author = 0;
-	const std::string *params_badge_contact = 0;
-	const std::string *params_badge_comments = 0;
-	const std::string *params_badge_customIcon = 0;
+	const std::string *logging_title = 0;
+	const std::string *logging_author = 0;
+	const std::string *logging_contact = 0;
+	const std::string *logging_comments = 0;
+	const std::string *logging_customIcon = 0;
 	std::stringstream aaSettings;
 
 	if(! params.getParam("camera_name", name) )
@@ -789,11 +789,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("drawParams", drawParams);
-	params.getParam("params_badge_author", params_badge_author);
-	params.getParam("params_badge_title", params_badge_title);
-	params.getParam("params_badge_contact", params_badge_contact);
-	params.getParam("params_badge_comments", params_badge_comments);
-	params.getParam("params_badge_customIcon", params_badge_customIcon);
+	params.getParam("logging_author", logging_author);
+	params.getParam("logging_title", logging_title);
+	params.getParam("logging_contact", logging_contact);
+	params.getParam("logging_comments", logging_comments);
+	params.getParam("logging_customIcon", logging_customIcon);
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
@@ -811,11 +811,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
 	film->setAAParams(aaSettings.str());
-	if(params_badge_title) film->setBadgeTitle(*params_badge_title);
-	if(params_badge_author) film->setBadgeAuthor(*params_badge_author);
-	if(params_badge_contact) film->setBadgeContact(*params_badge_contact);
-	if(params_badge_comments) film->setBadgeComments(*params_badge_comments);
-	if(params_badge_customIcon) film->setBadgeCustomIcon(*params_badge_customIcon);
+	if(logging_title) film->setBadgeTitle(*logging_title);
+	if(logging_author) film->setBadgeAuthor(*logging_author);
+	if(logging_contact) film->setBadgeContact(*logging_contact);
+	if(logging_comments) film->setBadgeComments(*logging_comments);
+	if(logging_customIcon) film->setBadgeCustomIcon(*logging_customIcon);
 
 	//setup scene and render.
 	scene.setImageFilm(film);
