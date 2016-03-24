@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
 	"[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
 	
 	parse.setOption("pp","plugin-path", false, "Path to load plugins.");
-	parse.setOption("vl","verbosity-level", false, "Set verbosity level, options are:\n                                       0 - MUTE (Prints nothing)\n                                       1 - ERROR (Prints only errors)\n                                       2 - WARNING (Prints only errors and warnings)\n                                       3 - INFO (Prints all messages)\n");
+	parse.setOption("vl","verbosity-level", false, "Set console verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basi info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
+	parse.setOption("lvl","log-verbosity-level", false, "Set log/HTML files verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basic info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.parseCommandLine();
 	
 #ifdef RELEASE
@@ -41,9 +42,14 @@ int main(int argc, char *argv[])
 	
 	// Plugin load
 	std::string ppath = parse.getOptionString("pp");
-	int verbLevel = parse.getOptionInteger("vl");
+	std::string verbLevel = parse.getOptionString("vl");
+	std::string logVerbLevel = parse.getOptionString("lvl");
 	
-	if(verbLevel >= 0) yafLog.setConsoleMasterVerbosity("verbose");//FIXME DAVID!!
+	if(verbLevel.empty()) yafLog.setConsoleMasterVerbosity("mute");
+	else yafLog.setConsoleMasterVerbosity(verbLevel);
+
+	if(logVerbLevel.empty()) yafLog.setLogMasterVerbosity("verbose");
+	else yafLog.setLogMasterVerbosity(logVerbLevel);
 	
 	if(ppath.empty()) env->getPluginPath(ppath);
 	
