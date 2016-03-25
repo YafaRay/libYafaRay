@@ -94,6 +94,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
 		void clearAll();
+		void splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension);
 		yafarayLog_t &out(int verbosity_level);
 		void setConsoleMasterVerbosity(int vlevel);
 		void setLogMasterVerbosity(int vlevel);

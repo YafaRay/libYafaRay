@@ -21,6 +21,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include <yafray_config.h>
+#include <algorithm>
 
 __BEGIN_YAFRAY
 
@@ -73,7 +74,6 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	}
 }
 
-
 void yafarayLog_t::saveHtmlLog(const std::string &name)
 {
 	if(!mSaveHTML) return;
@@ -81,10 +81,14 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	std::ofstream htmlLogFile;
 	htmlLogFile.open(name.c_str());
 
+	std::string baseImgPath, baseImgFileName, imgExtension;
+
+	splitPath(mImagePath, baseImgPath, baseImgFileName, imgExtension);
+	
 	htmlLogFile << "<!DOCTYPE html>" << std::endl;
 	htmlLogFile << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
 	
-	htmlLogFile << "<title>YafaRay Log: " << mImagePath << "</title>" << std::endl;
+	htmlLogFile << "<title>YafaRay Log: " << baseImgFileName << imgExtension << "</title>" << std::endl;
 	
 	htmlLogFile << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
 
@@ -122,15 +126,18 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 
 	//htmlLogFile << "<header>" << std::endl << "<h1>YafaRay Image HTML file</h1>" << std::endl << "</header>" << std::endl;
 	
-	if(!mImagePath.empty()) htmlLogFile << "<img src=\"" << mImagePath << "\" width=\"768\"/>" << std::endl;
+	std::string extLowerCase = imgExtension;
+	std::transform(extLowerCase.begin(), extLowerCase.end(),extLowerCase.begin(), ::tolower);
+	
+	if(!mImagePath.empty() && (extLowerCase == ".jpg" || extLowerCase == ".jpeg" || extLowerCase == ".png")) htmlLogFile << "<a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << imgExtension << "\"/></a>" << std::endl;
 
 	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Image path:</th><td>" << mImagePath << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << imgExtension << "</td></tr>" << std::endl;
 	if(!mLoggingTitle.empty()) htmlLogFile << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
 	if(!mLoggingAuthor.empty()) htmlLogFile << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
+	if(!mLoggingCustomIcon.empty()) htmlLogFile << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon <<"\"/></a></td></tr>" << std::endl;
 	if(!mLoggingContact.empty()) htmlLogFile << "<tr><th>Contact:</th><td>" << mLoggingContact << "</td></tr>" << std::endl;
 	if(!mLoggingComments.empty()) htmlLogFile << "<tr><th>Comments:</th><td>" << mLoggingComments << "</td></tr>" << std::endl;
-	if(!mLoggingCustomIcon.empty()) htmlLogFile << "<tr><th>Custom Icon:</th><td><img src=\"" << mLoggingCustomIcon << "\" width=\"80\"/></td></tr>" << std::endl;
 	htmlLogFile << "</table>" << std::endl;
 
 	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
@@ -256,6 +263,32 @@ void yafarayLog_t::setIntegratorSettings(const std::string &integ_settings)
 {
 	mIntegratorSettings = integ_settings;
 }
+
+void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension)
+{
+    std::string fullFileName;
+
+    size_t sep = fullFilePath.find_last_of("\\/");
+    if (sep != std::string::npos)
+        fullFileName = fullFilePath.substr(sep + 1, fullFilePath.size() - sep - 1);
+
+    basePath = fullFilePath.substr(0, sep+1);
+
+    if(basePath == "") baseFileName = fullFilePath;
+
+    size_t dot = fullFileName.find_last_of(".");
+
+    if (dot != std::string::npos)
+    {
+        baseFileName = fullFileName.substr(0, dot);
+        extension  = fullFileName.substr(dot, fullFileName.size() - dot);
+    }
+    else
+    {
+        baseFileName = fullFileName;
+        extension  = "";
+    }
+}               
 
 __END_YAFRAY
 
