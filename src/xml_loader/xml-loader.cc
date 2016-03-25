@@ -45,12 +45,12 @@ int main(int argc, char *argv[])
 	std::string verbLevel = parse.getOptionString("vl");
 	std::string logVerbLevel = parse.getOptionString("lvl");
 	
-	if(verbLevel.empty()) yafLog.setConsoleMasterVerbosity("mute");
+	if(verbLevel.empty()) yafLog.setConsoleMasterVerbosity("info");
 	else yafLog.setConsoleMasterVerbosity(verbLevel);
 
 	if(logVerbLevel.empty()) yafLog.setLogMasterVerbosity("verbose");
 	else yafLog.setLogMasterVerbosity(logVerbLevel);
-	
+
 	if(ppath.empty()) env->getPluginPath(ppath);
 	
 	if (!ppath.empty())
@@ -81,8 +81,7 @@ int main(int argc, char *argv[])
     parse.setOption("ml","multilayer", true, "Enables multi-layer image output (only in certain formats as EXR)");
 	parse.setOption("t","threads", false, "Overrides threads setting on the XML file, for auto selection use -1.");
 	parse.setOption("a","with-alpha", true, "Enables saving the image with alpha channel.");
-	parse.setOption("dp","draw-params", true, "Enables saving the image with a settings badge.");
-	parse.setOption("ndp","no-draw-params", true, "Disables saving the image with a settings badge (warning: this overrides --draw-params setting).");
+	parse.setOption("pbp","params_badge_position", false, "Sets position of the params badge: \"none\", \"top\" or \"bottom\".");
 	parse.setOption("cs","custom-string", false, "Sets the custom string to be used on the settings badge.");
 	parse.setOption("z","z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz","no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
@@ -118,8 +117,6 @@ int main(int argc, char *argv[])
 	if(input_color_space_string.empty()) input_color_space_string = "LinearRGB";
 	float input_gamma = 1.f;	//TODO: there is no parse.getOptionFloat available for now, so no way to have the additional option of entering an arbitrary manual input gamma yet. Maybe in the future...
 	int threads = parse.getOptionInteger("t");
-	bool drawparams = parse.getFlag("dp");
-	bool nodrawparams = parse.getFlag("ndp");
 	std::string customString = parse.getOptionString("cs");
 	bool zbuf = parse.getFlag("z");
 	bool nozbuf = parse.getFlag("nz");
@@ -181,14 +178,27 @@ int main(int argc, char *argv[])
 	render.getParam("ystart", by); // border render y start
 	
 	if(threads >= -1) render["threads"] = threads;
-	
-	if(drawparams)
+
+	std::string params_badge_position = parse.getOptionString("pbp");
+
+	if(!params_badge_position.empty())
 	{
-		render["drawParams"] = true;
-		if(!customString.empty()) render["customString"] = customString;
+		render["logging_paramsBadgePosition"] = params_badge_position;
+		yafLog.setParamsBadgePosition(params_badge_position);
 	}
-	
-	if(nodrawparams) render["drawParams"] = false;
+	else
+	{
+		render.getParam("logging_paramsBadgePosition", params_badge_position);
+		if(!params_badge_position.empty())
+		{
+			yafLog.setParamsBadgePosition(params_badge_position);
+		}
+		else
+		{
+			render["logging_paramsBadgePosition"] = "none";
+			yafLog.setParamsBadgePosition("none");
+		}
+	}
 	
 	if(zbuf) render["z_channel"] = true;
 	if(nozbuf) render["z_channel"] = false;

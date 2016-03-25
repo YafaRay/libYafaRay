@@ -369,7 +369,6 @@ void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 
 void yafrayInterface_t::setParamsBadgePosition(const std::string &badgePosition)
 {
-	(*params)["logging_paramsBadgePosition"] = badgePosition;
 	yafLog.setParamsBadgePosition(badgePosition);
 }
 

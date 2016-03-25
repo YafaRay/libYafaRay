@@ -274,7 +274,7 @@ void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &baseP
 
     basePath = fullFilePath.substr(0, sep+1);
 
-    if(basePath == "") baseFileName = fullFilePath;
+    if(basePath == "") fullFileName = fullFilePath;
 
     size_t dot = fullFileName.find_last_of(".");
 
@@ -288,6 +288,8 @@ void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &baseP
         baseFileName = fullFileName;
         extension  = "";
     }
+    
+    Y_DEBUG << "fullFilePath='"<<fullFilePath<<"', basePath='"<<basePath<<"', baseFileName='"<<baseFileName<<"', extension='"<<extension<<"'"<<yendl;
 }               
 
 void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
