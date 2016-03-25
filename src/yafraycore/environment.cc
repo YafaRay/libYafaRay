@@ -568,7 +568,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool premult2 = false;
-	bool drawParams = false;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -585,9 +584,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
-	params.getParam("drawParams", drawParams);
-
-	yafLog.setUseParamsBadge(drawParams);
 
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
@@ -721,6 +717,8 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float AA_clamp_samples = 0.f;
 	float AA_clamp_indirect = 0.f;
 	bool drawParams = false;
+	bool logging_saveLog = false;
+	bool logging_saveHTML = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
@@ -790,6 +788,8 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("drawParams", drawParams);
+	params.getParam("logging_saveLog", logging_saveLog);
+	params.getParam("logging_saveHTML", logging_saveHTML);
 	params.getParam("logging_author", logging_author);
 	params.getParam("logging_title", logging_title);
 	params.getParam("logging_contact", logging_contact);
@@ -799,6 +799,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
+
+	yafLog.setUseParamsBadge(drawParams);
+	yafLog.setSaveLog(logging_saveLog);
+	yafLog.setSaveHTML(logging_saveHTML);
 
 	imageFilm_t *film = createImageFilm(params, output);
 

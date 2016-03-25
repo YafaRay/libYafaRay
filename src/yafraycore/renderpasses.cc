@@ -229,7 +229,7 @@ void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 	//std::sort(intPasses.begin(), intPasses.end());
 	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) index of the internal pass actually using that index 
 	
-	Y_VERBOSE << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
+	if(intPassType != PASS_INT_COMBINED) Y_VERBOSE << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
         
 extPassTypes_t renderPasses_t::extPassTypeFromIndex(int extPassIndex) const { return extPasses.at(extPassIndex).extPassType; }

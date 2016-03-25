@@ -68,6 +68,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setLogMasterVerbosity(const std::string &strVLevel);
 
 		void setUseParamsBadge(bool on = true) { mDrawParams = on; }
+		void setSaveLog(bool save_log) { mSaveLog = save_log; }
+		void setSaveHTML(bool save_html) { mSaveHTML = save_html; }
 		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
 		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
 		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }

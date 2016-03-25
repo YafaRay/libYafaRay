@@ -26,6 +26,7 @@ yafrayInterface_t::~yafrayInterface_t()
 	if(film) delete film;
 	delete params;
 	delete eparams;
+	yafLog.clearMemoryLog();
 }
 
 void yafrayInterface_t::loadPlugins(const char *path)
