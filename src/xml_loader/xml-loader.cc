@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 	if(logVerbLevel.empty()) yafLog.setLogMasterVerbosity("verbose");
 	else yafLog.setLogMasterVerbosity(logVerbLevel);
 
+
 	if(ppath.empty()) env->getPluginPath(ppath);
 	
 	if (!ppath.empty())
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
 	parse.setOption("t","threads", false, "Overrides threads setting on the XML file, for auto selection use -1.");
 	parse.setOption("a","with-alpha", true, "Enables saving the image with alpha channel.");
 	parse.setOption("pbp","params_badge_position", false, "Sets position of the params badge: \"none\", \"top\" or \"bottom\".");
-	parse.setOption("cs","custom-string", false, "Sets the custom string to be used on the settings badge.");
+	parse.setOption("l","log-file-output", false, "Enable log file output(s): \"none\", \"txt\", \"html\" or \"txt+html\". Log file name will be same as selected image name,");
 	parse.setOption("z","z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz","no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
     parse.setOption("pst","partial-save-timer", false, "Sets timer in seconds for partial saving of images during render. If set to 0 (default) it will disable this feature. IMPORTANT: the more frequently partial images are saved, the slower the render will be.");
@@ -117,7 +118,6 @@ int main(int argc, char *argv[])
 	if(input_color_space_string.empty()) input_color_space_string = "LinearRGB";
 	float input_gamma = 1.f;	//TODO: there is no parse.getOptionFloat available for now, so no way to have the additional option of entering an arbitrary manual input gamma yet. Maybe in the future...
 	int threads = parse.getOptionInteger("t");
-	std::string customString = parse.getOptionString("cs");
 	bool zbuf = parse.getFlag("z");
 	bool nozbuf = parse.getFlag("nz");
 	int partial_save_timer = parse.getOptionInteger("pst");
@@ -179,8 +179,29 @@ int main(int argc, char *argv[])
 	
 	if(threads >= -1) render["threads"] = threads;
 
-	std::string params_badge_position = parse.getOptionString("pbp");
+	std::string logFileTypes = parse.getOptionString("l");
+	if(logFileTypes == "none")
+	{
+		render["logging_saveLog"] = false;
+		render["logging_saveHTML"] = false;
+	}
+	if(logFileTypes == "txt")
+	{
+		render["logging_saveLog"] = true;
+		render["logging_saveHTML"] = false;
+	}
+	if(logFileTypes == "html")
+	{
+		render["logging_saveLog"] = false;
+		render["logging_saveHTML"] = true;
+	}
+	if(logFileTypes == "txt+html")
+	{
+		render["logging_saveLog"] = true;
+		render["logging_saveHTML"] = true;
+	}
 
+	std::string params_badge_position = parse.getOptionString("pbp");
 	if(!params_badge_position.empty())
 	{
 		render["logging_paramsBadgePosition"] = params_badge_position;
