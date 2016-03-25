@@ -68,9 +68,9 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setConsoleMasterVerbosity(const std::string &strVLevel);
 		void setLogMasterVerbosity(const std::string &strVLevel);
 
-		void setUseParamsBadge(bool on = true) { mDrawParams = on; }
 		void setSaveLog(bool save_log) { mSaveLog = save_log; }
 		void setSaveHTML(bool save_html) { mSaveHTML = save_html; }
+		void setParamsBadgePosition(const std::string &badgePosition);
 		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
 		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
 		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
@@ -82,6 +82,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 
 		bool getUseParamsBadge() { return mDrawParams; }
 		int getBadgeHeight() const { return mParamsBadgeHeight; } 
+		bool isParamsBadgeTop() { return mParamsBadgeTop; }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
 		std::string getLoggingAuthor() const { return mLoggingAuthor; }
 		std::string getLoggingContact() const { return mLoggingContact; }
@@ -130,6 +131,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
 		std::string mImagePath;
 		int mParamsBadgeHeight;					//Height of the parameters badge
+		bool mParamsBadgeTop;//If enabled, draw badge in the top of the image instead of the bottom
 		bool mDrawParams;	//Enable/disable drawing params badge in exported images
 		bool mSaveLog;		//Enable/disable text log file saving with exported images
 		bool mSaveHTML;		//Enable/disable HTML file saving with exported images

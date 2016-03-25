@@ -367,10 +367,10 @@ void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 	//delete film;
 }
 
-void yafrayInterface_t::setDrawParams(bool on)
+void yafrayInterface_t::setParamsBadgePosition(const std::string &badgePosition)
 {
-	(*params)["drawParams"] = on;
-	yafLog.setUseParamsBadge(on);
+	(*params)["logging_paramsBadgePosition"] = badgePosition;
+	yafLog.setParamsBadgePosition(badgePosition);
 }
 
 bool yafrayInterface_t::getDrawParams()

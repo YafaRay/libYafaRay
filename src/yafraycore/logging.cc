@@ -290,5 +290,24 @@ void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &baseP
     }
 }               
 
+void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
+{ 
+	if(badgePosition == "top")
+	{
+		mDrawParams = true;
+		mParamsBadgeTop = true;
+	}
+	else if(badgePosition == "bottom")
+	{
+		mDrawParams = true;
+		mParamsBadgeTop = false;
+	}
+	else
+	{
+		mDrawParams = false;
+		mParamsBadgeTop = false;
+	}
+}
+
 __END_YAFRAY
 

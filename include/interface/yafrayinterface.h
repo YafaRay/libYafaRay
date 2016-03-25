@@ -97,7 +97,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		void setConsoleVerbosityLevel(const std::string &strVLevel);
 		void setLogVerbosityLevel(const std::string &strVLevel);
 		
-		virtual void setDrawParams(bool on = true);
+		virtual void setParamsBadgePosition(const std::string &badgePosition = "none");
 		virtual bool getDrawParams();
 
 		virtual char* getVersion() const; //!< Get version to check aginst the exporters

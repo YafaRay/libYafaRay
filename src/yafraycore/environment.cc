@@ -716,13 +716,13 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	int AA_variance_pixels = 0;
 	float AA_clamp_samples = 0.f;
 	float AA_clamp_indirect = 0.f;
-	bool drawParams = false;
 	bool logging_saveLog = false;
 	bool logging_saveHTML = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;        
+	const std::string *logging_paramsBadgePosition = 0;
 	const std::string *logging_title = 0;
 	const std::string *logging_author = 0;
 	const std::string *logging_contact = 0;
@@ -787,7 +787,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	params.getParam("drawParams", drawParams);
+	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
 	params.getParam("logging_saveLog", logging_saveLog);
 	params.getParam("logging_saveHTML", logging_saveHTML);
 	params.getParam("logging_author", logging_author);
@@ -800,9 +800,14 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 
-	yafLog.setUseParamsBadge(drawParams);
 	yafLog.setSaveLog(logging_saveLog);
 	yafLog.setSaveHTML(logging_saveHTML);
+	if(logging_paramsBadgePosition) yafLog.setParamsBadgePosition(*logging_paramsBadgePosition);
+	if(logging_title) yafLog.setLoggingTitle(*logging_title);
+	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
+	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
+	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
+	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
 
 	imageFilm_t *film = createImageFilm(params, output);
 
@@ -816,11 +821,6 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
 	yafLog.setAASettings(aaSettings.str());
-	if(logging_title) yafLog.setLoggingTitle(*logging_title);
-	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
-	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
-	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
-	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
 
 	//setup scene and render.
 	scene.setImageFilm(film);

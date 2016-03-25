@@ -512,6 +512,10 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
     std::vector<colorA_t> colExtPasses2;	//For secondary file output (when enabled)
 	if(out2) colExtPasses2.resize(imagePasses.size(), colorA_t(0.f));
 
+	int displaceRenderedImageBadgeHeight = 0;
+	
+	if(yafLog.isParamsBadgeTop()) displaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
+
 	for(int j = 0; j < h; j++)
 	{
 		for(int i = 0; i < w; i++)
@@ -556,8 +560,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				}
 			}
 
-			colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
-			if(out2) out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
+			colout->putPixel(numView, i, j+displaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
+			if(out2) out2->putPixel(numView, i, j+displaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
 		}
 	}
 
@@ -565,13 +569,17 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	{
 		if(colout && colout->isImageOutput())
 		{
-			for(int j = h; j < h+dpHeight; j++)
+			int badgeStartY = h;
+			
+			if(yafLog.isParamsBadgeTop()) badgeStartY = 0;
+			
+			for(int j = badgeStartY; j < badgeStartY+dpHeight; j++)
 			{
 				for(int i = 0; i < w; i++)
 				{
 					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 					{
-						colorA_t &dpcol = (*dpimage)(i, j-h);
+						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses[idx] = colorA_t(dpcol, 1.f);
 					}
 					colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
@@ -579,14 +587,19 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			}
 		}
 
-		if(out2 && out2->isImageOutput())	{
-			for(int j = h; j < h+dpHeight; j++)
+		if(out2 && out2->isImageOutput())
+		{
+			int badgeStartY = h;
+			
+			if(yafLog.isParamsBadgeTop()) badgeStartY = 0;
+			
+			for(int j = badgeStartY; j < badgeStartY+dpHeight; j++)
 			{
 				for(int i = 0; i < w; i++)
 				{
 					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 					{
-						colorA_t &dpcol = (*dpimage)(i, j-h);
+						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses2[idx] = colorA_t(dpcol, 1.f);
 					}
 					out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
