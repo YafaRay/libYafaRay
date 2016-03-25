@@ -36,15 +36,29 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	std::ofstream txtLogFile;
 	txtLogFile.open(name.c_str());
 
+	txtLogFile << "YafaRay Image Log file " << std::endl << std::endl;
+
+	txtLogFile << "Image: \"" << mImagePath << "\"" << std::endl << std::endl;
+	
+	if(!mLoggingTitle.empty()) txtLogFile << "Title: \"" << mLoggingTitle << "\"" << std::endl;
+	if(!mLoggingAuthor.empty()) txtLogFile << "Author: \"" << mLoggingAuthor << "\"" <<  std::endl;
+	if(!mLoggingContact.empty()) txtLogFile << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
+	if(!mLoggingComments.empty()) txtLogFile << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
+
+	txtLogFile << std::endl << "Integrator Settings:" << std::endl << "  " << mIntegratorSettings << std::endl;
+	txtLogFile << std::endl << "AA and Noise Control Settings:" << std::endl << "  " << mAASettings << std::endl;
+
 	if(!m_MemoryLog.empty()) 
 	{
+		txtLogFile << std::endl;
+		
 		for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
 			txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << "] ";
 
 			switch(it->mVerbLevel)
 			{
-				case VL_DEBUG:		txtLogFile << "**DEBUG**: "; break;
+				case VL_DEBUG:		txtLogFile << "DEBUG: "; break;
 				case VL_VERBOSE:	txtLogFile << "VERB: "; break;
 				case VL_INFO:		txtLogFile << "INFO: "; break;
 				case VL_PARAMS:		txtLogFile << "PARM: "; break;
@@ -72,8 +86,10 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 		htmlLogFile << "<html><head><meta charset=\"UTF-8\">" << std::endl;
 		htmlLogFile << "<title>YafaRay Log: " << name << "</title></head>" << std::endl;
 		htmlLogFile << "<body>" << std::endl;
-		if(!mImagePath.empty()) htmlLogFile << "<img src=\"" << mImagePath << "\" width=\"500\"/>" << std::endl;
-		htmlLogFile << "<table><th>Date</th><th>Time</th><th>Severity</th><th>Description</th>" << std::endl;
+		if(!mImagePath.empty()) htmlLogFile << "<img src=\"" << mImagePath << "\" width=\"768\"/>" << std::endl;
+		htmlLogFile << "<p>Integrator Settings</p><p>" << mIntegratorSettings << "</p>" << std::endl;
+		htmlLogFile << "<p>AA and Noise Control Settings</p><p>" << mAASettings << "</p>" << std::endl;
+		htmlLogFile << "<table><th>Date</th><th>Time</th><th>Verbosity</th><th>Description</th>" << std::endl;
 		
 		for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
@@ -81,7 +97,7 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 
 			switch(it->mVerbLevel)
 			{
-				case VL_DEBUG:		htmlLogFile << "<td BGCOLOR=#ff80ff>**DEBUG**: "; break;
+				case VL_DEBUG:		htmlLogFile << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
 				case VL_VERBOSE:	htmlLogFile << "<td BGCOLOR=#80ff80>VERB: "; break;
 				case VL_INFO:		htmlLogFile << "<td BGCOLOR=#40ff40>INFO: "; break;
 				case VL_PARAMS:		htmlLogFile << "<td BGCOLOR=#80ffff>PARM: "; break;
@@ -113,7 +129,7 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 	{
 		switch(mVerbLevel)
 		{
-			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] **DEBUG**: " << setColor(); break;
+			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG: " << setColor(); break;
 			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB: " << setColor(); break;
 			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO: " << setColor(); break;
 			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM: " << setColor(); break;
