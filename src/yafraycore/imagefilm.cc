@@ -512,9 +512,11 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
     std::vector<colorA_t> colExtPasses2;	//For secondary file output (when enabled)
 	if(out2) colExtPasses2.resize(imagePasses.size(), colorA_t(0.f));
 
-	int displaceRenderedImageBadgeHeight = 0;
+	int outputDisplaceRenderedImageBadgeHeight = 0, out2DisplaceRenderedImageBadgeHeight = 0;
 	
-	if(yafLog.isParamsBadgeTop()) displaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
+	if(colout && colout->isImageOutput() && yafLog.isParamsBadgeTop()) outputDisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
+	
+	if(out2 && out2->isImageOutput() && yafLog.isParamsBadgeTop()) out2DisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
 
 	for(int j = 0; j < h; j++)
 	{
@@ -560,8 +562,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				}
 			}
 
-			colout->putPixel(numView, i, j+displaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
-			if(out2) out2->putPixel(numView, i, j+displaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
+			colout->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
+			if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
 		}
 	}
 
