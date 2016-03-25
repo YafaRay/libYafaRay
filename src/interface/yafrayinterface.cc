@@ -369,15 +369,14 @@ void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 void yafrayInterface_t::setDrawParams(bool on)
 {
 	(*params)["drawParams"] = on;
-	if(film) film->setUseParamsBadge(on);
+	yafLog.setUseParamsBadge(on);
 }
 
 bool yafrayInterface_t::getDrawParams()
 {
 	bool dp = false;
 	
-	if(film) dp = film->getUseParamsBadge();
-	else params->getParam("drawParams", dp);
+	dp = yafLog.getUseParamsBadge();
 	
 	return dp;
 }

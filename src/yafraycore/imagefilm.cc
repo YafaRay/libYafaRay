@@ -118,11 +118,11 @@ float Lanczos2(float dx, float dy)
 }
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
-						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA, bool drawParams):
+						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
 	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(0), pbar(0),
-	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false),drawParams(drawParams)
+	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -493,16 +493,18 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	colorOutput_t *colout = out ? out : output;
 	colorOutput_t *out2 = env->getOutput2();
 
-	if(out && out->imageFileDrawParams()) drawRenderSettings();
-	else if(out2 && out2->imageFileDrawParams()) drawRenderSettings();
-
+	if(yafLog.getUseParamsBadge())
+	{
+		if(out && out->imageFileDrawParams()) drawRenderSettings();
+		else if(out2 && out2->imageFileDrawParams()) drawRenderSettings();
+	}
+	
 #ifndef HAVE_FREETYPE
 	Y_WARNING << "imageFilm: Compiled without FreeType support." << yendl;
 	Y_WARNING << "imageFilm: Text on the parameters badge won't be available." << yendl;
 #endif
 
 	float multi = 0.f;
-	int k = 0;
 
 	if(estimateDensity) multi = (float) (w * h) / (float) numSamples;
 
@@ -558,41 +560,41 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 			if(out2) out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
 		}
-
-		if(drawParams && h - j <= dpHeight) k++;
 	}
 
-	if(colout && dpimage && colout->imageFileDrawParams())
+	if(yafLog.getUseParamsBadge() && dpimage)
 	{
-		for(int j = h; j < h+dpHeight; j++)
+		if(colout && colout->imageFileDrawParams())
 		{
-			for(int i = 0; i < w; i++)
+			for(int j = h; j < h+dpHeight; j++)
 			{
-				for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+				for(int i = 0; i < w; i++)
 				{
-					colorA_t &dpcol = (*dpimage)(i, j-h);
-					colExtPasses[idx] = colorA_t(dpcol, 1.f);
+					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+					{
+						colorA_t &dpcol = (*dpimage)(i, j-h);
+						colExtPasses[idx] = colorA_t(dpcol, 1.f);
+					}
+					colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 				}
-				colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+			}
+		}
+
+		if(out2 && out2->imageFileDrawParams())	{
+			for(int j = h; j < h+dpHeight; j++)
+			{
+				for(int i = 0; i < w; i++)
+				{
+					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+					{
+						colorA_t &dpcol = (*dpimage)(i, j-h);
+						colExtPasses2[idx] = colorA_t(dpcol, 1.f);
+					}
+					out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
+				}
 			}
 		}
 	}
-
-	if(out2 && dpimage && out2->imageFileDrawParams())	{
-		for(int j = h; j < h+dpHeight; j++)
-		{
-			for(int i = 0; i < w; i++)
-			{
-				for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-				{
-					colorA_t &dpcol = (*dpimage)(i, j-h);
-					colExtPasses2[idx] = colorA_t(dpcol, 1.f);
-				}
-				out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
-			}
-		}
-	}
-
 
 	colout->flush(numView, env->getRenderPasses());
 	if(out2) out2->flush(numView, env->getRenderPasses());
@@ -768,16 +770,6 @@ void imageFilm_t::setProgressBar(progressBar_t *pb)
 	pbar = pb;
 }
 
-void imageFilm_t::setAAParams(const std::string &aa_params)
-{
-	aaSettings = aa_params;
-}
-
-void imageFilm_t::setIntegParams(const std::string &integ_params)
-{
-	integratorSettings = integ_params;
-}
-
 void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
 {
 	AA_detect_color_noise = detect_color_noise;
@@ -856,8 +848,8 @@ void imageFilm_t::drawRenderSettings()
 	if (timeh > 0) ss << " " << timeh << "h";
 	if (timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
-	ss << " | " << aaSettings;
-	ss << "\nLighting: " << integratorSettings;
+	ss << " | " << yafLog.getAASettings();
+	ss << "\nLighting: " << yafLog.getIntegratorSettings();
 
 	std::string text_utf8 = ss.str();
 	std::wstring wtext_utf16 = utf8_to_utf16(text_utf8);

@@ -168,5 +168,15 @@ std::string yafarayLog_t::printDate(std::time_t datetime) const
 	return std::string(mbstr);
 }
 
+void yafarayLog_t::setAASettings(const std::string &aa_settings)
+{
+	mAASettings = aa_settings;
+}
+
+void yafarayLog_t::setIntegratorSettings(const std::string &integ_settings)
+{
+	mIntegratorSettings = integ_settings;
+}
+
 __END_YAFRAY
 

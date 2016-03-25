@@ -67,19 +67,25 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setConsoleMasterVerbosity(const std::string &strVLevel);
 		void setLogMasterVerbosity(const std::string &strVLevel);
 
+		void setUseParamsBadge(bool on = true) { mDrawParams = on; }
 		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
 		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
 		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
 		void setLoggingComments(const std::string &comments) { mLoggingComments = comments; }
 		void setLoggingCustomIcon(const std::string &iconPath) { mLoggingCustomIcon = iconPath; }
 		void setImagePath(const std::string &path) { mImagePath = path; }
+		void setAASettings(const std::string &aa_settings);
+		void setIntegratorSettings(const std::string &integ_settings);
 
+		bool getUseParamsBadge() { return mDrawParams; }
 		int getBadgeHeight() const { return mParamsBadgeHeight; } 
 		std::string getLoggingTitle() const { return mLoggingTitle; }
 		std::string getLoggingAuthor() const { return mLoggingAuthor; }
 		std::string getLoggingContact() const { return mLoggingContact; }
 		std::string getLoggingComments() const { return mLoggingComments; }
 		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
+		std::string getAASettings() const { return mAASettings; }
+		std::string getIntegratorSettings() const { return mIntegratorSettings; }
 
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
@@ -112,7 +118,6 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 			return *this;
 		}
 
-
 	protected:
 		int mVerbLevel;
 		int mConsoleMasterVerbLevel;
@@ -128,6 +133,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingContact;
 		std::string mLoggingComments;
 		std::string mLoggingCustomIcon;		
+		std::string mAASettings;
+		std::string mIntegratorSettings;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

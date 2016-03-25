@@ -587,6 +587,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
 	params.getParam("drawParams", drawParams);
 
+	yafLog.setUseParamsBadge(drawParams);
+
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
@@ -619,7 +621,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_VERBOSE_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
+	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult);
 	
 	if(color_space == RAW_MANUAL_GAMMA)
 	{
@@ -809,7 +811,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("filter_type", name); // AA filter type
 	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
-	film->setAAParams(aaSettings.str());
+	yafLog.setAASettings(aaSettings.str());
 	if(logging_title) yafLog.setLoggingTitle(*logging_title);
 	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
 	if(logging_contact) yafLog.setLoggingContact(*logging_contact);

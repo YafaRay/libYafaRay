@@ -97,7 +97,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
 	SettingsSPPM << integratorName << " (" << settings << "; Passes rendered: " << passInfo << ")";
-	imageFilm->setIntegParams(SettingsSPPM.str());
+	yafLog.setIntegratorSettings(SettingsSPPM.str());
 	return true;
 }
 

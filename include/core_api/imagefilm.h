@@ -67,7 +67,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! imageFilm_t Constructor */
 		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
 		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32,
-		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false, bool drawParams = false);
+		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false);
 		/*! imageFilm_t Destructor */
 		~imageFilm_t();
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
@@ -117,13 +117,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
-		void setAAParams(const std::string &aa_params);
-		void setIntegParams(const std::string &integ_params);
-		void setUseParamsBadge(bool on = true) { drawParams = on; }
-		bool getUseParamsBadge() { return drawParams; }
 		int getTotalPixels() const { return w*h; };
 		void setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
-
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings();
         void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
@@ -170,9 +165,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool premultAlpha;
 		bool premultAlpha2;	//For optional secondary file output
 		int nPasses;
-		bool drawParams;
-		std::string aaSettings;
-		std::string integratorSettings;
         double accumulated_image_area_flush_time;
 };
 

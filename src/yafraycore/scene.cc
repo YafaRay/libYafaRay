@@ -883,7 +883,7 @@ bool scene_t::update()
 		bool success = (surfIntegrator->preprocess() && volIntegrator->preprocess());
 
 		inteSettings << surfIntegrator->getName() << " (" << surfIntegrator->getSettings() << ")";
-		imageFilm->setIntegParams(inteSettings.str());
+		yafLog.setIntegratorSettings(inteSettings.str());
 
 		if(!success) return false;
 	}
