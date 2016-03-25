@@ -199,9 +199,6 @@ int main(int argc, char *argv[])
 	// create output
 	colorOutput_t *out = NULL;
 
-	bool imageFileDrawParams = false;
-	render.getParam("drawParams", imageFileDrawParams);
-
 	paraMap_t ihParams;
 	ihParams["type"] = format;
 	ihParams["width"] = width;
@@ -209,7 +206,6 @@ int main(int argc, char *argv[])
 	ihParams["alpha_channel"] = alpha;
 	ihParams["z_channel"] = use_zbuf;
 	ihParams["img_multilayer"] = multilayer;
-	ihParams["img_draw_params"] = imageFileDrawParams;
     
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 

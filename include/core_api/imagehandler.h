@@ -45,9 +45,9 @@ enum textureOptimization_t
 class YAFRAYCORE_EXPORT imageHandler_t
 {
 public:
-	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(NULL), rgbaCompressedBuffer(NULL), rgbOptimizedBuffer(NULL), rgbCompressedBuffer(NULL), m_MultiLayer(false), m_DrawParams(false) {};
+	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(NULL), rgbaCompressedBuffer(NULL), rgbOptimizedBuffer(NULL), rgbCompressedBuffer(NULL), m_MultiLayer(false) {};
 
-	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false, bool draw_params = false) = 0;
+	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
 	virtual ~imageHandler_t() {};
 	virtual bool loadFromFile(const std::string &name) = 0;
 	virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
@@ -61,7 +61,6 @@ public:
 	virtual bool isMultiLayer() { return m_MultiLayer; }
 	int getTextureOptimization() { return m_textureOptimization; }
 	void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
-	bool drawParams() { return m_DrawParams; }
 	
 protected:
 	std::string handlerName;
@@ -75,7 +74,6 @@ protected:
 	rgbOptimizedImage_nw_t *rgbOptimizedBuffer;	//!< optimized RGB (24bit/pixel) without alpha buffer
 	rgbCompressedImage_nw_t *rgbCompressedBuffer;	//!< compressed RGB (16bit/pixel) LOSSY! without alpha buffer
 	bool m_MultiLayer;
-	bool m_DrawParams;
 };
 
 

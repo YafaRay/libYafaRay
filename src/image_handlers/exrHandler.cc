@@ -45,7 +45,7 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false, bool draw_params = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -65,13 +65,12 @@ exrHandler_t::exrHandler_t()
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer, bool draw_params)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
-	m_DrawParams = draw_params;
     
 	m_halfrgba.resize(renderPasses->extPassesSize());
 	
@@ -264,7 +263,6 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	bool withAlpha = false;
 	bool forOutput = true;
 	bool multiLayer = false;
-	bool drawParams = false;
 
 	params.getParam("pixel_type", pixtype);
 	params.getParam("compression", compression);
@@ -273,14 +271,13 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
-	params.getParam("img_draw_params", drawParams);
 
 	imageHandler_t *ih = new exrHandler_t();
 
 	if(forOutput)
 	{
-		if(drawParams) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer, drawParams);
+		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
 	}
 
 	return ih;

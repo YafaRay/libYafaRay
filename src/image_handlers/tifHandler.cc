@@ -37,7 +37,7 @@ class tifHandler_t: public imageHandler_t
 public:
 	tifHandler_t();
 	~tifHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false, bool draw_params = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -51,7 +51,6 @@ tifHandler_t::tifHandler_t()
 	m_height = 0;
 	m_hasAlpha = false;
 	m_MultiLayer = false;
-	m_DrawParams = false;
 	
 	handlerName = "TIFFHandler";
 
@@ -61,13 +60,12 @@ tifHandler_t::tifHandler_t()
 	rgbaCompressedBuffer = NULL;
 }
 
-void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer, bool draw_params)
+void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
-    m_DrawParams = draw_params;
 	
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -242,20 +240,18 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
-	bool drawParams = false;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-	params.getParam("img_draw_params", drawParams);
 
 	imageHandler_t *ih = new tifHandler_t();
 	
 	if(forOutput)
 	{
-		if(drawParams) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false, drawParams);
+		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 	}
 	
 	return ih;

@@ -495,8 +495,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(yafLog.getUseParamsBadge())
 	{
-		if(out && out->imageFileDrawParams()) drawRenderSettings();
-		else if(out2 && out2->imageFileDrawParams()) drawRenderSettings();
+		if((colout && colout->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings();
 	}
 	
 #ifndef HAVE_FREETYPE
@@ -564,7 +563,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(yafLog.getUseParamsBadge() && dpimage)
 	{
-		if(colout && colout->imageFileDrawParams())
+		if(colout && colout->isImageOutput())
 		{
 			for(int j = h; j < h+dpHeight; j++)
 			{
@@ -580,7 +579,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			}
 		}
 
-		if(out2 && out2->imageFileDrawParams())	{
+		if(out2 && out2->isImageOutput())	{
 			for(int j = h; j < h+dpHeight; j++)
 			{
 				for(int i = 0; i < w; i++)
