@@ -46,7 +46,6 @@ bool SPPM::preprocess()
 bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 {
 	std::stringstream passString;
-	std::stringstream SettingsSPPM;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 
@@ -77,6 +76,10 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 
 	initializePPM(); // seems could integrate into the preRender
 	renderPass(numView, 1, 0, false, 0);
+	
+	std::string initialEstimate = "no";
+	if(PM_IRE) initialEstimate = "yes";
+	
 	PM_IRE = false;
 
 	int hpNum = camera->resX() * camera->resY();
@@ -96,8 +99,24 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
-	SettingsSPPM << integratorName << " (" << settings << "; Passes rendered: " << passInfo << ")";
-	yafLog.setIntegratorSettings(SettingsSPPM.str());
+
+	std::stringstream set;
+	
+	set << "SPPM  ";
+
+	if(trShad)
+	{
+		set << "ShadowDepth=" << sDepth << "  ";
+	}
+	set << "RayDepth=" << rDepth << "  ";
+
+	set << "Passes rendered: " << passInfo << "  ";
+	
+	set << "\nPhotons=" << nPhotons << " search=" << nSearch <<" radius=" << dsRadius << "(init.estim=" << initialEstimate << ") total photons=" << totalnPhotons << "  ";
+	
+	yafLog.appendRenderSettings(set.str());
+	Y_PARAMS << set.str() << yendl;
+	
 	return true;
 }
 
@@ -302,18 +321,10 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 //photon pass, scatter photon
 void SPPM::prePass(int samples, int offset, bool adaptive)
 {
-	std::stringstream set;
 	gTimer.addEvent("prePass");
 	gTimer.start("prePass");
 
 	Y_INFO << integratorName << ": Starting Photon tracing pass..." << yendl;
-
-	if(trShad)
-	{
-		set << "ShadowDepth [" << sDepth << "]";
-	}
-	if(!set.str().empty()) set << "+";
-	set << "RayDepth [" << rDepth << "]";
 
 	if(bHashgrid) photonGrid.clear();
 	else {diffuseMap.clear(); causticMap.clear();}
@@ -323,7 +334,6 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	std::vector<light_t*> tmplights;
 
 	//background do not emit photons, or it is merged into normal light?
-	settings = set.str();
 
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
@@ -655,8 +665,8 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 				if(nGathered > _nMax)
 				{
 					_nMax = nGathered;
-					std::cout << "maximum Photons: "<<_nMax<<", radius2: "<<radius2<<"\n";
-					if(_nMax == 10) for(int j=0; j < nGathered; ++j ) std::cout<<"col:"<<gathered[j].photon->color()<<"\n";
+					Y_DEBUG << "maximum Photons: "<<_nMax<<", radius2: "<<radius2<<"\n";
+					if(_nMax == 10) for(int j=0; j < nGathered; ++j ) Y_DEBUG <<"col:"<<gathered[j].photon->color()<<"\n";
 				}
 				for(int i=0; i<nGathered; ++i)
 				{

@@ -47,8 +47,8 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	if(!mLoggingContact.empty()) txtLogFile << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
 	if(!mLoggingComments.empty()) txtLogFile << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
 
-	txtLogFile << std::endl << "Integrator Settings:" << std::endl << "  " << mIntegratorSettings << std::endl;
-	txtLogFile << std::endl << "AA and Noise Control Settings:" << std::endl << "  " << mAASettings << std::endl;
+	txtLogFile << std::endl << "Render Settings:" << std::endl << "  " << mRenderSettings << std::endl;
+	txtLogFile << std::endl << "AA and Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
@@ -141,8 +141,8 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	htmlLogFile << "</table>" << std::endl;
 
 	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Integrator Settings:</th><td>" << mIntegratorSettings << "</td></tr>" << std::endl;
-	htmlLogFile << "<tr><th>AA and Noise Control Settings:</th><td>" << mAASettings << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>Render Settings:</th><td>" << mRenderSettings << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>AA and Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
 	htmlLogFile << "</table>" << std::endl;
 
 	if(!m_MemoryLog.empty()) 
@@ -184,8 +184,8 @@ void yafarayLog_t::clearAll()
 	mLoggingContact = "";
 	mLoggingComments = "";
 	mLoggingCustomIcon = "";
-	mAASettings = "";
-	mIntegratorSettings = "";
+	mAANoiseSettings = "";
+	mRenderSettings = "";
 }
 
 yafarayLog_t & yafarayLog_t::out(int verbosity_level)
@@ -254,14 +254,14 @@ std::string yafarayLog_t::printDate(std::time_t datetime) const
 	return std::string(mbstr);
 }
 
-void yafarayLog_t::setAASettings(const std::string &aa_settings)
+void yafarayLog_t::appendAANoiseSettings(const std::string &aa_noise_settings)
 {
-	mAASettings = aa_settings;
+	mAANoiseSettings += aa_noise_settings;
 }
 
-void yafarayLog_t::setIntegratorSettings(const std::string &integ_settings)
+void yafarayLog_t::appendRenderSettings(const std::string &render_settings)
 {
-	mIntegratorSettings = integ_settings;
+	mRenderSettings += render_settings;
 }
 
 void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension)

@@ -862,8 +862,8 @@ void imageFilm_t::drawRenderSettings()
 	if (timeh > 0) ss << " " << timeh << "h";
 	if (timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
-	ss << " | " << yafLog.getAASettings();
-	ss << "\nLighting: " << yafLog.getIntegratorSettings();
+	ss << " | " << yafLog.getRenderSettings();
+	ss << "\n" << yafLog.getAANoiseSettings();
 
 	std::string text_utf8 = ss.str();
 	std::wstring wtext_utf16 = utf8_to_utf16(text_utf8);

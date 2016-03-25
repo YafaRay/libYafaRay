@@ -168,7 +168,7 @@ biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(t
 	type = SURFACE;
 	integratorName = "BidirectionalPathTracer";
 	integratorShortName = "BdPT";
-	settings = "";
+	yafLog.appendRenderSettings("");
 }
 
 biDirIntegrator_t::~biDirIntegrator_t()

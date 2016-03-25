@@ -376,6 +376,11 @@ void scene_t::setNumThreads(int threads)
 	}
 
 	Y_PARAMS << "Using [" << nthreads << "] Threads." << yendl;
+	
+	std::stringstream set;
+	set << "CPU threads=" << nthreads << std::endl;
+	
+	yafLog.appendRenderSettings(set.str());
 }
 
 #define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
@@ -881,9 +886,6 @@ bool scene_t::update()
 		std::stringstream inteSettings;
 
 		bool success = (surfIntegrator->preprocess() && volIntegrator->preprocess());
-
-		inteSettings << surfIntegrator->getName() << " (" << surfIntegrator->getSettings() << ")";
-		yafLog.setIntegratorSettings(inteSettings.str());
 
 		if(!success) return false;
 	}

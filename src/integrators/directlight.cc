@@ -57,14 +57,19 @@ bool directLighting_t::preprocess()
 {
 	bool success = true;
 	std::stringstream set;
-	settings = "";
+
+	set << "Direct Light  ";
 
 	if(trShad)
 	{
-		set << "ShadowDepth: [" << sDepth << "]";
+		set << "ShadowDepth=" << sDepth << "  ";
 	}
-	if(!set.str().empty()) set << "+";
-	set << "RayDepth: [" << rDepth << "]";
+	set << "RayDepth=" << rDepth << "  ";
+
+	if(useAmbientOcclusion)
+	{
+		set << "AO samples=" << aoSamples << " dist=" << aoDist << "  ";
+	}
 
 	background = scene->getBackground();
 	lights = scene->lights;
@@ -72,17 +77,11 @@ bool directLighting_t::preprocess()
 	if(usePhotonCaustics)
 	{
 		success = createCausticMap();
-		if(!set.str().empty()) set << "+";
-		set << "Caustics:" << nCausPhotons << " photons. Search=" << nCausSearch <<", radius=" << causRadius << ", depth=" << causDepth;
+		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
 
-	if(useAmbientOcclusion)
-	{
-		if(!set.str().empty()) set << "+";
-		set << "AO samples=" << aoSamples << ", dist=" << aoDist;
-	}
-
-	settings = set.str();
+	yafLog.appendRenderSettings(set.str());
+	Y_PARAMS << set.str() << yendl;
 
 	return success;
 }

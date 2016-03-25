@@ -818,9 +818,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	}
 
 	params.getParam("filter_type", name); // AA filter type
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
+	
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): passes=" << AA_passes << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise << " dark.thr=" << AA_dark_threshold_factor << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
 
-	yafLog.setAASettings(aaSettings.str());
+	yafLog.appendAANoiseSettings(aaSettings.str());
 
 	//setup scene and render.
 	scene.setImageFilm(film);

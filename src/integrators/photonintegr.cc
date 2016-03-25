@@ -133,12 +133,13 @@ bool photonIntegrator_t::preprocess()
 
 	Y_INFO << integratorName << ": Starting preprocess..." << yendl;
 
+	set << "Photon Mapping  ";
+
 	if(trShad)
 	{
-		set << "ShadowDepth [" << sDepth << "]";
+		set << "ShadowDepth=" << sDepth << "  ";
 	}
-	if(!set.str().empty()) set << "+";
-	set << "RayDepth [" << rDepth << "]";
+	set << "RayDepth=" << rDepth << "  ";
 
 	diffuseMap.clear();
 	causticMap.clear();
@@ -146,16 +147,23 @@ bool photonIntegrator_t::preprocess()
 	lights = scene->lights;
 	std::vector<light_t*> tmplights;
 
-	if(!set.str().empty()) set << "+";
-	
-	set << "DiffPhotons [" << nDiffusePhotons << "]+CausPhotons[" << nCausPhotons << "]";
-	
+	if(caustics_enabled())
+	{
+		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
+	}
+
+	if(diffuse_enabled())
+	{
+		set << "\nDiffuse photons=" << nDiffusePhotons << " search=" << nDiffuseSearch <<" radius=" << dsRadius << "  ";
+	}
+
 	if(finalGather)
 	{
-		set << "+FG[" << nPaths << ", " << gatherBounces << "]";
+		set << " FG paths=" << nPaths << " bounces=" << gatherBounces << "  ";
 	}
 	
-	settings = set.str();
+	yafLog.appendRenderSettings(set.str());
+	Y_PARAMS << set.str() << yendl;
 	
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
@@ -1051,8 +1059,6 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	ite->aoSamples = AO_samples;
 	ite->aoDist = AO_dist;
 	ite->aoCol = AO_col;
-	
-	if(enable_caustics) Y_PARAMS << ite->integratorName << ": caustics: photons=" << numCPhotons << ", mix=" << caustic_mix << yendl;
 	
 	return ite;
 }

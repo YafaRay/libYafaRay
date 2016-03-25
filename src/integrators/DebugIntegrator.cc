@@ -52,30 +52,33 @@ DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
 	debugType = dt;
 	integratorName = "DebugIntegrator";
 	integratorShortName = "DBG";
+	yafLog.appendRenderSettings("Debug integrator: '");
 	switch(dt)
 	{
 		case N:
-		settings = "N";
+		yafLog.appendRenderSettings("N");
 		break;
 		case dPdU:
-		settings = "dPdU";
+		yafLog.appendRenderSettings("dPdU");
 		break;
 		case dPdV:
-		settings = "dPdV";
+		yafLog.appendRenderSettings("dPdV");
 		break;
 		case NU:
-		settings = "NU";
+		yafLog.appendRenderSettings("NU");
 		break;
 		case NV:
-		settings = "NV";
+		yafLog.appendRenderSettings("NV");
 		break;
 		case dSdU:
-		settings = "dSdU";
+		yafLog.appendRenderSettings("dSdU");
 		break;
 		case dSdV:
-		settings = "dSdV";
+		yafLog.appendRenderSettings("dSdV");
 		break;
 	}
+	
+	yafLog.appendRenderSettings("' | ");
 }
 
 bool DebugIntegrator::preprocess()

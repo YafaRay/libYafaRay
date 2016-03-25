@@ -77,8 +77,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setLoggingComments(const std::string &comments) { mLoggingComments = comments; }
 		void setLoggingCustomIcon(const std::string &iconPath) { mLoggingCustomIcon = iconPath; }
 		void setImagePath(const std::string &path) { mImagePath = path; }
-		void setAASettings(const std::string &aa_settings);
-		void setIntegratorSettings(const std::string &integ_settings);
+		void appendAANoiseSettings(const std::string &aa_noise_settings);
+		void appendRenderSettings(const std::string &render_settings);
 
 		bool getUseParamsBadge() { return mDrawParams; }
 		int getBadgeHeight() const { return mParamsBadgeHeight; } 
@@ -88,8 +88,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string getLoggingContact() const { return mLoggingContact; }
 		std::string getLoggingComments() const { return mLoggingComments; }
 		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
-		std::string getAASettings() const { return mAASettings; }
-		std::string getIntegratorSettings() const { return mIntegratorSettings; }
+		std::string getAANoiseSettings() const { return mAANoiseSettings; }
+		std::string getRenderSettings() const { return mRenderSettings; }
 
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
@@ -140,8 +140,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingContact;
 		std::string mLoggingComments;
 		std::string mLoggingCustomIcon;		
-		std::string mAASettings;
-		std::string mIntegratorSettings;
+		std::string mAANoiseSettings;
+		std::string mRenderSettings;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

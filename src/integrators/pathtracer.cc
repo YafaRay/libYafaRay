@@ -72,10 +72,13 @@ bool pathIntegrator_t::preprocess()
 	background = scene->getBackground();
 	lights = scene->lights;
 	
-	if(trShad) set << "ShadowDepth: [" << sDepth << "]"; 
+	set << "Path Tracing  ";
 
-	if(!set.str().empty()) set << "+";
-	set << "RayDepth: [" << rDepth << "]";
+	if(trShad)
+	{
+		set << "ShadowDepth=" << sDepth << "  ";
+	}
+	set << "RayDepth=" << rDepth << " npaths=" << nPaths << " bounces=" << maxBounces << " ";
 
 	bool success = true;
 	traceCaustics = false;
@@ -89,21 +92,19 @@ bool pathIntegrator_t::preprocess()
 	
 	if(causticType == PATH)
 	{
-		if(!set.str().empty()) set << "+";
-		set << "Caustics: Path";
+		set << "\nCaustics: Path" << " ";
 	}
 	else if(causticType == PHOTON)
 	{
-		if(!set.str().empty()) set << "+";
-		set << "Caustics: Photon(" << nCausPhotons << ")";
+		set << "\nCaustics: Photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
 	else if(causticType == BOTH)
 	{
-		if(!set.str().empty()) set << "+";
-		set << "Caustics: Path+Photon(" << nCausPhotons << ")";
+		set << "\nCaustics: Path + Photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
 	
-	settings = set.str();
+	yafLog.appendRenderSettings(set.str());
+	Y_PARAMS << set.str() << yendl;
 	
 	return success;
 }
