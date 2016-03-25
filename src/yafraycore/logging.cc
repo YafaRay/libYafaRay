@@ -4,6 +4,7 @@
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez for original Console_Verbosity file
  *		Copyright (C) 2016 David Bluecame for all changes to convert original
  * 		console output classes/objects into full Logging classes/objects
+ * 		and the Log and HTML file saving.
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -80,17 +81,67 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	std::ofstream htmlLogFile;
 	htmlLogFile.open(name.c_str());
 
+	htmlLogFile << "<!DOCTYPE html>" << std::endl;
+	htmlLogFile << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
+	
+	htmlLogFile << "<title>YafaRay Log: " << mImagePath << "</title>" << std::endl;
+	
+	htmlLogFile << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
+
+	htmlLogFile << "<style>" << std::endl << "body {font-family: Verdana, sans-serif; font-size:0.8em;}" << std::endl << "header, nav, section, article, footer" << std::endl << "{border:1px solid grey; margin:5px; padding:8px;}" << std::endl << "nav ul {margin:0; padding:0;}" << std::endl << "nav ul li {display:inline; margin:5px;}" << std::endl;
+	
+	htmlLogFile << "table {" << std::endl;
+	htmlLogFile << "    width:100%;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "table, th, td {" << std::endl;
+	htmlLogFile << "    border: 1px solid black;" << std::endl;
+	htmlLogFile << "    border-collapse: collapse;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "th:first-child{" << std::endl;
+	htmlLogFile << "    width:1%;" << std::endl;
+	htmlLogFile << "    white-space:nowrap;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "th, td {" << std::endl;
+	htmlLogFile << "    padding: 5px;" << std::endl;
+	htmlLogFile << "    text-align: left;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "table#yafalog tr:nth-child(even) {" << std::endl;
+	htmlLogFile << "    background-color: #eee;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "table#yafalog tr:nth-child(odd) {" << std::endl;
+	htmlLogFile << "   background-color:#fff;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+	htmlLogFile << "table#yafalog th	{" << std::endl;
+	htmlLogFile << "    background-color: black;" << std::endl;
+	htmlLogFile << "    color: white;" << std::endl;
+	htmlLogFile << "}" << std::endl;
+
+	htmlLogFile << "</style>" << std::endl << "</head>" << std::endl << std::endl;
+
+	htmlLogFile << "<body>" << std::endl;
+
+	//htmlLogFile << "<header>" << std::endl << "<h1>YafaRay Image HTML file</h1>" << std::endl << "</header>" << std::endl;
+	
+	if(!mImagePath.empty()) htmlLogFile << "<img src=\"" << mImagePath << "\" width=\"768\"/>" << std::endl;
+
+	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
+	htmlLogFile << "<tr><th>Image path:</th><td>" << mImagePath << "</td></tr>" << std::endl;
+	if(!mLoggingTitle.empty()) htmlLogFile << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
+	if(!mLoggingAuthor.empty()) htmlLogFile << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
+	if(!mLoggingContact.empty()) htmlLogFile << "<tr><th>Contact:</th><td>" << mLoggingContact << "</td></tr>" << std::endl;
+	if(!mLoggingComments.empty()) htmlLogFile << "<tr><th>Comments:</th><td>" << mLoggingComments << "</td></tr>" << std::endl;
+	if(!mLoggingCustomIcon.empty()) htmlLogFile << "<tr><th>Custom Icon:</th><td><img src=\"" << mLoggingCustomIcon << "\" width=\"80\"/></td></tr>" << std::endl;
+	htmlLogFile << "</table>" << std::endl;
+
+	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
+	htmlLogFile << "<tr><th>Integrator Settings:</th><td>" << mIntegratorSettings << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>AA and Noise Control Settings:</th><td>" << mAASettings << "</td></tr>" << std::endl;
+	htmlLogFile << "</table>" << std::endl;
+
 	if(!m_MemoryLog.empty()) 
 	{
-		htmlLogFile << "<!DOCTYPE html>" << std::endl;
-		htmlLogFile << "<html><head><meta charset=\"UTF-8\">" << std::endl;
-		htmlLogFile << "<title>YafaRay Log: " << name << "</title></head>" << std::endl;
-		htmlLogFile << "<body>" << std::endl;
-		if(!mImagePath.empty()) htmlLogFile << "<img src=\"" << mImagePath << "\" width=\"768\"/>" << std::endl;
-		htmlLogFile << "<p>Integrator Settings</p><p>" << mIntegratorSettings << "</p>" << std::endl;
-		htmlLogFile << "<p>AA and Noise Control Settings</p><p>" << mAASettings << "</p>" << std::endl;
-		htmlLogFile << "<table><th>Date</th><th>Time</th><th>Verbosity</th><th>Description</th>" << std::endl;
-		
+		htmlLogFile << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Verbosity</th><th>Description</th>" << std::endl;
+
 		for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
 			htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td>";
@@ -114,8 +165,20 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 
 void yafarayLog_t::clearMemoryLog()
 {
-	m_MemoryLog.clear();
+	m_MemoryLog.clear();	
+}
+
+void yafarayLog_t::clearAll()
+{
+	clearMemoryLog();
 	mImagePath = "";
+	mLoggingTitle = "";
+	mLoggingAuthor = "";
+	mLoggingContact = "";
+	mLoggingComments = "";
+	mLoggingCustomIcon = "";
+	mAASettings = "";
+	mIntegratorSettings = "";
 }
 
 yafarayLog_t & yafarayLog_t::out(int verbosity_level)

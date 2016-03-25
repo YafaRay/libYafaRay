@@ -4,6 +4,7 @@
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez for original Console_Verbosity file
  *		Copyright (C) 2016 David Bluecame for all changes to convert original
  * 		console output classes/objects into full Logging classes/objects
+ * 		and the Log and HTML file saving.
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -92,6 +93,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
+		void clearAll();
 		yafarayLog_t &out(int verbosity_level);
 		void setConsoleMasterVerbosity(int vlevel);
 		void setLogMasterVerbosity(int vlevel);
