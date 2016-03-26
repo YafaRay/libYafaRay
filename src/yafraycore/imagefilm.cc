@@ -212,7 +212,10 @@ void imageFilm_t::init(int numPasses)
 	if(split)
 	{
 		next_area = 0;
-		splitter = new imageSpliter_t(w, h, cx0, cy0, tileSize, tilesOrder);
+		scene_t *scene = env->getScene();
+		int nThreads = 1;
+		if(scene) nThreads = scene->getNumThreads();
+		splitter = new imageSpliter_t(w, h, cx0, cy0, tileSize, tilesOrder, nThreads);
 		area_cnt = splitter->size();
 	}
 	else area_cnt = 1;

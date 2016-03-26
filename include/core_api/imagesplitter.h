@@ -54,7 +54,7 @@ class imageSpliter_t
 {
 	public:
 		enum tilesOrderType { LINEAR, RANDOM };
-		imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder);
+		imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder, int nthreads);
 		/* return the n-th area to be rendered.
 			\return false if n is out of range, true otherwise
 		*/
