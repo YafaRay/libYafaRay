@@ -22,7 +22,7 @@ yafrayInterface_t::~yafrayInterface_t()
 	if(scene) delete scene;
 	Y_VERBOSE << "Interface: Deleting environment..." << yendl;
 	if(env) delete env;
-	Y_VERBOSE << "Interface: Done." << yendl;
+	Y_INFO << "Interface: Done." << yendl;
 	if(film) delete film;
 	delete params;
 	delete eparams;

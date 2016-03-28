@@ -70,9 +70,9 @@ __BEGIN_YAFRAY
 renderEnvironment_t::renderEnvironment_t()
 {	
 #ifdef RELEASE
-	Y_PARAMS << PACKAGE << " " << VERSION << yendl;
+	Y_INFO << PACKAGE << " " << VERSION << yendl;
 #else
-	Y_PARAMS << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
+	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
 	output2 = NULL;
