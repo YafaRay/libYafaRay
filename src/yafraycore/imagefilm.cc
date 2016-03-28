@@ -220,7 +220,7 @@ void imageFilm_t::init(int numPasses)
 	}
 	else area_cnt = 1;
 
-	if(pbar) pbar->init(area_cnt);
+	if(pbar) pbar->init(w * h);
 
 	abort = false;
 	completed_cnt = 0;
@@ -373,7 +373,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 	if(pbar)
 	{
-		pbar->init(area_cnt);
+		pbar->init(w * h);
 		pbar->setTag(passString.str().c_str());
 	}
 	completed_cnt = 0;
@@ -481,7 +481,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
     if(pbar)
     {
         if(++completed_cnt == area_cnt) pbar->done();
-        else pbar->update(1);
+        else pbar->update(a.W * a.H);
     }
     
 	outMutex.unlock();

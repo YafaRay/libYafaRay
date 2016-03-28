@@ -11,23 +11,23 @@ std::cout << "\r" << setColor(Green) << "Progress: " << \
 setColor(Red, true) << "[" << setColor(Green, true) << std::string(progFull, '#') << std::string(progEmpty, ' ') << setColor(Red, true) << "] " << \
 setColor() << "(" << setColor(Yellow, true) << per << "%" << setColor() << ")" << std::flush
 
-ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0), doneSteps(0)
+ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), totalArea(0), doneArea(0)
 {
 	totalBarLen = width - 22;
 }
 
-void ConsoleProgressBar_t::init(int totalSteps)
+void ConsoleProgressBar_t::init(int total_area)
 {
-	nSteps=totalSteps;
-	doneSteps = 0;
+	totalArea=total_area;
+	doneArea = 0;
 	lastBarLen = 0;
 	printBar(totalBarLen, 0, 0);
 }
 
-void ConsoleProgressBar_t::update(int steps)
+void ConsoleProgressBar_t::update(int added_area)
 {
-	doneSteps += steps;
-	float progress = (float) std::min(doneSteps, nSteps) / (float) nSteps;
+	doneArea += added_area;
+	float progress = (float) std::min(doneArea, totalArea) / (float) totalArea;
 	int barLen = std::min(totalBarLen, (int)(totalBarLen*progress));
 	if(!(barLen >= 0)) barLen = 0;
 	if(barLen > lastBarLen)
