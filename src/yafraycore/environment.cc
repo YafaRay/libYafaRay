@@ -145,11 +145,11 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 {
 #ifdef _WIN32
 	HKEY hkey;
-	DWORD dwType, dwSize;
+	DWORD dwSize; //, dwType;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,"Software\\YafaRay Team\\YafaRay",0,KEY_READ,&hkey)==ERROR_SUCCESS)
 	{
-		dwType = REG_EXPAND_SZ;
+		//dwType = REG_EXPAND_SZ;
 	 	dwSize = MAX_PATH;
 		DWORD dwStat;
 
