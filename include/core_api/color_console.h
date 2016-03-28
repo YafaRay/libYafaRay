@@ -44,7 +44,7 @@ enum
 	Red			= 0x0004,
 	Green		= 0x0002,
 	Yellow		= Red | Green,
-	Blue		= 0x0008,
+	Blue		= 0x0001,
 	Magenta		= Blue | Red,
 	Cyan		= Blue | Green,
 	White		= Red | Green | Blue,
