@@ -94,6 +94,7 @@ class YAFRAYCORE_EXPORT triangleObject_t: public object3d_t
 		std::vector<normal_t> normals;
 		std::vector<int> uv_offsets;
 		std::vector<uv_t> uv_values;
+		using object3d_t::getPrimitives;
 	protected:
 		bool has_orco;
 		bool has_uv;
@@ -128,6 +129,7 @@ class YAFRAYCORE_EXPORT triangleObjectInstance_t: public triangleObject_t
         std::vector<triangleInstance_t> triangles;
         matrix4x4_t objToWorld;
         triangleObject_t* mBase;
+	using object3d_t::getPrimitives;
 };
 
 #include <yafraycore/triangle_inline.h>

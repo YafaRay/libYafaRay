@@ -725,7 +725,7 @@ void imageFilm_t::addDensitySample(const color_t& c, int x, int y, float dx, flo
 	double y_offs = dy - 0.5;
 	for (int i=dy0, n=0; i <= dy1; ++i, ++n)
 	{
-		float d = fabsf( (double(i) - y_offs) * tableScale);
+		float d = fabsf((float)((double(i) - y_offs) * tableScale));
 		yIndex[n] = Floor2Int(d);
 	}
 

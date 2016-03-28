@@ -320,7 +320,7 @@ unsigned int 	xmlInterface_t::createObject(const char* name)
 	return ++nextObj;
 }
 
-void xmlInterface_t::render(colorOutput_t &output)
+void xmlInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 {
 	xmlFile << "\n<render>\n";
 	writeParamMap(*params);
