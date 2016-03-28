@@ -41,7 +41,7 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrde
 
 	for(size_t rn=0; rn<regions_raw.size(); ++rn)
 	{
-		if(nthreads == 1 || blocksize <= 4 || rn<regions_raw.size()-(int)floor((float)nthreads*1.5f))	//If blocksize is more than 4, resubdivide the last tiles (as many as number of CPU threads x 1.5) so their block size is original blocksize/numthreads (min.4x4) (better CPU/thread usage in the last tiles to avoid having one big tile at the end with only 1 CPU thread)
+		if(nthreads == 1 || blocksize <= 4 || rn<regions_raw.size()-(int)floor((float)regions_raw.size()*0.10f))	//If blocksize is more than 4, resubdivide the last 10% tiles so their block size is original blocksize/numthreads (min.4x4) (better CPU/thread usage in the last tiles to avoid having one big tile at the end with only 1 CPU thread)
 		{
 			regions.push_back(regions_raw[rn]);
 		}
