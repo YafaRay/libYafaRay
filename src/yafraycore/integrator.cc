@@ -184,6 +184,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	renderPass(numView, AA_samples, 0, false, 0);
 	
 	int acumAASamples = AA_samples;
+	bool AAthresholdChanged = true;
+	int resampled_pixels = 0;
 	
 	for(int i=1; i<AA_passes; ++i)
 	{
@@ -197,13 +199,22 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 		
 		Y_INFO << integratorName << ": Sample multiplier = " << AA_sample_multiplier << ", Light Sample multiplier = " << AA_light_sample_multiplier << ", Indirect Sample multiplier = " << AA_indirect_sample_multiplier << yendl;
 		
-		imageFilm->setAAThreshold(AA_threshold);
 		imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
-		int resampled_pixels = imageFilm->nextPass(numView, true, integratorName);
+		if(resampled_pixels <= 0.f && !AAthresholdChanged)
+		{
+			Y_INFO << integratorName << ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped." << yendl;
+		}
+		else
+		{
+			imageFilm->setAAThreshold(AA_threshold);
+			resampled_pixels = imageFilm->nextPass(numView, true, integratorName);
+			AAthresholdChanged = false;
+		}		
+		
 		int AA_samples_mult = (int) ceilf(AA_inc_samples * AA_sample_multiplier);
 
-		renderPass(numView, AA_samples_mult, acumAASamples, true, i);
+		if(resampled_pixels > 0) renderPass(numView, AA_samples_mult, acumAASamples, true, i);
 
 		acumAASamples += AA_samples_mult;
 
@@ -213,6 +224,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 			AA_threshold *= (1.f - 0.1f * AA_variation_ratio);
 			
 			Y_VERBOSE << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor_pixels << "): new AA Threshold (-" << AA_variation_ratio * 0.1f * 100.f << "%) for next pass = " << AA_threshold << yendl;
+			
+			if(AA_threshold > 0.f) AAthresholdChanged = true;
 		} 
 	}
 	maxDepth = 0.f;

@@ -240,6 +240,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 	int variance_half_edge = AA_variance_edge_size / 2;
+	
+	float AA_thresh_scaled = AA_thesh;
 
 	int n_resample=0;
 	
@@ -262,7 +264,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
 				
-				float AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+				if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
 				
 				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
