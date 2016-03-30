@@ -27,14 +27,6 @@
 #include <utilities/mathOptimizations.h>
 #include <iostream>
 
-// ensure isnan is available. I *hope* it works with OSX w. gcc 4.x too
-#ifdef _MSC_VER
-#include <float.h>
-#define isnan _isnan
-#else
-using std::isnan; // from cmath
-#endif
-
 __BEGIN_YAFRAY
 
 // useful trick found in trimesh2 lib by Szymon Rusinkiewicz

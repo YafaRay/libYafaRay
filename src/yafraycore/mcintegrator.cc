@@ -419,7 +419,7 @@ bool mcIntegrator_t::createCausticMap()
 
 			while( scene->intersect(ray, *hit2) )
 			{
-				if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
+				if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 				{
 					Y_WARNING << integratorName << ": NaN (photon color)" << yendl;
 					break;

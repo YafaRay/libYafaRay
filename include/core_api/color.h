@@ -32,16 +32,6 @@
 
 #define COLOR_SIZE 3
 
-// ensure isnan and isinf are available. I *hope* it works with OSX w. gcc 4.x too
-#ifdef _MSC_VER
-#include <float.h>
-#define isnan _isnan
-#define isinf _isinf
-#else
-using std::isnan; // from cmath
-using std::isinf; // from cmath
-#endif
-
 __BEGIN_YAFRAY
 
 enum colorSpaces_t
@@ -74,8 +64,8 @@ class YAFRAYCORE_EXPORT color_t
 		color_t(CFLOAT g) { R=G=B=g; }
 		color_t(CFLOAT af[3]) { R=af[0];  G=af[1];  B=af[2]; }
 		bool isBlack() const { return ((R==0) && (G==0) && (B==0)); }
-		bool isNaN() const { return (isnan(R) || isnan(G) || isnan(B)); }
-		bool isInf() const { return (isinf(R) || isinf(G) || isinf(B)); }
+		bool isNaN() const { return (std::isnan(R) || std::isnan(G) || std::isnan(B)); }
+		bool isInf() const { return (std::isinf(R) || std::isinf(G) || std::isinf(B)); }
 		~color_t() {}
 		void set(CFLOAT r, CFLOAT g, CFLOAT b) { R=r;  G=g;  B=b; }
 

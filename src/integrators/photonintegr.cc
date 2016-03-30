@@ -277,7 +277,7 @@ bool photonIntegrator_t::preprocess()
 
 			while( scene->intersect(ray, sp) )
 			{
-				if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
+				if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 				{
 					Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << "." << yendl;
 					continue;
@@ -465,7 +465,7 @@ bool photonIntegrator_t::preprocess()
 
 			while( scene->intersect(ray, sp) )
 			{
-				if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
+				if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 				{
 					Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << "." << yendl;
 					continue;
@@ -622,7 +622,7 @@ bool photonIntegrator_t::preprocess()
 				vector3d_t rnorm = pgdat.rad_points[n].normal;
 				float scale = 1.f / ( float(diffuseMap.nPaths()) * radius * M_PI);
 				
-				if(isnan(scale))
+				if(std::isnan(scale))
 				{
 					Y_WARNING << integratorName << ": NaN on (scale)" << yendl;
 					break;

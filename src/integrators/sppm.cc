@@ -433,7 +433,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 		while( scene->intersect(ray, sp) ) //scatter photons.
 		{
-			if(isnan(pcol.R) || isnan(pcol.G) || isnan(pcol.B))
+			if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 			{ Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << ".\n"; continue; }
 
 			color_t transm(1.f);
