@@ -83,6 +83,7 @@ find_package(Threads REQUIRED)
 if(WIN32)
 	add_definitions(-DWIN32 )
 	add_definitions(-D_USE_MATH_DEFINES )
+	add_definitions(-D_hypot=hypot )
 endif(WIN32)
 	
 # Find optional libs
