@@ -80,6 +80,11 @@ endif(LIBXML2_FOUND)
 
 find_package(Threads REQUIRED)
 
+if(WIN32)
+	add_definitions(-DWIN32 )
+	add_definitions(-D_USE_MATH_DEFINES )
+endif(WIN32)
+	
 # Find optional libs
 if(CMAKE_HAVE_PTHREAD_H)
 	if(WIN32)
