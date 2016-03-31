@@ -871,7 +871,8 @@ void imageFilm_t::drawRenderSettings()
 	ss << "\n" << yafLog.getAANoiseSettings();
 
 	std::string text_utf8 = ss.str();
-	std::wstring wtext_utf16 = utf8_to_utf16(text_utf8);
+	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;
+	std::u32string wtext_utf32 = convert.from_bytes(text_utf8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f;
@@ -919,10 +920,10 @@ void imageFilm_t::drawRenderSettings()
 	pen.y = textOffsetY * 64;
 
 	// Draw the text
-	for ( size_t n = 0; n < wtext_utf16.size(); n++ )
+	for ( size_t n = 0; n < wtext_utf32.size(); n++ )
 	{
 		// Set Coordinates for the carrige return
-		if (wtext_utf16[n] == '\n') {
+		if (wtext_utf32[n] == '\n') {
 			pen.x = textOffsetX * 64;
 			pen.y -= textInterlineOffset * 64;
 			fontsize = 9.5f;
@@ -939,9 +940,9 @@ void imageFilm_t::drawRenderSettings()
 		FT_Set_Transform( face, 0, &pen );
 
 		// Load glyph image into the slot (erase previous one)
-		if (FT_Load_Char( face, wtext_utf16[n], FT_LOAD_DEFAULT ))
+		if (FT_Load_Char( face, wtext_utf32[n], FT_LOAD_DEFAULT ))
 		{
-			Y_ERROR << "imageFilm: FreeType Couldn't load the glyph image for: '" << wtext_utf16[n] << "'!" << yendl;
+			Y_ERROR << "imageFilm: FreeType Couldn't load the glyph image for: '" << wtext_utf32[n] << "'!" << yendl;
 			continue;
 		}
 
