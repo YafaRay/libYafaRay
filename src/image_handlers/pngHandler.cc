@@ -66,10 +66,10 @@ pngHandler_t::pngHandler_t()
 	
 	handlerName = "PNGHandler";
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;
 }
 
 void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
@@ -94,7 +94,7 @@ pngHandler_t::~pngHandler_t()
 		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 		{
 			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = NULL;
+			imagePasses.at(idx) = nullptr;
 		}
 	}
 
@@ -103,10 +103,10 @@ pngHandler_t::~pngHandler_t()
 	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
 	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;	
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;	
 }
 
 void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -132,7 +132,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	png_structp pngPtr;
 	png_infop infoPtr;
 	int channels;
-	png_bytep *rowPointers = NULL;
+	png_bytep *rowPointers = nullptr;
 
 	fp = fopen(name.c_str(), "wb");
 
@@ -177,7 +177,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	png_write_image(pngPtr, rowPointers);
 
-	png_write_end(pngPtr, NULL);
+	png_write_end(pngPtr, nullptr);
 
 	png_destroy_write_struct(&pngPtr, &infoPtr);
 
@@ -200,8 +200,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 {
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
-	png_structp pngPtr = NULL;
-	png_infop infoPtr = NULL;
+	png_structp pngPtr = nullptr;
+	png_infop infoPtr = nullptr;
 
 	FILE *fp = fopen(name.c_str(), "rb");
 
@@ -239,8 +239,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 }
 bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
 {
-	png_structp pngPtr = NULL;
-	png_infop infoPtr = NULL;
+	png_structp pngPtr = nullptr;
+	png_infop infoPtr = nullptr;
 
 	pngDataReader_t *reader = new pngDataReader_t(data, size);
 
@@ -277,7 +277,7 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
     	return false;
     }
 
-	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
 		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
 		return false;
@@ -285,14 +285,14 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 
 	if(!(infoPtr = png_create_info_struct(pngPtr)))
 	{
-		png_destroy_read_struct(&pngPtr, NULL, NULL);
+		png_destroy_read_struct(&pngPtr, nullptr, nullptr);
 		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
 		return false;
 	}
 
 	if(setjmp(png_jmpbuf(pngPtr)))
 	{
-		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+		png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
 		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
 		return false;
 	}
@@ -302,7 +302,7 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 
 bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr)
 {
-	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
 		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
 		return false;
@@ -310,14 +310,14 @@ bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_struct
 
 	if(!(infoPtr = png_create_info_struct(pngPtr)))
 	{
-		png_destroy_read_struct(&pngPtr, NULL, NULL);
+		png_destroy_read_struct(&pngPtr, nullptr, nullptr);
 		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
 		return false;
 	}
 
 	if(setjmp(png_jmpbuf(pngPtr)))
 	{
-		png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+		png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
 		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
 		return false;
 	}
@@ -341,7 +341,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 
 	png_read_info(pngPtr, infoPtr);
 
-	png_get_IHDR(pngPtr, infoPtr, &w, &h, &bitDepth, &colorType, NULL, NULL, NULL);
+	png_get_IHDR(pngPtr, infoPtr, &w, &h, &bitDepth, &colorType, nullptr, nullptr, nullptr);
 
 	int numChan = png_get_channels(pngPtr, infoPtr);
 
@@ -491,7 +491,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 
 	png_read_end(pngPtr, infoPtr);
 
-	png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+	png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
 
 	// cleanup:
 	for(int i = 0; i < m_height; i++)

@@ -35,7 +35,7 @@ textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float
 textureImage_t::~textureImage_t()
 {
 	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
-	image = NULL;
+	image = nullptr;
 }
 
 void textureImage_t::resolution(int &x, int &y, int &z) const
@@ -261,8 +261,8 @@ int string2cliptype(const std::string *clipname)
 
 texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	const std::string *name = NULL;
-	const std::string *intpstr = NULL;
+	const std::string *name = nullptr;
+	const std::string *intpstr = nullptr;
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
@@ -270,8 +270,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	std::string texture_optimization_string = "none";
 	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
-	textureImage_t *tex = NULL;
-	imageHandler_t *ih = NULL;
+	textureImage_t *tex = nullptr;
+	imageHandler_t *ih = nullptr;
 	params.getParam("interpolate", intpstr);
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -283,7 +283,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	if(!name)
 	{
 		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << yendl;
-		return NULL;
+		return nullptr;
 	}
 	
 	// interpolation type, bilinear default
@@ -305,7 +305,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	if(fmt == "")
 	{
 		Y_ERROR << "ImageTexture: Image extension not recognized, dropping texture." << yendl;
-		return NULL;
+		return nullptr;
 	}
 	
 	paraMap_t ihpm;
@@ -319,7 +319,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	if(!ih)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << yendl;
-		return NULL;
+		return nullptr;
 	}
 	
 
@@ -349,7 +349,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	if(!ih->loadFromFile(*name))
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
-		return NULL;
+		return nullptr;
 	}
 	
 	tex = new textureImage_t(ih, intp, gamma, color_space);
@@ -357,7 +357,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	if(!tex)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
-		return NULL;
+		return nullptr;
 	}
 
 	// setup image

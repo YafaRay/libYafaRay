@@ -15,14 +15,14 @@ class gBoundTreeNode_t
 	//friend class gBoundTree_t;
 	public:
 		gBoundTreeNode_t(gBoundTreeNode_t<T> *l,gBoundTreeNode_t<T> *r,bound_t &b) 
-			{_left=l;_right=r;bound=b;r->_parent=l->_parent=this;_parent=NULL;};
+			{_left=l;_right=r;bound=b;r->_parent=l->_parent=this;_parent=nullptr;};
 		
 		gBoundTreeNode_t(const std::vector<T> & v,const bound_t b):_child(v) 
-		{_left=_right=NULL;_parent=NULL;bound=b;};
+		{_left=_right=nullptr;_parent=nullptr;bound=b;};
 		
-		~gBoundTreeNode_t() {if(_left!=NULL) {delete _left;delete _right;} };
+		~gBoundTreeNode_t() {if(_left!=nullptr) {delete _left;delete _right;} };
 		
-		bool isLeaf()const  {return (_left==NULL);};
+		bool isLeaf()const  {return (_left==nullptr);};
 		gBoundTreeNode_t<T> *right() {return _right;};
 		const gBoundTreeNode_t<T> *right()const {return _right;};
 		gBoundTreeNode_t<T> *left() {return _left;};
@@ -163,7 +163,7 @@ class gObjectIterator_t
 #define UP(c) c=c->parent()
 #define WAS_LEFT(o,c) (c->left()==o)
 #define WAS_RIGHT(o,c) (c->right()==o)
-#define TOP(c) (c->parent()==NULL)
+#define TOP(c) (c->parent()==nullptr)
 
 template<class T,class D,class CROSS>
 gObjectIterator_t<T,D,CROSS>::gObjectIterator_t(const gBoundTreeNode_t<T> *r,const D &d):
@@ -187,7 +187,7 @@ gObjectIterator_t<T,D,CROSS>::gObjectIterator_t(const gBoundTreeNode_t<T> *r,con
 			{
 				first=false;
 				upFirstRight();
-				if(currN==NULL)
+				if(currN==nullptr)
 				{
 					end=true;
 					return;
@@ -211,7 +211,7 @@ gObjectIterator_t<T,D,CROSS>::gObjectIterator_t(const gBoundTreeNode_t<T> *r,con
 			{
 				first=false;
 				upFirstRight();
-				if(currN==NULL)
+				if(currN==nullptr)
 				{
 					end=true;
 					return;
@@ -231,7 +231,7 @@ void gObjectIterator_t<T,D,CROSS>::upFirstRight()
 	const gBoundTreeNode_t<T> *old=currN;
 	if(TOP(currN)) 
 	{
-		currN=NULL;
+		currN=nullptr;
 		return;
 	}
 	old=currN;
@@ -240,7 +240,7 @@ void gObjectIterator_t<T,D,CROSS>::upFirstRight()
 	{
 		if(TOP(currN))
 		{
-			currN=NULL;
+			currN=nullptr;
 			return;
 		}
 		old=currN;
@@ -276,7 +276,7 @@ inline void gObjectIterator_t<T,D,CROSS>::operator ++ ()
 		{
 			first=false;
 			upFirstRight();
-			if(currN==NULL)
+			if(currN==nullptr)
 			{
 				end=true;
 				return;
@@ -302,7 +302,7 @@ class gBoundTree_t
 			tree = buildGenericTree(lpho,global_photon_calc_bound,global_photon_is_in_bound,
 									global_photon_get_pos,8);
 		}
-		~gBoundTree_t(){ if(tree!=NULL) delete tree; }
+		~gBoundTree_t(){ if(tree!=nullptr) delete tree; }
 		
 		lookup(const point3d_t &P,const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K,PFLOAT &radius,PFLOAT mincos)const;
 	private:

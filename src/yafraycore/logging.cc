@@ -192,7 +192,7 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 {
 	mVerbLevel = verbosity_level;
 	
-	std::time_t current_datetime = std::time(NULL);
+	std::time_t current_datetime = std::time(nullptr);
 	if(mVerbLevel <= mLogMasterVerbLevel) m_MemoryLog.push_back(logEntry_t(current_datetime, mVerbLevel, ""));
 	
 	if(mVerbLevel <= mConsoleMasterVerbLevel) 

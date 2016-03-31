@@ -34,12 +34,12 @@ imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, i
 
 imageOutput_t::imageOutput_t()
 {
-	image = NULL;
+	image = nullptr;
 }
 
 imageOutput_t::~imageOutput_t()
 {
-	image = NULL;
+	image = nullptr;
 }
 
 bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)

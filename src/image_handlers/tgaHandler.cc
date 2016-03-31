@@ -82,10 +82,10 @@ tgaHandler_t::tgaHandler_t()
 	
 	handlerName = "TGAHandler";
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;
 }
 
 void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
@@ -110,7 +110,7 @@ tgaHandler_t::~tgaHandler_t()
 		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 		{
 			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = NULL;
+			imagePasses.at(idx) = nullptr;
 		}
 	}
 
@@ -119,10 +119,10 @@ tgaHandler_t::~tgaHandler_t()
 	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
 	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;	
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;	
 }
 
 bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
@@ -144,7 +144,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	
 	fp = fopen(name.c_str(), "wb");
 
-	if (fp == NULL)
+	if (fp == nullptr)
 		return false;
 	else 
 	{
@@ -484,7 +484,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 
 	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 		
-	ColorMap = NULL;
+	ColorMap = nullptr;
 	
 	// Read the colormap if needed
 	if(hasColorMap)
@@ -595,10 +595,10 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	}
 	
 	fclose(fp);
-	fp = NULL;
+	fp = nullptr;
 	
 	if (ColorMap) delete ColorMap;
-	ColorMap = NULL;
+	ColorMap = nullptr;
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 

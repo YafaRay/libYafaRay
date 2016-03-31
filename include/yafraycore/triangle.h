@@ -31,7 +31,7 @@ class YAFRAYCORE_EXPORT triangle_t
 	friend class triangleInstance_t;
 
 	public:
-		triangle_t(): pa(-1), pb(-1), pc(-1), na(-1), nb(-1), nc(-1), mesh(NULL), intersectionBiasFactor(0.f), edge1(0.f), edge2(0.f) { /* Empty */ }
+		triangle_t(): pa(-1), pb(-1), pc(-1), na(-1), nb(-1), nc(-1), mesh(nullptr), intersectionBiasFactor(0.f), edge1(0.f), edge2(0.f) { /* Empty */ }
         triangle_t(int ia, int ib, int ic, triangleObject_t* m): pa(ia), pb(ib), pc(ic), na(-1), nb(-1), nc(-1), mesh(m), intersectionBiasFactor(0.f), edge1(0.f), edge2(0.f) {  updateIntersectionCachedValues(); }
 		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;
@@ -79,7 +79,7 @@ class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
 	friend class triangleObjectInstance_t;
 
 	public:
-		triangleInstance_t(): mBase(NULL), mesh(NULL) { }
+		triangleInstance_t(): mBase(nullptr), mesh(nullptr) { }
         triangleInstance_t(triangle_t* base, triangleObjectInstance_t* m): mBase(base), mesh(m) { updateIntersectionCachedValues();}
 		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
 		virtual bound_t getBound() const;

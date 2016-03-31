@@ -359,7 +359,7 @@ void scene_t::setNumThreads(int threads)
 		mib[0] = CTL_HW;
 		mib[1] = HW_NCPU;
 		len = sizeof(int);
-		sysctl(mib, 2, &nthreads, &len, NULL, 0);
+		sysctl(mib, 2, &nthreads, &len, nullptr, 0);
 	#	elif defined(__sgi)
 		nthreads = sysconf(_SC_NPROC_ONLN);
 	#	else

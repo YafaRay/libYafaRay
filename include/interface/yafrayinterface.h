@@ -34,7 +34,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		yafrayInterface_t();
 		virtual ~yafrayInterface_t();
 		// directly related to scene_t:
-		virtual void loadPlugins(const char *path); //!< load plugins from path, if NULL load from default path, if available.
+		virtual void loadPlugins(const char *path); //!< load plugins from path, if nullptr load from default path, if available.
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
 		/*! start a triangle mesh

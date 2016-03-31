@@ -18,7 +18,7 @@ class YAFRAYCORE_EXPORT background_t
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const=0;
 		virtual color_t eval(const ray_t &ray, bool filtered=false) const=0;
 		/*! get the light source representing background lighting.
-			\return the light source that reproduces background lighting, or NULL if background
+			\return the light source that reproduces background lighting, or nullptr if background
 					shall only be sampled from BSDFs
 		*/
 		virtual bool hasIBL() { return false; }

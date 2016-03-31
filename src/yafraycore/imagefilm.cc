@@ -135,9 +135,9 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
 
-	densityImage = NULL;
+	densityImage = nullptr;
 	estimateDensity = false;
-	dpimage = NULL;
+	dpimage = nullptr;
 
 	// fill filter table:
 	float *fTp = filterTable;
@@ -968,7 +968,7 @@ void imageFilm_t::drawRenderSettings()
 	ihParams["for_output"] = false;
 	
 	bool logo_loaded = false;
-	imageHandler_t *logo = NULL;
+	imageHandler_t *logo = nullptr;
 
 	if(!yafLog.getLoggingCustomIcon().empty())
 	{

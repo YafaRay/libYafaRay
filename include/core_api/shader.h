@@ -25,7 +25,7 @@ struct nodeResult_t
 class nodeStack_t
 {
 	public:
-		nodeStack_t() { dat = NULL; }
+		nodeStack_t() { dat = nullptr; }
 		nodeStack_t(void *data) { dat = (nodeResult_t *)data; }
 		const nodeResult_t& operator()( unsigned int ID) const
 		{

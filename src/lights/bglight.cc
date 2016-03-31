@@ -57,7 +57,7 @@ light_t(LIGHT_NONE), samples(sampl), absInter(absIntersect)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
-	background = NULL;
+	background = nullptr;
 	uDist = 0;
 	vDist = 0;
 }

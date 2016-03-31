@@ -86,7 +86,7 @@ exrHandler_t::~exrHandler_t()
 	{
 		if(m_halfrgba.at(idx)) delete m_halfrgba.at(idx);
 	
-		m_halfrgba.at(idx) = NULL;
+		m_halfrgba.at(idx) = nullptr;
 	}
 }
 
@@ -218,7 +218,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		char bytes[4];
 		fread(&bytes, 1, 4, fp);
 		fclose(fp);
-		fp = NULL;
+		fp = nullptr;
 		if(!isImfMagic(bytes)) return false;
 	}
 

@@ -66,7 +66,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 
 		/*! imageFilm_t Constructor */
 		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
-		renderEnvironment_t *e = NULL, bool showSamMask = false, int tSize = 32,
+		renderEnvironment_t *e = nullptr, bool showSamMask = false, int tSize = 32,
 		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false);
 		/*! imageFilm_t Destructor */
 		~imageFilm_t();

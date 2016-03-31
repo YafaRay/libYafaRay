@@ -50,7 +50,7 @@ textureClouds_t::textureClouds_t(int dep, PFLOAT sz, bool hd,
 textureClouds_t::~textureClouds_t()
 {
 	if (nGen) delete nGen;
-	nGen = NULL;
+	nGen = nullptr;
 }
 
 CFLOAT textureClouds_t::getFloat(const point3d_t &p) const
@@ -371,11 +371,11 @@ textureMusgrave_t::~textureMusgrave_t()
 {
 	if (nGen) {
 		delete nGen;
-		nGen = NULL;
+		nGen = nullptr;
 	}
 	if (mGen) {
 		delete mGen;
-		mGen = NULL;
+		mGen = nullptr;
 	}
 }
 
@@ -430,11 +430,11 @@ textureDistortedNoise_t::~textureDistortedNoise_t()
 {
 	if (nGen1) {
 		delete nGen1;
-		nGen1 = NULL;
+		nGen1 = nullptr;
 	}
 	if (nGen2) {
 		delete nGen2;
-		nGen2 = NULL;
+		nGen2 = nullptr;
 	}
 }
 

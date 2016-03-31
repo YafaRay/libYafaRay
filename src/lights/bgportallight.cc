@@ -34,7 +34,7 @@ bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bL
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
-    mesh = NULL;
+    mesh = nullptr;
 	aPdf = 0.f;
 	areaDist = 0;
 	tris = 0;

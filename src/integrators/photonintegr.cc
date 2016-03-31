@@ -170,7 +170,7 @@ bool photonIntegrator_t::preprocess()
 	int numCLights = 0;
 	int numDLights = 0;
 	float fNumLights = 0.f;
-	float *energies = NULL;
+	float *energies = nullptr;
 	color_t pcol;
 
 	//shoot photons
@@ -272,7 +272,7 @@ bool photonIntegrator_t::preprocess()
 			int nBounces=0;
 			bool causticPhoton = false;
 			bool directPhoton = true;
-			const material_t *material = NULL;
+			const material_t *material = nullptr;
 			BSDF_t bsdfs;
 
 			while( scene->intersect(ray, sp) )
@@ -285,7 +285,7 @@ bool photonIntegrator_t::preprocess()
 				
 				color_t transm(1.f);
 				color_t vcol(0.f);
-				const volumeHandler_t* vol = NULL;
+				const volumeHandler_t* vol = nullptr;
 				
 				if(material)
 				{
@@ -460,7 +460,7 @@ bool photonIntegrator_t::preprocess()
 			int nBounces=0;
 			bool causticPhoton = false;
 			bool directPhoton = true;
-			const material_t *material = NULL;
+			const material_t *material = nullptr;
 			BSDF_t bsdfs;
 
 			while( scene->intersect(ray, sp) )
@@ -473,7 +473,7 @@ bool photonIntegrator_t::preprocess()
 				
 				color_t transm(1.f);
 				color_t vcol(0.f);
-				const volumeHandler_t* vol = NULL;
+				const volumeHandler_t* vol = nullptr;
 				
 				if(material)
 				{

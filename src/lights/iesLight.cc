@@ -270,7 +270,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	if (!light->isIESOk())
 	{
 		delete light;
-		return NULL;
+		return nullptr;
 	}
 	
 	light->lShootCaustic = shootC;

@@ -9,7 +9,7 @@ __BEGIN_YAFRAY
 class YAFRAYCORE_EXPORT hashGrid_t
 {
 public:
-	hashGrid_t(){hashGrid = NULL;}
+	hashGrid_t(){hashGrid = nullptr;}
 
 	hashGrid_t(double _cellSize, unsigned int _gridSize, bound_t _bBox);
 

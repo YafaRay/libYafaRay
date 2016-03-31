@@ -19,7 +19,7 @@ const shaderNode_t* sNodeFinder_t::operator()(const std::string &name) const
 {
 	auto i=node_table.find(name);
 	if(i!=node_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 void recursiveSolver(shaderNode_t *node, std::vector<shaderNode_t*> &sorted)

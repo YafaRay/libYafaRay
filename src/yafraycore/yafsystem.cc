@@ -20,7 +20,7 @@ void sharedlibrary_t::open(const std::string &lib)
 {
 	handle = LoadLibrary(lib.c_str());
 
-	if (handle == NULL) {
+	if (handle == nullptr) {
 		DWORD err_code = GetLastError();
 		const size_t err_buf_size = 64000;
 		char err_buf[err_buf_size] = {0};
@@ -34,26 +34,26 @@ void sharedlibrary_t::open(const std::string &lib)
 
 void sharedlibrary_t::close() 
 {
-	if (handle != NULL) 
+	if (handle != nullptr) 
 	{
 		FreeLibrary(handle);
-		handle = NULL;
+		handle = nullptr;
 		delete refcount;
 	}
 }
 
 void * sharedlibrary_t::getSymbol(const char *name) 
 {
-	if (handle != NULL) 
+	if (handle != nullptr) 
 	{
 		void *func = (void*)GetProcAddress(handle, name); //added explicit cast to enable mingw32 compilation (DarkTide)
-		if (func == NULL)
+		if (func == nullptr)
 			cerr << "GetProcAddress error: " << GetLastError() << endl;
 		return func;
 	} 
 	else 
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -62,7 +62,7 @@ void * sharedlibrary_t::getSymbol(const char *name)
 void sharedlibrary_t::open(const std::string &lib) 
 {
 	handle = dlopen(lib.c_str(),RTLD_NOW);
-	if (handle == NULL) 
+	if (handle == nullptr) 
 		cerr << "dlerror: " << dlerror() << endl;
 	else
 		refcount=new int(1);
@@ -70,41 +70,41 @@ void sharedlibrary_t::open(const std::string &lib)
 
 void sharedlibrary_t::close() 
 {
-	if (handle != NULL) 
+	if (handle != nullptr) 
 	{
 		dlclose(handle);
-		handle = NULL;
+		handle = nullptr;
 		delete refcount;
 	}
 }
 
 void * sharedlibrary_t::getSymbol(const char *name) 
 {
-	if (handle != NULL) 
+	if (handle != nullptr) 
 	{
 		void *func = dlsym(handle, name);
-		if (func == NULL) 
+		if (func == nullptr) 
 			cerr<<"dlerror: "<<dlerror()<<endl;
 		return func;
 	} 
 	else 
-		return NULL;
+		return nullptr;
 }
 
 #endif
 
 bool sharedlibrary_t::isOpen() 
 {
-	return handle != NULL;
+	return handle != nullptr;
 }
 
 sharedlibrary_t::sharedlibrary_t() 
 {
-  handle = NULL;
+  handle = nullptr;
 }
 
 sharedlibrary_t::sharedlibrary_t(const std::string &library) 
-  : handle(NULL)
+  : handle(nullptr)
 {
   open(library);
 }
@@ -167,10 +167,10 @@ const std::list<std::string> & listDir(const std::string &dir)
 	struct stat estado;
 
 	directorio=opendir(dir.c_str());
-	if(directorio==NULL) return lista;
+	if(directorio==nullptr) return lista;
 
 	entrada=readdir(directorio);
-	while(entrada!=NULL) 
+	while(entrada!=nullptr) 
 	{
 		string full=dir+"/"+entrada->d_name;
 		stat(full.c_str(),&estado);

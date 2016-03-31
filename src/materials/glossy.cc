@@ -492,13 +492,13 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	std::map<std::string, shaderNode_t *> nodeList;
 
 	// Prepare our node list
-	nodeList["diffuse_shader"] = NULL;
-	nodeList["glossy_shader"] = NULL;
-	nodeList["glossy_reflect_shader"] = NULL;
-	nodeList["bump_shader"] = NULL;
-    nodeList["sigma_oren_shader"]   = NULL;
-    nodeList["exponent_shader"] = NULL;
-    nodeList["diffuse_refl_shader"] = NULL;    
+	nodeList["diffuse_shader"] = nullptr;
+	nodeList["glossy_shader"] = nullptr;
+	nodeList["glossy_reflect_shader"] = nullptr;
+	nodeList["bump_shader"] = nullptr;
+    nodeList["sigma_oren_shader"]   = nullptr;
+    nodeList["exponent_shader"] = nullptr;
+    nodeList["diffuse_refl_shader"] = nullptr;    
 
 	if(mat->loadNodes(paramList, render))
 	{

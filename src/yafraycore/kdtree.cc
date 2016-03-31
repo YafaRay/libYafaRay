@@ -686,7 +686,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t) break;
 		// loop until leaf is found
@@ -840,7 +840,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t) break;
 		
@@ -990,7 +990,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t /*a*/) break;
 		// loop until leaf is found

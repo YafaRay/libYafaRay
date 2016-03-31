@@ -723,7 +723,7 @@ bool kdTree_t<T>::Intersect(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT &Z, in
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t) break;
 		// loop until leaf is found
@@ -861,7 +861,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT shado
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t /*a*/) break;
 		// loop until leaf is found
@@ -999,7 +999,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	stack[exPt].node = 0; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
-	while (currNode != NULL)
+	while (currNode != nullptr)
 	{
 		if (dist < stack[enPt].t /*a*/) break;
 		// loop until leaf is found

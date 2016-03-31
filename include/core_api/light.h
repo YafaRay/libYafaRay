@@ -36,11 +36,11 @@ class light_t
 		//! emit a photon
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const = 0;
 		//! create a sample of light emission, similar to emitPhoton, just more suited for bidirectional methods
-		/*! fill in s.dirPdf, s.areaPdf, s.col and s.flags, and s.sp if not NULL */
+		/*! fill in s.dirPdf, s.areaPdf, s.col and s.flags, and s.sp if not nullptr */
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const{return color_t(0.f);};
 		//! indicate whether the light has a dirac delta distribution or not
 		virtual bool diracLight() const = 0;
-		//! illuminate a given surface point, generating sample s, fill in s.sp if not NULL; Set ray to test visibility by integrator
+		//! illuminate a given surface point, generating sample s, fill in s.sp if not nullptr; Set ray to test visibility by integrator
 		/*! fill in s.pdf, s.col and s.flags */
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const = 0;
 		//! illuminate a given surfance point; Set ray to test visibility by integrator. Only for dirac lights.

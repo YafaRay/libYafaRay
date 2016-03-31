@@ -619,15 +619,15 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     std::map<std::string, shaderNode_t *> nodeList;
 
     // prepare shader nodes list
-    nodeList["diffuse_shader"]      = NULL;
-    nodeList["mirror_color_shader"] = NULL;
-    nodeList["bump_shader"]         = NULL;
-    nodeList["mirror_shader"]       = NULL;
-    nodeList["transparency_shader"] = NULL;
-    nodeList["translucency_shader"] = NULL;
-    nodeList["sigma_oren_shader"]   = NULL;
-    nodeList["diffuse_refl_shader"] = NULL;
-    nodeList["IOR_shader"]          = NULL;
+    nodeList["diffuse_shader"]      = nullptr;
+    nodeList["mirror_color_shader"] = nullptr;
+    nodeList["bump_shader"]         = nullptr;
+    nodeList["mirror_shader"]       = nullptr;
+    nodeList["transparency_shader"] = nullptr;
+    nodeList["translucency_shader"] = nullptr;
+    nodeList["sigma_oren_shader"]   = nullptr;
+    nodeList["diffuse_refl_shader"] = nullptr;
+    nodeList["IOR_shader"]          = nullptr;
 
     // load shader nodes:
     if(mat->loadNodes(paramsList, render))

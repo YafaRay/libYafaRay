@@ -86,8 +86,8 @@ jpgHandler_t::jpgHandler_t()
 	
 	handlerName = "JPEGHandler";
 	
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
 }
 
 void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
@@ -112,15 +112,15 @@ jpgHandler_t::~jpgHandler_t()
 		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 		{
 			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = NULL;
+			imagePasses.at(idx) = nullptr;
 		}
 	}
 
 	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
 	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
 }
 
 void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
@@ -144,7 +144,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	struct jpeg_compress_struct info;
 	struct jpgErrorManager jerr;
 	int x, y, ix;
-	yByte *scanline = NULL;
+	yByte *scanline = nullptr;
 	
 	fp = fopen(name.c_str(), "wb");
 	

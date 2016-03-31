@@ -39,7 +39,7 @@ class textureMarble_t : public texture_t
 		{
 			if (nGen) {
 				delete nGen;
-				nGen = NULL;
+				nGen = nullptr;
 			}
 		}
 
@@ -67,7 +67,7 @@ class textureWood_t : public texture_t
 		{
 			if (nGen) {
 				delete nGen;
-				nGen = NULL;
+				nGen = nullptr;
 			}
 		}
 

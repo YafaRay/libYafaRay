@@ -54,10 +54,10 @@ tifHandler_t::tifHandler_t()
 	
 	handlerName = "TIFFHandler";
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;
 }
 
 void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
@@ -82,7 +82,7 @@ tifHandler_t::~tifHandler_t()
 		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 		{
 			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = NULL;
+			imagePasses.at(idx) = nullptr;
 		}
 	}
 
@@ -91,10 +91,10 @@ tifHandler_t::~tifHandler_t()
 	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
 	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
 
-	rgbOptimizedBuffer = NULL;
-	rgbCompressedBuffer = NULL;
-	rgbaOptimizedBuffer = NULL;
-	rgbaCompressedBuffer = NULL;	
+	rgbOptimizedBuffer = nullptr;
+	rgbCompressedBuffer = nullptr;
+	rgbaOptimizedBuffer = nullptr;
+	rgbaCompressedBuffer = nullptr;	
 }
 
 void tifHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)

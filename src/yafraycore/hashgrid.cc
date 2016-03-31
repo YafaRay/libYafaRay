@@ -35,7 +35,7 @@ void hashGrid_t::updateGrid()
 		hashGrid = new std::list<photon_t *>*[gridSize];
 
 		for (unsigned int i = 0; i < gridSize; ++i)
-			hashGrid[i] = NULL;
+			hashGrid[i] = nullptr;
 	} 
 	else 
 	{
@@ -45,7 +45,7 @@ void hashGrid_t::updateGrid()
 			{
 				//delete hashGrid[i];
 				hashGrid[i]->clear(); // fix me! too many time consumed here
-				//hashGrid[i] = NULL;
+				//hashGrid[i] = nullptr;
 			}
 		}
 	}
@@ -61,7 +61,7 @@ void hashGrid_t::updateGrid()
 
 		unsigned int index = Hash(ix,iy,iz);
 
-		if(hashGrid[index] == NULL)
+		if(hashGrid[index] == nullptr)
 			hashGrid[index] = new std::list<photon_t*>();
 
 		hashGrid[index]->push_front(&(*itr));
@@ -88,7 +88,7 @@ unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsign
 			for (int ix = abs(int(bMin.x)); ix <= abs(int(bMax.x)); ix++) {
 				int hv = Hash(ix, iy, iz);
 
-				if(hashGrid[hv] == NULL) continue;
+				if(hashGrid[hv] == nullptr) continue;
 
 				for(auto itr = hashGrid[hv]->begin(); itr != hashGrid[hv]->end(); ++itr)
 				{

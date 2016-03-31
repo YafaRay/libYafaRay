@@ -72,7 +72,7 @@ hdrHandler_t::~hdrHandler_t()
 	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
 		if(imagePasses.at(idx)) delete imagePasses.at(idx);
-		imagePasses.at(idx) = NULL;
+		imagePasses.at(idx) = nullptr;
 	}
 }
 
@@ -344,7 +344,7 @@ bool hdrHandler_t::readORLE(std::ifstream &file, int y, int scanWidth)
 	}
 
 	delete [] scanline;
-	scanline = NULL;
+	scanline = nullptr;
 
 	return true;
 }
@@ -355,7 +355,7 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 	yByte count = 0; // run description
 	yByte col = 0; // color component
 	
-	if (scanline == NULL)
+	if (scanline == nullptr)
 	{
 		Y_ERROR << handlerName << ": Unable to allocate buffer memory..." << yendl;
 		return false;
@@ -418,7 +418,7 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 	}
 
 	delete [] scanline;
-	scanline = NULL;
+	scanline = nullptr;
 
 	return true;
 }

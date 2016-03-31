@@ -400,10 +400,10 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	std::map<std::string, shaderNode_t *> nodeList;
 	
 	// Prepare our node list
-	nodeList["mirror_color_shader"] = NULL;
-	nodeList["bump_shader"] = NULL;
-    nodeList["filter_color_shader"] = NULL;
-    nodeList["IOR_shader"] = NULL;
+	nodeList["mirror_color_shader"] = nullptr;
+	nodeList["bump_shader"] = nullptr;
+    nodeList["filter_color_shader"] = nullptr;
+    nodeList["IOR_shader"] = nullptr;
 	
 	if(mat->loadNodes(paramList, render))
 	{

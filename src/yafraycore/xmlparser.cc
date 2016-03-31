@@ -81,27 +81,27 @@ static void my_fatalError(void *user_data, const char *msg, ...)
 
 static xmlSAXHandler my_handler =
 {
-	NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
+	nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
   startDocument, //  startDocumentSAXFunc startDocument;
   endDocument, //  endDocumentSAXFunc endDocument;
   startElement, //  startElementSAXFunc startElement;
   endElement, //  endElementSAXFunc endElement;
-  NULL,
-  NULL, //  charactersSAXFunc characters;
-  NULL,
-  NULL,
-  NULL,
+  nullptr,
+  nullptr, //  charactersSAXFunc characters;
+  nullptr,
+  nullptr,
+  nullptr,
   my_warning,
   my_error,
   my_fatalError

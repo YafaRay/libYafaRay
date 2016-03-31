@@ -75,7 +75,7 @@ renderEnvironment_t::renderEnvironment_t()
 	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
-	output2 = NULL;
+	output2 = nullptr;
 }
 
 template <class T>
@@ -134,7 +134,7 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 		if(!plug.isOpen()) continue;
 		reg_t *registerPlugin;
 		registerPlugin=(reg_t *)plug.getSymbol("registerPlugin");
-		if(registerPlugin==NULL) continue;
+		if(registerPlugin==nullptr) continue;
 		registerPlugin(*this);
 		pluginHandlers.push_back(plug);
 	}
@@ -154,7 +154,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 
 		char *pInstallDir=(char *)malloc(MAX_PATH);
 
-  		dwStat = RegQueryValueEx(hkey, TEXT("InstallDir"), NULL, NULL, (LPBYTE)pInstallDir, &dwSize);
+  		dwStat = RegQueryValueEx(hkey, TEXT("InstallDir"), nullptr, nullptr, (LPBYTE)pInstallDir, &dwSize);
 
 		if (dwStat == NO_ERROR)
 		{
@@ -187,42 +187,42 @@ material_t* renderEnvironment_t::getMaterial(const std::string &name)const
 {
 	auto i=material_table.find(name);
 	if(i!=material_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 texture_t* renderEnvironment_t::getTexture(const std::string &name)const
 {
 	auto i=texture_table.find(name);
 	if(i!=texture_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 camera_t* renderEnvironment_t::getCamera(const std::string &name)const
 {
 	auto i=camera_table.find(name);
 	if(i!=camera_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 background_t* renderEnvironment_t::getBackground(const std::string &name)const
 {
 	auto i=background_table.find(name);
 	if(i!=background_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 integrator_t* renderEnvironment_t::getIntegrator(const std::string &name)const
 {
 	auto i=integrator_table.find(name);
 	if(i!=integrator_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 shaderNode_t* renderEnvironment_t::getShaderNode(const std::string &name)const
 {
 	auto i=shader_table.find(name);
 	if(i!=shader_table.end()) return i->second;
-	else return NULL;
+	else return nullptr;
 }
 
 light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &params)

@@ -45,7 +45,7 @@ enum textureOptimization_t
 class YAFRAYCORE_EXPORT imageHandler_t
 {
 public:
-	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(NULL), rgbaCompressedBuffer(NULL), rgbOptimizedBuffer(NULL), rgbCompressedBuffer(NULL), m_MultiLayer(false) {};
+	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
 
 	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
 	virtual ~imageHandler_t() {};

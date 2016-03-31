@@ -129,32 +129,32 @@ static void yaf_tile_dealloc(YafTileObject_t *self)
 PySequenceMethods sequence_methods =
 {
 	( lenfunc ) yaf_tile_length,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	( ssizeargfunc ) yaf_tile_subscript_int
 };
 
 PyTypeObject yafTile_Type =
 {
-	PyVarObject_HEAD_INIT(NULL, 0)
+	PyVarObject_HEAD_INIT(nullptr, 0)
 	"yaf_tile",							/* tp_name */
 	sizeof(YafTileObject_t),			/* tp_basicsize */
 	0,									/* tp_itemsize */
 	( destructor ) yaf_tile_dealloc,	/* tp_dealloc */
-	NULL,                       		/* printfunc tp_print; */
-	NULL,								/* getattrfunc tp_getattr; */
-	NULL,								/* setattrfunc tp_setattr; */
-	NULL,								/* tp_compare */ /* DEPRECATED in python 3.0! */
-	NULL,								/* tp_repr */
-	NULL,                       		/* PyNumberMethods *tp_as_number; */
+	nullptr,                       		/* printfunc tp_print; */
+	nullptr,								/* getattrfunc tp_getattr; */
+	nullptr,								/* setattrfunc tp_setattr; */
+	nullptr,								/* tp_compare */ /* DEPRECATED in python 3.0! */
+	nullptr,								/* tp_repr */
+	nullptr,                       		/* PyNumberMethods *tp_as_number; */
 	&sequence_methods,					/* PySequenceMethods *tp_as_sequence; */
-	NULL,								/* PyMappingMethods *tp_as_mapping; */
-	NULL,								/* hashfunc tp_hash; */
-	NULL,								/* ternaryfunc tp_call; */
-	NULL,                       		/* reprfunc tp_str; */
-	NULL,								/* getattrofunc tp_getattro; */
-	NULL,								/* setattrofunc tp_setattro; */
-	NULL,                       		/* PyBufferProcs *tp_as_buffer; */
+	nullptr,								/* PyMappingMethods *tp_as_mapping; */
+	nullptr,								/* hashfunc tp_hash; */
+	nullptr,								/* ternaryfunc tp_call; */
+	nullptr,                       		/* reprfunc tp_str; */
+	nullptr,								/* getattrofunc tp_getattro; */
+	nullptr,								/* setattrofunc tp_setattro; */
+	nullptr,                       		/* PyBufferProcs *tp_as_buffer; */
 	Py_TPFLAGS_DEFAULT,         		/* long tp_flags; */
 };
 
@@ -508,7 +508,7 @@ private:
 	if (!PyCallable_Check($input))
 	{
 		PyErr_SetString(PyExc_TypeError, "Need a callback method.");
-		return NULL;
+		return nullptr;
 	}
 
 	$1 = $input;
@@ -669,7 +669,7 @@ namespace yafaray
 			yafrayInterface_t();
 			virtual ~yafrayInterface_t();
 			// directly related to scene_t:
-			virtual void loadPlugins(const char *path); //!< load plugins from path, if NULL load from default path, if available.
+			virtual void loadPlugins(const char *path); //!< load plugins from path, if nullptr load from default path, if available.
 			virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 			virtual bool endGeometry(); //!< call after creating geometry;
 			/*! start a triangle mesh

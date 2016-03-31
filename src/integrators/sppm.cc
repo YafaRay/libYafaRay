@@ -339,7 +339,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
 	int numDLights = 0;
 	float fNumLights = 0.f;
-	float *energies = NULL;
+	float *energies = nullptr;
 	color_t pcol;
 
 	tmplights.clear();
@@ -428,7 +428,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 		int nBounces=0;
 		bool causticPhoton = false;
 		bool directPhoton = true;
-		const material_t *material = NULL;
+		const material_t *material = nullptr;
 		BSDF_t bsdfs;
 
 		while( scene->intersect(ray, sp) ) //scatter photons.

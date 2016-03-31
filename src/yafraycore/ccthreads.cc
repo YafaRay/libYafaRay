@@ -11,7 +11,7 @@ namespace yafthreads {
 mutex_t::mutex_t() 
 {
 #if HAVE_PTHREAD
-	int error=pthread_mutex_init(&m, NULL);
+	int error=pthread_mutex_init(&m, nullptr);
 	switch(error)
 	{
 		case EINVAL: throw std::runtime_error("pthread_mutex_init error EINVAL"); break;
@@ -61,7 +61,7 @@ mutex_t::~mutex_t()
 rwlock_t::rwlock_t() 
 {
 #if HAVE_PTHREAD
-	int error=pthread_rwlock_init(&l, NULL);
+	int error=pthread_rwlock_init(&l, nullptr);
 	switch(error)
 	{
 		case EINVAL: throw std::runtime_error("pthread_rwlock_init error EINVAL"); break;
@@ -115,7 +115,7 @@ rwlock_t::~rwlock_t()
 conditionVar_t::conditionVar_t() 
 {
 #if HAVE_PTHREAD
-	int error=pthread_mutex_init(&m, NULL);
+	int error=pthread_mutex_init(&m, nullptr);
 	switch(error)
 	{
 		case EINVAL: throw std::runtime_error("pthread_mutex_init error EINVAL"); break;
@@ -123,7 +123,7 @@ conditionVar_t::conditionVar_t()
 		case EAGAIN: throw std::runtime_error("pthread_mutex_init error EAGAIN"); break;
 		default: break;
 	}
-	error = pthread_cond_init (&c, NULL);
+	error = pthread_cond_init (&c, nullptr);
 	if(error != 0)
 	{
 		throw std::runtime_error("pthread_cond_init error\n");
@@ -206,7 +206,7 @@ void * wrapper(void *data)
 	}
 	obj->running=false;
 	pthread_exit(0);
-	return NULL;
+	return nullptr;
 }
 
 void thread_t::run()
@@ -220,7 +220,7 @@ void thread_t::run()
 
 void thread_t::wait()
 {
-	pthread_join(id,NULL);
+	pthread_join(id,nullptr);
 	running=false;
 }
 

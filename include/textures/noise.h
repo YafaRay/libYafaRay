@@ -135,7 +135,7 @@ public:
 	voronoi_t(voronoiType vt=V_F1, dMetricType dm=DIST_REAL, PFLOAT mex=2.5);
 	virtual ~voronoi_t()
 	{
-		//if (distfunc) { delete distfunc;  distfunc=NULL; }
+		//if (distfunc) { delete distfunc;  distfunc=nullptr; }
 	}
 	virtual PFLOAT operator() (const point3d_t &pt) const;
 	PFLOAT getDistance(int x, PFLOAT da[4]) const { return da[x & 3]; }
