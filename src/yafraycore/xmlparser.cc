@@ -161,7 +161,7 @@ void xmlParser_t::popState()
 {
 	state_stack.pop_back();
 	if(!state_stack.empty()) current = &state_stack.back();
-	else current = 0;
+	else current = nullptr;
 }
 
 /*=============================================================

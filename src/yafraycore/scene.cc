@@ -50,7 +50,7 @@ scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
 	state.nextFreeID = std::numeric_limits<int>::max();
-	state.curObj = 0;
+	state.curObj = nullptr;
 
 	AA_resampled_floor = 0.f;
 	AA_sample_multiplier_factor = 1.f;
@@ -790,7 +790,7 @@ bool scene_t::update()
 	{
 		if(tree) delete tree;
 		if(vtree) delete vtree;
-		tree = 0, vtree = 0;
+		tree = nullptr, vtree = nullptr;
 		int nprims=0;
 		if(mode==0)
 		{

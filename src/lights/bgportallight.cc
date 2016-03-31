@@ -30,7 +30,7 @@
 __BEGIN_YAFRAY
 
 bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bLightEnabled, bool bCastShadows):
-	objID(msh), samples(sampl), power(pow), tree(0)
+	objID(msh), samples(sampl), power(pow), tree(nullptr)
 {
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
@@ -49,7 +49,7 @@ bgPortalLight_t::~bgPortalLight_t()
 	if(tree)
 	{
 		delete tree;
-		tree = 0;
+		tree = nullptr;
 	}
 }
 

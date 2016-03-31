@@ -62,7 +62,7 @@ VolumeRegion* NoiseVolume::factory(paraMap_t &params,renderEnvironment_t &render
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
 	int attSc = 1;
-	const std::string *texName = 0;
+	const std::string *texName = nullptr;
 	
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);

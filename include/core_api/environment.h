@@ -69,7 +69,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		imageFilm_t*	createImageFilm(const paraMap_t &params, colorOutput_t &output);
 		imageHandler_t* createImageHandler(const std::string &name, paraMap_t &params, bool addToTable = true);
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
-		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = 0);
+		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = nullptr);
 		void			setupRenderPasses(const paraMap_t &params);
 		const			renderPasses_t* getRenderPasses() const { return &renderPasses; }
 		const 			std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }

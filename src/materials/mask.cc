@@ -134,7 +134,7 @@ CFLOAT maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp,
 
 material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
 {
-	const std::string *name = 0;
+	const std::string *name = nullptr;
 	const material_t *m1=0, *m2=0;
 	double thresh = 0.5;
 	std::string sVisibility = "normal";

@@ -66,7 +66,7 @@ void sphere_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectDat
 	createCS(sp.N, sp.NU, sp.NV);
 	sp.U = atan2(normal.y, normal.x)*M_1_PI + 1;
 	sp.V = 1.f - fAcos(normal.z)*M_1_PI;
-	sp.light = 0;
+	sp.light = nullptr;
 }
 
 object3d_t* sphere_factory(paraMap_t &params, renderEnvironment_t &env)

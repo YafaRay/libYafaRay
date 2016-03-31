@@ -422,8 +422,8 @@ const volumeHandler_t* blendMat_t::getVolumeHandler(bool inside)const
 
 material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &env)
 {
-	const std::string *name = 0;
-	const material_t *m1=0, *m2=0;
+	const std::string *name = nullptr;
+	const material_t *m1=nullptr, *m2=nullptr;
 	double blend_val = 0.5;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;

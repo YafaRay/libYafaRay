@@ -407,7 +407,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 		ErrNoType; return 0;
 	}
 
-	imageHandler_t* ih = 0;
+	imageHandler_t* ih = nullptr;
 	auto i=imagehandler_factory.find(type);
 
 	if(i!=imagehandler_factory.end())
@@ -721,12 +721,12 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;        
-	const std::string *logging_paramsBadgePosition = 0;
-	const std::string *logging_title = 0;
-	const std::string *logging_author = 0;
-	const std::string *logging_contact = 0;
-	const std::string *logging_comments = 0;
-	const std::string *logging_customIcon = 0;
+	const std::string *logging_paramsBadgePosition = nullptr;
+	const std::string *logging_title = nullptr;
+	const std::string *logging_author = nullptr;
+	const std::string *logging_contact = nullptr;
+	const std::string *logging_comments = nullptr;
+	const std::string *logging_customIcon = nullptr;
 	std::stringstream aaSettings;
 
 	if(! params.getParam("camera_name", name) )
@@ -763,7 +763,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	integrator_t *volInte = this->getIntegrator(*name);
 
-	background_t *backg = 0;
+	background_t *backg = nullptr;
 	if( params.getParam("background_name", name) )
 	{
 		backg = this->getBackground(*name);

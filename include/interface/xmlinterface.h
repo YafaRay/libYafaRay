@@ -43,7 +43,7 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		virtual VolumeRegion* 	createVolumeRegion	(const char* name);
 		virtual unsigned int 	createObject		(const char* name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(colorOutput_t &output, progressBar_t *pb = 0); //!< render the scene...
+		virtual void render(colorOutput_t &output, progressBar_t *pb = nullptr); //!< render the scene...
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		
 		virtual void setOutfile(const char *fname);

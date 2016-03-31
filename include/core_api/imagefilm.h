@@ -83,7 +83,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(int numView, renderArea_t &a);
 		/*! Output all pixels to the color output */
-		void flush(int numView, int flags = IF_ALL, colorOutput_t *out = 0);
+		void flush(int numView, int flags = IF_ALL, colorOutput_t *out = nullptr);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -92,12 +92,12 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
+		void addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = nullptr, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addDensitySample(const color_t &c, int x, int y, float dx, float dy, const renderArea_t *a = 0);
+		void addDensitySample(const color_t &c, int x, int y, float dx, float dy, const renderArea_t *a = nullptr);
 		//! Enables/Disables a light density estimation image
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)

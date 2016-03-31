@@ -45,9 +45,9 @@ meshLight_t::~meshLight_t()
 	if(areaDist) delete areaDist;
 	areaDist = 0;
 	if(tris) delete[] tris;
-	tris = 0;
+	tris = nullptr;
 	if(tree) delete tree;
-	tree = 0;
+	tree = nullptr;
 }
 
 void meshLight_t::initIS()

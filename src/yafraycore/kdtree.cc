@@ -520,7 +520,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	}
 	
 	//todo: check working memory for child recursive calls
-	u_int32 remainingMem, *morePrims = 0, *nRightPrims;
+	u_int32 remainingMem, *morePrims = nullptr, *nRightPrims;
 	u_int32 *oldRightPrims = rightPrims;
 	if(nPrims > rightMemSize || 2*TRI_CLIP_THRESH > rightMemSize ) // *possibly* not enough, get some more
 	{
@@ -683,7 +683,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 	int exPt = 1; // pointer to stack
 	stack[exPt].t = b;
 	stack[exPt].pb = ray.from + ray.dir * b;
-	stack[exPt].node = 0; // "nowhere", termination flag
+	stack[exPt].node = nullptr; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while (currNode != nullptr)
@@ -837,7 +837,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 	int exPt = 1; // pointer to stack
 	stack[exPt].t = b;
 	stack[exPt].pb = ray.from + ray.dir * b;
-	stack[exPt].node = 0; // "nowhere", termination flag
+	stack[exPt].node = nullptr; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while (currNode != nullptr)
@@ -987,7 +987,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	int exPt = 1; // pointer to stack
 	stack[exPt].t = b;
 	stack[exPt].pb = ray.from + ray.dir * b;
-	stack[exPt].node = 0; // "nowhere", termination flag
+	stack[exPt].node = nullptr; // "nowhere", termination flag
 	
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while (currNode != nullptr)
