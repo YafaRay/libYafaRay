@@ -104,8 +104,7 @@ bool xmlInterface_t::endTriMesh()
 
 bool xmlInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape)
 {
-	std::map<const material_t *, std::string>::const_iterator i;
-	i = materials.find(mat);
+	auto i = materials.find(mat);
 	if(i == materials.end()) return false;
 	xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n"
 			<< "\t\t\t<strand_start fval=\"" << strandStart << "\"/>\n"
@@ -137,8 +136,7 @@ bool xmlInterface_t::addTriangle(int a, int b, int c, const material_t *mat)
 {
 	if(mat != last_mat) //need to set current material
 	{
-		std::map<const material_t *, std::string>::const_iterator i;
-		i = materials.find(mat);
+		auto i = materials.find(mat);
 		if(i == materials.end()) return false;
 		xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
 		last_mat = mat;
@@ -151,8 +149,7 @@ bool xmlInterface_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv
 {
 	if(mat != last_mat) //need to set current material
 	{
-		std::map<const material_t *, std::string>::const_iterator i;
-		i = materials.find(mat);
+		auto i = materials.find(mat);
 		if(i == materials.end()) return false;
 		xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
 		last_mat = mat;
@@ -229,15 +226,13 @@ void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
 {
 	std::string tabs(indent, '\t');
 	const std::map< std::string, parameter_t > *dict = pmap.getDict();
-	std::map< std::string, parameter_t >::const_iterator ip;
-	for(ip = dict->begin(); ip!= dict->end(); ++ip)
+	for(auto ip = dict->begin(); ip!= dict->end(); ++ip)
 	{
 		xmlFile << tabs;
 		writeParam(ip->first, ip->second, xmlFile, XMLColorSpace, XMLGamma);
 	}
 	const std::map< std::string, matrix4x4_t > *mdict = pmap.getMDict();
-	std::map< std::string, matrix4x4_t >::const_iterator im;
-	for(im = mdict->begin(); im!= mdict->end(); ++im)
+	for(auto im = mdict->begin(); im!= mdict->end(); ++im)
 	{
 		xmlFile << tabs;
 		writeMatrix(im->first, im->second, xmlFile);
@@ -247,8 +242,11 @@ void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
 void xmlInterface_t::writeParamList(int indent)
 {
 	std::string tabs(indent, '\t');
-	std::list<paraMap_t>::const_iterator ip, end;
-	for(ip=eparams->begin(), end=eparams->end(); ip!= end; ++ip)
+
+	auto ip=eparams->begin();
+	auto end=eparams->end();
+	
+	for(; ip!= end; ++ip)
 	{
 		xmlFile << tabs << "<list_element>\n";
 		writeParamMap(*ip, indent+1);

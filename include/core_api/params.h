@@ -81,14 +81,14 @@ class YAFRAYCORE_EXPORT paraMap_t
 		template <class T>
 		bool getParam(const std::string &name, T &val) const
 		{
-			std::map<std::string,parameter_t>::const_iterator i=dicc.find(name);
+			auto i=dicc.find(name);
 			if(i != dicc.end() ) return i->second.getVal(val);
 			return false;
 		}
 		
 		bool getMatrix(const std::string &name, matrix4x4_t &m) const
 		{
-			std::map<std::string,matrix4x4_t>::const_iterator i=mdicc.find(name);
+			auto i=mdicc.find(name);
 			if(i != mdicc.end() ){ m = i->second; return true; }
 			return false;
 		}

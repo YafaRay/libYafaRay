@@ -50,8 +50,8 @@ void roughGlassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, B
 	if(bumpS) evalBump(stack, state, sp, bumpS);
 
 	//eval viewindependent nodes
-	std::vector<shaderNode_t *>::const_iterator iter, end=allViewindep.end();
-	for(iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
+	auto end=allViewindep.end();
+	for(auto iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
 	bsdfTypes=bsdfFlags;
 }
 

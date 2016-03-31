@@ -42,7 +42,7 @@ inline color_t mcIntegrator_t::estimateAllDirectLight(renderState_t &state, cons
 {
 	color_t col;
 	unsigned int loffs = 0;
-	for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
+	for(auto l=lights.begin(); l!=lights.end(); ++l)
 	{
 		col += doLightEstimation(state, (*l), sp, wo, loffs, colorPasses);
 		loffs++;

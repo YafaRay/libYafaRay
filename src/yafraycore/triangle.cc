@@ -435,9 +435,9 @@ void vTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersect
 	}
 	if(mesh->has_uv)
 	{
-		std::vector<int>::const_iterator uvi = mesh->uv_offsets.begin() + 3*tri_index;
+		auto uvi = mesh->uv_offsets.begin() + 3*tri_index;
 		int uvi1 = *uvi, uvi2 = *(uvi+1), uvi3 = *(uvi+2);
-		std::vector<uv_t>::const_iterator it = mesh->uv_values.begin();
+		auto it = mesh->uv_values.begin();
 		//eh...u, v and w are actually the barycentric coords, not some UVs...quite annoying, i know...
 		sp.U = u * it[uvi1].u + v * it[uvi2].u + w * it[uvi3].u;
 		sp.V = u * it[uvi1].v + v * it[uvi2].v + w * it[uvi3].v;
@@ -667,9 +667,9 @@ void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersec
 		// gives the index in triangle array, according to my latest informations
 		// it _should be_ safe to rely on array-like contiguous memory in std::vector<>!
 		unsigned int tri_index= this - &(mesh->s_triangles.front());
-		std::vector<int>::const_iterator uvi = mesh->uv_offsets.begin() + 3*tri_index;
+		auto uvi = mesh->uv_offsets.begin() + 3*tri_index;
 		int uvi1 = *uvi, uvi2 = *(uvi+1), uvi3 = *(uvi+2);
-		std::vector<uv_t>::const_iterator it = mesh->uv_values.begin();
+		auto it = mesh->uv_values.begin();
 		//eh...u, v and w are actually the barycentric coords, not some UVs...quite annoying, i know...
 		sp.U = u * it[uvi1].u + v * it[uvi2].u + w * it[uvi3].u;
 		sp.V = u * it[uvi1].v + v * it[uvi2].v + w * it[uvi3].v;

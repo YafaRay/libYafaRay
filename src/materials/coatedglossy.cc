@@ -141,8 +141,8 @@ void coatedGlossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp,
 	nodeStack_t stack(dat->stack);
 	if(bumpS) evalBump(stack, state, sp, bumpS);
 
-	std::vector<shaderNode_t *>::const_iterator iter, end=allViewindep.end();
-	for(iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
+	auto end=allViewindep.end();
+	for(auto iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
 	bsdfTypes=bsdfFlags;
 	dat->mDiffuse = mDiffuse;
 	dat->mGlossy = glossyRefS ? glossyRefS->getScalar(stack) : reflectivity;

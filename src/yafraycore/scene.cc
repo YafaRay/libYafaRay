@@ -68,8 +68,7 @@ scene_t::~scene_t()
 {
 	if(tree) delete tree;
 	if(vtree) delete vtree;
-	std::map<objID_t, objData_t>::iterator i;
-	for(i = meshes.begin(); i != meshes.end(); ++i)
+	for(auto i = meshes.begin(); i != meshes.end(); ++i)
 	{
 		if(i->second.type == TRIM)
 			delete i->second.obj;
@@ -125,7 +124,7 @@ bool scene_t::endGeometry()
 	// in case objects share arrays, so they all need to be updated
 	// after each object change, uncomment the below block again:
 	// don't forget to update the mesh object iterators!
-/*	for(std::map<objID_t, objData_t>::iterator i=meshes.begin();
+/*	for(auto i=meshes.begin();
 		 i!=meshes.end(); ++i)
 	{
 		objData_t &dat = (*i).second;
@@ -392,7 +391,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 	objData_t *odat;
 	if(id)
 	{
-		std::map<objID_t, objData_t>::iterator it = meshes.find(id);
+		auto it = meshes.find(id);
 		if(it == meshes.end() ) return false;
 		odat = &(it->second);
 	}
@@ -478,7 +477,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 		{
 			std::vector<triangle_t*> &tris = vface[i];
 			int j = 0;
-			for(std::vector<triangle_t*>::iterator fi=tris.begin(); fi!=tris.end(); ++fi)
+			for(auto fi=tris.begin(); fi!=tris.end(); ++fi)
 			{
 				triangle_t* f = *fi;
 				bool smooth = false;
@@ -488,7 +487,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 				fnorm = f->getNormal();
 				vnorm = fnorm * alphas[i][j];
                 int k = 0;
-				for(std::vector<triangle_t*>::iterator f2=tris.begin(); f2!=tris.end(); ++f2)
+				for(auto f2=tris.begin(); f2!=tris.end(); ++f2)
 				{
 					if(**fi == **f2)
 					{
@@ -736,13 +735,13 @@ background_t* scene_t::getBackground() const
 
 triangleObject_t* scene_t::getMesh(objID_t id) const
 {
-	std::map<objID_t, objData_t>::const_iterator i = meshes.find(id);
+	auto i = meshes.find(id);
 	return (i==meshes.end()) ? 0 : i->second.obj;
 }
 
 object3d_t* scene_t::getObject(objID_t id) const
 {
-	std::map<objID_t, objData_t>::const_iterator i = meshes.find(id);
+	auto i = meshes.find(id);
 	if(i != meshes.end())
 	{
 		if(i->second.type == TRIM) return i->second.obj;
@@ -750,7 +749,7 @@ object3d_t* scene_t::getObject(objID_t id) const
 	}
 	else
 	{
-		std::map<objID_t, object3d_t *>::const_iterator oi = objects.find(id);
+		auto oi = objects.find(id);
 		if(oi != objects.end() ) return oi->second;
 	}
 	return 0;
@@ -795,7 +794,7 @@ bool scene_t::update()
 		int nprims=0;
 		if(mode==0)
 		{
-			for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
+			for(auto i=meshes.begin(); i!=meshes.end(); ++i)
 			{
                 objData_t &dat = (*i).second;
 
@@ -808,7 +807,7 @@ bool scene_t::update()
 			{
 				const triangle_t **tris = new const triangle_t*[nprims];
 				const triangle_t **insert = tris;
-				for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
+				for(auto i=meshes.begin(); i!=meshes.end(); ++i)
 				{
 					objData_t &dat = (*i).second;
 
@@ -833,13 +832,13 @@ bool scene_t::update()
 		}
 		else
 		{
-			for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
+			for(auto i=meshes.begin(); i!=meshes.end(); ++i)
 			{
 				objData_t &dat = (*i).second;
 				if(dat.type != TRIM) nprims += dat.mobj->numPrimitives();
 			}
 			// include all non-mesh objects; eventually make a common map...
-			for(std::map<objID_t, object3d_t *>::iterator i=objects.begin(); i!=objects.end(); ++i)
+			for(auto i=objects.begin(); i!=objects.end(); ++i)
 			{
 				nprims += i->second->numPrimitives();
 			}
@@ -847,12 +846,12 @@ bool scene_t::update()
 			{
 				const primitive_t **tris = new const primitive_t*[nprims];
 				const primitive_t **insert = tris;
-				for(std::map<objID_t, objData_t>::iterator i=meshes.begin(); i!=meshes.end(); ++i)
+				for(auto i=meshes.begin(); i!=meshes.end(); ++i)
 				{
 					objData_t &dat = (*i).second;
 					if(dat.type != TRIM) insert += dat.mobj->getPrimitives(insert);
 				}
-				for(std::map<objID_t, object3d_t *>::iterator i=objects.begin(); i!=objects.end(); ++i)
+				for(auto i=objects.begin(); i!=objects.end(); ++i)
 				{
 					insert += i->second->getPrimitives(insert);
 				}
@@ -1015,9 +1014,7 @@ bool scene_t::render()
 		return false;
 	}
 
-	std::map<std::string,camera_t *>::const_iterator cam_table_entry;
-	
-	for(cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
+	for(auto cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
     {
 		int numView = distance(camera_table->begin(), cam_table_entry);
 		camera_t* cam = cam_table_entry->second;

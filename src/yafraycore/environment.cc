@@ -81,8 +81,7 @@ renderEnvironment_t::renderEnvironment_t()
 template <class T>
 void freeMap(std::map< std::string, T* > &map)
 {
-	typename std::map<std::string, T *>::iterator i;
-	for(i=map.begin(); i!=map.end(); ++i) delete i->second;
+	for(auto i=map.begin(); i!=map.end(); ++i) delete i->second;
 }
 
 renderEnvironment_t::~renderEnvironment_t()
@@ -129,7 +128,7 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 	Y_INFO_ENV << "Loading plugins ..." << yendl;
 	std::list<std::string> plugins=listDir(path);
 
-	for(std::list<std::string>::iterator i=plugins.begin();i!=plugins.end();++i)
+	for(auto i=plugins.begin();i!=plugins.end();++i)
 	{
 		sharedlibrary_t plug(i->c_str());
 		if(!plug.isOpen()) continue;
@@ -186,42 +185,42 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 
 material_t* renderEnvironment_t::getMaterial(const std::string &name)const
 {
-	std::map<std::string,material_t *>::const_iterator i=material_table.find(name);
+	auto i=material_table.find(name);
 	if(i!=material_table.end()) return i->second;
 	else return NULL;
 }
 
 texture_t* renderEnvironment_t::getTexture(const std::string &name)const
 {
-	std::map<std::string,texture_t *>::const_iterator i=texture_table.find(name);
+	auto i=texture_table.find(name);
 	if(i!=texture_table.end()) return i->second;
 	else return NULL;
 }
 
 camera_t* renderEnvironment_t::getCamera(const std::string &name)const
 {
-	std::map<std::string,camera_t *>::const_iterator i=camera_table.find(name);
+	auto i=camera_table.find(name);
 	if(i!=camera_table.end()) return i->second;
 	else return NULL;
 }
 
 background_t* renderEnvironment_t::getBackground(const std::string &name)const
 {
-	std::map<std::string,background_t *>::const_iterator i=background_table.find(name);
+	auto i=background_table.find(name);
 	if(i!=background_table.end()) return i->second;
 	else return NULL;
 }
 
 integrator_t* renderEnvironment_t::getIntegrator(const std::string &name)const
 {
-	std::map<std::string,integrator_t *>::const_iterator i=integrator_table.find(name);
+	auto i=integrator_table.find(name);
 	if(i!=integrator_table.end()) return i->second;
 	else return NULL;
 }
 
 shaderNode_t* renderEnvironment_t::getShaderNode(const std::string &name)const
 {
-	std::map<std::string,shaderNode_t *>::const_iterator i=shader_table.find(name);
+	auto i=shader_table.find(name);
 	if(i!=shader_table.end()) return i->second;
 	else return NULL;
 }
@@ -239,7 +238,7 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 		ErrNoType; return 0;
 	}
 	light_t* light;
-	std::map<std::string,light_factory_t *>::iterator i=light_factory.find(type);
+	auto i=light_factory.find(type);
 	if(i!=light_factory.end()) light = i->second(params,*this);
 	else
 	{
@@ -271,7 +270,7 @@ texture_t* renderEnvironment_t::createTexture(const std::string &name, paraMap_t
 		ErrNoType; return 0;
 	}
 	texture_t* texture;
-	std::map<std::string,texture_factory_t *>::iterator i=texture_factory.find(type);
+	auto i=texture_factory.find(type);
 	if(i!=texture_factory.end()) texture = i->second(params,*this);
 	else
 	{
@@ -300,7 +299,7 @@ shaderNode_t* renderEnvironment_t::createShaderNode(const std::string &name, par
 		ErrNoType; return 0;
 	}
 	shaderNode_t* shader;
-	std::map<std::string,shader_factory_t *>::iterator i=shader_factory.find(type);
+	auto i=shader_factory.find(type);
 	if(i!=shader_factory.end()) shader = i->second(params,*this);
 	else
 	{
@@ -330,7 +329,7 @@ material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap
 	}
 	params["name"] = name;
 	material_t* material;
-	std::map<std::string,material_factory_t *>::iterator i=material_factory.find(type);
+	auto i=material_factory.find(type);
 	if(i!=material_factory.end()) material = i->second(params, eparams, *this);
 	else
 	{
@@ -359,7 +358,7 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 		ErrNoType; return 0;
 	}
 	background_t* background;
-	std::map<std::string,background_factory_t *>::iterator i=background_factory.find(type);
+	auto i=background_factory.find(type);
 	if(i!=background_factory.end()) background = i->second(params,*this);
 	else
 	{
@@ -409,7 +408,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	}
 
 	imageHandler_t* ih = 0;
-	std::map<std::string, imagehandler_factory_t *>::iterator i=imagehandler_factory.find(type);
+	auto i=imagehandler_factory.find(type);
 
 	if(i!=imagehandler_factory.end())
 	{
@@ -447,7 +446,7 @@ object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t
 		ErrNoType; return 0;
 	}
 	object3d_t* object;
-	std::map<std::string,object_factory_t *>::iterator i=object_factory.find(type);
+	auto i=object_factory.find(type);
 	if(i!=object_factory.end()) object = i->second(params,*this);
 	else
 	{
@@ -476,7 +475,7 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 		ErrNoType; return 0;
 	}
 	camera_t* camera;
-	std::map<std::string,camera_factory_t *>::iterator i=camera_factory.find(type);
+	auto i=camera_factory.find(type);
 	if(i!=camera_factory.end()) camera = i->second(params,*this);
 	else
 	{
@@ -511,7 +510,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 		ErrNoType; return 0;
 	}
 	integrator_t* integrator;
-	std::map<std::string,integrator_factory_t *>::iterator i=integrator_factory.find(type);
+	auto i=integrator_factory.find(type);
 	if(i!=integrator_factory.end()) integrator = i->second(params,*this);
 	else
 	{
@@ -541,7 +540,7 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 	params.getParam("pass_mask_only", pass_mask_only);
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(std::map<extPassTypes_t, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
+	for(auto it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
 	{
 		externalPass = it->second;
 		params.getParam("pass_" + externalPass, internalPass);
@@ -651,7 +650,7 @@ volumeHandler_t* renderEnvironment_t::createVolumeH(const std::string &name, con
 		ErrNoType; return 0;
 	}
 	volumeHandler_t* volume;
-	std::map<std::string,volume_factory_t *>::iterator i=volume_factory.find(type);
+	auto i=volume_factory.find(type);
 	if(i!=volume_factory.end()) volume = i->second(params,*this);
 	else
 	{
@@ -680,7 +679,7 @@ VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, p
 		ErrNoType; return 0;
 	}
 	VolumeRegion* volumeregion;
-	std::map<std::string,volumeregion_factory_t *>::iterator i=volumeregion_factory.find(type);
+	auto i=volumeregion_factory.find(type);
 	if(i!=volumeregion_factory.end()) volumeregion = i->second(params,*this);
 	else
 	{
@@ -911,7 +910,7 @@ std::vector<std::string> renderEnvironment_t::listImageHandlers()
 	std::vector<std::string> ret;
 	if(imagehandler_fullnames.size() > 0)
 	{
-		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
 		{
 			ret.push_back(i->first);
 		}
@@ -926,7 +925,7 @@ std::vector<std::string> renderEnvironment_t::listImageHandlersFullName()
 	std::vector<std::string> ret;
 	if(imagehandler_fullnames.size() > 0)
 	{
-		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
 		{
 			ret.push_back(i->second);
 		}
@@ -941,7 +940,7 @@ std::string renderEnvironment_t::getImageFormatFromFullName(const std::string &f
 	std::string ret;
 	if(imagehandler_fullnames.size() > 0)
 	{
-		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
 		{
 			if(i->second == fullname) ret = i->first;
 		}
@@ -959,7 +958,7 @@ std::string renderEnvironment_t::getImageFormatFromExtension(const std::string &
 
 	if(imagehandler_extensions.size() > 0)
 	{
-		for(std::map<std::string, std::string>::const_iterator i=imagehandler_extensions.begin(); i != imagehandler_extensions.end(); ++i)
+		for(auto i=imagehandler_extensions.begin(); i != imagehandler_extensions.end(); ++i)
 		{
 			if(i->second.find(ext) != std::string::npos) ret = i->first;
 		}
@@ -974,7 +973,7 @@ std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &f
 	std::string ret;
 	if(imagehandler_fullnames.size() > 0)
 	{
-		for(std::map<std::string, std::string>::const_iterator i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i=imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
 		{
 			if(i->first == format) ret = i->second;
 		}
@@ -986,7 +985,7 @@ std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &f
 
 renderEnvironment_t::shader_factory_t* renderEnvironment_t::getShaderNodeFactory(const std::string &name)const
 {
-	std::map<std::string,shader_factory_t *>::const_iterator i=shader_factory.find(name);
+	auto i=shader_factory.find(name);
 	if(i!=shader_factory.end()) return i->second;
 	Y_ERROR_ENV << "There is no factory for '"<<name<<"'\n";
 	return 0;

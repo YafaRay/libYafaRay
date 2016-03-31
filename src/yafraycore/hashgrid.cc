@@ -51,8 +51,7 @@ void hashGrid_t::updateGrid()
 	}
 
 	//travel the vector to build the Grid
-	std::vector<photon_t>::iterator itr;
-	for(itr = photons.begin(); itr != photons.end(); ++itr)
+	for(auto itr = photons.begin(); itr != photons.end(); ++itr)
 	{
 		point3d_t hashindex  =  ( (*itr).pos - bBox.a) * invcellSize;
 
@@ -91,8 +90,7 @@ unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsign
 
 				if(hashGrid[hv] == NULL) continue;
 
-				std::list<photon_t*>::iterator itr;
-				for(itr = hashGrid[hv]->begin(); itr != hashGrid[hv]->end(); ++itr)
+				for(auto itr = hashGrid[hv]->begin(); itr != hashGrid[hv]->end(); ++itr)
 				{
 					if( ( (*itr)->pos- P).lengthSqr() < sqRadius)
 					{

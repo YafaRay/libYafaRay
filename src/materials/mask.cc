@@ -169,7 +169,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	{
 		if(params.getParam("mask", name))
 		{
-			std::map<std::string,shaderNode_t *>::const_iterator i=mat->mShadersTable.find(*name);
+			auto i=mat->mShadersTable.find(*name);
 			if(i!=mat->mShadersTable.end()){ mat->mask = i->second; roots.push_back(mat->mask); }
 			else
 			{

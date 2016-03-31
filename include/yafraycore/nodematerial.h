@@ -27,8 +27,8 @@ class YAFRAYCORE_EXPORT nodeMaterial_t: public material_t
 		void getNodeList(const shaderNode_t *root, std::vector<shaderNode_t *> &nodes);
 		void evalNodes(const renderState_t &state, const surfacePoint_t &sp, const std::vector<shaderNode_t *> &nodes, nodeStack_t &stack)const
 		{
-			std::vector<shaderNode_t *>::const_iterator iter, end=nodes.end();
-			for(iter = nodes.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
+			auto end=nodes.end();
+			for(auto iter = nodes.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
 		}
         void evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS)const;
 		/*! filter out nodes with specific properties */

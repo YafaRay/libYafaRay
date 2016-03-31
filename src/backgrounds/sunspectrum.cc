@@ -114,8 +114,7 @@ struct  irregularSpectrum_t
 
 float irregularSpectrum_t::sample(float wl)
 {
-	std::vector<float>::const_iterator i;
-	i = lower_bound(wavelen.begin(), wavelen.end(), wl);
+	auto i = lower_bound(wavelen.begin(), wavelen.end(), wl);
 	if(i == wavelen.begin() || i == wavelen.end()) return 0.f;
 	int index = (i-wavelen.begin()) - 1;
 	float delta = (wl - wavelen[index]) / (wavelen[index+1] - wavelen[index]);

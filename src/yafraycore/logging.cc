@@ -54,7 +54,7 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	{
 		txtLogFile << std::endl;
 		
-		for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
+		for (auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
 			txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << "] ";
 
@@ -149,7 +149,7 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	{
 		htmlLogFile << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
-		for (std::vector<logEntry_t>::iterator it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
+		for(auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
 			htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td>";
 

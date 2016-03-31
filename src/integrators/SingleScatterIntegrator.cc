@@ -68,7 +68,7 @@ public:
 
 				Y_PARAMS << "SingleScatter: volume, attGridMaps with size: " << xSize << " " << ySize << " " << xSize << std::endl;
 			
-				for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
+				for(auto l=lights.begin(); l!=lights.end(); ++l)
 				{
 					color_t lcol(0.0);
 
@@ -161,7 +161,7 @@ public:
 		ray_t lightRay;
 		lightRay.from = sp.P;
 
-		for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
+		for(auto l=lights.begin(); l!=lights.end(); ++l)
 		{
 			color_t lcol(0.0);
 

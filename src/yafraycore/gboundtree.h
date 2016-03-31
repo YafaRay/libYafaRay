@@ -52,7 +52,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 		unsigned int dratio=1,unsigned int depth=1,
 		bool skipX=false,bool skipY=false,bool skipZ=false)
 {
-	typedef typename std::vector<T>::const_iterator vector_const_iterator;
+	//typedef typename std::vector<T>::const_iterator vector_const_iterator; //FIXME DAVID remove if not needed
 	if((v.size()<=dratio) || (skipX && skipY && skipZ))
 		return new gBoundTreeNode_t<T>(v,calc_bound(v));
 	PFLOAT lx,ly,lz;
@@ -66,7 +66,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 	if(((lx>=ly) || skipY) && ((lx>=lz) || skipZ) && !skipX)
 	{
 		PFLOAT media=0;
-		for(vector_const_iterator i=v.begin();i!=v.end();++i)
+		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).x;
 		media/=(PFLOAT)v.size();
 		bl=bound;bl.setMaxX(media);
@@ -76,7 +76,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 	else if(((ly>=lx) || skipX) && ((ly>=lz) || skipZ) && !skipY)
 	{
 		PFLOAT media=0;
-		for(vector_const_iterator i=v.begin();i!=v.end();++i)
+		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).y;
 		media/=(PFLOAT)v.size();
 		bl=bound;bl.setMaxY(media);
@@ -86,7 +86,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 	else
 	{
 		PFLOAT media=0;
-		for(vector_const_iterator i=v.begin();i!=v.end();++i)
+		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).z;
 		media/=(PFLOAT)v.size();
 		bl=bound;bl.setMaxZ(media);
@@ -94,7 +94,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 		usedZ=true;
 	}
 	std::vector<T> vl,vr,vm;
-	for(vector_const_iterator i=v.begin();i!=v.end();++i)
+	for(auto i=v.begin();i!=v.end();++i)
 	{
 		if(is_in_bound(*i,bl))
 		{

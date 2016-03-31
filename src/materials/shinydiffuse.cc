@@ -158,8 +158,8 @@ void shinyDiffuseMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp,
     }
 
     //eval viewindependent nodes
-    std::vector<shaderNode_t *>::const_iterator iter, end=allViewindep.end();
-    for(iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
+    auto end=allViewindep.end();
+    for(auto iter = allViewindep.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
     bsdfTypes=bsdfFlags;
 
     getComponents(viNodes, stack, dat->component);
@@ -495,8 +495,8 @@ color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const sur
     if(!mIsTransparent) return color_t(0.f);
     
     nodeStack_t stack(state.userdata);
-    std::vector<shaderNode_t *>::const_iterator iter, end=allSorted.end();
-    for(iter = allSorted.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
+    auto end=allSorted.end();
+    for(auto iter = allSorted.begin(); iter!=end; ++iter) (*iter)->eval(stack, state, sp);
     float accum=1.f;
     float Kr;
     vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);

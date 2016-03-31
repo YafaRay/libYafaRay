@@ -44,7 +44,7 @@ triangle_t* triangleObject_t::addTriangle(const triangle_t &t)
 
 void triangleObject_t::finish()
 {
-	for(std::vector<triangle_t>::iterator i=triangles.begin(); i!= triangles.end(); ++i)
+	for(auto i=triangles.begin(); i!= triangles.end(); ++i)
 	{
 		i->recNormal();
 	}
@@ -127,7 +127,7 @@ primitive_t* meshObject_t::addBsTriangle(const bsTriangle_t &t)
 
 void meshObject_t::finish()
 {
-	for(std::vector<vTriangle_t>::iterator i=triangles.begin(); i!= triangles.end(); ++i)
+	for(auto i=triangles.begin(); i!= triangles.end(); ++i)
 	{
 		i->recNormal();
 	}
