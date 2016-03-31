@@ -7,7 +7,7 @@
 //#include <math.h>
 #include <limits>
 #include <set>
-#if ( HAVE_PTHREAD && defined (__GNUC__) )
+#if ( HAVE_PTHREAD && defined (__GNUC__) && !defined (__clang__))
 #include <ext/mt_allocator.h>
 #endif
 #include <time.h>
@@ -974,7 +974,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
 
 	int depth=0;
-#if ( HAVE_PTHREAD && defined (__GNUC__) )
+#if ( HAVE_PTHREAD && defined (__GNUC__)  && !defined (__clang__))
 	std::set<const T *, std::less<const T *>, __gnu_cxx::__mt_alloc<const T *> > filtered;
 #else
 	std::set<const T *> filtered;
