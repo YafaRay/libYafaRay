@@ -10,7 +10,7 @@ __BEGIN_YAFRAY
 template<class T, int logBlockSize> class tiledArray2D_t
 {
 public:
-	tiledArray2D_t(): data(0), nx(0), ny(0), xBlocks(0)
+	tiledArray2D_t(): data(nullptr), nx(0), ny(0), xBlocks(0)
 	{
 		blockSize = 1 << logBlockSize;
 		blockMask = blockSize-1;

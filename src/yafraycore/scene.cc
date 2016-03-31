@@ -45,7 +45,7 @@
 
 __BEGIN_YAFRAY
 
-scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), env(render_environment)
+scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(nullptr), camera(nullptr), imageFilm(nullptr), tree(nullptr), vtree(nullptr), background(nullptr), surfIntegrator(nullptr),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), env(render_environment)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
@@ -752,7 +752,7 @@ object3d_t* scene_t::getObject(objID_t id) const
 		auto oi = objects.find(id);
 		if(oi != objects.end() ) return oi->second;
 	}
-	return 0;
+	return nullptr;
 }
 
 bound_t scene_t::getSceneBound() const

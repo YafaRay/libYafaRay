@@ -130,7 +130,7 @@ struct foundPhoton_t
 class YAFRAYCORE_EXPORT photonMap_t
 {
 	public:
-		photonMap_t(): paths(0), updated(false), searchRadius(1.), tree(0){ }
+		photonMap_t(): paths(0), updated(false), searchRadius(1.), tree(nullptr){ }
 		~photonMap_t(){ if(tree) delete tree; }
 		void setNumPaths(int n){ paths=n; }
 		int nPaths() const{ return paths; }
@@ -138,7 +138,7 @@ class YAFRAYCORE_EXPORT photonMap_t
 		void pushPhoton(photon_t &p) { photons.push_back(p); updated=false; }
 		void swapVector(std::vector<photon_t> &vec) { photons.swap(vec); updated=false; }
 		void updateTree();
-		void clear(){ photons.clear(); delete tree; tree=0; updated=false; }
+		void clear(){ photons.clear(); delete tree; tree = nullptr; updated=false; }
 		bool ready() const { return updated; }
 	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, PFLOAT &sqRadius) const;
 		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT &sqRadius) const;
@@ -165,7 +165,7 @@ struct photonGather_t
 
 struct nearestPhoton_t
 {
-	nearestPhoton_t(const point3d_t &pos, const vector3d_t &norm): p(pos), n(norm), nearest(0) {}
+	nearestPhoton_t(const point3d_t &pos, const vector3d_t &norm): p(pos), n(norm), nearest(nullptr) {}
 	void operator()(const photon_t *photon, PFLOAT dist2, PFLOAT &maxDistSquared) const
 	{
 		if ( photon->direction() * n > 0.f) { nearest = photon; maxDistSquared = dist2; }

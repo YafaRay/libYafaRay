@@ -179,7 +179,7 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 	const kdNode<T> *farChild, *currNode = nodes;
 	
 	int stackPtr = 1;
-	stack[stackPtr].node = 0; // "nowhere", termination flag
+	stack[stackPtr].node = nullptr; // "nowhere", termination flag
 	
 	while (true)
 	{

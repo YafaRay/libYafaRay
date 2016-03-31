@@ -313,7 +313,7 @@ struct mesh_dat_t
 
 struct curve_dat_t
 {
-    curve_dat_t(): ID(0), mat(0), strandStart(0), strandEnd(0), strandShape(0) {};
+    curve_dat_t(): ID(0), mat(nullptr), strandStart(0), strandEnd(0), strandShape(0) {};
     objID_t ID;
     const material_t *mat;
     float strandStart, strandEnd, strandShape;

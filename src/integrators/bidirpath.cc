@@ -163,7 +163,7 @@ protected:
 };
 
 biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(transpShad), sDepth(shadowDepth),
-	lightPowerD(0), lightImage(0)
+	lightPowerD(nullptr), lightImage(nullptr)
 {
 	type = SURFACE;
 	integratorName = "BidirectionalPathTracer";

@@ -36,16 +36,16 @@ bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bL
     lCastShadows = bCastShadows;
     mesh = nullptr;
 	aPdf = 0.f;
-	areaDist = 0;
-	tris = 0;
+	areaDist = nullptr;
+	tris = nullptr;
 }
 
 bgPortalLight_t::~bgPortalLight_t()
 {
 	if(areaDist) delete areaDist;
-	areaDist = 0;
+	areaDist = nullptr;
 	if(tris) delete[] tris;
-	tris = 0;
+	tris = nullptr;
 	if(tree)
 	{
 		delete tree;

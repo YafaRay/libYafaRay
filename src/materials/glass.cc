@@ -77,7 +77,7 @@ class glassMat_t: public nodeMaterial_t
 };
 
 glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility):
-		bumpS(0), mirColS(0), filterColS(0), iorS(0), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
+		bumpS(nullptr), mirColS(nullptr), filterColS(nullptr), iorS(nullptr), filterCol(filtC), specRefCol(srcol), absorb(false), disperse(false),
 		fakeShadow(fakeS), dispersion_power(disp_pow)
 {
     mVisibility = eVisibility;

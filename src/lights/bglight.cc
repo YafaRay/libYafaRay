@@ -58,17 +58,17 @@ light_t(LIGHT_NONE), samples(sampl), absInter(absIntersect)
     lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
 	background = nullptr;
-	uDist = 0;
-	vDist = 0;
+	uDist = nullptr;
+	vDist = nullptr;
 }
 
 bgLight_t::~bgLight_t()
 {
 	for(int i = 0; i < vDist->count; i++) delete uDist[i];
 	if(uDist) delete[] uDist;
-	uDist = 0;
+	uDist = nullptr;
 	if(vDist) delete vDist;
-	vDist = 0;
+	vDist = nullptr;
 }
 
 void bgLight_t::init(scene_t &scene)

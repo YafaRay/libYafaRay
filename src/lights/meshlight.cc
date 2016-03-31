@@ -30,20 +30,20 @@
 __BEGIN_YAFRAY
 
 meshLight_t::meshLight_t(unsigned int msh, const color_t &col, int sampl, bool dbl_s, bool bLightEnabled, bool bCastShadows):
-	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(0)
+	objID(msh), doubleSided(dbl_s), color(col), samples(sampl), tree(nullptr)
 {
 	lLightEnabled = bLightEnabled;
     lCastShadows = bCastShadows;
-    mesh = 0;
-    areaDist = 0;
-    tris = 0;
+    mesh = nullptr;
+    areaDist = nullptr;
+    tris = nullptr;
 	//initIS();
 }
 
 meshLight_t::~meshLight_t()
 {
 	if(areaDist) delete areaDist;
-	areaDist = 0;
+	areaDist = nullptr;
 	if(tris) delete[] tris;
 	tris = nullptr;
 	if(tree) delete tree;

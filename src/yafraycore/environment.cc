@@ -230,19 +230,19 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 	std::string pname = "Light";
 	if(light_table.find(name) != light_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	light_t* light;
 	auto i=light_factory.find(type);
 	if(i!=light_factory.end()) light = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(light)
 	{
@@ -254,7 +254,7 @@ light_t* renderEnvironment_t::createLight(const std::string &name, paraMap_t &pa
 		return light;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 texture_t* renderEnvironment_t::createTexture(const std::string &name, paraMap_t &params)
@@ -262,19 +262,19 @@ texture_t* renderEnvironment_t::createTexture(const std::string &name, paraMap_t
 	std::string pname = "Texture";
 	if(texture_table.find(name) != texture_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	texture_t* texture;
 	auto i=texture_factory.find(type);
 	if(i!=texture_factory.end()) texture = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(texture)
 	{
@@ -283,7 +283,7 @@ texture_t* renderEnvironment_t::createTexture(const std::string &name, paraMap_t
 		return texture;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 shaderNode_t* renderEnvironment_t::createShaderNode(const std::string &name, paraMap_t &params)
@@ -291,19 +291,19 @@ shaderNode_t* renderEnvironment_t::createShaderNode(const std::string &name, par
 	std::string pname = "ShaderNode";
 	if(shader_table.find(name) != shader_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	shaderNode_t* shader;
 	auto i=shader_factory.find(type);
 	if(i!=shader_factory.end()) shader = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(shader)
 	{
@@ -312,7 +312,7 @@ shaderNode_t* renderEnvironment_t::createShaderNode(const std::string &name, par
 		return shader;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap_t &params, std::list<paraMap_t> &eparams)
@@ -320,12 +320,12 @@ material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap
 	std::string pname = "Material";
 	if(material_table.find(name) != material_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	params["name"] = name;
 	material_t* material;
@@ -333,7 +333,7 @@ material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap
 	if(i!=material_factory.end()) material = i->second(params, eparams, *this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(material)
 	{
@@ -342,7 +342,7 @@ material_t* renderEnvironment_t::createMaterial(const std::string &name, paraMap
 		return material;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 background_t* renderEnvironment_t::createBackground(const std::string &name, paraMap_t &params)
@@ -350,19 +350,19 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 	std::string pname = "Background";
 	if(background_table.find(name) != background_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	background_t* background;
 	auto i=background_factory.find(type);
 	if(i!=background_factory.end()) background = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(background)
 	{
@@ -371,7 +371,7 @@ background_t* renderEnvironment_t::createBackground(const std::string &name, par
 		return background;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params, bool addToTable)
@@ -404,7 +404,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 
 	imageHandler_t* ih = nullptr;
@@ -416,7 +416,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 	}
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 
 	if(ih)
@@ -430,7 +430,7 @@ imageHandler_t* renderEnvironment_t::createImageHandler(const std::string &name,
 
 	ErrOnCreate(type);
 
-	return 0;
+	return nullptr;
 }
 
 object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t &params)
@@ -438,19 +438,19 @@ object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t
 	std::string pname = "Object";
 	if(object_table.find(name) != object_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	object3d_t* object;
 	auto i=object_factory.find(type);
 	if(i!=object_factory.end()) object = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(object)
 	{
@@ -459,7 +459,7 @@ object3d_t* renderEnvironment_t::createObject(const std::string &name, paraMap_t
 		return object;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &params)
@@ -467,19 +467,19 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 	std::string pname = "Camera";
 	if(camera_table.find(name) != camera_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	camera_t* camera;
 	auto i=camera_factory.find(type);
 	if(i!=camera_factory.end()) camera = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(camera)
 	{
@@ -494,7 +494,7 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 		return camera;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, paraMap_t &params)
@@ -502,19 +502,19 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	std::string pname = "Integrator";
 	if(integrator_table.find(name) != integrator_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	integrator_t* integrator;
 	auto i=integrator_factory.find(type);
 	if(i!=integrator_factory.end()) integrator = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(integrator)
 	{
@@ -524,7 +524,7 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 		return integrator;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
@@ -642,19 +642,19 @@ volumeHandler_t* renderEnvironment_t::createVolumeH(const std::string &name, con
 	std::string pname = "VolumeHandler";
 	if(volume_table.find(name) != volume_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	volumeHandler_t* volume;
 	auto i=volume_factory.find(type);
 	if(i!=volume_factory.end()) volume = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(volume)
 	{
@@ -663,7 +663,7 @@ volumeHandler_t* renderEnvironment_t::createVolumeH(const std::string &name, con
 		return volume;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, paraMap_t &params)
@@ -671,19 +671,19 @@ VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, p
 	std::string pname = "VolumeRegion";
 	if(volumeregion_table.find(name) != volumeregion_table.end() )
 	{
-		WarnExist; return 0;
+		WarnExist; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type) )
 	{
-		ErrNoType; return 0;
+		ErrNoType; return nullptr;
 	}
 	VolumeRegion* volumeregion;
 	auto i=volumeregion_factory.find(type);
 	if(i!=volumeregion_factory.end()) volumeregion = i->second(params,*this);
 	else
 	{
-		ErrUnkType(type); return 0;
+		ErrUnkType(type); return nullptr;
 	}
 	if(volumeregion)
 	{
@@ -692,7 +692,7 @@ VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, p
 		return volumeregion;
 	}
 	ErrOnCreate(type);
-	return 0;
+	return nullptr;
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -988,7 +988,7 @@ renderEnvironment_t::shader_factory_t* renderEnvironment_t::getShaderNodeFactory
 	auto i=shader_factory.find(name);
 	if(i!=shader_factory.end()) return i->second;
 	Y_ERROR_ENV << "There is no factory for '"<<name<<"'\n";
-	return 0;
+	return nullptr;
 }
 
 __END_YAFRAY

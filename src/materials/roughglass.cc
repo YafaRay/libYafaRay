@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 
 
 roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow, visibility_t eVisibility):
-		bumpS(0), mirColS(0), roughnessS(0), iorS(0), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
+		bumpS(nullptr), mirColS(nullptr), roughnessS(nullptr), iorS(nullptr), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
 		disperse(false), fakeShadow(fakeS), dispersion_power(disp_pow)
 {
     mVisibility = eVisibility;

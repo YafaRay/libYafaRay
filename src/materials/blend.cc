@@ -31,7 +31,7 @@ __BEGIN_YAFRAY
 #define addPdf(p1, p2) (p1*ival + p2*val)
 
 blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, visibility_t eVisibility):
-	mat1(m1), mat2(m2), blendS(0)
+	mat1(m1), mat2(m2), blendS(nullptr)
 {
     mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
@@ -430,9 +430,9 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	
-	if(! params.getParam("material1", name) ) return 0;
+	if(! params.getParam("material1", name) ) return nullptr;
 	m1 = env.getMaterial(*name);
-	if(! params.getParam("material2", name) ) return 0;
+	if(! params.getParam("material2", name) ) return nullptr;
 	m2 = env.getMaterial(*name);
 	params.getParam("blend_value", blend_val);
 	
@@ -446,7 +446,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	else if(sVisibility == "invisible") visibility = INVISIBLE;
 	else visibility = NORMAL_VISIBLE;
 	
-	if(m1==0 || m2==0 ) return 0;
+	if(m1==nullptr || m2==nullptr ) return nullptr;
 	
 	blendMat_t *mat = new blendMat_t(m1, m2, blend_val, visibility);
 	
@@ -469,7 +469,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 			{
 				Y_ERROR << "Blend: Blend shader node '" << *name << "' does not exist!" << yendl;
 				delete mat;
-				return 0;
+				return nullptr;
 			}
 		}
 	}
@@ -477,7 +477,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	{
 		Y_ERROR << "Blend: loadNodes() failed!" << yendl;
 		delete mat;
-		return 0;
+		return nullptr;
 	}
 	mat->solveNodesOrder(roots);
 	mat->reqMem = sizeof(bool) + mat->reqNodeMem;

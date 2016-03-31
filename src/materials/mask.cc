@@ -135,18 +135,18 @@ CFLOAT maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp,
 material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
 {
 	const std::string *name = nullptr;
-	const material_t *m1=0, *m2=0;
+	const material_t *m1=nullptr, *m2=nullptr;
 	double thresh = 0.5;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	bool receive_shadows = true;
 	
 	params.getParam("threshold", thresh);
-	if(! params.getParam("material1", name) ) return 0;
+	if(! params.getParam("material1", name) ) return nullptr;
 	m1 = env.getMaterial(*name);
-	if(! params.getParam("material2", name) ) return 0;
+	if(! params.getParam("material2", name) ) return nullptr;
 	m2 = env.getMaterial(*name);
-	//if(! params.getParam("mask", name) ) return 0;
+	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = env.getTexture(*name);
 	
 	params.getParam("receive_shadows", receive_shadows);
@@ -158,7 +158,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	else if(sVisibility == "invisible") visibility = INVISIBLE;
 	else visibility = NORMAL_VISIBLE;
 	
-	if(m1==0 || m2==0 ) return 0;
+	if(m1==nullptr || m2==nullptr ) return nullptr;
 	
 	maskMat_t *mat = new maskMat_t(m1, m2, thresh, visibility);
 
@@ -175,7 +175,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 			{
 				Y_ERROR << "MaskMat: Mask shader node '" << *name << "' does not exist!" << yendl;
 				delete mat;
-				return 0;
+				return nullptr;
 			}
 		}
 	}
@@ -183,7 +183,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	{
 		Y_ERROR << "MaskMat: loadNodes() failed!" << yendl;
 		delete mat;
-		return 0;
+		return nullptr;
 	}
 	mat->solveNodesOrder(roots);
 	size_t inputReq = std::max(m1->getReqMem(), m2->getReqMem());

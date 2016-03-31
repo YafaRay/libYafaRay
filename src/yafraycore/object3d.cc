@@ -90,7 +90,7 @@ void triangleObjectInstance_t::finish()
 =====================================*/
 
 meshObject_t::meshObject_t(int ntris, bool hasUV, bool hasOrco):
-	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false), light(0)
+	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false), light(nullptr)
 {
 	//triangles.reserve(ntris);
 	if(hasUV)

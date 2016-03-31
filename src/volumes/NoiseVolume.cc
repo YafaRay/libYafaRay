@@ -83,7 +83,7 @@ VolumeRegion* NoiseVolume::factory(paraMap_t &params,renderEnvironment_t &render
 	if (!texName)
 	{
 		Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << yendl;
-		return 0;
+		return nullptr;
 	}
 
 	texture_t* noise = render.getTexture(*texName);
@@ -91,7 +91,7 @@ VolumeRegion* NoiseVolume::factory(paraMap_t &params,renderEnvironment_t &render
 	if(!noise)
 	{
 		Y_VERBOSE << "NoiseVolume: Noise texture '" << *texName << "' couldn't be found, the volume region won't be created." << yendl;
-		return 0;
+		return nullptr;
 	}
 		
 	NoiseVolume *vol = new NoiseVolume(color_t(sa), color_t(ss), color_t(le), g, cov, sharp, dens,

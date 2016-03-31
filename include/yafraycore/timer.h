@@ -23,7 +23,7 @@ class YAFRAYCORE_EXPORT timer_t
 		bool reset(const std::string &name);
 		double getTime(const std::string &name);
 		
-		static void splitTime(double t, double *secs, int *mins=0, int *hours=0, int *days=0);
+		static void splitTime(double t, double *secs, int *mins=nullptr, int *hours=nullptr, int *days=nullptr);
 	
 	protected:
 		bool includes(const std::string &label)const;

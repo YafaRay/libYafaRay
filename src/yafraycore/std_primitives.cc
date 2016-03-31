@@ -78,9 +78,9 @@ object3d_t* sphere_factory(paraMap_t &params, renderEnvironment_t &env)
 	params.getParam("center", center);
 	params.getParam("radius", radius);
 	params.getParam("material", matname);
-	if(!matname) return 0;
+	if(!matname) return nullptr;
 	mat = env.getMaterial(*matname);
-	if(!mat) return 0;
+	if(!mat) return nullptr;
 	sphere_t *sphere = new sphere_t(center, radius, mat);
 	return new primObject_t(sphere);
 }

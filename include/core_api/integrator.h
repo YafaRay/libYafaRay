@@ -41,7 +41,7 @@ struct renderArea_t;
 class YAFRAYCORE_EXPORT integrator_t
 {
 	public:
-		integrator_t() { scene = 0; intpb = 0; }
+		integrator_t() { scene = nullptr; intpb = nullptr; }
 		//! this MUST be called before any other member function!
 		void setScene(scene_t *s) { scene=s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */

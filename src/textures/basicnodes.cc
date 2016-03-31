@@ -298,13 +298,13 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	if( !params.getParam("texture", texname) )
 	{
 		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
-		return 0;
+		return nullptr;
 	}
 	tex = render.getTexture(*texname);
 	if(!tex)
 	{
 		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << yendl;
-		return 0;
+		return nullptr;
 	}
 	textureMapper_t *tm = new textureMapper_t(tex);
 	if(params.getParam("texco", option) )

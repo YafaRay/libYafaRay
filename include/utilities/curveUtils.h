@@ -53,7 +53,7 @@ public:
 	float getSample(float wl) const;
 	void addSample(float data);
 };
-IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n):c1(0), c2(0), size(n), index(0)
+IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n):c1(nullptr), c2(nullptr), size(n), index(0)
 {
 	c1 = new float[n];
 	c2 = new float[n];
@@ -64,7 +64,7 @@ IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n):c1
 	}
 }
 
-IrregularCurve::IrregularCurve(const float *datay, int n):c1(0), c2(0), size(n), index(0)
+IrregularCurve::IrregularCurve(const float *datay, int n):c1(nullptr), c2(nullptr), size(n), index(0)
 {
 	c1 = new float[n];
 	c2 = new float[n];
@@ -126,14 +126,14 @@ public:
 };
 
 RegularCurve::RegularCurve(const float *data, float BeginR, float EndR, int n):
-	c(0), m(BeginR), M(EndR), step(0.0), size(n), index(0)
+	c(nullptr), m(BeginR), M(EndR), step(0.0), size(n), index(0)
 {
 	c = new float[n];
 	for(int i=0; i<n; i++) c[i] = data[i];
 	step = n / (M - m);
 }
 
-RegularCurve::RegularCurve(float BeginR, float EndR, int n) : c(0), m(BeginR), M(EndR), step(0.0), size(n), index(0)
+RegularCurve::RegularCurve(float BeginR, float EndR, int n) : c(nullptr), m(BeginR), M(EndR), step(0.0), size(n), index(0)
 {
 	c = new float[n];
 	step = n / (M - m);

@@ -29,7 +29,7 @@ template<class T> class rkdTreeNode
 public:
 	void createLeaf(u_int32 *primIdx, int np, const T **prims, MemoryArena &arena)
 	{
-		primitives = 0;
+		primitives = nullptr;
 		flags = np << 2;
 		flags |= 3;
 		if(np>1)

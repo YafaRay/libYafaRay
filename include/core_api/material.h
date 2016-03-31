@@ -82,7 +82,7 @@ enum visibility_t
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0),additionalDepth(0)
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(nullptr), volO(nullptr),additionalDepth(0)
 		{
 			materialIndexAuto++;
 			srand(materialIndexAuto);

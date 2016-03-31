@@ -29,7 +29,7 @@ class xmlParser_t
 {
 	public:
 		xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma);
-		void pushState(startElement_cb start, endElement_cb end, void *userdata=0);
+		void pushState(startElement_cb start, endElement_cb end, void *userdata=nullptr);
 		void popState();
 		void startElement(const char *element, const char **attrs){ ++level; if(current) current->start(*this, element, attrs); }
 		void endElement(const char *element)	{ if(current) current->end(*this, element); --level; }

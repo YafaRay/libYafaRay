@@ -8,7 +8,7 @@
 
 __BEGIN_YAFRAY
 
-yafrayInterface_t::yafrayInterface_t(): scene(0), film(0), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
+yafrayInterface_t::yafrayInterface_t(): scene(nullptr), film(nullptr), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
@@ -31,7 +31,7 @@ yafrayInterface_t::~yafrayInterface_t()
 
 void yafrayInterface_t::loadPlugins(const char *path)
 {
-	if(path != 0)
+	if(path != nullptr)
 	{
 		std::string plugPath(path);
 		if(plugPath.empty()) env->getPluginPath(plugPath);
@@ -55,9 +55,9 @@ void yafrayInterface_t::clearAll()
 	Y_VERBOSE << "Interface: Deleting scene..." << yendl;
 	if(scene) delete scene;
 	Y_VERBOSE << "Interface: Clearing film and parameter maps scene..." << yendl;
-	scene = 0;//new scene_t();
+	scene = nullptr;//new scene_t();
 	if(film) delete film;
-	film = 0;
+	film = nullptr;
 	params->clear();
 	eparams->clear();
 	cparams = params;
@@ -277,9 +277,9 @@ imageHandler_t* yafrayInterface_t::createImageHandler(const char* name, bool add
 VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name)
 {
 	VolumeRegion* vr = env->createVolumeRegion(name, *params);
-	if (!vr) return 0;
+	if (!vr) return nullptr;
 	scene->addVolumeRegion(vr);
-	return 0;
+	return nullptr;
 }
 
 unsigned int yafrayInterface_t::createObject	(const char* name)

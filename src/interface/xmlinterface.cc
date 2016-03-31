@@ -5,7 +5,7 @@
 
 __BEGIN_YAFRAY
 
-xmlInterface_t::xmlInterface_t(): last_mat(0), nextObj(0), XMLGamma(1.f), XMLColorSpace(RAW_MANUAL_GAMMA)
+xmlInterface_t::xmlInterface_t(): last_mat(nullptr), nextObj(0), XMLGamma(1.f), XMLColorSpace(RAW_MANUAL_GAMMA)
 {
 	xmlName = "yafaray.xml";
 }
@@ -73,7 +73,7 @@ unsigned int xmlInterface_t::getNextFreeID() {
 
 bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
-	last_mat = 0;
+	last_mat = nullptr;
 	n_uvs = 0;
 	xmlFile << "\n<mesh id=\"" << id << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
 			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
@@ -89,7 +89,7 @@ bool xmlInterface_t::startCurveMesh(unsigned int id, int vertices, int obj_pass_
 bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	*id = ++nextObj;
-	last_mat = 0;
+	last_mat = nullptr;
 	n_uvs = 0;
 	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
 			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
@@ -259,7 +259,7 @@ light_t* 		xmlInterface_t::createLight(const char* name)
 	xmlFile << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</light>\n";
-	return 0;
+	return nullptr;
 }
 
 texture_t* 		xmlInterface_t::createTexture(const char* name)
@@ -267,7 +267,7 @@ texture_t* 		xmlInterface_t::createTexture(const char* name)
 	xmlFile << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</texture>\n";
-	return 0;
+	return nullptr;
 }
 
 material_t* 	xmlInterface_t::createMaterial(const char* name)
@@ -285,21 +285,21 @@ camera_t* 		xmlInterface_t::createCamera(const char* name)
 	xmlFile << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</camera>\n";
-	return 0;
+	return nullptr;
 }
 background_t* 	xmlInterface_t::createBackground(const char* name)
 {
 	xmlFile << "\n<background name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</background>\n";
-	return 0;
+	return nullptr;
 }
 integrator_t* 	xmlInterface_t::createIntegrator(const char* name)
 {
 	xmlFile << "\n<integrator name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</integrator>\n";
-	return 0;
+	return nullptr;
 }
 
 VolumeRegion* 	xmlInterface_t::createVolumeRegion(const char* name)
@@ -307,7 +307,7 @@ VolumeRegion* 	xmlInterface_t::createVolumeRegion(const char* name)
 	xmlFile << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params);
 	xmlFile << "</volumeregion>\n";
-	return 0;
+	return nullptr;
 }
 
 unsigned int 	xmlInterface_t::createObject(const char* name)

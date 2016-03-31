@@ -129,9 +129,9 @@ color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
 
 background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
-	const texture_t *tex=0;
-	const std::string *texname=0;
-	const std::string *mapping=0;
+	const texture_t *tex=nullptr;
+	const std::string *texname=nullptr;
+	const std::string *mapping=nullptr;
 	PROJECTION pr = spherical;
 	float power = 1.0, rot=0.0;
 	bool IBL = false;

@@ -58,9 +58,9 @@ typedef unsigned int objID_t;
 struct YAFRAYCORE_EXPORT renderState_t
 {
 	renderState_t():raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
-		traveled(0.0), chromatic(true), includeLights(false), userdata(0), lightdata(0), prng(0) {};
+		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(nullptr) {};
 	renderState_t(random_t *rand):raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
-		traveled(0.0), chromatic(true), includeLights(false), userdata(0), lightdata(0), prng(rand) {};
+		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(rand) {};
 	~renderState_t(){};
 
 	int raylevel;

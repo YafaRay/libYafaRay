@@ -108,7 +108,7 @@ class coatedGlossyMat_t: public nodeMaterial_t
 };
 
 coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility):
-	diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), iorS(0), exponentS(0), mMirrorShader(0), mMirrorColorShader(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), mirror_color(mirCol), mMirrorStrength(mirrorStrength), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
+	diffuseS(nullptr), glossyS(nullptr), glossyRefS(nullptr), bumpS(nullptr), iorS(nullptr), exponentS(nullptr), mMirrorShader(nullptr), mMirrorColorShader(nullptr), mSigmaOrenShader(nullptr), mDiffuseReflShader(nullptr), gloss_color(col), diff_color(dcol), mirror_color(mirCol), mMirrorStrength(mirrorStrength), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
 	as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
     mVisibility = eVisibility;

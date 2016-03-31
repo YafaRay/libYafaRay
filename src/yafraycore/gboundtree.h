@@ -297,7 +297,7 @@ class gBoundTree_t
 {
 	//friend class gBoundTree_t;
 	public:
-		gBoundTree_t(...): tree(0)
+		gBoundTree_t(...): tree(nullptr)
 		{
 			tree = buildGenericTree(lpho,global_photon_calc_bound,global_photon_is_in_bound,
 									global_photon_get_pos,8);

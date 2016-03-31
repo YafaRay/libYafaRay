@@ -82,7 +82,7 @@ class glossyMat_t: public nodeMaterial_t
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
-			diffuseS(0), glossyS(0), glossyRefS(0), bumpS(0), exponentS(0), mSigmaOrenShader(0), mDiffuseReflShader(0), gloss_color(col), diff_color(dcol), exponent(expo),
+			diffuseS(nullptr), glossyS(nullptr), glossyRefS(nullptr), bumpS(nullptr), exponentS(nullptr), mSigmaOrenShader(nullptr), mDiffuseReflShader(nullptr), gloss_color(col), diff_color(dcol), exponent(expo),
 			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
     mVisibility = eVisibility;

@@ -15,7 +15,7 @@ typedef unsigned int LIGHTF_t;
 
 struct lSample_t
 {
-	lSample_t(surfacePoint_t *s_p=0): sp(s_p) {}
+	lSample_t(surfacePoint_t *s_p=nullptr): sp(s_p) {}
 	float s1, s2; //<! 2d sample value for choosing a surface point on the light.
 	float s3, s4; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
 	float pdf; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
