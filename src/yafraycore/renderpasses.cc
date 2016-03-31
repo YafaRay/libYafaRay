@@ -81,7 +81,7 @@ void renderPasses_t::generate_pass_maps()
 	extPassMapStringInt["SubsurfaceCol"] = PASS_EXT_SUBSURFACE_COLOR;
 
 	//Generation of reverse map (pass type -> pass_string)
-	for(std::map<std::string, extPassTypes_t>::const_iterator it = extPassMapStringInt.begin(); it != extPassMapStringInt.end(); ++it)
+	for(auto it = extPassMapStringInt.begin(); it != extPassMapStringInt.end(); ++it)
 	{
 		extPassMapIntString[it->second] = it->first;
 	}
@@ -147,7 +147,7 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-aa-samples"] = PASS_INT_AA_SAMPLES;
 
 	//Generation of reverse map (pass type -> pass_string)
-	for(std::map<std::string, intPassTypes_t>::const_iterator it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
+	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
 	{
 		intPassMapIntString[it->second] = it->first;
 	}
@@ -237,35 +237,35 @@ intPassTypes_t renderPasses_t::intPassTypeFromIndex(int intPassIndex) const { re
 	
 std::string renderPasses_t::extPassTypeStringFromIndex(int extPassIndex) const
 {
-	std::map<extPassTypes_t, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPasses.at(extPassIndex).extPassType);
+	auto map_iterator = extPassMapIntString.find(extPasses.at(extPassIndex).extPassType);
 	if(map_iterator == extPassMapIntString.end()) return "not found";
 	else return map_iterator->second;
 }
 
 std::string renderPasses_t::extPassTypeStringFromType(extPassTypes_t extPassType) const
 {
-	std::map<extPassTypes_t, std::string>::const_iterator map_iterator = extPassMapIntString.find(extPassType);
+	auto map_iterator = extPassMapIntString.find(extPassType);
 	if(map_iterator == extPassMapIntString.end()) return "not found";
 	else return map_iterator->second;
 }
 
 std::string renderPasses_t::intPassTypeStringFromType(intPassTypes_t intPassType) const
 {
-	std::map<intPassTypes_t, std::string>::const_iterator map_iterator = intPassMapIntString.find(intPassType);
+	auto map_iterator = intPassMapIntString.find(intPassType);
 	if(map_iterator == intPassMapIntString.end()) return "not found";
 	else return map_iterator->second;
 }
 
 extPassTypes_t renderPasses_t::extPassTypeFromString(std::string extPassTypeString) const
 {
-	std::map<std::string, extPassTypes_t>::const_iterator map_iterator = extPassMapStringInt.find(extPassTypeString);
+	auto map_iterator = extPassMapStringInt.find(extPassTypeString);
 	if(map_iterator == extPassMapStringInt.end()) return PASS_EXT_DISABLED;	//PASS_EXT_DISABLED is returned if the string cannot be found
 	else return map_iterator->second;
 }
 
 intPassTypes_t renderPasses_t::intPassTypeFromString(std::string intPassTypeString) const
 {
-	std::map<std::string, intPassTypes_t>::const_iterator map_iterator = intPassMapStringInt.find(intPassTypeString);
+	auto map_iterator = intPassMapStringInt.find(intPassTypeString);
 	if(map_iterator == intPassMapStringInt.end()) return PASS_INT_DISABLED;	//PASS_INT_DISABLED is returned if the string cannot be found
 	else return map_iterator->second;
 }
@@ -322,7 +322,7 @@ colorPasses_t::colorPasses_t(const renderPasses_t *renderPasses):passDefinitions
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
 	colVector.reserve(passDefinitions->intPasses.size());
-	for(std::vector<intPassTypes_t>::const_iterator it = passDefinitions->intPasses.begin(); it != passDefinitions->intPasses.end(); ++it)
+	for(auto it = passDefinitions->intPasses.begin(); it != passDefinitions->intPasses.end(); ++it)
 	{
 		colVector.push_back(init_color(passDefinitions->intPassTypeFromIndex(it - passDefinitions->intPasses.begin())));
 	}
@@ -361,7 +361,7 @@ colorA_t& colorPasses_t::operator()(int intPassIndex)
 
 void colorPasses_t::reset_colors()
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it = init_color(intPassTypeFromIndex(it - colVector.begin()));
 	}
@@ -384,7 +384,7 @@ colorA_t colorPasses_t::init_color(intPassTypes_t intPassType)
 
 void colorPasses_t::multiply_colors(float factor)
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it *= factor;
 	}
@@ -446,7 +446,7 @@ colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colo
 
 colorPasses_t & colorPasses_t::operator *= (CFLOAT f)
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it *= f;
 	}
@@ -455,7 +455,7 @@ colorPasses_t & colorPasses_t::operator *= (CFLOAT f)
 
 colorPasses_t & colorPasses_t::operator *= (const color_t &a)
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it *= a;
 	}
@@ -464,7 +464,7 @@ colorPasses_t & colorPasses_t::operator *= (const color_t &a)
 
 colorPasses_t & colorPasses_t::operator *= (const colorA_t &a)
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it *= a;
 	}
@@ -473,7 +473,7 @@ colorPasses_t & colorPasses_t::operator *= (const colorA_t &a)
 
 colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
 {
-	for(std::vector<colorA_t>::iterator it = colVector.begin(); it != colVector.end(); ++it)
+	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
 		*it += a.colVector.at(it - colVector.begin());
 	}
