@@ -42,7 +42,7 @@ add_library(tgaHandler SHARED tgaHandler.cc)
 target_link_libraries(tgaHandler yafaray_e3_core)
 
 add_library(hdrHandler SHARED hdrHandler.cc)
-target_link_libraries(hdrHandler yafaray_e3_core)
+target_link_libraries(hdrHandler yafaray_e3_core ${Boost_LIBRARIES})
 
 if(WITH_OpenEXR)
 	install (TARGETS exrHandler ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
