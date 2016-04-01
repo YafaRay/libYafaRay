@@ -24,6 +24,8 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <locale>
+#include <codecvt>
 
 #include <png.h>
 
@@ -198,12 +200,18 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 bool pngHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
-
 	png_structp pngPtr = nullptr;
 	png_infop infoPtr = nullptr;
 
+#if defined(_WIN32)
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
+	std::wstring wname = convert.from_bytes(name);    
+	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+#else
 	FILE *fp = fopen(name.c_str(), "rb");
+#endif
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
 	{

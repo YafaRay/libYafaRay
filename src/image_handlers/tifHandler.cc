@@ -26,6 +26,8 @@
 #include <core_api/scene.h>
 
 #include <tiffio.h>
+#include <locale>
+#include <codecvt>
 
 __BEGIN_YAFRAY
 
@@ -170,11 +172,19 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 bool tifHandler_t::loadFromFile(const std::string &name)
 {
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
-
 	uint32 w, h;
 	
+#if defined(_WIN32)
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
+	std::wstring wname = convert.from_bytes(name);    
+	TIFF *tif = TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+#else
 	TIFF *tif = TIFFOpen(name.c_str(), "r");
+#endif
+	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+
+
 
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
