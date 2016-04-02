@@ -50,9 +50,9 @@ public:
 private:
 	bool writeHeader(std::ofstream &file);
 	bool writeScanline(std::ofstream &file, rgbePixel_t *scanline);
-	bool readHeader(std::ifstream &file); //!< Reads file header and detects if the file is valid
-	bool readORLE(std::ifstream &file, int y, int scanWidth); //!< Reads the scanline with the original Radiance RLE schema or without compression
-	bool readARLE(std::ifstream &file, int y, int scanWidth); //!< Reads a scanline with Adaptative RLE schema
+	bool readHeader(FILE *fp); //!< Reads file header and detects if the file is valid
+	bool readORLE(FILE *fp, int y, int scanWidth); //!< Reads the scanline with the original Radiance RLE schema or without compression
+	bool readARLE(FILE *fp, int y, int scanWidth); //!< Reads a scanline with Adaptative RLE schema
 
 	rgbeHeader_t header;
 };
@@ -93,20 +93,26 @@ void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 
 bool hdrHandler_t::loadFromFile(const std::string &name)
 {
+#if defined(_WIN32)
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
+	std::wstring wname = convert.from_bytes(name);    
+	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+#else
+	FILE *fp = fopen(name.c_str(), "rb");
+#endif
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
-	std::ifstream file(name.c_str(), std::ios::binary | std::ios::in);
-
-	if (!file.good())
+	if(!fp)
 	{
-		Y_ERROR << handlerName << ": An error has occurred when opening file \"" << name << "\"..." << yendl;
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
 		return false;
 	}
 
-	if (!readHeader(file))
+	if (!readHeader(fp))
 	{
 		Y_ERROR << handlerName << ": An error has occurred while reading the header..." << yendl;
-		file.close();
+		fclose(fp);
 		return false;
 	}
 
@@ -131,14 +137,14 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	{
 		for (int y = header.min[0]; y != header.max[0]; y += header.step[0])
 		{
-			if (!readORLE(file, y, scanWidth))
+			if (!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading uncompressed scanline..." << yendl;
-				file.close();
+				fclose(fp);
 				return false;
 			}
 		}
-		file.close();
+		fclose(fp);
 		return true;
 	}
 	
@@ -146,67 +152,70 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	{
 		rgbePixel_t pix;
 
-		file.read((char *)&pix, sizeof(rgbePixel_t));
+		if (fread((char *)&pix, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
+		{
+			Y_ERROR << handlerName << ": An error has occurred while reading scanline start..." << yendl;
+			fclose(fp);
+			return false;
+		}
 
-		if (file.eof())
+		if (feof(fp))
 		{
 			Y_ERROR << handlerName << ": EOF reached while reading scanline start..." << yendl;
-			file.close();
+			fclose(fp);
 			return false;
 		}
 		
-		if (file.fail())
-		{
-			Y_ERROR << handlerName << ": An error has occurred while reading scanline start..." << yendl;
-			file.close();
-			return false;
-		}
-
 		if (pix.isARLEDesc()) // Adaptaive RLE schema encoding
 		{
 			if (pix.getARLECount() > scanWidth)
 			{
 				Y_ERROR << handlerName << ": Error reading, invalid ARLE scanline width..." << yendl;
-				file.close();
+				fclose(fp);
 				return false;
 			}
 
-			if (!readARLE(file, y, pix.getARLECount()))
+			if (!readARLE(fp, y, pix.getARLECount()))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
-				file.close();
+				fclose(fp);
 				return false;
 			}
 		}
 		else // Original RLE schema encoding or raw without compression
 		{
 			// rewind the read pixel to start reading from the begining of the scanline
-			file.seekg(-sizeof(rgbePixel_t), std::ios_base::cur);
+			fseek(fp, (long int) -sizeof(rgbePixel_t), SEEK_CUR);
 
-			if(!readORLE(file, y, scanWidth))
+			if(!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline..." << yendl;
-				file.close();
+				fclose(fp);
 				return false;
 			}
 		}
 	}
 
-	file.close();
+	fclose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
 	return true;
 }
 
-bool hdrHandler_t::readHeader(std::ifstream &file)
+bool hdrHandler_t::readHeader(FILE *fp)
 {
-	std::string line = "";
-	std::getline(file, line);
+	std::string line;
+	int line_size = 1000;
+	char* linebuf = (char*) malloc(line_size);
+
+	fgets(linebuf, line_size, fp); 
+	line = std::string(linebuf);
 
 	if (line.find("#?") == std::string::npos)
 	{
 		Y_ERROR << handlerName << ": File is not a valid Radiance RBGE image..." << yendl;
+		free(linebuf);
 		return false;
 	}
 
@@ -217,9 +226,10 @@ bool hdrHandler_t::readHeader(std::ifstream &file)
 	// search for optional flags
 	for(;;)
 	{
-		std::getline(file, line);
+		fgets(linebuf, line_size, fp); 
+		line = std::string(linebuf);
 
-		if (line == "") break; // We found the end of the header tag section and we move on
+		if (line == "" || line == "\n") break; // We found the end of the header tag section and we move on
 
 		//Find variables
 		// We only check for the most used tags and ignore the rest
@@ -229,6 +239,7 @@ bool hdrHandler_t::readHeader(std::ifstream &file)
 			if(line.substr(foundPos+7).find("32-bit_rle_rgbe") == std::string::npos)
 			{
 				Y_ERROR << handlerName << ": Sorry this is an XYZE file, only RGBE images are supported..." << yendl;
+				free(linebuf);
 				return false;
 			}
 		}
@@ -241,8 +252,9 @@ bool hdrHandler_t::readHeader(std::ifstream &file)
 	}
 
 	// check image size and orientation
-	std::getline(file, line);
-
+	fgets(linebuf, line_size, fp); 
+	line = std::string(linebuf);
+	
 	std::vector<std::string> sizeOrient = tokenize(line);
 	
 	header.yFirst = (sizeOrient[0].find("Y") != std::string::npos);
@@ -287,10 +299,11 @@ bool hdrHandler_t::readHeader(std::ifstream &file)
 		header.step[f] = -1;
 	}
 
+	free(linebuf);
 	return true;
 }
 
-bool hdrHandler_t::readORLE(std::ifstream &file, int y, int scanWidth)
+bool hdrHandler_t::readORLE(FILE *fp, int y, int scanWidth)
 {
 	rgbePixel_t *scanline = new rgbePixel_t[scanWidth]; // Scanline buffer
 	int rshift = 0;
@@ -301,9 +314,7 @@ bool hdrHandler_t::readORLE(std::ifstream &file, int y, int scanWidth)
 
 	while (x < scanWidth)
 	{
-		file.read((char *)&pixel, sizeof(rgbePixel_t));
-
-		if (file.fail())
+		if (fread((char *)&pixel, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
 		{
 			Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline header..." << yendl;
 			return false;
@@ -349,7 +360,7 @@ bool hdrHandler_t::readORLE(std::ifstream &file, int y, int scanWidth)
 	return true;
 }
 
-bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
+bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 {
 	rgbePixel_t *scanline = new rgbePixel_t[scanWidth]; // Scanline buffer
 	yByte count = 0; // run description
@@ -369,9 +380,7 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 		j = 0;
 		while(j < scanWidth)
 		{
-			file.read((char *)&count, 1);
-			
-			if (file.fail())
+			if(fread((char *)&count, 1, 1, fp) != 1)
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
 				return false;
@@ -387,7 +396,12 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 					return false;
 				}
 
-				file.read((char *)&col, 1);
+				if(fread((char *)&col, 1, 1, fp) != 1)
+				{
+					Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
+					return false;
+				}
+
 				while(count--) scanline[j++][chan] = col;
 			}
 			else // else is a non-run raw values
@@ -400,7 +414,11 @@ bool hdrHandler_t::readARLE(std::ifstream &file, int y, int scanWidth)
 
 				while(count--)
 				{
-					file.read((char *)&col, 1);
+					if(fread((char *)&col, 1, 1, fp) != 1)
+					{
+						Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
+						return false;
+					}
 					scanline[j++][chan] = col;
 				}
 			}
