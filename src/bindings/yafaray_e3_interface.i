@@ -720,6 +720,7 @@ namespace yafaray
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 			virtual void render(colorOutput_t &output, progressBar_t *pb = nullptr); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
+			virtual bool setLoggingAndBadgeSettings();
 			virtual bool setupRenderPasses(); //!< setup render passes information
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }

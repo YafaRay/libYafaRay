@@ -867,8 +867,8 @@ void imageFilm_t::drawRenderSettings()
 	if (timeh > 0) ss << " " << timeh << "h";
 	if (timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
-	ss << " | " << yafLog.getRenderSettings();
-	ss << "\n" << yafLog.getAANoiseSettings();
+	if(yafLog.getDrawRenderSettings()) ss << " | " << yafLog.getRenderSettings();
+	if(yafLog.getDrawAANoiseSettings()) ss << "\n" << yafLog.getAANoiseSettings();
 
 	std::string text_utf8 = ss.str();
 	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;
@@ -996,14 +996,15 @@ void imageFilm_t::drawRenderSettings()
 	
 	if(logo_loaded)
 	{
-		if(logo->getWidth() > 80 || logo->getHeight() > 45) Y_WARNING << "imageFilm: custom params badge logo is too big (" << logo->getWidth() << " x " << logo->getHeight() << "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example." << yendl;
+		if(logo->getWidth() > 80 || logo->getHeight() > 45) Y_WARNING << "imageFilm: custom params badge logo is quite big (" << logo->getWidth() << " x " << logo->getHeight() << "). It could invade other areas in the badge. Please try to keep logo size smaller than 80 x 45, for example." << yendl;
 		int lx, ly;
 		int imWidth = std::min(logo->getWidth(), w);
 		int imHeight = std::min(logo->getHeight(), dpHeight);
 
 		for ( lx = 0; lx < imWidth; lx++ )
 			for ( ly = 0; ly < imHeight; ly++ )
-				(*dpimage)(w-imWidth+lx, dpHeight-imHeight+ly) = logo->getPixel(lx, ly);
+				if(yafLog.isParamsBadgeTop()) (*dpimage)(w-imWidth+lx, ly) = logo->getPixel(lx, ly);
+				else (*dpimage)(w-imWidth+lx, dpHeight-imHeight+ly) = logo->getPixel(lx, ly);
 
 		delete logo;
 	}

@@ -695,6 +695,42 @@ VolumeRegion* renderEnvironment_t::createVolumeRegion(const std::string &name, p
 	return nullptr;
 }
 
+void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
+{
+	bool logging_saveLog = false;
+	bool logging_saveHTML = false;
+	bool logging_drawRenderSettings = true;
+	bool logging_drawAANoiseSettings = true;
+	const std::string *logging_paramsBadgePosition = nullptr;
+	const std::string *logging_title = nullptr;
+	const std::string *logging_author = nullptr;
+	const std::string *logging_contact = nullptr;
+	const std::string *logging_comments = nullptr;
+	const std::string *logging_customIcon = nullptr;
+
+	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
+	params.getParam("logging_saveLog", logging_saveLog);
+	params.getParam("logging_saveHTML", logging_saveHTML);
+	params.getParam("logging_drawRenderSettings", logging_drawRenderSettings);
+	params.getParam("logging_drawAANoiseSettings", logging_drawAANoiseSettings);
+	params.getParam("logging_author", logging_author);
+	params.getParam("logging_title", logging_title);
+	params.getParam("logging_contact", logging_contact);
+	params.getParam("logging_comments", logging_comments);
+	params.getParam("logging_customIcon", logging_customIcon);
+
+	yafLog.setSaveLog(logging_saveLog);
+	yafLog.setSaveHTML(logging_saveHTML);
+	yafLog.setDrawRenderSettings(logging_drawRenderSettings);
+	yafLog.setDrawAANoiseSettings(logging_drawAANoiseSettings);
+	if(logging_paramsBadgePosition) yafLog.setParamsBadgePosition(*logging_paramsBadgePosition);
+	if(logging_title) yafLog.setLoggingTitle(*logging_title);
+	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
+	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
+	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
+	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
+}
+
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
 	set antialiasing etc.)
 	attention: since this function creates an image film and asigns it to the scene,
@@ -715,18 +751,11 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	int AA_variance_pixels = 0;
 	float AA_clamp_samples = 0.f;
 	float AA_clamp_indirect = 0.f;
-	bool logging_saveLog = false;
-	bool logging_saveHTML = false;
+	
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;        
-	const std::string *logging_paramsBadgePosition = nullptr;
-	const std::string *logging_title = nullptr;
-	const std::string *logging_author = nullptr;
-	const std::string *logging_contact = nullptr;
-	const std::string *logging_comments = nullptr;
-	const std::string *logging_customIcon = nullptr;
 	std::stringstream aaSettings;
 
 	if(! params.getParam("camera_name", name) )
@@ -786,27 +815,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
-	params.getParam("logging_saveLog", logging_saveLog);
-	params.getParam("logging_saveHTML", logging_saveHTML);
-	params.getParam("logging_author", logging_author);
-	params.getParam("logging_title", logging_title);
-	params.getParam("logging_contact", logging_contact);
-	params.getParam("logging_comments", logging_comments);
-	params.getParam("logging_customIcon", logging_customIcon);
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
-
-	yafLog.setSaveLog(logging_saveLog);
-	yafLog.setSaveHTML(logging_saveHTML);
-	if(logging_paramsBadgePosition) yafLog.setParamsBadgePosition(*logging_paramsBadgePosition);
-	if(logging_title) yafLog.setLoggingTitle(*logging_title);
-	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
-	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
-	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
-	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
 
 	imageFilm_t *film = createImageFilm(params, output);
 

@@ -207,19 +207,6 @@ int main(int argc, char *argv[])
 		render["logging_paramsBadgePosition"] = params_badge_position;
 		yafLog.setParamsBadgePosition(params_badge_position);
 	}
-	else
-	{
-		render.getParam("logging_paramsBadgePosition", params_badge_position);
-		if(!params_badge_position.empty())
-		{
-			yafLog.setParamsBadgePosition(params_badge_position);
-		}
-		else
-		{
-			render["logging_paramsBadgePosition"] = "none";
-			yafLog.setParamsBadgePosition("none");
-		}
-	}
 	
 	if(zbuf) render["z_channel"] = true;
 	if(nozbuf) render["z_channel"] = false;

@@ -326,7 +326,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	std::string el(element), *name=0;
 	if( el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-		el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes")
+		el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes" || el == "logging_badge")
 	{
 		if(!attrs[0])
 		{
@@ -656,6 +656,10 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			else if(el == "render_passes")
 			{
 				p.env->setupRenderPasses(p.params);
+			}
+			else if(el == "logging_badge")
+			{
+				p.env->setupLoggingAndBadge(p.params);
 			}
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << yendl;
 		}

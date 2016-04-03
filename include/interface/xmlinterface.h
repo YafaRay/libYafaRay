@@ -15,6 +15,7 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		xmlInterface_t();
 		// directly related to scene_t:
 		virtual void loadPlugins(const char *path);
+		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		virtual bool startGeometry();
 		virtual bool endGeometry();

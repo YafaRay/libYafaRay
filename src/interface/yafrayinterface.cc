@@ -73,6 +73,12 @@ bool yafrayInterface_t::startScene(int type)
 	return true;
 }
 
+bool yafrayInterface_t::setLoggingAndBadgeSettings()
+{
+	env->setupLoggingAndBadge(*params);
+	return true;
+}
+
 bool yafrayInterface_t::setupRenderPasses()
 {
 	env->setupRenderPasses(*params);

@@ -61,7 +61,7 @@ class YAFRAYCORE_EXPORT logEntry_t
 class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	public:
-		yafarayLog_t(): mVerbLevel(VL_INFO), mConsoleMasterVerbLevel(VL_INFO), mLogMasterVerbLevel(VL_VERBOSE), mImagePath(""), mParamsBadgeHeight(150), mSaveLog(false), mSaveHTML(false) {}
+		yafarayLog_t() {}
 		
 		~yafarayLog_t() {}
 
@@ -79,9 +79,10 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setImagePath(const std::string &path) { mImagePath = path; }
 		void appendAANoiseSettings(const std::string &aa_noise_settings);
 		void appendRenderSettings(const std::string &render_settings);
+		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
+		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
 
 		bool getUseParamsBadge() { return mDrawParams; }
-		int getBadgeHeight() const { return mParamsBadgeHeight; } 
 		bool isParamsBadgeTop() { return mParamsBadgeTop; }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
 		std::string getLoggingAuthor() const { return mLoggingAuthor; }
@@ -90,7 +91,10 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
 		std::string getAANoiseSettings() const { return mAANoiseSettings; }
 		std::string getRenderSettings() const { return mRenderSettings; }
-
+		bool getDrawAANoiseSettings() { return drawAANoiseSettings; }
+		bool getDrawRenderSettings() { return drawRenderSettings; }
+		int getBadgeHeight() const;
+		
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
@@ -125,16 +129,15 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		}
 
 	protected:
-		int mVerbLevel;
-		int mConsoleMasterVerbLevel;
-		int mLogMasterVerbLevel;
+		int mVerbLevel = VL_INFO;
+		int mConsoleMasterVerbLevel = VL_INFO;
+		int mLogMasterVerbLevel = VL_VERBOSE;
 		std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
-		std::string mImagePath;
-		int mParamsBadgeHeight;					//Height of the parameters badge
-		bool mParamsBadgeTop;//If enabled, draw badge in the top of the image instead of the bottom
-		bool mDrawParams;	//Enable/disable drawing params badge in exported images
-		bool mSaveLog;		//Enable/disable text log file saving with exported images
-		bool mSaveHTML;		//Enable/disable HTML file saving with exported images
+		std::string mImagePath = "";
+		bool mParamsBadgeTop = true;//If enabled, draw badge in the top of the image instead of the bottom
+		bool mDrawParams = false;	//Enable/disable drawing params badge in exported images
+		bool mSaveLog = false;		//Enable/disable text log file saving with exported images
+		bool mSaveHTML = false;		//Enable/disable HTML file saving with exported images
 		std::string mLoggingTitle;
 		std::string mLoggingAuthor;
 		std::string mLoggingContact;
@@ -142,6 +145,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingCustomIcon;		
 		std::string mAANoiseSettings;
 		std::string mRenderSettings;
+		bool drawAANoiseSettings = true;
+		bool drawRenderSettings = true;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

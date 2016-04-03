@@ -49,10 +49,20 @@ bool xmlInterface_t::startScene(int type)
 	return true;
 }
 
+bool xmlInterface_t::setLoggingAndBadgeSettings()
+{
+	xmlFile << "\n<logging_badge name=\"logging_badge\">\n";
+	writeParamMap(*params);
+	params->clear();
+	xmlFile << "</logging_badge>\n";
+	return true;
+}
+
 bool xmlInterface_t::setupRenderPasses()
 {
 	xmlFile << "\n<render_passes name=\"render_passes\">\n";
 	writeParamMap(*params);
+	params->clear();
 	xmlFile << "</render_passes>\n";
 	return true;
 }

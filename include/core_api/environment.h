@@ -71,6 +71,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		void 			setScene(scene_t *scene) { curren_scene=scene; };
 		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = nullptr);
 		void			setupRenderPasses(const paraMap_t &params);
+		void			setupLoggingAndBadge(const paraMap_t &params);
 		const			renderPasses_t* getRenderPasses() const { return &renderPasses; }
 		const 			std::map<std::string,camera_t *> * getCameraTable() const { return &camera_table; }
 		void			setOutput2(colorOutput_t *out2) { output2 = out2; }

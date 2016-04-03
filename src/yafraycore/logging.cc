@@ -288,8 +288,6 @@ void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &baseP
         baseFileName = fullFileName;
         extension  = "";
     }
-    
-    Y_DEBUG << "fullFilePath='"<<fullFilePath<<"', basePath='"<<basePath<<"', baseFileName='"<<baseFileName<<"', extension='"<<extension<<"'"<<yendl;
 }               
 
 void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
@@ -311,5 +309,13 @@ void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
 	}
 }
 
+
+int yafarayLog_t::getBadgeHeight() const
+{
+	if(drawAANoiseSettings && drawRenderSettings) return 150;
+	else if(!drawAANoiseSettings && !drawRenderSettings) return 70;
+	else return 110;
+}
+		
 __END_YAFRAY
 
