@@ -30,8 +30,6 @@
 #include <iostream>
 #include <vector>
 
-#include <boost/filesystem.hpp>
-
 #include "hdrUtils.h"
 
 __BEGIN_YAFRAY

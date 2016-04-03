@@ -35,6 +35,8 @@
 #include <locale>
 #include <codecvt>
 
+#include <boost/filesystem.hpp>
+
 using namespace Imf;
 using namespace Imath;
 
@@ -219,15 +221,37 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 	std::wstring wname = convert.from_bytes(name);    
 	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+	std::string tempFilePathString = "";	//filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
 #else
 	FILE *fp = fopen(name.c_str(), "rb");
 #endif
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
-	if (fp)
+	if(!fp)
+	{
+		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		return false;
+	}
+	else
 	{
 		char bytes[4];
 		fread(&bytes, 1, 4, fp);
+#if defined(_WIN32)		
+		fseek (fp , 0 , SEEK_SET);
+		auto tempFolder = boost::filesystem::temp_directory_path();
+		auto tempFile = boost::filesystem::unique_path();
+		tempFilePathString = tempFolder.string() + tempFile.string() + ".exr";
+		Y_VERBOSE << handlerName << ": Creating intermediate temporary file tempstr=" << tempFilePathString << yendl;
+		FILE *fpTemp = fopen(tempFilePathString.c_str(), "wb");
+		unsigned char *copy_buffer = (unsigned char*) malloc(1024);
+	
+		int numReadBytes = 0;
+		while((numReadBytes = fread(copy_buffer, sizeof(unsigned char), 1024, fp)) == 1024) fwrite(copy_buffer, sizeof(unsigned char), 1024, fpTemp);
+		fwrite(copy_buffer, sizeof(unsigned char), numReadBytes, fpTemp);
+		fclose(fpTemp);
+		
+		free(copy_buffer);
+#endif		
 		fclose(fp);
 		fp = nullptr;
 		if(!isImfMagic(bytes)) return false;
@@ -235,7 +259,12 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 
 	try
 	{
-		RgbaInputFile file(name.c_str());
+#if defined(_WIN32)
+		Y_INFO << handlerName << ": Loading intermediate temporary file tempstr=" << tempFilePathString << yendl;
+		RgbaInputFile file(tempFilePathString.c_str());		
+#else		
+		RgbaInputFile file(name.c_str());		
+#endif		
 		Box2i dw = file.dataWindow();
 
 		m_width  = dw.max.x - dw.min.x + 1;
@@ -255,14 +284,19 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 
 		file.setFrameBuffer(&(*m_halfrgba.at(0))(0, 0) - dw.min.y - dw.min.x * m_height, m_height, 1);
 		file.readPixels(dw.min.y, dw.max.y);
-
-		return true;
 	}
 	catch (const std::exception &exc)
 	{
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
 	}
+
+#if defined(_WIN32)
+	Y_INFO << handlerName << ": Deleting intermediate temporary file tempstr=" << tempFilePathString << yendl;
+	std::remove(tempFilePathString.c_str());		
+#endif	
+
+	return true;
 }
 
 imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &render)
