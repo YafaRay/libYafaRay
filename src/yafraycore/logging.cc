@@ -250,7 +250,7 @@ std::string yafarayLog_t::printTime(std::time_t datetime) const
 std::string yafarayLog_t::printDate(std::time_t datetime) const
 {
 	char mbstr[20];
-	std::strftime( mbstr, sizeof(mbstr), "%F", std::localtime(&datetime) );
+	std::strftime( mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime) );
 	return std::string(mbstr);
 }
 
