@@ -243,13 +243,17 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		tempFilePathString = tempFolder.string() + tempFile.string() + ".exr";
 		Y_VERBOSE << handlerName << ": Creating intermediate temporary file tempstr=" << tempFilePathString << yendl;
 		FILE *fpTemp = fopen(tempFilePathString.c_str(), "wb");
+		if(!fpTemp)
+		{
+			Y_ERROR << handlerName << ": Cannot create intermediate temporary file " << tempFilePathString << yendl;
+			return false;
+		}
+		//Copy original EXR texture contents into new temporary file, so we can circumvent the lack of UTF16 support in MinGW ifstream
 		unsigned char *copy_buffer = (unsigned char*) malloc(1024);
-	
 		int numReadBytes = 0;
 		while((numReadBytes = fread(copy_buffer, sizeof(unsigned char), 1024, fp)) == 1024) fwrite(copy_buffer, sizeof(unsigned char), 1024, fpTemp);
 		fwrite(copy_buffer, sizeof(unsigned char), numReadBytes, fpTemp);
-		fclose(fpTemp);
-		
+		fclose(fpTemp);		
 		free(copy_buffer);
 #endif		
 		fclose(fp);
