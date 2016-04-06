@@ -197,6 +197,8 @@ camera_t* perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 	int resx=320, resy=200;
 	float aspect=1, dfocal=1, apt=0, dofd=0, bkhrot=0;
     float nearClip = 0.0f, farClip = -1.0f;
+    std::string viewName = "";
+    
 	params.getParam("from", from);
 	params.getParam("to", to);
 	params.getParam("up", up);
@@ -211,6 +213,7 @@ camera_t* perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 	params.getParam("aspect_ratio", aspect);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
+    params.getParam("view_name", viewName);
 
 	bokehType bt = BK_DISK1;
 	if (*bkhtype=="disk2")			bt = BK_DISK2;
@@ -225,6 +228,8 @@ camera_t* perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 	else if (*bkhbias=="edge") 		bbt = BB_EDGE;
 
     perspectiveCam_t* cam = new perspectiveCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, nearClip, farClip);
+
+	cam->view_name = viewName;
 
     return cam;
 }

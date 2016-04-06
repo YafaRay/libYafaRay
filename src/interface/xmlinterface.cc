@@ -49,6 +49,14 @@ bool xmlInterface_t::startScene(int type)
 	return true;
 }
 
+bool xmlInterface_t::setupRenderPasses()
+{
+	xmlFile << "\n<render_passes name=\"render_passes\">\n";
+	writeParamMap(*params);
+	xmlFile << "</render_passes>\n";
+	return true;
+}
+
 void xmlInterface_t::setOutfile(const char *fname)
 {
 	xmlName = std::string(fname);
@@ -63,28 +71,28 @@ unsigned int xmlInterface_t::getNextFreeID() {
 }
 
 
-bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	last_mat = 0;
 	n_uvs = 0;
 	xmlFile << "\n<mesh id=\"" << id << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
-			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type <<"\">\n";
+			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool xmlInterface_t::startCurveMesh(unsigned int id, int vertices)
+bool xmlInterface_t::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
 {
-	xmlFile << "\n<curve id=\"" << id << "\" vertices=\"" << vertices <<"\">\n";
+	xmlFile << "\n<curve id=\"" << id << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	*id = ++nextObj;
 	last_mat = 0;
 	n_uvs = 0;
 	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
-			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type <<"\">\n";
+			<< "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 

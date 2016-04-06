@@ -14,9 +14,6 @@ target_link_libraries(blend yafaraycore)
 add_library(glossy SHARED glossy.cc)
 target_link_libraries(glossy yafaraycore)
 
-add_library(glossy2 SHARED glossy2.cc)
-target_link_libraries(glossy2 yafaraycore)
-
 add_library(shinydiffuse SHARED shinydiffuse.cc)
 target_link_libraries(shinydiffuse yafaraycore)
 
@@ -29,5 +26,5 @@ target_link_libraries(simple yafaraycore)
 add_library(volumetric SHARED beer.cc)
 target_link_libraries(volumetric yafaraycore)
 
-install (TARGETS glass roughglass blend glossy glossy2 shinydiffuse coatedglossy simple volumetric
+install (TARGETS glass roughglass blend glossy shinydiffuse coatedglossy simple volumetric
 		${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

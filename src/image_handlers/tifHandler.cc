@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <tiffio.h>
 
@@ -36,11 +37,11 @@ class tifHandler_t: public imageHandler_t
 public:
 	tifHandler_t();
 	~tifHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name);
-	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
-	colorA_t getPixel(int x, int y);
+	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
+	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -49,50 +50,68 @@ tifHandler_t::tifHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-	m_hasDepth = false;
-	
-	m_rgba = NULL;
-	m_depth = NULL;
 	
 	handlerName = "TIFFHandler";
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;
 }
 
-void tifHandler_t::initForOutput(int width, int height, bool withAlpha, bool withDepth)
+void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-	m_hasDepth = withDepth;
+	m_MultiLayer = multi_layer;
 	
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
+	imagePasses.resize(renderPasses->extPassesSize());
 	
-	if(m_hasDepth)
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
-		m_depth = new gray2DImage_nw_t(m_width, m_height);
+		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
 	}
 }
 
 tifHandler_t::~tifHandler_t()
 {
-	if(m_rgba) delete m_rgba;
-	if(m_depth) delete m_depth;
-	m_rgba = NULL;
-	m_depth = NULL;
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
+	}
 
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
+	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
+	rgbaOptimizedBuffer = NULL;
+	rgbaCompressedBuffer = NULL;	
 }
 
-void tifHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
+void tifHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
 {
-	(*m_rgba)(x, y) = rgba;
-	if(m_hasDepth) (*m_depth)(x, y) = depth;
+	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
 }
 
-colorA_t tifHandler_t::getPixel(int x, int y)
+colorA_t tifHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*m_rgba)(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(rgbaOptimizedBuffer) return (*rgbaOptimizedBuffer)(x, y).getColor();
+	else if(rgbaCompressedBuffer) return (*rgbaCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
-bool tifHandler_t::saveToFile(const std::string &name)
+bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
 
@@ -122,7 +141,7 @@ bool tifHandler_t::saveToFile(const std::string &name)
     	for(int x = 0; x < m_width; x++)
     	{
     		int ix = x * channels;
-    		colorA_t &col = (*m_rgba)(x, y);
+    		colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
     		col.clampRGBA01();
     		scanline[ix]   = (yByte)(col.getR() * 255.f);
     		scanline[ix+1] = (yByte)(col.getG() * 255.f);
@@ -143,50 +162,6 @@ bool tifHandler_t::saveToFile(const std::string &name)
 	TIFFClose(out);
 	_TIFFfree(scanline);
 	
-	if(m_hasDepth)
-	{
-		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.tif";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\" (16Bits grayscale)..." << yendl;
-
-		out = TIFFOpen(zbufname.c_str(), "w");
-		
-		TIFFSetField(out, TIFFTAG_IMAGEWIDTH, m_width);
-		TIFFSetField(out, TIFFTAG_IMAGELENGTH, m_height);
-		TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, 1);
-		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 16);
-		TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-		TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-		TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
-		bytesPerScanline = m_width * 2; // 16 bits wide = 2 bytes per entry
-
-		yWord *scanline16 = (yWord*)_TIFFmalloc(bytesPerScanline);
-		
-		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, bytesPerScanline));
-
-		for (int y = 0; y < m_height; y++)
-		{
-			for(int x = 0; x < m_width; x++)
-			{
-				float col = std::max(0.f, std::min(1.f, (*m_depth)(x, y)));
-				scanline16[x] = (yWord)(col * 65535.f);
-			}
-			
-			if(TIFFWriteScanline(out, scanline16, y, 0) < 0)
-			{
-				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-				TIFFClose(out);
-				_TIFFfree(scanline16);
-
-				return false;
-			}
-		}
-		
-		TIFFClose(out);
-		_TIFFfree(scanline16);
-
-	}
-
 	Y_INFO << handlerName << ": Done." << yendl;
 
 	return true;
@@ -212,12 +187,21 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	}
 	
 	m_hasAlpha = true;
-	m_hasDepth = false;
 	m_width = (int)w;
 	m_height = (int)h;
 
-	if(m_rgba) delete m_rgba;
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		}
+		imagePasses.clear();
+	}
+
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED) rgbaOptimizedBuffer = new rgbaOptimizedImage_nw_t(m_width, m_height);	
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED) rgbaCompressedBuffer = new rgbaCompressedImage_nw_t(m_width, m_height);
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 	
 	int i = 0;
 	
@@ -225,12 +209,18 @@ bool tifHandler_t::loadFromFile(const std::string &name)
     {
     	for( int x = 0; x < m_width; x++ )
     	{
-    		colorA_t &col = (*m_rgba)(x, y);
-    		col.set((float)TIFFGetR(tiffData[i]) * inv8,
+    		colorA_t color;
+    		color.set((float)TIFFGetR(tiffData[i]) * inv8,
 					(float)TIFFGetG(tiffData[i]) * inv8,
 					(float)TIFFGetB(tiffData[i]) * inv8,
 					(float)TIFFGetA(tiffData[i]) * inv8);
 			i++;
+			
+			if(rgbaOptimizedBuffer) (*rgbaOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbaCompressedBuffer) (*rgbaCompressedBuffer)(x, y).setColor(color);
+			else if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;			
     	}
     }
 
@@ -248,18 +238,16 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
-	bool withDepth = false;
 	bool forOutput = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
-	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
 	
 	imageHandler_t *ih = new tifHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 	
 	return ih;
 }

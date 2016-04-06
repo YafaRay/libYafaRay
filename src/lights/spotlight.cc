@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class spotLight_t : public light_t
 {
 	public:
-		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled);
+		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled=true, bool bCastShadows=true);
 		virtual ~spotLight_t();
 		virtual color_t totalEnergy() const;
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -39,9 +39,7 @@ class spotLight_t : public light_t
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual bool canIntersect() const{ return softShadows; }
 		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		virtual bool lightEnabled() const { return lLightEnabled;}
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
-
 		virtual int nSamples() const { return samples; };
 	protected:
 		point3d_t position;
@@ -59,12 +57,13 @@ class spotLight_t : public light_t
 		bool softShadows;
 		float shadowFuzzy;
 		int samples;
-		bool lLightEnabled; //!< enable/disable light
 };
 
-spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled):
-	light_t(LIGHT_SINGULAR), position(from), intensity(power), photonOnly(ponly), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl), lLightEnabled(bLightEnabled)
+spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, PFLOAT angle, PFLOAT falloff, bool ponly, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled, bool bCastShadows):
+	light_t(LIGHT_SINGULAR), position(from), intensity(power), photonOnly(ponly), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl)
 {
+    lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
 	ndir = (from - to).normalize();
 	dir = -ndir;
 	color = col*power;
@@ -293,6 +292,7 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	int smpl = 8;
 	float ssfuzzy = 1.f;
 	bool lightEnabled = true;
+	bool castShadows = true;
 
 	params.getParam("from",from);
 	params.getParam("to",to);
@@ -305,8 +305,9 @@ light_t *spotLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("shadowFuzzyness",ssfuzzy);
 	params.getParam("samples",smpl);
 	params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 	
-	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy, lightEnabled);
+	return new spotLight_t(from, to, color, power, angle, falloff, pOnly, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
 }
 
 

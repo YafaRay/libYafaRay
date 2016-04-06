@@ -26,6 +26,11 @@
 
 __BEGIN_YAFRAY
 
+
+float material_t::highestMaterialIndex = 1.f;	//Initially this class shared variable will be 1.f
+unsigned int material_t::materialIndexAuto = 0;	//Initially this class shared variable will be 0
+
+
 bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
 {
 	float W = 0.f;

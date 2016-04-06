@@ -23,6 +23,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
+#include <core_api/scene.h>
 
 #include <cstdio>
 
@@ -68,11 +69,11 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, bool withAlpha = false, bool withDepth = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name);
-	void putPixel(int x, int y, const colorA_t &rgba, float depth = 0.f);
-	colorA_t getPixel(int x, int y);
+	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
+	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -81,50 +82,60 @@ jpgHandler_t::jpgHandler_t()
 	m_width = 0;
 	m_height = 0;
 	m_hasAlpha = false;
-	m_hasDepth = false;
-	
-	m_rgba = NULL;
-	m_depth = NULL;
 	
 	handlerName = "JPEGHandler";
+	
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
-void jpgHandler_t::initForOutput(int width, int height, bool withAlpha, bool withDepth)
+void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
-	m_hasDepth = withDepth;
+    m_MultiLayer = multi_layer;
+
+	imagePasses.resize(renderPasses->extPassesSize());
 	
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
-	
-	if(m_hasDepth)
+	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 	{
-		m_depth = new gray2DImage_nw_t(m_width, m_height);
+		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
 	}
 }
 
 jpgHandler_t::~jpgHandler_t()
 {
-	if(m_rgba) delete m_rgba;
-	if(m_depth) delete m_depth;
-	m_rgba = NULL;
-	m_depth = NULL;
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			imagePasses.at(idx) = NULL;
+		}
+	}
 
+	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
+	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
+
+	rgbOptimizedBuffer = NULL;
+	rgbCompressedBuffer = NULL;
 }
 
-void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, float depth)
+void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
 {
-	(*m_rgba)(x, y) = rgba;
-	if(m_hasDepth) (*m_depth)(x, y) = depth;
+	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
 }
 
-colorA_t jpgHandler_t::getPixel(int x, int y)
+colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 {
-	return (*m_rgba)(x, y);
+	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
+	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
+	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
+	else return colorA_t(0.f);	//This should not happen, but just in case
 }
 
-bool jpgHandler_t::saveToFile(const std::string &name)
+bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << yendl;
 
@@ -168,7 +179,7 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 		for (x = 0; x < m_width; x++)
 		{
 			ix = x * 3;
-			colorA_t &col = (*m_rgba)(x, y);
+			colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
 			col.clampRGBA01();
 			scanline[ix]   = (yByte)(col.getR() * 255);
 			scanline[ix+1] = (yByte)(col.getG() * 255);
@@ -223,61 +234,7 @@ bool jpgHandler_t::saveToFile(const std::string &name)
 		{
 			for (x = 0; x < m_width; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, (*m_rgba)(x, y).getA()));
-
-				scanline[x] = (yByte)(col * 255);
-			}
-
-			jpeg_write_scanlines(&info, &scanline, 1);
-		}
-
-		delete [] scanline;
-
-		jpeg_finish_compress(&info);
-		jpeg_destroy_compress(&info);
-
-		fclose(fp);
-	}
-
-	if(m_hasDepth)
-	{
-		std::string zbufname = name.substr(0, name.size() - 4) + "_zbuffer.jpg";
-		Y_INFO << handlerName << ": Saving Z-Buffer as \"" << zbufname << "\"..." << yendl;
-
-		fp = fopen(zbufname.c_str(), "wb");
-		
-		if (!fp)
-		{
-			Y_ERROR << handlerName << ": Cannot open file for writing " << zbufname << yendl;
-			return false;
-		}
-		
-		info.err = jpeg_std_error(&jerr.pub);
-		info.err->output_message = jpgErrorMessage;
-		jerr.pub.error_exit = jpgExitOnError;
-
-		jpeg_create_compress(&info);
-		jpeg_stdio_dest(&info, fp);
-
-		info.image_width = m_width;
-		info.image_height = m_height;
-		info.in_color_space = JCS_GRAYSCALE;
-		info.input_components = 1;
-		
-		jpeg_set_defaults(&info);
-		
-		info.dct_method = JDCT_FLOAT;
-		jpeg_set_quality(&info, 100, TRUE);
-		
-		jpeg_start_compress(&info, TRUE);
-
-		scanline = new yByte[ m_width ];
-
-		for(y = 0; y < m_height; y++)
-		{
-			for (x = 0; x < m_width; x++)
-			{
-				float col = std::max(0.f, std::min(1.f, (*m_depth)(x, y)));
+				float col = std::max(0.f, std::min(1.f, (*imagePasses.at(imagePassNumber))(x, y).getA()));
 
 				scanline[x] = (yByte)(col * 255);
 			}
@@ -350,12 +307,21 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	}
 	
 	m_hasAlpha = false;
-	m_hasDepth = false;
 	m_width = info.output_width;
 	m_height = info.output_height;
+
+	if(!imagePasses.empty())
+	{
+		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		{
+			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+		}
+		imagePasses.clear();
+	}
 	
-	if(m_rgba) delete m_rgba;
-	m_rgba = new rgba2DImage_nw_t(m_width, m_height);
+	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED) rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
+	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED) rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
+	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
 
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
@@ -368,15 +334,17 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		
 		for (int x = 0; x < m_width; x++)
 		{
+			colorA_t color;
+			
 			if (isGray)
 			{
-				float color = scanline[x] * inv8;
-				(*m_rgba)(x, y).set(color, color, color, 1.f);
+				float colscan = scanline[x] * inv8;
+				color.set(colscan, colscan, colscan, 1.f);
 			}
 			else if(isRGB)
 			{
 				ix = x * 3;
-				(*m_rgba)(x, y).set( scanline[ix] * inv8,
+				color.set( scanline[ix] * inv8,
 									 scanline[ix+1] * inv8,
 									 scanline[ix+2] * inv8,
 									 1.f);
@@ -387,7 +355,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 				float K = scanline[ix+3] * inv8;
 				float iK = 1.f - K;
 				
-				(*m_rgba)(x, y).set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f),
+				color.set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
 									 1.f - std::max((scanline[ix+1] * inv8 * iK) + K, 1.f),
 									 1.f - std::max((scanline[ix+2] * inv8 * iK) + K, 1.f),
 									 1.f);
@@ -397,11 +365,15 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 				ix = x * 4;
 				float A = scanline[ix+3] * inv8;
 				float iA = 1.f - A;
-				(*m_rgba)(x, y).set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
+				color.set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
 									 std::max(0.f, std::min((scanline[ix+1] * inv8) - iA, 1.f)),
 									 std::max(0.f, std::min((scanline[ix+2] * inv8) - iA, 1.f)),
 									 A);
 			}
+			
+			if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
+			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
+			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;	
 		}
 		y++;
 	}
@@ -418,23 +390,22 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	return true;
 }
 
+
 imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	int width = 0;
 	int height = 0;
 	bool withAlpha = false;
-	bool withDepth = false;
 	bool forOutput = true;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
-	params.getParam("z_channel", withDepth);
 	params.getParam("for_output", forOutput);
 	
 	imageHandler_t *ih = new jpgHandler_t();
 	
-	if(forOutput) ih->initForOutput(width, height, withAlpha, withDepth);
+	if(forOutput) ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
 	
 	return ih;
 }

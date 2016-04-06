@@ -118,7 +118,11 @@ color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
 	
 	color_t ret = tex->getColor(point3d_t(u, v, 0.f));
 	
-	if(ret.minimum() < 1e-6f) ret = color_t(1e-5f);
+	float minComponent = 1.0e-5f;
+	
+	if(ret.R < minComponent) ret.R = minComponent;
+	if(ret.G < minComponent) ret.G = minComponent;
+	if(ret.B < minComponent) ret.B = minComponent;
 	
 	return power * ret;
 }
@@ -166,7 +170,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["samples"] = IBL_sam;
 		bgp["shoot_caustics"] = caust;
 		bgp["shoot_diffuse"] = diffuse;
-		bgp["abs_intersect"] = (pr == angular);
+		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
 		
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
 		

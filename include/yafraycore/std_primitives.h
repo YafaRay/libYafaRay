@@ -21,6 +21,7 @@ class YAFRAYCORE_EXPORT sphere_t: public primitive_t
 		virtual bool intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const;
 		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
 		virtual const material_t* getMaterial() const { return material; }
+		virtual const triangleObject_t* getMesh() const { return NULL; }
 	protected:
 		point3d_t center;
 		PFLOAT radius;

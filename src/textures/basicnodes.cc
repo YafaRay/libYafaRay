@@ -136,10 +136,15 @@ void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfaceP
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 		case TXC_TRAN:	texpt = mtx * sp.P; Ng = mtx * sp.Ng; break;  // apply 4x4 matrix of object for mapping also to true surface normals
 		case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
+		case TXC_NOR:	{	
+							vector3d_t camx, camy, camz;
+							state.cam->getAxis(camx,camy,camz);
+							texpt = point3d_t(sp.N*camx, -sp.N*camy, 0); Ng = sp.Ng;
+							break;
+						}
 		case TXC_STICK:	// Not implemented yet use GLOB
 		case TXC_STRESS:// Not implemented yet use GLOB
 		case TXC_TAN:	// Not implemented yet use GLOB
-		case TXC_NOR:	// Not implemented yet use GLOB
 		case TXC_REFL:	// Not implemented yet use GLOB
 		case TXC_GLOB:	// GLOB mapped as default
 		default:		texpt = sp.P; Ng = sp.Ng; break;
@@ -232,7 +237,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			vector3d_t norm(0.f);
 
 			// Get color from normal map texture
-			color = tex->getNoGammaColor(texpt);
+			color = tex->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();

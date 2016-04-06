@@ -52,17 +52,23 @@ inline float sinSample(float s)
 	return fSin(s * M_PI);
 }
 
-bgLight_t::bgLight_t(int sampl, bool shootC, bool shootD, bool absIntersect):
+bgLight_t::bgLight_t(int sampl, bool shootC, bool shootD, bool absIntersect, bool bLightEnabled, bool bCastShadows):
 light_t(LIGHT_NONE), samples(sampl), shootCaustic(shootC), shootDiffuse(shootD), absInter(absIntersect)
 {
+    lLightEnabled = bLightEnabled;
+    lCastShadows = bCastShadows;
 	background = NULL;
+	uDist = 0;
+	vDist = 0;
 }
 
 bgLight_t::~bgLight_t()
 {
 	for(int i = 0; i < vDist->count; i++) delete uDist[i];
-	delete[] uDist;
-	delete vDist;
+	if(uDist) delete[] uDist;
+	uDist = 0;
+	if(vDist) delete vDist;
+	vDist = 0;
 }
 
 void bgLight_t::init(scene_t &scene)
@@ -280,13 +286,17 @@ light_t* bgLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	bool shootD = true;
 	bool shootC = true;
 	bool absInt = false;
+    bool lightEnabled = true;
+	bool castShadows = true;
 	
 	params.getParam("samples", samples);
 	params.getParam("shoot_caustics", shootC);
 	params.getParam("shoot_diffuse", shootD);
 	params.getParam("abs_intersect", absInt);
+    params.getParam("light_enabled", lightEnabled);
+	params.getParam("cast_shadows", castShadows);
 
-	bgLight_t *light = new bgLight_t(samples, shootC, shootD, absInt);
+	bgLight_t *light = new bgLight_t(samples, shootC, shootD, absInt, lightEnabled, castShadows);
 
 	return light;
 }

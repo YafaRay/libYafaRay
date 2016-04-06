@@ -924,7 +924,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT shado
 			T *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit > shadow_bias )
+				if(t_hit < dist && t_hit > ray.tmin )
 				{
 					*tr = mp;
 					return true;
@@ -939,7 +939,7 @@ bool kdTree_t<T>::IntersectS(const ray_t &ray, PFLOAT dist, T **tr, PFLOAT shado
 				T *mp = prims[i];
 					if (mp->intersect(ray, &t_hit, bary))
 					{
-						if(t_hit < dist && t_hit > shadow_bias )
+						if(t_hit < dist && t_hit > ray.tmin )
 						{
 							*tr = mp;
 							return true;
@@ -1062,7 +1062,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 			T *mp = currNode->onePrimitive;
 			if (mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= shadow_bias )
+				if(t_hit < dist && t_hit >= ray.tmin )
 				{
 					const material_t *mat = mp->getMaterial();
 					if(!mat->isTransparent() ) return true;
@@ -1085,7 +1085,7 @@ bool kdTree_t<T>::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 				T *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit >= shadow_bias )
+					if(t_hit < dist && t_hit >= ray.tmin )
 					{
 						const material_t *mat = mp->getMaterial();
 						if(!mat->isTransparent() ) return true;

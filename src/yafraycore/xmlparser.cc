@@ -326,7 +326,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 {
 	std::string el(element), *name=0;
 	if( el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-		el == "camera" || el == "background" || el == "object" || el == "volumeregion")
+		el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes")
 	{
 		if(!attrs[0])
 		{
@@ -344,7 +344,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	else if(el == "mesh")
 	{
 		mesh_dat_t *md = new mesh_dat_t();
-		int vertices=0, triangles=0, type=0, id=-1;
+		int vertices=0, triangles=0, type=0, id=-1, obj_pass_index=0;
 		for(int n=0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
@@ -354,6 +354,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 			else if(name == "faces") triangles = atoi(attrs[n+1]);
 			else if(name == "type")	type = atoi(attrs[n+1]);
 			else if(name == "id" ) id = atoi(attrs[n+1]);
+			else if(name == "obj_pass_index" ) obj_pass_index = atoi(attrs[n+1]);
 		}
 		parser.pushState(startEl_mesh, endEl_mesh, md);
 		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
@@ -362,7 +363,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		if(id == -1) md->ID = parser.scene->getNextFreeID();
 		else md->ID = id;
 		
-		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type))
+		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type, obj_pass_index))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
 		}
@@ -651,6 +652,10 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			{
 				VolumeRegion* vr = p.env->createVolumeRegion(*name, p.params);
 				if (vr) p.scene->addVolumeRegion(vr);
+			}
+			else if(el == "render_passes")
+			{
+				p.env->setupRenderPasses(p.params);
 			}
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << yendl;
 		}

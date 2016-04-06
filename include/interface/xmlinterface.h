@@ -15,12 +15,13 @@ class YAFRAYPLUGIN_EXPORT xmlInterface_t: public yafrayInterface_t
 		xmlInterface_t();
 		// directly related to scene_t:
 		virtual void loadPlugins(const char *path);
+		virtual bool setupRenderPasses(); //!< setup render passes information
 		virtual bool startGeometry();
 		virtual bool endGeometry();
 		virtual unsigned int getNextFreeID();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0);
-		virtual bool startCurveMesh(unsigned int id, int vertices);
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int obj_pass_index=0);
+		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index=0);
 		virtual bool endTriMesh();
 		virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
 		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);

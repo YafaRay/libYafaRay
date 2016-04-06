@@ -30,14 +30,16 @@ __BEGIN_YAFRAY
 
 #define addPdf(p1, p2) (p1*ival + p2*val)
 
-blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval):
+blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, visibility_t eVisibility):
 	mat1(m1), mat2(m2), blendS(0)
 {
+    mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
 	mmem1 = mat1->getReqMem();
 	recalcBlend = false;
 	blendVal = bval;
 	blendedIOR = (mat1->getMatIOR() + mat2->getMatIOR()) * 0.5f;
+	mVisibility = eVisibility;
 }
 
 blendMat_t::~blendMat_t()
@@ -95,7 +97,7 @@ void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t
 	state.userdata = old_udat;
 }
 
-color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs)const
+color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval)const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
@@ -389,6 +391,10 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	const std::string *name = 0;
 	const material_t *m1=0, *m2=0;
 	double blend_val = 0.5;
+	std::string sVisibility = "normal";
+	visibility_t visibility = NORMAL_VISIBLE;
+	int mat_pass_index = 0;
+	bool receive_shadows = true;
 	
 	if(! params.getParam("material1", name) ) return 0;
 	m1 = env.getMaterial(*name);
@@ -396,9 +402,22 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	m2 = env.getMaterial(*name);
 	params.getParam("blend_value", blend_val);
 	
+	params.getParam("receive_shadows", receive_shadows);
+	params.getParam("visibility", sVisibility);
+	params.getParam("mat_pass_index",   mat_pass_index);
+	
+	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
+	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
+	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
+	else if(sVisibility == "invisible") visibility = INVISIBLE;
+	else visibility = NORMAL_VISIBLE;
+	
 	if(m1==0 || m2==0 ) return 0;
 	
-	blendMat_t *mat = new blendMat_t(m1, m2, blend_val);
+	blendMat_t *mat = new blendMat_t(m1, m2, blend_val, visibility);
+	
+	mat->setMaterialIndex(mat_pass_index);
+	mat->mReceiveShadows = receive_shadows;
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

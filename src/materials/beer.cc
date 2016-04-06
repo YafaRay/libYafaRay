@@ -14,6 +14,10 @@ class beer_t: public volumeHandler_t
 		beer_t(const color_t &acol, double dist);
 		virtual bool transmittance(const renderState_t &state, const ray_t &ray, color_t &col) const;
 		virtual bool scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const;
+        virtual color_t getSubSurfaceColor(const renderState_t &state) const
+        {
+                return sigma_a;
+        }
 		
 		static volumeHandler_t* factory(const paraMap_t &params, renderEnvironment_t &env);
 	protected:

@@ -41,10 +41,12 @@ __BEGIN_YAFRAY
 
 /*!	This class recieves all rendered image samples.
 	You can see it as an enhanced render buffer;
-	Holds RGBA, Depth and Density (for actual bidirectional pathtracing implementation) buffers.
+	Holds RGBA and Density (for actual bidirectional pathtracing implementation) buffers.
 */
 
 class progressBar_t;
+class renderPasses_t;
+class colorPasses_t;
 
 // Image types define
 #define IF_IMAGE 1
@@ -70,20 +72,18 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		~imageFilm_t();
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(int numPasses = 0);
-		/*! Allocates memory for the z-buffer rendering */
-		void initDepthMap();
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_AA if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(bool adaptive_AA, std::string integratorName);
+		int nextPass(int numView, bool adaptive_AA, std::string integratorName);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
-			\return number of resampled pixels */
-		bool nextArea(renderArea_t &a);
+			\return false if no area is left to be handed out, true otherwise */
+		bool nextArea(int numView, renderArea_t &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(renderArea_t &a);
+		void finishArea(int numView, renderArea_t &a);
 		/*! Output all pixels to the color output */
-		void flush(int flags = IF_ALL, colorOutput_t *out = 0);
+		void flush(int numView, int flags = IF_ALL, colorOutput_t *out = 0);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -92,10 +92,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(const colorA_t &c, int x, int y, float dx, float dy, const renderArea_t *a = 0);
-		/*!	Add depth (z-buffer) sample; dx and dy describe the position in the pixel (x,y)
-		*/
-		void addDepthSample(int chan, float val, int x, int y, float dx, float dy);
+		void addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a = 0, int numSample = 0, int AA_pass_number = 0, float inv_AA_max_possible_samples = 0.1f);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
@@ -105,8 +102,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
 		void setNumSamples(int n){ numSamples = n; }
-		/*! Enables/disables color clamping */
-		void setClamp(bool c){ clamp = c; }
 		/*! (Deprecated, use setColorSpace instead) Enables/disables gamma correction of output; when gammaVal is <= 0 the current value is kept */
 		void setGamma(float gammaVal, bool enable);
 		/*! Sets the film color space and gamma correction */
@@ -115,6 +110,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setAAThreshold(CFLOAT thresh){ AA_thesh=thresh; }
 		/*! Enables interactive color buffer output for preview during render */
 		void setInteractive(bool ia){ interactive = ia; }
+        /*! Enables partial image saving during render every time_interval seconds. Time=0.0 (default) disables partial saving. */
+		void setImageOutputPartialSaveTimeInterval(double time_interval){ imageOutputPartialSaveTimeInterval = time_interval; }
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
@@ -123,17 +120,19 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setCustomString(const std::string &custom);
 		void setUseParamsBadge(bool on = true) { drawParams = on; }
 		bool getUseParamsBadge() { return drawParams; }
+		int getTotalPixels() const { return w*h; };
+		void setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings();
+        void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
 #endif
 
 	protected:
-		rgba2DImage_t *image; //!< rgba color buffer
-		gray2DImage_t *depthMap; //!< storage for z-buffer channel
+		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
 		tiledBitArray2D_t<3> *flags; //!< flags for adaptive AA sampling;
@@ -144,12 +143,18 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorSpaces_t colorSpace;
 		float gamma;
 		CFLOAT AA_thesh;
+		bool AA_detect_color_noise;
+		float AA_dark_threshold_factor;
+		int AA_variance_edge_size;
+		int AA_variance_pixels;
+		float AA_clamp_samples;
 		float filterw, tableScale;
 		float *filterTable;
 		colorOutput_t *output;
 		// Thread mutes for shared access
-		yafthreads::mutex_t imageMutex, splitterMutex, outMutex, depthMapMutex, densityImageMutex;
-		bool clamp, split, interactive, abort;
+		yafthreads::mutex_t imageMutex, splitterMutex, outMutex, densityImageMutex;
+		bool split, interactive, abort;
+        double imageOutputPartialSaveTimeInterval;
 		bool estimateDensity;
 		int numSamples;
 		imageSpliter_t *splitter;
@@ -165,6 +170,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		std::string aaSettings;
 		std::string integratorSettings;
 		std::string customString;
+        double accumulated_image_area_flush_time;
 };
 
 __END_YAFRAY

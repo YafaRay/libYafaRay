@@ -66,15 +66,17 @@ class light_t
 		//! This method must be called right after the factory is called on a background light or the light will fail
 		virtual void setBackground(background_t *bg) { background = bg; }
 		//! Enable/disable entire light source
-		virtual bool lightEnabled() const { return true;}
-
-		light_t(): flags(LIGHT_NONE) {}
+		bool lightEnabled() const { return lLightEnabled;}
+		bool castShadows() const { return lCastShadows; }
+		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
 		LIGHTF_t getFlags() const { return flags; }
 
 	protected:
 		LIGHTF_t flags;
 		background_t* background;
+	        bool lLightEnabled; //!< enable/disable light
+		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 };
 
 __END_YAFRAY

@@ -119,8 +119,10 @@ public:
 	virtual ~biDirIntegrator_t();
 	virtual bool preprocess();
 	virtual void cleanup();
-	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray) const;
+	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
+	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+	color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 protected:
 	int createPath(renderState_t &state, ray_t &start, std::vector<pathVertex_t> &path, int maxLen) const;
 	color_t evalPath(renderState_t &state, int s, int t, pathData_t &pd) const;
@@ -149,6 +151,11 @@ protected:
 	float fNumLights;
 	std::map <const light_t*, CFLOAT> invLightPowerD;
 	imageFilm_t *lightImage;
+	
+	bool useAmbientOcclusion; //! Use ambient occlusion
+	int aoSamples; //! Ambient occlusion samples
+	float aoDist; //! Ambient occlusion distance
+	color_t aoCol; //! Ambient occlusion color
 	bool transpBackground; //! Render background as transparent
 	bool transpRefractedBackground; //! Render refractions of background as transparent
 };
@@ -259,7 +266,7 @@ void biDirIntegrator_t::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) const
+colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	color_t col(0.f);
 	surfacePoint_t sp;
@@ -271,6 +278,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 	
 	if(scene->intersect(testray, sp))
 	{
+		vector3d_t wo = -ray.dir;
 		static int dbg=0;
 		state.includeLights = true;
 		pathData_t &pathData = threadData[state.threadID];
@@ -413,19 +421,41 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray) cons
 				}
 			}
 		}
+		
+		if(colorPasses.size() > 1 && state.raylevel == 0)
+		{
+			generateCommonRenderPasses(colorPasses, state, sp);
+			
+			if(colorPasses.enabled(PASS_INT_AO))
+			{
+				BSDF_t bsdfs;
+				
+				sp.material->initBSDF(state, sp, bsdfs);
+
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+			}
+
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
+			{
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
+			}
+		}
 	}
 	else
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += (*background)(ray, state, false);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
 		}
 	}
 	
 	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
-	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 	
 	col = (col * colVolTransmittance) + colVolIntegration;	
 	
@@ -768,12 +798,13 @@ CFLOAT biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathDat
 	}
 	if(pd.singularL) p[0] = 0.f;
 	// correct p1 with direct lighting strategy:
-	else p[1] *= pd.pdf_illum / pd.pdf_emit; //test! workaround for incomplete pdf funcs of lights
+	else if(pd.pdf_emit < -1.0e-12 || pd.pdf_emit > +1.0e-12) p[1] *= pd.pdf_illum / pd.pdf_emit; //test! workaround for incomplete pdf funcs of lights
+	else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work. 
 	// do MIS...maximum heuristic, particularly simple, if there's a more likely sample method, weight is zero, otherwise 1
 	float weight = 1.f;
 
-	for(int i=s-1; i>=0; --i) if(p[i] > p[s]) weight=0.f;
-	for(int i=s+1; i<=k+1; ++i) if(p[i] > p[s]) weight=0.f;
+	for(int i=s-1; i>=0; --i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f;	//FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	for(int i=s+1; i<=k+1; ++i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
 
 	return weight;
 }
@@ -843,12 +874,13 @@ color_t biDirIntegrator_t::evalPath(renderState_t &state, int s, int t, pathData
 {
 	const pathVertex_t &y = pd.lightPath[s-1];
 	const pathVertex_t &z = pd.eyePath[t-1];
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	color_t c_st = pd.f_y * pd.path[s].G * pd.f_z;
 	//unweighted contronution C*:
 	color_t C_uw = y.alpha * c_st * z.alpha;
 	ray_t conRay(y.sp.P, pd.w_l_e, 0.0005, pd.d_yz);
-	if(scene->isShadowed(state, conRay)) return color_t(0.f);
+	if(scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
 	return C_uw;
 }
 
@@ -856,8 +888,10 @@ color_t biDirIntegrator_t::evalPath(renderState_t &state, int s, int t, pathData
 color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, const color_t &lcol) const
 {
 	static int dbg=0;
-	if(scene->isShadowed(state, lRay)) return color_t(0.f);
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+	if(scene->isShadowed(state, lRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
 	const pathVertex_t &z = pd.eyePath[t-1];
+	
 
 	color_t C_uw = lcol * pd.f_z * z.alpha * std::fabs(z.sp.N*lRay.dir); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	// hence c_st is only cos_x1_b * f_z...like path tracing
@@ -871,9 +905,9 @@ color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd
 color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd) const
 {
 	const pathVertex_t &y = pd.lightPath[s-1];
-
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	ray_t conRay(y.sp.P, pd.w_l_e, 0.0005, pd.d_yz);
-	if(scene->isShadowed(state, conRay)) return color_t(0.f);
+	if(scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
 
 	//eval material
 	state.userdata = y.userdata;
@@ -939,18 +973,150 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
     return col/lightNumPdf;
 } */
 
+color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+{
+	color_t col(0.f), surfCol(0.f), scol(0.f);
+	bool shadowed;
+	const material_t *material = sp.material;
+	ray_t lightRay;
+	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+
+	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
+	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+
+	Halton hal2(2);
+	Halton hal3(3);
+
+	hal2.setStart(offs-1);
+	hal3.setStart(offs-1);
+
+	for(int i = 0; i < n; ++i)
+	{
+		float s1 = hal2.getNext();
+		float s2 = hal3.getNext();
+
+		if(state.rayDivision > 1)
+		{
+			s1 = addMod1(s1, state.dc1);
+			s2 = addMod1(s2, state.dc2);
+		}
+
+		lightRay.tmax = aoDist;
+
+		float W = 0.f;
+
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
+
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+
+		//shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+
+		if(!shadowed)
+		{
+			float cos = std::fabs(sp.N * lightRay.dir);
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
+		}
+	}
+
+	return col / (float)n;
+}
+
+
+color_t biDirIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+{
+	color_t col(0.f), surfCol(0.f), scol(0.f);
+	bool shadowed;
+	const material_t *material = sp.material;
+	ray_t lightRay;
+	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+
+	int n = aoSamples;
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
+	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+
+	Halton hal2(2);
+	Halton hal3(3);
+
+	hal2.setStart(offs-1);
+	hal3.setStart(offs-1);
+
+	for(int i = 0; i < n; ++i)
+	{
+		float s1 = hal2.getNext();
+		float s2 = hal3.getNext();
+
+		if(state.rayDivision > 1)
+		{
+			s1 = addMod1(s1, state.dc1);
+			s2 = addMod1(s2, state.dc2);
+		}
+
+		lightRay.tmax = aoDist;
+
+		float W = 0.f;
+
+		sample_t s(s1, s2, BSDF_ALL );
+		surfCol = material->sampleClay(state, sp, wo, lightRay.dir, s, W);
+		s.pdf = 1.f;
+
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+
+		if(!shadowed)
+		{
+			float cos = std::fabs(sp.N * lightRay.dir);
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
+		}
+	}
+
+	return col / (float)n;
+}
+
+
 integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
+	bool do_AO=false;
+	int AO_samples = 32;
+	double AO_dist = 1.0;
+	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
 
+	params.getParam("do_AO", do_AO);
+	params.getParam("AO_samples", AO_samples);
+	params.getParam("AO_distance", AO_dist);
+	params.getParam("AO_color", AO_col);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	
 	biDirIntegrator_t *inte = new biDirIntegrator_t();
+
+	// AO settings
+	inte->useAmbientOcclusion = do_AO;
+	inte->aoSamples = AO_samples;
+	inte->aoDist = AO_dist;
+	inte->aoCol = AO_col;
+
 	// Background settings
 	inte->transpBackground = bg_transp;
 	inte->transpRefractedBackground = bg_transp_refract;
+
 	return inte;
 }
 

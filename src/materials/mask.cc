@@ -29,10 +29,13 @@
 
 __BEGIN_YAFRAY
 
-maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh):
+maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh, visibility_t eVisibility):
 	mat1(m1), mat2(m2), threshold(thresh)
 {
+    mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
+	
+	mVisibility = eVisibility;
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
@@ -49,7 +52,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
 }
 
-color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
 {
 	bool mv = *(bool*)state.userdata;
 	color_t col;
@@ -134,6 +137,9 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	const std::string *name = 0;
 	const material_t *m1=0, *m2=0;
 	double thresh = 0.5;
+	std::string sVisibility = "normal";
+	visibility_t visibility = NORMAL_VISIBLE;
+	bool receive_shadows = true;
 	
 	params.getParam("threshold", thresh);
 	if(! params.getParam("material1", name) ) return 0;
@@ -143,9 +149,20 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	//if(! params.getParam("mask", name) ) return 0;
 	//mask = env.getTexture(*name);
 	
+	params.getParam("receive_shadows", receive_shadows);
+	params.getParam("visibility", sVisibility);
+	
+	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
+	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
+	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
+	else if(sVisibility == "invisible") visibility = INVISIBLE;
+	else visibility = NORMAL_VISIBLE;
+	
 	if(m1==0 || m2==0 ) return 0;
 	
-	maskMat_t *mat = new maskMat_t(m1, m2, thresh);
+	maskMat_t *mat = new maskMat_t(m1, m2, thresh, visibility);
+
+	mat->mReceiveShadows = receive_shadows;
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

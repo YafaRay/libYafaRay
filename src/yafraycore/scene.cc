@@ -45,13 +45,23 @@
 
 __BEGIN_YAFRAY
 
-scene_t::scene_t():  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),
-					AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), do_depth(false), norm_depth(false), signals(0)
+scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(0), camera(0), imageFilm(0), tree(0), vtree(0), background(0), surfIntegrator(0),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), env(render_environment)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
 	state.nextFreeID = std::numeric_limits<int>::max();
 	state.curObj = 0;
+
+	AA_resampled_floor = 0.f;
+	AA_sample_multiplier_factor = 1.f;
+	AA_light_sample_multiplier_factor = 1.f;
+	AA_indirect_sample_multiplier_factor = 1.f;
+	AA_detect_color_noise = false;
+	AA_dark_threshold_factor = 0.f;
+	AA_variance_edge_size = 10;
+	AA_variance_pixels = 0;
+	AA_clamp_samples = 0.f;
+	AA_clamp_indirect = 0.f;
 }
 
 scene_t::~scene_t()
@@ -84,13 +94,22 @@ int scene_t::getSignals() const
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, int &resampled_floor) const
+void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
 {
 	samples = AA_samples;
 	passes = AA_passes;
 	inc_samples = AA_inc_samples;
 	threshold = AA_threshold;
 	resampled_floor = AA_resampled_floor;
+	sample_multiplier_factor = AA_sample_multiplier_factor;
+	light_sample_multiplier_factor = AA_light_sample_multiplier_factor;
+	indirect_sample_multiplier_factor = AA_indirect_sample_multiplier_factor;
+	detect_color_noise = AA_detect_color_noise;
+	dark_threshold_factor = AA_dark_threshold_factor;
+	variance_edge_size = AA_variance_edge_size;
+	variance_pixels = AA_variance_pixels;
+	clamp_samples = AA_clamp_samples;
+	clamp_indirect = AA_clamp_indirect;
 }
 
 bool scene_t::startGeometry()
@@ -116,7 +135,7 @@ bool scene_t::endGeometry()
 	return true;
 }
 
-bool scene_t::startCurveMesh(objID_t id, int vertices)
+bool scene_t::startCurveMesh(objID_t id, int vertices, int obj_pass_index)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = 0 & 0xFF;
@@ -126,6 +145,7 @@ bool scene_t::startCurveMesh(objID_t id, int vertices)
 	//TODO: switch?
 	// Allocate triangles to render the curve
 	nObj.obj = new triangleObject_t( 2 * (vertices-1) , true, false);
+	nObj.obj->setObjectIndex(obj_pass_index);
 	nObj.type = ptype;
 	state.stack.push_front(OBJECT);
 	state.changes |= C_GEOM;
@@ -263,7 +283,7 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 	return true;
 }
 
-bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type)
+bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
 {
 	if(state.stack.front() != GEOMETRY) return false;
 	int ptype = type & 0xFF;
@@ -275,10 +295,12 @@ bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco
 		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco);
 					nObj.obj->setVisibility( !(type & INVISIBLEM) );
 					nObj.obj->useAsBaseObject( (type & BASEMESH) );
+					nObj.obj->setObjectIndex(obj_pass_index);
 					break;
 		case VTRIM:
 		case MTRIM:	nObj.mobj = new meshObject_t(triangles, hasUV, hasOrco);
 					nObj.mobj->setVisibility( !(type & INVISIBLEM) );
+					nObj.obj->setObjectIndex(obj_pass_index);
 					break;
 		default: return false;
 	}
@@ -734,13 +756,22 @@ bound_t scene_t::getSceneBound() const
 	return sceneBound;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, int resampled_floor)
+void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
 {
 	AA_samples = std::max(1, numSamples);
 	AA_passes = numPasses;
 	AA_inc_samples = (incSamples > 0) ? incSamples : AA_samples;
 	AA_threshold = (CFLOAT)threshold;
 	AA_resampled_floor = resampled_floor;
+	AA_sample_multiplier_factor = sample_multiplier_factor;
+	AA_light_sample_multiplier_factor = light_sample_multiplier_factor;
+	AA_indirect_sample_multiplier_factor = indirect_sample_multiplier_factor;
+	AA_detect_color_noise = detect_color_noise;
+	AA_dark_threshold_factor = dark_threshold_factor;
+	AA_variance_edge_size = variance_edge_size;
+	AA_variance_pixels = variance_pixels;
+	AA_clamp_samples = clamp_samples;
+	AA_clamp_indirect = clamp_indirect;
 }
 
 /*! update scene state to prepare for rendering.
@@ -788,22 +819,10 @@ bool scene_t::update()
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 
-				if(shadowBiasAuto)
-				{
-					//Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
-					shadowBias = sceneBound.longX();
-					if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
-					if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-					shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
-				}
-				
-				if(rayMinDistAuto)
-				{
-					//Automatic Min Ray Dist calculation, based on the currently used Shadow Bias value. The factor 0.1 is based on the original ratio between YAF_SHADOW_BIAS (typically 0.0005) and MIN_RAYDIST (0.00005)
-					rayMinDist = 0.1f * shadowBias;
-				}
+				if(shadowBiasAuto) shadowBias = YAF_SHADOW_BIAS;
+				if(rayMinDistAuto) rayMinDist = MIN_RAYDIST;
 
-				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << ", Ray Min Dist=" << rayMinDist << yendl;
+				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << (shadowBiasAuto ? " (auto)":"") << ", Ray Min Dist=" << rayMinDist << (rayMinDistAuto ? " (auto)":"") << yendl;
 			}
 			else Y_WARNING << "Scene: Scene is empty..." << yendl;
 		}
@@ -839,22 +858,10 @@ bool scene_t::update()
 				"(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
 				sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
 
-				if(shadowBiasAuto)
-				{
-					//Automatic shadow bias calculation based on the original YAF_SHADOW_BIAS and an automatic correction based on the size of the scene. This is an empirical formula I just made up based on values of shadow bias that seem to avoid black self shadow artifacts in big scenes, probably will be improved in the future.
-					shadowBias = sceneBound.longX();
-					if(shadowBias < sceneBound.longY()) shadowBias=sceneBound.longY();
-					if(shadowBias < sceneBound.longZ()) shadowBias=sceneBound.longZ();
-					shadowBias = YAF_SHADOW_BIAS * 0.25f * shadowBias;
-				}
-				
-				if(rayMinDistAuto)
-				{
-					//Automatic Min Ray Dist calculation, based on the currently used Shadow Bias value. The factor 0.1 is based on the original ratio between YAF_SHADOW_BIAS (typically 0.0005) and MIN_RAYDIST (0.00005)
-					rayMinDist = 0.1f * shadowBias;
-				}
+				if(shadowBiasAuto) shadowBias = YAF_SHADOW_BIAS;
+				if(rayMinDistAuto) rayMinDist = MIN_RAYDIST;
 
-				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << ", Ray Min Dist=" << rayMinDist << yendl;
+				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << (shadowBiasAuto ? " (auto)":"") << ", Ray Min Dist=" << rayMinDist << (rayMinDistAuto ? " (auto)":"") << yendl;
 				
 			}
 			else Y_ERROR << "Scene: Scene is empty..." << yendl;
@@ -915,34 +922,47 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 	return true;
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray) const
+bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const
 {
 
 	ray_t sray(ray);
+	sray.from += sray.dir * sray.tmin;
 	sray.time = state.time;
 	PFLOAT dis;
 	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
-	else  dis = sray.tmax - shadowBias;
+	else  dis = sray.tmax - 2*sray.tmin;
 	if(mode==0)
 	{
 		triangle_t *hitt=0;
 		if(!tree) return false;
-		return tree->IntersectS(sray, dis, &hitt, shadowBias);
+		bool shadowed = tree->IntersectS(sray, dis, &hitt, shadowBias);
+		if(hitt)
+		{
+			if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+		}
+		return shadowed;
 	}
 	else
 	{
 		primitive_t *hitt=0;
 		if(!vtree) return false;
-		return vtree->IntersectS(sray, dis, &hitt, shadowBias);
+		bool shadowed = vtree->IntersectS(sray, dis, &hitt, shadowBias);
+		if(hitt)
+		{
+			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+		}
+		return shadowed;
 	}
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt) const
+bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const
 {
 	ray_t sray(ray);
+	sray.from += sray.dir * sray.tmin;
 	PFLOAT dis;
 	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
-	else  dis = sray.tmax - shadowBias;
+	else  dis = sray.tmax - 2*sray.tmin;
 	filt = color_t(1.0);
 	void *odat = state.userdata;
 	unsigned char userdata[USER_DATA_SIZE+7];
@@ -951,17 +971,31 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	if(mode==0)
 	{
 		triangle_t *hitt=0;
-		if(tree) isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+		if(tree) 
+		{
+			isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			if(hitt)
+			{
+				if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
+				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			}
+		}
 	}
 	else
 	{
 		primitive_t *hitt=0;
-		if(vtree) isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+		if(vtree)
+		{
+			isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			if(hitt)
+			{
+				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			}
+		}
 	}
 	state.userdata = odat;
 	return isect;
 }
-
 
 bool scene_t::render()
 {
@@ -969,13 +1003,31 @@ bool scene_t::render()
 	signals = 0;
 	sig_mutex.unlock();
 
-	if(!update()) return false;
+	bool success = false;
+	
+	const std::map<std::string,camera_t *> *camera_table = env->getCameraTable();
 
-	bool success = surfIntegrator->render(imageFilm);
+	if(camera_table->size() == 0)
+	{
+		Y_ERROR << "No cameras/views found, exiting." << yendl;
+		return false;
+	}
 
-	surfIntegrator->cleanup();
-	imageFilm->flush();
+	std::map<std::string,camera_t *>::const_iterator cam_table_entry;
+	
+	for(cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
+    {
+		int numView = distance(camera_table->begin(), cam_table_entry);
+		camera_t* cam = cam_table_entry->second;
+		setCamera(cam);
+		if(!update()) return false;
 
+		success = surfIntegrator->render(numView, imageFilm);
+
+		surfIntegrator->cleanup();
+		imageFilm->flush(numView);
+    }
+    	
 	return success;
 }
 
@@ -1041,5 +1093,9 @@ bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
 		return false;
 	}
 }
+
+const renderPasses_t* scene_t::getRenderPasses() const { return env->getRenderPasses(); }
+bool scene_t::pass_enabled(intPassTypes_t intPassType) const { return env->getRenderPasses()->pass_enabled(intPassType); }
+
 
 __END_YAFRAY

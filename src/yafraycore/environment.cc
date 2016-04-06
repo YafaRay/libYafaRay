@@ -480,6 +480,12 @@ camera_t* renderEnvironment_t::createCamera(const std::string &name, paraMap_t &
 	{
 		camera_table[name] = camera;
 		InfoSucces(name, type);
+		int viewNumber = renderPasses.view_names.size();
+		camera->set_camera_name(name);
+		renderPasses.view_names.push_back(camera->get_view_name());
+		
+		Y_INFO << "Environment: View number=" << viewNumber << ", view name: '" << renderPasses.view_names[viewNumber] << "', camera name: '" << camera->get_camera_name() << "'" << yendl;
+
 		return camera;
 	}
 	ErrOnCreate(type);
@@ -515,6 +521,32 @@ integrator_t* renderEnvironment_t::createIntegrator(const std::string &name, par
 	return 0;
 }
 
+void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
+{
+	std::string externalPass, internalPass;
+	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
+	bool pass_mask_invert = false;
+	bool pass_mask_only = false;
+
+	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
+	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
+	params.getParam("pass_mask_invert", pass_mask_invert);
+	params.getParam("pass_mask_only", pass_mask_only);
+
+	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
+	for(std::map<extPassTypes_t, std::string>::const_iterator it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
+	{
+		externalPass = it->second;
+		params.getParam("pass_" + externalPass, internalPass);
+		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
+	}
+
+	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
+	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
+	renderPasses.set_pass_mask_invert(pass_mask_invert);
+	renderPasses.set_pass_mask_only(pass_mask_only);
+}
+		
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
 {
 	const std::string *name=0;
@@ -523,7 +555,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	float filt_sz = 1.5, gamma=1.f;
-	bool clamp = false;
 	bool showSampledPixels = false;
 	int tileSize = 32;
 	bool premult = false;
@@ -531,7 +562,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
-	params.getParam("clamp_rgb", clamp);
 	params.getParam("AA_pixelwidth", filt_sz);
 	params.getParam("width", width); // width of rendered image
 	params.getParam("height", height); // height of rendered image
@@ -549,7 +579,9 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
 	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
 	else color_space = SRGB;
-
+	
+    	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+    
 	imageFilm_t::filterType type=imageFilm_t::BOX;
 	if(name)
 	{
@@ -569,8 +601,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else Y_INFO_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult, drawParams);
-
-	film->setClamp(clamp);
 	
 	if(color_space == RAW_MANUAL_GAMMA)
 	{
@@ -650,9 +680,16 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	const std::string *name=0;
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1;
 	double AA_threshold=0.05;
-	int AA_resampled_floor=0;
-	bool z_chan = false;
-	bool norm_z_chan = true;
+	float AA_resampled_floor=0.f;
+	float AA_sample_multiplier_factor = 1.f;
+	float AA_light_sample_multiplier_factor = 1.f;
+	float AA_indirect_sample_multiplier_factor = 1.f;
+	bool AA_detect_color_noise = false;
+	float AA_dark_threshold_factor = 0.f;
+	int AA_variance_edge_size = 10;
+	int AA_variance_pixels = 0;
+	float AA_clamp_samples = 0.f;
+	float AA_clamp_indirect = 0.f;
 	bool drawParams = false;
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
@@ -666,14 +703,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		Y_ERROR_ENV << "Specify a Camera!!" << yendl;
 		return false;
 	}
-	camera_t *cam = this->getCamera(*name);
-
-	if(!cam)
-	{
-		Y_ERROR_ENV << "Specify an _existing_ Camera!!" << yendl;
-		return false;
-	}
-
+	
 	if(!params.getParam("integrator_name", name) )
 	{
 		Y_ERROR_ENV << "Specify an Integrator!!" << yendl;
@@ -715,9 +745,16 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_inc_samples", AA_inc_samples);
 	params.getParam("AA_threshold", AA_threshold);
 	params.getParam("AA_resampled_floor", AA_resampled_floor);
+	params.getParam("AA_sample_multiplier_factor", AA_sample_multiplier_factor);
+	params.getParam("AA_light_sample_multiplier_factor", AA_light_sample_multiplier_factor);
+	params.getParam("AA_indirect_sample_multiplier_factor", AA_indirect_sample_multiplier_factor);
+	params.getParam("AA_detect_color_noise", AA_detect_color_noise);
+	params.getParam("AA_dark_threshold_factor", AA_dark_threshold_factor);
+	params.getParam("AA_variance_edge_size", AA_variance_edge_size);
+	params.getParam("AA_variance_pixels", AA_variance_pixels);
+	params.getParam("AA_clamp_samples", AA_clamp_samples);
+	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	params.getParam("z_channel", z_chan); // render z-buffer
-	params.getParam("normalize_z_channel", norm_z_chan); // normalize values of z-buffer in range [0,1]
 	params.getParam("drawParams", drawParams);
 	params.getParam("customString", custString);
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
@@ -733,22 +770,17 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		inte->setProgressBar(pb);
 	}
 
-	if(z_chan) film->initDepthMap();
-
 	params.getParam("filter_type", name); // AA filter type
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor;
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): " << AA_passes << ";" << AA_samples << ";" << AA_inc_samples << ";" << AA_resampled_floor << "; " << AA_sample_multiplier_factor << "; " << AA_light_sample_multiplier_factor << "; " << AA_indirect_sample_multiplier_factor << "; " << AA_detect_color_noise << "; " << AA_dark_threshold_factor << "; " << AA_variance_edge_size << "; " << AA_variance_pixels << "; " << AA_clamp_samples << "; " << AA_clamp_indirect;
 
 	film->setAAParams(aaSettings.str());
 	if(custString) film->setCustomString(*custString);
 
 	//setup scene and render.
 	scene.setImageFilm(film);
-	scene.depthChannel(z_chan);
-	scene.setNormalizeDepthChannel(norm_z_chan);
-	scene.setCamera(cam);
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor);
+	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	scene.setNumThreads(nthreads);
 	if(backg) scene.setBackground(backg);
 	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;

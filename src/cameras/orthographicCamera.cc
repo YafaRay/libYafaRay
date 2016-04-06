@@ -84,6 +84,7 @@ camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	int resx=320, resy=200;
 	double aspect=1.0, scale=1.0;
     float nearClip = 0.0f, farClip = -1.0f;
+    std::string viewName = "";
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -94,8 +95,11 @@ camera_t* orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("aspect_ratio", aspect);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
+    params.getParam("view_name", viewName);
 
     orthoCam_t* cam = new orthoCam_t(from, to, up, resx, resy, aspect, scale, nearClip, farClip);
+
+	cam->view_name = viewName;
 
     return cam;
 }

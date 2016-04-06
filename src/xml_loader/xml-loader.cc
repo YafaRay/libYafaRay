@@ -20,7 +20,7 @@ using namespace::yafaray;
 
 int main(int argc, char *argv[])
 {
-	std::string xmlLoaderVersion = "YafaRay XML loader version 0.3";
+	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
 
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
 
@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 	parse.setOption("op","output-path", false, "Uses the path in <value> as rendered image output path.");
 	parse.setOption("ics","input-color-space", false, "Sets color space for input color values.\n                                       This does not affect textures, as they have individual color\n                                       space parameters in the XML file.\n                                       Available options:\n\n                                       LinearRGB (default)\n                                       sRGB\n                                       XYZ (experimental)\n");
 	parse.setOption("f","format", false, "Sets the output image format, available formats are:\n\n" + formatString + "\n                                       Default: tga.\n");
+    parse.setOption("ml","multilayer", true, "Enables multi-layer image output (only in certain formats as EXR)");
 	parse.setOption("t","threads", false, "Overrides threads setting on the XML file, for auto selection use -1.");
 	parse.setOption("a","with-alpha", true, "Enables saving the image with alpha channel.");
 	parse.setOption("dp","draw-params", true, "Enables saving the image with a settings badge.");
@@ -79,6 +80,7 @@ int main(int argc, char *argv[])
 	parse.setOption("cs","custom-string", false, "Sets the custom string to be used on the settings badge.");
 	parse.setOption("z","z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz","no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
+    parse.setOption("pst","partial-save-timer", false, "Sets timer in seconds for partial saving of images during render. If set to 0 (default) it will disable this feature. IMPORTANT: the more frequently partial images are saved, the slower the render will be.");
 	
 	bool parseOk = parse.parseCommandLine();
 	
@@ -103,6 +105,8 @@ int main(int argc, char *argv[])
 	
 	bool alpha = parse.getFlag("a");
 	std::string format = parse.getOptionString("f");
+    bool multilayer = parse.getFlag("ml");
+    
 	std::string outputPath = parse.getOptionString("op");
 	std::string input_color_space_string = parse.getOptionString("ics");	
 	if(input_color_space_string.empty()) input_color_space_string = "LinearRGB";
@@ -113,7 +117,8 @@ int main(int argc, char *argv[])
 	std::string customString = parse.getOptionString("cs");
 	bool zbuf = parse.getFlag("z");
 	bool nozbuf = parse.getFlag("nz");
-	
+	int partial_save_timer = parse.getOptionInteger("pst");
+    
 	if(format.empty()) format = "tga";
 	bool formatValid = false;
 	
@@ -157,7 +162,7 @@ int main(int argc, char *argv[])
 		outputPath += "/" + outName;
 	}
 	
-	scene_t *scene = new scene_t();
+	scene_t *scene = new scene_t(env);
 	env->setScene(scene);
 	paraMap_t render;
 	
@@ -196,7 +201,8 @@ int main(int argc, char *argv[])
 	ihParams["height"] = height;
 	ihParams["alpha_channel"] = alpha;
 	ihParams["z_channel"] = use_zbuf;
-	
+	ihParams["img_multilayer"] = multilayer;
+    
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 
 	if(ih)
@@ -207,11 +213,14 @@ int main(int argc, char *argv[])
 	else return 1;
 	
 	if(! env->setupScene(*scene, render, *out) ) return 1;
+    
+    imageFilm_t *film = scene->getImageFilm();
+    film->setInteractive(false);
+    film->setImageOutputPartialSaveTimeInterval((double) partial_save_timer);
 	
+
 	scene->render();
 	env->clearAll();
-
-	imageFilm_t *film = scene->getImageFilm();
 
 	delete film;
 	delete out;

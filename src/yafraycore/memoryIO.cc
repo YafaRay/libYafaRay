@@ -15,17 +15,17 @@ memoryIO_t::memoryIO_t ( int resx, int resy, float* iMem )
 }
 
 // Depth channel support?
-bool memoryIO_t::putPixel ( int x, int y, const float *c, bool alpha, bool depth, float z )
+bool memoryIO_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
 {
-	for (int i = 0; i < 4; ++i)
-	{
-		if(!alpha && i == 3) imageMem[(x + sizex * y) * 4 + i] = 1.f;
-		else imageMem[(x + sizex * y) * 4 + i] = c[i];
-	}
+	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).R;
+	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).G;
+	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).B;
+	if(!alpha) imageMem[(x + sizex * y) * 4 + 3] = 1.f;
+
 	return true;
 }
 
-void memoryIO_t::flush() { }
+void memoryIO_t::flush(int numView, const renderPasses_t *renderPasses) { }
 
 memoryIO_t::~memoryIO_t() { }
 

@@ -3,6 +3,10 @@
 
 __BEGIN_YAFRAY
 
+float object3d_t::highestObjectIndex = 1.f;	//Initially this class shared variable will be 1.f
+unsigned int object3d_t::objectIndexAuto = 0;	//Initially this class shared variable will be 0
+
+
 triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
     has_orco(hasOrco), has_uv(hasUV), is_smooth(false), normals_exported(false)
 {

@@ -27,6 +27,7 @@
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/mcqmc.h>
+#include <core_api/renderpasses.h>
 
 #ifdef __clang__
 #define inline  // aka inline removal
@@ -37,20 +38,22 @@ __BEGIN_YAFRAY
 #define allBSDFIntersect (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
 #define loffsDelta 4567 //just some number to have different sequences per light...and it's a prime even...
 
-inline color_t mcIntegrator_t::estimateAllDirectLight(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+inline color_t mcIntegrator_t::estimateAllDirectLight(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const
 {
 	color_t col;
 	unsigned int loffs = 0;
 	for(std::vector<light_t *>::const_iterator l=lights.begin(); l!=lights.end(); ++l)
 	{
-		col += doLightEstimation(state, (*l), sp, wo, loffs);
+		col += doLightEstimation(state, (*l), sp, wo, loffs, colorPasses);
 		loffs++;
 	}
+
+	colorPasses.probe_mult(PASS_INT_SHADOW, 1.f / (float) loffs);
 
 	return col;
 }
 
-inline color_t mcIntegrator_t::estimateOneDirectLight(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, int n) const
+inline color_t mcIntegrator_t::estimateOneDirectLight(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, int n, colorPasses_t &colorPasses) const
 {
 	int lightNum = lights.size();
 
@@ -61,13 +64,14 @@ inline color_t mcIntegrator_t::estimateOneDirectLight(renderState_t &state, cons
 
 	int lnum = std::min((int)(hal2.getNext() * (float)lightNum), lightNum - 1);
 
-	return doLightEstimation(state, lights[lnum], sp, wo, lnum) * lightNum;
+	return doLightEstimation(state, lights[lnum], sp, wo, lnum, colorPasses) * lightNum;
 	//return col * nLights;
 }
 
-inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *light, const surfacePoint_t &sp, const vector3d_t &wo, const unsigned int  &loffs) const
+inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *light, const surfacePoint_t &sp, const vector3d_t &wo, const unsigned int  &loffs, colorPasses_t &colorPasses) const
 {
 	color_t col(0.f);
+	colorA_t colShadow(0.f), colShadowObjMask(0.f), colShadowMatMask(0.f), colDiffDir(0.f), colDiffNoShadow(0.f), colGlossyDir(0.f);
 	bool shadowed;
 	unsigned int l_offs = loffs * loffsDelta;
 	const material_t *material = sp.material;
@@ -75,28 +79,68 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	lightRay.from = sp.P;
 	color_t lcol(0.f), scol;
 	float lightPdf;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
+	bool castShadows = light->castShadows() && material->getReceiveShadows();
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{
 		if( light->illuminate(sp, lcol, lightRay) )
 		{
 			// ...shadowed...
-			shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
-			if(!shadowed)
+			if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+			else lightRay.tmin = scene->shadowBias;
+			
+			if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+			else shadowed = false;
+			
+			if(!shadowed || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 			{
-				if(trShad) lcol *= scol;
+                if(!shadowed && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
+
 				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
-				col += surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+				colorA_t tmpColNoShadow = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+				if(trShad && castShadows) lcol *= scol;
+				colorA_t tmpCol = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+
+				if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
+				{
+					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+					colDiffNoShadow += tmpColNoShadow;
+					if(!shadowed) colDiffDir += tmpCol;
+				}
+				
+				if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
+				{
+					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+					if(!shadowed) colGlossyDir += tmpCol;
+				}
+				
+				if(!shadowed) col += surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+			}
+			
+			if(shadowed)
+			{
+				if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
+					&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
+				
+				if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
+					&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
 			}
 		}
+		colorPasses.probe_add(PASS_INT_SHADOW, colShadow, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_MAT_INDEX_MASK_SHADOW, colShadowMatMask, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, colShadowObjMask, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir, state.raylevel == 0);
 	}
 	else // area light and suchlike
 	{
 		Halton hal2(2);
 		Halton hal3(3);
-		int n = light->nSamples();
+		int n = (int) ceilf(light->nSamples()*AA_light_sample_multiplier);
 		if(state.rayDivision > 1) n = std::max(1, n/state.rayDivision);
 		float invNS = 1.f / (float)n;
 		unsigned int offs = n * state.pixelSample + state.samplingOffs + l_offs;
@@ -116,14 +160,22 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if( light->illumSample (sp, ls, lightRay) )
 			{
 				// ...shadowed...
-				shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+				if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+				else  lightRay.tmin = scene->shadowBias;
+				
+				if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+				else shadowed = false;
 
-				if(!shadowed && ls.pdf > 1e-6f)
+				if((!shadowed && ls.pdf > 1e-6f) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 				{
-					if(trShad) ls.col *= scol;
+					color_t lsColNoShadow = ls.col;
+					if(trShad && castShadows) ls.col *= scol;
 					color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 					ls.col *= transmitCol;
 					color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
+
+					if((!shadowed && ls.pdf > 1e-6f) && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
+					
 					if( canIntersect)
 					{
 						float mPdf = material->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
@@ -132,23 +184,88 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 							float l2 = ls.pdf * ls.pdf;
 							float m2 = mPdf * mPdf;
 							float w = l2 / (l2 + m2);
-							ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+							
+							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
+							{
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
+							}
+							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
+							{
+								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+								if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
+							}
+
+							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
 						}
 						else
 						{
-							ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
+							{
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
+							}
+
+							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
+							{
+								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+								if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
+							}
+
+							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
 						}
 					}
-					else ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+					else
+					{
+						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
+						{
+							color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
+							if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
+						}
+
+						if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
+						{
+							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
+						}
+
+						if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+					}
+				}
+				
+				if(shadowed || ls.pdf <= 1e-6f)
+				{
+					if((colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_SHADOW))
+						&& mask_mat_index == colorPasses.get_pass_mask_mat_index()) colShadowMatMask += color_t(1.f);
+				
+					if((colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_SHADOW))
+						&& mask_obj_index == colorPasses.get_pass_mask_obj_index()) colShadowObjMask += color_t(1.f);
 				}
 			}
 		}
-
+		
 		col += ccol * invNS;
-
+		colorPasses.probe_add(PASS_INT_SHADOW, colShadow * invNS, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_MAT_INDEX_MASK_SHADOW, colShadowMatMask * invNS, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, colShadowObjMask * invNS, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir * invNS, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow * invNS, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir * invNS, state.raylevel == 0);
+		
 		if(canIntersect) // sample from BSDF to complete MIS
 		{
 			color_t ccol2(0.f);
+			
+			if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW)) 
+			{
+				colDiffNoShadow = colorA_t(0.f);
+				colDiffDir = colorA_t(0.f);
+			}
+			
+			if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0) colGlossyDir = colorA_t(0.f);
 
 			hal2.setStart(offs-1);
 			hal3.setStart(offs-1);
@@ -156,7 +273,10 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			for(int i=0; i<n; ++i)
 			{
 				ray_t bRay;
-				bRay.tmin = scene->rayMinDist; bRay.from = sp.P;
+				if(scene->rayMinDistAuto) bRay.tmin = scene->rayMinDist * std::max(1.f, vector3d_t(sp.P).length());
+				else bRay.tmin = scene->rayMinDist;
+				
+				bRay.from = sp.P;
 
 				float s1 = hal2.getNext();
 				float s2 = hal3.getNext();
@@ -166,21 +286,41 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 				color_t surfCol = material->sample(state, sp, wo, bRay.dir, s, W);
 				if( s.pdf>1e-6f && light->intersect(bRay, bRay.tmax, lcol, lightPdf) )
 				{
-					shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol) : scene->isShadowed(state, bRay);
-					if(!shadowed && lightPdf > 1e-6f)
+					if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, bRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, bRay, mask_obj_index, mask_mat_index);
+					else shadowed = false;
+					
+					if((!shadowed && lightPdf > 1e-6f) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 					{
-						if(trShad) lcol *= scol;
+						if(trShad && castShadows) lcol *= scol;
 						color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
 						lcol *= transmitCol;
 						float lPdf = 1.f/lightPdf;
 						float l2 = lPdf * lPdf;
 						float m2 = s.pdf * s.pdf;
 						float w = m2 / (l2 + m2);
-						ccol2 += surfCol * lcol * w * W;
+
+						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
+						{
+							color_t tmpCol = material->sample(state, sp, wo, bRay.dir, s, W) * lcol * w * W;
+							colDiffNoShadow += tmpCol;
+							if((!shadowed && lightPdf > 1e-6f) && ((s.sampledFlags & BSDF_DIFFUSE) == BSDF_DIFFUSE)) colDiffDir += tmpCol;
+						}
+
+						if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
+						{
+							color_t tmpCol = material->sample(state, sp, wo, bRay.dir, s, W) * lcol * w * W;
+							if((!shadowed && lightPdf > 1e-6f) && ((s.sampledFlags & BSDF_GLOSSY) == BSDF_GLOSSY)) colGlossyDir += tmpCol;
+						}
+
+						if((!shadowed && lightPdf > 1e-6f)) ccol2 += surfCol * lcol * w * W;
 					}
 				}
 			}
+			
 			col += ccol2 * invNS;
+			colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir * invNS, state.raylevel == 0);
+			colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow * invNS, state.raylevel == 0);
+			colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir * invNS, state.raylevel == 0);
 		}
 	}
 	return col;
@@ -198,7 +338,6 @@ bool mcIntegrator_t::createCausticMap()
 		{
 			causLights.push_back(lights[i]);
 		}
-
 	}
 
 	int numLights = causLights.size();
@@ -238,6 +377,7 @@ bool mcIntegrator_t::createCausticMap()
 		surfacePoint_t sp1, sp2;
 		surfacePoint_t *hit=&sp1, *hit2=&sp2;
 		renderState_t state;
+		state.cam = scene->getCamera();
 		unsigned char userdata[USER_DATA_SIZE+7];
 		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 		while(!done)
@@ -411,10 +551,12 @@ inline color_t mcIntegrator_t::estimateCausticPhotons(renderState_t &state, cons
 	return sum;
 }
 
-inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const
+inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses) const
 {
 	const material_t *material = sp.material;
 	spDifferentials_t spDiff(sp, ray);
+
+	colorPasses_t tmpColorPasses = colorPasses;
 
     state.raylevel++;
 
@@ -442,6 +584,8 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			diffRay_t refRay;
 			float W = 0.f;
 
+			if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
+
 			for(int ns=0; ns<dsam; ++ns)
 			{
 				state.wavelength = (ns + ss1)*d_1;
@@ -459,7 +603,9 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 					color_t wl_col;
 					wl2rgb(state.wavelength, wl_col);
 					refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
-					dcol += (color_t)integrate(state, refRay) * mcol * wl_col * W;
+					
+					dcol += tmpColorPasses.probe_add(PASS_INT_TRANS, (color_t) integrate(state, refRay, tmpColorPasses) * mcol * wl_col * W, state.raylevel == 1);
+					
 					state.chromatic = true;
 				}
 			}
@@ -468,9 +614,16 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			{
 				vol->transmittance(state, refRay, vcol);
 				dcol *= vcol;
+				//if(tmpColorPasses.size() > 1) tmpColorPasses *= vcol; //FIXME DAVID??
 			}
 
 			col += dcol * d_1;
+			if(tmpColorPasses.size() > 1)
+			{
+				tmpColorPasses *= d_1;
+				colorPasses += tmpColorPasses;
+			}
+			
 			state.rayDivision = oldDivision;
 			state.rayOffset = oldOffset;
 			state.dc1 = old_dc1;
@@ -498,6 +651,8 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			hal2.setStart(offs);
 			hal3.setStart(offs);
 
+			if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
+
 			for(int ns=0; ns<gsam; ++ns)
 			{
 				state.dc1 = scrHalton(2*state.raylevel+1, branch + state.samplingOffs);
@@ -521,15 +676,19 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
                         color_t mcol = material->sample(state, sp, wo, wi, s, W);
                         colorA_t integ = 0.f;
                         refRay = diffRay_t(sp.P, wi, scene->rayMinDist);
-                        if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
-                        else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
-                        integ = (color_t)integrate(state, refRay);
+                        if(diffRaysEnabled)
+                        {
+			    if(s.sampledFlags & BSDF_REFLECT) spDiff.reflectedRay(ray, refRay);
+			    else if(s.sampledFlags & BSDF_TRANSMIT) spDiff.refractedRay(ray, refRay, material->getMatIOR());
+                        }
+                        integ = (color_t)integrate(state, refRay, tmpColorPasses);
 
                         if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                         {
                             if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
                         }
-                        gcol += (color_t)integ * mcol * W;
+                        
+                        gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (color_t)integ * mcol * W, state.raylevel == 1);
                     }
                     else if((material->getFlags() & BSDF_REFLECT) && (material->getFlags() & BSDF_TRANSMIT))
                     {
@@ -541,28 +700,31 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
                         mcol[0] = material->sample(state, sp, wo, dir, mcol[1], s, W);
                         colorA_t integ = 0.f;
 
-                        if(s.sampledFlags & BSDF_REFLECT)
+                        if(s.sampledFlags & BSDF_REFLECT && !(s.sampledFlags & BSDF_DISPERSIVE))
                         {
                             refRay = diffRay_t(sp.P, dir[0], scene->rayMinDist);
-                            spDiff.reflectedRay(ray, refRay);
-                            integ = integrate(state, refRay);
+                            if(diffRaysEnabled) spDiff.reflectedRay(ray, refRay);
+                            integ = integrate(state, refRay, tmpColorPasses);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
                             }
-                            gcol += (color_t)integ * mcol[0] * W[0];
+                            color_t colReflectFactor = mcol[0] * W[0];
+                            gcol += tmpColorPasses.probe_add(PASS_INT_TRANS, (color_t)integ * colReflectFactor, state.raylevel == 1);
                         }
 
                         if(s.sampledFlags & BSDF_TRANSMIT)
                         {
                             refRay = diffRay_t(sp.P, dir[1], scene->rayMinDist);
-                            spDiff.refractedRay(ray, refRay, material->getMatIOR());
-                            integ = integrate(state, refRay);
+                            if(diffRaysEnabled) spDiff.refractedRay(ray, refRay, material->getMatIOR());
+                            integ = integrate(state, refRay, tmpColorPasses);
                             if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
                             {
                                 if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
                             }
-                            gcol += (color_t)integ * mcol[1] * W[1];
+                            
+                            color_t colTransmitFactor = mcol[1] * W[1];
+                            gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (color_t)integ * colTransmitFactor, state.raylevel == 1);
                             alpha = integ.A;
                         }
                     }
@@ -570,8 +732,13 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			}
 
 			col += gcol * d_1;
-            if((bsdfs & BSDF_DISPERSIVE) && state.chromatic) col *= 0.5f; //Fix to avoid extra brightness in Rough Glass when dispersion is enabled, as I believe surface points are evaluated twice. Does it make sense?
-            //if(col.maximum() > 1.f) Y_WARNING << col << " | " << d_1 << yendl;
+			
+			if(tmpColorPasses.size() > 1)
+			{
+				tmpColorPasses *= d_1;
+				colorPasses += tmpColorPasses;
+			}
+			
 			state.rayDivision = oldDivision;
 			state.rayOffset = oldOffset;
 			state.dc1 = old_dc1;
@@ -589,33 +756,37 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			const volumeHandler_t *vol;
 			if(reflect)
 			{
+				if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
+			
 				diffRay_t refRay(sp.P, dir[0], scene->rayMinDist);
-				spDiff.reflectedRay(ray, refRay);
-				color_t integ = integrate(state, refRay);
+				if(diffRaysEnabled) spDiff.reflectedRay(ray, refRay);
+				color_t integ = integrate(state, refRay, tmpColorPasses);
 
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
 				{
 					if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
 				}
-
-				col += integ * rcol[0];
+			
+				col += colorPasses.probe_add(PASS_INT_REFLECT_PERFECT, (color_t)integ * rcol[0], state.raylevel == 1);
 			}
 			if(refract)
 			{
+				if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
+
 				diffRay_t refRay(sp.P, dir[1], scene->rayMinDist);
-				spDiff.refractedRay(ray, refRay, material->getMatIOR());
-				colorA_t integ = integrate(state, refRay);
+				if(diffRaysEnabled) spDiff.refractedRay(ray, refRay, material->getMatIOR());
+				colorA_t integ = integrate(state, refRay, tmpColorPasses);
 
 				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * refRay.dir < 0)))
 				{
 					if(vol->transmittance(state, refRay, vcol)) integ *= vcol;
 				}
 
-				col += (color_t)integ * rcol[1];
+				col += colorPasses.probe_add(PASS_INT_REFRACT_PERFECT, (color_t)integ * rcol[1], state.raylevel == 1);
+
 				alpha = integ.A;
 			}
 		}
-
 	}
 	--state.raylevel;
 }
@@ -627,6 +798,126 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 	const material_t *material = sp.material;
 	ray_t lightRay;
 	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+
+	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
+	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+
+	Halton hal2(2);
+	Halton hal3(3);
+
+	hal2.setStart(offs-1);
+	hal3.setStart(offs-1);
+
+	for(int i = 0; i < n; ++i)
+	{
+		float s1 = hal2.getNext();
+		float s2 = hal3.getNext();
+
+		if(state.rayDivision > 1)
+		{
+			s1 = addMod1(s1, state.dc1);
+			s2 = addMod1(s2, state.dc2);
+		}
+
+		if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+		else lightRay.tmin = scene->shadowBias;
+		
+		lightRay.tmax = aoDist;
+
+		float W = 0.f;
+
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
+
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+
+		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+
+		if(!shadowed)
+		{
+			float cos = std::fabs(sp.N * lightRay.dir);
+			if(trShad) col += aoCol * scol * surfCol * cos * W;
+			else col += aoCol * surfCol * cos * W;
+		}
+	}
+
+	return col / (float)n;
+}
+
+color_t mcIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+{
+	color_t col(0.f), surfCol(0.f), scol(0.f);
+	bool shadowed;
+	const material_t *material = sp.material;
+	ray_t lightRay;
+	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
+
+	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
+	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
+
+	unsigned int offs = n * state.pixelSample + state.samplingOffs;
+
+	Halton hal2(2);
+	Halton hal3(3);
+
+	hal2.setStart(offs-1);
+	hal3.setStart(offs-1);
+
+	for(int i = 0; i < n; ++i)
+	{
+		float s1 = hal2.getNext();
+		float s2 = hal3.getNext();
+
+		if(state.rayDivision > 1)
+		{
+			s1 = addMod1(s1, state.dc1);
+			s2 = addMod1(s2, state.dc2);
+		}
+
+		if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+		else lightRay.tmin = scene->shadowBias;
+		
+		lightRay.tmax = aoDist;
+
+		float W = 0.f;
+
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
+		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
+
+		if(material->getFlags() & BSDF_EMIT)
+		{
+			col += material->emit(state, sp, wo) * s.pdf;
+		}
+
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+
+		if(!shadowed)
+		{
+			float cos = std::fabs(sp.N * lightRay.dir);
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
+		}
+	}
+
+	return col / (float)n;
+}
+
+
+color_t mcIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+{
+	color_t col(0.f), surfCol(0.f), scol(0.f);
+	bool shadowed;
+	const material_t *material = sp.material;
+	ray_t lightRay;
+	lightRay.from = sp.P;
+	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = aoSamples;
 	if(state.rayDivision > 1) n = std::max(1, n / state.rayDivision);
@@ -654,21 +945,22 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 
 		float W = 0.f;
 
-		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
-		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
+		sample_t s(s1, s2, BSDF_ALL );
+		surfCol = material->sampleClay(state, sp, wo, lightRay.dir, s, W);
+		s.pdf = 1.f;
 
 		if(material->getFlags() & BSDF_EMIT)
 		{
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 
-		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
 			float cos = std::fabs(sp.N * lightRay.dir);
-			if(trShad) col += aoCol * scol * surfCol * cos * W;
-			else col += aoCol * surfCol * cos * W;
+			//if(trShad) col += aoCol * scol * surfCol * cos * W;
+			col += aoCol * surfCol * cos * W;
 		}
 	}
 

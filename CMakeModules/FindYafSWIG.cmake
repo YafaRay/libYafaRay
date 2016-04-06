@@ -46,7 +46,7 @@ IF(SWIG_EXECUTABLE)
     STRING(REGEX REPLACE "[\n\r]+" ";" SWIG_swiglib_output ${SWIG_swiglib_output})
     # force the path to be computed each time in case SWIG_EXECUTABLE has changed.
     SET(SWIG_DIR SWIG_DIR-NOTFOUND)
-    FIND_PATH(SWIG_DIR swig.swg PATHS ${SWIG_swiglib_output})
+    FIND_PATH(SWIG_DIR swig.swg PATHS ${SWIG_swiglib_output} NO_CMAKE_FIND_ROOT_PATH)
     IF(SWIG_DIR)
       SET(SWIG_FOUND 1)
       SET(SWIG_USE_FILE ${CMAKE_SOURCE_DIR}/CMakeModules/UseYafSWIG.cmake)

@@ -27,6 +27,7 @@
 #include "scene.h"
 #include <yafraycore/monitor.h>
 #include <string>
+#include <core_api/renderpasses.h>
 
 __BEGIN_YAFRAY
 
@@ -44,7 +45,7 @@ class YAFRAYCORE_EXPORT integrator_t
 		//! this MUST be called before any other member function!
 		void setScene(scene_t *s) { scene=s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		virtual bool render(imageFilm_t *imageFilm) { return false; }
+		virtual bool render(int numView, imageFilm_t *imageFilm) { return false; }
 		virtual void setProgressBar(progressBar_t *pb) { intpb = pb; }
 		virtual std::string getSettings() const { return settings; }
 		virtual std::string getShortName() const { return integratorShortName; }
@@ -71,7 +72,7 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
 //		virtual bool setupSampler(sampler_t &sam);
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray/*, sampler_t &sam*/) const = 0;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colPasses /*, sampler_t &sam*/) const = 0;
 	protected:
 		surfaceIntegrator_t() {} //don't use...
 };
@@ -81,7 +82,7 @@ class YAFRAYCORE_EXPORT volumeIntegrator_t: public integrator_t
 	public:
 		volumeIntegrator_t() {}
 		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const = 0;
-		virtual colorA_t integrate(renderState_t &state, ray_t &ray) const = 0;
+		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colPasses) const = 0;
 		virtual bool preprocess() { return true; }
 	
 	protected:

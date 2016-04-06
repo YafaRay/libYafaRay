@@ -128,7 +128,7 @@ inline float asmSqrt(float n)
 		:"=m" (r)
 		:"m" (r)
 		);
-#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#elif defined(__GNUC__) && defined(__i386__)
     asm(
 		"fld %0;"
 		"fsqrt;"
@@ -136,6 +136,8 @@ inline float asmSqrt(float n)
 		:"=m" (r)
 		:"m" (r)
 		);
+#elif defined(__GNUC__) && defined(__x86_64__)
+	r = sqrt(n);
 #else
     r = fsqrt(n);
 #endif

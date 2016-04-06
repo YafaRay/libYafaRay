@@ -8,7 +8,7 @@
 #include "ray.h"
 #include "surface.h"
 #include "utilities/sample_utils.h"
-
+#include "core_api/object3d.h"
 
 __BEGIN_YAFRAY
 
@@ -70,11 +70,33 @@ struct pSample_t: public sample_t // << whats with the public?? structs inherit 
 	color_t color; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
 
+enum visibility_t
+{
+	NORMAL_VISIBLE			= 0,
+	VISIBLE_NO_SHADOWS		= 1,
+	INVISIBLE_SHADOWS_ONLY	= 2,
+	INVISIBLE				= 3
+};
+
+
 class YAFRAYCORE_EXPORT material_t
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), reqMem(0), volI(0), volO(0) {}
-		virtual ~material_t() {}
+		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(0), volO(0)
+		{
+			materialIndexAuto++;
+			srand(materialIndexAuto);
+			float R,G,B;
+			do
+			{
+				R = (float) (rand() % 8) / 8.f;
+				G = (float) (rand() % 8) / 8.f;
+				B = (float) (rand() % 8) / 8.f;
+			}
+			while (R+G+B < 0.5f);
+			materialIndexAutoColor = color_t(R,G,B);
+		}
+		virtual ~material_t() { resetMaterialIndex(); }
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
@@ -86,7 +108,7 @@ class YAFRAYCORE_EXPORT material_t
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t types)const = 0;
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t types, bool force_eval = false)const = 0;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
@@ -95,6 +117,14 @@ class YAFRAYCORE_EXPORT material_t
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const = 0;// {return color_t(0.f);}
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const {return color_t(0.f);}
 
+		virtual color_t sampleClay(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const 
+		{
+			vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s.s1, s.s2);
+			s.pdf = std::fabs(wi*N);
+			W = (std::fabs(wi*sp.N))/(s.pdf*0.99f + 0.01f);
+			return color_t(1.0f);	//Clay color White 100%
+		}
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
@@ -144,6 +174,36 @@ class YAFRAYCORE_EXPORT material_t
 		/*! Get materials IOR (for refracted photons) */
 
 		virtual float getMatIOR() const { return 1.5f; }
+	        virtual color_t getDiffuseColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getGlossyColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getTransColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getMirrorColor(const renderState_t &state) const { return color_t(0.f); }
+	        virtual color_t getSubSurfaceColor(const renderState_t &state) const { return color_t(0.f); }
+	        void setMaterialIndex(const float &newMatIndex)
+	        {
+			materialIndex = newMatIndex;
+			if(highestMaterialIndex < materialIndex) highestMaterialIndex = materialIndex;
+		}
+	        void resetMaterialIndex() { highestMaterialIndex = 1.f; materialIndexAuto = 0; }
+	        void setMaterialIndex(const int &newMatIndex) { setMaterialIndex((float) newMatIndex); }
+	        float getAbsMaterialIndex() const { return materialIndex; }
+	        float getNormMaterialIndex() const { return (materialIndex / highestMaterialIndex); }
+	        color_t getAbsMaterialIndexColor() const
+		{
+			return color_t(materialIndex);
+		}
+		color_t getNormMaterialIndexColor() const
+		{
+			float normalizedMaterialIndex = getNormMaterialIndex();
+			return color_t(normalizedMaterialIndex);
+		}
+		color_t getAutoMaterialIndexColor() const
+		{
+			return materialIndexAutoColor;
+		}
+
+		visibility_t getVisibility() const { return mVisibility; }
+		bool getReceiveShadows() const { return mReceiveShadows; }
 
 	protected:
 		/* small function to apply bump mapping to a surface point
@@ -151,12 +211,19 @@ class YAFRAYCORE_EXPORT material_t
         void applyBump(surfacePoint_t &sp, PFLOAT dfdNU, PFLOAT dfdNV) const;
 
 		BSDF_t bsdfFlags;
+		
+		visibility_t mVisibility; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
+
+		bool mReceiveShadows; //!< enables/disables material reception of shadows.
+		
 		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		volumeHandler_t* volI; //!< volumetric handler for space inside material (opposed to surface normal)
 		volumeHandler_t* volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
+	        float materialIndex;	//!< Material Index for the material-index render pass
+		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
+		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
+		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 };
-
-
 
 __END_YAFRAY
 

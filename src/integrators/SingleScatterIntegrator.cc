@@ -40,6 +40,8 @@ public:
 	{
 		Y_INFO << "SingleScatter: Preprocessing..." << yendl;
 
+		lights.clear();
+
 		for(unsigned int i=0;i<scene->lights.size();++i)
 		{
 			lights.push_back(scene->lights[i]);
@@ -154,6 +156,7 @@ public:
 		color_t inScatter(0.f);
 		surfacePoint_t sp;
 		sp.P = stepRay.from;
+		float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 		ray_t lightRay;
 		lightRay.from = sp.P;
@@ -169,7 +172,7 @@ public:
 				{
 					// ...shadowed...
 					if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
-					bool shadowed = scene->isShadowed(state, lightRay);
+					bool shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 					if (!shadowed)
 					{
 						float lightTr = 0.0f;
@@ -223,7 +226,7 @@ public:
 					{
 						// ...shadowed...
 						if (lightRay.tmax < 0.f) lightRay.tmax = 1e10; // infinitely distant light
-						bool shadowed = scene->isShadowed(state, lightRay);
+						bool shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 						if(!shadowed) {
 							ccol += ls.col / ls.pdf;
 
@@ -298,7 +301,7 @@ public:
 	}
 	
 	// emission and in-scattering
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray) const
+	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses) const
 	{
 		float t0 = 1e10f, t1 = -1e10f;
 

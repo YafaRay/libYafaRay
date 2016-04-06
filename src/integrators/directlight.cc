@@ -34,7 +34,7 @@ class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
 	public:
 		directLighting_t(bool transpShad=false, int shadowDepth=4, int rayDepth=6);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -87,7 +87,7 @@ bool directLighting_t::preprocess()
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
+colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses) const
 {
 	color_t col(0.0);
 	float alpha;
@@ -112,17 +112,46 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 
 		material->initBSDF(state, sp, bsdfs);
 
-		if(bsdfs & BSDF_EMIT) col += material->emit(state, sp, wo);
+		if(bsdfs & BSDF_EMIT) 
+		{
+			col += colorPasses.probe_set(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+		}
 
 		if(bsdfs & BSDF_DIFFUSE)
 		{
-			col += estimateAllDirectLight(state, sp, wo);
-			if(usePhotonCaustics) col += estimateCausticPhotons(state, sp, wo);
+			col += estimateAllDirectLight(state, sp, wo, colorPasses);
+			
+			if(usePhotonCaustics)
+			{
+				if(AA_clamp_indirect>0)
+				{
+					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
+					tmpCol.clampProportionalRGB(AA_clamp_indirect);
+					col += colorPasses.probe_add(PASS_INT_INDIRECT, tmpCol, state.raylevel == 0);
+				}
+				else col += colorPasses.probe_add(PASS_INT_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+			}
+
 			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses);
 
+		if(colorPasses.size() > 1 && state.raylevel == 0)
+		{
+			generateCommonRenderPasses(colorPasses, state, sp);
+			
+			if(colorPasses.enabled(PASS_INT_AO))
+			{
+				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+			}
+
+			if(colorPasses.enabled(PASS_INT_AO_CLAY))
+			{
+				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
+			}
+		}
+		
 		if(transpRefractedBackground)
 		{
 			float m_alpha = material->getAlpha(state, sp, wo);
@@ -132,17 +161,23 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray) const
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background && !transpRefractedBackground) col += (*background)(ray, state, false);
+		if(background && !transpRefractedBackground)
+		{
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
+		}
 	}
 
 	state.userdata = o_udat;
 	state.includeLights = oldIncludeLights;
 
 	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
-	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray);
+	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
 
 	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
 	
+	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
+	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
+
 	col = (col * colVolTransmittance) + colVolIntegration;
 	
 	return colorA_t(col, alpha);
