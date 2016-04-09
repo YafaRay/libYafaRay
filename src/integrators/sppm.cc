@@ -53,8 +53,8 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	AA_light_sample_multiplier = 1.f;
 	AA_indirect_sample_multiplier = 1.f;
 
-	Y_PARAMS << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
-	Y_PARAMS << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
+	Y_VERBOSE << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
+	Y_VERBOSE << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 
 	passString << "Rendering pass 1 of " << std::max(1, passNum) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -115,7 +115,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	set << "\nPhotons=" << nPhotons << " search=" << nSearch <<" radius=" << dsRadius << "(init.estim=" << initialEstimate << ") total photons=" << totalnPhotons << "  ";
 	
 	yafLog.appendRenderSettings(set.str());
-	Y_PARAMS << set.str() << yendl;
+	Y_VERBOSE << set.str() << yendl;
 	
 	return true;
 }

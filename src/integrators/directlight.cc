@@ -97,7 +97,7 @@ bool directLighting_t::preprocess()
 
 	yafLog.appendRenderSettings(set.str());
 
-	for (std::string line; std::getline(set, line, '\n');) Y_PARAMS << line << yendl;
+	for (std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << yendl;
 
 	return success;
 }
