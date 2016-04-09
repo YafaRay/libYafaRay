@@ -101,14 +101,13 @@ bool pathIntegrator_t::preprocess()
 		set << "\nCaustics: Path + Photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
 
-	if(causticType == BOTH || causticType == PATH) 
+	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
+
+	if(causticType == BOTH || causticType == PHOTON) 
 	{
-		traceCaustics = true;
-		
 		if(photonMapProcessing == PHOTONS_LOAD)
 		{
 			set << " (loading photon maps from file)";
-			return true;
 		}
 		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
 	}

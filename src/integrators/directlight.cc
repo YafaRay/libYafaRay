@@ -82,7 +82,6 @@ bool directLighting_t::preprocess()
 		if(photonMapProcessing == PHOTONS_LOAD)
 		{
 			set << " (loading photon maps from file)";
-			return true;
 		}
 		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
 	}
