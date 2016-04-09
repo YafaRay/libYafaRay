@@ -25,7 +25,9 @@
 #include <core_api/mcintegrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
+#include <yafraycore/timer.h>
 #include <sstream>
+#include <iomanip>
 
 __BEGIN_YAFRAY
 
@@ -57,6 +59,8 @@ bool directLighting_t::preprocess()
 {
 	bool success = true;
 	std::stringstream set;
+	gTimer.addEvent("prepass");
+	gTimer.start("prepass");
 
 	set << "Direct Light  ";
 
@@ -86,8 +90,14 @@ bool directLighting_t::preprocess()
 		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
 	}
 
+	gTimer.stop("prepass");
+	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << yendl;
+
+	set << " [" << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << "]";
+
 	yafLog.appendRenderSettings(set.str());
-	Y_PARAMS << set.str() << yendl;
+
+	for (std::string line; std::getline(set, line, '\n');) Y_PARAMS << line << yendl;
 
 	return success;
 }

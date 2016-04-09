@@ -867,8 +867,20 @@ void imageFilm_t::drawRenderSettings()
 	if (timeh > 0) ss << " " << timeh << "h";
 	if (timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
+	
+	times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
+	gTimer.splitTime(times, &times, &timem, &timeh);
+	ss << " | Total time:";
+	if (timeh > 0) ss << " " << timeh << "h";
+	if (timem > 0) ss << " " << timem << "m";
+	ss << " " << times << "s";
+	
 	if(yafLog.getDrawRenderSettings()) ss << " | " << yafLog.getRenderSettings();
 	if(yafLog.getDrawAANoiseSettings()) ss << "\n" << yafLog.getAANoiseSettings();
+
+	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+	for (std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
+	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
 
 	std::string text_utf8 = ss.str();
 	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;

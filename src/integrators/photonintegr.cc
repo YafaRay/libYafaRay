@@ -24,6 +24,7 @@
 #include <yafraycore/scr_halton.h>
 
 #include <sstream>
+#include <iomanip>
 
 __BEGIN_YAFRAY
 
@@ -205,11 +206,17 @@ bool photonIntegrator_t::preprocess()
 	}
 	else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
 
-	yafLog.appendRenderSettings(set.str());
-	Y_PARAMS << set.str() << yendl;
-
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
+		gTimer.stop("prepass");
+		Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << yendl;
+
+		set << " [" << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << "]";
+
+		yafLog.appendRenderSettings(set.str());
+		
+		for (std::string line; std::getline(set, line, '\n');) Y_PARAMS << line << yendl;
+		
 		return true;
 	}
 
@@ -720,7 +727,13 @@ bool photonIntegrator_t::preprocess()
 	}
 		
 	gTimer.stop("prepass");
-	Y_INFO << integratorName << ": Photonmap building time: " << gTimer.getTime("prepass") << yendl;
+	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << yendl;
+
+	set << " [" << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << "]";
+
+	yafLog.appendRenderSettings(set.str());
+	
+	for (std::string line; std::getline(set, line, '\n');) Y_PARAMS << line << yendl;
 
 	return true;
 }

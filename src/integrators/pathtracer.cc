@@ -29,10 +29,12 @@
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/spectrum.h>
+#include <yafraycore/timer.h>
 
 #include <utilities/mcqmc.h>
 //#include <integrators/integr_utils.h>
 #include <sstream>
+#include <iomanip>
 
 __BEGIN_YAFRAY
 
@@ -69,6 +71,9 @@ pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth)
 bool pathIntegrator_t::preprocess()
 {
 	std::stringstream set;
+	gTimer.addEvent("prepass");
+	gTimer.start("prepass");
+	
 	background = scene->getBackground();
 	lights = scene->lights;
 	
@@ -112,8 +117,14 @@ bool pathIntegrator_t::preprocess()
 		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
 	}
 
+	gTimer.stop("prepass");
+	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << yendl;
+
+	set << " [" << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << "]";
+	
 	yafLog.appendRenderSettings(set.str());
-	Y_PARAMS << set.str() << yendl;
+
+	for (std::string line; std::getline(set, line, '\n');) Y_PARAMS << line << yendl;
 	
 	return success;
 }
