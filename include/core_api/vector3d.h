@@ -27,6 +27,9 @@
 #include <utilities/mathOptimizations.h>
 #include <iostream>
 
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+
 __BEGIN_YAFRAY
 
 // useful trick found in trimesh2 lib by Szymon Rusinkiewicz
@@ -88,6 +91,14 @@ class YAFRAYCORE_EXPORT vector3d_t
 		void abs() { x=std::fabs(x);  y=std::fabs(y);  z=std::fabs(z); }
 		~vector3d_t() {};
 		PFLOAT x,y,z;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(x);
+			ar & BOOST_SERIALIZATION_NVP(y);
+			ar & BOOST_SERIALIZATION_NVP(z);
+		}
 };
 
 class YAFRAYCORE_EXPORT normal_t
@@ -100,6 +111,14 @@ class YAFRAYCORE_EXPORT normal_t
 		normal_t& operator = (const vector3d_t &v){ x=v.x, y=v.y, z=v.z; return *this; }
 		normal_t& operator +=(const vector3d_t &s) { x+=s.x;  y+=s.y;  z+=s.z;  return *this; }
 		GFLOAT x, y, z;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(x);
+			ar & BOOST_SERIALIZATION_NVP(y);
+			ar & BOOST_SERIALIZATION_NVP(z);
+		}
 };
 
 class YAFRAYCORE_EXPORT point3d_t
@@ -120,6 +139,14 @@ class YAFRAYCORE_EXPORT point3d_t
 		PFLOAT &operator[](int i) { return (&x)[i]; } //Lynx
 		~point3d_t() {};
 		PFLOAT x,y,z;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(x);
+			ar & BOOST_SERIALIZATION_NVP(y);
+			ar & BOOST_SERIALIZATION_NVP(z);
+		}
 };
 
 

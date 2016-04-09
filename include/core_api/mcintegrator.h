@@ -23,8 +23,16 @@
 
 #include <core_api/tiledintegrator.h>
 #include <yafraycore/photon.h>
+#include <boost/filesystem.hpp>
 
 __BEGIN_YAFRAY
+
+enum photonMapProcessing_t
+{
+	PHOTONS_GENERATE_ONLY,
+	PHOTONS_GENERATE_AND_SAVE,
+	PHOTONS_LOAD
+};
 
 class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 {
@@ -63,6 +71,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		float aoDist; //! Ambient occlusion distance
 		color_t aoCol; //! Ambient occlusion color
 		
+		photonMapProcessing_t photonMapProcessing = PHOTONS_GENERATE_ONLY;
 		
 		background_t *background; //! Background shader
 		int nPaths; //! Number of samples for mc raytracing

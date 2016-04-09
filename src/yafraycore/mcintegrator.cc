@@ -328,6 +328,23 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 bool mcIntegrator_t::createCausticMap()
 {
+	if(photonMapProcessing == PHOTONS_LOAD)
+	{
+		std::string filename = boost::filesystem::temp_directory_path().string();
+		filename += "/yafaray_caustics_photon.map";
+		Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << yendl;
+		if(photonMapLoad(causticMap, filename))
+		{
+			Y_VERBOSE << integratorName << ": Caustics map loaded." << yendl;
+			return true;
+		}
+		else
+		{
+			photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+			Y_WARNING << integratorName << ": photon map loading failed, changing to Generate and Save mode." << yendl;
+		}
+	}
+		
 	causticMap.clear();
 	ray_t ray;
 	std::vector<light_t *> causLights;
@@ -501,8 +518,16 @@ bool mcIntegrator_t::createCausticMap()
 			pb->setTag("Building caustic photons kd-tree...");
 			causticMap.updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
-		}
 
+			if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+			{
+				std::string filename = boost::filesystem::temp_directory_path().string();
+				filename += "/yafaray_caustics_photon.map";
+				Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
+				if(photonMapSave(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
+			}
+		}
+				
 		if(!intpb) delete pb;
 
 	}

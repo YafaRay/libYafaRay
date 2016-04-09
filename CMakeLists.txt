@@ -68,7 +68,7 @@ if(YAF_USER_EXTRA_LIBS)
 endif(YAF_USER_EXTRA_LIBS)
 
 # find the required libs
-FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS system filesystem serialization REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 find_package(ZLIB REQUIRED)

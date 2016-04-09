@@ -87,8 +87,6 @@ bool pathIntegrator_t::preprocess()
 	{
 		success = createCausticMap();
 	}
-
-	if(causticType == BOTH || causticType == PATH) traceCaustics = true;
 	
 	if(causticType == PATH)
 	{
@@ -102,7 +100,19 @@ bool pathIntegrator_t::preprocess()
 	{
 		set << "\nCaustics: Path + Photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
-	
+
+	if(causticType == BOTH || causticType == PATH) 
+	{
+		traceCaustics = true;
+		
+		if(photonMapProcessing == PHOTONS_LOAD)
+		{
+			set << " (loading photon maps from file)";
+			return true;
+		}
+		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
+	}
+
 	yafLog.appendRenderSettings(set.str());
 	Y_PARAMS << set.str() << yendl;
 	
@@ -349,6 +359,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	std::string photon_maps_processing_str = "generate";
 	
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);
@@ -362,6 +373,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("AO_samples", AO_samples);
 	params.getParam("AO_distance", AO_dist);
 	params.getParam("AO_color", AO_col);
+	params.getParam("photon_maps_processing", photon_maps_processing_str);
 	
 	pathIntegrator_t* inte = new pathIntegrator_t(transpShad, shadowDepth);
 	if(params.getParam("caustic_type", cMethod))
@@ -397,6 +409,11 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	inte->aoSamples = AO_samples;
 	inte->aoDist = AO_dist;
 	inte->aoCol = AO_col;
+	
+	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
+	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
+	
 	return inte;
 }
 

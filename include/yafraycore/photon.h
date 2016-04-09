@@ -7,6 +7,13 @@
 #include "pkdtree.h"
 #include <core_api/color.h>
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+
 __BEGIN_YAFRAY
 #define c255Ratio 81.16902097686662123083
 #define c256Ratio 40.74366543152520595687
@@ -100,9 +107,26 @@ class photon_t
 #ifdef _SMALL_PHOTONS
 		rgbe_t c;
 		unsigned char theta,phi;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(pos);
+			ar & BOOST_SERIALIZATION_NVP(c);
+			ar & BOOST_SERIALIZATION_NVP(theta);
+			ar & BOOST_SERIALIZATION_NVP(phi);
+		}
 #else
 		color_t c;
 		normal_t dir;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(pos);
+			ar & BOOST_SERIALIZATION_NVP(c);
+			ar & BOOST_SERIALIZATION_NVP(dir);
+		}
 #endif
 };
 
@@ -149,6 +173,16 @@ class YAFRAYCORE_EXPORT photonMap_t
 		bool updated;
 		PFLOAT searchRadius;
 		kdtree::pointKdTree<photon_t> *tree;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(photons);
+			ar & BOOST_SERIALIZATION_NVP(paths);
+			ar & BOOST_SERIALIZATION_NVP(updated);
+			ar & BOOST_SERIALIZATION_NVP(searchRadius);
+			ar & BOOST_SERIALIZATION_NVP(tree);
+		}
 };
 
 // photon "processes" for lookup
@@ -185,6 +219,11 @@ struct eliminatePhoton_t
 	}
 	const vector3d_t n;
 };
+
+
+YAFRAYCORE_EXPORT bool photonMapLoad(photonMap_t &map, const std::string &filename, bool debugXMLformat = false);
+
+YAFRAYCORE_EXPORT bool photonMapSave(const photonMap_t &map, const std::string &filename, bool debugXMLformat = false);
 
 
 __END_YAFRAY

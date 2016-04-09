@@ -78,6 +78,13 @@ bool directLighting_t::preprocess()
 	{
 		success = createCausticMap();
 		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
+		
+		if(photonMapProcessing == PHOTONS_LOAD)
+		{
+			set << " (loading photon maps from file)";
+			return true;
+		}
+		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
 	}
 
 	yafLog.appendRenderSettings(set.str());
@@ -199,6 +206,7 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	std::string photon_maps_processing_str = "generate";
 
 	params.getParam("raydepth", raydepth);
 	params.getParam("transpShad", transpShad);
@@ -214,6 +222,7 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("AO_color", AO_col);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
+	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
 	directLighting_t *inte = new directLighting_t(transpShad, shadowDepth, raydepth);
 	// caustic settings
@@ -230,6 +239,10 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	// Background settings
 	inte->transpBackground = bg_transp;
 	inte->transpRefractedBackground = bg_transp_refract;
+	
+	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
+	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
 	
 	return inte;
 }

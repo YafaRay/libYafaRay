@@ -8,6 +8,10 @@
 #include <algorithm>
 #include <vector>
 
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/array.hpp>
+
 __BEGIN_YAFRAY
 
 namespace kdtree {
@@ -40,6 +44,14 @@ struct kdNode
 		const T *data;
 	};
 	u_int32	flags;
+
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(flags);
+		if(IsLeaf()) ar & BOOST_SERIALIZATION_NVP(data);
+		else ar & BOOST_SERIALIZATION_NVP(division);
+	}
 };
 
 template<class NodeData> struct CompareNode
@@ -56,6 +68,7 @@ template <class T>
 class pointKdTree
 {
 	public:
+		pointKdTree() {};
 		pointKdTree(const std::vector<T> &dat);
 		~pointKdTree(){ if(nodes) y_free(nodes); }
 		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared) const;
@@ -74,8 +87,32 @@ class pointKdTree
 		u_int32 nElements, nextFreeNode;
 		bound_t treeBound;
 		mutable unsigned int Y_LOOKUPS, Y_PROCS;
-};
 
+		friend class boost::serialization::access;
+		template<class Archive> void save(Archive & ar, const unsigned int version) const
+		{
+			ar & BOOST_SERIALIZATION_NVP(nElements);
+			ar & BOOST_SERIALIZATION_NVP(nextFreeNode);
+			ar & BOOST_SERIALIZATION_NVP(treeBound);
+			ar & BOOST_SERIALIZATION_NVP(Y_LOOKUPS);
+			ar & BOOST_SERIALIZATION_NVP(Y_PROCS);
+			ar & boost::serialization::make_array(nodes, nextFreeNode);
+		}
+		
+		friend class boost::serialization::access;
+		template<class Archive> void load(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(nElements);
+			ar & BOOST_SERIALIZATION_NVP(nextFreeNode);
+			ar & BOOST_SERIALIZATION_NVP(treeBound);
+			ar & BOOST_SERIALIZATION_NVP(Y_LOOKUPS);
+			ar & BOOST_SERIALIZATION_NVP(Y_PROCS);	
+			nodes = (kdNode<T> *)y_memalign(64, 4*nElements*sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
+			ar & boost::serialization::make_array(nodes, nextFreeNode);
+		}
+		
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
+};
 
 template<class T>
 pointKdTree<T>::pointKdTree(const std::vector<T> &dat)

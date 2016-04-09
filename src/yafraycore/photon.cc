@@ -48,6 +48,62 @@ void photonGather_t::operator()(const photon_t *photon, PFLOAT dist2, PFLOAT &ma
 	}
 }
 
+bool photonMapLoad(photonMap_t &map, const std::string &filename, bool debugXMLformat)
+{
+	try
+	{
+		std::ifstream ifs(filename, std::fstream::binary);
+		
+		if(debugXMLformat)
+		{
+			boost::archive::xml_iarchive ia(ifs);
+			map.clear();
+			ia >> BOOST_SERIALIZATION_NVP(map);
+			ifs.close();
+		}
+		else
+		{
+			boost::archive::binary_iarchive ia(ifs);
+			map.clear();
+			ia >> BOOST_SERIALIZATION_NVP(map);
+			ifs.close();
+		}
+		return true;
+	}
+	catch(std::exception& ex){
+        // elminate any dangling references
+        map.clear();
+        Y_WARNING << "PhotonMap: error '" << ex.what() << "' while loading photon map file: '" << filename << "'" << yendl;
+		return false;
+    }
+}
+
+bool photonMapSave(const photonMap_t &map, const std::string &filename, bool debugXMLformat)
+{
+	try
+	{
+		std::ofstream ofs(filename, std::fstream::binary);
+
+		if(debugXMLformat)
+		{
+			boost::archive::xml_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(map);
+			ofs.close();
+		}
+		else
+		{
+			boost::archive::binary_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(map);
+			ofs.close();
+		}
+		return true;
+	}
+	catch(std::exception& ex){
+        Y_WARNING << "PhotonMap: error '" << ex.what() << "' while saving photon map file: '" << filename << "'" << yendl;
+		return false;
+    }
+}
+
 void photonMap_t::updateTree()
 {
 	if(tree) delete tree;

@@ -127,6 +127,8 @@ photonIntegrator_t::~photonIntegrator_t()
 
 bool photonIntegrator_t::preprocess()
 {
+	lookupRad = 4*dsRadius*dsRadius;
+		
 	std::stringstream set;
 	gTimer.addEvent("prepass");
 	gTimer.start("prepass");
@@ -161,10 +163,52 @@ bool photonIntegrator_t::preprocess()
 	{
 		set << " FG paths=" << nPaths << " bounces=" << gatherBounces << "  ";
 	}
-	
+		
+	if(photonMapProcessing == PHOTONS_LOAD)
+	{
+		if(caustics_enabled())
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_caustics_photon.map";
+			Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << yendl;
+			if(photonMapLoad(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map loaded." << yendl;
+			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+		}
+
+		if(diffuse_enabled())
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_diffuse_photon.map";
+			Y_INFO << integratorName << ": Loading diffuse photon map from: " << filename << yendl;
+			if(photonMapLoad(diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map loaded." << yendl;
+			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+		}
+
+		if(diffuse_enabled() && finalGather)
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_fg_radiance_photon.map";
+			Y_INFO << integratorName << ": Loading FG radiance photon map from: " << filename << yendl;
+			if(photonMapLoad(radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map loaded." << yendl;
+			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+		}
+		
+		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+		{
+			Y_WARNING << integratorName << ": photon map loading failed, changing to Generate and Save mode." << yendl;
+		}
+	}
+
+	if(photonMapProcessing == PHOTONS_LOAD)
+	{
+		set << " (loading photon maps from file)";
+		return true;
+	}
+	else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
+
 	yafLog.appendRenderSettings(set.str());
 	Y_PARAMS << set.str() << yendl;
-	
+
 	ray_t ray;
 	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
 	int numCLights = 0;
@@ -372,6 +416,14 @@ bool photonIntegrator_t::preprocess()
 			pb->setTag("Building diffuse photons kd-tree...");
 			diffuseMap.updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
+			
+			if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+			{
+				std::string filename = boost::filesystem::temp_directory_path().string();
+				filename += "/yafaray_diffuse_photon.map";
+				Y_INFO << integratorName << ": Saving diffuse photon map to: " << filename << yendl;
+				if(photonMapSave(diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
+			}
 		}
 	}
 	else
@@ -549,15 +601,21 @@ bool photonIntegrator_t::preprocess()
 			pb->setTag("Building caustic photons kd-tree...");
 			causticMap.updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
+
+			if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+			{
+				std::string filename = boost::filesystem::temp_directory_path().string();
+				filename += "/yafaray_caustics_photon.map";
+				Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
+				if(photonMapSave(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
+			}
 		}
 	}
 	else
 	{
 		Y_INFO << integratorName << ": Caustics photon mapping disabled, skipping..." << yendl;
 	}
-	
-	lookupRad = 4*dsRadius*dsRadius;
-	
+		
 	tmplights.clear();
 
 	if(!intpb) delete pb;
@@ -647,8 +705,16 @@ bool photonIntegrator_t::preprocess()
 		Y_VERBOSE << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
 		radianceMap.updateTree();
 		Y_VERBOSE << integratorName << ": Done." << yendl;
-	}
 
+		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_fg_radiance_photon.map";
+			Y_INFO << integratorName << ": Saving FG radiance photon map to: " << filename << yendl;
+			if(photonMapSave(radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map saved." << yendl;
+		}
+	}
+		
 	gTimer.stop("prepass");
 	Y_INFO << integratorName << ": Photonmap building time: " << gTimer.getTime("prepass") << yendl;
 
@@ -1008,6 +1074,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	bool bg_transp_refract = false;
 	bool enable_caustics = true;
 	bool enable_diffuse = true;
+	std::string photon_maps_processing_str = "generate";
 	
 	params.getParam("enable_caustics", enable_caustics);
 	params.getParam("enable_diffuse", enable_diffuse);
@@ -1035,6 +1102,7 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	params.getParam("AO_samples", AO_samples);
 	params.getParam("AO_distance", AO_dist);
 	params.getParam("AO_color", AO_col);
+	params.getParam("photon_maps_processing", photon_maps_processing_str);
 	
 	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	
@@ -1059,6 +1127,10 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	ite->aoSamples = AO_samples;
 	ite->aoDist = AO_dist;
 	ite->aoCol = AO_col;
+
+	if(photon_maps_processing_str == "generate-save") ite->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+	else if(photon_maps_processing_str == "load") ite->photonMapProcessing = PHOTONS_LOAD;
+	else ite->photonMapProcessing = PHOTONS_GENERATE_ONLY;
 	
 	return ite;
 }
