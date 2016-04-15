@@ -45,7 +45,7 @@
 
 __BEGIN_YAFRAY
 
-scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(nullptr), camera(nullptr), imageFilm(nullptr), tree(nullptr), vtree(nullptr), background(nullptr), surfIntegrator(nullptr),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), mode(1), signals(0), env(render_environment)
+scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(nullptr), camera(nullptr), imageFilm(nullptr), tree(nullptr), vtree(nullptr), background(nullptr), surfIntegrator(nullptr),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), nthreads_photons(1), mode(1), signals(0), env(render_environment)
 {
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
@@ -380,6 +380,44 @@ void scene_t::setNumThreads(int threads)
 	set << "CPU threads=" << nthreads << std::endl;
 	
 	yafLog.appendRenderSettings(set.str());
+}
+
+void scene_t::setNumThreadsPhotons(int threads_photons)
+{
+	nthreads_photons = threads_photons;
+
+	if(nthreads_photons == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	{
+		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << yendl;
+
+#ifdef WIN32
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+		nthreads_photons = (int) info.dwNumberOfProcessors;
+#else
+	#	ifdef __APPLE__
+		int mib[2];
+		size_t len;
+
+		mib[0] = CTL_HW;
+		mib[1] = HW_NCPU;
+		len = sizeof(int);
+		sysctl(mib, 2, &nthreads_photons, &len, nullptr, 0);
+	#	elif defined(__sgi)
+		nthreads_photons = sysconf(_SC_NPROC_ONLN);
+	#	else
+		nthreads_photons = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	#	endif
+#endif
+
+		Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons << "]." << yendl;
+	}
+	else
+	{
+		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << yendl;
+	}
+
+	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons << "] Threads." << yendl;
 }
 
 #define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \

@@ -118,9 +118,9 @@ bool pathIntegrator_t::preprocess()
 	}
 
 	gTimer.stop("prepass");
-	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << yendl;
+	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " (" << scene->getNumThreadsPhotons() << " thread(s))" << yendl;
 
-	set << " [" << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << "]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " [" << scene->getNumThreadsPhotons() << " thread(s)]";
 	
 	yafLog.appendRenderSettings(set.str());
 

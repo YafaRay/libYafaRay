@@ -739,7 +739,7 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
 {
 	const std::string *name=0;
-	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1;
+	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=1;
 	double AA_threshold=0.05;
 	float AA_resampled_floor=0.f;
 	float AA_sample_multiplier_factor = 1.f;
@@ -815,6 +815,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
+	params.getParam("threads_photons", nthreads_photons); // number of threads for photon mapping, -1 = auto detection
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
@@ -840,6 +841,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
 	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	scene.setNumThreads(nthreads);
+	scene.setNumThreadsPhotons(nthreads_photons);
 	if(backg) scene.setBackground(backg);
 	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;
 	scene.shadowBias = adv_shadow_bias_value;

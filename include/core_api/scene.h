@@ -96,6 +96,7 @@ struct YAFRAYCORE_EXPORT renderState_t
 		dc1 = dc2 = 0.f;
 		traveled = 0;
 	}
+	
 //	protected:
 	explicit renderState_t(const renderState_t &r):prng(r.prng) {}//forbiden
 };
@@ -181,6 +182,7 @@ class YAFRAYCORE_EXPORT scene_t
 		void setVolIntegrator(volumeIntegrator_t *v);
 		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect);
 		void setNumThreads(int threads);
+		void setNumThreadsPhotons(int threads_photons);
 		void setMode(int m){ mode = m; }
 		background_t* getBackground() const;
 		triangleObject_t* getMesh(objID_t id) const;
@@ -190,6 +192,7 @@ class YAFRAYCORE_EXPORT scene_t
 		imageFilm_t* getImageFilm() const { return imageFilm; }
 		bound_t getSceneBound() const;
 		int getNumThreads() const { return nthreads; }
+		int getNumThreadsPhotons() const { return nthreads_photons; }
 		int getSignals() const;
 		//! only for backward compatibility!
 		void getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
@@ -241,6 +244,7 @@ class YAFRAYCORE_EXPORT scene_t
 		float AA_clamp_samples;
 		float AA_clamp_indirect;
 		int nthreads;
+		int nthreads_photons;
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
 		int signals;
 		const renderEnvironment_t *env;	//!< reference to the environment to which this scene belongs to

@@ -6,6 +6,7 @@
 
 #include "pkdtree.h"
 #include <core_api/color.h>
+#include <yafraycore/ccthreads.h>
 
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -161,12 +162,18 @@ class YAFRAYCORE_EXPORT photonMap_t
 		int nPhotons() const{ return photons.size(); }
 		void pushPhoton(photon_t &p) { photons.push_back(p); updated=false; }
 		void swapVector(std::vector<photon_t> &vec) { photons.swap(vec); updated=false; }
+		void appendVector(std::vector<photon_t> &vec, unsigned int curr) { photons.insert(std::end(photons), std::begin(vec), std::end(vec)); updated=false; paths += curr;}
+		void reserveMemory(size_t numPhotons) { photons.reserve(numPhotons); }
 		void updateTree();
 		void clear(){ photons.clear(); delete tree; tree = nullptr; updated=false; }
 		bool ready() const { return updated; }
 	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, PFLOAT &sqRadius) const;
 		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT &sqRadius) const;
 		const photon_t* findNearest(const point3d_t &P, const vector3d_t &n, PFLOAT dist) const;
+#ifdef USING_THREADS
+		yafthreads::mutex_t mutex;
+#endif
+
 	protected:
 		std::vector<photon_t> photons;
 		int paths; //!< amount of photon paths that have been traced for generating the map

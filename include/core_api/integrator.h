@@ -52,6 +52,7 @@ class YAFRAYCORE_EXPORT integrator_t
 		virtual ~integrator_t() {}
 		enum TYPE { SURFACE, VOLUME };
 		TYPE integratorType(){ return type; }
+
 	protected:
 		TYPE type;
 		scene_t *scene;
