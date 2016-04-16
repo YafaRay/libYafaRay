@@ -498,10 +498,56 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	colorOutput_t *colout = out ? out : output;
 	colorOutput_t *out2 = env->getOutput2();
 
+#ifdef RELEASE
+	std::string version = std::string(VERSION);
+#else
+	std::string version = std::string(YAF_SVN_REV);
+#endif
+
+	std::stringstream ssBadge;
+
+	if(!yafLog.getLoggingTitle().empty()) ssBadge << yafLog.getLoggingTitle() << "\n";
+	if(!yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingAuthor() << " | " << yafLog.getLoggingContact() << "\n";
+	else if(!yafLog.getLoggingAuthor().empty() && yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingAuthor() << "\n";
+	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
+	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
+
+	ssBadge << "\nYafaRay (" << version << ")";
+
+	ssBadge << std::setprecision(2);
+	double times = gTimer.getTime("rendert");
+	int timem, timeh;
+	gTimer.splitTime(times, &times, &timem, &timeh);
+	ssBadge << " | Render time:";
+	if (timeh > 0) ssBadge << " " << timeh << "h";
+	if (timem > 0) ssBadge << " " << timem << "m";
+	ssBadge << " " << times << "s";
+	
+	times = gTimer.getTime("rendert") + gTimer.getTime("prepassBadge");
+	gTimer.splitTime(times, &times, &timem, &timeh);
+	ssBadge << " | Total time:";
+	if (timeh > 0) ssBadge << " " << timeh << "h";
+	if (timem > 0) ssBadge << " " << timem << "m";
+	ssBadge << " " << times << "s";
+	
+	std::stringstream ssLog;
+	ssLog << ssBadge.str();
+	
+	if(yafLog.getDrawRenderSettings()) ssBadge << " | " << yafLog.getRenderSettings();
+	if(yafLog.getDrawAANoiseSettings()) ssBadge << "\n" << yafLog.getAANoiseSettings();
+
+	ssLog << " | " << yafLog.getRenderSettings();
+	ssLog << "\n" << yafLog.getAANoiseSettings();
+
 	if(yafLog.getUseParamsBadge())
 	{
-		if((colout && colout->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings();
+		if((colout && colout->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings(ssBadge);
 	}
+
+	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+	for (std::string line; std::getline(ssLog, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
+	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+
 	
 #ifndef HAVE_FREETYPE
 	Y_WARNING << "imageFilm: Compiled without FreeType support." << yendl;
@@ -829,7 +875,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 #endif
 
-void imageFilm_t::drawRenderSettings()
+void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 {
 	if(dpimage) return;
 
@@ -842,45 +888,6 @@ void imageFilm_t::drawRenderSettings()
 
 	FT_GlyphSlot slot;
 	FT_Vector pen; // untransformed origin
-
-#ifdef RELEASE
-	std::string version = std::string(VERSION);
-#else
-	std::string version = std::string(YAF_SVN_REV);
-#endif
-
-	std::stringstream ss;
-
-	if(!yafLog.getLoggingTitle().empty()) ss << yafLog.getLoggingTitle() << "\n";
-	if(!yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << " | " << yafLog.getLoggingContact() << "\n";
-	else if(!yafLog.getLoggingAuthor().empty() && yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << "\n";
-	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingContact() << "\n";
-	if(!yafLog.getLoggingComments().empty()) ss << yafLog.getLoggingComments() << "\n";
-
-	ss << "\nYafaRay (" << version << ")";
-
-	ss << std::setprecision(2);
-	double times = gTimer.getTime("rendert");
-	int timem, timeh;
-	gTimer.splitTime(times, &times, &timem, &timeh);
-	ss << " | Render time:";
-	if (timeh > 0) ss << " " << timeh << "h";
-	if (timem > 0) ss << " " << timem << "m";
-	ss << " " << times << "s";
-	
-	times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
-	gTimer.splitTime(times, &times, &timem, &timeh);
-	ss << " | Total time:";
-	if (timeh > 0) ss << " " << timeh << "h";
-	if (timem > 0) ss << " " << timem << "m";
-	ss << " " << times << "s";
-	
-	if(yafLog.getDrawRenderSettings()) ss << " | " << yafLog.getRenderSettings();
-	if(yafLog.getDrawAANoiseSettings()) ss << "\n" << yafLog.getAANoiseSettings();
-
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
-	for (std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
 
 	std::string text_utf8 = ss.str();
 	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;

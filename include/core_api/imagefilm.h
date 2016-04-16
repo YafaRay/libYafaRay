@@ -120,7 +120,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		int getTotalPixels() const { return w*h; };
 		void setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
-		void drawRenderSettings();
+		void drawRenderSettings(std::stringstream & ss);
         void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
 
 #if HAVE_FREETYPE
