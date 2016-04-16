@@ -820,6 +820,27 @@ bool photonIntegrator_t::preprocess()
 		Y_INFO << integratorName << ": Diffuse photon mapping disabled, skipping..." << yendl;
 	}
 	
+#ifdef USING_THREADS
+	photonMapKdTreeWorker_t * diffuseMapBuildKdTree = nullptr;
+
+	if( diffuse_enabled() && diffuseMap.nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	{
+		Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
+		pb->setTag("Building diffuse photons kd-tree...");
+
+		diffuseMapBuildKdTree = new photonMapKdTreeWorker_t(diffuseMap);
+
+		diffuseMapBuildKdTree->run();
+	}
+	else
+#endif
+	if( diffuse_enabled() && diffuseMap.nPhotons() > 0)
+	{
+		Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
+		pb->setTag("Building diffuse photons kd-tree...");
+		diffuseMap.updateTree();
+		Y_VERBOSE << integratorName << ": Done." << yendl;
+	}
 
 	for(int i=0;i<(int)lights.size();++i)
 	{
@@ -1017,36 +1038,20 @@ bool photonIntegrator_t::preprocess()
 
 
 #ifdef USING_THREADS
-	if( diffuse_enabled() && diffuseMap.nPhotons() > 0 && caustics_enabled() && causticMap.nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	photonMapKdTreeWorker_t * causticMapBuildKdTree = nullptr;
+	
+	if(caustics_enabled() && causticMap.nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
-		Y_INFO << integratorName << ": Building caustic and diffuse photons kd-trees:" << yendl;
-		pb->setTag("Building caustic and diffuse photons kd-trees...");
+		Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
+		pb->setTag("Building caustic photons kd-tree...");
 
-		photonMapKdTreeWorker_t * diffuseMapBuildKdTree = new photonMapKdTreeWorker_t(diffuseMap);
-		photonMapKdTreeWorker_t * causticMapBuildKdTree = new photonMapKdTreeWorker_t(causticMap);
+		causticMapBuildKdTree = new photonMapKdTreeWorker_t(causticMap);
 
-		diffuseMapBuildKdTree->run();
 		causticMapBuildKdTree->run();
-		
-		diffuseMapBuildKdTree->wait();
-		causticMapBuildKdTree->wait();
-
-		delete diffuseMapBuildKdTree;
-		delete causticMapBuildKdTree;
-
-		Y_VERBOSE << integratorName << ": Done." << yendl;
 	}
 	else
 #endif
 	{
-		if( diffuse_enabled() && diffuseMap.nPhotons() > 0)
-		{
-			Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
-			pb->setTag("Building diffuse photons kd-tree...");
-			diffuseMap.updateTree();
-			Y_VERBOSE << integratorName << ": Done." << yendl;
-		}
-
 		if( caustics_enabled() && causticMap.nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
@@ -1056,25 +1061,16 @@ bool photonIntegrator_t::preprocess()
 		}
 	}
 
-	if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+#ifdef USING_THREADS
+	if( diffuse_enabled() && diffuseMap.nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
-		if( diffuse_enabled() && diffuseMap.nPhotons() > 0)
-		{
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_diffuse_photon.map";
-			Y_INFO << integratorName << ": Saving diffuse photon map to: " << filename << yendl;
-			if(photonMapSave(diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
-		}
+		diffuseMapBuildKdTree->wait();
 
-		if( caustics_enabled() && causticMap.nPhotons() > 0)
-		{
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_caustics_photon.map";
-			Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
-			if(photonMapSave(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
-		}
+		delete diffuseMapBuildKdTree;
+
+		Y_VERBOSE << integratorName << ": Diffuse photon map: done." << yendl;
 	}
-
+#endif
 
 	if(diffuse_enabled() && finalGather) //create radiance map:
 	{
@@ -1161,8 +1157,38 @@ bool photonIntegrator_t::preprocess()
 		Y_VERBOSE << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
 		radianceMap.updateTree();
 		Y_VERBOSE << integratorName << ": Done." << yendl;
+	}
 
-		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+#ifdef USING_THREADS
+	if(caustics_enabled() && causticMap.nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	{
+		causticMapBuildKdTree->wait();
+
+		delete causticMapBuildKdTree;
+
+		Y_VERBOSE << integratorName << ": Caustic photon map: done." << yendl;
+	}
+#endif
+
+	if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+	{
+		if( diffuse_enabled() && diffuseMap.nPhotons() > 0)
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_diffuse_photon.map";
+			Y_INFO << integratorName << ": Saving diffuse photon map to: " << filename << yendl;
+			if(photonMapSave(diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
+		}
+
+		if( caustics_enabled() && causticMap.nPhotons() > 0)
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_caustics_photon.map";
+			Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
+			if(photonMapSave(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
+		}
+
+		if(diffuse_enabled() && finalGather && radianceMap.nPhotons() > 0)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_fg_radiance_photon.map";
@@ -1170,7 +1196,7 @@ bool photonIntegrator_t::preprocess()
 			if(photonMapSave(radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map saved." << yendl;
 		}
 	}
-		
+
 	gTimer.stop("prepass");
 	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " (" << scene->getNumThreadsPhotons() << " thread(s))" << yendl;
 
