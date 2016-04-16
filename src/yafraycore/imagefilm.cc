@@ -526,7 +526,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	if (timem > 0) ssBadge << " " << timem << "m";
 	ssBadge << " " << times << "s";
 	
-	times = gTimer.getTime("rendert") + gTimer.getTime("prepassBadge");
+	times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
 	gTimer.splitTime(times, &times, &timem, &timeh);
 	ssBadge << " | Total time:";
 	if (timeh > 0) ssBadge << " " << timeh << "h";
