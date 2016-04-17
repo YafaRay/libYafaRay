@@ -329,11 +329,11 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 class causticWorker_t: public yafthreads::thread_t
 {
 	public:
-		causticWorker_t(photonMap_t &causticmap, int thread_id, const scene_t *sc, unsigned int ncausphotons, pdf1D_t *lightpowerd, int numlights, const std::string &integratorname, const std::vector<light_t *> &causlights, int causdepth, progressBar_t *ppb, int pbstep, unsigned int &totalphotonsshot):
+		causticWorker_t(photonMap_t * causticmap, int thread_id, const scene_t *sc, unsigned int ncausphotons, pdf1D_t *lightpowerd, int numlights, const std::string &integratorname, const std::vector<light_t *> &causlights, int causdepth, progressBar_t *ppb, int pbstep, unsigned int &totalphotonsshot):
 			causticMap(causticmap), threadID(thread_id), scene(sc), nCausPhotons(ncausphotons), lightPowerD(lightpowerd), numLights(numlights), integratorName(integratorname), causLights(causlights), causDepth(causdepth), pb(ppb), pbStep(pbstep), totalPhotonsShot(totalphotonsshot) {};
 		virtual void body();
 	protected:
-		photonMap_t &causticMap;
+		photonMap_t * causticMap;
 		int threadID;
 		const scene_t *scene;
 		unsigned int nCausPhotons;
@@ -390,9 +390,9 @@ void causticWorker_t::body()
 
 		if(lightNum >= numLights)
 		{
-			causticMap.mutex.lock();
+			causticMap->mutex.lock();
 			Y_ERROR << integratorName << ": lightPDF sample error! " << sL << "/" << lightNum << yendl;
-			causticMap.mutex.unlock();
+			causticMap->mutex.unlock();
 			return;
 		}
 
@@ -417,9 +417,9 @@ void causticWorker_t::body()
 		{
 			if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 			{
-				causticMap.mutex.lock();
+				causticMap->mutex.lock();
 				Y_WARNING << integratorName << ": NaN (photon color)" << yendl;
-				causticMap.mutex.unlock();
+				causticMap->mutex.unlock();
 				break;
 			}
 			color_t transm(1.f), vcol;
@@ -489,10 +489,10 @@ void causticWorker_t::body()
 		}
 		done = (curr >= nCausPhotons_thread);
 	}
-	causticMap.mutex.lock();
-	causticMap.appendVector(localCausticPhotons, curr);
+	causticMap->mutex.lock();
+	causticMap->appendVector(localCausticPhotons, curr);
 	totalPhotonsShot += curr;
-	causticMap.mutex.unlock();
+	causticMap->mutex.unlock();
 }
 
 bool mcIntegrator_t::createCausticMap()
@@ -500,9 +500,9 @@ bool mcIntegrator_t::createCausticMap()
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
 		std::string filename = boost::filesystem::temp_directory_path().string();
-		filename += "/yafaray_caustics_photon.map";
-		Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << yendl;
-		if(photonMapLoad(causticMap, filename))
+		filename += "/yafaray_photonMap_caustics.tmp";
+		Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
+		if(photonMapLoad(session.causticMap, filename))
 		{
 			Y_VERBOSE << integratorName << ": Caustics map loaded." << yendl;
 			return true;
@@ -513,9 +513,20 @@ bool mcIntegrator_t::createCausticMap()
 			Y_WARNING << integratorName << ": photon map loading failed, changing to Generate and Save mode." << yendl;
 		}
 	}
+	
+	if(photonMapProcessing == PHOTONS_REUSE)
+	{
+		Y_INFO << integratorName << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
+		if(session.causticMap->nPhotons() == 0)
+		{
+			photonMapProcessing = PHOTONS_GENERATE_ONLY;
+			Y_WARNING << integratorName << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << yendl;
+		}
+		else return true;
+	}
 		
-	causticMap.clear();
-	causticMap.reserveMemory(nCausPhotons);
+	session.causticMap->clear();
+	session.causticMap->reserveMemory(nCausPhotons);
 	ray_t ray;
 	std::vector<light_t *> causLights;
 
@@ -571,7 +582,7 @@ bool mcIntegrator_t::createCausticMap()
 		if(nThreads > 1)
 		{
 			std::vector<causticWorker_t *> workers;
-			for(int i=0; i<nThreads; ++i) workers.push_back(new causticWorker_t(causticMap, i, scene, nCausPhotons, lightPowerD, numLights, integratorName, causLights, causDepth, pb, pbStep, curr));		
+			for(int i=0; i<nThreads; ++i) workers.push_back(new causticWorker_t(session.causticMap, i, scene, nCausPhotons, lightPowerD, numLights, integratorName, causLights, causDepth, pb, pbStep, curr));		
 			for(int i=0;i<nThreads;++i) workers[i]->run();
 			for(int i=0;i<nThreads;++i)	workers[i]->wait();
 			for(int i=0;i<nThreads;++i)	delete workers[i];
@@ -655,8 +666,8 @@ bool mcIntegrator_t::createCausticMap()
 					if(causticPhoton)
 					{
 						photon_t np(wi, hit->P, pcol);
-						causticMap.pushPhoton(np);
-						causticMap.setNumPaths(curr);
+						session.causticMap->pushPhoton(np);
+						session.causticMap->setNumPaths(curr);
 					}
 				}
 				// need to break in the middle otherwise we scatter the photon and then discard it => redundant
@@ -704,22 +715,22 @@ bool mcIntegrator_t::createCausticMap()
 		pb->setTag("Caustic photon map built.");
 		Y_VERBOSE << integratorName << ": Done." << yendl;
 		Y_INFO << integratorName << ": Shot " << curr << " caustic photons from " << numLights <<" light(s)." << yendl;
-		Y_VERBOSE << integratorName << ": Stored caustic photons: " << causticMap.nPhotons() << yendl;
+		Y_VERBOSE << integratorName << ": Stored caustic photons: " << session.causticMap->nPhotons() << yendl;
 
 		delete lightPowerD;
 
-		if(causticMap.nPhotons() > 0)
+		if(session.causticMap->nPhotons() > 0)
 		{
 			pb->setTag("Building caustic photons kd-tree...");
-			causticMap.updateTree();
+			session.causticMap->updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
 
 			if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
 			{
 				std::string filename = boost::filesystem::temp_directory_path().string();
-				filename += "/yafaray_caustics_photon.map";
+				filename += "/yafaray_photonMap_caustics.tmp";
 				Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
-				if(photonMapSave(causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
+				if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
 			}
 		}
 				
@@ -736,14 +747,14 @@ bool mcIntegrator_t::createCausticMap()
 
 inline color_t mcIntegrator_t::estimateCausticPhotons(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
-	if(!causticMap.ready()) return color_t(0.f);
+	if(!session.causticMap->ready()) return color_t(0.f);
 
 	foundPhoton_t *gathered = new foundPhoton_t[nCausSearch];//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
 	int nGathered = 0;
 
 	float gRadiusSquare = causRadius * causRadius;
 
-	nGathered = causticMap.gather(sp.P, gathered, nCausSearch, gRadiusSquare);
+	nGathered = session.causticMap->gather(sp.P, gathered, nCausSearch, gRadiusSquare);
 
 	gRadiusSquare = 1.f / gRadiusSquare;
 
@@ -763,7 +774,7 @@ inline color_t mcIntegrator_t::estimateCausticPhotons(renderState_t &state, cons
 			k = kernel(gathered[i].distSquare, gRadiusSquare);
 			sum += surfCol * k * photon->color();
 		}
-		sum *= 1.f / ( float(causticMap.nPaths()) );
+		sum *= 1.f / ( float(session.causticMap->nPaths()) );
 	}
 
 	delete [] gathered;

@@ -33,6 +33,8 @@
 
 __BEGIN_YAFRAY
 
+class photonMap_t;
+
 enum
 {
 	VL_MUTE = 0,
@@ -61,9 +63,9 @@ class YAFRAYCORE_EXPORT logEntry_t
 class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	public:
-		yafarayLog_t() {}
+		yafarayLog_t();
 		
-		~yafarayLog_t() {}
+		~yafarayLog_t();
 
 		void setConsoleMasterVerbosity(const std::string &strVLevel);
 		void setLogMasterVerbosity(const std::string &strVLevel);

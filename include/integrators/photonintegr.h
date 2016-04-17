@@ -45,8 +45,6 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public mcIntegrator_t
 		float dsRadius; //!< diffuse search radius
 		float lookupRad; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
 		float gatherDist; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
-		photonMap_t diffuseMap;
-		photonMap_t radianceMap; //!< this map contains precomputed radiance "photons", not incoming photon marks
 		friend class prepassWorker_t;
 };
 

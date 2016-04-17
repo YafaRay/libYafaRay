@@ -22,11 +22,17 @@
  */
 #include <yafray_config.h>
 #include <algorithm>
+#include <yafraycore/photon.h>
 
 __BEGIN_YAFRAY
 
-// Initialization of the master instance of yafLog
-yafarayLog_t yafLog = yafarayLog_t();
+yafarayLog_t::yafarayLog_t()
+{
+}
+
+yafarayLog_t::~yafarayLog_t()
+{
+}
 
 
 // Definition of the logging functions

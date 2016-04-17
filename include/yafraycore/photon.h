@@ -228,9 +228,9 @@ struct eliminatePhoton_t
 };
 
 
-YAFRAYCORE_EXPORT bool photonMapLoad(photonMap_t &map, const std::string &filename, bool debugXMLformat = false);
+YAFRAYCORE_EXPORT bool photonMapLoad(photonMap_t * map, const std::string &filename, bool debugXMLformat = false);
 
-YAFRAYCORE_EXPORT bool photonMapSave(const photonMap_t &map, const std::string &filename, bool debugXMLformat = false);
+YAFRAYCORE_EXPORT bool photonMapSave(const photonMap_t * map, const std::string &filename, bool debugXMLformat = false);
 
 
 __END_YAFRAY
