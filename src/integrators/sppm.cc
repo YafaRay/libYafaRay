@@ -321,8 +321,8 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 //photon pass, scatter photon
 void SPPM::prePass(int samples, int offset, bool adaptive)
 {
-	gTimer.addEvent("prePass");
-	gTimer.start("prePass");
+	gTimer.addEvent("prepass");
+	gTimer.start("prepass");
 
 	Y_INFO << integratorName << ": Starting Photon tracing pass..." << yendl;
 
@@ -558,12 +558,12 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 	if(!intpb) delete pb;
 
-	gTimer.stop("prePass");
+	gTimer.stop("prepass");
 
 	if(bHashgrid)
-		Y_INFO << integratorName << ": PhotonGrid building time: " << gTimer.getTime("prePass") << yendl;
+		Y_INFO << integratorName << ": PhotonGrid building time: " << gTimer.getTime("prepass") << yendl;
 	else
-		Y_INFO << integratorName << ": PhotonMap building time: " << gTimer.getTime("prePass") << yendl;
+		Y_INFO << integratorName << ": PhotonMap building time: " << gTimer.getTime("prepass") << yendl;
 
 	return;
 }
