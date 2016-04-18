@@ -1172,6 +1172,9 @@ color_t mcIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, con
 			s2 = addMod1(s2, state.dc2);
 		}
 
+		if(scene->shadowBiasAuto) lightRay.tmin = scene->shadowBias * std::max(1.f, vector3d_t(sp.P).length());
+		else lightRay.tmin = scene->shadowBias;
+		
 		lightRay.tmax = aoDist;
 
 		float W = 0.f;
