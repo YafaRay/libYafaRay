@@ -538,13 +538,17 @@ bool photonIntegrator_t::preprocess()
 		
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
+		bool causticMapFailedLoad = false;
+		bool diffuseMapFailedLoad = false;
+		bool fgRadianceMapFailedLoad = false;
+		
 		if(usePhotonCaustics)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_caustics.tmp";
 			Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(photonMapLoad(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map loaded." << yendl;
-			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+			else causticMapFailedLoad = true;
 		}
 
 		if(usePhotonDiffuse)
@@ -553,7 +557,7 @@ bool photonIntegrator_t::preprocess()
 			filename += "/yafaray_photonMap_diffuse.tmp";
 			Y_INFO << integratorName << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!"  << yendl;
 			if(photonMapLoad(session.diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map loaded." << yendl;
-			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+			else diffuseMapFailedLoad = true;
 		}
 
 		if(usePhotonDiffuse && finalGather)
@@ -562,23 +566,28 @@ bool photonIntegrator_t::preprocess()
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
 			Y_INFO << integratorName << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!"  << yendl;
 			if(photonMapLoad(session.radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map loaded." << yendl;
-			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+			else fgRadianceMapFailedLoad = true;
 		}
 		
-		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+		if(causticMapFailedLoad || diffuseMapFailedLoad || fgRadianceMapFailedLoad)
 		{
-			Y_WARNING << integratorName << ": photon map loading failed, changing to Generate and Save mode." << yendl;
+			photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
+			Y_WARNING << integratorName << ": photon maps loading failed, changing to Generate and Save mode." << yendl;
 		}
 	}
 
 	if(photonMapProcessing == PHOTONS_REUSE)
 	{
+		bool causticMapEmpty = false;
+		bool diffuseMapEmpty = false;
+		bool fgRadianceMapEmpty = false;
+		
 		if(usePhotonCaustics)
 		{
 			Y_INFO << integratorName << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.causticMap->nPhotons() == 0)
 			{
-				photonMapProcessing = PHOTONS_GENERATE_ONLY;
+				causticMapEmpty = true;
 			}
 		}
 
@@ -587,22 +596,23 @@ bool photonIntegrator_t::preprocess()
 			Y_INFO << integratorName << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.diffuseMap->nPhotons() == 0)
 			{
-				photonMapProcessing = PHOTONS_GENERATE_ONLY;
+				diffuseMapEmpty = true;
 			}
 		}
 
 		if(usePhotonDiffuse && finalGather)
 		{
 			Y_INFO << integratorName << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
-			if(session.diffuseMap->nPhotons() == 0)
+			if(session.radianceMap->nPhotons() == 0)
 			{
-				photonMapProcessing = PHOTONS_GENERATE_ONLY;
+				fgRadianceMapEmpty = true;
 			}
 		}
 		
-		if(photonMapProcessing == PHOTONS_GENERATE_ONLY)
+		if(causticMapEmpty && diffuseMapEmpty && fgRadianceMapEmpty)
 		{
-			Y_WARNING << integratorName << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << yendl;
+			photonMapProcessing = PHOTONS_GENERATE_ONLY;
+			Y_WARNING << integratorName << ": all previous photon maps in memory were empty, they cannot be reused: changing to Generate mode." << yendl;
 		}
 	}
 
