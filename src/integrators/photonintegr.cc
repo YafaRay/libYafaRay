@@ -105,8 +105,8 @@ void preGatherWorker_t::body()
 
 photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad)
 {
-	bEnableCaustics = true;
-	bEnableDiffuse = true;
+	usePhotonCaustics = true;
+	usePhotonDiffuse = true;
 	type = SURFACE;
 	trShad = transpShad;
 	finalGather = true;
@@ -521,12 +521,12 @@ bool photonIntegrator_t::preprocess()
 	lights = scene->lights;
 	std::vector<light_t*> tmplights;
 
-	if(caustics_enabled())
+	if(usePhotonCaustics)
 	{
 		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 	}
 
-	if(diffuse_enabled())
+	if(usePhotonDiffuse)
 	{
 		set << "\nDiffuse photons=" << nDiffusePhotons << " search=" << nDiffuseSearch <<" radius=" << dsRadius << "  ";
 	}
@@ -538,7 +538,7 @@ bool photonIntegrator_t::preprocess()
 		
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
-		if(caustics_enabled())
+		if(usePhotonCaustics)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_caustics.tmp";
@@ -547,7 +547,7 @@ bool photonIntegrator_t::preprocess()
 			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
 		}
 
-		if(diffuse_enabled())
+		if(usePhotonDiffuse)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_diffuse.tmp";
@@ -556,7 +556,7 @@ bool photonIntegrator_t::preprocess()
 			else photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
 		}
 
-		if(diffuse_enabled() && finalGather)
+		if(usePhotonDiffuse && finalGather)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
@@ -573,7 +573,7 @@ bool photonIntegrator_t::preprocess()
 
 	if(photonMapProcessing == PHOTONS_REUSE)
 	{
-		if(caustics_enabled())
+		if(usePhotonCaustics)
 		{
 			Y_INFO << integratorName << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.causticMap->nPhotons() == 0)
@@ -582,7 +582,7 @@ bool photonIntegrator_t::preprocess()
 			}
 		}
 
-		if(diffuse_enabled())
+		if(usePhotonDiffuse)
 		{
 			Y_INFO << integratorName << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.diffuseMap->nPhotons() == 0)
@@ -591,7 +591,7 @@ bool photonIntegrator_t::preprocess()
 			}
 		}
 
-		if(diffuse_enabled() && finalGather)
+		if(usePhotonDiffuse && finalGather)
 		{
 			Y_INFO << integratorName << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.diffuseMap->nPhotons() == 0)
@@ -673,7 +673,7 @@ bool photonIntegrator_t::preprocess()
 		enableDiffuse(false);
 	}
 	
-	if( diffuse_enabled() )
+	if( usePhotonDiffuse )
 	{
 		fNumLights = (float)numDLights;
 		energies = new float[numDLights];
@@ -863,7 +863,7 @@ bool photonIntegrator_t::preprocess()
 #ifdef USING_THREADS
 	photonMapKdTreeWorker_t * diffuseMapBuildKdTree = nullptr;
 
-	if( diffuse_enabled() && session.diffuseMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	if( usePhotonDiffuse && session.diffuseMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
 		pb->setTag("Building diffuse photons kd-tree...");
@@ -874,7 +874,7 @@ bool photonIntegrator_t::preprocess()
 	}
 	else
 #endif
-	if( diffuse_enabled() && session.diffuseMap->nPhotons() > 0)
+	if( usePhotonDiffuse && session.diffuseMap->nPhotons() > 0)
 	{
 		Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
 		pb->setTag("Building diffuse photons kd-tree...");
@@ -897,7 +897,7 @@ bool photonIntegrator_t::preprocess()
 		enableCaustics(false);
 	}
 
-	if( caustics_enabled() )
+	if( usePhotonCaustics )
 	{
 		curr=0;
 
@@ -1080,7 +1080,7 @@ bool photonIntegrator_t::preprocess()
 #ifdef USING_THREADS
 	photonMapKdTreeWorker_t * causticMapBuildKdTree = nullptr;
 	
-	if(caustics_enabled() && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	if(usePhotonCaustics && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
 		pb->setTag("Building caustic photons kd-tree...");
@@ -1092,7 +1092,7 @@ bool photonIntegrator_t::preprocess()
 	else
 #endif
 	{
-		if( caustics_enabled() && session.causticMap->nPhotons() > 0)
+		if( usePhotonCaustics && session.causticMap->nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
 			pb->setTag("Building caustic photons kd-tree...");
@@ -1102,7 +1102,7 @@ bool photonIntegrator_t::preprocess()
 	}
 
 #ifdef USING_THREADS
-	if( diffuse_enabled() && session.diffuseMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	if( usePhotonDiffuse && session.diffuseMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
 		diffuseMapBuildKdTree->wait();
 
@@ -1112,7 +1112,7 @@ bool photonIntegrator_t::preprocess()
 	}
 #endif
 
-	if(diffuse_enabled() && finalGather) //create radiance map:
+	if(usePhotonDiffuse && finalGather) //create radiance map:
 	{
 #ifdef USING_THREADS
 		// == remove too close radiance points ==//
@@ -1200,7 +1200,7 @@ bool photonIntegrator_t::preprocess()
 	}
 
 #ifdef USING_THREADS
-	if(caustics_enabled() && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
+	if(usePhotonCaustics && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
 	{
 		causticMapBuildKdTree->wait();
 
@@ -1212,7 +1212,7 @@ bool photonIntegrator_t::preprocess()
 
 	if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
 	{
-		if( diffuse_enabled() && session.diffuseMap->nPhotons() > 0)
+		if( usePhotonDiffuse && session.diffuseMap->nPhotons() > 0)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_diffuse.tmp";
@@ -1220,7 +1220,7 @@ bool photonIntegrator_t::preprocess()
 			if(photonMapSave(session.diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
 		}
 
-		if( caustics_enabled() && session.causticMap->nPhotons() > 0)
+		if( usePhotonCaustics && session.causticMap->nPhotons() > 0)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_caustics.tmp";
@@ -1228,7 +1228,7 @@ bool photonIntegrator_t::preprocess()
 			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
 		}
 
-		if(diffuse_enabled() && finalGather && session.radianceMap->nPhotons() > 0)
+		if(usePhotonDiffuse && finalGather && session.radianceMap->nPhotons() > 0)
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
@@ -1436,7 +1436,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		
 		state.includeLights = false;
 		
-		if(diffuse_enabled() && finalGather)
+		if(usePhotonDiffuse && finalGather)
 		{
 			if(showMap)
 			{
@@ -1472,7 +1472,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		}
 		else
 		{
-			if(diffuse_enabled() && showMap)
+			if(usePhotonDiffuse && showMap)
 			{
 				vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 				const photon_t *nearest = session.diffuseMap->findNearest(sp.P, N, dsRadius);
@@ -1480,7 +1480,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 			}
 			else
 			{
-				if(diffuse_enabled() && state.raylevel == 0 && colorPasses.enabled(PASS_INT_RADIANCE))
+				if(usePhotonDiffuse && state.raylevel == 0 && colorPasses.enabled(PASS_INT_RADIANCE))
 				{
 					vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 					const photon_t *nearest = session.radianceMap->findNearest(sp.P, N, lookupRad);
@@ -1499,9 +1499,9 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 
 				int nGathered=0;
 				
-				if(diffuse_enabled() && session.diffuseMap->nPhotons() > 0) nGathered = session.diffuseMap->gather(sp.P, gathered, nDiffuseSearch, radius);
+				if(usePhotonDiffuse && session.diffuseMap->nPhotons() > 0) nGathered = session.diffuseMap->gather(sp.P, gathered, nDiffuseSearch, radius);
 				color_t sum(0.0);
-				if(diffuse_enabled() && nGathered > 0)
+				if(usePhotonDiffuse && nGathered > 0)
 				{
 					if(nGathered > _nMax) _nMax = nGathered;
 
@@ -1518,7 +1518,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		}
 		
 		// add caustics
-		if(caustics_enabled() && bsdfs & BSDF_DIFFUSE)
+		if(usePhotonCaustics && bsdfs & BSDF_DIFFUSE)
 		{
 			if(AA_clamp_indirect>0.f)
 			{
@@ -1600,12 +1600,12 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
-	bool enable_caustics = true;
-	bool enable_diffuse = true;
+	bool caustics = true;
+	bool diffuse = true;
 	std::string photon_maps_processing_str = "generate";
 	
-	params.getParam("enable_caustics", enable_caustics);
-	params.getParam("enable_diffuse", enable_diffuse);
+	params.getParam("caustics", caustics);
+	params.getParam("diffuse", diffuse);
 	
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
@@ -1634,8 +1634,8 @@ integrator_t* photonIntegrator_t::factory(paraMap_t &params, renderEnvironment_t
 	
 	photonIntegrator_t* ite = new photonIntegrator_t(numPhotons, numCPhotons, transpShad, shadowDepth, dsRad, cRad);
 	
-	ite->bEnableCaustics = enable_caustics;
-	ite->bEnableDiffuse = enable_diffuse;
+	ite->usePhotonCaustics = caustics;
+	ite->usePhotonDiffuse = diffuse;
 	
 	ite->rDepth = raydepth;
 	ite->nDiffuseSearch = search;
