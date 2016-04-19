@@ -724,14 +724,14 @@ bool mcIntegrator_t::createCausticMap()
 			pb->setTag("Building caustic photons kd-tree...");
 			session.causticMap->updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
+		}
 
-			if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
-			{
-				std::string filename = boost::filesystem::temp_directory_path().string();
-				filename += "/yafaray_photonMap_caustics.tmp";
-				Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
-				if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
-			}
+		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
+		{
+			std::string filename = boost::filesystem::temp_directory_path().string();
+			filename += "/yafaray_photonMap_caustics.tmp";
+			Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
+			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
 		}
 				
 		if(!intpb) delete pb;

@@ -1212,7 +1212,7 @@ bool photonIntegrator_t::preprocess()
 
 	if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
 	{
-		if( usePhotonDiffuse && session.diffuseMap->nPhotons() > 0)
+		if( usePhotonDiffuse )
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_diffuse.tmp";
@@ -1220,7 +1220,7 @@ bool photonIntegrator_t::preprocess()
 			if(photonMapSave(session.diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
 		}
 
-		if( usePhotonCaustics && session.causticMap->nPhotons() > 0)
+		if( usePhotonCaustics )
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_caustics.tmp";
@@ -1228,7 +1228,7 @@ bool photonIntegrator_t::preprocess()
 			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
 		}
 
-		if(usePhotonDiffuse && finalGather && session.radianceMap->nPhotons() > 0)
+		if( usePhotonDiffuse && finalGather )
 		{
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
