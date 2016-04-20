@@ -37,6 +37,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		float AA_light_sample_multiplier_factor;
 		float AA_indirect_sample_multiplier_factor;
 		bool AA_detect_color_noise;
+		int AA_dark_detection_type;
 		float AA_dark_threshold_factor;
 		int AA_variance_edge_size;
 		int AA_variance_pixels;

@@ -35,6 +35,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <iomanip>
+#include <utility>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -127,7 +128,6 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	cx1 = xstart + width;
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
-
 
 	//Creation of the image buffers for the render passes
 	for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
@@ -263,8 +263,15 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
-				
-				if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+
+				if(AA_dark_detection_type == DARK_DETECTION_LINEAR)
+				{
+					if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+				}
+				else if(AA_dark_detection_type == DARK_DETECTION_CURVE)
+				{
+					AA_thresh_scaled = dark_threshold_curve_interpolate(pixColBri);
+				}
 				
 				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
@@ -838,9 +845,10 @@ void imageFilm_t::setProgressBar(progressBar_t *pb)
 	pbar = pb;
 }
 
-void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
+void imageFilm_t::setAANoiseParams(bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
 {
 	AA_detect_color_noise = detect_color_noise;
+	AA_dark_detection_type = dark_detection_type;
 	AA_dark_threshold_factor = dark_threshold_factor;
 	AA_variance_edge_size = variance_edge_size;
 	AA_variance_pixels = variance_pixels;
@@ -1032,6 +1040,24 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 	}
 
 	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
+}
+
+float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
+{
+	if(pixel_brightness <= 0.10f) return 0.0001f;
+	else if(pixel_brightness > 0.10f && pixel_brightness <= 0.20f) return (0.0001f + (pixel_brightness - 0.10f) * (0.0010f - 0.0001f) / 0.10f);
+	else if(pixel_brightness > 0.20f && pixel_brightness <= 0.30f) return (0.0010f + (pixel_brightness - 0.20f) * (0.0020f - 0.0010f) / 0.10f);
+	else if(pixel_brightness > 0.30f && pixel_brightness <= 0.40f) return (0.0020f + (pixel_brightness - 0.30f) * (0.0035f - 0.0020f) / 0.10f);
+	else if(pixel_brightness > 0.40f && pixel_brightness <= 0.50f) return (0.0035f + (pixel_brightness - 0.40f) * (0.0055f - 0.0035f) / 0.10f);
+	else if(pixel_brightness > 0.50f && pixel_brightness <= 0.60f) return (0.0055f + (pixel_brightness - 0.50f) * (0.0075f - 0.0055f) / 0.10f);
+	else if(pixel_brightness > 0.60f && pixel_brightness <= 0.70f) return (0.0075f + (pixel_brightness - 0.60f) * (0.0100f - 0.0075f) / 0.10f);
+	else if(pixel_brightness > 0.70f && pixel_brightness <= 0.80f) return (0.0100f + (pixel_brightness - 0.70f) * (0.0150f - 0.0100f) / 0.10f);
+	else if(pixel_brightness > 0.80f && pixel_brightness <= 0.90f) return (0.0150f + (pixel_brightness - 0.80f) * (0.0250f - 0.0150f) / 0.10f);
+	else if(pixel_brightness > 0.90f && pixel_brightness <= 1.00f) return (0.0250f + (pixel_brightness - 0.90f) * (0.0400f - 0.0250f) / 0.10f);
+	else if(pixel_brightness > 1.00f && pixel_brightness <= 1.20f) return (0.0400f + (pixel_brightness - 1.00f) * (0.0800f - 0.0400f) / 0.20f);
+	else if(pixel_brightness > 1.20f && pixel_brightness <= 1.40f) return (0.0800f + (pixel_brightness - 1.20f) * (0.0950f - 0.0800f) / 0.20f);
+	else if(pixel_brightness > 1.40f && pixel_brightness <= 1.80f) return (0.0950f + (pixel_brightness - 1.40f) * (0.1000f - 0.0950f) / 0.40f);
+	else if(pixel_brightness > 1.80f) return 0.1000f;
 }
 
 __END_YAFRAY

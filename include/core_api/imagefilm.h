@@ -53,6 +53,13 @@ class colorPasses_t;
 #define IF_DENSITYIMAGE 2
 #define IF_ALL (IF_IMAGE | IF_DENSITYIMAGE)
 
+enum darkDetectionType_t
+{
+	DARK_DETECTION_NONE,
+	DARK_DETECTION_LINEAR,
+	DARK_DETECTION_CURVE,
+};
+
 class YAFRAYCORE_EXPORT imageFilm_t
 {
 	public:
@@ -118,10 +125,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
 		int getTotalPixels() const { return w*h; };
-		void setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
+		void setAANoiseParams(bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings(std::stringstream & ss);
         void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
+        float dark_threshold_curve_interpolate(float pixel_brightness);
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -142,6 +150,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		float gamma2;				//For optional secondary file output
 		CFLOAT AA_thesh;
 		bool AA_detect_color_noise;
+        int AA_dark_detection_type;
 		float AA_dark_threshold_factor;
 		int AA_variance_edge_size;
 		int AA_variance_pixels;

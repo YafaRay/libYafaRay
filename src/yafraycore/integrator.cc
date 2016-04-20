@@ -136,7 +136,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 {
 	std::stringstream passString;
 	imageFilm = image;
-	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	iAA_passes = 1.f / (float) AA_passes;
 
 	AA_sample_multiplier = 1.f;
@@ -153,7 +153,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	Y_VERBOSE << "AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
 	Y_VERBOSE << "AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
 	Y_VERBOSE << "AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
-	Y_VERBOSE << "AA_dark_threshold_factor: "<< AA_dark_threshold_factor << yendl;
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR)	Y_VERBOSE << "AA_dark_threshold (linear), factor: "<< AA_dark_threshold_factor << yendl;
+	if(AA_dark_detection_type == DARK_DETECTION_CURVE)	Y_VERBOSE << "AA_dark_threshold (curve)" << yendl;
 	Y_VERBOSE << "AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
 	Y_VERBOSE << "AA_variance_pixels: "<< AA_variance_pixels << yendl;
 	Y_VERBOSE << "AA_clamp_samples: "<< AA_clamp_samples << yendl;
@@ -170,7 +171,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	gTimer.addEvent("image_area_flush");
 
 	imageFilm->init(AA_passes);
-	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
+	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 	maxDepth = 0.f;
 	minDepth = 1e38f;
@@ -199,7 +200,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 		
 		Y_INFO << integratorName << ": Sample multiplier = " << AA_sample_multiplier << ", Light Sample multiplier = " << AA_light_sample_multiplier << ", Indirect Sample multiplier = " << AA_indirect_sample_multiplier << yendl;
 		
-		imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
+		imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 		if(resampled_pixels <= 0.f && !AAthresholdChanged)
 		{

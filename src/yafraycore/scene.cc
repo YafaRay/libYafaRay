@@ -93,7 +93,7 @@ int scene_t::getSignals() const
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
+void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
 {
 	samples = AA_samples;
 	passes = AA_passes;
@@ -104,6 +104,7 @@ void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOA
 	light_sample_multiplier_factor = AA_light_sample_multiplier_factor;
 	indirect_sample_multiplier_factor = AA_indirect_sample_multiplier_factor;
 	detect_color_noise = AA_detect_color_noise;
+	dark_detection_type = AA_dark_detection_type;
 	dark_threshold_factor = AA_dark_threshold_factor;
 	variance_edge_size = AA_variance_edge_size;
 	variance_pixels = AA_variance_pixels;
@@ -798,7 +799,7 @@ bound_t scene_t::getSceneBound() const
 	return sceneBound;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
+void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
 {
 	AA_samples = std::max(1, numSamples);
 	AA_passes = numPasses;
@@ -809,6 +810,7 @@ void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, dou
 	AA_light_sample_multiplier_factor = light_sample_multiplier_factor;
 	AA_indirect_sample_multiplier_factor = indirect_sample_multiplier_factor;
 	AA_detect_color_noise = detect_color_noise;
+	AA_dark_detection_type = dark_detection_type;
 	AA_dark_threshold_factor = dark_threshold_factor;
 	AA_variance_edge_size = variance_edge_size;
 	AA_variance_pixels = variance_pixels;

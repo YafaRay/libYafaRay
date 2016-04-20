@@ -746,6 +746,8 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float AA_light_sample_multiplier_factor = 1.f;
 	float AA_indirect_sample_multiplier_factor = 1.f;
 	bool AA_detect_color_noise = false;
+	std::string AA_dark_detection_type_string = "none";
+	int AA_dark_detection_type = DARK_DETECTION_NONE;
 	float AA_dark_threshold_factor = 0.f;
 	int AA_variance_edge_size = 10;
 	int AA_variance_pixels = 0;
@@ -809,6 +811,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_light_sample_multiplier_factor", AA_light_sample_multiplier_factor);
 	params.getParam("AA_indirect_sample_multiplier_factor", AA_indirect_sample_multiplier_factor);
 	params.getParam("AA_detect_color_noise", AA_detect_color_noise);
+	params.getParam("AA_dark_detection_type", AA_dark_detection_type_string);
 	params.getParam("AA_dark_threshold_factor", AA_dark_threshold_factor);
 	params.getParam("AA_variance_edge_size", AA_variance_edge_size);
 	params.getParam("AA_variance_pixels", AA_variance_pixels);
@@ -831,7 +834,16 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	params.getParam("filter_type", name); // AA filter type
 	
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): passes=" << AA_passes << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise << " dark.thr=" << AA_dark_threshold_factor << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
+	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;
+	else if(AA_dark_detection_type_string == "curve") AA_dark_detection_type = DARK_DETECTION_CURVE;
+	else AA_dark_detection_type = DARK_DETECTION_NONE;
+	
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): passes=" << AA_passes << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise;
+	
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " dark.thr(lin),fac=" << AA_dark_threshold_factor;
+	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " dark.thr(curve)";
+ 
+	aaSettings << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
 
 	yafLog.appendAANoiseSettings(aaSettings.str());
 
@@ -839,7 +851,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.setImageFilm(film);
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
 	if(backg) scene.setBackground(backg);
