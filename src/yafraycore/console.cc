@@ -3,6 +3,9 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#ifdef _MSC_VER
+#include <algorithm>
+#endif
 
 __BEGIN_YAFRAY
 

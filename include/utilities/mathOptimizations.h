@@ -114,12 +114,7 @@ inline float asmSqrt(float n)
 {
     float r = n;
 #ifdef _MSC_VER
-    __asm
-    {
-		fld r
-		fsqrt
-		fstp r
-    }
+	r = sqrt(n);
 #elif defined (__APPLE__)
 	asm(
 		"flds %0;"
