@@ -22,22 +22,66 @@
 
 __BEGIN_YAFRAY
 
-//std::string sysInfoGetArchitecture();
-//std::string sysInfoGetCompiler();
-std::string sysInfoGetOS()
+std::string sysInfoGetArchitecture()
 {
-#ifdef BOOST_OS_LINUX
-	return "Linux";
-#elif BOOST_OS_MACOS
-	return "MacOSX";
-#elif BOOST_OS_WINDOWS
-	return "Windows";
+#if BOOST_ARCH_X86_32
+	return "x86 32bit";
+#elif BOOST_ARCH_X86_64
+	return "x86 64bit";
 #else
-	return "Other OS";
+	return "";
 #endif
 }
 
-//std::string sysInfoGetPlatform();
+std::string sysInfoGetCompiler()
+{
+#if BOOST_COMP_CLANG
+	return "Clang";
+#elif BOOST_COMP_GNUC
+	return "Gnu GCC C/C++";
+#elif BOOST_COMP_INTEL
+	return "Intel compiler";
+#elif BOOST_COMP_LLVM
+	return "LLVM";
+#elif BOOST_COMP_MSVC
+	return "Microsoft Visual C/C++";
+#else
+	return "";
+#endif
+}
+
+std::string sysInfoGetOS()
+{
+#if BOOST_OS_MACOS
+	return "MacOSX";
+#elif BOOST_OS_LINUX
+	return "Linux";
+#elif BOOST_OS_WINDOWS
+	return "Windows";
+#else
+	return "";
+#endif
+}
+
+std::string sysInfoGetPlatform()
+{
+#if BOOST_PLAT_MINGW
+	#if __MINGW32__
+		return "MinGW 32bit v" + __MINGW32_VERSION_MAJOR + "." __MINGW32_VERSION_MINOR;
+	#elif __MINGW64__
+		return "MinGW 64bit v" + __MINGW64_VERSION_MAJOR + "." __MINGW64_VERSION_MINOR;
+	#else
+		return "MinGW";
+	#endif
+#elif BOOST_PLAT_WINDOWS_DESKTOP
+	return "Windows desktop";
+#elif BOOST_PLAT_WINDOWS_RUNTIME
+	return "Windows runtime";
+#else
+	return "";
+#endif
+}
+
 //std::string sysInfoGetHW();
 //std::string sysInfoGetRuntimeInformation();
 
