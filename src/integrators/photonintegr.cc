@@ -131,8 +131,6 @@ void photonIntegrator_t::causticWorker(photonMap_t * causticMap, int threadID, c
 	
 	while(!done)
 	{
-		if(scene->getSignals() & Y_SIG_ABORT) { return; }
-
 		unsigned int haltoncurr = curr + nCausPhotons_thread * threadID;
 
 		state.chromatic = true;
@@ -245,6 +243,7 @@ void photonIntegrator_t::causticWorker(photonMap_t * causticMap, int threadID, c
 			pb->mutx.lock();
 			pb->update();
 			pb->mutx.unlock();
+			if(scene->getSignals() & Y_SIG_ABORT) { return; }
 		}
 		done = (curr >= nCausPhotons_thread);
 	}
@@ -285,8 +284,6 @@ void photonIntegrator_t::diffuseWorker(photonMap_t * diffuseMap, int threadID, c
 	
 	while(!done)
 	{
-		if(scene->getSignals() & Y_SIG_ABORT) { return; }
-		
 		unsigned int haltoncurr = curr + nDiffusePhotons_thread * threadID;
 
 		s1 = RI_vdC(haltoncurr);
@@ -399,6 +396,7 @@ void photonIntegrator_t::diffuseWorker(photonMap_t * diffuseMap, int threadID, c
 			pb->mutx.lock();
 			pb->update();
 			pb->mutx.unlock();
+			if(scene->getSignals() & Y_SIG_ABORT) { return; }
 		}
 		done = (curr >= nDiffusePhotons_thread);
 	}
@@ -872,10 +870,9 @@ bool photonIntegrator_t::preprocess()
 		else		
 		{
 			bool done=false;
-			
 			float invCaustPhotons = 1.f / (float)nCausPhotons;
 			float s1, s2, s3, s4, s5, s6, s7, sL;
-			
+
 			while(!done)
 			{
 				if(scene->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb) delete pb; return false; }

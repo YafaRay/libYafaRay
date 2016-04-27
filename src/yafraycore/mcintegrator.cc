@@ -352,8 +352,6 @@ void mcIntegrator_t::causticWorker(photonMap_t * causticMap, int threadID, const
 
 	while(!done)
 	{
-		if(scene->getSignals() & Y_SIG_ABORT) { return; }
-
 		unsigned int haltoncurr = curr + nCausPhotons_thread * threadID;
 
 		state.chromatic = true;
@@ -466,6 +464,7 @@ void mcIntegrator_t::causticWorker(photonMap_t * causticMap, int threadID, const
 			pb->mutx.lock();
 			pb->update();
 			pb->mutx.unlock();
+			if(scene->getSignals() & Y_SIG_ABORT) { return; }
 		}
 		done = (curr >= nCausPhotons_thread);
 	}

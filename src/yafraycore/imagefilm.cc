@@ -1057,7 +1057,7 @@ float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
 	else if(pixel_brightness > 1.00f && pixel_brightness <= 1.20f) return (0.0400f + (pixel_brightness - 1.00f) * (0.0800f - 0.0400f) / 0.20f);
 	else if(pixel_brightness > 1.20f && pixel_brightness <= 1.40f) return (0.0800f + (pixel_brightness - 1.20f) * (0.0950f - 0.0800f) / 0.20f);
 	else if(pixel_brightness > 1.40f && pixel_brightness <= 1.80f) return (0.0950f + (pixel_brightness - 1.40f) * (0.1000f - 0.0950f) / 0.40f);
-	else if(pixel_brightness > 1.80f) return 0.1000f;
+	else return 0.1000f;
 }
 
 __END_YAFRAY
