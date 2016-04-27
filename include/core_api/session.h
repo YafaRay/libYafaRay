@@ -27,10 +27,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <vector>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <core_api/logging.h>
 #include <core_api/sysinfo.h>
 #if defined(_WIN32) && defined(__MINGW32__)

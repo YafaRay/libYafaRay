@@ -67,9 +67,9 @@ std::string sysInfoGetPlatform()
 {
 #if BOOST_PLAT_MINGW
 	#if __MINGW32__
-		return "MinGW 32bit v" + __MINGW32_VERSION_MAJOR + "." __MINGW32_VERSION_MINOR;
+		return "MinGW 32bit";
 	#elif __MINGW64__
-		return "MinGW 64bit v" + __MINGW64_VERSION_MAJOR + "." __MINGW64_VERSION_MINOR;
+		return "MinGW 64bit";
 	#else
 		return "MinGW";
 	#endif
