@@ -326,29 +326,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	return col;
 }
 
-class causticWorker_t: public yafthreads::thread_t
-{
-	public:
-		causticWorker_t(photonMap_t * causticmap, int thread_id, const scene_t *sc, unsigned int ncausphotons, pdf1D_t *lightpowerd, int numlights, const std::string &integratorname, const std::vector<light_t *> &causlights, int causdepth, progressBar_t *ppb, int pbstep, unsigned int &totalphotonsshot):
-			causticMap(causticmap), threadID(thread_id), scene(sc), nCausPhotons(ncausphotons), lightPowerD(lightpowerd), numLights(numlights), integratorName(integratorname), causLights(causlights), causDepth(causdepth), pb(ppb), pbStep(pbstep), totalPhotonsShot(totalphotonsshot) {};
-		virtual void body();
-	protected:
-		photonMap_t * causticMap;
-		int threadID;
-		const scene_t *scene;
-		unsigned int nCausPhotons;
-		pdf1D_t *lightPowerD;
-		int numLights;
-		const std::string &integratorName;
-		const std::vector<light_t *> &causLights;
-		int causDepth;
-		std::vector<photon_t> localCausticPhotons;
-		progressBar_t *pb;
-		int pbStep;
-		unsigned int &totalPhotonsShot;
-};
-
-void causticWorker_t::body()
+void mcIntegrator_t::causticWorker(photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, pdf1D_t *lightPowerD, int numLights, const std::string &integratorName, const std::vector<light_t *> &causLights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot)
 {
 	bool done=false;
 	float s1, s2, s3, s4, s5, s6, s7, sL;
@@ -357,6 +335,8 @@ void causticWorker_t::body()
 
 	unsigned int curr = 0;
 	unsigned int nCausPhotons_thread = 1 + ( (nCausPhotons - 1) / scene->getNumThreadsPhotons() );
+
+	std::vector<photon_t> localCausticPhotons;
 
 	surfacePoint_t sp1, sp2;
 	surfacePoint_t *hit=&sp1, *hit2=&sp2;
@@ -390,9 +370,9 @@ void causticWorker_t::body()
 
 		if(lightNum >= numLights)
 		{
-			causticMap->mutex.lock();
+			causticMap->mutx.lock();
 			Y_ERROR << integratorName << ": lightPDF sample error! " << sL << "/" << lightNum << yendl;
-			causticMap->mutex.unlock();
+			causticMap->mutx.unlock();
 			return;
 		}
 
@@ -417,9 +397,9 @@ void causticWorker_t::body()
 		{
 			if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
 			{
-				causticMap->mutex.lock();
+				causticMap->mutx.lock();
 				Y_WARNING << integratorName << ": NaN (photon color)" << yendl;
-				causticMap->mutex.unlock();
+				causticMap->mutx.unlock();
 				break;
 			}
 			color_t transm(1.f), vcol;
@@ -483,22 +463,27 @@ void causticWorker_t::body()
 		++curr;
 		if(curr % pbStep == 0)
 		{
-			pb->mutex.lock();
+			pb->mutx.lock();
 			pb->update();
-			pb->mutex.unlock();
+			pb->mutx.unlock();
 		}
 		done = (curr >= nCausPhotons_thread);
 	}
-	causticMap->mutex.lock();
+	causticMap->mutx.lock();
 	causticMap->appendVector(localCausticPhotons, curr);
 	totalPhotonsShot += curr;
-	causticMap->mutex.unlock();
+	causticMap->mutx.unlock();
 }
 
 bool mcIntegrator_t::createCausticMap()
 {
+	progressBar_t *pb;
+	if(intpb) pb = intpb;
+	else pb = new ConsoleProgressBar_t(80);
+
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
+		pb->setTag("Loading caustic photon map from temp folder...");
 		std::string filename = boost::filesystem::temp_directory_path().string();
 		filename += "/yafaray_photonMap_caustics.tmp";
 		Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
@@ -526,6 +511,7 @@ bool mcIntegrator_t::createCausticMap()
 	}
 		
 	session.causticMap->clear();
+	session.causticMap->setNumPaths(0);
 	session.causticMap->reserveMemory(nCausPhotons);
 	ray_t ray;
 	std::vector<light_t *> causLights;
@@ -539,9 +525,6 @@ bool mcIntegrator_t::createCausticMap()
 	}
 
 	int numLights = causLights.size();
-	progressBar_t *pb;
-	if(intpb) pb = intpb;
-	else pb = new ConsoleProgressBar_t(80);
 
 	if(numLights > 0)
 	{
@@ -572,143 +555,139 @@ bool mcIntegrator_t::createCausticMap()
 
 		unsigned int curr=0;
 
-#ifdef USING_THREADS
 		int nThreads = scene->getNumThreadsPhotons();
 
 		nCausPhotons = (nCausPhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
 		
 		Y_PARAMS << integratorName << ": Shooting "<<nCausPhotons<<" photons across " << nThreads << " threads (" << (nCausPhotons / nThreads) << " photons/thread)"<< yendl;
 
-		if(nThreads > 1)
+		if(nThreads >= 2)
 		{
-			std::vector<causticWorker_t *> workers;
-			for(int i=0; i<nThreads; ++i) workers.push_back(new causticWorker_t(session.causticMap, i, scene, nCausPhotons, lightPowerD, numLights, integratorName, causLights, causDepth, pb, pbStep, curr));		
-			for(int i=0;i<nThreads;++i) workers[i]->run();
-			for(int i=0;i<nThreads;++i)	workers[i]->wait();
-			for(int i=0;i<nThreads;++i)	delete workers[i];
+			std::vector<std::thread> threads;
+			for(int i=0; i<nThreads; ++i) threads.push_back(std::thread(&mcIntegrator_t::causticWorker, this, session.causticMap, i, scene, nCausPhotons, lightPowerD, numLights, std::ref(integratorName), causLights, causDepth, pb, pbStep, std::ref(curr)));		
+			for(auto& t : threads) t.join();
 		}
 		else		
-#endif
 		{
-		bool done=false;
-		float s1, s2, s3, s4, s5, s6, s7, sL;
-		surfacePoint_t sp1, sp2;
-		surfacePoint_t *hit=&sp1, *hit2=&sp2;
+			bool done=false;
+			float s1, s2, s3, s4, s5, s6, s7, sL;
+			surfacePoint_t sp1, sp2;
+			surfacePoint_t *hit=&sp1, *hit2=&sp2;
 
-		renderState_t state;
-		state.cam = scene->getCamera();
-		unsigned char userdata[USER_DATA_SIZE+7];
-		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+			renderState_t state;
+			state.cam = scene->getCamera();
+			unsigned char userdata[USER_DATA_SIZE+7];
+			state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 
-		while(!done)
-		{
-			if(scene->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb) delete pb; return false; }
-			state.chromatic = true;
-			state.wavelength = RI_S(curr);
-			s1 = RI_vdC(curr);
-			s2 = scrHalton(2, curr);
-			s3 = scrHalton(3, curr);
-			s4 = scrHalton(4, curr);
-
-			sL = float(curr) / float(nCausPhotons);
-
-			int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
-
-			if(lightNum >= numLights)
+			while(!done)
 			{
-				Y_ERROR << integratorName << ": lightPDF sample error! " << sL << "/" << lightNum << yendl;
-				delete lightPowerD;
-				return false;
-			}
+				if(scene->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb) delete pb; return false; }
+				state.chromatic = true;
+				state.wavelength = RI_S(curr);
+				s1 = RI_vdC(curr);
+				s2 = scrHalton(2, curr);
+				s3 = scrHalton(3, curr);
+				s4 = scrHalton(4, curr);
 
-			color_t pcol = causLights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
-			ray.tmin = scene->rayMinDist;
-			ray.tmax = -1.0;
-			pcol *= fNumLights * lightPdf / lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
-			if(pcol.isBlack())
-			{
-				++curr;
-				done = (curr >= nCausPhotons);
-				continue;
-			}
-			BSDF_t bsdfs = BSDF_NONE;
-			int nBounces = 0;
-			bool causticPhoton = false;
-			bool directPhoton = true;
-			const material_t *material = nullptr;
-			const volumeHandler_t *vol = nullptr;
+				sL = float(curr) / float(nCausPhotons);
 
-			while( scene->intersect(ray, *hit2) )
-			{
-				if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
+				int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
+
+				if(lightNum >= numLights)
 				{
-					Y_WARNING << integratorName << ": NaN (photon color)" << yendl;
-					break;
+					Y_ERROR << integratorName << ": lightPDF sample error! " << sL << "/" << lightNum << yendl;
+					delete lightPowerD;
+					return false;
 				}
-				color_t transm(1.f), vcol;
-				// check for volumetric effects
-				if(material)
-				{
-					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(hit->Ng * ray.dir < 0)))
-					{
-						vol->transmittance(state, ray, vcol);
-						transm = vcol;
-					}
 
-				}
-				std::swap(hit, hit2);
-				vector3d_t wi = -ray.dir, wo;
-				material = hit->material;
-				material->initBSDF(state, *hit, bsdfs);
-				if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
-				{
-					//deposit caustic photon on surface
-					if(causticPhoton)
-					{
-						photon_t np(wi, hit->P, pcol);
-						session.causticMap->pushPhoton(np);
-						session.causticMap->setNumPaths(curr);
-					}
-				}
-				// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-				if(nBounces == causDepth) break;
-				// scatter photon
-				int d5 = 3*nBounces + 5;
-				//int d6 = d5 + 1;
-
-				s5 = scrHalton(d5, curr);
-				s6 = scrHalton(d5+1, curr);
-				s7 = scrHalton(d5+2, curr);
-
-				pSample_t sample(s5, s6, s7, BSDF_ALL_SPECULAR | BSDF_GLOSSY | BSDF_FILTER | BSDF_DISPERSIVE, pcol, transm);
-				bool scattered = material->scatterPhoton(state, *hit, wi, wo, sample);
-				if(!scattered) break; //photon was absorped.
-				pcol = sample.color;
-				// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
-				causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
-								((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
-				// light through transparent materials can be calculated by direct lighting, so still consider them direct!
-				directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
-				// caustic-only calculation can be stopped if:
-				if(!(causticPhoton || directPhoton)) break;
-
-				if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
-				{
-					state.chromatic=false;
-					color_t wl_col;
-					wl2rgb(state.wavelength, wl_col);
-					pcol *= wl_col;
-				}
-				ray.from = hit->P;
-				ray.dir = wo;
+				color_t pcol = causLights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 				ray.tmin = scene->rayMinDist;
 				ray.tmax = -1.0;
-				++nBounces;
+				pcol *= fNumLights * lightPdf / lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
+				if(pcol.isBlack())
+				{
+					++curr;
+					done = (curr >= nCausPhotons);
+					continue;
+				}
+				BSDF_t bsdfs = BSDF_NONE;
+				int nBounces = 0;
+				bool causticPhoton = false;
+				bool directPhoton = true;
+				const material_t *material = nullptr;
+				const volumeHandler_t *vol = nullptr;
+
+				while( scene->intersect(ray, *hit2) )
+				{
+					if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
+					{
+						Y_WARNING << integratorName << ": NaN (photon color)" << yendl;
+						break;
+					}
+					color_t transm(1.f), vcol;
+					// check for volumetric effects
+					if(material)
+					{
+						if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(hit->Ng * ray.dir < 0)))
+						{
+							vol->transmittance(state, ray, vcol);
+							transm = vcol;
+						}
+
+					}
+					std::swap(hit, hit2);
+					vector3d_t wi = -ray.dir, wo;
+					material = hit->material;
+					material->initBSDF(state, *hit, bsdfs);
+					if(bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY))
+					{
+						//deposit caustic photon on surface
+						if(causticPhoton)
+						{
+							photon_t np(wi, hit->P, pcol);
+							session.causticMap->pushPhoton(np);
+							session.causticMap->setNumPaths(curr);
+						}
+					}
+					// need to break in the middle otherwise we scatter the photon and then discard it => redundant
+					if(nBounces == causDepth) break;
+					// scatter photon
+					int d5 = 3*nBounces + 5;
+					//int d6 = d5 + 1;
+
+					s5 = scrHalton(d5, curr);
+					s6 = scrHalton(d5+1, curr);
+					s7 = scrHalton(d5+2, curr);
+
+					pSample_t sample(s5, s6, s7, BSDF_ALL_SPECULAR | BSDF_GLOSSY | BSDF_FILTER | BSDF_DISPERSIVE, pcol, transm);
+					bool scattered = material->scatterPhoton(state, *hit, wi, wo, sample);
+					if(!scattered) break; //photon was absorped.
+					pcol = sample.color;
+					// hm...dispersive is not really a scattering qualifier like specular/glossy/diffuse or the special case filter...
+					causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
+									((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
+					// light through transparent materials can be calculated by direct lighting, so still consider them direct!
+					directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
+					// caustic-only calculation can be stopped if:
+					if(!(causticPhoton || directPhoton)) break;
+
+					if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
+					{
+						state.chromatic=false;
+						color_t wl_col;
+						wl2rgb(state.wavelength, wl_col);
+						pcol *= wl_col;
+					}
+					ray.from = hit->P;
+					ray.dir = wo;
+					ray.tmin = scene->rayMinDist;
+					ray.tmax = -1.0;
+					++nBounces;
+				}
+				++curr;
+				if(curr % pbStep == 0) pb->update();
+				done = (curr >= nCausPhotons);
 			}
-			++curr;
-			if(curr % pbStep == 0) pb->update();
-			done = (curr >= nCausPhotons);
-		}
 		}
 
 		pb->done();
@@ -728,6 +707,7 @@ bool mcIntegrator_t::createCausticMap()
 
 		if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE)
 		{
+			pb->setTag("Saving caustic photon map to temp folder...");
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_caustics.tmp";
 			Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;

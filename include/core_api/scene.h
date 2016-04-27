@@ -7,7 +7,6 @@
 #include"color.h"
 #include"vector3d.h"
 #include <core_api/volume.h>
-#include <yafraycore/ccthreads.h>
 #include <vector>
 #include <core_api/matrix4.h>
 #include <core_api/material.h>
@@ -249,7 +248,7 @@ class YAFRAYCORE_EXPORT scene_t
 		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
 		int signals;
 		const renderEnvironment_t *env;	//!< reference to the environment to which this scene belongs to
-		mutable yafthreads::mutex_t sig_mutex;
+		mutable std::mutex sig_mutex;
 };
 
 __END_YAFRAY

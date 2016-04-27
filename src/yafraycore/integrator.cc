@@ -40,49 +40,25 @@
 
 __BEGIN_YAFRAY
 
-#ifdef USING_THREADS
-
-class renderWorker_t: public yafthreads::thread_t
-{
-	public:
-		renderWorker_t(int numView, tiledIntegrator_t *it, scene_t *s, imageFilm_t *f, threadControl_t *c, int id, int smpls, int offs=0, bool adptv=false, int AA_pass_number=0):
-			integrator(it), scene(s), imageFilm(f), control(c), samples(smpls), mNumView(numView), offset(offs), threadID(id), adaptive(adptv), AA_pass(AA_pass_number)
-		{
-			//Empty
-		}
-		virtual void body();
-	protected:
-		tiledIntegrator_t *integrator;
-		scene_t *scene;
-		imageFilm_t *imageFilm;
-		threadControl_t *control;
-		int samples;
-        int mNumView;
-        int offset;
-		int threadID;
-		bool adaptive;
-		int AA_pass;
-};
-
-void renderWorker_t::body()
+void tiledIntegrator_t::renderWorker(int mNumView, tiledIntegrator_t *integrator, scene_t *scene, imageFilm_t *imageFilm, threadControl_t *control, int threadID, int samples, int offset, bool adaptive, int AA_pass)
 {
 	renderArea_t a;
+
 	while(imageFilm->nextArea(mNumView, a))
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		integrator->preTile(a, samples, offset, adaptive, threadID);
 		integrator->renderTile(mNumView, a, samples, offset, adaptive, threadID, AA_pass);
-		control->countCV.lock();
+		
+		std::unique_lock<std::mutex> lk(control->m);
 		control->areas.push_back(a);
-		control->countCV.signal();
-		control->countCV.unlock();
+		control->c.notify_one();
+
 	}
-	control->countCV.lock();
+	std::unique_lock<std::mutex> lk(control->m);
 	++(control->finishedThreads);
-	control->countCV.signal();
-	control->countCV.unlock();
+	control->c.notify_one();
 }
-#endif
 
 void tiledIntegrator_t::preRender()
 {
@@ -243,31 +219,27 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 
 	int nthreads = scene->getNumThreads();
 
-#ifdef USING_THREADS
 	if(nthreads>1)
 	{
 		threadControl_t tc;
-		std::vector<renderWorker_t *> workers;
-		for(int i=0;i<nthreads;++i) workers.push_back(new renderWorker_t(numView, this, scene, imageFilm, &tc, i, samples, offset, adaptive, AA_pass_number));
+		std::vector<std::thread> threads;
 		for(int i=0;i<nthreads;++i)
 		{
-			workers[i]->run();
+			threads.push_back(std::thread(&tiledIntegrator_t::renderWorker, this, numView, this, scene, imageFilm, &tc, i, samples, offset, adaptive, AA_pass_number));
 		}
-		//update finished tiles
-		tc.countCV.lock();
+
+		std::unique_lock<std::mutex> lk(tc.m);
 		while(tc.finishedThreads < nthreads)
 		{
-			tc.countCV.wait();
+			tc.c.wait(lk);
 			for(size_t i=0; i<tc.areas.size(); ++i) imageFilm->finishArea(numView, tc.areas[i]);
 			tc.areas.clear();
 		}
-		tc.countCV.unlock();
-		//join all threads (although they probably have exited already, but not necessarily):
-		for(int i=0;i<nthreads;++i) {workers[i]->wait(); delete workers[i];} //Fix for Linux hangs/crashes, it's better to wait for threads to end before deleting the thread objects. Using code to wait for the threads to end in the destructors is not recommended.
+
+		for(auto& t : threads) t.join();	//join all threads (although they probably have exited already, but not necessarily):
 	}
 	else
 	{
-#endif
 		renderArea_t a;
 		while(imageFilm->nextArea(numView, a))
 		{
@@ -276,9 +248,7 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 			renderTile(numView, a, samples, offset, adaptive, 0);
 			imageFilm->finishArea(numView, a);
 		}
-#ifdef USING_THREADS
 	}
-#endif
 	return true; //hm...quite useless the return value :)
 }
 

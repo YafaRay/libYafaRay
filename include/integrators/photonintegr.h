@@ -12,13 +12,24 @@
 #include <core_api/mcintegrator.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/monitor.h>
-#include <yafraycore/ccthreads.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/sample_utils.h>
 
 
 __BEGIN_YAFRAY
+
+struct preGatherData_t
+{
+	preGatherData_t(photonMap_t *dm): diffuseMap(dm), fetched(0) {}
+	photonMap_t *diffuseMap;
+	
+	std::vector<radData_t> rad_points;
+	std::vector<photon_t> radianceVec;
+	progressBar_t *pbar;
+	volatile int fetched;
+	std::mutex mutx;
+};
 
 class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public mcIntegrator_t
 {
@@ -28,6 +39,11 @@ class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public mcIntegrator_t
 		virtual bool preprocess();
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
+		virtual void preGatherWorker(preGatherData_t * gdata, float dsRad, int nSearch);
+		virtual void causticWorker(photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, const pdf1D_t *lightPowerD, int numCLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces);
+		virtual void diffuseWorker(photonMap_t * diffuseMap, int threadID, const scene_t *scene, unsigned int nDiffusePhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, bool finalGather, preGatherData_t &pgdat);
+		virtual void photonMapKdTreeWorker(photonMap_t * photonMap);
+
 	protected:
 		color_t finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const;
 		

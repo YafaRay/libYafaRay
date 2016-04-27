@@ -7,9 +7,7 @@
 //#include <math.h>
 #include <limits>
 #include <set>
-#if ( HAVE_PTHREAD && defined (__GNUC__) && !defined (__clang__))
-#include <ext/mt_allocator.h>
-#endif
+
 #include <time.h>
 
 __BEGIN_YAFRAY

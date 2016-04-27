@@ -26,7 +26,6 @@
 #include <yafray_config.h>
 
 #include "color.h"
-#include <yafraycore/ccthreads.h>
 #include <core_api/output.h>
 #include <core_api/imagesplitter.h>
 #include <core_api/environment.h>
@@ -159,7 +158,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		float *filterTable;
 		colorOutput_t *output;
 		// Thread mutes for shared access
-		yafthreads::mutex_t imageMutex, splitterMutex, outMutex, densityImageMutex;
+		std::mutex imageMutex, splitterMutex, outMutex, densityImageMutex;
 		bool split, interactive, abort;
         double imageOutputPartialSaveTimeInterval;
 		bool estimateDensity;

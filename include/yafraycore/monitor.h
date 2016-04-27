@@ -3,7 +3,6 @@
 #define Y_MONITOR_H
 
 #include <yafray_config.h>
-#include <yafraycore/ccthreads.h>
 
 __BEGIN_YAFRAY
 //! Progress bar abstract class with pure virtual members
@@ -19,7 +18,7 @@ class YAFRAYCORE_EXPORT progressBar_t
 		virtual void done() = 0;
 		//! method to pass some informative text to the progress bar in case needed
 		virtual void setTag(const char* text) = 0;
-		yafthreads::mutex_t mutex;
+		std::mutex mutx;
 };
 
 /*! the default console progress bar (implemented in console.cc)

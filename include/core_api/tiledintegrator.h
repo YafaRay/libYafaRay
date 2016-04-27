@@ -8,6 +8,8 @@
 
 __BEGIN_YAFRAY
 
+class threadControl_t;
+
 class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 {
 	public:
@@ -23,6 +25,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		virtual bool renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number);
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
+		virtual void renderWorker(int mNumView, tiledIntegrator_t *integrator, scene_t *scene, imageFilm_t *imageFilm, threadControl_t *control, int threadID, int samples, int offset=0, bool adaptive=false, int AA_pass=0);
 		
 //		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
 		virtual void precalcDepths();
@@ -53,17 +56,14 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 
 };
 
-#ifdef USING_THREADS
-
 struct threadControl_t
 {
 	threadControl_t() : finishedThreads(0) {}
-	yafthreads::conditionVar_t countCV; //!< condition variable to signal main thread
+	std::mutex m;
+	std::condition_variable c; //!< condition variable to signal main thread
 	std::vector<renderArea_t> areas; //!< area to be output to e.g. blender, if any
 	volatile int finishedThreads; //!< number of finished threads, lock countCV when increasing/reading!
 };
-
-#endif
 
 __END_YAFRAY
 

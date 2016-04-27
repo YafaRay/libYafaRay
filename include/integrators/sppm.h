@@ -11,7 +11,6 @@
 #include <core_api/mcintegrator.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/monitor.h>
-#include <yafraycore/ccthreads.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/sample_utils.h>

@@ -6,7 +6,6 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
-option(WITH_Pthreads "Build with POSIX threads wrapper on windows platforms" OFF)
 option(WITH_Freetype "Build font rendering with FreeType" ON)
 option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
 option(WITH_JPEG "Build JPEG image I/O plugin" ON)
@@ -81,30 +80,11 @@ else(LIBXML2_FOUND)
 	message("Using LibXML: no")
 endif(LIBXML2_FOUND)
 
-find_package(Threads REQUIRED)
-
 if(WIN32)
 	add_definitions(-DWIN32 )
 	add_definitions(-D_USE_MATH_DEFINES )
 	add_definitions(-D_hypot=hypot )
 endif(WIN32)
-	
-# Find optional libs
-if(CMAKE_HAVE_PTHREAD_H)
-	if(WIN32)
-		if(WITH_Pthreads)
-			add_definitions(-DHAVE_PTHREAD)
-			message("Using Posix Threads: yes")
-		else(WITH_Pthreads)
-			message("Using Posix Threads: no (disabled by user)")
-		endif(WITH_Pthreads)
-	else(WIN32)
-		add_definitions(-DHAVE_PTHREAD)
-		message("Using Posix Threads: yes")
-	endif(WIN32)
-else(CMAKE_HAVE_PTHREAD_H)
-	message("Using Posix Threads: no (not found)")
-endif(CMAKE_HAVE_PTHREAD_H)
 
 if(WITH_Freetype)
 	find_package(Freetype REQUIRED)

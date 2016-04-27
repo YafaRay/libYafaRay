@@ -28,6 +28,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <core_api/logging.h>
 
 

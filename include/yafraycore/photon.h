@@ -6,7 +6,6 @@
 
 #include "pkdtree.h"
 #include <core_api/color.h>
-#include <yafraycore/ccthreads.h>
 
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -170,9 +169,7 @@ class YAFRAYCORE_EXPORT photonMap_t
 	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, PFLOAT &sqRadius) const;
 		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT &sqRadius) const;
 		const photon_t* findNearest(const point3d_t &P, const vector3d_t &n, PFLOAT dist) const;
-#ifdef USING_THREADS
-		yafthreads::mutex_t mutex;
-#endif
+		std::mutex mutx;
 
 	protected:
 		std::vector<photon_t> photons;
