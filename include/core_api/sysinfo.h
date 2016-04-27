@@ -1,8 +1,8 @@
 /****************************************************************************
- *      session.h: YafaRay Session control
+ *      sysinfo.h: YafaRay System Information
  *      This is part of the yafray package
  *		Copyright (C) 2016 David Bluecame
- * 		Session control and persistent objects between renders
+ * 		System Information, compilation information, etc
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
  
-#ifndef Y_SESSION_H
-#define Y_SESSION_H
+#ifndef Y_SYSINFO_H
+#define Y_SYSINFO_H
 
 #include <iostream>
 #include <ctime>
@@ -28,40 +28,16 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <core_api/logging.h>
-#include <core_api/sysinfo.h>
-#if defined(_WIN32) && defined(__MINGW32__)
-	#undef _GLIBCXX_HAS_GTHREADS
-	#include <utilities/mingw-std-threads/mingw.thread.h>
-	#include <mutex>
-	#include <utilities/mingw-std-threads/mingw.mutex.h>
-	#include <utilities/mingw-std-threads/mingw.condition_variable.h>
-#else
-	#include <thread>
-	#include <mutex>
-	#include <condition_variable>
-#endif
+#include <boost/predef.h>
 
 __BEGIN_YAFRAY
 
-class photonMap_t;
-
-class YAFRAYCORE_EXPORT session_t
-{
-	public:
-		session_t();
-		
-		~session_t();
-		
-		photonMap_t * causticMap;
-		photonMap_t * diffuseMap;
-		photonMap_t * radianceMap;
-};
-
-extern YAFRAYCORE_EXPORT session_t session;
+extern YAFRAYCORE_EXPORT std::string sysInfoGetArchitecture();
+extern YAFRAYCORE_EXPORT std::string sysInfoGetCompiler();
+extern YAFRAYCORE_EXPORT std::string sysInfoGetOS();
+extern YAFRAYCORE_EXPORT std::string sysInfoGetPlatform();
+extern YAFRAYCORE_EXPORT std::string sysInfoGetHW();
+extern YAFRAYCORE_EXPORT std::string sysInfoGetRuntimeInformation();
 
 __END_YAFRAY
 
