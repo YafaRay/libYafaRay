@@ -25,9 +25,9 @@ __BEGIN_YAFRAY
 std::string sysInfoGetArchitecture()
 {
 #if BOOST_ARCH_X86_32
-	return "x86 32bit";
+	return "32bit ";
 #elif BOOST_ARCH_X86_64
-	return "x86 64bit";
+	return "64bit ";
 #else
 	return "";
 #endif
@@ -38,13 +38,13 @@ std::string sysInfoGetCompiler()
 #if BOOST_COMP_CLANG
 	return "Clang";
 #elif BOOST_COMP_GNUC
-	return "Gnu GCC C/C++";
+	return "GCC";
 #elif BOOST_COMP_INTEL
-	return "Intel compiler";
+	return "ICC";
 #elif BOOST_COMP_LLVM
 	return "LLVM";
 #elif BOOST_COMP_MSVC
-	return "Microsoft Visual C/C++";
+	return "MSVC";
 #else
 	return "";
 #endif
@@ -53,11 +53,11 @@ std::string sysInfoGetCompiler()
 std::string sysInfoGetOS()
 {
 #if BOOST_OS_MACOS
-	return "MacOSX";
+	return "MacOSX ";
 #elif BOOST_OS_LINUX
-	return "Linux";
+	return "Linux ";
 #elif BOOST_OS_WINDOWS
-	return "Windows";
+	return "Windows ";
 #else
 	return "";
 #endif
@@ -66,17 +66,7 @@ std::string sysInfoGetOS()
 std::string sysInfoGetPlatform()
 {
 #if BOOST_PLAT_MINGW
-	#if __MINGW32__
-		return "MinGW 32bit";
-	#elif __MINGW64__
-		return "MinGW 64bit";
-	#else
-		return "MinGW";
-	#endif
-#elif BOOST_PLAT_WINDOWS_DESKTOP
-	return "Windows desktop";
-#elif BOOST_PLAT_WINDOWS_RUNTIME
-	return "Windows runtime";
+	return "MinGW ";
 #else
 	return "";
 #endif

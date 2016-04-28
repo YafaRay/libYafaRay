@@ -519,8 +519,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
 	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
 
-	ssBadge << "\nYafaRay (" << version << ")";
-	ssBadge << " " << sysInfoGetOS() << " " << sysInfoGetArchitecture() << " " << sysInfoGetPlatform() << " " << sysInfoGetCompiler(); 
+	ssBadge << "\nYafaRay (" << version << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler(); 
 
 	ssBadge << std::setprecision(2);
 	double times = gTimer.getTime("rendert");

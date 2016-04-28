@@ -70,9 +70,9 @@ __BEGIN_YAFRAY
 renderEnvironment_t::renderEnvironment_t()
 {	
 #ifdef RELEASE
-	Y_INFO << PACKAGE << " " << VERSION << yendl;
+	Y_INFO << PACKAGE << " (" << VERSION << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 #else
-	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
+	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 #endif
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
