@@ -120,6 +120,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setLogMasterVerbosity(int vlevel);
 		std::string printTime(std::time_t datetime) const;
 		std::string printDuration(double duration) const;
+		std::string printDurationSimpleFormat(double duration) const;
 		std::string printDate(std::time_t datetime) const;
 		int vlevel_from_string(std::string strVLevel) const;
 		

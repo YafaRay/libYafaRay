@@ -223,15 +223,20 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 		
 		switch(mVerbLevel)
 		{
-			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] DEBUG: " << setColor(); break;
-			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] VERB: " << setColor(); break;
-			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] INFO: " << setColor(); break;
-			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] PARM: " << setColor(); break;
-			case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] WARNING: " << setColor(); break;
-			case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] ERROR: " << setColor(); break;
-			default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << " (" << printDuration(duration) << ")] LOG: " << setColor(); break;
+			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
+			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB"; break;
+			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO"; break;
+			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
+			case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
+			case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
+			default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG"; break;
 		}
 
+		if(duration == 0) std::cout << ": ";
+		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
+		
+		std::cout << setColor();
+		
 		previousConsoleEventDateTime = current_datetime;
 	}
 	
@@ -302,6 +307,29 @@ std::string yafarayLog_t::printDuration(double duration) const
 	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "    ";
 	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
 	else strDur << " " << std::setw(2) << seconds << "s";
+	
+	return std::string(strDur.str());
+}
+
+std::string yafarayLog_t::printDurationSimpleFormat(double duration) const
+{
+	std::ostringstream strDur;
+	
+	int duration_int = (int) duration;
+	int hours = duration_int / 3600;
+	int minutes = (duration_int % 3600) / 60;
+	int seconds = duration_int % 60;
+	
+	if(hours == 0) strDur << "";
+	else strDur << "+" << std::setw(2) << hours << "h";
+
+	if(hours == 0 && minutes == 0) strDur << "";
+	else if (hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
+	else strDur << "" << std::setw(2) << minutes << "m";
+
+	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "";
+	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
+	else strDur << "" << std::setw(2) << seconds << "s";
 	
 	return std::string(strDur.str());
 }
