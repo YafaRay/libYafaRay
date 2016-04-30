@@ -155,8 +155,11 @@ class YAFRAYCORE_EXPORT photonMap_t
 {
 	public:
 		photonMap_t(): paths(0), updated(false), searchRadius(1.), tree(nullptr){ }
+		photonMap_t(const std::string &mapname, int threads): paths(0), updated(false), searchRadius(1.), tree(nullptr), name(mapname),threadsPKDtree(threads) { }
 		~photonMap_t(){ if(tree) delete tree; }
 		void setNumPaths(int n){ paths=n; }
+		void setName(const std::string &mapname) { name = mapname; }
+		void setNumThreadsPKDtree(int threads){ threadsPKDtree = threads; }
 		int nPaths() const{ return paths; }
 		int nPhotons() const{ return photons.size(); }
 		void pushPhoton(photon_t &p) { photons.push_back(p); updated=false; }
@@ -177,6 +180,8 @@ class YAFRAYCORE_EXPORT photonMap_t
 		bool updated;
 		PFLOAT searchRadius;
 		kdtree::pointKdTree<photon_t> *tree;
+		std::string name;
+		int threadsPKDtree = 1;
 
 		friend class boost::serialization::access;
 		template<class Archive> void serialize(Archive & ar, const unsigned int version)
@@ -185,6 +190,8 @@ class YAFRAYCORE_EXPORT photonMap_t
 			ar & BOOST_SERIALIZATION_NVP(paths);
 			ar & BOOST_SERIALIZATION_NVP(updated);
 			ar & BOOST_SERIALIZATION_NVP(searchRadius);
+			ar & BOOST_SERIALIZATION_NVP(name);
+			ar & BOOST_SERIALIZATION_NVP(threadsPKDtree);
 			ar & BOOST_SERIALIZATION_NVP(tree);
 		}
 };

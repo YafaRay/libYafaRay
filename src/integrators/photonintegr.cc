@@ -484,7 +484,7 @@ bool photonIntegrator_t::preprocess()
 
 		if(usePhotonDiffuse && finalGather)
 		{
-			pb->setTag("Loading FG radiance map from temp folder...");
+			pb->setTag("Loading FG radiance photon map from temp folder...");
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
 			Y_INFO << integratorName << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!"  << yendl;
@@ -566,11 +566,16 @@ bool photonIntegrator_t::preprocess()
 	session.diffuseMap->clear();
 	session.diffuseMap->setNumPaths(0);
 	session.diffuseMap->reserveMemory(nDiffusePhotons);
+	session.diffuseMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
+
 	session.causticMap->clear();
 	session.causticMap->setNumPaths(0);
 	session.causticMap->reserveMemory(nCausPhotons);
+	session.causticMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
+
 	session.radianceMap->clear();
 	session.radianceMap->setNumPaths(0);
+	session.radianceMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
 
 	ray_t ray;
 	float lightNumPdf, lightPdf;
@@ -1032,7 +1037,7 @@ bool photonIntegrator_t::preprocess()
 	if(usePhotonDiffuse && finalGather) //create radiance map:
 	{
 		// == remove too close radiance points ==//
-		kdtree::pointKdTree< radData_t > *rTree = new kdtree::pointKdTree< radData_t >(pgdat.rad_points);
+		kdtree::pointKdTree< radData_t > *rTree = new kdtree::pointKdTree< radData_t >(pgdat.rad_points, "FG Radiance Photon Map", scene->getNumThreadsPhotons());
 		std::vector< radData_t > cleaned;
 		for(unsigned int i=0; i<pgdat.rad_points.size(); ++i)
 		{
@@ -1097,7 +1102,7 @@ bool photonIntegrator_t::preprocess()
 
 		if( usePhotonDiffuse && finalGather )
 		{
-			pb->setTag("Saving FG radiance map to temp folder...");
+			pb->setTag("Saving FG radiance photon map to temp folder...");
 			std::string filename = boost::filesystem::temp_directory_path().string();
 			filename += "/yafaray_photonMap_fg_radiance.tmp";
 			Y_INFO << integratorName << ": Saving FG radiance photon map to: " << filename << yendl;

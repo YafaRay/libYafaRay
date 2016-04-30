@@ -109,7 +109,7 @@ void photonMap_t::updateTree()
 	if(tree) delete tree;
 	if(photons.size() > 0)
 	{
-		tree = new kdtree::pointKdTree<photon_t>(photons);
+		tree = new kdtree::pointKdTree<photon_t>(photons, name, threadsPKDtree);
 		updated = true;
 	}
 	else tree=0;

@@ -69,7 +69,7 @@ class pointKdTree
 {
 	public:
 		pointKdTree() {};
-		pointKdTree(const std::vector<T> &dat);
+		pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads=1);
 		~pointKdTree(){ if(nodes) y_free(nodes); }
 		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared) const;
 		double lookupStat()const{ return double(Y_PROCS)/double(Y_LOOKUPS); } //!< ratio of photons tested per lookup call
@@ -82,11 +82,13 @@ class pointKdTree
 			int axis; 		//!< the split axis of parent node
 		};
 		void buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims);
-		void buildTree2(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int axis=0);
+		void buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes);
 		kdNode<T> *nodes;
 		u_int32 nElements, nextFreeNode;
 		bound_t treeBound;
 		mutable unsigned int Y_LOOKUPS, Y_PROCS;
+		int maxLevelThreads = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
+		std::mutex mutx;
 
 		friend class boost::serialization::access;
 		template<class Archive> void save(Archive & ar, const unsigned int version) const
@@ -115,7 +117,7 @@ class pointKdTree
 };
 
 template<class T>
-pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
+pointKdTree<T>::pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads)
 {
 	Y_LOOKUPS=0; Y_PROCS=0;
 	nextFreeNode = 0;
@@ -123,11 +125,12 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 	
 	if(nElements == 0)
 	{
-		Y_ERROR << "pointKdTree: Empty vector!" << yendl;
+		Y_ERROR << "pointKdTree: " << mapName << " empty vector!" << yendl;
 		return;
 	}
 	
 	nodes = (kdNode<T> *)y_memalign(64, 4*nElements*sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
+	
 	const T **elements = new const T*[nElements];
 	
 	for(u_int32 i=0; i<nElements; ++i) elements[i] = &dat[i];
@@ -136,11 +139,14 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 	
 	for(u_int32 i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
 	
-	Y_VERBOSE << "pointKdTree: Starting recusive tree build for "<<nElements<<" elements..." << yendl;
+	maxLevelThreads = (int) std::ceil(std::log2((float) numThreads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
+	int realThreads = (int) pow(2.f, maxLevelThreads); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
+	
+	Y_INFO << "pointKdTree: Starting " << mapName << " recusive tree build for " << nElements << " elements [using " << realThreads << " threads]" << yendl;
 	
 	buildTree(0, nElements, treeBound, elements);
 	
-	Y_VERBOSE << "pointKdTree: Tree built." << yendl;
+	Y_VERBOSE << "pointKdTree: " << mapName << " tree built." << yendl;
 	
 	delete[] elements;
 }
@@ -148,62 +154,85 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat)
 template<class T>
 void pointKdTree<T>::buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims)
 {
+	buildTreeWorker(start, end, nodeBound, prims, 0, nextFreeNode, nodes);
+}
+
+template<class T>
+void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes)
+{
+	++level;
 	if(end - start == 1)
 	{
-		nodes[nextFreeNode].createLeaf(prims[start]);
-		nextFreeNode++;
+		localNodes[localNextFreeNode].createLeaf(prims[start]);
+		localNextFreeNode++;
 		return;
 	}
 	int splitAxis = nodeBound.largestAxis();
 	int splitEl = (start+end)/2;
 	std::nth_element(&prims[start], &prims[splitEl],
 					&prims[end], CompareNode<T>(splitAxis));
-	u_int32 curNode = nextFreeNode;
+	u_int32 curNode = localNextFreeNode;
 	PFLOAT splitPos = prims[splitEl]->pos[splitAxis];
-	nodes[curNode].createInterior(splitAxis, splitPos);
-	++nextFreeNode;
+	localNodes[curNode].createInterior(splitAxis, splitPos);
+	++localNextFreeNode;
 	bound_t boundL = nodeBound, boundR = nodeBound;
 	switch(splitAxis){
 		case 0: boundL.setMaxX(splitPos); boundR.setMinX(splitPos); break;
 		case 1: boundL.setMaxY(splitPos); boundR.setMinY(splitPos); break;
 		case 2: boundL.setMaxZ(splitPos); boundR.setMinZ(splitPos); break;
 	}
-	//<< recurse below child >>
-	buildTree(start, splitEl, boundL, prims);
-	//<< recurse above child >>
-	nodes[curNode].setRightChild (nextFreeNode);
-	buildTree(splitEl, end, boundR, prims);
-}
-
-template<class T>
-void pointKdTree<T>::buildTree2(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int axis)
-{
-	if(end - start == 1)
+	
+	if(level <= maxLevelThreads)  //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
 	{
-		nodes[nextFreeNode].createLeaf(prims[start]);
-		nextFreeNode++;
-		return;
-	}
+		//<< recurse below child >>
+		uint32_t nextFreeNode1 = 0;
+		kdNode<T> * nodes1 = (kdNode<T> *)y_memalign(64, 4*(splitEl-start)*sizeof(kdNode<T>));
+		std::thread * belowWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, start, splitEl, std::ref(boundL), prims, level, std::ref(nextFreeNode1), nodes1);
+		
+		//<< recurse above child >>
+		uint32_t nextFreeNode2 = 0;
+		kdNode<T> * nodes2 = (kdNode<T> *)y_memalign(64, 4*(end-splitEl)*sizeof(kdNode<T>));
+		std::thread * aboveWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, splitEl, end, std::ref(boundR), prims, level, std::ref(nextFreeNode2), nodes2);
 
-	int splitAxis = axis;
-	int splitEl = (start+end)/2;
-	std::nth_element(&prims[start], &prims[splitEl],
-					&prims[end], CompareNode<T>(splitAxis));
-	u_int32 curNode = nextFreeNode;
-	PFLOAT splitPos = prims[splitEl]->pos[splitAxis];
-	nodes[curNode].createInterior(splitAxis, splitPos);
-	++nextFreeNode;
-	bound_t boundL = nodeBound, boundR = nodeBound;
-	switch(splitAxis){
-		case 0: boundL.setMaxX(splitPos); boundR.setMinX(splitPos); break;
-		case 1: boundL.setMaxY(splitPos); boundR.setMinY(splitPos); break;
-		case 2: boundL.setMaxZ(splitPos); boundR.setMinZ(splitPos); break;
+		belowWorker->join();
+		aboveWorker->join();
+		delete belowWorker;
+		delete aboveWorker;
+		
+		for(uint32_t i=0; i<nextFreeNode1; ++i)
+		{
+			localNodes[i+localNextFreeNode] = nodes1[i];
+			if(!localNodes[i+localNextFreeNode].IsLeaf())
+			{
+				uint32_t right_child = localNodes[i+localNextFreeNode].getRightChild();
+				localNodes[i+localNextFreeNode].setRightChild(right_child + localNextFreeNode);
+			}
+		}
+		free(nodes1);
+		
+		for(uint32_t i=0; i<nextFreeNode2; ++i)
+		{
+			localNodes[i+localNextFreeNode+nextFreeNode1] = nodes2[i];
+			if(!localNodes[i+localNextFreeNode+nextFreeNode1].IsLeaf())
+			{
+				uint32_t right_child = localNodes[i+localNextFreeNode+nextFreeNode1].getRightChild();
+				localNodes[i+localNextFreeNode+nextFreeNode1].setRightChild(right_child + localNextFreeNode + nextFreeNode1);
+			}
+		}
+		free(nodes2);
+
+		localNodes[curNode].setRightChild (localNextFreeNode + nextFreeNode1);
+		localNextFreeNode = localNextFreeNode + nextFreeNode1 + nextFreeNode2;
 	}
-	//<< recurse below child >>
-	buildTree2(start, splitEl, boundL, prims, (axis+1)%3);
-	//<< recurse above child >>
-	nodes[curNode].setRightChild (nextFreeNode);
-	buildTree2(splitEl, end, boundR, prims, (axis+1)%3);
+	else  //for the rest of the levels in the tree, don't launch more threads, do normal "sequential" operation
+	{
+		//<< recurse below child >>
+		buildTreeWorker(start, splitEl, boundL, prims, level, localNextFreeNode, localNodes);
+		//<< recurse above child >>
+		localNodes[curNode].setRightChild (localNextFreeNode);
+		buildTreeWorker(splitEl, end, boundR, prims, level, localNextFreeNode, localNodes);
+	}
+	--level;
 }
 
 
