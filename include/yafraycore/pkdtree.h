@@ -143,11 +143,11 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat, const std::string &mapNam
 	int realThreads = (int) pow(2.f, maxLevelThreads); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
 	
 	Y_INFO << "pointKdTree: Starting " << mapName << " recusive tree build for " << nElements << " elements [using " << realThreads << " threads]" << yendl;
-	
+
 	buildTree(0, nElements, treeBound, elements);
 	
 	Y_VERBOSE << "pointKdTree: " << mapName << " tree built." << yendl;
-	
+
 	delete[] elements;
 }
 
@@ -182,44 +182,50 @@ void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBo
 		case 2: boundL.setMaxZ(splitPos); boundR.setMinZ(splitPos); break;
 	}
 	
-	if(level <= maxLevelThreads)  //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
+	if (level <= maxLevelThreads)  //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
 	{
 		//<< recurse below child >>
 		uint32_t nextFreeNode1 = 0;
-		kdNode<T> * nodes1 = (kdNode<T> *)y_memalign(64, 4*(splitEl-start)*sizeof(kdNode<T>));
+		kdNode<T> * nodes1 = (kdNode<T> *)y_memalign(64, 4 * (splitEl - start)*sizeof(kdNode<T>));
 		std::thread * belowWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, start, splitEl, std::ref(boundL), prims, level, std::ref(nextFreeNode1), nodes1);
-		
+
 		//<< recurse above child >>
 		uint32_t nextFreeNode2 = 0;
-		kdNode<T> * nodes2 = (kdNode<T> *)y_memalign(64, 4*(end-splitEl)*sizeof(kdNode<T>));
+		kdNode<T> * nodes2 = (kdNode<T> *)y_memalign(64, 4 * (end - splitEl)*sizeof(kdNode<T>));
 		std::thread * aboveWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, splitEl, end, std::ref(boundR), prims, level, std::ref(nextFreeNode2), nodes2);
 
 		belowWorker->join();
 		aboveWorker->join();
 		delete belowWorker;
 		delete aboveWorker;
-		
-		for(uint32_t i=0; i<nextFreeNode1; ++i)
+
+		if (nodes1)
 		{
-			localNodes[i+localNextFreeNode] = nodes1[i];
-			if(!localNodes[i+localNextFreeNode].IsLeaf())
+			for (uint32_t i = 0; i < nextFreeNode1; ++i)
 			{
-				uint32_t right_child = localNodes[i+localNextFreeNode].getRightChild();
-				localNodes[i+localNextFreeNode].setRightChild(right_child + localNextFreeNode);
+				localNodes[i + localNextFreeNode] = nodes1[i];
+				if (!localNodes[i + localNextFreeNode].IsLeaf())
+				{
+					uint32_t right_child = localNodes[i + localNextFreeNode].getRightChild();
+					localNodes[i + localNextFreeNode].setRightChild(right_child + localNextFreeNode);
+				}
 			}
+			y_free(nodes1);
 		}
-		free(nodes1);
-		
-		for(uint32_t i=0; i<nextFreeNode2; ++i)
+
+		if (nodes2)
 		{
-			localNodes[i+localNextFreeNode+nextFreeNode1] = nodes2[i];
-			if(!localNodes[i+localNextFreeNode+nextFreeNode1].IsLeaf())
+			for (uint32_t i = 0; i < nextFreeNode2; ++i)
 			{
-				uint32_t right_child = localNodes[i+localNextFreeNode+nextFreeNode1].getRightChild();
-				localNodes[i+localNextFreeNode+nextFreeNode1].setRightChild(right_child + localNextFreeNode + nextFreeNode1);
+				localNodes[i + localNextFreeNode + nextFreeNode1] = nodes2[i];
+				if (!localNodes[i + localNextFreeNode + nextFreeNode1].IsLeaf())
+				{
+					uint32_t right_child = localNodes[i + localNextFreeNode + nextFreeNode1].getRightChild();
+					localNodes[i + localNextFreeNode + nextFreeNode1].setRightChild(right_child + localNextFreeNode + nextFreeNode1);
+				}
 			}
+			y_free(nodes2);
 		}
-		free(nodes2);
 
 		localNodes[curNode].setRightChild (localNextFreeNode + nextFreeNode1);
 		localNextFreeNode = localNextFreeNode + nextFreeNode1 + nextFreeNode2;

@@ -1003,8 +1003,6 @@ bool photonIntegrator_t::preprocess()
 		
 	tmplights.clear();
 
-	if(!intpb) delete pb;
-	
 	std::thread * causticMapBuildKdTree_thread = nullptr;
 	
 	if(usePhotonCaustics && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2)
@@ -1033,6 +1031,8 @@ bool photonIntegrator_t::preprocess()
 
 		Y_VERBOSE << integratorName << ": Diffuse photon map: done." << yendl;
 	}
+
+	if (!intpb) delete pb;
 
 	if(usePhotonDiffuse && finalGather) //create radiance map:
 	{
