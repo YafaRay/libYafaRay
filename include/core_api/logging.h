@@ -30,6 +30,17 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#if defined(_WIN32) && defined(__MINGW32__)
+	#undef _GLIBCXX_HAS_GTHREADS
+	#include <utilities/mingw-std-threads/mingw.thread.h>
+	#include <mutex>
+	#include <utilities/mingw-std-threads/mingw.mutex.h>
+	#include <utilities/mingw-std-threads/mingw.condition_variable.h>
+#else
+	#include <thread>
+	#include <mutex>
+	#include <condition_variable>
+#endif
 
 __BEGIN_YAFRAY
 
@@ -51,10 +62,11 @@ class YAFRAYCORE_EXPORT logEntry_t
 	friend class yafarayLog_t;
 	
 	public:
-		logEntry_t(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
+		logEntry_t(std::time_t datetime, double duration, int verb_level, std::string description):eventDateTime(datetime),eventDuration(duration),mVerbLevel(verb_level),eventDescription(description) {}
 
 	protected:
 		std::time_t eventDateTime;
+		double eventDuration;
 		int mVerbLevel;
 		std::string eventDescription;
 };
@@ -64,6 +76,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	public:
 		yafarayLog_t();
+		yafarayLog_t(const yafarayLog_t&);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
 		
 		~yafarayLog_t();
 
@@ -106,8 +119,11 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setConsoleMasterVerbosity(int vlevel);
 		void setLogMasterVerbosity(int vlevel);
 		std::string printTime(std::time_t datetime) const;
+		std::string printDuration(double duration) const;
 		std::string printDate(std::time_t datetime) const;
 		int vlevel_from_string(std::string strVLevel) const;
+		
+		std::mutex mutx;  //To try to avoid garbled output when there are several threads trying to output data to the log
 
 		template <typename T>
 		yafarayLog_t & operator << ( const T &obj )
@@ -149,6 +165,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mRenderSettings;
 		bool drawAANoiseSettings = true;
 		bool drawRenderSettings = true;
+		std::time_t previousConsoleEventDateTime = 0;
+		std::time_t previousLogEventDateTime = 0;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;
