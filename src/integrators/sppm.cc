@@ -327,7 +327,18 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	Y_INFO << integratorName << ": Starting Photon tracing pass..." << yendl;
 
 	if(bHashgrid) photonGrid.clear();
-	else {diffuseMap.clear(); causticMap.clear();}
+	else
+	{
+		session.diffuseMap->clear();
+		session.diffuseMap->setNumPaths(0);
+		session.diffuseMap->reserveMemory(nPhotons);
+		session.diffuseMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
+
+		session.causticMap->clear();
+		session.causticMap->setNumPaths(0);
+		session.causticMap->reserveMemory(nPhotons);
+		session.causticMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
+	}
 
 	background = scene->getBackground();
 	lights = scene->lights;
@@ -460,8 +471,8 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 				if(bHashgrid) photonGrid.pushPhoton(np);
 				else
 				{
-					diffuseMap.pushPhoton(np);
-					diffuseMap.setNumPaths(curr);
+					session.diffuseMap->pushPhoton(np);
+					session.diffuseMap->setNumPaths(curr);
 				}
 				ndPhotonStored++;
 			}
@@ -473,8 +484,8 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 				if(bHashgrid) photonGrid.pushPhoton(np);
 				else
 				{
-					causticMap.pushPhoton(np);
-					causticMap.setNumPaths(curr);
+					session.causticMap->pushPhoton(np);
+					session.causticMap->setNumPaths(curr);
 				}
 				ndPhotonStored++;
 			}
@@ -525,7 +536,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 	totalnPhotons +=  nPhotons;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	Y_VERBOSE << integratorName << ": Stored photons: "<< diffuseMap.nPhotons() + causticMap.nPhotons() << yendl;
+	Y_VERBOSE << integratorName << ": Stored photons: "<< session.diffuseMap->nPhotons() + session.causticMap->nPhotons() << yendl;
 
 	if(bHashgrid)
 	{
@@ -535,19 +546,19 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	}
 	else
 	{
-		if(diffuseMap.nPhotons() > 0)
+		if(session.diffuseMap->nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building diffuse photons kd-tree:" << yendl;
-			diffuseMap.updateTree();
+			session.diffuseMap->updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
-		if(causticMap.nPhotons() > 0)
+		if(session.causticMap->nPhotons() > 0)
 		{
 			Y_INFO << integratorName << ": Building caustic photons kd-tree:" << yendl;
-			causticMap.updateTree();
+			session.causticMap->updateTree();
 			Y_VERBOSE << integratorName << ": Done." << yendl;
 		}
-		if(diffuseMap.nPhotons() < 50)
+		if(session.diffuseMap->nPhotons() < 50)
 		{
 			Y_ERROR << integratorName << ": Too few photons, stopping now." << yendl;
 			return;
@@ -633,10 +644,10 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			PFLOAT radius_2 = radius_1;
 			int nGathered_1 = 0, nGathered_2 = 0;
 
-			if(diffuseMap.nPhotons() > 0)
-				nGathered_1 = diffuseMap.gather(sp.P, gathered, nSearch, radius_1);
-			if(causticMap.nPhotons() > 0)
-				nGathered_2 = causticMap.gather(sp.P, gathered, nSearch, radius_2);
+			if(session.diffuseMap->nPhotons() > 0)
+				nGathered_1 = session.diffuseMap->gather(sp.P, gathered, nSearch, radius_1);
+			if(session.causticMap->nPhotons() > 0)
+				nGathered_2 = session.causticMap->gather(sp.P, gathered, nSearch, radius_2);
 			if(nGathered_1 > 0 || nGathered_2 >0) // it none photon gathered, we just skip.
 			{
 				if(radius_1 < radius_2) // we choose the smaller one to be the initial radius.
@@ -655,9 +666,9 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			nGathered = photonGrid.gather(sp.P, gathered, nMaxGather, radius2); // disable now
 		else
 		{
-			if(diffuseMap.nPhotons() > 0) // this is needed to avoid a runtime error.
+			if(session.diffuseMap->nPhotons() > 0) // this is needed to avoid a runtime error.
 			{
-				nGathered = diffuseMap.gather(sp.P, gathered, nMaxGather, radius2); //we always collected all the photon inside the radius
+				nGathered = session.diffuseMap->gather(sp.P, gathered, nMaxGather, radius2); //we always collected all the photon inside the radius
 			}
 
 			if(nGathered > 0)
@@ -697,11 +708,11 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 			}
 
 			// gather caustics photons
-			if(bsdfs & BSDF_DIFFUSE && causticMap.ready())
+			if(bsdfs & BSDF_DIFFUSE && session.causticMap->ready())
 			{
 
 				radius2 = hp.radius2; //reset radius2 & nGathered
-				nGathered = causticMap.gather(sp.P, gathered, nMaxGather, radius2);
+				nGathered = session.causticMap->gather(sp.P, gathered, nMaxGather, radius2);
 				if(nGathered > 0)
 				{
 					color_t surfCol(0.f);
