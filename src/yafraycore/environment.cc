@@ -818,6 +818,9 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
+	
+	nthreads_photons = nthreads;	//if no "threads_photons" parameter exists, make "nthreads_photons" equal to render threads
+	
 	params.getParam("threads_photons", nthreads_photons); // number of threads for photon mapping, -1 = auto detection
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
