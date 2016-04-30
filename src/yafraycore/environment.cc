@@ -739,7 +739,7 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
 {
 	const std::string *name=0;
-	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=1;
+	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=-1;
 	double AA_threshold=0.05;
 	float AA_resampled_floor=0.f;
 	float AA_sample_multiplier_factor = 1.f;
