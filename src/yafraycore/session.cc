@@ -36,9 +36,9 @@ session_t::session_t()
 	causticMap = new photonMap_t;
 	causticMap->setName("Caustic Photon Map");
 	diffuseMap = new photonMap_t;
-	causticMap->setName("Diffuse Photon Map");
+	diffuseMap->setName("Diffuse Photon Map");
 	radianceMap = new photonMap_t;
-	causticMap->setName("FG Radiance Photon Map");
+	radianceMap->setName("FG Radiance Photon Map");
 }
 
 session_t::~session_t()

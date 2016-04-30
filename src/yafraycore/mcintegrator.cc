@@ -512,6 +512,8 @@ bool mcIntegrator_t::createCausticMap()
 	session.causticMap->clear();
 	session.causticMap->setNumPaths(0);
 	session.causticMap->reserveMemory(nCausPhotons);
+	session.causticMap->setNumThreadsPKDtree(scene->getNumThreadsPhotons());
+	
 	ray_t ray;
 	std::vector<light_t *> causLights;
 
