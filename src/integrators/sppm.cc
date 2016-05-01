@@ -318,6 +318,185 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	return true;
 }
 
+void SPPM::photonWorker(photonMap_t * diffuseMap, photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nPhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, random_t & prng)
+{
+	ray_t ray;
+	float lightNumPdf, lightPdf, s1, s2, s3, s4, s5, s6, s7, sL;
+	color_t pcol;
+
+	//shoot photons
+	bool done=false;
+	unsigned int curr=0;
+	
+	surfacePoint_t sp;
+	renderState_t state(&prng);
+	unsigned char userdata[USER_DATA_SIZE+7];
+	state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+	state.cam = scene->getCamera();
+	
+	float fNumLights = (float)numDLights;
+
+	unsigned int nPhotons_thread = 1 + ( (nPhotons - 1) / scene->getNumThreadsPhotons() );
+
+	std::vector<photon_t> localCausticPhotons;
+	localCausticPhotons.clear();
+	localCausticPhotons.reserve(nPhotons_thread);
+
+	std::vector<photon_t> localDiffusePhotons;
+	localDiffusePhotons.clear();
+	localDiffusePhotons.reserve(nPhotons_thread);
+		
+	//Pregather  photons
+	float invDiffPhotons = 1.f / (float)nPhotons;
+
+	unsigned int ndPhotonStored = 0;
+//	unsigned int ncPhotonStored = 0;
+
+	while(!done)
+	{
+		unsigned int haltoncurr = curr + nPhotons_thread * threadID;
+
+		state.chromatic = true;
+		state.wavelength = scrHalton(5, haltoncurr);
+
+	   // Tried LD, get bad and strange results for some stategy.
+	   s1 = hal1.getNext();
+	   s2 = hal2.getNext();
+	   s3 = hal3.getNext();
+	   s4 = hal4.getNext();
+
+		sL = float(haltoncurr) * invDiffPhotons; // Does sL also need more random for each pass?
+		int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
+		if(lightNum >= numDLights)
+		{
+			diffuseMap->mutx.lock();
+			Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"\n";
+			diffuseMap->mutx.unlock();
+			return;
+		}
+
+		pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
+		ray.tmin = scene->rayMinDist;
+		ray.tmax = -1.0;
+		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
+
+		if(pcol.isBlack())
+		{
+			++curr;
+			done = (curr >= nPhotons);
+			continue;
+		}
+
+		int nBounces=0;
+		bool causticPhoton = false;
+		bool directPhoton = true;
+		const material_t *material = nullptr;
+		BSDF_t bsdfs;
+
+		while( scene->intersect(ray, sp) ) //scatter photons.
+		{
+			if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
+			{
+				diffuseMap->mutx.lock();
+				Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << "." << yendl;
+				diffuseMap->mutx.unlock();
+				continue;
+			}
+
+			color_t transm(1.f);
+			color_t vcol(0.f);
+			const volumeHandler_t* vol;
+
+			if(material)
+			{
+				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * -ray.dir < 0)))
+				{
+					if(vol->transmittance(state, ray, vcol)) transm = vcol;
+				}
+			}
+
+			vector3d_t wi = -ray.dir, wo;
+			material = sp.material;
+			material->initBSDF(state, sp, bsdfs);
+
+			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
+			if(!directPhoton && !causticPhoton && (bsdfs & (BSDF_DIFFUSE)))
+			{
+				photon_t np(wi, sp.P, pcol);// pcol used here
+
+				if(bHashgrid) photonGrid.pushPhoton(np);
+				else
+				{
+					localDiffusePhotons.push_back(np);
+				}
+				ndPhotonStored++;
+			}
+			// add caustic photon
+			if(!directPhoton && causticPhoton && (bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY)))
+			{
+				photon_t np(wi, sp.P, pcol);// pcol used here
+
+				if(bHashgrid) photonGrid.pushPhoton(np);
+				else
+				{
+					localCausticPhotons.push_back(np);
+				}
+				ndPhotonStored++;
+			}
+
+			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
+			if(nBounces == maxBounces) break;
+
+			// scatter photon
+			s5 = ourRandom(); // now should use this to see correctness
+			s6 = ourRandom();
+			s7 = ourRandom();
+
+			pSample_t sample(s5, s6, s7, BSDF_ALL, pcol, transm);
+
+			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+			if(!scattered) break; //photon was absorped.  actually based on russian roulette
+
+			pcol = sample.color;
+
+			causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
+							((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
+			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
+
+			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
+				{
+					state.chromatic=false;
+					color_t wl_col;
+					wl2rgb(state.wavelength, wl_col);
+					pcol *= wl_col;
+				}
+				
+			ray.from = sp.P;
+			ray.dir = wo;
+			ray.tmin = scene->rayMinDist;
+			ray.tmax = -1.0;
+			++nBounces;
+		}
+		++curr;
+		if(curr % pbStep == 0)
+		{
+			pb->mutx.lock();
+			pb->update();
+			pb->mutx.unlock();
+			if(scene->getSignals() & Y_SIG_ABORT) { return; }
+		}
+		done = (curr >= nPhotons_thread);
+	}
+	diffuseMap->mutx.lock();
+	causticMap->mutx.lock();
+	diffuseMap->appendVector(localDiffusePhotons, curr);
+	causticMap->appendVector(localCausticPhotons, curr);
+	totalPhotonsShot += curr;
+	causticMap->mutx.unlock();
+	diffuseMap->mutx.unlock();
+}
+
+
 //photon pass, scatter photon
 void SPPM::prePass(int samples, int offset, bool adaptive)
 {
@@ -381,7 +560,6 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	delete[] energies;
 
 	//shoot photons
-	bool done=false;
 	unsigned int curr=0;
 
 	surfacePoint_t sp;
@@ -402,132 +580,150 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	pbStep = std::max(1U, nPhotons/128);
 	//pb->setTag("Building photon map...");
 
-	//Pregather  photons
-	float invDiffPhotons = 1.f / (float)nPhotons;
+	int nThreads = scene->getNumThreadsPhotons();
 
-	unsigned int ndPhotonStored = 0;
-//	unsigned int ncPhotonStored = 0;
+	nPhotons = (nPhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
+	
+	Y_PARAMS << integratorName << ": Shooting "<<nPhotons<<" photons across " << nThreads << " threads (" << (nPhotons / nThreads) << " photons/thread)"<< yendl;
 
-	while(!done)
+	if(nThreads >= 2)
 	{
-		if(scene->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb) delete pb; return; }
-		state.chromatic = true;
-		state.wavelength = scrHalton(5, curr);
+		std::vector<std::thread> threads;
+		for(int i=0; i<nThreads; ++i) threads.push_back(std::thread(&SPPM::photonWorker, this, session.diffuseMap, session.causticMap, i, scene, nPhotons, lightPowerD, numDLights, std::ref(integratorName), tmplights, pb, pbStep, std::ref(curr), maxBounces, std::ref(prng)));
+		for(auto& t : threads) t.join();
+	}
+	else
+	{
+		bool done=false;
+			
+		//Pregather  photons
+		float invDiffPhotons = 1.f / (float)nPhotons;
 
-	   // Tried LD, get bad and strange results for some stategy.
-       s1 = hal1.getNext();
-	   s2 = hal2.getNext();
-       s3 = hal3.getNext();
-       s4 = hal4.getNext();
+		unsigned int ndPhotonStored = 0;
+	//	unsigned int ncPhotonStored = 0;
 
-		sL = float(curr) * invDiffPhotons; // Does sL also need more random for each pass?
-		int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
-		if(lightNum >= numDLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return; }
-
-		pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
-		ray.tmin = scene->rayMinDist;
-		ray.tmax = -1.0;
-		pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
-
-		if(pcol.isBlack())
+		while(!done)
 		{
-			++curr;
-			done = (curr >= nPhotons);
-			continue;
-		}
+			if(scene->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb) delete pb; return; }
+			state.chromatic = true;
+			state.wavelength = scrHalton(5, curr);
 
-		int nBounces=0;
-		bool causticPhoton = false;
-		bool directPhoton = true;
-		const material_t *material = nullptr;
-		BSDF_t bsdfs;
+		   // Tried LD, get bad and strange results for some stategy.
+		   s1 = hal1.getNext();
+		   s2 = hal2.getNext();
+		   s3 = hal3.getNext();
+		   s4 = hal4.getNext();
 
-		while( scene->intersect(ray, sp) ) //scatter photons.
-		{
-			if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
-			{ Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << ".\n"; continue; }
+			sL = float(curr) * invDiffPhotons; // Does sL also need more random for each pass?
+			int lightNum = lightPowerD->DSample(sL, &lightNumPdf);
+			if(lightNum >= numDLights){ Y_ERROR << integratorName << ": lightPDF sample error! "<<sL<<"/"<<lightNum<<"... stopping now.\n"; delete lightPowerD; return; }
 
-			color_t transm(1.f);
-			color_t vcol(0.f);
-			const volumeHandler_t* vol;
-
-			if(material)
-			{
-				if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * -ray.dir < 0)))
-				{
-					if(vol->transmittance(state, ray, vcol)) transm = vcol;
-				}
-			}
-
-			vector3d_t wi = -ray.dir, wo;
-			material = sp.material;
-			material->initBSDF(state, sp, bsdfs);
-
-			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-			if(!directPhoton && !causticPhoton && (bsdfs & (BSDF_DIFFUSE)))
-			{
-				photon_t np(wi, sp.P, pcol);// pcol used here
-
-				if(bHashgrid) photonGrid.pushPhoton(np);
-				else
-				{
-					session.diffuseMap->pushPhoton(np);
-					session.diffuseMap->setNumPaths(curr);
-				}
-				ndPhotonStored++;
-			}
-			// add caustic photon
-			if(!directPhoton && causticPhoton && (bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY)))
-			{
-				photon_t np(wi, sp.P, pcol);// pcol used here
-
-				if(bHashgrid) photonGrid.pushPhoton(np);
-				else
-				{
-					session.causticMap->pushPhoton(np);
-					session.causticMap->setNumPaths(curr);
-				}
-				ndPhotonStored++;
-			}
-
-			// need to break in the middle otherwise we scatter the photon and then discard it => redundant
-			if(nBounces == maxBounces) break;
-
-			// scatter photon
-			s5 = ourRandom(); // now should use this to see correctness
-			s6 = ourRandom();
-			s7 = ourRandom();
-
-			pSample_t sample(s5, s6, s7, BSDF_ALL, pcol, transm);
-
-			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
-			if(!scattered) break; //photon was absorped.  actually based on russian roulette
-
-			pcol = sample.color;
-
-			causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
-							((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
-			directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
-
-			if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
-				{
-					state.chromatic=false;
-					color_t wl_col;
-					wl2rgb(state.wavelength, wl_col);
-					pcol *= wl_col;
-				}
-				
-			ray.from = sp.P;
-			ray.dir = wo;
+			pcol = tmplights[lightNum]->emitPhoton(s1, s2, s3, s4, ray, lightPdf);
 			ray.tmin = scene->rayMinDist;
 			ray.tmax = -1.0;
-			++nBounces;
+			pcol *= fNumLights*lightPdf/lightNumPdf; //remember that lightPdf is the inverse of th pdf, hence *=...
 
+			if(pcol.isBlack())
+			{
+				++curr;
+				done = (curr >= nPhotons);
+				continue;
+			}
+
+			int nBounces=0;
+			bool causticPhoton = false;
+			bool directPhoton = true;
+			const material_t *material = nullptr;
+			BSDF_t bsdfs;
+
+			while( scene->intersect(ray, sp) ) //scatter photons.
+			{
+				if(std::isnan(pcol.R) || std::isnan(pcol.G) || std::isnan(pcol.B))
+				{ Y_WARNING << integratorName << ": NaN  on photon color for light" << lightNum + 1 << ".\n"; continue; }
+
+				color_t transm(1.f);
+				color_t vcol(0.f);
+				const volumeHandler_t* vol;
+
+				if(material)
+				{
+					if((bsdfs&BSDF_VOLUMETRIC) && (vol=material->getVolumeHandler(sp.Ng * -ray.dir < 0)))
+					{
+						if(vol->transmittance(state, ray, vcol)) transm = vcol;
+					}
+				}
+
+				vector3d_t wi = -ray.dir, wo;
+				material = sp.material;
+				material->initBSDF(state, sp, bsdfs);
+
+				//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
+				if(!directPhoton && !causticPhoton && (bsdfs & (BSDF_DIFFUSE)))
+				{
+					photon_t np(wi, sp.P, pcol);// pcol used here
+
+					if(bHashgrid) photonGrid.pushPhoton(np);
+					else
+					{
+						session.diffuseMap->pushPhoton(np);
+						session.diffuseMap->setNumPaths(curr);
+					}
+					ndPhotonStored++;
+				}
+				// add caustic photon
+				if(!directPhoton && causticPhoton && (bsdfs & (BSDF_DIFFUSE | BSDF_GLOSSY)))
+				{
+					photon_t np(wi, sp.P, pcol);// pcol used here
+
+					if(bHashgrid) photonGrid.pushPhoton(np);
+					else
+					{
+						session.causticMap->pushPhoton(np);
+						session.causticMap->setNumPaths(curr);
+					}
+					ndPhotonStored++;
+				}
+
+				// need to break in the middle otherwise we scatter the photon and then discard it => redundant
+				if(nBounces == maxBounces) break;
+
+				// scatter photon
+				s5 = ourRandom(); // now should use this to see correctness
+				s6 = ourRandom();
+				s7 = ourRandom();
+
+				pSample_t sample(s5, s6, s7, BSDF_ALL, pcol, transm);
+
+				bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+				if(!scattered) break; //photon was absorped.  actually based on russian roulette
+
+				pcol = sample.color;
+
+				causticPhoton = ((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_DISPERSIVE)) && directPhoton) ||
+								((sample.sampledFlags & (BSDF_GLOSSY | BSDF_SPECULAR | BSDF_FILTER | BSDF_DISPERSIVE)) && causticPhoton);
+				directPhoton = (sample.sampledFlags & BSDF_FILTER) && directPhoton;
+
+				if(state.chromatic && (sample.sampledFlags & BSDF_DISPERSIVE))
+					{
+						state.chromatic=false;
+						color_t wl_col;
+						wl2rgb(state.wavelength, wl_col);
+						pcol *= wl_col;
+					}
+					
+				ray.from = sp.P;
+				ray.dir = wo;
+				ray.tmin = scene->rayMinDist;
+				ray.tmax = -1.0;
+				++nBounces;
+
+			}
+			++curr;
+			if(curr % pbStep == 0) pb->update();
+			done = (curr >= nPhotons);
 		}
-		++curr;
-		if(curr % pbStep == 0) pb->update();
-		done = (curr >= nPhotons);
 	}
+	
 	pb->done();
 	//pb->setTag("Photon map built.");
 	Y_VERBOSE << integratorName << ":Photon map built." << yendl;
