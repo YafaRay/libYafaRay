@@ -582,7 +582,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 	int nThreads = scene->getNumThreadsPhotons();
 
-	nPhotons = (nPhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
+	nPhotons = std::max((unsigned int) nThreads, (nPhotons / nThreads) * nThreads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 	
 	Y_PARAMS << integratorName << ": Shooting "<<nPhotons<<" photons across " << nThreads << " threads (" << (nPhotons / nThreads) << " photons/thread)"<< yendl;
 

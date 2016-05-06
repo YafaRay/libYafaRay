@@ -646,7 +646,7 @@ bool photonIntegrator_t::preprocess()
 
 		int nThreads = scene->getNumThreadsPhotons();
 
-		nDiffusePhotons = (nDiffusePhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
+		nDiffusePhotons = std::max((unsigned int) nThreads, (nDiffusePhotons / nThreads) * nThreads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		
 		Y_PARAMS << integratorName << ": Shooting "<<nDiffusePhotons<<" photons across " << nThreads << " threads (" << (nDiffusePhotons / nThreads) << " photons/thread)"<< yendl;
 		
@@ -861,7 +861,7 @@ bool photonIntegrator_t::preprocess()
 
 		int nThreads = scene->getNumThreadsPhotons();
 
-		nCausPhotons = (nCausPhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
+		nCausPhotons = std::max((unsigned int) nThreads, (nCausPhotons / nThreads) * nThreads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		
 		Y_PARAMS << integratorName << ": Shooting "<<nCausPhotons<<" photons across " << nThreads << " threads (" << (nCausPhotons / nThreads) << " photons/thread)"<< yendl;
 

@@ -558,7 +558,7 @@ bool mcIntegrator_t::createCausticMap()
 
 		int nThreads = scene->getNumThreadsPhotons();
 
-		nCausPhotons = (nCausPhotons / nThreads) * nThreads; //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads)
+		nCausPhotons = std::max((unsigned int) nThreads, (nCausPhotons / nThreads) * nThreads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		
 		Y_PARAMS << integratorName << ": Shooting "<<nCausPhotons<<" photons across " << nThreads << " threads (" << (nCausPhotons / nThreads) << " photons/thread)"<< yendl;
 
