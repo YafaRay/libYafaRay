@@ -165,6 +165,7 @@ void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBo
 	{
 		localNodes[localNextFreeNode].createLeaf(prims[start]);
 		localNextFreeNode++;
+		--level;
 		return;
 	}
 	int splitAxis = nodeBound.largestAxis();
