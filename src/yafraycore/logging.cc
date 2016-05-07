@@ -57,8 +57,8 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	if(!mLoggingContact.empty()) txtLogFile << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
 	if(!mLoggingComments.empty()) txtLogFile << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
 
-	txtLogFile << std::endl << "Render Settings:" << std::endl << "  " << mRenderSettings << std::endl;
-	txtLogFile << std::endl << "AA and Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
+	txtLogFile << std::endl << "Render Information:" << std::endl << "  " << mRenderInfo << std::endl << "  " << mRenderSettings << std::endl;
+	txtLogFile << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
@@ -151,8 +151,8 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	htmlLogFile << "</table>" << std::endl;
 
 	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Render Settings:</th><td>" << mRenderSettings << "</td></tr>" << std::endl;
-	htmlLogFile << "<tr><th>AA and Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings <<"</p></td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>AA/Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
 	htmlLogFile << "</table>" << std::endl;
 
 	if(!m_MemoryLog.empty()) 

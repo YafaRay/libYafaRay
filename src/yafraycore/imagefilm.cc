@@ -542,6 +542,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	
 	std::stringstream ssLog;
 	ssLog << ssBadge.str();
+	yafLog.setRenderInfo(ssBadge.str());
 	
 	if(yafLog.getDrawRenderSettings()) ssBadge << " | " << yafLog.getRenderSettings();
 	if(yafLog.getDrawAANoiseSettings()) ssBadge << "\n" << yafLog.getAANoiseSettings();

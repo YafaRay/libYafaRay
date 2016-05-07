@@ -94,6 +94,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setImagePath(const std::string &path) { mImagePath = path; }
 		void appendAANoiseSettings(const std::string &aa_noise_settings);
 		void appendRenderSettings(const std::string &render_settings);
+		void setRenderInfo(const std::string &render_info) { mRenderInfo = render_info; }
 		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
 		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
 
@@ -164,6 +165,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingCustomIcon;		
 		std::string mAANoiseSettings;
 		std::string mRenderSettings;
+		std::string mRenderInfo;
 		bool drawAANoiseSettings = true;
 		bool drawRenderSettings = true;
 		std::time_t previousConsoleEventDateTime = 0;
