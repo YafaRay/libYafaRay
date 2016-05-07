@@ -264,7 +264,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
 
-				if(AA_dark_detection_type == DARK_DETECTION_LINEAR)
+				if(AA_dark_detection_type == DARK_DETECTION_LINEAR && AA_dark_threshold_factor > 0.f)
 				{
 					if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
 				}
