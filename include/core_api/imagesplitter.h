@@ -77,11 +77,12 @@ class imageSpliter_t
 };
 
 class imageSpliterCentreSorter_t {
-      int imageW, imageH;
+      int imageW, imageH, imageX0, imageY0;
 public:
-      imageSpliterCentreSorter_t(int image_w, int image_h) : imageW(image_w), imageH(image_h) {}
-      bool operator()(imageSpliter_t::region_t const & a, imageSpliter_t::region_t const & b) const {
-            return ((a.x - imageW/2) * (a.x - imageW/2) + (a.y - imageH/2) * (a.y - imageH/2)) < ((b.x - imageW/2) * (b.x - imageW/2) + (b.y - imageH/2) * (b.y - imageH/2));
+      imageSpliterCentreSorter_t(int image_w, int image_h, int image_x0, int image_y0) : imageW(image_w), imageH(image_h), imageX0(image_x0), imageY0(image_y0) {}
+      bool operator()(imageSpliter_t::region_t const & a, imageSpliter_t::region_t const & b) const
+      {
+            return ((a.x-imageX0 - imageW/2) * (a.x-imageX0 - imageW/2) + (a.y-imageY0 - imageH/2) * (a.y-imageY0 - imageH/2)) < ((b.x-imageX0 - imageW/2) * (b.x-imageX0 - imageW/2) + (b.y-imageY0 - imageH/2) * (b.y-imageY0 - imageH/2));
       }
 };
 
