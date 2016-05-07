@@ -32,9 +32,11 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrde
 
 	switch(tilesorder)
 	{
-		case RANDOM:	std::random_shuffle( regions_raw.begin(), regions_raw.end() );
-		case LINEAR:
-		default:	break;
+		case RANDOM:		std::random_shuffle( regions_raw.begin(), regions_raw.end() );
+		case CENTRE_RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
+							std::sort( regions.begin(), regions.end(), imageSpliterCentreSorter_t(w, h) );
+		case LINEAR:		break;
+		default:			break;
 	}
 
 	std::vector<region_t> regions_subdivided;
@@ -66,13 +68,19 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrde
 			}
 		}
 	}
-	
+
 	switch(tilesorder)
 	{
-		case RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
-						std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
-		case LINEAR:
-		default:	break;
+		case RANDOM:		std::random_shuffle( regions.begin(), regions.end() );
+							std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
+							break;
+		case CENTRE_RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
+							std::sort( regions.begin(), regions.end(), imageSpliterCentreSorter_t(w, h) );
+							std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
+							std::sort( regions_subdivided.begin(), regions_subdivided.end(), imageSpliterCentreSorter_t(w, h) );
+							break;				
+		case LINEAR: 		break;
+		default:			break;
 	}
 
 	regions.insert(regions.end(), regions_subdivided.begin(), regions_subdivided.end());

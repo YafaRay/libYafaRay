@@ -5,6 +5,7 @@
 #include <yafray_config.h>
 
 #include <vector>
+#include <cmath>
 
 __BEGIN_YAFRAY
 
@@ -53,7 +54,7 @@ struct renderArea_t
 class imageSpliter_t
 {
 	public:
-		enum tilesOrderType { LINEAR, RANDOM };
+		enum tilesOrderType { LINEAR, RANDOM, CENTRE_RANDOM };
 		imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder, int nthreads);
 		/* return the n-th area to be rendered.
 			\return false if n is out of range, true otherwise
@@ -64,6 +65,7 @@ class imageSpliter_t
 		int size()const {return regions.size();};
 
 	protected:
+	friend class imageSpliterCentreSorter_t;
 		struct region_t
 		{
 			int x,y,w,h;
@@ -73,6 +75,16 @@ class imageSpliter_t
 		std::vector<region_t> regions;
 		tilesOrderType tilesorder;
 };
+
+class imageSpliterCentreSorter_t {
+      int imageW, imageH;
+public:
+      imageSpliterCentreSorter_t(int image_w, int image_h) : imageW(image_w), imageH(image_h) {}
+      bool operator()(imageSpliter_t::region_t const & a, imageSpliter_t::region_t const & b) const {
+            return ((a.x - imageW/2) * (a.x - imageW/2) + (a.y - imageH/2) * (a.y - imageH/2)) < ((b.x - imageW/2) * (b.x - imageW/2) + (b.y - imageH/2) * (b.y - imageH/2));
+      }
+};
+
 
 __END_YAFRAY
 

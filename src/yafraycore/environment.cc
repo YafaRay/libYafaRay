@@ -608,13 +608,14 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
 
-	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::LINEAR;
+	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::CENTRE_RANDOM;
 	if(tiles_order)
 	{
 		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
 		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
+		else if(*tiles_order == "centre") tilesOrder = imageSpliter_t::CENTRE_RANDOM;
 	}
-	else Y_VERBOSE_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
+	else Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult);
 	
