@@ -48,6 +48,15 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	
+	std::stringstream aaSettings;
+	aaSettings << " passes=" << passNum << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples;
+	aaSettings << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
+
+	yafLog.appendAANoiseSettings(aaSettings.str());
+
+
+	session.setStatusTotalPasses(passNum);	//passNum is total number of passes in SPPM
 
 	AA_sample_multiplier = 1.f;
 	AA_light_sample_multiplier = 1.f;
@@ -56,17 +65,35 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	Y_VERBOSE << integratorName << ": AA_clamp_samples: "<< AA_clamp_samples << yendl;
 	Y_VERBOSE << integratorName << ": AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 
+	std::stringstream set;
+	
+	set << "SPPM  ";
+
+	if(trShad)
+	{
+		set << "ShadowDepth=" << sDepth << "  ";
+	}
+	set << "RayDepth=" << rDepth << "  ";
+	
+	yafLog.appendRenderSettings(set.str());
+	Y_VERBOSE << set.str() << yendl;
+
+
 	passString << "Rendering pass 1 of " << std::max(1, passNum) << "...";
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
 
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
+
+	imageFilm->reset_accumulated_image_area_flush_time();
+	gTimer.addEvent("image_area_flush");
+
 	imageFilm->init(passNum);
 	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 	const camera_t* camera = scene->getCamera();
-
+	
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
@@ -95,28 +122,21 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
+	session.setStatusRenderFinished();
 	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert") << "s." << yendl;
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
-
-	std::stringstream set;
 	
-	set << "SPPM  ";
-
-	if(trShad)
-	{
-		set << "ShadowDepth=" << sDepth << "  ";
-	}
-	set << "RayDepth=" << rDepth << "  ";
-
+	set.clear();
+	
 	set << "Passes rendered: " << passInfo << "  ";
 	
 	set << "\nPhotons=" << nPhotons << " search=" << nSearch <<" radius=" << dsRadius << "(init.estim=" << initialEstimate << ") total photons=" << totalnPhotons << "  ";
 	
 	yafLog.appendRenderSettings(set.str());
 	Y_VERBOSE << set.str() << yendl;
-	
+
 	return true;
 }
 
@@ -568,9 +588,17 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	unsigned char userdata[USER_DATA_SIZE+7];
 	state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
 	state.cam = scene->getCamera();
+		
 	progressBar_t *pb;
+	std::string previousProgressTag;
+	int previousProgressTotalSteps = 0;
 	int pbStep;
-	if(intpb) pb = intpb;
+	if(intpb)
+	{
+		pb = intpb;
+		previousProgressTag = pb->getTag();
+		previousProgressTotalSteps = pb->getTotalSteps();		
+	}
 	else pb = new ConsoleProgressBar_t(80);
 
 	if(bHashgrid) Y_INFO << integratorName << ": Building photon hashgrid..." << yendl;
@@ -578,7 +606,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 
 	pb->init(128);
 	pbStep = std::max(1U, nPhotons/128);
-	//pb->setTag("Building photon map...");
+	pb->setTag(previousProgressTag + " - building photon map...");
 
 	int nThreads = scene->getNumThreadsPhotons();
 
@@ -725,7 +753,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	}
 	
 	pb->done();
-	//pb->setTag("Photon map built.");
+	pb->setTag(previousProgressTag + " - photon map built.");
 	Y_VERBOSE << integratorName << ":Photon map built." << yendl;
 	Y_INFO << integratorName << ": Shot " << curr << " photons from " << numDLights << " light(s)" << yendl;
 	delete lightPowerD;
@@ -771,6 +799,12 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 		Y_INFO << integratorName << ": PhotonGrid building time: " << gTimer.getTime("prepass") << yendl;
 	else
 		Y_INFO << integratorName << ": PhotonMap building time: " << gTimer.getTime("prepass") << yendl;
+
+	if(intpb) 
+	{
+		intpb->setTag(previousProgressTag);
+		intpb->init(previousProgressTotalSteps);
+	}
 
 	return;
 }

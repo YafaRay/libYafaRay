@@ -49,12 +49,43 @@ class YAFRAYCORE_EXPORT session_t
 {
 	public:
 		session_t();
+		session_t(const session_t&);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
 		
 		~session_t();
+				
+		void setStatusRenderStarted();
+		void setStatusRenderResumed();
+		void setStatusRenderFinished();
+		void setStatusRenderAborted();
+		void setStatusTotalPasses(int total_passes);
+		void setStatusCurrentPass(int current_pass);
+		void setStatusCurrentPassPercent(float current_pass_percent);
+		void setInteractive(bool interactive);
 		
-		photonMap_t * causticMap;
-		photonMap_t * diffuseMap;
-		photonMap_t * radianceMap;
+		bool renderInProgress();
+		bool renderResumed();
+		bool renderFinished();
+		bool renderAborted();
+		int totalPasses();
+		int currentPass();
+		float currentPassPercent();
+		bool isInteractive();
+				
+		photonMap_t * causticMap = nullptr;
+		photonMap_t * diffuseMap = nullptr;
+		photonMap_t * radianceMap = nullptr;
+		
+		std::mutex mutx;
+	
+	protected:
+		bool mRenderInProgress = false;
+		bool mRenderFinished = false;
+		bool mRenderResumed = false;
+		bool mRenderAborted = false;
+		int mTotalPasses = 0;
+		int mCurrentPass = 0;
+		float mCurrentPassPercent = 0.f;
+		bool mInteractive = false;
 };
 
 extern YAFRAYCORE_EXPORT session_t session;

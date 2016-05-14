@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <algorithm>
+#include <signal.h>
 
 #ifdef WIN32
 	#include <windows.h>
@@ -18,8 +19,33 @@
 
 using namespace::yafaray;
 
+scene_t *globalScene = nullptr;
+
+void ctrl_c_handler(int signal)
+{
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}	
+}
+
 int main(int argc, char *argv[])
 {
+	//handle CTRL+C events
+	struct sigaction signalHandler;
+	signalHandler.sa_handler = ctrl_c_handler;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	sigaction(SIGINT, &signalHandler, nullptr);
+	
 	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
 
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
@@ -86,7 +112,6 @@ int main(int argc, char *argv[])
 	parse.setOption("l","log-file-output", false, "Enable log file output(s): \"none\", \"txt\", \"html\" or \"txt+html\". Log file name will be same as selected image name,");
 	parse.setOption("z","z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz","no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
-    parse.setOption("pst","partial-save-timer", false, "Sets timer in seconds for partial saving of images during render. If set to 0 (default) it will disable this feature. IMPORTANT: the more frequently partial images are saved, the slower the render will be.");
 	
 	bool parseOk = parse.parseCommandLine();
 	
@@ -120,7 +145,6 @@ int main(int argc, char *argv[])
 	int threads = parse.getOptionInteger("t");
 	bool zbuf = parse.getFlag("z");
 	bool nozbuf = parse.getFlag("nz");
-	int partial_save_timer = parse.getOptionInteger("pst");
     
 	if(format.empty()) format = "tga";
 	bool formatValid = false;
@@ -164,6 +188,9 @@ int main(int argc, char *argv[])
 	}
 	
 	scene_t *scene = new scene_t(env);
+	
+	globalScene = scene;	//for the CTRL+C handler
+	
 	env->setScene(scene);
 	paraMap_t render;
 	
@@ -235,13 +262,11 @@ int main(int argc, char *argv[])
 	else return 1;
 	
 	if(! env->setupScene(*scene, render, *out) ) return 1;
-    
     imageFilm_t *film = scene->getImageFilm();
-    film->setInteractive(false);
-    film->setImageOutputPartialSaveTimeInterval((double) partial_save_timer);
-	
-
+    session.setInteractive(false);
+	session.setStatusRenderStarted();
 	scene->render();
+	
 	env->clearAll();
 
 	delete film;

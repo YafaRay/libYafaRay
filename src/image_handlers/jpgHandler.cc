@@ -24,6 +24,7 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
 
 #include <cstdio>
 #include <locale>
@@ -140,7 +141,8 @@ colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 
 bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << yendl;
+	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << name << "\"..." << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << yendl;
 
 	FILE * fp;
 	struct jpeg_compress_struct info;
@@ -202,7 +204,8 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	if(m_hasAlpha)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
-		Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << yendl;
+		if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"..." << yendl;
+		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << yendl;
 
 		fp = fopen(alphaname.c_str(), "wb");
 		

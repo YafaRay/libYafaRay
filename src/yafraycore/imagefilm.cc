@@ -122,7 +122,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
-	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(nullptr), pbar(nullptr),
+	split(true), abort(false), saveEndPass(false), imageOutputPartialSaveTimeInterval(0.0), splitter(nullptr), pbar(nullptr),
 	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false)
 {
 	cx1 = xstart + width;
@@ -168,6 +168,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	area_cnt = 0;
 
 	pbar = new ConsoleProgressBar_t(80);
+	session.setStatusCurrentPassPercent(pbar->getPercent());
 	
 	AA_detect_color_noise = false;
 	AA_dark_threshold_factor = 0.f;
@@ -221,6 +222,7 @@ void imageFilm_t::init(int numPasses)
 	else area_cnt = 1;
 
 	if(pbar) pbar->init(w * h);
+	session.setStatusCurrentPassPercent(pbar->getPercent());
 
 	abort = false;
 	completed_cnt = 0;
@@ -235,6 +237,24 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	splitterMutex.unlock();
 	nPass++;
 	std::stringstream passString;
+	
+	if(session.isInteractive())
+	{
+		colorOutput_t *out2 = env->getOutput2();
+
+		if(out2 && saveEndPass && session.renderInProgress())
+		{
+			this->flush(numView, IF_ALL, out2);
+		}
+	}
+	else
+	{
+		if(output && saveEndPass && session.renderInProgress())
+		{
+			this->flush(numView, IF_ALL, output);
+		}
+	}
+
 
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
@@ -350,7 +370,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				{	
 					++n_resample;
 												
-					if(interactive && showMask)
+					if(session.isInteractive() && showMask)
 					{
 						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 						{
@@ -373,8 +393,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 		n_resample = h*w;
 	}
 
-	//if(interactive) //FIXME DAVID, SHOULD I PUT THIS BACK?, TEST WITH BLENDER AND XML+MULTILAYER
-	output->flush(numView, env->getRenderPasses());
+	if(session.isInteractive())	output->flush(numView, env->getRenderPasses());
 
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
@@ -383,6 +402,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	if(pbar)
 	{
 		pbar->init(w * h);
+		session.setStatusCurrentPassPercent(pbar->getPercent());
 		pbar->setTag(passString.str().c_str());
 	}
 	completed_cnt = 0;
@@ -410,7 +430,7 @@ bool imageFilm_t::nextArea(int numView, renderArea_t &a)
 			a.sy0 = a.Y + ifilterw;
 			a.sy1 = a.Y + a.H - ifilterw;
 
-			if(interactive)
+			if(session.isInteractive())
 			{
 				outMutex.lock();
 				int end_x = a.X+a.W, end_y = a.Y+a.H;
@@ -472,17 +492,33 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 		}
 	}
 
-	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
+	if(session.isInteractive())
+	{
+		output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
+        gTimer.stop("image_area_flush");
+        accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
+        if(accumulated_image_area_flush_time < 0.f) reset_accumulated_image_area_flush_time(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+        gTimer.start("image_area_flush");
+
+		colorOutput_t *out2 = env->getOutput2();
+        
+        if(out2 && session.renderInProgress() && ((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)))
+        {
+			this->flush(numView, IF_ALL, out2); 
+			reset_accumulated_image_area_flush_time();
+        }
+	}
     
     else
     { 
         gTimer.stop("image_area_flush");
         accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
+        if(accumulated_image_area_flush_time < 0.f) reset_accumulated_image_area_flush_time(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
         gTimer.start("image_area_flush");
-        
-        if((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
+
+        if(session.renderInProgress() && (imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
         {
-             output->flush(numView, env->getRenderPasses());
+             this->flush(numView, IF_ALL, output); 
              reset_accumulated_image_area_flush_time();
         }
     }
@@ -491,6 +527,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
     {
         if(++completed_cnt == area_cnt) pbar->done();
         else pbar->update(a.W * a.H);
+        session.setStatusCurrentPassPercent(pbar->getPercent());
     }
     
 	outMutex.unlock();
@@ -498,12 +535,16 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 {
-	outMutex.lock();
+	if(session.renderFinished())
+	{
+		outMutex.lock();
+		Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
+	}
 
-	Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
-
-	colorOutput_t *colout = out ? out : output;
+	colorOutput_t *out1 = out ? out : output;
 	colorOutput_t *out2 = env->getOutput2();
+	
+	if(out1 == out2) out1 = nullptr;	//if we are already flushing the secondary output (out2) as main output (out1), then disable out1 to avoid duplicated work
 
 #ifdef RELEASE
 	std::string version = std::string(VERSION);
@@ -522,10 +563,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	ssBadge << "\nYafaRay (" << version << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler(); 
 
 	ssBadge << std::setprecision(2);
-	double times = gTimer.getTime("rendert");
+	double times = gTimer.getTimeNotStopping("rendert");
+	if(session.renderFinished()) times = gTimer.getTime("rendert");
 	int timem, timeh;
 	gTimer.splitTime(times, &times, &timem, &timeh);
 	ssBadge << " | " << w << "x" << h;
+	if(session.renderInProgress()) ssBadge << " | in progress " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else if(session.renderAborted()) ssBadge << " | stopped at " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else ssBadge << " | " << session.totalPasses() << " passes";
 	//if(cx0 != 0) ssBadge << ", xstart=" << cx0; 
 	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
 	ssBadge << " | Render time:";
@@ -533,7 +578,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	if (timem > 0) ssBadge << " " << timem << "m";
 	ssBadge << " " << times << "s";
 	
-	times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
+	times = gTimer.getTimeNotStopping("rendert") + gTimer.getTime("prepass");
+	if(session.renderFinished()) times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
 	gTimer.splitTime(times, &times, &timem, &timeh);
 	ssBadge << " | Total time:";
 	if (timeh > 0) ssBadge << " " << timeh << "h";
@@ -552,13 +598,15 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(yafLog.getUseParamsBadge())
 	{
-		if((colout && colout->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings(ssBadge);
+		if((out1 && out1->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings(ssBadge);
 	}
 
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
-	for (std::string line; std::getline(ssLog, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
-
+	if(session.renderFinished())
+	{
+		Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+		for (std::string line; std::getline(ssLog, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
+		Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+	}
 	
 #ifndef HAVE_FREETYPE
 	Y_WARNING << "imageFilm: Compiled without FreeType support." << yendl;
@@ -576,7 +624,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	int outputDisplaceRenderedImageBadgeHeight = 0, out2DisplaceRenderedImageBadgeHeight = 0;
 	
-	if(colout && colout->isImageOutput() && yafLog.isParamsBadgeTop()) outputDisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
+	if(out1 && out1->isImageOutput() && yafLog.isParamsBadgeTop()) outputDisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
 	
 	if(out2 && out2->isImageOutput() && yafLog.isParamsBadgeTop()) out2DisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
 
@@ -624,14 +672,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				}
 			}
 
-			colout->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
+			if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
 			if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
 		}
 	}
 
 	if(yafLog.getUseParamsBadge() && dpimage)
 	{
-		if(colout && colout->isImageOutput())
+		if(out1 && out1->isImageOutput())
 		{
 			int badgeStartY = h;
 			
@@ -646,7 +694,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses[idx] = colorA_t(dpcol, 1.f);
 					}
-					colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+					out1->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 				}
 			}
 		}
@@ -672,12 +720,15 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		}
 	}
 
-	colout->flush(numView, env->getRenderPasses());
+	if(out1 && (session.renderFinished() || !out2)) out1->flush(numView, env->getRenderPasses());
 	if(out2) out2->flush(numView, env->getRenderPasses());
 
-	outMutex.unlock();
-
-	Y_VERBOSE << "imageFilm: Done." << yendl;
+	if(session.renderFinished())
+	{
+		yafLog.clearMemoryLog();
+		outMutex.unlock();
+		Y_VERBOSE << "imageFilm: Done." << yendl;
+	}
 }
 
 bool imageFilm_t::doMoreSamples(int x, int y) const
@@ -889,7 +940,11 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 {
-	if(dpimage) return;
+	if(dpimage)
+	{
+		delete dpimage;
+		dpimage = nullptr;
+	}
 
 	dpHeight = yafLog.getBadgeHeight();
 
@@ -1040,7 +1095,7 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 		delete logo;
 	}
 
-	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
+	Y_VERBOSE << "imageFilm: Rendering parameters badge created." << yendl;
 }
 
 float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)

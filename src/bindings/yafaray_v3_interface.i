@@ -464,7 +464,8 @@ public:
 
 	virtual void init(int totalSteps)
 	{
-		steps_to_percent = 1.f / (float) totalSteps;
+		nSteps = totalSteps;
+		steps_to_percent = 1.f / (float) nSteps;
 		doneSteps = 0;
 		report_progress(0.f);
 	}
@@ -482,6 +483,7 @@ public:
 
 	virtual void setTag(const char* text)
 	{
+		tag = std::string(text);
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text);
@@ -490,11 +492,31 @@ public:
 		PyGILState_Release(gstate);
 	}
 
+	virtual void setTag(std::string text)
+	{
+		tag = text;
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text.c_str());
+		Py_XDECREF(result);
+		//std::cout << "setTag: result->ob_refcnt=" << result->ob_refcnt << std::endl;
+		PyGILState_Release(gstate);
+	}
+	
+	virtual std::string getTag() const
+	{
+		return tag;
+	}
+	
+	virtual float getPercent() const { return 100.f * std::min(1.f, (float) doneSteps * steps_to_percent); }
+	virtual float getTotalSteps() const { return nSteps; } 
+
 private:
 
 	PyObject *callb;
 	float steps_to_percent;
-	int doneSteps;
+	int doneSteps, nSteps;
+	std::string tag;
 };
 
 %}
@@ -722,6 +744,7 @@ namespace yafaray
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 			virtual bool setLoggingAndBadgeSettings();
 			virtual bool setupRenderPasses(); //!< setup render passes information
+			bool setInteractive(bool interactive);
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }
 			virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output

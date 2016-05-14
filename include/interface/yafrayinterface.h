@@ -87,6 +87,7 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
+		bool setInteractive(bool interactive);
 		virtual void abort();
 		virtual paraMap_t* getRenderParameters() { return params; }
 		virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output

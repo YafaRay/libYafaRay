@@ -25,10 +25,12 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
 
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <iomanip>
 
 #include "hdrUtils.h"
 
@@ -451,7 +453,8 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 	else
 	{
-		Y_INFO << handlerName << ": Saving RGBE file as \"" << name << "\"..." << yendl;
+		if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGBE file as \"" << name << "\"..." << yendl;
+		else Y_INFO << handlerName << ": Saving RGBE file as \"" << name << "\"..." << yendl;
 		if (m_hasAlpha) Y_VERBOSE << handlerName << ": Ignoring alpha channel." << yendl;
 
 		writeHeader(file);

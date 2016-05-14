@@ -85,6 +85,12 @@ bool yafrayInterface_t::setupRenderPasses()
 	return true;
 }
 
+bool yafrayInterface_t::setInteractive(bool interactive)
+{
+	session.setInteractive(interactive);
+	return true;
+}
+
 bool yafrayInterface_t::startGeometry() { return scene->startGeometry(); }
 
 bool yafrayInterface_t::endGeometry() { return scene->endGeometry(); }
@@ -288,7 +294,7 @@ VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name)
 	return nullptr;
 }
 
-unsigned int yafrayInterface_t::createObject	(const char* name)
+unsigned int yafrayInterface_t::createObject(const char* name)
 {
 	object3d_t *object = env->createObject(name, *params);
 	if(!object) return 0;
@@ -297,7 +303,12 @@ unsigned int yafrayInterface_t::createObject	(const char* name)
 	return 0;
 }
 
-void yafrayInterface_t::abort(){ if(scene) scene->abort(); }
+void yafrayInterface_t::abort()
+{
+	if(scene) scene->abort(); 
+	session.setStatusRenderAborted();
+	Y_WARNING << "Interface: Render aborted by user." << yendl;
+}
 
 bool yafrayInterface_t::getRenderedImage(int numView, colorOutput_t &output)
 {
@@ -368,6 +379,7 @@ void yafrayInterface_t::printError(const std::string &msg)
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 {
 	if(! env->setupScene(*scene, *params, output, pb) ) return;
+	session.setStatusRenderStarted();
 	scene->render();
 	film = scene->getImageFilm();
 	//delete film;

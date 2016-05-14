@@ -116,10 +116,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
 		void setAAThreshold(CFLOAT thresh){ AA_thesh=thresh; }
-		/*! Enables interactive color buffer output for preview during render */
-		void setInteractive(bool ia){ interactive = ia; }
         /*! Enables partial image saving during render every time_interval seconds. Time=0.0 (default) disables partial saving. */
 		void setImageOutputPartialSaveTimeInterval(double time_interval){ imageOutputPartialSaveTimeInterval = time_interval; }
+		void setImageOutputPartialSaveEndPass(bool save_end_pass) { saveEndPass = save_end_pass; }
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
@@ -129,6 +128,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void drawRenderSettings(std::stringstream & ss);
         void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
         float dark_threshold_curve_interpolate(float pixel_brightness);
+        int getWidth() const { return w; }
+        int getHeight() const { return h; }
+        int getNumPasses() const { return nPasses; }
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -159,7 +161,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorOutput_t *output;
 		// Thread mutes for shared access
 		std::mutex imageMutex, splitterMutex, outMutex, densityImageMutex;
-		bool split, interactive, abort;
+		bool split, abort;
+		bool saveEndPass;
         double imageOutputPartialSaveTimeInterval;
 		bool estimateDensity;
 		int numSamples;

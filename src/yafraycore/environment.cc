@@ -567,6 +567,8 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool premult2 = false;
+	float partial_save_timer = 0.f;
+	bool partial_save_each_pass = false;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -583,7 +585,9 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
-
+	params.getParam("partial_save_timer", partial_save_timer); // Time for partially save image
+	params.getParam("partial_save_each_pass", partial_save_each_pass); // If enabled, it will autosave the image at the end of each pass
+	
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
@@ -634,6 +638,19 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else film->setColorSpace2(color_space2, gamma2);
 
 	film->setPremult2(premult2);
+
+	if(partial_save_each_pass)
+	{
+		Y_INFO_ENV << "Autosave partially rendered image at the end of each pass" << yendl;
+		film->setImageOutputPartialSaveTimeInterval(0.0);
+		film->setImageOutputPartialSaveEndPass(true);
+	}
+	else
+	{
+		Y_INFO_ENV << "Autosave partially rendered image using time interval = " << partial_save_timer << "s" << yendl;
+		if(partial_save_timer > 0.f) film->setImageOutputPartialSaveTimeInterval((double) partial_save_timer);
+		film->setImageOutputPartialSaveEndPass(false);
+	}
 
 	return film;
 }
@@ -758,8 +775,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
-	float adv_min_raydist_value=MIN_RAYDIST;        
-	std::stringstream aaSettings;
+	float adv_min_raydist_value=MIN_RAYDIST;
 
 	if(! params.getParam("camera_name", name) )
 	{
@@ -838,19 +854,14 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	params.getParam("filter_type", name); // AA filter type
 	
+	std::stringstream aaSettings;
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "):";
+	yafLog.appendAANoiseSettings(aaSettings.str());
+	
 	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;
 	else if(AA_dark_detection_type_string == "curve") AA_dark_detection_type = DARK_DETECTION_CURVE;
 	else AA_dark_detection_type = DARK_DETECTION_NONE;
 	
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): passes=" << AA_passes << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise;
-	
-	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " dark.thr(lin),fac=" << AA_dark_threshold_factor;
-	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " dark.thr(curve)";
- 
-	aaSettings << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
-
-	yafLog.appendAANoiseSettings(aaSettings.str());
-
 	//setup scene and render.
 	scene.setImageFilm(film);
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);

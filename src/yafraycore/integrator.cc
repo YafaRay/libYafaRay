@@ -113,7 +113,21 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	
+	std::stringstream aaSettings;
+	aaSettings << " passes=" << AA_passes;
+	aaSettings << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise;
+	
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " dark.thr(lin),fac=" << AA_dark_threshold_factor;
+	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " dark.thr(curve)";
+ 
+	aaSettings << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
+
+	yafLog.appendAANoiseSettings(aaSettings.str());
+
 	iAA_passes = 1.f / (float) AA_passes;
+
+	session.setStatusTotalPasses(AA_passes);
 
 	AA_sample_multiplier = 1.f;
 	AA_light_sample_multiplier = 1.f;
@@ -136,6 +150,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	Y_VERBOSE << "AA_clamp_samples: "<< AA_clamp_samples << yendl;
 	Y_VERBOSE << "AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
 	Y_PARAMS << "Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
+	
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
 	Y_INFO << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
@@ -207,6 +222,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
+	session.setStatusRenderFinished();
 	Y_INFO << integratorName << ": Overall rendertime: " << gTimer.getTime("rendert") << "s" << yendl;
 
 	return true;
@@ -218,6 +234,8 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 	prePass(samples, offset, adaptive);
 
 	int nthreads = scene->getNumThreads();
+
+	session.setStatusCurrentPass(AA_pass_number+1);
 
 	if(nthreads>1)
 	{
@@ -232,7 +250,10 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 		while(tc.finishedThreads < nthreads)
 		{
 			tc.c.wait(lk);
-			for(size_t i=0; i<tc.areas.size(); ++i) imageFilm->finishArea(numView, tc.areas[i]);
+			for(size_t i=0; i<tc.areas.size(); ++i)
+			{				
+				imageFilm->finishArea(numView, tc.areas[i]);
+			}
 			tc.areas.clear();
 		}
 

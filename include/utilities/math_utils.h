@@ -50,4 +50,10 @@ inline int Ceil2Int(double val) {
 	#endif
 }
 
+inline double RoundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
+{
+	if(precision <= 0.0) return 0.0;
+	else return std::round(val / precision) * precision;
+}
+
 #endif // Y_MATHUTIL_H

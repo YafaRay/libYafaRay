@@ -24,6 +24,7 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -96,7 +97,8 @@ exrHandler_t::~exrHandler_t()
 
 bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
+	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -141,7 +143,8 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 {
     std::string extPassName;
     
-    Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
+    if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
+    else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
