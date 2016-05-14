@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 	SetConsoleCtrlHandler(ctrl_c_handler, true);
 #else
-	struct std::sigaction signalHandler;
+	struct sigaction signalHandler;
 	signalHandler.sa_handler = ctrl_c_handler;
-	std::sigemptyset(&signalHandler.sa_mask);
+	sigemptyset(&signalHandler.sa_mask);
 	signalHandler.sa_flags = 0;
-	std::sigaction(SIGINT, &signalHandler, nullptr);
+	sigaction(SIGINT, &signalHandler, nullptr);
 #endif
 
 	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
