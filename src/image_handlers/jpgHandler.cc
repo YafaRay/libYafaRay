@@ -141,8 +141,10 @@ colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
 
 bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << name << "\"..." << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << name << "\"..." << yendl;
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	FILE * fp;
 	struct jpeg_compress_struct info;

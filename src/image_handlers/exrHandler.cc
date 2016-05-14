@@ -97,8 +97,10 @@ exrHandler_t::~exrHandler_t()
 
 bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -142,9 +144,12 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
     std::string extPassName;
+
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
     
-    if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
-    else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
+    if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+    else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
