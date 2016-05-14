@@ -21,6 +21,23 @@ using namespace::yafaray;
 
 scene_t *globalScene = nullptr;
 
+#ifdef WIN32
+BOOL WINAPI ctrl_c_handler(DWORD signal) {
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}
+    return TRUE;
+}
+#else
 void ctrl_c_handler(int signal)
 {
 	if(globalScene)
@@ -36,16 +53,21 @@ void ctrl_c_handler(int signal)
 		exit(1);
 	}	
 }
+#endif
 
 int main(int argc, char *argv[])
 {
 	//handle CTRL+C events
-	struct sigaction signalHandler;
+#ifdef WIN32
+	SetConsoleCtrlHandler(ctrl_c_handler, true);
+#else
+	struct std::sigaction signalHandler;
 	signalHandler.sa_handler = ctrl_c_handler;
-	sigemptyset(&signalHandler.sa_mask);
+	std::sigemptyset(&signalHandler.sa_mask);
 	signalHandler.sa_flags = 0;
-	sigaction(SIGINT, &signalHandler, nullptr);
-	
+	std::sigaction(SIGINT, &signalHandler, nullptr);
+#endif
+
 	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
 
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
