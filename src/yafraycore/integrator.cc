@@ -35,8 +35,10 @@
 
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
+#include <boost/filesystem.hpp>
 
 #include <sstream>
+#include <boost/filesystem.hpp>
 
 __BEGIN_YAFRAY
 

@@ -130,7 +130,16 @@ void session_t::setInteractive(bool interactive)
 
 void session_t::setPathYafaRayXml(std::string path)
 {
+	mutx.lock();
 	mPathYafaRayXml = path;
+	mutx.unlock();
+}
+
+void session_t::setPathImageOutput(std::string path)
+{
+	mutx.lock();
+	mPathImageOutput = path;
+	mutx.unlock();
 }
 
 bool session_t::renderInProgress()
@@ -176,6 +185,11 @@ bool session_t::isInteractive()
 std::string session_t::getPathYafaRayXml()
 {
 	return mPathYafaRayXml;
+}
+
+std::string session_t::getPathImageOutput()
+{
+	return mPathImageOutput;
 }
 
 __END_YAFRAY

@@ -36,6 +36,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <utility>
+#include <boost/filesystem.hpp>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -175,6 +176,9 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	AA_variance_edge_size = 10;
 	AA_variance_pixels = 0;
 	AA_clamp_samples = 0.f;
+	
+	autoSave = false;
+	autoLoad = false;
 }
 
 imageFilm_t::~imageFilm_t ()
@@ -228,6 +232,24 @@ void imageFilm_t::init(int numPasses)
 	completed_cnt = 0;
 	nPass = 1;
 	nPasses = numPasses;
+
+	if(autoLoad)
+	{
+		std::string filmPath = session.getPathImageOutput()+".film";
+		std::string filmPathBackup = filmPath+"-previous.bak";
+		Y_INFO << "imageFilm: Loading film from: \"" << filmPath << "\"" << yendl;
+		this->imageFilmLoad(filmPath, false);
+		Y_VERBOSE << "imageFilm: Making backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+		try
+		{	
+			boost::filesystem::copy_file(filmPath, filmPathBackup, boost::filesystem::copy_option::overwrite_if_exists);
+		}
+		catch(const boost::filesystem::filesystem_error& e)
+		{
+			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+		}
+		session.setStatusRenderResumed();
+	}
 }
 
 int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
@@ -723,6 +745,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	if(out1 && (session.renderFinished() || !out2)) out1->flush(numView, env->getRenderPasses());
 	if(out2) out2->flush(numView, env->getRenderPasses());
 
+	if(autoSave)
+	{
+		std::string filmPath = session.getPathImageOutput()+".film";
+		Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\"" << yendl;
+		this->imageFilmSave(filmPath, false);
+		Y_VERBOSE << "imageFilm: Saved film to: \"" << filmPath << "\"" << yendl;
+	}
+	
 	if(session.renderFinished())
 	{
 		yafLog.clearMemoryLog();
@@ -1114,6 +1144,82 @@ float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
 	else if(pixel_brightness > 1.20f && pixel_brightness <= 1.40f) return (0.0800f + (pixel_brightness - 1.20f) * (0.0950f - 0.0800f) / 0.20f);
 	else if(pixel_brightness > 1.40f && pixel_brightness <= 1.80f) return (0.0950f + (pixel_brightness - 1.40f) * (0.1000f - 0.0950f) / 0.40f);
 	else return 0.1000f;
+}
+
+void imageFilm_t::setAutoSave(bool auto_save)
+{
+	autoSave = auto_save;
+}
+
+void imageFilm_t::setAutoLoad(bool auto_load)
+{
+	autoLoad = auto_load;
+}
+
+bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat)
+{
+	try
+	{
+		std::ifstream ifs(filename, std::fstream::binary);
+		
+		if(debugXMLformat)
+		{
+			boost::archive::xml_iarchive ia(ifs);
+			//map->clear(); //FIXME DAVID
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		else
+		{
+			boost::archive::binary_iarchive ia(ifs);
+			//map->clear(); //FIXME DAVID
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		return true;
+	}
+	catch(std::exception& ex){
+        // elminate any dangling references
+        //map->clear(); //FIXME DAVID
+        Y_WARNING << "imageFilm: error '" << ex.what() << "' while loading ImageFilm file: '" << filename << "'" << yendl;
+		return false;
+    }
+}
+
+bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat)
+{
+	try
+	{
+		std::ofstream ofs(filename+".tmp", std::fstream::binary);
+
+		if(debugXMLformat)
+		{
+			boost::archive::xml_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+		else
+		{
+			boost::archive::binary_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+	}
+	catch(std::exception& ex){
+        Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filename << "'" << yendl;
+		return false;
+    }
+    
+	try
+	{
+		boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
+		boost::filesystem::remove(filename+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+		Y_WARNING << "imageFilm: file operation error \"" << e.what() << yendl;
+	}
+	return true;
 }
 
 __END_YAFRAY

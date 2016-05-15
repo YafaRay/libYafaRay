@@ -30,7 +30,7 @@ __BEGIN_YAFRAY
 
 imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
-	//empty
+	session.setPathImageOutput(fname);
 }
 
 imageOutput_t::imageOutput_t()

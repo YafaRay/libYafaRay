@@ -7,6 +7,13 @@
 #include <vector>
 #include <cmath>
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+
 __BEGIN_YAFRAY
 
 struct renderArea_t
@@ -45,6 +52,24 @@ struct renderArea_t
 //	std::vector<colorA_t> image;
 //	std::vector<PFLOAT> depth;
 	std::vector<bool> resample;
+
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(X);
+		ar & BOOST_SERIALIZATION_NVP(Y);
+		ar & BOOST_SERIALIZATION_NVP(W);
+		ar & BOOST_SERIALIZATION_NVP(H);
+		ar & BOOST_SERIALIZATION_NVP(realX);
+		ar & BOOST_SERIALIZATION_NVP(realY);
+		ar & BOOST_SERIALIZATION_NVP(realW);
+		ar & BOOST_SERIALIZATION_NVP(realH);
+		ar & BOOST_SERIALIZATION_NVP(sx0);
+		ar & BOOST_SERIALIZATION_NVP(sx1);
+		ar & BOOST_SERIALIZATION_NVP(sy0);
+		ar & BOOST_SERIALIZATION_NVP(sy1);
+		ar & BOOST_SERIALIZATION_NVP(resample);
+	}
 };
 
 /*!	Splits the image to be rendered into pieces, e.g. "buckets" for
@@ -55,6 +80,7 @@ class imageSpliter_t
 {
 	public:
 		enum tilesOrderType { LINEAR, RANDOM, CENTRE_RANDOM };
+		imageSpliter_t() {};
 		imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrderType torder, int nthreads);
 		/* return the n-th area to be rendered.
 			\return false if n is out of range, true otherwise
@@ -70,10 +96,27 @@ class imageSpliter_t
 		{
 			int x,y,w,h;
 //			int rx,ry,rw,rh;
+			template<class Archive> void serialize(Archive & ar, const unsigned int version)
+			{
+				ar & BOOST_SERIALIZATION_NVP(x);
+				ar & BOOST_SERIALIZATION_NVP(y);
+				ar & BOOST_SERIALIZATION_NVP(w);
+				ar & BOOST_SERIALIZATION_NVP(h);
+			}
 		};
 		int width,height,blocksize;
 		std::vector<region_t> regions;
 		tilesOrderType tilesorder;
+
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(width);
+			ar & BOOST_SERIALIZATION_NVP(height);
+			ar & BOOST_SERIALIZATION_NVP(blocksize);
+			ar & BOOST_SERIALIZATION_NVP(regions);
+			ar & BOOST_SERIALIZATION_NVP(tilesorder);
+		}
 };
 
 class imageSpliterCentreSorter_t {

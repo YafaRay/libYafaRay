@@ -130,7 +130,12 @@ class YAFRAYCORE_EXPORT imageFilm_t
         float dark_threshold_curve_interpolate(float pixel_brightness);
         int getWidth() const { return w; }
         int getHeight() const { return h; }
+        int getCurrentPass() const { return nPass; }
         int getNumPasses() const { return nPasses; }
+        void setAutoSave(bool auto_save);
+        void setAutoLoad(bool auto_load);
+        bool imageFilmLoad(const std::string &filename, bool debugXMLformat);
+        bool imageFilmSave(const std::string &filename, bool debugXMLformat);
 
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -177,6 +182,19 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool premultAlpha2;	//For optional secondary file output
 		int nPasses;
         double accumulated_image_area_flush_time;
+        bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
+        bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
+        
+		friend class boost::serialization::access;
+		template<class Archive> void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(imagePasses);
+			//ar & BOOST_SERIALIZATION_NVP(densityImage);
+			//ar & BOOST_SERIALIZATION_NVP(dpimage);
+			//ar & BOOST_SERIALIZATION_NVP(flags);
+			//ar & BOOST_SERIALIZATION_NVP(splitter);
+			//ar & BOOST_SERIALIZATION_NVP(nPass);
+		}
 };
 
 __END_YAFRAY
