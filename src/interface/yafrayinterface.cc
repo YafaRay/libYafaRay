@@ -5,11 +5,63 @@
 #include <core_api/imagefilm.h>
 #include <core_api/integrator.h>
 #include <core_api/matrix4.h>
+#include <signal.h>
+
+#ifdef WIN32
+	#include <windows.h>
+#endif
 
 __BEGIN_YAFRAY
 
+scene_t *globalScene = nullptr;
+
+#ifdef WIN32
+BOOL WINAPI ctrl_c_handler(DWORD signal) {
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}
+    return TRUE;
+}
+#else
+void ctrl_c_handler(int signal)
+{
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}	
+}
+#endif
+
 yafrayInterface_t::yafrayInterface_t(): scene(nullptr), film(nullptr), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
+	//handle CTRL+C events
+#ifdef WIN32
+	SetConsoleCtrlHandler(ctrl_c_handler, true);
+#else
+	struct sigaction signalHandler;
+	signalHandler.sa_handler = ctrl_c_handler;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	sigaction(SIGINT, &signalHandler, nullptr);
+#endif
+
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
 	eparams = new std::list<paraMap_t>;
@@ -68,6 +120,7 @@ bool yafrayInterface_t::startScene(int type)
 {
 	if(scene) delete scene;
 	scene = new scene_t(env);
+	globalScene = scene;	//for the CTRL+C handler
 	scene->setMode(type);
 	env->setScene(scene);
 	return true;
