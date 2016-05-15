@@ -143,7 +143,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	FILE * fp;
@@ -206,7 +206,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	if(m_hasAlpha)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
-		if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"..." << yendl;
+		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"..." << yendl;
 		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << yendl;
 
 		fp = fopen(alphaname.c_str(), "wb");

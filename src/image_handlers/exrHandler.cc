@@ -99,7 +99,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-	if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	int chan_size = sizeof(half);
@@ -148,7 +148,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
     
-    if(session.renderInProgress()) Y_VERBOSE << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+    if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
     else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
 	int chan_size = sizeof(half);

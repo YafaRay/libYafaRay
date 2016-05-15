@@ -93,15 +93,30 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
             if(numView == 0)
 	    {
 		image->saveToFile(fname+".tmp", 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
-		boost::filesystem::copy_file(fname+".tmp", fname, boost::filesystem::copy_option::overwrite_if_exists);
-		boost::filesystem::remove(fname+".tmp");
+		try
+		{
+		    boost::filesystem::copy_file(fname+".tmp", fname, boost::filesystem::copy_option::overwrite_if_exists);
+		    boost::filesystem::remove(fname+".tmp");
+		}
+		catch(const boost::filesystem::filesystem_error& e)
+		{
+		    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+		}
 	    }
          
             fnamePass = path + base_name + " [" + "multilayer" + "]"+ ext;
          
             image->saveToFileMultiChannel(fnamePass+".tmp", renderPasses);
-	    boost::filesystem::copy_file(fnamePass+".tmp", fnamePass, boost::filesystem::copy_option::overwrite_if_exists);
-	    boost::filesystem::remove(fnamePass+".tmp");
+	    try
+	    {
+		boost::filesystem::copy_file(fnamePass+".tmp", fnamePass, boost::filesystem::copy_option::overwrite_if_exists);
+		boost::filesystem::remove(fnamePass+".tmp");
+	    }
+	    catch(const boost::filesystem::filesystem_error& e)
+	    {
+		Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	    }
+
 	    yafLog.setImagePath(fnamePass);		//to show the image in the HTML log output
         }
         else
@@ -113,8 +128,16 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
                 if(numView == 0 && idx == 0)
 		{
 		    image->saveToFile(fname+".tmp", idx);	//default image filename, when not using views nor passes and for reloading into Blender
-		    boost::filesystem::copy_file(fname+".tmp", fname, boost::filesystem::copy_option::overwrite_if_exists);
-		    boost::filesystem::remove(fname+".tmp");
+		    try
+		    {
+			boost::filesystem::copy_file(fname+".tmp", fname, boost::filesystem::copy_option::overwrite_if_exists);
+			boost::filesystem::remove(fname+".tmp");
+		    }
+		    catch(const boost::filesystem::filesystem_error& e)
+		    {
+			Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+		    }
+
 		    yafLog.setImagePath(fname);		//to show the image in the HTML log output
 		}
 		
@@ -122,34 +145,44 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
                 {
                     fnamePass = path + base_name + " [pass " + passName + "]"+ ext;
                     image->saveToFile(fnamePass+".tmp", idx);
-		    boost::filesystem::copy_file(fnamePass+".tmp", fnamePass, boost::filesystem::copy_option::overwrite_if_exists);
-		    boost::filesystem::remove(fnamePass+".tmp");
+		    try
+		    {
+			boost::filesystem::copy_file(fnamePass+".tmp", fnamePass, boost::filesystem::copy_option::overwrite_if_exists);
+			boost::filesystem::remove(fnamePass+".tmp");
+		    }
+		    catch(const boost::filesystem::filesystem_error& e)
+		    {
+			Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+		    }
+
 		    if(idx == 0) yafLog.setImagePath(fnamePass);	//to show the image in the HTML log output
                 }
             }
         }
     }
     
+    std::string fLogName = path + base_name + "_log.txt";
+    yafLog.saveTxtLog(fLogName+".tmp");
     try
-    {
-	std::string fLogName = path + base_name + "_log.txt";
-	yafLog.saveTxtLog(fLogName+".tmp");
+    {	
 	boost::filesystem::copy_file(fLogName+".tmp",fLogName,boost::filesystem::copy_option::overwrite_if_exists);
 	boost::filesystem::remove(fLogName+".tmp");
     }
     catch(const boost::filesystem::filesystem_error& e)
     {
+	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
     }
 
+    std::string fLogHtmlName = path + base_name + "_log.html";
+    yafLog.saveHtmlLog(fLogHtmlName+".tmp");
     try
     {
-	std::string fLogHtmlName = path + base_name + "_log.html";
-	yafLog.saveHtmlLog(fLogHtmlName+".tmp");
 	boost::filesystem::copy_file(fLogHtmlName+".tmp",fLogHtmlName,boost::filesystem::copy_option::overwrite_if_exists);
 	boost::filesystem::remove(fLogHtmlName+".tmp");
     }
     catch(const boost::filesystem::filesystem_error& e)
     {
+	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
     }
 }
 
