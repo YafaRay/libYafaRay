@@ -8,6 +8,8 @@
 	#include <windows.h>
 #endif
 
+#include <boost/filesystem.hpp>
+
 #include <core_api/scene.h>
 #include <core_api/environment.h>
 #include <core_api/integrator.h>
@@ -67,6 +69,8 @@ int main(int argc, char *argv[])
 	signalHandler.sa_flags = 0;
 	sigaction(SIGINT, &signalHandler, nullptr);
 #endif
+
+	session.setPathYafaRayXml(boost::filesystem::system_complete(argv[0]).parent_path().string());
 
 	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
 

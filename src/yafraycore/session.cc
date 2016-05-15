@@ -128,6 +128,11 @@ void session_t::setInteractive(bool interactive)
 	mutx.unlock();
 }
 
+void session_t::setPathYafaRayXml(std::string path)
+{
+	mPathYafaRayXml = path;
+}
+
 bool session_t::renderInProgress()
 {
 	return mRenderInProgress;
@@ -166,6 +171,11 @@ float session_t::currentPassPercent()
 bool session_t::isInteractive()
 {
 	return mInteractive;
+}
+
+std::string session_t::getPathYafaRayXml()
+{
+	return mPathYafaRayXml;
 }
 
 __END_YAFRAY

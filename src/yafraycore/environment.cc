@@ -142,6 +142,13 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 
 bool renderEnvironment_t::getPluginPath(std::string &path)
 {
+	if(!session.getPathYafaRayXml().empty())	//Get plugin path from a subfolder of the current yafaray_xml executable file path
+	{
+		path = session.getPathYafaRayXml()+"/bin/plugins/";
+		return true;
+	}
+	
+//Next is DEPRECATED and probably will not even be executed now, but I'm keeping it for now just in case
 #ifdef _WIN32
 	HKEY hkey;
 	DWORD dwSize; //, dwType;

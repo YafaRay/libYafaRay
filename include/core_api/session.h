@@ -61,6 +61,7 @@ class YAFRAYCORE_EXPORT session_t
 		void setStatusCurrentPass(int current_pass);
 		void setStatusCurrentPassPercent(float current_pass_percent);
 		void setInteractive(bool interactive);
+		void setPathYafaRayXml(std::string path);
 		
 		bool renderInProgress();
 		bool renderResumed();
@@ -70,6 +71,7 @@ class YAFRAYCORE_EXPORT session_t
 		int currentPass();
 		float currentPassPercent();
 		bool isInteractive();
+		std::string getPathYafaRayXml();
 				
 		photonMap_t * causticMap = nullptr;
 		photonMap_t * diffuseMap = nullptr;
@@ -86,6 +88,7 @@ class YAFRAYCORE_EXPORT session_t
 		int mCurrentPass = 0;
 		float mCurrentPassPercent = 0.f;
 		bool mInteractive = false;
+		std::string mPathYafaRayXml;
 };
 
 extern YAFRAYCORE_EXPORT session_t session;

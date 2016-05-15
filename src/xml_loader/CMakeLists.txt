@@ -1,3 +1,5 @@
+SET(CMAKE_INSTALL_RPATH "$ORIGIN/:$ORIGIN/bin")
+
 include_directories(${YAF_INCLUDE_DIRS})
 
 add_executable(yafaray-xml xml-loader.cc)
