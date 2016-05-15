@@ -142,51 +142,13 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 
 bool renderEnvironment_t::getPluginPath(std::string &path)
 {
-	if(!session.getPathYafaRayXml().empty())	//Get plugin path from a subfolder of the current yafaray_xml executable file path
+	//Get plugin path from a subfolder of the current yafaray_xml executable file path
+	if(!session.getPathYafaRayXml().empty())
 	{
-		path = session.getPathYafaRayXml()+"/bin/plugins/";
+		path = session.getPathYafaRayXml()+"/plugins/";
 		return true;
 	}
-	
-//Next is DEPRECATED and probably will not even be executed now, but I'm keeping it for now just in case
-#ifdef _WIN32
-	HKEY hkey;
-	DWORD dwSize; //, dwType;
-
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,"Software\\YafaRay Team\\YafaRay",0,KEY_READ,&hkey)==ERROR_SUCCESS)
-	{
-		//dwType = REG_EXPAND_SZ;
-	 	dwSize = MAX_PATH;
-		DWORD dwStat;
-
-		char *pInstallDir=(char *)malloc(MAX_PATH);
-
-  		dwStat = RegQueryValueEx(hkey, TEXT("InstallDir"), nullptr, nullptr, (LPBYTE)pInstallDir, &dwSize);
-
-		if (dwStat == NO_ERROR)
-		{
-			path = std::string(pInstallDir) + "\\plugins";
-			free(pInstallDir);
-			RegCloseKey(hkey);
-			return true;
-		}
-
-		Y_ERROR_ENV << "Couldn't READ \'InstallDir\' value." << yendl;
-		free(pInstallDir);
-		RegCloseKey(hkey);
-	}
-	else Y_ERROR_ENV << "Couldn't find registry key." << yendl;
-
-	Y_ERROR << "Please fix your registry. Maybe you need add/modify" << yendl;
-	Y_ERROR << "HKEY_LOCAL_MACHINE\\Software\\YafaRay Team\\YafaRay\\InstallDir" << yendl;
-	Y_ERROR << "key at registry. You can use \"regedit.exe\" to adjust it at" << yendl;
-	Y_ERROR << "your own risk. If you are unsure, reinstall YafaRay" << yendl;
-
-	return false;
-#else
-	path = std::string(Y_PLUGINPATH);
-	return true;
-#endif
+	else return false;
 }
 
 
