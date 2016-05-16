@@ -248,8 +248,16 @@ void imageFilm_t::init(int numPasses)
 		{
 			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
 		}
-		session.setStatusRenderResumed();
 	}
+	
+	//film load check data initialization
+	filmload_check.w = w;
+	filmload_check.h = h;
+	filmload_check.cx0 = cx0;
+	filmload_check.cx1 = cx1;
+	filmload_check.cy0 = cy0;
+	filmload_check.cy1 = cy1;
+	filmload_check.numPasses = imagePasses.size();
 }
 
 int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
@@ -592,9 +600,9 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	int timem, timeh;
 	gTimer.splitTime(times, &times, &timem, &timeh);
 	ssBadge << " | " << w << "x" << h;
-	if(session.renderInProgress()) ssBadge << " | in progress " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
-	else if(session.renderAborted()) ssBadge << " | stopped at " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
-	else ssBadge << " | " << session.totalPasses() << " passes";
+	if(session.renderInProgress()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else if(session.renderAborted()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << session.totalPasses() << " passes";
 	//if(cx0 != 0) ssBadge << ", xstart=" << cx0; 
 	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
 	ssBadge << " | Render time:";
@@ -747,7 +755,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	if(out1 && (session.renderFinished() || !out2)) out1->flush(numView, env->getRenderPasses());
 	if(out2) out2->flush(numView, env->getRenderPasses());
 
-	if(autoSave)
+	if(autoSave && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
 		std::string filmPath = session.getPathImageOutput()+".film";
 		Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\"" << yendl;

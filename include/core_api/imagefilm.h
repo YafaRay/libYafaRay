@@ -185,9 +185,29 @@ class YAFRAYCORE_EXPORT imageFilm_t
         bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
         bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
         
+        struct filmload_check_t
+        {
+			int w, h, cx0, cx1, cy0, cy1;
+			size_t numPasses;
+			friend class boost::serialization::access;
+			template<class Archive> void serialize(Archive & ar, const unsigned int version)
+			{
+				ar & BOOST_SERIALIZATION_NVP(w);
+				ar & BOOST_SERIALIZATION_NVP(h);
+				ar & BOOST_SERIALIZATION_NVP(cx0);
+				ar & BOOST_SERIALIZATION_NVP(cx1);
+				ar & BOOST_SERIALIZATION_NVP(cy0);
+				ar & BOOST_SERIALIZATION_NVP(cy1);
+				ar & BOOST_SERIALIZATION_NVP(numPasses);
+			}
+		};
+		
+		filmload_check_t filmload_check;
+        
 		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
+		template<class Archive> void save(Archive & ar, const unsigned int version) const
+		{			
+			ar & BOOST_SERIALIZATION_NVP(filmload_check);
 			ar & BOOST_SERIALIZATION_NVP(imagePasses);
 			//ar & BOOST_SERIALIZATION_NVP(densityImage);
 			//ar & BOOST_SERIALIZATION_NVP(dpimage);
@@ -195,6 +215,28 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			//ar & BOOST_SERIALIZATION_NVP(splitter);
 			//ar & BOOST_SERIALIZATION_NVP(nPass);
 		}
+		template<class Archive> void load(Archive & ar, const unsigned int version)
+		{
+			ar & BOOST_SERIALIZATION_NVP(filmload_check);
+			
+			if(filmload_check.w != w || filmload_check.h != h || filmload_check.cx0 != cx0 || filmload_check.cx1 != cx1 || filmload_check.cy0 != cy0 || filmload_check.cy1 != cy1 || filmload_check.numPasses != imagePasses.size())
+			{
+				Y_WARNING << "imageFilm: loading imageFilm file failed because parameters are different. Expected: w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<imagePasses.size()<<" .In Image File: w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
+				
+				return;
+			}
+			else
+			{
+				session.setStatusRenderResumed();
+				ar & BOOST_SERIALIZATION_NVP(imagePasses);
+			}
+			//ar & BOOST_SERIALIZATION_NVP(densityImage);
+			//ar & BOOST_SERIALIZATION_NVP(dpimage);
+			//ar & BOOST_SERIALIZATION_NVP(flags);
+			//ar & BOOST_SERIALIZATION_NVP(splitter);
+			//ar & BOOST_SERIALIZATION_NVP(nPass);
+		}
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 __END_YAFRAY
