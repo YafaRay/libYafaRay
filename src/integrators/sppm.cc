@@ -92,6 +92,15 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	imageFilm->init(passNum);
 	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
+	if(session.renderResumed()) 
+	{
+		passString.clear();
+		passString << "Loading film file, skipping pass 1...";
+		intpb->setTag(passString.str().c_str());
+	}
+
+	Y_INFO << integratorName << ": " << passString.str() << yendl;
+
 	const camera_t* camera = scene->getCamera();
 	
 	maxDepth = 0.f;

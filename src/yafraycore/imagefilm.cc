@@ -417,6 +417,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 	if(session.isInteractive())	output->flush(numView, env->getRenderPasses());
 
+	if(session.renderResumed()) passString << "Film loaded + ";
+	
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
 	Y_INFO << integratorName << ": " << passString.str() << yendl;

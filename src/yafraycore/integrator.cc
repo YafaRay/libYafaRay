@@ -154,6 +154,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	Y_PARAMS << "Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
 	
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
+	
 	Y_INFO << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
 
@@ -165,6 +166,15 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 	imageFilm->init(AA_passes);
 	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
+
+	if(session.renderResumed()) 
+	{
+		passString.clear();
+		passString << "Loading film file, skipping pass 1...";
+		intpb->setTag(passString.str().c_str());
+	}
+	
+	Y_INFO << integratorName << ": " << passString.str() << yendl;
 
 	maxDepth = 0.f;
 	minDepth = 1e38f;
