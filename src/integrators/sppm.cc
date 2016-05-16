@@ -102,7 +102,8 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	if(scene->pass_enabled(PASS_INT_Z_DEPTH_NORM) || scene->pass_enabled(PASS_INT_MIST)) precalcDepths();
 
 	initializePPM(); // seems could integrate into the preRender
-	renderPass(numView, 1, 0, false, 0);
+	if(session.renderResumed()) renderPass(numView, 0, 0, false, 0);
+	else renderPass(numView, 1, 0, false, 0);
 	
 	std::string initialEstimate = "no";
 	if(PM_IRE) initialEstimate = "yes";

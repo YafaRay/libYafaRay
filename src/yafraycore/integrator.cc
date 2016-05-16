@@ -175,7 +175,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 	preRender();
 
-	renderPass(numView, AA_samples, 0, false, 0);
+	if(session.renderResumed()) renderPass(numView, 0, 0, false, 0);
+	else renderPass(numView, AA_samples, 0, false, 0);
 	
 	int acumAASamples = AA_samples;
 	bool AAthresholdChanged = true;
