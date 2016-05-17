@@ -132,6 +132,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
         int getHeight() const { return h; }
         int getCurrentPass() const { return nPass; }
         int getNumPasses() const { return nPasses; }
+        int getSamplingOffset() const { return samplingOffset; }
+        void setSamplingOffset(int offset) { samplingOffset = offset; }
         void setAutoSave(bool auto_save);
         void setAutoLoad(bool auto_load);
         bool imageFilmLoad(const std::string &filename, bool debugXMLformat);
@@ -182,6 +184,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool premultAlpha2;	//For optional secondary file output
 		int nPasses;
         double accumulated_image_area_flush_time;
+        int samplingOffset;	//To ensure sampling after loading the image film continues and does not repeat already done samples
         bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
         bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
         
@@ -206,8 +209,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
         
 		friend class boost::serialization::access;
 		template<class Archive> void save(Archive & ar, const unsigned int version) const
-		{			
+		{
+			Y_DEBUG<<"FilmSave samplingOffset="<<samplingOffset<<yendl;
 			ar & BOOST_SERIALIZATION_NVP(filmload_check);
+			ar & BOOST_SERIALIZATION_NVP(samplingOffset);
 			ar & BOOST_SERIALIZATION_NVP(imagePasses);
 			//ar & BOOST_SERIALIZATION_NVP(densityImage);
 			//ar & BOOST_SERIALIZATION_NVP(dpimage);
@@ -227,8 +232,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			}
 			else
 			{
-				session.setStatusRenderResumed();
+				ar & BOOST_SERIALIZATION_NVP(samplingOffset);
 				ar & BOOST_SERIALIZATION_NVP(imagePasses);
+				session.setStatusRenderResumed();
+				Y_DEBUG<<"FilmLoad samplingOffset="<<samplingOffset<<yendl;
 			}
 			//ar & BOOST_SERIALIZATION_NVP(densityImage);
 			//ar & BOOST_SERIALIZATION_NVP(dpimage);

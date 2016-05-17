@@ -232,6 +232,7 @@ void imageFilm_t::init(int numPasses)
 	completed_cnt = 0;
 	nPass = 1;
 	nPasses = numPasses;
+	samplingOffset = 0;
 
 	if(autoLoad)
 	{

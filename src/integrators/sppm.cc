@@ -110,8 +110,14 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 
 	if(scene->pass_enabled(PASS_INT_Z_DEPTH_NORM) || scene->pass_enabled(PASS_INT_MIST)) precalcDepths();
 
+	int acumAASamples = 1;
+
 	initializePPM(); // seems could integrate into the preRender
-	if(session.renderResumed()) renderPass(numView, 0, 0, false, 0);
+	if(session.renderResumed())
+	{
+		acumAASamples = imageFilm->getSamplingOffset();
+		renderPass(numView, 0, acumAASamples, false, 0);
+	}
 	else renderPass(numView, 1, 0, false, 0);
 	
 	std::string initialEstimate = "no";
@@ -127,7 +133,8 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 		passInfo = i+1;
 		imageFilm->nextPass(numView, false, integratorName);
 		nRefined = 0;
-		renderPass(numView, 1, 1 + (i-1)*1, false, i); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(numView, 1, acumAASamples, false, i); // offset are only related to the passNum, since we alway have only one sample.
+		acumAASamples += 1;
 		Y_INFO <<  integratorName << ": This pass refined " << nRefined << " of " << hpNum << " pixels." << yendl;
 	}
 	maxDepth = 0.f;

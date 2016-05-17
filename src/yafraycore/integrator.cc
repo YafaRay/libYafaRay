@@ -185,10 +185,15 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 	preRender();
 
-	if(session.renderResumed()) renderPass(numView, 0, 0, false, 0);
+	int acumAASamples = AA_samples;
+		
+	if(session.renderResumed())
+	{
+		acumAASamples = imageFilm->getSamplingOffset();
+		renderPass(numView, 0, acumAASamples, false, 0);
+	}
 	else renderPass(numView, AA_samples, 0, false, 0);
 	
-	int acumAASamples = AA_samples;
 	bool AAthresholdChanged = true;
 	int resampled_pixels = 0;
 	
@@ -219,6 +224,8 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 		
 		int AA_samples_mult = (int) ceilf(AA_inc_samples * AA_sample_multiplier);
 
+		Y_DEBUG << "acumAASamples="<<acumAASamples<<" AA_samples="<<AA_samples<<" AA_samples_mult="<<AA_samples_mult<<yendl;
+		
 		if(resampled_pixels > 0) renderPass(numView, AA_samples_mult, acumAASamples, true, i);
 
 		acumAASamples += AA_samples_mult;
@@ -244,11 +251,14 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number)
 {
+	Y_DEBUG << "Sampling: samples="<<samples<<" Offset=" << offset << " AA_pass_number="<<AA_pass_number<<yendl;
 	prePass(samples, offset, adaptive);
 
 	int nthreads = scene->getNumThreads();
 
 	session.setStatusCurrentPass(AA_pass_number+1);
+
+	imageFilm->setSamplingOffset(offset+samples);
 
 	if(nthreads>1)
 	{
@@ -283,6 +293,7 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 			imageFilm->finishArea(numView, a);
 		}
 	}
+		
 	return true; //hm...quite useless the return value :)
 }
 
