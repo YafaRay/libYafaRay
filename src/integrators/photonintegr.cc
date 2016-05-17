@@ -501,16 +501,13 @@ bool photonIntegrator_t::preprocess()
 
 	if(photonMapProcessing == PHOTONS_REUSE)
 	{
-		bool causticMapEmpty = false;
-		bool diffuseMapEmpty = false;
-		bool fgRadianceMapEmpty = false;
-		
 		if(usePhotonCaustics)
 		{
 			Y_INFO << integratorName << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.causticMap->nPhotons() == 0)
 			{
-				causticMapEmpty = true;
+				Y_WARNING << integratorName << ": Caustic photon map enabled but empty, cannot be reused: changing to Generate mode." << yendl;
+				photonMapProcessing = PHOTONS_GENERATE_ONLY;
 			}
 		}
 
@@ -519,23 +516,19 @@ bool photonIntegrator_t::preprocess()
 			Y_INFO << integratorName << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.diffuseMap->nPhotons() == 0)
 			{
-				diffuseMapEmpty = true;
+				Y_WARNING << integratorName << ": Diffuse photon map enabled but empty, cannot be reused: changing to Generate mode." << yendl;
+				photonMapProcessing = PHOTONS_GENERATE_ONLY;
 			}
 		}
 
-		if(usePhotonDiffuse && finalGather)
+		if(finalGather)
 		{
 			Y_INFO << integratorName << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
 			if(session.radianceMap->nPhotons() == 0)
 			{
-				fgRadianceMapEmpty = true;
+				Y_WARNING << integratorName << ": FG radiance photon map enabled but empty, cannot be reused: changing to Generate mode." << yendl;
+				photonMapProcessing = PHOTONS_GENERATE_ONLY;
 			}
-		}
-		
-		if(causticMapEmpty && diffuseMapEmpty && fgRadianceMapEmpty)
-		{
-			photonMapProcessing = PHOTONS_GENERATE_ONLY;
-			Y_WARNING << integratorName << ": all previous photon maps in memory were empty, they cannot be reused: changing to Generate mode." << yendl;
 		}
 	}
 
