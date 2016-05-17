@@ -161,28 +161,34 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
         }
     }
     
-    std::string fLogName = path + base_name + "_log.txt";
-    yafLog.saveTxtLog(fLogName+".tmp");
-    try
-    {	
-	boost::filesystem::copy_file(fLogName+".tmp",fLogName,boost::filesystem::copy_option::overwrite_if_exists);
-	boost::filesystem::remove(fLogName+".tmp");
-    }
-    catch(const boost::filesystem::filesystem_error& e)
+    if(yafLog.getSaveLog())
     {
-	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	std::string fLogName = path + base_name + "_log.txt";
+	yafLog.saveTxtLog(fLogName+".tmp");
+	try
+	{	
+	    boost::filesystem::copy_file(fLogName+".tmp",fLogName,boost::filesystem::copy_option::overwrite_if_exists);
+	    boost::filesystem::remove(fLogName+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	}
     }
 
-    std::string fLogHtmlName = path + base_name + "_log.html";
-    yafLog.saveHtmlLog(fLogHtmlName+".tmp");
-    try
+    if(yafLog.getSaveHTML())
     {
-	boost::filesystem::copy_file(fLogHtmlName+".tmp",fLogHtmlName,boost::filesystem::copy_option::overwrite_if_exists);
-	boost::filesystem::remove(fLogHtmlName+".tmp");
-    }
-    catch(const boost::filesystem::filesystem_error& e)
-    {
-	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	std::string fLogHtmlName = path + base_name + "_log.html";
+	yafLog.saveHtmlLog(fLogHtmlName+".tmp");
+	try
+	{
+	    boost::filesystem::copy_file(fLogHtmlName+".tmp",fLogHtmlName,boost::filesystem::copy_option::overwrite_if_exists);
+	    boost::filesystem::remove(fLogHtmlName+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	}
     }
 }
 

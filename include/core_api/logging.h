@@ -98,6 +98,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
 		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
 
+		bool getSaveLog() const { return mSaveLog; }
+		bool getSaveHTML() const { return mSaveHTML; }
 		bool getUseParamsBadge() { return mDrawParams; }
 		bool isParamsBadgeTop() { return mParamsBadgeTop; }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
