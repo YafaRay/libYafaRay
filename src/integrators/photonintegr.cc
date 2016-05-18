@@ -464,19 +464,17 @@ bool photonIntegrator_t::preprocess()
 		
 		if(usePhotonCaustics)
 		{
-			pb->setTag("Loading caustic photon map from temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_caustics.tmp";
-			Y_INFO << integratorName << ": Loading caustics photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
-			if(photonMapLoad(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map loaded." << yendl;
+			pb->setTag("Loading caustic photon map from file...");
+			std::string filename = session.getPathImageOutput() + "_caustic.photonmap";
+			Y_INFO << integratorName << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
+			if(photonMapLoad(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustic map loaded." << yendl;
 			else causticMapFailedLoad = true;
 		}
 
 		if(usePhotonDiffuse)
 		{
-			pb->setTag("Loading diffuse photon map from temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_diffuse.tmp";
+			pb->setTag("Loading diffuse photon map from file...");
+			std::string filename = session.getPathImageOutput() + "_diffuse.photonmap";
 			Y_INFO << integratorName << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!"  << yendl;
 			if(photonMapLoad(session.diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map loaded." << yendl;
 			else diffuseMapFailedLoad = true;
@@ -484,9 +482,8 @@ bool photonIntegrator_t::preprocess()
 
 		if(usePhotonDiffuse && finalGather)
 		{
-			pb->setTag("Loading FG radiance photon map from temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_fg_radiance.tmp";
+			pb->setTag("Loading FG radiance photon map from file...");
+			std::string filename = session.getPathImageOutput() + "_fg_radiance.photonmap";
 			Y_INFO << integratorName << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!"  << yendl;
 			if(photonMapLoad(session.radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map loaded." << yendl;
 			else fgRadianceMapFailedLoad = true;
@@ -1077,27 +1074,24 @@ bool photonIntegrator_t::preprocess()
 	{
 		if( usePhotonDiffuse )
 		{
-			pb->setTag("Saving diffuse photon map to temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_diffuse.tmp";
+			pb->setTag("Saving diffuse photon map to file...");
+			std::string filename = session.getPathImageOutput() + "_diffuse.photonmap";
 			Y_INFO << integratorName << ": Saving diffuse photon map to: " << filename << yendl;
 			if(photonMapSave(session.diffuseMap, filename)) Y_VERBOSE << integratorName << ": Diffuse map saved." << yendl;
 		}
 
 		if( usePhotonCaustics )
 		{
-			pb->setTag("Saving caustic photon map to temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_caustics.tmp";
-			Y_INFO << integratorName << ": Saving caustics photon map to: " << filename << yendl;
-			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustics map saved." << yendl;
+			pb->setTag("Saving caustic photon map to file...");
+			std::string filename = session.getPathImageOutput() + "_caustic.photonmap";
+			Y_INFO << integratorName << ": Saving caustic photon map to: " << filename << yendl;
+			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustic map saved." << yendl;
 		}
 
 		if( usePhotonDiffuse && finalGather )
 		{
-			pb->setTag("Saving FG radiance photon map to temp folder...");
-			std::string filename = boost::filesystem::temp_directory_path().string();
-			filename += "/yafaray_photonMap_fg_radiance.tmp";
+			pb->setTag("Saving FG radiance photon map to file...");
+			std::string filename = session.getPathImageOutput() + "_fg_radiance.photonmap";
 			Y_INFO << integratorName << ": Saving FG radiance photon map to: " << filename << yendl;
 			if(photonMapSave(session.radianceMap, filename)) Y_VERBOSE << integratorName << ": FG radiance map saved." << yendl;
 		}

@@ -20,6 +20,7 @@
  */
 #include <yafray_config.h>
 #include <algorithm>
+#include <boost/filesystem.hpp>
 #include <yafraycore/photon.h>
 
 __BEGIN_YAFRAY
@@ -189,7 +190,9 @@ std::string session_t::getPathYafaRayXml()
 
 std::string session_t::getPathImageOutput()
 {
-	return mPathImageOutput;
+	if(mPathImageOutput.empty()) return boost::filesystem::temp_directory_path().string()+"/yafaray";	//if no image output folder was specified, use the system temporary folder
+	else return mPathImageOutput;
+	
 }
 
 __END_YAFRAY
