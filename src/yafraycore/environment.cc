@@ -755,6 +755,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;
+	int adv_base_sampling_offset = 0;
 
 	if(! params.getParam("camera_name", name) )
 	{
@@ -822,6 +823,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
+	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
 
 	imageFilm_t *film = createImageFilm(params, output);
 
@@ -853,6 +855,9 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.shadowBias = adv_shadow_bias_value;
 	scene.rayMinDistAuto = adv_auto_min_raydist_enabled;
 	scene.rayMinDist = adv_min_raydist_value;
+
+	Y_DEBUG << "adv_base_sampling_offset="<<adv_base_sampling_offset<<yendl;
+	film->setBaseSamplingOffset(adv_base_sampling_offset);
 
 	return true;
 }

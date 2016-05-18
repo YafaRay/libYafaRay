@@ -251,14 +251,14 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number)
 {
-	Y_DEBUG << "Sampling: samples="<<samples<<" Offset=" << offset << " AA_pass_number="<<AA_pass_number<<yendl;
-	prePass(samples, offset, adaptive);
+	Y_DEBUG << "Sampling: samples="<<samples<<" Offset=" << offset << " Base Offset="<< + imageFilm->getBaseSamplingOffset()<<"  AA_pass_number="<<AA_pass_number<<yendl;
+	prePass(samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive);
 
 	int nthreads = scene->getNumThreads();
 
 	session.setStatusCurrentPass(AA_pass_number+1);
 
-	imageFilm->setSamplingOffset(offset+samples);
+	imageFilm->setSamplingOffset(offset + samples);
 
 	if(nthreads>1)
 	{
@@ -266,7 +266,7 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 		std::vector<std::thread> threads;
 		for(int i=0;i<nthreads;++i)
 		{
-			threads.push_back(std::thread(&tiledIntegrator_t::renderWorker, this, numView, this, scene, imageFilm, &tc, i, samples, offset, adaptive, AA_pass_number));
+			threads.push_back(std::thread(&tiledIntegrator_t::renderWorker, this, numView, this, scene, imageFilm, &tc, i, samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive, AA_pass_number));
 		}
 
 		std::unique_lock<std::mutex> lk(tc.m);
@@ -288,8 +288,8 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 		while(imageFilm->nextArea(numView, a))
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
-			preTile(a, samples, offset, adaptive, 0);
-			renderTile(numView, a, samples, offset, adaptive, 0);
+			preTile(a, samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive, 0);
+			renderTile(numView, a, samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive, 0);
 			imageFilm->finishArea(numView, a);
 		}
 	}
