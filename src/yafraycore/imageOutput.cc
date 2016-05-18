@@ -30,7 +30,7 @@ __BEGIN_YAFRAY
 
 imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
-	session.setPathImageOutput(fname);
+	session.setPathImageOutput(boost::filesystem::change_extension(fname, "").string());
 }
 
 imageOutput_t::imageOutput_t()
