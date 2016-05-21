@@ -367,12 +367,14 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					dx = (0.5+(PFLOAT)sample)*d1;
 					dy = RI_LP(sample+rstate.samplingOffs);
 				}
+				
 				if(sampleLns)
 				{
 					lens_u = halU.getNext();
 					lens_v = halV.getNext();
 				}
 				c_ray = camera->shootRay(j+dx, i+dy, lens_u, lens_v, wt);
+				
 				if(wt==0.0)
 				{
 					imageFilm->addSample(tmpPassesZero, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);

@@ -629,7 +629,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	if(film_autosave) Y_INFO_ENV << "Enabling imageFilm AutoSave feature" << yendl;
 
 	film->setAutoLoad(film_load);
-	if(film_autosave) Y_INFO_ENV << "Enabling imageFilm AutoLoad feature. It will load the image film from a file before start rendering. If it does not match exactly the scene, bad results or even crashes could happen. Use WITH CARE!" << yendl;
+	if(film_load) Y_INFO_ENV << "Enabling imageFilm AutoLoad feature. It will load the image film from a file before start rendering. If it does not match exactly the scene, bad results or even crashes could happen. Use WITH CARE!" << yendl;
 
 	return film;
 }
@@ -756,6 +756,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	bool adv_auto_min_raydist_enabled=true;
 	float adv_min_raydist_value=MIN_RAYDIST;
 	int adv_base_sampling_offset = 0;
+	int adv_computer_node = 0;
 
 	if(! params.getParam("camera_name", name) )
 	{
@@ -824,7 +825,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
-
+	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
 	imageFilm_t *film = createImageFilm(params, output);
 
 	if (pb)
@@ -858,6 +859,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	Y_DEBUG << "adv_base_sampling_offset="<<adv_base_sampling_offset<<yendl;
 	film->setBaseSamplingOffset(adv_base_sampling_offset);
+	film->setComputerNode(adv_computer_node);
 
 	return true;
 }

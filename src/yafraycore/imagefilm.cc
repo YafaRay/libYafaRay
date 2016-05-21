@@ -37,6 +37,10 @@
 #include <iomanip>
 #include <utility>
 #include <boost/filesystem.hpp>
+#include <boost/foreach.hpp> 
+#define BOOST_RANGE_ENABLE_CONCEPT_ASSERT 0
+#include <boost/filesystem.hpp>
+#include <boost/range/adaptors.hpp>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -235,22 +239,51 @@ void imageFilm_t::init(int numPasses)
 
 	if(autoLoad)
 	{
-		std::string filmPath = session.getPathImageOutput()+".film";
-		std::string filmPathBackup = filmPath+"-previous.bak";
-		Y_INFO << "imageFilm: Loading film from: \"" << filmPath << "\"" << yendl;
-		this->imageFilmLoad(filmPath, false);
-		Y_VERBOSE << "imageFilm: Making backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
-		try
-		{	
-			boost::filesystem::copy_file(filmPath, filmPathBackup, boost::filesystem::copy_option::overwrite_if_exists);
-		}
-		catch(const boost::filesystem::filesystem_error& e)
+		std::string filmPath = session.getPathImageOutput();
+		std::stringstream node;
+		node << std::setfill('0') << std::setw(4) << computerNode;
+		filmPath += " - node " + node.str();
+		filmPath += ".film";
+
+		//http://stackoverflow.com/questions/1257721/can-i-use-a-mask-to-iterate-files-in-a-directory-with-boost
+		//Thanks to http://stackoverflow.com/users/148405/oleg-svechkarenko  for this code
+
+		const std::string target_path( session.getPathImageOutput() );
+		const boost::regex my_filter( ".*\\.film$" );
+		boost::smatch what;
+
+		for (auto &entry: boost::make_iterator_range(boost::filesystem::directory_iterator(boost::filesystem::path(target_path).parent_path()), {})
+		| boost::adaptors::filtered(static_cast<bool (*)(const boost::filesystem::path &)>(&boost::filesystem::is_regular_file))
+		| boost::adaptors::filtered([&](const boost::filesystem::path &path){ return boost::regex_match(path.filename().string(), what, my_filter); })
+		)
 		{
-			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+			std::string loadedFilmPath = entry.path().string();
+			Y_INFO << "imageFilm: Loading film from: \"" << loadedFilmPath << "\"" << yendl;
+			imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+			loadedFilm->imageFilmLoad(loadedFilmPath, false);
+			
+			for(size_t idx=0; idx<imagePasses.size(); ++idx)
+			{
+				for(int i=0; i<w; ++i)
+				{
+					for(int j=0; j<h; ++j)
+					{
+						rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
+						(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+						(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+					}
+				}
+			}
+			
+			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+			
+			delete loadedFilm;
 		}
 	}
 	
 	//film load check data initialization
+	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
 	filmload_check.w = w;
 	filmload_check.h = h;
 	filmload_check.cx0 = cx0;
@@ -602,7 +635,11 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	ssBadge << " | " << w << "x" << h;
 	if(session.renderInProgress()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
 	else if(session.renderAborted()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
-	else ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << session.totalPasses() << " passes";
+	else 
+	{
+		if(session.renderResumed())	ssBadge << " | film loaded + " << session.totalPasses()-1 << " passes";
+		else ssBadge << " | " << session.totalPasses() << " passes";
+	}
 	//if(cx0 != 0) ssBadge << ", xstart=" << cx0; 
 	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
 	ssBadge << " | Render time:";
@@ -757,7 +794,25 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(autoSave && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
-		std::string filmPath = session.getPathImageOutput()+".film";
+		std::string filmPath = session.getPathImageOutput();
+		std::stringstream node;
+		node << std::setfill('0') << std::setw(4) << computerNode;
+		filmPath += " - node " + node.str();
+		filmPath += ".film";
+		std::string filmPathBackup = filmPath+"-previous.bak";
+
+		if(boost::filesystem::exists(filmPath))
+		{
+			Y_VERBOSE << "imageFilm: Making backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+			try
+			{	
+				boost::filesystem::copy_file(filmPath, filmPathBackup, boost::filesystem::copy_option::overwrite_if_exists);
+			}
+			catch(const boost::filesystem::filesystem_error& e)
+			{
+				Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+			}
+		}
 		Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\"" << yendl;
 		this->imageFilmSave(filmPath, false);
 		Y_VERBOSE << "imageFilm: Saved film to: \"" << filmPath << "\"" << yendl;
@@ -1175,22 +1230,18 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat
 		if(debugXMLformat)
 		{
 			boost::archive::xml_iarchive ia(ifs);
-			//map->clear(); //FIXME DAVID
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
 		else
 		{
 			boost::archive::binary_iarchive ia(ifs);
-			//map->clear(); //FIXME DAVID
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
 		return true;
 	}
 	catch(std::exception& ex){
-        // elminate any dangling references
-        //map->clear(); //FIXME DAVID
         Y_WARNING << "imageFilm: error '" << ex.what() << "' while loading ImageFilm file: '" << filename << "'" << yendl;
 		return false;
     }

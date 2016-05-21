@@ -132,8 +132,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
         int getHeight() const { return h; }
         int getCurrentPass() const { return nPass; }
         int getNumPasses() const { return nPasses; }
-        unsigned int getBaseSamplingOffset() const { return baseSamplingOffset; }
+        unsigned int getComputerNode() const { return computerNode; }
+        unsigned int getBaseSamplingOffset() const { return baseSamplingOffset + computerNode * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
         unsigned int getSamplingOffset() const { return samplingOffset; }
+        void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
         void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
         void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
         void setAutoSave(bool auto_save);
@@ -188,6 +190,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
         double accumulated_image_area_flush_time;
         unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
         unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
+        unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms
         bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
         bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
         
@@ -195,6 +198,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
         {
 			int w, h, cx0, cx1, cy0, cy1;
 			size_t numPasses;
+			std::string filmStructureVersion;
 			friend class boost::serialization::access;
 			template<class Archive> void serialize(Archive & ar, const unsigned int version)
 			{
@@ -205,17 +209,23 @@ class YAFRAYCORE_EXPORT imageFilm_t
 				ar & BOOST_SERIALIZATION_NVP(cy0);
 				ar & BOOST_SERIALIZATION_NVP(cy1);
 				ar & BOOST_SERIALIZATION_NVP(numPasses);
+				ar & BOOST_SERIALIZATION_NVP(filmStructureVersion);
 			}
 		};
+		
+		//IMPORTANT: change the FILM_STRUCTURE_VERSION string if there are significant changes in the film structure
+		#define FILM_STRUCTURE_VERSION "1.0"
 		
 		filmload_check_t filmload_check;
         
 		friend class boost::serialization::access;
 		template<class Archive> void save(Archive & ar, const unsigned int version) const
 		{
-			Y_DEBUG<<"FilmSave samplingOffset="<<samplingOffset<<yendl;
+			Y_DEBUG<<"FilmSave computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
 			ar & BOOST_SERIALIZATION_NVP(filmload_check);
 			ar & BOOST_SERIALIZATION_NVP(samplingOffset);
+			ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
+			ar & BOOST_SERIALIZATION_NVP(computerNode);
 			ar & BOOST_SERIALIZATION_NVP(imagePasses);
 			//ar & BOOST_SERIALIZATION_NVP(densityImage);
 			//ar & BOOST_SERIALIZATION_NVP(dpimage);
@@ -227,18 +237,20 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		{
 			ar & BOOST_SERIALIZATION_NVP(filmload_check);
 			
-			if(filmload_check.w != w || filmload_check.h != h || filmload_check.cx0 != cx0 || filmload_check.cx1 != cx1 || filmload_check.cy0 != cy0 || filmload_check.cy1 != cy1 || filmload_check.numPasses != imagePasses.size())
+			if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION || filmload_check.w != w || filmload_check.h != h || filmload_check.cx0 != cx0 || filmload_check.cx1 != cx1 || filmload_check.cy0 != cy0 || filmload_check.cy1 != cy1 || filmload_check.numPasses != imagePasses.size())
 			{
-				Y_WARNING << "imageFilm: loading imageFilm file failed because parameters are different. Expected: w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<imagePasses.size()<<" .In Image File: w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
+				Y_WARNING << "imageFilm: loading imageFilm file failed because parameters are different. Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<imagePasses.size()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
 				
 				return;
 			}
 			else
 			{
 				ar & BOOST_SERIALIZATION_NVP(samplingOffset);
+				ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
+				ar & BOOST_SERIALIZATION_NVP(computerNode);
 				ar & BOOST_SERIALIZATION_NVP(imagePasses);
 				session.setStatusRenderResumed();
-				Y_DEBUG<<"FilmLoad samplingOffset="<<samplingOffset<<yendl;
+				Y_DEBUG<<"FilmLoad computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
 			}
 			//ar & BOOST_SERIALIZATION_NVP(densityImage);
 			//ar & BOOST_SERIALIZATION_NVP(dpimage);
