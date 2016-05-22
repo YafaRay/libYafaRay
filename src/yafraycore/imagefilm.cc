@@ -1243,7 +1243,8 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat
 		}
 		else
 		{
-			boost::archive::binary_iarchive ia(ifs);
+			//boost::archive::binary_iarchive ia(ifs);
+			boost::archive::text_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
@@ -1269,7 +1270,8 @@ bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat
 		}
 		else
 		{
-			boost::archive::binary_oarchive oa(ofs);
+			//boost::archive::binary_oarchive oa(ofs);
+			boost::archive::text_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
