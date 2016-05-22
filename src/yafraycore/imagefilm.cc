@@ -36,11 +36,10 @@
 #include <stdexcept>
 #include <iomanip>
 #include <utility>
+#include <regex>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp> 
-#define BOOST_RANGE_ENABLE_CONCEPT_ASSERT 0
 #include <boost/filesystem.hpp>
-#include <boost/range/adaptors.hpp>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -245,40 +244,49 @@ void imageFilm_t::init(int numPasses)
 		filmPath += " - node " + node.str();
 		filmPath += ".film";
 
-		//http://stackoverflow.com/questions/1257721/can-i-use-a-mask-to-iterate-files-in-a-directory-with-boost
-		//Thanks to http://stackoverflow.com/users/148405/oleg-svechkarenko  for this code
+		const std::string target_path( boost::filesystem::path(session.getPathImageOutput()).parent_path().string() );
+		const std::regex filmFilter(".*\\.film$");
+		std::vector<std::string> filmFilesList;
 
-		const std::string target_path( session.getPathImageOutput() );
-		const boost::regex my_filter( ".*\\.film$" );
-		boost::smatch what;
-
-		for (auto &entry: boost::make_iterator_range(boost::filesystem::directory_iterator(boost::filesystem::path(target_path).parent_path()), {})
-		| boost::adaptors::filtered(static_cast<bool (*)(const boost::filesystem::path &)>(&boost::filesystem::is_regular_file))
-		| boost::adaptors::filtered([&](const boost::filesystem::path &path){ return boost::regex_match(path.filename().string(), what, my_filter); })
-		)
+		try
 		{
-			std::string loadedFilmPath = entry.path().string();
-			Y_INFO << "imageFilm: Loading film from: \"" << loadedFilmPath << "\"" << yendl;
-			imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
-			loadedFilm->imageFilmLoad(loadedFilmPath, false);
-			
-			for(size_t idx=0; idx<imagePasses.size(); ++idx)
+			boost::filesystem::directory_iterator it_end;
+			for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
 			{
-				for(int i=0; i<w; ++i)
+				if(!boost::filesystem::is_regular_file(it->status())) continue;
+				if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
+				filmFilesList.push_back(it->path().string());
+			}
+			std::sort(filmFilesList.begin(), filmFilesList.end());
+
+			for(auto filmFile: filmFilesList)
+			{
+				Y_INFO << "imageFilm: Loading film from: \"" << filmFile << "\"" << yendl;
+				imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+				loadedFilm->imageFilmLoad(filmFile, false);
+				
+				for(size_t idx=0; idx<imagePasses.size(); ++idx)
 				{
-					for(int j=0; j<h; ++j)
+					for(int i=0; i<w; ++i)
 					{
-						rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
-						(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
-						(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+						for(int j=0; j<h; ++j)
+						{
+							rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
+							(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+							(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+						}
 					}
 				}
+				
+				if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+				if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+				
+				delete loadedFilm;
 			}
-			
-			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
-			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
-			
-			delete loadedFilm;
+		}
+		catch(const boost::filesystem::filesystem_error& e)
+		{
+			Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
 		}
 	}
 	
