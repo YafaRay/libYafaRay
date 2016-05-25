@@ -1234,16 +1234,31 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat
 	try
 	{
 		std::ifstream ifs(filename, std::fstream::binary);
+		char *memblock = new char [1];
+		ifs.seekg (0, std::ios::beg);
+		ifs.read (memblock, 1);
+		bool binaryfile = false;
+		if(memblock[0] < '0') binaryfile = true;	//If first character in the film file is not an ASCII number then consider it a binary file
+		delete memblock;
+		ifs.seekg (0, std::ios::beg);
 		
 		if(debugXMLformat)
 		{
+			Y_DEBUG << "serialization: trying to load in XML format" << yendl;
 			boost::archive::xml_iarchive ia(ifs);
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		else if(binaryfile == true)
+		{
+			Y_DEBUG << "serialization: trying to load in Binary format" << yendl;
+			boost::archive::binary_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
 		else
 		{
-			//boost::archive::binary_iarchive ia(ifs);
+			Y_DEBUG << "serialization: trying to load in Text format" << yendl;
 			boost::archive::text_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
