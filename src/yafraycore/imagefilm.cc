@@ -306,6 +306,58 @@ void imageFilm_t::init(int numPasses)
 		if(pbar) pbar->setTag(oldTag);
 	}
 	
+	if(autoSave)	//If the imageFilm is set to Auto Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back
+	{
+		std::stringstream passString;
+		passString << "Creating backup of the previous ImageFilm file...";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		std::string filmPath = session.getPathImageOutput();
+		std::stringstream node;
+		node << std::setfill('0') << std::setw(4) << computerNode;
+		filmPath += " - node " + node.str();
+		filmPath += ".film";
+		std::string filmPathBackup = filmPath+"-previous.bak";
+
+/*		if(boost::filesystem::exists(filmPathBackup))
+		{
+			Y_VERBOSE << "imageFilm: Deleting previous old ImageFilm backup file: \"" << filmPathBackup << "\"" << yendl;
+			try
+			{	
+				boost::filesystem::remove(filmPathBackup);
+			}
+			catch(const boost::filesystem::filesystem_error& e)
+			{
+				Y_WARNING << "imageFilm: error during deletion of old ImageFilm backup \"" << e.what() << "\"" << yendl;
+			}
+		}
+		*/
+		
+		if(boost::filesystem::exists(filmPath))
+		{
+			Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+			try
+			{	
+				boost::filesystem::rename(filmPath, filmPathBackup);
+			}
+			catch(const boost::filesystem::filesystem_error& e)
+			{
+				Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+			}
+		}
+		
+		if(pbar) pbar->setTag(oldTag);
+	}
+
 	//film load check data initialization
 	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
 	filmload_check.w = w;
@@ -875,20 +927,6 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		node << std::setfill('0') << std::setw(4) << computerNode;
 		filmPath += " - node " + node.str();
 		filmPath += ".film";
-		std::string filmPathBackup = filmPath+"-previous.bak";
-
-		if(boost::filesystem::exists(filmPath))
-		{
-			Y_VERBOSE << "imageFilm: Making backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
-			try
-			{	
-				boost::filesystem::copy_file(filmPath, filmPathBackup, boost::filesystem::copy_option::overwrite_if_exists);
-			}
-			catch(const boost::filesystem::filesystem_error& e)
-			{
-				Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
-			}
-		}
 		this->imageFilmSave(filmPath, false);
 
 		if(pbar) pbar->setTag(oldTag);
