@@ -327,20 +327,6 @@ void imageFilm_t::init(int numPasses)
 		filmPath += " - node " + node.str();
 		filmPath += ".film";
 		std::string filmPathBackup = filmPath+"-previous.bak";
-
-/*		if(boost::filesystem::exists(filmPathBackup))
-		{
-			Y_VERBOSE << "imageFilm: Deleting previous old ImageFilm backup file: \"" << filmPathBackup << "\"" << yendl;
-			try
-			{	
-				boost::filesystem::remove(filmPathBackup);
-			}
-			catch(const boost::filesystem::filesystem_error& e)
-			{
-				Y_WARNING << "imageFilm: error during deletion of old ImageFilm backup \"" << e.what() << "\"" << yendl;
-			}
-		}
-		*/
 		
 		if(boost::filesystem::exists(filmPath))
 		{
