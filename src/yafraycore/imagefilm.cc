@@ -368,6 +368,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 			{
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 
+				if((*imagePasses.at(0))(x, y).weight <= 0.f) flags->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
 
