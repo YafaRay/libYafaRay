@@ -170,7 +170,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	if(session.renderResumed()) 
 	{
 		passString.clear();
-		passString << "Loading film file, skipping pass 1...";
+		passString << "Combining ImageFilm files, skipping pass 1...";
 		intpb->setTag(passString.str().c_str());
 	}
 	

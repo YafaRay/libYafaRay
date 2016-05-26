@@ -181,7 +181,9 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	AA_clamp_samples = 0.f;
 	
 	autoSave = false;
+	autoSaveBinary = true;
 	autoLoad = false;
+	
 }
 
 imageFilm_t::~imageFilm_t ()
@@ -238,6 +240,19 @@ void imageFilm_t::init(int numPasses)
 
 	if(autoLoad)
 	{
+		std::stringstream passString;
+		passString << "Loading ImageFilm files";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+		
 		std::string filmPath = session.getPathImageOutput();
 		std::stringstream node;
 		node << std::setfill('0') << std::setw(4) << computerNode;
@@ -261,7 +276,6 @@ void imageFilm_t::init(int numPasses)
 
 			for(auto filmFile: filmFilesList)
 			{
-				Y_INFO << "imageFilm: Loading film from: \"" << filmFile << "\"" << yendl;
 				imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
 				loadedFilm->imageFilmLoad(filmFile, false);
 				
@@ -288,6 +302,8 @@ void imageFilm_t::init(int numPasses)
 		{
 			Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
 		}
+		
+		if(pbar) pbar->setTag(oldTag);
 	}
 	
 	//film load check data initialization
@@ -797,11 +813,61 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		}
 	}
 
-	if(out1 && (session.renderFinished() || !out2)) out1->flush(numView, env->getRenderPasses());
-	if(out2) out2->flush(numView, env->getRenderPasses());
+	if(out1 && (session.renderFinished() || !out2)) 
+	{
+		std::stringstream passString;
+		passString << "Saving image files";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		out1->flush(numView, env->getRenderPasses());
+		
+		if(pbar) pbar->setTag(oldTag);
+	}
+	
+	if(out2)
+	{
+		std::stringstream passString;
+		passString << "Saving image files";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		out2->flush(numView, env->getRenderPasses());
+
+		if(pbar) pbar->setTag(oldTag);
+	}
 
 	if(autoSave && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
+		std::stringstream passString;
+		passString << "Saving internal ImageFilm file";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
 		std::string filmPath = session.getPathImageOutput();
 		std::stringstream node;
 		node << std::setfill('0') << std::setw(4) << computerNode;
@@ -821,9 +887,9 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
 			}
 		}
-		Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\"" << yendl;
 		this->imageFilmSave(filmPath, false);
-		Y_VERBOSE << "imageFilm: Saved film to: \"" << filmPath << "\"" << yendl;
+
+		if(pbar) pbar->setTag(oldTag);
 	}
 	
 	if(session.renderFinished())
@@ -1224,6 +1290,11 @@ void imageFilm_t::setAutoSave(bool auto_save)
 	autoSave = auto_save;
 }
 
+void imageFilm_t::setAutoSaveBinary(bool auto_save_binary)
+{
+	autoSaveBinary = auto_save_binary;
+}
+
 void imageFilm_t::setAutoLoad(bool auto_load)
 {
 	autoLoad = auto_load;
@@ -1244,25 +1315,26 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat
 		
 		if(debugXMLformat)
 		{
-			Y_DEBUG << "serialization: trying to load in XML format" << yendl;
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in XML format" << yendl;
 			boost::archive::xml_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
 		else if(binaryfile == true)
 		{
-			Y_DEBUG << "serialization: trying to load in Binary format" << yendl;
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Binary (non portable) format" << yendl;
 			boost::archive::binary_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
 		else
 		{
-			Y_DEBUG << "serialization: trying to load in Text format" << yendl;
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Text format" << yendl;
 			boost::archive::text_iarchive ia(ifs);
 			ia >> BOOST_SERIALIZATION_NVP(*this);
 			ifs.close();
 		}
+		Y_VERBOSE << "imageFilm: Film loaded from file." << yendl;
 		return true;
 	}
 	catch(std::exception& ex){
@@ -1279,17 +1351,26 @@ bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat
 
 		if(debugXMLformat)
 		{
+			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in XML format" << yendl;
 			boost::archive::xml_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+		else if(autoSaveBinary)
+		{
+			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in Binary (non portable) format" << yendl;
+			boost::archive::binary_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
 		else
 		{
-			//boost::archive::binary_oarchive oa(ofs);
+			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in Text format" << yendl;
 			boost::archive::text_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
+	Y_VERBOSE << "imageFilm: Film saved to file." << yendl;
 	}
 	catch(std::exception& ex){
         Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filename << "'" << yendl;

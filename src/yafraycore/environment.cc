@@ -539,6 +539,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	float partial_save_timer = 0.f;
 	bool partial_save_each_pass = false;
 	bool film_autosave = false;
+	bool film_save_binary_format = true;
 	bool film_load = false;
 
 	params.getParam("color_space", color_space_string);
@@ -559,6 +560,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("partial_save_timer", partial_save_timer); // Time for partially save image
 	params.getParam("partial_save_each_pass", partial_save_each_pass); // If enabled, it will autosave the image at the end of each pass
 	params.getParam("film_autosave", film_autosave); // If enabled, it will autosave the Image Film at the same time as the image files
+	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
 	params.getParam("film_load", film_load); // If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen
 	
 	if(color_space_string == "sRGB") color_space = SRGB;
@@ -626,10 +628,13 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 
 	film->setAutoSave(film_autosave);
-	if(film_autosave) Y_INFO_ENV << "Enabling imageFilm AutoSave feature" << yendl;
+	film->setAutoSaveBinary(film_save_binary_format);
+	
+	if(film_autosave && film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm AutoSave feature in binary format (smaller, faster but not portable among systems)" << yendl;
+	if(film_autosave && !film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm AutoSave feature in text format (portable among systems but bigger and slower)" << yendl;
 
 	film->setAutoLoad(film_load);
-	if(film_load) Y_INFO_ENV << "Enabling imageFilm AutoLoad feature. It will load the image film from a file before start rendering. If it does not match exactly the scene, bad results or even crashes could happen. Use WITH CARE!" << yendl;
+	if(film_load) Y_INFO_ENV << "Enabling imageFilm AutoLoad feature. It will load and combine all ImageFilm files (*.film) from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
 
 	return film;
 }
