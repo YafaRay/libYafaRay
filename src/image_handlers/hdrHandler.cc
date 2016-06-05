@@ -26,6 +26,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include <fstream>
 #include <iostream>
@@ -95,14 +96,8 @@ void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 
 bool hdrHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+	
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
@@ -114,7 +109,7 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	if (!readHeader(fp))
 	{
 		Y_ERROR << handlerName << ": An error has occurred while reading the header..." << yendl;
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -142,11 +137,11 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if (!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading uncompressed scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return true;
 	}
 	
@@ -157,14 +152,14 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 		if (fread((char *)&pix, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
 		{
 			Y_ERROR << handlerName << ": An error has occurred while reading scanline start..." << yendl;
-			fclose(fp);
+			fileUnicodeClose(fp);
 			return false;
 		}
 
 		if (feof(fp))
 		{
 			Y_ERROR << handlerName << ": EOF reached while reading scanline start..." << yendl;
-			fclose(fp);
+			fileUnicodeClose(fp);
 			return false;
 		}
 		
@@ -173,14 +168,14 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if (pix.getARLECount() > scanWidth)
 			{
 				Y_ERROR << handlerName << ": Error reading, invalid ARLE scanline width..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 
 			if (!readARLE(fp, y, pix.getARLECount()))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
@@ -192,13 +187,13 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if(!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
 	}
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 

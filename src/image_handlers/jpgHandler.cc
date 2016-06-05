@@ -25,10 +25,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-
-#include <cstdio>
-#include <locale>
-#include <codecvt>
+#include <utilities/fileUtils.h>
 
 extern "C"
 {
@@ -146,13 +143,12 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
-	FILE * fp;
 	struct jpeg_compress_struct info;
 	struct jpgErrorManager jerr;
 	int x, y, ix;
 	yByte *scanline = nullptr;
 	
-	fp = fopen(name.c_str(), "wb");
+	FILE * fp = fileUnicodeOpen(name, "wb");
 	
 	if (!fp)
 	{
@@ -201,7 +197,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	jpeg_finish_compress(&info);
 	jpeg_destroy_compress(&info);
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	if(m_hasAlpha)
 	{
@@ -209,7 +205,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"..." << yendl;
 		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"..." << yendl;
 
-		fp = fopen(alphaname.c_str(), "wb");
+		fp = fileUnicodeOpen(alphaname, "wb");
 		
 		if (!fp)
 		{
@@ -255,7 +251,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		jpeg_finish_compress(&info);
 		jpeg_destroy_compress(&info);
 
-		fclose(fp);
+		fileUnicodeClose(fp);
 	}
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -268,14 +264,8 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_decompress_struct info;
 	jpgErrorManager jerr;
 
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
@@ -292,7 +282,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	{
 		jpeg_destroy_decompress(&info);
 		
-		fclose(fp);
+		fileUnicodeClose(fp);
 		
 		return false;
 	}
@@ -314,7 +304,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
 		
-		fclose(fp);
+		fileUnicodeClose(fp);
 		
 		return false;
 	}
@@ -396,7 +386,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_finish_decompress(&info);
 	jpeg_destroy_decompress(&info);
 	
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 

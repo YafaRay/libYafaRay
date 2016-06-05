@@ -45,8 +45,9 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 {
 	if(!mSaveLog) return;
 	
-	std::ofstream txtLogFile;
-	txtLogFile.open(name.c_str());
+Y_DEBUG << "yafarayLog_t::saveTxtLog(const std::string &name) " << name << yendl;
+	std::ofstream txtLogFile123;
+/*	txtLogFile.open(name.c_str());
 
 	txtLogFile << "YafaRay Image Log file " << std::endl << std::endl;
 
@@ -82,14 +83,18 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 			txtLogFile << it->eventDescription;
 		}
 	}
+	txtLogFile.close();
+*/
 }
 
 void yafarayLog_t::saveHtmlLog(const std::string &name)
 {
 	if(!mSaveHTML) return;
 	
-	std::ofstream htmlLogFile;
-	htmlLogFile.open(name.c_str());
+Y_DEBUG << "yafarayLog_t::saveHtmlLog(const std::string &name) " << name << yendl;
+
+	std::ofstream htmlLogFile123;
+/*	htmlLogFile.open(name.c_str());
 
 	std::string baseImgPath, baseImgFileName, imgExtension;
 
@@ -178,6 +183,8 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 		}
 		htmlLogFile << std::endl << "</table></body></html>" << std::endl;
 	}
+	htmlLogFile.close();
+	*/
 }
 
 void yafarayLog_t::clearMemoryLog()

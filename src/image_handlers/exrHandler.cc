@@ -25,18 +25,13 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfVersion.h>
-
-#include <cstdio>
-#include <locale>
-#include <codecvt>
-
-#include <boost/filesystem.hpp>
 
 using namespace Imf;
 using namespace Imath;

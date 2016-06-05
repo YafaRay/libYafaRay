@@ -25,6 +25,7 @@
 
 #include "yafray_constants.h"
 #include <utilities/image_buffers.h>
+
 #include <fstream>
 #include <sstream>
 #include <string>

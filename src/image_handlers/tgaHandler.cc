@@ -25,12 +25,9 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include "tgaUtils.h"
-
-#include <cstdio>
-#include <locale>
-#include <codecvt>
 
 __BEGIN_YAFRAY
 
@@ -145,10 +142,8 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	header.height = m_height;
 	header.bitDepth = ((m_hasAlpha) ? 32 : 24 );
 	header.desc = TL | ((m_hasAlpha) ? alpha8 : noAlpha );
-	
-	FILE* fp;
-	
-	fp = fopen(name.c_str(), "wb");
+		
+	FILE * fp = fileUnicodeOpen(name, "wb");
 
 	if (fp == nullptr)
 		return false;
@@ -178,7 +173,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		}
 
 		fwrite(&footer, sizeof(tgaFooter_t), 1, fp);
-		fclose(fp);
+		fileUnicodeClose(fp);
 	}
 	
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -431,14 +426,8 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 
 bool tgaHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
 	if(!fp)
@@ -467,7 +456,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	
 	if(!precheckFile(header, name, isGray, isRLE, hasColorMap, alphaBitDepth))
 	{
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -607,7 +596,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 		}
 	}
 	
-	fclose(fp);
+	fileUnicodeClose(fp);
 	fp = nullptr;
 	
 	if (ColorMap) delete ColorMap;

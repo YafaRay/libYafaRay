@@ -853,10 +853,11 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		}
 	}
 
-	if(out1 && (session.renderFinished() || !out2)) 
+	if(out1 && (session.renderFinished() || out1->isImageOutput())) 
 	{
 		std::stringstream passString;
-		passString << "Saving image files";
+		if(out1->isImageOutput()) passString << "Saving image files";
+		else passString << "Flushing output";
 
 		Y_INFO << passString.str() << yendl;
 
@@ -873,7 +874,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(pbar) pbar->setTag(oldTag);
 	}
 	
-	if(out2)
+	if(out2 && out2->isImageOutput())
 	{
 		std::stringstream passString;
 		passString << "Saving image files";

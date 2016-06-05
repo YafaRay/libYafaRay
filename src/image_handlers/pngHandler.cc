@@ -25,8 +25,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <locale>
-#include <codecvt>
+#include <utilities/fileUtils.h>
 
 #include <png.h>
 
@@ -134,13 +133,12 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
 
-	FILE *fp;
 	png_structp pngPtr;
 	png_infop infoPtr;
 	int channels;
 	png_bytep *rowPointers = nullptr;
 
-	fp = fopen(name.c_str(), "wb");
+	FILE * fp = fileUnicodeOpen(name, "wb");
 
 	if(!fp)
 	{
@@ -150,7 +148,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr))
 	{
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -187,7 +185,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	png_destroy_write_struct(&pngPtr, &infoPtr);
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	// cleanup:
 	for(int i = 0; i < m_height; i++)
@@ -207,14 +205,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	png_structp pngPtr = nullptr;
 	png_infop infoPtr = nullptr;
 
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
@@ -233,7 +225,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
     if(!fillReadStructs(signature, pngPtr, infoPtr))
     {
-    	fclose(fp);
+    	fileUnicodeClose(fp);
     	return false;
     }
 
@@ -243,7 +235,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	readFromStructs(pngPtr, infoPtr);
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
