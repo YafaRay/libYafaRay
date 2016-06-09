@@ -27,7 +27,7 @@
 
 #include <cstdio>
 #include <locale>
-#include <codecvt>
+#include <utilities/stringUtils.h>
 
 #include <boost/filesystem.hpp>
 

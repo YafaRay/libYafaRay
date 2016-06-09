@@ -1153,8 +1153,7 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 	FT_Vector pen; // untransformed origin
 
 	std::string text_utf8 = ss.str();
-	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;
-	std::u32string wtext_utf32 = convert.from_bytes(text_utf8);
+	std::u32string wtext_utf32 = utf8_to_wutf32(text_utf8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f;
