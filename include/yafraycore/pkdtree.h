@@ -100,8 +100,6 @@ class pointKdTree
 			ar & BOOST_SERIALIZATION_NVP(Y_PROCS);
 			ar & boost::serialization::make_array(nodes, nextFreeNode);
 		}
-		
-		friend class boost::serialization::access;
 		template<class Archive> void load(Archive & ar, const unsigned int version)
 		{
 			ar & BOOST_SERIALIZATION_NVP(nElements);
