@@ -38,8 +38,7 @@ FILE * fileUnicodeOpen(const std::string &filename, const std::string &fileacces
 	FILE * filepointer = nullptr;
 	
 #if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wfilename = convert.from_bytes(filename);
+	std::wstring wfilename = utf8_to_wutf16(filename);
 	std::wstringstream wfileaccess;
 	wfileaccess << fileaccess.c_str();
 	filepointer = _wfopen(wfilename.c_str(), wfileaccess.str().c_str());	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16

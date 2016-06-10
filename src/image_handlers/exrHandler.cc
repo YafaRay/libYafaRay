@@ -219,15 +219,9 @@ colorA_t exrHandler_t::getPixel(int x, int y, int imagePassNumber)
 
 bool exrHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffffUL, std::little_endian>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-	std::string tempFilePathString = "";	//filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	std::string tempFilePathString = "";    //filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
+
+	FILE *fp = fileUnicodeOpen(name.c_str(), "rb");
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
 	if(!fp)

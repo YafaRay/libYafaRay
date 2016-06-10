@@ -78,6 +78,16 @@ inline std::string wutf32_to_utf8(const std::u32string& wutf32str)
     return boost::locale::conv::utf_to_utf<char>(wutf32str.c_str(), wutf32str.c_str() + wutf32str.size());
 }  
 
+inline std::wstring utf8_to_wutf16(const std::string& utf8str)
+{
+    return boost::locale::conv::utf_to_utf<wchar_t>(utf8str.c_str(), utf8str.c_str() + utf8str.size());
+}
+
+inline std::string wutf16_to_utf8(const std::wstring& wutf16str)
+{
+    return boost::locale::conv::utf_to_utf<char>(wutf16str.c_str(), wutf16str.c_str() + wutf16str.size());
+}  
+
 __END_YAFRAY
 
 #endif
