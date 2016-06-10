@@ -30,17 +30,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#if defined(_WIN32) && defined(__MINGW32__)
-	#undef _GLIBCXX_HAS_GTHREADS
-	#include <third_party/mingw-std-threads/mingw.thread.h>
-	#include <mutex>
-	#include <third_party/mingw-std-threads/mingw.mutex.h>
-	#include <third_party/mingw-std-threads/mingw.condition_variable.h>
-#else
-	#include <thread>
-	#include <mutex>
-	#include <condition_variable>
-#endif
+#include <utilities/threadUtils.h>
 
 __BEGIN_YAFRAY
 
