@@ -124,7 +124,6 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 #if defined(_WIN32)
 	std::wstring wname = utf8_to_wutf16(name);    
 	TIFF *out = TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #else
 	TIFF *out = TIFFOpen(name.c_str(), "w");
 #endif
@@ -187,7 +186,6 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 #if defined(_WIN32)
 	std::wstring wname = utf8_to_wutf16(name);
 	TIFF *tif = TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #else
 	TIFF *tif = TIFFOpen(name.c_str(), "r");
 #endif

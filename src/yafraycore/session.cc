@@ -38,6 +38,9 @@ session_t::session_t(const session_t&)	//We need to redefine the copy constructo
 session_t::session_t()
 {
 	Y_VERBOSE << "Session:started" << yendl;
+#if defined(_WIN32)
+	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
+#endif
 	causticMap = new photonMap_t;
 	causticMap->setName("Caustic Photon Map");
 	diffuseMap = new photonMap_t;

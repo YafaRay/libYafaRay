@@ -42,7 +42,6 @@ FILE * fileUnicodeOpen(const std::string &filename, const std::string &fileacces
 	std::wstringstream wfileaccess;
 	wfileaccess << fileaccess.c_str();
 	filepointer = _wfopen(wfilename.c_str(), wfileaccess.str().c_str());	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #else
 	filepointer = fopen(filename.c_str(), fileaccess.c_str());
 #endif
