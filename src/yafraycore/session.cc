@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <boost/filesystem.hpp>
 #include <yafraycore/photon.h>
+#include <yaf_version.h>
 
 __BEGIN_YAFRAY
 
@@ -196,6 +197,15 @@ std::string session_t::getPathImageOutput()
 	if(mPathImageOutput.empty()) return boost::filesystem::temp_directory_path().string()+"/yafaray";	//if no image output folder was specified, use the system temporary folder
 	else return mPathImageOutput;
 	
+}
+
+std::string session_t::getYafaRayCoreVersion()
+{
+	// This preprocessor macro is set by cmake during building in file yaf_version.h.cmake
+	// For example: cmake -DYAFARAY_CORE_VERSION="v1.2.3"
+	// the intention is to link the YafaRay Core version to the git information obtained, for example with:
+	// cmake /yafaray/src/Core -DYAFARAY_CORE_VERSION=`git --git-dir=/yafaray/src/Core/.git describe --dirty --always --tags --long`
+	return YAFARAY_CORE_VERSION;
 }
 
 __END_YAFRAY

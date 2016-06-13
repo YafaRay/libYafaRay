@@ -3,7 +3,6 @@
 #define Y_YAFRAYINTERFACE_H
 
 #include <yafray_constants.h>
-#include <yaf_revision.h>
 #include <list>
 #include <vector>
 #include <string>

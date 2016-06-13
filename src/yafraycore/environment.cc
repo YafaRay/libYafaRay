@@ -40,7 +40,6 @@
 #include <core_api/object3d.h>
 #include <core_api/volume.h>
 #include <yafraycore/std_primitives.h>
-#include <yaf_revision.h>
 #include <string>
 #include <sstream>
 
@@ -69,11 +68,7 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-#ifdef RELEASE
-	Y_INFO << PACKAGE << " (" << VERSION << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
-#else
-	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
-#endif
+	Y_INFO << PACKAGE << " (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
 }

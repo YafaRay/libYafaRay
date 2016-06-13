@@ -392,11 +392,7 @@ std::string yafrayInterface_t::getImageFullNameFromFormat(const std::string &for
 
 char* yafrayInterface_t::getVersion() const
 {
-#ifdef RELEASE
-	return (char*)std::string(VERSION).c_str();
-#else
-	return (char*)std::string(YAF_SVN_REV).c_str();
-#endif
+	return (char*)session.getYafaRayCoreVersion().c_str();
 }
 
 void yafrayInterface_t::printDebug(const std::string &msg)

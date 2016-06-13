@@ -79,16 +79,6 @@ set(WITH_YAF_PY_BINDINGS ON)
 set(WITH_YAF_RUBY_BINDINGS OFF)
 
 #                                                                              #
-# Enable release mode building of YafaRay                                      #
-# NOTE: This is only to build YafaRay releases, it controls the version number #
-# shown in yafaray-xml and the "draw parameters" parameters badge              #
-#                                                                              #
-# Default: OFF                                                                 #
-#                                                                              #
-
-set(BUILDRELEASE OFF)
-
-#                                                                              #
 # Enable debug build mode                                                      #
 #                                                                              #
 # Default: OFF                                                                 #
@@ -242,10 +232,10 @@ set(DEBUG_BUILD OFF)
 #                                                                              #
 # Use this variable to set the Python version you want to use for the bindings #
 #                                                                              #
-# Default: 2.6                                                                 #
+# Default: 3.5                                                                 #
 #                                                                              #
 
-#set(YAF_PY_VERSION 3.1)
+#set(YAF_PY_VERSION 3.5)
 
 ############################# Misc. Configurations #############################
 #                                                                              #

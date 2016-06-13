@@ -63,7 +63,8 @@ class YAFRAYCORE_EXPORT session_t
 		bool isInteractive();
 		std::string getPathYafaRayXml();
 		std::string getPathImageOutput();
-				
+		std::string getYafaRayCoreVersion();
+						
 		photonMap_t * causticMap = nullptr;
 		photonMap_t * diffuseMap = nullptr;
 		photonMap_t * radianceMap = nullptr;

@@ -28,7 +28,6 @@
 #include <utilities/math_utils.h>
 #include <resources/yafLogoTiny.h>
 
-#include <yaf_revision.h>
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -675,11 +674,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	
 	if(out1 == out2) out1 = nullptr;	//if we are already flushing the secondary output (out2) as main output (out1), then disable out1 to avoid duplicated work
 
-#ifdef RELEASE
-	std::string version = std::string(VERSION);
-#else
-	std::string version = std::string(YAF_SVN_REV);
-#endif
+	std::string version = session.getYafaRayCoreVersion();
 
 	std::stringstream ssBadge;
 

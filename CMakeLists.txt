@@ -1,5 +1,5 @@
 project (yafaray)
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.5)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 set(CMAKE_COLOR_MAKEFILE ON)
@@ -15,7 +15,6 @@ option(WITH_XML_LOADER "Build XML Loader" ON)
 option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
 option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(WITH_OSX_ADDON "Enable the use of blender's included python lib on OSX platforms" OFF)
-option(BUILDRELEASE "Enable release mode building of YafaRay" OFF)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
@@ -241,10 +240,6 @@ endif(USER_DEBUG_EXTRA_FLAGS)
 if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})
 endif(YAF_USER_EXTRA_DEFS)
-
-if (BUILDRELEASE)
-	add_definitions(-DRELEASE)
-endif (BUILDRELEASE)
 
 # Paths and flags configuration
 

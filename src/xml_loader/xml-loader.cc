@@ -15,7 +15,6 @@
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
 #include <yafraycore/xmlparser.h>
-#include <yaf_revision.h>
 #include <utilities/console_utils.h>
 #include <yafraycore/imageOutput.h>
 
@@ -72,11 +71,9 @@ int main(int argc, char *argv[])
 
 	session.setPathYafaRayXml(boost::filesystem::system_complete(argv[0]).parent_path().string());
 
-	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
-
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
 
-	parse.setAppName(xmlLoaderVersion,
+	parse.setAppName("YafaRay XML loader",
 	"[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
 	
 	parse.setOption("pp","plugin-path", false, "Path to load plugins.");
@@ -84,12 +81,6 @@ int main(int argc, char *argv[])
 	parse.setOption("lvl","log-verbosity-level", false, "Set log/HTML files verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basic info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.parseCommandLine();
 	
-#ifdef RELEASE
-	std::string version = std::string(VERSION);
-#else
-	std::string version = std::string(YAF_SVN_REV);
-#endif
-
 	renderEnvironment_t *env = new renderEnvironment_t();
 	
 	// Plugin load
@@ -149,7 +140,7 @@ int main(int argc, char *argv[])
 	
 	if(parse.getFlag("v"))
 	{
-		Y_INFO << xmlLoaderVersion << yendl << "Built with YafaRay version " << version << yendl;
+		Y_INFO << "YafaRay XML loader" << yendl << "Built with YafaRay Core version " << session.getYafaRayCoreVersion() << yendl;
 		return 0;
 	}
 	
