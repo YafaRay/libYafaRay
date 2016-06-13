@@ -204,7 +204,8 @@ std::string session_t::getYafaRayCoreVersion()
 	// This preprocessor macro is set by cmake during building in file yaf_version.h.cmake
 	// For example: cmake -DYAFARAY_CORE_VERSION="v1.2.3"
 	// the intention is to link the YafaRay Core version to the git information obtained, for example with:
-	// cmake /yafaray/src/Core -DYAFARAY_CORE_VERSION=`git --git-dir=/yafaray/src/Core/.git describe --dirty --always --tags --long`
+	// cmake /yafaray/src/Core -DYAFARAY_CORE_VERSION=`git --git-dir=/yafaray/src/Core/.git --work-tree=/yafaray/src/Core describe --dirty --always --tags --long`
+
 	return YAFARAY_CORE_VERSION;
 }
 
