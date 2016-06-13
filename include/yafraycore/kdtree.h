@@ -45,9 +45,9 @@ public:
 		else _emptyKd_leaves++; //stat
 		Kd_leaves++; //stat
 	}
-	void createInterior(int axis, PFLOAT d)
+	void createInterior(int axis, float d)
 	{	division = d; flags = (flags & ~3) | axis; Kd_inodes++; }
-	PFLOAT 	SplitPos() const { return division; }
+	float 	SplitPos() const { return division; }
 	int 	SplitAxis() const { return flags & 3; }
 	int 	nPrimitives() const { return flags >> 2; }
 	bool 	IsLeaf() const { return (flags & 3) == 3; }
@@ -56,7 +56,7 @@ public:
 	
 	union
 	{
-		PFLOAT 			division;		//!< interior: division plane position
+		float 			division;		//!< interior: division plane position
 		triangle_t** 	primitives;		//!< leaf: list of primitives
 		triangle_t*		onePrimitive;	//!< leaf: direct inxex of one primitive
 	};
@@ -69,14 +69,14 @@ public:
 class boundEdge {
 public:
 	boundEdge(){};
-	boundEdge(PFLOAT position, int primitive, int bound_end):
+	boundEdge(float position, int primitive, int bound_end):
 		pos(position), primNum(primitive), end(bound_end) {};
 	bool operator<(const boundEdge &e) const {
 		if (pos == e.pos)
 			return (int)end > (int)e.end;
 		else return pos < e.pos;
 	}
-	PFLOAT pos;
+	float pos;
 	int primNum;
 	int end;
 };
@@ -85,7 +85,7 @@ public:
 struct KdStack
 {
 	const kdTreeNode *node; //!< pointer to far child
-	PFLOAT t; 		//!< the entry/exit signed distance
+	float t; 		//!< the entry/exit signed distance
 	point3d_t pb; 		//!< the point coordinates of entry/exit point
 	int	 prev; 		//!< the pointer to the previous stack item
 };
@@ -93,7 +93,7 @@ struct KdStack
 struct KdToDo
 {
 	const kdTreeNode *node;
-	PFLOAT tmin, tmax;
+	float tmin, tmax;
 };
 
 class splitCost_t
@@ -104,7 +104,7 @@ public:
 	int bestOffset;
 	float bestCost;
 	float oldCost;
-	PFLOAT t;
+	float t;
 	int nBelow, nAbove, nEdge;
 };
 
@@ -117,7 +117,7 @@ class bin_t
 	int 	n;
 	int 	c_left, c_right;
 	int 	c_bleft, c_both;
-	PFLOAT 	t;
+	float 	t;
 };
 
 // ============================================================
@@ -129,11 +129,11 @@ class YAFRAYCORE_EXPORT triKdTree_t
 public:
 	triKdTree_t(const triangle_t **v, int np, int depth=-1, int leafSize=2,
 			float cost_ratio=0.35, float emptyBonus=0.33);
-	bool Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, intersectData_t &data) const;
-//	bool IntersectDBG(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
-	bool IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT shadow_bias) const;
-	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt, PFLOAT shadow_bias) const;
-//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z) const;
+	bool Intersect(const ray_t &ray, float dist, triangle_t **tr, float &Z, intersectData_t &data) const;
+//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
+	bool IntersectS(const ray_t &ray, float dist, triangle_t **tr, float shadow_bias) const;
+	bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, float dist, triangle_t **tr, color_t &filt, float shadow_bias) const;
+//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, triangle_t **tr, float &Z) const;
 	bound_t getBound(){ return treeBound; }
 	~triKdTree_t();
 private:

@@ -63,15 +63,15 @@ struct YAFRAYCORE_EXPORT renderState_t
 	~renderState_t(){};
 
 	int raylevel;
-	CFLOAT depth;
-	CFLOAT contribution; //?
+	float depth;
+	float contribution; //?
 	const void *skipelement;
 	int currentPass;
 	int pixelSample; //!< number of samples inside this pixels so far
 	int rayDivision; //!< keep track of trajectory splitting
 	int rayOffset; //!< keep track of trajectory splitting
 	float dc1, dc2; //!< used to decorrelate samples from trajectory splitting
-	PFLOAT traveled;
+	float traveled;
 	int pixelNumber;
 	int threadID; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
 	unsigned int samplingOffs; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
@@ -79,8 +79,8 @@ struct YAFRAYCORE_EXPORT renderState_t
 	const camera_t *cam;
 	bool chromatic; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
 	bool includeLights; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
-	PFLOAT wavelength; //!< the (normalized) wavelength being used when chromatic is false.
-	PFLOAT time; //!< the current (normalized) frame time
+	float wavelength; //!< the (normalized) wavelength being used when chromatic is false.
+	float time; //!< the current (normalized) frame time
 	mutable void *userdata; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
 	void *lightdata; //!< reserved; non-dirac lights may do some surface-point dependant initializations in the future to reduce redundancy...
 	random_t *const prng; //!< a pseudorandom number generator
@@ -160,11 +160,11 @@ class YAFRAYCORE_EXPORT scene_t
 		void addNormal(const normal_t &n);
 		bool addTriangle(int a, int b, int c, const material_t *mat);
 		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
-		int  addUV(GFLOAT u, GFLOAT v);
+		int  addUV(float u, float v);
 		bool startVmap(int id, int type, int dimensions);
 		bool endVmap();
 		bool addVmapValues(float *val);
-		bool smoothMesh(objID_t id, PFLOAT angle);
+		bool smoothMesh(objID_t id, float angle);
 		bool update();
 
 		bool addLight(light_t *l);
@@ -194,7 +194,7 @@ class YAFRAYCORE_EXPORT scene_t
 		int getNumThreadsPhotons() const { return nthreads_photons; }
 		int getSignals() const;
 		//! only for backward compatibility!
-		void getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
+		void getAAParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
 		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
@@ -208,10 +208,10 @@ class YAFRAYCORE_EXPORT scene_t
 		std::vector<light_t *> lights;
 		volumeIntegrator_t *volIntegrator;
 
-		PFLOAT shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+		float shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
 		bool shadowBiasAuto;  //enable automatic shadow bias calculation
 
-		PFLOAT rayMinDist;  //ray minimum distance
+		float rayMinDist;  //ray minimum distance
 		bool rayMinDistAuto;  //enable automatic ray minimum distance calculation
 
 	protected:
@@ -231,7 +231,7 @@ class YAFRAYCORE_EXPORT scene_t
 
 		int AA_samples, AA_passes;
 		int AA_inc_samples; //!< sample count for additional passes
-		CFLOAT AA_threshold;
+		float AA_threshold;
 		float AA_resampled_floor; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
 		float AA_sample_multiplier_factor;
 		float AA_light_sample_multiplier_factor;

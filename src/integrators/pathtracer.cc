@@ -138,7 +138,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 	static int calls=0;
 	++calls;
 	color_t col(0.0);
-	CFLOAT alpha;
+	float alpha;
 	surfacePoint_t sp;
 	void *o_udat = state.userdata;
 	float W = 0.f;
@@ -331,7 +331,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		if(transpRefractedBackground)
 		{
-			CFLOAT m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(state, sp, wo);
 			alpha = m_alpha + (1.f-m_alpha)*alpha;
 		}
 		else alpha = 1.0;

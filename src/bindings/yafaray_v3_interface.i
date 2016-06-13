@@ -665,8 +665,8 @@ namespace yafaray
 			void scale(float sx, float sy, float sz);
 			int invalid() const { return _invalid; }
 			// ignored by swig
-			//const PFLOAT * operator [] (int i) const { return matrix[i]; }
-			//PFLOAT * operator [] (int i) { return matrix[i]; }
+			//const float * operator [] (int i) const { return matrix[i]; }
+			//float * operator [] (int i) { return matrix[i]; }
 			void setVal(int row, int col, float val)
 			{
 				matrix[row][col] = val;

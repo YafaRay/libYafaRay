@@ -28,7 +28,7 @@ __BEGIN_YAFRAY
 class directionalLight_t : public light_t
 {
   public:
-	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled=true, bool bCastShadows=true);
+	directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, float inte, bool inf, float rad, bool bLightEnabled=true, bool bCastShadows=true);
 	virtual void init(scene_t &scene);
 	virtual color_t totalEnergy() const { return color * radius*radius * M_PI; }
 	virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
@@ -42,14 +42,14 @@ class directionalLight_t : public light_t
 	color_t color;
 	vector3d_t direction, du, dv;
 	float intensity;
-	PFLOAT radius;
+	float radius;
 	float areaPdf;
-	PFLOAT worldRadius;
+	float worldRadius;
 	bool infinite;
 	int majorAxis; //!< the largest component of direction
 };
 
-directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, CFLOAT inte, bool inf, float rad, bool bLightEnabled, bool bCastShadows):
+directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, float inte, bool inf, float rad, bool bLightEnabled, bool bCastShadows):
 	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf)
 {
     lLightEnabled = bLightEnabled;
@@ -86,7 +86,7 @@ bool directionalLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_
 	if(!infinite)
 	{
 		vector3d_t vec = position - sp.P;
-		PFLOAT dist = (direction ^ vec).length();
+		float dist = (direction ^ vec).length();
 		if(dist>radius) return false;
 		wi.tmax = (vec*direction);
 		if(wi.tmax <= 0.0) return false;
@@ -113,7 +113,7 @@ color_t directionalLight_t::emitPhoton(float s1, float s2, float s3, float s4, r
 {
 	//todo
 	ray.dir = -direction;
-	PFLOAT u, v;
+	float u, v;
 	ShirleyDisk(s1, s2, u, v);
 	ray.from = position + radius * (u*du + v*dv);
 	if(infinite) ray.from += direction*worldRadius;
@@ -127,7 +127,7 @@ color_t directionalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	wo = -direction;
 	s.sp->N = wo;
 	s.flags = flags;
-	PFLOAT u, v;
+	float u, v;
 	ShirleyDisk(s.s1, s.s2, u, v);
 	s.sp->P = position + radius * (u*du + v*dv);
 	if(infinite) s.sp->P += direction*worldRadius;
@@ -141,7 +141,7 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	point3d_t from(0.0);
 	point3d_t dir(0.0, 0.0, 1.0);
 	color_t color(1.0);
-	CFLOAT power = 1.0;
+	float power = 1.0;
 	float rad = 1.0;
 	bool inf = true;
 	bool lightEnabled = true;

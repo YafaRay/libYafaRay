@@ -166,7 +166,7 @@ inline void reflectMicrofacet(const vector3d_t &wo, vector3d_t &wi, const vector
 	wi = -wi;
 }
 
-inline float SchlickFresnel(PFLOAT costheta, PFLOAT R)
+inline float SchlickFresnel(float costheta, float R)
 {
 	float c1 = (1.f - costheta);
 	float c2 = c1 * c1;

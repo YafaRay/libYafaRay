@@ -74,10 +74,10 @@ void hashGrid_t::updateGrid()
 	Y_VERBOSE<<"HashGrid: there are " << notused << " enties not used!"<<std::endl;
 }
 
-unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT sqRadius)
+unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float sqRadius)
 {
 	unsigned int count = 0;
-	PFLOAT radius = sqrt(sqRadius);
+	float radius = sqrt(sqRadius);
 
 	point3d_t rad(radius, radius, radius);
 	point3d_t bMin = ((P - rad) - bBox.a) * invcellSize;

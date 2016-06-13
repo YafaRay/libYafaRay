@@ -304,9 +304,9 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	x=camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
-	PFLOAT dx=0.5, dy=0.5, d1=1.0/(PFLOAT)n_samples;
+	float dx=0.5, dy=0.5, d1=1.0/(float)n_samples;
 	float lens_u=0.5f, lens_v=0.5f;
-	PFLOAT wt, wt_dummy;
+	float wt, wt_dummy;
 	random_t prng(offset*(x*a.Y+a.X)+123);
 	renderState_t rstate(&prng);
 	rstate.threadID = threadID;
@@ -353,7 +353,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				colorPasses.reset_colors();
 				rstate.setDefaults();
 				rstate.pixelSample = pass_offs+sample;
-				rstate.time = addMod1((PFLOAT)sample*d1, toff);//(0.5+(PFLOAT)sample)*d1;
+				rstate.time = addMod1((float)sample*d1, toff);//(0.5+(float)sample)*d1;
 
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
@@ -364,7 +364,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				}
 				else if(n_samples > 1)
 				{
-					dx = (0.5+(PFLOAT)sample)*d1;
+					dx = (0.5+(float)sample)*d1;
 					dy = RI_LP(sample+rstate.samplingOffs);
 				}
 				

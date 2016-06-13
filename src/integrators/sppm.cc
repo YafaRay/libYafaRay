@@ -165,9 +165,9 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	x=camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
-	PFLOAT dx=0.5, dy=0.5, d1=1.0/(PFLOAT)n_samples;
+	float dx=0.5, dy=0.5, d1=1.0/(float)n_samples;
 	float lens_u=0.5f, lens_v=0.5f;
-	PFLOAT wt, wt_dummy;
+	float wt, wt_dummy;
 	random_t prng(offset*(x*a.Y+a.X)+123);
 	renderState_t rstate(&prng);
 	rstate.threadID = threadID;
@@ -204,7 +204,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 				
 				rstate.setDefaults();
 				rstate.pixelSample = pass_offs+sample;
-				rstate.time = addMod1((PFLOAT)sample*d1, toff); //(0.5+(PFLOAT)sample)*d1;
+				rstate.time = addMod1((float)sample*d1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
 
@@ -841,7 +841,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 	color_t col(0.0);
 	GatherInfo gInfo;
 
-	CFLOAT alpha;
+	float alpha;
 	surfacePoint_t sp;
 
 	void *o_udat = state.userdata;
@@ -887,8 +887,8 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		//if PM_IRE is on. we should estimate the initial radius using the photonMaps. (PM_IRE is only for the first pass, so not consume much time)
 		if(PM_IRE && !hp.radiusSetted) // "waste" two gather here as it has two maps now. This make the logic simple.
 		{
-			PFLOAT radius_1 = dsRadius * dsRadius;
-			PFLOAT radius_2 = radius_1;
+			float radius_1 = dsRadius * dsRadius;
+			float radius_2 = radius_1;
 			int nGathered_1 = 0, nGathered_2 = 0;
 
 			if(session.diffuseMap->nPhotons() > 0)
@@ -907,7 +907,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 		}
 
 		int nGathered=0;
-		PFLOAT radius2 = hp.radius2;
+		float radius2 = hp.radius2;
 
 		if(bHashgrid)
 			nGathered = photonGrid.gather(sp.P, gathered, nMaxGather, radius2); // disable now
@@ -1281,7 +1281,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 
 		if(transpRefractedBackground)
 		{
-			CFLOAT m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(state, sp, wo);
 			alpha = m_alpha + (1.f-m_alpha)*alpha;
 		}
 		else alpha = 1.0;

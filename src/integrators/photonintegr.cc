@@ -1035,7 +1035,7 @@ bool photonIntegrator_t::preprocess()
 			{
 				cleaned.push_back(pgdat.rad_points[i]);
 				eliminatePhoton_t elimProc(pgdat.rad_points[i].normal);
-				PFLOAT maxrad = 0.01f*dsRadius; // 10% of diffuse search radius
+				float maxrad = 0.01f*dsRadius; // 10% of diffuse search radius
 				rTree->lookup(pgdat.rad_points[i].pos, elimProc, maxrad);
 			}
 		}
@@ -1128,7 +1128,7 @@ color_t photonIntegrator_t::finalGathering(renderState_t &state, const surfacePo
 	for(int i=0; i<nSampl; ++i)
 	{
 		color_t throughput( 1.0 );
-		PFLOAT length=0;
+		float length=0;
 		surfacePoint_t hit=sp;
 		vector3d_t pwo = wo;
 		ray_t pRay;
@@ -1264,7 +1264,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 	static int calls=0;
 	++calls;
 	color_t col(0.0);
-	CFLOAT alpha;
+	float alpha;
 	surfacePoint_t sp;
 	
 	void *o_udat = state.userdata;
@@ -1355,7 +1355,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 				}
 				
 				foundPhoton_t *gathered = (foundPhoton_t *)alloca(nDiffuseSearch * sizeof(foundPhoton_t));
-				PFLOAT radius = dsRadius; //actually the square radius...
+				float radius = dsRadius; //actually the square radius...
 
 				int nGathered=0;
 				
@@ -1408,7 +1408,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 		
 		if(transpRefractedBackground)
 		{
-			CFLOAT m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(state, sp, wo);
 			alpha = m_alpha + (1.f-m_alpha)*alpha;
 		}
 		else alpha = 1.0;

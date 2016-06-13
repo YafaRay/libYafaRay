@@ -105,7 +105,7 @@ public:
 	// additional information for current path connection:
 	vector3d_t w_l_e;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
 	color_t f_y, f_z;       //!< f for light and eye vertex that are connected
-	PFLOAT u, v;            //!< current position on image plane
+	float u, v;            //!< current position on image plane
 	float d_yz;             //!< distance between y_s to z_t
 	const light_t *light;   //!< the light source to which the current path is connected
 	//float pdf_Ad_0;       //!< pdf for direct lighting strategy
@@ -134,8 +134,8 @@ protected:
 	bool connectLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, color_t &lcol) const;
 	bool connectPathE(renderState_t &state, int s, pathData_t &pd) const;
 	//color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc)const;
-	CFLOAT pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const;
-	CFLOAT pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const;
+	float pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const;
+	float pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const;
 
 	background_t *background;
 	const camera_t *cam;
@@ -151,7 +151,7 @@ protected:
 	mutable std::vector<pathData_t> threadData;
 	pdf1D_t *lightPowerD;
 	float fNumLights;
-	std::map <const light_t*, CFLOAT> invLightPowerD;
+	std::map <const light_t*, float> invLightPowerD;
 	imageFilm_t *lightImage;
 	
 	bool useAmbientOcclusion; //! Use ambient occlusion
@@ -217,7 +217,7 @@ bool biDirIntegrator_t::preprocess()
 
 	// test...
 	/*
-	PFLOAT wt, u, v;
+	float wt, u, v;
 	float pdf;
 	ray_t wo = cam->shootRay(10.25, 10.25, 0, 0, wt);
 	bool proj = cam->project(wo, 0, 0, u, v, pdf);
@@ -295,7 +295,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		ve.sp.P = ray.from;
 		ve.qi_wo = ve.qi_wi = 1.f; // definitely no russian roulette here...
 		// temporary!
-		PFLOAT cu, cv;
+		float cu, cv;
 		float camPdf = 0.0;
 		cam->project(ray, 0, 0, cu, cv, camPdf);
         if(camPdf == 0.f) camPdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway. 
@@ -357,12 +357,12 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 			clear_path(pathData.path, s, 1);
 			if(!connectPathE(state, s, pathData)) continue;
 			check_path(pathData.path, s, 1);
-			CFLOAT wt = pathWeight(state, s, 1, pathData);
+			float wt = pathWeight(state, s, 1, pathData);
 			if(wt > 0.f)
 			{
 				color_t li_col = evalPathE(state, s, pathData);
 				if(li_col.isBlack()) continue;
-				PFLOAT ix, idx, iy, idy;
+				float ix, idx, iy, idy;
 				idx = std::modf(pathData.u, &ix);
 				idy = std::modf(pathData.v, &iy);
 				lightImage->addDensitySample(li_col, ix, iy, idx, idy);
@@ -370,7 +370,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		}
 #endif
 
-		CFLOAT wt;
+		float wt;
 		for(int t=2; t<=nEye; ++t)
 		{
 			//directly hit a light?
@@ -574,9 +574,9 @@ inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, 
 	pathEvalVert_t &x_e = pd.path[s];
 	// precompute stuff in pc that is specific to the current connection of sub-paths
 	vector3d_t vec = z.sp.P - y.sp.P;
-	PFLOAT dist2 = vec.normLenSqr();
-	PFLOAT cos_y = std::fabs(y.sp.N * vec);
-	PFLOAT cos_z = std::fabs(z.sp.N * vec);
+	float dist2 = vec.normLenSqr();
+	float cos_y = std::fabs(y.sp.N * vec);
+	float cos_z = std::fabs(z.sp.N * vec);
 
 	state.userdata = y.userdata;
 	x_l.pdf_f = y.sp.material->pdf(state, y.sp, y.wi, vec, BSDF_ALL); // light vert to eye vert
@@ -670,7 +670,7 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	//fill in pc...connecting to light vertex:
 	//pathEvalVert_t &x_l = pd.path[0];
 	pathEvalVert_t &x_e = pd.path[1];
-	PFLOAT cos_z = std::fabs(z.sp.N * vec);
+	float cos_z = std::fabs(z.sp.N * vec);
 	x_e.G = std::fabs(cos_wo * cos_z) / (lRay.tmax*lRay.tmax); // or use Ng??
 	pd.w_l_e = vec;
 	pd.d_yz = lRay.tmax;
@@ -715,8 +715,8 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
 	pathEvalVert_t &x_e = pd.path[s];
 
 	vector3d_t vec = z.sp.P - y.sp.P;
-	PFLOAT dist2 = vec.normLenSqr();
-	PFLOAT cos_y = std::fabs(y.sp.N * vec);
+	float dist2 = vec.normLenSqr();
+	float cos_y = std::fabs(y.sp.N * vec);
 
 	ray_t wo(z.sp.P, -vec);
 	if(! cam->project(wo, 0, 0, pd.u, pd.v, x_e.pdf_b) ) return false;
@@ -762,7 +762,7 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
  ============================================================ */
 
 // compute path densities and weight path
-CFLOAT biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const
+float biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const
 {
 	const std::vector<pathEvalVert_t> &path = pd.path;
 	float pr[2*MAX_PATH_LENGTH+1], p[2*MAX_PATH_LENGTH+1];
@@ -812,7 +812,7 @@ CFLOAT biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathDat
 }
 
 // weight paths that directly hit a light, i.e. s=0; t is at least 2 //
-CFLOAT biDirIntegrator_t::pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const
+float biDirIntegrator_t::pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const
 {
 	const std::vector<pathEvalVert_t> &path = pd.path;
 	const pathVertex_t &vl = pd.eyePath[t-1];

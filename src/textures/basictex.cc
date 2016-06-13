@@ -36,7 +36,7 @@ noiseGenerator_t* newNoise(const std::string &ntype)
 // Clouds Texture
 //-----------------------------------------------------------------------------------------
 
-textureClouds_t::textureClouds_t(int dep, PFLOAT sz, bool hd,
+textureClouds_t::textureClouds_t(int dep, float sz, bool hd,
 		const color_t &c1, const color_t &c2,
 		const std::string &ntype, const std::string &btype)
 		:depth(dep), size(sz), hard(hd), color1(c1), color2(c2)
@@ -53,9 +53,9 @@ textureClouds_t::~textureClouds_t()
 	nGen = nullptr;
 }
 
-CFLOAT textureClouds_t::getFloat(const point3d_t &p) const
+float textureClouds_t::getFloat(const point3d_t &p) const
 {
-	CFLOAT v = turbulence(nGen, p, depth, size, hard);
+	float v = turbulence(nGen, p, depth, size, hard);
 	if (bias) {
 		v *= v;
 		if (bias==1) return -v;	// !!!
@@ -75,7 +75,7 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 	int depth = 2;
 	std::string _ntype, _btype;
 	const std::string *ntype = &_ntype, *btype=&_btype;
-	PFLOAT size = 1;
+	float size = 1;
 	bool hard = false;
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", color1);
@@ -91,8 +91,8 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 // Simple Marble Texture
 //-----------------------------------------------------------------------------------------
 
-textureMarble_t::textureMarble_t(int oct, PFLOAT sz, const color_t &c1, const color_t &c2,
-			PFLOAT _turb, PFLOAT shp, bool hrd, const std::string &ntype, const std::string &shape)
+textureMarble_t::textureMarble_t(int oct, float sz, const color_t &c1, const color_t &c2,
+			float _turb, float shp, bool hrd, const std::string &ntype, const std::string &shape)
 	:octaves(oct), color1(c1), color2(c2), turb(_turb), size(sz), hard(hrd)
 {
 	sharpness = 1.0;
@@ -103,22 +103,22 @@ textureMarble_t::textureMarble_t(int oct, PFLOAT sz, const color_t &c1, const co
 	else if (shape=="tri") wshape = TRI;
 }
 
-CFLOAT textureMarble_t::getFloat(const point3d_t &p) const
+float textureMarble_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT w = (p.x + p.y + p.z)*5.0
+	float w = (p.x + p.y + p.z)*5.0
 					+ ((turb==0.0) ? 0.0 : turb*turbulence(nGen, p, octaves, size, hard));
 	switch (wshape) {
 		case SAW:
-			w *= (PFLOAT)(0.5*M_1_PI);
+			w *= (float)(0.5*M_1_PI);
 			w -= floor(w);
 			break;
 		case TRI:
-			w *= (PFLOAT)(0.5*M_1_PI);
-			w = std::fabs((PFLOAT)2.0*(w-floor(w))-(PFLOAT)1.0);
+			w *= (float)(0.5*M_1_PI);
+			w = std::fabs((float)2.0*(w-floor(w))-(float)1.0);
 			break;
 		default:
 		case SIN:
-			w = (PFLOAT)0.5 + (PFLOAT)0.5*fSin(w);
+			w = (float)0.5 + (float)0.5*fSin(w);
 	}
 	return fPow(w, sharpness);
 }
@@ -133,7 +133,7 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 {
 	color_t col1(0.0), col2(1.0);
 	int oct = 2;
-	PFLOAT turb=1.0, shp=1.0, sz=1.0;
+	float turb=1.0, shp=1.0, sz=1.0;
 	bool hrd = false;
 	std::string _ntype, _shape;
 	const std::string *ntype=&_ntype, *shape=&_shape;
@@ -154,7 +154,7 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 // Simple Wood Texture
 //-----------------------------------------------------------------------------------------
 
-textureWood_t::textureWood_t(int oct, PFLOAT sz, const color_t &c1, const color_t &c2, PFLOAT _turb,
+textureWood_t::textureWood_t(int oct, float sz, const color_t &c1, const color_t &c2, float _turb,
 		bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape)
 	:octaves(oct), color1(c1), color2(c2), turb(_turb), size(sz), hard(hrd)
 {
@@ -165,9 +165,9 @@ textureWood_t::textureWood_t(int oct, PFLOAT sz, const color_t &c1, const color_
 	else if (shape=="tri") wshape = TRI;
 }
 
-CFLOAT textureWood_t::getFloat(const point3d_t &p) const
+float textureWood_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT w;
+	float w;
 	if (rings)
 		w = fSqrt(p.x*p.x + p.y*p.y + p.z*p.z)*20.0;
 	else
@@ -175,16 +175,16 @@ CFLOAT textureWood_t::getFloat(const point3d_t &p) const
 	w += (turb==0.0) ? 0.0 : turb*turbulence(nGen, p, octaves, size, hard);
 	switch (wshape) {
 		case SAW:
-			w *= (PFLOAT)(0.5*M_1_PI);
+			w *= (float)(0.5*M_1_PI);
 			w -= floor(w);
 			break;
 		case TRI:
-			w *= (PFLOAT)(0.5*M_1_PI);
-			w = std::fabs((PFLOAT)2.0*(w-floor(w))-(PFLOAT)1.0);
+			w *= (float)(0.5*M_1_PI);
+			w = std::fabs((float)2.0*(w-floor(w))-(float)1.0);
 			break;
 		default:
 		case SIN:
-			w = (PFLOAT)0.5 + (PFLOAT)0.5*fSin(w);
+			w = (float)0.5 + (float)0.5*fSin(w);
 	}
 	return w;
 }
@@ -199,7 +199,7 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 {
 	color_t col1(0.0), col2(1.0);
 	int oct = 2;
-	PFLOAT turb=1.0, sz=1.0, old_rxy;
+	float turb=1.0, sz=1.0, old_rxy;
 	bool hrd = false;
 	std::string _ntype, _wtype, _shape;
 	const std::string *ntype=&_ntype, *wtype=&_wtype, *shape=&_shape;
@@ -230,7 +230,7 @@ colorA_t rgbCube_t::getColor(const point3d_t &p) const
 	return col;
 }
 	
-CFLOAT rgbCube_t::getFloat(const point3d_t &p) const
+float rgbCube_t::getFloat(const point3d_t &p) const
 {
 	color_t col = color_t(p.x, p.y, p.z);
 	col.clampRGB01();
@@ -249,9 +249,9 @@ texture_t* rgbCube_t::factory(paraMap_t &params,renderEnvironment_t &render)
 
 textureVoronoi_t::textureVoronoi_t(const color_t &c1, const color_t &c2,
 		int ct,
-		CFLOAT _w1, CFLOAT _w2, CFLOAT _w3, CFLOAT _w4,
-		PFLOAT mex, PFLOAT sz,
-		CFLOAT isc, const std::string &dname)
+		float _w1, float _w2, float _w3, float _w4,
+		float mex, float sz,
+		float isc, const std::string &dname)
 		:w1(_w1), w2(_w2), w3(_w3), w4(_w4), size(sz), coltype(ct)
 {
 	voronoi_t::dMetricType dm = voronoi_t::DIST_REAL;
@@ -277,9 +277,9 @@ textureVoronoi_t::textureVoronoi_t(const color_t &c1, const color_t &c2,
 	if (iscale!=0) iscale = isc/iscale;
 }
 
-CFLOAT textureVoronoi_t::getFloat(const point3d_t &p) const
+float textureVoronoi_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT da[4];
+	float da[4];
 	point3d_t pa[4];
 	vGen.getFeatures(p*size, da, pa);
 	return iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
@@ -288,10 +288,10 @@ CFLOAT textureVoronoi_t::getFloat(const point3d_t &p) const
 
 colorA_t textureVoronoi_t::getColor(const point3d_t &p) const
 {
-	PFLOAT da[4];
+	float da[4];
 	point3d_t pa[4];
 	vGen.getFeatures(p*size, da, pa);
-	CFLOAT inte = iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
+	float inte = iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
 			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da));
 	colorA_t col(0.0);
 	if (coltype) {
@@ -300,7 +300,7 @@ colorA_t textureVoronoi_t::getColor(const point3d_t &p) const
 		col += aw3 * cellNoiseColor(vGen.getPoint(2, pa));
 		col += aw4 * cellNoiseColor(vGen.getPoint(3, pa));
 		if (coltype>=2) {
-			CFLOAT t1 = (vGen.getDistance(1, da) - vGen.getDistance(0, da))*10.0;
+			float t1 = (vGen.getDistance(1, da) - vGen.getDistance(0, da))*10.0;
 			if (t1>1) t1=1;
 			if (coltype==3) t1*=inte; else t1*=iscale;
 			col *= t1;
@@ -316,10 +316,10 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 	color_t col1(0.0), col2(1.0);
 	std::string _cltype, _dname;
 	const std::string *cltype=&_cltype, *dname=&_dname;
-	CFLOAT fw1=1, fw2=0, fw3=0, fw4=0;
-	PFLOAT mex=2.5;	// minkovsky exponent
-	CFLOAT isc=1;	// intensity scale
-	PFLOAT sz=1;	// size
+	float fw1=1, fw2=0, fw3=0, fw4=0;
+	float mex=2.5;	// minkovsky exponent
+	float isc=1;	// intensity scale
+	float sz=1;	// size
 	int ct=0;	// default "int" color type (intensity)
 	
 	params.getParam("color1", col1);
@@ -349,8 +349,8 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 //-----------------------------------------------------------------------------------------
 
 textureMusgrave_t::textureMusgrave_t(const color_t &c1, const color_t &c2,
-				PFLOAT H, PFLOAT lacu, PFLOAT octs, PFLOAT offs, PFLOAT gain,
-				PFLOAT _size, CFLOAT _iscale,
+				float H, float lacu, float octs, float offs, float gain,
+				float _size, float _iscale,
 				const std::string &ntype, const std::string &mtype)
 				:color1(c1), color2(c2), size(_size), iscale(_iscale)
 {
@@ -379,7 +379,7 @@ textureMusgrave_t::~textureMusgrave_t()
 	}
 }
 
-CFLOAT textureMusgrave_t::getFloat(const point3d_t &p) const
+float textureMusgrave_t::getFloat(const point3d_t &p) const
 {
 	return iscale * (*mGen)(p*size);
 }
@@ -394,7 +394,7 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 	color_t col1(0.0), col2(1.0);
 	std::string _ntype, _mtype;
 	const std::string *ntype=&_ntype, *mtype=&_mtype;
-	PFLOAT H=1, lacu=2, octs=2, offs=1, gain=1, size=1, iscale=1;
+	float H=1, lacu=2, octs=2, offs=1, gain=1, size=1, iscale=1;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -418,7 +418,7 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 //-----------------------------------------------------------------------------------------
 
 textureDistortedNoise_t::textureDistortedNoise_t(const color_t &c1, const color_t &c2,
-			PFLOAT _distort, PFLOAT _size,
+			float _distort, float _size,
 			const std::string &noiseb1, const std::string noiseb2)
 			:color1(c1), color2(c2), distort(_distort), size(_size)
 {
@@ -438,7 +438,7 @@ textureDistortedNoise_t::~textureDistortedNoise_t()
 	}
 }
 
-CFLOAT textureDistortedNoise_t::getFloat(const point3d_t &p) const
+float textureDistortedNoise_t::getFloat(const point3d_t &p) const
 {
 	// get a random vector and scale the randomization
 	const point3d_t ofs(13.5, 13.5, 13.5);
@@ -457,7 +457,7 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	color_t col1(0.0), col2(1.0);
 	std::string _ntype1, _ntype2;
 	const std::string *ntype1=&_ntype1, *ntype2=&_ntype2;
-	PFLOAT dist=1, size=1;
+	float dist=1, size=1;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -484,7 +484,7 @@ textureBlend_t::~textureBlend_t()
 {
 }
 
-CFLOAT textureBlend_t::getFloat(const point3d_t &p) const
+float textureBlend_t::getFloat(const point3d_t &p) const
 {
 	float blend;
 	// Transform -1..1 to 0..1

@@ -171,7 +171,7 @@ bool textureImage_t::doMapping(point3d_t &texpt) const
 	// repeat, only valid for REPEAT clipmode
 	if (tex_clipmode==TCL_REPEAT) {
 		if (xrepeat>1) {
-			texpt.x *= (PFLOAT)xrepeat;
+			texpt.x *= (float)xrepeat;
 			if (mirrorX && int(ceilf(texpt.x)) % 2 == 0)
 			{
 				texpt.x = -texpt.x;
@@ -179,7 +179,7 @@ bool textureImage_t::doMapping(point3d_t &texpt) const
 			if (texpt.x>1.0) texpt.x -= int(texpt.x); else if (texpt.x<0.0) texpt.x += 1-int(texpt.x);
 		}
 		if (yrepeat>1) {
-			texpt.y *= (PFLOAT)yrepeat;
+			texpt.y *= (float)yrepeat;
 			if (mirrorY && int(ceilf(texpt.y)) % 2 == 0)
 			{
 				texpt.y = -texpt.y;

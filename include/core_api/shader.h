@@ -17,9 +17,9 @@ class shaderNode_t;
 struct nodeResult_t
 {
 	nodeResult_t() {}
-	nodeResult_t(colorA_t color, CFLOAT fval): col(color), f(fval) {}
+	nodeResult_t(colorA_t color, float fval): col(color), f(fval) {}
 	colorA_t col;
-	CFLOAT f;
+	float f;
 };
 
 class nodeStack_t
@@ -81,12 +81,12 @@ class YAFRAYCORE_EXPORT shaderNode_t
 		/*! get the color value calculated on eval */
 		colorA_t getColor(const nodeStack_t &stack)const { return stack(this->ID).col; }
 		/*! get the scalar value calculated on eval */
-		CFLOAT getScalar(const nodeStack_t &stack)const { return stack(this->ID).f; }
+		float getScalar(const nodeStack_t &stack)const { return stack(this->ID).f; }
 		//! get the (approximate) partial derivatives df/dNU and df/dNV
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
-		void getDerivative(const nodeStack_t &stack, CFLOAT &du, CFLOAT &dv)const
+		void getDerivative(const nodeStack_t &stack, float &du, float &dv)const
 			{ du = stack(this->ID).col.R; dv = stack(this->ID).col.G; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const {du=0.f, dv=0.f;} */
 		unsigned int ID;
@@ -178,13 +178,13 @@ inline float texture_value_blend(float tex, float out, float fact, float facg, m
 			return facm*out + fact*std::fabs(tex-out);
 
 		case MN_DARK: {
-			CFLOAT col = fact*tex;
+			float col = fact*tex;
 			if (col<out) return col;
 			return out;
 		}
 
 		case MN_LIGHT: {
-			CFLOAT col = fact*tex;
+			float col = fact*tex;
 			if (col>out) return col;
 			return out;
 		}

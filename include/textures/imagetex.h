@@ -81,12 +81,12 @@ class textureImage_t : public texture_t
 };
 
 /*static inline colorA_t cubicInterpolate(const colorA_t &c1, const colorA_t &c2,
-								 const colorA_t &c3, const colorA_t &c4, CFLOAT x)
+								 const colorA_t &c3, const colorA_t &c4, float x)
 {
 	colorA_t t2(c3-c2);
 	colorA_t t1(t2 - (c2-c1));
 	t2 = (c4-c3) - t2;
-	CFLOAT ix = 1.f-x;
+	float ix = 1.f-x;
 	return x*c3 + ix*c2 + ((4.f*t2 - t1)*(x*x*x-x) + (4.f*t1 - t2)*(ix*ix*ix-ix))*0.06666667f;
 }*/
 

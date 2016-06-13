@@ -55,7 +55,7 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 	//typedef typename std::vector<T>::const_iterator vector_const_iterator; //FIXME DAVID remove if not needed
 	if((v.size()<=dratio) || (skipX && skipY && skipZ))
 		return new gBoundTreeNode_t<T>(v,calc_bound(v));
-	PFLOAT lx,ly,lz;
+	float lx,ly,lz;
 	bool usedX=false,usedY=false,usedZ=false;
 	bound_t bound=calc_bound(v);
 	lx=bound.longX();
@@ -65,30 +65,30 @@ gBoundTreeNode_t<T> * buildGenericTree(const std::vector<T> &v,
 	bound_t bl,br;
 	if(((lx>=ly) || skipY) && ((lx>=lz) || skipZ) && !skipX)
 	{
-		PFLOAT media=0;
+		float media=0;
 		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).x;
-		media/=(PFLOAT)v.size();
+		media/=(float)v.size();
 		bl=bound;bl.setMaxX(media);
 		br=bound;br.setMinX(media);
 		usedX=true;
 	}
 	else if(((ly>=lx) || skipX) && ((ly>=lz) || skipZ) && !skipY)
 	{
-		PFLOAT media=0;
+		float media=0;
 		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).y;
-		media/=(PFLOAT)v.size();
+		media/=(float)v.size();
 		bl=bound;bl.setMaxY(media);
 		br=bound;br.setMinY(media);
 		usedY=true;
 	}
 	else
 	{
-		PFLOAT media=0;
+		float media=0;
 		for(auto i=v.begin();i!=v.end();++i)
 			media+=get_pos(*i).z;
-		media/=(PFLOAT)v.size();
+		media/=(float)v.size();
 		bl=bound;bl.setMaxZ(media);
 		br=bound;br.setMinZ(media);
 		usedZ=true;
@@ -151,7 +151,7 @@ class gObjectIterator_t
 		const gBoundTreeNode_t<T> *currN;
 		const gBoundTreeNode_t<T> *root;
 		const D &dir;
-		PFLOAT dist;
+		float dist;
 		bool end;
 		CROSS cross;
 		typename std::vector<T>::const_iterator currT;
@@ -304,13 +304,13 @@ class gBoundTree_t
 		}
 		~gBoundTree_t(){ if(tree!=nullptr) delete tree; }
 		
-		lookup(const point3d_t &P,const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K,PFLOAT &radius,PFLOAT mincos)const;
+		lookup(const point3d_t &P,const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K,float &radius,float mincos)const;
 	private:
 		gBoundTreeNode_t<const storedPhoton_t *> *tree;
 }
 
 template<class T>
-gBoundTree_t<T>::lookup(const point3d_t &P,const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K,PFLOAT &radius,PFLOAT mincos)const
+gBoundTree_t<T>::lookup(const point3d_t &P,const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K,float &radius,float mincos)const
 {
 	foundPhoton_t temp;
 	compareFound_f cfound;
@@ -326,7 +326,7 @@ gBoundTree_t<T>::lookup(const point3d_t &P,const vector3d_t &N, std::vector<foun
 				i(tree,circle);!i;++i)
 		{
 			vector3d_t sep=(*i)->position()-P;
-			CFLOAT D=sep.length();
+			float D=sep.length();
 			if((D>radius) || (((*i)->direction()*N)<=mincos)) continue;
 			reached++;
 			temp.photon=*i;
@@ -349,7 +349,7 @@ gBoundTree_t<T>::lookup(const point3d_t &P,const vector3d_t &N, std::vector<foun
 	}
 	if(reached>K)
 	{
-		PFLOAT f=(PFLOAT)K/(PFLOAT)reached;
+		float f=(float)K/(float)reached;
 		if(f<(0.7*0.7)) radius*=0.95;
 	}
 	if(radius>maxradius) radius=maxradius;

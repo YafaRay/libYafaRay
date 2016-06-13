@@ -29,7 +29,7 @@
 
 __BEGIN_YAFRAY
 
-maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, CFLOAT thresh, visibility_t eVisibility):
+maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, float thresh, visibility_t eVisibility):
 	mat1(m1), mat2(m2), threshold(thresh)
 {
     mVisibility = eVisibility;
@@ -43,7 +43,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 {
 	nodeStack_t stack(state.userdata);
 	evalNodes(state, sp, allNodes, stack);
-	CFLOAT val = mask->getScalar(stack); //mask->getFloat(sp.P);
+	float val = mask->getScalar(stack); //mask->getFloat(sp.P);
 	bool mv = val > threshold;
 	*(bool*)state.userdata = mv;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
@@ -94,7 +94,7 @@ color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoin
 {
 	nodeStack_t stack(state.userdata);
 	evalNodes(state, sp, allNodes, stack);
-	CFLOAT val = mask->getScalar(stack);
+	float val = mask->getScalar(stack);
 	bool mv = val > 0.5;
 	if(mv) return mat2->getTransparency(state, sp, wo);
 	else   return mat1->getTransparency(state, sp, wo);
@@ -121,10 +121,10 @@ color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, co
 	return col;
 }
 
-CFLOAT maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
 	bool mv = *(bool*)state.userdata;
-	CFLOAT alpha;
+	float alpha;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) alpha = mat2->getAlpha(state, sp, wo);
 	else   alpha = mat1->getAlpha(state, sp, wo);

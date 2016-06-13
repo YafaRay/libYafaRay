@@ -18,10 +18,5 @@
 
 #cmakedefine HAVE_UNISTD_H 1
 
-__BEGIN_YAFRAY
-typedef float CFLOAT;
-typedef float GFLOAT;
-typedef float PFLOAT;
-__END_YAFRAY
 #endif
 

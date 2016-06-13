@@ -32,7 +32,7 @@ class iesLight_t : public light_t
 {
 	public:
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled=true, bool bCastShadows=true);
+		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled=true, bool bCastShadows=true);
 
 		virtual color_t totalEnergy() const { return color * totEnergy;};
 		virtual int nSamples() const { return samples; };
@@ -42,7 +42,7 @@ class iesLight_t : public light_t
 
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool canIntersect() const;
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
 
@@ -62,7 +62,7 @@ class iesLight_t : public light_t
 		vector3d_t dir; //!< orientation of the spot cone
 		vector3d_t ndir; //!< negative orientation (-dir)
 		vector3d_t du, dv; //!< form a coordinate system with dir, to sample directions
-		PFLOAT cosEnd; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
+		float cosEnd; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
 		color_t color; //<! color, premulitplied by light intensity
 
 		int samples;
@@ -75,7 +75,7 @@ class iesLight_t : public light_t
 		bool IESOk;
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, CFLOAT power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows):
+iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows):
 	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
 {
     lLightEnabled = bLightEnabled;
@@ -173,7 +173,7 @@ bool iesLight_t::canIntersect() const
 	return false;
 }
 
-bool iesLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
+bool iesLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
 {
 	return false;
 }
@@ -240,7 +240,7 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	point3d_t from(0.0);
 	point3d_t to(0.f, 0.f, -1.f);
 	color_t color(1.0);
-	CFLOAT power = 1.0;
+	float power = 1.0;
 	std::string file;
 	int sam = 16; //wild goose... sorry guess :D
 	bool sSha = false;

@@ -107,7 +107,7 @@ void nodeMaterial_t::evalBump(nodeStack_t &stack, const renderState_t &state, su
 {
 	auto end=bumpNodes.end();
 	for(auto iter = bumpNodes.begin(); iter!=end; ++iter) (*iter)->evalDerivative(stack, state, sp);
-	CFLOAT du, dv;
+	float du, dv;
 	bumpS->getDerivative(stack, du, dv);
 	applyBump(sp, du, dv);
 }

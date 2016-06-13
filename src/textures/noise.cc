@@ -158,10 +158,10 @@ static float hashvectf[768]= {
 //------------------------------------------------------------------------------------
 // New Perlin noise
 
-PFLOAT newPerlin_t::operator() (const point3d_t &pt) const
+float newPerlin_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT x=pt.x, y=pt.y, z=pt.z;
-	PFLOAT u=floor(x), v=floor(y), w=floor(z);
+	float x=pt.x, y=pt.y, z=pt.z;
+	float u=floor(x), v=floor(y), w=floor(z);
 	int X=((int)u) & 255, Y=((int)v) & 255, Z=((int)w) & 255; // FIND UNIT CUBE THAT CONTAINS POINT
 	x -= u;  // FIND RELATIVE X,Y,Z
 	y -= v;  // OF POINT IN CUBE.
@@ -171,7 +171,7 @@ PFLOAT newPerlin_t::operator() (const point3d_t &pt) const
 	w = fade(z);
 	int A=hash[X  ]+Y, AA=hash[A]+Z, AB=hash[A+1]+Z,  // HASH COORDINATES OF
 	    B=hash[X+1]+Y, BA=hash[B]+Z, BB=hash[B+1]+Z;  // THE 8 CUBE CORNERS,
-	PFLOAT nv = lerp(w, lerp(v, lerp(u, grad(hash[AA  ], x  , y  , z   ),  // AND ADD
+	float nv = lerp(w, lerp(v, lerp(u, grad(hash[AA  ], x  , y  , z   ),  // AND ADD
 																			grad(hash[BA  ], x-1, y  , z   )),  // BLENDED
 															lerp(u, grad(hash[AB  ], x  , y-1, z   ),   // RESULTS
 																			grad(hash[BB  ], x-1, y-1, z   ))), // FROM  8
@@ -295,7 +295,7 @@ static float stdp_g[512+2][3]= {
         r0 = t - (int)t; \
         r1 = r0 - 1.0;
 
-PFLOAT stdPerlin_t::operator() (const point3d_t &pt) const
+float stdPerlin_t::operator() (const point3d_t &pt) const
 {
 	int bx0, bx1, by0, by1, bz0, bz1, b00, b10, b01, b11;
 	float rx0, rx1, ry0, ry1, rz0, rz1, *q, sx, sy, sz, a, b, c, d, t, u, v;
@@ -349,25 +349,25 @@ PFLOAT stdPerlin_t::operator() (const point3d_t &pt) const
 }
 
 // distance metric function:
-PFLOAT dist_RealF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e) { return fSqrt(x*x + y*y + z*z); }
-PFLOAT dist_SquaredF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e) { return (x*x + y*y + z*z); }
-PFLOAT dist_ManhattanF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e) { return (std::fabs(x) + std::fabs(y) + std::fabs(z)); }
-PFLOAT dist_ChebychevF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e)
+float dist_RealF(float x, float y, float z, float e) { return fSqrt(x*x + y*y + z*z); }
+float dist_SquaredF(float x, float y, float z, float e) { return (x*x + y*y + z*z); }
+float dist_ManhattanF(float x, float y, float z, float e) { return (std::fabs(x) + std::fabs(y) + std::fabs(z)); }
+float dist_ChebychevF(float x, float y, float z, float e)
 {
 	x = std::fabs(x);
 	y = std::fabs(y);
 	z = std::fabs(z);
-	PFLOAT t = (x>y)?x:y;
+	float t = (x>y)?x:y;
 	return ((z>t)?z:t);
 }
 // minkovsky preset exponent 0.5
-PFLOAT dist_MinkovskyHF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e)
+float dist_MinkovskyHF(float x, float y, float z, float e)
 {
-	PFLOAT d = fSqrt(std::fabs(x)) + fSqrt(std::fabs(y)) + fSqrt(std::fabs(z));
+	float d = fSqrt(std::fabs(x)) + fSqrt(std::fabs(y)) + fSqrt(std::fabs(z));
 	return (d*d);
 }
 // minkovsky preset exponent 4
-PFLOAT dist_Minkovsky4F(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e)
+float dist_Minkovsky4F(float x, float y, float z, float e)
 {
 	x *= x;
 	y *= y;
@@ -375,25 +375,25 @@ PFLOAT dist_Minkovsky4F(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e)
 	return fSqrt(fSqrt(x*x + y*y + z*z));
 }
 // Minkovsky, general case, slow
-PFLOAT dist_MinkovskyF(PFLOAT x, PFLOAT y, PFLOAT z, PFLOAT e)
+float dist_MinkovskyF(float x, float y, float z, float e)
 {
-	return fPow(fPow(std::fabs(x), e) + fPow(std::fabs(y), e) + fPow(std::fabs(z), e), (PFLOAT)1.0/e);
+	return fPow(fPow(std::fabs(x), e) + fPow(std::fabs(y), e) + fPow(std::fabs(z), e), (float)1.0/e);
 }
 
 //------------------------------------------------------------------------------------
 // Blender noise, similar to 'standard' perlin
 
-PFLOAT blenderNoise_t::operator() (const point3d_t &pt) const
+float blenderNoise_t::operator() (const point3d_t &pt) const
 {
-	//PFLOAT cn1, cn2, cn3, cn4, cn5, cn6, i, *h;
-	//PFLOAT ox, oy, oz, jx, jy, jz;
-	//PFLOAT n= 0.5;
+	//float cn1, cn2, cn3, cn4, cn5, cn6, i, *h;
+	//float ox, oy, oz, jx, jy, jz;
+	//float n= 0.5;
 	float cn1, cn2, cn3, cn4, cn5, cn6, i, *h;
 	float ox, oy, oz, jx, jy, jz;
 	float n= 0.5;
 	int ix, iy, iz, b00, b01, b10, b11, b20, b21;
 
-	PFLOAT x=pt.x, y=pt.y, z=pt.z;
+	float x=pt.x, y=pt.y, z=pt.z;
 	ox= (x- (ix= (int)floor(x)) );
 	oy= (y- (iy= (int)floor(y)) );
 	oz= (z- (iz= (int)floor(z)) );
@@ -494,7 +494,7 @@ void voronoi_t::setDistM(dMetricType dm)
 	}
 }
 
-voronoi_t::voronoi_t(voronoiType vt, dMetricType dm, PFLOAT mex)
+voronoi_t::voronoi_t(voronoiType vt, dMetricType dm, float mex)
 {
 	vType = vt;
 	dmType = dm;
@@ -502,11 +502,11 @@ voronoi_t::voronoi_t(voronoiType vt, dMetricType dm, PFLOAT mex)
 	setDistM(dmType);
 }
 
-void voronoi_t::getFeatures(const point3d_t &pt, PFLOAT da[4], point3d_t pa[4]) const
+void voronoi_t::getFeatures(const point3d_t &pt, float da[4], point3d_t pa[4]) const
 {
 	int xx, yy, zz, xi, yi, zi;
-	//PFLOAT xd, yd, zd, d, *p;
-	//PFLOAT x=pt.x, y=pt.y, z=pt.z;
+	//float xd, yd, zd, d, *p;
+	//float x=pt.x, y=pt.y, z=pt.z;
 	float xd, yd, zd, d, *p;
 	float x=pt.x, y=pt.y, z=pt.z;
 	xi = (int)(floor(x));
@@ -543,9 +543,9 @@ void voronoi_t::getFeatures(const point3d_t &pt, PFLOAT da[4], point3d_t pa[4]) 
 	}
 }
 
-PFLOAT voronoi_t::operator() (const point3d_t &pt) const
+float voronoi_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT da[4];
+	float da[4];
 	point3d_t pa[4];
 	getFeatures(pt, da, pa);
 	switch (vType) {
@@ -558,7 +558,7 @@ PFLOAT voronoi_t::operator() (const point3d_t &pt) const
 		case V_F2F1:
 			return da[1]-da[0];
 		case V_CRACKLE: {
-			PFLOAT t = 10.0*(da[1]-da[0]);
+			float t = 10.0*(da[1]-da[0]);
 			return (t>1.0)?1.0:t;
 		}
 		default:
@@ -568,14 +568,14 @@ PFLOAT voronoi_t::operator() (const point3d_t &pt) const
 }
 
 // Cell noise
-PFLOAT cellNoise_t::operator() (const point3d_t &pt) const
+float cellNoise_t::operator() (const point3d_t &pt) const
 {
   int xi = (int)(floor(pt.x));
   int yi = (int)(floor(pt.y));
   int zi = (int)(floor(pt.z));
   unsigned int n = xi + yi*1301 + zi*314159;
   n ^= (n<<13);
-  return ((PFLOAT)(n*(n*n*15731 + 789221) + 1376312589) / 4294967296.0);
+  return ((float)(n*(n*n*15731 + 789221) + 1376312589) / 4294967296.0);
 }
 
 //------------------------------------------------------------------------------------
@@ -593,16 +593,16 @@ PFLOAT cellNoise_t::operator() (const point3d_t &pt) const
  *    ``lacunarity''  is the gap between successive frequencies
  *    ``octaves''  is the number of frequencies in the fBm
  */
-PFLOAT fBm_t::operator() (const point3d_t &pt) const
+float fBm_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT value=0, pwr=1, pwHL=fPow(lacunarity, -H);
+	float value=0, pwr=1, pwHL=fPow(lacunarity, -H);
 	point3d_t tp(pt);
 	for (int i=0; i<(int)octaves; i++) {
 		value += getSignedNoise(nGen, tp) * pwr;
 		pwr *= pwHL;
 		tp *= lacunarity;
 	}
-	PFLOAT rmd = octaves - floor(octaves);
+	float rmd = octaves - floor(octaves);
 	if (rmd!=0.f) value += rmd * getSignedNoise(nGen, tp) * pwr;
 	return value;
 }
@@ -621,17 +621,17 @@ PFLOAT fBm_t::operator() (const point3d_t &pt) const
  /* this one is in fact rather confusing,
  	* there seem to be errors in the original source code (in all three versions of proc.text&mod),
 	* I modified it to something that made sense to me, so it might be wrong... */
-PFLOAT mFractal_t::operator() (const point3d_t &pt) const
+float mFractal_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT value=1, pwr=1, pwHL=fPow(lacunarity, -H);
+	float value=1, pwr=1, pwHL=fPow(lacunarity, -H);
 	point3d_t tp(pt);
 	for (int i=0; i<(int)octaves; i++) {
-		value *= (pwr*getSignedNoise(nGen, tp) + (PFLOAT)1.0);
+		value *= (pwr*getSignedNoise(nGen, tp) + (float)1.0);
 		pwr *= pwHL;
 		tp *= lacunarity;
 	}
-	PFLOAT rmd = octaves - floor(octaves);
-	if (rmd!=(PFLOAT)0.0) value *= (rmd * getSignedNoise(nGen, tp) * pwr + (PFLOAT)1.0);
+	float rmd = octaves - floor(octaves);
+	if (rmd!=(float)0.0) value *= (rmd * getSignedNoise(nGen, tp) * pwr + (float)1.0);
 	return value;
 }
 
@@ -646,16 +646,16 @@ PFLOAT mFractal_t::operator() (const point3d_t &pt) const
  *       ``octaves''  is the number of frequencies in the fBm
  *       ``offset''  raises the terrain from `sea level'
  */
-PFLOAT heteroTerrain_t::operator() (const point3d_t &pt) const
+float heteroTerrain_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT pwHL = fPow(lacunarity, -H);
-	PFLOAT pwr = pwHL;	// starts with i=1 instead of 0
+	float pwHL = fPow(lacunarity, -H);
+	float pwr = pwHL;	// starts with i=1 instead of 0
 	point3d_t tp(pt);
 
 	// first unscaled octave of function; later octaves are scaled
-	PFLOAT value = offset + getSignedNoise(nGen, tp);
+	float value = offset + getSignedNoise(nGen, tp);
 	tp *= lacunarity;
-	PFLOAT increment;
+	float increment;
 	for (int i=1; i<(int)octaves; i++) {
 		increment = (getSignedNoise(nGen, tp) + offset) * pwr * value;
 		value += increment;
@@ -663,8 +663,8 @@ PFLOAT heteroTerrain_t::operator() (const point3d_t &pt) const
 		tp *= lacunarity;
 	}
 
-	PFLOAT rmd = octaves - floor(octaves);
-	if (rmd!=(PFLOAT)0.0) {
+	float rmd = octaves - floor(octaves);
+	if (rmd!=(float)0.0) {
 		increment = (getSignedNoise(nGen, tp) + offset) * pwr * value;
 		value += rmd * increment;
 	}
@@ -680,27 +680,27 @@ PFLOAT heteroTerrain_t::operator() (const point3d_t &pt) const
  *      H:           0.25
  *      offset:      0.7
  */
-PFLOAT hybridMFractal_t::operator() (const point3d_t &pt) const
+float hybridMFractal_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT pwHL = fPow(lacunarity, -H);
-	PFLOAT pwr = pwHL;	// starts with i=1 instead of 0
+	float pwHL = fPow(lacunarity, -H);
+	float pwr = pwHL;	// starts with i=1 instead of 0
 	point3d_t tp(pt);
 
-	PFLOAT result = getSignedNoise(nGen, tp) + offset;
-	PFLOAT weight = gain * result;
+	float result = getSignedNoise(nGen, tp) + offset;
+	float weight = gain * result;
 	tp *= lacunarity;
 
-	for (int i=1; (weight>(PFLOAT)0.001) && (i<(int)octaves); i++) {
-		if (weight>(PFLOAT)1.0)  weight=(PFLOAT)1.0;
-		PFLOAT signal = (getSignedNoise(nGen, tp) + offset) * pwr;
+	for (int i=1; (weight>(float)0.001) && (i<(int)octaves); i++) {
+		if (weight>(float)1.0)  weight=(float)1.0;
+		float signal = (getSignedNoise(nGen, tp) + offset) * pwr;
 		pwr *= pwHL;
 		result += weight * signal;
 		weight *= gain * signal;
 		tp *= lacunarity;
 	}
 
-	PFLOAT rmd = octaves - floor(octaves);
-	if (rmd!=(PFLOAT)0.0) result += rmd * ((getSignedNoise(nGen, tp) + offset) * pwr);
+	float rmd = octaves - floor(octaves);
+	if (rmd!=(float)0.0) result += rmd * ((getSignedNoise(nGen, tp) + offset) * pwr);
 
 	return result;
 
@@ -715,21 +715,21 @@ PFLOAT hybridMFractal_t::operator() (const point3d_t &pt) const
  *      offset:      1.0
  *      gain:        2.0
  */
-PFLOAT ridgedMFractal_t::operator() (const point3d_t &pt) const
+float ridgedMFractal_t::operator() (const point3d_t &pt) const
 {
-	PFLOAT pwHL = fPow(lacunarity, -H);
-	PFLOAT pwr = pwHL;	// starts with i=1 instead of 0
+	float pwHL = fPow(lacunarity, -H);
+	float pwr = pwHL;	// starts with i=1 instead of 0
 	point3d_t tp(pt);
 
-	PFLOAT signal = offset - std::fabs(getSignedNoise(nGen, tp));
+	float signal = offset - std::fabs(getSignedNoise(nGen, tp));
 	signal *= signal;
-	PFLOAT result = signal;
-	PFLOAT weight = 1.0;
+	float result = signal;
+	float weight = 1.0;
 
 	for(int i=1; i<(int)octaves; i++ ) {
 		tp *= lacunarity;
 		weight = signal * gain;
-		if (weight>(PFLOAT)1.0) weight=(PFLOAT)1.0; else if (weight<(PFLOAT)0.0) weight=(PFLOAT)0.0;
+		if (weight>(float)1.0) weight=(float)1.0; else if (weight<(float)0.0) weight=(float)0.0;
 		signal = offset - std::fabs(getSignedNoise(nGen, tp));
 		signal *= signal;
 		signal *= weight;
@@ -755,9 +755,9 @@ colorA_t cellNoiseColor(const point3d_t &pt)
 }
 
 // turbulence function used by basic blocks
-CFLOAT turbulence(const noiseGenerator_t* ngen, const point3d_t &pt, int oct, PFLOAT size, bool hard)
+float turbulence(const noiseGenerator_t* ngen, const point3d_t &pt, int oct, float size, bool hard)
 {
-	PFLOAT val, amp=1, sum=0;
+	float val, amp=1, sum=0;
 	point3d_t tp = ngen->offset(pt)*size;	// only blendernoise adds offset
 	for (int i=0;i<=oct;i++, amp*=0.5, tp*=2.0) {
 		val = (*ngen)(tp);
@@ -765,7 +765,7 @@ CFLOAT turbulence(const noiseGenerator_t* ngen, const point3d_t &pt, int oct, PF
 		sum += amp*val;
 	}
 	
-	return sum*((PFLOAT)(1<<oct)/(PFLOAT)((1<<(oct+1))-1));
+	return sum*((float)(1<<oct)/(float)((1<<(oct+1))-1));
 }
 
 __END_YAFRAY

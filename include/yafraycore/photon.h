@@ -46,10 +46,10 @@ class dirConverter_t
 		}
 		
 	protected:
-		PFLOAT cosphi[256];
-		PFLOAT sinphi[256];
-		PFLOAT costheta[255];
-		PFLOAT sintheta[255];
+		float cosphi[256];
+		float sinphi[256];
+		float costheta[255];
+		float sintheta[255];
 };
 
 extern YAFRAYCORE_EXPORT dirConverter_t dirconverter;
@@ -143,12 +143,12 @@ struct radData_t
 struct foundPhoton_t
 {
 	foundPhoton_t(){};
-	foundPhoton_t(const photon_t *p, PFLOAT d): photon(p), distSquare(d){}
+	foundPhoton_t(const photon_t *p, float d): photon(p), distSquare(d){}
 	bool operator<(const foundPhoton_t &p2) const { return distSquare < p2.distSquare; }
 	const photon_t *photon;
-	PFLOAT distSquare;
+	float distSquare;
 	//temp!!
-	PFLOAT dis;
+	float dis;
 };
 
 class YAFRAYCORE_EXPORT photonMap_t
@@ -169,16 +169,16 @@ class YAFRAYCORE_EXPORT photonMap_t
 		void updateTree();
 		void clear(){ photons.clear(); delete tree; tree = nullptr; updated=false; }
 		bool ready() const { return updated; }
-	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, PFLOAT &sqRadius) const;
-		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT &sqRadius) const;
-		const photon_t* findNearest(const point3d_t &P, const vector3d_t &n, PFLOAT dist) const;
+	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
+		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float &sqRadius) const;
+		const photon_t* findNearest(const point3d_t &P, const vector3d_t &n, float dist) const;
 		std::mutex mutx;
 
 	protected:
 		std::vector<photon_t> photons;
 		int paths; //!< amount of photon paths that have been traced for generating the map
 		bool updated;
-		PFLOAT searchRadius;
+		float searchRadius;
 		kdtree::pointKdTree<photon_t> *tree;
 		std::string name;
 		int threadsPKDtree = 1;
@@ -201,7 +201,7 @@ class YAFRAYCORE_EXPORT photonMap_t
 struct photonGather_t
 {
 	photonGather_t(u_int32 mp, const point3d_t &p);
-	void operator()(const photon_t *photon, PFLOAT dist2, PFLOAT &maxDistSquared) const;
+	void operator()(const photon_t *photon, float dist2, float &maxDistSquared) const;
 	const point3d_t &p;
 	foundPhoton_t *photons;
 	u_int32 nLookup;
@@ -211,7 +211,7 @@ struct photonGather_t
 struct nearestPhoton_t
 {
 	nearestPhoton_t(const point3d_t &pos, const vector3d_t &norm): p(pos), n(norm), nearest(nullptr) {}
-	void operator()(const photon_t *photon, PFLOAT dist2, PFLOAT &maxDistSquared) const
+	void operator()(const photon_t *photon, float dist2, float &maxDistSquared) const
 	{
 		if ( photon->direction() * n > 0.f) { nearest = photon; maxDistSquared = dist2; }
 	}
@@ -224,7 +224,7 @@ struct nearestPhoton_t
 struct eliminatePhoton_t
 {
 	eliminatePhoton_t(const vector3d_t &norm): n(norm) {}
-	void operator()(const radData_t *rpoint, PFLOAT dist2, PFLOAT &maxDistSquared) const
+	void operator()(const radData_t *rpoint, float dist2, float &maxDistSquared) const
 	{
 		if ( rpoint->normal * n > 0.f) { rpoint->use = false; }
 	}

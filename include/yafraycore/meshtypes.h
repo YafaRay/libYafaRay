@@ -11,8 +11,8 @@ __BEGIN_YAFRAY
 
 struct uv_t
 {
-	uv_t(GFLOAT _u, GFLOAT _v): u(_u), v(_v) {};
-	GFLOAT u, v;
+	uv_t(float _u, float _v): u(_u), v(_v) {};
+	float u, v;
 };
 
 class triangle_t;

@@ -19,17 +19,17 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual colorA_t getColor(int x, int y, int z) const { return colorA_t(0.f); }
 		virtual colorA_t getRawColor(const point3d_t &p) const { return getColor(p); }
 		virtual colorA_t getRawColor(int x, int y, int z) const { return getColor(x, y, z); }
-		virtual CFLOAT getFloat(const point3d_t &p) const { return getRawColor(p).col2bri(); }
-		virtual CFLOAT getFloat(int x, int y, int z) const { return getRawColor(x, y, z).col2bri(); }
+		virtual float getFloat(const point3d_t &p) const { return getRawColor(p).col2bri(); }
+		virtual float getFloat(int x, int y, int z) const { return getRawColor(x, y, z).col2bri(); }
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
 		virtual void getInterpolationStep(float &step) const { step = 0.f; };
 		virtual ~texture_t() {}
 };
 
-inline void angmap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
+inline void angmap(const point3d_t &p, float &u, float &v)
 {
-	PFLOAT r = p.x*p.x + p.z*p.z;
+	float r = p.x*p.x + p.z*p.z;
 	u = v = 0.f;
 	if (r > 0.f)
 	{
@@ -42,11 +42,11 @@ inline void angmap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 
 // slightly modified Blender's own function,
 // works better than previous function which needed extra tweaks
-inline void tubemap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
+inline void tubemap(const point3d_t &p, float &u, float &v)
 {
 	u = 0;
 	v = 1 - (p.z + 1)*0.5;
-	PFLOAT d = p.x*p.x + p.y*p.y;
+	float d = p.x*p.x + p.y*p.y;
 	if (d>0) {
 		d = 1/fSqrt(d);
 		u = 0.5*(1 - (atan2(p.x*d, p.y*d) *M_1_PI));
@@ -54,7 +54,7 @@ inline void tubemap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
 }
 
 // maps a direction to a 2d 0..1 interval
-inline void spheremap(const point3d_t &p, PFLOAT &u, PFLOAT &v)
+inline void spheremap(const point3d_t &p, float &u, float &v)
 {
 	float sqrtRPhi = p.x*p.x + p.y*p.y;
 	float sqrtRTheta = sqrtRPhi + p.z*p.z;

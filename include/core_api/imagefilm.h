@@ -115,7 +115,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Sets the film premultiply option for optional secondary file output */
 		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
-		void setAAThreshold(CFLOAT thresh){ AA_thesh=thresh; }
+		void setAAThreshold(float thresh){ AA_thesh=thresh; }
         /*! Enables partial image saving during render every time_interval seconds. Time=0.0 (default) disables partial saving. */
 		void setImageOutputPartialSaveTimeInterval(double time_interval){ imageOutputPartialSaveTimeInterval = time_interval; }
 		void setImageOutputPartialSaveEndPass(bool save_end_pass) { saveEndPass = save_end_pass; }
@@ -161,7 +161,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		float gamma;
 		colorSpaces_t colorSpace2;	//For optional secondary file output
 		float gamma2;				//For optional secondary file output
-		CFLOAT AA_thesh;
+		float AA_thesh;
 		bool AA_detect_color_noise;
         int AA_dark_detection_type;
 		float AA_dark_threshold_factor;

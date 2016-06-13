@@ -42,17 +42,17 @@ struct renderArea_t
 		realW=w;
 		realH=h;
 	}
-	bool checkResample(CFLOAT threshold);
+	bool checkResample(float threshold);
 //	bool out(colorOutput_t &o);
 
 //	colorA_t & imagePixel(int x,int y) {return image[(y-Y)*W+(x-X)];};
-//	PFLOAT & depthPixel(int x,int y)   {return depth[(y-Y)*W+(x-X)];};
+//	float & depthPixel(int x,int y)   {return depth[(y-Y)*W+(x-X)];};
 	bool  resamplePixel(int x,int y)  {return resample[(y-Y)*W+(x-X)];};
 
 	int X,Y,W,H,realX,realY,realW,realH;
 	int sx0, sx1, sy0, sy1; //!< safe area, i.e. region unaffected by samples outside (needs to be set by ImageFilm_t)
 //	std::vector<colorA_t> image;
-//	std::vector<PFLOAT> depth;
+//	std::vector<float> depth;
 	std::vector<bool> resample;
 
 	friend class boost::serialization::access;

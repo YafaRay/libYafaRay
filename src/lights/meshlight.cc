@@ -115,11 +115,11 @@ bool meshLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	
 	vector3d_t ldir = p - sp.P;
 	//normalize vec and compute inverse square distance
-	PFLOAT dist_sqr = ldir.lengthSqr();
-	PFLOAT dist = fSqrt(dist_sqr);
+	float dist_sqr = ldir.lengthSqr();
+	float dist = fSqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f/dist;
-	PFLOAT cos_angle = -(ldir*n);
+	float cos_angle = -(ldir*n);
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0)
 	{
@@ -185,25 +185,25 @@ color_t meshLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	return color;
 }
 
-bool meshLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
+bool meshLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
 {
 	if(!tree) return false;
-	PFLOAT dis;
+	float dis;
 	intersectData_t bary;
 	triangle_t *hitt=0;
-	if(ray.tmax<0) dis=std::numeric_limits<PFLOAT>::infinity();
+	if(ray.tmax<0) dis=std::numeric_limits<float>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:
 	if( ! tree->Intersect(ray, dis, &hitt, t, bary) ){ return false; }
 	
 	vector3d_t n = hitt->getNormal();
-	PFLOAT cos_angle = ray.dir*(-n);
+	float cos_angle = ray.dir*(-n);
 	if(cos_angle <= 0)
 	{
 		if(doubleSided) cos_angle = std::fabs(cos_angle);
 		else return false;
 	}
-	PFLOAT idist_sqr = 1.f / (t*t);
+	float idist_sqr = 1.f / (t*t);
 	ipdf = idist_sqr * area * cos_angle * (1.f/M_PI);
 	col = color;
 	
@@ -213,7 +213,7 @@ bool meshLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ip
 float meshLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
 {
 	vector3d_t wo = sp.P - sp_light.P;
-	PFLOAT r2 = wo.normLenSqr();
+	float r2 = wo.normLenSqr();
 	float cos_n = wo * sp_light.Ng;
 	return cos_n > 0 ? r2 * M_PI / (area * cos_n) : (doubleSided ? r2 * M_PI / (area * -cos_n)  : 0.f);
 }
@@ -250,7 +250,7 @@ light_t* meshLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("shoot_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 
-	meshLight_t *light = new meshLight_t(object, color*(CFLOAT)power*M_PI, samples, doubleS, lightEnabled, castShadows);
+	meshLight_t *light = new meshLight_t(object, color*(float)power*M_PI, samples, doubleS, lightEnabled, castShadows);
 	
 	light->lShootCaustic = shootC;
 	light->lShootDiffuse = shootD;

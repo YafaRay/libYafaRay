@@ -43,7 +43,7 @@ inline point3d_t tubemap(const point3d_t &p)
 {
 	point3d_t res;
 	res.y = p.z;
-	PFLOAT d = p.x*p.x + p.y*p.y;
+	float d = p.x*p.x + p.y*p.y;
 	if (d>0) {
 		res.z = 1.0/fSqrt(d);
 		res.x = -atan2(p.x, p.y) * M_1_PI;
@@ -56,7 +56,7 @@ inline point3d_t tubemap(const point3d_t &p)
 inline point3d_t spheremap(const point3d_t &p)
 {
 	point3d_t res(0.f);
-	PFLOAT d = p.x*p.x + p.y*p.y + p.z*p.z;
+	float d = p.x*p.x + p.y*p.y + p.z*p.z;
 	if (d>0) {
 		res.z = fSqrt(d);
 		if ((p.x!=0) && (p.y!=0)) res.x = -atan2(p.x, p.y) * M_1_PI;
@@ -103,7 +103,7 @@ point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)con
 		default: break;
 	}
 	// Texture axis mapping
-	PFLOAT texmap[4] = {0, texpt.x, texpt.y, texpt.z};
+	float texmap[4] = {0, texpt.x, texpt.y, texpt.z};
 	texpt.x=texmap[map_x];
 	texpt.y=texmap[map_y];
 	texpt.z=texmap[map_z];
@@ -537,7 +537,7 @@ class screenNode_t: public mixNode_t
 			f1 = 1.f - f2;
 
 			colorA_t color = colorA_t(1.f) - (colorA_t(f1) + f2 * (1.f - cin2)) * (1.f - cin1);
-			CFLOAT scalar   = 1.0 - (f1 + f2*(1.f - fin2)) * (1.f -  fin1);
+			float scalar   = 1.0 - (f1 + f2*(1.f - fin2)) * (1.f -  fin1);
 			stack[this->ID] = nodeResult_t(color, scalar);
 		}
 };
@@ -616,7 +616,7 @@ class overlayNode_t: public mixNode_t
 			color.G = (cin1.G < 0.5f) ? cin1.G * (f1 + 2.0f*f2*cin2.G) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.G)) * (1.0 - cin1.G);
 			color.B = (cin1.B < 0.5f) ? cin1.B * (f1 + 2.0f*f2*cin2.B) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.B)) * (1.0 - cin1.B);
 			color.A = (cin1.A < 0.5f) ? cin1.A * (f1 + 2.0f*f2*cin2.A) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.A)) * (1.0 - cin1.A);
-			CFLOAT scalar = (fin1 < 0.5f) ? fin1 * (f1 + 2.0f*f2*fin2) : 1.0 - (f1 + 2.0f*f2*(1.0 - fin2)) * (1.0 - fin1);
+			float scalar = (fin1 < 0.5f) ? fin1 * (f1 + 2.0f*f2*fin2) : 1.0 - (f1 + 2.0f*f2*(1.0 - fin2)) * (1.0 - fin1);
 			stack[this->ID] = nodeResult_t(color, scalar);
 		}
 };

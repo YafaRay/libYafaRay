@@ -27,12 +27,12 @@ struct kdNode
 		flags = 3;
 		data = d;
 	}
-	void createInterior(int axis, PFLOAT d)
+	void createInterior(int axis, float d)
 	{
 		division = d;
 		flags = (flags & ~3) | axis;
 	}
-	PFLOAT 	SplitPos() const { return division; }
+	float 	SplitPos() const { return division; }
 	int 	SplitAxis() const { return flags & 3; }
 	int 	nPrimitives() const { return flags >> 2; }
 	bool 	IsLeaf() const { return (flags & 3) == 3; }
@@ -40,7 +40,7 @@ struct kdNode
 	void 	setRightChild(u_int32 i) { flags = (flags&3) | (i << 2); }
 	union
 	{
-		PFLOAT division;
+		float division;
 		const T *data;
 	};
 	u_int32	flags;
@@ -71,14 +71,14 @@ class pointKdTree
 		pointKdTree() {};
 		pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads=1);
 		~pointKdTree(){ if(nodes) y_free(nodes); }
-		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared) const;
+		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared) const;
 		double lookupStat()const{ return double(Y_PROCS)/double(Y_LOOKUPS); } //!< ratio of photons tested per lookup call
 	protected:
-		template<class LookupProc> void recursiveLookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared, int nodeNum) const;
+		template<class LookupProc> void recursiveLookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared, int nodeNum) const;
 		struct KdStack
 		{
 			const kdNode<T> *node; //!< pointer to far child
-			PFLOAT s; 		//!< the split val of parent node
+			float s; 		//!< the split val of parent node
 			int axis; 		//!< the split axis of parent node
 		};
 		void buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims);
@@ -171,7 +171,7 @@ void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBo
 	std::nth_element(&prims[start], &prims[splitEl],
 					&prims[end], CompareNode<T>(splitAxis));
 	u_int32 curNode = localNextFreeNode;
-	PFLOAT splitPos = prims[splitEl]->pos[splitAxis];
+	float splitPos = prims[splitEl]->pos[splitAxis];
 	localNodes[curNode].createInterior(splitAxis, splitPos);
 	++localNextFreeNode;
 	bound_t boundL = nodeBound, boundR = nodeBound;
@@ -242,7 +242,7 @@ void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBo
 
 
 template<class T> template<class LookupProc> 
-void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared) const
+void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared) const
 {
 #if NON_REC_LOOKUP > 0
 	++Y_LOOKUPS;
@@ -257,7 +257,7 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 		while( !currNode->IsLeaf() )
 		{
 			int axis = currNode->SplitAxis();
-			PFLOAT splitVal = currNode->SplitPos();
+			float splitVal = currNode->SplitPos();
 			
 			if( p[axis] <= splitVal ) //need traverse left first
 			{
@@ -277,7 +277,7 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 
 		// Hand leaf-data kd-tree to processing function
 		vector3d_t v = currNode->data->pos - p;
-		PFLOAT dist2 = v.lengthSqr();
+		float dist2 = v.lengthSqr();
 
 		if (dist2 < maxDistSquared)
 		{
@@ -313,20 +313,20 @@ void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, PFLOAT &
 }
 
 template<class T> template<class LookupProc> 
-void pointKdTree<T>::recursiveLookup(const point3d_t &p, const LookupProc &proc, PFLOAT &maxDistSquared, int nodeNum) const
+void pointKdTree<T>::recursiveLookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared, int nodeNum) const
 {
 	const kdNode<T> *currNode = &nodes[nodeNum];
 	if(currNode->IsLeaf())
 	{
 		vector3d_t v = currNode->data->pos - p;
-		PFLOAT dist2 = v.lengthSqr();
+		float dist2 = v.lengthSqr();
 		if (dist2 < maxDistSquared)
 			proc(currNode->data, dist2, maxDistSquared);
 			++Y_PROCS;
 		return;
 	}
 	int axis = currNode->SplitAxis();
-	PFLOAT dist2 = p[axis] - currNode->SplitPos();
+	float dist2 = p[axis] - currNode->SplitPos();
 	dist2 *= dist2;
 	if(p[axis] <= currNode->SplitPos())
 	{

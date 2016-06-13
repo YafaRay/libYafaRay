@@ -34,7 +34,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
         virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const; // { return emitCol; }
         virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const;
-        virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
+        virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
         virtual color_t getDiffuseColor(const renderState_t &state) const
         {
                 SDDat_t *dat = (SDDat_t *)state.userdata;
@@ -90,7 +90,7 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr, float &currentIORSquared) const;
 
         void initOrenNayar(double sigma);
-        CFLOAT OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
+        float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
 
         bool mIsTransparent;                //!< Boolean value which is true if you have transparent component
         bool mIsTranslucent;                //!< Boolean value which is true if you have translucent component
