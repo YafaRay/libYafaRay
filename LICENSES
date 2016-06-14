@@ -1093,11 +1093,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-
-
-JPEG
-----
-
+JPEG (release 6b)
+-----------------
 In plain English:
 
 1. We don't promise that this software works.  (But if you find any bugs,
@@ -1114,7 +1111,7 @@ with respect to this software, its quality, accuracy, merchantability, or
 fitness for a particular purpose.  This software is provided "AS IS", and you,
 its user, assume the entire risk as to its quality and accuracy.
 
-This software is copyright (C) 1991-2012, Thomas G. Lane, Guido Vollbeding.
+This software is copyright (C) 1991-1998, Thomas G. Lane.
 All Rights Reserved except as specified below.
 
 Permission is hereby granted to use, copy, modify, and distribute this
@@ -1157,8 +1154,17 @@ the foregoing paragraphs do.
 The Unix configuration script "configure" was produced with GNU Autoconf.
 It is copyright by the Free Software Foundation but is freely distributable.
 The same holds for its supporting scripts (config.guess, config.sub,
-ltmain.sh).  Another support script, install-sh, is copyright by X Consortium
-but is also freely distributable.
+ltconfig, ltmain.sh).  Another support script, install-sh, is copyright
+by M.I.T. but is also freely distributable.
+
+It appears that the arithmetic coding option of the JPEG spec is covered by
+patents owned by IBM, AT&T, and Mitsubishi.  Hence arithmetic coding cannot
+legally be used without obtaining one or more licenses.  For this reason,
+support for arithmetic coding has been removed from the free JPEG software.
+(Since arithmetic coding provides only a marginal gain over the unpatented
+Huffman mode, it is unlikely that very many implementations will support it.)
+So far as we are aware, there are no patent restrictions on the remaining
+code.
 
 The IJG distribution formerly included code to read and write GIF files.
 To avoid entanglement with the Unisys LZW patent, GIF reading support has
@@ -1171,6 +1177,70 @@ We are required to state that
     "The Graphics Interchange Format(c) is the Copyright property of
     CompuServe Incorporated.  GIF(sm) is a Service Mark property of
     CompuServe Incorporated."
+
+
+
+JPEG (release 9b)
+-----------------
+In plain English:
+
+1. We don't promise that this software works.  (But if you find any bugs,
+   please let us know!)
+2. You can use this software for whatever you want.  You don't have to pay us.
+3. You may not pretend that you wrote this software.  If you use it in a
+   program, you must acknowledge somewhere in your documentation that
+   you've used the IJG code.
+
+In legalese:
+
+The authors make NO WARRANTY or representation, either express or implied,
+with respect to this software, its quality, accuracy, merchantability, or
+fitness for a particular purpose.  This software is provided "AS IS", and you,
+its user, assume the entire risk as to its quality and accuracy.
+
+This software is copyright (C) 1991-2016, Thomas G. Lane, Guido Vollbeding.
+All Rights Reserved except as specified below.
+
+Permission is hereby granted to use, copy, modify, and distribute this
+software (or portions thereof) for any purpose, without fee, subject to these
+conditions:
+(1) If any part of the source code for this software is distributed, then this
+README file must be included, with this copyright and no-warranty notice
+unaltered; and any additions, deletions, or changes to the original files
+must be clearly indicated in accompanying documentation.
+(2) If only executable code is distributed, then the accompanying
+documentation must state that "this software is based in part on the work of
+the Independent JPEG Group".
+(3) Permission for use of this software is granted only if the user accepts
+full responsibility for any undesirable consequences; the authors accept
+NO LIABILITY for damages of any kind.
+
+These conditions apply to any software derived from or based on the IJG code,
+not just to the unmodified library.  If you use our work, you ought to
+acknowledge us.
+
+Permission is NOT granted for the use of any IJG author's name or company name
+in advertising or publicity relating to this software or products derived from
+it.  This software may be referred to only as "the Independent JPEG Group's
+software".
+
+We specifically permit and encourage the use of this software as the basis of
+commercial products, provided that all warranty or liability claims are
+assumed by the product vendor.
+
+
+The Unix configuration script "configure" was produced with GNU Autoconf.
+It is copyright by the Free Software Foundation but is freely distributable.
+The same holds for its supporting scripts (config.guess, config.sub,
+ltmain.sh).  Another support script, install-sh, is copyright by X Consortium
+but is also freely distributable.
+
+The IJG distribution formerly included code to read and write GIF files.
+To avoid entanglement with the Unisys LZW patent (now expired), GIF reading
+support has been removed altogether, and the GIF writer has been simplified
+to produce "uncompressed GIFs".  This technique does not use the LZW
+algorithm; the resulting GIF files are larger than usual, but are readable
+by all standard GIF decoders.
 
 
 
@@ -1230,7 +1300,7 @@ library.  If the library is modified by someone else and passed on, we
 want its recipients to know that what they have is not the original
 version, so that any problems introduced by others will not reflect on
 the original authors' reputations.
-
+
   Finally, any free program is threatened constantly by software
 patents.  We wish to avoid the danger that companies distributing free
 software will individually obtain patent licenses, thus in effect
@@ -1277,7 +1347,7 @@ works together with the library.
 
   Note that it is possible for a library to be covered by the ordinary
 General Public License rather than by this special one.
-
+
 		  GNU LIBRARY GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
@@ -1324,7 +1394,7 @@ Library.
   You may charge a fee for the physical act of transferring a copy,
 and you may at your option offer warranty protection in exchange for a
 fee.
-
+
   2. You may modify your copy or copies of the Library or any portion
 of it, thus forming a work based on the Library, and copy and
 distribute such modifications or work under the terms of Section 1
@@ -1382,7 +1452,7 @@ instead of to this License.  (If a newer version than version 2 of the
 ordinary GNU General Public License has appeared, then you can specify
 that version instead if you wish.)  Do not make any other change in
 these notices.
-
+
   Once this change is made in a given copy, it is irreversible for
 that copy, so the ordinary GNU General Public License applies to all
 subsequent copies and derivative works made from that copy.
@@ -1433,7 +1503,7 @@ Library will still fall under Section 6.)
 distribute the object code for the work under the terms of Section 6.
 Any executables containing that work also fall under Section 6,
 whether or not they are linked directly with the Library itself.
-
+
   6. As an exception to the Sections above, you may also compile or
 link a "work that uses the Library" with the Library to produce a
 work containing portions of the Library, and distribute that work
@@ -1487,7 +1557,7 @@ restrictions of other proprietary libraries that do not normally
 accompany the operating system.  Such a contradiction means you cannot
 use both them and the Library together in an executable that you
 distribute.
-
+
   7. You may place library facilities that are a work based on the
 Library side-by-side in a single library together with other library
 facilities not covered by this License, and distribute such a combined
@@ -1528,7 +1598,7 @@ subject to these terms and conditions.  You may not impose any further
 restrictions on the recipients' exercise of the rights granted herein.
 You are not responsible for enforcing compliance by third parties to
 this License.
-
+
   11. If, as a consequence of a court judgment or allegation of patent
 infringement or for any other reason (not limited to patent issues),
 conditions are imposed on you (whether by court order, agreement or
@@ -1580,7 +1650,7 @@ conditions either of that version or of any later version published by
 the Free Software Foundation.  If the Library does not specify a
 license version number, you may choose any version ever published by
 the Free Software Foundation.
-
+
   14. If you wish to incorporate parts of the Library into other free
 programs whose distribution conditions are incompatible with these,
 write to the author to ask for permission.  For software which is
@@ -1614,7 +1684,7 @@ SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
-
+
      Appendix: How to Apply These Terms to Your New Libraries
 
   If you develop a new library, and you want it to be of the greatest
@@ -1664,6 +1734,7 @@ That's all there is to it!
 
 LibPNG
 ------
+
 
 This copy of the libpng notices is provided for your convenience.  In case of
 any discrepancy between this copy and the notices in the file png.h that is
@@ -1806,7 +1877,6 @@ THE SOFTWARE.
 
 
 
-
 TIFF
 ----
 Copyright (c) 1988-1997 Sam Leffler
@@ -1894,6 +1964,105 @@ SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
 FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+
+
+OpenCV
+------
+By downloading, copying, installing or using the software you agree to this license.
+If you do not agree to this license, do not download, install,
+copy or use the software.
+
+
+                          License Agreement
+               For Open Source Computer Vision Library
+                       (3-clause BSD License)
+
+Copyright (C) 2000-2015, Intel Corporation, all rights reserved.
+Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
+Copyright (C) 2009-2015, NVIDIA Corporation, all rights reserved.
+Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.
+Copyright (C) 2015, OpenCV Foundation, all rights reserved.
+Copyright (C) 2015, Itseez Inc., all rights reserved.
+Third party copyrights are property of their respective owners.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+  * Neither the names of the copyright holders nor the names of the contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+This software is provided by the copyright holders and contributors "as is" and
+any express or implied warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular purpose are disclaimed.
+In no event shall copyright holders or contributors be liable for any direct,
+indirect, incidental, special, exemplary, or consequential damages
+(including, but not limited to, procurement of substitute goods or services;
+loss of use, data, or profits; or business interruption) however caused
+and on any theory of liability, whether in contract, strict liability,
+or tort (including negligence or otherwise) arising in any way out of
+the use of this software, even if advised of the possibility of such damage.
+
+
+
+Python (v3.x)
+-------------
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+--------------------------------------------
+
+1. This LICENSE AGREEMENT is between the Python Software Foundation
+("PSF"), and the Individual or Organization ("Licensee") accessing and
+otherwise using this software ("Python") in source or binary form and
+its associated documentation.
+
+2. Subject to the terms and conditions of this License Agreement, PSF hereby
+grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
+analyze, test, perform and/or display publicly, prepare derivative works,
+distribute, and otherwise use Python alone or in any derivative version,
+provided, however, that PSF's License Agreement and PSF's notice of copyright,
+i.e., "Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+2011, 2012, 2013, 2014, 2015 Python Software Foundation; All Rights Reserved"
+are retained in Python alone or in any derivative version prepared by Licensee.
+
+3. In the event Licensee prepares a derivative work that is based on
+or incorporates Python or any part thereof, and wants to make
+the derivative work available to others as provided herein, then
+Licensee hereby agrees to include in any such work a brief summary of
+the changes made to Python.
+
+4. PSF is making Python available to Licensee on an "AS IS"
+basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
+DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
+FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON WILL NOT
+INFRINGE ANY THIRD PARTY RIGHTS.
+
+5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
+A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON,
+OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
+
+6. This License Agreement will automatically terminate upon a material
+breach of its terms and conditions.
+
+7. Nothing in this License Agreement shall be deemed to create any
+relationship of agency, partnership, or joint venture between PSF and
+Licensee.  This License Agreement does not grant permission to use PSF
+trademarks or trade name in a trademark sense to endorse or promote
+products or services of Licensee, or any third party.
+
+8. By copying, installing or otherwise using Python, Licensee
+agrees to be bound by the terms and conditions of this License
+Agreement.
+
 
 
 
