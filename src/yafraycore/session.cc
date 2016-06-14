@@ -194,7 +194,12 @@ std::string session_t::getPathYafaRayXml()
 
 std::string session_t::getPathImageOutput()
 {
-	if(mPathImageOutput.empty()) return boost::filesystem::temp_directory_path().string()+"/yafaray";	//if no image output folder was specified, use the system temporary folder
+	if(mPathImageOutput.empty())
+	{
+		std::string tempPathOutput = boost::filesystem::temp_directory_path().string()+"/yafaray";
+		Y_WARNING << "Image output path not specified, setting to temporary folder: '" << tempPathOutput << "'" << yendl;
+		return tempPathOutput;	//if no image output folder was specified, use the system temporary folder
+	}
 	else return mPathImageOutput;
 	
 }

@@ -257,11 +257,15 @@ void imageFilm_t::init(int numPasses)
 		node << std::setfill('0') << std::setw(4) << computerNode;
 		filmPath += " - node " + node.str();
 		filmPath += ".film";
+		
+		std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
 
-		const std::string target_path( boost::filesystem::path(session.getPathImageOutput()).parent_path().string() );
-		const std::regex filmFilter(".*\\.film$");
+		std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
+		if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
+		const std::string target_path( parentPath );
+		const std::regex filmFilter(baseImageFileName + ".*\\.film$");
 		std::vector<std::string> filmFilesList;
-
+		
 		try
 		{
 			boost::filesystem::directory_iterator it_end;
