@@ -68,7 +68,7 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-	Y_INFO << PACKAGE << " (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
+	Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
 }
