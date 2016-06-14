@@ -171,7 +171,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	{
 		passString.clear();
 		passString << "Combining ImageFilm files, skipping pass 1...";
-		intpb->setTag(passString.str().c_str());
+		if(intpb) intpb->setTag(passString.str().c_str());
 	}
 	
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
