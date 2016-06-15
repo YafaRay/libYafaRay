@@ -51,6 +51,7 @@ void ctrl_c_handler(int signal)
 
 yafrayInterface_t::yafrayInterface_t(): scene(nullptr), film(nullptr), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
+	Y_DEBUG << "*** YAFRAY INTERFACE CONSTRUCTOR ***" << yendl;
 	//handle CTRL+C events
 #ifdef WIN32
 	SetConsoleCtrlHandler(ctrl_c_handler, true);
@@ -70,6 +71,7 @@ yafrayInterface_t::yafrayInterface_t(): scene(nullptr), film(nullptr), inputGamm
 
 yafrayInterface_t::~yafrayInterface_t()
 {
+	Y_DEBUG << "*** YAFRAY INTERFACE DESTRUCTOR ***" << yendl;
 	Y_VERBOSE << "Interface: Deleting scene..." << yendl;
 	if(scene) delete scene;
 	Y_VERBOSE << "Interface: Deleting environment..." << yendl;
@@ -118,6 +120,7 @@ void yafrayInterface_t::clearAll()
 
 bool yafrayInterface_t::startScene(int type)
 {
+	Y_DEBUG << "*** YAFRAY INTERFACE STARTSCENE ***" << yendl;
 	if(scene) delete scene;
 	scene = new scene_t(env);
 	globalScene = scene;	//for the CTRL+C handler

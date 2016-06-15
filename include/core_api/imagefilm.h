@@ -143,13 +143,13 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setAutoLoad(bool auto_load);
         bool imageFilmLoad(const std::string &filename, bool debugXMLformat);
         bool imageFilmSave(const std::string &filename, bool debugXMLformat);
-
+		bool imageFilmLoadReuseCheckOk() const;
+        
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
 #endif
 
 	protected:
-		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
 		tiledBitArray2D_t<3> *flags; //!< flags for adaptive AA sampling;
@@ -187,6 +187,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		imageSpliter_t::tilesOrderType tilesOrder;
 		bool premultAlpha;
 		bool premultAlpha2;	//For optional secondary file output
+		std::vector<generic2DBuffer_t<pixel_t> *> * imagePasses = nullptr; //!< pointer to rgba color buffers for the render passes
+		std::vector<generic2DBuffer_t<pixel_t> *> imagePassesPreview; //!< rgba color buffers dedicated for preview renders
+		bool imageFilmReused = false;
 		int nPasses;
         double accumulated_image_area_flush_time;
         unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
@@ -195,30 +198,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
         bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
         bool autoSaveBinary;	//If enabled, it will autosave the Image Film in binary mode (faster, smaller but non-portable among systems)
         bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
-        
-        struct filmload_check_t
-        {
-			int w, h, cx0, cx1, cy0, cy1;
-			size_t numPasses;
-			std::string filmStructureVersion;
-			friend class boost::serialization::access;
-			template<class Archive> void serialize(Archive & ar, const unsigned int version)
-			{
-				ar & BOOST_SERIALIZATION_NVP(w);
-				ar & BOOST_SERIALIZATION_NVP(h);
-				ar & BOOST_SERIALIZATION_NVP(cx0);
-				ar & BOOST_SERIALIZATION_NVP(cx1);
-				ar & BOOST_SERIALIZATION_NVP(cy0);
-				ar & BOOST_SERIALIZATION_NVP(cy1);
-				ar & BOOST_SERIALIZATION_NVP(numPasses);
-				ar & BOOST_SERIALIZATION_NVP(filmStructureVersion);
-			}
-		};
-		
+
 		//IMPORTANT: change the FILM_STRUCTURE_VERSION string if there are significant changes in the film structure
 		#define FILM_STRUCTURE_VERSION "1.0"
 		
-		filmload_check_t filmload_check;
+		filmload_check_t & filmload_check;
         
 		friend class boost::serialization::access;
 		template<class Archive> void save(Archive & ar, const unsigned int version) const
@@ -229,23 +213,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
 			ar & BOOST_SERIALIZATION_NVP(computerNode);
 			ar & BOOST_SERIALIZATION_NVP(imagePasses);
-			//ar & BOOST_SERIALIZATION_NVP(densityImage);
-			//ar & BOOST_SERIALIZATION_NVP(dpimage);
-			//ar & BOOST_SERIALIZATION_NVP(flags);
-			//ar & BOOST_SERIALIZATION_NVP(splitter);
-			//ar & BOOST_SERIALIZATION_NVP(nPass);
 		}
 		template<class Archive> void load(Archive & ar, const unsigned int version)
 		{
 			ar & BOOST_SERIALIZATION_NVP(filmload_check);
-			
-			if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION || filmload_check.w != w || filmload_check.h != h || filmload_check.cx0 != cx0 || filmload_check.cx1 != cx1 || filmload_check.cy0 != cy0 || filmload_check.cy1 != cy1 || filmload_check.numPasses != imagePasses.size())
-			{
-				Y_WARNING << "imageFilm: loading imageFilm file failed because parameters are different. Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<imagePasses.size()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
-				
-				return;
-			}
-			else
+			if(imageFilmLoadReuseCheckOk())
 			{
 				ar & BOOST_SERIALIZATION_NVP(samplingOffset);
 				ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
@@ -254,11 +226,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 				session.setStatusRenderResumed();
 				Y_DEBUG<<"FilmLoad computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
 			}
-			//ar & BOOST_SERIALIZATION_NVP(densityImage);
-			//ar & BOOST_SERIALIZATION_NVP(dpimage);
-			//ar & BOOST_SERIALIZATION_NVP(flags);
-			//ar & BOOST_SERIALIZATION_NVP(splitter);
-			//ar & BOOST_SERIALIZATION_NVP(nPass);
 		}
 		BOOST_SERIALIZATION_SPLIT_MEMBER()
 };

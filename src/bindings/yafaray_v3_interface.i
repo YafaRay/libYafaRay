@@ -234,6 +234,8 @@ public:
 		return true;
 	}
 
+	virtual bool isPreview() { return preview; }
+
 	virtual void flush(int numView_unused, const yafaray::renderPasses_t *renderPasses)
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 

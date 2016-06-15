@@ -82,6 +82,8 @@ void photonIntegrator_t::preGatherWorker(preGatherData_t * gdata, float dsRad, i
 
 photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad, int shadowDepth, float dsRad, float cRad)
 {
+	Y_DEBUG << "*** PHOTON INT CONSTRUCTOR ***" << yendl;
+
 	usePhotonCaustics = true;
 	usePhotonDiffuse = true;
 	type = SURFACE;
@@ -101,6 +103,8 @@ photonIntegrator_t::photonIntegrator_t(unsigned int dPhotons, unsigned int cPhot
 photonIntegrator_t::~photonIntegrator_t()
 {
 	// Empty
+	Y_DEBUG << "*** PHOTON INT DESTRUCTOR ***" << yendl;
+
 }
 
 

@@ -38,6 +38,7 @@ session_t::session_t(const session_t&)	//We need to redefine the copy constructo
 
 session_t::session_t()
 {
+	Y_DEBUG << "*** SESSION CONSTRUCTOR ***" << yendl;
 	Y_VERBOSE << "Session:started" << yendl;
 #if defined(_WIN32)
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
@@ -52,6 +53,7 @@ session_t::session_t()
 
 session_t::~session_t()
 {
+	Y_DEBUG << "*** SESSION DESTRUCTOR ***" << yendl;
 	delete radianceMap;
 	delete diffuseMap;
 	delete causticMap;

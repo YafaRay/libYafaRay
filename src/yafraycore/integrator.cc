@@ -112,6 +112,7 @@ void tiledIntegrator_t::precalcDepths()
 
 bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 {
+	Y_DEBUG << "*** INTEGRATOR RENDER ***" << yendl;
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);

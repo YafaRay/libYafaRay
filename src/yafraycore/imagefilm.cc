@@ -126,18 +126,61 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
  gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
 	split(true), abort(false), saveEndPass(false), imageOutputPartialSaveTimeInterval(0.0), splitter(nullptr), pbar(nullptr),
-	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false)
+	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false), filmload_check(session.filmload_check)
 {
+	Y_DEBUG << "*** FILM CONSTRUCTOR ***" << yendl;
 	cx1 = xstart + width;
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 
-	//Creation of the image buffers for the render passes
-	for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
-	{
-		imagePasses.push_back(new rgba2DImage_t(width, height));
-	}
+	if(imagePasses) Y_DEBUG << "imagePasses->size() = " << imagePasses->size() << yendl;
 
+	if(output->isPreview())
+	{
+		imagePasses = &imagePassesPreview;	//During preview renders (material preview, etc) we will use dedicated color buffers for the film to avoid overwriting the persistent (session) color buffers used for scene renders 
+
+		//Creation of the image buffers for the render passes
+		for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
+		{
+			imagePasses->push_back(new rgba2DImage_t(width, height));
+		}
+	}
+	else
+	{
+		imagePasses = &session.imagePasses; //During scene renders (material preview, etc) we will use the persistent (session) color buffers
+		
+		if(!imagePasses || imagePasses->empty())
+		{	
+			Y_DEBUG << "imagePasses EMPTY, re-generating" << yendl;
+			//Creation of the image buffers for the render passes
+			for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
+			{
+				imagePasses->push_back(new rgba2DImage_t(width, height));
+			}
+		}
+		else if(imageFilmLoadReuseCheckOk()) 
+		{
+			Y_DEBUG << "imagePasses NOT empty, resuming" << yendl;
+			imageFilmReused = true;
+		}
+		else
+		{
+			Y_DEBUG << "imagePasses not empty, but imageFilm reuse checks failed, re-generating" << yendl;
+
+			//Deletion of the image buffers for the additional render passes
+			for(size_t idx = 0; idx < imagePasses->size(); ++idx)
+			{
+				delete((*imagePasses)[idx]);
+			}
+			imagePasses->clear();
+
+			//Creation of the image buffers for the render passes
+			for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
+			{
+				imagePasses->push_back(new rgba2DImage_t(width, height));
+			}
+		}
+	}
 	densityImage = nullptr;
 	estimateDensity = false;
 	dpimage = nullptr;
@@ -188,28 +231,41 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 imageFilm_t::~imageFilm_t ()
 {
 	
-	//Deletion of the image buffers for the additional render passes
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	if(output->isPreview())
 	{
-		delete(imagePasses[idx]);
+		//Deletion of the image buffers for the additional render passes
+		for(size_t idx = 0; idx < imagePasses->size(); ++idx)
+		{
+			delete((*imagePasses)[idx]);
+		}
+		imagePasses->clear();
 	}
-	imagePasses.clear();
-	
 	if(densityImage) delete densityImage;
 	delete[] filterTable;
 	if(splitter) delete splitter;
 	if(dpimage) delete dpimage;
 	if(pbar) delete pbar; //remove when pbar no longer created by imageFilm_t!!
+	imagePasses = nullptr;
+	
+	Y_DEBUG << "*** FILM DESTRUCTOR ***" << yendl;
 }
 
 void imageFilm_t::init(int numPasses)
 {
-	// Clear color buffers
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	Y_DEBUG << "*** FILM INIT ***" << yendl;
+	if(!output->isPreview() && imageFilmReused && imageFilmLoadReuseCheckOk())
 	{
-		imagePasses[idx]->clear();
+		Y_DEBUG << "ImageFilm reused: initialization skipped" << yendl;
+		session.setStatusRenderResumed();
 	}
-
+	else
+	{
+		// Clear color buffers
+		for(size_t idx = 0; idx < imagePasses->size(); ++idx)
+		{
+			(*imagePasses)[idx]->clear();
+		}
+	}
 	// Clear density image
 	if(estimateDensity)
 	{
@@ -237,125 +293,128 @@ void imageFilm_t::init(int numPasses)
 	nPass = 1;
 	nPasses = numPasses;
 
-	if(autoLoad)
+	if(!output->isPreview())	// Avoid executing the Film Load / Save operations and updating the film check values when we are just rendering a preview!
 	{
-		std::stringstream passString;
-		passString << "Loading ImageFilm files";
-
-		Y_INFO << passString.str() << yendl;
-
-		std::string oldTag;
-
-		if(pbar)
+		if(autoLoad)
 		{
-			oldTag = pbar->getTag();
-			pbar->setTag(passString.str().c_str());
-		}
-		
-		std::string filmPath = session.getPathImageOutput();
-		std::stringstream node;
-		node << std::setfill('0') << std::setw(4) << computerNode;
-		filmPath += " - node " + node.str();
-		filmPath += ".film";
-		
-		std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
+			std::stringstream passString;
+			passString << "Loading ImageFilm files";
 
-		std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
-		if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
-		const std::string target_path( parentPath );
-		const std::regex filmFilter(baseImageFileName + ".*\\.film$");
-		std::vector<std::string> filmFilesList;
-		
-		try
-		{
-			boost::filesystem::directory_iterator it_end;
-			for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
+			Y_INFO << passString.str() << yendl;
+
+			std::string oldTag;
+
+			if(pbar)
 			{
-				if(!boost::filesystem::is_regular_file(it->status())) continue;
-				if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
-				filmFilesList.push_back(it->path().string());
+				oldTag = pbar->getTag();
+				pbar->setTag(passString.str().c_str());
 			}
-			std::sort(filmFilesList.begin(), filmFilesList.end());
+			
+			std::string filmPath = session.getPathImageOutput();
+			std::stringstream node;
+			node << std::setfill('0') << std::setw(4) << computerNode;
+			filmPath += " - node " + node.str();
+			filmPath += ".film";
+			
+			std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
 
-			for(auto filmFile: filmFilesList)
+			std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
+			if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
+			const std::string target_path( parentPath );
+			const std::regex filmFilter(baseImageFileName + ".*\\.film$");
+			std::vector<std::string> filmFilesList;
+			
+			try
 			{
-				imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
-				loadedFilm->imageFilmLoad(filmFile, false);
-				
-				for(size_t idx=0; idx<imagePasses.size(); ++idx)
+				boost::filesystem::directory_iterator it_end;
+				for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
 				{
-					for(int i=0; i<w; ++i)
+					if(!boost::filesystem::is_regular_file(it->status())) continue;
+					if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
+					filmFilesList.push_back(it->path().string());
+				}
+				std::sort(filmFilesList.begin(), filmFilesList.end());
+
+				for(auto filmFile: filmFilesList)
+				{
+					imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+					loadedFilm->imageFilmLoad(filmFile, false);
+					
+					for(size_t idx=0; idx<imagePasses->size(); ++idx)
 					{
-						for(int j=0; j<h; ++j)
+						rgba2DImage_t *loadedImageBuffer = (*(loadedFilm->imagePasses))[idx];
+						for(int i=0; i<w; ++i)
 						{
-							rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
-							(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
-							(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+							for(int j=0; j<h; ++j)
+							{
+								(*(*imagePasses)[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+								(*(*imagePasses)[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+							}
 						}
 					}
+					
+					if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+					if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+					
+					delete loadedFilm;
 				}
-				
-				if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
-				if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
-				
-				delete loadedFilm;
-			}
-		}
-		catch(const boost::filesystem::filesystem_error& e)
-		{
-			Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
-		}
-		
-		if(pbar) pbar->setTag(oldTag);
-	}
-	
-	if(autoSave)	//If the imageFilm is set to Auto Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back
-	{
-		std::stringstream passString;
-		passString << "Creating backup of the previous ImageFilm file...";
-
-		Y_INFO << passString.str() << yendl;
-
-		std::string oldTag;
-
-		if(pbar)
-		{
-			oldTag = pbar->getTag();
-			pbar->setTag(passString.str().c_str());
-		}
-
-		std::string filmPath = session.getPathImageOutput();
-		std::stringstream node;
-		node << std::setfill('0') << std::setw(4) << computerNode;
-		filmPath += " - node " + node.str();
-		filmPath += ".film";
-		std::string filmPathBackup = filmPath+"-previous.bak";
-		
-		if(boost::filesystem::exists(filmPath))
-		{
-			Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
-			try
-			{	
-				boost::filesystem::rename(filmPath, filmPathBackup);
 			}
 			catch(const boost::filesystem::filesystem_error& e)
 			{
-				Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+				Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
 			}
+			
+			if(pbar) pbar->setTag(oldTag);
 		}
 		
-		if(pbar) pbar->setTag(oldTag);
-	}
+		if(autoSave)	//If the imageFilm is set to Auto Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
+		{
+			std::stringstream passString;
+			passString << "Creating backup of the previous ImageFilm file...";
 
-	//film load check data initialization
-	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
-	filmload_check.w = w;
-	filmload_check.h = h;
-	filmload_check.cx0 = cx0;
-	filmload_check.cx1 = cx1;
-	filmload_check.cy0 = cy0;
-	filmload_check.cy1 = cy1;
-	filmload_check.numPasses = imagePasses.size();
+			Y_INFO << passString.str() << yendl;
+
+			std::string oldTag;
+
+			if(pbar)
+			{
+				oldTag = pbar->getTag();
+				pbar->setTag(passString.str().c_str());
+			}
+
+			std::string filmPath = session.getPathImageOutput();
+			std::stringstream node;
+			node << std::setfill('0') << std::setw(4) << computerNode;
+			filmPath += " - node " + node.str();
+			filmPath += ".film";
+			std::string filmPathBackup = filmPath+"-previous.bak";
+			
+			if(boost::filesystem::exists(filmPath))
+			{
+				Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+				try
+				{	
+					boost::filesystem::rename(filmPath, filmPathBackup);
+				}
+				catch(const boost::filesystem::filesystem_error& e)
+				{
+					Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+				}
+			}
+			
+			if(pbar) pbar->setTag(oldTag);
+		}
+
+		//film load check data initialization
+		filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
+		filmload_check.w = w;
+		filmload_check.h = h;
+		filmload_check.cx0 = cx0;
+		filmload_check.cx1 = cx1;
+		filmload_check.cy0 = cy0;
+		filmload_check.cy1 = cy1;
+		filmload_check.numPasses = imagePasses->size();
+	}
 }
 
 int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
@@ -386,7 +445,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
-    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
+    std::vector<colorA_t> colExtPasses(imagePasses->size(), colorA_t(0.f));
 	int variance_half_edge = AA_variance_edge_size / 2;
 	
 	float AA_thresh_scaled = AA_thesh;
@@ -409,9 +468,9 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 			{
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 
-				if((*imagePasses.at(0))(x, y).weight <= 0.f) flags->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+				if((*imagePasses->at(0))(x, y).weight <= 0.f) flags->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
 
-				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
+				colorA_t pixCol = (*imagePasses->at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
 
 				if(AA_dark_detection_type == DARK_DETECTION_LINEAR && AA_dark_threshold_factor > 0.f)
@@ -423,19 +482,19 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 					AA_thresh_scaled = dark_threshold_curve_interpolate(pixColBri);
 				}
 				
-				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
+				if(pixCol.colorDifference((*imagePasses->at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					flags->setBit(x, y); flags->setBit(x+1, y);
 				}
-				if(pixCol.colorDifference((*imagePasses.at(0))(x, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
+				if(pixCol.colorDifference((*imagePasses->at(0))(x, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					flags->setBit(x, y); flags->setBit(x, y+1);
 				}
-				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
+				if(pixCol.colorDifference((*imagePasses->at(0))(x+1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					flags->setBit(x, y); flags->setBit(x+1, y+1);
 				}
-				if(x > 0 && pixCol.colorDifference((*imagePasses.at(0))(x-1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
+				if(x > 0 && pixCol.colorDifference((*imagePasses->at(0))(x-1, y+1).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
 					flags->setBit(x, y); flags->setBit(x-1, y+1);
 				}
@@ -452,8 +511,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 						if(xi<0) xi = 0;
 						else if(xi>=w-1) xi = w-2;
 						
-						colorA_t cx0 = (*imagePasses.at(0))(xi, y).normalized();
-						colorA_t cx1 = (*imagePasses.at(0))(xi+1, y).normalized();
+						colorA_t cx0 = (*imagePasses->at(0))(xi, y).normalized();
+						colorA_t cx1 = (*imagePasses->at(0))(xi+1, y).normalized();
 						
 						if(cx0.colorDifference(cx1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_x;
 					}
@@ -464,8 +523,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 						if(yi<0) yi = 0;
 						else if(yi>=h-1) yi = h-2;
 						
-						colorA_t cy0 = (*imagePasses.at(0))(x, yi).normalized();
-						colorA_t cy1 = (*imagePasses.at(0))(x, yi+1).normalized();
+						colorA_t cy0 = (*imagePasses->at(0))(x, yi).normalized();
+						colorA_t cy1 = (*imagePasses->at(0))(x, yi+1).normalized();
 						
 						if(cy0.colorDifference(cy1, AA_detect_color_noise) >= AA_thresh_scaled) ++variance_y;
 					}
@@ -502,9 +561,9 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 												
 					if(session.isInteractive() && showMask)
 					{
-						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+						for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 						{
-							color_t pix = (*imagePasses[idx])(x, y).normalized();
+							color_t pix = (*(*imagePasses)[idx])(x, y).normalized();
 							float pixColBri = pix.abscol2bri();
 
 							if(pix.R < pix.G && pix.R < pix.B)
@@ -596,19 +655,19 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 	int end_x = a.X+a.W-cx0, end_y = a.Y+a.H-cy0;
 
-    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
+    std::vector<colorA_t> colExtPasses(imagePasses->size(), colorA_t(0.f));
 
 	for(int j=a.Y-cy0; j<end_y; ++j)
 	{
 		for(int i=a.X-cx0; i<end_x; ++i)
 		{
-			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+			for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 			{
-				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+				colExtPasses[idx] = (*(*imagePasses)[idx])(i, j).normalized();
                 
 				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
-					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
+					colExtPasses[idx] = (*(*imagePasses)[idx])(i, j).weight;
 				}
 				
 				colExtPasses[idx].clampRGB0();
@@ -749,10 +808,10 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(estimateDensity) multi = (float) (w * h) / (float) numSamples;
 
-    std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
+    std::vector<colorA_t> colExtPasses(imagePasses->size(), colorA_t(0.f));
 
     std::vector<colorA_t> colExtPasses2;	//For secondary file output (when enabled)
-	if(out2) colExtPasses2.resize(imagePasses.size(), colorA_t(0.f));
+	if(out2) colExtPasses2.resize(imagePasses->size(), colorA_t(0.f));
 
 	int outputDisplaceRenderedImageBadgeHeight = 0, out2DisplaceRenderedImageBadgeHeight = 0;
 	
@@ -764,14 +823,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	{
 		for(int i = 0; i < w; i++)
 		{
-			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+			for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 			{
-				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+				if(flags & IF_IMAGE) colExtPasses[idx] = (*(*imagePasses)[idx])(i, j).normalized();
 				else colExtPasses[idx] = colorA_t(0.f);
 				
 				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
-					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
+					colExtPasses[idx] = (*(*imagePasses)[idx])(i, j).weight;
 				}
 								
 				if(estimateDensity && (flags & IF_DENSITYIMAGE) && idx == 0) colExtPasses[idx] += (*densityImage)(i, j) * multi;
@@ -821,7 +880,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			{
 				for(int i = 0; i < w; i++)
 				{
-					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+					for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 					{
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses[idx] = colorA_t(dpcol, 1.f);
@@ -841,7 +900,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			{
 				for(int i = 0; i < w; i++)
 				{
-					for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+					for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 					{
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses2[idx] = colorA_t(dpcol, 1.f);
@@ -978,13 +1037,13 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 			float filterWt = filterTable[offset];
 
 			// update pixel values with filtered sample contribution
-			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+			for(size_t idx = 0; idx < imagePasses->size(); ++idx)
 			{
 				colorA_t col = colorPasses(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
-				pixel_t &pixel = (*imagePasses[idx])(i - cx0, j - cy0);
+				pixel_t &pixel = (*(*imagePasses)[idx])(i - cx0, j - cy0);
 
 				if(premultAlpha) col.alphaPremultiply();
 
@@ -1413,5 +1472,59 @@ bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat
 	}
 	return true;
 }
+
+
+bool imageFilm_t::imageFilmLoadReuseCheckOk() const
+{
+	bool checksOK = true;
+	
+	if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Film structure version, expected=" << FILM_STRUCTURE_VERSION << ", in reused/loaded film=" << filmload_check.filmStructureVersion << yendl;
+	}	
+	if(filmload_check.w != w)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << w << ", in reused/loaded film=" << filmload_check.w << yendl;
+	}
+	if(filmload_check.h != h)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << h << ", in reused/loaded film=" << filmload_check.h << yendl;
+	}
+	if(filmload_check.cx0 != cx0)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx0 << ", in reused/loaded film=" << filmload_check.cx0 << yendl;
+	}
+	if(filmload_check.cx1 != cx1)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx1 << ", in reused/loaded film=" << filmload_check.cx1 << yendl;
+	}
+	if(filmload_check.cy0 != cy0)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy0 << ", in reused/loaded film=" << filmload_check.cy0 << yendl;
+	}
+	if(filmload_check.cy1 != cy1)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check.cy1 << yendl;
+	}
+	if(filmload_check.numPasses != (size_t) env->getRenderPasses()->extPassesSize())
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << env->getRenderPasses()->extPassesSize() << ", in reused/loaded film=" << filmload_check.numPasses << yendl;
+	}
+	
+	if(!checksOK) Y_WARNING << "imageFilm: loading/reusing film failed because parameters are different. The film will be re-generated." << yendl;
+	
+	Y_DEBUG << "imageFilm: loading/reusing film check results=" << checksOK << ". Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<env->getRenderPasses()->extPassesSize()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
+	
+	return checksOK;
+}
+
 
 __END_YAFRAY
