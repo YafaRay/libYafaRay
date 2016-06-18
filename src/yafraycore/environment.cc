@@ -531,12 +531,22 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool premult2 = false;
+	
 	float partial_save_timer = 0.f;
 	bool partial_save_each_pass = false;
 	bool film_autosave = false;
 	bool film_save_binary_format = true;
 	bool film_load = false;
-
+	
+	std::string images_autosave_interval_type_string = "none";
+	int images_autosave_interval_passes = 1;
+	int images_autosave_interval_seconds = 300;
+	
+	std::string film_save_load_string = "none";
+	std::string film_autosave_interval_type_string = "pass-interval";
+	int film_autosave_interval_passes = 1;
+	int film_autosave_interval_seconds = 300;
+	
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
 	params.getParam("color_space2", color_space_string2);
@@ -557,7 +567,19 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("film_autosave", film_autosave); // If enabled, it will autosave the Image Film at the same time as the image files
 	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
 	params.getParam("film_load", film_load); // If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen
+	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
+	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
+	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
 	
+	params.getParam("film_save_load", film_save_load_string);
+	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
+	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
+	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
+	
+	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_interval_passes << ", " << images_autosave_interval_seconds << yendl;
+
+	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_interval_passes << ", " << film_autosave_interval_seconds << yendl;
+		
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
