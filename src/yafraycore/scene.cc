@@ -47,7 +47,6 @@ __BEGIN_YAFRAY
 
 scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(nullptr), camera(nullptr), imageFilm(nullptr), tree(nullptr), vtree(nullptr), background(nullptr), surfIntegrator(nullptr),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), nthreads_photons(1), mode(1), signals(0), env(render_environment)
 {
-	Y_DEBUG << "*** SCENE CONSTRUCTOR ***" << yendl;
 	state.changes = C_ALL;
 	state.stack.push_front(READY);
 	state.nextFreeID = std::numeric_limits<int>::max();
@@ -67,7 +66,6 @@ scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(
 
 scene_t::~scene_t()
 {
-	Y_DEBUG << "*** SCENE DESTRUCTOR ***" << yendl;
 	if(tree) delete tree;
 	if(vtree) delete vtree;
 	for(auto i = meshes.begin(); i != meshes.end(); ++i)

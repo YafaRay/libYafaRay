@@ -27,39 +27,12 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
 #include <core_api/logging.h>
 #include <core_api/sysinfo.h>
 
 __BEGIN_YAFRAY
 
 class photonMap_t;
-class pixel_t;
-template <class T> class generic2DBuffer_t;
-
-struct filmload_check_t
-{
-	int w, h, cx0, cx1, cy0, cy1;
-	size_t numPasses;
-	std::string filmStructureVersion;
-	friend class boost::serialization::access;
-	template<class Archive> void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & BOOST_SERIALIZATION_NVP(w);
-		ar & BOOST_SERIALIZATION_NVP(h);
-		ar & BOOST_SERIALIZATION_NVP(cx0);
-		ar & BOOST_SERIALIZATION_NVP(cx1);
-		ar & BOOST_SERIALIZATION_NVP(cy0);
-		ar & BOOST_SERIALIZATION_NVP(cy1);
-		ar & BOOST_SERIALIZATION_NVP(numPasses);
-		ar & BOOST_SERIALIZATION_NVP(filmStructureVersion);
-	}
-};
 
 class YAFRAYCORE_EXPORT session_t
 {
@@ -95,9 +68,7 @@ class YAFRAYCORE_EXPORT session_t
 		photonMap_t * causticMap = nullptr;
 		photonMap_t * diffuseMap = nullptr;
 		photonMap_t * radianceMap = nullptr;
-		std::vector<generic2DBuffer_t<pixel_t> *> imagePasses; //!< rgba color buffers for the render passes
-
-		filmload_check_t filmload_check;		
+		
 		std::mutex mutx;
 	
 	protected:
