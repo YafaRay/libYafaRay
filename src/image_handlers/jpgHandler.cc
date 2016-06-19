@@ -69,7 +69,7 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -90,12 +90,15 @@ jpgHandler_t::jpgHandler_t()
 	rgbCompressedBuffer = nullptr;
 }
 
-void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -177,45 +180,57 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	scanline = new yByte[ m_width * 3 ];
 
-	cv::Mat A(m_height, m_width, CV_8UC3);
-	cv::Mat B(m_height, m_width, CV_8UC3);
-	cv::Mat_<cv::Vec3b> _A = A;
-	cv::Mat_<cv::Vec3b> _B = B;
-
-	for(y = 0; y < m_height; y++)
+	if(m_Denoise)
 	{
-		for (x = 0; x < m_width; x++)
-		{
-			ix = x * 3;
-			colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
-			col.clampRGBA01();
-			_A(y, x)[2]   = (col.getR() * 255);
-			_A(y, x)[0] = (col.getG() * 255);
-			_A(y, x)[1] = (col.getB() * 255);
-		}
-	}
-	
-	//cv::blur(A, B, cv::Size(10,10));
-	//cv::imwrite("/home/ARCHIVOS/VirtualBox/compartir/opencv_render/opencv - 001blur.png", B);
+		cv::Mat A(m_height, m_width, CV_8UC3);
+		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat_<cv::Vec3b> _A = A;
+		cv::Mat_<cv::Vec3b> _B = B;
 
-	cv::fastNlMeansDenoisingColored(A, B, 3, 60);
-	//cv::imwrite("/home/ARCHIVOS/VirtualBox/compartir/opencv_render/opencv - 001denoise.png", B);
-	
-	for(y = 0; y < m_height; y++)
-	{
-		for (x = 0; x < m_width; x++)
+		for(y = 0; y < m_height; y++)
 		{
-			ix = x * 3;
-			colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
-			col.clampRGBA01();
-			scanline[ix]   = (yByte) _B(y, x)[2];
-			scanline[ix+1] = (yByte) _B(y, x)[0];
-			scanline[ix+2] = (yByte) _B(y, x)[1];
+			for (x = 0; x < m_width; x++)
+			{
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				_A(y, x)[0] = (col.getR() * 255);
+				_A(y, x)[1] = (col.getG() * 255);
+				_A(y, x)[2] = (col.getB() * 255);
+			}
 		}
 
-		jpeg_write_scanlines(&info, &scanline, 1);
-	}
+		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+			
+		for(y = 0; y < m_height; y++)
+		{
+			for (x = 0; x < m_width; x++)
+			{
+				ix = x * 3;
+				scanline[ix]   = (yByte) _B(y, x)[0];
+				scanline[ix+1] = (yByte) _B(y, x)[1];
+				scanline[ix+2] = (yByte) _B(y, x)[2];
+			}
 
+			jpeg_write_scanlines(&info, &scanline, 1);
+		}
+	}
+	else
+	{
+		for(y = 0; y < m_height; y++)
+		{
+			for (x = 0; x < m_width; x++)
+			{
+				ix = x * 3;
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				scanline[ix]   = (yByte) (col.getR() * 255);
+				scanline[ix+1] = (yByte) (col.getG() * 255);
+				scanline[ix+2] = (yByte) (col.getB() * 255);
+			}
+
+			jpeg_write_scanlines(&info, &scanline, 1);
+		}
+	}
 	delete [] scanline;
 
 	jpeg_finish_compress(&info);
@@ -424,18 +439,24 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
 
 	imageHandler_t *ih = new jpgHandler_t();
 	
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
 	}
 	
 	return ih;

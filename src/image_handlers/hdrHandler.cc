@@ -42,7 +42,7 @@ class hdrHandler_t: public imageHandler_t
 public:
 	hdrHandler_t();
 	~hdrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -79,12 +79,15 @@ hdrHandler_t::~hdrHandler_t()
 	}
 }
 
-void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -589,18 +592,24 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
 
 	imageHandler_t *ih = new hdrHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
 	}
 
 	return ih;

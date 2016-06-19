@@ -40,6 +40,8 @@ class YAFRAYCORE_EXPORT imageOutput_t : public colorOutput_t
 		virtual void flush(int numView, const renderPasses_t *renderPasses);
 		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {} // not used by images... yet
 		virtual bool isImageOutput() { return true; }
+		void saveImageFile(std::string filename, int idx);
+		void saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses);
 
 	private:
 		imageHandler_t *image;

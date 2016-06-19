@@ -593,24 +593,39 @@ namespace yafaray
 	class imageHandler_t
 	{
 		public:
-			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
+			imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
+
+			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false) = 0;
 			virtual ~imageHandler_t() {};
 			virtual bool loadFromFile(const std::string &name) = 0;
 			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
 			virtual bool saveToFile(const std::string &name, int imagePassNumber = 0) = 0;
+			virtual bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses) { return false; };
 			virtual void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0) = 0;
 			virtual colorA_t getPixel(int x, int y, int imagePassNumber = 0) = 0;
 			virtual int getWidth() { return m_width; }
 			virtual int getHeight() { return m_height; }
 			virtual bool isHDR() { return false; }
+			virtual bool isMultiLayer() { return m_MultiLayer; }
+			int getTextureOptimization() { return m_textureOptimization; }
+			void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
+			virtual bool denoiseEnabled() { return m_Denoise; }
 			
 		protected:
 			std::string handlerName;
 			int m_width;
 			int m_height;
 			bool m_hasAlpha;
+			int m_textureOptimization;
 			std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
-			rgba2DImage_nw_t *m_rgba;
+			rgbaOptimizedImage_nw_t *rgbaOptimizedBuffer;	//!< optimized RGBA (32bit/pixel) with alpha buffer
+			rgbaCompressedImage_nw_t *rgbaCompressedBuffer;	//!< compressed RGBA (24bit/pixel) LOSSY! with alpha buffer
+			rgbOptimizedImage_nw_t *rgbOptimizedBuffer;	//!< optimized RGB (24bit/pixel) without alpha buffer
+			rgbCompressedImage_nw_t *rgbCompressedBuffer;	//!< compressed RGB (16bit/pixel) LOSSY! without alpha buffer
+			bool m_MultiLayer = false;
+			bool m_Denoise = false;
+			int m_DenoiseHLum = 3;
+			int m_DenoiseHCol = 3;
 	};
 
 	// Outputs

@@ -45,7 +45,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
@@ -74,12 +74,15 @@ pngHandler_t::pngHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -162,23 +165,66 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	{
 		rowPointers[i] = new yByte[ m_width * channels ];
 	}
+	
+	Y_DEBUG << "m_Denoise="<<m_Denoise<<" m_DenoiseHLum="<<m_DenoiseHLum<<" m_DenoiseHCol="<<m_DenoiseHCol<<yendl;
 
-	for(int y = 0; y < m_height; y++)
+	if(m_Denoise)
 	{
-		for(int x = 0; x < m_width; x++)
+		cv::Mat A(m_height, m_width, CV_8UC3);
+		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat_<cv::Vec3b> _A = A;
+		cv::Mat_<cv::Vec3b> _B = B;
+		
+		for(int y = 0; y < m_height; y++)
 		{
-			colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
-			color.clampRGBA01();
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
 
-			int i = x * channels;
+				_A(y, x)[0] = (color.getR() * 255);
+				_A(y, x)[1] = (color.getG() * 255);
+				_A(y, x)[2] = (color.getB() * 255);
+			}
+		}
 
-			rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
-			rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
-			rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
-			if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+
+		for(int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
+
+				int i = x * channels;
+
+				rowPointers[y][i]   = (yByte) _B(y, x)[0];
+				rowPointers[y][i+1] = (yByte) _B(y, x)[1];
+				rowPointers[y][i+2] = (yByte) _B(y, x)[2];
+				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+			}
 		}
 	}
+	else
+	{
+		for(int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
 
+				int i = x * channels;
+
+				rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
+				rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
+				rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
+				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+			}
+		}
+	}
+	
 	png_write_image(pngPtr, rowPointers);
 
 	png_write_end(pngPtr, nullptr);
@@ -512,18 +558,26 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
+
+	Y_DEBUG << "denoiseEnabled="<<denoiseEnabled<<" denoiseHLum="<<denoiseHLum<<" denoiseHCol="<<denoiseHCol<<yendl;
 
 	imageHandler_t *ih = new pngHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
 	}
 
 	return ih;

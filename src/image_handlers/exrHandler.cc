@@ -45,12 +45,12 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
+    bool saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
 	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
@@ -65,12 +65,15 @@ exrHandler_t::exrHandler_t()
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
     
 	m_halfrgba.resize(renderPasses->extPassesSize());
 	
@@ -136,7 +139,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 }
 
-bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
+bool exrHandler_t::saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses)
 {
     std::string extPassName;
 
@@ -309,6 +312,9 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	bool withAlpha = false;
 	bool forOutput = true;
 	bool multiLayer = false;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
 
 	params.getParam("pixel_type", pixtype);
 	params.getParam("compression", compression);
@@ -317,13 +323,16 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
 
 	imageHandler_t *ih = new exrHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, multiLayer);
 	}
 
 	return ih;
