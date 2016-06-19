@@ -148,8 +148,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
         void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
         void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
-        bool imageFilmLoad(const std::string &filename, bool debugXMLformat = false);
-        bool imageFilmSave(const std::string &filename, bool debugXMLformat = false);
+        bool imageFilmLoad(const std::string &filename);
+        bool imageFilmSave(const std::string tagText = "");
 		bool imageFilmLoadCheckOk() const;
 
         void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
@@ -216,6 +216,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		double imagesAutoSaveIntervalSeconds = 300.0;
 		int imagesAutoSaveIntervalPasses = 1;
 		double imagesAutoSaveTimer = 0.0; //Internal timer for images AutoSave
+		int imagesAutoSavePassCounter = 0;	//Internal counter for images AutoSave
 
 		//Options for Saving/AutoSaving/Loading the internal imageFilm image buffers
 		int filmFileSaveLoad = FILM_FILE_NONE;
@@ -223,6 +224,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		int filmAutoSaveIntervalType = AUTOSAVE_NONE;
 		double filmAutoSaveIntervalSeconds = 300.0;
 		double filmAutoSaveTimer = 0.0; //Internal timer for Film AutoSave
+		int filmAutoSavePassCounter = 0;	//Internal counter for Film AutoSave
 		int filmAutoSaveIntervalPasses = 1;
 		        
         struct filmload_check_t

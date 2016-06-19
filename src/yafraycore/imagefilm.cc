@@ -275,7 +275,7 @@ void imageFilm_t::init(int numPasses)
 				for(auto filmFile: filmFilesList)
 				{
 					imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
-					loadedFilm->imageFilmLoad(filmFile, false);
+					loadedFilm->imageFilmLoad(filmFile);
 					
 					for(size_t idx=0; idx<imagePasses.size(); ++idx)
 					{
@@ -360,6 +360,8 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	next_area = 0;
 	splitterMutex.unlock();
 	nPass++;
+	imagesAutoSavePassCounter++;
+	filmAutoSavePassCounter++;
 	
 	if(skipNextPass) return 0;
 	
@@ -367,44 +369,29 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 
 	colorOutput_t *out2 = env->getOutput2();
 
+	Y_DEBUG << "nPass = " << nPass << yendl;
+	
 	if(session.isInteractive())
 	{
-		if(out2 && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % imagesAutoSaveIntervalPasses == 0) && session.renderInProgress())
+		if(out2 && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses) && session.renderInProgress())
 		{
 			this->flush(numView, IF_ALL, out2);
+			imagesAutoSavePassCounter = 0;
 		}
 	}
 	else
 	{
-		if(output && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % imagesAutoSaveIntervalPasses == 0) && session.renderInProgress())
+		if(output && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses) && session.renderInProgress())
 		{
 			this->flush(numView, IF_ALL, output);
+			imagesAutoSavePassCounter = 0;
 		}
 	}
 
-	if(session.renderInProgress() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % filmAutoSaveIntervalPasses == 0) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
+	if(session.renderInProgress() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (filmAutoSavePassCounter >= filmAutoSaveIntervalPasses) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
-		std::stringstream passString;
-		passString << "AutoSaving internal ImageFilm file";
-
-		Y_INFO << passString.str() << yendl;
-
-		std::string oldTag;
-
-		if(pbar)
-		{
-			oldTag = pbar->getTag();
-			pbar->setTag(passString.str().c_str());
-		}
-
-		std::string filmPath = session.getPathImageOutput();
-		std::stringstream node;
-		node << std::setfill('0') << std::setw(4) << computerNode;
-		filmPath += " - node " + node.str();
-		filmPath += ".film";
-		this->imageFilmSave(filmPath, false);
-
-		if(pbar) pbar->setTag(oldTag);
+		imageFilmSave("AutoSaving internal ImageFilm file");
+		filmAutoSavePassCounter = 0;
 	}
 
 
@@ -675,27 +662,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 		{
 			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
 			{
-				std::stringstream passString;
-				passString << "AutoSaving internal ImageFilm file";
-
-				Y_INFO << passString.str() << yendl;
-
-				std::string oldTag;
-
-				if(pbar)
-				{
-					oldTag = pbar->getTag();
-					pbar->setTag(passString.str().c_str());
-				}
-
-				std::string filmPath = session.getPathImageOutput();
-				std::stringstream node;
-				node << std::setfill('0') << std::setw(4) << computerNode;
-				filmPath += " - node " + node.str();
-				filmPath += ".film";
-				this->imageFilmSave(filmPath, false);
-
-				if(pbar) pbar->setTag(oldTag);
+				imageFilmSave("AutoSaving internal ImageFilm file");
 			}
 			resetFilmAutoSaveTimer();
 		}
@@ -941,27 +908,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	if(session.renderFinished() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
-		std::stringstream passString;
-		passString << "Saving internal ImageFilm file";
-
-		Y_INFO << passString.str() << yendl;
-
-		std::string oldTag;
-
-		if(pbar)
-		{
-			oldTag = pbar->getTag();
-			pbar->setTag(passString.str().c_str());
-		}
-
-		std::string filmPath = session.getPathImageOutput();
-		std::stringstream node;
-		node << std::setfill('0') << std::setw(4) << computerNode;
-		filmPath += " - node " + node.str();
-		filmPath += ".film";
-		this->imageFilmSave(filmPath, false);
-
-		if(pbar) pbar->setTag(oldTag);
+		imageFilmSave();
 	}
 	
 	if(session.renderFinished())
@@ -1356,8 +1303,10 @@ float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
 	else return 0.1000f;
 }
 
-bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat)
+bool imageFilm_t::imageFilmLoad(const std::string &filename)
 {
+	bool debugXMLformat = false;	//Enable only for debugging purposes
+
 	try
 	{
 		std::ifstream ifs(filename, std::fstream::binary);
@@ -1399,29 +1348,51 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat
     }
 }
 
-bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat)
+bool imageFilm_t::imageFilmSave(const std::string tagText)
 {
+	bool debugXMLformat = false;	//Enable only for debugging purposes
+	
+	std::stringstream passString;
+	if(tagText.empty()) passString << "Saving internal ImageFilm file";
+	else passString << tagText;
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+
+	std::string filmPath = session.getPathImageOutput();
+	std::stringstream node;
+	node << std::setfill('0') << std::setw(4) << computerNode;
+	filmPath += " - node " + node.str();
+	filmPath += ".film";
+
 	try
 	{
-		std::ofstream ofs(filename+".tmp", std::fstream::binary);
+		std::ofstream ofs(filmPath+".tmp", std::fstream::binary);
 
 		if(debugXMLformat)
 		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in XML format" << yendl;
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in XML format" << yendl;
 			boost::archive::xml_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
 		else if(filmFileSaveBinaryFormat)
 		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in Binary (non portable) format" << yendl;
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Binary (non portable) format" << yendl;
 			boost::archive::binary_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
 		else
 		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in Text format" << yendl;
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Text format" << yendl;
 			boost::archive::text_oarchive oa(ofs);
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
@@ -1429,19 +1400,23 @@ bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat
 	Y_VERBOSE << "imageFilm: Film saved to file." << yendl;
 	}
 	catch(std::exception& ex){
-        Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filename << "'" << yendl;
+        Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filmPath << "'" << yendl;
+		if(pbar) pbar->setTag(oldTag);
 		return false;
     }
     
 	try
 	{
-		boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
-		boost::filesystem::remove(filename+".tmp");
+		boost::filesystem::copy_file(filmPath+".tmp", filmPath, boost::filesystem::copy_option::overwrite_if_exists);
+		boost::filesystem::remove(filmPath+".tmp");
 	}
 	catch(const boost::filesystem::filesystem_error& e)
 	{
 		Y_WARNING << "imageFilm: file operation error \"" << e.what() << yendl;
 	}
+
+	if(pbar) pbar->setTag(oldTag);
+	
 	return true;
 }
 
