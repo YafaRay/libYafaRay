@@ -86,8 +86,11 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	gTimer.addEvent("rendert");
 	gTimer.start("rendert");
 
-	imageFilm->reset_accumulated_image_area_flush_time();
-	gTimer.addEvent("image_area_flush");
+	imageFilm->resetImagesAutoSaveTimer();
+	gTimer.addEvent("imagesAutoSaveTimer");
+
+	imageFilm->resetFilmAutoSaveTimer();
+	gTimer.addEvent("filmAutoSaveTimer");
 
 	imageFilm->init(passNum);
 	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
@@ -139,6 +142,8 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
+	gTimer.stop("imagesAutoSaveTimer");
+	gTimer.stop("filmAutoSaveTimer");
 	session.setStatusRenderFinished();
 	Y_INFO << integratorName << ": Overall rendertime: "<< gTimer.getTime("rendert") << "s." << yendl;
 

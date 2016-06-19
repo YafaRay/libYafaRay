@@ -648,36 +648,58 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 		}
 	}
 
-	if(session.isInteractive())
+	if(session.isInteractive()) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
+	
+	if(session.renderInProgress() && !output->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
-		output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
-        gTimer.stop("image_area_flush");
-        accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
-        if(accumulated_image_area_flush_time < 0.f) reset_accumulated_image_area_flush_time(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-        gTimer.start("image_area_flush");
+		gTimer.stop("imagesAutoSaveTimer");
+		imagesAutoSaveTimer += gTimer.getTime("imagesAutoSaveTimer");
+		if(imagesAutoSaveTimer < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		gTimer.start("imagesAutoSaveTimer");
+
+		gTimer.stop("filmAutoSaveTimer");
+		filmAutoSaveTimer += gTimer.getTime("filmAutoSaveTimer");
+		if(filmAutoSaveTimer < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		gTimer.start("filmAutoSaveTimer");
 
 		colorOutput_t *out2 = env->getOutput2();
-        
-        if(out2 && session.renderInProgress() && (imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && ((accumulated_image_area_flush_time > imagesAutoSaveIntervalSeconds) || accumulated_image_area_flush_time == 0.0))
-        {
-			this->flush(numView, IF_ALL, out2); 
-			reset_accumulated_image_area_flush_time();
-        }
-	}
-    
-    else
-    { 
-        gTimer.stop("image_area_flush");
-        accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
-        if(accumulated_image_area_flush_time < 0.f) reset_accumulated_image_area_flush_time(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-        gTimer.start("image_area_flush");
 
-        if(session.renderInProgress() && (imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && ((accumulated_image_area_flush_time > imagesAutoSaveIntervalSeconds) || accumulated_image_area_flush_time == 0.0))
-        {
-             this->flush(numView, IF_ALL, output); 
-             reset_accumulated_image_area_flush_time();
-        }
-    }
+		if((imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (imagesAutoSaveTimer > imagesAutoSaveIntervalSeconds))
+		{
+			if(output && output->isImageOutput()) this->flush(numView, IF_ALL, output);
+			else if(out2 && out2->isImageOutput()) this->flush(numView, IF_ALL, out2);
+			resetImagesAutoSaveTimer();
+		}
+
+		if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (filmAutoSaveTimer > filmAutoSaveIntervalSeconds))
+		{
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				std::stringstream passString;
+				passString << "AutoSaving internal ImageFilm file";
+
+				Y_INFO << passString.str() << yendl;
+
+				std::string oldTag;
+
+				if(pbar)
+				{
+					oldTag = pbar->getTag();
+					pbar->setTag(passString.str().c_str());
+				}
+
+				std::string filmPath = session.getPathImageOutput();
+				std::stringstream node;
+				node << std::setfill('0') << std::setw(4) << computerNode;
+				filmPath += " - node " + node.str();
+				filmPath += ".film";
+				this->imageFilmSave(filmPath, false);
+
+				if(pbar) pbar->setTag(oldTag);
+			}
+			resetFilmAutoSaveTimer();
+		}
+	}
 
     if(pbar)
     {

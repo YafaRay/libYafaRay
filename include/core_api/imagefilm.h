@@ -137,7 +137,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setAANoiseParams(bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings(std::stringstream & ss);
-        void reset_accumulated_image_area_flush_time() { accumulated_image_area_flush_time = 0.0; }
         float dark_threshold_curve_interpolate(float pixel_brightness);
         int getWidth() const { return w; }
         int getHeight() const { return h; }
@@ -156,12 +155,14 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
         void setImagesAutoSaveIntervalSeconds(double interval_seconds) { imagesAutoSaveIntervalSeconds = interval_seconds; }
         void setImagesAutoSaveIntervalPasses(int interval_passes) { imagesAutoSaveIntervalPasses = interval_passes; }
+        void resetImagesAutoSaveTimer() { imagesAutoSaveTimer = 0.0; }
 
         void setFilmFileSaveLoad(int film_file_save_load) { filmFileSaveLoad = film_file_save_load; }
         void setFilmFileSaveBinaryFormat(bool binary_format) { filmFileSaveBinaryFormat = binary_format; }
         void setFilmAutoSaveIntervalType(int interval_type) { filmAutoSaveIntervalType = interval_type; }
         void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
         void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
+        void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -210,18 +211,18 @@ class YAFRAYCORE_EXPORT imageFilm_t
         unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
         unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms
 
-        double accumulated_image_area_flush_time = 0.0;	//Internal accumulated time used for Image or Film Time-Interval AutoSave feature
-
 		//Options for AutoSaving output images
 		int imagesAutoSaveIntervalType = AUTOSAVE_NONE;
 		double imagesAutoSaveIntervalSeconds = 300.0;
 		int imagesAutoSaveIntervalPasses = 1;
+		double imagesAutoSaveTimer = 0.0; //Internal timer for images AutoSave
 
 		//Options for Saving/AutoSaving/Loading the internal imageFilm image buffers
 		int filmFileSaveLoad = FILM_FILE_NONE;
 		bool filmFileSaveBinaryFormat = true;
 		int filmAutoSaveIntervalType = AUTOSAVE_NONE;
 		double filmAutoSaveIntervalSeconds = 300.0;
+		double filmAutoSaveTimer = 0.0; //Internal timer for Film AutoSave
 		int filmAutoSaveIntervalPasses = 1;
 		        
         struct filmload_check_t
