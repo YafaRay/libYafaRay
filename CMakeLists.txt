@@ -69,6 +69,9 @@ endif(YAF_USER_EXTRA_LIBS)
 FIND_PACKAGE(Boost COMPONENTS system filesystem serialization locale REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
+FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIR} )
+
 find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
 

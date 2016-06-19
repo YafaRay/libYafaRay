@@ -20,29 +20,29 @@ add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 if(WITH_OpenEXR)
 add_library(exrHandler SHARED exrHandler.cc)
-target_link_libraries(exrHandler yafaray_v3_core ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(exrHandler yafaray_v3_core ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
 endif(WITH_OpenEXR)
 
 if(WITH_JPEG)
 add_library(jpgHandler SHARED jpgHandler.cc)
-target_link_libraries(jpgHandler yafaray_v3_core ${JPEG_LIBRARY})
+target_link_libraries(jpgHandler yafaray_v3_core ${JPEG_LIBRARY} ${OpenCV_LIBRARIES})
 endif(WITH_JPEG)
 
 if(WITH_PNG)
 add_library(pngHandler SHARED pngHandler.cc)
-target_link_libraries(pngHandler yafaray_v3_core ${PNG_LIBRARIES})
+target_link_libraries(pngHandler yafaray_v3_core ${PNG_LIBRARIES} ${OpenCV_LIBRARIES})
 endif(WITH_PNG)
 
 if(WITH_TIFF)
 add_library(tifHandler SHARED tifHandler.cc)
-target_link_libraries(tifHandler yafaray_v3_core -Wl,-undefined -Wl,dynamic_lookup ${TIFF_LIBRARY})
+target_link_libraries(tifHandler yafaray_v3_core -Wl,-undefined -Wl,dynamic_lookup ${TIFF_LIBRARY} ${OpenCV_LIBRARIES})
 endif(WITH_TIFF)
 
 add_library(tgaHandler SHARED tgaHandler.cc)
-target_link_libraries(tgaHandler yafaray_v3_core)
+target_link_libraries(tgaHandler yafaray_v3_core ${OpenCV_LIBRARIES})
 
 add_library(hdrHandler SHARED hdrHandler.cc)
-target_link_libraries(hdrHandler yafaray_v3_core)
+target_link_libraries(hdrHandler yafaray_v3_core ${OpenCV_LIBRARIES})
 
 if(WITH_OpenEXR)
 	install (TARGETS exrHandler ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

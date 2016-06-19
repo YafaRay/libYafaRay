@@ -27,6 +27,9 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+
+#include <opencv2/photo.hpp>
+
 #include <core_api/logging.h>
 #include <core_api/sysinfo.h>
 
