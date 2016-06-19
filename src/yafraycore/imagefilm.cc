@@ -354,18 +354,21 @@ void imageFilm_t::init(int numPasses)
 	}
 }
 
-int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
+int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName, bool skipNextPass)
 {
 	splitterMutex.lock();
 	next_area = 0;
 	splitterMutex.unlock();
 	nPass++;
-	std::stringstream passString;
 	
+	if(skipNextPass) return 0;
+	
+	std::stringstream passString;
+
+	colorOutput_t *out2 = env->getOutput2();
+
 	if(session.isInteractive())
 	{
-		colorOutput_t *out2 = env->getOutput2();
-
 		if(out2 && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % imagesAutoSaveIntervalPasses == 0) && session.renderInProgress())
 		{
 			this->flush(numView, IF_ALL, out2);
@@ -377,6 +380,31 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 		{
 			this->flush(numView, IF_ALL, output);
 		}
+	}
+
+	if(session.renderInProgress() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % filmAutoSaveIntervalPasses == 0) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
+	{
+		std::stringstream passString;
+		passString << "AutoSaving internal ImageFilm file";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		std::string filmPath = session.getPathImageOutput();
+		std::stringstream node;
+		node << std::setfill('0') << std::setw(4) << computerNode;
+		filmPath += " - node " + node.str();
+		filmPath += ".film";
+		this->imageFilmSave(filmPath, false);
+
+		if(pbar) pbar->setTag(oldTag);
 	}
 
 
@@ -889,7 +917,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(pbar) pbar->setTag(oldTag);
 	}
 
-	if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
+	if(session.renderFinished() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
 		std::stringstream passString;
 		passString << "Saving internal ImageFilm file";

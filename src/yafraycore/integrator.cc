@@ -214,6 +214,7 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 		if(resampled_pixels <= 0.f && !AAthresholdChanged)
 		{
 			Y_INFO << integratorName << ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped." << yendl;
+			imageFilm->nextPass(numView, true, integratorName, /*skipNextPass=*/true);
 		}
 		else
 		{
