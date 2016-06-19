@@ -531,21 +531,17 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool premult2 = false;
-	
-	float partial_save_timer = 0.f;
-	bool partial_save_each_pass = false;
-	bool film_autosave = false;
-	bool film_save_binary_format = true;
-	bool film_load = false;
-	
 	std::string images_autosave_interval_type_string = "none";
+	int images_autosave_interval_type = AUTOSAVE_NONE;
 	int images_autosave_interval_passes = 1;
-	int images_autosave_interval_seconds = 300;
-	
+	double images_autosave_interval_seconds = 300.0;
 	std::string film_save_load_string = "none";
-	std::string film_autosave_interval_type_string = "pass-interval";
+	int film_save_load = FILM_FILE_NONE;
+	bool film_save_binary_format = true;
+	std::string film_autosave_interval_type_string = "none";
+	int film_autosave_interval_type = AUTOSAVE_NONE;
 	int film_autosave_interval_passes = 1;
-	int film_autosave_interval_seconds = 300;
+	double film_autosave_interval_seconds = 300.0;
 	
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -562,16 +558,11 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
-	params.getParam("partial_save_timer", partial_save_timer); // Time for partially save image
-	params.getParam("partial_save_each_pass", partial_save_each_pass); // If enabled, it will autosave the image at the end of each pass
-	params.getParam("film_autosave", film_autosave); // If enabled, it will autosave the Image Film at the same time as the image files
-	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
-	params.getParam("film_load", film_load); // If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen
 	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
 	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
 	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
-	
 	params.getParam("film_save_load", film_save_load_string);
+	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
 	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
 	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
 	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
@@ -591,6 +582,18 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string2 == "LinearRGB") color_space2 = LINEAR_RGB;
 	else if(color_space_string2 == "Raw_Manual_Gamma") color_space2 = RAW_MANUAL_GAMMA;
 	else color_space2 = SRGB;
+	
+	if(images_autosave_interval_type_string == "pass-interval") images_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
+	else if(images_autosave_interval_type_string == "time-interval") images_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
+	else images_autosave_interval_type = AUTOSAVE_NONE;
+
+	if(film_save_load_string == "load-save") film_save_load = FILM_FILE_LOAD_SAVE;
+	else if(film_save_load_string == "save") film_save_load = FILM_FILE_SAVE;
+	else film_save_load = FILM_FILE_NONE;
+
+	if(film_autosave_interval_type_string == "pass-interval") film_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
+	else if(film_autosave_interval_type_string == "time-interval") film_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
+	else film_autosave_interval_type = AUTOSAVE_NONE;
 	
     output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
@@ -631,28 +634,28 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	film->setPremult2(premult2);
 
-	if(partial_save_each_pass)
-	{
-		Y_INFO_ENV << "Autosave partially rendered image at the end of each pass" << yendl;
-		film->setImageOutputPartialSaveTimeInterval(0.0);
-		film->setImageOutputPartialSaveEndPass(true);
-	}
-	else
-	{
-		Y_INFO_ENV << "Autosave partially rendered image using time interval = " << partial_save_timer << "s" << yendl;
-		if(partial_save_timer > 0.f) film->setImageOutputPartialSaveTimeInterval((double) partial_save_timer);
-		film->setImageOutputPartialSaveEndPass(false);
-	}
+	film->setImagesAutoSaveIntervalType(images_autosave_interval_type);
+	film->setImagesAutoSaveIntervalSeconds(images_autosave_interval_seconds);
+	film->setImagesAutoSaveIntervalPasses(images_autosave_interval_passes);
 
-	film->setAutoSave(film_autosave);
-	film->setAutoSaveBinary(film_save_binary_format);
+	film->setFilmFileSaveLoad(film_save_load);
+	film->setFilmFileSaveBinaryFormat(film_save_binary_format);
+	film->setFilmAutoSaveIntervalType(film_autosave_interval_type);
+	film->setFilmAutoSaveIntervalSeconds(film_autosave_interval_seconds);
+	film->setFilmAutoSaveIntervalPasses(film_autosave_interval_passes);
 	
-	if(film_autosave && film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm AutoSave feature in binary format (smaller, faster but not portable among systems)" << yendl;
-	if(film_autosave && !film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm AutoSave feature in text format (portable among systems but bigger and slower)" << yendl;
+	if(images_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_passes << " passes" << yendl;
 
-	film->setAutoLoad(film_load);
-	if(film_load) Y_INFO_ENV << "Enabling imageFilm AutoLoad feature. It will load and combine all ImageFilm files (*.film) from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
+	if(images_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << yendl;
 
+	if(film_save_load != FILM_FILE_NONE && film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving feature in binary format (smaller, faster but not portable among systems)" << yendl;
+	if(film_save_load != FILM_FILE_NONE && !film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving in text format (portable among systems but bigger and slower)" << yendl;
+	if(film_save_load == FILM_FILE_LOAD_SAVE) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
+
+	if(film_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << yendl;
+
+	if(film_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_interval_seconds << " seconds" << yendl;
+	
 	return film;
 }
 

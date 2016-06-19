@@ -59,6 +59,20 @@ enum darkDetectionType_t
 	DARK_DETECTION_CURVE,
 };
 
+enum autoSaveIntervalType_t
+{
+	AUTOSAVE_NONE,
+	AUTOSAVE_TIME_INTERVAL,
+	AUTOSAVE_PASS_INTERVAL,
+};
+
+enum filmFileSaveLoad_t
+{
+	FILM_FILE_NONE,
+	FILM_FILE_SAVE,
+	FILM_FILE_LOAD_SAVE,
+};
+
 class YAFRAYCORE_EXPORT imageFilm_t
 {
 	public:
@@ -116,9 +130,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
 		void setAAThreshold(float thresh){ AA_thesh=thresh; }
-        /*! Enables partial image saving during render every time_interval seconds. Time=0.0 (default) disables partial saving. */
-		void setImageOutputPartialSaveTimeInterval(double time_interval){ imageOutputPartialSaveTimeInterval = time_interval; }
-		void setImageOutputPartialSaveEndPass(bool save_end_pass) { saveEndPass = save_end_pass; }
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
@@ -138,12 +149,19 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
         void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
         void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
-        void setAutoSave(bool auto_save);
-        void setAutoSaveBinary(bool auto_save_binary);
-        void setAutoLoad(bool auto_load);
-        bool imageFilmLoad(const std::string &filename, bool debugXMLformat);
-        bool imageFilmSave(const std::string &filename, bool debugXMLformat);
+        bool imageFilmLoad(const std::string &filename, bool debugXMLformat = false);
+        bool imageFilmSave(const std::string &filename, bool debugXMLformat = false);
 		bool imageFilmLoadCheckOk() const;
+
+        void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
+        void setImagesAutoSaveIntervalSeconds(double interval_seconds) { imagesAutoSaveIntervalSeconds = interval_seconds; }
+        void setImagesAutoSaveIntervalPasses(int interval_passes) { imagesAutoSaveIntervalPasses = interval_passes; }
+
+        void setFilmFileSaveLoad(int film_file_save_load) { filmFileSaveLoad = film_file_save_load; }
+        void setFilmFileSaveBinaryFormat(bool binary_format) { filmFileSaveBinaryFormat = binary_format; }
+        void setFilmAutoSaveIntervalType(int interval_type) { filmAutoSaveIntervalType = interval_type; }
+        void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
+        void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -153,15 +171,15 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
-		tiledBitArray2D_t<3> *flags; //!< flags for adaptive AA sampling;
+		tiledBitArray2D_t<3> *flags = nullptr; //!< flags for adaptive AA sampling;
 		int dpHeight; //!< height of the rendering parameters badge;
 		int w, h, cx0, cx1, cy0, cy1;
 		int area_cnt, completed_cnt;
 		volatile int next_area;
-		colorSpaces_t colorSpace;
-		float gamma;
-		colorSpaces_t colorSpace2;	//For optional secondary file output
-		float gamma2;				//For optional secondary file output
+		colorSpaces_t colorSpace = RAW_MANUAL_GAMMA;
+		float gamma = 1.f;
+		colorSpaces_t colorSpace2 = RAW_MANUAL_GAMMA;	//For optional secondary file output
+		float gamma2 = 1.f;				//For optional secondary file output
 		float AA_thesh;
 		bool AA_detect_color_noise;
         int AA_dark_detection_type;
@@ -174,29 +192,38 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		colorOutput_t *output;
 		// Thread mutes for shared access
 		std::mutex imageMutex, splitterMutex, outMutex, densityImageMutex;
-		bool split, abort;
-		bool saveEndPass;
-        double imageOutputPartialSaveTimeInterval;
+		bool split = true;
+		bool abort = false;
 		bool estimateDensity;
 		int numSamples;
-		imageSpliter_t *splitter;
-		progressBar_t *pbar;
+		imageSpliter_t *splitter = nullptr;
+		progressBar_t *pbar = nullptr;
 		renderEnvironment_t *env;
 		int nPass;
 		bool showMask;
 		int tileSize;
 		imageSpliter_t::tilesOrderType tilesOrder;
 		bool premultAlpha;
-		bool premultAlpha2;	//For optional secondary file output
+		bool premultAlpha2 = false;	//For optional secondary file output
 		int nPasses;
-        double accumulated_image_area_flush_time;
         unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
         unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
         unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms
-        bool autoSave;	// If enabled, it will autosave the Image Film at the same time as the image files
-        bool autoSaveBinary;	//If enabled, it will autosave the Image Film in binary mode (faster, smaller but non-portable among systems)
-        bool autoLoad;	// If enabled, it will load the image film from a file before start rendering, might be useful to continue interrupted renders but it has to be used with care. If it does not match exactly the scene, bad results or even crashes could happen.
-        
+
+        double accumulated_image_area_flush_time = 0.0;	//Internal accumulated time used for Image or Film Time-Interval AutoSave feature
+
+		//Options for AutoSaving output images
+		int imagesAutoSaveIntervalType = AUTOSAVE_NONE;
+		double imagesAutoSaveIntervalSeconds = 300.0;
+		int imagesAutoSaveIntervalPasses = 1;
+
+		//Options for Saving/AutoSaving/Loading the internal imageFilm image buffers
+		int filmFileSaveLoad = FILM_FILE_NONE;
+		bool filmFileSaveBinaryFormat = true;
+		int filmAutoSaveIntervalType = AUTOSAVE_NONE;
+		double filmAutoSaveIntervalSeconds = 300.0;
+		int filmAutoSaveIntervalPasses = 1;
+		        
         struct filmload_check_t
         {
 			int w, h, cx0, cx1, cy0, cy1;

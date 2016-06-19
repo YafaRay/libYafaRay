@@ -123,10 +123,8 @@ float Lanczos2(float dx, float dy)
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
-	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
- gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
-	split(true), abort(false), saveEndPass(false), imageOutputPartialSaveTimeInterval(0.0), splitter(nullptr), pbar(nullptr),
-	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false)
+	w(width), h(height), cx0(xstart), cy0(ystart), filterw(filterSize*0.5), output(&out),
+	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
@@ -177,12 +175,7 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	AA_dark_threshold_factor = 0.f;
 	AA_variance_edge_size = 10;
 	AA_variance_pixels = 0;
-	AA_clamp_samples = 0.f;
-	
-	autoSave = false;
-	autoSaveBinary = true;
-	autoLoad = false;
-	
+	AA_clamp_samples = 0.f;	
 }
 
 imageFilm_t::~imageFilm_t ()
@@ -239,7 +232,7 @@ void imageFilm_t::init(int numPasses)
 
 	if(!output->isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
-		if(autoLoad)
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE)
 		{
 			std::stringstream passString;
 			passString << "Loading ImageFilm files";
@@ -311,7 +304,7 @@ void imageFilm_t::init(int numPasses)
 			if(pbar) pbar->setTag(oldTag);
 		}
 	
-		if(autoSave)	//If the imageFilm is set to Auto Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE)	//If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
 		{
 			std::stringstream passString;
 			passString << "Creating backup of the previous ImageFilm file...";
@@ -373,14 +366,14 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	{
 		colorOutput_t *out2 = env->getOutput2();
 
-		if(out2 && saveEndPass && session.renderInProgress())
+		if(out2 && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % imagesAutoSaveIntervalPasses == 0) && session.renderInProgress())
 		{
 			this->flush(numView, IF_ALL, out2);
 		}
 	}
 	else
 	{
-		if(output && saveEndPass && session.renderInProgress())
+		if(output && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (nPass % imagesAutoSaveIntervalPasses == 0) && session.renderInProgress())
 		{
 			this->flush(numView, IF_ALL, output);
 		}
@@ -637,7 +630,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 		colorOutput_t *out2 = env->getOutput2();
         
-        if(out2 && session.renderInProgress() && ((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)))
+        if(out2 && session.renderInProgress() && (imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && ((accumulated_image_area_flush_time > imagesAutoSaveIntervalSeconds) || accumulated_image_area_flush_time == 0.0))
         {
 			this->flush(numView, IF_ALL, out2); 
 			reset_accumulated_image_area_flush_time();
@@ -651,7 +644,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
         if(accumulated_image_area_flush_time < 0.f) reset_accumulated_image_area_flush_time(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
         gTimer.start("image_area_flush");
 
-        if(session.renderInProgress() && (imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
+        if(session.renderInProgress() && (imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && ((accumulated_image_area_flush_time > imagesAutoSaveIntervalSeconds) || accumulated_image_area_flush_time == 0.0))
         {
              this->flush(numView, IF_ALL, output); 
              reset_accumulated_image_area_flush_time();
@@ -896,7 +889,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(pbar) pbar->setTag(oldTag);
 	}
 
-	if(autoSave && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
+	if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
 	{
 		std::stringstream passString;
 		passString << "Saving internal ImageFilm file";
@@ -1313,21 +1306,6 @@ float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
 	else return 0.1000f;
 }
 
-void imageFilm_t::setAutoSave(bool auto_save)
-{
-	autoSave = auto_save;
-}
-
-void imageFilm_t::setAutoSaveBinary(bool auto_save_binary)
-{
-	autoSaveBinary = auto_save_binary;
-}
-
-void imageFilm_t::setAutoLoad(bool auto_load)
-{
-	autoLoad = auto_load;
-}
-
 bool imageFilm_t::imageFilmLoad(const std::string &filename, bool debugXMLformat)
 {
 	try
@@ -1384,7 +1362,7 @@ bool imageFilm_t::imageFilmSave(const std::string &filename, bool debugXMLformat
 			oa << BOOST_SERIALIZATION_NVP(*this);
 			ofs.close();
 		}
-		else if(autoSaveBinary)
+		else if(filmFileSaveBinaryFormat)
 		{
 			Y_INFO << "imageFilm: Saving film to: \"" << filename << "\" in Binary (non portable) format" << yendl;
 			boost::archive::binary_oarchive oa(ofs);
