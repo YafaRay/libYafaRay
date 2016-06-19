@@ -148,8 +148,13 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
         void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
         void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
+		
+		std::string getFilmPath() const;
         bool imageFilmLoad(const std::string &filename);
-        bool imageFilmSave(const std::string tagText = "");
+		void imageFilmLoadAllInFolder();
+        bool imageFilmSave();
+        void imageFilmFileBackup() const;
+		void imageFilmUpdateCheckInfo();
 		bool imageFilmLoadCheckOk() const;
 
         void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }

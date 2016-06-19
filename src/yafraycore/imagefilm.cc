@@ -230,127 +230,22 @@ void imageFilm_t::init(int numPasses)
 	nPass = 1;
 	nPasses = numPasses;
 
+	imagesAutoSavePassCounter = 0;
+	filmAutoSavePassCounter = 0;
+	resetImagesAutoSaveTimer();
+	resetFilmAutoSaveTimer();
+	gTimer.addEvent("imagesAutoSaveTimer");
+	gTimer.addEvent("filmAutoSaveTimer");
+	gTimer.start("imagesAutoSaveTimer");
+	gTimer.start("filmAutoSaveTimer");
+
 	if(!output->isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
-		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE)
-		{
-			std::stringstream passString;
-			passString << "Loading ImageFilm files";
-
-			Y_INFO << passString.str() << yendl;
-
-			std::string oldTag;
-
-			if(pbar)
-			{
-				oldTag = pbar->getTag();
-				pbar->setTag(passString.str().c_str());
-			}
-			
-			std::string filmPath = session.getPathImageOutput();
-			std::stringstream node;
-			node << std::setfill('0') << std::setw(4) << computerNode;
-			filmPath += " - node " + node.str();
-			filmPath += ".film";
-			
-			std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
-
-			std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
-			if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
-			const std::string target_path( parentPath );
-			const std::regex filmFilter(baseImageFileName + ".*\\.film$");
-			std::vector<std::string> filmFilesList;
-			
-			try
-			{
-				boost::filesystem::directory_iterator it_end;
-				for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
-				{
-					if(!boost::filesystem::is_regular_file(it->status())) continue;
-					if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
-					filmFilesList.push_back(it->path().string());
-				}
-				std::sort(filmFilesList.begin(), filmFilesList.end());
-
-				for(auto filmFile: filmFilesList)
-				{
-					imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
-					loadedFilm->imageFilmLoad(filmFile);
-					
-					for(size_t idx=0; idx<imagePasses.size(); ++idx)
-					{
-						for(int i=0; i<w; ++i)
-						{
-							for(int j=0; j<h; ++j)
-							{
-								rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
-								(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
-								(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
-							}
-						}
-					}
-					
-					if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
-					if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
-					
-					delete loadedFilm;
-				}
-			}
-			catch(const boost::filesystem::filesystem_error& e)
-			{
-				Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
-			}
-			
-			if(pbar) pbar->setTag(oldTag);
-		}
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 	
-		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE)	//If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
-		{
-			std::stringstream passString;
-			passString << "Creating backup of the previous ImageFilm file...";
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
 
-			Y_INFO << passString.str() << yendl;
-
-			std::string oldTag;
-
-			if(pbar)
-			{
-				oldTag = pbar->getTag();
-				pbar->setTag(passString.str().c_str());
-			}
-
-			std::string filmPath = session.getPathImageOutput();
-			std::stringstream node;
-			node << std::setfill('0') << std::setw(4) << computerNode;
-			filmPath += " - node " + node.str();
-			filmPath += ".film";
-			std::string filmPathBackup = filmPath+"-previous.bak";
-			
-			if(boost::filesystem::exists(filmPath))
-			{
-				Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
-				try
-				{	
-					boost::filesystem::rename(filmPath, filmPathBackup);
-				}
-				catch(const boost::filesystem::filesystem_error& e)
-				{
-					Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
-				}
-			}
-			
-			if(pbar) pbar->setTag(oldTag);
-		}
-
-		//film load check data initialization
-		filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
-		filmload_check.w = w;
-		filmload_check.h = h;
-		filmload_check.cx0 = cx0;
-		filmload_check.cx1 = cx1;
-		filmload_check.cy0 = cy0;
-		filmload_check.cy1 = cy1;
-		filmload_check.numPasses = imagePasses.size();
+		imageFilmUpdateCheckInfo(); //film load check data initialization. Make sure this is done after the Film Load operation (if any).
 	}
 }
 
@@ -367,33 +262,28 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	
 	std::stringstream passString;
 
-	colorOutput_t *out2 = env->getOutput2();
+	Y_DEBUG << "nPass=" << nPass << " imagesAutoSavePassCounter="<<imagesAutoSavePassCounter<<" filmAutoSavePassCounter="<<filmAutoSavePassCounter<<yendl;
 
-	Y_DEBUG << "nPass = " << nPass << yendl;
-	
-	if(session.isInteractive())
+	if(session.renderInProgress() && !output->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
-		if(out2 && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses) && session.renderInProgress())
+		colorOutput_t *out2 = env->getOutput2();
+
+		if((imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses))
 		{
-			this->flush(numView, IF_ALL, out2);
+			if(output && output->isImageOutput()) this->flush(numView, IF_ALL, output);
+			else if(out2 && out2->isImageOutput()) this->flush(numView, IF_ALL, out2);
 			imagesAutoSavePassCounter = 0;
 		}
-	}
-	else
-	{
-		if(output && (imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses) && session.renderInProgress())
+
+		if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (filmAutoSavePassCounter >= filmAutoSaveIntervalPasses))
 		{
-			this->flush(numView, IF_ALL, output);
-			imagesAutoSavePassCounter = 0;
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				imageFilmSave();
+				filmAutoSavePassCounter = 0;
+			}
 		}
 	}
-
-	if(session.renderInProgress() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (filmAutoSavePassCounter >= filmAutoSaveIntervalPasses) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
-	{
-		imageFilmSave("AutoSaving internal ImageFilm file");
-		filmAutoSavePassCounter = 0;
-	}
-
 
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
@@ -653,6 +543,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 		if((imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (imagesAutoSaveTimer > imagesAutoSaveIntervalSeconds))
 		{
+			Y_DEBUG << "imagesAutoSaveTimer="<<imagesAutoSaveTimer<<yendl;
 			if(output && output->isImageOutput()) this->flush(numView, IF_ALL, output);
 			else if(out2 && out2->isImageOutput()) this->flush(numView, IF_ALL, out2);
 			resetImagesAutoSaveTimer();
@@ -660,9 +551,10 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 		if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (filmAutoSaveTimer > filmAutoSaveIntervalSeconds))
 		{
+			Y_DEBUG << "filmAutoSaveTimer="<<filmAutoSaveTimer<<yendl;
 			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
 			{
-				imageFilmSave("AutoSaving internal ImageFilm file");
+				imageFilmSave();
 			}
 			resetFilmAutoSaveTimer();
 		}
@@ -688,6 +580,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	colorOutput_t *out1 = out ? out : output;
 	colorOutput_t *out2 = env->getOutput2();
+
+	if(out1->isPreview()) out2 = nullptr;	//disable secondary file output when rendering a Preview (material preview, etc)
 	
 	if(out1 == out2) out1 = nullptr;	//if we are already flushing the secondary output (out2) as main output (out1), then disable out1 to avoid duplicated work
 
@@ -906,13 +800,19 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		if(pbar) pbar->setTag(oldTag);
 	}
 
-	if(session.renderFinished() && !output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (!session.isInteractive() || (session.isInteractive() && out2)))	//only save film here if the session is not interactive (i.e. yafaray-xml or render into file) or else if the session is interactive and we have secondary file output. We don't want to save the film in the material/lamp/world previews or if we don't have secondary file output (both cases interactive without out2)
-	{
-		imageFilmSave();
-	}
-	
 	if(session.renderFinished())
 	{
+		if(!output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE))
+		{
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				imageFilmSave();
+			}
+		}
+
+		gTimer.stop("imagesAutoSaveTimer");
+		gTimer.stop("filmAutoSaveTimer");
+
 		yafLog.clearMemoryLog();
 		outMutex.unlock();
 		Y_VERBOSE << "imageFilm: Done." << yendl;
@@ -1303,6 +1203,16 @@ float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
 	else return 0.1000f;
 }
 
+std::string imageFilm_t::getFilmPath() const
+{
+	std::string filmPath = session.getPathImageOutput();
+	std::stringstream node;
+	node << std::setfill('0') << std::setw(4) << computerNode;
+	filmPath += " - node " + node.str();
+	filmPath += ".film";
+	return filmPath;
+}
+
 bool imageFilm_t::imageFilmLoad(const std::string &filename)
 {
 	bool debugXMLformat = false;	//Enable only for debugging purposes
@@ -1348,13 +1258,81 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
     }
 }
 
-bool imageFilm_t::imageFilmSave(const std::string tagText)
+void imageFilm_t::imageFilmLoadAllInFolder()
+{
+	std::stringstream passString;
+	passString << "Loading ImageFilm files";
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+	
+	std::string filmPath = getFilmPath();
+	
+	std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
+
+	std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
+	if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
+	const std::string target_path( parentPath );
+	const std::regex filmFilter(baseImageFileName + ".*\\.film$");
+	std::vector<std::string> filmFilesList;
+	
+	try
+	{
+		boost::filesystem::directory_iterator it_end;
+		for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
+		{
+			if(!boost::filesystem::is_regular_file(it->status())) continue;
+			if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
+			filmFilesList.push_back(it->path().string());
+		}
+		std::sort(filmFilesList.begin(), filmFilesList.end());
+
+		for(auto filmFile: filmFilesList)
+		{
+			imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+			loadedFilm->imageFilmLoad(filmFile);
+			
+			for(size_t idx=0; idx<imagePasses.size(); ++idx)
+			{
+				for(int i=0; i<w; ++i)
+				{
+					for(int j=0; j<h; ++j)
+					{
+						rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
+						(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+						(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+					}
+				}
+			}
+			
+			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+			
+			delete loadedFilm;
+		}
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+		Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
+	}
+	
+	if(pbar) pbar->setTag(oldTag);
+}
+
+
+bool imageFilm_t::imageFilmSave()
 {
 	bool debugXMLformat = false;	//Enable only for debugging purposes
 	
 	std::stringstream passString;
-	if(tagText.empty()) passString << "Saving internal ImageFilm file";
-	else passString << tagText;
+	passString << "Saving internal ImageFilm file";
 
 	Y_INFO << passString.str() << yendl;
 
@@ -1366,11 +1344,7 @@ bool imageFilm_t::imageFilmSave(const std::string tagText)
 		pbar->setTag(passString.str().c_str());
 	}
 
-	std::string filmPath = session.getPathImageOutput();
-	std::stringstream node;
-	node << std::setfill('0') << std::setw(4) << computerNode;
-	filmPath += " - node " + node.str();
-	filmPath += ".film";
+	std::string filmPath = getFilmPath();
 
 	try
 	{
@@ -1420,6 +1394,51 @@ bool imageFilm_t::imageFilmSave(const std::string tagText)
 	return true;
 }
 
+void imageFilm_t::imageFilmFileBackup() const
+{
+	std::stringstream passString;
+	passString << "Creating backup of the previous ImageFilm file...";
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+
+	std::string filmPath = getFilmPath();
+	std::string filmPathBackup = filmPath+"-previous.bak";
+	
+	if(boost::filesystem::exists(filmPath))
+	{
+		Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+		try
+		{	
+			boost::filesystem::rename(filmPath, filmPathBackup);
+		}
+		catch(const boost::filesystem::filesystem_error& e)
+		{
+			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+		}
+	}
+	
+	if(pbar) pbar->setTag(oldTag);
+}
+
+void imageFilm_t::imageFilmUpdateCheckInfo()
+{
+	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
+	filmload_check.w = w;
+	filmload_check.h = h;
+	filmload_check.cx0 = cx0;
+	filmload_check.cx1 = cx1;
+	filmload_check.cy0 = cy0;
+	filmload_check.cy1 = cy1;
+	filmload_check.numPasses = imagePasses.size();
+}
 
 bool imageFilm_t::imageFilmLoadCheckOk() const
 {
