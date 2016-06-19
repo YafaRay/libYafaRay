@@ -151,28 +151,75 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
     
     TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, bytesPerScanline));
 
-    for (int y = 0; y < m_height; y++)
-    {
-    	for(int x = 0; x < m_width; x++)
-    	{
-    		int ix = x * channels;
-    		colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
-    		col.clampRGBA01();
-    		scanline[ix]   = (yByte)(col.getR() * 255.f);
-    		scanline[ix+1] = (yByte)(col.getG() * 255.f);
-    		scanline[ix+2] = (yByte)(col.getB() * 255.f);
-    		if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
-    	}
-    	
-		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
-		{
-			Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-			TIFFClose(out);
-			_TIFFfree(scanline);
+	if(m_Denoise)
+	{
+		cv::Mat A(m_height, m_width, CV_8UC3);
+		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat_<cv::Vec3b> _A = A;
+		cv::Mat_<cv::Vec3b> _B = B;
 
-			return false;
+		for (int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				_A(y, x)[0] = (col.getR() * 255);
+				_A(y, x)[1] = (col.getG() * 255);
+				_A(y, x)[2] = (col.getB() * 255);
+			}
 		}
-    }
+
+		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+
+		for (int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				int ix = x * channels;
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				scanline[ix]   = (yByte) _B(y, x)[0];
+				scanline[ix+1] = (yByte) _B(y, x)[1];
+				scanline[ix+2] = (yByte) _B(y, x)[2];
+				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
+			}
+			
+			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
+			{
+				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				TIFFClose(out);
+				_TIFFfree(scanline);
+
+				return false;
+			}
+		}
+	}
+	else
+	{
+		for (int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				int ix = x * channels;
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				scanline[ix]   = (yByte)(col.getR() * 255.f);
+				scanline[ix+1] = (yByte)(col.getG() * 255.f);
+				scanline[ix+2] = (yByte)(col.getB() * 255.f);
+				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
+			}
+			
+			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
+			{
+				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				TIFFClose(out);
+				_TIFFfree(scanline);
+
+				return false;
+			}
+		}
+	}
 	
 	TIFFClose(out);
 	_TIFFfree(scanline);

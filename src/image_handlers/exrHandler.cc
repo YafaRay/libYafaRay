@@ -323,10 +323,11 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
-	params.getParam("denoiseEnabled", denoiseEnabled);
-	params.getParam("denoiseHLum", denoiseHLum);
-	params.getParam("denoiseHCol", denoiseHCol);
-
+/*	//Denoise is not available for HDR/EXR images
+ * 	params.getParam("denoiseEnabled", denoiseEnabled);
+ *	params.getParam("denoiseHLum", denoiseHLum);
+ *	params.getParam("denoiseHCol", denoiseHCol);
+ */
 	imageHandler_t *ih = new exrHandler_t();
 
 	if(forOutput)

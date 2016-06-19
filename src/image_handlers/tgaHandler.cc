@@ -154,27 +154,75 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	{
 		fwrite(&header, sizeof(tgaHeader_t), 1, fp);
 		fwrite(imageId.c_str(), (size_t)header.idLength, 1, fp);
-		
-		for (int y = 0; y < m_height; y++) 
+
+		if(m_Denoise)
 		{
-			for (int x = 0; x < m_width; x++) 
+			cv::Mat A(m_height, m_width, CV_8UC3);
+			cv::Mat B(m_height, m_width, CV_8UC3);
+			cv::Mat_<cv::Vec3b> _A = A;
+			cv::Mat_<cv::Vec3b> _B = B;
+
+			for (int y = 0; y < m_height; y++) 
 			{
-				(*imagePasses.at(imagePassNumber))(x, y).clampRGBA01();
-				if(!m_hasAlpha)
+				for (int x = 0; x < m_width; x++) 
 				{
-					tgaPixelRGB_t rgb;
-					rgb = (color_t)(*imagePasses.at(imagePassNumber))(x, y);
-					fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				_A(y, x)[0] = (col.getR() * 255);
+				_A(y, x)[1] = (col.getG() * 255);
+				_A(y, x)[2] = (col.getB() * 255);
 				}
-				else
+			}
+
+			cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+
+			for (int y = 0; y < m_height; y++) 
+			{
+				for (int x = 0; x < m_width; x++) 
 				{
-					tgaPixelRGBA_t rgba;
-					rgba = (*imagePasses.at(imagePassNumber))(x, y);
-					fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					if(!m_hasAlpha)
+					{
+						tgaPixelRGB_t rgb;
+						rgb.R = (yByte) _B(y, x)[0];
+						rgb.G = (yByte) _B(y, x)[1];
+						rgb.B = (yByte) _B(y, x)[2];
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					}
+					else
+					{
+						colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+						tgaPixelRGBA_t rgba;
+						rgba.R = (yByte) _B(y, x)[0];
+						rgba.G = (yByte) _B(y, x)[1];
+						rgba.B = (yByte) _B(y, x)[2];
+						rgba.A = (*imagePasses.at(imagePassNumber))(x, y).A;
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
 				}
 			}
 		}
-
+		else
+		{
+			for (int y = 0; y < m_height; y++) 
+			{
+				for (int x = 0; x < m_width; x++) 
+				{
+					(*imagePasses.at(imagePassNumber))(x, y).clampRGBA01();
+					if(!m_hasAlpha)
+					{
+						tgaPixelRGB_t rgb;
+						rgb = (color_t)(*imagePasses.at(imagePassNumber))(x, y);
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					}
+					else
+					{
+						tgaPixelRGBA_t rgba;
+						rgba = (*imagePasses.at(imagePassNumber))(x, y);
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
+				}
+			}
+		}
 		fwrite(&footer, sizeof(tgaFooter_t), 1, fp);
 		fileUnicodeClose(fp);
 	}
