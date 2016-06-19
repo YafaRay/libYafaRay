@@ -44,6 +44,7 @@ class colorOutput_t
 		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
 		virtual bool isImageOutput() { return false; }
 		virtual bool isPreview() { return false; }
+		virtual std::string getDenoiseParams() const { return ""; }
 };
 
 __END_YAFRAY

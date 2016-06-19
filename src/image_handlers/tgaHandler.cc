@@ -132,8 +132,8 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
-	else Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"..." << yendl;
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	else Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
 	std::string imageId = "Image rendered with YafaRay";
 	tgaHeader_t header;

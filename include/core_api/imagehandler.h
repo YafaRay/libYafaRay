@@ -63,6 +63,13 @@ public:
 	int getTextureOptimization() { return m_textureOptimization; }
 	void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
 	virtual bool denoiseEnabled() { return m_Denoise; }
+	std::string getDenoiseParams() const
+	{
+		if(!m_Denoise) return "";
+		std::stringstream paramString;
+		paramString << "| Image file denoise=on (hLuminance=" << m_DenoiseHLum << ", hCrominance=" <<  m_DenoiseHCol << ")" << yendl;
+		return paramString.str();
+	}
 	
 protected:
 	std::string handlerName;

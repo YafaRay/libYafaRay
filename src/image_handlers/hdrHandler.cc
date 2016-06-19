@@ -453,8 +453,8 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	{
 		std::string nameWithoutTmp = name;
 		nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGBE file as \"" << nameWithoutTmp << "\"..." << yendl;
-		else Y_INFO << handlerName << ": Saving RGBE file as \"" << nameWithoutTmp << "\"..." << yendl;
+		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+		else Y_INFO << handlerName << ": Saving RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 		if (m_hasAlpha) Y_VERBOSE << handlerName << ": Ignoring alpha channel." << yendl;
 
 		writeHeader(file);

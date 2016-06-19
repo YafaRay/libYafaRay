@@ -631,9 +631,13 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	
 	if(yafLog.getDrawRenderSettings()) ssBadge << " | " << yafLog.getRenderSettings();
 	if(yafLog.getDrawAANoiseSettings()) ssBadge << "\n" << yafLog.getAANoiseSettings();
+	if(output && output->isImageOutput()) ssBadge << " " << output->getDenoiseParams();
+	else if(out2 && out2->isImageOutput()) ssBadge << " " << out2->getDenoiseParams();
 
 	ssLog << " | " << yafLog.getRenderSettings();
 	ssLog << "\n" << yafLog.getAANoiseSettings();
+	if(output && output->isImageOutput()) ssLog << " " << output->getDenoiseParams();
+	else if(out2 && out2->isImageOutput()) ssLog << " " << out2->getDenoiseParams();
 
 	if(yafLog.getUseParamsBadge())
 	{

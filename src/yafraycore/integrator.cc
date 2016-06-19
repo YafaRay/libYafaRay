@@ -120,8 +120,9 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	aaSettings << " passes=" << AA_passes;
 	aaSettings << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise;
 	
-	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " dark.thr(lin),fac=" << AA_dark_threshold_factor;
-	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " dark.thr(curve)";
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " AA thr(lin)=" << AA_threshold << ",dark_fac=" << AA_dark_threshold_factor;
+	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " AA.thr(curve)";
+	else aaSettings << " AA thr=" << AA_threshold;
  
 	aaSettings << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
 
@@ -145,8 +146,11 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	Y_VERBOSE << "AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
 	Y_VERBOSE << "AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
 	Y_VERBOSE << "AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
-	if(AA_dark_detection_type == DARK_DETECTION_LINEAR)	Y_VERBOSE << "AA_dark_threshold (linear), factor: "<< AA_dark_threshold_factor << yendl;
-	if(AA_dark_detection_type == DARK_DETECTION_CURVE)	Y_VERBOSE << "AA_dark_threshold (curve)" << yendl;
+	
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR)	Y_VERBOSE << "AA_threshold (linear): " << AA_threshold << ", dark factor: "<< AA_dark_threshold_factor << yendl;
+	else if(AA_dark_detection_type == DARK_DETECTION_CURVE)	Y_VERBOSE << "AA_threshold (curve)" << yendl;
+	else Y_VERBOSE << "AA threshold:" << AA_threshold << yendl;
+	
 	Y_VERBOSE << "AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
 	Y_VERBOSE << "AA_variance_pixels: "<< AA_variance_pixels << yendl;
 	Y_VERBOSE << "AA_clamp_samples: "<< AA_clamp_samples << yendl;
