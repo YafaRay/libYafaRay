@@ -595,7 +595,7 @@ namespace yafaray
 		public:
 			imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
 
-			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false) = 0;
+			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false) = 0;
 			virtual ~imageHandler_t() {};
 			virtual bool loadFromFile(const std::string &name) = 0;
 			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }

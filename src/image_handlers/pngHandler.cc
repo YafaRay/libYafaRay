@@ -45,7 +45,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
@@ -74,7 +74,7 @@ pngHandler_t::pngHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
@@ -83,6 +83,7 @@ void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -199,9 +200,9 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 				int i = x * channels;
 
-				rowPointers[y][i]   = (yByte) _B(y, x)[0];
-				rowPointers[y][i+1] = (yByte) _B(y, x)[1];
-				rowPointers[y][i+2] = (yByte) _B(y, x)[2];
+				rowPointers[y][i]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+				rowPointers[y][i+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+				rowPointers[y][i+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
 				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
 			}
 		}
@@ -561,6 +562,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
@@ -569,6 +571,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("denoiseEnabled", denoiseEnabled);
 	params.getParam("denoiseHLum", denoiseHLum);
 	params.getParam("denoiseHCol", denoiseHCol);
+	params.getParam("denoiseMix", denoiseMix);
 
 	Y_DEBUG << "denoiseEnabled="<<denoiseEnabled<<" denoiseHLum="<<denoiseHLum<<" denoiseHCol="<<denoiseHCol<<yendl;
 
@@ -577,7 +580,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 
 	return ih;

@@ -39,7 +39,7 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -88,7 +88,7 @@ tgaHandler_t::tgaHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
+void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
@@ -97,6 +97,7 @@ void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 	
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -183,18 +184,18 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 					if(!m_hasAlpha)
 					{
 						tgaPixelRGB_t rgb;
-						rgb.R = (yByte) _B(y, x)[0];
-						rgb.G = (yByte) _B(y, x)[1];
-						rgb.B = (yByte) _B(y, x)[2];
+						rgb.R = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+						rgb.G = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+						rgb.B = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
 						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
 					}
 					else
 					{
 						colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
 						tgaPixelRGBA_t rgba;
-						rgba.R = (yByte) _B(y, x)[0];
-						rgba.G = (yByte) _B(y, x)[1];
-						rgba.B = (yByte) _B(y, x)[2];
+						rgba.R = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+						rgba.G = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+						rgba.B = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
 						rgba.A = (*imagePasses.at(imagePassNumber))(x, y).A;
 						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
 					}
@@ -667,6 +668,7 @@ imageHandler_t *tgaHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
@@ -675,13 +677,14 @@ imageHandler_t *tgaHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("denoiseEnabled", denoiseEnabled);
 	params.getParam("denoiseHLum", denoiseHLum);
 	params.getParam("denoiseHCol", denoiseHCol);
+	params.getParam("denoiseMix", denoiseMix);
 
 	imageHandler_t *ih = new tgaHandler_t();
 	
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 	
 	return ih;

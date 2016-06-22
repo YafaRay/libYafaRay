@@ -48,7 +48,7 @@ class YAFRAYCORE_EXPORT imageHandler_t
 public:
 	imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
 
-	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false) = 0;
+	virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false) = 0;
 	virtual ~imageHandler_t() {};
 	virtual bool loadFromFile(const std::string &name) = 0;
 	virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
@@ -67,7 +67,7 @@ public:
 	{
 		if(!m_Denoise) return "";
 		std::stringstream paramString;
-		paramString << "| Image file denoise=on (hLuminance=" << m_DenoiseHLum << ", hCrominance=" <<  m_DenoiseHCol << ")" << yendl;
+		paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
 		return paramString.str();
 	}
 	
@@ -86,6 +86,7 @@ protected:
 	bool m_Denoise = false;
 	int m_DenoiseHLum = 3;
 	int m_DenoiseHCol = 3;
+	float m_DenoiseMix = 0.8f;	//!< Mix factor between the de-noised image and the original "noisy" image to avoid banding artifacts in images with all noise removed.
 };
 
 

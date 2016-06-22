@@ -39,7 +39,7 @@ class tifHandler_t: public imageHandler_t
 public:
 	tifHandler_t();
 	~tifHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -62,7 +62,7 @@ tifHandler_t::tifHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, bool withAlpha, bool multi_layer)
+void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
@@ -71,6 +71,7 @@ void tifHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 	
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -179,9 +180,9 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 				int ix = x * channels;
 				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
 				col.clampRGBA01();
-				scanline[ix]   = (yByte) _B(y, x)[0];
-				scanline[ix+1] = (yByte) _B(y, x)[1];
-				scanline[ix+2] = (yByte) _B(y, x)[2];
+				scanline[ix]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+				scanline[ix+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+				scanline[ix+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
 				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
 			}
 			
@@ -310,6 +311,7 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
@@ -318,13 +320,14 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("denoiseEnabled", denoiseEnabled);
 	params.getParam("denoiseHLum", denoiseHLum);
 	params.getParam("denoiseHCol", denoiseHCol);
+	params.getParam("denoiseMix", denoiseMix);
 
 	imageHandler_t *ih = new tifHandler_t();
 	
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 	
 	return ih;
