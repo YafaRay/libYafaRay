@@ -157,6 +157,31 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		return false;
 	}
 
+	//get length of file:
+    fin.seekg (0, fin.end);
+    int length = fin.tellg();
+    fin.seekg (0, fin.beg);
+	
+	if (length < 7)
+	{
+		Y_ERROR << "IES Parser: file is too small, only " << length << " bytes long." << yendl;
+		return false;
+	}
+
+	//check header is correct
+	char ies_check_characters[7];
+	fin.get(ies_check_characters, 7);
+	Y_DEBUG << "std::string(ies_check_characters)=" << std::string(ies_check_characters) << yendl;
+	
+	if (std::string(ies_check_characters) != "IESNA:")
+	{
+		Y_ERROR << "IES Parser: wrong file format, first characters are not \"IESNA:\"" << yendl;
+		return false;
+	}
+	
+	//rewind file to beginning again
+    fin.seekg (0, fin.beg);
+    
 	string line;
 	string dummy;
 	
