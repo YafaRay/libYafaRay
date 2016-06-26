@@ -27,7 +27,9 @@
 #include <utilities/math_utils.h>
 #include <utilities/fileUtils.h>
 
-#include <tiffio.h>
+namespace libtiff {
+	#include <tiffio.h>
+}
 
 __BEGIN_YAFRAY
 
@@ -127,9 +129,9 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 #if defined(_WIN32)
 	std::wstring wname = utf8_to_wutf16(name);    
-	TIFF *out = TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
 #else
-	TIFF *out = TIFFOpen(name.c_str(), "w");
+	libtiff::TIFF *out = libtiff::TIFFOpen(name.c_str(), "w");
 #endif
 
 	int channels;
@@ -138,19 +140,19 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	if(m_hasAlpha) channels = 4;
 	else channels = 3;
 
-	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, m_width);
-	TIFFSetField(out, TIFFTAG_IMAGELENGTH, m_height);
-	TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, channels);
-	TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);
-	TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-	TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+	libtiff::TIFFSetField(out, TIFFTAG_IMAGEWIDTH, m_width);
+	libtiff::TIFFSetField(out, TIFFTAG_IMAGELENGTH, m_height);
+	libtiff::TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, channels);
+	libtiff::TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);
+	libtiff::TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+	libtiff::TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+	libtiff::TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 
 	bytesPerScanline = channels * m_width;
 
-    yByte *scanline = (yByte*)_TIFFmalloc(bytesPerScanline);
+    yByte *scanline = (yByte*)libtiff::_TIFFmalloc(bytesPerScanline);
     
-    TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, bytesPerScanline));
+    libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytesPerScanline));
 
 	if(m_Denoise)
 	{
@@ -186,11 +188,11 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
 			}
 			
-			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
+			if(libtiff::TIFFWriteScanline(out, scanline, y, 0) < 0)
 			{
 				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-				TIFFClose(out);
-				_TIFFfree(scanline);
+				libtiff::TIFFClose(out);
+				libtiff::_TIFFfree(scanline);
 
 				return false;
 			}
@@ -214,16 +216,16 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 			{
 				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-				TIFFClose(out);
-				_TIFFfree(scanline);
+				libtiff::TIFFClose(out);
+				libtiff::_TIFFfree(scanline);
 
 				return false;
 			}
 		}
 	}
 	
-	TIFFClose(out);
-	_TIFFfree(scanline);
+	libtiff::TIFFClose(out);
+	libtiff::_TIFFfree(scanline);
 	
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
@@ -232,13 +234,13 @@ bool tifHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 bool tifHandler_t::loadFromFile(const std::string &name)
 {
-	uint32 w, h;
+	libtiff::uint32 w, h;
 	
 #if defined(_WIN32)
 	std::wstring wname = utf8_to_wutf16(name);
-	TIFF *tif = TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
 #else
-	TIFF *tif = TIFFOpen(name.c_str(), "r");
+	libtiff::TIFF *tif = libtiff::TIFFOpen(name.c_str(), "r");
 #endif
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
@@ -247,9 +249,9 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 
-	uint32 *tiffData = (uint32*)_TIFFmalloc(w * h * sizeof(uint32));
+	libtiff::uint32 *tiffData = (libtiff::uint32*)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
            
-	if(!TIFFReadRGBAImage(tif, w, h, tiffData, 0))
+	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiffData, 0))
 	{
 		Y_ERROR << handlerName << ": Error reading TIFF file" << yendl;
 		return false;
@@ -293,9 +295,9 @@ bool tifHandler_t::loadFromFile(const std::string &name)
     	}
     }
 
-	_TIFFfree(tiffData);
+	libtiff::_TIFFfree(tiffData);
 	
-	TIFFClose(tif);
+	libtiff::TIFFClose(tif);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
