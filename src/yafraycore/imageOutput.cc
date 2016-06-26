@@ -109,6 +109,7 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
                 if(numView == 0 && idx == 0)
 		{
 		    saveImageFile(fname, idx);  //default image filename, when not using views nor passes and for reloading into Blender
+		    yafLog.setImagePath(fname); //to show the image in the HTML log output
 		}
 		
 		if(passName != "not found" && (renderPasses->extPassesSize()>=2 || renderPasses->view_names.size() >= 2))
