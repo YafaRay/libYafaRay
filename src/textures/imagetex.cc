@@ -34,6 +34,12 @@ textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float
 
 textureImage_t::~textureImage_t()
 {
+	if(postProcessedImage)
+	{
+		delete postProcessedImage;
+		postProcessedImage = nullptr;
+	}
+	
 	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
 	image = nullptr;
 }
@@ -45,7 +51,7 @@ void textureImage_t::resolution(int &x, int &y, int &z) const
 	z=0;
 }
 
-colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
+colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postprocessed) const
 {
 	int x, y, x2, y2;
 	
@@ -64,7 +70,9 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
 	x = std::max(0, std::min(resx-1, (int)xf));
 	y = std::max(0, std::min(resy-1, (int)yf));
 
-	colorA_t c1 = image->getPixel(x, y);
+	colorA_t c1;
+	if(from_postprocessed && postProcessedImage) c1 = (*postProcessedImage)(x, y);
+	else c1 = image->getPixel(x, y);
 	
 	if (intp_type == INTP_NONE) return c1;
 	
@@ -72,10 +80,19 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
 	
 	x2 = std::min(resx-1, x+1);
 	y2 = std::min(resy-1, y+1);
-
-	c2 = image->getPixel(x2, y);
-	c3 = image->getPixel(x, y2);
-	c4 = image->getPixel(x2, y2);
+	
+	if(from_postprocessed && postProcessedImage)
+	{
+		c2 = (*postProcessedImage)(x2, y);
+		c3 = (*postProcessedImage)(x, y2);
+		c4 = (*postProcessedImage)(x2, y2);
+	}
+	else
+	{
+		c2 = image->getPixel(x2, y);
+		c3 = image->getPixel(x, y2);
+		c4 = image->getPixel(x2, y2);
+	}
 
 	float dx = xf - floor(xf);
 	float dy = yf - floor(yf);
@@ -97,19 +114,37 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
 	int y0 = std::max(0, y-1);
 	int y3 = std::min(resy-1, y2+1);
 
-	c0 = image->getPixel(x0, y0);
-	c5 = image->getPixel(x,  y0);
-	c6 = image->getPixel(x2, y0);
-	c7 = image->getPixel(x3, y0);
-	c8 = image->getPixel(x0, y);
-	c9 = image->getPixel(x3, y);
-	cA = image->getPixel(x0, y2);
-	cB = image->getPixel(x3, y2);
-	cC = image->getPixel(x0, y3);
-	cD = image->getPixel(x,  y3);
-	cE = image->getPixel(x2, y3);
-	cF = image->getPixel(x3, y3);
-
+	if(from_postprocessed && postProcessedImage)
+	{
+		c0 = (*postProcessedImage)(x0, y0);
+		c5 = (*postProcessedImage)(x,  y0);
+		c6 = (*postProcessedImage)(x2, y0);
+		c7 = (*postProcessedImage)(x3, y0);
+		c8 = (*postProcessedImage)(x0, y);
+		c9 = (*postProcessedImage)(x3, y);
+		cA = (*postProcessedImage)(x0, y2);
+		cB = (*postProcessedImage)(x3, y2);
+		cC = (*postProcessedImage)(x0, y3);
+		cD = (*postProcessedImage)(x,  y3);
+		cE = (*postProcessedImage)(x2, y3);
+		cF = (*postProcessedImage)(x3, y3);
+	}
+	else
+	{
+		c0 = image->getPixel(x0, y0);
+		c5 = image->getPixel(x,  y0);
+		c6 = image->getPixel(x2, y0);
+		c7 = image->getPixel(x3, y0);
+		c8 = image->getPixel(x0, y);
+		c9 = image->getPixel(x3, y);
+		cA = image->getPixel(x0, y2);
+		cB = image->getPixel(x3, y2);
+		cC = image->getPixel(x0, y3);
+		cD = image->getPixel(x,  y3);
+		cE = image->getPixel(x2, y3);
+		cF = image->getPixel(x3, y3);
+	}
+	
 	c0 = CubicInterpolate(c0, c5, c6, c7, dx);
 	c8 = CubicInterpolate(c8, c1, c2, c9, dx);
 	cA = CubicInterpolate(cA, c3, c4, cB, dx);
@@ -120,14 +155,14 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p) const
 	return c0;
 }
 
-colorA_t textureImage_t::getColor(const point3d_t &p) const
+colorA_t textureImage_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t ret = getRawColor(p);
+	colorA_t ret = getRawColor(p, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	return ret;
 }
 
-colorA_t textureImage_t::getRawColor(const point3d_t &p) const
+colorA_t textureImage_t::getRawColor(const point3d_t &p, bool from_postprocessed) const
 {
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
 	colorA_t ret(0.f);
@@ -136,19 +171,19 @@ colorA_t textureImage_t::getRawColor(const point3d_t &p) const
 
 	if(outside) return ret;
 	
-	ret = interpolateImage(p1);
+	ret = interpolateImage(p1, from_postprocessed);
 	
 	return ret;
 }
 
-colorA_t textureImage_t::getColor(int x, int y, int z) const
+colorA_t textureImage_t::getColor(int x, int y, int z, bool from_postprocessed) const
 {
-	colorA_t ret = getRawColor(x, y, z);
+	colorA_t ret = getRawColor(x, y, z, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	return ret;
 }
 
-colorA_t textureImage_t::getRawColor(int x, int y, int z) const
+colorA_t textureImage_t::getRawColor(int x, int y, int z, bool from_postprocessed) const
 {
 	int resx=image->getWidth();
 	int resy=image->getHeight();
@@ -160,7 +195,8 @@ colorA_t textureImage_t::getRawColor(int x, int y, int z) const
 
 	colorA_t c1(0.f);
 	
-	return image->getPixel(x, y);
+	if(from_postprocessed && postProcessedImage) return (*postProcessedImage)(x, y);
+	else return image->getPixel(x, y);
 }
 
 bool textureImage_t::doMapping(point3d_t &texpt) const
@@ -245,6 +281,68 @@ void textureImage_t::setCrop(float minx, float miny, float maxx, float maxy)
 	cropminx=minx, cropmaxx=maxx, cropminy=miny, cropmaxy=maxy;
 	cropx = ((cropminx!=0.0) || (cropmaxx!=1.0));
 	cropy = ((cropminy!=0.0) || (cropmaxy!=1.0));
+}
+
+void textureImage_t::postProcessedCreate()
+{
+	int w=0, h=0, z=0;
+	resolution(w, h, z);
+	
+	postProcessedImage = new rgba2DImage_nw_t(w, h);
+}
+
+void textureImage_t::postProcessedBlur(float blur_factor)
+{
+	if(!postProcessedImage) return;
+	
+	int w=0, h=0, z=0;
+	resolution(w, h, z);
+	
+	cv::Mat A(h, w, CV_32FC4);
+	cv::Mat B(h, w, CV_32FC4);
+	cv::Mat_<cv::Vec4f> _A = A;
+	cv::Mat_<cv::Vec4f> _B = B;
+	
+	for(int y = 0; y < h; y++)
+	{
+		for(int x = 0; x < w; x++)
+		{
+			colorA_t color = image->getPixel(x,y);
+			color.linearRGB_from_ColorSpace(colorSpace, gamma);
+
+			_A(y, x)[0] = color.getR();
+			_A(y, x)[1] = color.getG();
+			_A(y, x)[2] = color.getB();
+			_A(y, x)[3] = color.getA();
+		}
+	}
+
+	int blurSize = (int) ceil(std::min(w,h) * blur_factor);
+	if(blurSize % 2 == 0) blurSize += 1;
+	
+	cv::GaussianBlur(A, B, cv::Size(blurSize,blurSize),0.0); //Important, sizes must be odd!
+
+	for(int y = 0; y < h; y++)
+	{
+		for(int x = 0; x < w; x++)
+		{
+			(*postProcessedImage)(x,y).R = _B(y, x)[0];
+			(*postProcessedImage)(x,y).G = _B(y, x)[1];
+			(*postProcessedImage)(x,y).B = _B(y, x)[2];
+			(*postProcessedImage)(x,y).A = _B(y, x)[3];
+
+			(*postProcessedImage)(x,y).ColorSpace_from_linearRGB(colorSpace, gamma);
+		}
+	}
+
+	for(int i=0; i<w; ++i)
+	{
+		for(int j=0; j<h; ++j)
+		{
+//			(*postProcessedImage)(i,j) = image->getPixel(i,j) * colorA_t(1.f,0.f,0.f,1.f);
+		}
+	}
+
 }
 
 int string2cliptype(const std::string *clipname)

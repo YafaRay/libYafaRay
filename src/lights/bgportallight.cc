@@ -120,7 +120,7 @@ color_t bgPortalLight_t::totalEnergy() const
 	for(int i=0; i<1000; ++i) //exaggerated?
 	{
 		wo.dir = SampleSphere( ((float)i+0.5f)/1000.f, RI_vdC(i) );
-		col = bg->eval(wo);
+		col = bg->eval(wo, true);
 		for(int j=0; j<nTris; j++)
 		{
 			float cos_n = -wo.dir * tris[j]->getNormal(); //not 100% sure about sign yet...
@@ -153,7 +153,7 @@ bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t 
 	wi.tmax = dist;
 	wi.dir = ldir;
 	
-	s.col = bg->eval(wi) * power;
+	s.col = bg->eval(wi, true) * power;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf = dist_sqr*M_PI / (area * cos_angle);
 	s.flags = flags;
@@ -174,7 +174,7 @@ color_t bgPortalLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_
 	
 	ray.dir = SampleCosHemisphere(normal, du, dv, s1, s2);
 	ray_t r2(ray.from, -ray.dir);
-	return bg->eval(r2);
+	return bg->eval(r2, true);
 }
 
 color_t bgPortalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
@@ -190,7 +190,7 @@ color_t bgPortalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	
 	s.flags = flags;
 	ray_t r2(s.sp->P, -wo);
-	return bg->eval(r2);
+	return bg->eval(r2, true);
 }
 
 bool bgPortalLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
@@ -209,7 +209,7 @@ bool bgPortalLight_t::intersect(const ray_t &ray, float &t, color_t &col, float 
 	if(cos_angle <= 0) return false;
 	float idist_sqr = 1.f / (t*t);
 	ipdf = idist_sqr * area * cos_angle * (1.f/M_PI);
-	col = bg->eval(ray) * power;
+	col = bg->eval(ray, true) * power;
 	
 	return true;
 }

@@ -27,6 +27,7 @@
 #include <core_api/environment.h>
 #include <core_api/imagehandler.h>
 #include <utilities/interpolation.h>
+#include <utilities/image_buffers.h>
 
 __BEGIN_YAFRAY
 
@@ -54,17 +55,19 @@ class textureImage_t : public texture_t
 		virtual bool discrete() const { return true; }
 		virtual bool isThreeD() const { return false; }
 		virtual bool isNormalmap() const { return normalmap; }
-		virtual colorA_t getColor(const point3d_t &sp) const;
-		virtual colorA_t getColor(int x, int y, int z) const;
-		virtual colorA_t getRawColor(const point3d_t &p) const;
-		virtual colorA_t getRawColor(int x, int y, int z) const;
+		virtual colorA_t getColor(const point3d_t &sp, bool from_postprocessed=false) const;
+		virtual colorA_t getColor(int x, int y, int z, bool from_postprocessed=false) const;
+		virtual colorA_t getRawColor(const point3d_t &p, bool from_postprocessed=false) const;
+		virtual colorA_t getRawColor(int x, int y, int z, bool from_postprocessed=false) const;
 		virtual void resolution(int &x, int &y, int &z) const;
+		virtual void postProcessedCreate();
+		virtual void postProcessedBlur(float blur_factor);
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 
 	protected:
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		bool doMapping(point3d_t &texp) const;
-		colorA_t interpolateImage(const point3d_t &p) const;
+		colorA_t interpolateImage(const point3d_t &p, bool from_postprocessed=false) const;
 		
 		bool use_alpha, calc_alpha, normalmap;
 		bool cropx, cropy, checker_odd, checker_even, rot90;
@@ -78,6 +81,7 @@ class textureImage_t : public texture_t
 		float gamma;
 		bool mirrorX;
 		bool mirrorY;
+		rgba2DImage_nw_t * postProcessedImage = nullptr; //!< rgba color buffer for post-processed image (not linear, still in the original image color space)
 };
 
 /*static inline colorA_t cubicInterpolate(const colorA_t &c1, const colorA_t &c2,

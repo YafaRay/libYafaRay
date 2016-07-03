@@ -1296,7 +1296,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 	{
 		if(background && !transpRefractedBackground)
 		{
-			gInfo.constantRandiance += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			gInfo.constantRandiance += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
 		}
 	}
 

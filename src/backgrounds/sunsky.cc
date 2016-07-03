@@ -39,8 +39,8 @@ class sunskyBackground_t: public background_t
 {
 	public:
 		sunskyBackground_t(const point3d_t dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool shoot_caustics);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
-		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
+		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~sunskyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 		bool hasIBL() { return withIBL; }
@@ -192,12 +192,12 @@ inline color_t sunskyBackground_t::getSkyCol(const ray_t &ray) const
 	return skycolor;
 }
 
-color_t sunskyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
+color_t sunskyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
 {
 	return power * getSkyCol(ray);
 }
 
-color_t sunskyBackground_t::eval(const ray_t &ray, bool filtered) const
+color_t sunskyBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
 {
 	return power * getSkyCol(ray);
 }

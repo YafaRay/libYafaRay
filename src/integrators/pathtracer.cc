@@ -282,7 +282,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 					{
 						if((caustic && background && background->hasIBL() && background->shootsCaustic()))
 						{
-							pathCol += throughput * (*background)(pRay, state);
+							pathCol += throughput * (*background)(pRay, state, true);
 						}
 						break;
 					}
@@ -340,7 +340,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
 		}
 	}
 

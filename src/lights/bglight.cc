@@ -102,7 +102,7 @@ void bgLight_t::init(scene_t &scene)
 			
 			invSpheremap(fx, fy, ray.dir);
 			
-			fu[x] = background->eval(ray).energy() * sintheta;
+			fu[x] = background->eval(ray, true).energy() * sintheta;
 		}
 		
 		uDist[y] = new pdf1D_t(fu, nu);
@@ -191,7 +191,7 @@ bool bgLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) c
 	
 	invSpheremap(u, v, wi.dir);
 
-	s.col = background->eval(wi);
+	s.col = background->eval(wi, true);
 
 	return true;
 }
@@ -208,14 +208,14 @@ bool bgLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf)
 
 	invSpheremap(u, v, tr.dir);
 
-	col = background->eval(tr);
+	col = background->eval(tr, true);
 
 	return true;
 }
 
 color_t bgLight_t::totalEnergy() const
 {
-	color_t energy = background->eval(ray_t(point3d_t(0,0,0), vector3d_t(0.5, 0.5, 0.5))) * worldPIFactor;
+	color_t energy = background->eval(ray_t(point3d_t(0,0,0), vector3d_t(0.5, 0.5, 0.5)), true) * worldPIFactor;
 	return energy;
 }
 
@@ -228,7 +228,7 @@ color_t bgLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray
 	
 	sample_dir(s3, s4, ray.dir, ipdf, true);
 
-	pcol = background->eval(ray);
+	pcol = background->eval(ray, true);
 	ray.dir = -ray.dir;
 	
 	createCS(ray.dir, U, V);
@@ -250,7 +250,7 @@ color_t bgLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	
 	sample_dir(s.s1, s.s2, wo, s.dirPdf, true);
 	
-	pcol = background->eval(ray_t(point3d_t(0,0,0), wo));
+	pcol = background->eval(ray_t(point3d_t(0,0,0), wo), true);
 	wo = -wo;
 	
 	createCS(wo, U, V);

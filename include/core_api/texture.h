@@ -15,15 +15,17 @@ class YAFRAYCORE_EXPORT texture_t
 		   z for discrete textures) are unused on getColor and getFloat calls */
 		virtual bool isThreeD() const { return true; }
 		virtual bool isNormalmap() const { return false; }
-		virtual colorA_t getColor(const point3d_t &p) const = 0;
-		virtual colorA_t getColor(int x, int y, int z) const { return colorA_t(0.f); }
-		virtual colorA_t getRawColor(const point3d_t &p) const { return getColor(p); }
-		virtual colorA_t getRawColor(int x, int y, int z) const { return getColor(x, y, z); }
+		virtual colorA_t getColor(const point3d_t &p, bool from_postprocessed=false) const = 0;
+		virtual colorA_t getColor(int x, int y, int z, bool from_postprocessed=false) const { return colorA_t(0.f); }
+		virtual colorA_t getRawColor(const point3d_t &p, bool from_postprocessed=false) const { return getColor(p, from_postprocessed); }
+		virtual colorA_t getRawColor(int x, int y, int z, bool from_postprocessed=false) const { return getColor(x, y, z, from_postprocessed); }
 		virtual float getFloat(const point3d_t &p) const { return getRawColor(p).col2bri(); }
 		virtual float getFloat(int x, int y, int z) const { return getRawColor(x, y, z).col2bri(); }
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
 		virtual void getInterpolationStep(float &step) const { step = 0.f; };
+		virtual void postProcessedCreate() { };
+		virtual void postProcessedBlur(float blur_factor) { };
 		virtual ~texture_t() {}
 };
 

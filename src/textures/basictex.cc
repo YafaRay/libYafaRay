@@ -63,7 +63,7 @@ float textureClouds_t::getFloat(const point3d_t &p) const
 	return v;
 }
 
-colorA_t textureClouds_t::getColor(const point3d_t &p) const
+colorA_t textureClouds_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	return color1 + getFloat(p)*(color2 - color1);
 }
@@ -123,7 +123,7 @@ float textureMarble_t::getFloat(const point3d_t &p) const
 	return fPow(w, sharpness);
 }
 
-colorA_t textureMarble_t::getColor(const point3d_t &p) const
+colorA_t textureMarble_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	return color1 + getFloat(p)*(color2 - color1);
 }
@@ -189,7 +189,7 @@ float textureWood_t::getFloat(const point3d_t &p) const
 	return w;
 }
 
-colorA_t textureWood_t::getColor(const point3d_t &p) const
+colorA_t textureWood_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	return color1 + getFloat(p)*(color2 - color1);
 }
@@ -223,7 +223,7 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 /* even simpler RGB cube, goes r in x, g in y and b in z inside the unit cube.  */
 //-----------------------------------------------------------------------------------------
 
-colorA_t rgbCube_t::getColor(const point3d_t &p) const
+colorA_t rgbCube_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	colorA_t col = colorA_t(p.x, p.y, p.z);
 	col.clampRGB01();
@@ -286,7 +286,7 @@ float textureVoronoi_t::getFloat(const point3d_t &p) const
 			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da));
 }
 
-colorA_t textureVoronoi_t::getColor(const point3d_t &p) const
+colorA_t textureVoronoi_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	float da[4];
 	point3d_t pa[4];
@@ -384,7 +384,7 @@ float textureMusgrave_t::getFloat(const point3d_t &p) const
 	return iscale * (*mGen)(p*size);
 }
 
-colorA_t textureMusgrave_t::getColor(const point3d_t &p) const
+colorA_t textureMusgrave_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	return color1 + getFloat(p)*(color2 - color1);
 }
@@ -447,7 +447,7 @@ float textureDistortedNoise_t::getFloat(const point3d_t &p) const
 	return getSignedNoise(nGen2, tp+rv*distort);	// distorted-domain noise
 }
 
-colorA_t textureDistortedNoise_t::getColor(const point3d_t &p) const
+colorA_t textureDistortedNoise_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	return color1 + getFloat(p)*(color2 - color1);
 }
@@ -495,7 +495,7 @@ float textureBlend_t::getFloat(const point3d_t &p) const
 	return blend;
 }
 
-colorA_t textureBlend_t::getColor(const point3d_t &p) const
+colorA_t textureBlend_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	// TODO: colorband
         return colorA_t(1.0,1.0,1.0,1.0);
