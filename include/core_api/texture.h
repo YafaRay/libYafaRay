@@ -166,7 +166,7 @@ inline colorA_t texture_t::applyAdjustmentsColor(const colorA_t & texCol) const
 	if(adj_mult_factor_green != 1.f) ret.G *= adj_mult_factor_green;
 	if(adj_mult_factor_blue != 1.f) ret.B *= adj_mult_factor_blue;
 
-	if(adj_clamp) ret.clampRGB01();
+	if(adj_clamp) ret.clampRGB0();
 	
 	if(adj_saturation != 1.f)
 	{
@@ -174,7 +174,7 @@ inline colorA_t texture_t::applyAdjustmentsColor(const colorA_t & texCol) const
 		ret.rgb_to_hsv(h, s, v);
 		s *= adj_saturation;
 		ret.hsv_to_rgb(h, s, v);
-		if(adj_clamp) ret.clampRGB01();
+		if(adj_clamp) ret.clampRGB0();
 	}
 
 	return ret;
