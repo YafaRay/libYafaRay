@@ -159,7 +159,8 @@ colorA_t textureImage_t::getColor(const point3d_t &p, bool from_postprocessed) c
 {
 	colorA_t ret = getRawColor(p, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
-	return ret;
+	
+	return applyAdjustmentsColor(ret);
 }
 
 colorA_t textureImage_t::getRawColor(const point3d_t &p, bool from_postprocessed) const
@@ -180,7 +181,8 @@ colorA_t textureImage_t::getColor(int x, int y, int z, bool from_postprocessed) 
 {
 	colorA_t ret = getRawColor(x, y, z, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
-	return ret;
+	
+	return applyAdjustmentsColor(ret);
 }
 
 colorA_t textureImage_t::getRawColor(int x, int y, int z, bool from_postprocessed) const
@@ -468,6 +470,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	const std::string *clipmode=0;
 	bool mirror_x = false;
 	bool mirror_y = false;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
 	
 	params.getParam("xrepeat", xrep);
 	params.getParam("yrepeat", yrep);
@@ -485,6 +489,14 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("mirror_x", mirror_x);
 	params.getParam("mirror_y", mirror_y);
 	
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_clamp", clamp);
+	
 	tex->xrepeat = xrep;
 	tex->yrepeat = yrep;
 	tex->rot90 = rot90;
@@ -498,6 +510,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->checker_dist = cdist;
 	tex->mirrorX = mirror_x;
 	tex->mirrorY = mirror_y;
+	
+	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
 	
 	return tex;
 }

@@ -28,6 +28,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cmath>
 #include <utilities/mathOptimizations.h>
 
 #include <boost/serialization/nvp.hpp>
@@ -133,6 +134,8 @@ class YAFRAYCORE_EXPORT color_t
 		
 		void linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma);
 		void ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma);		
+		void rgb_to_hsv(float & h, float & s, float &v);
+		void hsv_to_rgb(const float & h, const float & s, const float &v);
 		
 //	protected:
 		float R, G, B;
@@ -490,6 +493,47 @@ inline float colorA_t::colorDifference(colorA_t color2, bool useRGBcomponents)
 	}
 	
 	return colorDifference;
+}
+
+inline void color_t::rgb_to_hsv(float & h, float & s, float &v)
+{
+	//HSV-RGB Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
+	
+	float R1 = std::max(R, 0.f);
+	float G1 = std::max(G, 0.f);
+	float B1 = std::max(B, 0.f);
+	
+	v = std::max(std::max(R1,G1),B1);
+	float m = std::min(std::min(R1,G1),B1);
+	float C = v - m;
+	
+	if(std::fabs(C) < 1.0e-6f) { h = 0.f; s = 0.f; }
+	else if(v == R1) { h = std::fmod((G1-B1)/C, 6.f);	s = C / std::max(v, 1.0e-6f); }
+	else if(v == G1) { h = ((B1-R1)/C) + 2.f;	s = C / std::max(v, 1.0e-6f); }
+	else if(v == B1) { h = ((R1-G1)/C) + 4.f;	s = C / std::max(v, 1.0e-6f); }
+	else { h = 0.f; s = 0.f; v = 0.f; }
+	
+	if(h < 0.f) h += 6.f;
+}
+
+inline void color_t::hsv_to_rgb(const float & h, const float & s, const float &v)
+{
+	//RGB-HSV Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
+	float C = v * s;
+	float X = C * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
+	float m = v - C;
+	float R1 = 0.f, G1 = 0.f, B1 = 0.f;
+
+	if(h >= 0.f && h < 1.f) { R1 = C; G1 = X; B1 = 0.f; }
+	else if(h >= 1.f && h < 2.f) { R1 = X; G1 = C; B1 = 0.f; }
+	else if(h >= 2.f && h < 3.f) { R1 = 0.f; G1 = C; B1 = X; }
+	else if(h >= 3.f && h < 4.f) { R1 = 0.f; G1 = X; B1 = C; }
+	else if(h >= 4.f && h < 5.f) { R1 = X; G1 = 0.f; B1 = C; }
+	else if(h >= 5.f && h < 6.f) { R1 = C; G1 = 0.f; B1 = X; }
+
+	R = R1 + m;
+	G = G1 + m;
+	B = B1 + m;
 }
 
 __END_YAFRAY
