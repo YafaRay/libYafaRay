@@ -3,6 +3,7 @@
 
 #include <yafray_config.h>
 #include "surface.h"
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 
@@ -28,8 +29,10 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual void postProcessedBlur(float blur_factor) { };
 		void setAdjustments(float intensity, float contrast, float saturation, bool clamp, float factor_red, float factor_green, float factor_blue);
 		colorA_t applyAdjustmentsColor(const colorA_t & texCol) const;
-		float applyAdjustmentsFloat(float texFloat) const;	
-		virtual ~texture_t() {}
+		float applyAdjustmentsFloat(float texFloat) const;
+		void colorRampCreate(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr) { color_ramp = new color_ramp_t(modeStr, interpolationStr, hue_interpolationStr); } 
+		void colorRampAddItem(colorA_t color, float position) { color_ramp->add_item(color, position); }
+		virtual ~texture_t() { if(color_ramp) { delete color_ramp; color_ramp = nullptr; } }
 	
 	protected:
 		float adj_intensity = 1.f;
@@ -40,6 +43,7 @@ class YAFRAYCORE_EXPORT texture_t
 		float adj_mult_factor_green = 1.f;
 		float adj_mult_factor_blue = 1.f;
 		bool adjustments_set = false;
+		color_ramp_t * color_ramp = nullptr;
 };
 
 inline void angmap(const point3d_t &p, float &u, float &v)
@@ -199,7 +203,6 @@ inline float texture_t::applyAdjustmentsFloat(float texFloat) const
 	
 	return ret;
 }
-
 
 __END_YAFRAY
 

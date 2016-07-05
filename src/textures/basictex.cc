@@ -32,6 +32,46 @@ noiseGenerator_t* newNoise(const std::string &ntype)
 	return new newPerlin_t();
 }
 
+void textureReadColorRamp(const paraMap_t &params, texture_t * tex)
+{
+	std::string modeStr, interpolationStr, hue_interpolationStr;
+	int ramp_num_items = 0;
+	params.getParam("ramp_color_mode", modeStr);
+	params.getParam("ramp_hue_interpolation", hue_interpolationStr);
+	params.getParam("ramp_interpolation", interpolationStr);
+	params.getParam("ramp_num_items", ramp_num_items);
+	
+	if(ramp_num_items > 0)
+	{
+		tex->colorRampCreate(modeStr, interpolationStr, hue_interpolationStr);
+		
+		for(int i = 0; i < ramp_num_items; ++i)
+		{
+			std::stringstream paramName;
+			colorA_t color(0.f, 0.f, 0.f, 1.f);
+			float alpha = 1.f;
+			float position = 0.f;
+			paramName << "ramp_item_" << i << "_color";
+			params.getParam(paramName.str(), color);
+			paramName.str("");
+			paramName.clear();
+			
+			paramName << "ramp_item_" << i << "_alpha";
+			params.getParam(paramName.str(), alpha);
+			paramName.str("");
+			paramName.clear();
+			color.A = alpha;
+			
+			paramName << "ramp_item_" << i << "_position";
+			params.getParam(paramName.str(), position);
+			paramName.str("");
+			paramName.clear();
+			tex->colorRampAddItem(color, position);
+		}
+	}
+}
+
+
 //-----------------------------------------------------------------------------------------
 // Clouds Texture
 //-----------------------------------------------------------------------------------------
@@ -65,9 +105,8 @@ float textureClouds_t::getFloat(const point3d_t &p) const
 
 colorA_t textureClouds_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t result = color1 + getFloat(p)*(color2 - color1);
-	
-	return result;
+	if(!color_ramp) return color1 + getFloat(p)*(color2 - color1);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureClouds_t::factory(paraMap_t &params,
@@ -81,6 +120,7 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 	bool hard = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", color1);
@@ -98,8 +138,13 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
 	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	textureClouds_t * tex = new textureClouds_t(depth, size, hard, color1, color2, *ntype, *btype);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -141,9 +186,8 @@ float textureMarble_t::getFloat(const point3d_t &p) const
 
 colorA_t textureMarble_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t result = color1 + getFloat(p)*(color2 - color1);
-	
-	return result;
+	if(!color_ramp) return color1 + getFloat(p)*(color2 - color1);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureMarble_t::factory(paraMap_t &params,
@@ -157,6 +201,7 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 	const std::string *ntype=&_ntype, *shape=&_shape;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", col1);
@@ -175,8 +220,12 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
 	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	textureMarble_t * tex = new textureMarble_t(oct, sz, col1, col2, turb, shp, hrd, *ntype, *shape);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -222,9 +271,8 @@ float textureWood_t::getFloat(const point3d_t &p) const
 
 colorA_t textureWood_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t result = color1 + getFloat(p)*(color2 - color1);
-	
-	return result;
+	if(!color_ramp) return color1 + getFloat(p)*(color2 - color1);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureWood_t::factory(paraMap_t &params,
@@ -238,6 +286,7 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 	const std::string *ntype=&_ntype, *wtype=&_wtype, *shape=&_shape;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", col1);
@@ -257,11 +306,15 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
 	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	if (params.getParam("ringscale_x", old_rxy) || params.getParam("ringscale_y", old_rxy))
 		Y_WARNING << "TextureWood: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead" << yendl;
 		
 	textureWood_t * tex = new textureWood_t(oct, sz, col1, col2, turb, hrd, *ntype, *wtype, *shape);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -289,6 +342,7 @@ texture_t* rgbCube_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("adj_mult_factor_red", factor_red);
 	params.getParam("adj_mult_factor_green", factor_green);
@@ -297,9 +351,13 @@ texture_t* rgbCube_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("adj_contrast", contrast);
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
 
 	rgbCube_t * tex = new rgbCube_t();
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -354,7 +412,8 @@ colorA_t textureVoronoi_t::getColor(const point3d_t &p, bool from_postprocessed)
 	float inte = iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
 			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da));
 	colorA_t col(0.0);
-	if (coltype) {
+	if(color_ramp) return color_ramp->get_color_interpolated(inte);
+	else if (coltype) {
 		col += aw1 * cellNoiseColor(vGen.getPoint(0, pa));
 		col += aw2 * cellNoiseColor(vGen.getPoint(1, pa));
 		col += aw3 * cellNoiseColor(vGen.getPoint(2, pa));
@@ -366,10 +425,9 @@ colorA_t textureVoronoi_t::getColor(const point3d_t &p, bool from_postprocessed)
 			col *= t1;
 		}
 		else col *= iscale;
+		return applyAdjustmentsColor(col);
 	}
-	else col.set(inte, inte, inte, inte);
-	
-	return applyAdjustmentsColor(col);
+	else return colorA_t(inte, inte, inte, inte);	
 }
 
 texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -384,6 +442,7 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 	int ct=0;	// default "int" color type (intensity)
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -412,8 +471,12 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
 	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	textureVoronoi_t * tex = new textureVoronoi_t(col1, col2, ct, fw1, fw2, fw3, fw4, mex, sz, isc, *dname);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -459,9 +522,8 @@ float textureMusgrave_t::getFloat(const point3d_t &p) const
 
 colorA_t textureMusgrave_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t result = color1 + getFloat(p)*(color2 - color1);
-	
-	return result;
+	if(!color_ramp) return color1 + getFloat(p)*(color2 - color1);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -472,6 +534,7 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 	float H=1, lacu=2, octs=2, offs=1, gain=1, size=1, iscale=1;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -494,9 +557,13 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("adj_contrast", contrast);
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
 
 	textureMusgrave_t * tex = new textureMusgrave_t(col1, col2, H, lacu, octs, offs, gain, size, iscale, *ntype, *mtype);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -536,9 +603,8 @@ float textureDistortedNoise_t::getFloat(const point3d_t &p) const
 
 colorA_t textureDistortedNoise_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	colorA_t result = color1 + getFloat(p)*(color2 - color1);
-	
-	return result;
+	if(!color_ramp) return color1 + getFloat(p)*(color2 - color1);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -549,6 +615,7 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	float dist=1, size=1;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -567,8 +634,12 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_clamp", clamp);
 	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	textureDistortedNoise_t * tex = new textureDistortedNoise_t(col1, col2, dist, size, *ntype1, *ntype2);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 
@@ -598,10 +669,8 @@ float textureBlend_t::getFloat(const point3d_t &p) const
 
 colorA_t textureBlend_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	// TODO: colorband
-	colorA_t result = colorA_t(1.0,1.0,1.0,1.0);
-	
-	return applyAdjustmentsColor(result);
+	if(!color_ramp) return colorA_t(1.f);
+	else return color_ramp->get_color_interpolated(getFloat(p));
 }
 
 texture_t *textureBlend_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -611,12 +680,16 @@ texture_t *textureBlend_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	//bool invertXY = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("stype", _stype);
+	params.getParam("use_color_ramp", use_color_ramp);
 	//params.getParam("invertXY", invertXY);
 	
 	textureBlend_t * tex = new textureBlend_t(*stype);
 	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
 	return tex;
 }
 

@@ -4,6 +4,7 @@
 
 #include <core_api/surface.h>
 #include <core_api/vector3d.h>
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 

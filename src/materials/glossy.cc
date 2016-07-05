@@ -23,7 +23,7 @@
 #include <core_api/environment.h>
 #include <utilities/sample_utils.h>
 #include <materials/microfacet.h>
-
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 

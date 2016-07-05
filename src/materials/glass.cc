@@ -21,7 +21,7 @@
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
 #include <yafraycore/spectrum.h>
-
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 

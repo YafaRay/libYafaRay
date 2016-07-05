@@ -22,6 +22,7 @@
 #include <materials/microfacet.h>
 #include <utilities/mcqmc.h>
 #include <yafraycore/spectrum.h>
+#include <core_api/color_ramp.h>
 #include <iostream>
 
 __BEGIN_YAFRAY
