@@ -470,7 +470,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	const std::string *clipmode=0;
 	bool mirror_x = false;
 	bool mirror_y = false;
-	float intensity = 1.f, contrast = 1.f, saturation = 1.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
 	
 	params.getParam("xrepeat", xrep);
@@ -495,6 +495,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("adj_intensity", intensity);
 	params.getParam("adj_contrast", contrast);
 	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
 	params.getParam("adj_clamp", clamp);
 	
 	tex->xrepeat = xrep;
@@ -511,7 +512,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->mirrorX = mirror_x;
 	tex->mirrorY = mirror_y;
 	
-	tex->setAdjustments(intensity, contrast, saturation, clamp, factor_red, factor_green, factor_blue);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	
 	return tex;
 }

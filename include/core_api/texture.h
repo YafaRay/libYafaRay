@@ -27,7 +27,7 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual void getInterpolationStep(float &step) const { step = 0.f; };
 		virtual void postProcessedCreate() { };
 		virtual void postProcessedBlur(float blur_factor) { };
-		void setAdjustments(float intensity, float contrast, float saturation, bool clamp, float factor_red, float factor_green, float factor_blue);
+		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
 		colorA_t applyAdjustmentsColor(const colorA_t & texCol) const;
 		float applyAdjustmentsFloat(float texFloat) const;
 		void colorRampCreate(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr) { color_ramp = new color_ramp_t(modeStr, interpolationStr, hue_interpolationStr); } 
@@ -38,6 +38,7 @@ class YAFRAYCORE_EXPORT texture_t
 		float adj_intensity = 1.f;
 		float adj_contrast = 1.f;
 		float adj_saturation = 1.f;
+		float adj_hue = 0.f;
 		bool adj_clamp = false;
 		float adj_mult_factor_red = 1.f;
 		float adj_mult_factor_green = 1.f;
@@ -104,10 +105,16 @@ inline void invSpheremap(float u, float v, vector3d_t &p)
 	p.z = -costheta;
 }
 
-inline void texture_t::setAdjustments(float intensity, float contrast, float saturation, bool clamp, float factor_red, float factor_green, float factor_blue)
+inline void texture_t::setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue)
 {
-	adj_intensity = intensity;  adj_contrast = contrast;  adj_saturation = saturation;  adj_clamp = clamp;
-	adj_mult_factor_red = factor_red;  adj_mult_factor_green = factor_green;  adj_mult_factor_blue = factor_blue;
+	adj_intensity = intensity;
+	adj_contrast = contrast;
+	adj_saturation = saturation;
+	adj_hue = hue;
+	adj_clamp = clamp;
+	adj_mult_factor_red = factor_red;
+	adj_mult_factor_green = factor_green;
+	adj_mult_factor_blue = factor_blue;
 	
 	std::stringstream adjustments_stream;
 
@@ -124,6 +131,11 @@ inline void texture_t::setAdjustments(float intensity, float contrast, float sat
 	if(saturation != 1.f)
 	{
 		adjustments_stream << " saturation=" << saturation; 
+		adjustments_set = true;
+	}
+	if(hue != 0.f)
+	{
+		adjustments_stream << " hue=" << hue; 
 		adjustments_set = true;
 	}
 	if(factor_red != 1.f)
@@ -172,11 +184,14 @@ inline colorA_t texture_t::applyAdjustmentsColor(const colorA_t & texCol) const
 
 	if(adj_clamp) ret.clampRGB0();
 	
-	if(adj_saturation != 1.f)
+	if(adj_saturation != 1.f || adj_hue != 0.f)
 	{
 		float h = 0.f, s = 0.f, v = 0.f;
 		ret.rgb_to_hsv(h, s, v);
 		s *= adj_saturation;
+		h += adj_hue;
+		if(h < 0.f) h += 6.f;
+		else if(h > 6.f) h -= 6.f;
 		ret.hsv_to_rgb(h, s, v);
 		if(adj_clamp) ret.clampRGB0();
 	}
