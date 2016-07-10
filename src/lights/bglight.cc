@@ -209,6 +209,8 @@ bool bgLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf)
 	invSpheremap(u, v, tr.dir);
 
 	col = background->eval(tr, true);
+	
+	col.clampProportionalRGB(lClampIntersect); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 
 	return true;
 }

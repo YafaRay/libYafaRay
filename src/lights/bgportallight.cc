@@ -211,6 +211,8 @@ bool bgPortalLight_t::intersect(const ray_t &ray, float &t, color_t &col, float 
 	ipdf = idist_sqr * area * cos_angle * (1.f/M_PI);
 	col = bg->eval(ray, true) * power;
 	
+	col.clampProportionalRGB(lClampIntersect); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
+
 	return true;
 }
 

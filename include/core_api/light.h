@@ -70,6 +70,8 @@ class light_t
 		bool shootsDiffuseP() const { return lShootDiffuse; }
 		//! checks if the light is a photon-only light (only shoots photons, not illuminating)
 		bool photonOnly() const { return lPhotonOnly; }
+		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
+		void setClampIntersect(float clamp) { lClampIntersect = clamp; }
 
 		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true),lShootCaustic(true),lShootDiffuse(true),lPhotonOnly(false) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
@@ -83,6 +85,7 @@ class light_t
 		bool lShootCaustic; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
 		bool lShootDiffuse; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
 		bool lPhotonOnly; //!<enable/disable if the light is a photon-only light (only shoots photons, not illuminating)
+		float lClampIntersect = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 
 };
 

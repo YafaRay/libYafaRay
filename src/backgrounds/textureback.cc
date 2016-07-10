@@ -137,6 +137,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	float power = 1.0, rot=0.0;
 	bool IBL = false;
 	float IBL_blur = 0.f;
+	float IBL_clamp_sampling = 0.f;
 	int IBL_sam = 16;
 	bool caust = true;
 	bool diffuse = true;
@@ -159,6 +160,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	}
 	params.getParam("ibl", IBL);
 	params.getParam("smartibl_blur", IBL_blur);
+	params.getParam("ibl_clamp_sampling", IBL_clamp_sampling);
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("power", power);
 	params.getParam("rotation", rot);
@@ -189,6 +191,13 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
 		
 		bglight->setBackground(texBG);
+		
+		if(IBL_clamp_sampling > 0.f)
+		{
+			Y_INFO << "TextureBackground: using IBL sampling clamp=" << IBL_clamp_sampling << yendl;
+			
+			bglight->setClampIntersect(IBL_clamp_sampling);
+		}
 		
 		if(bglight) render.getScene()->addLight(bglight);
 	}
