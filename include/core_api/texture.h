@@ -110,7 +110,7 @@ inline void texture_t::setAdjustments(float intensity, float contrast, float sat
 	adj_intensity = intensity;
 	adj_contrast = contrast;
 	adj_saturation = saturation;
-	adj_hue = hue;
+	adj_hue = hue / 60.f; //The value of the hue offset parameter is in degrees, but internally the HSV hue works in "units" where each unit is 60 degrees
 	adj_clamp = clamp;
 	adj_mult_factor_red = factor_red;
 	adj_mult_factor_green = factor_green;
@@ -135,7 +135,7 @@ inline void texture_t::setAdjustments(float intensity, float contrast, float sat
 	}
 	if(hue != 0.f)
 	{
-		adjustments_stream << " hue=" << hue; 
+		adjustments_stream << " hue offset=" << hue << "º"; 
 		adjustments_set = true;
 	}
 	if(factor_red != 1.f)
