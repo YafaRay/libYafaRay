@@ -160,7 +160,7 @@ colorA_t textureImage_t::getColor(const point3d_t &p, bool from_postprocessed) c
 	colorA_t ret = getRawColor(p, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	
-	return applyAdjustmentsColor(ret);
+	return applyAdjustments(ret);
 }
 
 colorA_t textureImage_t::getRawColor(const point3d_t &p, bool from_postprocessed) const
@@ -182,7 +182,7 @@ colorA_t textureImage_t::getColor(int x, int y, int z, bool from_postprocessed) 
 	colorA_t ret = getRawColor(x, y, z, from_postprocessed);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	
-	return applyAdjustmentsColor(ret);
+	return applyAdjustments(ret);
 }
 
 colorA_t textureImage_t::getRawColor(int x, int y, int z, bool from_postprocessed) const
