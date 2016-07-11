@@ -3,6 +3,9 @@ if(NOT YAFARAY_CORE_VERSION)
 	set(YAFARAY_CORE_VERSION "(devel)")
 endif(NOT YAFARAY_CORE_VERSION)
 
+if(DEBUG_BUILD STREQUAL "ON")
+	set(DEBUG "-DEBUG")
+endif(DEBUG_BUILD STREQUAL "ON")
 
 include(CheckIncludeFiles)
 check_include_files(unistd.h HAVE_UNISTD_H)
