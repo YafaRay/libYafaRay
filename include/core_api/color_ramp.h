@@ -35,8 +35,8 @@ __BEGIN_YAFRAY
 enum color_ramp_mode_t
 {
 	C_RAMP_RGB,
-	C_RAMP_HSV,	//Not yet supported
-	C_RAMP_HSL	//Not yet supported
+	C_RAMP_HSV,
+	C_RAMP_HSL	//Not yet supported, using HSV instead
 };
 
 enum color_ramp_interpolation_t
@@ -50,10 +50,10 @@ enum color_ramp_interpolation_t
 
 enum color_ramp_hue_interpolation_t
 {
-	C_RAMP_HUE_NEAR,	//Not yet supported
-	C_RAMP_HUE_FAR,	//Not yet supported
-	C_RAMP_HUE_CLOCKWISE,	//Not yet supported
-	C_RAMP_HUE_COUNTERCLOCKWISE	//Not yet supported
+	C_RAMP_HUE_NEAR,
+	C_RAMP_HUE_FAR,
+	C_RAMP_HUE_CLOCKWISE,
+	C_RAMP_HUE_COUNTERCLOCKWISE
 };
 
 class YAFRAYCORE_EXPORT color_ramp_item_t

@@ -134,7 +134,7 @@ class YAFRAYCORE_EXPORT color_t
 		
 		void linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma);
 		void ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma);		
-		void rgb_to_hsv(float & h, float & s, float &v);
+		void rgb_to_hsv(float & h, float & s, float &v) const;
 		void hsv_to_rgb(const float & h, const float & s, const float &v);
 		
 //	protected:
@@ -495,7 +495,7 @@ inline float colorA_t::colorDifference(colorA_t color2, bool useRGBcomponents)
 	return colorDifference;
 }
 
-inline void color_t::rgb_to_hsv(float & h, float & s, float &v)
+inline void color_t::rgb_to_hsv(float & h, float & s, float &v) const
 {
 	//HSV-RGB Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
 	
