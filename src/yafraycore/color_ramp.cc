@@ -34,7 +34,7 @@ color_ramp_t::color_ramp_t(std::string modeStr, std::string interpolationStr, st
 	Y_DEBUG << "modeStr='"<<modeStr<<"' interpolationStr='"<<interpolationStr<<"' hue_interpolationStr='"<<hue_interpolationStr<<"'"<<yendl;
 	if(modeStr == "RGB" || modeStr == "rgb") ramp_mode = C_RAMP_RGB;
 	else if(modeStr == "HSV" || modeStr == "hsv") ramp_mode = C_RAMP_HSV;
-	else if(modeStr == "HSL" || modeStr == "hsl") ramp_mode = C_RAMP_HSV; //TODO: HSL not supported yet, using hsl instead
+	else if(modeStr == "HSL" || modeStr == "hsl") ramp_mode = C_RAMP_HSL;
 	else ramp_mode = C_RAMP_RGB;
 	
 	if(interpolationStr == "CONSTANT" || interpolationStr == "constant" ) ramp_interpolation = C_RAMP_CONSTANT;
@@ -92,7 +92,7 @@ colorA_t color_ramp_t::get_color_interpolated(float pos) const
 			if(ramp_interpolation == C_RAMP_CONSTANT) result = item_current->color;
 			else result = interpolation_linear(pos, item_current->color, item_current->position, item_previous->color, item_previous->position);
 		}
-		else if(ramp_mode == C_RAMP_HSV || ramp_mode == C_RAMP_HSL) //HSL not yet supported, using HSV instead
+		else if(ramp_mode == C_RAMP_HSV)
 		{
 			float pos1 = item_current->position;
 			float pos2 = item_previous->position;
@@ -122,6 +122,38 @@ colorA_t color_ramp_t::get_color_interpolated(float pos) const
 			if(h < 0.f) h += 6.f;
 			else if(h > 6.f) h -= 6.f;
 			result.hsv_to_rgb(h, s, v);
+			result.A = a;
+		}
+		else if(ramp_mode == C_RAMP_HSL)
+		{
+			float pos1 = item_current->position;
+			float pos2 = item_previous->position;
+			float h1=0.f, s1=0.f, l1=0.f, a1=0.f;
+			float h2=0.f, s2=0.f, l2=0.f, a2=0.f;
+			float h=0.f, s=0.f, l=0.f, a=0.f;
+			
+			item_current->color.rgb_to_hsl(h1, s1, l1);
+			a1 = item_current->color.A;
+			
+			item_previous->color.rgb_to_hsl(h2, s2, l2);
+			a2 = item_previous->color.A;
+			
+			s = interpolation_linear(pos, s1, pos1, s2, pos2);
+			l = interpolation_linear(pos, l1, pos1, l2, pos2);
+			a = interpolation_linear(pos, a1, pos1, a2, pos2);
+
+			if(ramp_hue_interpolation == C_RAMP_HUE_CLOCKWISE && h1 < h2) h1 += 6.f;
+			else if(ramp_hue_interpolation == C_RAMP_HUE_COUNTERCLOCKWISE && h1 > h2) h2 += 6.f;
+			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 < h2 && (h2 - h1) > 3.f) h1 += 6.f;
+			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 > h2 && (h2 - h1) < -3.f) h2 += 6.f;
+			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 < h2 && (h2 - h1) < 3.f) h1 += 6.f;
+			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 > h2 && (h2 - h1) > -3.f) h2 += 6.f;
+
+			h = interpolation_linear(pos, h1, pos1, h2, pos2);
+
+			if(h < 0.f) h += 6.f;
+			else if(h > 6.f) h -= 6.f;
+			result.hsv_to_rgb(h, s, l);
 			result.A = a;
 		}
 	}
