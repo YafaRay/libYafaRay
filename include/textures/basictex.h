@@ -170,17 +170,31 @@ class rgbCube_t : public texture_t
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 };
 
+enum blendProgressionType_t
+{
+	TEX_BLEND_LINEAR,
+	TEX_BLEND_QUADRATIC,
+	TEX_BLEND_EASING,
+	TEX_BLEND_DIAGONAL,
+	TEX_BLEND_SPHERICAL,
+	TEX_BLEND_QUADRATIC_SPHERE,
+	TEX_BLEND_RADIAL,
+};
 
 class textureBlend_t : public texture_t
 {
 	public:
-		textureBlend_t(const std::string &stype);
+		textureBlend_t(const std::string &stype, bool use_flip_axis);
 		virtual ~textureBlend_t();
 		
 		virtual colorA_t getColor(const point3d_t &p, bool from_postprocessed=false) const;
 		virtual float getFloat(const point3d_t &p) const;
 		
 		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		
+	protected:
+		int blendProgressionType = TEX_BLEND_LINEAR;
+		bool m_use_flip_axis = false;
 };	
 __END_YAFRAY
 

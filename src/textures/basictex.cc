@@ -654,9 +654,19 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 // Blend Texture
 //-----------------------------------------------------------------------------------------
 
-textureBlend_t::textureBlend_t(const std::string &stype)
+
+textureBlend_t::textureBlend_t(const std::string &stype, bool use_flip_axis)
 {
-	// TODO: Blend Types
+	m_use_flip_axis = use_flip_axis;
+	
+	if(stype == "lin") blendProgressionType = TEX_BLEND_LINEAR;
+	else if(stype == "quad") blendProgressionType = TEX_BLEND_QUADRATIC;
+	else if(stype == "ease") blendProgressionType = TEX_BLEND_EASING;
+	else if(stype == "diag") blendProgressionType = TEX_BLEND_DIAGONAL;
+	else if(stype == "sphere") blendProgressionType = TEX_BLEND_SPHERICAL;
+	else if(stype == "halo" || stype == "quad_sphere") blendProgressionType = TEX_BLEND_QUADRATIC_SPHERE;
+	else if(stype == "radial") blendProgressionType = TEX_BLEND_RADIAL;
+	else blendProgressionType = TEX_BLEND_LINEAR;
 }
 
 textureBlend_t::~textureBlend_t()
@@ -665,12 +675,56 @@ textureBlend_t::~textureBlend_t()
 
 float textureBlend_t::getFloat(const point3d_t &p) const
 {
-	float blend;
-	// Transform -1..1 to 0..1
-	blend = 0.5 * ( p.x + 1. );
+	float blend = 0.f;
+	
+	float coord1 = p.x;
+	float coord2 = p.y;
+	
+	if(m_use_flip_axis)
+	{
+		coord1 = p.y;
+		coord2 = p.x;
+	}
+	
+	if(blendProgressionType == TEX_BLEND_QUADRATIC)
+	{
+		// Transform -1..1 to 0..1
+		blend = 0.5f * ( coord1 + 1.f );
+		if(blend < 0.f) blend = 0.f;
+		else blend *= blend;
+	}
+	else if(blendProgressionType == TEX_BLEND_EASING)
+	{
+		blend = 0.5f * ( coord1 + 1.f );
+		if(blend <= 0.f) blend = 0.f;
+		else if(blend >= 1.f) blend = 1.f;
+		else
+		{
+			blend = (3.f * blend * blend - 2.f * blend * blend * blend);
+		}
+	}
+	else if(blendProgressionType == TEX_BLEND_DIAGONAL)
+	{
+		blend = 0.25f * (2.f + coord1 + coord2);
+	}
+	else if(blendProgressionType == TEX_BLEND_SPHERICAL || blendProgressionType == TEX_BLEND_QUADRATIC_SPHERE)
+	{
+		blend = 1.f - fSqrt(coord1 * coord1 + coord2 * coord2 + p.z * p.z);
+		if(blend < 0.f) blend = 0.f;
+		if(blendProgressionType == TEX_BLEND_QUADRATIC_SPHERE) blend *= blend;
+	}
+	else if(blendProgressionType == TEX_BLEND_RADIAL)
+	{
+		blend = (atan2f(coord2, coord1) / (float)(2.f * M_PI) + 0.5f);
+	}
+	else  //linear by default
+	{
+		// Transform -1..1 to 0..1
+		blend = 0.5f * ( coord1 + 1.f );
+	}
 	// Clipping to 0..1
 	blend = std::max(0.f, std::min(blend, 1.f));
-	
+
 	return applyAdjustmentsFloat(blend);
 }
 
@@ -684,16 +738,16 @@ texture_t *textureBlend_t::factory(paraMap_t &params, renderEnvironment_t &rende
 {
 	std::string _stype;
 	const std::string *stype=&_stype;
-	//bool invertXY = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
 	bool use_color_ramp = false;
+	bool use_flip_axis = false;
 	
 	params.getParam("stype", _stype);
 	params.getParam("use_color_ramp", use_color_ramp);
-	//params.getParam("invertXY", invertXY);
+	params.getParam("use_flip_axis", use_flip_axis);
 	
-	textureBlend_t * tex = new textureBlend_t(*stype);
+	textureBlend_t * tex = new textureBlend_t(*stype, use_flip_axis);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp(params, tex);
 	
