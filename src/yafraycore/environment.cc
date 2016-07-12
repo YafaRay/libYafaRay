@@ -862,7 +862,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("filter_type", name); // AA filter type
 	
 	std::stringstream aaSettings;
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "):";
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): Tile size=" << film->getTileSize();
 	yafLog.appendAANoiseSettings(aaSettings.str());
 	
 	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;

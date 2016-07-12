@@ -140,6 +140,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
         float dark_threshold_curve_interpolate(float pixel_brightness);
         int getWidth() const { return w; }
         int getHeight() const { return h; }
+        int getTileSize() const { return tileSize; }
         int getCurrentPass() const { return nPass; }
         int getNumPasses() const { return nPasses; }
         unsigned int getComputerNode() const { return computerNode; }
