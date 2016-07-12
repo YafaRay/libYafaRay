@@ -32,11 +32,51 @@ noiseGenerator_t* newNoise(const std::string &ntype)
 	return new newPerlin_t();
 }
 
+void textureReadColorRamp(const paraMap_t &params, texture_t * tex)
+{
+	std::string modeStr, interpolationStr, hue_interpolationStr;
+	int ramp_num_items = 0;
+	params.getParam("ramp_color_mode", modeStr);
+	params.getParam("ramp_hue_interpolation", hue_interpolationStr);
+	params.getParam("ramp_interpolation", interpolationStr);
+	params.getParam("ramp_num_items", ramp_num_items);
+	
+	if(ramp_num_items > 0)
+	{
+		tex->colorRampCreate(modeStr, interpolationStr, hue_interpolationStr);
+		
+		for(int i = 0; i < ramp_num_items; ++i)
+		{
+			std::stringstream paramName;
+			colorA_t color(0.f, 0.f, 0.f, 1.f);
+			float alpha = 1.f;
+			float position = 0.f;
+			paramName << "ramp_item_" << i << "_color";
+			params.getParam(paramName.str(), color);
+			paramName.str("");
+			paramName.clear();
+			
+			paramName << "ramp_item_" << i << "_alpha";
+			params.getParam(paramName.str(), alpha);
+			paramName.str("");
+			paramName.clear();
+			color.A = alpha;
+			
+			paramName << "ramp_item_" << i << "_position";
+			params.getParam(paramName.str(), position);
+			paramName.str("");
+			paramName.clear();
+			tex->colorRampAddItem(color, position);
+		}
+	}
+}
+
+
 //-----------------------------------------------------------------------------------------
 // Clouds Texture
 //-----------------------------------------------------------------------------------------
 
-textureClouds_t::textureClouds_t(int dep, PFLOAT sz, bool hd,
+textureClouds_t::textureClouds_t(int dep, float sz, bool hd,
 		const color_t &c1, const color_t &c2,
 		const std::string &ntype, const std::string &btype)
 		:depth(dep), size(sz), hard(hd), color1(c1), color2(c2)
@@ -53,19 +93,20 @@ textureClouds_t::~textureClouds_t()
 	nGen = nullptr;
 }
 
-CFLOAT textureClouds_t::getFloat(const point3d_t &p) const
+float textureClouds_t::getFloat(const point3d_t &p) const
 {
-	CFLOAT v = turbulence(nGen, p, depth, size, hard);
+	float v = turbulence(nGen, p, depth, size, hard);
 	if (bias) {
 		v *= v;
 		if (bias==1) return -v;	// !!!
 	}
-	return v;
+	return applyIntensityContrastAdjustments(v);
 }
 
-colorA_t textureClouds_t::getColor(const point3d_t &p) const
+colorA_t textureClouds_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	return color1 + getFloat(p)*(color2 - color1);
+	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureClouds_t::factory(paraMap_t &params,
@@ -75,8 +116,12 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 	int depth = 2;
 	std::string _ntype, _btype;
 	const std::string *ntype = &_ntype, *btype=&_btype;
-	PFLOAT size = 1;
+	float size = 1;
 	bool hard = false;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
+	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", color1);
 	params.getParam("color2", color2);
@@ -84,15 +129,32 @@ texture_t *textureClouds_t::factory(paraMap_t &params,
 	params.getParam("size", size);
 	params.getParam("hard", hard);
 	params.getParam("bias", btype);
-	return new textureClouds_t(depth, size, hard, color1, color2, *ntype, *btype);
+	
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
+	textureClouds_t * tex = new textureClouds_t(depth, size, hard, color1, color2, *ntype, *btype);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
 // Simple Marble Texture
 //-----------------------------------------------------------------------------------------
 
-textureMarble_t::textureMarble_t(int oct, PFLOAT sz, const color_t &c1, const color_t &c2,
-			PFLOAT _turb, PFLOAT shp, bool hrd, const std::string &ntype, const std::string &shape)
+textureMarble_t::textureMarble_t(int oct, float sz, const color_t &c1, const color_t &c2,
+			float _turb, float shp, bool hrd, const std::string &ntype, const std::string &shape)
 	:octaves(oct), color1(c1), color2(c2), turb(_turb), size(sz), hard(hrd)
 {
 	sharpness = 1.0;
@@ -103,29 +165,30 @@ textureMarble_t::textureMarble_t(int oct, PFLOAT sz, const color_t &c1, const co
 	else if (shape=="tri") wshape = TRI;
 }
 
-CFLOAT textureMarble_t::getFloat(const point3d_t &p) const
+float textureMarble_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT w = (p.x + p.y + p.z)*5.0
+	float w = (p.x + p.y + p.z)*5.0
 					+ ((turb==0.0) ? 0.0 : turb*turbulence(nGen, p, octaves, size, hard));
 	switch (wshape) {
 		case SAW:
-			w *= (PFLOAT)(0.5*M_1_PI);
+			w *= (float)(0.5*M_1_PI);
 			w -= floor(w);
 			break;
 		case TRI:
-			w *= (PFLOAT)(0.5*M_1_PI);
-			w = std::fabs((PFLOAT)2.0*(w-floor(w))-(PFLOAT)1.0);
+			w *= (float)(0.5*M_1_PI);
+			w = std::fabs((float)2.0*(w-floor(w))-(float)1.0);
 			break;
 		default:
 		case SIN:
-			w = (PFLOAT)0.5 + (PFLOAT)0.5*fSin(w);
+			w = (float)0.5 + (float)0.5*fSin(w);
 	}
-	return fPow(w, sharpness);
+	return applyIntensityContrastAdjustments(fPow(w, sharpness));
 }
 
-colorA_t textureMarble_t::getColor(const point3d_t &p) const
+colorA_t textureMarble_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	return color1 + getFloat(p)*(color2 - color1);
+	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureMarble_t::factory(paraMap_t &params,
@@ -133,10 +196,14 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 {
 	color_t col1(0.0), col2(1.0);
 	int oct = 2;
-	PFLOAT turb=1.0, shp=1.0, sz=1.0;
+	float turb=1.0, shp=1.0, sz=1.0;
 	bool hrd = false;
 	std::string _ntype, _shape;
 	const std::string *ntype=&_ntype, *shape=&_shape;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
+	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -146,7 +213,22 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 	params.getParam("size", sz);
 	params.getParam("hard", hrd);
 	params.getParam("shape", shape);
-	return new textureMarble_t(oct, sz, col1, col2, turb, shp, hrd, *ntype, *shape);
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
+	textureMarble_t * tex = new textureMarble_t(oct, sz, col1, col2, turb, shp, hrd, *ntype, *shape);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 
@@ -154,7 +236,7 @@ texture_t *textureMarble_t::factory(paraMap_t &params,
 // Simple Wood Texture
 //-----------------------------------------------------------------------------------------
 
-textureWood_t::textureWood_t(int oct, PFLOAT sz, const color_t &c1, const color_t &c2, PFLOAT _turb,
+textureWood_t::textureWood_t(int oct, float sz, const color_t &c1, const color_t &c2, float _turb,
 		bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape)
 	:octaves(oct), color1(c1), color2(c2), turb(_turb), size(sz), hard(hrd)
 {
@@ -165,9 +247,9 @@ textureWood_t::textureWood_t(int oct, PFLOAT sz, const color_t &c1, const color_
 	else if (shape=="tri") wshape = TRI;
 }
 
-CFLOAT textureWood_t::getFloat(const point3d_t &p) const
+float textureWood_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT w;
+	float w;
 	if (rings)
 		w = fSqrt(p.x*p.x + p.y*p.y + p.z*p.z)*20.0;
 	else
@@ -175,23 +257,24 @@ CFLOAT textureWood_t::getFloat(const point3d_t &p) const
 	w += (turb==0.0) ? 0.0 : turb*turbulence(nGen, p, octaves, size, hard);
 	switch (wshape) {
 		case SAW:
-			w *= (PFLOAT)(0.5*M_1_PI);
+			w *= (float)(0.5*M_1_PI);
 			w -= floor(w);
 			break;
 		case TRI:
-			w *= (PFLOAT)(0.5*M_1_PI);
-			w = std::fabs((PFLOAT)2.0*(w-floor(w))-(PFLOAT)1.0);
+			w *= (float)(0.5*M_1_PI);
+			w = std::fabs((float)2.0*(w-floor(w))-(float)1.0);
 			break;
 		default:
 		case SIN:
-			w = (PFLOAT)0.5 + (PFLOAT)0.5*fSin(w);
+			w = (float)0.5 + (float)0.5*fSin(w);
 	}
-	return w;
+	return applyIntensityContrastAdjustments(w);
 }
 
-colorA_t textureWood_t::getColor(const point3d_t &p) const
+colorA_t textureWood_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	return color1 + getFloat(p)*(color2 - color1);
+	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureWood_t::factory(paraMap_t &params,
@@ -199,10 +282,14 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 {
 	color_t col1(0.0), col2(1.0);
 	int oct = 2;
-	PFLOAT turb=1.0, sz=1.0, old_rxy;
+	float turb=1.0, sz=1.0, old_rxy;
 	bool hrd = false;
 	std::string _ntype, _wtype, _shape;
 	const std::string *ntype=&_ntype, *wtype=&_wtype, *shape=&_shape;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
+	
 	params.getParam("noise_type", ntype);
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -213,34 +300,69 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 	params.getParam("wood_type", wtype);
 	params.getParam("shape", shape);
 	
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
 	if (params.getParam("ringscale_x", old_rxy) || params.getParam("ringscale_y", old_rxy))
 		Y_WARNING << "TextureWood: 'ringscale_x' and 'ringscale_y' are obsolete, use 'size' instead" << yendl;
 		
-	return new textureWood_t(oct, sz, col1, col2, turb, hrd, *ntype, *wtype, *shape);
+	textureWood_t * tex = new textureWood_t(oct, sz, col1, col2, turb, hrd, *ntype, *wtype, *shape);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
 /* even simpler RGB cube, goes r in x, g in y and b in z inside the unit cube.  */
 //-----------------------------------------------------------------------------------------
 
-colorA_t rgbCube_t::getColor(const point3d_t &p) const
+colorA_t rgbCube_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
 	colorA_t col = colorA_t(p.x, p.y, p.z);
 	col.clampRGB01();
-	return col;
+	
+	if(adjustments_set) return applyAdjustments(col);
+	else return col;
 }
 	
-CFLOAT rgbCube_t::getFloat(const point3d_t &p) const
+float rgbCube_t::getFloat(const point3d_t &p) const
 {
 	color_t col = color_t(p.x, p.y, p.z);
 	col.clampRGB01();
-	return col.energy();
+	return applyIntensityContrastAdjustments(col.energy());
 }
 
 texture_t* rgbCube_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
-	// has no params (yet)...
-	return new rgbCube_t();
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
+	
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+
+	rgbCube_t * tex = new rgbCube_t();
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -249,9 +371,9 @@ texture_t* rgbCube_t::factory(paraMap_t &params,renderEnvironment_t &render)
 
 textureVoronoi_t::textureVoronoi_t(const color_t &c1, const color_t &c2,
 		int ct,
-		CFLOAT _w1, CFLOAT _w2, CFLOAT _w3, CFLOAT _w4,
-		PFLOAT mex, PFLOAT sz,
-		CFLOAT isc, const std::string &dname)
+		float _w1, float _w2, float _w3, float _w4,
+		float mex, float sz,
+		float isc, const std::string &dname)
 		:w1(_w1), w2(_w2), w3(_w3), w4(_w4), size(sz), coltype(ct)
 {
 	voronoi_t::dMetricType dm = voronoi_t::DIST_REAL;
@@ -277,38 +399,39 @@ textureVoronoi_t::textureVoronoi_t(const color_t &c1, const color_t &c2,
 	if (iscale!=0) iscale = isc/iscale;
 }
 
-CFLOAT textureVoronoi_t::getFloat(const point3d_t &p) const
+float textureVoronoi_t::getFloat(const point3d_t &p) const
 {
-	PFLOAT da[4];
+	float da[4];
 	point3d_t pa[4];
 	vGen.getFeatures(p*size, da, pa);
-	return iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
-			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da));
+	return applyIntensityContrastAdjustments(iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
+			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da)));
 }
 
-colorA_t textureVoronoi_t::getColor(const point3d_t &p) const
+colorA_t textureVoronoi_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	PFLOAT da[4];
+	float da[4];
 	point3d_t pa[4];
 	vGen.getFeatures(p*size, da, pa);
-	CFLOAT inte = iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
+	float inte = iscale * std::fabs(w1*vGen.getDistance(0, da) + w2*vGen.getDistance(1, da)
 			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da));
 	colorA_t col(0.0);
-	if (coltype) {
+	if(color_ramp) return applyColorAdjustments(color_ramp->get_color_interpolated(inte));
+	else if (coltype) {
 		col += aw1 * cellNoiseColor(vGen.getPoint(0, pa));
 		col += aw2 * cellNoiseColor(vGen.getPoint(1, pa));
 		col += aw3 * cellNoiseColor(vGen.getPoint(2, pa));
 		col += aw4 * cellNoiseColor(vGen.getPoint(3, pa));
 		if (coltype>=2) {
-			CFLOAT t1 = (vGen.getDistance(1, da) - vGen.getDistance(0, da))*10.0;
+			float t1 = (vGen.getDistance(1, da) - vGen.getDistance(0, da))*10.0;
 			if (t1>1) t1=1;
 			if (coltype==3) t1*=inte; else t1*=iscale;
 			col *= t1;
 		}
 		else col *= iscale;
+		return applyAdjustments(col);
 	}
-	else col.set(inte, inte, inte, inte);
-	return col;
+	else return applyColorAdjustments(colorA_t(inte, inte, inte, inte));
 }
 
 texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -316,11 +439,14 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 	color_t col1(0.0), col2(1.0);
 	std::string _cltype, _dname;
 	const std::string *cltype=&_cltype, *dname=&_dname;
-	CFLOAT fw1=1, fw2=0, fw3=0, fw4=0;
-	PFLOAT mex=2.5;	// minkovsky exponent
-	CFLOAT isc=1;	// intensity scale
-	PFLOAT sz=1;	// size
+	float fw1=1, fw2=0, fw3=0, fw4=0;
+	float mex=2.5;	// minkovsky exponent
+	float isc=1;	// intensity scale
+	float sz=1;	// size
 	int ct=0;	// default "int" color type (intensity)
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -341,7 +467,22 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 	
 	params.getParam("distance_metric", dname);
 	
-	return new textureVoronoi_t(col1, col2, ct, fw1, fw2, fw3, fw4, mex, sz, isc, *dname);
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
+	textureVoronoi_t * tex = new textureVoronoi_t(col1, col2, ct, fw1, fw2, fw3, fw4, mex, sz, isc, *dname);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -349,8 +490,8 @@ texture_t *textureVoronoi_t::factory(paraMap_t &params, renderEnvironment_t &ren
 //-----------------------------------------------------------------------------------------
 
 textureMusgrave_t::textureMusgrave_t(const color_t &c1, const color_t &c2,
-				PFLOAT H, PFLOAT lacu, PFLOAT octs, PFLOAT offs, PFLOAT gain,
-				PFLOAT _size, CFLOAT _iscale,
+				float H, float lacu, float octs, float offs, float gain,
+				float _size, float _iscale,
 				const std::string &ntype, const std::string &mtype)
 				:color1(c1), color2(c2), size(_size), iscale(_iscale)
 {
@@ -379,14 +520,15 @@ textureMusgrave_t::~textureMusgrave_t()
 	}
 }
 
-CFLOAT textureMusgrave_t::getFloat(const point3d_t &p) const
+float textureMusgrave_t::getFloat(const point3d_t &p) const
 {
-	return iscale * (*mGen)(p*size);
+	return applyIntensityContrastAdjustments(iscale * (*mGen)(p*size));
 }
 
-colorA_t textureMusgrave_t::getColor(const point3d_t &p) const
+colorA_t textureMusgrave_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	return color1 + getFloat(p)*(color2 - color1);
+	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -394,7 +536,10 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 	color_t col1(0.0), col2(1.0);
 	std::string _ntype, _mtype;
 	const std::string *ntype=&_ntype, *mtype=&_mtype;
-	PFLOAT H=1, lacu=2, octs=2, offs=1, gain=1, size=1, iscale=1;
+	float H=1, lacu=2, octs=2, offs=1, gain=1, size=1, iscale=1;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -409,8 +554,23 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("gain", gain);
 	params.getParam("size", size);
 	params.getParam("intensity", iscale);
+	
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
 
-	return new textureMusgrave_t(col1, col2, H, lacu, octs, offs, gain, size, iscale, *ntype, *mtype);
+	textureMusgrave_t * tex = new textureMusgrave_t(col1, col2, H, lacu, octs, offs, gain, size, iscale, *ntype, *mtype);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -418,7 +578,7 @@ texture_t *textureMusgrave_t::factory(paraMap_t &params, renderEnvironment_t &re
 //-----------------------------------------------------------------------------------------
 
 textureDistortedNoise_t::textureDistortedNoise_t(const color_t &c1, const color_t &c2,
-			PFLOAT _distort, PFLOAT _size,
+			float _distort, float _size,
 			const std::string &noiseb1, const std::string noiseb2)
 			:color1(c1), color2(c2), distort(_distort), size(_size)
 {
@@ -438,18 +598,19 @@ textureDistortedNoise_t::~textureDistortedNoise_t()
 	}
 }
 
-CFLOAT textureDistortedNoise_t::getFloat(const point3d_t &p) const
+float textureDistortedNoise_t::getFloat(const point3d_t &p) const
 {
 	// get a random vector and scale the randomization
 	const point3d_t ofs(13.5, 13.5, 13.5);
 	point3d_t tp(p*size);
 	point3d_t rv(getSignedNoise(nGen1, tp+ofs), getSignedNoise(nGen1, tp), getSignedNoise(nGen1, tp-ofs));
-	return getSignedNoise(nGen2, tp+rv*distort);	// distorted-domain noise
+	return applyIntensityContrastAdjustments(getSignedNoise(nGen2, tp+rv*distort));	// distorted-domain noise
 }
 
-colorA_t textureDistortedNoise_t::getColor(const point3d_t &p) const
+colorA_t textureDistortedNoise_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	return color1 + getFloat(p)*(color2 - color1);
+	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment_t &render)
@@ -457,7 +618,10 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	color_t col1(0.0), col2(1.0);
 	std::string _ntype1, _ntype2;
 	const std::string *ntype1=&_ntype1, *ntype2=&_ntype2;
-	PFLOAT dist=1, size=1;
+	float dist=1, size=1;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
 	
 	params.getParam("color1", col1);
 	params.getParam("color2", col2);
@@ -468,49 +632,126 @@ texture_t *textureDistortedNoise_t::factory(paraMap_t &params, renderEnvironment
 	params.getParam("distort", dist);
 	params.getParam("size", size);
 	
-	return new textureDistortedNoise_t(col1, col2, dist, size, *ntype1, *ntype2);
+	params.getParam("adj_mult_factor_red", factor_red);
+	params.getParam("adj_mult_factor_green", factor_green);
+	params.getParam("adj_mult_factor_blue", factor_blue);
+	params.getParam("adj_intensity", intensity);
+	params.getParam("adj_contrast", contrast);
+	params.getParam("adj_saturation", saturation);
+	params.getParam("adj_hue", hue);
+	params.getParam("adj_clamp", clamp);
+	
+	params.getParam("use_color_ramp", use_color_ramp);
+	
+	textureDistortedNoise_t * tex = new textureDistortedNoise_t(col1, col2, dist, size, *ntype1, *ntype2);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 //-----------------------------------------------------------------------------------------
 // Blend Texture
 //-----------------------------------------------------------------------------------------
 
-textureBlend_t::textureBlend_t(const std::string &stype)
+
+textureBlend_t::textureBlend_t(const std::string &stype, bool use_flip_axis)
 {
-	// TODO: Blend Types
+	m_use_flip_axis = use_flip_axis;
+	
+	if(stype == "lin") blendProgressionType = TEX_BLEND_LINEAR;
+	else if(stype == "quad") blendProgressionType = TEX_BLEND_QUADRATIC;
+	else if(stype == "ease") blendProgressionType = TEX_BLEND_EASING;
+	else if(stype == "diag") blendProgressionType = TEX_BLEND_DIAGONAL;
+	else if(stype == "sphere") blendProgressionType = TEX_BLEND_SPHERICAL;
+	else if(stype == "halo" || stype == "quad_sphere") blendProgressionType = TEX_BLEND_QUADRATIC_SPHERE;
+	else if(stype == "radial") blendProgressionType = TEX_BLEND_RADIAL;
+	else blendProgressionType = TEX_BLEND_LINEAR;
 }
 
 textureBlend_t::~textureBlend_t()
 {
 }
 
-CFLOAT textureBlend_t::getFloat(const point3d_t &p) const
+float textureBlend_t::getFloat(const point3d_t &p) const
 {
-	float blend;
-	// Transform -1..1 to 0..1
-	blend = 0.5 * ( p.x + 1. );
+	float blend = 0.f;
+	
+	float coord1 = p.x;
+	float coord2 = p.y;
+	
+	if(m_use_flip_axis)
+	{
+		coord1 = p.y;
+		coord2 = p.x;
+	}
+	
+	if(blendProgressionType == TEX_BLEND_QUADRATIC)
+	{
+		// Transform -1..1 to 0..1
+		blend = 0.5f * ( coord1 + 1.f );
+		if(blend < 0.f) blend = 0.f;
+		else blend *= blend;
+	}
+	else if(blendProgressionType == TEX_BLEND_EASING)
+	{
+		blend = 0.5f * ( coord1 + 1.f );
+		if(blend <= 0.f) blend = 0.f;
+		else if(blend >= 1.f) blend = 1.f;
+		else
+		{
+			blend = (3.f * blend * blend - 2.f * blend * blend * blend);
+		}
+	}
+	else if(blendProgressionType == TEX_BLEND_DIAGONAL)
+	{
+		blend = 0.25f * (2.f + coord1 + coord2);
+	}
+	else if(blendProgressionType == TEX_BLEND_SPHERICAL || blendProgressionType == TEX_BLEND_QUADRATIC_SPHERE)
+	{
+		blend = 1.f - fSqrt(coord1 * coord1 + coord2 * coord2 + p.z * p.z);
+		if(blend < 0.f) blend = 0.f;
+		if(blendProgressionType == TEX_BLEND_QUADRATIC_SPHERE) blend *= blend;
+	}
+	else if(blendProgressionType == TEX_BLEND_RADIAL)
+	{
+		blend = (atan2f(coord2, coord1) / (float)(2.f * M_PI) + 0.5f);
+	}
+	else  //linear by default
+	{
+		// Transform -1..1 to 0..1
+		blend = 0.5f * ( coord1 + 1.f );
+	}
 	// Clipping to 0..1
 	blend = std::max(0.f, std::min(blend, 1.f));
-	
-	return blend;
+
+	return applyIntensityContrastAdjustments(blend);
 }
 
-colorA_t textureBlend_t::getColor(const point3d_t &p) const
+colorA_t textureBlend_t::getColor(const point3d_t &p, bool from_postprocessed) const
 {
-	// TODO: colorband
-        return colorA_t(1.0,1.0,1.0,1.0);
+	if(!color_ramp) return applyColorAdjustments(color_t(getFloat(p)));
+	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
 }
 
 texture_t *textureBlend_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	std::string _stype;
 	const std::string *stype=&_stype;
-	//bool invertXY = false;
+	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
+	bool clamp = false;
+	bool use_color_ramp = false;
+	bool use_flip_axis = false;
 	
 	params.getParam("stype", _stype);
-	//params.getParam("invertXY", invertXY);
+	params.getParam("use_color_ramp", use_color_ramp);
+	params.getParam("use_flip_axis", use_flip_axis);
 	
-	return new textureBlend_t(*stype);
+	textureBlend_t * tex = new textureBlend_t(*stype, use_flip_axis);
+	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	if(use_color_ramp) textureReadColorRamp(params, tex);
+	
+	return tex;
 }
 
 extern "C"

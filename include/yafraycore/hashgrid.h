@@ -21,7 +21,7 @@ public:
 
 	void pushPhoton(photon_t &p);
 
-	unsigned int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, PFLOAT radius);
+	unsigned int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float radius);
 
 private:
 	unsigned int Hash(const int ix, const int iy, const int iz) {

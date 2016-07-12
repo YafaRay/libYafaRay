@@ -3,6 +3,7 @@
 #define Y_ROUGHGLASS_H
 
 #include <yafraycore/nodematerial.h>
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 

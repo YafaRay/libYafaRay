@@ -62,7 +62,7 @@ class mixNode_t: public shaderNode_t
 		virtual bool getDependencies(std::vector<const shaderNode_t*> &dep) const;
 		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
 	protected:
-		void getInputs(nodeStack_t &stack, colorA_t &cin1, colorA_t &cin2, CFLOAT &fin1, CFLOAT &fin2, CFLOAT &f2) const;
+		void getInputs(nodeStack_t &stack, colorA_t &cin1, colorA_t &cin2, float &fin1, float &fin2, float &f2) const;
 		colorA_t col1, col2;
 		float val1, val2, cfactor;
 		const shaderNode_t *input1;
@@ -70,7 +70,7 @@ class mixNode_t: public shaderNode_t
 		const shaderNode_t *factor;
 };
 
-inline void mixNode_t::getInputs(nodeStack_t &stack, colorA_t &cin1, colorA_t &cin2, CFLOAT &fin1, CFLOAT &fin2, CFLOAT &f2) const
+inline void mixNode_t::getInputs(nodeStack_t &stack, colorA_t &cin1, colorA_t &cin2, float &fin1, float &fin2, float &f2) const
 {
 	f2 = (factor) ? factor->getScalar(stack) : cfactor;
 	if(input1)

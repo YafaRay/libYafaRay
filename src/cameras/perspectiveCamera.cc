@@ -26,8 +26,8 @@
 __BEGIN_YAFRAY
 
 perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                                   int _resx, int _resy, PFLOAT aspect,
-                                   PFLOAT df, PFLOAT ap, PFLOAT dofd, bokehType bt, bkhBiasType bbt, PFLOAT bro,
+                                   int _resx, int _resy, float aspect,
+                                   float df, float ap, float dofd, bokehType bt, bkhBiasType bbt, float bro,
                                    float const near_clip_distance, float const far_clip_distance) :
     camera_t(pos, look, up,  _resx, _resy, aspect, near_clip_distance, far_clip_distance), bkhtype(bt), bkhbias(bbt), aperture(ap) , focal_distance(df), dof_distance(dofd)
 {
@@ -39,7 +39,7 @@ perspectiveCam_t::perspectiveCam_t(const point3d_t &pos, const point3d_t &look, 
 
 	int ns = (int)bkhtype;
 	if ((ns>=3) && (ns<=6)) {
-		PFLOAT w=degToRad(bro), wi=(M_2PI)/(PFLOAT)ns;
+		float w=degToRad(bro), wi=(M_2PI)/(float)ns;
 		ns = (ns+2)*2;
 		LS.resize(ns);
 		for (int i=0;i<ns;i+=2) {
@@ -66,18 +66,18 @@ void perspectiveCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const
 	vright = camX;
 	vup = aspect_ratio * camY;
 	vto = (camZ * focal_distance) - 0.5 * (vup + vright);
-	vup /= (PFLOAT)resy;
-	vright /= (PFLOAT)resx;
+	vup /= (float)resy;
+	vright /= (float)resx;
 }
 
-void perspectiveCam_t::biasDist(PFLOAT &r) const
+void perspectiveCam_t::biasDist(float &r) const
 {
 	switch (bkhbias) {
 		case BB_CENTER:
 			r = fSqrt(fSqrt(r)*r);
 			break;
 		case BB_EDGE:
-			r = fSqrt((PFLOAT)1.0-r*r);
+			r = fSqrt((float)1.0-r*r);
 			break;
 		default:
 		case BB_NONE:
@@ -85,20 +85,20 @@ void perspectiveCam_t::biasDist(PFLOAT &r) const
 	}
 }
 
-void perspectiveCam_t::sampleTSD(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const
+void perspectiveCam_t::sampleTSD(float r1, float r2, float &u, float &v) const
 {
-	PFLOAT fn = (PFLOAT)bkhtype;
+	float fn = (float)bkhtype;
 	int idx = int(r1*fn);
-	r1 = (r1-((PFLOAT)idx)/fn)*fn;
+	r1 = (r1-((float)idx)/fn)*fn;
 	biasDist(r1);
-	PFLOAT b1 = r1 * r2;
-	PFLOAT b0 = r1 - b1;
+	float b1 = r1 * r2;
+	float b0 = r1 - b1;
 	idx <<= 1;
 	u = LS[idx]*b0 + LS[idx+2]*b1;
 	v = LS[idx+1]*b0 + LS[idx+3]*b1;
 }
 
-void perspectiveCam_t::getLensUV(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) const
+void perspectiveCam_t::getLensUV(float r1, float r2, float &u, float &v) const
 {
 	switch (bkhtype) {
 		case BK_TRI:
@@ -109,8 +109,8 @@ void perspectiveCam_t::getLensUV(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) con
 			break;
 		case BK_DISK2:
 		case BK_RING: {
-			PFLOAT w = (PFLOAT)M_2PI*r2;
-			if (bkhtype==BK_RING) r1 = fSqrt((PFLOAT)0.707106781 + (PFLOAT)0.292893218);
+			float w = (float)M_2PI*r2;
+			if (bkhtype==BK_RING) r1 = fSqrt((float)0.707106781 + (float)0.292893218);
 			else biasDist(r1);
 			u = r1*fCos(w);
 			v = r1*fSin(w);
@@ -124,7 +124,7 @@ void perspectiveCam_t::getLensUV(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v) con
 
 
 
-ray_t perspectiveCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const
+ray_t perspectiveCam_t::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
 	ray_t ray;
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
@@ -137,7 +137,7 @@ ray_t perspectiveCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOA
     ray.tmax = ray_plane_intersection(ray, far_plane);
 
 	if (aperture!=0) {
-		PFLOAT u, v;
+		float u, v;
 		
 		getLensUV(lu, lv, u, v);
 		vector3d_t LI = dof_rt * u + dof_up * v;
@@ -154,9 +154,9 @@ point3d_t perspectiveCam_t::screenproject(const point3d_t &p) const
 	vector3d_t dir = p - position;
 
 	// project p to pixel plane:
-	PFLOAT dx = dir * camX;
-	PFLOAT dy = dir * camY;
-	PFLOAT dz = dir * camZ;
+	float dx = dir * camX;
+	float dy = dir * camY;
+	float dz = dir * camZ;
 	
 	s.x = 2.0f * dx * focal_distance / dz;
 	s.y = -2.0f * dy * focal_distance / (dz * aspect_ratio);
@@ -165,24 +165,24 @@ point3d_t perspectiveCam_t::screenproject(const point3d_t &p) const
 	return s;
 }
 
-bool perspectiveCam_t::project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const
+bool perspectiveCam_t::project(const ray_t &wo, float lu, float lv, float &u, float &v, float &pdf) const
 {
 	// project wo to pixel plane:
-	PFLOAT dx = camX * wo.dir;
-	PFLOAT dy = camY * wo.dir;
-	PFLOAT dz = camZ * wo.dir;
+	float dx = camX * wo.dir;
+	float dy = camY * wo.dir;
+	float dz = camZ * wo.dir;
 	if(dz <= 0) return false;
 	
 	u = dx * focal_distance / dz;
 	if(u < -0.5 || u > 0.5) return false;
-	u = (u + 0.5) * (PFLOAT) resx;
+	u = (u + 0.5) * (float) resx;
 	
 	v = dy * focal_distance / (dz * aspect_ratio);
 	if(v < -0.5 || v > 0.5) return false;
-	v = (v + 0.5) * (PFLOAT) resy;
+	v = (v + 0.5) * (float) resy;
 	
 	// pdf = 1/A_pix * r^2 / cos(forward, dir), where r^2 is also 1/cos(vto, dir)^2
-	PFLOAT cos_wo = dz; //camZ * wo.dir;
+	float cos_wo = dz; //camZ * wo.dir;
 	pdf = 8.f * M_PI / (A_pix *  cos_wo * cos_wo * cos_wo );
 	return true;
 }

@@ -24,18 +24,14 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfVersion.h>
-
-#include <cstdio>
-#include <locale>
-#include <codecvt>
-
-#include <boost/filesystem.hpp>
 
 using namespace Imf;
 using namespace Imath;
@@ -49,12 +45,12 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
+    bool saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
 	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
@@ -69,12 +65,16 @@ exrHandler_t::exrHandler_t()
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
     
 	m_halfrgba.resize(renderPasses->extPassesSize());
 	
@@ -96,7 +96,10 @@ exrHandler_t::~exrHandler_t()
 
 bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -137,11 +140,15 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 }
 
-bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
+bool exrHandler_t::saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses)
 {
     std::string extPassName;
+
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
     
-    Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << name << "\"..." << yendl;
+    if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+    else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -216,15 +223,9 @@ colorA_t exrHandler_t::getPixel(int x, int y, int imagePassNumber)
 
 bool exrHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-	std::string tempFilePathString = "";	//filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	std::string tempFilePathString = "";    //filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
+
+	FILE *fp = fileUnicodeOpen(name.c_str(), "rb");
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
 	if(!fp)
@@ -312,6 +313,10 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	bool withAlpha = false;
 	bool forOutput = true;
 	bool multiLayer = false;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("pixel_type", pixtype);
 	params.getParam("compression", compression);
@@ -320,13 +325,18 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
-
+/*	//Denoise is not available for HDR/EXR images
+ * 	params.getParam("denoiseEnabled", denoiseEnabled);
+ *	params.getParam("denoiseHLum", denoiseHLum);
+ *	params.getParam("denoiseHCol", denoiseHCol);
+ *	params.getParam("denoiseMix", denoiseMix);
+ */
 	imageHandler_t *ih = new exrHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, multiLayer);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, multiLayer);
 	}
 
 	return ih;

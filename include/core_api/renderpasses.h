@@ -223,7 +223,7 @@ class YAFRAYCORE_EXPORT colorPasses_t  //Internal YafaRay color passes generated
 		colorA_t probe_mult(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition = true);
 		colorA_t probe_mult(const intPassTypes_t& intPassType, const colorPasses_t& colorPasses, const bool& condition = true);
 		
-		colorPasses_t & operator *= (CFLOAT f);
+		colorPasses_t & operator *= (float f);
 		colorPasses_t & operator *= (const color_t &a);
 		colorPasses_t & operator *= (const colorA_t &a);
 		colorPasses_t & operator += (const colorPasses_t &a);

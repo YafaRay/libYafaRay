@@ -23,7 +23,7 @@
 #include <core_api/environment.h>
 #include <utilities/sample_utils.h>
 #include <materials/microfacet.h>
-
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 
@@ -39,7 +39,7 @@ __BEGIN_YAFRAY
 class coatedGlossyMat_t: public nodeMaterial_t
 {
 	public:
-		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility=NORMAL_VISIBLE);
+		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, float ior, float expo, bool as_diff, visibility_t eVisibility=NORMAL_VISIBLE);
         virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false)const;
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
@@ -95,10 +95,10 @@ class coatedGlossyMat_t: public nodeMaterial_t
         shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)        
 		color_t gloss_color, diff_color, mirror_color; //!< color of glossy base
         float mMirrorStrength;              //!< BSDF Specular reflection component strength when not textured        
-		PFLOAT IOR;
+		float IOR;
 		float exponent, exp_u, exp_v;
 		float reflectivity;
-		CFLOAT mGlossy, mDiffuse;
+		float mGlossy, mDiffuse;
 		bool as_diffuse, with_diffuse, anisotropic;
 		BSDF_t specFlags, glossyFlags;
 		BSDF_t cFlags[3];
@@ -107,7 +107,7 @@ class coatedGlossyMat_t: public nodeMaterial_t
 		float orenA, orenB;
 };
 
-coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, PFLOAT ior, float expo, bool as_diff, visibility_t eVisibility):
+coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, float ior, float expo, bool as_diff, visibility_t eVisibility):
 	diffuseS(nullptr), glossyS(nullptr), glossyRefS(nullptr), bumpS(nullptr), iorS(nullptr), exponentS(nullptr), mMirrorShader(nullptr), mMirrorColorShader(nullptr), mSigmaOrenShader(nullptr), mDiffuseReflShader(nullptr), gloss_color(col), diff_color(dcol), mirror_color(mirCol), mMirrorStrength(mirrorStrength), IOR(ior), exponent(expo), reflectivity(reflect), mDiffuse(diff),
 	as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
 {
@@ -230,7 +230,7 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 		{
 			glossy = Kt * Blinn_D(H*N, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
 		}
-		col = (CFLOAT)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
+		col = (float)glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 	}
 	if(with_diffuse && diffuse_flag)
 	{
@@ -389,7 +389,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 				s.pdf += Blinn_Pdf(cosHN, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent)) * width[rcIndex[C_GLOSSY]];
 				glossy = Blinn_D(cosHN, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
 			}
-			scolor = (CFLOAT)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
+			scolor = (float)glossy*Kt*(glossyS ? glossyS->getColor(stack) : gloss_color);
 		}
 
 		if(use[C_DIFFUSE])

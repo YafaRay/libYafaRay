@@ -3,7 +3,7 @@
 #define Y_CONFIG_H
 #include "yafray_constants.h"
 #include <core_api/color_console.h>
-#include <core_api/logging.h>
+#include <core_api/session.h>
 
 #define MIN_RAYDIST @YAF_MIN_RAY_DIST@
 #define YAF_SHADOW_BIAS @YAF_SHADOW_BIAS@
@@ -18,10 +18,5 @@
 
 #cmakedefine HAVE_UNISTD_H 1
 
-__BEGIN_YAFRAY
-typedef float CFLOAT;
-typedef float GFLOAT;
-typedef float PFLOAT;
-__END_YAFRAY
 #endif
 

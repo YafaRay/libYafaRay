@@ -251,10 +251,10 @@ void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
 			case 'y': p.y = atof(attrs[n+1]); type = TYPE_POINT; break;
 			case 'z': p.z = atof(attrs[n+1]); type = TYPE_POINT; break;
 			
-			case 'r': c.R = (CFLOAT)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'g': c.G = (CFLOAT)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'b': c.B = (CFLOAT)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'a': c.A = (CFLOAT)atof(attrs[n+1]); type = TYPE_COLOR; break;
+			case 'r': c.R = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
+			case 'g': c.G = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
+			case 'b': c.B = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
+			case 'a': c.A = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
 		}
 	}
 	

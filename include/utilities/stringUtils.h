@@ -3,7 +3,6 @@
  *      stringUtils.h: Some std::string manipulation utilities
  *      This is part of the yafray package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez (DarkTide)
- * 				  (except for "utf8_to_utf16", written by John http://stackoverflow.com/users/882003/john)
  *		Creation date: 2010-05-06
  *
  *      This library is free software; you can redistribute it and/or
@@ -28,9 +27,7 @@
 #include <string>
 #include <sstream>
 #include <cctype>
-#include <stdexcept>
-#include <locale>
-#include <codecvt>
+#include <boost/locale/encoding_utf.hpp>
 
 __BEGIN_YAFRAY
 
@@ -70,6 +67,26 @@ inline std::vector<std::string> tokenize(std::string str, std::string delimiter 
 	
 	return result;
 }
+
+inline std::u32string utf8_to_wutf32(const std::string& utf8str)
+{
+    return boost::locale::conv::utf_to_utf<char32_t>(utf8str.c_str(), utf8str.c_str() + utf8str.size());
+}
+
+inline std::string wutf32_to_utf8(const std::u32string& wutf32str)
+{
+    return boost::locale::conv::utf_to_utf<char>(wutf32str.c_str(), wutf32str.c_str() + wutf32str.size());
+}  
+
+inline std::wstring utf8_to_wutf16(const std::string& utf8str)
+{
+    return boost::locale::conv::utf_to_utf<wchar_t>(utf8str.c_str(), utf8str.c_str() + utf8str.size());
+}
+
+inline std::string wutf16_to_utf8(const std::wstring& wutf16str)
+{
+    return boost::locale::conv::utf_to_utf<char>(wutf16str.c_str(), wutf16str.c_str() + wutf16str.size());
+}  
 
 __END_YAFRAY
 

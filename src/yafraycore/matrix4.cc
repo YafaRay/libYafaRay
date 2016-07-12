@@ -27,13 +27,13 @@ using namespace std;
 
 __BEGIN_YAFRAY
 
-matrix4x4_t::matrix4x4_t(const PFLOAT init):_invalid(0)
+matrix4x4_t::matrix4x4_t(const float init):_invalid(0)
 {
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;++j)
 		{
 			if(i==j)
-				matrix[i][j]=(PFLOAT)init;
+				matrix[i][j]=(float)init;
 			else 
 				matrix[i][j]=0;
 		}
@@ -74,7 +74,7 @@ matrix4x4_t & matrix4x4_t::inverse()
 	matrix4x4_t iden(1);
 	for(int i=0;i<4;++i)
 	{
-		PFLOAT max=0;
+		float max=0;
 		int ci=0;
 		for(int k=i;k<4;++k)
 		{
@@ -91,7 +91,7 @@ matrix4x4_t & matrix4x4_t::inverse()
 			_invalid=1;
 		}
 		SWAP(matrix,i,ci);SWAP(iden,i,ci);
-		PFLOAT factor=matrix[i][i];
+		float factor=matrix[i][i];
 		DIV(matrix,i,factor);DIV(iden,i,factor);
 		for(int k=0;k<4;++k)
 		{
@@ -116,7 +116,7 @@ matrix4x4_t & matrix4x4_t::transpose()
 	return *this;
 }
 
-void matrix4x4_t::translate(PFLOAT dx,PFLOAT dy,PFLOAT dz)
+void matrix4x4_t::translate(float dx,float dy,float dz)
 {
 	matrix4x4_t aux(1);
 
@@ -127,12 +127,12 @@ void matrix4x4_t::translate(PFLOAT dx,PFLOAT dy,PFLOAT dz)
 	(*this)=aux*(*this);
 }
 
-void matrix4x4_t::rotateZ(PFLOAT degrees)
+void matrix4x4_t::rotateZ(float degrees)
 {
-	PFLOAT temp=degrees;
-	temp=fmod(temp,(PFLOAT)360.0);
-	if(temp<0) temp=((PFLOAT)360.0)-temp;
-	temp=temp*( M_PI/((PFLOAT)180));
+	float temp=degrees;
+	temp=fmod(temp,(float)360.0);
+	if(temp<0) temp=((float)360.0)-temp;
+	temp=temp*( M_PI/((float)180));
 
 	matrix4x4_t aux(1);
 	aux[0][0]=fCos(temp);
@@ -143,12 +143,12 @@ void matrix4x4_t::rotateZ(PFLOAT degrees)
 	(*this)=aux*(*this);
 }
 
-void matrix4x4_t::rotateX(PFLOAT degrees)
+void matrix4x4_t::rotateX(float degrees)
 {
-	PFLOAT temp=degrees;
-	temp=fmod(temp,(PFLOAT)360.0);
-	if(temp<0) temp=((PFLOAT)360.0)-temp;
-	temp=temp*( M_PI/((PFLOAT)180));
+	float temp=degrees;
+	temp=fmod(temp,(float)360.0);
+	if(temp<0) temp=((float)360.0)-temp;
+	temp=temp*( M_PI/((float)180));
 
 	matrix4x4_t aux(1);
 	aux[1][1]=fCos(temp);
@@ -159,12 +159,12 @@ void matrix4x4_t::rotateX(PFLOAT degrees)
 	(*this)=aux*(*this);
 }
 
-void matrix4x4_t::rotateY(PFLOAT degrees)
+void matrix4x4_t::rotateY(float degrees)
 {
-	PFLOAT temp=degrees;
-	temp=fmod(temp,(PFLOAT)360.0);
-	if(temp<0) temp=((PFLOAT)360.0)-temp;
-	temp=temp*( M_PI/((PFLOAT)180));
+	float temp=degrees;
+	temp=fmod(temp,(float)360.0);
+	if(temp<0) temp=((float)360.0)-temp;
+	temp=temp*( M_PI/((float)180));
 
 	matrix4x4_t aux(1);
 	aux[0][0]=fCos(temp);
@@ -176,7 +176,7 @@ void matrix4x4_t::rotateY(PFLOAT degrees)
 }
 
 
-void matrix4x4_t::scale(PFLOAT sx, PFLOAT sy, PFLOAT sz)
+void matrix4x4_t::scale(float sx, float sy, float sz)
 {
   matrix[0][0]*=sx;  matrix[1][0]*=sx;  matrix[2][0]*=sx;
   matrix[0][1]*=sy;  matrix[1][1]*=sy;  matrix[2][1]*=sy;

@@ -114,7 +114,11 @@ bool pathIntegrator_t::preprocess()
 		{
 			set << " (loading photon maps from file)";
 		}
-		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
+		else if(photonMapProcessing == PHOTONS_REUSE)
+		{
+			set << " (reusing photon maps from memory)";
+		}
+		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
 	}
 
 	gTimer.stop("prepass");
@@ -134,7 +138,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 	static int calls=0;
 	++calls;
 	color_t col(0.0);
-	CFLOAT alpha;
+	float alpha;
 	surfacePoint_t sp;
 	void *o_udat = state.userdata;
 	float W = 0.f;
@@ -278,7 +282,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 					{
 						if((caustic && background && background->hasIBL() && background->shootsCaustic()))
 						{
-							pathCol += throughput * (*background)(pRay, state);
+							pathCol += throughput * (*background)(pRay, state, true);
 						}
 						break;
 					}
@@ -327,7 +331,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		if(transpRefractedBackground)
 		{
-			CFLOAT m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(state, sp, wo);
 			alpha = m_alpha + (1.f-m_alpha)*alpha;
 		}
 		else alpha = 1.0;
@@ -336,7 +340,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
 		}
 	}
 
@@ -422,6 +426,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	
 	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
 	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
+	else if(photon_maps_processing_str == "reuse-previous") inte->photonMapProcessing = PHOTONS_REUSE;
 	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
 	
 	return inte;

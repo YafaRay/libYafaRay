@@ -66,9 +66,9 @@ class YAFRAYCORE_EXPORT parameter_t
 			int ival;
 			double fval;
 			bool bval;
-			CFLOAT C[4];
-			PFLOAT P[4];
-			//PFLOAT matrix[4][4];
+			float C[4];
+			float P[4];
+			//float matrix[4][4];
 		};
 		int vtype; //!< type of the stored value
 };

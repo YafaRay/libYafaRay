@@ -6,7 +6,6 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
-option(WITH_Pthreads "Build with POSIX threads wrapper on windows platforms" OFF)
 option(WITH_Freetype "Build font rendering with FreeType" ON)
 option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
 option(WITH_JPEG "Build JPEG image I/O plugin" ON)
@@ -16,7 +15,6 @@ option(WITH_XML_LOADER "Build XML Loader" ON)
 option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
 option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(WITH_OSX_ADDON "Enable the use of blender's included python lib on OSX platforms" OFF)
-option(BUILDRELEASE "Enable release mode building of YafaRay" OFF)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
@@ -68,8 +66,11 @@ if(YAF_USER_EXTRA_LIBS)
 endif(YAF_USER_EXTRA_LIBS)
 
 # find the required libs
-FIND_PACKAGE(Boost COMPONENTS system filesystem serialization REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS system filesystem serialization locale REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
+FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIR} )
 
 find_package(ZLIB REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -81,30 +82,11 @@ else(LIBXML2_FOUND)
 	message("Using LibXML: no")
 endif(LIBXML2_FOUND)
 
-find_package(Threads REQUIRED)
-
 if(WIN32)
 	add_definitions(-DWIN32 )
 	add_definitions(-D_USE_MATH_DEFINES )
 	add_definitions(-D_hypot=hypot )
 endif(WIN32)
-	
-# Find optional libs
-if(CMAKE_HAVE_PTHREAD_H)
-	if(WIN32)
-		if(WITH_Pthreads)
-			add_definitions(-DHAVE_PTHREAD)
-			message("Using Posix Threads: yes")
-		else(WITH_Pthreads)
-			message("Using Posix Threads: no (disabled by user)")
-		endif(WITH_Pthreads)
-	else(WIN32)
-		add_definitions(-DHAVE_PTHREAD)
-		message("Using Posix Threads: yes")
-	endif(WIN32)
-else(CMAKE_HAVE_PTHREAD_H)
-	message("Using Posix Threads: no (not found)")
-endif(CMAKE_HAVE_PTHREAD_H)
 
 if(WITH_Freetype)
 	find_package(Freetype REQUIRED)
@@ -261,10 +243,6 @@ endif(USER_DEBUG_EXTRA_FLAGS)
 if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})
 endif(YAF_USER_EXTRA_DEFS)
-
-if (BUILDRELEASE)
-	add_definitions(-DRELEASE)
-endif (BUILDRELEASE)
 
 # Paths and flags configuration
 

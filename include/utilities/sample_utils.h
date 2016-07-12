@@ -27,8 +27,8 @@ vector3d_t inline SampleCosHemisphere(const vector3d_t &N,const vector3d_t &Ru,c
 	if(s1>=1.0f) return N; //Fix for some white/black dots when s1>1.0. Also, this returns a fast trivial value when s1=1.0.
 	else
 	{
-		PFLOAT z1 = s1;
-		PFLOAT z2 = s2*M_2PI;
+		float z1 = s1;
+		float z2 = s2*M_2PI;
 		return (Ru*fCos(z2) + Rv*fSin(z2))*fSqrt(1.0-z1) + N*fSqrt(z1);
 	}
 }
@@ -39,11 +39,11 @@ vector3d_t inline SampleSphere(float s1, float s2)
 {
 	vector3d_t dir;
 	dir.z = 1.0f - 2.0f*s1;
-	PFLOAT r = 1.0f - dir.z*dir.z;
+	float r = 1.0f - dir.z*dir.z;
 	if(r>0.0f)
 	{
 		r = fSqrt(r);
-		PFLOAT a = M_2PI * s2;
+		float a = M_2PI * s2;
 		dir.x = fCos(a) * r;
 		dir.y = fSin(a) * r;
 	}
@@ -151,8 +151,8 @@ public:
 void inline minRot(const vector3d_t &D, const vector3d_t &U,
 				   const vector3d_t &D2, vector3d_t &U2, vector3d_t &V2)
 {
-	PFLOAT cosAlpha = D*D2;
-	PFLOAT sinAlpha = fSqrt(1 - cosAlpha*cosAlpha);
+	float cosAlpha = D*D2;
+	float sinAlpha = fSqrt(1 - cosAlpha*cosAlpha);
 	vector3d_t v = D^D2;
 	U2 = cosAlpha*U + (1.f-cosAlpha) * (v*U) + sinAlpha * (v^U);
 	V2 = D2^U2;

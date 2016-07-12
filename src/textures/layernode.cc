@@ -3,7 +3,7 @@
 
 __BEGIN_YAFRAY
 
-layerNode_t::layerNode_t(unsigned tflag, CFLOAT col_fac, CFLOAT val_fac, CFLOAT def_val, colorA_t def_col, mix_modes mmod):
+layerNode_t::layerNode_t(unsigned tflag, float col_fac, float val_fac, float def_val, colorA_t def_col, mix_modes mmod):
 			input(0), upperLayer(0), texflag(tflag), colfac(col_fac), valfac(val_fac), default_val(def_val),
 			default_col(def_col), mode(mmod), do_color(false), do_scalar(false), color_input(false)
 {}
@@ -11,7 +11,7 @@ layerNode_t::layerNode_t(unsigned tflag, CFLOAT col_fac, CFLOAT val_fac, CFLOAT 
 void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
 	colorA_t rcol, texcolor;
-	CFLOAT rval, Tin=0.f, Ta=1.f, stencilTin = 1.f;
+	float rval, Tin=0.f, Ta=1.f, stencilTin = 1.f;
 	// == get result of upper layer (or base values) ==
 	rcol = (upperLayer) ? upperLayer->getColor(stack) : upper_col;
 	rval = (upperLayer) ? upperLayer->getScalar(stack) : upper_val;
@@ -39,7 +39,7 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 		Tin = 1.f-Tin;
 	}
 	
-	CFLOAT fact;
+	float fact;
 	
 	if(texflag & TXF_STENCIL)
 	{
@@ -63,7 +63,7 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 		if(!TEX_RGB)	texcolor = default_col;
 		else			Tin = Ta;
         
-        CFLOAT Tin_truncated_range;
+        float Tin_truncated_range;
         
         if(Tin>1.f) Tin_truncated_range=1.f;
         else if(Tin<0.f) Tin_truncated_range=0.f;
@@ -89,7 +89,7 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 			}
 		}
 		
-		rval = texture_value_blend(default_val, rval, Tin, stencilTin * valfac, mode, do_scalar);
+		rval = texture_value_blend(default_val, rval, Tin, stencilTin * valfac, mode);
 		if(rval<0.f) rval=0.f;
 	}
 	rcol.A = stencilTin;
@@ -104,8 +104,8 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
 {
 	colorA_t texcolor;
-	CFLOAT rdu=0.f, rdv=0.f, tdu, tdv;
-	CFLOAT stencilTin = 1.f;
+	float rdu=0.f, rdv=0.f, tdu, tdv;
+	float stencilTin = 1.f;
 
 	// == get result of upper layer (or base values) ==
 	if(upperLayer)

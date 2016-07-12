@@ -39,7 +39,7 @@ class YAFRAYCORE_EXPORT camera_t
 	public:
 		camera_t() { }
         camera_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up, int _resx, int _resy, float aspect, float const near_clip_distance, float const far_clip_distance) :
-            position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (PFLOAT)resy / (PFLOAT)resx),camera_name(""), view_name("")
+            position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (float)resy / (float)resx),camera_name(""), view_name("")
 		{
 			// Calculate and store camera axis
 			camY = up - position;
@@ -62,7 +62,7 @@ class YAFRAYCORE_EXPORT camera_t
         virtual ~camera_t() {}
 		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
-		virtual ray_t shootRay(PFLOAT px, PFLOAT py, float u, float v, PFLOAT &wt) const = 0; //!< Shoot a new ray from the camera.
+		virtual ray_t shootRay(float px, float py, float u, float v, float &wt) const = 0; //!< Shoot a new ray from the camera.
 		virtual point3d_t screenproject(const point3d_t &p) const = 0; //!< Get projection of point p into camera plane
 
 		virtual int resX() const { return resx; } //!< Get camera X resolution
@@ -73,7 +73,7 @@ class YAFRAYCORE_EXPORT camera_t
 		/*! Indicate whether the lense need to be sampled (u, v parameters of shootRay), i.e.
 			DOF-like effects. When false, no lense samples need to be computed */
 		virtual bool sampleLense() const { return false; } //!< Indicate whether the lense need to be sampled
-		virtual bool project(const ray_t &wo, PFLOAT lu, PFLOAT lv, PFLOAT &u, PFLOAT &v, float &pdf) const { return false; }
+		virtual bool project(const ray_t &wo, float lu, float lv, float &u, float &v, float &pdf) const { return false; }
 		virtual float getNearClip() const { return nearClip; }
 		virtual float getFarClip() const { return farClip; }
 		void set_camera_name(std::string name) { camera_name = name; }

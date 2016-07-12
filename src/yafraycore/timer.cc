@@ -70,6 +70,24 @@ double timer_t::getTime(const std::string &name)
 #endif
 }
 
+double timer_t::getTimeNotStopping(const std::string &name)
+{
+	auto i=events.find(name);
+	if (i==events.end()) return -1;
+#ifdef WIN32
+	else return ((double) (clock() - i->second.start) ) / CLOCKS_PER_SEC;
+#else
+	else
+	{
+		timeval now;
+		struct timezone tz;
+		gettimeofday(&now, &tz);		
+		const tdata_t &td = i->second;
+		return (now.tv_sec - td.tvs.tv_sec) + double(now.tv_usec - td.tvs.tv_usec)/1.0e6;
+	}
+#endif
+}
+
 
 bool timer_t::includes(const std::string &label)const
 {

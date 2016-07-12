@@ -24,12 +24,10 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include "tgaUtils.h"
-
-#include <cstdio>
-#include <locale>
-#include <codecvt>
 
 __BEGIN_YAFRAY
 
@@ -41,7 +39,7 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
@@ -90,12 +88,16 @@ tgaHandler_t::tgaHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 	
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -129,7 +131,10 @@ tgaHandler_t::~tgaHandler_t()
 
 bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << name << "\"..." << yendl;
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	else Y_INFO << handlerName << ": Saving " << ((m_hasAlpha) ? "RGBA" : "RGB" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
 	std::string imageId = "Image rendered with YafaRay";
 	tgaHeader_t header;
@@ -141,10 +146,8 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	header.height = m_height;
 	header.bitDepth = ((m_hasAlpha) ? 32 : 24 );
 	header.desc = TL | ((m_hasAlpha) ? alpha8 : noAlpha );
-	
-	FILE* fp;
-	
-	fp = fopen(name.c_str(), "wb");
+		
+	FILE * fp = fileUnicodeOpen(name, "wb");
 
 	if (fp == nullptr)
 		return false;
@@ -152,29 +155,77 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	{
 		fwrite(&header, sizeof(tgaHeader_t), 1, fp);
 		fwrite(imageId.c_str(), (size_t)header.idLength, 1, fp);
-		
-		for (int y = 0; y < m_height; y++) 
+
+		if(m_Denoise)
 		{
-			for (int x = 0; x < m_width; x++) 
+			cv::Mat A(m_height, m_width, CV_8UC3);
+			cv::Mat B(m_height, m_width, CV_8UC3);
+			cv::Mat_<cv::Vec3b> _A = A;
+			cv::Mat_<cv::Vec3b> _B = B;
+
+			for (int y = 0; y < m_height; y++) 
 			{
-				(*imagePasses.at(imagePassNumber))(x, y).clampRGBA01();
-				if(!m_hasAlpha)
+				for (int x = 0; x < m_width; x++) 
 				{
-					tgaPixelRGB_t rgb;
-					rgb = (color_t)(*imagePasses.at(imagePassNumber))(x, y);
-					fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				col.clampRGBA01();
+				_A(y, x)[0] = (col.getR() * 255);
+				_A(y, x)[1] = (col.getG() * 255);
+				_A(y, x)[2] = (col.getB() * 255);
 				}
-				else
+			}
+
+			cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+
+			for (int y = 0; y < m_height; y++) 
+			{
+				for (int x = 0; x < m_width; x++) 
 				{
-					tgaPixelRGBA_t rgba;
-					rgba = (*imagePasses.at(imagePassNumber))(x, y);
-					fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					if(!m_hasAlpha)
+					{
+						tgaPixelRGB_t rgb;
+						rgb.R = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+						rgb.G = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+						rgb.B = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					}
+					else
+					{
+						colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+						tgaPixelRGBA_t rgba;
+						rgba.R = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+						rgba.G = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+						rgba.B = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
+						rgba.A = (*imagePasses.at(imagePassNumber))(x, y).A;
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
 				}
 			}
 		}
-
+		else
+		{
+			for (int y = 0; y < m_height; y++) 
+			{
+				for (int x = 0; x < m_width; x++) 
+				{
+					(*imagePasses.at(imagePassNumber))(x, y).clampRGBA01();
+					if(!m_hasAlpha)
+					{
+						tgaPixelRGB_t rgb;
+						rgb = (color_t)(*imagePasses.at(imagePassNumber))(x, y);
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					}
+					else
+					{
+						tgaPixelRGBA_t rgba;
+						rgba = (*imagePasses.at(imagePassNumber))(x, y);
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
+				}
+			}
+		}
 		fwrite(&footer, sizeof(tgaFooter_t), 1, fp);
-		fclose(fp);
+		fileUnicodeClose(fp);
 	}
 	
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -427,14 +478,8 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 
 bool tgaHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
 	if(!fp)
@@ -463,7 +508,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	
 	if(!precheckFile(header, name, isGray, isRLE, hasColorMap, alphaBitDepth))
 	{
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -603,7 +648,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 		}
 	}
 	
-	fclose(fp);
+	fileUnicodeClose(fp);
 	fp = nullptr;
 	
 	if (ColorMap) delete ColorMap;
@@ -620,18 +665,26 @@ imageHandler_t *tgaHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
+	params.getParam("denoiseMix", denoiseMix);
 
 	imageHandler_t *ih = new tgaHandler_t();
 	
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 	
 	return ih;

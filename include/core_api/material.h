@@ -160,7 +160,7 @@ class YAFRAYCORE_EXPORT material_t
 		virtual const volumeHandler_t* getVolumeHandler(bool inside)const { return inside ? volI : volO; }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
-		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return 1.f; }
+		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const { return 1.f; }
 
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
@@ -209,7 +209,7 @@ class YAFRAYCORE_EXPORT material_t
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
-        void applyBump(surfacePoint_t &sp, PFLOAT dfdNU, PFLOAT dfdNV) const;
+        void applyBump(surfacePoint_t &sp, float dfdNU, float dfdNV) const;
 
 		BSDF_t bsdfFlags;
 		

@@ -27,7 +27,7 @@ class beer_t: public volumeHandler_t
 
 beer_t::beer_t(const color_t &acol, double dist)
 {
-	const CFLOAT maxlog = log(1e38);
+	const float maxlog = log(1e38);
 	sigma_a.R = (acol.R > 1e-38) ? -log(acol.R) : maxlog;
 	sigma_a.G = (acol.G > 1e-38) ? -log(acol.G) : maxlog;
 	sigma_a.B = (acol.B > 1e-38) ? -log(acol.B) : maxlog;
@@ -41,7 +41,7 @@ bool beer_t::transmittance(const renderState_t &state, const ray_t &ray, color_t
 		col = color_t( 0.f, 0.f, 0.f);
 		return true;
 	}
-	CFLOAT dist = ray.tmax; // maybe substract ray.tmin...
+	float dist = ray.tmax; // maybe substract ray.tmin...
 	color_t be(-dist * sigma_a);
 	col = color_t( fExp(be.getR()), fExp(be.getG()), fExp(be.getB()) );
 	return true;
@@ -72,7 +72,7 @@ class sss_t: public beer_t
 	
 		static volumeHandler_t* factory(const paraMap_t &params, renderEnvironment_t &env);
 	protected:
-		PFLOAT dist_s;
+		float dist_s;
 		color_t scatter_col;
 };
 
@@ -82,7 +82,7 @@ sss_t::sss_t(const color_t &a_col, const color_t &s_col, double dist):
 
 bool sss_t::scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const
 {
-	PFLOAT dist = -dist_s * log(s.s1);
+	float dist = -dist_s * log(s.s1);
 	if(dist >= ray.tmax) return false;
 	sRay.from = ray.from + dist*ray.dir;
 	sRay.dir = SampleSphere(s.s2, s.s3);

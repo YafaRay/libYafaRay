@@ -55,10 +55,10 @@ bool  operator != ( const vector3d_t &a,const vector3d_t &b)
 	return false;
 }
 
-/* vector3d_t refract(const vector3d_t &n,const vector3d_t &v,PFLOAT IOR)
+/* vector3d_t refract(const vector3d_t &n,const vector3d_t &v,float IOR)
 {
 	vector3d_t N=n,I,T;
-	PFLOAT eta=IOR;
+	float eta=IOR;
 	I=-v;
 	if((v*n)<0)
 	{
@@ -70,8 +70,8 @@ bool  operator != ( const vector3d_t &a,const vector3d_t &b)
 		N=n;
 		eta=1.0/IOR;
 	}
-	PFLOAT IdotN = v*N;
-	PFLOAT k = 1 - eta*eta*(1 - IdotN*IdotN);
+	float IdotN = v*N;
+	float k = 1 - eta*eta*(1 - IdotN*IdotN);
 	T= (k < 0) ? vector3d_t(0,0,0) : (eta*I + (eta*IdotN - sqrt(k))*N);
 	T.normalize();
 	return T;
@@ -109,7 +109,7 @@ bool refract(const vector3d_t &n,const vector3d_t &wi, vector3d_t &wo, float IOR
 
 void fresnel(const vector3d_t & I, const vector3d_t & n, float IOR, float &Kr, float &Kt)
 {
-	PFLOAT eta;
+	float eta;
 	vector3d_t N;
 
 	if((I*n)<0)
@@ -123,13 +123,13 @@ void fresnel(const vector3d_t & I, const vector3d_t & n, float IOR, float &Kr, f
 		eta=IOR;
 		N=n;
 	}
-	PFLOAT c=I*N;
-	PFLOAT g=eta*eta+c*c-1;
+	float c=I*N;
+	float g=eta*eta+c*c-1;
 	if(g<=0)
 		g=0;
 	else
 		g=fSqrt(g);
-	PFLOAT aux=c*(g+c);
+	float aux=c*(g+c);
 
 	Kr=( ( 0.5*(g-c)*(g-c) )/( (g+c)*(g+c) ) ) *
 		   ( 1+ ((aux-1)*(aux-1))/( (aux+1)*(aux+1) ) );
@@ -141,20 +141,20 @@ void fresnel(const vector3d_t & I, const vector3d_t & n, float IOR, float &Kr, f
 
 
 // 'Faster' Schlick fresnel approximation,
-void fast_fresnel(const vector3d_t & I, const vector3d_t & n, PFLOAT IORF,
-		CFLOAT &Kr, CFLOAT &Kt)
+void fast_fresnel(const vector3d_t & I, const vector3d_t & n, float IORF,
+		float &Kr, float &Kt)
 {
-	PFLOAT t = 1 - (I*n);
+	float t = 1 - (I*n);
 	//t = (t<0)?0:((t>1)?1:t);
-	PFLOAT t2 = t*t;
+	float t2 = t*t;
 	Kr = IORF + (1 - IORF) * t2*t2*t;
 	Kt = 1-Kr;
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
-void ShirleyDisk(PFLOAT r1, PFLOAT r2, PFLOAT &u, PFLOAT &v)
+void ShirleyDisk(float r1, float r2, float &u, float &v)
 {
-	PFLOAT phi=0, r=0, a=2*r1-1, b=2*r2-1;
+	float phi=0, r=0, a=2*r1-1, b=2*r2-1;
 	if (a>-b) {
 		if (a>b) {	// Reg.1
 			r = a;
@@ -188,25 +188,25 @@ YAFRAYCORE_EXPORT int myseed=123212;
 
 vector3d_t randomVectorCone(const vector3d_t &D,
 				const vector3d_t &U, const vector3d_t &V,
-				PFLOAT cosang, PFLOAT z1, PFLOAT z2)
+				float cosang, float z1, float z2)
 {
-  PFLOAT t1=M_2PI*z1, t2=1.0-(1.0-cosang)*z2;
+  float t1=M_2PI*z1, t2=1.0-(1.0-cosang)*z2;
   return (U*fCos(t1) + V*fSin(t1))*fSqrt(1.0-t2*t2) + D*t2;
 }
 
-vector3d_t randomVectorCone(const vector3d_t &dir, PFLOAT cangle, PFLOAT r1, PFLOAT r2)
+vector3d_t randomVectorCone(const vector3d_t &dir, float cangle, float r1, float r2)
 {
 	vector3d_t u, v;
 	createCS(dir, u, v);
 	return randomVectorCone(dir, u, v, cangle, r1, r2);
 }
 
-vector3d_t discreteVectorCone(const vector3d_t &dir, PFLOAT cangle, int sample, int square)
+vector3d_t discreteVectorCone(const vector3d_t &dir, float cangle, int sample, int square)
 {
-	PFLOAT r1=(PFLOAT)(sample / square)/(PFLOAT)square;
-	PFLOAT r2=(PFLOAT)(sample % square)/(PFLOAT)square;
-	PFLOAT tt = M_2PI * r1;
-	PFLOAT ss = fAcos(1.0 - (1.0 - cangle)*r2);
+	float r1=(float)(sample / square)/(float)square;
+	float r2=(float)(sample % square)/(float)square;
+	float tt = M_2PI * r1;
+	float ss = fAcos(1.0 - (1.0 - cangle)*r2);
 	vector3d_t	vx(fCos(ss),fSin(ss)*fCos(tt),fSin(ss)*fSin(tt));
 	vector3d_t	i(1,0,0),c;
 	matrix4x4_t M(1);

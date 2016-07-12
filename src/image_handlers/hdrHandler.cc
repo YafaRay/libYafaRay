@@ -25,10 +25,13 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <iomanip>
 
 #include "hdrUtils.h"
 
@@ -39,7 +42,7 @@ class hdrHandler_t: public imageHandler_t
 public:
 	hdrHandler_t();
 	~hdrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
@@ -76,12 +79,16 @@ hdrHandler_t::~hdrHandler_t()
 	}
 }
 
-void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -93,14 +100,8 @@ void hdrHandler_t::initForOutput(int width, int height, const renderPasses_t *re
 
 bool hdrHandler_t::loadFromFile(const std::string &name)
 {
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+	
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
@@ -112,7 +113,7 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	if (!readHeader(fp))
 	{
 		Y_ERROR << handlerName << ": An error has occurred while reading the header..." << yendl;
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -140,11 +141,11 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if (!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading uncompressed scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return true;
 	}
 	
@@ -155,14 +156,14 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 		if (fread((char *)&pix, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
 		{
 			Y_ERROR << handlerName << ": An error has occurred while reading scanline start..." << yendl;
-			fclose(fp);
+			fileUnicodeClose(fp);
 			return false;
 		}
 
 		if (feof(fp))
 		{
 			Y_ERROR << handlerName << ": EOF reached while reading scanline start..." << yendl;
-			fclose(fp);
+			fileUnicodeClose(fp);
 			return false;
 		}
 		
@@ -171,14 +172,14 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if (pix.getARLECount() > scanWidth)
 			{
 				Y_ERROR << handlerName << ": Error reading, invalid ARLE scanline width..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 
 			if (!readARLE(fp, y, pix.getARLECount()))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
@@ -190,13 +191,13 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 			if(!readORLE(fp, y, scanWidth))
 			{
 				Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline..." << yendl;
-				fclose(fp);
+				fileUnicodeClose(fp);
 				return false;
 			}
 		}
 	}
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
@@ -451,7 +452,10 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 	else
 	{
-		Y_INFO << handlerName << ": Saving RGBE file as \"" << name << "\"..." << yendl;
+		std::string nameWithoutTmp = name;
+		nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+		else Y_INFO << handlerName << ": Saving RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 		if (m_hasAlpha) Y_VERBOSE << handlerName << ": Ignoring alpha channel." << yendl;
 
 		writeHeader(file);
@@ -589,18 +593,27 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
-
+/*	//Denoise is not available for HDR/EXR images
+ * 	params.getParam("denoiseEnabled", denoiseEnabled);
+ *	params.getParam("denoiseHLum", denoiseHLum);
+ *	params.getParam("denoiseHCol", denoiseHCol);
+ *	params.getParam("denoiseMix", denoiseMix);
+ */
 	imageHandler_t *ih = new hdrHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 
 	return ih;

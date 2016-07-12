@@ -31,11 +31,15 @@ enum photonMapProcessing_t
 {
 	PHOTONS_GENERATE_ONLY,
 	PHOTONS_GENERATE_AND_SAVE,
-	PHOTONS_LOAD
+	PHOTONS_LOAD,
+	PHOTONS_REUSE
 };
 
 class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 {
+	public:
+		mcIntegrator_t() {};
+	
 	protected:
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		virtual color_t estimateAllDirectLight(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const;
@@ -53,6 +57,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		virtual void causticWorker(photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, pdf1D_t *lightPowerD, int numLights, const std::string &integratorName, const std::vector<light_t *> &causLights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot);
 
 		int rDepth; //! Ray depth
 		bool trShad; //! Use transparent shadows
@@ -63,7 +68,6 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		int nCausSearch; //! Amount of caustic photons to be gathered in estimation
 		float causRadius; //! Caustic search radius for estimation
 		int causDepth; //! Caustic photons max path depth
-		photonMap_t causticMap; //! Container for the caustic photon map
 		pdf1D_t *lightPowerD;
 		
 		bool useAmbientOcclusion; //! Use ambient occlusion

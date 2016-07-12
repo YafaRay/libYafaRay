@@ -21,7 +21,7 @@
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
 #include <yafraycore/spectrum.h>
-
+#include <core_api/color_ramp.h>
 
 __BEGIN_YAFRAY
 
@@ -35,7 +35,7 @@ class glassMat_t: public nodeMaterial_t
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
 		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
-		virtual CFLOAT getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
+		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 								 bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
 		virtual float getMatIOR() const;
@@ -72,8 +72,8 @@ class glassMat_t: public nodeMaterial_t
 		float ior;
 		bool absorb, disperse, fakeShadow;
 		BSDF_t tmFlags;
-		PFLOAT dispersion_power;
-		PFLOAT CauchyA, CauchyB;
+		float dispersion_power;
+		float CauchyA, CauchyB;
 };
 
 glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility):
@@ -118,7 +118,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	}
 	vector3d_t refdir, N;
 	bool outside = sp.Ng*wo > 0;
-	PFLOAT cos_wo_N = sp.N*wo;
+	float cos_wo_N = sp.N*wo;
 	if(outside)	N = (cos_wo_N >= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
 	else		N = (cos_wo_N <= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
 	s.pdf = 1.f;
@@ -141,7 +141,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 
 		if( refract(N, wo, refdir, cur_ior) )
 		{
-			CFLOAT Kr, Kt;
+			float Kr, Kt;
 			fresnel(wo, N, cur_ior, Kr, Kt);
 			float pKr = 0.01+0.99*Kr, pKt = 0.01+0.99*Kt;
 			if( !(s.flags & BSDF_SPECULAR) || s.s1 < pKt)
@@ -191,7 +191,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
         
 		if( refract(N, wo, refdir, cur_ior) )
 		{
-			CFLOAT Kr, Kt;
+			float Kr, Kt;
 			fresnel(wo, N, cur_ior, Kr, Kt);
 			float pKr = 0.01+0.99*Kr, pKt = 0.01+0.99*Kt;
 			if(s.s1 < pKt && matches(s.flags, tmFlags))
@@ -245,13 +245,13 @@ color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoi
 {
     nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	CFLOAT Kr, Kt;
+	float Kr, Kt;
 	fresnel(wo, N, (iorS ? iorS->getScalar(stack):ior), Kr, Kt);
 	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
 }
 
-CFLOAT glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const {
-	CFLOAT alpha = 1.0 - getTransparency(state, sp, wo).energy();
+float glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const {
+	float alpha = 1.0 - getTransparency(state, sp, wo).energy();
 	if (alpha < 0.0f) alpha = 0.0f;
 	return alpha;
 }
@@ -262,7 +262,7 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	nodeStack_t stack(state.userdata);
 	bool outside = sp.Ng*wo > 0;
 	vector3d_t N;
-	PFLOAT cos_wo_N = sp.N*wo;
+	float cos_wo_N = sp.N*wo;
 	if(outside)
 	{
 		N = (cos_wo_N >= 0) ? sp.N : (sp.N - (1.00001*cos_wo_N)*wo).normalize();
@@ -292,7 +292,7 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
     
 	if( refract(N, wo, refdir, cur_ior) )
 	{
-		CFLOAT Kr, Kt;
+		float Kr, Kt;
 		fresnel(wo, N, cur_ior, Kr, Kt);
 		if(!state.chromatic || !disperse)
 		{
@@ -374,7 +374,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 			color_t sigma(0.f);
 			if(params.getParam("absorption_dist", dist))
 			{
-				const CFLOAT maxlog = log(1e38);
+				const float maxlog = log(1e38);
 				sigma.R = (absorp.R > 1e-38) ? -log(absorp.R) : maxlog;
 				sigma.G = (absorp.G > 1e-38) ? -log(absorp.G) : maxlog;
 				sigma.B = (absorp.B > 1e-38) ? -log(absorp.B) : maxlog;

@@ -22,6 +22,7 @@
 
 #include <core_api/renderpasses.h>
 #include <yafraycore/imageOutput.h>
+#include <boost/filesystem.hpp>
 #include <sstream>
 #include <iomanip>
 
@@ -29,7 +30,7 @@ __BEGIN_YAFRAY
 
 imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
-	//empty
+	session.setPathImageOutput(boost::filesystem::change_extension(fname, "").string());
 }
 
 imageOutput_t::imageOutput_t()
@@ -89,12 +90,15 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
     {
         if(image->isMultiLayer())
         {
-            if(numView == 0) image->saveToFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+            if(numView == 0)
+	    {
+		saveImageFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+	    }
          
             fnamePass = path + base_name + " [" + "multilayer" + "]"+ ext;
-         
-            image->saveToFileMultiChannel(fnamePass, renderPasses);
-	    yafLog.setImagePath(fnamePass);		//to show the image in the HTML log output
+            saveImageFileMultiChannel(fnamePass, renderPasses);
+
+	    yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
         }
         else
         {
@@ -104,28 +108,79 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
                 
                 if(numView == 0 && idx == 0)
 		{
-		    image->saveToFile(fname, idx);	//default image filename, when not using views nor passes and for reloading into Blender
-		    yafLog.setImagePath(fname);		//to show the image in the HTML log output
+		    saveImageFile(fname, idx);  //default image filename, when not using views nor passes and for reloading into Blender
+		    yafLog.setImagePath(fname); //to show the image in the HTML log output
 		}
 		
 		if(passName != "not found" && (renderPasses->extPassesSize()>=2 || renderPasses->view_names.size() >= 2))
                 {
                     fnamePass = path + base_name + " [pass " + passName + "]"+ ext;
-                    image->saveToFile(fnamePass, idx);
-		    if(idx == 0) yafLog.setImagePath(fnamePass);	//to show the image in the HTML log output
+                    saveImageFile(fnamePass, idx);
+
+		    if(idx == 0) yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
                 }
             }
         }
     }
     
-    std::string fLogName = path + base_name + "_log.txt";
-    yafLog.saveTxtLog(fLogName);
-    
-    std::string fLogHtmlName = path + base_name + "_log.html";
-    yafLog.saveHtmlLog(fLogHtmlName);
-    
-    yafLog.clearMemoryLog();
+    if(yafLog.getSaveLog())
+    {
+	std::string fLogName = path + base_name + "_log.txt";
+	yafLog.saveTxtLog(fLogName+".tmp");
+	try
+	{	
+	    boost::filesystem::copy_file(fLogName+".tmp",fLogName,boost::filesystem::copy_option::overwrite_if_exists);
+	    boost::filesystem::remove(fLogName+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	}
+    }
+
+    if(yafLog.getSaveHTML())
+    {
+	std::string fLogHtmlName = path + base_name + "_log.html";
+	yafLog.saveHtmlLog(fLogHtmlName+".tmp");
+	try
+	{
+	    boost::filesystem::copy_file(fLogHtmlName+".tmp",fLogHtmlName,boost::filesystem::copy_option::overwrite_if_exists);
+	    boost::filesystem::remove(fLogHtmlName+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	}
+    }
 }
 
+
+void imageOutput_t::saveImageFile(std::string filename, int idx)
+{
+    image->saveToFile(filename+".tmp", idx);
+    try
+    {
+	boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
+	boost::filesystem::remove(filename+".tmp");
+    }
+    catch(const boost::filesystem::filesystem_error& e)
+    {
+	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+    }
+}
+
+void imageOutput_t::saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses)
+{
+    image->saveToFileMultiChannel(filename+".tmp", renderPasses);
+    try
+    {
+	boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
+	boost::filesystem::remove(filename+".tmp");
+    }
+    catch(const boost::filesystem::filesystem_error& e)
+    {
+	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+    }
+}
 __END_YAFRAY
 

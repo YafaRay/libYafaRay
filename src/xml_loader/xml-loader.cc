@@ -2,29 +2,78 @@
 #include <cstdlib>
 #include <cctype>
 #include <algorithm>
+#include <signal.h>
 
 #ifdef WIN32
 	#include <windows.h>
 #endif
+
+#include <boost/filesystem.hpp>
 
 #include <core_api/scene.h>
 #include <core_api/environment.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
 #include <yafraycore/xmlparser.h>
-#include <yaf_revision.h>
 #include <utilities/console_utils.h>
 #include <yafraycore/imageOutput.h>
 
 using namespace::yafaray;
 
+scene_t *globalScene = nullptr;
+
+#ifdef WIN32
+BOOL WINAPI ctrl_c_handler(DWORD signal) {
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}
+    return TRUE;
+}
+#else
+void ctrl_c_handler(int signal)
+{
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}	
+}
+#endif
+
 int main(int argc, char *argv[])
 {
-	std::string xmlLoaderVersion = "YafaRay XML loader version: " + std::string(VERSION);
+	//handle CTRL+C events
+#ifdef WIN32
+	SetConsoleCtrlHandler(ctrl_c_handler, true);
+#else
+	struct sigaction signalHandler;
+	signalHandler.sa_handler = ctrl_c_handler;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	sigaction(SIGINT, &signalHandler, nullptr);
+#endif
+
+	session.setPathYafaRayXml(boost::filesystem::system_complete(argv[0]).parent_path().string());
 
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
 
-	parse.setAppName(xmlLoaderVersion,
+	parse.setAppName("YafaRay XML loader",
 	"[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
 	
 	parse.setOption("pp","plugin-path", false, "Path to load plugins.");
@@ -32,12 +81,6 @@ int main(int argc, char *argv[])
 	parse.setOption("lvl","log-verbosity-level", false, "Set log/HTML files verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basic info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.parseCommandLine();
 	
-#ifdef RELEASE
-	std::string version = std::string(VERSION);
-#else
-	std::string version = std::string(YAF_SVN_REV);
-#endif
-
 	renderEnvironment_t *env = new renderEnvironment_t();
 	
 	// Plugin load
@@ -86,7 +129,6 @@ int main(int argc, char *argv[])
 	parse.setOption("l","log-file-output", false, "Enable log file output(s): \"none\", \"txt\", \"html\" or \"txt+html\". Log file name will be same as selected image name,");
 	parse.setOption("z","z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz","no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
-    parse.setOption("pst","partial-save-timer", false, "Sets timer in seconds for partial saving of images during render. If set to 0 (default) it will disable this feature. IMPORTANT: the more frequently partial images are saved, the slower the render will be.");
 	
 	bool parseOk = parse.parseCommandLine();
 	
@@ -98,7 +140,7 @@ int main(int argc, char *argv[])
 	
 	if(parse.getFlag("v"))
 	{
-		Y_INFO << xmlLoaderVersion << yendl << "Built with YafaRay version " << version << yendl;
+		Y_INFO << "YafaRay XML loader" << yendl << "Built with YafaRay Core version " << session.getYafaRayCoreVersion() << yendl;
 		return 0;
 	}
 	
@@ -120,7 +162,6 @@ int main(int argc, char *argv[])
 	int threads = parse.getOptionInteger("t");
 	bool zbuf = parse.getFlag("z");
 	bool nozbuf = parse.getFlag("nz");
-	int partial_save_timer = parse.getOptionInteger("pst");
     
 	if(format.empty()) format = "tga";
 	bool formatValid = false;
@@ -164,6 +205,9 @@ int main(int argc, char *argv[])
 	}
 	
 	scene_t *scene = new scene_t(env);
+	
+	globalScene = scene;	//for the CTRL+C handler
+	
 	env->setScene(scene);
 	paraMap_t render;
 	
@@ -235,13 +279,11 @@ int main(int argc, char *argv[])
 	else return 1;
 	
 	if(! env->setupScene(*scene, render, *out) ) return 1;
-    
     imageFilm_t *film = scene->getImageFilm();
-    film->setInteractive(false);
-    film->setImageOutputPartialSaveTimeInterval((double) partial_save_timer);
-	
-
+    session.setInteractive(false);
+	session.setStatusRenderStarted();
 	scene->render();
+	
 	env->clearAll();
 
 	delete film;

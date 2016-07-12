@@ -46,7 +46,7 @@ class meshLight_t : public light_t
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
 		virtual int nSamples() const { return samples; }
 		virtual bool canIntersect() const{ return tree!=0 /* false */ ; }
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);

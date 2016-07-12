@@ -44,13 +44,13 @@ __BEGIN_YAFRAY
  */
 
 class bound_t;
-YAFRAYCORE_EXPORT GFLOAT bound_distance(const bound_t &l,const bound_t &r);
-GFLOAT b_intersect(const bound_t &l,const bound_t &r);
+YAFRAYCORE_EXPORT float bound_distance(const bound_t &l,const bound_t &r);
+float b_intersect(const bound_t &l,const bound_t &r);
 
 class YAFRAYCORE_EXPORT bound_t 
 {
-	//friend YAFRAYCORE_EXPORT GFLOAT bound_distance(const bound_t &l,const bound_t &r);
-	//friend GFLOAT b_intersect(const bound_t &l,const bound_t &r);
+	//friend YAFRAYCORE_EXPORT float bound_distance(const bound_t &l,const bound_t &r);
+	//friend float b_intersect(const bound_t &l,const bound_t &r);
 	
 	public:
 
@@ -79,32 +79,32 @@ class YAFRAYCORE_EXPORT bound_t
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray)const;
 		//! Returns true if the given ray crosses the bound closer than dist
-		//bool cross(const point3d_t &from, const vector3d_t &ray, PFLOAT dist)const;
-		//bool cross(const point3d_t &from, const vector3d_t &ray, PFLOAT &where, PFLOAT dist)const;
-		bool cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const PFLOAT dist)const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist)const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist)const;
+		bool cross(const ray_t &ray, float &enter, float &leave, const float dist)const;
 
 		//! Returns the volume of the bound
-		GFLOAT vol() const;
+		float vol() const;
 		//! Returns the lenght along X axis
-		PFLOAT longX()const {return g.x-a.x;};
+		float longX()const {return g.x-a.x;};
 		//! Returns the lenght along Y axis
-		PFLOAT longY()const {return g.y-a.y;};
+		float longY()const {return g.y-a.y;};
 		//! Returns the lenght along Y axis
-		PFLOAT longZ()const {return g.z-a.z;};
+		float longZ()const {return g.z-a.z;};
 		//! Cuts the bound to have the given max X
-		void setMaxX(PFLOAT X) {g.x=X;};
+		void setMaxX(float X) {g.x=X;};
 		//! Cuts the bound to have the given min X
-		void setMinX(PFLOAT X) {a.x=X;};
+		void setMinX(float X) {a.x=X;};
 		
 		//! Cuts the bound to have the given max Y
-		void setMaxY(PFLOAT Y) {g.y=Y;};
+		void setMaxY(float Y) {g.y=Y;};
 		//! Cuts the bound to have the given min Y
-		void setMinY(PFLOAT Y) {a.y=Y;};
+		void setMinY(float Y) {a.y=Y;};
 
 		//! Cuts the bound to have the given max Z
-		void setMaxZ(PFLOAT Z) {g.z=Z;};
+		void setMaxZ(float Z) {g.z=Z;};
 		//! Cuts the bound to have the given min Z
-		void setMinZ(PFLOAT Z) {a.z=Z;};
+		void setMinZ(float Z) {a.z=Z;};
 		//! Adjust bound size to include point p
 		void include(const point3d_t &p);
 		//! Returns true if the point is inside the bound
@@ -114,16 +114,16 @@ class YAFRAYCORE_EXPORT bound_t
 				 ( pn.y >= a.y ) && ( pn.y <= g.y) &&
 				 ( pn.z >= a.z ) && ( pn.z <= g.z) );
 		};
-		PFLOAT centerX()const {return (g.x+a.x)*0.5;};
-		PFLOAT centerY()const {return (g.y+a.y)*0.5;};
-		PFLOAT centerZ()const {return (g.z+a.z)*0.5;};
+		float centerX()const {return (g.x+a.x)*0.5;};
+		float centerY()const {return (g.y+a.y)*0.5;};
+		float centerZ()const {return (g.z+a.z)*0.5;};
 		point3d_t center()const {return (g+a)*0.5;};
 		int largestAxis()
 		{
 			vector3d_t d = g-a;
 			return (d.x>d.y) ? ((d.x>d.z) ? 0 : 2) : ((d.y>d.z) ? 1:2 );
 		}
-		void grow(PFLOAT d)
+		void grow(float d)
 		{
 			a.x-=d;
 			a.y-=d;
@@ -155,7 +155,7 @@ inline void bound_t::include(const point3d_t &p)
 	g.z = std::max(g.z, p.z);
 }
 
-inline bool bound_t::cross(const ray_t &ray, PFLOAT &enter, PFLOAT &leave, const PFLOAT dist)const
+inline bool bound_t::cross(const ray_t &ray, float &enter, float &leave, const float dist)const
 {
 	// Smits method
 	const point3d_t &a0=a,&a1=g;

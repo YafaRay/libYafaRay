@@ -26,8 +26,8 @@
 __BEGIN_YAFRAY
 
 architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-		int _resx, int _resy, PFLOAT aspect,
-        PFLOAT df, PFLOAT ap, PFLOAT dofd, bokehType bt, bkhBiasType bbt, PFLOAT bro, float const near_clip_distance, float const far_clip_distance)
+		int _resx, int _resy, float aspect,
+        float df, float ap, float dofd, bokehType bt, bkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
         :perspectiveCam_t(pos, look, up, _resx, _resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
 {
 	// Initialize camera specific plane coordinates
@@ -35,7 +35,7 @@ architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, cons
 
 	int ns = (int)bkhtype;
 	if ((ns>=3) && (ns<=6)) {
-		PFLOAT w=degToRad(bro), wi=(M_2PI)/(PFLOAT)ns;
+		float w=degToRad(bro), wi=(M_2PI)/(float)ns;
 		ns = (ns+2)*2;
 		LS.resize(ns);
 		for (int i=0;i<ns;i+=2) {
@@ -62,8 +62,8 @@ void architectCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const v
 	vright = camX;
 	vup = aspect_ratio * vector3d_t(0, 0, -1);
 	vto = (camZ * focal_distance) - 0.5 * (vup + vright);
-	vup /= (PFLOAT)resy;
-	vright /= (PFLOAT)resx;
+	vup /= (float)resy;
+	vright /= (float)resx;
 }
 
 point3d_t architectCam_t::screenproject(const point3d_t &p) const
@@ -77,13 +77,13 @@ point3d_t architectCam_t::screenproject(const point3d_t &p) const
 	vector3d_t camz = camy ^ camX;
 	vector3d_t camx = camz ^ camy;
 	
-	PFLOAT dx = dir * camx;
-	PFLOAT dy = dir * camY;
-	PFLOAT dz = dir * camz;
+	float dx = dir * camx;
+	float dy = dir * camY;
+	float dz = dir * camz;
 	
 	s.y = 2 * dy * focal_distance / (dz * aspect_ratio);
 	// Needs focal_distance correction
-	PFLOAT fod = (focal_distance) * camy * camY / (camx * camX);
+	float fod = (focal_distance) * camy * camY / (camx * camX);
 	s.x = 2 * dx * fod / dz;
 	s.z = 0;
 	

@@ -30,18 +30,18 @@ bound_t sphere_t::getBound() const
 	return bound_t(center - r, center + r);
 }
 
-bool sphere_t::intersect(const ray_t &ray, PFLOAT *t, intersectData_t &data) const
+bool sphere_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
 {
 	vector3d_t vf = ray.from - center;
-	PFLOAT ea = ray.dir*ray.dir;
-	PFLOAT eb = 2.0*(vf*ray.dir);
-	PFLOAT ec = vf*vf - radius*radius;
-	PFLOAT osc = eb*eb-4.0*ea*ec;
+	float ea = ray.dir*ray.dir;
+	float eb = 2.0*(vf*ray.dir);
+	float ec = vf*vf - radius*radius;
+	float osc = eb*eb-4.0*ea*ec;
 	if(osc<0) return false;
 	osc=fSqrt(osc);
-	PFLOAT sol1=(-eb-osc)/(2.0*ea);
-	PFLOAT sol2=(-eb+osc)/(2.0*ea);
-	PFLOAT sol=sol1;
+	float sol1=(-eb-osc)/(2.0*ea);
+	float sol2=(-eb+osc)/(2.0*ea);
+	float sol=sol1;
 	if(sol < ray.tmin)
 	{
 		sol = sol2;

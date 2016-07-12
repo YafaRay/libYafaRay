@@ -40,7 +40,6 @@
 #include <core_api/object3d.h>
 #include <core_api/volume.h>
 #include <yafraycore/std_primitives.h>
-#include <yaf_revision.h>
 #include <string>
 #include <sstream>
 
@@ -69,11 +68,7 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-#ifdef RELEASE
-	Y_INFO << PACKAGE << " " << VERSION << yendl;
-#else
-	Y_INFO << PACKAGE << " (" << YAF_SVN_REV << ")" << yendl;
-#endif
+	Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
 }
@@ -142,44 +137,13 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 
 bool renderEnvironment_t::getPluginPath(std::string &path)
 {
-#ifdef _WIN32
-	HKEY hkey;
-	DWORD dwSize; //, dwType;
-
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,"Software\\YafaRay Team\\YafaRay",0,KEY_READ,&hkey)==ERROR_SUCCESS)
+	//Get plugin path from a subfolder of the current yafaray_xml executable file path
+	if(!session.getPathYafaRayXml().empty())
 	{
-		//dwType = REG_EXPAND_SZ;
-	 	dwSize = MAX_PATH;
-		DWORD dwStat;
-
-		char *pInstallDir=(char *)malloc(MAX_PATH);
-
-  		dwStat = RegQueryValueEx(hkey, TEXT("InstallDir"), nullptr, nullptr, (LPBYTE)pInstallDir, &dwSize);
-
-		if (dwStat == NO_ERROR)
-		{
-			path = std::string(pInstallDir) + "\\plugins";
-			free(pInstallDir);
-			RegCloseKey(hkey);
-			return true;
-		}
-
-		Y_ERROR_ENV << "Couldn't READ \'InstallDir\' value." << yendl;
-		free(pInstallDir);
-		RegCloseKey(hkey);
+		path = session.getPathYafaRayXml()+"/plugins/";
+		return true;
 	}
-	else Y_ERROR_ENV << "Couldn't find registry key." << yendl;
-
-	Y_ERROR << "Please fix your registry. Maybe you need add/modify" << yendl;
-	Y_ERROR << "HKEY_LOCAL_MACHINE\\Software\\YafaRay Team\\YafaRay\\InstallDir" << yendl;
-	Y_ERROR << "key at registry. You can use \"regedit.exe\" to adjust it at" << yendl;
-	Y_ERROR << "your own risk. If you are unsure, reinstall YafaRay" << yendl;
-
-	return false;
-#else
-	path = std::string(Y_PLUGINPATH);
-	return true;
-#endif
+	else return false;
 }
 
 
@@ -567,7 +531,18 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	int tileSize = 32;
 	bool premult = false;
 	bool premult2 = false;
-
+	std::string images_autosave_interval_type_string = "none";
+	int images_autosave_interval_type = AUTOSAVE_NONE;
+	int images_autosave_interval_passes = 1;
+	double images_autosave_interval_seconds = 300.0;
+	std::string film_save_load_string = "none";
+	int film_save_load = FILM_FILE_NONE;
+	bool film_save_binary_format = true;
+	std::string film_autosave_interval_type_string = "none";
+	int film_autosave_interval_type = AUTOSAVE_NONE;
+	int film_autosave_interval_passes = 1;
+	double film_autosave_interval_seconds = 300.0;
+	
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
 	params.getParam("color_space2", color_space_string2);
@@ -583,7 +558,19 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
+	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
+	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
+	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
+	params.getParam("film_save_load", film_save_load_string);
+	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
+	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
+	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
+	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
+	
+	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_interval_passes << ", " << images_autosave_interval_seconds << yendl;
 
+	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_interval_passes << ", " << film_autosave_interval_seconds << yendl;
+		
 	if(color_space_string == "sRGB") color_space = SRGB;
 	else if(color_space_string == "XYZ") color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
@@ -595,6 +582,18 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	else if(color_space_string2 == "LinearRGB") color_space2 = LINEAR_RGB;
 	else if(color_space_string2 == "Raw_Manual_Gamma") color_space2 = RAW_MANUAL_GAMMA;
 	else color_space2 = SRGB;
+	
+	if(images_autosave_interval_type_string == "pass-interval") images_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
+	else if(images_autosave_interval_type_string == "time-interval") images_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
+	else images_autosave_interval_type = AUTOSAVE_NONE;
+
+	if(film_save_load_string == "load-save") film_save_load = FILM_FILE_LOAD_SAVE;
+	else if(film_save_load_string == "save") film_save_load = FILM_FILE_SAVE;
+	else film_save_load = FILM_FILE_NONE;
+
+	if(film_autosave_interval_type_string == "pass-interval") film_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
+	else if(film_autosave_interval_type_string == "time-interval") film_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
+	else film_autosave_interval_type = AUTOSAVE_NONE;
 	
     output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
     
@@ -608,13 +607,14 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	}
 	else Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
 
-	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::LINEAR;
+	imageSpliter_t::tilesOrderType tilesOrder=imageSpliter_t::CENTRE_RANDOM;
 	if(tiles_order)
 	{
 		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
 		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
+		else if(*tiles_order == "centre") tilesOrder = imageSpliter_t::CENTRE_RANDOM;
 	}
-	else Y_VERBOSE_ENV << "Defaulting to Linear tiles order." << yendl; // this is info imho not a warning
+	else Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult);
 	
@@ -634,6 +634,28 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	film->setPremult2(premult2);
 
+	film->setImagesAutoSaveIntervalType(images_autosave_interval_type);
+	film->setImagesAutoSaveIntervalSeconds(images_autosave_interval_seconds);
+	film->setImagesAutoSaveIntervalPasses(images_autosave_interval_passes);
+
+	film->setFilmFileSaveLoad(film_save_load);
+	film->setFilmFileSaveBinaryFormat(film_save_binary_format);
+	film->setFilmAutoSaveIntervalType(film_autosave_interval_type);
+	film->setFilmAutoSaveIntervalSeconds(film_autosave_interval_seconds);
+	film->setFilmAutoSaveIntervalPasses(film_autosave_interval_passes);
+	
+	if(images_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_passes << " passes" << yendl;
+
+	if(images_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << yendl;
+
+	if(film_save_load != FILM_FILE_NONE && film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving feature in binary format (smaller, faster but not portable among systems)" << yendl;
+	if(film_save_load != FILM_FILE_NONE && !film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving in text format (portable among systems but bigger and slower)" << yendl;
+	if(film_save_load == FILM_FILE_LOAD_SAVE) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
+
+	if(film_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << yendl;
+
+	if(film_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_interval_seconds << " seconds" << yendl;
+	
 	return film;
 }
 
@@ -739,13 +761,15 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
 {
 	const std::string *name=0;
-	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=1;
+	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=-1;
 	double AA_threshold=0.05;
 	float AA_resampled_floor=0.f;
 	float AA_sample_multiplier_factor = 1.f;
 	float AA_light_sample_multiplier_factor = 1.f;
 	float AA_indirect_sample_multiplier_factor = 1.f;
 	bool AA_detect_color_noise = false;
+	std::string AA_dark_detection_type_string = "none";
+	int AA_dark_detection_type = DARK_DETECTION_NONE;
 	float AA_dark_threshold_factor = 0.f;
 	int AA_variance_edge_size = 10;
 	int AA_variance_pixels = 0;
@@ -755,8 +779,9 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	bool adv_auto_shadow_bias_enabled=true;
 	float adv_shadow_bias_value=YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled=true;
-	float adv_min_raydist_value=MIN_RAYDIST;        
-	std::stringstream aaSettings;
+	float adv_min_raydist_value=MIN_RAYDIST;
+	int adv_base_sampling_offset = 0;
+	int adv_computer_node = 0;
 
 	if(! params.getParam("camera_name", name) )
 	{
@@ -809,18 +834,23 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_light_sample_multiplier_factor", AA_light_sample_multiplier_factor);
 	params.getParam("AA_indirect_sample_multiplier_factor", AA_indirect_sample_multiplier_factor);
 	params.getParam("AA_detect_color_noise", AA_detect_color_noise);
+	params.getParam("AA_dark_detection_type", AA_dark_detection_type_string);
 	params.getParam("AA_dark_threshold_factor", AA_dark_threshold_factor);
 	params.getParam("AA_variance_edge_size", AA_variance_edge_size);
 	params.getParam("AA_variance_pixels", AA_variance_pixels);
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
+	
+	nthreads_photons = nthreads;	//if no "threads_photons" parameter exists, make "nthreads_photons" equal to render threads
+	
 	params.getParam("threads_photons", nthreads_photons); // number of threads for photon mapping, -1 = auto detection
 	params.getParam("adv_auto_shadow_bias_enabled", adv_auto_shadow_bias_enabled);
 	params.getParam("adv_shadow_bias_value", adv_shadow_bias_value);
 	params.getParam("adv_auto_min_raydist_enabled", adv_auto_min_raydist_enabled);
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
-
+	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
+	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
 	imageFilm_t *film = createImageFilm(params, output);
 
 	if (pb)
@@ -831,15 +861,19 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	params.getParam("filter_type", name); // AA filter type
 	
-	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): passes=" << AA_passes << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise << " dark.thr=" << AA_dark_threshold_factor << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
-
+	std::stringstream aaSettings;
+	aaSettings << "AA Settings (" << ((name)?*name:"box") << "): Tile size=" << film->getTileSize();
 	yafLog.appendAANoiseSettings(aaSettings.str());
-
+	
+	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;
+	else if(AA_dark_detection_type_string == "curve") AA_dark_detection_type = DARK_DETECTION_CURVE;
+	else AA_dark_detection_type = DARK_DETECTION_NONE;
+	
 	//setup scene and render.
 	scene.setImageFilm(film);
 	scene.setSurfIntegrator((surfaceIntegrator_t*)inte);
 	scene.setVolIntegrator((volumeIntegrator_t*)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
 	if(backg) scene.setBackground(backg);
@@ -847,6 +881,10 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	scene.shadowBias = adv_shadow_bias_value;
 	scene.rayMinDistAuto = adv_auto_min_raydist_enabled;
 	scene.rayMinDist = adv_min_raydist_value;
+
+	Y_DEBUG << "adv_base_sampling_offset="<<adv_base_sampling_offset<<yendl;
+	film->setBaseSamplingOffset(adv_base_sampling_offset);
+	film->setComputerNode(adv_computer_node);
 
 	return true;
 }

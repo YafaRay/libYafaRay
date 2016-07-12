@@ -40,9 +40,9 @@ class textureBackground_t: public background_t
 			angular
 		};
 
-		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, bool shoot_caustics);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
-		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
+		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool shoot_caustics);
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
+		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~textureBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 		bool hasIBL() { return withIBL; }
@@ -55,6 +55,7 @@ class textureBackground_t: public background_t
 		float rotation;
 		float sin_r, cos_r;
 		bool withIBL;
+		float IBL_Blur;
 		bool shootCaustic;
 		bool shootDiffuse;
 };
@@ -63,8 +64,8 @@ class constBackground_t: public background_t
 {
 	public:
 		constBackground_t(color_t col, bool ibl, bool shoot_caustics);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
-		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
+		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~constBackground_t();
 		static background_t *factory(paraMap_t &params,renderEnvironment_t &render);
 		bool hasIBL() { return withIBL; }
@@ -77,8 +78,8 @@ class constBackground_t: public background_t
 };
 
 
-textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, bool shoot_caustics):
-	tex(texture), project(proj), power(bpower), withIBL(ibl), shootCaustic(shoot_caustics)
+textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool shoot_caustics):
+	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur(ibl_blur), shootCaustic(shoot_caustics)
 {
 	rotation = 2.0f * rot / 360.f;
 	sin_r = fSin(M_PI*rotation);
@@ -90,12 +91,12 @@ textureBackground_t::~textureBackground_t()
 	// Empty
 }
 
-color_t textureBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
+color_t textureBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
 {
-	return eval(ray);
+	return eval(ray, from_postprocessed);
 }
 
-color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
+color_t textureBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
 {
 	float u = 0.f, v = 0.f;
 	
@@ -116,7 +117,7 @@ color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
 		if (u > 1.f) u -= 2.f;
 	}
 	
-	color_t ret = tex->getColor(point3d_t(u, v, 0.f));
+	color_t ret = tex->getColor(point3d_t(u, v, 0.f), from_postprocessed);
 	
 	float minComponent = 1.0e-5f;
 	
@@ -129,12 +130,14 @@ color_t textureBackground_t::eval(const ray_t &ray, bool filtered) const
 
 background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t &render)
 {
-	const texture_t *tex=nullptr;
+	texture_t *tex=nullptr;
 	const std::string *texname=nullptr;
 	const std::string *mapping=nullptr;
 	PROJECTION pr = spherical;
 	float power = 1.0, rot=0.0;
 	bool IBL = false;
+	float IBL_blur = 0.f;
+	float IBL_clamp_sampling = 0.f;
 	int IBL_sam = 16;
 	bool caust = true;
 	bool diffuse = true;
@@ -156,6 +159,8 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		if(*mapping == "probe" || *mapping == "angular") pr = angular;
 	}
 	params.getParam("ibl", IBL);
+	params.getParam("smartibl_blur", IBL_blur);
+	params.getParam("ibl_clamp_sampling", IBL_clamp_sampling);
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("power", power);
 	params.getParam("rotation", rot);
@@ -163,7 +168,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("shoot_diffuse", diffuse);
 	params.getParam("cast_shadows", castShadows);
 	
-	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, caust);
+	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, IBL_blur, caust);
 	
 	if(IBL)
 	{
@@ -174,10 +179,25 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		bgp["shoot_diffuse"] = diffuse;
 		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
 		bgp["cast_shadows"] = castShadows;
+				
+		if(IBL_blur > 0.f)
+		{
+			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << IBL_blur << yendl;
+			tex->postProcessedCreate();
+			tex->postProcessedBlur(IBL_blur);
+			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done." << yendl;
+		}
 		
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
 		
 		bglight->setBackground(texBG);
+		
+		if(IBL_clamp_sampling > 0.f)
+		{
+			Y_INFO << "TextureBackground: using IBL sampling clamp=" << IBL_clamp_sampling << yendl;
+			
+			bglight->setClampIntersect(IBL_clamp_sampling);
+		}
 		
 		if(bglight) render.getScene()->addLight(bglight);
 	}
@@ -198,12 +218,12 @@ constBackground_t::~constBackground_t()
 	// Empty
 }
 
-color_t constBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
+color_t constBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
 {
 	return color;
 }
 
-color_t constBackground_t::eval(const ray_t &ray, bool filtered) const
+color_t constBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
 {
 	return color;
 }

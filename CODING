@@ -8,7 +8,7 @@ some coding conventions:
   libs added to their build environment for all HAVE_* options they
   pull in (directly or indirectly!)
 * interface functions shall not have arguments or return types which
-  depend on configurable typedefines (such as CFLOAT, PLOAT and GFLOAT)
+  depend on configurable typedefines (such as float, PLOAT and float)
 * use doxygen comments to document non-obvious types, classes, interfaces
   and functions and their usage.
 

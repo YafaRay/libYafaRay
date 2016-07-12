@@ -26,7 +26,7 @@
 __BEGIN_YAFRAY
 
 orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-        int _resx, int _resy, PFLOAT aspect, PFLOAT _scale, float const near_clip_distance, float const far_clip_distance)
+        int _resx, int _resy, float aspect, float _scale, float const near_clip_distance, float const far_clip_distance)
         :camera_t(pos, look, up, _resx, _resy, aspect, near_clip_distance, far_clip_distance), scale(_scale)
 {
 	// Initialize camera specific plane coordinates
@@ -43,12 +43,12 @@ void orthoCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vecto
 	vup = aspect_ratio * camY;
 	vto = camZ;
 	pos = position - 0.5 * scale* (vup + vright);
-	vup     *= scale/(PFLOAT)resy;
-	vright  *= scale/(PFLOAT)resx;
+	vup     *= scale/(float)resy;
+	vright  *= scale/(float)resx;
 }
 
 
-ray_t orthoCam_t::shootRay(PFLOAT px, PFLOAT py, float lu, float lv, PFLOAT &wt) const
+ray_t orthoCam_t::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
 	ray_t ray;
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
@@ -67,7 +67,7 @@ point3d_t orthoCam_t::screenproject(const point3d_t &p) const
 	vector3d_t dir = p - pos;	
 	// Project p to pixel plane
 
-	PFLOAT dz = camZ * dir;
+	float dz = camZ * dir;
 	
 	vector3d_t proj = dir - dz * camZ;
 	

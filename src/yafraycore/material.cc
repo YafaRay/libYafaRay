@@ -38,8 +38,8 @@ bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	if(s.pdf > 1.0e-6f)
 	{
 		color_t cnew = s.lcol * s.alpha * scol * W;
-		CFLOAT new_max = cnew.maximum();
-		CFLOAT old_max = s.lcol.maximum();
+		float new_max = cnew.maximum();
+		float old_max = s.lcol.maximum();
 		float prob = std::min(1.f, new_max/old_max);
 		if(s.s3 <= prob && prob > 1e-4f)
 		{
@@ -71,7 +71,7 @@ color_t material_t::getReflectivity(const renderState_t &state, const surfacePoi
 }
 		
 
-void material_t::applyBump(surfacePoint_t &sp, PFLOAT dfdNU, PFLOAT dfdNV) const
+void material_t::applyBump(surfacePoint_t &sp, float dfdNU, float dfdNV) const
 {
 	sp.NU += dfdNU * sp.N;
 	sp.NV += dfdNV * sp.N;

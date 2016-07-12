@@ -444,7 +444,7 @@ colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colo
 	else return colorA_t(0.f);
 }
 
-colorPasses_t & colorPasses_t::operator *= (CFLOAT f)
+colorPasses_t & colorPasses_t::operator *= (float f)
 {
 	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{

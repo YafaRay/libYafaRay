@@ -30,8 +30,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utilities/threadUtils.h>
 
 __BEGIN_YAFRAY
+
+class photonMap_t;
 
 enum
 {
@@ -49,10 +52,11 @@ class YAFRAYCORE_EXPORT logEntry_t
 	friend class yafarayLog_t;
 	
 	public:
-		logEntry_t(std::time_t datetime, int verb_level, std::string description):eventDateTime(datetime),mVerbLevel(verb_level),eventDescription(description) {}
+		logEntry_t(std::time_t datetime, double duration, int verb_level, std::string description):eventDateTime(datetime),eventDuration(duration),mVerbLevel(verb_level),eventDescription(description) {}
 
 	protected:
 		std::time_t eventDateTime;
+		double eventDuration;
 		int mVerbLevel;
 		std::string eventDescription;
 };
@@ -61,9 +65,10 @@ class YAFRAYCORE_EXPORT logEntry_t
 class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	public:
-		yafarayLog_t() {}
+		yafarayLog_t();
+		yafarayLog_t(const yafarayLog_t&);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
 		
-		~yafarayLog_t() {}
+		~yafarayLog_t();
 
 		void setConsoleMasterVerbosity(const std::string &strVLevel);
 		void setLogMasterVerbosity(const std::string &strVLevel);
@@ -79,9 +84,12 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setImagePath(const std::string &path) { mImagePath = path; }
 		void appendAANoiseSettings(const std::string &aa_noise_settings);
 		void appendRenderSettings(const std::string &render_settings);
+		void setRenderInfo(const std::string &render_info) { mRenderInfo = render_info; }
 		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
 		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
 
+		bool getSaveLog() const { return mSaveLog; }
+		bool getSaveHTML() const { return mSaveHTML; }
 		bool getUseParamsBadge() { return mDrawParams; }
 		bool isParamsBadgeTop() { return mParamsBadgeTop; }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
@@ -104,8 +112,12 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setConsoleMasterVerbosity(int vlevel);
 		void setLogMasterVerbosity(int vlevel);
 		std::string printTime(std::time_t datetime) const;
+		std::string printDuration(double duration) const;
+		std::string printDurationSimpleFormat(double duration) const;
 		std::string printDate(std::time_t datetime) const;
 		int vlevel_from_string(std::string strVLevel) const;
+		
+		std::mutex mutx;  //To try to avoid garbled output when there are several threads trying to output data to the log
 
 		template <typename T>
 		yafarayLog_t & operator << ( const T &obj )
@@ -145,8 +157,11 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingCustomIcon;		
 		std::string mAANoiseSettings;
 		std::string mRenderSettings;
+		std::string mRenderInfo;
 		bool drawAANoiseSettings = true;
 		bool drawRenderSettings = true;
+		std::time_t previousConsoleEventDateTime = 0;
+		std::time_t previousLogEventDateTime = 0;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

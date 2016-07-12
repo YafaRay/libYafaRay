@@ -184,11 +184,11 @@ void shinyDiffuseMat_t::initOrenNayar(double sigma)
  *  @param  N  Surface normal
  *  @note   http://en.wikipedia.org/wiki/Oren-Nayar_reflectance_model
  */
-CFLOAT shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const
+float shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const
 {
-    PFLOAT cos_ti = std::max(-1.f,std::min(1.f,N*wi));
-    PFLOAT cos_to = std::max(-1.f,std::min(1.f,N*wo));
-    CFLOAT maxcos_f = 0.f;
+    float cos_ti = std::max(-1.f,std::min(1.f,N*wi));
+    float cos_to = std::max(-1.f,std::min(1.f,N*wo));
+    float maxcos_f = 0.f;
 
     if(cos_ti < 0.9999f && cos_to < 0.9999f)
     {
@@ -197,7 +197,7 @@ CFLOAT shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, 
         maxcos_f = std::max(0.f, v1*v2);
     }
 
-    CFLOAT sin_alpha, tan_beta;
+    float sin_alpha, tan_beta;
 
     if(cos_to >= cos_ti)
     {
@@ -226,8 +226,8 @@ CFLOAT shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, 
 
 color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval)const
 {
-    PFLOAT cos_Ng_wo = sp.Ng*wo;
-    PFLOAT cos_Ng_wl = sp.Ng*wl;
+    float cos_Ng_wo = sp.Ng*wo;
+    float cos_Ng_wl = sp.Ng*wl;
     // face forward:
     vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
     if(!(bsdfs & bsdfFlags & BSDF_DIFFUSE)) return color_t(0.f);
@@ -281,7 +281,7 @@ color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t
 color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
     float accumC[4];
-    PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi, cos_N;
+    float cos_Ng_wo = sp.Ng*wo, cos_Ng_wi, cos_N;
     vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 
     SDDat_t *dat = (SDDat_t *)state.userdata;
@@ -382,7 +382,7 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
     
     float pdf=0.f;
     float accumC[4];
-    PFLOAT cos_Ng_wo = sp.Ng*wo, cos_Ng_wi;
+    float cos_Ng_wo = sp.Ng*wo, cos_Ng_wi;
     vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
     float Kr;
 
@@ -476,7 +476,7 @@ void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoi
         //Y_WARNING << sp.N << " | " << N << yendl;
         wi[0] = wo;
         wi[0].reflect(N);
-        PFLOAT cos_wi_Ng = wi[0]*Ng;
+        float cos_wi_Ng = wi[0]*Ng;
         if(cos_wi_Ng < 0.01)
         {
             wi[0] += (0.01-cos_wi_Ng)*Ng;
@@ -523,7 +523,7 @@ color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const sur
     return accum * tcol;
 }
 
-CFLOAT shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
     SDDat_t *dat = (SDDat_t *)state.userdata;
     nodeStack_t stack(dat->nodeStack);
@@ -542,7 +542,7 @@ CFLOAT shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoin
         else cur_ior_squared = mIOR_Squared;
 
         getFresnel(wo, N, Kr, cur_ior_squared);
-        CFLOAT refl = (1.f - dat->component[0]*Kr) * dat->component[1];
+        float refl = (1.f - dat->component[0]*Kr) * dat->component[1];
         return 1.f - refl;
     }
     return 1.f;
@@ -553,7 +553,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     /// Material Parameters
     color_t diffuseColor=1.f;
     color_t mirrorColor=1.f;
-    CFLOAT diffuseStrength=1.f;
+    float diffuseStrength=1.f;
     float transparencyStrength=0.f;
     float translucencyStrength=0.f;
     float mirrorStrength=0.f;

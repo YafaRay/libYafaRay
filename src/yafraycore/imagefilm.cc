@@ -28,13 +28,17 @@
 #include <utilities/math_utils.h>
 #include <resources/yafLogoTiny.h>
 
-#include <yaf_revision.h>
 #include <cstring>
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <iomanip>
+#include <utility>
+#include <regex>
+#include <boost/filesystem.hpp>
+#include <boost/foreach.hpp> 
+#include <boost/filesystem.hpp>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -119,15 +123,12 @@ float Lanczos2(float dx, float dy)
 
 imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize, filterType filt,
 						  renderEnvironment_t *e, bool showSamMask, int tSize, imageSpliter_t::tilesOrderType tOrder, bool pmA):
-	flags(0), w(width), h(height), cx0(xstart), cy0(ystart), colorSpace(RAW_MANUAL_GAMMA),
- gamma(1.0), colorSpace2(RAW_MANUAL_GAMMA), gamma2(1.0), filterw(filterSize*0.5), output(&out),
-	split(true), interactive(true), abort(false), imageOutputPartialSaveTimeInterval(0.0), splitter(nullptr), pbar(nullptr),
-	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA), premultAlpha2(false)
+	w(width), h(height), cx0(xstart), cy0(ystart), filterw(filterSize*0.5), output(&out),
+	env(e), showMask(showSamMask), tileSize(tSize), tilesOrder(tOrder), premultAlpha(pmA)
 {
 	cx1 = xstart + width;
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
-
 
 	//Creation of the image buffers for the render passes
 	for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
@@ -168,12 +169,13 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	area_cnt = 0;
 
 	pbar = new ConsoleProgressBar_t(80);
+	session.setStatusCurrentPassPercent(pbar->getPercent());
 	
 	AA_detect_color_noise = false;
 	AA_dark_threshold_factor = 0.f;
 	AA_variance_edge_size = 10;
 	AA_variance_pixels = 0;
-	AA_clamp_samples = 0.f;
+	AA_clamp_samples = 0.f;	
 }
 
 imageFilm_t::~imageFilm_t ()
@@ -221,20 +223,67 @@ void imageFilm_t::init(int numPasses)
 	else area_cnt = 1;
 
 	if(pbar) pbar->init(w * h);
+	session.setStatusCurrentPassPercent(pbar->getPercent());
 
 	abort = false;
 	completed_cnt = 0;
 	nPass = 1;
 	nPasses = numPasses;
+
+	imagesAutoSavePassCounter = 0;
+	filmAutoSavePassCounter = 0;
+	resetImagesAutoSaveTimer();
+	resetFilmAutoSaveTimer();
+	gTimer.addEvent("imagesAutoSaveTimer");
+	gTimer.addEvent("filmAutoSaveTimer");
+	gTimer.start("imagesAutoSaveTimer");
+	gTimer.start("filmAutoSaveTimer");
+
+	if(!output->isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
+	{
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+	
+		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
+
+		imageFilmUpdateCheckInfo(); //film load check data initialization. Make sure this is done after the Film Load operation (if any).
+	}
 }
 
-int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName)
+int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorName, bool skipNextPass)
 {
 	splitterMutex.lock();
 	next_area = 0;
 	splitterMutex.unlock();
 	nPass++;
+	imagesAutoSavePassCounter++;
+	filmAutoSavePassCounter++;
+	
+	if(skipNextPass) return 0;
+	
 	std::stringstream passString;
+
+	Y_DEBUG << "nPass=" << nPass << " imagesAutoSavePassCounter="<<imagesAutoSavePassCounter<<" filmAutoSavePassCounter="<<filmAutoSavePassCounter<<yendl;
+
+	if(session.renderInProgress() && !output->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	{
+		colorOutput_t *out2 = env->getOutput2();
+
+		if((imagesAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (imagesAutoSavePassCounter >= imagesAutoSaveIntervalPasses))
+		{
+			if(output && output->isImageOutput()) this->flush(numView, IF_ALL, output);
+			else if(out2 && out2->isImageOutput()) this->flush(numView, IF_ALL, out2);
+			imagesAutoSavePassCounter = 0;
+		}
+
+		if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_PASS_INTERVAL) && (filmAutoSavePassCounter >= filmAutoSaveIntervalPasses))
+		{
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				imageFilmSave();
+				filmAutoSavePassCounter = 0;
+			}
+		}
+	}
 
 	if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
@@ -261,10 +310,19 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 			{
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 
+				if((*imagePasses.at(0))(x, y).weight <= 0.f) flags->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
-				
-				if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+
+				if(AA_dark_detection_type == DARK_DETECTION_LINEAR && AA_dark_threshold_factor > 0.f)
+				{
+					if(AA_dark_threshold_factor > 0.f) AA_thresh_scaled = AA_thesh*((1.f-AA_dark_threshold_factor) + (pixColBri*AA_dark_threshold_factor));
+				}
+				else if(AA_dark_detection_type == DARK_DETECTION_CURVE)
+				{
+					AA_thresh_scaled = dark_threshold_curve_interpolate(pixColBri);
+				}
 				
 				if(pixCol.colorDifference((*imagePasses.at(0))(x+1, y).normalized(), AA_detect_color_noise) >= AA_thresh_scaled)
 				{
@@ -343,7 +401,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				{	
 					++n_resample;
 												
-					if(interactive && showMask)
+					if(session.isInteractive() && showMask)
 					{
 						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 						{
@@ -366,9 +424,10 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 		n_resample = h*w;
 	}
 
-	//if(interactive) //FIXME DAVID, SHOULD I PUT THIS BACK?, TEST WITH BLENDER AND XML+MULTILAYER
-	output->flush(numView, env->getRenderPasses());
+	if(session.isInteractive())	output->flush(numView, env->getRenderPasses());
 
+	if(session.renderResumed()) passString << "Film loaded + ";
+	
 	passString << "Rendering pass " << nPass << " of " << nPasses << ", resampling " << n_resample << " pixels.";
 
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
@@ -376,6 +435,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 	if(pbar)
 	{
 		pbar->init(w * h);
+		session.setStatusCurrentPassPercent(pbar->getPercent());
 		pbar->setTag(passString.str().c_str());
 	}
 	completed_cnt = 0;
@@ -403,7 +463,7 @@ bool imageFilm_t::nextArea(int numView, renderArea_t &a)
 			a.sy0 = a.Y + ifilterw;
 			a.sy1 = a.Y + a.H - ifilterw;
 
-			if(interactive)
+			if(session.isInteractive())
 			{
 				outMutex.lock();
 				int end_x = a.X+a.W, end_y = a.Y+a.H;
@@ -465,25 +525,46 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 		}
 	}
 
-	if(interactive) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
-    
-    else
-    { 
-        gTimer.stop("image_area_flush");
-        accumulated_image_area_flush_time += gTimer.getTime("image_area_flush");
-        gTimer.start("image_area_flush");
-        
-        if((imageOutputPartialSaveTimeInterval > 0.f) && ((accumulated_image_area_flush_time > imageOutputPartialSaveTimeInterval) ||accumulated_image_area_flush_time == 0.0)) 
-        {
-             output->flush(numView, env->getRenderPasses());
-             reset_accumulated_image_area_flush_time();
-        }
-    }
+	if(session.isInteractive()) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
+	
+	if(session.renderInProgress() && !output->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	{
+		gTimer.stop("imagesAutoSaveTimer");
+		imagesAutoSaveTimer += gTimer.getTime("imagesAutoSaveTimer");
+		if(imagesAutoSaveTimer < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		gTimer.start("imagesAutoSaveTimer");
+
+		gTimer.stop("filmAutoSaveTimer");
+		filmAutoSaveTimer += gTimer.getTime("filmAutoSaveTimer");
+		if(filmAutoSaveTimer < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		gTimer.start("filmAutoSaveTimer");
+
+		colorOutput_t *out2 = env->getOutput2();
+
+		if((imagesAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (imagesAutoSaveTimer > imagesAutoSaveIntervalSeconds))
+		{
+			Y_DEBUG << "imagesAutoSaveTimer="<<imagesAutoSaveTimer<<yendl;
+			if(output && output->isImageOutput()) this->flush(numView, IF_ALL, output);
+			else if(out2 && out2->isImageOutput()) this->flush(numView, IF_ALL, out2);
+			resetImagesAutoSaveTimer();
+		}
+
+		if((filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) && (filmAutoSaveIntervalType == AUTOSAVE_TIME_INTERVAL) && (filmAutoSaveTimer > filmAutoSaveIntervalSeconds))
+		{
+			Y_DEBUG << "filmAutoSaveTimer="<<filmAutoSaveTimer<<yendl;
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				imageFilmSave();
+			}
+			resetFilmAutoSaveTimer();
+		}
+	}
 
     if(pbar)
     {
         if(++completed_cnt == area_cnt) pbar->done();
         else pbar->update(a.W * a.H);
+        session.setStatusCurrentPassPercent(pbar->getPercent());
     }
     
 	outMutex.unlock();
@@ -491,16 +572,83 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 {
-	outMutex.lock();
+	if(session.renderFinished())
+	{
+		outMutex.lock();
+		Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
+	}
 
-	Y_INFO << "imageFilm: Flushing buffer (View number " << numView << ")..." << yendl;
-
-	colorOutput_t *colout = out ? out : output;
+	colorOutput_t *out1 = out ? out : output;
 	colorOutput_t *out2 = env->getOutput2();
+
+	if(out1->isPreview()) out2 = nullptr;	//disable secondary file output when rendering a Preview (material preview, etc)
+	
+	if(out1 == out2) out1 = nullptr;	//if we are already flushing the secondary output (out2) as main output (out1), then disable out1 to avoid duplicated work
+
+	std::string version = session.getYafaRayCoreVersion();
+
+	std::stringstream ssBadge;
+
+	if(!yafLog.getLoggingTitle().empty()) ssBadge << yafLog.getLoggingTitle() << "\n";
+	if(!yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingAuthor() << " | " << yafLog.getLoggingContact() << "\n";
+	else if(!yafLog.getLoggingAuthor().empty() && yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingAuthor() << "\n";
+	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
+	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
+
+	ssBadge << "\nYafaRay (" << version << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler(); 
+
+	ssBadge << std::setprecision(2);
+	double times = gTimer.getTimeNotStopping("rendert");
+	if(session.renderFinished()) times = gTimer.getTime("rendert");
+	int timem, timeh;
+	gTimer.splitTime(times, &times, &timem, &timeh);
+	ssBadge << " | " << w << "x" << h;
+	if(session.renderInProgress()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else if(session.renderAborted()) ssBadge << " | " << (session.renderResumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << session.currentPassPercent() << "% of pass: " << session.currentPass() << " / " << session.totalPasses();
+	else 
+	{
+		if(session.renderResumed())	ssBadge << " | film loaded + " << session.totalPasses()-1 << " passes";
+		else ssBadge << " | " << session.totalPasses() << " passes";
+	}
+	//if(cx0 != 0) ssBadge << ", xstart=" << cx0; 
+	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
+	ssBadge << " | Render time:";
+	if (timeh > 0) ssBadge << " " << timeh << "h";
+	if (timem > 0) ssBadge << " " << timem << "m";
+	ssBadge << " " << times << "s";
+	
+	times = gTimer.getTimeNotStopping("rendert") + gTimer.getTime("prepass");
+	if(session.renderFinished()) times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
+	gTimer.splitTime(times, &times, &timem, &timeh);
+	ssBadge << " | Total time:";
+	if (timeh > 0) ssBadge << " " << timeh << "h";
+	if (timem > 0) ssBadge << " " << timem << "m";
+	ssBadge << " " << times << "s";
+	
+	std::stringstream ssLog;
+	ssLog << ssBadge.str();
+	yafLog.setRenderInfo(ssBadge.str());
+	
+	if(yafLog.getDrawRenderSettings()) ssBadge << " | " << yafLog.getRenderSettings();
+	if(yafLog.getDrawAANoiseSettings()) ssBadge << "\n" << yafLog.getAANoiseSettings();
+	if(output && output->isImageOutput()) ssBadge << " " << output->getDenoiseParams();
+	else if(out2 && out2->isImageOutput()) ssBadge << " " << out2->getDenoiseParams();
+
+	ssLog << " | " << yafLog.getRenderSettings();
+	ssLog << "\n" << yafLog.getAANoiseSettings();
+	if(output && output->isImageOutput()) ssLog << " " << output->getDenoiseParams();
+	else if(out2 && out2->isImageOutput()) ssLog << " " << out2->getDenoiseParams();
 
 	if(yafLog.getUseParamsBadge())
 	{
-		if((colout && colout->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings();
+		if((out1 && out1->isImageOutput()) || (out2 && out2->isImageOutput())) drawRenderSettings(ssBadge);
+	}
+
+	if(session.renderFinished())
+	{
+		Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
+		for (std::string line; std::getline(ssLog, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
+		Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
 	}
 	
 #ifndef HAVE_FREETYPE
@@ -519,7 +667,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 
 	int outputDisplaceRenderedImageBadgeHeight = 0, out2DisplaceRenderedImageBadgeHeight = 0;
 	
-	if(colout && colout->isImageOutput() && yafLog.isParamsBadgeTop()) outputDisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
+	if(out1 && out1->isImageOutput() && yafLog.isParamsBadgeTop()) outputDisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
 	
 	if(out2 && out2->isImageOutput() && yafLog.isParamsBadgeTop()) out2DisplaceRenderedImageBadgeHeight = yafLog.getBadgeHeight();
 
@@ -567,14 +715,14 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				}
 			}
 
-			colout->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
+			if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
 			if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
 		}
 	}
 
 	if(yafLog.getUseParamsBadge() && dpimage)
 	{
-		if(colout && colout->isImageOutput())
+		if(out1 && out1->isImageOutput())
 		{
 			int badgeStartY = h;
 			
@@ -589,7 +737,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses[idx] = colorA_t(dpcol, 1.f);
 					}
-					colout->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+					out1->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
 				}
 			}
 		}
@@ -615,12 +763,64 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		}
 	}
 
-	colout->flush(numView, env->getRenderPasses());
-	if(out2) out2->flush(numView, env->getRenderPasses());
+	if(out1 && (session.renderFinished() || out1->isImageOutput())) 
+	{
+		std::stringstream passString;
+		if(out1->isImageOutput()) passString << "Saving image files";
+		else passString << "Flushing output";
 
-	outMutex.unlock();
+		Y_INFO << passString.str() << yendl;
 
-	Y_VERBOSE << "imageFilm: Done." << yendl;
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		out1->flush(numView, env->getRenderPasses());
+		
+		if(pbar) pbar->setTag(oldTag);
+	}
+	
+	if(out2 && out2->isImageOutput())
+	{
+		std::stringstream passString;
+		passString << "Saving image files";
+
+		Y_INFO << passString.str() << yendl;
+
+		std::string oldTag;
+
+		if(pbar)
+		{
+			oldTag = pbar->getTag();
+			pbar->setTag(passString.str().c_str());
+		}
+
+		out2->flush(numView, env->getRenderPasses());
+
+		if(pbar) pbar->setTag(oldTag);
+	}
+
+	if(session.renderFinished())
+	{
+		if(!output->isPreview() && (filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE))
+		{
+			if((output && output->isImageOutput()) || (out2 && out2->isImageOutput()))
+			{
+				imageFilmSave();
+			}
+		}
+
+		gTimer.stop("imagesAutoSaveTimer");
+		gTimer.stop("filmAutoSaveTimer");
+
+		yafLog.clearMemoryLog();
+		outMutex.unlock();
+		Y_VERBOSE << "imageFilm: Done." << yendl;
+	}
 }
 
 bool imageFilm_t::doMoreSamples(int x, int y) const
@@ -789,9 +989,10 @@ void imageFilm_t::setProgressBar(progressBar_t *pb)
 	pbar = pb;
 }
 
-void imageFilm_t::setAANoiseParams(bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
+void imageFilm_t::setAANoiseParams(bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
 {
 	AA_detect_color_noise = detect_color_noise;
+	AA_dark_detection_type = dark_detection_type;
 	AA_dark_threshold_factor = dark_threshold_factor;
 	AA_variance_edge_size = variance_edge_size;
 	AA_variance_pixels = variance_pixels;
@@ -829,9 +1030,13 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 #endif
 
-void imageFilm_t::drawRenderSettings()
+void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 {
-	if(dpimage) return;
+	if(dpimage)
+	{
+		delete dpimage;
+		dpimage = nullptr;
+	}
 
 	dpHeight = yafLog.getBadgeHeight();
 
@@ -843,48 +1048,8 @@ void imageFilm_t::drawRenderSettings()
 	FT_GlyphSlot slot;
 	FT_Vector pen; // untransformed origin
 
-#ifdef RELEASE
-	std::string version = std::string(VERSION);
-#else
-	std::string version = std::string(YAF_SVN_REV);
-#endif
-
-	std::stringstream ss;
-
-	if(!yafLog.getLoggingTitle().empty()) ss << yafLog.getLoggingTitle() << "\n";
-	if(!yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << " | " << yafLog.getLoggingContact() << "\n";
-	else if(!yafLog.getLoggingAuthor().empty() && yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingAuthor() << "\n";
-	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ss << yafLog.getLoggingContact() << "\n";
-	if(!yafLog.getLoggingComments().empty()) ss << yafLog.getLoggingComments() << "\n";
-
-	ss << "\nYafaRay (" << version << ")";
-
-	ss << std::setprecision(2);
-	double times = gTimer.getTime("rendert");
-	int timem, timeh;
-	gTimer.splitTime(times, &times, &timem, &timeh);
-	ss << " | Render time:";
-	if (timeh > 0) ss << " " << timeh << "h";
-	if (timem > 0) ss << " " << timem << "m";
-	ss << " " << times << "s";
-	
-	times = gTimer.getTime("rendert") + gTimer.getTime("prepass");
-	gTimer.splitTime(times, &times, &timem, &timeh);
-	ss << " | Total time:";
-	if (timeh > 0) ss << " " << timeh << "h";
-	if (timem > 0) ss << " " << timem << "m";
-	ss << " " << times << "s";
-	
-	if(yafLog.getDrawRenderSettings()) ss << " | " << yafLog.getRenderSettings();
-	if(yafLog.getDrawAANoiseSettings()) ss << "\n" << yafLog.getAANoiseSettings();
-
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
-	for (std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") Y_PARAMS << line << yendl;
-	Y_PARAMS << "--------------------------------------------------------------------------------" << yendl;
-
 	std::string text_utf8 = ss.str();
-	std::wstring_convert<std::codecvt_utf8<char32_t>,char32_t> convert;
-	std::u32string wtext_utf32 = convert.from_bytes(text_utf8);
+	std::u32string wtext_utf32 = utf8_to_wutf32(text_utf8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f;
@@ -1021,7 +1186,315 @@ void imageFilm_t::drawRenderSettings()
 		delete logo;
 	}
 
-	Y_INFO << "imageFilm: Rendering parameters badge created." << yendl;
+	Y_VERBOSE << "imageFilm: Rendering parameters badge created." << yendl;
 }
+
+float imageFilm_t::dark_threshold_curve_interpolate(float pixel_brightness)
+{
+	if(pixel_brightness <= 0.10f) return 0.0001f;
+	else if(pixel_brightness > 0.10f && pixel_brightness <= 0.20f) return (0.0001f + (pixel_brightness - 0.10f) * (0.0010f - 0.0001f) / 0.10f);
+	else if(pixel_brightness > 0.20f && pixel_brightness <= 0.30f) return (0.0010f + (pixel_brightness - 0.20f) * (0.0020f - 0.0010f) / 0.10f);
+	else if(pixel_brightness > 0.30f && pixel_brightness <= 0.40f) return (0.0020f + (pixel_brightness - 0.30f) * (0.0035f - 0.0020f) / 0.10f);
+	else if(pixel_brightness > 0.40f && pixel_brightness <= 0.50f) return (0.0035f + (pixel_brightness - 0.40f) * (0.0055f - 0.0035f) / 0.10f);
+	else if(pixel_brightness > 0.50f && pixel_brightness <= 0.60f) return (0.0055f + (pixel_brightness - 0.50f) * (0.0075f - 0.0055f) / 0.10f);
+	else if(pixel_brightness > 0.60f && pixel_brightness <= 0.70f) return (0.0075f + (pixel_brightness - 0.60f) * (0.0100f - 0.0075f) / 0.10f);
+	else if(pixel_brightness > 0.70f && pixel_brightness <= 0.80f) return (0.0100f + (pixel_brightness - 0.70f) * (0.0150f - 0.0100f) / 0.10f);
+	else if(pixel_brightness > 0.80f && pixel_brightness <= 0.90f) return (0.0150f + (pixel_brightness - 0.80f) * (0.0250f - 0.0150f) / 0.10f);
+	else if(pixel_brightness > 0.90f && pixel_brightness <= 1.00f) return (0.0250f + (pixel_brightness - 0.90f) * (0.0400f - 0.0250f) / 0.10f);
+	else if(pixel_brightness > 1.00f && pixel_brightness <= 1.20f) return (0.0400f + (pixel_brightness - 1.00f) * (0.0800f - 0.0400f) / 0.20f);
+	else if(pixel_brightness > 1.20f && pixel_brightness <= 1.40f) return (0.0800f + (pixel_brightness - 1.20f) * (0.0950f - 0.0800f) / 0.20f);
+	else if(pixel_brightness > 1.40f && pixel_brightness <= 1.80f) return (0.0950f + (pixel_brightness - 1.40f) * (0.1000f - 0.0950f) / 0.40f);
+	else return 0.1000f;
+}
+
+std::string imageFilm_t::getFilmPath() const
+{
+	std::string filmPath = session.getPathImageOutput();
+	std::stringstream node;
+	node << std::setfill('0') << std::setw(4) << computerNode;
+	filmPath += " - node " + node.str();
+	filmPath += ".film";
+	return filmPath;
+}
+
+bool imageFilm_t::imageFilmLoad(const std::string &filename)
+{
+	bool debugXMLformat = false;	//Enable only for debugging purposes
+
+	try
+	{
+		std::ifstream ifs(filename, std::fstream::binary);
+		char *memblock = new char [1];
+		ifs.seekg (0, std::ios::beg);
+		ifs.read (memblock, 1);
+		bool binaryfile = false;
+		if(memblock[0] < '0') binaryfile = true;	//If first character in the film file is not an ASCII number then consider it a binary file
+		delete memblock;
+		ifs.seekg (0, std::ios::beg);
+		
+		if(debugXMLformat)
+		{
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in XML format" << yendl;
+			boost::archive::xml_iarchive ia(ifs);
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		else if(binaryfile == true)
+		{
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Binary (non portable) format" << yendl;
+			boost::archive::binary_iarchive ia(ifs);
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		else
+		{
+			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Text format" << yendl;
+			boost::archive::text_iarchive ia(ifs);
+			ia >> BOOST_SERIALIZATION_NVP(*this);
+			ifs.close();
+		}
+		Y_VERBOSE << "imageFilm: Film loaded from file." << yendl;
+		return true;
+	}
+	catch(std::exception& ex){
+        Y_WARNING << "imageFilm: error '" << ex.what() << "' while loading ImageFilm file: '" << filename << "'" << yendl;
+		return false;
+    }
+}
+
+void imageFilm_t::imageFilmLoadAllInFolder()
+{
+	std::stringstream passString;
+	passString << "Loading ImageFilm files";
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+	
+	std::string filmPath = getFilmPath();
+	
+	std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
+
+	std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
+	if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
+	const std::string target_path( parentPath );
+	const std::regex filmFilter(baseImageFileName + ".*\\.film$");
+	std::vector<std::string> filmFilesList;
+	
+	try
+	{
+		boost::filesystem::directory_iterator it_end;
+		for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
+		{
+			if(!boost::filesystem::is_regular_file(it->status())) continue;
+			if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
+			filmFilesList.push_back(it->path().string());
+		}
+		std::sort(filmFilesList.begin(), filmFilesList.end());
+
+		for(auto filmFile: filmFilesList)
+		{
+			imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+			loadedFilm->imageFilmLoad(filmFile);
+			
+			for(size_t idx=0; idx<imagePasses.size(); ++idx)
+			{
+				for(int i=0; i<w; ++i)
+				{
+					for(int j=0; j<h; ++j)
+					{
+						rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
+						(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+						(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+					}
+				}
+			}
+			
+			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+			
+			delete loadedFilm;
+		}
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+		Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
+	}
+	
+	if(pbar) pbar->setTag(oldTag);
+}
+
+
+bool imageFilm_t::imageFilmSave()
+{
+	bool debugXMLformat = false;	//Enable only for debugging purposes
+	
+	std::stringstream passString;
+	passString << "Saving internal ImageFilm file";
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+
+	std::string filmPath = getFilmPath();
+
+	try
+	{
+		std::ofstream ofs(filmPath+".tmp", std::fstream::binary);
+
+		if(debugXMLformat)
+		{
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in XML format" << yendl;
+			boost::archive::xml_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+		else if(filmFileSaveBinaryFormat)
+		{
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Binary (non portable) format" << yendl;
+			boost::archive::binary_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+		else
+		{
+			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Text format" << yendl;
+			boost::archive::text_oarchive oa(ofs);
+			oa << BOOST_SERIALIZATION_NVP(*this);
+			ofs.close();
+		}
+	Y_VERBOSE << "imageFilm: Film saved to file." << yendl;
+	}
+	catch(std::exception& ex){
+        Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filmPath << "'" << yendl;
+		if(pbar) pbar->setTag(oldTag);
+		return false;
+    }
+    
+	try
+	{
+		boost::filesystem::copy_file(filmPath+".tmp", filmPath, boost::filesystem::copy_option::overwrite_if_exists);
+		boost::filesystem::remove(filmPath+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+		Y_WARNING << "imageFilm: file operation error \"" << e.what() << yendl;
+	}
+
+	if(pbar) pbar->setTag(oldTag);
+	
+	return true;
+}
+
+void imageFilm_t::imageFilmFileBackup() const
+{
+	std::stringstream passString;
+	passString << "Creating backup of the previous ImageFilm file...";
+
+	Y_INFO << passString.str() << yendl;
+
+	std::string oldTag;
+
+	if(pbar)
+	{
+		oldTag = pbar->getTag();
+		pbar->setTag(passString.str().c_str());
+	}
+
+	std::string filmPath = getFilmPath();
+	std::string filmPathBackup = filmPath+"-previous.bak";
+	
+	if(boost::filesystem::exists(filmPath))
+	{
+		Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
+		try
+		{	
+			boost::filesystem::rename(filmPath, filmPathBackup);
+		}
+		catch(const boost::filesystem::filesystem_error& e)
+		{
+			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
+		}
+	}
+	
+	if(pbar) pbar->setTag(oldTag);
+}
+
+void imageFilm_t::imageFilmUpdateCheckInfo()
+{
+	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
+	filmload_check.w = w;
+	filmload_check.h = h;
+	filmload_check.cx0 = cx0;
+	filmload_check.cx1 = cx1;
+	filmload_check.cy0 = cy0;
+	filmload_check.cy1 = cy1;
+	filmload_check.numPasses = imagePasses.size();
+}
+
+bool imageFilm_t::imageFilmLoadCheckOk() const
+{
+	bool checksOK = true;
+	
+	if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Film structure version, expected=" << FILM_STRUCTURE_VERSION << ", in reused/loaded film=" << filmload_check.filmStructureVersion << yendl;
+	}	
+	if(filmload_check.w != w)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << w << ", in reused/loaded film=" << filmload_check.w << yendl;
+	}
+	if(filmload_check.h != h)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << h << ", in reused/loaded film=" << filmload_check.h << yendl;
+	}
+	if(filmload_check.cx0 != cx0)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx0 << ", in reused/loaded film=" << filmload_check.cx0 << yendl;
+	}
+	if(filmload_check.cx1 != cx1)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx1 << ", in reused/loaded film=" << filmload_check.cx1 << yendl;
+	}
+	if(filmload_check.cy0 != cy0)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy0 << ", in reused/loaded film=" << filmload_check.cy0 << yendl;
+	}
+	if(filmload_check.cy1 != cy1)
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check.cy1 << yendl;
+	}
+	if(filmload_check.numPasses != (size_t) env->getRenderPasses()->extPassesSize())
+	{
+		checksOK = false;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << env->getRenderPasses()->extPassesSize() << ", in reused/loaded film=" << filmload_check.numPasses << yendl;
+	}
+	
+	if(!checksOK) Y_WARNING << "imageFilm: loading/reusing film failed because parameters are different. The film will be re-generated." << yendl;
+	
+	Y_DEBUG << "imageFilm: loading/reusing film check results=" << checksOK << ". Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<env->getRenderPasses()->extPassesSize()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
+	
+	return checksOK;
+}
+
 
 __END_YAFRAY

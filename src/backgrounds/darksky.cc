@@ -32,8 +32,8 @@ class darkSkyBackground_t: public background_t
 	public:
 		darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
 							float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool shoot_caustics);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool filtered=false) const;
-		virtual color_t eval(const ray_t &ray, bool filtered=false) const;
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
+		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~darkSkyBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 		bool hasIBL() { return withIBL; }
@@ -240,13 +240,13 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	return skyCol * skyBrightness;
 }
 
-color_t darkSkyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool filtered) const
+color_t darkSkyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
 {
 	color_t ret = getSkyCol(ray);
 	return ret;
 }
 
-color_t darkSkyBackground_t::eval(const ray_t &ray, bool filtered) const
+color_t darkSkyBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
 {
 	color_t ret = getSkyCol(ray)  * power;
 	return ret;

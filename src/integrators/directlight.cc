@@ -83,12 +83,16 @@ bool directLighting_t::preprocess()
 		success = createCausticMap();
 		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
 		
-		if(photonMapProcessing == PHOTONS_LOAD)
-		{
-			set << " (loading photon maps from file)";
-		}
-		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";	
+	if(photonMapProcessing == PHOTONS_LOAD)
+	{
+		set << " (loading photon maps from file)";
 	}
+	else if(photonMapProcessing == PHOTONS_REUSE)
+	{
+		set << " (reusing photon maps from memory)";
+	}
+	else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
+}
 
 	gTimer.stop("prepass");
 	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " (" << scene->getNumThreadsPhotons() << " thread(s))" << yendl;
@@ -181,7 +185,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	{
 		if(background && !transpRefractedBackground)
 		{
-			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state, false), state.raylevel == 0);
+			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
 		}
 	}
 
@@ -251,6 +255,7 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	
 	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
 	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
+	else if(photon_maps_processing_str == "reuse-previous") inte->photonMapProcessing = PHOTONS_REUSE;
 	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
 	
 	return inte;

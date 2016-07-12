@@ -11,7 +11,6 @@
 #include <core_api/mcintegrator.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/monitor.h>
-#include <yafraycore/ccthreads.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/sample_utils.h>
@@ -69,6 +68,8 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		void initializePPM();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp, colorPasses_t &colorPasses);
+		void photonWorker(photonMap_t * diffuseMap, photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nPhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, random_t & prng);
+		
 	protected:
 		hashGrid_t  photonGrid; // the hashgrid for holding photons
 		photonMap_t diffuseMap,causticMap; // photonmap

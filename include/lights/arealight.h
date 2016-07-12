@@ -11,7 +11,7 @@ class areaLight_t : public light_t
 {
 	public:
 		areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-					const color_t &col, CFLOAT inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
+					const color_t &col, float inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
 		~areaLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -21,7 +21,7 @@ class areaLight_t : public light_t
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
 		virtual bool canIntersect() const{ return true; }
-		virtual bool intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const;
+		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }

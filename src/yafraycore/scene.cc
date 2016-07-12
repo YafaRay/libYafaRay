@@ -93,7 +93,7 @@ int scene_t::getSignals() const
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOAT &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
+void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
 {
 	samples = AA_samples;
 	passes = AA_passes;
@@ -104,6 +104,7 @@ void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, CFLOA
 	light_sample_multiplier_factor = AA_light_sample_multiplier_factor;
 	indirect_sample_multiplier_factor = AA_indirect_sample_multiplier_factor;
 	detect_color_noise = AA_detect_color_noise;
+	dark_detection_type = AA_dark_detection_type;
 	dark_threshold_factor = AA_dark_threshold_factor;
 	variance_edge_size = AA_variance_edge_size;
 	variance_pixels = AA_variance_pixels;
@@ -423,7 +424,7 @@ void scene_t::setNumThreadsPhotons(int threads_photons)
 #define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
 			e2 = vertices[v2] - vertices[q];
 
-bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
+bool scene_t::smoothMesh(objID_t id, float angle)
 {
 	if( state.stack.front() != GEOMETRY ) return false;
 	objData_t *odat;
@@ -489,7 +490,7 @@ bool scene_t::smoothMesh(objID_t id, PFLOAT angle)
 	}
 	else if(angle>0.1)// angle dependant smoothing
 	{
-		PFLOAT thresh = fCos(degToRad(angle));
+		float thresh = fCos(degToRad(angle));
 		std::vector<vector3d_t> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex
@@ -798,17 +799,18 @@ bound_t scene_t::getSceneBound() const
 	return sceneBound;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
+void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
 {
 	AA_samples = std::max(1, numSamples);
 	AA_passes = numPasses;
 	AA_inc_samples = (incSamples > 0) ? incSamples : AA_samples;
-	AA_threshold = (CFLOAT)threshold;
+	AA_threshold = (float)threshold;
 	AA_resampled_floor = resampled_floor;
 	AA_sample_multiplier_factor = sample_multiplier_factor;
 	AA_light_sample_multiplier_factor = light_sample_multiplier_factor;
 	AA_indirect_sample_multiplier_factor = indirect_sample_multiplier_factor;
 	AA_detect_color_noise = detect_color_noise;
+	AA_dark_detection_type = dark_detection_type;
 	AA_dark_threshold_factor = dark_threshold_factor;
 	AA_variance_edge_size = variance_edge_size;
 	AA_variance_pixels = variance_pixels;
@@ -934,9 +936,9 @@ bool scene_t::update()
 
 bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 {
-	PFLOAT dis, Z;
+	float dis, Z;
 	intersectData_t data;
-	if(ray.tmax<0) dis=std::numeric_limits<PFLOAT>::infinity();
+	if(ray.tmax<0) dis=std::numeric_limits<float>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:
 	if(mode == 0)
@@ -967,8 +969,8 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 	ray_t sray(ray);
 	sray.from += sray.dir * sray.tmin;
 	sray.time = state.time;
-	PFLOAT dis;
-	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
+	float dis;
+	if(ray.tmax<0)	dis=std::numeric_limits<float>::infinity();
 	else  dis = sray.tmax - 2*sray.tmin;
 	if(mode==0)
 	{
@@ -999,8 +1001,8 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 {
 	ray_t sray(ray);
 	sray.from += sray.dir * sray.tmin;
-	PFLOAT dis;
-	if(ray.tmax<0)	dis=std::numeric_limits<PFLOAT>::infinity();
+	float dis;
+	if(ray.tmax<0)	dis=std::numeric_limits<float>::infinity();
 	else  dis = sray.tmax - 2*sray.tmin;
 	filt = color_t(1.0);
 	void *odat = state.userdata;

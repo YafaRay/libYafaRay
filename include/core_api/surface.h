@@ -81,18 +81,18 @@ struct YAFRAYCORE_EXPORT surfacePoint_t
 	bool available;
 	int primNum;
 
-	GFLOAT U; //!< the u texture coord.
-	GFLOAT V; //!< the v texture coord.
+	float U; //!< the u texture coord.
+	float V; //!< the v texture coord.
     vector3d_t  NU; //!< second vector building orthogonal shading space with N
     vector3d_t  NV; //!< third vector building orthogonal shading space with N
 	vector3d_t dPdU; //!< u-axis in world space
 	vector3d_t dPdV; //!< v-axis in world space
 	vector3d_t dSdU; //!< u-axis in shading space (NU, NV, N)
 	vector3d_t dSdV; //!< v-axis in shading space (NU, NV, N)
-	//GFLOAT dudNU;
-	//GFLOAT dudNV;
-	//GFLOAT dvdNU;
-	//GFLOAT dvdNV;
+	//float dudNU;
+	//float dudNV;
+	//float dvdNU;
+	//float dvdNV;
 };
 
 YAFRAYCORE_EXPORT surfacePoint_t blend_surface_points(surfacePoint_t const& sp_0, surfacePoint_t const& sp_1, float const alpha);
@@ -106,8 +106,8 @@ class YAFRAYCORE_EXPORT spDifferentials_t
 		//! compute differentials for a scattered ray
 		void reflectedRay(const diffRay_t &in, diffRay_t &out) const;
 		//! compute differentials for a refracted ray
-		void refractedRay(const diffRay_t &in, diffRay_t &out, PFLOAT IOR) const;
-		PFLOAT projectedPixelArea();
+		void refractedRay(const diffRay_t &in, diffRay_t &out, float IOR) const;
+		float projectedPixelArea();
 		vector3d_t dPdx;
 		vector3d_t dPdy;
 		const surfacePoint_t &sp;

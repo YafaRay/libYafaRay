@@ -7,9 +7,7 @@
 //#include <math.h>
 #include <limits>
 #include <set>
-#if ( HAVE_PTHREAD && defined (__GNUC__) && !defined (__clang__))
-#include <ext/mt_allocator.h>
-#endif
+
 #include <time.h>
 
 __BEGIN_YAFRAY
@@ -154,20 +152,20 @@ triKdTree_t::~triKdTree_t()
 void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx, splitCost_t &split)
 {
 	bin_t bin[ KD_BINS+1 ];
-	PFLOAT d[3];
+	float d[3];
 	d[0] = nodeBound.longX();
 	d[1] = nodeBound.longY();
 	d[2] = nodeBound.longZ();
 	split.oldCost = float(nPrims);
-	split.bestCost = std::numeric_limits<PFLOAT>::infinity();
+	split.bestCost = std::numeric_limits<float>::infinity();
 	float invTotalSA = 1.0f / (d[0]*d[1] + d[0]*d[2] + d[1]*d[2]);
-	PFLOAT t_low, t_up;
+	float t_low, t_up;
 	int b_left, b_right;
 	
 	for(int axis=0;axis<3;axis++)
 	{
-		PFLOAT s = KD_BINS/d[axis];
-		PFLOAT min = nodeBound.a[axis];
+		float s = KD_BINS/d[axis];
+		float min = nodeBound.a[axis];
 		// pigeonhole sort:
 		for(unsigned int i=0; i<nPrims; ++i)
 		{
@@ -240,7 +238,7 @@ void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *pri
 				nBelow += bin[i].c_left;
 				nAbove -= bin[i].c_right;
 				// cost:
-				PFLOAT edget = bin[i].t;
+				float edget = bin[i].t;
 				if (edget > nodeBound.a[axis] && edget < nodeBound.g[axis])
 				{
 					// Compute cost for split at _i_th edge
@@ -303,12 +301,12 @@ void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *pri
 void triKdTree_t::minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx,
 		const bound_t *pBounds, boundEdge *edges[3], splitCost_t &split)
 {
-	PFLOAT d[3];
+	float d[3];
 	d[0] = nodeBound.longX();
 	d[1] = nodeBound.longY();
 	d[2] = nodeBound.longZ();
 	split.oldCost = float(nPrims);
-	split.bestCost = std::numeric_limits<PFLOAT>::infinity();
+	split.bestCost = std::numeric_limits<float>::infinity();
 	float invTotalSA = 1.0f / (d[0]*d[1] + d[0]*d[2] + d[1]*d[2]);
 	int nEdge;
 	
@@ -359,7 +357,7 @@ void triKdTree_t::minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primI
 		//todo: early-out criteria: if l1 > l2*nPrims (l2 > l1*nPrims) => minimum is lowest (highest) edge!
 		if(nPrims>5)
 		{
-			PFLOAT edget = edges[axis][0].pos;
+			float edget = edges[axis][0].pos;
 			float l1 = edget - nodeBound.a[axis];
 			float l2 = nodeBound.g[axis] - edget;
 			if(l1 > l2*float(nPrims) && l2 > 0.f)
@@ -396,7 +394,7 @@ void triKdTree_t::minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primI
 		
 		for (int i = 0; i < nEdge; ++i) {
 			if (edges[axis][i].end == UPPER_B) --nAbove;
-			PFLOAT edget = edges[axis][i].pos;
+			float edget = edges[axis][i].pos;
 			if (edget > nodeBound.a[axis] &&
 				edget < nodeBound.g[axis]) {
 				// Compute cost for split at _i_th edge
@@ -535,7 +533,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	}
 	
 	// Classify primitives with respect to split
-	PFLOAT splitPos;
+	float splitPos;
 	int n0 = 0, n1 = 0;
 	if(nPrims > 128) // we did pigeonhole
 	{
@@ -654,11 +652,11 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	returns the closest hit within dist
 */
 
-bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT &Z, intersectData_t &data) const
+bool triKdTree_t::Intersect(const ray_t &ray, float dist, triangle_t **tr, float &Z, intersectData_t &data) const
 {
 	Z=dist;
-	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
-	PFLOAT t_hit;
+	float a, b, t; // entry/exit/splitting plane signed distance
+	float t_hit;
 	
 	if( !treeBound.cross(ray, a, b, dist) ) { return false; }
 	
@@ -693,7 +691,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 		while( !currNode->IsLeaf() )
 		{
 			int axis = currNode->SplitAxis();
-			PFLOAT splitVal = currNode->SplitPos();
+			float splitVal = currNode->SplitPos();
 			
 			if(stack[enPt].pb[axis] <= splitVal){
 				if(stack[exPt].pb[axis] <= splitVal)
@@ -809,10 +807,10 @@ bool triKdTree_t::Intersect(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLO
 }
 
 
-bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFLOAT shadow_bias) const
+bool triKdTree_t::IntersectS(const ray_t &ray, float dist, triangle_t **tr, float shadow_bias) const
 {
-	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
-	PFLOAT t_hit;
+	float a, b, t; // entry/exit/splitting plane signed distance
+	float t_hit;
 	
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
@@ -848,7 +846,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 		while( !currNode->IsLeaf() )
 		{
 			int axis = currNode->SplitAxis();
-			PFLOAT splitVal = currNode->SplitPos();
+			float splitVal = currNode->SplitPos();
 			
 			if(stack[enPt].pb[axis] <= splitVal)
 			{
@@ -952,10 +950,10 @@ bool triKdTree_t::IntersectS(const ray_t &ray, PFLOAT dist, triangle_t **tr, PFL
 	allow for transparent shadows.
 =============================================================*/
 
-bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, PFLOAT dist, triangle_t **tr, color_t &filt, PFLOAT shadow_bias) const
+bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, float dist, triangle_t **tr, color_t &filt, float shadow_bias) const
 {
-	PFLOAT a, b, t; // entry/exit/splitting plane signed distance
-	PFLOAT t_hit;
+	float a, b, t; // entry/exit/splitting plane signed distance
+	float t_hit;
 	
 	if (!treeBound.cross(ray, a, b, dist))
 		return false;
@@ -997,7 +995,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 		while( !currNode->IsLeaf() )
 		{
 			int axis = currNode->SplitAxis();
-			PFLOAT splitVal = currNode->SplitPos();
+			float splitVal = currNode->SplitPos();
 			
 			if(stack[enPt].pb[axis] <= splitVal){
 				if(stack[exPt].pb[axis] <= splitVal)

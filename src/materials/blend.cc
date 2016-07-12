@@ -331,7 +331,7 @@ color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	return col1;
 }
 
-CFLOAT blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
 	if(isTransparent())
 	{

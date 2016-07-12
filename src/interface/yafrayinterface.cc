@@ -5,11 +5,63 @@
 #include <core_api/imagefilm.h>
 #include <core_api/integrator.h>
 #include <core_api/matrix4.h>
+#include <signal.h>
+
+#ifdef WIN32
+	#include <windows.h>
+#endif
 
 __BEGIN_YAFRAY
 
+scene_t *globalScene = nullptr;
+
+#ifdef WIN32
+BOOL WINAPI ctrl_c_handler(DWORD signal) {
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}
+    return TRUE;
+}
+#else
+void ctrl_c_handler(int signal)
+{
+	if(globalScene)
+	{
+		globalScene->abort(); 
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+	}
+	else
+	{
+		session.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		exit(1);
+	}	
+}
+#endif
+
 yafrayInterface_t::yafrayInterface_t(): scene(nullptr), film(nullptr), inputGamma(1.f), inputColorSpace(RAW_MANUAL_GAMMA)
 {
+	//handle CTRL+C events
+#ifdef WIN32
+	SetConsoleCtrlHandler(ctrl_c_handler, true);
+#else
+	struct sigaction signalHandler;
+	signalHandler.sa_handler = ctrl_c_handler;
+	sigemptyset(&signalHandler.sa_mask);
+	signalHandler.sa_flags = 0;
+	sigaction(SIGINT, &signalHandler, nullptr);
+#endif
+
 	env = new renderEnvironment_t();
 	params = new paraMap_t;
 	eparams = new std::list<paraMap_t>;
@@ -68,6 +120,7 @@ bool yafrayInterface_t::startScene(int type)
 {
 	if(scene) delete scene;
 	scene = new scene_t(env);
+	globalScene = scene;	//for the CTRL+C handler
 	scene->setMode(type);
 	env->setScene(scene);
 	return true;
@@ -82,6 +135,12 @@ bool yafrayInterface_t::setLoggingAndBadgeSettings()
 bool yafrayInterface_t::setupRenderPasses()
 {
 	env->setupRenderPasses(*params);
+	return true;
+}
+
+bool yafrayInterface_t::setInteractive(bool interactive)
+{
+	session.setInteractive(interactive);
 	return true;
 }
 
@@ -288,7 +347,7 @@ VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name)
 	return nullptr;
 }
 
-unsigned int yafrayInterface_t::createObject	(const char* name)
+unsigned int yafrayInterface_t::createObject(const char* name)
 {
 	object3d_t *object = env->createObject(name, *params);
 	if(!object) return 0;
@@ -297,7 +356,12 @@ unsigned int yafrayInterface_t::createObject	(const char* name)
 	return 0;
 }
 
-void yafrayInterface_t::abort(){ if(scene) scene->abort(); }
+void yafrayInterface_t::abort()
+{
+	if(scene) scene->abort(); 
+	session.setStatusRenderAborted();
+	Y_WARNING << "Interface: Render aborted by user." << yendl;
+}
 
 bool yafrayInterface_t::getRenderedImage(int numView, colorOutput_t &output)
 {
@@ -328,11 +392,7 @@ std::string yafrayInterface_t::getImageFullNameFromFormat(const std::string &for
 
 char* yafrayInterface_t::getVersion() const
 {
-#ifdef RELEASE
-	return (char*)std::string(VERSION).c_str();
-#else
-	return (char*)std::string(YAF_SVN_REV).c_str();
-#endif
+	return (char*)session.getYafaRayCoreVersion().c_str();
 }
 
 void yafrayInterface_t::printDebug(const std::string &msg)
@@ -368,6 +428,7 @@ void yafrayInterface_t::printError(const std::string &msg)
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 {
 	if(! env->setupScene(*scene, *params, output, pb) ) return;
+	session.setStatusRenderStarted();
 	scene->render();
 	film = scene->getImageFilm();
 	//delete film;

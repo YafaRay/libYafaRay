@@ -1,4 +1,4 @@
-%module yafaray_e3_interface
+%module yafaray_v3_interface
 
 %include "cpointer.i"
 %pointer_functions(float, floatp);
@@ -234,6 +234,8 @@ public:
 		return true;
 	}
 
+	virtual bool isPreview() { return preview; }
+
 	virtual void flush(int numView_unused, const yafaray::renderPasses_t *renderPasses)
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
@@ -464,7 +466,8 @@ public:
 
 	virtual void init(int totalSteps)
 	{
-		steps_to_percent = 1.f / (float) totalSteps;
+		nSteps = totalSteps;
+		steps_to_percent = 1.f / (float) nSteps;
 		doneSteps = 0;
 		report_progress(0.f);
 	}
@@ -482,6 +485,7 @@ public:
 
 	virtual void setTag(const char* text)
 	{
+		tag = std::string(text);
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text);
@@ -490,11 +494,31 @@ public:
 		PyGILState_Release(gstate);
 	}
 
+	virtual void setTag(std::string text)
+	{
+		tag = text;
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text.c_str());
+		Py_XDECREF(result);
+		//std::cout << "setTag: result->ob_refcnt=" << result->ob_refcnt << std::endl;
+		PyGILState_Release(gstate);
+	}
+	
+	virtual std::string getTag() const
+	{
+		return tag;
+	}
+	
+	virtual float getPercent() const { return 100.f * std::min(1.f, (float) doneSteps * steps_to_percent); }
+	virtual float getTotalSteps() const { return nSteps; } 
+
 private:
 
 	PyObject *callb;
 	float steps_to_percent;
-	int doneSteps;
+	int doneSteps, nSteps;
+	std::string tag;
 };
 
 %}
@@ -560,33 +584,43 @@ namespace yafaray
 	{
 		public:
 			virtual ~colorOutput_t() {};
+			virtual void initTilesPasses(int totalViews, int numExtPasses) {};
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
 			virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
+			virtual bool isImageOutput() { return false; }
+			virtual bool isPreview() { return false; }
+			virtual std::string getDenoiseParams() const { return ""; }
 	};
 
 	class imageHandler_t
 	{
 		public:
-			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false) = 0;
+			imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
+
+			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false) = 0;
 			virtual ~imageHandler_t() {};
 			virtual bool loadFromFile(const std::string &name) = 0;
 			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
 			virtual bool saveToFile(const std::string &name, int imagePassNumber = 0) = 0;
+			virtual bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses) { return false; };
 			virtual void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0) = 0;
 			virtual colorA_t getPixel(int x, int y, int imagePassNumber = 0) = 0;
 			virtual int getWidth() { return m_width; }
 			virtual int getHeight() { return m_height; }
 			virtual bool isHDR() { return false; }
-			
-		protected:
-			std::string handlerName;
-			int m_width;
-			int m_height;
-			bool m_hasAlpha;
-			std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
-			rgba2DImage_nw_t *m_rgba;
+			virtual bool isMultiLayer() { return m_MultiLayer; }
+			int getTextureOptimization() { return m_textureOptimization; }
+			void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
+			virtual bool denoiseEnabled() { return m_Denoise; }
+			std::string getDenoiseParams() const
+			{
+				if(!m_Denoise) return "";
+				std::stringstream paramString;
+				paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
+				return paramString.str();
+			}
 	};
 
 	// Outputs
@@ -599,12 +633,15 @@ namespace yafaray
 			virtual ~imageOutput_t();
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			virtual void flush(int numView, const renderPasses_t *renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // not used by images... yet
-		private:
-			imageHandler_t *image;
-			std::string fname;
-			float bX;
-			float bY;
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {} // not used by images... yet
+			virtual bool isImageOutput() { return true; }
+			virtual std::string getDenoiseParams() const
+			{
+				if(image) return image->getDenoiseParams();
+				else return "";
+			}
+			void saveImageFile(std::string filename, int idx);
+			void saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses);
 	};
 
 	class memoryIO_t : public colorOutput_t
@@ -615,9 +652,6 @@ namespace yafaray
 			void flush(int numView, const renderPasses_t *renderPasses);
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // no tiled file format used...yet
 			virtual ~memoryIO_t();
-		protected:
-			int sizex, sizey;
-			float* imageMem;
 	};
 
 	// Utility classes
@@ -643,22 +677,17 @@ namespace yafaray
 			void scale(float sx, float sy, float sz);
 			int invalid() const { return _invalid; }
 			// ignored by swig
-			//const PFLOAT * operator [] (int i) const { return matrix[i]; }
-			//PFLOAT * operator [] (int i) { return matrix[i]; }
+			//const float * operator [] (int i) const { return matrix[i]; }
+			//float * operator [] (int i) { return matrix[i]; }
 			void setVal(int row, int col, float val)
 			{
 				matrix[row][col] = val;
-			};
+			}
 
 			float getVal(int row, int col)
 			{
 				return matrix[row][col];
-			};
-
-		protected:
-
-			float  matrix[4][4];
-			int _invalid;
+			}
 	};
 
 	// Interfaces
@@ -722,6 +751,7 @@ namespace yafaray
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 			virtual bool setLoggingAndBadgeSettings();
 			virtual bool setupRenderPasses(); //!< setup render passes information
+			bool setInteractive(bool interactive);
 			virtual void abort();
 			virtual paraMap_t* getRenderParameters() { return params; }
 			virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output
@@ -748,16 +778,6 @@ namespace yafaray
 			
 			void setInputColorSpace(std::string color_space_string, float gammaVal);
 			void setOutput2(colorOutput_t *out2);
-		
-		protected:
-			paraMap_t *params;
-			std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
-			paraMap_t *cparams; //! just a pointer to the current paramMap, either params or a eparams element
-			renderEnvironment_t *env;
-			scene_t *scene;
-			imageFilm_t *film;
-			float inputGamma;
-			colorSpaces_t inputColorSpace;
 	};
 
 	class xmlInterface_t: public yafrayInterface_t
@@ -766,6 +786,7 @@ namespace yafaray
 			xmlInterface_t();
 			// directly related to scene_t:
 			virtual void loadPlugins(const char *path);
+			virtual bool setLoggingAndBadgeSettings();
 			virtual bool setupRenderPasses(); //!< setup render passes information
 			virtual bool startGeometry();
 			virtual bool endGeometry();
@@ -794,23 +815,12 @@ namespace yafaray
 			virtual VolumeRegion* 	createVolumeRegion	(const char* name);
 			virtual unsigned int 	createObject		(const char* name);
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-			virtual void render(colorOutput_t &output); //!< render the scene...
+			virtual void render(colorOutput_t &output, progressBar_t *pb = nullptr); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-			virtual void setOutfile(const char *fname);
-			void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal);
-		protected:
-			void writeParamMap(const paraMap_t &pmap, int indent=1);
-			void writeParamList(int indent);
 			
-			std::map<const material_t *, std::string> materials;
-			std::ofstream xmlFile;
-			std::string xmlName;
-			const material_t *last_mat;
-			size_t nmat;
-			int n_uvs;
-			unsigned int nextObj;
-			float XMLGamma;
-			colorSpaces_t XMLColorSpace;
+			virtual void setOutfile(const char *fname);
+			
+			void setXMLColorSpace(std::string color_space_string, float gammaVal);
 	};
 
 }

@@ -32,22 +32,26 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrde
 
 	switch(tilesorder)
 	{
-		case RANDOM:	std::random_shuffle( regions_raw.begin(), regions_raw.end() );
-		case LINEAR:
-		default:	break;
+		case RANDOM:		std::random_shuffle( regions_raw.begin(), regions_raw.end() );
+		case CENTRE_RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
+							std::sort( regions.begin(), regions.end(), imageSpliterCentreSorter_t(w, h, x0, y0) );
+		case LINEAR:		break;
+		default:			break;
 	}
 
 	std::vector<region_t> regions_subdivided;
 
 	for(size_t rn=0; rn<regions_raw.size(); ++rn)
 	{
-		if(nthreads == 1 || blocksize <= 4 || rn<regions_raw.size()-2*nthreads)	//If blocksize is more than 4, resubdivide the last (2 x nunber of threads) so their block size is original blocksize/numthreads (min.4x4) (better CPU/thread usage in the last tiles to avoid having one big tile at the end with only 1 CPU thread)
+		if(nthreads == 1 || blocksize <= 4 || rn<regions_raw.size()-2*nthreads)	//If blocksize is more than 4, resubdivide the last (2 x nunber of threads) so their block size is progressively smaller (better CPU/thread usage in the last tiles to avoid/mitigate having one big tile at the end with only 1 CPU thread)
 		{
 			regions.push_back(regions_raw[rn]);
 		}
 		else
 		{
-			int blocksize2 = std::max(4, blocksize / nthreads);
+			int blocksize2 = blocksize;
+			if(rn>regions_raw.size()-nthreads) blocksize2 = std::max(4, blocksize / 4);
+			else if(rn<=regions_raw.size()-nthreads) blocksize2 = std::max(4, blocksize / 2);
 			int nx2, ny2;
 			nx2 = (regions_raw[rn].w+blocksize2-1)/blocksize2;
 			ny2 = (regions_raw[rn].h+blocksize2-1)/blocksize2;
@@ -66,13 +70,19 @@ imageSpliter_t::imageSpliter_t(int w, int h, int x0,int y0, int bsize, tilesOrde
 			}
 		}
 	}
-	
+
 	switch(tilesorder)
 	{
-		case RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
-						std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
-		case LINEAR:
-		default:	break;
+		case RANDOM:		std::random_shuffle( regions.begin(), regions.end() );
+							std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
+							break;
+		case CENTRE_RANDOM:	std::random_shuffle( regions.begin(), regions.end() );
+							std::sort( regions.begin(), regions.end(), imageSpliterCentreSorter_t(w, h, x0, y0) );
+							std::random_shuffle( regions_subdivided.begin(), regions_subdivided.end() );
+							std::sort( regions_subdivided.begin(), regions_subdivided.end(), imageSpliterCentreSorter_t(w, h, x0, y0) );
+							break;				
+		case LINEAR: 		break;
+		default:			break;
 	}
 
 	regions.insert(regions.end(), regions_subdivided.begin(), regions_subdivided.end());

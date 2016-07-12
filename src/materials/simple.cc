@@ -65,7 +65,7 @@ color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 	if(!state.includeLights) return color_t(0.f);
 	if(doubleSided) return lightCol;
 	
-	PFLOAT angle = wo*sp.N;
+	float angle = wo*sp.N;
 	return (angle>0) ? lightCol : color_t(0.f);
 }
 
@@ -82,7 +82,7 @@ material_t* lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &epara
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("double_sided", ds);
-	return new lightMat_t(col*(CFLOAT)power, ds);
+	return new lightMat_t(col*(float)power, ds);
 }
 
 extern "C"

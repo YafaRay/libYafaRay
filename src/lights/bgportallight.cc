@@ -120,10 +120,10 @@ color_t bgPortalLight_t::totalEnergy() const
 	for(int i=0; i<1000; ++i) //exaggerated?
 	{
 		wo.dir = SampleSphere( ((float)i+0.5f)/1000.f, RI_vdC(i) );
-		col = bg->eval(wo);
+		col = bg->eval(wo, true);
 		for(int j=0; j<nTris; j++)
 		{
-			PFLOAT cos_n = -wo.dir * tris[j]->getNormal(); //not 100% sure about sign yet...
+			float cos_n = -wo.dir * tris[j]->getNormal(); //not 100% sure about sign yet...
 			if(cos_n > 0) energy += col*cos_n*tris[j]->surfaceArea();
 		}
 	}
@@ -141,11 +141,11 @@ bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t 
 	
 	vector3d_t ldir = p - sp.P;
 	//normalize vec and compute inverse square distance
-	PFLOAT dist_sqr = ldir.lengthSqr();
-	PFLOAT dist = fSqrt(dist_sqr);
+	float dist_sqr = ldir.lengthSqr();
+	float dist = fSqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f/dist;
-	PFLOAT cos_angle = -(ldir*n);
+	float cos_angle = -(ldir*n);
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 	
@@ -153,7 +153,7 @@ bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t 
 	wi.tmax = dist;
 	wi.dir = ldir;
 	
-	s.col = bg->eval(wi) * power;
+	s.col = bg->eval(wi, true) * power;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf = dist_sqr*M_PI / (area * cos_angle);
 	s.flags = flags;
@@ -174,7 +174,7 @@ color_t bgPortalLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_
 	
 	ray.dir = SampleCosHemisphere(normal, du, dv, s1, s2);
 	ray_t r2(ray.from, -ray.dir);
-	return bg->eval(r2);
+	return bg->eval(r2, true);
 }
 
 color_t bgPortalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
@@ -190,34 +190,36 @@ color_t bgPortalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	
 	s.flags = flags;
 	ray_t r2(s.sp->P, -wo);
-	return bg->eval(r2);
+	return bg->eval(r2, true);
 }
 
-bool bgPortalLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
+bool bgPortalLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
 {
 	if(!tree) return false;
-	PFLOAT dis;
+	float dis;
 	intersectData_t bary;
 	triangle_t *hitt=0;
-	if(ray.tmax<0) dis=std::numeric_limits<PFLOAT>::infinity();
+	if(ray.tmax<0) dis=std::numeric_limits<float>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:
 	if( ! tree->Intersect(ray, dis, &hitt, t, bary) ){ return false; }
 	
 	vector3d_t n = hitt->getNormal();
-	PFLOAT cos_angle = ray.dir*(-n);
+	float cos_angle = ray.dir*(-n);
 	if(cos_angle <= 0) return false;
-	PFLOAT idist_sqr = 1.f / (t*t);
+	float idist_sqr = 1.f / (t*t);
 	ipdf = idist_sqr * area * cos_angle * (1.f/M_PI);
-	col = bg->eval(ray) * power;
+	col = bg->eval(ray, true) * power;
 	
+	col.clampProportionalRGB(lClampIntersect); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
+
 	return true;
 }
 
 float bgPortalLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
 {
 	vector3d_t wo = sp.P - sp_light.P;
-	PFLOAT r2 = wo.normLenSqr();
+	float r2 = wo.normLenSqr();
 	float cos_n = wo * sp_light.Ng;
 	return cos_n > 0 ? ( r2 * M_PI / (area * cos_n) ) : 0.f;
 }

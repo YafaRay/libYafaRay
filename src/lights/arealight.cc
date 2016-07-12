@@ -31,7 +31,7 @@ __BEGIN_YAFRAY
 //int hit_t1=0, hit_t2=0;
 
 areaLight_t::areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-				const color_t &col,CFLOAT inte, int nsam, bool bLightEnabled, bool bCastShadows):
+				const color_t &col,float inte, int nsam, bool bLightEnabled, bool bCastShadows):
 				corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte)
 {
 	lLightEnabled = bLightEnabled;
@@ -76,11 +76,11 @@ bool areaLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi)
 	point3d_t p = corner + s.s1*toX + s.s2*toY;
 	vector3d_t ldir = p - sp.P;
 	//normalize vec and compute inverse square distance
-	PFLOAT dist_sqr = ldir.lengthSqr();
-	PFLOAT dist = fSqrt(dist_sqr);
+	float dist_sqr = ldir.lengthSqr();
+	float dist = fSqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f/dist;
-	PFLOAT cos_angle = ldir*fnormal;
+	float cos_angle = ldir*fnormal;
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 
@@ -119,10 +119,10 @@ color_t areaLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
 	return color; // still not 100% sure this is correct without cosine...
 }
 
-inline bool triIntersect(const point3d_t &a, const point3d_t &b, const point3d_t &c, const ray_t &ray, PFLOAT &t)
+inline bool triIntersect(const point3d_t &a, const point3d_t &b, const point3d_t &c, const ray_t &ray, float &t)
 {
 	vector3d_t edge1, edge2, tvec, pvec, qvec;
-	PFLOAT det, inv_det, u, v;
+	float det, inv_det, u, v;
 	edge1 = b - a;
 	edge2 = c - a;
 	pvec = ray.dir ^ edge2;
@@ -140,9 +140,9 @@ inline bool triIntersect(const point3d_t &a, const point3d_t &b, const point3d_t
 	return true;
 }
 
-bool areaLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ipdf) const
+bool areaLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
 {
-	PFLOAT cos_angle = ray.dir*fnormal;
+	float cos_angle = ray.dir*fnormal;
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 	
@@ -161,7 +161,7 @@ bool areaLight_t::intersect(const ray_t &ray, PFLOAT &t, color_t &col, float &ip
 float areaLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
 {
 	vector3d_t wi = sp_light.P - sp.P;
-	PFLOAT r2 = wi.normLenSqr();
+	float r2 = wi.normLenSqr();
 	float cos_n = wi*fnormal;
 	return cos_n > 0 ? r2 * M_PI / (area * cos_n) : 0.f;
 }
@@ -179,7 +179,7 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	point3d_t p1(0.0);
 	point3d_t p2(0.0);
 	color_t color(1.0);
-	CFLOAT power = 1.0;
+	float power = 1.0;
 	int samples = 4;
 	int object = 0;
 	bool lightEnabled = true;

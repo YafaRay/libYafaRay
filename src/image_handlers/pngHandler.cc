@@ -24,8 +24,8 @@
 #include <core_api/imagehandler.h>
 #include <core_api/params.h>
 #include <core_api/scene.h>
-#include <locale>
-#include <codecvt>
+#include <utilities/math_utils.h>
+#include <utilities/fileUtils.h>
 
 #include <png.h>
 
@@ -45,7 +45,7 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
@@ -74,12 +74,16 @@ pngHandler_t::pngHandler_t()
 	rgbaCompressedBuffer = nullptr;
 }
 
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool withAlpha, bool multi_layer)
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
 {
 	m_width = width;
 	m_height = height;
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
 
 	imagePasses.resize(renderPasses->extPassesSize());
 	
@@ -128,15 +132,17 @@ colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
 
 bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 {
-	Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << name << "\"..." << yendl;
+	std::string nameWithoutTmp = name;
+	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
-	FILE *fp;
 	png_structp pngPtr;
 	png_infop infoPtr;
 	int channels;
 	png_bytep *rowPointers = nullptr;
 
-	fp = fopen(name.c_str(), "wb");
+	FILE * fp = fileUnicodeOpen(name, "wb");
 
 	if(!fp)
 	{
@@ -146,7 +152,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr))
 	{
-		fclose(fp);
+		fileUnicodeClose(fp);
 		return false;
 	}
 
@@ -160,30 +166,73 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	{
 		rowPointers[i] = new yByte[ m_width * channels ];
 	}
+	
+	Y_DEBUG << "m_Denoise="<<m_Denoise<<" m_DenoiseHLum="<<m_DenoiseHLum<<" m_DenoiseHCol="<<m_DenoiseHCol<<yendl;
 
-	for(int y = 0; y < m_height; y++)
+	if(m_Denoise)
 	{
-		for(int x = 0; x < m_width; x++)
+		cv::Mat A(m_height, m_width, CV_8UC3);
+		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat_<cv::Vec3b> _A = A;
+		cv::Mat_<cv::Vec3b> _B = B;
+		
+		for(int y = 0; y < m_height; y++)
 		{
-			colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
-			color.clampRGBA01();
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
 
-			int i = x * channels;
+				_A(y, x)[0] = (color.getR() * 255);
+				_A(y, x)[1] = (color.getG() * 255);
+				_A(y, x)[2] = (color.getB() * 255);
+			}
+		}
 
-			rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
-			rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
-			rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
-			if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
+
+		for(int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
+
+				int i = x * channels;
+
+				rowPointers[y][i]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
+				rowPointers[y][i+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
+				rowPointers[y][i+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
+				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+			}
 		}
 	}
+	else
+	{
+		for(int y = 0; y < m_height; y++)
+		{
+			for(int x = 0; x < m_width; x++)
+			{
+				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				color.clampRGBA01();
 
+				int i = x * channels;
+
+				rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
+				rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
+				rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
+				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+			}
+		}
+	}
+	
 	png_write_image(pngPtr, rowPointers);
 
 	png_write_end(pngPtr, nullptr);
 
 	png_destroy_write_struct(&pngPtr, &infoPtr);
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	// cleanup:
 	for(int i = 0; i < m_height; i++)
@@ -203,14 +252,8 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	png_structp pngPtr = nullptr;
 	png_infop infoPtr = nullptr;
 
-#if defined(_WIN32)
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t> convert;
-	std::wstring wname = convert.from_bytes(name);    
-	FILE *fp = _wfopen(wname.c_str(), L"rb");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
-	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
-#else
-	FILE *fp = fopen(name.c_str(), "rb");
-#endif
+	FILE *fp = fileUnicodeOpen(name, "rb");
+
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
 	if(!fp)
@@ -229,7 +272,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
     if(!fillReadStructs(signature, pngPtr, infoPtr))
     {
-    	fclose(fp);
+    	fileUnicodeClose(fp);
     	return false;
     }
 
@@ -239,7 +282,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	readFromStructs(pngPtr, infoPtr);
 
-	fclose(fp);
+	fileUnicodeClose(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 
@@ -516,18 +559,28 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool denoiseEnabled = false;
+	int denoiseHLum = 3;
+	int denoiseHCol = 3;
+	float denoiseMix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
+	params.getParam("denoiseEnabled", denoiseEnabled);
+	params.getParam("denoiseHLum", denoiseHLum);
+	params.getParam("denoiseHCol", denoiseHCol);
+	params.getParam("denoiseMix", denoiseMix);
+
+	Y_DEBUG << "denoiseEnabled="<<denoiseEnabled<<" denoiseHLum="<<denoiseHLum<<" denoiseHCol="<<denoiseHCol<<yendl;
 
 	imageHandler_t *ih = new pngHandler_t();
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
 	}
 
 	return ih;

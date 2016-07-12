@@ -22,11 +22,21 @@
  */
 #include <yafray_config.h>
 #include <algorithm>
+#include <yafraycore/photon.h>
 
 __BEGIN_YAFRAY
 
-// Initialization of the master instance of yafLog
-yafarayLog_t yafLog = yafarayLog_t();
+yafarayLog_t::yafarayLog_t()
+{
+}
+
+yafarayLog_t::yafarayLog_t(const yafarayLog_t&)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one log object in the session anyway so it should be ok.
+{
+}
+
+yafarayLog_t::~yafarayLog_t()
+{
+}
 
 
 // Definition of the logging functions
@@ -34,7 +44,7 @@ yafarayLog_t yafLog = yafarayLog_t();
 void yafarayLog_t::saveTxtLog(const std::string &name)
 {
 	if(!mSaveLog) return;
-	
+
 	std::ofstream txtLogFile;
 	txtLogFile.open(name.c_str());
 
@@ -47,8 +57,8 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	if(!mLoggingContact.empty()) txtLogFile << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
 	if(!mLoggingComments.empty()) txtLogFile << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
 
-	txtLogFile << std::endl << "Render Settings:" << std::endl << "  " << mRenderSettings << std::endl;
-	txtLogFile << std::endl << "AA and Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
+	txtLogFile << std::endl << "Render Information:" << std::endl << "  " << mRenderInfo << std::endl << "  " << mRenderSettings << std::endl;
+	txtLogFile << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
@@ -56,7 +66,7 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 		
 		for (auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
-			txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << "] ";
+			txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << " (" << printDuration(it->eventDuration) << ")] ";
 
 			switch(it->mVerbLevel)
 			{
@@ -72,12 +82,13 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 			txtLogFile << it->eventDescription;
 		}
 	}
+	txtLogFile.close();
 }
 
 void yafarayLog_t::saveHtmlLog(const std::string &name)
 {
 	if(!mSaveHTML) return;
-	
+
 	std::ofstream htmlLogFile;
 	htmlLogFile.open(name.c_str());
 
@@ -141,17 +152,17 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	htmlLogFile << "</table>" << std::endl;
 
 	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Render Settings:</th><td>" << mRenderSettings << "</td></tr>" << std::endl;
-	htmlLogFile << "<tr><th>AA and Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings <<"</p></td></tr>" << std::endl;
+	htmlLogFile << "<tr><th>AA/Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
 	htmlLogFile << "</table>" << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
-		htmlLogFile << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Verbosity</th><th>Description</th>" << std::endl;
+		htmlLogFile << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
 		for(auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
-			htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td>";
+			htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td><td>" << printDuration(it->eventDuration) << "</td>";
 
 			switch(it->mVerbLevel)
 			{
@@ -168,6 +179,7 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 		}
 		htmlLogFile << std::endl << "</table></body></html>" << std::endl;
 	}
+	htmlLogFile.close();
 }
 
 void yafarayLog_t::clearMemoryLog()
@@ -190,24 +202,48 @@ void yafarayLog_t::clearAll()
 
 yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 {
+	mutx.lock();
+	
 	mVerbLevel = verbosity_level;
 	
 	std::time_t current_datetime = std::time(nullptr);
-	if(mVerbLevel <= mLogMasterVerbLevel) m_MemoryLog.push_back(logEntry_t(current_datetime, mVerbLevel, ""));
-	
+
+	if(mVerbLevel <= mLogMasterVerbLevel)
+	{
+		if(previousLogEventDateTime == 0) previousLogEventDateTime = current_datetime;
+		double duration = std::difftime(current_datetime, previousLogEventDateTime);
+		
+		m_MemoryLog.push_back(logEntry_t(current_datetime, duration, mVerbLevel, ""));
+		
+		previousLogEventDateTime = current_datetime;
+	}
+		
 	if(mVerbLevel <= mConsoleMasterVerbLevel) 
 	{
+		if(previousConsoleEventDateTime == 0) previousConsoleEventDateTime = current_datetime;
+		double duration = std::difftime(current_datetime, previousConsoleEventDateTime);
+		
 		switch(mVerbLevel)
 		{
-			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG: " << setColor(); break;
-			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB: " << setColor(); break;
-			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO: " << setColor(); break;
-			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM: " << setColor(); break;
-			case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING: " << setColor(); break;
-			case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR: " << setColor(); break;
-			default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG: " << setColor(); break;
+			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
+			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB"; break;
+			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO"; break;
+			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
+			case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
+			case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
+			default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG"; break;
 		}
+
+		if(duration == 0) std::cout << ": ";
+		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
+		
+		std::cout << setColor();
+		
+		previousConsoleEventDateTime = current_datetime;
 	}
+	
+	mutx.unlock();
+	
 	return *this;
 }
 
@@ -252,6 +288,52 @@ std::string yafarayLog_t::printDate(std::time_t datetime) const
 	char mbstr[20];
 	std::strftime( mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime) );
 	return std::string(mbstr);
+}
+
+std::string yafarayLog_t::printDuration(double duration) const
+{
+	std::ostringstream strDur;
+	
+	int duration_int = (int) duration;
+	int hours = duration_int / 3600;
+	int minutes = (duration_int % 3600) / 60;
+	int seconds = duration_int % 60;
+	
+	if(hours == 0) strDur << "     ";
+	else strDur << "+" << std::setw(3) << hours << "h";
+
+	if(hours == 0 && minutes == 0) strDur << "    ";
+	else if (hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
+	else strDur << " " << std::setw(2) << minutes << "m";
+
+	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "    ";
+	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
+	else strDur << " " << std::setw(2) << seconds << "s";
+	
+	return std::string(strDur.str());
+}
+
+std::string yafarayLog_t::printDurationSimpleFormat(double duration) const
+{
+	std::ostringstream strDur;
+	
+	int duration_int = (int) duration;
+	int hours = duration_int / 3600;
+	int minutes = (duration_int % 3600) / 60;
+	int seconds = duration_int % 60;
+	
+	if(hours == 0) strDur << "";
+	else strDur << "+" << std::setw(2) << hours << "h";
+
+	if(hours == 0 && minutes == 0) strDur << "";
+	else if (hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
+	else strDur << "" << std::setw(2) << minutes << "m";
+
+	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "";
+	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
+	else strDur << "" << std::setw(2) << seconds << "s";
+	
+	return std::string(strDur.str());
 }
 
 void yafarayLog_t::appendAANoiseSettings(const std::string &aa_noise_settings)

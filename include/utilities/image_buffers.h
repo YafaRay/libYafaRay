@@ -29,6 +29,13 @@
 #include <vector>
 #include <stdint.h>
 
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+
 __BEGIN_YAFRAY
 
 /*! Color weighted pixel structure */
@@ -44,6 +51,13 @@ class pixel_t
 	
 	colorA_t col;
 	float weight;
+	
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(col);
+		ar & BOOST_SERIALIZATION_NVP(weight);
+	}
 };
 
 /*! Gray scale weighted pixel structure */
@@ -58,6 +72,13 @@ class pixelGray_t
 	}
 	float val;
 	float weight;
+
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(val);
+		ar & BOOST_SERIALIZATION_NVP(weight);
+	}
 };
 
 class rgba8888_t
@@ -210,11 +231,18 @@ public:
 		return data[x][y];
 	}
 		
-private:
-	
+protected:
 	std::vector< std::vector< T > > data;
 	int width;
 	int height;
+
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(data);
+		ar & BOOST_SERIALIZATION_NVP(width);
+		ar & BOOST_SERIALIZATION_NVP(height);
+	}
 };
 
 template <class T> class genericScanlineBuffer_t
@@ -248,11 +276,18 @@ public:
 		return data[x * height + y];
 	}
 		
-private:
-	
+protected:
 	std::vector< T > data;
 	int width;
 	int height;
+	
+	friend class boost::serialization::access;
+	template<class Archive> void serialize(Archive & ar, const unsigned int version)
+	{
+		ar & BOOST_SERIALIZATION_NVP(data);
+		ar & BOOST_SERIALIZATION_NVP(width);
+		ar & BOOST_SERIALIZATION_NVP(height);
+	}
 };
 
 typedef generic2DBuffer_t<pixel_t> 		rgba2DImage_t; //!< Weighted RGBA image buffer typedef
