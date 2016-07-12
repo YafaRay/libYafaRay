@@ -584,10 +584,14 @@ namespace yafaray
 	{
 		public:
 			virtual ~colorOutput_t() {};
+			virtual void initTilesPasses(int totalViews, int numExtPasses) {};
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
 			virtual void highliteArea(int numView, int x0, int y0, int x1, int y1){};
+			virtual bool isImageOutput() { return false; }
+			virtual bool isPreview() { return false; }
+			virtual std::string getDenoiseParams() const { return ""; }
 	};
 
 	class imageHandler_t
@@ -610,22 +614,13 @@ namespace yafaray
 			int getTextureOptimization() { return m_textureOptimization; }
 			void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
 			virtual bool denoiseEnabled() { return m_Denoise; }
-			
-		protected:
-			std::string handlerName;
-			int m_width;
-			int m_height;
-			bool m_hasAlpha;
-			int m_textureOptimization;
-			std::vector<rgba2DImage_nw_t*> imagePasses; //!< rgba color buffers for the additional render passes
-			rgbaOptimizedImage_nw_t *rgbaOptimizedBuffer;	//!< optimized RGBA (32bit/pixel) with alpha buffer
-			rgbaCompressedImage_nw_t *rgbaCompressedBuffer;	//!< compressed RGBA (24bit/pixel) LOSSY! with alpha buffer
-			rgbOptimizedImage_nw_t *rgbOptimizedBuffer;	//!< optimized RGB (24bit/pixel) without alpha buffer
-			rgbCompressedImage_nw_t *rgbCompressedBuffer;	//!< compressed RGB (16bit/pixel) LOSSY! without alpha buffer
-			bool m_MultiLayer = false;
-			bool m_Denoise = false;
-			int m_DenoiseHLum = 3;
-			int m_DenoiseHCol = 3;
+			std::string getDenoiseParams() const
+			{
+				if(!m_Denoise) return "";
+				std::stringstream paramString;
+				paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
+				return paramString.str();
+			}
 	};
 
 	// Outputs
@@ -638,12 +633,15 @@ namespace yafaray
 			virtual ~imageOutput_t();
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			virtual void flush(int numView, const renderPasses_t *renderPasses);
-			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // not used by images... yet
-		private:
-			imageHandler_t *image;
-			std::string fname;
-			float bX;
-			float bY;
+			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {} // not used by images... yet
+			virtual bool isImageOutput() { return true; }
+			virtual std::string getDenoiseParams() const
+			{
+				if(image) return image->getDenoiseParams();
+				else return "";
+			}
+			void saveImageFile(std::string filename, int idx);
+			void saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses);
 	};
 
 	class memoryIO_t : public colorOutput_t
@@ -654,9 +652,6 @@ namespace yafaray
 			void flush(int numView, const renderPasses_t *renderPasses);
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // no tiled file format used...yet
 			virtual ~memoryIO_t();
-		protected:
-			int sizex, sizey;
-			float* imageMem;
 	};
 
 	// Utility classes
@@ -687,17 +682,12 @@ namespace yafaray
 			void setVal(int row, int col, float val)
 			{
 				matrix[row][col] = val;
-			};
+			}
 
 			float getVal(int row, int col)
 			{
 				return matrix[row][col];
-			};
-
-		protected:
-
-			float  matrix[4][4];
-			int _invalid;
+			}
 	};
 
 	// Interfaces
@@ -788,16 +778,6 @@ namespace yafaray
 			
 			void setInputColorSpace(std::string color_space_string, float gammaVal);
 			void setOutput2(colorOutput_t *out2);
-		
-		protected:
-			paraMap_t *params;
-			std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
-			paraMap_t *cparams; //! just a pointer to the current paramMap, either params or a eparams element
-			renderEnvironment_t *env;
-			scene_t *scene;
-			imageFilm_t *film;
-			float inputGamma;
-			colorSpaces_t inputColorSpace;
 	};
 
 	class xmlInterface_t: public yafrayInterface_t
@@ -806,6 +786,7 @@ namespace yafaray
 			xmlInterface_t();
 			// directly related to scene_t:
 			virtual void loadPlugins(const char *path);
+			virtual bool setLoggingAndBadgeSettings();
 			virtual bool setupRenderPasses(); //!< setup render passes information
 			virtual bool startGeometry();
 			virtual bool endGeometry();
@@ -834,23 +815,12 @@ namespace yafaray
 			virtual VolumeRegion* 	createVolumeRegion	(const char* name);
 			virtual unsigned int 	createObject		(const char* name);
 			virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-			virtual void render(colorOutput_t &output); //!< render the scene...
+			virtual void render(colorOutput_t &output, progressBar_t *pb = nullptr); //!< render the scene...
 			virtual bool startScene(int type=0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-			virtual void setOutfile(const char *fname);
-			void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal);
-		protected:
-			void writeParamMap(const paraMap_t &pmap, int indent=1);
-			void writeParamList(int indent);
 			
-			std::map<const material_t *, std::string> materials;
-			std::ofstream xmlFile;
-			std::string xmlName;
-			const material_t *last_mat;
-			size_t nmat;
-			int n_uvs;
-			unsigned int nextObj;
-			float XMLGamma;
-			colorSpaces_t XMLColorSpace;
+			virtual void setOutfile(const char *fname);
+			
+			void setXMLColorSpace(std::string color_space_string, float gammaVal);
 	};
 
 }
