@@ -150,7 +150,7 @@ inline color_t texture_rgb_blend(const color_t &tex, const color_t &out, float f
 
 }
 
-inline float texture_value_blend(float tex, float out, float fact, float facg, mix_modes blendtype, bool flip)
+inline float texture_value_blend(float tex, float out, float fact, float facg, mix_modes blendtype, bool flip=false)
 {
 	fact *= facg;
 	float facm = 1.f-fact;
