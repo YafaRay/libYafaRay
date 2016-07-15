@@ -91,7 +91,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		bool getSaveLog() const { return mSaveLog; }
 		bool getSaveHTML() const { return mSaveHTML; }
 		bool getUseParamsBadge() { return mDrawParams; }
-		bool isParamsBadgeTop() { return mParamsBadgeTop; }
+		bool isParamsBadgeTop() { return (mDrawParams && mParamsBadgeTop); }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
 		std::string getLoggingAuthor() const { return mLoggingAuthor; }
 		std::string getLoggingContact() const { return mLoggingContact; }
