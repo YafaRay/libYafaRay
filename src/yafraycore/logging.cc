@@ -223,21 +223,37 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 		if(previousConsoleEventDateTime == 0) previousConsoleEventDateTime = current_datetime;
 		double duration = std::difftime(current_datetime, previousConsoleEventDateTime);
 		
-		switch(mVerbLevel)
+		if(mConsoleLogColorsEnabled)
 		{
-			case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
-			case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB"; break;
-			case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO"; break;
-			case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
-			case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
-			case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
-			default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG"; break;
+			switch(mVerbLevel)
+			{
+				case VL_DEBUG:		std::cout << setColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
+				case VL_VERBOSE:	std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] VERB"; break;
+				case VL_INFO:		std::cout << setColor(Green) << "[" << printTime(current_datetime) << "] INFO"; break;
+				case VL_PARAMS:		std::cout << setColor(Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
+				case VL_WARNING:	std::cout << setColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
+				case VL_ERROR:		std::cout << setColor(Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
+				default:			std::cout << setColor(White) << "[" << printTime(current_datetime) << "] LOG"; break;
+			}
+		}
+		else
+		{
+			switch(mVerbLevel)
+			{
+				case VL_DEBUG:		std::cout << "[" << printTime(current_datetime) << "] DEBUG"; break;
+				case VL_VERBOSE:	std::cout << "[" << printTime(current_datetime) << "] VERB"; break;
+				case VL_INFO:		std::cout << "[" << printTime(current_datetime) << "] INFO"; break;
+				case VL_PARAMS:		std::cout << "[" << printTime(current_datetime) << "] PARM"; break;
+				case VL_WARNING:	std::cout << "[" << printTime(current_datetime) << "] WARNING"; break;
+				case VL_ERROR:		std::cout << "[" << printTime(current_datetime) << "] ERROR"; break;
+				default:			std::cout << "[" << printTime(current_datetime) << "] LOG"; break;
+			}
 		}
 
 		if(duration == 0) std::cout << ": ";
 		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
 		
-		std::cout << setColor();
+		if(mConsoleLogColorsEnabled) std::cout << setColor();
 		
 		previousConsoleEventDateTime = current_datetime;
 	}

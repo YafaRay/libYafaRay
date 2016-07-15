@@ -11,9 +11,21 @@
 __BEGIN_YAFRAY
 
 #define printBar(progEmpty, progFull, per) \
-std::cout << "\r" << setColor(Green) << "Progress: " << \
-setColor(Red, true) << "[" << setColor(Green, true) << std::string(progFull, '#') << std::string(progEmpty, ' ') << setColor(Red, true) << "] " << \
-setColor() << "(" << setColor(Yellow, true) << per << "%" << setColor() << ")" << std::flush
+std::cout << "\r"; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Green); \
+std::cout << "Progress: "; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Red, true); \
+std::cout << "["; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Green, true); \
+std::cout << std::string(progFull, '#') << std::string(progEmpty, ' '); \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Red, true); \
+std::cout << "] "; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(); \
+std::cout << "("; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Yellow, true); \
+std::cout << per << "%"; \
+if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(); \
+std::cout << ")" << std::flush
 
 ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0), doneSteps(0)
 {

@@ -87,6 +87,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setRenderInfo(const std::string &render_info) { mRenderInfo = render_info; }
 		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
 		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
+		void setConsoleLogColorsEnabled(bool console_log_colors_enabled) { mConsoleLogColorsEnabled = console_log_colors_enabled; }
 
 		bool getSaveLog() const { return mSaveLog; }
 		bool getSaveHTML() const { return mSaveHTML; }
@@ -102,6 +103,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		bool getDrawAANoiseSettings() { return drawAANoiseSettings; }
 		bool getDrawRenderSettings() { return drawRenderSettings; }
 		int getBadgeHeight() const;
+		bool getConsoleLogColorsEnabled() const { return mConsoleLogColorsEnabled; }
 		
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
@@ -160,6 +162,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mRenderInfo;
 		bool drawAANoiseSettings = true;
 		bool drawRenderSettings = true;
+		bool mConsoleLogColorsEnabled = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previousConsoleEventDateTime = 0;
 		std::time_t previousLogEventDateTime = 0;
 };

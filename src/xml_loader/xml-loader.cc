@@ -79,7 +79,14 @@ int main(int argc, char *argv[])
 	parse.setOption("pp","plugin-path", false, "Path to load plugins.");
 	parse.setOption("vl","verbosity-level", false, "Set console verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basi info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.setOption("lvl","log-verbosity-level", false, "Set log/HTML files verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basic info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
+	parse.setOption("ccd","console-colors-disabled", true, "If specified, disables the Console colors ANSI codes, useful for some 3rd party software that cannot handle ANSI codes well.");
+
 	parse.parseCommandLine();
+
+	bool console_colors_disabled = parse.getFlag("ccd");
+
+	if(console_colors_disabled) yafLog.setConsoleLogColorsEnabled(false);
+	else yafLog.setConsoleLogColorsEnabled(true);
 	
 	renderEnvironment_t *env = new renderEnvironment_t();
 	
