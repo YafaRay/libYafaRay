@@ -136,8 +136,8 @@ light_t *sunLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("samples",samples);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", shootC);
-	params.getParam("shoot_diffuse", shootD);
+	params.getParam("with_caustic", shootC);
+	params.getParam("with_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 
 	sunLight_t *light = new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);

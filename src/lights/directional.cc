@@ -156,8 +156,8 @@ light_t *directionalLight_t::factory(paraMap_t &params,renderEnvironment_t &rend
 	params.getParam("infinite", inf);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", shootC);
-	params.getParam("shoot_diffuse", shootD);
+	params.getParam("with_caustic", shootC);
+	params.getParam("with_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 	
 	if(!inf)

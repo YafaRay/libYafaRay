@@ -197,8 +197,8 @@ light_t* areaLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", shootC);
-	params.getParam("shoot_diffuse", shootD);
+	params.getParam("with_caustic", shootC);
+	params.getParam("with_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 
 	areaLight_t *light = new areaLight_t(corner, p1-corner, p2-corner, color, power, samples, lightEnabled, castShadows);

@@ -217,8 +217,8 @@ light_t *sphereLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("object", object);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", shootC);
-	params.getParam("shoot_diffuse", shootD);
+	params.getParam("with_caustic", shootC);
+	params.getParam("with_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 	
 	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);

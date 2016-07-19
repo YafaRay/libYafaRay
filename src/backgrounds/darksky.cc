@@ -31,7 +31,7 @@ class darkSkyBackground_t: public background_t
 {
 	public:
 		darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
-							float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool shoot_caustics);
+							float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
 		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~darkSkyBackground_t();
@@ -65,8 +65,8 @@ class darkSkyBackground_t: public background_t
 };
 
 darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp,float av, float bv, float cv, float dv, float ev,
-										float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool shoot_caustics):
-									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night), withIBL(ibl), shootCaustic(shoot_caustics)
+										float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic):
+									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night), withIBL(ibl), shootCaustic(with_caustic)
 {
 
 
@@ -298,8 +298,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("sun_power", pw);
 
 	params.getParam("background_light", bgl);
-	params.getParam("shoot_caustics", caus);
-	params.getParam("shoot_diffuse", diff);
+	params.getParam("with_caustic", caus);
+	params.getParam("with_diffuse", diff);
 	params.getParam("light_samples", bgl_samples);
 	params.getParam("cast_shadows", castShadows);
 	params.getParam("cast_shadows_sun", castShadowsSun);
@@ -339,8 +339,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		p["power"] = parameter_t(pw);
 		p["samples"] = bgl_samples;
 		p["cast_shadows"] = castShadowsSun;
-		p["shoot_caustics"] = caus;
-		p["shoot_diffuse"] = diff;
+		p["with_caustic"] = caus;
+		p["with_diffuse"] = diff;
 
 		Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << yendl;
 
@@ -354,8 +354,8 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = bgl_samples;
-		bgp["shoot_caustics"] = caus;
-		bgp["shoot_diffuse"] = diff;
+		bgp["with_caustic"] = caus;
+		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 
 		Y_VERBOSE << "DarkSky: Adding background light" << yendl;

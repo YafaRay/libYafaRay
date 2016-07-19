@@ -261,8 +261,8 @@ light_t *iesLight_t::factory(paraMap_t &params,renderEnvironment_t &render)
 	params.getParam("cone_angle", ang);
 	params.getParam("light_enabled", lightEnabled);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", shootC);
-	params.getParam("shoot_diffuse", shootD);
+	params.getParam("with_caustic", shootC);
+	params.getParam("with_diffuse", shootD);
 	params.getParam("photon_only",pOnly);
 
 	iesLight_t* light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);

@@ -40,7 +40,7 @@ class textureBackground_t: public background_t
 			angular
 		};
 
-		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool shoot_caustics);
+		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
 		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~textureBackground_t();
@@ -63,7 +63,7 @@ class textureBackground_t: public background_t
 class constBackground_t: public background_t
 {
 	public:
-		constBackground_t(color_t col, bool ibl, bool shoot_caustics);
+		constBackground_t(color_t col, bool ibl, bool with_caustic);
 		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
 		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
 		virtual ~constBackground_t();
@@ -78,8 +78,8 @@ class constBackground_t: public background_t
 };
 
 
-textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool shoot_caustics):
-	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur(ibl_blur), shootCaustic(shoot_caustics)
+textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
+	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur(ibl_blur), shootCaustic(with_caustic)
 {
 	rotation = 2.0f * rot / 360.f;
 	sin_r = fSin(M_PI*rotation);
@@ -164,8 +164,8 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("power", power);
 	params.getParam("rotation", rot);
-	params.getParam("shoot_caustics", caust);
-	params.getParam("shoot_diffuse", diffuse);
+	params.getParam("with_caustic", caust);
+	params.getParam("with_diffuse", diffuse);
 	params.getParam("cast_shadows", castShadows);
 	
 	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, IBL_blur, caust);
@@ -175,8 +175,8 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = IBL_sam;
-		bgp["shoot_caustics"] = caust;
-		bgp["shoot_diffuse"] = diffuse;
+		bgp["with_caustic"] = caust;
+		bgp["with_diffuse"] = diffuse;
 		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
 		bgp["cast_shadows"] = castShadows;
 				
@@ -209,7 +209,7 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 / minimalistic background...
 / ========================================= */
 
-constBackground_t::constBackground_t(color_t col, bool ibl, bool shoot_caustics) : color(col), withIBL(ibl), shootCaustic(shoot_caustics)
+constBackground_t::constBackground_t(color_t col, bool ibl, bool with_caustic) : color(col), withIBL(ibl), shootCaustic(with_caustic)
 {
 	// Empty
 }
@@ -243,8 +243,8 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 	params.getParam("ibl", IBL);
 	params.getParam("ibl_samples", IBL_sam);
 	params.getParam("cast_shadows", castShadows);
-	params.getParam("shoot_caustics", caus);
-	params.getParam("shoot_diffuse", diff);
+	params.getParam("with_caustic", caus);
+	params.getParam("with_diffuse", diff);
 	
 	background_t *constBG = new constBackground_t(col*power, IBL, true);
 	
@@ -253,8 +253,8 @@ background_t* constBackground_t::factory(paraMap_t &params,renderEnvironment_t &
 		paraMap_t bgp;
 		bgp["type"] = std::string("bglight");
 		bgp["samples"] = IBL_sam;
-		bgp["shoot_caustics"] = caus;
-		bgp["shoot_diffuse"] = diff;
+		bgp["with_caustic"] = caus;
+		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = castShadows;
 		
 		light_t *bglight = render.createLight("constantBackground_bgLight", bgp);
