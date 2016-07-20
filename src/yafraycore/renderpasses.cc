@@ -50,7 +50,7 @@ void renderPasses_t::generate_pass_maps()
 	//External Render passes - mapping String and External Pass Type
 	//IMPORTANT: the external strings MUST MATCH the pass property names in Blender. These must also match the property names in Blender-Exporter without the "pass_" prefix. 
 	extPassMapStringInt["Combined"] = PASS_EXT_COMBINED;
-	extPassMapStringInt["Depth"] = PASS_EXT_Z_DEPTH;
+	extPassMapStringInt["Depth"] = PASS_EXT_Z_DEPTH;	//From here, specific ext.passes for Blender Exporter
 	extPassMapStringInt["Vector"] = PASS_EXT_VECTOR;
 	extPassMapStringInt["Normal"] = PASS_EXT_NORMAL;
 	extPassMapStringInt["UV"] = PASS_EXT_UV;
@@ -79,7 +79,39 @@ void renderPasses_t::generate_pass_maps()
 	extPassMapStringInt["SubsurfaceDir"] = PASS_EXT_SUBSURFACE_DIRECT;
 	extPassMapStringInt["SubsurfaceInd"] = PASS_EXT_SUBSURFACE_INDIRECT;
 	extPassMapStringInt["SubsurfaceCol"] = PASS_EXT_SUBSURFACE_COLOR;
-
+	extPassMapStringInt["RenderPass_1"] = PASS_EXT_1;	//From here, generic ext.passes for other exporters and plugins
+	extPassMapStringInt["RenderPass_2"] = PASS_EXT_2;
+	extPassMapStringInt["RenderPass_3"] = PASS_EXT_3;
+	extPassMapStringInt["RenderPass_4"] = PASS_EXT_4;
+	extPassMapStringInt["RenderPass_5"] = PASS_EXT_5;
+	extPassMapStringInt["RenderPass_6"] = PASS_EXT_6;
+	extPassMapStringInt["RenderPass_7"] = PASS_EXT_7;
+	extPassMapStringInt["RenderPass_8"] = PASS_EXT_8;
+	extPassMapStringInt["RenderPass_9"] = PASS_EXT_9;
+	extPassMapStringInt["RenderPass_10"] = PASS_EXT_10;
+	extPassMapStringInt["RenderPass_11"] = PASS_EXT_11;
+	extPassMapStringInt["RenderPass_12"] = PASS_EXT_12;
+	extPassMapStringInt["RenderPass_13"] = PASS_EXT_13;
+	extPassMapStringInt["RenderPass_14"] = PASS_EXT_14;
+	extPassMapStringInt["RenderPass_15"] = PASS_EXT_15;
+	extPassMapStringInt["RenderPass_16"] = PASS_EXT_16;
+	extPassMapStringInt["RenderPass_17"] = PASS_EXT_17;
+	extPassMapStringInt["RenderPass_18"] = PASS_EXT_18;
+	extPassMapStringInt["RenderPass_19"] = PASS_EXT_19;
+	extPassMapStringInt["RenderPass_20"] = PASS_EXT_20;
+	extPassMapStringInt["RenderPass_21"] = PASS_EXT_21;
+	extPassMapStringInt["RenderPass_22"] = PASS_EXT_22;
+	extPassMapStringInt["RenderPass_23"] = PASS_EXT_23;
+	extPassMapStringInt["RenderPass_24"] = PASS_EXT_24;
+	extPassMapStringInt["RenderPass_25"] = PASS_EXT_25;
+	extPassMapStringInt["RenderPass_26"] = PASS_EXT_26;
+	extPassMapStringInt["RenderPass_27"] = PASS_EXT_27;
+	extPassMapStringInt["RenderPass_28"] = PASS_EXT_28;
+	extPassMapStringInt["RenderPass_29"] = PASS_EXT_29;
+	extPassMapStringInt["RenderPass_30"] = PASS_EXT_30;
+	extPassMapStringInt["RenderPass_31"] = PASS_EXT_31;
+	extPassMapStringInt["RenderPass_32"] = PASS_EXT_32;
+	
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = extPassMapStringInt.begin(); it != extPassMapStringInt.end(); ++it)
 	{
