@@ -35,7 +35,6 @@
 #include <stdexcept>
 #include <iomanip>
 #include <utility>
-#include <regex>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp> 
 #include <boost/filesystem.hpp>
@@ -1284,7 +1283,6 @@ void imageFilm_t::imageFilmLoadAllInFolder()
 	std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
 	if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
 	const std::string target_path( parentPath );
-	const std::regex filmFilter(baseImageFileName + ".*\\.film$");
 	std::vector<std::string> filmFilesList;
 	
 	try
@@ -1293,7 +1291,9 @@ void imageFilm_t::imageFilmLoadAllInFolder()
 		for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
 		{
 			if(!boost::filesystem::is_regular_file(it->status())) continue;
-			if(!std::regex_match(it->path().filename().string(), filmFilter)) continue;
+			if(it->path().extension().string() != ".film") continue;
+			if(it->path().stem().string().size() < baseImageFileName.size()) continue;
+			if(it->path().stem().string().compare(0, baseImageFileName.size(), baseImageFileName) != 0) continue;
 			filmFilesList.push_back(it->path().string());
 		}
 		std::sort(filmFilesList.begin(), filmFilesList.end());
