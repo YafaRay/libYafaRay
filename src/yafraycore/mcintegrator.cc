@@ -135,6 +135,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir, state.raylevel == 0);
 		colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow, state.raylevel == 0);
 		colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir, state.raylevel == 0);
+		colorPasses.probe_add(PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_DIRAC, col, state.raylevel == 0);
 	}
 	else // area light and suchlike
 	{
@@ -248,6 +249,9 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 		}
 		
 		col += ccol * invNS;
+
+		colorPasses.probe_add(PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_SAMPLING, ccol * invNS, state.raylevel == 0);
+
 		colorPasses.probe_add(PASS_INT_SHADOW, colShadow * invNS, state.raylevel == 0);
 		colorPasses.probe_add(PASS_INT_MAT_INDEX_MASK_SHADOW, colShadowMatMask * invNS, state.raylevel == 0);
 		colorPasses.probe_add(PASS_INT_OBJ_INDEX_MASK_SHADOW, colShadowObjMask * invNS, state.raylevel == 0);
@@ -318,6 +322,8 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			}
 			
 			col += ccol2 * invNS;
+
+			colorPasses.probe_add(PASS_INT_DEBUG_LIGHT_ESTIMATION_MAT_SAMPLING, ccol2 * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_DIFFUSE, colDiffDir * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_DIFFUSE_NO_SHADOW, colDiffNoShadow * invNS, state.raylevel == 0);
 			colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir * invNS, state.raylevel == 0);

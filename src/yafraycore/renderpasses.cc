@@ -177,6 +177,9 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["adv-volume-integration"] = PASS_INT_VOLUME_INTEGRATION;
 	intPassMapStringInt["adv-volume-transmittance"] = PASS_INT_VOLUME_TRANSMITTANCE;
 	intPassMapStringInt["debug-aa-samples"] = PASS_INT_AA_SAMPLES;
+	intPassMapStringInt["debug-light-estimation-light-dirac"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_DIRAC;
+	intPassMapStringInt["debug-light-estimation-light-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_SAMPLING;
+	intPassMapStringInt["debug-light-estimation-mat-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_MAT_SAMPLING;
 
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
