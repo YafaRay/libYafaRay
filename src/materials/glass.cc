@@ -314,7 +314,7 @@ void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 	}
 	else //total inner reflection
 	{
-		col[0] = color_t(1.f);
+		col[0] = mirColS ? mirColS->getColor(stack) : specRefCol;
 		dir[0] = wo;
 		dir[0].reflect(N);
 		refl = true;
