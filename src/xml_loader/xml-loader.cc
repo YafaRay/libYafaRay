@@ -227,6 +227,15 @@ int main(int argc, char *argv[])
 	render.getParam("height", height); // height of rendered image
 	render.getParam("xstart", bx); // border render x start
 	render.getParam("ystart", by); // border render y start
+
+	//image output denoise options
+	bool denoiseEnabled = false;
+	int denoiseHCol=5, denoiseHLum=5;
+	float denoiseMix = 0.8;
+	render.getParam("denoiseEnabled", denoiseEnabled);
+	render.getParam("denoiseHCol", denoiseHCol);
+	render.getParam("denoiseHLum", denoiseHLum);
+	render.getParam("denoiseMix", denoiseMix);
 	
 	if(threads >= -1) render["threads"] = threads;
 
@@ -275,7 +284,11 @@ int main(int argc, char *argv[])
 	ihParams["alpha_channel"] = alpha;
 	ihParams["z_channel"] = use_zbuf;
 	ihParams["img_multilayer"] = multilayer;
-    
+	ihParams["denoiseEnabled"] = denoiseEnabled;
+	ihParams["denoiseHCol"] = denoiseHCol;
+	ihParams["denoiseHLum"] = denoiseHLum;
+	ihParams["denoiseMix"] = denoiseMix;
+	    
 	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
 
 	if(ih)
