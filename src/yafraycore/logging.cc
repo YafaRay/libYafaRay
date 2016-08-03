@@ -410,9 +410,14 @@ void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
 
 int yafarayLog_t::getBadgeHeight() const
 {
-	if(drawAANoiseSettings && drawRenderSettings) return 150;
-	else if(!drawAANoiseSettings && !drawRenderSettings) return 70;
-	else return 110;
+	int badgeHeight = 0;
+	if(drawAANoiseSettings && drawRenderSettings) badgeHeight = 150;
+	else if(!drawAANoiseSettings && !drawRenderSettings) badgeHeight = 70;
+	else badgeHeight = 110;
+	
+	badgeHeight = (int) std::ceil(badgeHeight * mLoggingFontSizeFactor);
+	
+	return badgeHeight;
 }
 		
 __END_YAFRAY

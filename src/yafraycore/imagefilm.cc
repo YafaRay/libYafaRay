@@ -1003,11 +1003,9 @@ void imageFilm_t::setAANoiseParams(bool detect_color_noise, int dark_detection_t
 void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 {
 	int i, j, p, q;
-	int x_max = x + bitmap->width;
-	int y_max = y + bitmap->rows;
+	int x_max = std::min(x + bitmap->width, dpimage->getWidth());
+	int y_max = std::min(y + bitmap->rows, dpimage->getHeight());
 	color_t textColor(1.f);
-	int tmpBuf;
-	float alpha;
 
 	for ( i = x, p = 0; i < x_max; i++, p++ )
 	{
@@ -1015,12 +1013,12 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 		{
 			if ( i >= w || j >= h ) continue;
 
-			tmpBuf = bitmap->buffer[q * bitmap->width + p];
+			int tmpBuf = bitmap->buffer[q * bitmap->width + p];
 
 			if (tmpBuf > 0)
 			{
-				colorA_t &col = (*dpimage)(i, j);
-				alpha = (float) tmpBuf / 255.0;
+				colorA_t &col = (*dpimage)(std::max(0,i), std::max(0,j));
+				float alpha = (float) tmpBuf / 255.0;
 				col = colorA_t(alphaBlend((color_t)col, textColor, alpha), col.getA());
 			}
 		}
@@ -1051,7 +1049,7 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 	std::u32string wtext_utf32 = utf8_to_wutf32(text_utf8);
 
 	// set font size at default dpi
-	float fontsize = 12.5f;
+	float fontsize = 12.5f * yafLog.getLoggingFontSizeFactor();
 
 	// initialize library
 	if (FT_Init_FreeType( &library ))
@@ -1061,17 +1059,25 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 	}
 
 	// create face object
-/*	std::string fontPath = "/usr/share/fonts/dejavu/DejaVuSansMono.ttf";
-	if (FT_New_Face( library, fontPath.c_str(), 0, &face ))
+	std::string fontPath = yafLog.getLoggingFontPath();
+	if(fontPath.empty())
 	{
-		Y_WARNING << "imageFilm: FreeType couldn't load the font '" << fontPath<< "', loading default font." << yendl;*/
+		if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
+		{
+			Y_ERROR << "imageFilm: FreeType couldn't load the default font!" << yendl;
+			return;
+		}
+	}
+	else if(FT_New_Face( library, fontPath.c_str(), 0, &face ))
+	{
+		Y_WARNING << "imageFilm: FreeType couldn't load the font '" << fontPath<< "', loading default font." << yendl;
 			
 		if (FT_New_Memory_Face( library, (const FT_Byte*)guifont, guifont_size, 0, &face ))
 		{
-			Y_ERROR << "imageFilm: FreeType couldn't load the font!" << yendl;
+			Y_ERROR << "imageFilm: FreeType couldn't load the default font!" << yendl;
 			return;
 		}
-	/*}*/
+	}
 
 	FT_Select_Charmap(face , ft_encoding_unicode);
 	
@@ -1084,8 +1090,8 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 
 	slot = face->glyph;
 
-	int textOffsetY = -12;
-	int textInterlineOffset = 13;
+	int textOffsetY = -1 * (int) ceil(12 * yafLog.getLoggingFontSizeFactor());
+	int textInterlineOffset = (int) ceil(13 * yafLog.getLoggingFontSizeFactor());
 #endif
 	// offsets
 	int textOffsetX = 4;
@@ -1102,7 +1108,7 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 		if (wtext_utf32[n] == '\n') {
 			pen.x = textOffsetX * 64;
 			pen.y -= textInterlineOffset * 64;
-			fontsize = 9.5f;
+			fontsize = 9.5f * yafLog.getLoggingFontSizeFactor();
 			if (FT_Set_Char_Size( face, (FT_F26Dot6)(fontsize * 64.0), 0, 0, 0 ))
 			{
 				Y_ERROR << "imageFilm: FreeType couldn't set the character size!" << yendl;

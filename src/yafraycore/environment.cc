@@ -729,6 +729,8 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	const std::string *logging_contact = nullptr;
 	const std::string *logging_comments = nullptr;
 	const std::string *logging_customIcon = nullptr;
+	const std::string *logging_fontPath = nullptr;
+	float logging_fontSizeFactor = 1.f;
 
 	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
 	params.getParam("logging_saveLog", logging_saveLog);
@@ -740,6 +742,8 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	params.getParam("logging_contact", logging_contact);
 	params.getParam("logging_comments", logging_comments);
 	params.getParam("logging_customIcon", logging_customIcon);
+	params.getParam("logging_fontPath", logging_fontPath);
+	params.getParam("logging_fontSizeFactor", logging_fontSizeFactor);
 
 	yafLog.setSaveLog(logging_saveLog);
 	yafLog.setSaveHTML(logging_saveHTML);
@@ -751,6 +755,8 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
 	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
 	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
+	if(logging_fontPath) yafLog.setLoggingFontPath(*logging_fontPath);
+	yafLog.setLoggingFontSizeFactor(logging_fontSizeFactor);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,

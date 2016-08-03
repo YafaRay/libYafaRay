@@ -221,6 +221,21 @@ public:
 		for(int i = 0; i < width; i++) data[i].resize(height);
 	}
 
+	inline void resize_and_clear(int new_width, int new_height)
+	{
+		if(data.size() > 0)
+		{
+			for(int i = 0; i < width; i++) data[i].clear();
+			data.clear();
+		}
+		
+		width = new_width;
+		height = new_height;
+		
+		data.resize(width);
+		for(int i = 0; i < width; i++) data[i].resize(height);
+	}
+
 	inline T &operator()(int x, int y)
 	{
 		return data[x][y];
@@ -230,6 +245,9 @@ public:
 	{
 		return data[x][y];
 	}
+	
+	inline int getWidth() { return width; }
+	inline int getHeight() { return height; }
 		
 protected:
 	std::vector< std::vector< T > > data;

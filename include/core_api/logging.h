@@ -81,6 +81,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
 		void setLoggingComments(const std::string &comments) { mLoggingComments = comments; }
 		void setLoggingCustomIcon(const std::string &iconPath) { mLoggingCustomIcon = iconPath; }
+		void setLoggingFontPath(const std::string &fontPath) { mLoggingFontPath = fontPath; }
+		void setLoggingFontSizeFactor(float &fontSizeFactor) { mLoggingFontSizeFactor = fontSizeFactor; }
 		void setImagePath(const std::string &path) { mImagePath = path; }
 		void appendAANoiseSettings(const std::string &aa_noise_settings);
 		void appendRenderSettings(const std::string &render_settings);
@@ -98,6 +100,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string getLoggingContact() const { return mLoggingContact; }
 		std::string getLoggingComments() const { return mLoggingComments; }
 		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
+		std::string getLoggingFontPath() const { return mLoggingFontPath; }
+		float getLoggingFontSizeFactor() const { return mLoggingFontSizeFactor; }
 		std::string getAANoiseSettings() const { return mAANoiseSettings; }
 		std::string getRenderSettings() const { return mRenderSettings; }
 		bool getDrawAANoiseSettings() { return drawAANoiseSettings; }
@@ -156,7 +160,9 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string mLoggingAuthor;
 		std::string mLoggingContact;
 		std::string mLoggingComments;
-		std::string mLoggingCustomIcon;		
+		std::string mLoggingCustomIcon;
+		std::string mLoggingFontPath;
+		float mLoggingFontSizeFactor = 1.f;
 		std::string mAANoiseSettings;
 		std::string mRenderSettings;
 		std::string mRenderInfo;
