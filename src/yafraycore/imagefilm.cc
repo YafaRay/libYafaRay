@@ -1003,8 +1003,8 @@ void imageFilm_t::setAANoiseParams(bool detect_color_noise, int dark_detection_t
 void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 {
 	int i, j, p, q;
-	int x_max = std::min(x + bitmap->width, dpimage->getWidth());
-	int y_max = std::min(y + bitmap->rows, dpimage->getHeight());
+	int x_max = std::min(static_cast<int>(x + bitmap->width), dpimage->getWidth());
+	int y_max = std::min(static_cast<int>(y + bitmap->rows), dpimage->getHeight());
 	color_t textColor(1.f);
 
 	for ( i = x, p = 0; i < x_max; i++, p++ )
