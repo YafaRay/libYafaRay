@@ -1038,7 +1038,7 @@ bool photonIntegrator_t::preprocess()
 				float maxrad = 0.01f*dsRadius; // 10% of diffuse search radius
 				rTree->lookup(pgdat.rad_points[i].pos, elimProc, maxrad);
 			}
-		}
+		}		
 		pgdat.rad_points.swap(cleaned);
 		// ================ //
 		int nThreads = scene->getNumThreads();
@@ -1059,6 +1059,9 @@ bool photonIntegrator_t::preprocess()
 		Y_VERBOSE << integratorName << ": Radiance tree built... Updating the tree..." << yendl;
 		session.radianceMap->updateTree();
 		Y_VERBOSE << integratorName << ": Done." << yendl;
+		
+		delete rTree;
+		rTree = nullptr;
 	}
 
 	if(usePhotonCaustics && session.causticMap->nPhotons() > 0 && scene->getNumThreadsPhotons() >= 2 && causticMapBuildKdTree_thread)
