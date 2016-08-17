@@ -134,16 +134,16 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 
 	s2.pdf = s1.pdf = s.pdf = 0.f;
 	
+	state.userdata = PTR_ADD(state.userdata, reqMem);
 	if(s.flags & mat1Flags)
 	{
-		state.userdata = PTR_ADD(state.userdata, reqMem);
 		col1 = mat1->sample(state, sp, wo, wi1, s1, W1);
 		mat1Sampled = true;
 	}
 	
+	state.userdata = PTR_ADD(state.userdata, mmem1);
 	if(s.flags & mat2Flags)
 	{
-		state.userdata = PTR_ADD(state.userdata, mmem1);
 		col2 = mat2->sample(state, sp, wo, wi2, s2, W2);
 		mat2Sampled = true;
 	}
