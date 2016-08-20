@@ -93,25 +93,26 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         void initOrenNayar(double sigma);
         float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
 
-        bool mIsTransparent;                //!< Boolean value which is true if you have transparent component
-        bool mIsTranslucent;                //!< Boolean value which is true if you have translucent component
-        bool mIsMirror;                     //!< Boolean value which is true if you have specular reflection component
-        bool mIsDiffuse;                    //!< Boolean value which is true if you have diffuse component
+        bool mIsTransparent = false;                  //!< Boolean value which is true if you have transparent component
+        bool mIsTranslucent = false;                  //!< Boolean value which is true if you have translucent component
+        bool mIsMirror = false;                       //!< Boolean value which is true if you have specular reflection component
+        bool mIsDiffuse = false;                      //!< Boolean value which is true if you have diffuse component
 
-        bool mHasFresnelEffect;             //!< Boolean value which is true if you have Fresnel specular effect
-        float IOR;                          //!< IOR
-        float mIOR_Squared;                 //!< Squared IOR
+        bool mHasFresnelEffect = false;               //!< Boolean value which is true if you have Fresnel specular effect
+        float IOR = 1.f;                              //!< IOR
+        float mIOR_Squared = 1.f;                     //!< Squared IOR
 
-        bool viNodes[4], vdNodes[4];        //!< describes if the nodes are viewdependant or not (if available)
-        shaderNode_t *mDiffuseShader;       //!< Shader node for diffuse color
-        shaderNode_t *mBumpShader;          //!< Shader node for bump
-        shaderNode_t *mTransparencyShader;  //!< Shader node for transparency strength (float)
-        shaderNode_t *mTranslucencyShader;  //!< Shader node for translucency strength (float)
-        shaderNode_t *mMirrorShader;        //!< Shader node for specular reflection strength (float)
-        shaderNode_t *mMirrorColorShader;   //!< Shader node for specular reflection color
-        shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
-        shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)
-        shaderNode_t *iorS;                 //!< Shader node for diffuse reflection strength (float)
+        bool viNodes[4], vdNodes[4];                  //!< describes if the nodes are viewdependant or not (if available)
+        shaderNode_t *mDiffuseShader = nullptr;       //!< Shader node for diffuse color
+        shaderNode_t *mBumpShader = nullptr;          //!< Shader node for bump
+        shaderNode_t *mTransparencyShader = nullptr;  //!< Shader node for transparency strength (float)
+        shaderNode_t *mTranslucencyShader = nullptr;  //!< Shader node for translucency strength (float)
+        shaderNode_t *mMirrorShader = nullptr;        //!< Shader node for specular reflection strength (float)
+        shaderNode_t *mMirrorColorShader = nullptr;   //!< Shader node for specular reflection color
+        shaderNode_t *mSigmaOrenShader = nullptr;     //!< Shader node for sigma in Oren Nayar material
+        shaderNode_t *mDiffuseReflShader = nullptr;   //!< Shader node for diffuse reflection strength (float)
+        shaderNode_t *iorS = nullptr;                 //!< Shader node for IOR value (float)
+        shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
 
         color_t mDiffuseColor;              //!< BSDF Diffuse component color
         color_t mEmitColor;                 //!< Emit color
@@ -122,12 +123,12 @@ class shinyDiffuseMat_t: public nodeMaterial_t
         float mDiffuseStrength;             //!< BSDF Diffuse component strength when not textured
         float mEmitStrength;                //!< Emit strength
         float mTransmitFilterStrength;      //!< determines how strong light passing through material gets tinted
+        
+        bool mUseOrenNayar = false;         //!< Use Oren Nayar reflectance (default Lambertian)
+        float mOrenNayar_A = 0.f;           //!< Oren Nayar A coefficient
+        float mOrenNayar_B = 0.f;           //!< Oren Nayar B coefficient
 
-        bool mUseOrenNayar;                 //!< Use Oren Nayar reflectance (default Lambertian)
-        float mOrenNayar_A;                 //!< Oren Nayar A coefficient
-        float mOrenNayar_B;                 //!< Oren Nayar B coefficient
-
-        int nBSDF;
+        int nBSDF = 0;
 
         BSDF_t cFlags[4];                   //!< list the BSDF components that are present
         int cIndex[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)

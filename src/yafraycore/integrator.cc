@@ -548,6 +548,13 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 	{
         colorPasses(PASS_INT_MAT_INDEX_MASK_ALL) = colorPasses(PASS_INT_MAT_INDEX_MASK) + colorPasses(PASS_INT_MAT_INDEX_MASK_SHADOW);
 	}
+
+	if(colorPasses.enabled(PASS_INT_DEBUG_WIREFRAME))
+	{
+		colorA_t wireframe_color = colorA_t(0.f, 0.f, 0.f, 0.f);
+		sp.material->applyWireFrame(wireframe_color, 1.f, sp);
+        colorPasses(PASS_INT_DEBUG_WIREFRAME) = wireframe_color;
+	}
 }
 
 

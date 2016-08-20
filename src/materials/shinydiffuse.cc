@@ -6,9 +6,8 @@
 __BEGIN_YAFRAY
 
 shinyDiffuseMat_t::shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength, float translucencyStrength, float mirrorStrength, float emitStrength, float transmitFilterStrength, visibility_t eVisibility):
-            mIsTransparent(false), mIsTranslucent(false), mIsMirror(false), mIsDiffuse(false), mHasFresnelEffect(false),
-            mDiffuseShader(nullptr), mBumpShader(nullptr), mTransparencyShader(nullptr), mTranslucencyShader(nullptr), mMirrorShader(nullptr), mMirrorColorShader(nullptr), mSigmaOrenShader(nullptr), mDiffuseReflShader(nullptr), iorS(nullptr), mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
-            mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength), mUseOrenNayar(false), nBSDF(0)
+            mDiffuseColor(diffuseColor), mMirrorColor(mirrorColor),
+            mMirrorStrength(mirrorStrength), mTransparencyStrength(transparencyStrength), mTranslucencyStrength(translucencyStrength), mDiffuseStrength(diffuseStrength), mTransmitFilterStrength(transmitFilterStrength)
 {
     mVisibility = eVisibility;
     mEmitColor = emitStrength * diffuseColor;
@@ -266,8 +265,13 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
     }
 
     if(mDiffuseReflShader) mD *= mDiffuseReflShader->getScalar(stack);
+    
+    color_t result = mD * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
 
-    return mD * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(result, wireFrameAmount, sp);
+
+    return result;
 }
 
 color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -275,7 +279,12 @@ color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t
     SDDat_t *dat = (SDDat_t *)state.userdata;
     nodeStack_t stack(dat->nodeStack);
 
-    return (mDiffuseShader ? mDiffuseShader->getColor(stack) * mEmitStrength : mEmitColor);
+    color_t result = (mDiffuseShader ? mDiffuseShader->getColor(stack) * mEmitStrength : mEmitColor);
+        
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(result, wireFrameAmount, sp);
+
+    return result;
 }
 
 color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
@@ -370,6 +379,10 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
     }
     s.sampledFlags = choice[pick];
     W = (std::fabs(wi*sp.N))/(s.pdf*0.99f + 0.01f);
+    
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(scolor, wireFrameAmount, sp);
+    
     return scolor;
 }
 
@@ -488,6 +501,9 @@ void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoi
     {
         doReflect = false;
     }
+
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(col, wireFrameAmount, sp);
 }
 
 color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -520,7 +536,13 @@ color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const sur
         accum *= mTransparencyShader ? mTransparencyShader->getScalar(stack) * accum : mTransparencyStrength * accum;
     }
     color_t tcol = mTransmitFilterStrength * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor) + color_t(1.f-mTransmitFilterStrength);
-    return accum * tcol;
+    
+    color_t result = accum * tcol;
+
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(result, wireFrameAmount, sp);
+
+    return result;
 }
 
 float shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
@@ -543,7 +565,12 @@ float shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint
 
         getFresnel(wo, N, Kr, cur_ior_squared);
         float refl = (1.f - dat->component[0]*Kr) * dat->component[1];
-        return 1.f - refl;
+        float result = 1.f - refl;
+
+        float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+        applyWireFrame(result, wireFrameAmount, sp);
+
+        return result;
     }
     return 1.f;
 }
@@ -566,6 +593,10 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     double transmitFilterStrength=1.0;
     int mat_pass_index = 0;
 	int additionaldepth = 0;
+    float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
+    float WireFrameThickness = 0.01f;      //!< Wireframe thickness
+    float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+    color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 
     params.getParam("color",            diffuseColor);
     params.getParam("mirror_color",     mirrorColor);
@@ -583,6 +614,11 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
 	
+    params.getParam("wireframe_amount",  WireFrameAmount);
+    params.getParam("wireframe_thickness",  WireFrameThickness);
+    params.getParam("wireframe_exponent",  WireFrameExponent);
+    params.getParam("wireframe_color",  WireFrameColor);
+    
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
 	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
@@ -595,6 +631,11 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     mat->setMaterialIndex(mat_pass_index);
     mat->mReceiveShadows = receive_shadows;
 	mat->additionalDepth = additionaldepth;
+
+    mat->mWireFrameAmount = WireFrameAmount;
+    mat->mWireFrameThickness = WireFrameThickness;
+    mat->mWireFrameExponent = WireFrameExponent;
+    mat->mWireFrameColor = WireFrameColor;
 
     if(hasFresnelEffect)
     {
@@ -628,6 +669,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     nodeList["sigma_oren_shader"]   = nullptr;
     nodeList["diffuse_refl_shader"] = nullptr;
     nodeList["IOR_shader"]          = nullptr;
+    nodeList["wireframe_shader"]    = nullptr;
 
     // load shader nodes:
     if(mat->loadNodes(paramsList, render))
@@ -645,6 +687,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     mat->mSigmaOrenShader    = nodeList["sigma_oren_shader"];
     mat->mDiffuseReflShader  = nodeList["diffuse_refl_shader"];
     mat->iorS                = nodeList["IOR_shader"];
+    mat->mWireFrameShader    = nodeList["wireframe_shader"];
     
     // solve nodes order
     if(!roots.empty())
@@ -661,6 +704,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
         if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
         if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);
         if(mat->iorS)                mat->getNodeList(mat->iorS, colorNodes);
+        if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
         
         mat->filterNodes(colorNodes, mat->allViewdep,   VIEW_DEP);
         mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);

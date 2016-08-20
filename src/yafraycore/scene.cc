@@ -949,6 +949,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 		point3d_t h=ray.from + Z*ray.dir;
 		hitt->getSurface(sp, h, data);
 		sp.origin = hitt;
+		sp.data = data;
 	}
 	else
 	{
@@ -958,6 +959,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 		point3d_t h=ray.from + Z*ray.dir;
 		hitprim->getSurface(sp, h, data);
 		sp.origin = hitprim;
+		sp.data = data;
 	}
 	ray.tmax = Z;
 	return true;

@@ -31,28 +31,21 @@ class material_t;
 class light_t;
 class object3d_t;
 class diffRay_t;
+class vector3d_t;
 
-struct intersectData_t
+class intersectData_t
 {
-	float b0;
-	float b1;
-	float b2;
-	float t;
-
-	intersectData_t() : b0(0.f), b1(0.f), b2(0.f), t(0.f)
-	{
-		// Empty
-	}
-
-	inline intersectData_t & operator = (intersectData_t &in)
-	{
-		b0 = in.b0;
-		b1 = in.b1;
-		b2 = in.b2;
-		t = in.t;
-
-		return *this;
-	}
+	public:
+		intersectData_t()
+		{
+			// Empty
+		}
+		float b0 = 0.f;
+		float b1 = 0.f;
+		float b2 = 0.f;
+		float t = 0.f;
+		const vector3d_t * edge1 = nullptr;
+		const vector3d_t * edge2 = nullptr;
 };
 
 /*! This holds a sampled surface point's data
@@ -60,40 +53,64 @@ struct intersectData_t
 	It contains data about normal, position, assigned material and other
 	things.
  */
-struct YAFRAYCORE_EXPORT surfacePoint_t
+class YAFRAYCORE_EXPORT surfacePoint_t
 {
-	//int object; //!< the object owner of the point.
-	const material_t *material; //!< the surface material
-	const light_t *light; //!< light source if surface point is on a light
-	const object3d_t *object; //!< object the prim belongs to
-//	point2d_t screenpos; // only used with 'win' texture coord. mode
-	void *origin;
+	public:
+		float getDistToNearestEdge() const;
+	
+		//int object; //!< the object owner of the point.
+		const material_t *material; //!< the surface material
+		const light_t *light; //!< light source if surface point is on a light
+		const object3d_t *object; //!< object the prim belongs to
+	//	point2d_t screenpos; // only used with 'win' texture coord. mode
+		void *origin;
+		intersectData_t data;
 
-	// Geometry related
-    vector3d_t N; //!< the shading normal.
-	vector3d_t Ng; //!< the geometric normal.
-	vector3d_t orcoNg; //!< the untransformed geometric normal.
-	point3d_t P; //!< the (world) position.
-	point3d_t orcoP;
-//	color_t vertex_col;
-	bool hasUV;
-	bool hasOrco;
-	bool available;
-	int primNum;
+		// Geometry related
+		vector3d_t N; //!< the shading normal.
+		vector3d_t Ng; //!< the geometric normal.
+		vector3d_t orcoNg; //!< the untransformed geometric normal.
+		point3d_t P; //!< the (world) position.
+		point3d_t orcoP;
+	//	color_t vertex_col;
+		bool hasUV;
+		bool hasOrco;
+		bool available;
+		int primNum;
 
-	float U; //!< the u texture coord.
-	float V; //!< the v texture coord.
-    vector3d_t  NU; //!< second vector building orthogonal shading space with N
-    vector3d_t  NV; //!< third vector building orthogonal shading space with N
-	vector3d_t dPdU; //!< u-axis in world space
-	vector3d_t dPdV; //!< v-axis in world space
-	vector3d_t dSdU; //!< u-axis in shading space (NU, NV, N)
-	vector3d_t dSdV; //!< v-axis in shading space (NU, NV, N)
-	//float dudNU;
-	//float dudNV;
-	//float dvdNU;
-	//float dvdNV;
+		float U; //!< the u texture coord.
+		float V; //!< the v texture coord.
+		vector3d_t  NU; //!< second vector building orthogonal shading space with N
+		vector3d_t  NV; //!< third vector building orthogonal shading space with N
+		vector3d_t dPdU; //!< u-axis in world space
+		vector3d_t dPdV; //!< v-axis in world space
+		vector3d_t dSdU; //!< u-axis in shading space (NU, NV, N)
+		vector3d_t dSdV; //!< v-axis in shading space (NU, NV, N)
+		//float dudNU;
+		//float dudNV;
+		//float dvdNU;
+		//float dvdNV;
 };
+
+inline float surfacePoint_t::getDistToNearestEdge() const
+{
+	if(data.edge1 && data.edge2)
+	{
+		float edge1len = data.edge1->length();
+		float edge2len = data.edge2->length();
+		float edge12len = (*(data.edge1) + *(data.edge2)).length() * 0.5f;
+		
+		float edge1dist = data.b1 * edge1len;
+		float edge2dist = data.b2 * edge2len;
+		float edge12dist = data.b0 * edge12len;
+						
+		float edgeMinDist = std::min(edge12dist, std::min(edge1dist, edge2dist));
+		
+		return edgeMinDist;
+	}
+	else return std::numeric_limits<float>::infinity();
+}
+
 
 YAFRAYCORE_EXPORT surfacePoint_t blend_surface_points(surfacePoint_t const& sp_0, surfacePoint_t const& sp_1, float const alpha);
 

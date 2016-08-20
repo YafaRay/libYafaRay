@@ -31,7 +31,7 @@ __BEGIN_YAFRAY
 #define addPdf(p1, p2) (p1*ival + p2*val)
 
 blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, visibility_t eVisibility):
-	mat1(m1), mat2(m2), blendS(nullptr)
+	mat1(m1), mat2(m2)
 {
     mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
@@ -100,6 +100,8 @@ void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t
 
 color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval)const
 {
+	nodeStack_t stack(state.userdata);
+
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 	
@@ -115,11 +117,16 @@ color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, c
 	state.userdata = old_udat;
 
 	col1 = addColors(col1, col2, ival, val);
+
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col1, wireFrameAmount, sp);
 	return col1;
 }
 
 color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
+	nodeStack_t stack(state.userdata);
+
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 	
@@ -195,11 +202,15 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	}
 
 	state.userdata = old_udat;
+
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col1, wireFrameAmount, sp);
 	return col1;
 }
 
 color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const
 {
+	nodeStack_t stack(state.userdata);
 	
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
@@ -213,6 +224,9 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	else col = mat1->sample(state, sp, wo, dir, tcol, s, W)*ival + mat2->sample(state, sp, wo, dir, tcol, s, W)*val;
 
 	state.userdata = old_udat;
+
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col, wireFrameAmount, sp);
 	return col;
 }
 
@@ -240,6 +254,8 @@ float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, cons
 void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
 							  bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
 {
+	nodeStack_t stack(state.userdata);
+
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
@@ -298,6 +314,9 @@ void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &s
 
 	refract = refract || m1_refract;
 	reflect = reflect || m1_reflect;
+	
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col, wireFrameAmount, sp);
 }
 
 float blendMat_t::getMatIOR() const
@@ -312,6 +331,8 @@ bool blendMat_t::isTransparent() const
 
 color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+	nodeStack_t stack(state.userdata);
+
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
@@ -328,11 +349,16 @@ color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	col1 = addColors(col1, col2, ival, val);
 	
 	state.userdata = old_udat;
+
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col1, wireFrameAmount, sp);
 	return col1;
 }
 
 float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+	nodeStack_t stack(state.userdata);
+
 	if(isTransparent())
 	{
 		float val, ival;
@@ -352,14 +378,21 @@ float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp,
 		
 		state.userdata = old_udat;
 		
+		float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+		applyWireFrame(al1, wireFrameAmount, sp);
 		return al1;
 	}
 	
-	return 1.0;
+	float result = 1.0;
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(result, wireFrameAmount, sp);
+	return result;
 }
 
 color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+	nodeStack_t stack(state.userdata);
+
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
@@ -375,6 +408,9 @@ color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 	col1 = addColors(col1, col2, ival, val);
 		
 	state.userdata = old_udat;
+	
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col1, wireFrameAmount, sp);
 	return col1;
 }
 
@@ -429,6 +465,10 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
+    float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
+    float WireFrameThickness = 0.01f;      //!< Wireframe thickness
+    float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+    color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 	
 	if(! params.getParam("material1", name) ) return nullptr;
 	m1 = env.getMaterial(*name);
@@ -439,6 +479,11 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
+	
+    params.getParam("wireframe_amount",  WireFrameAmount);
+    params.getParam("wireframe_thickness",  WireFrameThickness);
+    params.getParam("wireframe_exponent",  WireFrameExponent);
+    params.getParam("wireframe_color",  WireFrameColor);
 	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
@@ -452,6 +497,11 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	
 	mat->setMaterialIndex(mat_pass_index);
 	mat->mReceiveShadows = receive_shadows;
+
+    mat->mWireFrameAmount = WireFrameAmount;
+    mat->mWireFrameThickness = WireFrameThickness;
+    mat->mWireFrameExponent = WireFrameExponent;
+    mat->mWireFrameColor = WireFrameColor;
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

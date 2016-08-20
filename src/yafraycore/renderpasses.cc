@@ -180,6 +180,7 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-light-estimation-light-dirac"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_DIRAC;
 	intPassMapStringInt["debug-light-estimation-light-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_SAMPLING;
 	intPassMapStringInt["debug-light-estimation-mat-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_MAT_SAMPLING;
+	intPassMapStringInt["debug-wireframe"] = PASS_INT_DEBUG_WIREFRAME;
 
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
@@ -406,6 +407,7 @@ colorA_t colorPasses_t::init_color(intPassTypes_t intPassType)
 {
 	switch(intPassType)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
 	{
+		case PASS_INT_DEBUG_WIREFRAME:
 		case PASS_INT_SHADOW:
 		case PASS_INT_OBJ_INDEX_MASK:
 		case PASS_INT_OBJ_INDEX_MASK_SHADOW:

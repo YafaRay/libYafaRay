@@ -205,6 +205,12 @@ class YAFRAYCORE_EXPORT material_t
 		visibility_t getVisibility() const { return mVisibility; }
 		bool getReceiveShadows() const { return mReceiveShadows; }
 		int getAdditionalDepth() const { return additionalDepth; }
+		
+		void applyWireFrame(float & value, float wireFrameAmount, const surfacePoint_t &sp) const;
+		void applyWireFrame(color_t & col, float wireFrameAmount, const surfacePoint_t &sp) const;
+		void applyWireFrame(color_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const;
+		void applyWireFrame(colorA_t & col, float wireFrameAmount, const surfacePoint_t &sp) const;
+		void applyWireFrame(colorA_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const;
 
 	protected:
 		/* small function to apply bump mapping to a surface point
@@ -225,7 +231,102 @@ class YAFRAYCORE_EXPORT material_t
 		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
 		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 		int additionalDepth;	//!< Per-material additional ray-depth
+		
+		float mWireFrameAmount = 0.f;           //!< Wireframe shading amount   
+        float mWireFrameThickness = 0.01f;      //!< Wireframe thickness
+        float mWireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+        color_t mWireFrameColor = color_t(1.f); //!< Wireframe shading color
 };
+
+
+inline void material_t::applyWireFrame(float & value, float wireFrameAmount, const surfacePoint_t &sp) const
+{
+	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	{
+		float dist = sp.getDistToNearestEdge();
+		if(dist <= mWireFrameThickness)
+		{
+			if(mWireFrameExponent > 0.f)
+			{
+				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+			}
+			value = value * (1.f - wireFrameAmount);
+		}
+	}
+}
+
+inline void material_t::applyWireFrame(color_t & col, float wireFrameAmount, const surfacePoint_t &sp) const
+{
+	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	{
+		float dist = sp.getDistToNearestEdge();
+		if(dist <= mWireFrameThickness)
+		{
+			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
+			if(mWireFrameExponent > 0.f)
+			{
+				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+			}
+			col.blend(wireFrameCol, wireFrameAmount);
+		}
+	}
+}
+
+inline void material_t::applyWireFrame(color_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const
+{
+	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	{
+		float dist = sp.getDistToNearestEdge();
+		if(dist <= mWireFrameThickness)
+		{
+			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
+			if(mWireFrameExponent > 0.f)
+			{
+				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+			}
+            col[0].blend(wireFrameCol, wireFrameAmount);
+            col[1].blend(wireFrameCol, wireFrameAmount);
+		}
+	}
+}
+
+inline void material_t::applyWireFrame(colorA_t & col, float wireFrameAmount, const surfacePoint_t &sp) const
+{
+	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	{
+		float dist = sp.getDistToNearestEdge();
+		if(dist <= mWireFrameThickness)
+		{
+			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
+			if(mWireFrameExponent > 0.f)
+			{
+				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+			}
+			col.blend(wireFrameCol, wireFrameAmount);
+			col.A = wireFrameAmount;
+		}
+	}
+}
+
+inline void material_t::applyWireFrame(colorA_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const
+{
+	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	{
+		float dist = sp.getDistToNearestEdge();
+		if(dist <= mWireFrameThickness)
+		{
+			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
+			if(mWireFrameExponent > 0.f)
+			{
+				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+			}
+            col[0].blend(wireFrameCol, wireFrameAmount);
+			col[0].A = wireFrameAmount;
+            col[1].blend(wireFrameCol, wireFrameAmount);
+			col[1].A = wireFrameAmount;
+		}
+	}
+}
 
 __END_YAFRAY
 

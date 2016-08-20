@@ -65,25 +65,25 @@ class glossyMat_t: public nodeMaterial_t
 		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
 
 	protected:
-		shaderNode_t* diffuseS;
-		shaderNode_t* glossyS;
-		shaderNode_t* glossyRefS;
-		shaderNode_t* bumpS;
-        shaderNode_t* exponentS;
-        shaderNode_t *mSigmaOrenShader;     //!< Shader node for sigma in Oren Nayar material
-        shaderNode_t *mDiffuseReflShader;   //!< Shader node for diffuse reflection strength (float)                
+		shaderNode_t* diffuseS = nullptr;
+		shaderNode_t* glossyS = nullptr;
+		shaderNode_t* glossyRefS = nullptr;
+		shaderNode_t* bumpS = nullptr;
+        shaderNode_t* exponentS = nullptr;
+        shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
+        shaderNode_t *mSigmaOrenShader = nullptr;     //!< Shader node for sigma in Oren Nayar material
+        shaderNode_t *mDiffuseReflShader = nullptr;   //!< Shader node for diffuse reflection strength (float)                
 		color_t gloss_color, diff_color;
 		float exponent, exp_u, exp_v;
 		float reflectivity;
 		float mDiffuse;
-		bool as_diffuse, with_diffuse, anisotropic;
+		bool as_diffuse, with_diffuse = false, anisotropic = false;
 		bool orenNayar;
 		float orenA, orenB;
 };
 
 glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
-			diffuseS(nullptr), glossyS(nullptr), glossyRefS(nullptr), bumpS(nullptr), exponentS(nullptr), mSigmaOrenShader(nullptr), mDiffuseReflShader(nullptr), gloss_color(col), diff_color(dcol), exponent(expo),
-			reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff), with_diffuse(false), anisotropic(false)
+			gloss_color(col), diff_color(dcol), exponent(expo), reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff)
 {
     mVisibility = eVisibility;
 	bsdfFlags = BSDF_NONE;
@@ -220,6 +220,8 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
         //diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(col, wireFrameAmount, sp);
 	return col;
 }
 
@@ -255,7 +257,12 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 
 			cos_Ng_wi = sp.Ng * wi;
 
-			if(cos_Ng_wi * cos_Ng_wo < 0.f) return scolor;
+			if(cos_Ng_wi * cos_Ng_wo < 0.f)
+			{
+				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+				applyWireFrame(scolor, wireFrameAmount, sp);
+				return scolor;
+			}
 
 			wiN = std::fabs(wi * N);
 
@@ -281,7 +288,13 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			}
 			s.sampledFlags = BSDF_DIFFUSE | BSDF_REFLECT;
 
-			if( !(s.flags & BSDF_REFLECT) ) return color_t(0.f);
+			if( !(s.flags & BSDF_REFLECT) )
+			{
+				scolor = color_t(0.f);
+				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+				applyWireFrame(scolor, wireFrameAmount, sp);
+				return scolor;
+			}
 
 			scolor = glossy*(glossyS ? glossyS->getColor(stack) : gloss_color);
 
@@ -301,8 +314,10 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
                 scolor += addCol;
             }
 			W = wiN / (s.pdf*0.99f + 0.01f);
-			return scolor;
 
+			float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+			applyWireFrame(scolor, wireFrameAmount, sp);
+			return scolor;
 		}
 		s1 -= cur_pDiffuse;
 		s1 /= (1.f - cur_pDiffuse);
@@ -324,7 +339,13 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wi = reflect_dir(H, wo);
 			cos_Ng_wi = sp.Ng*wi;
 
-			if(cos_Ng_wo*cos_Ng_wi < 0.f) return color_t(0.f);
+			if(cos_Ng_wo*cos_Ng_wi < 0.f)
+			{
+				scolor = color_t(0.f);
+				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+				applyWireFrame(scolor, wireFrameAmount, sp);
+				return scolor;
+			}
 
 			wiN = std::fabs(wi * N);
 
@@ -345,7 +366,13 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 			wi = reflect_dir(H, wo);
 			cos_Ng_wi = sp.Ng*wi;
 
-			if(cos_Ng_wo*cos_Ng_wi < 0.f) return color_t(0.f);
+			if(cos_Ng_wo*cos_Ng_wi < 0.f)
+			{
+				scolor = color_t(0.f);
+				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+				applyWireFrame(scolor, wireFrameAmount, sp);
+				return scolor;
+			}
 
 			wiN = std::fabs(wi * N);
 			float cosHN = H*N;
@@ -377,6 +404,8 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 
 	W = wiN / (s.pdf*0.99f + 0.01f);
 
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(scolor, wireFrameAmount, sp);
 	return scolor;
 }
 
@@ -441,6 +470,10 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
+    float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
+    float WireFrameThickness = 0.01f;      //!< Wireframe thickness
+    float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+    color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 	
 	const std::string *name=0;
 	params.getParam("color", col);
@@ -456,6 +489,11 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
 	
+    params.getParam("wireframe_amount",  WireFrameAmount);
+    params.getParam("wireframe_thickness",  WireFrameThickness);
+    params.getParam("wireframe_exponent",  WireFrameExponent);
+    params.getParam("wireframe_color",  WireFrameColor);
+	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
 	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
@@ -467,6 +505,11 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	mat->setMaterialIndex(mat_pass_index);
 	mat->mReceiveShadows = receive_shadows;
 	mat->additionalDepth = additionaldepth;
+
+    mat->mWireFrameAmount = WireFrameAmount;
+    mat->mWireFrameThickness = WireFrameThickness;
+    mat->mWireFrameExponent = WireFrameExponent;
+    mat->mWireFrameColor = WireFrameColor;
 
 	if(aniso)
 	{
@@ -498,6 +541,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	nodeList["bump_shader"] = nullptr;
     nodeList["sigma_oren_shader"]   = nullptr;
     nodeList["exponent_shader"] = nullptr;
+    nodeList["wireframe_shader"]    = nullptr;
     nodeList["diffuse_refl_shader"] = nullptr;    
 
 	if(mat->loadNodes(paramList, render))
@@ -512,6 +556,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	mat->bumpS = nodeList["bump_shader"];
     mat->mSigmaOrenShader = nodeList["sigma_oren_shader"];
     mat->exponentS = nodeList["exponent_shader"];
+    mat->mWireFrameShader    = nodeList["wireframe_shader"];
     mat->mDiffuseReflShader  = nodeList["diffuse_refl_shader"];    
 
 	// solve nodes order
@@ -525,7 +570,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		if(mat->glossyS) mat->getNodeList(mat->glossyS, colorNodes);
 		if(mat->glossyRefS) mat->getNodeList(mat->glossyRefS, colorNodes);
         if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
-		if(mat->exponentS) mat->getNodeList(mat->exponentS, colorNodes);       
+		if(mat->exponentS) mat->getNodeList(mat->exponentS, colorNodes);
+        if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
         if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);

@@ -39,7 +39,8 @@ class blendMat_t: public nodeMaterial_t
 		static material_t* factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &render);
 	protected:
 		const material_t *mat1, *mat2;
-		shaderNode_t *blendS; //!< the shader node used for blending the materials
+		shaderNode_t *blendS = nullptr; //!< the shader node used for blending the materials
+        shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
 		float blendVal;
 		float minThres;
 		float maxThres;

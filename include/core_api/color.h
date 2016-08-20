@@ -127,6 +127,13 @@ class YAFRAYCORE_EXPORT color_t
 			if (B<0.0) B=0.0; else if (B>1.0) B=1.0;
 		}
 		
+		void blend(const color_t &col, float blend_factor)
+		{
+			R = R * (1.f - blend_factor) + col.R * blend_factor;
+			G = G * (1.f - blend_factor) + col.G * blend_factor;
+			B = B * (1.f - blend_factor) + col.B * blend_factor;
+		}
+		
 		void clampProportionalRGB(float maxValue);
 		
 		float linearRGB_from_sRGB(float value_sRGB);

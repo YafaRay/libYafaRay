@@ -29,8 +29,7 @@ __BEGIN_YAFRAY
 
 
 roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow, visibility_t eVisibility):
-		bumpS(nullptr), mirColS(nullptr), roughnessS(nullptr), iorS(nullptr), filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), absorb(false),
-		disperse(false), fakeShadow(fakeS), dispersion_power(disp_pow)
+		filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha*alpha), a(alpha), fakeShadow(fakeS), dispersion_power(disp_pow)
 {
     mVisibility = eVisibility;
 	bsdfFlags = BSDF_ALL_GLOSSY;
@@ -163,8 +162,12 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 		W = 1.f;
 	}
 
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(ret, wireFrameAmount, sp);
+
 	return ret;
 }
+
 color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const
 {
 	nodeStack_t stack(state.userdata);
@@ -278,6 +281,9 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 		W[0] = 1.f;
 	}
 
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(ret, wireFrameAmount, sp);
+
 	return ret;
 }
 
@@ -287,13 +293,22 @@ color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfa
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
 	float Kr, Kt;
 	fresnel(wo, N, (iorS ? iorS->getScalar(stack):ior), Kr, Kt);
-	return Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
+	color_t result = Kt*(filterColS ? filterColS->getColor(stack) : filterCol);
+
+    float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+    applyWireFrame(result, wireFrameAmount, sp);
+    return result;	
 }
 
 float roughGlassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
+    nodeStack_t stack(state.userdata);
+
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(state, sp, wo).energy()));
-	return alpha;
+	
+	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
+	applyWireFrame(alpha, wireFrameAmount, sp);
+	return alpha;	
 }
 
 float roughGlassMat_t::getMatIOR() const
@@ -315,6 +330,10 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
+    float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
+    float WireFrameThickness = 0.01f;      //!< Wireframe thickness
+    float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+    color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 	
 	params.getParam("IOR", IOR);
 	params.getParam("filter_color", filtCol);
@@ -329,6 +348,11 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
 	
+    params.getParam("wireframe_amount",  WireFrameAmount);
+    params.getParam("wireframe_thickness",  WireFrameThickness);
+    params.getParam("wireframe_exponent",  WireFrameExponent);
+    params.getParam("wireframe_color",  WireFrameColor);
+	
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
 	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
@@ -342,6 +366,11 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	mat->setMaterialIndex(mat_pass_index);
 	mat->mReceiveShadows = receive_shadows;
 	mat->additionalDepth = additionaldepth;
+
+    mat->mWireFrameAmount = WireFrameAmount;
+    mat->mWireFrameThickness = WireFrameThickness;
+    mat->mWireFrameExponent = WireFrameExponent;
+    mat->mWireFrameColor = WireFrameColor;
 
 	if( params.getParam("absorption", absorp) )
 	{
@@ -382,6 +411,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	nodeList["bump_shader"] = nullptr;
     nodeList["filter_color_shader"] = nullptr;
     nodeList["IOR_shader"] = nullptr;
+    nodeList["wireframe_shader"] = nullptr;
     nodeList["roughness_shader"] = nullptr;
     
 	if(mat->loadNodes(paramList, render))
@@ -394,6 +424,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 	mat->bumpS = nodeList["bump_shader"];
     mat->filterColS = nodeList["filter_color_shader"];
     mat->iorS = nodeList["IOR_shader"];
+    mat->mWireFrameShader = nodeList["wireframe_shader"];
     mat->roughnessS = nodeList["roughness_shader"];
 
 	// solve nodes order
@@ -404,6 +435,7 @@ material_t* roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &
 		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
         if(mat->roughnessS) mat->getNodeList(mat->roughnessS, colorNodes);
         if(mat->iorS) mat->getNodeList(mat->iorS, colorNodes);
+        if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
         if(mat->filterColS) mat->getNodeList(mat->filterColS, colorNodes);
 		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);

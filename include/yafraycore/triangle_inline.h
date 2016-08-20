@@ -66,6 +66,8 @@ inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &d
 	data.b1 = u;
 	data.b2 = v;
 	data.b0 = 1 - u - v;
+	data.edge1 = &edge1;
+	data.edge2 = &edge2;
 	return true;
 }
 
@@ -145,6 +147,8 @@ inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectD
 	data.b1 = u;
 	data.b2 = v;
 	data.b0 = 1 - u - v;
+	data.edge1 = &edge1;
+	data.edge2 = &edge2;
 	return true;
 }
 

@@ -38,17 +38,18 @@ class roughGlassMat_t: public nodeMaterial_t
 		}
 
 	protected:
-		shaderNode_t* bumpS;
-		shaderNode_t *mirColS;
-        shaderNode_t *roughnessS;
-        shaderNode_t *iorS;
-        shaderNode_t *filterColS;
+		shaderNode_t* bumpS = nullptr;
+		shaderNode_t *mirColS = nullptr;
+        shaderNode_t *roughnessS = nullptr;
+        shaderNode_t *iorS = nullptr;
+        shaderNode_t *filterColS = nullptr;
+        shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
 		color_t filterCol, specRefCol;
 		color_t beer_sigma_a;
 		float ior;
 		float a2;
 		float a;
-		bool absorb, disperse, fakeShadow;
+		bool absorb = false, disperse = false, fakeShadow;
         float dispersion_power;
 		float CauchyA, CauchyB;
 };
