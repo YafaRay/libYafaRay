@@ -169,6 +169,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
         void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
         void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
+
+		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);

@@ -220,6 +220,20 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
+	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, int idx, const yafaray::colorA_t &color, bool alpha = true)
+	{
+		if(idx < (int) tilesPasses.at(numView).size())
+		{
+			yafTilePixel_t &pix= tilesPasses.at(numView)[idx]->mem[resx * y + x];
+			pix.r = color.R;
+			pix.g = color.G;
+			pix.b = color.B;
+			pix.a = (alpha || idx > 0) ? color.A : 1.0f;
+		}
+        
+		return true;
+	}
+
 	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true)
 	{
 		for(size_t idx = 0; idx < tilesPasses.at(numView).size(); ++idx)
@@ -585,6 +599,7 @@ namespace yafaray
 		public:
 			virtual ~colorOutput_t() {};
 			virtual void initTilesPasses(int totalViews, int numExtPasses) {};
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
@@ -631,6 +646,7 @@ namespace yafaray
 			imageOutput_t(imageHandler_t *handle, const std::string &name, int bx, int by);
 			imageOutput_t(); //!< Dummy initializer
 			virtual ~imageOutput_t();
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			virtual void flush(int numView, const renderPasses_t *renderPasses);
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {} // not used by images... yet

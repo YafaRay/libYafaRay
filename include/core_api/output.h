@@ -38,6 +38,7 @@ class colorOutput_t
 	public:
 		virtual ~colorOutput_t() {};
         virtual void initTilesPasses(int totalViews, int numExtPasses) {};
+        virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true)=0;
 		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 		virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;

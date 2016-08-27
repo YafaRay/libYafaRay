@@ -43,6 +43,14 @@ imageOutput_t::~imageOutput_t()
 	image = nullptr;
 }
 
+bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha)
+{
+    colorA_t col(0.f);
+    col.set(color.R, color.G, color.B, ( (alpha || idx > 0) ? color.A : 1.f ) );
+    image->putPixel(x + bX , y + bY, col, idx);
+    return true;
+}
+
 bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
 {
 	if(image)

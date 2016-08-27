@@ -181,6 +181,9 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-light-estimation-light-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_LIGHT_SAMPLING;
 	intPassMapStringInt["debug-light-estimation-mat-sampling"] = PASS_INT_DEBUG_LIGHT_ESTIMATION_MAT_SAMPLING;
 	intPassMapStringInt["debug-wireframe"] = PASS_INT_DEBUG_WIREFRAME;
+	intPassMapStringInt["debug-faces-edges"] = PASS_INT_DEBUG_FACES_EDGES;
+	intPassMapStringInt["debug-objects-edges"] = PASS_INT_DEBUG_OBJECTS_EDGES;
+	intPassMapStringInt["toon"] = PASS_INT_TOON;
 
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
@@ -247,7 +250,15 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
             intPass_add(PASS_INT_MAT_INDEX_MASK);
             intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW);
             break;
-            
+        
+        case PASS_INT_DEBUG_FACES_EDGES:
+			intPass_add(PASS_INT_NORMAL_GEOM);
+            intPass_add(PASS_INT_Z_DEPTH_NORM);
+        
+        case PASS_INT_DEBUG_OBJECTS_EDGES:
+			intPass_add(PASS_INT_NORMAL_SMOOTH);
+            intPass_add(PASS_INT_Z_DEPTH_NORM);
+
         default:
 			break;
     }

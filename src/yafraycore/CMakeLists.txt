@@ -22,6 +22,6 @@ if(APPLE) # set rpath - Jens
 	add_custom_command(TARGET yafaray_v3_core POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray_v3_core.dylib)
 endif(APPLE)
 
-target_link_libraries(yafaray_v3_core ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(yafaray_v3_core ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
 
 install (TARGETS yafaray_v3_core ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
