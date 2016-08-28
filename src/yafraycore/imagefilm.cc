@@ -135,6 +135,12 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
 
+	//Creation of the image buffers for the auxiliary render passes
+	for(int idx = 0; idx < env->getRenderPasses()->auxPassesSize(); ++idx)
+	{
+		auxImagePasses.push_back(new rgba2DImage_t(width, height));
+	}
+
 	densityImage = nullptr;
 	estimateDensity = false;
 	dpimage = nullptr;
@@ -186,7 +192,20 @@ imageFilm_t::~imageFilm_t ()
 		delete(imagePasses[idx]);
 	}
 	imagePasses.clear();
+
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		delete(auxImagePasses[idx]);
+	}
+	auxImagePasses.clear();
 	
+	//Deletion of the auxiliary image buffers
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		delete(auxImagePasses[idx]);
+	}
+	auxImagePasses.clear();
+
 	if(densityImage) delete densityImage;
 	delete[] filterTable;
 	if(splitter) delete splitter;
@@ -528,136 +547,12 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 	{
 		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
 		{
-			int idxNormalGeom = 0;
-			int idxZDepth = 0;
-			
-			for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-			{
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) idxNormalGeom = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) idxZDepth = idx;
-			}
-			
-			if(idxNormalGeom > 0 && idxZDepth > 0)
-			{
-				std::vector<cv::Mat> imageMat;
-				for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
-
-				for(int j=a.Y-cy0; j<end_y; ++j)
-				{
-					for(int i=a.X-cx0; i<end_x; ++i)
-					{
-						color_t colNormal = (*imagePasses[idxNormalGeom])(i, j).normalized();
-						float zDepth = (*imagePasses[idxZDepth])(i, j).normalized().A;
-
-						imageMat.at(0).at<float>(j, i) = colNormal.getR();
-						imageMat.at(1).at<float>(j, i) = colNormal.getG();
-						imageMat.at(2).at<float>(j, i) = colNormal.getB();
-						imageMat.at(3).at<float>(j, i) = zDepth;
-					}
-				}
-				
-				edgeImageDetection(imageMat, /*edge_threshold=*/ 0.01f, /*edge_thickness=*/ 1, /*smoothness=*/ 0.5f);
-
-				for(int j=a.Y-cy0; j<end_y; ++j)
-				{
-					for(int i=a.X-cx0; i<end_x; ++i)
-					{
-						color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
-
-						if(i <= 3 || j <= 3 || i >= end_x-1-3 || j >= end_y-1-3) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
-
-						if( !output->putPixel(numView, i, j, env->getRenderPasses(), idx, colEdge) ) abort=true;
-					}
-				}
-			}
+			generateDebugFacesEdges(numView, idx, a.X-cx0, end_x, a.Y-cy0, end_y, true, output);
 		}
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES)
+		
+		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
 		{
-			int idxNormalSmooth = 0;
-			int idxZDepth = 0;
-			int idxToon = 0;
-			
-			for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-			{
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) idxNormalSmooth = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) idxZDepth = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
-			}
-			
-			if(idxNormalSmooth > 0 && idxZDepth > 0)
-			{
-				cv::Mat_<cv::Vec3f> imageMatCombinedVec(h, w, CV_32FC3);
-				float toonQuantization = 0.1f;
-				std::vector<cv::Mat> imageMat;
-				for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
-
-				for(int j=a.Y-cy0; j<end_y; ++j)
-				{
-					for(int i=a.X-cx0; i<end_x; ++i)
-					{
-						color_t colNormal = (*imagePasses[idxNormalSmooth])(i, j).normalized();
-						float zDepth = (*imagePasses[idxZDepth])(i, j).normalized().A;
-
-						imageMatCombinedVec(j, i)[0] = (*imagePasses[0])(i, j).normalized().B;
-						imageMatCombinedVec(j, i)[1] = (*imagePasses[0])(i, j).normalized().G;
-						imageMatCombinedVec(j, i)[2] = (*imagePasses[0])(i, j).normalized().R;
-												
-						imageMat.at(0).at<float>(j, i) = colNormal.getR();
-						imageMat.at(1).at<float>(j, i) = colNormal.getG();
-						imageMat.at(2).at<float>(j, i) = colNormal.getB();
-						imageMat.at(3).at<float>(j, i) = zDepth;
-					}
-				}
-
-				cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
-				
-				if(toonQuantization > 0.f)
-				{
-					for(int j=a.Y-cy0; j<end_y; ++j)
-					{
-						for(int i=a.X-cx0; i<end_x; ++i)
-						{
-							{
-								float h, s, v;
-								color_t col(imageMatCombinedVec(j, i)[0], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[2]);
-								col.rgb_to_hsv(h, s, v);
-								h = std::round(h / toonQuantization) * toonQuantization;
-								s = std::round(s / toonQuantization) * toonQuantization;
-								v = std::round(v / toonQuantization) * toonQuantization;
-								col.hsv_to_rgb(h, s, v);
-								imageMatCombinedVec(j, i)[0] = col.R;
-								imageMatCombinedVec(j, i)[1] = col.G;
-								imageMatCombinedVec(j, i)[2] = col.B;
-							}
-						}
-					}
-					cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
-				}
-
-				edgeImageDetection(imageMat, /*edge_threshold=*/ 0.3f, /*edge_thickness=*/ 2, /*smoothness=*/ 0.75f);
-
-				for(int j=a.Y-cy0; j<end_y; ++j)
-				{
-					for(int i=a.X-cx0; i<end_x; ++i)
-					{
-						color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
-
-						if(i <= 3 || j <= 3 || i >= end_x-1-3 || j >= end_y-1-3) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
-						if( !output->putPixel(numView, i, j, env->getRenderPasses(), idx, colEdge) ) abort=true;
-						
-						color_t colToon(imageMatCombinedVec(j, i)[2], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[0]);
-						colToon = colToon - colEdge;
-						
-						if(i <= 3 || j <= 3 || i >= end_x-1-3 || j >= end_y-1-3) colToon = color_t(0.5f,0.f,0.f);
-						colToon.clampRGB0();
-						
-						if(idxToon > 0)
-						{
-							if( !output->putPixel(numView, i, j, env->getRenderPasses(), idxToon, colToon) ) abort=true;
-						}
-					}
-				}
-			}
+			generateToonAndDebugObjectEdges(numView, idx, a.X-cx0, end_x, a.Y-cy0, end_y, true, output);
 		}
 	}
 
@@ -860,138 +755,15 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	{
 		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
 		{
-			int idxNormalGeom = 0;
-			int idxZDepth = 0;
-			
-			for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-			{
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) idxNormalGeom = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) idxZDepth = idx;
-			}
-			
-			if(idxNormalGeom > 0 && idxZDepth > 0)
-			{
-				std::vector<cv::Mat> imageMat;
-				for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
-
-				for(int j = 0; j < h; j++)
-				{
-					for(int i = 0; i < w; i++)
-					{
-						color_t colNormal = (*imagePasses[idxNormalGeom])(i, j).normalized();
-						float zDepth = (*imagePasses[idxZDepth])(i, j).normalized().A;
-
-						imageMat.at(0).at<float>(j, i) = colNormal.getR();
-						imageMat.at(1).at<float>(j, i) = colNormal.getG();
-						imageMat.at(2).at<float>(j, i) = colNormal.getB();
-						imageMat.at(3).at<float>(j, i) = zDepth;
-					}
-				}
-				
-				edgeImageDetection(imageMat, /*edge_threshold=*/ 0.01f, /*edge_thickness=*/ 1, /*smoothness=*/ 0.5f);
-
-				for(int j = 0; j < h; j++)
-				{
-					for(int i = 0; i < w; i++)
-					{
-						color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
-
-						if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idx, colEdge);
-						if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idx, colEdge);
-					}
-				}
-			}
+			generateDebugFacesEdges(numView, idx, 0, w, 0, h, false, out1, outputDisplaceRenderedImageBadgeHeight, out2, out2DisplaceRenderedImageBadgeHeight);
 		}
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES)
+		
+		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
 		{
-			int idxNormalSmooth = 0;
-			int idxZDepth = 0;
-			int idxToon = 0;
-			
-			for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-			{
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) idxNormalSmooth = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) idxZDepth = idx;
-				else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
-			}
-			
-			if(idxNormalSmooth > 0 && idxZDepth > 0)
-			{
-				cv::Mat_<cv::Vec3f> imageMatCombinedVec(h, w, CV_32FC3);
-				float toonQuantization = 0.1f;
-				std::vector<cv::Mat> imageMat;
-				for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
-
-				for(int j = 0; j < h; j++)
-				{
-					for(int i = 0; i < w; i++)
-					{
-						color_t colNormal = (*imagePasses[idxNormalSmooth])(i, j).normalized();
-						float zDepth = (*imagePasses[idxZDepth])(i, j).normalized().A;
-
-						imageMatCombinedVec(j, i)[0] = (*imagePasses[0])(i, j).normalized().B;
-						imageMatCombinedVec(j, i)[1] = (*imagePasses[0])(i, j).normalized().G;
-						imageMatCombinedVec(j, i)[2] = (*imagePasses[0])(i, j).normalized().R;
-						
-						imageMat.at(0).at<float>(j, i) = colNormal.getR();
-						imageMat.at(1).at<float>(j, i) = colNormal.getG();
-						imageMat.at(2).at<float>(j, i) = colNormal.getB();
-						imageMat.at(3).at<float>(j, i) = zDepth;
-					}
-				}
-				
-				cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
-				
-				if(toonQuantization > 0.f)
-				{
-					for(int j = 0; j < h; j++)
-					{
-						for(int i = 0; i < w; i++)
-						{
-							{
-								float h, s, v;
-								color_t col(imageMatCombinedVec(j, i)[0], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[2]);
-								col.rgb_to_hsv(h, s, v);
-								h = std::round(h / toonQuantization) * toonQuantization;
-								s = std::round(s / toonQuantization) * toonQuantization;
-								v = std::round(v / toonQuantization) * toonQuantization;
-								col.hsv_to_rgb(h, s, v);
-								imageMatCombinedVec(j, i)[0] = col.R;
-								imageMatCombinedVec(j, i)[1] = col.G;
-								imageMatCombinedVec(j, i)[2] = col.B;
-							}
-						}
-					}
-					cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
-				}
-
-				edgeImageDetection(imageMat, /*edge_threshold=*/ 0.3f, /*edge_thickness=*/ 2, /*smoothness=*/ 0.75f);
-				
-				for(int j = 0; j < h; j++)
-				{
-					for(int i = 0; i < w; i++)
-					{
-						color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
-
-						if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idx, colEdge);
-						if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idx, colEdge);
-												
-						color_t colToon(imageMatCombinedVec(j, i)[2], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[0]);
-						colToon = colToon - colEdge;
-						
-						colToon.clampRGB0();
-						
-						if(idxToon > 0)
-						{
-							if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idxToon, colToon);
-							if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), idxToon, colToon);
-						}
-					}
-				}
-			}
+			generateToonAndDebugObjectEdges(numView, idx, 0, w, 0, h, false, out1, outputDisplaceRenderedImageBadgeHeight, out2, out2DisplaceRenderedImageBadgeHeight);
 		}
 	}
-
+	
 
 	if(yafLog.getUseParamsBadge() && dpimage)
 	{
@@ -1159,6 +931,26 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 				if(premultAlpha) col.alphaPremultiply();
 
 				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				{
+					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
+				}
+				else
+				{
+					pixel.col += (col * filterWt);
+					pixel.weight += filterWt;
+				}
+			}
+			for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+			{
+				colorA_t col = colorPasses(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx));
+				
+				col.clampProportionalRGB(AA_clamp_samples);
+
+				pixel_t &pixel = (*auxImagePasses[idx])(i - cx0, j - cy0);
+
+				if(premultAlpha) col.alphaPremultiply();
+
+				if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}
@@ -1802,5 +1594,160 @@ void imageFilm_t::edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge
 	//Soften the edges if needed
 	if(smoothness > 0.f) cv::GaussianBlur( imageMat.at(0), imageMat.at(0), cv::Size(3,3), /*sigmaX=*/ smoothness );
 }
+
+
+void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement)
+{
+	rgba2DImage_t * normalImagePass = nullptr;
+	rgba2DImage_t * zDepthImagePass = nullptr;
+	
+	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
+	{
+		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = imagePasses[idx];
+		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
+	}
+	
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = auxImagePasses[idx];
+		else if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
+	}
+
+	if(normalImagePass && zDepthImagePass)
+	{
+		std::vector<cv::Mat> imageMat;
+		for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
+
+		for(int j=ystart; j<height; ++j)
+		{
+			for(int i=xstart; i<width; ++i)
+			{
+				color_t colNormal = (*normalImagePass)(i, j).normalized();
+				float zDepth = (*zDepthImagePass)(i, j).normalized().A;
+
+				imageMat.at(0).at<float>(j, i) = colNormal.getR();
+				imageMat.at(1).at<float>(j, i) = colNormal.getG();
+				imageMat.at(2).at<float>(j, i) = colNormal.getB();
+				imageMat.at(3).at<float>(j, i) = zDepth;
+			}
+		}
+		
+		edgeImageDetection(imageMat, /*edge_threshold=*/ 0.01f, /*edge_thickness=*/ 1, /*smoothness=*/ 0.5f);
+
+		for(int j=ystart; j<height; ++j)
+		{
+			for(int i=xstart; i<width; ++i)
+			{
+				color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
+
+				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
+
+				if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxPass, colEdge);
+				if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxPass, colEdge);
+			}
+		}
+	}
+}
+
+void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement)
+{
+	rgba2DImage_t * normalImagePass = nullptr;
+	rgba2DImage_t * zDepthImagePass = nullptr;
+	int idxToon = 0;
+	
+	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
+	{
+		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = imagePasses[idx];
+		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
+		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
+	}
+	
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = auxImagePasses[idx];
+		else if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
+	}
+
+	if(normalImagePass && zDepthImagePass)
+	{
+		cv::Mat_<cv::Vec3f> imageMatCombinedVec(h, w, CV_32FC3);
+		float toonQuantization = 0.1f;
+		std::vector<cv::Mat> imageMat;
+		for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
+		color_t colNormal(0.f);
+		float zDepth = 0.f;
+
+		for(int j=ystart; j<height; ++j)
+		{
+			for(int i=xstart; i<width; ++i)
+			{
+				colNormal = (*normalImagePass)(i, j).normalized();
+				zDepth = (*zDepthImagePass)(i, j).normalized().A;
+
+				imageMatCombinedVec(j, i)[0] = (*imagePasses[0])(i, j).normalized().B;
+				imageMatCombinedVec(j, i)[1] = (*imagePasses[0])(i, j).normalized().G;
+				imageMatCombinedVec(j, i)[2] = (*imagePasses[0])(i, j).normalized().R;
+										
+				imageMat.at(0).at<float>(j, i) = colNormal.getR();
+				imageMat.at(1).at<float>(j, i) = colNormal.getG();
+				imageMat.at(2).at<float>(j, i) = colNormal.getB();
+				imageMat.at(3).at<float>(j, i) = zDepth;
+			}
+		}
+
+		cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
+		
+		if(toonQuantization > 0.f)
+		{
+			for(int j=ystart; j<height; ++j)
+			{
+				for(int i=xstart; i<width; ++i)
+				{
+					{
+						float h, s, v;
+						color_t col(imageMatCombinedVec(j, i)[0], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[2]);
+						col.rgb_to_hsv(h, s, v);
+						h = std::round(h / toonQuantization) * toonQuantization;
+						s = std::round(s / toonQuantization) * toonQuantization;
+						v = std::round(v / toonQuantization) * toonQuantization;
+						col.hsv_to_rgb(h, s, v);
+						imageMatCombinedVec(j, i)[0] = col.R;
+						imageMatCombinedVec(j, i)[1] = col.G;
+						imageMatCombinedVec(j, i)[2] = col.B;
+					}
+				}
+			}
+			cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
+		}
+
+		edgeImageDetection(imageMat, /*edge_threshold=*/ 0.3f, /*edge_thickness=*/ 2, /*smoothness=*/ 0.75f);
+
+		for(int j=ystart; j<height; ++j)
+		{
+			for(int i=xstart; i<width; ++i)
+			{
+				color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
+
+				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
+				
+				if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxPass, colEdge);
+				if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxPass, colEdge);
+				
+				color_t colToon(imageMatCombinedVec(j, i)[2], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[0]);
+				colToon = colToon - colEdge;
+				
+				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colToon = colorA_t(0.5f,0.f,0.f,1.f);
+				colToon.clampRGB0();
+				
+				if(idxToon > 0)
+				{
+					if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxToon, colToon);
+					if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxToon, colToon);
+				}
+			}
+		}
+	}
+}
+
 
 __END_YAFRAY

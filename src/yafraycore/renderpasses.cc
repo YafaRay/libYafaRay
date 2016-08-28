@@ -40,6 +40,11 @@ int renderPasses_t::extPassesSize() const
 	return extPasses.size();
 }
 
+int renderPasses_t::auxPassesSize() const
+{
+	return auxPasses.size();
+}
+
 int renderPasses_t::intPassesSize() const
 {
 	return intPasses.size();
@@ -220,48 +225,27 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 	if(sExternalPass != "Combined") Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
     
     intPass_add(intPassType);
+}
+
+void renderPasses_t::auxPass_add(intPassTypes_t intPassType)
+{	
+	if(intPassType == PASS_INT_DISABLED) return;
+
+	for(int idx = 0; idx < extPassesSize(); ++idx)
+	{
+		if(intPassTypeFromExtPassIndex(idx) == intPassType) return;		//If the internal pass is already rendered into a certain external pass, the auxiliary pass is not necessary.
+	}
+	
+	for(int idx = 0; idx < auxPassesSize(); ++idx)
+	{
+		if(intPassTypeFromAuxPassIndex(idx) == intPassType) return;		//If the auxiliary pass already exists, do nothing.
+	}
+
+	auxPasses.push_back(auxPass_t(intPassType));
     
-    //If any internal pass needs an auxiliary internal pass, enable also the auxiliary passes.
-    switch(intPassType)
-    {
-        case PASS_INT_REFLECT_ALL:
-            intPass_add(PASS_INT_REFLECT_PERFECT);
-            intPass_add(PASS_INT_GLOSSY);
-            intPass_add(PASS_INT_GLOSSY_INDIRECT);
-            break;
-            
-        case PASS_INT_REFRACT_ALL:
-            intPass_add(PASS_INT_REFRACT_PERFECT);
-            intPass_add(PASS_INT_TRANS);
-            intPass_add(PASS_INT_TRANS_INDIRECT);
-            break;
-
-        case PASS_INT_INDIRECT_ALL:
-            intPass_add(PASS_INT_INDIRECT);
-            intPass_add(PASS_INT_DIFFUSE_INDIRECT);
-            break;
-
-        case PASS_INT_OBJ_INDEX_MASK_ALL:
-            intPass_add(PASS_INT_OBJ_INDEX_MASK);
-            intPass_add(PASS_INT_OBJ_INDEX_MASK_SHADOW);
-            break;
-
-        case PASS_INT_MAT_INDEX_MASK_ALL:
-            intPass_add(PASS_INT_MAT_INDEX_MASK);
-            intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW);
-            break;
-        
-        case PASS_INT_DEBUG_FACES_EDGES:
-			intPass_add(PASS_INT_NORMAL_GEOM);
-            intPass_add(PASS_INT_Z_DEPTH_NORM);
-        
-        case PASS_INT_DEBUG_OBJECTS_EDGES:
-			intPass_add(PASS_INT_NORMAL_SMOOTH);
-            intPass_add(PASS_INT_Z_DEPTH_NORM);
-
-        default:
-			break;
-    }
+    intPass_add(intPassType);
+    
+    Y_VERBOSE << "Render Passes: auxiliary Render pass generated for internal pass type: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
 
 void renderPasses_t::intPass_add(intPassTypes_t intPassType)
@@ -277,6 +261,60 @@ void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) index of the internal pass actually using that index 
 	
 	if(intPassType != PASS_INT_COMBINED) Y_VERBOSE << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
+}
+
+void renderPasses_t::auxPasses_generate()
+{
+	for(size_t idx=1; idx < intPasses.size(); ++idx)
+	{
+		//If any internal pass needs an auxiliary internal pass and/or auxiliary Render pass, enable also the auxiliary passes.
+		switch(intPasses.at(idx))
+		{
+			case PASS_INT_REFLECT_ALL:
+				intPass_add(PASS_INT_REFLECT_PERFECT);
+				intPass_add(PASS_INT_GLOSSY);
+				intPass_add(PASS_INT_GLOSSY_INDIRECT);
+				break;
+				
+			case PASS_INT_REFRACT_ALL:
+				intPass_add(PASS_INT_REFRACT_PERFECT);
+				intPass_add(PASS_INT_TRANS);
+				intPass_add(PASS_INT_TRANS_INDIRECT);
+				break;
+
+			case PASS_INT_INDIRECT_ALL:
+				intPass_add(PASS_INT_INDIRECT);
+				intPass_add(PASS_INT_DIFFUSE_INDIRECT);
+				break;
+
+			case PASS_INT_OBJ_INDEX_MASK_ALL:
+				intPass_add(PASS_INT_OBJ_INDEX_MASK);
+				intPass_add(PASS_INT_OBJ_INDEX_MASK_SHADOW);
+				break;
+
+			case PASS_INT_MAT_INDEX_MASK_ALL:
+				intPass_add(PASS_INT_MAT_INDEX_MASK);
+				intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW);
+				break;
+			
+			case PASS_INT_DEBUG_FACES_EDGES:
+				auxPass_add(PASS_INT_NORMAL_GEOM);
+				auxPass_add(PASS_INT_Z_DEPTH_NORM);
+				break;
+			
+			case PASS_INT_DEBUG_OBJECTS_EDGES:
+				auxPass_add(PASS_INT_NORMAL_SMOOTH);
+				auxPass_add(PASS_INT_Z_DEPTH_NORM);
+				break;
+
+			case PASS_INT_TOON:
+				auxPass_add(PASS_INT_DEBUG_OBJECTS_EDGES);
+				break;
+
+			default:
+				break;
+		}
+	}
 }
         
 extPassTypes_t renderPasses_t::extPassTypeFromIndex(int extPassIndex) const { return extPasses.at(extPassIndex).extPassType; }
@@ -321,6 +359,7 @@ externalPassTileTypes_t renderPasses_t::tileType(int extPassIndex) const { retur
 
 intPassTypes_t renderPasses_t::intPassTypeFromExtPassIndex(int extPassIndex) const { return extPasses.at(extPassIndex).intPassType; }
 
+intPassTypes_t renderPasses_t::intPassTypeFromAuxPassIndex(int auxPassIndex) const { return auxPasses.at(auxPassIndex).intPassType; }
 
 int renderPasses_t::extPassIndexFromType(extPassTypes_t extPassType) const
 {
@@ -357,6 +396,18 @@ extPass_t::extPass_t(extPassTypes_t extPassType, intPassTypes_t intPassType):
 		case PASS_EXT_MAT_INDEX:	tileType = PASS_EXT_TILE_1_GRAYSCALE;	break;
 		default: 					tileType = PASS_EXT_TILE_3_RGB;			break;
 	}
+}
+
+
+
+////////////////////////////
+// --    auxPass_t     -- //
+////////////////////////////
+
+auxPass_t::auxPass_t(intPassTypes_t intPassType):
+			intPassType(intPassType)
+{ 
+	//empty
 }
 
 

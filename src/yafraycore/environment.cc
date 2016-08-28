@@ -511,6 +511,9 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
 	}
 
+	//Generate any necessary auxiliar render passes
+	renderPasses.auxPasses_generate();
+
 	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
 	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
 	renderPasses.set_pass_mask_invert(pass_mask_invert);

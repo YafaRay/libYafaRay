@@ -171,6 +171,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
 
 		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
+		void generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
+		void generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -178,6 +180,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 
 	protected:
 		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
+		std::vector<rgba2DImage_t*> auxImagePasses; //!< rgba color buffers for the auxiliary image passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
 		tiledBitArray2D_t<3> *flags = nullptr; //!< flags for adaptive AA sampling;
@@ -268,6 +271,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 			ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
 			ar & BOOST_SERIALIZATION_NVP(computerNode);
 			ar & BOOST_SERIALIZATION_NVP(imagePasses);
+			ar & BOOST_SERIALIZATION_NVP(auxImagePasses);
 		}
 		template<class Archive> void load(Archive & ar, const unsigned int version)
 		{
@@ -278,6 +282,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 				ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
 				ar & BOOST_SERIALIZATION_NVP(computerNode);
 				ar & BOOST_SERIALIZATION_NVP(imagePasses);
+				ar & BOOST_SERIALIZATION_NVP(auxImagePasses);
 				session.setStatusRenderResumed();
 				Y_DEBUG<<"FilmLoad computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
 			}
