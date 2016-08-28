@@ -237,7 +237,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		double filmAutoSaveTimer = 0.0; //Internal timer for Film AutoSave
 		int filmAutoSavePassCounter = 0;	//Internal counter for Film AutoSave
 		int filmAutoSaveIntervalPasses = 1;
-		        
+		
         struct filmload_check_t
         {
 			int w, h, cx0, cx1, cy0, cy1;

@@ -498,10 +498,32 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 	bool pass_mask_invert = false;
 	bool pass_mask_only = false;
 
+	color_t toonEdgeColor(0.f);
+	int objectEdgeThickness = 2;
+	float objectEdgeThreshold = 0.3f;
+	float objectEdgeSmoothness = 0.75f;
+	float toonPreSmooth = 3.f;
+	float toonQuantization = 0.1f;
+	float toonPostSmooth = 3.f;
+	int facesEdgeThickness = 1;
+	float facesEdgeThreshold = 0.01f;
+	float facesEdgeSmoothness = 0.5f;
+
 	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
 	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
 	params.getParam("pass_mask_invert", pass_mask_invert);
 	params.getParam("pass_mask_only", pass_mask_only);
+
+	params.getParam("toonEdgeColor", toonEdgeColor);
+	params.getParam("objectEdgeThickness", objectEdgeThickness);
+	params.getParam("objectEdgeThreshold", objectEdgeThreshold);
+	params.getParam("objectEdgeSmoothness", objectEdgeSmoothness);
+	params.getParam("toonPreSmooth", toonPreSmooth);
+	params.getParam("toonQuantization", toonQuantization);
+	params.getParam("toonPostSmooth", toonPostSmooth);
+	params.getParam("facesEdgeThickness", facesEdgeThickness);
+	params.getParam("facesEdgeThreshold", facesEdgeThreshold);
+	params.getParam("facesEdgeSmoothness", facesEdgeSmoothness);
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
 	for(auto it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
@@ -518,6 +540,20 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
 	renderPasses.set_pass_mask_invert(pass_mask_invert);
 	renderPasses.set_pass_mask_only(pass_mask_only);
+
+	renderPasses.objectEdgeThickness = objectEdgeThickness;
+	renderPasses.objectEdgeThreshold = objectEdgeThreshold;
+	renderPasses.objectEdgeSmoothness = objectEdgeSmoothness;
+	renderPasses.toonPreSmooth = toonPreSmooth;
+	renderPasses.toonQuantization = toonQuantization;
+	renderPasses.toonPostSmooth = toonPostSmooth;
+	renderPasses.facesEdgeThickness = facesEdgeThickness;
+	renderPasses.facesEdgeThreshold = facesEdgeThreshold;
+	renderPasses.facesEdgeSmoothness = facesEdgeSmoothness;
+	
+	renderPasses.toonEdgeColor[0] = toonEdgeColor.R;
+	renderPasses.toonEdgeColor[1] = toonEdgeColor.G;
+	renderPasses.toonEdgeColor[2] = toonEdgeColor.B;
 }
 		
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)

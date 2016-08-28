@@ -1611,19 +1611,24 @@ void imageFilm_t::edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge
 
 void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement)
 {
+	const renderPasses_t * renderPasses = env->getRenderPasses();
+	const int facesEdgeThickness = renderPasses->facesEdgeThickness;
+	const float facesEdgeThreshold = renderPasses->facesEdgeThreshold;
+	const float facesEdgeSmoothness = renderPasses->facesEdgeSmoothness;
+
 	rgba2DImage_t * normalImagePass = nullptr;
 	rgba2DImage_t * zDepthImagePass = nullptr;
 	
 	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = imagePasses[idx];
-		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = imagePasses[idx];
+		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
 	}
 	
 	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = auxImagePasses[idx];
-		else if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
+		if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = auxImagePasses[idx];
+		else if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
 	}
 
 	if(normalImagePass && zDepthImagePass)
@@ -1645,7 +1650,7 @@ void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, 
 			}
 		}
 		
-		edgeImageDetection(imageMat, /*edge_threshold=*/ 0.01f, /*edge_thickness=*/ 1, /*smoothness=*/ 0.5f);
+		edgeImageDetection(imageMat, facesEdgeThreshold, facesEdgeThickness, facesEdgeSmoothness);
 
 		for(int j=ystart; j<height; ++j)
 		{
@@ -1655,8 +1660,8 @@ void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, 
 
 				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
 
-				if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxPass, colEdge);
-				if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxPass, colEdge);
+				if(out1) out1->putPixel(numView, i, j+out1displacement, renderPasses, idxPass, colEdge);
+				if(out2) out2->putPixel(numView, i, j+out2displacement, renderPasses, idxPass, colEdge);
 			}
 		}
 	}
@@ -1664,27 +1669,35 @@ void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, 
 
 void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement)
 {
+	const renderPasses_t * renderPasses = env->getRenderPasses();
+	const float toonPreSmooth = renderPasses->toonPreSmooth;
+	const float toonQuantization = renderPasses->toonQuantization;
+	const float toonPostSmooth = renderPasses->toonPostSmooth;
+	const color_t toonEdgeColor = color_t(renderPasses->toonEdgeColor[0], renderPasses->toonEdgeColor[1], renderPasses->toonEdgeColor[2]);
+	const int objectEdgeThickness = renderPasses->objectEdgeThickness;
+	const float objectEdgeThreshold = renderPasses->objectEdgeThreshold;
+	const float objectEdgeSmoothness = renderPasses->objectEdgeSmoothness;
+	
 	rgba2DImage_t * normalImagePass = nullptr;
 	rgba2DImage_t * zDepthImagePass = nullptr;
 	int idxToon = 0;
 	
 	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = imagePasses[idx];
-		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
-		else if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = imagePasses[idx];
+		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
+		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
 	}
 	
 	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = auxImagePasses[idx];
-		else if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
+		if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = auxImagePasses[idx];
+		else if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
 	}
 
 	if(normalImagePass && zDepthImagePass)
 	{
 		cv::Mat_<cv::Vec3f> imageMatCombinedVec(h, w, CV_32FC3);
-		float toonQuantization = 0.1f;
 		std::vector<cv::Mat> imageMat;
 		for(int i=0; i<4; ++i) imageMat.push_back(cv::Mat(h, w, CV_32FC1));
 		color_t colNormal(0.f);
@@ -1708,7 +1721,7 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 			}
 		}
 
-		cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
+		cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), toonPreSmooth );
 		
 		if(toonQuantization > 0.f)
 		{
@@ -1730,32 +1743,32 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 					}
 				}
 			}
-			cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), /*sigmaX=*/ 3.f );
+			cv::GaussianBlur( imageMatCombinedVec, imageMatCombinedVec, cv::Size(3,3), toonPostSmooth );
 		}
 
-		edgeImageDetection(imageMat, /*edge_threshold=*/ 0.3f, /*edge_thickness=*/ 2, /*smoothness=*/ 0.75f);
+		edgeImageDetection(imageMat, objectEdgeThreshold, objectEdgeThickness, objectEdgeSmoothness);
 
 		for(int j=ystart; j<height; ++j)
 		{
 			for(int i=xstart; i<width; ++i)
 			{
-				color_t colEdge = color_t(imageMat.at(0).at<float>(j, i));
+				float edgeValue = imageMat.at(0).at<float>(j, i);
+				color_t colEdge = color_t(edgeValue);
 
 				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colEdge = colorA_t(0.5f,0.f,0.f,1.f);
 				
-				if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxPass, colEdge);
-				if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxPass, colEdge);
+				if(out1) out1->putPixel(numView, i, j+out1displacement, renderPasses, idxPass, colEdge);
+				if(out2) out2->putPixel(numView, i, j+out2displacement, renderPasses, idxPass, colEdge);
 				
 				color_t colToon(imageMatCombinedVec(j, i)[2], imageMatCombinedVec(j, i)[1], imageMatCombinedVec(j, i)[0]);
-				colToon = colToon - colEdge;
+				colToon.blend(toonEdgeColor, edgeValue);
 				
 				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colToon = colorA_t(0.5f,0.f,0.f,1.f);
-				colToon.clampRGB0();
 				
 				if(idxToon > 0)
 				{
-					if(out1) out1->putPixel(numView, i, j+out1displacement, env->getRenderPasses(), idxToon, colToon);
-					if(out2) out2->putPixel(numView, i, j+out2displacement, env->getRenderPasses(), idxToon, colToon);
+					if(out1) out1->putPixel(numView, i, j+out1displacement, renderPasses, idxToon, colToon);
+					if(out2) out2->putPixel(numView, i, j+out2displacement, renderPasses, idxToon, colToon);
 				}
 			}
 		}

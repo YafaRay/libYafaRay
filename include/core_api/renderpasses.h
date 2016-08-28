@@ -237,6 +237,19 @@ class YAFRAYCORE_EXPORT renderPasses_t
 		std::map<std::string, intPassTypes_t> intPassMapStringInt; //Reverse map string-int for internal passes
 		std::vector<std::string> view_names;	//Render Views names
         
+		//Options for Edge detection and Toon Render Pass
+		std::vector<float> toonEdgeColor = std::vector<float> (3, 0.f);	//Color of the edges used in the Toon Render Pass
+		int objectEdgeThickness = 2;		//Thickness of the edges used in the Object Edge and Toon Render Passes
+		float objectEdgeThreshold = 0.3f;	//Threshold for the edge detection process used in the Object Edge and Toon Render Passes
+		float objectEdgeSmoothness = 0.75f;	//Smoothness (blur) of the edges used in the Object Edge and Toon Render Passes
+		float toonPreSmooth = 3.f;      //Toon effect: smoothness applied to the original image
+		float toonQuantization = 0.1f;      //Toon effect: color Quantization applied to the original image
+		float toonPostSmooth = 3.f;      //Toon effect: smoothness applied after Quantization		
+
+		int facesEdgeThickness = 1;		//Thickness of the edges used in the Faces Edge Render Pass
+		float facesEdgeThreshold = 0.01f;	//Threshold for the edge detection process used in the Faces Edge Render Pass
+		float facesEdgeSmoothness = 0.5f;	//Smoothness (blur) of the edges used in the Faces Edge Render Pass
+
     protected:
 		std::vector<extPass_t> extPasses;		//List of the external Render passes to be exported
 		std::vector<auxPass_t> auxPasses;		//List of the intermediate auxiliary Render passes used for other operations
