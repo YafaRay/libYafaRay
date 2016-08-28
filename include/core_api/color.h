@@ -173,14 +173,16 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 	friend YAFRAYCORE_EXPORT std::ostream & operator << (std::ostream & out, const colorA_t c);
 	friend YAFRAYCORE_EXPORT colorA_t mix(const colorA_t &a, const colorA_t &b, float point);
 	public:
-		colorA_t() { /* A=0; */ }
-		colorA_t(const color_t &c):color_t(c), A(1.f) { /* A=0; */ }
-		colorA_t(const color_t &c, float a):color_t(c), A(a) {}
-		colorA_t(float r, float g, float b, float a=0):color_t(r,g,b), A(a) {}
-		colorA_t(float g):color_t(g) { A=g; }
-		colorA_t(float af[4]):color_t(af) { A=af[3]; }
+		colorA_t():A(1.f) { }
+		colorA_t(const color_t &c):color_t(c), A(1.f) { }
+		colorA_t(const color_t &c, float a):color_t(c), A(a) { }
+		colorA_t(float r, float g, float b, float a=1.f):color_t(r,g,b), A(a) { }
+		colorA_t(float g):color_t(g), A(g) { }
+		colorA_t(float g, float a):color_t(g), A(a) { }
+		colorA_t(float af[4]):color_t(af), A(af[3]) { }
 		~colorA_t() {};
-		void set(float r, float g, float b, float a=0) { color_t::set(r,g,b);  A=a; }
+		
+		void set(float r, float g, float b, float a=1.f) { color_t::set(r,g,b);  A=a; }
 
 		colorA_t & operator +=(const colorA_t &c);
 		colorA_t & operator -=(const colorA_t &c);
