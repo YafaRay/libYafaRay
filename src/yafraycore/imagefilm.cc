@@ -1388,6 +1388,19 @@ void imageFilm_t::imageFilmLoadAllInFolder()
 				}
 			}
 			
+			for(size_t idx=0; idx<auxImagePasses.size(); ++idx)
+			{
+				for(int i=0; i<w; ++i)
+				{
+					for(int j=0; j<h; ++j)
+					{
+						rgba2DImage_t *loadedImageBuffer = loadedFilm->auxImagePasses[idx];
+						(*auxImagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+						(*auxImagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+					}
+				}
+			}
+			
 			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
 			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
 			
