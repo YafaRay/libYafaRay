@@ -1767,8 +1767,16 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 				
 				if(idxToon > 0)
 				{
-					if(out1) out1->putPixel(numView, i, j+out1displacement, renderPasses, idxToon, colToon);
-					if(out2) out2->putPixel(numView, i, j+out2displacement, renderPasses, idxToon, colToon);
+					if(out1)
+					{
+						colToon.ColorSpace_from_linearRGB(colorSpace, gamma);
+						out1->putPixel(numView, i, j+out1displacement, renderPasses, idxToon, colToon);
+					}
+					if(out2)
+					{
+						colToon.ColorSpace_from_linearRGB(colorSpace2, gamma2);
+						out2->putPixel(numView, i, j+out2displacement, renderPasses, idxToon, colToon);
+					}
 				}
 			}
 		}
