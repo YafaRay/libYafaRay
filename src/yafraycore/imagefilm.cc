@@ -303,7 +303,11 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 		}
 	}
 
-	if(flags) flags->clear();
+	const renderPasses_t * renderPasses = env->getRenderPasses();
+
+    rgba2DImage_t * samplingFactorImagePass = getImagePassFromIntPassType(PASS_INT_DEBUG_SAMPLING_FACTOR);
+	
+    if(flags) flags->clear();
 	else flags = new tiledBitArray2D_t<3>(w, h, true);
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 	int variance_half_edge = AA_variance_edge_size / 2;
@@ -321,7 +325,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 				flags->clearBit(x, y);
 			}
 		}
-		
+		        
 		for(int y=0; y<h-1; ++y)
 		{
 			for(int x = 0; x < w-1; ++x)
@@ -329,6 +333,13 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
                 //We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
 
 				if((*imagePasses.at(0))(x, y).weight <= 0.f) flags->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+
+                float matSampleFactor = 1.f;
+                if(samplingFactorImagePass)
+				{
+					matSampleFactor = (*samplingFactorImagePass)(x, y).normalized().R;
+					if(!backgroundResampling && matSampleFactor == 0.f) continue;
+				}
 
 				colorA_t pixCol = (*imagePasses.at(0))(x, y).normalized();
 				float pixColBri = pixCol.abscol2bri();
@@ -421,17 +432,24 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 												
 					if(session.isInteractive() && showMask)
 					{
+                        float matSampleFactor = 1.f;
+                        if(samplingFactorImagePass)
+                        {
+                            matSampleFactor = (*samplingFactorImagePass)(x, y).normalized().R;
+                            if(!backgroundResampling && matSampleFactor == 0.f) continue;
+                        }
+                        
 						for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 						{
 							color_t pix = (*imagePasses[idx])(x, y).normalized();
 							float pixColBri = pix.abscol2bri();
 
 							if(pix.R < pix.G && pix.R < pix.B)
-								colExtPasses[idx].set(0.7f, pixColBri, pixColBri);
+								colExtPasses[idx].set(0.7f, pixColBri, matSampleFactor > 1.f ? 0.7f : pixColBri);
 							else
-								colExtPasses[idx].set(pixColBri, 0.7f, pixColBri);
+								colExtPasses[idx].set(pixColBri, 0.7f, matSampleFactor > 1.f ? 0.7f : pixColBri);
 						}
-						output->putPixel(numView, x, y, env->getRenderPasses(), colExtPasses, false);
+						output->putPixel(numView, x, y, renderPasses, colExtPasses, false);
 					}
 				}
 			}
@@ -442,7 +460,7 @@ int imageFilm_t::nextPass(int numView, bool adaptive_AA, std::string integratorN
 		n_resample = h*w;
 	}
 
-	if(session.isInteractive())	output->flush(numView, env->getRenderPasses());
+	if(session.isInteractive())	output->flush(numView, renderPasses);
 
 	if(session.renderResumed()) passString << "Film loaded + ";
 	
@@ -1616,20 +1634,8 @@ void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, 
 	const float facesEdgeThreshold = renderPasses->facesEdgeThreshold;
 	const float facesEdgeSmoothness = renderPasses->facesEdgeSmoothness;
 
-	rgba2DImage_t * normalImagePass = nullptr;
-	rgba2DImage_t * zDepthImagePass = nullptr;
-	
-	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-	{
-		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = imagePasses[idx];
-		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
-	}
-	
-	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
-	{
-		if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_GEOM) normalImagePass = auxImagePasses[idx];
-		else if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
-	}
+    rgba2DImage_t * normalImagePass = getImagePassFromIntPassType(PASS_INT_NORMAL_GEOM);
+    rgba2DImage_t * zDepthImagePass = getImagePassFromIntPassType(PASS_INT_Z_DEPTH_NORM);
 
 	if(normalImagePass && zDepthImagePass)
 	{
@@ -1678,23 +1684,9 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 	const float objectEdgeThreshold = renderPasses->objectEdgeThreshold;
 	const float objectEdgeSmoothness = renderPasses->objectEdgeSmoothness;
 	
-	rgba2DImage_t * normalImagePass = nullptr;
-	rgba2DImage_t * zDepthImagePass = nullptr;
-	int idxToon = 0;
+    rgba2DImage_t * normalImagePass = getImagePassFromIntPassType(PASS_INT_NORMAL_SMOOTH);
+    rgba2DImage_t * zDepthImagePass = getImagePassFromIntPassType(PASS_INT_Z_DEPTH_NORM);
 	
-	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
-	{
-		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = imagePasses[idx];
-		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = imagePasses[idx];
-		else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON) idxToon = idx;
-	}
-	
-	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
-	{
-		if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_NORMAL_SMOOTH) normalImagePass = auxImagePasses[idx];
-		else if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_Z_DEPTH_NORM) zDepthImagePass = auxImagePasses[idx];
-	}
-
 	if(normalImagePass && zDepthImagePass)
 	{
 		cv::Mat_<cv::Vec3f> imageMatCombinedVec(h, w, CV_32FC3);
@@ -1748,6 +1740,8 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 
 		edgeImageDetection(imageMat, objectEdgeThreshold, objectEdgeThickness, objectEdgeSmoothness);
 
+        int idxToon = getImagePassIndexFromIntPassType(PASS_INT_TOON);
+
 		for(int j=ystart; j<height; ++j)
 		{
 			for(int i=xstart; i<width; ++i)
@@ -1765,7 +1759,7 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 				
 				if(drawborder && (i <= xstart+1 || j <= ystart+1 || i >= width-1-1 || j >= height-1-1)) colToon = colorA_t(0.5f,0.f,0.f,1.f);
 				
-				if(idxToon > 0)
+				if(idxToon != -1)
 				{
 					if(out1)
 					{
@@ -1781,6 +1775,41 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 			}
 		}
 	}
+}
+
+rgba2DImage_t * imageFilm_t::getImagePassFromIntPassType(int intPassType)
+{
+    for(size_t idx = 1; idx < imagePasses.size(); ++idx)
+	{
+		if(env->getScene()->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == intPassType) return imagePasses[idx];
+	}
+    
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		if(env->getScene()->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == intPassType) return auxImagePasses[idx];
+	}
+    
+    return nullptr;
+}
+
+int imageFilm_t::getImagePassIndexFromIntPassType(int intPassType)
+{
+    for(size_t idx = 1; idx < imagePasses.size(); ++idx)
+	{
+		if(env->getScene()->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == intPassType) return (int) idx;
+	}
+
+    return -1;
+}
+
+int imageFilm_t::getAuxImagePassIndexFromIntPassType(int intPassType)
+{
+	for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
+	{
+		if(env->getScene()->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == intPassType) return (int) idx;
+	}
+
+    return -1;
 }
 
 

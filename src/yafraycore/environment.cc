@@ -827,6 +827,8 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	float adv_min_raydist_value=MIN_RAYDIST;
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
+    
+    bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
 
 	if(! params.getParam("camera_name", name) )
 	{
@@ -886,6 +888,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("AA_clamp_samples", AA_clamp_samples);
 	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
+    params.getParam("background_resampling", background_resampling);
 	
 	nthreads_photons = nthreads;	//if no "threads_photons" parameter exists, make "nthreads_photons" equal to render threads
 	
@@ -930,6 +933,8 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	Y_DEBUG << "adv_base_sampling_offset="<<adv_base_sampling_offset<<yendl;
 	film->setBaseSamplingOffset(adv_base_sampling_offset);
 	film->setComputerNode(adv_computer_node);
+    
+    film->setBackgroundResampling(background_resampling);
 
 	return true;
 }

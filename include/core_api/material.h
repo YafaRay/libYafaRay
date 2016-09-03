@@ -212,6 +212,13 @@ class YAFRAYCORE_EXPORT material_t
 		void applyWireFrame(colorA_t & col, float wireFrameAmount, const surfacePoint_t &sp) const;
 		void applyWireFrame(colorA_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const;
 
+		void setSamplingFactor(const float &newSamplingFactor)
+		{
+			mSamplingFactor = newSamplingFactor;
+			if(mHighestSamplingFactor < mSamplingFactor) mHighestSamplingFactor = mSamplingFactor;
+		}
+		float getSamplingFactor() const { return mSamplingFactor; }
+		
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
@@ -236,6 +243,9 @@ class YAFRAYCORE_EXPORT material_t
         float mWireFrameThickness = 0.01f;      //!< Wireframe thickness
         float mWireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
         color_t mWireFrameColor = color_t(1.f); //!< Wireframe shading color
+        
+        float mSamplingFactor = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
+		static float mHighestSamplingFactor;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.        
 };
 
 

@@ -470,6 +470,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
+	float samplingfactor = 1.f;
     float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
     float WireFrameThickness = 0.01f;      //!< Wireframe thickness
     float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
@@ -488,6 +489,7 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
+	params.getParam("samplingfactor",   samplingfactor);
 	
     params.getParam("wireframe_amount",  WireFrameAmount);
     params.getParam("wireframe_thickness",  WireFrameThickness);
@@ -511,6 +513,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
     mat->mWireFrameExponent = WireFrameExponent;
     mat->mWireFrameColor = WireFrameColor;
 
+	mat->setSamplingFactor(samplingfactor);
+	
 	if(aniso)
 	{
 		float e_u=50.0, e_v=50.0;

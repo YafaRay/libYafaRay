@@ -320,7 +320,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	
 	for(int i=1; i<AA_passes; ++i)
 	{
-		AA_max_possible_samples += ceilf(AA_inc_samples * pow(AA_sample_multiplier_factor, i));
+		AA_max_possible_samples += ceilf(AA_inc_samples * pow(AA_sample_multiplier_factor, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
 	}
 	
 	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
@@ -328,20 +328,45 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 	Halton halU(3);
 	Halton halV(5);
 
-	colorPasses_t colorPasses(scene->getRenderPasses());
- 
-	colorPasses_t tmpPassesZero(scene->getRenderPasses());
+	const renderPasses_t * renderPasses = scene->getRenderPasses();
+	colorPasses_t colorPasses(renderPasses);
+	colorPasses_t tmpPassesZero(renderPasses);
 	
+    rgba2DImage_t * samplingFactorImagePass = imageFilm->getImagePassFromIntPassType(PASS_INT_DEBUG_SAMPLING_FACTOR);
+	
+    int filmCX0 = imageFilm->getCX0();
+    int filmCY0 = imageFilm->getCY0();
+    
 	for(int i=a.Y; i<end_y; ++i)
 	{
 		for(int j=a.X; j<end_x; ++j)
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
 
+			float matSampleFactor = 1.f;
+			int n_samples_adjusted = n_samples;
+
 			if(adaptive)
 			{
 				if(!imageFilm->doMoreSamples(j, i)) continue;
+
+				if(samplingFactorImagePass)
+				{
+					matSampleFactor = (*samplingFactorImagePass)(j-filmCX0, i-filmCY0).normalized().R;
+                    
+                    if(imageFilm->getBackgroundResampling()) matSampleFactor = std::max(matSampleFactor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
+					
+					if(matSampleFactor > 0.f && matSampleFactor < 1.f) matSampleFactor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples. Otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing. However if the factor is equal to 0.f (as in the background) then no more samples will be shot 
+				}
+
+				if(matSampleFactor != 1.f)
+				{
+					n_samples_adjusted = (int) round((float) n_samples * matSampleFactor);
+					d1=1.0/(float)n_samples_adjusted;	//DAVID FIXME: is this correct???
+				}
 			}
+
+			//Y_DEBUG << "idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<yendl;
 
 			rstate.pixelNumber = x*i+j;
 			rstate.samplingOffs = fnv_32a_buf(i*fnv_32a_buf(j));//fnv_32a_buf(rstate.pixelNumber);
@@ -350,7 +375,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 			halU.setStart(pass_offs+rstate.samplingOffs);
 			halV.setStart(pass_offs+rstate.samplingOffs);
 
-			for(int sample=0; sample<n_samples; ++sample)
+			for(int sample=0; sample<n_samples_adjusted; ++sample)
 			{
 				colorPasses.reset_colors();
 				rstate.setDefaults();
@@ -364,7 +389,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 					dx = RI_vdC(rstate.pixelSample, rstate.samplingOffs);
 					dy = RI_S(rstate.pixelSample, rstate.samplingOffs);
 				}
-				else if(n_samples > 1)
+				else if(n_samples_adjusted > 1)
 				{
 					dx = (0.5+(float)sample)*d1;
 					dy = RI_LP(sample+rstate.samplingOffs);
@@ -554,6 +579,11 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 		colorA_t wireframe_color = colorA_t(0.f, 0.f, 0.f, 0.f);
 		sp.material->applyWireFrame(wireframe_color, 1.f, sp);
         colorPasses(PASS_INT_DEBUG_WIREFRAME) = wireframe_color;
+	}
+
+	if(colorPasses.enabled(PASS_INT_DEBUG_SAMPLING_FACTOR))
+	{
+        colorPasses(PASS_INT_DEBUG_SAMPLING_FACTOR) = colorA_t(sp.material->getSamplingFactor());
 	}
 }
 

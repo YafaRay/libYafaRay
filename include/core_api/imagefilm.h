@@ -140,9 +140,13 @@ class YAFRAYCORE_EXPORT imageFilm_t
         float dark_threshold_curve_interpolate(float pixel_brightness);
         int getWidth() const { return w; }
         int getHeight() const { return h; }
+        int getCX0() const { return cx0; }
+        int getCY0() const { return cy0; }
         int getTileSize() const { return tileSize; }
         int getCurrentPass() const { return nPass; }
         int getNumPasses() const { return nPasses; }
+        bool getBackgroundResampling() const { return backgroundResampling; }
+        void setBackgroundResampling(bool background_resampling) { backgroundResampling = background_resampling; }
         unsigned int getComputerNode() const { return computerNode; }
         unsigned int getBaseSamplingOffset() const { return baseSamplingOffset + computerNode * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
         unsigned int getSamplingOffset() const { return samplingOffset; }
@@ -173,6 +177,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
 		void generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
 		void generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
+		
+		rgba2DImage_t * getImagePassFromIntPassType(int intPassType);
+        int getImagePassIndexFromIntPassType(int intPassType);
+        int getAuxImagePassIndexFromIntPassType(int intPassType);
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
@@ -218,6 +226,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool premultAlpha;
 		bool premultAlpha2 = false;	//For optional secondary file output
 		int nPasses;
+        bool backgroundResampling = true;   //If false, the background will not be resampled in subsequent adaptative AA passes
+
+        //Options for Film saving/loading correct sampling, as well as multi computer film saving
         unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
         unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
         unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms

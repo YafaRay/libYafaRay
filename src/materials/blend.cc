@@ -464,6 +464,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
+	float samplingfactor = 1.f;
 	bool receive_shadows = true;
     float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
     float WireFrameThickness = 0.01f;      //!< Wireframe thickness
@@ -479,6 +480,7 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
+	params.getParam("samplingfactor",   samplingfactor);
 	
     params.getParam("wireframe_amount",  WireFrameAmount);
     params.getParam("wireframe_thickness",  WireFrameThickness);
@@ -502,6 +504,8 @@ material_t* blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
     mat->mWireFrameThickness = WireFrameThickness;
     mat->mWireFrameExponent = WireFrameExponent;
     mat->mWireFrameColor = WireFrameColor;
+
+	mat->setSamplingFactor(samplingfactor);
 	
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))

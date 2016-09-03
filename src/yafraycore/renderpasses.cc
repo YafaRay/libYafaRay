@@ -189,6 +189,7 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-faces-edges"] = PASS_INT_DEBUG_FACES_EDGES;
 	intPassMapStringInt["debug-objects-edges"] = PASS_INT_DEBUG_OBJECTS_EDGES;
 	intPassMapStringInt["toon"] = PASS_INT_TOON;
+	intPassMapStringInt["debug-sampling-factor"] = PASS_INT_DEBUG_SAMPLING_FACTOR;
 
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
@@ -265,6 +266,8 @@ void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 
 void renderPasses_t::auxPasses_generate()
 {
+	auxPass_add(PASS_INT_DEBUG_SAMPLING_FACTOR);	//This auxiliary pass will always be needed for material-specific number of samples calculation
+	
 	for(size_t idx=1; idx < intPasses.size(); ++idx)
 	{
 		//If any internal pass needs an auxiliary internal pass and/or auxiliary Render pass, enable also the auxiliary passes.
