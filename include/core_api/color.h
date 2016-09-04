@@ -133,6 +133,13 @@ class YAFRAYCORE_EXPORT color_t
 			G = G * (1.f - blend_factor) + col.G * blend_factor;
 			B = B * (1.f - blend_factor) + col.B * blend_factor;
 		}
+
+		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer 
+		{
+			R = ceilf(R);
+			G = ceilf(G);
+			B = ceilf(B);
+		}
 		
 		void clampProportionalRGB(float maxValue);
 		
@@ -203,6 +210,14 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 		{
 			clampRGB01();
 			if (A<0.0) A=0.0; else if (A>1.0) A=1.0;
+		}
+
+		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer 
+		{
+			R = ceilf(R);
+			G = ceilf(G);
+			B = ceilf(B);
+			A = ceilf(A);
 		}
 
 		float colorDifference(colorA_t color2, bool useRGBcomponents = false);

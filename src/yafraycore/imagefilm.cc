@@ -545,13 +545,20 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 		{
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
-                
 				if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
-				
+				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS)
+				{
+					colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+                    colExtPasses[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
+				}
+                else
+                {
+                    colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+                }
+
 				colExtPasses[idx].clampRGB0();
 				colExtPasses[idx].ColorSpace_from_linearRGB(colorSpace, gamma);//FIXME DAVID: what passes must be corrected and what do not?
 				if(premultAlpha && idx == 0) colExtPasses[idx].alphaPremultiply();
@@ -732,13 +739,20 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 		{
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
-				else colExtPasses[idx] = colorA_t(0.f);
-				
 				if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
+				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS)
+				{
+					colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+                    colExtPasses[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
+				}
+                else
+                {
+                    if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
+                    else colExtPasses[idx] = colorA_t(0.f);
+                }
 								
 				if(estimateDensity && (flags & IF_DENSITYIMAGE) && idx == 0) colExtPasses[idx] += (*densityImage)(i, j) * multi;
 				colExtPasses[idx].clampRGB0();
