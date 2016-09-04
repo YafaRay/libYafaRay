@@ -129,14 +129,16 @@ imageFilm_t::imageFilm_t (int width, int height, int xstart, int ystart, colorOu
 	cy1 = ystart + height;
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+    
 	//Creation of the image buffers for the render passes
-	for(int idx = 0; idx < env->getRenderPasses()->extPassesSize(); ++idx)
+	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
 	{
 		imagePasses.push_back(new rgba2DImage_t(width, height));
 	}
 
 	//Creation of the image buffers for the auxiliary render passes
-	for(int idx = 0; idx < env->getRenderPasses()->auxPassesSize(); ++idx)
+	for(int idx = 0; idx < renderPasses->auxPassesSize(); ++idx)
 	{
 		auxImagePasses.push_back(new rgba2DImage_t(width, height));
 	}
@@ -531,6 +533,8 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 {
 	outMutex.lock();
 
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+    
 	int end_x = a.X+a.W-cx0, end_y = a.Y+a.H-cy0;
 
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
@@ -543,7 +547,7 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 			{
 				colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                 
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -557,24 +561,24 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 				else if(colExtPasses[idx].A > 1.f) colExtPasses[idx].A = 1.f;
 			}
 
-			if( !output->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses) ) abort=true;
+			if( !output->putPixel(numView, i, j, renderPasses, colExtPasses) ) abort=true;
 		}
 	}
 
 	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
 		{
 			generateDebugFacesEdges(numView, idx, a.X-cx0, end_x, a.Y-cy0, end_y, true, output);
 		}
 		
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
 		{
 			generateToonAndDebugObjectEdges(numView, idx, a.X-cx0, end_x, a.Y-cy0, end_y, true, output);
 		}
 	}
 
-	if(session.isInteractive()) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, env->getRenderPasses());
+	if(session.isInteractive()) output->flushArea(numView, a.X, a.Y, end_x+cx0, end_y+cy0, renderPasses);
 	
 	if(session.renderInProgress() && !output->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -621,6 +625,8 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 
 void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 {
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+    
 	if(session.renderFinished())
 	{
 		outMutex.lock();
@@ -729,7 +735,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				if(flags & IF_IMAGE) colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
 				else colExtPasses[idx] = colorA_t(0.f);
 				
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
@@ -764,19 +770,19 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				}
 			}
 
-			if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses);
-			if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, env->getRenderPasses(), colExtPasses2);
+			if(out1) out1->putPixel(numView, i, j+outputDisplaceRenderedImageBadgeHeight, renderPasses, colExtPasses);
+			if(out2) out2->putPixel(numView, i, j+out2DisplaceRenderedImageBadgeHeight, renderPasses, colExtPasses2);
 		}
 	}
 
 	for(size_t idx = 1; idx < imagePasses.size(); ++idx)
 	{
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_FACES_EDGES)
 		{
 			generateDebugFacesEdges(numView, idx, 0, w, 0, h, false, out1, outputDisplaceRenderedImageBadgeHeight, out2, out2DisplaceRenderedImageBadgeHeight);
 		}
 		
-		if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
+		if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_DEBUG_OBJECTS_EDGES || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_TOON)
 		{
 			generateToonAndDebugObjectEdges(numView, idx, 0, w, 0, h, false, out1, outputDisplaceRenderedImageBadgeHeight, out2, out2DisplaceRenderedImageBadgeHeight);
 		}
@@ -800,7 +806,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses[idx] = colorA_t(dpcol, 1.f);
 					}
-					out1->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses);
+					out1->putPixel(numView, i, j, renderPasses, colExtPasses);
 				}
 			}
 		}
@@ -820,7 +826,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 						colorA_t &dpcol = (*dpimage)(i, j-badgeStartY);
 						colExtPasses2[idx] = colorA_t(dpcol, 1.f);
 					}
-					out2->putPixel(numView, i, j, env->getRenderPasses(), colExtPasses2);
+					out2->putPixel(numView, i, j, renderPasses, colExtPasses2);
 				}
 			}
 		}
@@ -842,7 +848,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			pbar->setTag(passString.str().c_str());
 		}
 
-		out1->flush(numView, env->getRenderPasses());
+		out1->flush(numView, renderPasses);
 		
 		if(pbar) pbar->setTag(oldTag);
 	}
@@ -862,7 +868,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 			pbar->setTag(passString.str().c_str());
 		}
 
-		out2->flush(numView, env->getRenderPasses());
+		out2->flush(numView, renderPasses);
 
 		if(pbar) pbar->setTag(oldTag);
 	}
@@ -896,6 +902,8 @@ bool imageFilm_t::doMoreSamples(int x, int y) const
 	contributions from outside area a! (yes, really!) */
 void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, float dy, const renderArea_t *a, int numSample, int AA_pass_number, float inv_AA_max_possible_samples)
 {
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+    
 	int dx0, dx1, dy0, dy1, x0, x1, y0, y1;
 
 	// get filter extent and make sure we don't leave image area:
@@ -940,7 +948,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 			// update pixel values with filtered sample contribution
 			for(size_t idx = 0; idx < imagePasses.size(); ++idx)
 			{
-				colorA_t col = colorPasses(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx));
+				colorA_t col = colorPasses(renderPasses->intPassTypeFromExtPassIndex(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
@@ -948,7 +956,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 				if(premultAlpha) col.alphaPremultiply();
 
-				if(env->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}
@@ -960,7 +968,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 			}
 			for(size_t idx = 0; idx < auxImagePasses.size(); ++idx)
 			{
-				colorA_t col = colorPasses(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx));
+				colorA_t col = colorPasses(renderPasses->intPassTypeFromAuxPassIndex(idx));
 				
 				col.clampProportionalRGB(AA_clamp_samples);
 
@@ -968,7 +976,7 @@ void imageFilm_t::addSample(colorPasses_t &colorPasses, int x, int y, float dx, 
 
 				if(premultAlpha) col.alphaPremultiply();
 
-				if(env->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == PASS_INT_AA_SAMPLES)
+				if(renderPasses->intPassTypeFromAuxPassIndex(idx) == PASS_INT_AA_SAMPLES)
 				{
 					pixel.weight += inv_AA_max_possible_samples / ((x1-x0+1)*(y1-y0+1));
 				}
@@ -1549,6 +1557,8 @@ void imageFilm_t::imageFilmUpdateCheckInfo()
 
 bool imageFilm_t::imageFilmLoadCheckOk() const
 {
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+    
 	bool checksOK = true;
 	
 	if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION)
@@ -1586,15 +1596,15 @@ bool imageFilm_t::imageFilmLoadCheckOk() const
 		checksOK = false;
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check.cy1 << yendl;
 	}
-	if(filmload_check.numPasses != (size_t) env->getRenderPasses()->extPassesSize())
+	if(filmload_check.numPasses != (size_t) renderPasses->extPassesSize())
 	{
 		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << env->getRenderPasses()->extPassesSize() << ", in reused/loaded film=" << filmload_check.numPasses << yendl;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << renderPasses->extPassesSize() << ", in reused/loaded film=" << filmload_check.numPasses << yendl;
 	}
 	
 	if(!checksOK) Y_WARNING << "imageFilm: loading/reusing film failed because parameters are different. The film will be re-generated." << yendl;
 	
-	Y_DEBUG << "imageFilm: loading/reusing film check results=" << checksOK << ". Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<env->getRenderPasses()->extPassesSize()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
+	Y_DEBUG << "imageFilm: loading/reusing film check results=" << checksOK << ". Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<renderPasses->extPassesSize()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
 	
 	return checksOK;
 }
