@@ -150,12 +150,14 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["obj-index-abs"] = PASS_INT_OBJ_INDEX_ABS;
 	intPassMapStringInt["obj-index-norm"] = PASS_INT_OBJ_INDEX_NORM;
 	intPassMapStringInt["obj-index-auto"] = PASS_INT_OBJ_INDEX_AUTO;
+	intPassMapStringInt["obj-index-auto-abs"] = PASS_INT_OBJ_INDEX_AUTO_ABS;
 	intPassMapStringInt["obj-index-mask"] = PASS_INT_OBJ_INDEX_MASK;
 	intPassMapStringInt["obj-index-mask-shadow"] = PASS_INT_OBJ_INDEX_MASK_SHADOW;
 	intPassMapStringInt["obj-index-mask-all"] = PASS_INT_OBJ_INDEX_MASK_ALL;
 	intPassMapStringInt["mat-index-abs"] = PASS_INT_MAT_INDEX_ABS;
 	intPassMapStringInt["mat-index-norm"] = PASS_INT_MAT_INDEX_NORM;
 	intPassMapStringInt["mat-index-auto"] = PASS_INT_MAT_INDEX_AUTO;
+	intPassMapStringInt["mat-index-auto-abs"] = PASS_INT_MAT_INDEX_AUTO_ABS;
 	intPassMapStringInt["mat-index-mask"] = PASS_INT_MAT_INDEX_MASK;
 	intPassMapStringInt["mat-index-mask-shadow"] = PASS_INT_MAT_INDEX_MASK_SHADOW;
 	intPassMapStringInt["mat-index-mask-all"] = PASS_INT_MAT_INDEX_MASK_ALL;

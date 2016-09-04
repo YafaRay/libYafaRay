@@ -549,7 +549,11 @@ void imageFilm_t::finishArea(int numView, renderArea_t &a)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
-				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS)
+				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_AUTO_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_AUTO_ABS
+                        )
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                     colExtPasses[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
@@ -743,7 +747,11 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).weight;
 				}
-				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS || renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS)
+				else if(renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_OBJ_INDEX_AUTO_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_ABS ||
+                        renderPasses->intPassTypeFromExtPassIndex(idx) == PASS_INT_MAT_INDEX_AUTO_ABS
+                        )
 				{
 					colExtPasses[idx] = (*imagePasses[idx])(i, j).normalized();
                     colExtPasses[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer

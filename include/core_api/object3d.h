@@ -33,6 +33,7 @@ class YAFRAYCORE_EXPORT object3d_t
 			}
 			while (R+G+B < 0.5f);
 			objectIndexAutoColor = color_t(R,G,B);
+            objectIndexAutoNumber = objectIndexAuto;
 		}
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
@@ -79,6 +80,10 @@ class YAFRAYCORE_EXPORT object3d_t
 		{
 			return objectIndexAutoColor;
 		}
+        color_t getAutoObjectIndexNumber() const
+		{
+			return objectIndexAutoNumber;
+		}
 
 	protected:
 		const light_t *light;
@@ -86,7 +91,8 @@ class YAFRAYCORE_EXPORT object3d_t
         bool is_base_mesh;
 		float objectIndex;	//!< Object Index for the object-index render pass
 		static unsigned int objectIndexAuto;	//!< Object Index automatically generated for the object-index-auto render pass
-		color_t objectIndexAutoColor;	//!< Object Index color automatically generated for the object-index-auto render pass
+		color_t objectIndexAutoColor;	//!< Object Index color automatically generated for the object-index-auto color render pass
+        color_t objectIndexAutoNumber = 0.f;	//!< Object Index number automatically generated for the object-index-auto-abs numeric render pass
 		static float highestObjectIndex;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
 };
 

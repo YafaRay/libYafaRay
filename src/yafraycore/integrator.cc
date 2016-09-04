@@ -472,9 +472,11 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 						case PASS_INT_OBJ_INDEX_ABS: break;
 						case PASS_INT_OBJ_INDEX_NORM: break;
 						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_OBJ_INDEX_AUTO_ABS: break;
 						case PASS_INT_MAT_INDEX_ABS: break;
 						case PASS_INT_MAT_INDEX_NORM: break;
 						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_AUTO_ABS: break;
 						case PASS_INT_AA_SAMPLES: break;
 
 						//Processing of mask render passes:
@@ -549,10 +551,12 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_ABS, sp.object->getAbsObjectIndexColor());
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_NORM, sp.object->getNormObjectIndexColor());
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_AUTO, sp.object->getAutoObjectIndexColor());
+	colorPasses.probe_set(PASS_INT_OBJ_INDEX_AUTO_ABS, sp.object->getAutoObjectIndexNumber());
 	
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_ABS, sp.material->getAbsMaterialIndexColor());
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_NORM, sp.material->getNormMaterialIndexColor());
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_AUTO, sp.material->getAutoMaterialIndexColor());
+	colorPasses.probe_set(PASS_INT_MAT_INDEX_AUTO_ABS, sp.material->getAutoMaterialIndexNumber());
 	
 	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK))
 	{

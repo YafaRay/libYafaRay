@@ -95,6 +95,7 @@ class YAFRAYCORE_EXPORT material_t
 			}
 			while (R+G+B < 0.5f);
 			materialIndexAutoColor = color_t(R,G,B);
+            materialIndexAutoNumber = materialIndexAuto;
 		}
 		virtual ~material_t() { resetMaterialIndex(); }
 
@@ -201,6 +202,10 @@ class YAFRAYCORE_EXPORT material_t
 		{
 			return materialIndexAutoColor;
 		}
+		color_t getAutoMaterialIndexNumber() const
+		{
+			return materialIndexAutoNumber;
+		}
 
 		visibility_t getVisibility() const { return mVisibility; }
 		bool getReceiveShadows() const { return mReceiveShadows; }
@@ -235,7 +240,8 @@ class YAFRAYCORE_EXPORT material_t
 		volumeHandler_t* volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
 	        float materialIndex;	//!< Material Index for the material-index render pass
 		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
-		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto render pass
+		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
+        float materialIndexAutoNumber = 0.f;	//!< Material Index number automatically generated for the material-index-auto-abs (numeric) render pass
 		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 		int additionalDepth;	//!< Per-material additional ray-depth
 		

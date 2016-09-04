@@ -321,9 +321,11 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 						case PASS_INT_OBJ_INDEX_ABS: break;
 						case PASS_INT_OBJ_INDEX_NORM: break;
 						case PASS_INT_OBJ_INDEX_AUTO: break;
+						case PASS_INT_OBJ_INDEX_AUTO_ABS: break;
 						case PASS_INT_MAT_INDEX_ABS: break;
 						case PASS_INT_MAT_INDEX_NORM: break;
 						case PASS_INT_MAT_INDEX_AUTO: break;
+						case PASS_INT_MAT_INDEX_AUTO_ABS: break;
 						case PASS_INT_AA_SAMPLES: break;
 						
 						//Processing of mask render passes:
