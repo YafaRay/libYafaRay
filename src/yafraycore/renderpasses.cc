@@ -362,9 +362,17 @@ intPassTypes_t renderPasses_t::intPassTypeFromString(std::string intPassTypeStri
         
 externalPassTileTypes_t renderPasses_t::tileType(int extPassIndex) const { return extPasses.at(extPassIndex).tileType; }
 
-intPassTypes_t renderPasses_t::intPassTypeFromExtPassIndex(int extPassIndex) const { return extPasses.at(extPassIndex).intPassType; }
+intPassTypes_t renderPasses_t::intPassTypeFromExtPassIndex(int extPassIndex) const
+{
+    if(extPassesSize() > extPassIndex) return extPasses.at(extPassIndex).intPassType;
+    else return PASS_INT_DISABLED;
+}
 
-intPassTypes_t renderPasses_t::intPassTypeFromAuxPassIndex(int auxPassIndex) const { return auxPasses.at(auxPassIndex).intPassType; }
+intPassTypes_t renderPasses_t::intPassTypeFromAuxPassIndex(int auxPassIndex) const
+{
+    if(auxPassesSize() > auxPassIndex) return auxPasses.at(auxPassIndex).intPassType;
+    else return PASS_INT_DISABLED;
+}
 
 int renderPasses_t::extPassIndexFromType(extPassTypes_t extPassType) const
 {
