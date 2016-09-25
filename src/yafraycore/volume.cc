@@ -86,10 +86,14 @@ float VolumeRegion::attenuation(const point3d_t p, light_t *l)
 	float y = (p.y - bBox.a.y) / bBox.longY() * attGridY - 0.5f;
 	float z = (p.z - bBox.a.z) / bBox.longZ() * attGridZ - 0.5f;
 
+	//Check that the point is within the bounding box, return 0 if outside the box
+	if(x < -0.5f || y < -0.5f || z < -0.5f) return 0.f;
+	else if(x > (attGridX - 0.5f) || y > (attGridY - 0.5f) || z > (attGridZ - 0.5f)) return 0.f;
+
 	// cell vertices in which p lies
-	int x0 = floor(x);
-	int y0 = floor(y);
-	int z0 = floor(z);
+	int x0 = max(0, floor(x));
+	int y0 = max(0, floor(y));
+	int z0 = max(0, floor(z));
 
 	int x1 = min(attGridX - 1, ceil(x));
 	int y1 = min(attGridY - 1, ceil(y));
