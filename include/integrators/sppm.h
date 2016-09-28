@@ -79,7 +79,7 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		int nSearch;// now used to do initial radius estimate
 		int passNum; // the progressive pass number
 		float initialFactor; // used to time the initial radius
-		unsigned int totalnPhotons; // amount of total photons that have been emited, used to normalize photon energy
+		uint64_t totalnPhotons; // amount of total photons that have been emited, used to normalize photon energy
 		bool PM_IRE; // flag to  say if using PM for initial radius estimate
 		bool bHashgrid; // flag to choose using hashgrid or not.
 
