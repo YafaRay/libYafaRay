@@ -528,6 +528,7 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
 	for(auto it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
 	{
+		internalPass = "";
 		externalPass = it->second;
 		params.getParam("pass_" + externalPass, internalPass);
 		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
