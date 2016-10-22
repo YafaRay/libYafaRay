@@ -32,6 +32,10 @@
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
 
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
+
 #if HAVE_FREETYPE
 struct FT_Bitmap_;
 #endif
@@ -174,7 +178,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
         void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
 
-		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
 		void generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
 		void generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
 		
@@ -184,6 +187,10 @@ class YAFRAYCORE_EXPORT imageFilm_t
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
+#endif
+
+#ifdef HAVE_OPENCV
+		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
 #endif
 
 	protected:

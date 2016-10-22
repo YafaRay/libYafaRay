@@ -1632,6 +1632,9 @@ bool imageFilm_t::imageFilmLoadCheckOk() const
 }
 
 
+//The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
+#ifdef HAVE_OPENCV
+
 void imageFilm_t::edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const
 {	
 	//The result of the edges detection will be stored in the first component image of the vector 
@@ -1657,7 +1660,6 @@ void imageFilm_t::edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge
 	//Soften the edges if needed
 	if(smoothness > 0.f) cv::GaussianBlur( imageMat.at(0), imageMat.at(0), cv::Size(3,3), /*sigmaX=*/ smoothness );
 }
-
 
 void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement)
 {
@@ -1808,6 +1810,15 @@ void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int 
 		}
 	}
 }
+
+#else   //If not built with OpenCV, these functions will do nothing
+
+void imageFilm_t::generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement) { }
+
+void imageFilm_t::generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement, colorOutput_t * out2, int out2displacement) { }
+
+#endif
+
 
 rgba2DImage_t * imageFilm_t::getImagePassFromIntPassType(int intPassType)
 {

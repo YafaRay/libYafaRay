@@ -156,6 +156,9 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		fwrite(&header, sizeof(tgaHeader_t), 1, fp);
 		fwrite(imageId.c_str(), (size_t)header.idLength, 1, fp);
 
+//The denoise functionality will only work if YafaRay is built with OpenCV support
+#ifdef HAVE_OPENCV
+
 		if(m_Denoise)
 		{
 			cv::Mat A(m_height, m_width, CV_8UC3);
@@ -203,6 +206,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 			}
 		}
 		else
+#endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
 		{
 			for (int y = 0; y < m_height; y++) 
 			{

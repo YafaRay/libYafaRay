@@ -31,6 +31,10 @@
 #include <string>
 #include <core_api/renderpasses.h>
 
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
+
 __BEGIN_YAFRAY
 
 typedef unsigned char yByte;
@@ -65,10 +69,14 @@ public:
 	virtual bool denoiseEnabled() { return m_Denoise; }
 	std::string getDenoiseParams() const
 	{
+#ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
 		if(!m_Denoise) return "";
 		std::stringstream paramString;
 		paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
 		return paramString.str();
+#else
+		return "";
+#endif
 	}
 	
 protected:

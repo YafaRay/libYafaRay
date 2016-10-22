@@ -5,6 +5,10 @@
 #include "surface.h"
 #include <core_api/color_ramp.h>
 
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
+
 __BEGIN_YAFRAY
 
 class YAFRAYCORE_EXPORT texture_t

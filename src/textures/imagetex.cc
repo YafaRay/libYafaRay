@@ -295,6 +295,8 @@ void textureImage_t::postProcessedCreate()
 
 void textureImage_t::postProcessedBlur(float blur_factor)
 {
+//The background blur functionality will only work if YafaRay is built with OpenCV support
+#ifdef HAVE_OPENCV
 	if(!postProcessedImage) return;
 	
 	int w=0, h=0, z=0;
@@ -344,7 +346,7 @@ void textureImage_t::postProcessedBlur(float blur_factor)
 //			(*postProcessedImage)(i,j) = image->getPixel(i,j) * colorA_t(1.f,0.f,0.f,1.f);
 		}
 	}
-
+#endif	//If YafaRay is not built with OpenCV, skip the OpenCV image processing
 }
 
 int string2cliptype(const std::string *clipname)

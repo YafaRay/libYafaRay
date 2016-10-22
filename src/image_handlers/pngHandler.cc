@@ -169,6 +169,9 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	
 	Y_DEBUG << "m_Denoise="<<m_Denoise<<" m_DenoiseHLum="<<m_DenoiseHLum<<" m_DenoiseHCol="<<m_DenoiseHCol<<yendl;
 
+//The denoise functionality will only work if YafaRay is built with OpenCV support
+#ifdef HAVE_OPENCV
+
 	if(m_Denoise)
 	{
 		cv::Mat A(m_height, m_width, CV_8UC3);
@@ -208,6 +211,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		}
 	}
 	else
+#endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
 	{
 		for(int y = 0; y < m_height; y++)
 		{
