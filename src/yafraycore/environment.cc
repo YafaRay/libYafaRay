@@ -28,6 +28,8 @@
 	#include <windows.h>
 #endif
 
+#include <boost/filesystem.hpp>
+
 #include <core_api/light.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
@@ -42,6 +44,7 @@
 #include <yafraycore/std_primitives.h>
 #include <string>
 #include <sstream>
+
 
 __BEGIN_YAFRAY
 #define ENV_TAG << "Environment: "
@@ -141,13 +144,47 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 
 bool renderEnvironment_t::getPluginPath(std::string &path)
 {
-	//Get plugin path from a subfolder of the current yafaray_xml executable file path
-	if(!session.getPathYafaRayXml().empty())
+	// Steps to find the plugins path.
+	
+	// First check if the plugins path has been manually set and if it exists:
+	if(!path.empty())
 	{
-		path = session.getPathYafaRayXml()+"/plugins/";
+		if(boost::filesystem::exists( path ))
+		{
+			Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+			return true;
+		}
+		else
+		{
+			Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+		}
+	}
+	
+	// If the previous check does not work, check if the plugins path is in a subfolder of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
+	path = session.getPathYafaRayXml()+"/yafaray-plugins/";
+	if ( boost::filesystem::exists( path ) )
+	{
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
 		return true;
 	}
-	else return false;
+	else
+	{
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+	}
+
+	// If the previous checks do not work, check if the plugins path is in the "yafaray-plugins" subfolder defined during the compiling/building/installing process. This is the last resort to find the plugins
+	path = std::string(YAF_BUILD_INSTALL_PREFIX)+"/"+std::string(YAF_BUILD_PLUGIN_DIR);
+	if ( boost::filesystem::exists( path ) )
+	{
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+		return true;
+	}
+	else
+	{
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+	}
+
+return false;
 }
 
 

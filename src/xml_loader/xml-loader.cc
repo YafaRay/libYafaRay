@@ -102,16 +102,18 @@ int main(int argc, char *argv[])
 	else yafLog.setLogMasterVerbosity(logVerbLevel);
 
 
-	if(ppath.empty()) env->getPluginPath(ppath);
+	bool pluginPathFound = env->getPluginPath(ppath);
 	
-	if (!ppath.empty())
+	if (pluginPathFound)
 	{
-		Y_VERBOSE << "The plugin path is: " << ppath << yendl;
+		Y_INFO << "The plugins path is: " << ppath << yendl;
 		env->loadPlugins(ppath);
 	}
 	else
 	{
-		Y_ERROR << "Getting plugin path from render environment failed!" << yendl;
+		Y_ERROR << "Getting plugins path from render environment failed!" << yendl;
+		parse.printError();
+		parse.printUsage();
 		return 1;
 	}
 	
