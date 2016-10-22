@@ -19,13 +19,20 @@ option(WITH_OpenCV "Build OpenCV image processing support" ON)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
+option(BLENDER_ADDON "Build YafaRay as a self-contained blender add-on" OFF)
 
 ###### Packages and Definitions #########
 
-SET(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk")
+if(YAF_CMAKE_OSX_SYSROOT)
+	SET(CMAKE_OSX_SYSROOT ${YAF_CMAKE_OSX_SYSROOT})
+else(YAF_CMAKE_OSX_SYSROOT)
+	SET(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk")
+endif(YAF_CMAKE_OSX_SYSROOT)
 
 # Load user configurations if available
 include(CMakeConfig/UserConfig.txt OPTIONAL)
+
+find_package(Git)
 
 if(NOT YAF_USER_CONFIG)
 	include(${CMAKE_BINARY_DIR}/UserConfig.txt OPTIONAL)
@@ -50,9 +57,13 @@ if(YAF_USER_INCLUDE_DIRS)
 	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
 endif(YAF_USER_INCLUDE_DIRS)
 
-if(YAF_USER_LIBRARY_DIRS)
-	set(CMAKE_LIBRARY_PATH ${YAF_USER_LIBRARY_DIRS} CACHE STRING "Library search directories" FORCE)
-endif(YAF_USER_LIBRARY_DIRS)
+if(YAF_CMAKE_DEPENDENCIES_SEARCH_PATH)
+	set(CMAKE_PREFIX_PATH ${YAF_CMAKE_DEPENDENCIES_SEARCH_PATH} CACHE STRING "CMAKE dependencies package search directories" FORCE)
+endif(YAF_CMAKE_DEPENDENCIES_SEARCH_PATH)
+
+if(YAF_USER_INCLUDE_DIRS)
+	set(CMAKE_INCLUDE_PATH ${YAF_USER_INCLUDE_DIRS} CACHE STRING "Include search directories" FORCE)
+endif(YAF_USER_INCLUDE_DIRS)
 
 SET(YAF_PROGRAM_PATH "")
 
@@ -71,10 +82,10 @@ FIND_PACKAGE(Boost COMPONENTS system filesystem serialization locale REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 if(WITH_OpenCV)
-FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
+	FIND_PACKAGE(OpenCV COMPONENTS core imgproc photo REQUIRED)
 	message("Using OpenCV: yes")
 	if(OpenCV_FOUND)
-INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIR} )
+		INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIR} )
 		add_definitions(-DHAVE_OPENCV)
 	endif(OpenCV_FOUND)
 else(WITH_OpenCV)
@@ -177,6 +188,14 @@ if(NOT WIN32)
 		set(YAF_LIB_DIR lib)
 	endif(NOT YAF_LIB_DIR)
 
+	if(NOT YAF_BINDINGS_PY_DIR)
+		set(YAF_BINDINGS_PY_DIR ${YAF_LIB_DIR})
+	endif(NOT YAF_BINDINGS_PY_DIR)
+
+	if(NOT YAF_BINDINGS_RUBY_DIR)
+		set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
+	endif(NOT YAF_BINDINGS_RUBY_DIR)
+
 	# build flags
 	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
 	
@@ -206,6 +225,14 @@ else(NOT WIN32)
 	endif(NOT YAF_BIN_DIR)
 
 	set(YAF_LIB_DIR ${YAF_BIN_DIR})
+
+	if(NOT YAF_BINDINGS_PY_DIR)
+		set(YAF_BINDINGS_PY_DIR ${YAF_LIB_DIR})
+	endif(NOT YAF_BINDINGS_PY_DIR)
+
+	if(NOT YAF_BINDINGS_RUBY_DIR)
+		set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
+	endif(NOT YAF_BINDINGS_RUBY_DIR)
 
 	# build flags
 	if(MINGW)
@@ -256,15 +283,9 @@ endif(YAF_USER_EXTRA_DEFS)
 
 # Paths and flags configuration
 
-if(NOT WIN32)
-	if(NOT YAF_PLUGIN_DIR)
-		set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray)
-	endif(NOT YAF_PLUGIN_DIR)
-else(NOT WIN32)
-	if(NOT YAF_PLUGIN_DIR)
-		set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/plugins)
-	endif(NOT YAF_PLUGIN_DIR)
-endif(NOT WIN32)
+if(NOT YAF_PLUGIN_DIR)
+	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray-plugins)
+endif(NOT YAF_PLUGIN_DIR)
 
 if (USER_RELFLAGS)
 	set(CMAKE_CXX_FLAGS_RELEASE "${YAF_CXX_FLAGS_RELEASE} ${USER_RELFLAGS}" CACHE STRING "Release compiler flags" FORCE)

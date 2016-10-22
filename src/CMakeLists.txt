@@ -1,3 +1,9 @@
+if(APPLE)
+        SET(CMAKE_INSTALL_RPATH @loader_path)
+else(APPLE)
+        SET(CMAKE_INSTALL_RPATH "$ORIGIN/:${CMAKE_INSTALL_PREFIX}/${YAF_LIB_DIR}")
+endif(APPLE)
+
 add_subdirectory(yafraycore)
 add_subdirectory(backgrounds)
 add_subdirectory(cameras)
