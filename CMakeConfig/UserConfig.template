@@ -78,6 +78,18 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 
 ##set(YAF_PLUGIN_DIR "")
 
+# The plugin runtime search directory
+# When yafaray is executed, it will automatically search for the "yafaray-plugins" folder in the following locations:
+# * Directory specified with the "-pp" option in yafaray-xml or equivalent when using YafaRay API
+# * Subdirectory "yafaray-plugins" of the current subdirectory where YafaRay is executed from.
+# * Directory specified during the building process in this "YAF_RUNTIME_SEARCH_PLUGIN_DIR" variable.
+# Therefore this variable should be specified considering the expected location of the plugins folder after YafaRay is installed.
+# If not specified it will take the absolute plugin installation directory as defined in the CMake building process
+# Default:                                                                     
+#    ${CMAKE_INSTALL_PREFIX}/${YAF_PLUGIN_DIR}
+
+##set(YAF_RUNTIME_SEARCH_PLUGIN_DIR "")
+
 # The Python Bindings Installation Path                                        
 # Default: ${YAF_LIB_DIR}
 #                                                                              

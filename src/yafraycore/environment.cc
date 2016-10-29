@@ -172,8 +172,8 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
 	}
 
-	// If the previous checks do not work, check if the plugins path is in the "yafaray-plugins" subfolder defined during the compiling/building/installing process. This is the last resort to find the plugins
-	path = std::string(YAF_BUILD_INSTALL_PREFIX)+"/"+std::string(YAF_BUILD_PLUGIN_DIR);
+	// If the previous checks do not work, check if the plugins path is in the plugins search directory defined in CMake during the building process
+	path = std::string(YAF_RUNTIME_SEARCH_PLUGIN_DIR);
 	if ( boost::filesystem::exists( path ) )
 	{
 		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
