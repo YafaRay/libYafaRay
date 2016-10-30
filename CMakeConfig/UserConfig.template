@@ -117,6 +117,15 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 
 ##set(YAF_DOC_DIR "share/doc/yafaray")
 
+# The Core tests instalation dir                                                
+# Default: share/yafaray/tests
+#                                                                              
+# Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter tests will be used instead
+# In Windows this will install the Core documentation in ${USER_INSTALL_PREFIX}/tests
+# In other OS this will install the Core documentation in ${USER_INSTALL_PREFIX}/share/yafaray/tests
+
+##set(YAF_TESTS_DIR "share/yafaray/tests")
+
 
 # Setting paths and directories for Dependencies
 # CMAKE custom search path for dependencies, Packages, Libraries and Header Files 
