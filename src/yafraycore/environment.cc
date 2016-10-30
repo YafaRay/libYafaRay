@@ -172,6 +172,18 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
 	}
 
+	// If the previous check does not work, check if the plugins path is in a "lib" subfolder of the parent of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
+	path = session.getPathYafaRayXml()+"/../lib/yafaray-plugins/";
+	if ( boost::filesystem::exists( path ) )
+	{
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+		return true;
+	}
+	else
+	{
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+	}
+
 	// If the previous checks do not work, check if the plugins path is in the plugins search directory defined in CMake during the building process
 	path = std::string(YAF_RUNTIME_SEARCH_PLUGIN_DIR);
 	if ( boost::filesystem::exists( path ) )
