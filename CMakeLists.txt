@@ -41,10 +41,6 @@ if(NOT YAF_USER_CONFIG)
 	include(${CMAKE_SOURCE_DIR}/UserConfig.txt OPTIONAL)
 endif(NOT YAF_USER_CONFIG)
 
-# Load the packaging config
-include(CMakeConfig/CPackConfig.txt)
-
-
 if(NOT YAF_MIN_RAY_DIST)
 	set(YAF_MIN_RAY_DIST 0.00005)
 endif(NOT YAF_MIN_RAY_DIST)
@@ -176,6 +172,9 @@ set(YAF_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
 if (USER_INSTALL_PREFIX)
 	set(CMAKE_INSTALL_PREFIX ${USER_INSTALL_PREFIX})
 endif (USER_INSTALL_PREFIX)
+
+# Load the packaging config
+include(CMakeConfig/CPackConfig.txt)
 
 if(NOT WIN32)
 	# installation directories
