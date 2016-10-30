@@ -1,0 +1,898 @@
+<?xml version="1.0"?>
+
+<!-- 
+# YafaRay v3 Test01
+# Tests for texture formats, render passes, denoise, logs and image film saving.
+
+To test, using the terminal (or Windows "cmd") do this:
+* Using "cd", enter the directory "test01" where this test01.xml file resides
+* Execute the "yafaray-xml" indicating the full path to it, and some parameters as, for example:
+<path-to-yafaray-xml>/yafaray-xml -a -f png -vl verbose -lvl verbose test01.xml test01_render
+
+Note: if yafaray-xml cannot find the plugins directory, add the -pp option to manually specify the plugins directory location, for example:
+<path-to-yafaray-xml>/yafaray-xml -pp <path-to-yafaray-plugins> -a -f png -vl verbose -lvl verbose test01.xml test01_render
+-->
+
+<scene type="triangle">
+
+<render_passes name="render_passes">
+	<facesEdgeSmoothness fval="0.5"/>
+	<facesEdgeThickness ival="1"/>
+	<facesEdgeThreshold fval="0.01"/>
+	<objectEdgeSmoothness fval="0.75"/>
+	<objectEdgeThickness ival="2"/>
+	<objectEdgeThreshold fval="0.3"/>
+	<pass_AO sval="ao-clay"/>
+	<pass_Color sval="disabled"/>
+	<pass_Depth sval="z-depth-norm"/>
+	<pass_DiffCol sval="disabled"/>
+	<pass_DiffDir sval="disabled"/>
+	<pass_DiffInd sval="disabled"/>
+	<pass_Diffuse sval="diffuse"/>
+	<pass_Emit sval="disabled"/>
+	<pass_Env sval="env"/>
+	<pass_GlossCol sval="disabled"/>
+	<pass_GlossDir sval="disabled"/>
+	<pass_GlossInd sval="disabled"/>
+	<pass_IndexMA sval="disabled"/>
+	<pass_IndexOB sval="disabled"/>
+	<pass_Indirect sval="disabled"/>
+	<pass_Mist sval="mist"/>
+	<pass_Normal sval="debug-normal-smooth"/>
+	<pass_Reflect sval="disabled"/>
+	<pass_Refract sval="disabled"/>
+	<pass_Shadow sval="shadow"/>
+	<pass_Spec sval="disabled"/>
+	<pass_SubsurfaceCol sval="disabled"/>
+	<pass_SubsurfaceDir sval="disabled"/>
+	<pass_SubsurfaceInd sval="disabled"/>
+	<pass_TransCol sval="disabled"/>
+	<pass_TransDir sval="disabled"/>
+	<pass_TransInd sval="disabled"/>
+	<pass_UV sval="obj-index-auto"/>
+	<pass_Vector sval="mat-index-auto"/>
+	<pass_enable bval="true"/>
+	<pass_mask_invert bval="false"/>
+	<pass_mask_mat_index ival="2"/>
+	<pass_mask_obj_index ival="2"/>
+	<pass_mask_only bval="false"/>
+	<toonEdgeColor r="0" g="0" b="0" a="1"/>
+	<toonPostSmooth fval="3"/>
+	<toonPreSmooth fval="3"/>
+	<toonQuantization fval="0.1"/>
+</render_passes>
+
+<logging_badge name="logging_badge">
+	<logging_author sval=""/>
+	<logging_comments sval="Tests for texture formats, render passes, denoise, logs and image film saving."/>
+	<logging_contact sval=""/>
+	<logging_drawAANoiseSettings bval="false"/>
+	<logging_drawRenderSettings bval="false"/>
+	<logging_fontPath sval=""/>
+	<logging_fontSizeFactor fval="1"/>
+	<logging_paramsBadgePosition sval="top"/>
+	<logging_saveHTML bval="true"/>
+	<logging_saveLog bval="true"/>
+	<logging_title sval="YafaRay v3 Test01"/>
+</logging_badge>
+
+<texture name="Texture.005">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="sRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.tif"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<texture name="Texture.004">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="sRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.tga"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<texture name="Texture.003">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="sRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.png"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<texture name="Texture.002">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="sRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.jpg"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<texture name="Texture.001">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="LinearRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.hdr"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<texture name="Texture">
+	<adj_clamp bval="true"/>
+	<adj_contrast fval="1"/>
+	<adj_hue fval="0"/>
+	<adj_intensity fval="1"/>
+	<adj_mult_factor_blue fval="1"/>
+	<adj_mult_factor_green fval="1"/>
+	<adj_mult_factor_red fval="1"/>
+	<adj_saturation fval="1"/>
+	<calc_alpha bval="false"/>
+	<clipping sval="repeat"/>
+	<color_space sval="LinearRGB"/>
+	<cropmax_x fval="1"/>
+	<cropmax_y fval="1"/>
+	<cropmin_x fval="0"/>
+	<cropmin_y fval="0"/>
+	<fileformat sval="JPEG"/>
+	<filename sval="test01_tex.exr"/>
+	<gamma fval="1"/>
+	<interpolate sval="bilinear"/>
+	<mirror_x bval="false"/>
+	<mirror_y bval="false"/>
+	<normalmap bval="false"/>
+	<rot90 bval="false"/>
+	<texture_optimization sval="optimized"/>
+	<type sval="image"/>
+	<use_alpha bval="false"/>
+	<xrepeat ival="1"/>
+	<yrepeat ival="1"/>
+</texture>
+
+<material name="defaultMat">
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<type sval="shinydiffusemat"/>
+</material>
+
+<material name="Material.008--9223363248046659264">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="0.5"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="2"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="1"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture.005"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.007--9223363248046659360">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="1"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="2"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="1"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture.004"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.006--9223363248046659456">
+	<IOR fval="1.5"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="0.6"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="1"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="1"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture.003"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.005--9223363248046659552">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="0.4"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="1"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="1"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture.002"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.004--9223363248046659648">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="1"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="0"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="0.95"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture.001"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.003--9223363248046659744">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="1"/>
+	<diffuse_shader sval="diff_layer0"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="0"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+	<list_element>
+		<colfac fval="0.95"/>
+		<color_input bval="true"/>
+		<def_col r="1" g="0" b="1" a="1"/>
+		<def_val fval="1"/>
+		<do_color bval="true"/>
+		<do_scalar bval="false"/>
+		<element sval="shader_node"/>
+		<input sval="map0"/>
+		<mode ival="0"/>
+		<name sval="diff_layer0"/>
+		<negative bval="false"/>
+		<noRGB bval="false"/>
+		<stencil bval="false"/>
+		<type sval="layer"/>
+		<upper_color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+		<upper_value fval="0"/>
+		<use_alpha bval="false"/>
+	</list_element>
+	<list_element>
+		<element sval="shader_node"/>
+		<mapping sval="cube"/>
+		<name sval="map0"/>
+		<offset x="0" y="0" z="0"/>
+		<proj_x ival="1"/>
+		<proj_y ival="2"/>
+		<proj_z ival="3"/>
+		<scale x="1" y="1" z="1"/>
+		<texco sval="orco"/>
+		<texture sval="Texture"/>
+		<type sval="texture_mapper"/>
+	</list_element>
+</material>
+
+<material name="Material.002--9223363248046659840">
+	<IOR fval="1.8"/>
+	<additionaldepth ival="0"/>
+	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
+	<diffuse_reflect fval="1"/>
+	<emit fval="0"/>
+	<fresnel_effect bval="false"/>
+	<mat_pass_index ival="0"/>
+	<mirror_color r="1" g="1" b="1" a="1"/>
+	<receive_shadows bval="true"/>
+	<samplingfactor fval="1"/>
+	<specular_reflect fval="0"/>
+	<translucency fval="0"/>
+	<transmit_filter fval="1"/>
+	<transparency fval="0"/>
+	<type sval="shinydiffusemat"/>
+	<visibility sval="normal"/>
+	<wireframe_amount fval="0"/>
+	<wireframe_color r="1" g="1" b="1" a="1"/>
+	<wireframe_exponent fval="0"/>
+	<wireframe_thickness fval="0.01"/>
+</material>
+
+<light name="Point">
+	<cast_shadows bval="true"/>
+	<color r="1" g="1" b="1" a="1"/>
+	<from x="5.27648" y="-4.88993" z="8.89514"/>
+	<light_enabled bval="true"/>
+	<photon_only bval="false"/>
+	<power fval="72"/>
+	<type sval="pointlight"/>
+	<with_caustic bval="true"/>
+	<with_diffuse bval="true"/>
+</light>
+
+<mesh id="1" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="5">
+			<p x="-4.40469" y="1.44162" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="-4.40469" y="1.44162" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="-4.40469" y="3.44162" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="-4.40469" y="3.44162" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="-2.40468" y="1.44162" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="-2.40468" y="1.44162" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="-2.40468" y="3.44162" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="-2.40468" y="3.44162" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.008--9223363248046659264"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="2" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="4">
+			<p x="3.26859" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="3.26859" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="3.26859" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="3.26859" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="5.26859" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="5.26859" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="5.26859" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="5.26859" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.007--9223363248046659360"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="3" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="3">
+			<p x="-0.635578" y="3.54144" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="-0.635578" y="3.54144" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="-0.635578" y="5.54144" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="-0.635578" y="5.54144" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="1.36442" y="3.54144" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="1.36442" y="3.54144" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="1.36442" y="5.54144" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="1.36442" y="5.54144" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.006--9223363248046659456"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="4" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="2">
+			<p x="-0.635578" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="-0.635578" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="-0.635578" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="-0.635578" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="1.36442" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="1.36442" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="1.36442" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="1.36442" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.005--9223363248046659552"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="5" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="1">
+			<p x="-0.635578" y="-3.81854" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="-0.635578" y="-3.81854" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="-0.635578" y="-1.81854" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="-0.635578" y="-1.81854" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="1.36442" y="-3.81854" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="1.36442" y="-3.81854" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="1.36442" y="-1.81854" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="1.36442" y="-1.81854" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.004--9223363248046659648"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="6" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="0">
+			<p x="-5.01096" y="-1.94285" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+			<p x="-5.01096" y="-1.94285" z="2.00001" ox="-1" oy="-1" oz="1"/>
+			<p x="-5.01096" y="0.0571451" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+			<p x="-5.01096" y="0.0571451" z="2.00001" ox="-1" oy="1" oz="1"/>
+			<p x="-3.01096" y="-1.94285" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+			<p x="-3.01096" y="-1.94285" z="2.00001" ox="1" oy="-1" oz="1"/>
+			<p x="-3.01096" y="0.0571451" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+			<p x="-3.01096" y="0.0571451" z="2.00001" ox="1" oy="1" oz="1"/>
+			<set_material sval="Material.003--9223363248046659744"/>
+			<f a="2" b="0" c="1"/>
+			<f a="2" b="1" c="3"/>
+			<f a="3" b="7" c="6"/>
+			<f a="3" b="6" c="2"/>
+			<f a="7" b="5" c="4"/>
+			<f a="7" b="4" c="6"/>
+			<f a="0" b="4" c="5"/>
+			<f a="0" b="5" c="1"/>
+			<f a="0" b="2" c="6"/>
+			<f a="0" b="6" c="4"/>
+			<f a="5" b="7" c="3"/>
+			<f a="5" b="3" c="1"/>
+</mesh>
+
+<mesh id="7" vertices="4" faces="1" has_orco="false" has_uv="false" type="0" obj_pass_index="0">
+			<p x="-10" y="-10" z="0"/>
+			<p x="10" y="-10" z="0"/>
+			<p x="-10" y="10" z="0"/>
+			<p x="10" y="10" z="0"/>
+			<set_material sval="Material.002--9223363248046659840"/>
+			<f a="0" b="1" c="3"/>
+			<f a="0" b="3" c="2"/>
+</mesh>
+
+<camera name="cam">
+	<aperture fval="0"/>
+	<bokeh_rotation fval="0"/>
+	<bokeh_type sval="disk1"/>
+	<dof_distance fval="0"/>
+	<focal fval="1.09375"/>
+	<from x="8.64791" y="-7.22615" z="8.1295"/>
+	<resx ival="480"/>
+	<resy ival="270"/>
+	<to x="8.03447" y="-6.65603" z="7.58301"/>
+	<type sval="perspective"/>
+	<up x="8.25644" y="-6.8447" z="8.9669"/>
+	<view_name sval=""/>
+</camera>
+
+<background name="world_background">
+	<cast_shadows bval="true"/>
+	<cast_shadows_sun bval="true"/>
+	<color r="0.854296" g="0.854296" b="0.854296" a="1"/>
+	<ibl bval="false"/>
+	<ibl_samples ival="3"/>
+	<power fval="0.5"/>
+	<type sval="constant"/>
+	<with_caustic bval="true"/>
+	<with_diffuse bval="true"/>
+</background>
+
+<integrator name="default">
+	<AO_color r="0.954685" g="0.954685" b="0.954685" a="1"/>
+	<AO_distance fval="1"/>
+	<AO_samples ival="32"/>
+	<bg_transp bval="false"/>
+	<bg_transp_refract bval="false"/>
+	<caustics bval="false"/>
+	<do_AO bval="false"/>
+	<photon_maps_processing sval="generate-only"/>
+	<raydepth ival="8"/>
+	<shadowDepth ival="2"/>
+	<transpShad bval="false"/>
+	<type sval="directlighting"/>
+</integrator>
+
+<integrator name="volintegr">
+	<type sval="none"/>
+</integrator>
+
+<render>
+	<AA_clamp_indirect fval="0"/>
+	<AA_clamp_samples fval="0"/>
+	<AA_dark_detection_type sval="linear"/>
+	<AA_dark_threshold_factor fval="0"/>
+	<AA_detect_color_noise bval="false"/>
+	<AA_inc_samples ival="1"/>
+	<AA_indirect_sample_multiplier_factor fval="1"/>
+	<AA_light_sample_multiplier_factor fval="1"/>
+	<AA_minsamples ival="1"/>
+	<AA_passes ival="1"/>
+	<AA_pixelwidth fval="1.5"/>
+	<AA_resampled_floor fval="0"/>
+	<AA_sample_multiplier_factor fval="1"/>
+	<AA_threshold fval="0.05"/>
+	<AA_variance_edge_size ival="10"/>
+	<AA_variance_pixels ival="0"/>
+	<adv_auto_min_raydist_enabled bval="true"/>
+	<adv_auto_shadow_bias_enabled bval="true"/>
+	<adv_base_sampling_offset ival="0"/>
+	<adv_computer_node ival="0"/>
+	<adv_min_raydist_value fval="5e-05"/>
+	<adv_shadow_bias_value fval="0.0005"/>
+	<background_name sval="world_background"/>
+	<background_resampling bval="true"/>
+	<camera_name sval="cam"/>
+	<color_space sval="sRGB"/>
+	<color_space2 sval="sRGB"/>
+	<denoiseEnabled bval="true"/>
+	<denoiseHCol ival="5"/>
+	<denoiseHLum ival="5"/>
+	<denoiseMix fval="0.8"/>
+	<film_autosave_interval_passes ival="1"/>
+	<film_autosave_interval_seconds fval="300"/>
+	<film_autosave_interval_type sval="none"/>
+	<film_save_binary_format bval="true"/>
+	<film_save_load sval="save"/>
+	<filter_type sval="gauss"/>
+	<gamma fval="1"/>
+	<gamma2 fval="1"/>
+	<height ival="270"/>
+	<images_autosave_interval_passes ival="1"/>
+	<images_autosave_interval_seconds fval="300"/>
+	<images_autosave_interval_type sval="none"/>
+	<integrator_name sval="default"/>
+	<premult bval="false"/>
+	<show_sam_pix bval="true"/>
+	<threads ival="-1"/>
+	<threads_photons ival="-1"/>
+	<tile_size ival="32"/>
+	<tiles_order sval="centre"/>
+	<type sval="none"/>
+	<volintegrator_name sval="volintegr"/>
+	<width ival="480"/>
+	<xstart ival="0"/>
+	<ystart ival="0"/>
+</render>
+</scene>
