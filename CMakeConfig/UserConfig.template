@@ -108,6 +108,15 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 
 ##set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
 
+# The Core documentation instalation dir                                                
+# Default: share/doc/yafaray                                                       
+#                                                                              
+# Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter docs will be used instead
+# In Windows this will install the Core documentation in ${USER_INSTALL_PREFIX}/doc
+# In other OS this will install the Core documentation in ${USER_INSTALL_PREFIX}/share/doc/yafaray
+
+##set(YAF_DOC_DIR "share/doc/yafaray")
+
 
 # Setting paths and directories for Dependencies
 # CMAKE custom search path for dependencies, Packages, Libraries and Header Files 

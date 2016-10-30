@@ -1,3 +1,11 @@
+if(NOT YAF_DOC_DIR)
+    if(NOT WIN32)
+        set(YAF_DOC_DIR share/doc/yafaray)
+    else(NOT WIN32)
+        set(YAF_DOC_DIR doc)
+    endif(NOT WIN32)
+endif(NOT YAF_DOC_DIR)
+
 if (BLENDER_ADDON)
     if (BLENDER_EXPORTER_PATH)
         message("** Blender-Exporter Add-On building enabled.")
@@ -24,6 +32,16 @@ if (BLENDER_ADDON)
 
     else (BLENDER_EXPORTER_PATH)
         message("!! WARNING: Blender-Exporter source code path not found, disabling Blender Add-On generation. To enable the Blender Add-On, download the current Blender-Exporter with 'git clone git://github.com/YafaRay/Blender-Exporter <path_to_blender_exporter>' and add 'set(BLENDER_EXPORTER_PATH, \"<path_to_blender_exporter>\")' in the file UserConfig.txt")
+
+        file(COPY ${CMAKE_SOURCE_DIR}/AUTHORS DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+        file(COPY ${CMAKE_SOURCE_DIR}/CHANGELOG DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+        file(COPY ${CMAKE_SOURCE_DIR}/LICENSES DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+        file(COPY ${CMAKE_SOURCE_DIR}/README DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
     endif (BLENDER_EXPORTER_PATH)
+else (BLENDER_ADDON)
+    file(COPY ${CMAKE_SOURCE_DIR}/AUTHORS DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+    file(COPY ${CMAKE_SOURCE_DIR}/CHANGELOG DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+    file(COPY ${CMAKE_SOURCE_DIR}/LICENSES DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
+    file(COPY ${CMAKE_SOURCE_DIR}/README DESTINATION ${USER_INSTALL_PREFIX}/${YAF_DOC_DIR})
 endif (BLENDER_ADDON)
 
