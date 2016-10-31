@@ -1,8 +1,6 @@
 # Debian Testing version - YafaRay Standalone building procedure (only valid for YafaRay v3.1.2 or higher)
-# NOTE: This procedure generates a "yafaray_v3" folder that can be installed in the Blender Add-Ons folder
-#       However, this only works for the Blender included in the distro (currently 2.77 in Debian Testing)
-#       When using this yafaray_v3 folder with the Blender downloaded from www.blender.org there might be
-#       conflicts with the Blender EXR, PNG and JPEG libraries.
+# NOTE: This procedure generates a "yafaray_v3" folder that can be used by 3rd party software, or by
+# executing yafaray_v3/bin/yafaray-xml to render a YafaRay XML scene file
 
 # INSTALLING DEVEL TOOLS
 sudo apt-get install -y git cmake cmake-curses-gui autoconf gcc g++ cpp swig
