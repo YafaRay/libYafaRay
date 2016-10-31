@@ -45,7 +45,6 @@ make install -j9
 
 # TEST IN BLENDER
 mkdir -p $HOME/.config/blender/2.76/scripts/addons
-#rm -R $HOME/.config/blender/2.76/scripts/addons/yafaray_v3
 cp -R $HOME/yafa-dev/build/yafaray_v3 $HOME/.config/blender/2.76/scripts/addons/yafaray_v3
 blender $HOME/yafa-dev/build/yafaray_v3/tests/test01/test01.blend
 
