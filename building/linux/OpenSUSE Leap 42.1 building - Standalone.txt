@@ -34,6 +34,7 @@ EOF
 # BUILDING YAFARAY
 cd $HOME/yafa-dev/make
 cmake $HOME/yafa-dev/src/Core
+# Note: "-j9" uses 9 threads in this example for speeding up the building process. It can be changed to "-j<number of threads>" depending on the number of cores of the processor used for building YafaRay.
 make -j9
 make install -j9
 
