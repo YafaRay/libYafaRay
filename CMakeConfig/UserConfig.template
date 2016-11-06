@@ -114,14 +114,13 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 # Note: include files will not be installed when building as Blender AddOn
 # By default: ${USER_INSTALL_PREFIX}/include/yafaray
 
-##set(YAF_INCL_DIR "share/doc/yafaray")
+##set(YAF_INCL_DIR "include/yafaray")
 
 # The Core documentation instalation dir                                                
 # Default: share/doc/yafaray                                                       
 #                                                                              
 # Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter docs will be used instead
-# In Windows this will install the Core documentation in ${USER_INSTALL_PREFIX}/doc
-# In other OS this will install the Core documentation in ${USER_INSTALL_PREFIX}/share/doc/yafaray
+# By default: ${USER_INSTALL_PREFIX}/share/doc/yafaray
 
 ##set(YAF_DOC_DIR "share/doc/yafaray")
 
@@ -129,8 +128,7 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 # Default: share/yafaray/tests
 #                                                                              
 # Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter tests will be used instead
-# In Windows this will install the Core documentation in ${USER_INSTALL_PREFIX}/tests
-# In other OS this will install the Core documentation in ${USER_INSTALL_PREFIX}/share/yafaray/tests
+# By default: ${USER_INSTALL_PREFIX}/share/yafaray/tests
 
 ##set(YAF_TESTS_DIR "share/yafaray/tests")
 

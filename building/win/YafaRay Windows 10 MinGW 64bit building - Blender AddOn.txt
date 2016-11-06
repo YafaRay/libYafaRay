@@ -137,10 +137,9 @@ mv /usr/bin/shNONO.exe /usr/bin/sh.exe
 
 
 # TEST IN BLENDER
-mkdir -p $HOME/.config/blender/2.78/scripts/addons
-cp -R $HOME/yafa-dev64/build/yafaray_v3 $HOME/.config/blender/2.78/scripts/addons/yafaray_v3
-blender $HOME/yafa-dev64/build/yafaray_v3/tests/test01/test01.blend
-
-# In Blender, go to File->User Preferences->AddOns-->YafaRay v3 and enable it. Then, click save settings and close the User Preferences window.
-
-# Now you should be able to render the test01.blend file.
+Download Blender for Windows 64bit from blender.org
+Copy the folder C:\msys64\home\<user name>\yafa-dev64\build\yafaray_v3 to the Blender "addons" folder
+Start Blender
+Go to File->User Preferences->AddOns-->YafaRay v3 and enable it. Then, click save settings and close the User Preferences window.
+# Now you should be able to render the test01.blend file, located in:
+C:\msys64\home\<user name>\yafa-dev64\build\yafaray_v3\share\yafaray\tests\test01\test01.blend

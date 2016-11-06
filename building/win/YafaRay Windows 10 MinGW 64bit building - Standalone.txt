@@ -137,5 +137,5 @@ mv /usr/bin/shNONO.exe /usr/bin/sh.exe
 
 
 # TESTING YAFARAY
-cd $HOME/yafa-dev64/build/yafaray_v3/tests/test01/
+cd $HOME/yafa-dev64/build/yafaray_v3/share/yafaray/tests/test01/
 $HOME/yafa-dev64/build/yafaray_v3/bin/yafaray-xml -f png test01.xml test01_render
