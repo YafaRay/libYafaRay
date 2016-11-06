@@ -135,9 +135,9 @@ if (WITH_YAF_RUBY_BINDINGS)
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)
 
 	set_source_files_properties(yafaray_v3_interface.i PROPERTIES CPLUSPLUS ON)
-	SWIG_ADD_MODULE(yafaray_v3_interface RUBY yafaray_v3_interface.i)
-	SWIG_LINK_LIBRARIES(yafaray_v3_interface yafaray_v3_core yafaray_v3_plugin ${RUBY_LIBRARY})
-	install(TARGETS ${SWIG_MODULE_yafaray_v3_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+	SWIG_ADD_MODULE(yafaray_v3_interface_ruby RUBY yafaray_v3_interface.i)
+	SWIG_LINK_LIBRARIES(yafaray_v3_interface_ruby yafaray_v3_core yafaray_v3_plugin ${RUBY_LIBRARY})
+	install(TARGETS ${SWIG_MODULE_yafaray_v3_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 endif (WITH_YAF_RUBY_BINDINGS)
 

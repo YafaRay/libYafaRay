@@ -1,4 +1,8 @@
-%module yafaray_v3_interface
+#if defined(SWIGRUBY)
+  %module yafaray_v3_interface_ruby
+#else
+  %module yafaray_v3_interface
+#endif
 
 %include "cpointer.i"
 %pointer_functions(float, floatp);
