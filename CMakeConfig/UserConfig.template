@@ -108,6 +108,14 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 
 ##set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
 
+# The Core include files instalation dir                                                
+# Default: include/yafaray                                                       
+#                                                                              
+# Note: include files will not be installed when building as Blender AddOn
+# By default: ${USER_INSTALL_PREFIX}/include/yafaray
+
+##set(YAF_INCL_DIR "share/doc/yafaray")
+
 # The Core documentation instalation dir                                                
 # Default: share/doc/yafaray                                                       
 #                                                                              
