@@ -1,0 +1,141 @@
+# Windows 10 64bit MinGW YafaRay Blender Add-On building procedure (only valid for YafaRay v3.1.2 or higher)
+# NOTE: This procedure generates a "yafaray_v3" folder that can be used by 3rd party software, or by
+# executing yafaray_v3/bin/yafaray-xml to render a YafaRay XML scene file
+
+
+# INSTALL Python 3.5.1 Windows 64bit installer into the folder C:\Python351_64
+# https://www.python.org/downloads/release/python-351/
+Download from: https://www.python.org/ftp/python/3.5.1/python-3.5.1-amd64.exe
+Select customized, leave default options and set the destination folder "C:\Python351_64"
+
+
+# INSTALL MSys2 64bit (allows using MinGW 32bit and MinGW 64bit)
+Download from:
+https://sourceforge.net/projects/msys2/files/latest/download?source=files
+
+Install to: C:\msys64
+
+# To avoid conflicts with installation of packages later, rename:
+C:\msys64\mingw32.exe as C:\msys64\mingw32-shell.exe
+C:\msys64\mingw32.ini as C:\msys64\mingw32-shell.ini
+C:\msys64\mingw64.exe as C:\msys64\mingw64-shell.exe
+C:\msys64\mingw64.ini as C:\msys64\mingw64-shell.ini
+
+# Start MSys2, executing 
+C:\msys64\msys2.exe
+
+# From MSys2 shell:
+# UPDATE PACKAGES
+pacman -Syuu #close the MSys2 shell window when asked
+
+# Start MSys2 (again), executing 
+C:\msys64\msys2.exe
+
+# UPDATE PACKAGES (again)
+pacman -Syuu #again 
+
+# INSTALLING DEVEL TOOLS (just press Enter when asked for selecting to select all packages)
+pacman -S nano git base-devel msys2-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-swig  mingw-w64-x86_64-make mingw-w64-x86_64-gdb
+
+
+# INSTALLING LIBRARY DEPENDENCIES
+pacman -S mingw-w64-x86_64-boost mingw-w64-x86_64-opencv mingw-w64-x86_64-openexr mingw-w64-x86_64-libpng mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libtiff mingw-w64-x86_64-libxml2 mingw-w64-x86_64-freetype 
+
+mkdir -p $HOME/yafa-libs64/src $HOME/yafa-libs64/make $HOME/yafa-libs64/build/include $HOME/yafa-libs64/build/bin $HOME/yafa-libs64/build/lib
+
+cd $HOME/yafa-libs64/build/include
+git clone https://github.com/meganz/mingw-std-threads
+cd mingw-std-threads
+
+# Copy Python 3.5.1 from the already installed Python in C:\Python351_64
+mkdir -p $HOME/yafa-libs64/build/include/python3.5/
+cp C:/Python351_64/include/* $HOME/yafa-libs64/build/include/python3.5/
+cp C:/Python351_64/python35.dll $HOME/yafa-libs64/build/lib/
+
+
+# DOWNLOADING YAFARAY AND SETTING UP FOLDERS
+mkdir -p $HOME/yafa-dev64/src $HOME/yafa-dev64/make $HOME/yafa-dev64/build
+cd $HOME/yafa-dev64/src
+git clone https://github.com/YafaRay/Blender-Exporter
+git clone https://github.com/YafaRay/Core
+
+# CREATE UserConfig.txt FILE WITH YAFARAY BUILDING OPTIONS. Execute the entire block below until (including) EOF
+
+cat <<EOF >$HOME/yafa-dev64/make/UserConfig.txt
+###############################################################################
+# UserConfig File to build for Windows 10 MinGW
+###############################################################################
+# WARNING: DON'T TOUCH THE NEXT LINE                                           
+set(YAF_USER_CONFIG ON)
+###############################################################################
+
+set(DEBUG_BUILD OFF)
+set(YAF_USER_EXTRA_DEFS -DOPENEXR_DLL -DMS_WIN64)
+set(USER_INSTALL_PREFIX "C:/msys64$HOME/yafa-dev64/build/yafaray_v3/")
+set(YAF_CMAKE_DEPENDENCIES_SEARCH_PATH "C:/msys64$HOME/yafa-libs64/build")
+set(BLENDER_ADDON OFF)
+set(YAF_USER_SWIG_BIN_DIR "C:/msys64/mingw64/usr/bin/")
+set(YAF_PY_VERSION 3.5)
+###############################################################
+EOF
+
+
+# Exit Msys2 shell
+exit 
+
+
+# BUILDING YAFARAY
+# Start Msys2-MinGW64bit shell, executing 
+C:\mingw64\mingw64-shell.exe
+
+#To avoid issues with CMake and sh.exe in path
+mv /usr/bin/sh.exe /usr/bin/shNONO.exe
+
+cd $HOME/yafa-dev64/make
+cmake $HOME/yafa-dev64/src/Core -G "MinGW Makefiles"
+# Note: "-j9" uses 9 threads in this example for speeding up the building process. It can be changed to "-j<number of threads>" depending on the number of cores of the processor used for building YafaRay.
+mingw32-make -j9
+mingw32-make install -j9
+cp /mingw64/bin/libboost_filesystem-mt.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libfreetype-6.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libboost_system-mt.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libboost_serialization-mt.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libboost_regex-mt.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libwinpthread-1.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libxml2-2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libgcc_s_seh-1.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libstdc++-6.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libopencv_core310.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libopencv_imgproc310.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libopencv_photo310.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libbz2-1.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libharfbuzz-0.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/zlib1.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libpng16-16.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/tbb.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/liblzma-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libiconv-2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libglib-2.0-0.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libgraphite2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libintl-8.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libpcre-1.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libHalf-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libIex-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libIexMath-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libIlmImf-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libIlmImfUtil-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libIlmThread-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libImath-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libjpeg-8.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libtiffxx-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/libtiff-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+
+
+
+#Restore sh.exe
+mv /usr/bin/shNONO.exe /usr/bin/sh.exe
+
+
+# TESTING YAFARAY
+cd $HOME/yafa-dev64/build/yafaray_v3/tests/test01/
+$HOME/yafa-dev64/build/yafaray_v3/bin/yafaray-xml -f png test01.xml test01_render
