@@ -37,9 +37,10 @@ public:
 	void setRenderSize(const QSize &s);
 
 	// inherited from yafaray::colorOutput_t
-	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t &renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true);
-	virtual void flush(int numView, const yafaray::renderPasses_t &renderPasses);
-	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t &renderPasses);
+	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, int idx, const yafaray::colorA_t &color, bool alpha = true);
+	virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true);
+	virtual void flush(int numView, const yafaray::renderPasses_t *renderPasses);
+	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses);
 	virtual void highliteArea(int numView, int x0, int y0, int x1, int y1);
 
 private:

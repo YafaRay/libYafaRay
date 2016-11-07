@@ -71,9 +71,9 @@ public slots:
 	void setAlpha(bool checked);
 	void showColor(bool checked);
 	void showAlpha(bool checked);
-	void showDepth(bool checked);
+	//FIXME: void showDepth(bool checked);
 	void setAskSave(bool checked);
-	void setSaveDepth(bool checked);
+	//FIXME: void setSaveDepth(bool checked);
 	void setDrawParams(bool checked);
 	void zoomIn();
 	void zoomOut();

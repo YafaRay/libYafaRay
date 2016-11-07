@@ -242,8 +242,8 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 			this, SLOT(showColor(bool)));
 	connect(m_ui->actionAskSave, SIGNAL(triggered(bool)),
 			this, SLOT(setAskSave(bool)));
-	connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
-			this, SLOT(setDrawParams(bool)));
+	//FIXME: connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
+	//FIXME:		this, SLOT(setDrawParams(bool)));
 
 	m_ui->actionShowRGB->setChecked(true);
 	useDrawParams = interf->getDrawParams();
@@ -475,7 +475,7 @@ void MainWindow::setDrawParams(bool checked)
 	useDrawParams = checked;
 	if(!m_render->isRendering())
 	{
-		interf->setDrawParams(useDrawParams);
+		//FIXME: interf->setDrawParams(useDrawParams);
 		interf->getRenderedImage(0, *m_output); //FIXME DAVID VIEWS!!
 		showColor(true);
 	}
@@ -559,7 +559,7 @@ bool MainWindow::saveDlg()
 
 		interf->paramsClearAll();
 
-		interf->setDrawParams(useDrawParams);
+		//FIXME: interf->setDrawParams(useDrawParams);
 
 		interf->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
