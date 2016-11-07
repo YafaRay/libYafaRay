@@ -47,6 +47,11 @@ set(WITH_YAF_PY_BINDINGS ON)
 # Enable the YafaRay Ruby bindings, default:OFF
 set(WITH_YAF_RUBY_BINDINGS OFF)
 
+# Enable Qt Gui build                                                          # Default: ON                                                                  set(WITH_QT ON)
+
+# Embed font for QT GUI (useful for some buggy QT installations)               #
+# Default: OFF                                                                 set(EMBED_FONT_QT OFF)
+
 
 ############################ Path setting variables ############################
 # Default:                                                                     
@@ -184,6 +189,10 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 # Path to swig executable                                                      
 
 ##set(YAF_USER_SWIG_BIN_DIR "")
+
+
+# Path to Qt qmake executable                                                     #
+##set(YAF_USER_QT_BIN_DIR "")
 
 
 ########################### Extra linking variables ############################
