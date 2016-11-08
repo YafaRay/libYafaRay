@@ -39,7 +39,7 @@ pacman -S nano git base-devel msys2-devel mingw-w64-x86_64-toolchain mingw-w64-x
 
 
 # INSTALLING LIBRARY DEPENDENCIES
-pacman -S mingw-w64-x86_64-boost mingw-w64-x86_64-opencv mingw-w64-x86_64-openexr mingw-w64-x86_64-libpng mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libtiff mingw-w64-x86_64-libxml2 mingw-w64-x86_64-freetype mingw-w64-x86_64-ruby 
+pacman -S mingw-w64-x86_64-boost mingw-w64-x86_64-opencv mingw-w64-x86_64-openexr mingw-w64-x86_64-libpng mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libtiff mingw-w64-x86_64-libxml2 mingw-w64-x86_64-freetype mingw-w64-x86_64-ruby mingw-w64-x86_64-qt4
 
 mkdir -p $HOME/yafa-libs64/src $HOME/yafa-libs64/make $HOME/yafa-libs64/build/include $HOME/yafa-libs64/build/bin $HOME/yafa-libs64/build/lib
 
@@ -79,6 +79,7 @@ set(BLENDER_ADDON OFF)
 set(YAF_USER_SWIG_BIN_DIR "C:/msys64/mingw64/usr/bin/")
 set(YAF_PY_VERSION 3.5)
 set(WITH_YAF_RUBY_BINDINGS ON)
+set(WITH_QT ON)
 ###############################################################
 EOF
 
@@ -134,6 +135,8 @@ cp /mingw64/bin/libtiffxx-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libtiff-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/x64-msvcrt-ruby230.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libgmp-10.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/QtCore4.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp /mingw64/bin/QtGui4.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 
 
 #Restore sh.exe
