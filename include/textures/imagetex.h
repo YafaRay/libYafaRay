@@ -62,6 +62,7 @@ class textureImage_t : public texture_t
 		virtual void resolution(int &x, int &y, int &z) const;
 		virtual void postProcessedCreate();
 		virtual void postProcessedBlur(float blur_factor);
+		virtual void postProcessedAverage();
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 
 	protected:

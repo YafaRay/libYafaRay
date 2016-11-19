@@ -133,6 +133,14 @@ class YAFRAYCORE_EXPORT color_t
 			G = G * (1.f - blend_factor) + col.G * blend_factor;
 			B = B * (1.f - blend_factor) + col.B * blend_factor;
 		}
+		
+		void blend01(const color_t &col, float blend_factor)
+		{
+			float blend_factor_01 = std::max(0.f, std::min(1.f, blend_factor));
+			R = R * (1.f - blend_factor_01) + col.R * blend_factor_01;
+			G = G * (1.f - blend_factor_01) + col.G * blend_factor_01;
+			B = B * (1.f - blend_factor_01) + col.B * blend_factor_01;
+		}
 
 		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer 
 		{

@@ -36,6 +36,7 @@ void textureMapper_t::setup()
 
 	if (!tex->isNormalmap())
 		bumpStr /= 100.0f;
+
 }
 
 // Map the texture to a cylinder
@@ -160,7 +161,32 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 
 	texpt = doMapping(texpt, Ng);
 
-	stack[this->ID] = nodeResult_t(tex->getColor(texpt), (doScalar) ? tex->getFloat(texpt) : 0.f );
+	colorA_t result_color = tex->getColor(texpt);
+	float result_value = (doScalar) ? tex->getFloat(texpt) : 0.f;
+
+	if(tex->get_distance_avg_enabled())
+	{
+		float distance = (state.cam->getPosition()-sp.P).length();
+		if(distance > tex->get_distance_avg_dist_min())
+		{
+			colorA_t result_color_averaged = tex->getColor(texpt, true);
+			float result_value_averaged = (doScalar) ? tex->getFloat(texpt, true) : 0.f;
+			
+			if(distance < tex->get_distance_avg_dist_max())
+			{
+				float distance_factor = (distance - tex->get_distance_avg_dist_min()) / (tex->get_distance_avg_dist_max() - tex->get_distance_avg_dist_min());
+				result_color.blend(result_color_averaged, distance_factor);
+				result_value = result_value * (1.f - distance_factor) + result_value_averaged * distance_factor;
+			}
+			else
+			{
+				result_color = result_color_averaged;
+				result_value = result_value_averaged;
+			}
+		}
+	}
+
+	stack[this->ID] = nodeResult_t(result_color, result_value);
 }
 
 // Basically you shouldn't call this anyway, but for the sake of consistency, redirect:
@@ -176,6 +202,9 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
 	float du = 0.0f, dv = 0.0f;
+	
+    float distance_factor = (state.cam->getPosition()-sp.P).length()/100.f;
+    distance_factor = std::max(0.f, std::min(1.f, distance_factor));
 
 	getCoords(texpt, Ng, sp, state);
 
@@ -189,6 +218,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		{
 			// Get color from normal map texture
 			color = tex->getRawColor(texpt);
+			color.blend(color_t(0.5,0.8,1.0), distance_factor);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();
@@ -206,8 +236,8 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			point3d_t i1 = (texpt + pDU);
 			point3d_t j0 = (texpt - pDV);
 			point3d_t j1 = (texpt + pDV);
-			float dfdu = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-			float dfdv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+			float dfdu = ((tex->getFloat(i0)* (1.f - distance_factor) + 0.5f * distance_factor) - (tex->getFloat(i1)* (1.f - distance_factor) + 0.5f * distance_factor)) / dU;
+			float dfdv = ((tex->getFloat(j0)* (1.f - distance_factor) + 0.5f * distance_factor) - (tex->getFloat(j1)* (1.f - distance_factor) + 0.5f * distance_factor)) / dV;
 
 			// now we got the derivative in UV-space, but need it in shading space:
 			vector3d_t vecU = sp.dSdU;
@@ -238,6 +268,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
 			// Get color from normal map texture
 			color = tex->getRawColor(texpt);
+			color.blend(color_t(0.5,0.8,1.0), distance_factor);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();
@@ -268,8 +299,8 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
 			point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
 
-			du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-			dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+			du = ((tex->getFloat(i0)* (1.f - distance_factor) + 0.5f * distance_factor) - (tex->getFloat(i1)* (1.f - distance_factor) + 0.5f * distance_factor)) / dU;
+			dv = ((tex->getFloat(j0)* (1.f - distance_factor) + 0.5f * distance_factor) - (tex->getFloat(j1)* (1.f - distance_factor) + 0.5f * distance_factor)) / dV;
 			du *= bumpStr;
 			dv *= bumpStr;
 			
@@ -295,6 +326,7 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	int map[3] = { 1, 2, 3 };
 	point3d_t offset(0.f), scale(1.f);
 	matrix4x4_t mtx(1);
+	
 	if( !params.getParam("texture", texname) )
 	{
 		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
