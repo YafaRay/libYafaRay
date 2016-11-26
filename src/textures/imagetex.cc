@@ -339,52 +339,15 @@ void textureImage_t::postProcessedBlur(float blur_factor)
 		}
 	}
 
-#endif	//If YafaRay is not built with OpenCV, skip the OpenCV image processing
-}
-
-void textureImage_t::postProcessedAverage()
-{
-//The average functionality will only work if YafaRay is built with OpenCV support
-#ifdef HAVE_OPENCV
-	if(!postProcessedImage) return;
-	
-	int w=0, h=0, z=0;
-	resolution(w, h, z);
-	
-	cv::Mat A(h, w, CV_32FC4);
-	cv::Mat_<cv::Vec4f> _A = A;
-	
-	for(int y = 0; y < h; y++)
+	for(int i=0; i<w; ++i)
 	{
-		for(int x = 0; x < w; x++)
+		for(int j=0; j<h; ++j)
 		{
-			colorA_t color = image->getPixel(x,y);
-			color.linearRGB_from_ColorSpace(colorSpace, gamma);
-
-			_A(y, x)[0] = color.getR();
-			_A(y, x)[1] = color.getG();
-			_A(y, x)[2] = color.getB();
-			_A(y, x)[3] = color.getA();
+//			(*postProcessedImage)(i,j) = image->getPixel(i,j) * colorA_t(1.f,0.f,0.f,1.f);
 		}
 	}
-	cv::Scalar meanScalar = cv::mean(A);
-
-	for(int y = 0; y < h; y++)
-	{
-		for(int x = 0; x < w; x++)
-		{
-			(*postProcessedImage)(x,y).R = meanScalar[0];
-			(*postProcessedImage)(x,y).G = meanScalar[1];
-			(*postProcessedImage)(x,y).B = meanScalar[2];
-			(*postProcessedImage)(x,y).A = meanScalar[3];
-
-			(*postProcessedImage)(x,y).ColorSpace_from_linearRGB(colorSpace, gamma);
-		}
-	}
-
 #endif	//If YafaRay is not built with OpenCV, skip the OpenCV image processing
 }
-
 
 int string2cliptype(const std::string *clipname)
 {
@@ -511,9 +474,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	bool mirror_y = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
-	bool distance_avg_enabled = false;
-	float distance_avg_dist_min = 0.f;
-	float distance_avg_dist_max = 100.f;
 	
 	params.getParam("xrepeat", xrep);
 	params.getParam("yrepeat", yrep);
@@ -540,10 +500,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("adj_hue", hue);
 	params.getParam("adj_clamp", clamp);
 	
-	params.getParam("distance_avg_enabled", distance_avg_enabled);
-	params.getParam("distance_avg_dist_min", distance_avg_dist_min);
-	params.getParam("distance_avg_dist_max", distance_avg_dist_max);
-	
 	tex->xrepeat = xrep;
 	tex->yrepeat = yrep;
 	tex->rot90 = rot90;
@@ -559,15 +515,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->mirrorY = mirror_y;
 	
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	
-	if(distance_avg_enabled)
-	{
-		tex->distance_avg_enabled = true;
-		tex->distance_avg_dist_min = distance_avg_dist_min;
-		tex->distance_avg_dist_max = std::max(distance_avg_dist_min, distance_avg_dist_max);
-		if(!tex->postProcessedImage) tex->postProcessedCreate();
-		tex->postProcessedAverage();
-	}
 	
 	return tex;
 }
