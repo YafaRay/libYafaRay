@@ -53,7 +53,7 @@ void textureImage_t::resolution(int &x, int &y, int &z) const
 
 colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postprocessed) const
 {
-	int x, y, x2, y2;
+	int x, y, x0, x2, x3, y0, y2, y3;
 	
 	int resx=image->getWidth();
 	int resy=image->getHeight();
@@ -61,14 +61,129 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postproc
 	float xf = ((float)resx * (p.x - floor(p.x)));
 	float yf = ((float)resy * (p.y - floor(p.y)));
 	
+	float dx = 0.f;
+	float dy = 0.f;
+
 	if (intp_type != INTP_NONE)
 	{
 		xf -= 0.5f;
 		yf -= 0.5f;
 	}
 	
-	x = std::max(0, std::min(resx-1, (int)xf));
-	y = std::max(0, std::min(resy-1, (int)yf));
+	if (tex_clipmode==TCL_REPEAT)
+	{
+		x = ((int)xf) % resx;
+		y = ((int)yf) % resy;
+
+		if(mirrorX)
+		{
+
+			if(xf < 0.f)
+			{
+				x0 = 1 % resx;
+				x2 = x;
+				x3 = x0;
+				dx = -xf;
+			}
+			else if(xf >= resx - 1.f)
+			{
+				x0 = (resx+resx-1) % resx;
+				x2 = x;
+				x3 = x0;
+				dx = xf - ((int)xf);
+			}
+			else
+			{
+				x0 = (resx+x-1) % resx;
+				x2 = x+1;
+				if(x2 >= resx) x2 = (resx + resx - x2) % resx;
+				x3 = x+2;
+				if(x3 >= resx) x3 = (resx + resx - x3) % resx;
+				dx = xf - ((int)xf);
+			}			
+		}
+		else
+		{
+			if(xf > 0.f)
+			{
+				x0 = (resx+x-1) % resx;
+				x2 = (x+1) % resx;
+				x3 = (x+2) % resx;
+				dx = xf - ((int)xf);
+			}
+			else
+			{
+				x0 = 1 % resx;
+				x2 = (resx-1) % resx;
+				x3 = (resx-2) % resx;
+				dx = -xf;
+			}
+		}
+		
+		if(mirrorY)
+		{
+
+			if(yf < 0.f)
+			{
+				y0 = 1 % resy;
+				y2 = y;
+				y3 = y0;
+				dy = -yf;
+			}
+			else if(yf >= resy - 1.f)
+			{
+				y0 = (resy+resy-1) % resy;
+				y2 = y;
+				y3 = y0;
+				dy = yf - ((int)yf);
+			}
+			else
+			{
+				y0 = (resy+y-1) % resy;
+				y2 = y+1;
+				if(y2 >= resy) y2 = (resy + resy - y2) % resy;
+				y3 = y+2;
+				if(y3 >= resy) y3 = (resy + resy - y3) % resy;
+				dy = yf - ((int)yf);
+			}			
+		}
+		else
+		{
+			if(yf > 0.f)
+			{
+				y0 = (resy+y-1) % resy;
+				y2 = (y+1) % resy;
+				y3 = (y+2) % resy;
+				dy = yf - ((int)yf);
+			}
+			else
+			{
+				y0 = 1 % resy;
+				y2 = (resy-1) % resy;
+				y3 = (resy-2) % resy;
+				dy = -yf;
+			}
+		}
+	}
+	else
+	{
+		x = std::max(0, std::min(resx-1, ((int)xf)));
+		y = std::max(0, std::min(resy-1, ((int)yf)));
+
+		if(xf > 0.f) x2 = std::min(resx-1, x+1);
+		else x2 = 0;
+		
+		if(yf > 0.f) y2 = std::min(resy-1, y+1);
+		else y2 = 0;
+
+		x0 = std::max(0, x-1);
+		x3 = std::min(resx-1, x2+1);
+		y0 = std::max(0, y-1);
+		y3 = std::min(resy-1, y2+1);
+		
+		dx = xf - floor(xf);
+		dy = yf - floor(yf);
+	}
 
 	colorA_t c1;
 	if(from_postprocessed && postProcessedImage) c1 = (*postProcessedImage)(x, y);
@@ -77,9 +192,6 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postproc
 	if (intp_type == INTP_NONE) return c1;
 	
 	colorA_t c2, c3, c4;
-	
-	x2 = std::min(resx-1, x+1);
-	y2 = std::min(resy-1, y+1);
 	
 	if(from_postprocessed && postProcessedImage)
 	{
@@ -94,9 +206,6 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postproc
 		c4 = image->getPixel(x2, y2);
 	}
 
-	float dx = xf - floor(xf);
-	float dy = yf - floor(yf);
-	
 	if (intp_type == INTP_BILINEAR)
 	{
 		float w0 = (1-dx) * (1-dy);
@@ -108,11 +217,6 @@ colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postproc
 	}
 
 	colorA_t c0, c5, c6, c7, c8, c9, cA, cB, cC, cD, cE, cF, ret;
-
-	int x0 = std::max(0, x-1);
-	int x3 = std::min(resx-1, x2+1);
-	int y0 = std::max(0, y-1);
-	int y3 = std::min(resy-1, y2+1);
 
 	if(from_postprocessed && postProcessedImage)
 	{
