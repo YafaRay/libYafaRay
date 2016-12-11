@@ -208,18 +208,18 @@ bool textureImage_t::doMapping(point3d_t &texpt) const
 	texpt = 0.5f*texpt + 0.5f;
 	// repeat, only valid for REPEAT clipmode
 	if (tex_clipmode==TCL_REPEAT) {
-		texpt.x *= (float)xrepeat;
-		if (mirrorX && int(ceilf(texpt.x)) % 2 == 0)
-		{
-			texpt.x = -texpt.x;
-		}
-		if (texpt.x>1.0) texpt.x -= int(texpt.x); else if (texpt.x<0.0) texpt.x += 1-int(texpt.x);
-		texpt.y *= (float)yrepeat;
-		if (mirrorY && int(ceilf(texpt.y)) % 2 == 0)
-		{
-			texpt.y = -texpt.y;
-		}
-		if (texpt.y>1.0) texpt.y -= int(texpt.y); else if (texpt.y<0.0) texpt.y += 1-int(texpt.y);
+		
+		if(xrepeat > 1) texpt.x *= (float)xrepeat;
+		if(yrepeat > 1) texpt.y *= (float)yrepeat;
+		
+		if (mirrorX && int(ceilf(texpt.x)) % 2 == 0) texpt.x = -texpt.x;
+		if (mirrorY && int(ceilf(texpt.y)) % 2 == 0) texpt.y = -texpt.y;
+		
+		if (texpt.x>1.f) texpt.x -= int(texpt.x);
+		else if (texpt.x<0.f) texpt.x += 1 - int(texpt.x);
+		
+		if (texpt.y>1.f) texpt.y -= int(texpt.y);
+		else if (texpt.y<0.f) texpt.y += 1 - int(texpt.y);
 	}
 	
 	// crop
