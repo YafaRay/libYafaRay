@@ -75,7 +75,7 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	int resx=320, resy=200;
 	double aspect=1.0, angle=90, max_angle=90;
 	bool circular = true, mirrored = false;
-	float nearClip = 0.0f, farClip = -1.0f;
+	float nearClip = 0.0f, farClip = -1.0e38f;
 	std::string viewName = "";
 
 	params.getParam("from", from);
