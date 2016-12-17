@@ -321,8 +321,10 @@ void pointKdTree<T>::recursiveLookup(const point3d_t &p, const LookupProc &proc,
 		vector3d_t v = currNode->data->pos - p;
 		float dist2 = v.lengthSqr();
 		if (dist2 < maxDistSquared)
+		{
 			proc(currNode->data, dist2, maxDistSquared);
 			++Y_PROCS;
+		}
 		return;
 	}
 	int axis = currNode->SplitAxis();
