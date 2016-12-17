@@ -576,7 +576,8 @@ material_t* glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
         if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
 		if(mat->exponentS) mat->getNodeList(mat->exponentS, colorNodes);
         if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
-        if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
+        if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);
+		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
 		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
 		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);
 	}
