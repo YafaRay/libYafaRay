@@ -73,8 +73,8 @@ IrregularCurve::IrregularCurve(const float *datay, int n):c1(nullptr), c2(nullpt
 
 IrregularCurve::~IrregularCurve()
 {
-	if(c1) delete [] c1; c1=nullptr;
-	if(c2) delete [] c2; c2=nullptr;
+	if(c1) { delete [] c1; c1=nullptr; }
+	if(c2) { delete [] c2; c2=nullptr; }
 }
 
 float IrregularCurve::getSample(float x) const
@@ -141,7 +141,7 @@ RegularCurve::RegularCurve(float BeginR, float EndR, int n) : c(nullptr), m(Begi
 
 RegularCurve::~RegularCurve()
 {
-	if(c) delete [] c; c=nullptr;
+	if(c) { delete [] c; c=nullptr; }
 }
 
 float RegularCurve::getSample(float x) const
