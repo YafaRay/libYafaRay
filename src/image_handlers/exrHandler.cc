@@ -50,7 +50,7 @@ public:
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-    bool saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses);
+    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
 	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
 	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
@@ -140,7 +140,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	}
 }
 
-bool exrHandler_t::saveToFileMultiChannel(const std::string &name, bool denoise, const renderPasses_t *renderPasses)
+bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
     std::string extPassName;
 
