@@ -69,79 +69,66 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
-	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
+	bool saveToFile(const std::string &name, int imgIndex = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
+	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
 jpgHandler_t::jpgHandler_t()
 {
-	m_width = 0;
-	m_height = 0;
 	m_hasAlpha = false;
 	m_MultiLayer = false;
 	
 	handlerName = "JPEGHandler";
-	
-	rgbOptimizedBuffer = nullptr;
-	rgbCompressedBuffer = nullptr;
 }
 
-void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
+jpgHandler_t::~jpgHandler_t()
 {
-	m_width = width;
-	m_height = height;
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	{
+		delete imgBuffer.at(idx);
+		imgBuffer.at(idx) = nullptr;
+	}
+}
+
+void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
+{
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
 	m_DenoiseMix = denoiseMix;
+	m_grayscale = grayscale;
 
-	imagePasses.resize(renderPasses->extPassesSize());
-	
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	int nChannels = 3;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
+
+	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
 	{
-		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
+		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
 	}
 }
 
-jpgHandler_t::~jpgHandler_t()
+void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
 {
-	if(!imagePasses.empty())
-	{
-		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-		{
-			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = nullptr;
-		}
-	}
-
-	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
-	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
-
-	rgbOptimizedBuffer = nullptr;
-	rgbCompressedBuffer = nullptr;
+	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
 }
 
-void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
+colorA_t jpgHandler_t::getPixel(int x, int y, int imgIndex)
 {
-	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
+	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
 
-colorA_t jpgHandler_t::getPixel(int x, int y, int imagePassNumber)
+bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
-	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
-	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
-	else return colorA_t(0.f);	//This should not happen, but just in case
-}
+	int h = imgBuffer.at(imgIndex)->getHeight();
+	int w = imgBuffer.at(imgIndex)->getWidth();
 
-bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
-{
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
@@ -167,8 +154,8 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	jpeg_create_compress(&info);
 	jpeg_stdio_dest(&info, fp);
 
-	info.image_width = m_width;
-	info.image_height = m_height;
+	info.image_width = w;
+	info.image_height = h;
 	info.in_color_space = JCS_RGB;
 	info.input_components = 3;
 	
@@ -179,23 +166,23 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	
 	jpeg_start_compress(&info, TRUE);
 
-	scanline = new yByte[ m_width * 3 ];
+	scanline = new yByte[ w * 3 ];
 
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 
 	if(m_Denoise)
 	{
-		cv::Mat A(m_height, m_width, CV_8UC3);
-		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat A(h, w, CV_8UC3);
+		cv::Mat B(h, w, CV_8UC3);
 		cv::Mat_<cv::Vec3b> _A = A;
 		cv::Mat_<cv::Vec3b> _B = B;
 
-		for(y = 0; y < m_height; y++)
+		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < m_width; x++)
+			for (x = 0; x < w; x++)
 			{
-				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				_A(y, x)[0] = (col.getR() * 255);
 				_A(y, x)[1] = (col.getG() * 255);
@@ -205,9 +192,9 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
 			
-		for(y = 0; y < m_height; y++)
+		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < m_width; x++)
+			for (x = 0; x < w; x++)
 			{
 				ix = x * 3;
 				scanline[ix]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
@@ -221,12 +208,12 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	else
 #endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
 	{
-		for(y = 0; y < m_height; y++)
+		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < m_width; x++)
+			for (x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				colorA_t &col = (*imagePasses.at(imagePassNumber))(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				scanline[ix]   = (yByte) (col.getR() * 255);
 				scanline[ix+1] = (yByte) (col.getG() * 255);
@@ -264,8 +251,8 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		jpeg_create_compress(&info);
 		jpeg_stdio_dest(&info, fp);
 
-		info.image_width = m_width;
-		info.image_height = m_height;
+		info.image_width = w;
+		info.image_height = h;
 		info.in_color_space = JCS_GRAYSCALE;
 		info.input_components = 1;
 		
@@ -276,13 +263,13 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		
 		jpeg_start_compress(&info, TRUE);
 
-		scanline = new yByte[ m_width ];
+		scanline = new yByte[ w ];
 
-		for(y = 0; y < m_height; y++)
+		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < m_width; x++)
+			for (x = 0; x < w; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, (*imagePasses.at(imagePassNumber))(x, y).getA()));
+				float col = std::max(0.f, std::min(1.f, imgBuffer.at(imgIndex)->getColor(x, y).getA()));
 
 				scanline[x] = (yByte)(col * 255);
 			}
@@ -357,19 +344,22 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	m_width = info.output_width;
 	m_height = info.output_height;
 
-	if(!imagePasses.empty())
+	if(!imgBuffer.empty())
 	{
-		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
 		{
-			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			delete imgBuffer.at(idx);
+			imgBuffer.at(idx) = nullptr;
 		}
-		imagePasses.clear();
+		imgBuffer.clear();
 	}
 	
-	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED) rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);	//JPG does not have alpha, so we can save 8 bits in the optimized buffer
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED) rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
-	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
+	int nChannels = 3;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
 
+	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
 	int y = 0;
@@ -418,9 +408,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 									 A);
 			}
 			
-			if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
-			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
-			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;	
+			imgBuffer.at(0)->setColor(x, y, color);
 		}
 		y++;
 	}
@@ -444,6 +432,7 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool img_grayscale = false;
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
@@ -457,13 +446,14 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("denoiseHLum", denoiseHLum);
 	params.getParam("denoiseHCol", denoiseHCol);
 	params.getParam("denoiseMix", denoiseMix);
+	params.getParam("img_grayscale", img_grayscale);
 
 	imageHandler_t *ih = new jpgHandler_t();
 	
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
 	}
 	
 	return ih;

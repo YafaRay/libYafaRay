@@ -45,19 +45,16 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name, int imagePassNumber = 0);
+	bool saveToFile(const std::string &name, int imgIndex = 0);
     bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
-	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
-	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
+	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	bool isHDR() { return true; }
-
-private:
-	std::vector<halfRgbaScanlineImage_t*> m_halfrgba;
 };
 
 exrHandler_t::exrHandler_t()
@@ -65,37 +62,40 @@ exrHandler_t::exrHandler_t()
 	handlerName = "EXRHandler";
 }
 
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
+exrHandler_t::~exrHandler_t()
 {
-	m_width = width;
-	m_height = height;
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	{
+		delete imgBuffer.at(idx);
+		imgBuffer.at(idx) = nullptr;
+	}
+}
+
+void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
+{
 	m_hasAlpha = withAlpha;
 	m_MultiLayer = multi_layer;
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
 	m_DenoiseMix = denoiseMix;
+	m_grayscale = grayscale;
     
-	m_halfrgba.resize(renderPasses->extPassesSize());
-	
-	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
+	int nChannels = 3;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
+
+	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
 	{
-		m_halfrgba.at(idx) = new halfRgbaScanlineImage_t(m_height, m_width);
+		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
 	}
 }
 
-exrHandler_t::~exrHandler_t()
+bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
-	{
-		if(m_halfrgba.at(idx)) delete m_halfrgba.at(idx);
-	
-		m_halfrgba.at(idx) = nullptr;
-	}
-}
+	int h = imgBuffer.at(imgIndex)->getHeight();
+	int w = imgBuffer.at(imgIndex)->getWidth();
 
-bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
-{
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
@@ -105,7 +105,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	const int num_colchan = 4;
 	int totchan_size = num_colchan*chan_size;
 
-	Header header(m_width, m_height);
+	Header header(w, h);
 
 	header.compression() = ZIP_COMPRESSION;
 
@@ -116,20 +116,34 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	OutputFile file(name.c_str(), header);
 
-	char* data_ptr = (char *)&(*m_halfrgba.at(imagePassNumber))(0, 0);
-	
+	Imf::Array2D<Imf::Rgba> pixels;
+	pixels.resizeErase(h, w);
 
+	for(int i = 0; i < w; ++i)
+	{
+		for(int j = 0; j < h; ++j)
+		{
+			colorA_t col = imgBuffer.at(imgIndex)->getColor(i, j);
+			pixels[j][i].r = col.R;
+			pixels[j][i].g = col.G;
+			pixels[j][i].b = col.B;
+			pixels[j][i].a = col.A;
+		}
+	}
+
+	char* data_ptr = (char *)&pixels[0][0];
+	
 	FrameBuffer fb;
-	fb.insert("R", Slice(HALF, data_ptr              , totchan_size, m_width*totchan_size));
-	fb.insert("G", Slice(HALF, data_ptr +   chan_size, totchan_size, m_width*totchan_size));
-	fb.insert("B", Slice(HALF, data_ptr + 2*chan_size, totchan_size, m_width*totchan_size));
-	fb.insert("A", Slice(HALF, data_ptr + 3*chan_size, totchan_size, m_width*totchan_size));
+	fb.insert("R", Slice(HALF, data_ptr              , totchan_size, w * totchan_size));
+	fb.insert("G", Slice(HALF, data_ptr +   chan_size, totchan_size, w * totchan_size));
+	fb.insert("B", Slice(HALF, data_ptr + 2*chan_size, totchan_size, w * totchan_size));
+	fb.insert("A", Slice(HALF, data_ptr + 3*chan_size, totchan_size, w * totchan_size));
 
 	file.setFrameBuffer(fb);
 
 	try
 	{
-		file.writePixels(m_height);
+		file.writePixels(h);
 		Y_VERBOSE << handlerName << ": Done." << yendl;
 		return true;
 	}
@@ -142,6 +156,22 @@ bool exrHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
+	int h0 = imgBuffer.at(0)->getHeight();
+	int w0 = imgBuffer.at(0)->getWidth();
+
+	bool allImageBuffersSameSize = true;
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	{
+		if(imgBuffer.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
+		if(imgBuffer.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
+	}
+	
+	if(!allImageBuffersSameSize)
+	{
+		Y_ERROR << handlerName << ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format." << yendl;
+		return false;
+	}
+
     std::string extPassName;
 
 	std::string nameWithoutTmp = name;
@@ -154,11 +184,13 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 	const int num_colchan = 4;
 	int totchan_size = num_colchan*chan_size;
 	
-    Header header(m_width, m_height);
+    Header header(w0, h0);
     FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
     
-    for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
+	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
+
+    for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
     {
 		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
 		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
@@ -178,47 +210,65 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
         header.channels().insert(channelB, Channel(HALF));
         header.channels().insert(channelA, Channel(HALF));
  
-        char* data_ptr = (char *)&(*m_halfrgba.at(idx))(0, 0);
+		pixels.push_back(new Imf::Array2D<Imf::Rgba>);
+		pixels.at(idx)->resizeErase(h0, w0);
 
-        fb.insert(channelR, Slice(HALF, data_ptr              , totchan_size, m_width*totchan_size));
-        fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, m_width*totchan_size));
-        fb.insert(channelB, Slice(HALF, data_ptr + 2*chan_size, totchan_size, m_width*totchan_size));
-        fb.insert(channelA, Slice(HALF, data_ptr + 3*chan_size, totchan_size, m_width*totchan_size));
+		for(int i = 0; i < w0; ++i)
+		{
+			for(int j = 0; j < h0; ++j)
+			{
+				colorA_t col = imgBuffer.at(idx)->getColor(i, j);
+				(*pixels.at(idx))[j][i].r = col.R;
+				(*pixels.at(idx))[j][i].g = col.G;
+				(*pixels.at(idx))[j][i].b = col.B;
+				(*pixels.at(idx))[j][i].a = col.A;
+			}
+		}
+
+		char* data_ptr = (char *)&(*pixels.at(idx))[0][0];
+
+        fb.insert(channelR, Slice(HALF, data_ptr              , totchan_size, w0 * totchan_size));
+        fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, w0 * totchan_size));
+        fb.insert(channelB, Slice(HALF, data_ptr + 2*chan_size, totchan_size, w0 * totchan_size));
+        fb.insert(channelA, Slice(HALF, data_ptr + 3*chan_size, totchan_size, w0 * totchan_size));
     }
     
     OutputFile file(name.c_str(), header);    
 	file.setFrameBuffer(fb);
-
+	
 	try
 	{
-		file.writePixels(m_height);
+		file.writePixels(h0);
 		Y_VERBOSE << handlerName << ": Done." << yendl;
+		for(size_t idx = 0; idx < pixels.size(); ++idx)
+		{
+			delete pixels.at(idx);
+			pixels.at(idx) = nullptr;
+		}
+		pixels.clear();
 		return true;
 	}
 	catch (const std::exception &exc)
 	{
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
+		for(size_t idx = 0; idx < pixels.size(); ++idx)
+		{
+			delete pixels.at(idx);
+			pixels.at(idx) = nullptr;
+		}
+		pixels.clear();
 		return false;
 	}
 }
 
-void exrHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
+void exrHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
 {
-	Rgba &pixel = (*m_halfrgba.at(imagePassNumber))(y, x);
-
-	pixel.r = rgba.getR();
-	pixel.g = rgba.getG();
-	pixel.b = rgba.getB();
-
-	if(m_hasAlpha) pixel.a = rgba.getA();
-	else pixel.a = 1.f;
+	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
 }
 
-colorA_t exrHandler_t::getPixel(int x, int y, int imagePassNumber)
+colorA_t exrHandler_t::getPixel(int x, int y, int imgIndex)
 {
-	Rgba &pixel = (*m_halfrgba.at(imagePassNumber))(x, y);
-
-	return colorA_t(pixel.r, pixel.g, pixel.b, pixel.a);
+	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
 
 bool exrHandler_t::loadFromFile(const std::string &name)
@@ -276,19 +326,39 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		m_height = dw.max.y - dw.min.y + 1;
 		m_hasAlpha = true;
 
-		if(!m_halfrgba.empty())
+		if(!imgBuffer.empty())
 		{
-			for(size_t idx = 0; idx < m_halfrgba.size(); ++idx)
+			for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
 			{
-				if(m_halfrgba.at(idx)) delete m_halfrgba.at(idx);
+				delete imgBuffer.at(idx);
+				imgBuffer.at(idx) = nullptr;
 			}
-			m_halfrgba.clear();
+			imgBuffer.clear();
 		}
-		
-		m_halfrgba.push_back(new halfRgbaScanlineImage_t(m_width, m_height));
 
-		file.setFrameBuffer(&(*m_halfrgba.at(0))(0, 0) - dw.min.y - dw.min.x * m_height, m_height, 1);
+		int nChannels = 3;
+		if(m_grayscale) nChannels = 1;
+		else if(m_hasAlpha) nChannels = 4;
+
+		imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+
+		Imf::Array2D<Imf::Rgba> pixels;
+		pixels.resizeErase(m_width, m_height);
+		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * m_height, m_height, 1);
 		file.readPixels(dw.min.y, dw.max.y);
+		
+		for(int i = 0; i < m_width; ++i)
+		{
+			for(int j = 0; j < m_height; ++j)
+			{
+				colorA_t col;
+				col.R = pixels[i][j].r;
+				col.G = pixels[i][j].g;
+				col.B = pixels[i][j].b;
+				col.A = pixels[i][j].a;
+				imgBuffer.at(0)->setColor(i, j, col);
+			}
+		}
 	}
 	catch (const std::exception &exc)
 	{
@@ -313,6 +383,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	bool withAlpha = false;
 	bool forOutput = true;
 	bool multiLayer = false;
+	bool img_grayscale = false;
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
@@ -325,6 +396,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("alpha_channel", withAlpha);
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
+	params.getParam("img_grayscale", img_grayscale);
 /*	//Denoise is not available for HDR/EXR images
  * 	params.getParam("denoiseEnabled", denoiseEnabled);
  *	params.getParam("denoiseHLum", denoiseHLum);
@@ -332,11 +404,13 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
  *	params.getParam("denoiseMix", denoiseMix);
  */
 	imageHandler_t *ih = new exrHandler_t();
+	
+	ih->setTextureOptimization(TEX_OPTIMIZATION_HALF_FLOAT);
 
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, multiLayer);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, multiLayer, img_grayscale);
 	}
 
 	return ih;

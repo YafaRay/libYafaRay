@@ -21,6 +21,8 @@
 #include <yafraycore/xmlparser.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
+#include <utilities/math_utils.h>
+#include <iomanip>
 #if HAVE_XML
 #include <libxml/parser.h>
 #endif
@@ -532,8 +534,21 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 		{
 			switch(attrs[0][0])
 			{
-				case 'u': u = atof(attrs[1]); break;
-				case 'v': v = atof(attrs[1]); break;
+				case 'u': u = atof(attrs[1]);
+					if(!(isValidFloat(u)))
+					{
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0]<<"="<<attrs[1]<<". Replacing with 0.0." << yendl;
+						u = 0.f;
+					}
+					break;
+				case 'v': v = atof(attrs[1]);
+					if(!(isValidFloat(v)))
+					{
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0]<<"="<<attrs[1]<<". Replacing with 0.0." << yendl;
+						v = 0.f;
+					}
+					break;
+
 				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in uv" << yendl;
 			}
 		}

@@ -22,6 +22,7 @@
 #include <core_api/scene.h>
 #include <core_api/object3d.h>
 #include <core_api/camera.h>
+#include <core_api/material.h>
 #include <core_api/light.h>
 #include <core_api/background.h>
 #include <core_api/integrator.h>
@@ -950,6 +951,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 		hitt->getSurface(sp, h, data);
 		sp.origin = hitt;
 		sp.data = data;
+		sp.ray = nullptr;
 	}
 	else
 	{
@@ -960,6 +962,40 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 		hitprim->getSurface(sp, h, data);
 		sp.origin = hitprim;
 		sp.data = data;
+		sp.ray = nullptr;
+	}
+	ray.tmax = Z;
+	return true;
+}
+
+bool scene_t::intersect(const diffRay_t &ray, surfacePoint_t &sp) const
+{
+	float dis, Z;
+	intersectData_t data;
+	if(ray.tmax<0) dis=std::numeric_limits<float>::infinity();
+	else dis=ray.tmax;
+	// intersect with tree:
+	if(mode == 0)
+	{
+		if(!tree) return false;
+		triangle_t *hitt=0;
+		if( ! tree->Intersect(ray, dis, &hitt, Z, data) ){ return false; }
+		point3d_t h=ray.from + Z*ray.dir;
+		hitt->getSurface(sp, h, data);
+		sp.origin = hitt;
+		sp.data = data;
+		sp.ray = &ray;
+	}
+	else
+	{
+		if(!vtree) return false;
+		primitive_t *hitprim=0;
+		if( ! vtree->Intersect(ray, dis, &hitprim, Z, data) ){ return false; }
+		point3d_t h=ray.from + Z*ray.dir;
+		hitprim->getSurface(sp, h, data);
+		sp.origin = hitprim;
+		sp.data = data;
+		sp.ray = &ray;
 	}
 	ray.tmax = Z;
 	return true;

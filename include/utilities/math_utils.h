@@ -56,4 +56,9 @@ inline double RoundFloatPrecision(double val, double precision) //To round, for 
 	else return std::round(val / precision) * precision;
 }
 
+inline bool isValidFloat(float value)	//To check a float is not a NaN for example, even while using --fast-math compile flag
+{
+	return (value >= std::numeric_limits<float>::lowest() && value <= std::numeric_limits<float>::max()); 
+}
+
 #endif // Y_MATHUTIL_H

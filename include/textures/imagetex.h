@@ -31,6 +31,8 @@
 
 __BEGIN_YAFRAY
 
+#define EWA_WEIGHT_LUT_SIZE 128
+
 enum TEX_CLIPMODE
 {
 	TCL_EXTEND,
@@ -40,59 +42,52 @@ enum TEX_CLIPMODE
 	TCL_CHECKER
 };
 
-enum interpolationType
-{
-	INTP_NONE,
-	INTP_BILINEAR,
-	INTP_BICUBIC
-};
-
 class textureImage_t : public texture_t
 {
 	public:
-		textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma, colorSpaces_t color_space = RAW_MANUAL_GAMMA);
+		textureImage_t(imageHandler_t *ih, int intp, float gamma, colorSpaces_t color_space = RAW_MANUAL_GAMMA);
 		virtual ~textureImage_t();
 		virtual bool discrete() const { return true; }
 		virtual bool isThreeD() const { return false; }
 		virtual bool isNormalmap() const { return normalmap; }
-		virtual colorA_t getColor(const point3d_t &sp, bool from_postprocessed=false) const;
-		virtual colorA_t getColor(int x, int y, int z, bool from_postprocessed=false) const;
-		virtual colorA_t getRawColor(const point3d_t &p, bool from_postprocessed=false) const;
-		virtual colorA_t getRawColor(int x, int y, int z, bool from_postprocessed=false) const;
+		virtual colorA_t getColor(const point3d_t &sp, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
+		virtual colorA_t getColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
+		virtual colorA_t getRawColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
+		virtual colorA_t getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
 		virtual void resolution(int &x, int &y, int &z) const;
-		virtual void postProcessedCreate();
-		virtual void postProcessedBlur(float blur_factor);
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
+		virtual void generateMipMaps() { if(image->getHighestImgIndex() == 0) image->generateMipMaps(); }
 
 	protected:
 		void setCrop(float minx, float miny, float maxx, float maxy);
+		void findTextureInterpolationCoordinates(int &coord, int &coord0, int &coord2, int &coord3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
+		colorA_t noInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t bilinearInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t bicubicInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t mipMapsTrilinearInterpolation(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
+		colorA_t mipMapsEWAInterpolation(const point3d_t &p, float dSdx, float dTdx, float dSdy, float dTdy, float maxAnisotropy) const;
+		colorA_t EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel=0) const;
+		void generateEWALookupTable();
 		bool doMapping(point3d_t &texp) const;
-		colorA_t interpolateImage(const point3d_t &p, bool from_postprocessed=false) const;
+		colorA_t interpolateImage(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const;
 		
 		bool use_alpha, calc_alpha, normalmap;
+		bool grayscale = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		bool cropx, cropy, checker_odd, checker_even, rot90;
 		float cropminx, cropmaxx, cropminy, cropmaxy;
 		float checker_dist;
 		int xrepeat, yrepeat;
 		int tex_clipmode;
 		imageHandler_t *image;
-		interpolationType intp_type;
 		colorSpaces_t colorSpace;
 		float gamma;
 		bool mirrorX;
 		bool mirrorY;
-		rgba2DImage_nw_t * postProcessedImage = nullptr; //!< rgba color buffer for post-processed image (not linear, still in the original image color space)
+		float trilinear_level_bias=0.f; //!< manually specified delta to be added/subtracted from the calculated mipmap level. Negative values will choose higher resolution mipmaps than calculated, reducing the blurry artifacts at the cost of increasing texture noise. Positive values will choose lower resolution mipmaps than calculated. Default (and recommended) is 0.0 to use the calculated mipmaps as-is.
+		float ewa_max_anisotropy=8.f; //!< Maximum anisotropy allowed for mipmap EWA algorithm. Higher values give better quality in textures seen from an angle, but render will be slower. Lower values will give more speed but lower quality in textures seen in an angle.
+		static float *ewaWeightLut;
 };
 
-/*static inline colorA_t cubicInterpolate(const colorA_t &c1, const colorA_t &c2,
-								 const colorA_t &c3, const colorA_t &c4, float x)
-{
-	colorA_t t2(c3-c2);
-	colorA_t t1(t2 - (c2-c1));
-	t2 = (c4-c3) - t2;
-	float ix = 1.f-x;
-	return x*c3 + ix*c2 + ((4.f*t2 - t1)*(x*x*x-x) + (4.f*t1 - t2)*(ix*ix*ix-ix))*0.06666667f;
-}*/
 
 __END_YAFRAY
 

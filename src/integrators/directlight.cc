@@ -161,7 +161,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
-			generateCommonRenderPasses(colorPasses, state, sp);
+			generateCommonRenderPasses(colorPasses, state, sp, ray);
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{

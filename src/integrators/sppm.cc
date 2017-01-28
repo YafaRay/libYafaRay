@@ -109,7 +109,7 @@ bool SPPM::render(int numView, yafaray::imageFilm_t *image)
 	maxDepth = 0.f;
 	minDepth = 1e38f;
 
-	diffRaysEnabled = false;	//always false for now, reserved for future motion blur and interference features
+	diffRaysEnabled = session.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
 	if(scene->pass_enabled(PASS_INT_Z_DEPTH_NORM) || scene->pass_enabled(PASS_INT_MIST)) precalcDepths();
 
@@ -1273,7 +1273,7 @@ GatherInfo SPPM::traceGatherRay(yafaray::renderState_t &state, yafaray::diffRay_
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
-			generateCommonRenderPasses(colorPasses, state, sp);
+			generateCommonRenderPasses(colorPasses, state, sp, ray);
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{

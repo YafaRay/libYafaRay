@@ -92,6 +92,10 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 		sp.V = 0.f;  //fix for nan black dots using glossy with bump mapping without UV map associated. Forcing initialization to avoid non-initialized values in that case.
 	}
 
+	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
+	sp.dPdU_abs = sp.dPdU;
+	sp.dPdV_abs = sp.dPdV;
+	
 	sp.dPdU.normalize();
 	sp.dPdV.normalize();
 

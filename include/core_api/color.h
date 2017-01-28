@@ -212,6 +212,14 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 			if (A<0.0) A=0.0; else if (A>1.0) A=1.0;
 		}
 
+		void blend(const colorA_t &col, float blend_factor)
+		{
+			R = R * (1.f - blend_factor) + col.R * blend_factor;
+			G = G * (1.f - blend_factor) + col.G * blend_factor;
+			B = B * (1.f - blend_factor) + col.B * blend_factor;
+			A = A * (1.f - blend_factor) + col.A * blend_factor;
+		}
+
 		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer 
 		{
 			R = ceilf(R);

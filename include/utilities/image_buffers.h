@@ -42,15 +42,15 @@ __BEGIN_YAFRAY
 class pixel_t
 {
 	public:
-	pixel_t() { col = colorA_t(0.f); weight = 0.f;}
+	pixel_t() {}
 	colorA_t normalized() const
 	{
 		if(weight != 0.f) return col / weight;	//Changed from if(weight > 0.f) to if(weight != 0.f) because lanczos and mitchell filters, as they have a negative lobe, sometimes generate pixels with all negative values and also negative weight. Having if(weight > 0.f) caused such pixels to be incorrectly set to 0,0,0,0 and were shown as black dots (with alpha=0). Options are: clipping the filter output to values >=0, but they would lose ability to sharpen the image. Other option (applied here) is to allow negative values and normalize them correctly. This solves a problem stated in http://yafaray.org/node/712 but perhaps could cause other artifacts? We have to keep an eye on this to decide the best option.
 		else return colorA_t(0.f);
 	}
 	
-	colorA_t col;
-	float weight;
+	colorA_t col = colorA_t(0.f);
+	float weight = 0.f;
 	
 	friend class boost::serialization::access;
 	template<class Archive> void serialize(Archive & ar, const unsigned int version)
@@ -64,14 +64,14 @@ class pixel_t
 class pixelGray_t 
 {
 	public:
-	pixelGray_t() { val = 0.f; weight = 0.f;}
+	pixelGray_t() {}
 	float normalized() const
 	{
 		if(weight > 0.f) return val / weight;
 		else return 0.f;
 	}
-	float val;
-	float weight;
+	float val = 0.f;
+	float weight = 0.f;
 
 	friend class boost::serialization::access;
 	template<class Archive> void serialize(Archive & ar, const unsigned int version)
@@ -84,7 +84,7 @@ class pixelGray_t
 class rgba8888_t
 {
 	public:
-		rgba8888_t():r(0),g(0),b(0),a(1) {}
+		rgba8888_t() {}
 	
 		void setColor(const colorA_t& col) { setR((uint8_t)roundf(col.R*255.f)); setG((uint8_t)roundf(col.G*255.f)); setB((uint8_t)roundf(col.B*255.f)); setA((uint8_t)roundf(col.A*255.f)); }
 		
@@ -101,10 +101,10 @@ class rgba8888_t
 		colorA_t getColor() { return colorA_t((float) getR()/255.f, (float) getG()/255.f, (float) getB()/255.f, (float) getA()/255.f); }
 	
 	protected:
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
-		uint8_t a;
+		uint8_t r = 0;
+		uint8_t g = 0;
+		uint8_t b = 0;
+		uint8_t a = 1;
 };
 
 class rgba7773_t
@@ -113,7 +113,7 @@ class rgba7773_t
     //7 bits for each color, 3 bits for alpha channel
     
     public:
-		rgba7773_t():ra(0x01),ga(0x01),ba(0x01) {}
+		rgba7773_t() {}
 		
 		void setColor(const colorA_t& col) { setR((uint8_t)roundf(col.R*255.f)); setG((uint8_t)roundf(col.G*255.f)); setB((uint8_t)roundf(col.B*255.f));  setA((uint8_t)roundf(col.A*255.f)); }
 		
@@ -135,16 +135,16 @@ class rgba7773_t
 		colorA_t getColor() { return colorA_t((float) getR()/254.f, (float) getG()/254.f, (float) getB()/254.f, (float) getA()/224.f); } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
     
     protected:
-		uint8_t ra;		//red + alpha most significant bit
-		uint8_t ga;		//green + alpha centre bit
-		uint8_t ba;		//blue + alpha least significant bit
+		uint8_t ra = 0x01;		//red + alpha most significant bit
+		uint8_t ga = 0x01;		//green + alpha centre bit
+		uint8_t ba = 0x01;		//blue + alpha least significant bit
 };
 
 
 class rgb888_t
 {
 	public:
-		rgb888_t():r(0),g(0),b(0) {}
+		rgb888_t() {}
 	
 		void setColor(const colorA_t& col) { setR((uint8_t)roundf(col.R*255.f)); setG((uint8_t)roundf(col.G*255.f)); setB((uint8_t)roundf(col.B*255.f)); }
 		
@@ -161,16 +161,43 @@ class rgb888_t
 		colorA_t getColor() { return colorA_t((float) getR()/255.f, (float) getG()/255.f, (float) getB()/255.f, 1.f); }
 	
 	protected:
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
+		uint8_t r = 0;
+		uint8_t g = 0;
+		uint8_t b = 0;
 };
+
+
+class gray8_t
+{
+	public:
+		gray8_t() {}
+	
+		void setColor(const colorA_t& col)
+		{
+			float fGrayAvg = (col.R + col.G + col.B) / 3.f;
+			setGray((uint8_t)roundf(fGrayAvg*255.f)); 
+		}
+		
+		void setGray(uint8_t val) { value = val; }
+		
+		uint8_t getGray() const { return value; }
+
+		colorA_t getColor()
+		{
+			float fValue = (float) value / 255.f;
+			return colorA_t(fValue, 1.f);
+		}
+	
+	protected:
+		uint8_t value = 0;
+};
+
 
 class rgb565_t
 {
     //RGB565 lossy 16bit format: rrrr rggg gggb bbbb
     public:
-		rgb565_t():rgb565(0) {}
+		rgb565_t() {}
 		
 		void setColor(const colorA_t& col) { setR((uint8_t)roundf(col.R*255.f)); setG((uint8_t)roundf(col.G*255.f)); setB((uint8_t)roundf(col.B*255.f)); }
 		
@@ -187,7 +214,7 @@ class rgb565_t
 		colorA_t getColor() { return colorA_t((float) getR()/248.f, (float) getG()/252.f, (float) getB()/248.f, 1.f); } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
     
     protected:
-		uint16_t rgb565;
+		uint16_t rgb565 = 0;
 };
 
 template <class T> class generic2DBuffer_t
@@ -317,6 +344,7 @@ typedef generic2DBuffer_t<rgb888_t>		rgbOptimizedImage_nw_t; //!< Non-weighted o
 typedef generic2DBuffer_t<rgb565_t>		rgbCompressedImage_nw_t; //!< Non-weighted compressed (16bit/pixel) LOSSY image buffer typedef
 typedef generic2DBuffer_t<rgba8888_t>	rgbaOptimizedImage_nw_t; //!< Non-weighted optimized (32bit/pixel) with alpha buffer typedef
 typedef generic2DBuffer_t<rgba7773_t>	rgbaCompressedImage_nw_t; //!< Non-weighted compressed (24bit/pixel) LOSSY with alpha buffer typedef
+typedef generic2DBuffer_t<gray8_t>		grayOptimizedImage_nw_t; //!< Non-weighted gray scale (8bit/gray pixel) image buffer typedef
 
 __END_YAFRAY
 

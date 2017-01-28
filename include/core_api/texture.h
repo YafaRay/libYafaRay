@@ -11,6 +11,15 @@
 
 __BEGIN_YAFRAY
 
+enum interpolationType
+{
+	INTP_NONE,
+	INTP_BILINEAR,
+	INTP_BICUBIC,
+	INTP_MIPMAP_TRILINEAR,
+	INTP_MIPMAP_EWA
+};
+
 class YAFRAYCORE_EXPORT texture_t
 {
 	public :
@@ -20,17 +29,35 @@ class YAFRAYCORE_EXPORT texture_t
 		   z for discrete textures) are unused on getColor and getFloat calls */
 		virtual bool isThreeD() const { return true; }
 		virtual bool isNormalmap() const { return false; }
-		virtual colorA_t getColor(const point3d_t &p, bool from_postprocessed=false) const = 0;
-		virtual colorA_t getColor(int x, int y, int z, bool from_postprocessed=false) const { return colorA_t(0.f); }
-		virtual colorA_t getRawColor(const point3d_t &p, bool from_postprocessed=false) const { return getColor(p, from_postprocessed); }
-		virtual colorA_t getRawColor(int x, int y, int z, bool from_postprocessed=false) const { return getColor(x, y, z, from_postprocessed); }
-		virtual float getFloat(const point3d_t &p) const { return applyIntensityContrastAdjustments(getRawColor(p).col2bri()); }
-		virtual float getFloat(int x, int y, int z) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z).col2bri()); }
+		
+		virtual colorA_t getColor(const point3d_t &p) const { return getColor(p, 0.f); }
+		virtual colorA_t getColor(const point3d_t &p, float force_image_level) const { return getColor(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual colorA_t getColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return colorA_t(0.f); }
+		
+		virtual colorA_t getColor(int x, int y, int z) const { return getColor(x, y, z, 0.f); }
+		virtual colorA_t getColor(int x, int y, int z, float force_image_level) const { return getColor(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual colorA_t getColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return colorA_t(0.f); }
+		
+		virtual colorA_t getRawColor(const point3d_t &p) const { return getRawColor(p, 0.f); }
+		virtual colorA_t getRawColor(const point3d_t &p, float force_image_level) const { return getRawColor(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual colorA_t getRawColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return getColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy); }
+		
+		virtual colorA_t getRawColor(int x, int y, int z) const { return getRawColor(x, y, z, 0.f); }
+		virtual colorA_t getRawColor(int x, int y, int z, float force_image_level) const { return getRawColor(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual colorA_t getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return getColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy); }
+		
+		virtual float getFloat(const point3d_t &p) const { return getFloat(p, 0.f); };
+		virtual float getFloat(const point3d_t &p, float force_image_level) const { return getFloat(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual float getFloat(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return applyIntensityContrastAdjustments(getRawColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy).col2bri()); }
+		
+		virtual float getFloat(int x, int y, int z) const { return getFloat(x, y, z, 0.f); };
+		virtual float getFloat(int x, int y, int z, float force_image_level) const { return getFloat(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
+		virtual float getFloat(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy).col2bri()); }
 		/* gives the number of values in each dimension for discrete textures */
+		
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
-		virtual void getInterpolationStep(float &step) const { step = 0.f; };
-		virtual void postProcessedCreate() { };
-		virtual void postProcessedBlur(float blur_factor) { };
+		virtual void getInterpolationStep(float &step) const { step=0.f; };
+		virtual void generateMipMaps() {}
 		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
 		colorA_t applyAdjustments(const colorA_t & texCol) const;
 		colorA_t applyIntensityContrastAdjustments(const colorA_t & texCol) const;
@@ -39,6 +66,7 @@ class YAFRAYCORE_EXPORT texture_t
 		void colorRampCreate(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr) { color_ramp = new color_ramp_t(modeStr, interpolationStr, hue_interpolationStr); } 
 		void colorRampAddItem(colorA_t color, float position) { color_ramp->add_item(color, position); }
 		virtual ~texture_t() { if(color_ramp) { delete color_ramp; color_ramp = nullptr; } }
+		int getInterpolationType() const { return intp_type; }
 	
 	protected:
 		float adj_intensity = 1.f;
@@ -51,6 +79,8 @@ class YAFRAYCORE_EXPORT texture_t
 		float adj_mult_factor_blue = 1.f;
 		bool adjustments_set = false;
 		color_ramp_t * color_ramp = nullptr;
+		int intp_type = INTP_BILINEAR;
+
 };
 
 inline void angmap(const point3d_t &p, float &u, float &v)

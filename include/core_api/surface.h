@@ -82,14 +82,19 @@ class YAFRAYCORE_EXPORT surfacePoint_t
 		float V; //!< the v texture coord.
 		vector3d_t  NU; //!< second vector building orthogonal shading space with N
 		vector3d_t  NV; //!< third vector building orthogonal shading space with N
-		vector3d_t dPdU; //!< u-axis in world space
-		vector3d_t dPdV; //!< v-axis in world space
+		vector3d_t dPdU; //!< u-axis in world space (normalized)
+		vector3d_t dPdV; //!< v-axis in world space (normalized)
 		vector3d_t dSdU; //!< u-axis in shading space (NU, NV, N)
 		vector3d_t dSdV; //!< v-axis in shading space (NU, NV, N)
+		vector3d_t dPdU_abs; //!< u-axis in world space (before normalization)
+		vector3d_t dPdV_abs; //!< v-axis in world space (before normalization)
 		//float dudNU;
 		//float dudNV;
 		//float dvdNU;
 		//float dvdNV;
+		
+		// Differential ray for mipmaps calculations
+		const diffRay_t * ray = nullptr;
 };
 
 inline float surfacePoint_t::getDistToNearestEdge() const
@@ -125,9 +130,12 @@ class YAFRAYCORE_EXPORT spDifferentials_t
 		//! compute differentials for a refracted ray
 		void refractedRay(const diffRay_t &in, diffRay_t &out, float IOR) const;
 		float projectedPixelArea();
+		void getUVdifferentials(float &dUdx, float &dVdx, float &dUdy, float &dVdy) const;
 		vector3d_t dPdx;
 		vector3d_t dPdy;
 		const surfacePoint_t &sp;
+	protected:
+		void dU_dV_from_dP_dPdU_dPdV(float &dU, float &dV, const point3d_t &dP, const vector3d_t &dPdU, const vector3d_t &dPdV) const;
 };
 
 __END_YAFRAY

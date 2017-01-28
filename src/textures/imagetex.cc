@@ -21,25 +21,23 @@
 
 #include <cstring>
 #include <cctype>
+#include <sstream>
+#include <iomanip>
 #include <textures/imagetex.h>
 #include <utilities/stringUtils.h>
 
 __BEGIN_YAFRAY
 
-textureImage_t::textureImage_t(imageHandler_t *ih, interpolationType intp, float gamma, colorSpaces_t color_space):
-				image(ih), intp_type(intp), colorSpace(color_space), gamma(gamma), mirrorX(false), mirrorY(false)
+float * textureImage_t::ewaWeightLut = nullptr;
+
+textureImage_t::textureImage_t(imageHandler_t *ih, int intp, float gamma, colorSpaces_t color_space):
+				image(ih), colorSpace(color_space), gamma(gamma), mirrorX(false), mirrorY(false)
 {
-	// Empty
+	intp_type = intp;
 }
 
 textureImage_t::~textureImage_t()
 {
-	if(postProcessedImage)
-	{
-		delete postProcessedImage;
-		postProcessedImage = nullptr;
-	}
-	
 	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
 	image = nullptr;
 }
@@ -51,223 +49,34 @@ void textureImage_t::resolution(int &x, int &y, int &z) const
 	z=0;
 }
 
-colorA_t textureImage_t::interpolateImage(const point3d_t &p, bool from_postprocessed) const
+colorA_t textureImage_t::interpolateImage(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
-	int x, y, x0, x2, x3, y0, y2, y3;
-	
-	int resx=image->getWidth();
-	int resy=image->getHeight();
-	
-	float xf = ((float)resx * (p.x - floor(p.x)));
-	float yf = ((float)resy * (p.y - floor(p.y)));
-	
-	float dx = 0.f;
-	float dy = 0.f;
+	if(force_image_level > 0.f) return mipMapsTrilinearInterpolation(p, force_image_level, 0.f, 0.f, 0.f, 0.f);
 
-	if (intp_type != INTP_NONE)
+	colorA_t interpolatedColor(0.f);
+
+	switch(intp_type)
 	{
-		xf -= 0.5f;
-		yf -= 0.5f;
-	}
-	
-	if (tex_clipmode==TCL_REPEAT)
-	{
-		x = ((int)xf) % resx;
-		y = ((int)yf) % resy;
-
-		if(mirrorX)
-		{
-
-			if(xf < 0.f)
-			{
-				x0 = 1 % resx;
-				x2 = x;
-				x3 = x0;
-				dx = -xf;
-			}
-			else if(xf >= resx - 1.f)
-			{
-				x0 = (resx+resx-1) % resx;
-				x2 = x;
-				x3 = x0;
-				dx = xf - ((int)xf);
-			}
-			else
-			{
-				x0 = (resx+x-1) % resx;
-				x2 = x+1;
-				if(x2 >= resx) x2 = (resx + resx - x2) % resx;
-				x3 = x+2;
-				if(x3 >= resx) x3 = (resx + resx - x3) % resx;
-				dx = xf - ((int)xf);
-			}			
-		}
-		else
-		{
-			if(xf > 0.f)
-			{
-				x0 = (resx+x-1) % resx;
-				x2 = (x+1) % resx;
-				x3 = (x+2) % resx;
-				dx = xf - ((int)xf);
-			}
-			else
-			{
-				x0 = 1 % resx;
-				x2 = (resx-1) % resx;
-				x3 = (resx-2) % resx;
-				dx = -xf;
-			}
-		}
-		
-		if(mirrorY)
-		{
-
-			if(yf < 0.f)
-			{
-				y0 = 1 % resy;
-				y2 = y;
-				y3 = y0;
-				dy = -yf;
-			}
-			else if(yf >= resy - 1.f)
-			{
-				y0 = (resy+resy-1) % resy;
-				y2 = y;
-				y3 = y0;
-				dy = yf - ((int)yf);
-			}
-			else
-			{
-				y0 = (resy+y-1) % resy;
-				y2 = y+1;
-				if(y2 >= resy) y2 = (resy + resy - y2) % resy;
-				y3 = y+2;
-				if(y3 >= resy) y3 = (resy + resy - y3) % resy;
-				dy = yf - ((int)yf);
-			}			
-		}
-		else
-		{
-			if(yf > 0.f)
-			{
-				y0 = (resy+y-1) % resy;
-				y2 = (y+1) % resy;
-				y3 = (y+2) % resy;
-				dy = yf - ((int)yf);
-			}
-			else
-			{
-				y0 = 1 % resy;
-				y2 = (resy-1) % resy;
-				y3 = (resy-2) % resy;
-				dy = -yf;
-			}
-		}
-	}
-	else
-	{
-		x = std::max(0, std::min(resx-1, ((int)xf)));
-		y = std::max(0, std::min(resy-1, ((int)yf)));
-
-		if(xf > 0.f) x2 = std::min(resx-1, x+1);
-		else x2 = 0;
-		
-		if(yf > 0.f) y2 = std::min(resy-1, y+1);
-		else y2 = 0;
-
-		x0 = std::max(0, x-1);
-		x3 = std::min(resx-1, x2+1);
-		y0 = std::max(0, y-1);
-		y3 = std::min(resy-1, y2+1);
-		
-		dx = xf - floor(xf);
-		dy = yf - floor(yf);
+		case INTP_NONE: interpolatedColor = noInterpolation(p); break;
+		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p); break;
+		case INTP_MIPMAP_TRILINEAR: interpolatedColor = mipMapsTrilinearInterpolation(p, force_image_level, dSdx, dTdx, dSdy, dTdy); break;
+		case INTP_MIPMAP_EWA: interpolatedColor = mipMapsEWAInterpolation(p, dSdx, dTdx, dSdy, dTdy, ewa_max_anisotropy); break;
+		case INTP_BILINEAR:
+		default: 			interpolatedColor = bilinearInterpolation(p); break;	//By default use Bilinear
 	}
 
-	colorA_t c1;
-	if(from_postprocessed && postProcessedImage) c1 = (*postProcessedImage)(x, y);
-	else c1 = image->getPixel(x, y);
-	
-	if (intp_type == INTP_NONE) return c1;
-	
-	colorA_t c2, c3, c4;
-	
-	if(from_postprocessed && postProcessedImage)
-	{
-		c2 = (*postProcessedImage)(x2, y);
-		c3 = (*postProcessedImage)(x, y2);
-		c4 = (*postProcessedImage)(x2, y2);
-	}
-	else
-	{
-		c2 = image->getPixel(x2, y);
-		c3 = image->getPixel(x, y2);
-		c4 = image->getPixel(x2, y2);
-	}
-
-	if (intp_type == INTP_BILINEAR)
-	{
-		float w0 = (1-dx) * (1-dy);
-		float w1 = (1-dx) * dy;
-		float w2 = dx * (1-dy);
-		float w3 = dx * dy;
-		
-		return (w0 * c1) + (w1 * c3) + (w2 * c2) + (w3 * c4);
-	}
-
-	colorA_t c0, c5, c6, c7, c8, c9, cA, cB, cC, cD, cE, cF, ret;
-
-	if(from_postprocessed && postProcessedImage)
-	{
-		c0 = (*postProcessedImage)(x0, y0);
-		c5 = (*postProcessedImage)(x,  y0);
-		c6 = (*postProcessedImage)(x2, y0);
-		c7 = (*postProcessedImage)(x3, y0);
-		c8 = (*postProcessedImage)(x0, y);
-		c9 = (*postProcessedImage)(x3, y);
-		cA = (*postProcessedImage)(x0, y2);
-		cB = (*postProcessedImage)(x3, y2);
-		cC = (*postProcessedImage)(x0, y3);
-		cD = (*postProcessedImage)(x,  y3);
-		cE = (*postProcessedImage)(x2, y3);
-		cF = (*postProcessedImage)(x3, y3);
-	}
-	else
-	{
-		c0 = image->getPixel(x0, y0);
-		c5 = image->getPixel(x,  y0);
-		c6 = image->getPixel(x2, y0);
-		c7 = image->getPixel(x3, y0);
-		c8 = image->getPixel(x0, y);
-		c9 = image->getPixel(x3, y);
-		cA = image->getPixel(x0, y2);
-		cB = image->getPixel(x3, y2);
-		cC = image->getPixel(x0, y3);
-		cD = image->getPixel(x,  y3);
-		cE = image->getPixel(x2, y3);
-		cF = image->getPixel(x3, y3);
-	}
-	
-	c0 = CubicInterpolate(c0, c5, c6, c7, dx);
-	c8 = CubicInterpolate(c8, c1, c2, c9, dx);
-	cA = CubicInterpolate(cA, c3, c4, cB, dx);
-	cC = CubicInterpolate(cC, cD, cE, cF, dx);
-	
-	c0 = CubicInterpolate(c0, c8, cA, cC, dy);
-	
-	return c0;
+	return interpolatedColor;
 }
 
-colorA_t textureImage_t::getColor(const point3d_t &p, bool from_postprocessed) const
+colorA_t textureImage_t::getColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
-	colorA_t ret = getRawColor(p, from_postprocessed);
+	colorA_t ret = getRawColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getRawColor(const point3d_t &p, bool from_postprocessed) const
+colorA_t textureImage_t::getRawColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
 	colorA_t ret(0.f);
@@ -276,21 +85,22 @@ colorA_t textureImage_t::getRawColor(const point3d_t &p, bool from_postprocessed
 
 	if(outside) return ret;
 	
-	ret = interpolateImage(p1, from_postprocessed);
+	ret = interpolateImage(p1, force_image_level, dSdx, dTdx, dSdy, dTdy);
 	
 	return ret;
 }
 
-colorA_t textureImage_t::getColor(int x, int y, int z, bool from_postprocessed) const
+colorA_t textureImage_t::getColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
-	colorA_t ret = getRawColor(x, y, z, from_postprocessed);
+	colorA_t ret = getRawColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy);
 	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getRawColor(int x, int y, int z, bool from_postprocessed) const
+colorA_t textureImage_t::getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
+	return color_t(x, y, z);
 	int resx=image->getWidth();
 	int resy=image->getHeight();
 
@@ -301,7 +111,11 @@ colorA_t textureImage_t::getRawColor(int x, int y, int z, bool from_postprocesse
 
 	colorA_t c1(0.f);
 	
-	if(from_postprocessed && postProcessedImage) return (*postProcessedImage)(x, y);
+	if(force_image_level > 0.f)
+	{
+		force_image_level *= image->getHighestImgIndex();
+		return image->getPixel(x, y, (int) floorf(force_image_level));
+	}
 	else return image->getPixel(x, y);
 }
 
@@ -385,68 +199,304 @@ void textureImage_t::setCrop(float minx, float miny, float maxx, float maxy)
 	cropy = ((cropminy!=0.0) || (cropmaxy!=1.0));
 }
 
-void textureImage_t::postProcessedCreate()
+void textureImage_t::findTextureInterpolationCoordinates(int &coord0, int &coord1, int &coord2, int &coord3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const
 {
-	int w=0, h=0, z=0;
-	resolution(w, h, z);
-	
-	postProcessedImage = new rgba2DImage_nw_t(w, h);
+	if(repeat)
+	{
+		coord1 = ((int)coord_float) % resolution;
+
+		if(mirror)
+		{
+
+			if(coord_float < 0.f)
+			{
+				coord0 = 1 % resolution;
+				coord2 = coord1;
+				coord3 = coord0;
+				coord_decimal_part = -coord_float;
+			}
+			else if(coord_float >= resolution - 1.f)
+			{
+				coord0 = (resolution+resolution-1) % resolution;
+				coord2 = coord1;
+				coord3 = coord0;
+				coord_decimal_part = coord_float - ((int)coord_float);
+			}
+			else
+			{
+				coord0 = (resolution+coord1-1) % resolution;
+				coord2 = coord1+1;
+				if(coord2 >= resolution) coord2 = (resolution + resolution - coord2) % resolution;
+				coord3 = coord1+2;
+				if(coord3 >= resolution) coord3 = (resolution + resolution - coord3) % resolution;
+				coord_decimal_part = coord_float - ((int)coord_float);
+			}			
+		}
+		else
+		{
+			if(coord_float > 0.f)
+			{
+				coord0 = (resolution+coord1-1) % resolution;
+				coord2 = (coord1+1) % resolution;
+				coord3 = (coord1+2) % resolution;
+				coord_decimal_part = coord_float - ((int)coord_float);
+			}
+			else
+			{
+				coord0 = 1 % resolution;
+				coord2 = (resolution-1) % resolution;
+				coord3 = (resolution-2) % resolution;
+				coord_decimal_part = -coord_float;
+			}
+		}
+	}
+	else
+	{
+		coord1 = std::max(0, std::min(resolution-1, ((int)coord_float)));
+
+		if(coord_float > 0.f) coord2 = std::min(resolution-1, coord1+1);
+		else coord2 = 0;
+		
+		coord0 = std::max(0, coord1-1);
+		coord3 = std::min(resolution-1, coord2+1);
+		
+		coord_decimal_part = coord_float - floor(coord_float);
+	}
 }
 
-void textureImage_t::postProcessedBlur(float blur_factor)
+colorA_t textureImage_t::noInterpolation(const point3d_t &p, int mipmaplevel) const
 {
-//The background blur functionality will only work if YafaRay is built with OpenCV support
-#ifdef HAVE_OPENCV
-	if(!postProcessedImage) return;
+	int resx = image->getWidth(mipmaplevel);
+	int resy = image->getHeight(mipmaplevel);
 	
-	int w=0, h=0, z=0;
-	resolution(w, h, z);
-	
-	cv::Mat A(h, w, CV_32FC4);
-	cv::Mat B(h, w, CV_32FC4);
-	cv::Mat_<cv::Vec4f> _A = A;
-	cv::Mat_<cv::Vec4f> _B = B;
-	
-	for(int y = 0; y < h; y++)
-	{
-		for(int x = 0; x < w; x++)
-		{
-			colorA_t color = image->getPixel(x,y);
-			color.linearRGB_from_ColorSpace(colorSpace, gamma);
+	float xf = ((float)resx * (p.x - floor(p.x)));
+	float yf = ((float)resy * (p.y - floor(p.y)));
 
-			_A(y, x)[0] = color.getR();
-			_A(y, x)[1] = color.getG();
-			_A(y, x)[2] = color.getB();
-			_A(y, x)[3] = color.getA();
-		}
+	int x0, x1, x2, x3, y0, y1, y2, y3;
+	float dx, dy;
+	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
+	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
+
+	return image->getPixel(x1, y1, mipmaplevel);
+}
+
+colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplevel) const
+{
+	int resx = image->getWidth(mipmaplevel);
+	int resy = image->getHeight(mipmaplevel);
+	
+	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
+	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+
+	int x0, x1, x2, x3, y0, y1, y2, y3;
+	float dx, dy;
+	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
+	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
+
+	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
+
+	float w11 = (1-dx) * (1-dy);
+	float w12 = (1-dx) * dy;
+	float w21 = dx * (1-dy);
+	float w22 = dx * dy;
+	
+	return (w11 * c11) + (w12 * c12) + (w21 * c21) + (w22 * c22);
+}
+
+colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmaplevel) const
+{
+	int resx = image->getWidth(mipmaplevel);
+	int resy = image->getHeight(mipmaplevel);
+	
+	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
+	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+
+	int x0, x1, x2, x3, y0, y1, y2, y3;
+	float dx, dy;
+	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
+	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
+
+	colorA_t c00 = image->getPixel(x0, y0, mipmaplevel);
+	colorA_t c01 = image->getPixel(x0, y1, mipmaplevel);
+	colorA_t c02 = image->getPixel(x0, y2, mipmaplevel);
+	colorA_t c03 = image->getPixel(x0, y3, mipmaplevel);
+
+	colorA_t c10 = image->getPixel(x1, y0, mipmaplevel);
+	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
+	colorA_t c13 = image->getPixel(x1, y3, mipmaplevel);
+
+	colorA_t c20 = image->getPixel(x2, y0, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
+	colorA_t c23 = image->getPixel(x2, y3, mipmaplevel);
+
+	colorA_t c30 = image->getPixel(x3, y0, mipmaplevel);
+	colorA_t c31 = image->getPixel(x3, y1, mipmaplevel);
+	colorA_t c32 = image->getPixel(x3, y2, mipmaplevel);
+	colorA_t c33 = image->getPixel(x3, y3, mipmaplevel);
+
+	colorA_t cy0 = CubicInterpolate(c00, c10, c20, c30, dx);
+	colorA_t cy1 = CubicInterpolate(c01, c11, c21, c31, dx);
+	colorA_t cy2 = CubicInterpolate(c02, c12, c22, c32, dx);
+	colorA_t cy3 = CubicInterpolate(c03, c13, c23, c33, dx);
+
+	return CubicInterpolate(cy0, cy1, cy2, cy3, dy);
+}
+
+colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
+{
+	float dS = std::max(fabsf(dSdx), fabsf(dSdy)) * image->getWidth();
+	float dT = std::max(fabsf(dTdx), fabsf(dTdy)) * image->getHeight();
+	float mipmaplevel = 0.5f * log2(dS*dS + dT*dT);
+	
+	if(force_image_level > 0.f) mipmaplevel = force_image_level * image->getHighestImgIndex();
+	
+	mipmaplevel += trilinear_level_bias;
+
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image->getHighestImgIndex());
+	
+	int mipmaplevelA = (int) floor(mipmaplevel);
+	int mipmaplevelB = (int) ceil(mipmaplevel);
+	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
+	
+	colorA_t col = bilinearInterpolation(p, mipmaplevelA);
+	colorA_t colB = bilinearInterpolation(p, mipmaplevelB);
+
+	col.blend(colB, mipmaplevelDelta);
+	
+	return col;
+}
+
+//All EWA interpolation/calculation code has been adapted from PBRT v2 (https://github.com/mmp/pbrt-v2). see LICENSES file
+
+colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float dSdx, float dTdx, float dSdy, float dTdy, float maxAnisotropy) const
+{
+	float dS0 = fabsf(dSdx);
+	float dS1 = fabsf(dSdy);
+	float dT0 = fabsf(dTdx);
+	float dT1 = fabsf(dTdy);
+	
+	if((dS0*dS0 + dT0*dT0) < (dS1*dS1 + dT1*dT1))
+	{
+		std::swap(dS0, dS1);
+		std::swap(dT0, dT1);
+	}
+	
+	float majorLength = sqrtf(dS0*dS0 + dT0*dT0);
+	float minorLength = sqrtf(dS1*dS1 + dT1*dT1);
+
+	if((minorLength * maxAnisotropy < majorLength) && (minorLength > 0.f))
+	{
+		float scale = majorLength / (minorLength * maxAnisotropy);
+		dS1 *= scale;
+		dT1 *= scale;
+		minorLength *= scale;
 	}
 
-	int blurSize = (int) ceil(std::min(w,h) * blur_factor);
-	if(blurSize % 2 == 0) blurSize += 1;
+	if(minorLength <= 0.f) return bilinearInterpolation(p);
+
+	float mipmaplevel = image->getHighestImgIndex() - 1.f + log2(minorLength);
+
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image->getHighestImgIndex());
 	
-	cv::GaussianBlur(A, B, cv::Size(blurSize,blurSize),0.0); //Important, sizes must be odd!
+	
+	int mipmaplevelA = (int) floor(mipmaplevel);
+	int mipmaplevelB = (int) ceil(mipmaplevel);
+	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
+	
+	colorA_t col = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelA);
+	colorA_t colB = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelB);
+	
+	col.blend(colB, mipmaplevelDelta);
+	
+	return col;
+}
 
-	for(int y = 0; y < h; y++)
+inline int Mod(int a, int b) {
+    int n = int(a/b);
+    a -= n*b;
+    if (a < 0) a += b;
+    return a;
+}
+
+colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
+{
+	if(mipmaplevel >= image->getHighestImgIndex()) return image->getPixel(p.x, p.y, image->getHighestImgIndex());
+	
+	int resx = image->getWidth(mipmaplevel);
+	int resy = image->getHeight(mipmaplevel);
+	
+	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
+	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+	
+	dS0 *= resx;
+	dS1 *= resx;
+	dT0 *= resy;
+	dT1 *= resy;
+
+	float A = dT0*dT0 + dT1*dT1 + 1;
+	float B = -2.f * (dS0*dT0 + dS1*dT1);
+	float C = dS0*dS0 + dS1*dS1 + 1;
+	float invF = 1.f / (A*C - B*B*0.25f);
+	A *= invF;
+	B *= invF;
+	C *= invF;
+	
+	float det = -B*B + 4.f*A*C;
+	float invDet = 1.f / det;
+	float uSqrt = sqrtf(det * C);
+	float vSqrt = sqrtf(A * det);
+	
+	int s0 = (int) ceilf(xf - 2.f * invDet * uSqrt);
+	int s1 = (int) floorf(xf + 2.f * invDet * uSqrt);
+	int t0 = (int) ceilf(yf - 2.f * invDet * vSqrt);
+	int t1 = (int) floorf(yf + 2.f * invDet * vSqrt);
+	
+	colorA_t sumCol(0.f);
+	
+	float sumWts = 0.f;
+	for(int it = t0; it <= t1; ++it)
 	{
-		for(int x = 0; x < w; x++)
+		float tt = it - yf;
+		for(int is = s0; is <= s1; ++is)
 		{
-			(*postProcessedImage)(x,y).R = _B(y, x)[0];
-			(*postProcessedImage)(x,y).G = _B(y, x)[1];
-			(*postProcessedImage)(x,y).B = _B(y, x)[2];
-			(*postProcessedImage)(x,y).A = _B(y, x)[3];
-
-			(*postProcessedImage)(x,y).ColorSpace_from_linearRGB(colorSpace, gamma);
+			float ss = is - xf;
+			
+			float r2 = A*ss*ss + B*ss*tt + C*tt*tt;
+			if(r2 < 1.f)
+			{
+				float weight = ewaWeightLut[std::min((int)floorf(r2*EWA_WEIGHT_LUT_SIZE), EWA_WEIGHT_LUT_SIZE-1)];
+				int ismod = Mod(is, resx);
+				int itmod = Mod(it, resy);
+				sumCol += image->getPixel(ismod, itmod, mipmaplevel) * weight;
+				sumWts += weight;
+			}
 		}
 	}
+	
+	if(sumWts > 0.f) sumCol = sumCol / sumWts;
+	else sumCol = colorA_t(0.f);
+	
+	return sumCol;
+}
 
-	for(int i=0; i<w; ++i)
+void textureImage_t::generateEWALookupTable()
+{
+	Y_DEBUG << "** GENERATING EWA LOOKUP **" << yendl;
+	if(!ewaWeightLut)
 	{
-		for(int j=0; j<h; ++j)
+		ewaWeightLut = (float *) malloc(sizeof(float) * EWA_WEIGHT_LUT_SIZE);
+		for(int i = 0; i < EWA_WEIGHT_LUT_SIZE; ++i)
 		{
-//			(*postProcessedImage)(i,j) = image->getPixel(i,j) * colorA_t(1.f,0.f,0.f,1.f);
+			float alpha = 2.f;
+			float r2 = float(i) / float(EWA_WEIGHT_LUT_SIZE - 1);
+			ewaWeightLut[i] = expf(-alpha * r2) - expf(-alpha);
 		}
 	}
-#endif	//If YafaRay is not built with OpenCV, skip the OpenCV image processing
 }
 
 int string2cliptype(const std::string *clipname)
@@ -472,6 +522,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	std::string texture_optimization_string = "none";
 	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
+	bool img_grayscale = false;
 	textureImage_t *tex = nullptr;
 	imageHandler_t *ih = nullptr;
 	params.getParam("interpolate", intpstr);
@@ -481,6 +532,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
 	params.getParam("texture_optimization", texture_optimization_string);
+	params.getParam("img_grayscale", img_grayscale);
 	
 	if(!name)
 	{
@@ -489,12 +541,14 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	}
 	
 	// interpolation type, bilinear default
-	interpolationType intp = INTP_BILINEAR;
+	int intp = INTP_BILINEAR;
 	
 	if(intpstr)
 	{
 		if (*intpstr == "none") intp = INTP_NONE;
 		else if (*intpstr == "bicubic") intp = INTP_BICUBIC;
+		else if (*intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
+		else if (*intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
 	}
 	
 	size_t lDot = name->rfind(".") + 1;
@@ -546,12 +600,32 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else texture_optimization = TEX_OPTIMIZATION_NONE;
 	}
 	
+	ih->setColorSpace(color_space, gamma);
 	ih->setTextureOptimization(texture_optimization);
+	ih->setGrayScaleSetting(img_grayscale);
 
 	if(!ih->loadFromFile(*name))
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
 		return nullptr;
+	}
+
+	if(intp == INTP_MIPMAP_TRILINEAR || intp == INTP_MIPMAP_EWA)
+	{
+		ih->generateMipMaps();
+		if(!session.getDifferentialRaysEnabled())
+		{
+			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << yendl;
+			session.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
+		}
+		
+		/*//FIXME DAVID: TEST SAVING MIPMAPS
+		for(int i=0; i<=ih->getHighestImgIndex(); ++i)
+		{
+			std::stringstream ss;
+			ss << "//tmp//saved_mipmap_" << i;
+			ih->saveToFile(ss.str(), i);
+		}*/
 	}
 	
 	tex = new textureImage_t(ih, intp, gamma, color_space);
@@ -574,6 +648,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	bool mirror_y = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
+	float trilinear_level_bias = 0.f;
+	float ewa_max_anisotropy = 8.f;
 	
 	params.getParam("xrepeat", xrep);
 	params.getParam("yrepeat", yrep);
@@ -590,6 +666,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("calc_alpha", calc_alpha);
 	params.getParam("mirror_x", mirror_x);
 	params.getParam("mirror_y", mirror_y);
+	params.getParam("trilinear_level_bias", trilinear_level_bias);
+	params.getParam("ewa_max_anisotropy", ewa_max_anisotropy);
 	
 	params.getParam("adj_mult_factor_red", factor_red);
 	params.getParam("adj_mult_factor_green", factor_green);
@@ -599,7 +677,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("adj_saturation", saturation);
 	params.getParam("adj_hue", hue);
 	params.getParam("adj_clamp", clamp);
-	
+		
 	tex->xrepeat = xrep;
 	tex->yrepeat = yrep;
 	tex->rot90 = rot90;
@@ -615,6 +693,11 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	tex->mirrorY = mirror_y;
 	
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
+	
+	tex->trilinear_level_bias = trilinear_level_bias;
+	tex->ewa_max_anisotropy = ewa_max_anisotropy;
+
+	if(intp == INTP_MIPMAP_EWA) tex->generateEWALookupTable();
 	
 	return tex;
 }

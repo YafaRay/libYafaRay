@@ -41,8 +41,8 @@ class textureBackground_t: public background_t
 		};
 
 		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
-		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool use_ibl_blur=false) const;
+		virtual color_t eval(const ray_t &ray, bool use_ibl_blur=false) const;
 		virtual ~textureBackground_t();
 		static background_t *factory(paraMap_t &,renderEnvironment_t &);
 		bool hasIBL() { return withIBL; }
@@ -55,7 +55,7 @@ class textureBackground_t: public background_t
 		float rotation;
 		float sin_r, cos_r;
 		bool withIBL;
-		float IBL_Blur;
+		float IBL_Blur_mipmap_level; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
 		bool shootCaustic;
 		bool shootDiffuse;
 };
@@ -64,8 +64,8 @@ class constBackground_t: public background_t
 {
 	public:
 		constBackground_t(color_t col, bool ibl, bool with_caustic);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
-		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
+		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool use_ibl_blur=false) const;
+		virtual color_t eval(const ray_t &ray, bool use_ibl_blur=false) const;
 		virtual ~constBackground_t();
 		static background_t *factory(paraMap_t &params,renderEnvironment_t &render);
 		bool hasIBL() { return withIBL; }
@@ -79,7 +79,7 @@ class constBackground_t: public background_t
 
 
 textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
-	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur(ibl_blur), shootCaustic(with_caustic)
+	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur_mipmap_level(pow(ibl_blur, 2.f)), shootCaustic(with_caustic)
 {
 	rotation = 2.0f * rot / 360.f;
 	sin_r = fSin(M_PI*rotation);
@@ -91,12 +91,12 @@ textureBackground_t::~textureBackground_t()
 	// Empty
 }
 
-color_t textureBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
+color_t textureBackground_t::operator() (const ray_t &ray, renderState_t &state, bool use_ibl_blur) const
 {
-	return eval(ray, from_postprocessed);
+	return eval(ray, use_ibl_blur);
 }
 
-color_t textureBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
+color_t textureBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
 {
 	float u = 0.f, v = 0.f;
 	
@@ -117,7 +117,9 @@ color_t textureBackground_t::eval(const ray_t &ray, bool from_postprocessed) con
 		if (u > 1.f) u -= 2.f;
 	}
 	
-	color_t ret = tex->getColor(point3d_t(u, v, 0.f), from_postprocessed);
+	color_t ret;
+	if(use_ibl_blur) ret = tex->getColor(point3d_t(u, v, 0.f), IBL_Blur_mipmap_level);
+	else ret = tex->getColor(point3d_t(u, v, 0.f));
 	
 	float minComponent = 1.0e-5f;
 	
@@ -183,9 +185,8 @@ background_t* textureBackground_t::factory(paraMap_t &params,renderEnvironment_t
 		if(IBL_blur > 0.f)
 		{
 			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << IBL_blur << yendl;
-			tex->postProcessedCreate();
-			tex->postProcessedBlur(IBL_blur);
-			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done." << yendl;
+			tex->generateMipMaps();
+			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << yendl;
 		}
 		
 		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
@@ -218,12 +219,12 @@ constBackground_t::~constBackground_t()
 	// Empty
 }
 
-color_t constBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
+color_t constBackground_t::operator() (const ray_t &ray, renderState_t &state, bool use_ibl_blur) const
 {
 	return color;
 }
 
-color_t constBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
+color_t constBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
 {
 	return color;
 }

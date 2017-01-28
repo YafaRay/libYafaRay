@@ -9,7 +9,6 @@
 #include <core_api/volume.h>
 #include <vector>
 #include <core_api/matrix4.h>
-#include <core_api/material.h>
 #include <core_api/renderpasses.h>
 
 #define USER_DATA_SIZE 1024
@@ -28,12 +27,13 @@
 __BEGIN_YAFRAY
 class scene_t;
 class camera_t;
-//class material_t;
+class material_t;
 class object3d_t;
 class triangleObject_t;
 class meshObject_t;
-struct surfacePoint_t;
+class surfacePoint_t;
 class ray_t;
+class diffRay_t;
 class primitive_t;
 class triKdTree_t;
 template<class T> class kdTree_t;
@@ -43,7 +43,6 @@ class light_t;
 class surfaceIntegrator_t;
 class volumeIntegrator_t;
 class imageFilm_t;
-struct renderArea_t;
 class random_t;
 class renderEnvironment_t;
 
@@ -196,6 +195,7 @@ class YAFRAYCORE_EXPORT scene_t
 		//! only for backward compatibility!
 		void getAAParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
 		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
+		bool intersect(const diffRay_t &ray, surfacePoint_t &sp) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
 		const renderPasses_t* getRenderPasses() const;

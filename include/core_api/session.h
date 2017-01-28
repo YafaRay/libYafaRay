@@ -53,11 +53,14 @@ class YAFRAYCORE_EXPORT session_t
 		void setInteractive(bool interactive);
 		void setPathYafaRayXml(std::string path);
 		void setPathImageOutput(std::string path);
+		void setDifferentialRaysEnabled(bool value) { mRayDifferentialsEnabled = value; }
 		
 		bool renderInProgress();
 		bool renderResumed();
 		bool renderFinished();
 		bool renderAborted();
+		bool getDifferentialRaysEnabled() const { return mRayDifferentialsEnabled; }
+		
 		int totalPasses();
 		int currentPass();
 		float currentPassPercent();
@@ -77,6 +80,7 @@ class YAFRAYCORE_EXPORT session_t
 		bool mRenderFinished = false;
 		bool mRenderResumed = false;
 		bool mRenderAborted = false;
+		bool mRayDifferentialsEnabled = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
 		int mTotalPasses = 0;
 		int mCurrentPass = 0;
 		float mCurrentPassPercent = 0.f;

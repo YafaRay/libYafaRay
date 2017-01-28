@@ -1280,6 +1280,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 	{
 		unsigned char userdata[USER_DATA_SIZE+7];
 		state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
+		
 		if(state.raylevel == 0)
 		{
 			state.chromatic = true;
@@ -1396,7 +1397,7 @@ colorA_t photonIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, col
 
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
-			generateCommonRenderPasses(colorPasses, state, sp);
+			generateCommonRenderPasses(colorPasses, state, sp, ray);
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{

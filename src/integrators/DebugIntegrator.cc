@@ -100,7 +100,7 @@ colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorP
 			unsigned char userdata[USER_DATA_SIZE+7];
 			userdata[0] = 0;
 			state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-
+			
 			BSDF_t bsdfs;
 			const material_t *material = sp.material;
 			material->initBSDF(state, sp, bsdfs);

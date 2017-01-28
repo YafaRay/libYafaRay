@@ -74,6 +74,7 @@ renderEnvironment_t::renderEnvironment_t()
 	Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
+	session.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 
 #ifndef HAVE_OPENCV
 	Y_WARNING << PACKAGE << " built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << yendl;

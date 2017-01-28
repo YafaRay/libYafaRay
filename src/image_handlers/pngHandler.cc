@@ -45,93 +45,71 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false);
+	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
-	bool saveToFile(const std::string &name, int imagePassNumber = 0);
-	void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0);
-	colorA_t getPixel(int x, int y, int imagePassNumber = 0);
+	bool saveToFile(const std::string &name, int imgIndex = 0);
+	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
+	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 private:
 	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
-	void readFromStructsOptimized(png_structp pngPtr, png_infop infoPtr);
 	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
-	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr);
+	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex);
 };
 
 pngHandler_t::pngHandler_t()
 {
-	m_width = 0;
-	m_height = 0;
 	m_hasAlpha = false;
 	m_MultiLayer = false;
 	
 	handlerName = "PNGHandler";
-
-	rgbOptimizedBuffer = nullptr;
-	rgbCompressedBuffer = nullptr;
-	rgbaOptimizedBuffer = nullptr;
-	rgbaCompressedBuffer = nullptr;
 }
 
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer)
+pngHandler_t::~pngHandler_t()
 {
-	m_width = width;
-	m_height = height;
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	{
+		delete imgBuffer.at(idx);
+		imgBuffer.at(idx) = nullptr;
+	}
+}
+
+void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
+{
 	m_hasAlpha = withAlpha;
     m_MultiLayer = multi_layer;
 	m_Denoise = denoiseEnabled;
 	m_DenoiseHLum = denoiseHLum;
 	m_DenoiseHCol = denoiseHCol;
 	m_DenoiseMix = denoiseMix;
+	m_grayscale = grayscale;
 
-	imagePasses.resize(renderPasses->extPassesSize());
-	
-	for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+	int nChannels = 3;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
+
+	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
 	{
-		imagePasses.at(idx) = new rgba2DImage_nw_t(m_width, m_height);
+		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
 	}
 }
 
-pngHandler_t::~pngHandler_t()
+void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
 {
-	if(!imagePasses.empty())
-	{
-		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
-		{
-			if(imagePasses.at(idx)) delete imagePasses.at(idx);
-			imagePasses.at(idx) = nullptr;
-		}
-	}
-
-	if(rgbOptimizedBuffer) delete rgbOptimizedBuffer;
-	if(rgbCompressedBuffer) delete rgbCompressedBuffer;
-	if(rgbaOptimizedBuffer) delete rgbaOptimizedBuffer;
-	if(rgbaCompressedBuffer) delete rgbaCompressedBuffer;
-
-	rgbOptimizedBuffer = nullptr;
-	rgbCompressedBuffer = nullptr;
-	rgbaOptimizedBuffer = nullptr;
-	rgbaCompressedBuffer = nullptr;	
+	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
 }
 
-void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber)
+colorA_t pngHandler_t::getPixel(int x, int y, int imgIndex)
 {
-	(*imagePasses.at(imagePassNumber))(x, y) = rgba;
+	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
 
-colorA_t pngHandler_t::getPixel(int x, int y, int imagePassNumber)
+bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	if(rgbOptimizedBuffer) return (*rgbOptimizedBuffer)(x, y).getColor();
-	else if(rgbCompressedBuffer) return (*rgbCompressedBuffer)(x, y).getColor();
-	else if(rgbaOptimizedBuffer) return (*rgbaOptimizedBuffer)(x, y).getColor();
-	else if(rgbaCompressedBuffer) return (*rgbaCompressedBuffer)(x, y).getColor();
-	else if(!imagePasses.empty() && imagePasses.at(0)) return (*imagePasses.at(0))(x, y);
-	else return colorA_t(0.f);	//This should not happen, but just in case
-}
+	int h = imgBuffer.at(imgIndex)->getHeight();
+	int w = imgBuffer.at(imgIndex)->getWidth();
 
-bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
-{
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
@@ -141,7 +119,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	png_infop infoPtr;
 	int channels;
 	png_bytep *rowPointers = nullptr;
-
+	
 	FILE * fp = fileUnicodeOpen(name, "wb");
 
 	if(!fp)
@@ -150,21 +128,21 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 		return false;
 	}
 
-	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr))
+	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr, imgIndex))
 	{
 		fileUnicodeClose(fp);
 		return false;
 	}
 
-	rowPointers = new png_bytep[m_height];
+	rowPointers = new png_bytep[h];
 
 	channels = 3;
 
 	if(m_hasAlpha) channels++;
 
-	for(int i = 0; i < m_height; i++)
+	for(int i = 0; i < h; i++)
 	{
-		rowPointers[i] = new yByte[ m_width * channels ];
+		rowPointers[i] = new yByte[ w * channels ];
 	}
 	
 	Y_DEBUG << "m_Denoise="<<m_Denoise<<" m_DenoiseHLum="<<m_DenoiseHLum<<" m_DenoiseHCol="<<m_DenoiseHCol<<yendl;
@@ -174,16 +152,16 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 	if(m_Denoise)
 	{
-		cv::Mat A(m_height, m_width, CV_8UC3);
-		cv::Mat B(m_height, m_width, CV_8UC3);
+		cv::Mat A(h, w, CV_8UC3);
+		cv::Mat B(h, w, CV_8UC3);
 		cv::Mat_<cv::Vec3b> _A = A;
 		cv::Mat_<cv::Vec3b> _B = B;
 		
-		for(int y = 0; y < m_height; y++)
+		for(int y = 0; y < h; y++)
 		{
-			for(int x = 0; x < m_width; x++)
+			for(int x = 0; x < w; x++)
 			{
-				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				_A(y, x)[0] = (color.getR() * 255);
@@ -194,11 +172,11 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 
 		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
 
-		for(int y = 0; y < m_height; y++)
+		for(int y = 0; y < h; y++)
 		{
-			for(int x = 0; x < m_width; x++)
+			for(int x = 0; x < w; x++)
 			{
-				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -213,11 +191,11 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	else
 #endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
 	{
-		for(int y = 0; y < m_height; y++)
+		for(int y = 0; y < h; y++)
 		{
-			for(int x = 0; x < m_width; x++)
+			for(int x = 0; x < w; x++)
 			{
-				colorA_t &color = (*imagePasses.at(imagePassNumber))(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -239,7 +217,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imagePassNumber)
 	fileUnicodeClose(fp);
 
 	// cleanup:
-	for(int i = 0; i < m_height; i++)
+	for(int i = 0; i < h; i++)
 	{
 		delete [] rowPointers[i];
 	}
@@ -355,8 +333,11 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 	return true;
 }
 
-bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr)
+bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex)
 {
+	int h = imgBuffer.at(imgIndex)->getHeight();
+	int w = imgBuffer.at(imgIndex)->getWidth();
+
 	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
 		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
@@ -379,7 +360,7 @@ bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_struct
 
 	png_init_io(pngPtr, fp);
 
-	png_set_IHDR(pngPtr, infoPtr, (png_uint_32)m_width, (png_uint_32)m_height,
+	png_set_IHDR(pngPtr, infoPtr, (png_uint_32) w, (png_uint_32) h,
 				 8, colorType, PNG_INTERLACE_NONE,
 				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
@@ -432,32 +413,26 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	// an image of 4,294,967,295 (max value of unsigned int) pixels on one side?
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
+
 	m_width = (int)w;
 	m_height = (int)h;
-
-	if(!imagePasses.empty())
+	
+	if(!imgBuffer.empty())
 	{
-		for(size_t idx = 0; idx < imagePasses.size(); ++idx)
+		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
 		{
-			if(imagePasses.at(idx)) delete imagePasses.at(idx);
+			delete imgBuffer.at(idx);
+			imgBuffer.at(idx) = nullptr;
 		}
-		imagePasses.clear();
+		imgBuffer.clear();
 	}
 
-	if(getTextureOptimization() == TEX_OPTIMIZATION_OPTIMIZED)
-	{
-		if(numChan == 4) rgbaOptimizedBuffer = new rgbaOptimizedImage_nw_t(m_width, m_height);
-		else rgbOptimizedBuffer = new rgbOptimizedImage_nw_t(m_width, m_height);
-	}
-	
-	else if(getTextureOptimization() == TEX_OPTIMIZATION_COMPRESSED)
-	{
-		if(numChan == 4) rgbaCompressedBuffer = new rgbaCompressedImage_nw_t(m_width, m_height);
-		else rgbCompressedBuffer = new rgbCompressedImage_nw_t(m_width, m_height);
-	}
+	int nChannels = numChan;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
 
-	else imagePasses.push_back(new rgba2DImage_nw_t(m_width, m_height));
-	
+	imgBuffer.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
+
 	png_bytepp rowPointers = new png_bytep[m_height];
 
 	int bitMult = 1;
@@ -536,11 +511,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				}
 			}
 			
-			if(rgbaOptimizedBuffer) (*rgbaOptimizedBuffer)(x, y).setColor(color);
-			else if(rgbaCompressedBuffer) (*rgbaCompressedBuffer)(x, y).setColor(color);
-			else if(rgbOptimizedBuffer) (*rgbOptimizedBuffer)(x, y).setColor(color);
-			else if(rgbCompressedBuffer) (*rgbCompressedBuffer)(x, y).setColor(color);
-			else if(!imagePasses.empty() && imagePasses.at(0)) (*imagePasses.at(0))(x, y) = color;			
+			imgBuffer.at(0)->setColor(x, y, color);
 		}
 	}
 
@@ -563,6 +534,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	int height = 0;
 	bool withAlpha = false;
 	bool forOutput = true;
+	bool img_grayscale = false;
 	bool denoiseEnabled = false;
 	int denoiseHLum = 3;
 	int denoiseHCol = 3;
@@ -576,6 +548,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("denoiseHLum", denoiseHLum);
 	params.getParam("denoiseHCol", denoiseHCol);
 	params.getParam("denoiseMix", denoiseMix);
+	params.getParam("img_grayscale", img_grayscale);
 
 	Y_DEBUG << "denoiseEnabled="<<denoiseEnabled<<" denoiseHLum="<<denoiseHLum<<" denoiseHCol="<<denoiseHCol<<yendl;
 
@@ -584,7 +557,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false);
+		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
 	}
 
 	return ih;

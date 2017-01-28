@@ -426,7 +426,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
-			generateCommonRenderPasses(colorPasses, state, sp);
+			generateCommonRenderPasses(colorPasses, state, sp, ray);
 			
 			if(colorPasses.enabled(PASS_INT_AO))
 			{

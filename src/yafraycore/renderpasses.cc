@@ -192,7 +192,14 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-objects-edges"] = PASS_INT_DEBUG_OBJECTS_EDGES;
 	intPassMapStringInt["toon"] = PASS_INT_TOON;
 	intPassMapStringInt["debug-sampling-factor"] = PASS_INT_DEBUG_SAMPLING_FACTOR;
-
+	intPassMapStringInt["debug-dp-lengths"] = PASS_INT_DEBUG_DP_LENGTHS;
+	intPassMapStringInt["debug-dpdx"] = PASS_INT_DEBUG_DPDX;
+	intPassMapStringInt["debug-dpdy"] = PASS_INT_DEBUG_DPDY;
+	intPassMapStringInt["debug-dpdxy"] = PASS_INT_DEBUG_DPDXY;
+	intPassMapStringInt["debug-dudx-dvdx"] = PASS_INT_DEBUG_DUDX_DVDX;
+	intPassMapStringInt["debug-dudy-dvdy"] = PASS_INT_DEBUG_DUDY_DVDY;
+	intPassMapStringInt["debug-dudxy-dvdxy"] = PASS_INT_DEBUG_DUDXY_DVDXY;
+	
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
 	{

@@ -28,6 +28,7 @@
 #include <yafraycore/spectrum.h>
 #include <utilities/mcqmc.h>
 #include <core_api/renderpasses.h>
+#include <core_api/camera.h>
 
 #ifdef __clang__
 #define inline  // aka inline removal
@@ -329,6 +330,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			colorPasses.probe_add(PASS_INT_GLOSSY, colGlossyDir * invNS, state.raylevel == 0);
 		}
 	}
+
 	return col;
 }
 
