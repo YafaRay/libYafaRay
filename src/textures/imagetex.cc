@@ -100,7 +100,6 @@ colorA_t textureImage_t::getColor(int x, int y, int z, float force_image_level, 
 
 colorA_t textureImage_t::getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
 {
-	return color_t(x, y, z);
 	int resx=image->getWidth();
 	int resy=image->getHeight();
 
