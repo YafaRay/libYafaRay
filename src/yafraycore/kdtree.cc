@@ -959,7 +959,20 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 		return false;
 	
 	intersectData_t bary;
-	vector3d_t invDir(1.f/ray.dir.x, 1.f/ray.dir.y, 1.f/ray.dir.z);
+	
+	//To avoid division by zero
+	float invDirX, invDirY, invDirZ;
+	
+	if(ray.dir.x == 0.f) invDirX = std::numeric_limits<float>::max();
+	else invDirX = 1.f/ray.dir.x;
+	
+	if(ray.dir.y == 0.f) invDirY = std::numeric_limits<float>::max();
+	else invDirY = 1.f/ray.dir.y;
+
+	if(ray.dir.z == 0.f) invDirZ = std::numeric_limits<float>::max();
+	else invDirZ = 1.f/ray.dir.z;
+	
+	vector3d_t invDir(invDirX, invDirY, invDirZ);
 	int depth=0;
 
 #if ( HAVE_PTHREAD && defined (__GNUC__) && !defined (__clang__) )
