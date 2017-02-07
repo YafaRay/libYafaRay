@@ -60,7 +60,8 @@ void ConsoleProgressBar_t::done()
 
 float ConsoleProgressBar_t::getPercent() const
 {
-	float progress = 100.f * RoundFloatPrecision((float) std::min(doneSteps, nSteps) / (float) nSteps, 0.01);
+	float progress = 0.f;
+	if(nSteps != 0) progress = 100.f * RoundFloatPrecision((float) std::min(doneSteps, nSteps) / (float) nSteps, 0.01);
 	return progress;
 }
 
