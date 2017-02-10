@@ -35,8 +35,8 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 			break;
 			
 		case TEX_OPTIMIZATION_OPTIMIZED:
-			if(m_num_channels == 4) rgba32_OptimizedImg = new rgbaOptimizedImage_nw_t(width, height);
-			else if(m_num_channels == 3) rgb24_OptimizedImg = new rgbOptimizedImage_nw_t(width, height);
+			if(m_num_channels == 4) rgba40_OptimizedImg = new rgbaOptimizedImage_nw_t(width, height);
+			else if(m_num_channels == 3) rgb32_OptimizedImg = new rgbOptimizedImage_nw_t(width, height);
 			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
 			break;
 			
@@ -59,10 +59,10 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 
 imageBuffer_t::~imageBuffer_t()
 {
-	if(rgba32_OptimizedImg) { delete rgba32_OptimizedImg; rgba32_OptimizedImg = nullptr; }
+	if(rgba40_OptimizedImg) { delete rgba40_OptimizedImg; rgba40_OptimizedImg = nullptr; }
 	if(rgba24_CompressedImg) { delete rgba24_CompressedImg; rgba24_CompressedImg = nullptr; }
 	if(rgba128_FloatImg) { delete rgba128_FloatImg; rgba128_FloatImg = nullptr; }
-	if(rgb24_OptimizedImg) { delete rgb24_OptimizedImg; rgb24_OptimizedImg = nullptr; }
+	if(rgb32_OptimizedImg) { delete rgb32_OptimizedImg; rgb32_OptimizedImg = nullptr; }
 	if(rgb16_CompressedImg) { delete rgb16_CompressedImg; rgb16_CompressedImg = nullptr; }
 	if(rgb96_FloatImg) { delete rgb96_FloatImg; rgb96_FloatImg = nullptr; }
 	if(gray32_FloatImg) { delete gray32_FloatImg; gray32_FloatImg = nullptr; }
@@ -91,38 +91,61 @@ std::string imageHandler_t::getDenoiseParams() const
 
 void imageHandler_t::generateMipMaps()
 {
-	if(imgBuffer.empty()) return;
+	if(imgBufferRaw.empty()) return;
+
+	bool generateLinearMipmaps = (getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_SPEED && !imgBufferLinear.empty() && imgBufferLinear.at(0));
 	
 	int imgIndex = 0;
 	//bool blur_seamless = true;
 	int w = m_width, h = m_height;
 	
 	Y_VERBOSE << "ImageHandler: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << yendl;
+	if(generateLinearMipmaps) Y_VERBOSE << "ImageHandler: generating linear RGB mipmaps for faster color space decoding during the render (but higher memory usage)." << yendl;
 	
 	cv::Mat A(h, w, CV_32FC4);
 	cv::Mat_<cv::Vec4f> _A = A;
-		
-	for(int j = 0; j < h; ++j)
+	
+	if(generateLinearMipmaps) //If we are to generate linear mipmaps is because there is already a linear main buffer available, so we can skip the initial color space decoding and save some time
 	{
-		for(int i = 0; i < w; ++i)
+		for(int j = 0; j < h; ++j)
 		{
-			colorA_t color = imgBuffer.at(imgIndex)->getColor(i, j);
-			//color.linearRGB_from_ColorSpace(m_colorSpace, m_gamma);
+			for(int i = 0; i < w; ++i)
+			{
+				colorA_t color = imgBufferLinear.at(imgIndex)->getColor(i, j);
 
-			_A(j, i)[0] = color.getR();
-			_A(j, i)[1] = color.getG();
-			_A(j, i)[2] = color.getB();
-			_A(j, i)[3] = color.getA();
+				_A(j, i)[0] = color.getR();
+				_A(j, i)[1] = color.getG();
+				_A(j, i)[2] = color.getB();
+				_A(j, i)[3] = color.getA();
+			}
 		}
 	}
+	else
+	{
+		for(int j = 0; j < h; ++j)
+		{
+			for(int i = 0; i < w; ++i)
+			{
+				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(i, j);
+				color.linearRGB_from_ColorSpace(m_colorSpace, m_gamma);
 
+				_A(j, i)[0] = color.getR();
+				_A(j, i)[1] = color.getG();
+				_A(j, i)[2] = color.getB();
+				_A(j, i)[3] = color.getA();
+			}
+		}
+	}
+	
 	//Mipmap generation using the temporary full float buffer to reduce information loss
 	while(w > 1 || h > 1)
 	{
 		int w2 = (w + 1) / 2;
 		int h2 = (h + 1) / 2;
 		++imgIndex;
-		imgBuffer.push_back(new imageBuffer_t(w2, h2, imgBuffer.at(imgIndex-1)->getNumChannels(), getTextureOptimization()));
+		imgBufferRaw.push_back(new imageBuffer_t(w2, h2, imgBufferRaw.at(imgIndex-1)->getNumChannels(), getTextureOptimization()));
+		
+		if(generateLinearMipmaps) imgBufferLinear.push_back(new imageBuffer_t(w2, h2, imgBufferLinear.at(imgIndex-1)->getNumChannels(), getTextureOptimization()));
 
 		cv::Mat B(h2, w2, CV_32FC4);
 		cv::Mat_<cv::Vec4f> _B = B;
@@ -139,8 +162,10 @@ void imageHandler_t::generateMipMaps()
 				tmpCol.B = _B(j, i)[2];
 				tmpCol.A = _B(j, i)[3];
 
-				//tmpCol.ColorSpace_from_linearRGB(m_colorSpace, m_gamma);
-				imgBuffer.at(imgIndex)->setColor(i, j, tmpCol);
+				if(generateLinearMipmaps) imgBufferLinear.at(imgIndex)->setColor(i, j, tmpCol);
+				
+				tmpCol.ColorSpace_from_linearRGB(m_colorSpace, m_gamma);
+				imgBufferRaw.at(imgIndex)->setColor(i, j, tmpCol);
 			}
 		}
 
@@ -152,5 +177,88 @@ void imageHandler_t::generateMipMaps()
 	Y_VERBOSE << "ImageHandler: mipmap generation done: " << imgIndex << " mipmaps generated." << yendl;
 }
 
+
+void imageHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
+{
+	imgBufferRaw.at(imgIndex)->setColor(x, y, rgba);
+}
+
+colorA_t imageHandler_t::getPixel(int x, int y, colorSpaceProcessing_t colorSpaceProcessing, int imgIndex)
+{
+	if(colorSpaceProcessing == CS_GET_LINEAR)
+	{
+		if(getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_SPEED) return imgBufferLinear.at(imgIndex)->getColor(x, y);
+		else if(getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_MEMORY)
+		{
+			colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+			col.linearRGB_from_ColorSpace(m_colorSpace, m_gamma);
+			return col;
+		}
+		else return imgBufferRaw.at(imgIndex)->getColor(x, y);
+	}
+	else return imgBufferRaw.at(imgIndex)->getColor(x, y);
+}
+
+void imageHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
+{
+	m_hasAlpha = withAlpha;
+	m_MultiLayer = multi_layer;
+	m_Denoise = denoiseEnabled;
+	m_DenoiseHLum = denoiseHLum;
+	m_DenoiseHCol = denoiseHCol;
+	m_DenoiseMix = denoiseMix;
+	m_grayscale = grayscale;
+    
+	int nChannels = 3;
+	if(m_grayscale) nChannels = 1;
+	else if(m_hasAlpha) nChannels = 4;
+
+	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
+	{
+		imgBufferRaw.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
+	}
+}
+
+void imageHandler_t::clearImgBuffers()
+{
+	if(!imgBufferRaw.empty())
+	{
+		for(size_t idx = 0; idx < imgBufferRaw.size(); ++idx)
+		{
+			delete imgBufferRaw.at(idx);
+			imgBufferRaw.at(idx) = nullptr;
+		}
+	}
+	
+	if(!imgBufferLinear.empty())
+	{
+		for(size_t idx = 0; idx < imgBufferLinear.size(); ++idx)
+		{
+			delete imgBufferLinear.at(idx);
+			imgBufferLinear.at(idx) = nullptr;
+		}
+	}
+}
+
+void imageHandler_t::createLinearBuffer()
+{
+	if(imgBufferRaw.empty() || (!imgBufferRaw.empty() && !imgBufferRaw.at(0)) || getInterpolationColorSpaceConversion() != INTP_COLORSPACE_GET_LINEAR_SPEED) return;
+
+	Y_VERBOSE << "ImageHandler: creating linear RGB buffers for faster interpolation (but higher memory usage)" << yendl;
+
+	int w = getWidth(), h = getHeight();
+
+	imgBufferLinear.push_back(new imageBuffer_t(w, h, imgBufferRaw.at(0)->getNumChannels(), getTextureOptimization()));	
+	
+	for(int j = 0; j < h; ++j)
+	{
+		for(int i = 0; i < w; ++i)
+		{
+			colorA_t color = imgBufferRaw.at(0)->getColor(i, j);
+			color.linearRGB_from_ColorSpace(m_colorSpace, m_gamma);
+			imgBufferLinear.at(0)->setColor(i, j, color);
+		}
+	}
+}
 
 __END_YAFRAY

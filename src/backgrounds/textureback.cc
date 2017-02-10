@@ -118,7 +118,13 @@ color_t textureBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
 	}
 	
 	color_t ret;
-	if(use_ibl_blur) ret = tex->getColor(point3d_t(u, v, 0.f), IBL_Blur_mipmap_level);
+	if(use_ibl_blur)
+	{
+		mipMapParams_t * mipMapParams = new mipMapParams_t(IBL_Blur_mipmap_level);
+		ret = tex->getColor(point3d_t(u, v, 0.f), CS_GET_LINEAR, mipMapParams);
+		delete mipMapParams;
+		mipMapParams = nullptr;
+	}
 	else ret = tex->getColor(point3d_t(u, v, 0.f));
 	
 	float minComponent = 1.0e-5f;

@@ -2,8 +2,8 @@
  *      image_buffers.h: An image buffer handler
  *      This is part of the yafray package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
- *      Copyright (C) 2015 David Bluecame for rgba8888, rgba7773, rgb888 and
- * 		rgb565 buffers for texture RAM optimization
+ *      Copyright (C) 2015-2017 David Bluecame for rgba8888, rgba7773, rgb888,
+ *      rgb565, rgb101010 and rgba1010108 buffers for texture RAM optimization
  *		(pixel_t class wa originally written by someone else, don't know exactly who)
  *
  *      This library is free software; you can redistribute it and/or
@@ -217,6 +217,74 @@ class rgb565_t
 		uint16_t rgb565 = 0;
 };
 
+class rgb101010_t
+{
+    //RGB101010 RGB 32bit extra integer precision format: 00rrggbb rrrrrrrr gggggggg bbbbbbbb
+    //Bit location scheme "invented" by David Bluecame
+    public:
+		rgb101010_t() {}
+		
+		void setColor(const colorA_t& col)
+		{
+			setR((uint16_t)roundf(col.R*1023.f));
+			setG((uint16_t)roundf(col.G*1023.f));
+			setB((uint16_t)roundf(col.B*1023.f));
+		}
+		
+		void setR(uint16_t red10) { r = (red10 & 0x00FF); rgb_extra = (rgb_extra & 0x0F) | ((red10 & 0x0300) >> 4); }
+		void setG(uint16_t green10) { g = (green10 & 0x00FF); rgb_extra = (rgb_extra & 0x33) | ((green10 & 0x0300) >> 6); }
+		void setB(uint16_t blue10) { b = (blue10 & 0x00FF); rgb_extra = (rgb_extra & 0x3C) | ((blue10 & 0x0300) >> 8); }
+		void setA(uint8_t alpha8) {}
+		
+		uint16_t getR() const { return r + ((uint16_t)(rgb_extra & 0x30) << 4); }
+		uint16_t getG() const { return g + ((uint16_t)(rgb_extra & 0x0C) << 6); }
+		uint16_t getB() const { return b + ((uint16_t)(rgb_extra & 0x03) << 8); }
+		uint8_t getA() const { return 255; }
+
+		colorA_t getColor() { return colorA_t((float) getR()/1023.f, (float) getG()/1023.f, (float) getB()/1023.f, 1.f); } 
+    
+    protected:
+		uint8_t rgb_extra = 0;
+		uint8_t r = 0;
+		uint8_t g = 0;
+		uint8_t b = 0;
+};
+
+class rgba1010108_t
+{
+    //RGB1010108 RGBA 40bit extra integer precision format: 00rrggbb rrrrrrrr gggggggg bbbbbbbb aaaaaaaaa
+    //Bit location scheme "invented" by David Bluecame
+    public:
+		rgba1010108_t() {}
+		
+		void setColor(const colorA_t& col)
+		{
+			setR((uint16_t)roundf(col.R*1023.f));
+			setG((uint16_t)roundf(col.G*1023.f));
+			setB((uint16_t)roundf(col.B*1023.f));
+			setA((uint8_t)roundf(col.A*255.f));
+		}
+		
+		void setR(uint16_t red10) { r = (red10 & 0x00FF); rgb_extra = (rgb_extra & 0x0F) | ((red10 & 0x0300) >> 4); }
+		void setG(uint16_t green10) { g = (green10 & 0x00FF); rgb_extra = (rgb_extra & 0x33) | ((green10 & 0x0300) >> 6); }
+		void setB(uint16_t blue10) { b = (blue10 & 0x00FF); rgb_extra = (rgb_extra & 0x3C) | ((blue10 & 0x0300) >> 8); }
+		void setA(uint8_t alpha8) { a = alpha8; }
+		
+		uint16_t getR() const { return r + ((uint16_t)(rgb_extra & 0x30) << 4); }
+		uint16_t getG() const { return g + ((uint16_t)(rgb_extra & 0x0C) << 6); }
+		uint16_t getB() const { return b + ((uint16_t)(rgb_extra & 0x03) << 8); }
+		uint8_t getA() const { return a; }
+
+		colorA_t getColor() { return colorA_t((float) getR()/1023.f, (float) getG()/1023.f, (float) getB()/1023.f, (float) getA()/255.f); } 
+    
+    protected:
+		uint8_t rgb_extra = 0;
+		uint8_t r = 0;
+		uint8_t g = 0;
+		uint8_t b = 0;
+		uint8_t a = 1;
+};
+
 template <class T> class generic2DBuffer_t
 {
 public:
@@ -340,9 +408,9 @@ typedef generic2DBuffer_t<pixelGray_t> 	gray2DImage_t; //!< Weighted monochromat
 typedef generic2DBuffer_t<color_t> 		rgb2DImage_nw_t; //!< Non-weighted RGB (96bit/pixel) image buffer typedef
 typedef generic2DBuffer_t<colorA_t> 	rgba2DImage_nw_t; //!< Non-weighted RGBA (128bit/pixel) image buffer typedef
 typedef generic2DBuffer_t<float> 		gray2DImage_nw_t; //!< Non-weighted gray scale (32bit/gray pixel) image buffer typedef
-typedef generic2DBuffer_t<rgb888_t>		rgbOptimizedImage_nw_t; //!< Non-weighted optimized (24bit/pixel) without alpha image buffer typedef
+typedef generic2DBuffer_t<rgb101010_t>		rgbOptimizedImage_nw_t; //!< Non-weighted optimized (32bit/pixel) without alpha image buffer typedef
 typedef generic2DBuffer_t<rgb565_t>		rgbCompressedImage_nw_t; //!< Non-weighted compressed (16bit/pixel) LOSSY image buffer typedef
-typedef generic2DBuffer_t<rgba8888_t>	rgbaOptimizedImage_nw_t; //!< Non-weighted optimized (32bit/pixel) with alpha buffer typedef
+typedef generic2DBuffer_t<rgba1010108_t>	rgbaOptimizedImage_nw_t; //!< Non-weighted optimized (40bit/pixel) with alpha buffer typedef
 typedef generic2DBuffer_t<rgba7773_t>	rgbaCompressedImage_nw_t; //!< Non-weighted compressed (24bit/pixel) LOSSY with alpha buffer typedef
 typedef generic2DBuffer_t<gray8_t>		grayOptimizedImage_nw_t; //!< Non-weighted gray scale (8bit/gray pixel) image buffer typedef
 

@@ -157,13 +157,11 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
+	mipMapParams_t * mipMapParams = nullptr;
 	
 	if((tex->getInterpolationType() == INTP_MIPMAP_TRILINEAR || tex->getInterpolationType() == INTP_MIPMAP_EWA) && sp.ray && sp.ray->hasDifferentials)
 	{
 		spDifferentials_t spDiff(sp, *(sp.ray));
-
-		float dSdx = 0.f, dTdx = 0.f;
-		float dSdy = 0.f, dTdy = 0.f;
 
 		getCoords(texpt, Ng, sp, state);
 
@@ -180,24 +178,21 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 			point3d_t texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdx, dVdx, 0.f), Ng) - texpt);
 			point3d_t texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdy, dVdy, 0.f), Ng) - texpt);
 			
-			dSdx = texpt_diffx.x;
-			dTdx = texpt_diffx.y;
-			
-			dSdy = texpt_diffy.x;
-			dTdy = texpt_diffy.y;
+			mipMapParams = new mipMapParams_t(texpt_diffx.x, texpt_diffx.y, texpt_diffy.x, texpt_diffy.y);
 		}
-		else
-		{
-		}
-
-		stack[this->ID] = nodeResult_t(tex->getColor(texpt, 0.f, dSdx, dTdx, dSdy, dTdy), (doScalar) ? tex->getFloat(texpt, 0.f, dSdx, dTdx, dSdy, dTdy) : 0.f );
 	}
 	else
 	{
 		getCoords(texpt, Ng, sp, state);
 		texpt = doMapping(texpt, Ng);
-		
-		stack[this->ID] = nodeResult_t(tex->getColor(texpt), (doScalar) ? tex->getFloat(texpt) : 0.f );
+	}
+
+	stack[this->ID] = nodeResult_t(tex->getColor(texpt, CS_GET_LINEAR, mipMapParams), (doScalar) ? tex->getFloat(texpt, CS_USE_RAW, mipMapParams) : 0.f );
+	
+	if(mipMapParams)
+	{
+		delete mipMapParams;
+		mipMapParams = nullptr;
 	}
 }
 
@@ -226,7 +221,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		if (tex->isNormalmap())
 		{
 			// Get color from normal map texture
-			color = tex->getRawColor(texpt);
+			color = tex->getColor(texpt, CS_USE_RAW);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();
@@ -275,7 +270,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			vector3d_t norm(0.f);
 
 			// Get color from normal map texture
-			color = tex->getRawColor(texpt);
+			color = tex->getColor(texpt, CS_USE_RAW);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();

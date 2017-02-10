@@ -15,8 +15,8 @@ class textureClouds_t : public texture_t
 				const color_t &c1, const color_t &c2,
 				const std::string &ntype, const std::string &btype);
 		virtual ~textureClouds_t();
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -43,8 +43,8 @@ class textureMarble_t : public texture_t
 			}
 		}
 
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -71,8 +71,8 @@ class textureWood_t : public texture_t
 			}
 		}
 
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -96,8 +96,8 @@ class textureVoronoi_t : public texture_t
 				float isc, const std::string &dname);
 		virtual ~textureVoronoi_t() {}
 
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -121,8 +121,8 @@ class textureMusgrave_t : public texture_t
 				const std::string &ntype, const std::string &mtype);
 		virtual ~textureMusgrave_t();
 
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -143,8 +143,8 @@ class textureDistortedNoise_t : public texture_t
 					const std::string &noiseb1, const std::string noiseb2);
 		virtual ~textureDistortedNoise_t();
 		
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		virtual void getInterpolationStep(float &step) const { step = size; };
 
@@ -164,8 +164,8 @@ class rgbCube_t : public texture_t
 {
 	public:
 		rgbCube_t(){}
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 };
@@ -187,8 +187,8 @@ class textureBlend_t : public texture_t
 		textureBlend_t(const std::string &stype, bool use_flip_axis);
 		virtual ~textureBlend_t();
 		
-		virtual colorA_t getColor(const point3d_t &p) const;
-		virtual float getFloat(const point3d_t &p) const;
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const;
 		
 		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		

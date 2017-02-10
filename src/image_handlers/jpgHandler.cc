@@ -69,11 +69,8 @@ class jpgHandler_t: public imageHandler_t
 public:
 	jpgHandler_t();
 	~jpgHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imgIndex = 0);
-	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
@@ -87,47 +84,13 @@ jpgHandler_t::jpgHandler_t()
 
 jpgHandler_t::~jpgHandler_t()
 {
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-	{
-		delete imgBuffer.at(idx);
-		imgBuffer.at(idx) = nullptr;
-	}
-}
-
-void jpgHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
-{
-	m_hasAlpha = withAlpha;
-    m_MultiLayer = multi_layer;
-	m_Denoise = denoiseEnabled;
-	m_DenoiseHLum = denoiseHLum;
-	m_DenoiseHCol = denoiseHCol;
-	m_DenoiseMix = denoiseMix;
-	m_grayscale = grayscale;
-
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
-
-	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
-	{
-		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
-	}
-}
-
-void jpgHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
-{
-	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
-}
-
-colorA_t jpgHandler_t::getPixel(int x, int y, int imgIndex)
-{
-	return imgBuffer.at(imgIndex)->getColor(x, y);
+	clearImgBuffers();
 }
 
 bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	int h = imgBuffer.at(imgIndex)->getHeight();
-	int w = imgBuffer.at(imgIndex)->getWidth();
+	int h = getHeight(imgIndex);
+	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
@@ -182,7 +145,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for (x = 0; x < w; x++)
 			{
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				_A(y, x)[0] = (col.getR() * 255);
 				_A(y, x)[1] = (col.getG() * 255);
@@ -213,7 +176,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for (x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				scanline[ix]   = (yByte) (col.getR() * 255);
 				scanline[ix+1] = (yByte) (col.getG() * 255);
@@ -269,7 +232,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for (x = 0; x < w; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, imgBuffer.at(imgIndex)->getColor(x, y).getA()));
+				float col = std::max(0.f, std::min(1.f, imgBufferRaw.at(imgIndex)->getColor(x, y).getA()));
 
 				scanline[x] = (yByte)(col * 255);
 			}
@@ -344,21 +307,13 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	m_width = info.output_width;
 	m_height = info.output_height;
 
-	if(!imgBuffer.empty())
-	{
-		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-		{
-			delete imgBuffer.at(idx);
-			imgBuffer.at(idx) = nullptr;
-		}
-		imgBuffer.clear();
-	}
+	clearImgBuffers();
 	
 	int nChannels = 3;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
-	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 	
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
@@ -408,7 +363,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 									 A);
 			}
 			
-			imgBuffer.at(0)->setColor(x, y, color);
+			imgBufferRaw.at(0)->setColor(x, y, color);
 		}
 		y++;
 	}

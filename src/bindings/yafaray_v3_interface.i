@@ -603,7 +603,7 @@ namespace yafaray
 		public:
 			virtual ~colorOutput_t() {};
 			virtual void initTilesPasses(int totalViews, int numExtPasses) {};
-			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true)=0;
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true)=0;
 			virtual void flush(int numView, const renderPasses_t *renderPasses)=0;
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses)=0;
@@ -616,30 +616,30 @@ namespace yafaray
 	class imageHandler_t
 	{
 		public:
-			imageHandler_t():m_width(0), m_height(0), m_hasAlpha(false), m_textureOptimization(TEX_OPTIMIZATION_OPTIMIZED), rgbaOptimizedBuffer(nullptr), rgbaCompressedBuffer(nullptr), rgbOptimizedBuffer(nullptr), rgbCompressedBuffer(nullptr), m_MultiLayer(false) {};
-
-			virtual void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false) = 0;
-			virtual ~imageHandler_t() {};
+			virtual ~imageHandler_t() {}
 			virtual bool loadFromFile(const std::string &name) = 0;
 			virtual bool loadFromMemory(const yByte *data, size_t size) {return false; }
-			virtual bool saveToFile(const std::string &name, int imagePassNumber = 0) = 0;
+			virtual bool saveToFile(const std::string &name, int imgIndex = 0) = 0;
 			virtual bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses) { return false; };
-			virtual void putPixel(int x, int y, const colorA_t &rgba, int imagePassNumber = 0) = 0;
-			virtual colorA_t getPixel(int x, int y, int imagePassNumber = 0) = 0;
-			virtual int getWidth() { return m_width; }
-			virtual int getHeight() { return m_height; }
 			virtual bool isHDR() { return false; }
 			virtual bool isMultiLayer() { return m_MultiLayer; }
+			virtual bool denoiseEnabled() { return m_Denoise; }
 			int getTextureOptimization() { return m_textureOptimization; }
 			void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
-			virtual bool denoiseEnabled() { return m_Denoise; }
-			std::string getDenoiseParams() const
-			{
-				if(!m_Denoise) return "";
-				std::stringstream paramString;
-				paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
-				return paramString.str();
-			}
+			void setGrayScaleSetting(bool grayscale) { m_grayscale = grayscale; }
+			int getWidth(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getWidth(); }
+			int getHeight(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getHeight(); }
+			std::string getDenoiseParams() const;
+			void generateMipMaps();
+			int getHighestImgIndex() const { return (int) imgBufferRaw.size() - 1; }
+			void setColorSpace(colorSpaces_t color_space, float gamma) { m_colorSpace = color_space; m_gamma = gamma; }
+			int getInterpolationColorSpaceConversion() const { return m_intp_colorspace_conversion; }
+			void setInterpolationColorSpaceConversion(int conversion) { m_intp_colorspace_conversion = conversion; }
+			void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
+			colorA_t getPixel(int x, int y, colorSpaceProcessing_t colorSpaceProcessing, int imgIndex = 0);
+			void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
+			void clearImgBuffers();
+			void createLinearBuffer();
 	};
 
 	// Outputs
@@ -668,6 +668,7 @@ namespace yafaray
 	{
 		public:
 			memoryIO_t(int resx, int resy, float* iMem);
+			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
 			virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 			void flush(int numView, const renderPasses_t *renderPasses);
 			virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // no tiled file format used...yet

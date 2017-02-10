@@ -39,13 +39,10 @@ class tgaHandler_t: public imageHandler_t
 {
 public:
 	tgaHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	void initForInput();
 	~tgaHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imgIndex = 0);
-	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 
 private:
@@ -83,37 +80,13 @@ tgaHandler_t::tgaHandler_t()
 
 tgaHandler_t::~tgaHandler_t()
 {
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-	{
-		delete imgBuffer.at(idx);
-		imgBuffer.at(idx) = nullptr;
-	}
-}
-
-void tgaHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
-{
-	m_hasAlpha = withAlpha;
-    m_MultiLayer = multi_layer;
-	m_Denoise = denoiseEnabled;
-	m_DenoiseHLum = denoiseHLum;
-	m_DenoiseHCol = denoiseHCol;
-	m_DenoiseMix = denoiseMix;
-	m_grayscale = grayscale;
-	
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
-
-	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
-	{
-		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
-	}
+	clearImgBuffers();
 }
 
 bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	int h = imgBuffer.at(imgIndex)->getHeight();
-	int w = imgBuffer.at(imgIndex)->getWidth();
+	int h = getHeight(imgIndex);
+	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
@@ -154,7 +127,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 			{
 				for (int x = 0; x < w; x++) 
 				{
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				_A(y, x)[0] = (col.getR() * 255);
 				_A(y, x)[1] = (col.getG() * 255);
@@ -178,12 +151,12 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 					}
 					else
 					{
-						colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+						colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
 						tgaPixelRGBA_t rgba;
 						rgba.R = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
 						rgba.G = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
 						rgba.B = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
-						rgba.A = imgBuffer.at(imgIndex)->getColor(x, y).A;
+						rgba.A = imgBufferRaw.at(imgIndex)->getColor(x, y).A;
 						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
 					}
 				}
@@ -196,7 +169,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 			{
 				for (int x = 0; x < w; x++) 
 				{
-					colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+					colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
 					col.clampRGBA01();
 					
 					if(!m_hasAlpha)
@@ -221,16 +194,6 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 	
 	return true;
-}
-
-void tgaHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
-{
-	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
-}
-
-colorA_t tgaHandler_t::getPixel(int x, int y, int imgIndex)
-{
-	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
 
 template <class ColorType> void tgaHandler_t::readColorMap(FILE *fp, tgaHeader_t &header, colorProcessor cp)
@@ -268,7 +231,7 @@ template <class ColorType> void tgaHandler_t::readRLEImage(FILE *fp, colorProces
 		{
 			if(!rlePack)  fread(&color, sizeof(ColorType), 1, fp);
 
-			imgBuffer.at(0)->setColor(x, y, (this->*cp)(&color));
+			imgBufferRaw.at(0)->setColor(x, y, (this->*cp)(&color));
 
 			x += stepX;
 
@@ -293,7 +256,7 @@ template <class ColorType> void tgaHandler_t::readDirectImage(FILE *fp, colorPro
 	{
 		for(size_t x = minX; x != maxX; x += stepX)
 		{
-			imgBuffer.at(0)->setColor(x, y, (this->*cp)(&color[i]));
+			imgBufferRaw.at(0)->setColor(x, y, (this->*cp)(&color[i]));
 			i++;
 		}
 	}
@@ -491,21 +454,13 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	// Jump over any image Id
 	fseek(fp, header.idLength, SEEK_CUR);
 	
-	if(!imgBuffer.empty())
-	{
-		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-		{
-			delete imgBuffer.at(idx);
-			imgBuffer.at(idx) = nullptr;
-		}
-		imgBuffer.clear();
-	}
+	clearImgBuffers();
 
 	int nChannels = 3;
 	if(header.cmEntryBitDepth == 16 || header.cmEntryBitDepth == 32 || header.bitDepth == 16 || header.bitDepth == 32) nChannels = 4;
 	if(m_grayscale) nChannels = 1;
 
-	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 	
 	ColorMap = nullptr;
 	

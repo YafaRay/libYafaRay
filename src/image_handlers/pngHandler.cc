@@ -45,12 +45,9 @@ class pngHandler_t: public imageHandler_t
 public:
 	pngHandler_t();
 	~pngHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	bool loadFromFile(const std::string &name);
 	bool loadFromMemory(const yByte *data, size_t size);
 	bool saveToFile(const std::string &name, int imgIndex = 0);
-	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 private:
 	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
@@ -68,47 +65,13 @@ pngHandler_t::pngHandler_t()
 
 pngHandler_t::~pngHandler_t()
 {
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-	{
-		delete imgBuffer.at(idx);
-		imgBuffer.at(idx) = nullptr;
-	}
-}
-
-void pngHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
-{
-	m_hasAlpha = withAlpha;
-    m_MultiLayer = multi_layer;
-	m_Denoise = denoiseEnabled;
-	m_DenoiseHLum = denoiseHLum;
-	m_DenoiseHCol = denoiseHCol;
-	m_DenoiseMix = denoiseMix;
-	m_grayscale = grayscale;
-
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
-
-	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
-	{
-		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
-	}
-}
-
-void pngHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
-{
-	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
-}
-
-colorA_t pngHandler_t::getPixel(int x, int y, int imgIndex)
-{
-	return imgBuffer.at(imgIndex)->getColor(x, y);
+	clearImgBuffers();
 }
 
 bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	int h = imgBuffer.at(imgIndex)->getHeight();
-	int w = imgBuffer.at(imgIndex)->getWidth();
+	int h = getHeight(imgIndex);
+	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
@@ -161,7 +124,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				_A(y, x)[0] = (color.getR() * 255);
@@ -176,7 +139,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -195,7 +158,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -335,8 +298,8 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 
 bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex)
 {
-	int h = imgBuffer.at(imgIndex)->getHeight();
-	int w = imgBuffer.at(imgIndex)->getWidth();
+	int h = getHeight(imgIndex);
+	int w = getWidth(imgIndex);
 
 	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
@@ -417,21 +380,13 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	m_width = (int)w;
 	m_height = (int)h;
 	
-	if(!imgBuffer.empty())
-	{
-		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-		{
-			delete imgBuffer.at(idx);
-			imgBuffer.at(idx) = nullptr;
-		}
-		imgBuffer.clear();
-	}
-
+	clearImgBuffers();
+	
 	int nChannels = numChan;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
-	imgBuffer.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
+	imgBufferRaw.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
 
 	png_bytepp rowPointers = new png_bytep[m_height];
 
@@ -511,7 +466,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				}
 			}
 			
-			imgBuffer.at(0)->setColor(x, y, color);
+			imgBufferRaw.at(0)->setColor(x, y, color);
 		}
 	}
 

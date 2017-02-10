@@ -4,21 +4,9 @@
 #include <yafray_config.h>
 #include "surface.h"
 #include <core_api/color_ramp.h>
-
-#ifdef HAVE_OPENCV
-#include <opencv2/photo/photo.hpp>
-#endif
+#include <core_api/imagehandler.h>
 
 __BEGIN_YAFRAY
-
-enum interpolationType
-{
-	INTP_NONE,
-	INTP_BILINEAR,
-	INTP_BICUBIC,
-	INTP_MIPMAP_TRILINEAR,
-	INTP_MIPMAP_EWA
-};
 
 class YAFRAYCORE_EXPORT texture_t
 {
@@ -30,32 +18,15 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual bool isThreeD() const { return true; }
 		virtual bool isNormalmap() const { return false; }
 		
-		virtual colorA_t getColor(const point3d_t &p) const { return getColor(p, 0.f); }
-		virtual colorA_t getColor(const point3d_t &p, float force_image_level) const { return getColor(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual colorA_t getColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return colorA_t(0.f); }
+		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
+		virtual colorA_t getColor(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
 		
-		virtual colorA_t getColor(int x, int y, int z) const { return getColor(x, y, z, 0.f); }
-		virtual colorA_t getColor(int x, int y, int z, float force_image_level) const { return getColor(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual colorA_t getColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return colorA_t(0.f); }
-		
-		virtual colorA_t getRawColor(const point3d_t &p) const { return getRawColor(p, 0.f); }
-		virtual colorA_t getRawColor(const point3d_t &p, float force_image_level) const { return getRawColor(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual colorA_t getRawColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return getColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy); }
-		
-		virtual colorA_t getRawColor(int x, int y, int z) const { return getRawColor(x, y, z, 0.f); }
-		virtual colorA_t getRawColor(int x, int y, int z, float force_image_level) const { return getRawColor(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual colorA_t getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return getColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy); }
-		
-		virtual float getFloat(const point3d_t &p) const { return getFloat(p, 0.f); };
-		virtual float getFloat(const point3d_t &p, float force_image_level) const { return getFloat(p, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual float getFloat(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return applyIntensityContrastAdjustments(getRawColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy).col2bri()); }
-		
-		virtual float getFloat(int x, int y, int z) const { return getFloat(x, y, z, 0.f); };
-		virtual float getFloat(int x, int y, int z, float force_image_level) const { return getFloat(x, y, z, force_image_level, 0.f, 0.f, 0.f, 0.f); }
-		virtual float getFloat(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy).col2bri()); }
+		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getColor(p, colorSpaceProcessing, mmParams).col2bri()); }
+		virtual float getFloat(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getColor(x, y, z, colorSpaceProcessing, mmParams).col2bri()); }
+
 		/* gives the number of values in each dimension for discrete textures */
-		
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }
+
 		virtual void getInterpolationStep(float &step) const { step=0.f; };
 		virtual void generateMipMaps() {}
 		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
@@ -80,7 +51,6 @@ class YAFRAYCORE_EXPORT texture_t
 		bool adjustments_set = false;
 		color_ramp_t * color_ramp = nullptr;
 		int intp_type = INTP_BILINEAR;
-
 };
 
 inline void angmap(const point3d_t &p, float &u, float &v)

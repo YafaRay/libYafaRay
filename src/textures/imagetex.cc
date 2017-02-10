@@ -49,34 +49,32 @@ void textureImage_t::resolution(int &x, int &y, int &z) const
 	z=0;
 }
 
-colorA_t textureImage_t::interpolateImage(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
+colorA_t textureImage_t::interpolateImage(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
 {
-	if(force_image_level > 0.f) return mipMapsTrilinearInterpolation(p, force_image_level, 0.f, 0.f, 0.f, 0.f);
+	if(mmParams && mmParams->forceImageLevel > 0.f) return mipMapsTrilinearInterpolation(p, colorSpaceProcessing, mmParams);
 
 	colorA_t interpolatedColor(0.f);
 
 	switch(intp_type)
 	{
-		case INTP_NONE: interpolatedColor = noInterpolation(p); break;
-		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p); break;
-		case INTP_MIPMAP_TRILINEAR: interpolatedColor = mipMapsTrilinearInterpolation(p, force_image_level, dSdx, dTdx, dSdy, dTdy); break;
-		case INTP_MIPMAP_EWA: interpolatedColor = mipMapsEWAInterpolation(p, dSdx, dTdx, dSdy, dTdy, ewa_max_anisotropy); break;
+		case INTP_NONE: interpolatedColor = noInterpolation(p, colorSpaceProcessing); break;
+		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p, colorSpaceProcessing); break;
+		case INTP_MIPMAP_TRILINEAR:
+									if(mmParams) interpolatedColor = mipMapsTrilinearInterpolation(p, colorSpaceProcessing, mmParams);
+									else interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); 
+									break;
+		case INTP_MIPMAP_EWA:
+									if(mmParams) interpolatedColor = mipMapsEWAInterpolation(p, colorSpaceProcessing, ewa_max_anisotropy, mmParams);
+									else interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); 
+									break;
 		case INTP_BILINEAR:
-		default: 			interpolatedColor = bilinearInterpolation(p); break;	//By default use Bilinear
+		default: 			interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); break;	//By default use Bilinear
 	}
 
 	return interpolatedColor;
 }
 
-colorA_t textureImage_t::getColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
-{
-	colorA_t ret = getRawColor(p, force_image_level, dSdx, dTdx, dSdy, dTdy);
-	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
-	
-	return applyAdjustments(ret);
-}
-
-colorA_t textureImage_t::getRawColor(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
+colorA_t textureImage_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
 {
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
 	colorA_t ret(0.f);
@@ -85,20 +83,14 @@ colorA_t textureImage_t::getRawColor(const point3d_t &p, float force_image_level
 
 	if(outside) return ret;
 	
-	ret = interpolateImage(p1, force_image_level, dSdx, dTdx, dSdy, dTdy);
+	ret = interpolateImage(p1, colorSpaceProcessing, mmParams);
 	
-	return ret;
-}
-
-colorA_t textureImage_t::getColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
-{
-	colorA_t ret = getRawColor(x, y, z, force_image_level, dSdx, dTdx, dSdy, dTdy);
-	ret.linearRGB_from_ColorSpace(colorSpace, gamma);
+	if(colorSpaceProcessing == CS_GET_LINEAR && image->getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY) ret.linearRGB_from_ColorSpace(colorSpace, gamma);
 	
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getRawColor(int x, int y, int z, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
+colorA_t textureImage_t::getColor(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
 {
 	int resx=image->getWidth();
 	int resy=image->getHeight();
@@ -108,15 +100,16 @@ colorA_t textureImage_t::getRawColor(int x, int y, int z, float force_image_leve
 	x = std::max(0, std::min(resx-1, x));
 	y = std::max(0, std::min(resy-1, y));
 
-	colorA_t c1(0.f);
+	colorA_t ret(0.f);
 	
-	if(force_image_level > 0.f)
-	{
-		force_image_level *= image->getHighestImgIndex();
-		return image->getPixel(x, y, (int) floorf(force_image_level));
-	}
-	else return image->getPixel(x, y);
+	if(mmParams && mmParams->forceImageLevel > 0.f) ret = image->getPixel(x, y, colorSpaceProcessing, (int) floorf(mmParams->forceImageLevel * image->getHighestImgIndex()));
+	else ret = image->getPixel(x, y, colorSpaceProcessing);
+
+	if(colorSpaceProcessing == CS_GET_LINEAR && image->getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY) ret.linearRGB_from_ColorSpace(colorSpace, gamma);
+	
+	return applyAdjustments(ret);
 }
+
 
 bool textureImage_t::doMapping(point3d_t &texpt) const
 {
@@ -263,7 +256,7 @@ void textureImage_t::findTextureInterpolationCoordinates(int &coord0, int &coord
 	}
 }
 
-colorA_t textureImage_t::noInterpolation(const point3d_t &p, int mipmaplevel) const
+colorA_t textureImage_t::noInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -276,10 +269,10 @@ colorA_t textureImage_t::noInterpolation(const point3d_t &p, int mipmaplevel) co
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	return image->getPixel(x1, y1, mipmaplevel);
+	return image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
 }
 
-colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplevel) const
+colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -292,10 +285,10 @@ colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplev
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
+	colorA_t c11 = image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, colorSpaceProcessing, mipmaplevel);
 
 	float w11 = (1-dx) * (1-dy);
 	float w12 = (1-dx) * dy;
@@ -305,7 +298,7 @@ colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplev
 	return (w11 * c11) + (w12 * c12) + (w21 * c21) + (w22 * c22);
 }
 
-colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmaplevel) const
+colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -318,25 +311,25 @@ colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmapleve
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	colorA_t c00 = image->getPixel(x0, y0, mipmaplevel);
-	colorA_t c01 = image->getPixel(x0, y1, mipmaplevel);
-	colorA_t c02 = image->getPixel(x0, y2, mipmaplevel);
-	colorA_t c03 = image->getPixel(x0, y3, mipmaplevel);
+	colorA_t c00 = image->getPixel(x0, y0, colorSpaceProcessing, mipmaplevel);
+	colorA_t c01 = image->getPixel(x0, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c02 = image->getPixel(x0, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c03 = image->getPixel(x0, y3, colorSpaceProcessing, mipmaplevel);
 
-	colorA_t c10 = image->getPixel(x1, y0, mipmaplevel);
-	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
-	colorA_t c13 = image->getPixel(x1, y3, mipmaplevel);
+	colorA_t c10 = image->getPixel(x1, y0, colorSpaceProcessing, mipmaplevel);
+	colorA_t c11 = image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c13 = image->getPixel(x1, y3, colorSpaceProcessing, mipmaplevel);
 
-	colorA_t c20 = image->getPixel(x2, y0, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
-	colorA_t c23 = image->getPixel(x2, y3, mipmaplevel);
+	colorA_t c20 = image->getPixel(x2, y0, colorSpaceProcessing, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c23 = image->getPixel(x2, y3, colorSpaceProcessing, mipmaplevel);
 
-	colorA_t c30 = image->getPixel(x3, y0, mipmaplevel);
-	colorA_t c31 = image->getPixel(x3, y1, mipmaplevel);
-	colorA_t c32 = image->getPixel(x3, y2, mipmaplevel);
-	colorA_t c33 = image->getPixel(x3, y3, mipmaplevel);
+	colorA_t c30 = image->getPixel(x3, y0, colorSpaceProcessing, mipmaplevel);
+	colorA_t c31 = image->getPixel(x3, y1, colorSpaceProcessing, mipmaplevel);
+	colorA_t c32 = image->getPixel(x3, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c33 = image->getPixel(x3, y3, colorSpaceProcessing, mipmaplevel);
 
 	colorA_t cy0 = CubicInterpolate(c00, c10, c20, c30, dx);
 	colorA_t cy1 = CubicInterpolate(c01, c11, c21, c31, dx);
@@ -346,13 +339,13 @@ colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmapleve
 	return CubicInterpolate(cy0, cy1, cy2, cy3, dy);
 }
 
-colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, float force_image_level, float dSdx, float dTdx, float dSdy, float dTdy) const
+colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
 {
-	float dS = std::max(fabsf(dSdx), fabsf(dSdy)) * image->getWidth();
-	float dT = std::max(fabsf(dTdx), fabsf(dTdy)) * image->getHeight();
+	float dS = std::max(fabsf(mmParams->dSdx), fabsf(mmParams->dSdy)) * image->getWidth();
+	float dT = std::max(fabsf(mmParams->dTdx), fabsf(mmParams->dTdy)) * image->getHeight();
 	float mipmaplevel = 0.5f * log2(dS*dS + dT*dT);
 	
-	if(force_image_level > 0.f) mipmaplevel = force_image_level * image->getHighestImgIndex();
+	if(mmParams->forceImageLevel > 0.f) mipmaplevel = mmParams->forceImageLevel * image->getHighestImgIndex();
 	
 	mipmaplevel += trilinear_level_bias;
 
@@ -362,8 +355,8 @@ colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, float
 	int mipmaplevelB = (int) ceil(mipmaplevel);
 	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
 	
-	colorA_t col = bilinearInterpolation(p, mipmaplevelA);
-	colorA_t colB = bilinearInterpolation(p, mipmaplevelB);
+	colorA_t col = bilinearInterpolation(p, colorSpaceProcessing, mipmaplevelA);
+	colorA_t colB = bilinearInterpolation(p, colorSpaceProcessing, mipmaplevelB);
 
 	col.blend(colB, mipmaplevelDelta);
 	
@@ -372,12 +365,12 @@ colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, float
 
 //All EWA interpolation/calculation code has been adapted from PBRT v2 (https://github.com/mmp/pbrt-v2). see LICENSES file
 
-colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float dSdx, float dTdx, float dSdy, float dTdy, float maxAnisotropy) const
+colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float maxAnisotropy, mipMapParams_t * mmParams) const
 {
-	float dS0 = fabsf(dSdx);
-	float dS1 = fabsf(dSdy);
-	float dT0 = fabsf(dTdx);
-	float dT1 = fabsf(dTdy);
+	float dS0 = fabsf(mmParams->dSdx);
+	float dS1 = fabsf(mmParams->dSdy);
+	float dT0 = fabsf(mmParams->dTdx);
+	float dT1 = fabsf(mmParams->dTdy);
 	
 	if((dS0*dS0 + dT0*dT0) < (dS1*dS1 + dT1*dT1))
 	{
@@ -396,7 +389,7 @@ colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float dSdx,
 		minorLength *= scale;
 	}
 
-	if(minorLength <= 0.f) return bilinearInterpolation(p);
+	if(minorLength <= 0.f) return bilinearInterpolation(p, colorSpaceProcessing);
 
 	float mipmaplevel = image->getHighestImgIndex() - 1.f + log2(minorLength);
 
@@ -407,8 +400,8 @@ colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float dSdx,
 	int mipmaplevelB = (int) ceil(mipmaplevel);
 	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
 	
-	colorA_t col = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelA);
-	colorA_t colB = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelB);
+	colorA_t col = EWAEllipticCalculation(p, colorSpaceProcessing, dS0, dT0, dS1, dT1, mipmaplevelA);
+	colorA_t colB = EWAEllipticCalculation(p, colorSpaceProcessing, dS0, dT0, dS1, dT1, mipmaplevelB);
 	
 	col.blend(colB, mipmaplevelDelta);
 	
@@ -422,9 +415,15 @@ inline int Mod(int a, int b) {
     return a;
 }
 
-colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
+colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
 {
-	if(mipmaplevel >= image->getHighestImgIndex()) return image->getPixel(p.x, p.y, image->getHighestImgIndex());
+	if(mipmaplevel >= image->getHighestImgIndex())
+	{
+		int resx = image->getWidth(mipmaplevel);
+		int resy = image->getHeight(mipmaplevel);
+		
+		return image->getPixel(Mod(p.x, resx), Mod(p.y, resy), colorSpaceProcessing, image->getHighestImgIndex());
+	}
 	
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -471,7 +470,8 @@ colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, f
 				float weight = ewaWeightLut[std::min((int)floorf(r2*EWA_WEIGHT_LUT_SIZE), EWA_WEIGHT_LUT_SIZE-1)];
 				int ismod = Mod(is, resx);
 				int itmod = Mod(it, resy);
-				sumCol += image->getPixel(ismod, itmod, mipmaplevel) * weight;
+
+				sumCol += image->getPixel(ismod, itmod, colorSpaceProcessing, mipmaplevel) * weight;
 				sumWts += weight;
 			}
 		}
@@ -485,9 +485,9 @@ colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, f
 
 void textureImage_t::generateEWALookupTable()
 {
-	Y_DEBUG << "** GENERATING EWA LOOKUP **" << yendl;
 	if(!ewaWeightLut)
 	{
+		Y_DEBUG << "** GENERATING EWA LOOKUP **" << yendl;
 		ewaWeightLut = (float *) malloc(sizeof(float) * EWA_WEIGHT_LUT_SIZE);
 		for(int i = 0; i < EWA_WEIGHT_LUT_SIZE; ++i)
 		{
@@ -521,6 +521,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
 	std::string texture_optimization_string = "none";
 	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
+	std::string colorspace_interpolation_method_string = "old-legacy";
+	interpolationColorSpaceConversion_t colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY;
 	bool img_grayscale = false;
 	textureImage_t *tex = nullptr;
 	imageHandler_t *ih = nullptr;
@@ -531,6 +533,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
 	params.getParam("texture_optimization", texture_optimization_string);
+	params.getParam("colorspace_interpolation_method", colorspace_interpolation_method_string);
 	params.getParam("img_grayscale", img_grayscale);
 	
 	if(!name)
@@ -549,6 +552,11 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else if (*intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
 		else if (*intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
 	}
+	
+	if (colorspace_interpolation_method_string == "none-raw") colorspace_interpolation_method = INTP_COLORSPACE_NONE_RAW;
+	else if (colorspace_interpolation_method_string == "old-legacy") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY;
+	else if (colorspace_interpolation_method_string == "linear-speed") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_SPEED;
+	else if (colorspace_interpolation_method_string == "linear-memory") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_MEMORY;
 	
 	size_t lDot = name->rfind(".") + 1;
 	size_t lSlash = name->rfind("/") + 1;
@@ -583,7 +591,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		if(color_space_string != "LinearRGB") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string <<"' and the gamma setting." << yendl;
 		color_space = LINEAR_RGB;
 		if(texture_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string <<"'" << yendl;
-		texture_optimization = TEX_OPTIMIZATION_NONE;
+		texture_optimization = TEX_OPTIMIZATION_NONE;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	}
 	else
 	{
@@ -600,13 +608,31 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	}
 	
 	ih->setColorSpace(color_space, gamma);
-	ih->setTextureOptimization(texture_optimization);
+	ih->setTextureOptimization(texture_optimization);	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	ih->setGrayScaleSetting(img_grayscale);
-
+	
 	if(!ih->loadFromFile(*name))
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
 		return nullptr;
+	}
+
+	tex = new textureImage_t(ih, intp, gamma, color_space);
+
+	if(!tex)
+	{
+		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
+		return nullptr;
+	}
+
+	if(ih->isHDR()) 
+	{
+		ih->setInterpolationColorSpaceConversion(INTP_COLORSPACE_NONE_RAW);
+	}
+	else
+	{
+		ih->setInterpolationColorSpaceConversion(colorspace_interpolation_method);
+		ih->createLinearBuffer();
 	}
 
 	if(intp == INTP_MIPMAP_TRILINEAR || intp == INTP_MIPMAP_EWA)
@@ -618,23 +644,15 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 			session.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 		
-		/*//FIXME DAVID: TEST SAVING MIPMAPS
+		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
 		for(int i=0; i<=ih->getHighestImgIndex(); ++i)
 		{
 			std::stringstream ss;
-			ss << "//tmp//saved_mipmap_" << i;
+			ss << "//tmp//saved_mipmap_" << ihname << "__" << i;
 			ih->saveToFile(ss.str(), i);
 		}*/
 	}
 	
-	tex = new textureImage_t(ih, intp, gamma, color_space);
-
-	if(!tex)
-	{
-		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
-		return nullptr;
-	}
-
 	// setup image
 	bool rot90 = false;
 	bool even_tiles=false, odd_tiles=true;

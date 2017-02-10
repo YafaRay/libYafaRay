@@ -45,14 +45,10 @@ class exrHandler_t: public imageHandler_t
 {
 public:
 	exrHandler_t();
-	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
-	void initForInput();
 	~exrHandler_t();
 	bool loadFromFile(const std::string &name);
 	bool saveToFile(const std::string &name, int imgIndex = 0);
     bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
-	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	bool isHDR() { return true; }
 };
@@ -64,37 +60,13 @@ exrHandler_t::exrHandler_t()
 
 exrHandler_t::~exrHandler_t()
 {
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-	{
-		delete imgBuffer.at(idx);
-		imgBuffer.at(idx) = nullptr;
-	}
-}
-
-void exrHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
-{
-	m_hasAlpha = withAlpha;
-	m_MultiLayer = multi_layer;
-	m_Denoise = denoiseEnabled;
-	m_DenoiseHLum = denoiseHLum;
-	m_DenoiseHCol = denoiseHCol;
-	m_DenoiseMix = denoiseMix;
-	m_grayscale = grayscale;
-    
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
-
-	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
-	{
-		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
-	}
+	clearImgBuffers();
 }
 
 bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 {
-	int h = imgBuffer.at(imgIndex)->getHeight();
-	int w = imgBuffer.at(imgIndex)->getWidth();
+	int h = getHeight(imgIndex);
+	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
 	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
@@ -123,7 +95,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			colorA_t col = imgBuffer.at(imgIndex)->getColor(i, j);
+			colorA_t col = imgBufferRaw.at(imgIndex)->getColor(i, j);
 			pixels[j][i].r = col.R;
 			pixels[j][i].g = col.G;
 			pixels[j][i].b = col.B;
@@ -156,14 +128,14 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
-	int h0 = imgBuffer.at(0)->getHeight();
-	int w0 = imgBuffer.at(0)->getWidth();
+	int h0 = imgBufferRaw.at(0)->getHeight();
+	int w0 = imgBufferRaw.at(0)->getWidth();
 
 	bool allImageBuffersSameSize = true;
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	for(size_t idx = 0; idx < imgBufferRaw.size(); ++idx)
 	{
-		if(imgBuffer.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
-		if(imgBuffer.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
+		if(imgBufferRaw.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
+		if(imgBufferRaw.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
 	}
 	
 	if(!allImageBuffersSameSize)
@@ -190,7 +162,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     
 	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
 
-    for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+    for(size_t idx = 0; idx < imgBufferRaw.size(); ++idx)
     {
 		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
 		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
@@ -217,7 +189,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		{
 			for(int j = 0; j < h0; ++j)
 			{
-				colorA_t col = imgBuffer.at(idx)->getColor(i, j);
+				colorA_t col = imgBufferRaw.at(idx)->getColor(i, j);
 				(*pixels.at(idx))[j][i].r = col.R;
 				(*pixels.at(idx))[j][i].g = col.G;
 				(*pixels.at(idx))[j][i].b = col.B;
@@ -259,16 +231,6 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		pixels.clear();
 		return false;
 	}
-}
-
-void exrHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
-{
-	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
-}
-
-colorA_t exrHandler_t::getPixel(int x, int y, int imgIndex)
-{
-	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
 
 bool exrHandler_t::loadFromFile(const std::string &name)
@@ -326,21 +288,13 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		m_height = dw.max.y - dw.min.y + 1;
 		m_hasAlpha = true;
 
-		if(!imgBuffer.empty())
-		{
-			for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-			{
-				delete imgBuffer.at(idx);
-				imgBuffer.at(idx) = nullptr;
-			}
-			imgBuffer.clear();
-		}
+		clearImgBuffers();
 
 		int nChannels = 3;
 		if(m_grayscale) nChannels = 1;
 		else if(m_hasAlpha) nChannels = 4;
 
-		imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+		imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(m_width, m_height);
@@ -356,7 +310,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 				col.G = pixels[i][j].g;
 				col.B = pixels[i][j].b;
 				col.A = pixels[i][j].a;
-				imgBuffer.at(0)->setColor(i, j, col);
+				imgBufferRaw.at(0)->setColor(i, j, col);
 			}
 		}
 	}
