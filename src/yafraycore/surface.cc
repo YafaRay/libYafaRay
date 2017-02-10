@@ -53,6 +53,11 @@ void spDifferentials_t::reflectedRay(const diffRay_t &in, diffRay_t &out) const
 
 void spDifferentials_t::refractedRay(const diffRay_t &in, diffRay_t &out, float IOR) const
 {
+	if(!in.hasDifferentials)
+	{
+		out.hasDifferentials = false;
+		return;
+	}
 	//RayDifferential rd(p, wi);
 	out.hasDifferentials = true;
 	out.xfrom = sp.P + dPdx;
