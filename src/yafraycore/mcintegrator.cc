@@ -1016,6 +1016,7 @@ color_t mcIntegrator_t::sampleAmbientOcclusion(renderState_t &state, const surfa
 	const material_t *material = sp.material;
 	ray_t lightRay;
 	lightRay.from = sp.P;
+	lightRay.dir = vector3d_t(0.f);
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
@@ -1075,6 +1076,7 @@ color_t mcIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, const s
 	const material_t *material = sp.material;
 	ray_t lightRay;
 	lightRay.from = sp.P;
+	lightRay.dir = vector3d_t(0.f);
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = aoSamples;//(int) ceilf(aoSamples*getSampleMultiplier());
@@ -1135,6 +1137,7 @@ color_t mcIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, con
 	const material_t *material = sp.material;
 	ray_t lightRay;
 	lightRay.from = sp.P;
+	lightRay.dir = vector3d_t(0.f);
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	int n = aoSamples;
