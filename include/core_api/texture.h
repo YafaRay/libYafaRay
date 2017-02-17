@@ -18,11 +18,13 @@ class YAFRAYCORE_EXPORT texture_t
 		virtual bool isThreeD() const { return true; }
 		virtual bool isNormalmap() const { return false; }
 		
-		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
-		virtual colorA_t getColor(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
+		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
+		virtual colorA_t getColor(int x, int y, int z, mipMapParams_t * mmParams = nullptr) const { return colorA_t(0.f); }
+		virtual colorA_t getRawColor(const point3d_t &p, mipMapParams_t * mmParams = nullptr) const { return getColor(p, mmParams); }
+		virtual colorA_t getRawColor(int x, int y, int z, mipMapParams_t * mmParams = nullptr) const { return getColor(x, y, z, mmParams); }
 		
-		virtual float getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getColor(p, colorSpaceProcessing, mmParams).col2bri()); }
-		virtual float getFloat(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing = CS_USE_RAW, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getColor(x, y, z, colorSpaceProcessing, mmParams).col2bri()); }
+		virtual float getFloat(const point3d_t &p, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getRawColor(p, mmParams).col2bri()); }
+		virtual float getFloat(int x, int y, int z, mipMapParams_t * mmParams = nullptr) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z, mmParams).col2bri()); }
 
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x=0, y=0, z=0; }

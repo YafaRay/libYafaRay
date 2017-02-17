@@ -97,7 +97,7 @@ bool hdrHandler_t::loadFromFile(const std::string &name)
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
-	imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 
 	int scanWidth = (header.yFirst) ? m_width : m_height;
 	
@@ -318,8 +318,8 @@ bool hdrHandler_t::readORLE(FILE *fp, int y, int scanWidth)
 	// put the pixels on the main buffer
 	for(int x = header.min[1]; x != header.max[1]; x += header.max[1])
 	{
-		if(header.yFirst) imgBufferRaw.at(0)->setColor(x, y, scanline[j].getRGBA());
-		else imgBufferRaw.at(0)->setColor(y, x, scanline[j].getRGBA());
+		if(header.yFirst) imgBuffer.at(0)->setColor(x, y, scanline[j].getRGBA(), m_colorSpace, m_gamma);
+		else imgBuffer.at(0)->setColor(y, x, scanline[j].getRGBA(), m_colorSpace, m_gamma);
 		j++;
 	}
 
@@ -399,8 +399,8 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 	// put the pixels on the main buffer
 	for(int x = header.min[1]; x != header.max[1]; x += header.step[1])
 	{
-		if(header.yFirst) imgBufferRaw.at(0)->setColor(x, y, scanline[j].getRGBA());
-		else imgBufferRaw.at(0)->setColor(y, x, scanline[j].getRGBA());
+		if(header.yFirst) imgBuffer.at(0)->setColor(x, y, scanline[j].getRGBA(), m_colorSpace, m_gamma);
+		else imgBuffer.at(0)->setColor(y, x, scanline[j].getRGBA(), m_colorSpace, m_gamma);
 		j++;
 	}
 
@@ -445,7 +445,7 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imgIndex)
 			// fill the scanline buffer
 			for (int x = 0; x < w; x++)
 			{
-				scanline[x] = getPixel(x, y, CS_USE_RAW, imgIndex);
+				scanline[x] = getPixel(x, y, imgIndex);
 			}
 
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks

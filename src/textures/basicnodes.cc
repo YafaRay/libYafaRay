@@ -187,7 +187,7 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 		texpt = doMapping(texpt, Ng);
 	}
 
-	stack[this->ID] = nodeResult_t(tex->getColor(texpt, CS_GET_LINEAR, mipMapParams), (doScalar) ? tex->getFloat(texpt, CS_USE_RAW, mipMapParams) : 0.f );
+	stack[this->ID] = nodeResult_t(tex->getColor(texpt, mipMapParams), (doScalar) ? tex->getFloat(texpt, mipMapParams) : 0.f );
 	
 	if(mipMapParams)
 	{
@@ -221,7 +221,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		if (tex->isNormalmap())
 		{
 			// Get color from normal map texture
-			color = tex->getColor(texpt, CS_USE_RAW);
+			color = tex->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();
@@ -270,7 +270,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			vector3d_t norm(0.f);
 
 			// Get color from normal map texture
-			color = tex->getColor(texpt, CS_USE_RAW);
+			color = tex->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
 			norm.x = color.getR();

@@ -60,20 +60,6 @@ enum textureOptimization_t
 	TEX_OPTIMIZATION_HALF_FLOAT			= 4		//Only available if built with OpenEXR support
 };
 
-enum colorSpaceProcessing_t
-{
-	CS_USE_RAW,
-	CS_GET_LINEAR
-};
-
-enum interpolationColorSpaceConversion_t
-{
-	INTP_COLORSPACE_NONE_RAW,
-	INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY,
-	INTP_COLORSPACE_GET_LINEAR_SPEED,
-	INTP_COLORSPACE_GET_LINEAR_MEMORY
-};
-
 enum interpolationType_t
 {
 	INTP_NONE,
@@ -109,6 +95,7 @@ public:
 
 	colorA_t getColor(int x, int y) const;
 	void setColor(int x, int y, const colorA_t & col);
+	void setColor(int x, int y, const colorA_t & col, colorSpaces_t color_space, float gamma);	// Set color after linearizing it from color space 
 
 protected:
 	int m_width;
@@ -144,19 +131,16 @@ public:
 	int getTextureOptimization() { return m_textureOptimization; }
 	void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
 	void setGrayScaleSetting(bool grayscale) { m_grayscale = grayscale; }
-	int getWidth(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getWidth(); }
-	int getHeight(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getHeight(); }
+	int getWidth(int imgIndex = 0) { return imgBuffer.at(imgIndex)->getWidth(); }
+	int getHeight(int imgIndex = 0) { return imgBuffer.at(imgIndex)->getHeight(); }
 	std::string getDenoiseParams() const;
 	void generateMipMaps();
-	int getHighestImgIndex() const { return (int) imgBufferRaw.size() - 1; }
+	int getHighestImgIndex() const { return (int) imgBuffer.size() - 1; }
 	void setColorSpace(colorSpaces_t color_space, float gamma) { m_colorSpace = color_space; m_gamma = gamma; }
-	int getInterpolationColorSpaceConversion() const { return m_intp_colorspace_conversion; }
-	void setInterpolationColorSpaceConversion(int conversion) { m_intp_colorspace_conversion = conversion; }
 	void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-	colorA_t getPixel(int x, int y, colorSpaceProcessing_t colorSpaceProcessing, int imgIndex = 0);
+	colorA_t getPixel(int x, int y, int imgIndex = 0);
 	void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 	void clearImgBuffers();
-	void createLinearBuffer();
 	
 protected:
 	std::string handlerName;
@@ -167,14 +151,12 @@ protected:
 	int m_textureOptimization = TEX_OPTIMIZATION_OPTIMIZED;
 	colorSpaces_t m_colorSpace = RAW_MANUAL_GAMMA;
 	float m_gamma = 1.f;
-	std::vector<imageBuffer_t *> imgBufferRaw;
-	std::vector<imageBuffer_t *> imgBufferLinear;
+	std::vector<imageBuffer_t *> imgBuffer;
 	bool m_MultiLayer = false;
 	bool m_Denoise = false;
 	int m_DenoiseHLum = 3;
 	int m_DenoiseHCol = 3;
 	float m_DenoiseMix = 0.8f;	//!< Mix factor between the de-noised image and the original "noisy" image to avoid banding artifacts in images with all noise removed.
-	int m_intp_colorspace_conversion = INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY;
 };
 
 
@@ -279,6 +261,20 @@ inline void imageBuffer_t::setColor(int x, int y, const colorA_t & col)
 			float fGrayAvg = (col.R + col.G + col.B) / 3.f;
 			(*gray32_FloatImg)(x, y) = fGrayAvg;
 		}
+	}
+}
+
+inline void imageBuffer_t::setColor(int x, int y, const colorA_t & col, colorSpaces_t color_space, float gamma)
+{
+	if(color_space == LINEAR_RGB || (color_space == RAW_MANUAL_GAMMA && gamma == 1.f))
+	{
+		setColor(x, y, col);
+	}
+	else
+	{
+		colorA_t colLinear = col;
+		colLinear.linearRGB_from_ColorSpace(color_space, gamma);
+		setColor(x, y, colLinear);
 	}
 }
 

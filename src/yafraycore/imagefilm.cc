@@ -1299,8 +1299,8 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 
 		for ( lx = 0; lx < imWidth; lx++ )
 			for ( ly = 0; ly < imHeight; ly++ )
-				if(yafLog.isParamsBadgeTop()) (*dpimage)(w-imWidth+lx, ly) = logo->getPixel(lx, ly, CS_GET_LINEAR);
-				else (*dpimage)(w-imWidth+lx, dpHeight-imHeight+ly) = logo->getPixel(lx, ly, CS_GET_LINEAR);
+				if(yafLog.isParamsBadgeTop()) (*dpimage)(w-imWidth+lx, ly) = logo->getPixel(lx, ly);
+				else (*dpimage)(w-imWidth+lx, dpHeight-imHeight+ly) = logo->getPixel(lx, ly);
 
 		delete logo;
 	}

@@ -124,7 +124,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				_A(y, x)[0] = (color.getR() * 255);
@@ -139,7 +139,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -158,7 +158,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
@@ -386,7 +386,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
-	imgBufferRaw.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
+	imgBuffer.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
 
 	png_bytepp rowPointers = new png_bytep[m_height];
 
@@ -466,7 +466,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				}
 			}
 			
-			imgBufferRaw.at(0)->setColor(x, y, color);
+			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
 		}
 	}
 

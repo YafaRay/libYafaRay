@@ -95,7 +95,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			colorA_t col = imgBufferRaw.at(imgIndex)->getColor(i, j);
+			colorA_t col = imgBuffer.at(imgIndex)->getColor(i, j);
 			pixels[j][i].r = col.R;
 			pixels[j][i].g = col.G;
 			pixels[j][i].b = col.B;
@@ -128,14 +128,14 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
 {
-	int h0 = imgBufferRaw.at(0)->getHeight();
-	int w0 = imgBufferRaw.at(0)->getWidth();
+	int h0 = imgBuffer.at(0)->getHeight();
+	int w0 = imgBuffer.at(0)->getWidth();
 
 	bool allImageBuffersSameSize = true;
-	for(size_t idx = 0; idx < imgBufferRaw.size(); ++idx)
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
 	{
-		if(imgBufferRaw.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
-		if(imgBufferRaw.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
+		if(imgBuffer.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
+		if(imgBuffer.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
 	}
 	
 	if(!allImageBuffersSameSize)
@@ -162,7 +162,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
     
 	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
 
-    for(size_t idx = 0; idx < imgBufferRaw.size(); ++idx)
+    for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
     {
 		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
 		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
@@ -189,7 +189,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		{
 			for(int j = 0; j < h0; ++j)
 			{
-				colorA_t col = imgBufferRaw.at(idx)->getColor(i, j);
+				colorA_t col = imgBuffer.at(idx)->getColor(i, j);
 				(*pixels.at(idx))[j][i].r = col.R;
 				(*pixels.at(idx))[j][i].g = col.G;
 				(*pixels.at(idx))[j][i].b = col.B;
@@ -294,7 +294,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		if(m_grayscale) nChannels = 1;
 		else if(m_hasAlpha) nChannels = 4;
 
-		imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+		imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(m_width, m_height);
@@ -310,7 +310,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 				col.G = pixels[i][j].g;
 				col.B = pixels[i][j].b;
 				col.A = pixels[i][j].a;
-				imgBufferRaw.at(0)->setColor(i, j, col);
+				imgBuffer.at(0)->setColor(i, j, col, m_colorSpace, m_gamma);
 			}
 		}
 	}

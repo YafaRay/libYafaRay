@@ -110,7 +110,7 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				_A(y, x)[0] = (col.getR() * 255);
 				_A(y, x)[1] = (col.getG() * 255);
@@ -125,7 +125,7 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for(int x = 0; x < w; x++)
 			{
 				int ix = x * channels;
-				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				scanline[ix]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
 				scanline[ix+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
@@ -151,7 +151,7 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for(int x = 0; x < w; x++)
 			{
 				int ix = x * channels;
-				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				scanline[ix]   = (yByte)(col.getR() * 255.f);
 				scanline[ix+1] = (yByte)(col.getG() * 255.f);
@@ -212,7 +212,7 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	int nChannels = 3;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
-	imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 		
 	int i = 0;
 	
@@ -227,7 +227,7 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 					(float)TIFFGetA(tiffData[i]) * inv8);
 			i++;
 			
-			imgBufferRaw.at(0)->setColor(x, y, color);
+			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
     	}
     }
 

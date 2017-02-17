@@ -49,8 +49,10 @@ class textureImage_t : public texture_t
 		virtual bool discrete() const { return true; }
 		virtual bool isThreeD() const { return false; }
 		virtual bool isNormalmap() const { return normalmap; }
-		virtual colorA_t getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
-		virtual colorA_t getColor(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing = CS_GET_LINEAR, mipMapParams_t * mmParams = nullptr) const;
+		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t * mmParams = nullptr) const;
+		virtual colorA_t getColor(int x, int y, int z, mipMapParams_t * mmParams = nullptr) const;
+		virtual colorA_t getRawColor(const point3d_t &p, mipMapParams_t * mmParams = nullptr) const;
+		virtual colorA_t getRawColor(int x, int y, int z, mipMapParams_t * mmParams = nullptr) const;
 		virtual void resolution(int &x, int &y, int &z) const;
 		static texture_t *factory(paraMap_t &params,renderEnvironment_t &render);
 		virtual void generateMipMaps() { if(image->getHighestImgIndex() == 0) image->generateMipMaps(); }
@@ -58,15 +60,15 @@ class textureImage_t : public texture_t
 	protected:
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		void findTextureInterpolationCoordinates(int &coord, int &coord0, int &coord2, int &coord3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
-		colorA_t noInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel=0) const;
-		colorA_t bilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel=0) const;
-		colorA_t bicubicInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel=0) const;
-		colorA_t mipMapsTrilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const;
-		colorA_t mipMapsEWAInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float maxAnisotropy, mipMapParams_t * mmParams) const;
-		colorA_t EWAEllipticCalculation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float dS0, float dT0, float dS1, float dT1, int mipmaplevel=0) const;
+		colorA_t noInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t bilinearInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t bicubicInterpolation(const point3d_t &p, int mipmaplevel=0) const;
+		colorA_t mipMapsTrilinearInterpolation(const point3d_t &p, mipMapParams_t * mmParams) const;
+		colorA_t mipMapsEWAInterpolation(const point3d_t &p, float maxAnisotropy, mipMapParams_t * mmParams) const;
+		colorA_t EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel=0) const;
 		void generateEWALookupTable();
 		bool doMapping(point3d_t &texp) const;
-		colorA_t interpolateImage(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const;
+		colorA_t interpolateImage(const point3d_t &p, mipMapParams_t * mmParams) const;
 		
 		bool use_alpha, calc_alpha, normalmap;
 		bool grayscale = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.

@@ -627,19 +627,16 @@ namespace yafaray
 			int getTextureOptimization() { return m_textureOptimization; }
 			void setTextureOptimization(int texture_optimization) { m_textureOptimization = texture_optimization; }
 			void setGrayScaleSetting(bool grayscale) { m_grayscale = grayscale; }
-			int getWidth(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getWidth(); }
-			int getHeight(int imgIndex = 0) { return imgBufferRaw.at(imgIndex)->getHeight(); }
+			int getWidth(int imgIndex = 0) { return imgBuffer.at(imgIndex)->getWidth(); }
+			int getHeight(int imgIndex = 0) { return imgBuffer.at(imgIndex)->getHeight(); }
 			std::string getDenoiseParams() const;
 			void generateMipMaps();
-			int getHighestImgIndex() const { return (int) imgBufferRaw.size() - 1; }
+			int getHighestImgIndex() const { return (int) imgBuffer.size() - 1; }
 			void setColorSpace(colorSpaces_t color_space, float gamma) { m_colorSpace = color_space; m_gamma = gamma; }
-			int getInterpolationColorSpaceConversion() const { return m_intp_colorspace_conversion; }
-			void setInterpolationColorSpaceConversion(int conversion) { m_intp_colorspace_conversion = conversion; }
 			void putPixel(int x, int y, const colorA_t &rgba, int imgIndex = 0);
-			colorA_t getPixel(int x, int y, colorSpaceProcessing_t colorSpaceProcessing, int imgIndex = 0);
+			colorA_t getPixel(int x, int y, int imgIndex = 0);
 			void initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha = false, bool multi_layer = false, bool grayscale = false);
 			void clearImgBuffers();
-			void createLinearBuffer();
 	};
 
 	// Outputs

@@ -145,7 +145,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for (x = 0; x < w; x++)
 			{
-				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				_A(y, x)[0] = (col.getR() * 255);
 				_A(y, x)[1] = (col.getG() * 255);
@@ -176,7 +176,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for (x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				colorA_t col = imgBufferRaw.at(imgIndex)->getColor(x, y);
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
 				scanline[ix]   = (yByte) (col.getR() * 255);
 				scanline[ix+1] = (yByte) (col.getG() * 255);
@@ -232,7 +232,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for (x = 0; x < w; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, imgBufferRaw.at(imgIndex)->getColor(x, y).getA()));
+				float col = std::max(0.f, std::min(1.f, imgBuffer.at(imgIndex)->getColor(x, y).getA()));
 
 				scanline[x] = (yByte)(col * 255);
 			}
@@ -313,7 +313,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
-	imgBufferRaw.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
 	
 	yByte* scanline = new yByte[m_width * info.output_components];
 	
@@ -363,7 +363,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 									 A);
 			}
 			
-			imgBufferRaw.at(0)->setColor(x, y, color);
+			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
 		}
 		y++;
 	}

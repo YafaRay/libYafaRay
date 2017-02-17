@@ -121,7 +121,7 @@ color_t textureBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
 	if(use_ibl_blur)
 	{
 		mipMapParams_t * mipMapParams = new mipMapParams_t(IBL_Blur_mipmap_level);
-		ret = tex->getColor(point3d_t(u, v, 0.f), CS_GET_LINEAR, mipMapParams);
+		ret = tex->getColor(point3d_t(u, v, 0.f), mipMapParams);
 		delete mipMapParams;
 		mipMapParams = nullptr;
 	}

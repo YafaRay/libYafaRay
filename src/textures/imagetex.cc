@@ -49,32 +49,32 @@ void textureImage_t::resolution(int &x, int &y, int &z) const
 	z=0;
 }
 
-colorA_t textureImage_t::interpolateImage(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureImage_t::interpolateImage(const point3d_t &p, mipMapParams_t * mmParams) const
 {
-	if(mmParams && mmParams->forceImageLevel > 0.f) return mipMapsTrilinearInterpolation(p, colorSpaceProcessing, mmParams);
+	if(mmParams && mmParams->forceImageLevel > 0.f) return mipMapsTrilinearInterpolation(p, mmParams);
 
 	colorA_t interpolatedColor(0.f);
 
 	switch(intp_type)
 	{
-		case INTP_NONE: interpolatedColor = noInterpolation(p, colorSpaceProcessing); break;
-		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p, colorSpaceProcessing); break;
+		case INTP_NONE: interpolatedColor = noInterpolation(p); break;
+		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p); break;
 		case INTP_MIPMAP_TRILINEAR:
-									if(mmParams) interpolatedColor = mipMapsTrilinearInterpolation(p, colorSpaceProcessing, mmParams);
-									else interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); 
+									if(mmParams) interpolatedColor = mipMapsTrilinearInterpolation(p, mmParams);
+									else interpolatedColor = bilinearInterpolation(p); 
 									break;
 		case INTP_MIPMAP_EWA:
-									if(mmParams) interpolatedColor = mipMapsEWAInterpolation(p, colorSpaceProcessing, ewa_max_anisotropy, mmParams);
-									else interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); 
+									if(mmParams) interpolatedColor = mipMapsEWAInterpolation(p, ewa_max_anisotropy, mmParams);
+									else interpolatedColor = bilinearInterpolation(p); 
 									break;
 		case INTP_BILINEAR:
-		default: 			interpolatedColor = bilinearInterpolation(p, colorSpaceProcessing); break;	//By default use Bilinear
+		default: 			interpolatedColor = bilinearInterpolation(p); break;	//By default use Bilinear
 	}
 
 	return interpolatedColor;
 }
 
-colorA_t textureImage_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureImage_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
 	colorA_t ret(0.f);
@@ -83,14 +83,28 @@ colorA_t textureImage_t::getColor(const point3d_t &p, colorSpaceProcessing_t col
 
 	if(outside) return ret;
 	
-	ret = interpolateImage(p1, colorSpaceProcessing, mmParams);
-	
-	if(colorSpaceProcessing == CS_GET_LINEAR && image->getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY) ret.linearRGB_from_ColorSpace(colorSpace, gamma);
-	
+	ret = interpolateImage(p1, mmParams);
+		
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getColor(int x, int y, int z, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureImage_t::getRawColor(const point3d_t &p, mipMapParams_t * mmParams) const
+{
+	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
+	
+	// For example for Non-RGB / Stencil / Bump / Normal maps, etc, textures are typically already linear and the user should select "linearRGB" in the texture properties, but if the user (by mistake) keeps the default sRGB for them, for example, the default linearization would apply a sRGB to linearRGB conversion that messes up the texture values. This function will try to reconstruct the original texture values. In this case (if the user selected incorrectly sRGB for a normal map, for example), this function will prevent wrong results, but it will be slower and it could be slightly inaccurate as the interpolation will take place in the (incorrectly) linearized texels. 
+	
+	//If the user correctly selected "linearRGB" for these kind of textures, the function below will not make any changes to the color and will keep the texture "as is" without any linearization nor de-linearization, which is the ideal case (fast and correct).
+	
+	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
+	
+	colorA_t ret = getColor(p, mmParams);
+	ret.ColorSpace_from_linearRGB(colorSpace, gamma);
+	
+	return ret;
+}
+
+colorA_t textureImage_t::getColor(int x, int y, int z, mipMapParams_t * mmParams) const
 {
 	int resx=image->getWidth();
 	int resy=image->getHeight();
@@ -102,14 +116,27 @@ colorA_t textureImage_t::getColor(int x, int y, int z, colorSpaceProcessing_t co
 
 	colorA_t ret(0.f);
 	
-	if(mmParams && mmParams->forceImageLevel > 0.f) ret = image->getPixel(x, y, colorSpaceProcessing, (int) floorf(mmParams->forceImageLevel * image->getHighestImgIndex()));
-	else ret = image->getPixel(x, y, colorSpaceProcessing);
+	if(mmParams && mmParams->forceImageLevel > 0.f) ret = image->getPixel(x, y, (int) floorf(mmParams->forceImageLevel * image->getHighestImgIndex()));
+	else ret = image->getPixel(x, y);
 
-	if(colorSpaceProcessing == CS_GET_LINEAR && image->getInterpolationColorSpaceConversion() == INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY) ret.linearRGB_from_ColorSpace(colorSpace, gamma);
-	
 	return applyAdjustments(ret);
 }
 
+colorA_t textureImage_t::getRawColor(int x, int y, int z, mipMapParams_t * mmParams) const
+{
+	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
+	
+	// For example for Non-RGB / Stencil / Bump / Normal maps, etc, textures are typically already linear and the user should select "linearRGB" in the texture properties, but if the user (by mistake) keeps the default sRGB for them, for example, the default linearization would apply a sRGB to linearRGB conversion that messes up the texture values. This function will try to reconstruct the original texture values. In this case (if the user selected incorrectly sRGB for a normal map, for example), this function will prevent wrong results, but it will be slower and it could be slightly inaccurate as the interpolation will take place in the (incorrectly) linearized texels. 
+	
+	//If the user correctly selected "linearRGB" for these kind of textures, the function below will not make any changes to the color and will keep the texture "as is" without any linearization nor de-linearization, which is the ideal case (fast and correct).
+	
+	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
+	
+	colorA_t ret = getColor(x, y, z, mmParams);
+	ret.ColorSpace_from_linearRGB(colorSpace, gamma);
+		
+	return ret;
+}
 
 bool textureImage_t::doMapping(point3d_t &texpt) const
 {
@@ -256,7 +283,7 @@ void textureImage_t::findTextureInterpolationCoordinates(int &coord0, int &coord
 	}
 }
 
-colorA_t textureImage_t::noInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
+colorA_t textureImage_t::noInterpolation(const point3d_t &p, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -269,10 +296,10 @@ colorA_t textureImage_t::noInterpolation(const point3d_t &p, colorSpaceProcessin
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	return image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
+	return image->getPixel(x1, y1, mipmaplevel);
 }
 
-colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
+colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -285,10 +312,10 @@ colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, colorSpacePro
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	colorA_t c11 = image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, colorSpaceProcessing, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, colorSpaceProcessing, mipmaplevel);
+	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
 
 	float w11 = (1-dx) * (1-dy);
 	float w12 = (1-dx) * dy;
@@ -298,7 +325,7 @@ colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, colorSpacePro
 	return (w11 * c11) + (w12 * c12) + (w21 * c21) + (w22 * c22);
 }
 
-colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, int mipmaplevel) const
+colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmaplevel) const
 {
 	int resx = image->getWidth(mipmaplevel);
 	int resy = image->getHeight(mipmaplevel);
@@ -311,25 +338,25 @@ colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, colorSpaceProc
 	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode==TCL_REPEAT, mirrorX);
 	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode==TCL_REPEAT, mirrorY);
 
-	colorA_t c00 = image->getPixel(x0, y0, colorSpaceProcessing, mipmaplevel);
-	colorA_t c01 = image->getPixel(x0, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c02 = image->getPixel(x0, y2, colorSpaceProcessing, mipmaplevel);
-	colorA_t c03 = image->getPixel(x0, y3, colorSpaceProcessing, mipmaplevel);
+	colorA_t c00 = image->getPixel(x0, y0, mipmaplevel);
+	colorA_t c01 = image->getPixel(x0, y1, mipmaplevel);
+	colorA_t c02 = image->getPixel(x0, y2, mipmaplevel);
+	colorA_t c03 = image->getPixel(x0, y3, mipmaplevel);
 
-	colorA_t c10 = image->getPixel(x1, y0, colorSpaceProcessing, mipmaplevel);
-	colorA_t c11 = image->getPixel(x1, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, colorSpaceProcessing, mipmaplevel);
-	colorA_t c13 = image->getPixel(x1, y3, colorSpaceProcessing, mipmaplevel);
+	colorA_t c10 = image->getPixel(x1, y0, mipmaplevel);
+	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
+	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
+	colorA_t c13 = image->getPixel(x1, y3, mipmaplevel);
 
-	colorA_t c20 = image->getPixel(x2, y0, colorSpaceProcessing, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, colorSpaceProcessing, mipmaplevel);
-	colorA_t c23 = image->getPixel(x2, y3, colorSpaceProcessing, mipmaplevel);
+	colorA_t c20 = image->getPixel(x2, y0, mipmaplevel);
+	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
+	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
+	colorA_t c23 = image->getPixel(x2, y3, mipmaplevel);
 
-	colorA_t c30 = image->getPixel(x3, y0, colorSpaceProcessing, mipmaplevel);
-	colorA_t c31 = image->getPixel(x3, y1, colorSpaceProcessing, mipmaplevel);
-	colorA_t c32 = image->getPixel(x3, y2, colorSpaceProcessing, mipmaplevel);
-	colorA_t c33 = image->getPixel(x3, y3, colorSpaceProcessing, mipmaplevel);
+	colorA_t c30 = image->getPixel(x3, y0, mipmaplevel);
+	colorA_t c31 = image->getPixel(x3, y1, mipmaplevel);
+	colorA_t c32 = image->getPixel(x3, y2, mipmaplevel);
+	colorA_t c33 = image->getPixel(x3, y3, mipmaplevel);
 
 	colorA_t cy0 = CubicInterpolate(c00, c10, c20, c30, dx);
 	colorA_t cy1 = CubicInterpolate(c01, c11, c21, c31, dx);
@@ -339,7 +366,7 @@ colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, colorSpaceProc
 	return CubicInterpolate(cy0, cy1, cy2, cy3, dy);
 }
 
-colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float dS = std::max(fabsf(mmParams->dSdx), fabsf(mmParams->dSdy)) * image->getWidth();
 	float dT = std::max(fabsf(mmParams->dTdx), fabsf(mmParams->dTdy)) * image->getHeight();
@@ -355,8 +382,8 @@ colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, color
 	int mipmaplevelB = (int) ceil(mipmaplevel);
 	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
 	
-	colorA_t col = bilinearInterpolation(p, colorSpaceProcessing, mipmaplevelA);
-	colorA_t colB = bilinearInterpolation(p, colorSpaceProcessing, mipmaplevelB);
+	colorA_t col = bilinearInterpolation(p, mipmaplevelA);
+	colorA_t colB = bilinearInterpolation(p, mipmaplevelB);
 
 	col.blend(colB, mipmaplevelDelta);
 	
@@ -365,7 +392,7 @@ colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, color
 
 //All EWA interpolation/calculation code has been adapted from PBRT v2 (https://github.com/mmp/pbrt-v2). see LICENSES file
 
-colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float maxAnisotropy, mipMapParams_t * mmParams) const
+colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float maxAnisotropy, mipMapParams_t * mmParams) const
 {
 	float dS0 = fabsf(mmParams->dSdx);
 	float dS1 = fabsf(mmParams->dSdy);
@@ -389,7 +416,7 @@ colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, colorSpaceP
 		minorLength *= scale;
 	}
 
-	if(minorLength <= 0.f) return bilinearInterpolation(p, colorSpaceProcessing);
+	if(minorLength <= 0.f) return bilinearInterpolation(p);
 
 	float mipmaplevel = image->getHighestImgIndex() - 1.f + log2(minorLength);
 
@@ -400,8 +427,8 @@ colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, colorSpaceP
 	int mipmaplevelB = (int) ceil(mipmaplevel);
 	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
 	
-	colorA_t col = EWAEllipticCalculation(p, colorSpaceProcessing, dS0, dT0, dS1, dT1, mipmaplevelA);
-	colorA_t colB = EWAEllipticCalculation(p, colorSpaceProcessing, dS0, dT0, dS1, dT1, mipmaplevelB);
+	colorA_t col = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelA);
+	colorA_t colB = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelB);
 	
 	col.blend(colB, mipmaplevelDelta);
 	
@@ -415,14 +442,14 @@ inline int Mod(int a, int b) {
     return a;
 }
 
-colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
+colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
 {
 	if(mipmaplevel >= image->getHighestImgIndex())
 	{
 		int resx = image->getWidth(mipmaplevel);
 		int resy = image->getHeight(mipmaplevel);
 		
-		return image->getPixel(Mod(p.x, resx), Mod(p.y, resy), colorSpaceProcessing, image->getHighestImgIndex());
+		return image->getPixel(Mod(p.x, resx), Mod(p.y, resy), image->getHighestImgIndex());
 	}
 	
 	int resx = image->getWidth(mipmaplevel);
@@ -471,7 +498,7 @@ colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, colorSpacePr
 				int ismod = Mod(is, resx);
 				int itmod = Mod(it, resy);
 
-				sumCol += image->getPixel(ismod, itmod, colorSpaceProcessing, mipmaplevel) * weight;
+				sumCol += image->getPixel(ismod, itmod, mipmaplevel) * weight;
 				sumWts += weight;
 			}
 		}
@@ -519,10 +546,8 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	bool normalmap = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
-	std::string texture_optimization_string = "none";
-	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_NONE;
-	std::string colorspace_interpolation_method_string = "old-legacy";
-	interpolationColorSpaceConversion_t colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY;
+	std::string texture_optimization_string = "optimized";
+	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_OPTIMIZED;
 	bool img_grayscale = false;
 	textureImage_t *tex = nullptr;
 	imageHandler_t *ih = nullptr;
@@ -533,7 +558,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
 	params.getParam("texture_optimization", texture_optimization_string);
-	params.getParam("colorspace_interpolation_method", colorspace_interpolation_method_string);
 	params.getParam("img_grayscale", img_grayscale);
 	
 	if(!name)
@@ -552,12 +576,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 		else if (*intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
 		else if (*intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
 	}
-	
-	if (colorspace_interpolation_method_string == "none-raw") colorspace_interpolation_method = INTP_COLORSPACE_NONE_RAW;
-	else if (colorspace_interpolation_method_string == "old-legacy") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_OLD_LEGACY;
-	else if (colorspace_interpolation_method_string == "linear-speed") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_SPEED;
-	else if (colorspace_interpolation_method_string == "linear-memory") colorspace_interpolation_method = INTP_COLORSPACE_GET_LINEAR_MEMORY;
-	
+		
 	size_t lDot = name->rfind(".") + 1;
 	size_t lSlash = name->rfind("/") + 1;
 	
@@ -623,16 +642,6 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
 		return nullptr;
-	}
-
-	if(ih->isHDR()) 
-	{
-		ih->setInterpolationColorSpaceConversion(INTP_COLORSPACE_NONE_RAW);
-	}
-	else
-	{
-		ih->setInterpolationColorSpaceConversion(colorspace_interpolation_method);
-		ih->createLinearBuffer();
 	}
 
 	if(intp == INTP_MIPMAP_TRILINEAR || intp == INTP_MIPMAP_EWA)

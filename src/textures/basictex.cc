@@ -93,7 +93,7 @@ textureClouds_t::~textureClouds_t()
 	nGen = nullptr;
 }
 
-float textureClouds_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureClouds_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float v = turbulence(nGen, p, depth, size, hard);
 	if (bias) {
@@ -103,7 +103,7 @@ float textureClouds_t::getFloat(const point3d_t &p, colorSpaceProcessing_t color
 	return applyIntensityContrastAdjustments(v);
 }
 
-colorA_t textureClouds_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureClouds_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
@@ -165,7 +165,7 @@ textureMarble_t::textureMarble_t(int oct, float sz, const color_t &c1, const col
 	else if (shape=="tri") wshape = TRI;
 }
 
-float textureMarble_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureMarble_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float w = (p.x + p.y + p.z)*5.0
 					+ ((turb==0.0) ? 0.0 : turb*turbulence(nGen, p, octaves, size, hard));
@@ -185,7 +185,7 @@ float textureMarble_t::getFloat(const point3d_t &p, colorSpaceProcessing_t color
 	return applyIntensityContrastAdjustments(fPow(w, sharpness));
 }
 
-colorA_t textureMarble_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureMarble_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
@@ -247,7 +247,7 @@ textureWood_t::textureWood_t(int oct, float sz, const color_t &c1, const color_t
 	else if (shape=="tri") wshape = TRI;
 }
 
-float textureWood_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureWood_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float w;
 	if (rings)
@@ -271,7 +271,7 @@ float textureWood_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSp
 	return applyIntensityContrastAdjustments(w);
 }
 
-colorA_t textureWood_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureWood_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
@@ -325,7 +325,7 @@ texture_t *textureWood_t::factory(paraMap_t &params,
 /* even simpler RGB cube, goes r in x, g in y and b in z inside the unit cube.  */
 //-----------------------------------------------------------------------------------------
 
-colorA_t rgbCube_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t rgbCube_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	colorA_t col = colorA_t(p.x, p.y, p.z);
 	col.clampRGB01();
@@ -334,7 +334,7 @@ colorA_t rgbCube_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpa
 	else return col;
 }
 	
-float rgbCube_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float rgbCube_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	color_t col = color_t(p.x, p.y, p.z);
 	col.clampRGB01();
@@ -399,7 +399,7 @@ textureVoronoi_t::textureVoronoi_t(const color_t &c1, const color_t &c2,
 	if (iscale!=0) iscale = isc/iscale;
 }
 
-float textureVoronoi_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureVoronoi_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float da[4];
 	point3d_t pa[4];
@@ -408,7 +408,7 @@ float textureVoronoi_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colo
 			+ w3*vGen.getDistance(2, da) + w4*vGen.getDistance(3, da)));
 }
 
-colorA_t textureVoronoi_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureVoronoi_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float da[4];
 	point3d_t pa[4];
@@ -520,12 +520,12 @@ textureMusgrave_t::~textureMusgrave_t()
 	}
 }
 
-float textureMusgrave_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureMusgrave_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	return applyIntensityContrastAdjustments(iscale * (*mGen)(p*size));
 }
 
-colorA_t textureMusgrave_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureMusgrave_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
@@ -598,7 +598,7 @@ textureDistortedNoise_t::~textureDistortedNoise_t()
 	}
 }
 
-float textureDistortedNoise_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureDistortedNoise_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	// get a random vector and scale the randomization
 	const point3d_t ofs(13.5, 13.5, 13.5);
@@ -607,7 +607,7 @@ float textureDistortedNoise_t::getFloat(const point3d_t &p, colorSpaceProcessing
 	return applyIntensityContrastAdjustments(getSignedNoise(nGen2, tp+rv*distort));	// distorted-domain noise
 }
 
-colorA_t textureDistortedNoise_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureDistortedNoise_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color1 + getFloat(p)*(color2 - color1));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
@@ -673,7 +673,7 @@ textureBlend_t::~textureBlend_t()
 {
 }
 
-float textureBlend_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+float textureBlend_t::getFloat(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	float blend = 0.f;
 	
@@ -728,7 +728,7 @@ float textureBlend_t::getFloat(const point3d_t &p, colorSpaceProcessing_t colorS
 	return applyIntensityContrastAdjustments(blend);
 }
 
-colorA_t textureBlend_t::getColor(const point3d_t &p, colorSpaceProcessing_t colorSpaceProcessing, mipMapParams_t * mmParams) const
+colorA_t textureBlend_t::getColor(const point3d_t &p, mipMapParams_t * mmParams) const
 {
 	if(!color_ramp) return applyColorAdjustments(color_t(getFloat(p)));
 	else return applyColorAdjustments(color_ramp->get_color_interpolated(getFloat(p)));
