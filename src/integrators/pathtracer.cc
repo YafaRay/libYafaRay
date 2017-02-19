@@ -51,7 +51,7 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 		bool no_recursive;
 		float invNPaths;
 		int causticType;
-		bool russian_roulette;
+		int russianRouletteMinBounces;	//!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
 };
 
 pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth)
@@ -62,8 +62,8 @@ pathIntegrator_t::pathIntegrator_t(bool transpShad, int shadowDepth)
 	causticType = PATH;
 	rDepth = 6;
 	maxBounces = 5;
+	russianRouletteMinBounces = 0;
 	nPaths = 64;
-	russian_roulette = false;
 	invNPaths = 1.f/64.f;
 	no_recursive = false;
 	integratorName = "PathTracer";
@@ -85,11 +85,8 @@ bool pathIntegrator_t::preprocess()
 	{
 		set << "ShadowDepth=" << sDepth << "  ";
 	}
-	set << "RayDepth=" << rDepth << " npaths=" << nPaths << " bounces=" << maxBounces;
+	set << "RayDepth=" << rDepth << " npaths=" << nPaths << " bounces=" << maxBounces << " min_bounces=" << russianRouletteMinBounces << " ";
 	
-	if(russian_roulette) set << " (w. russian roulette) ";
-	else set << " ";
-
 	bool success = true;
 	traceCaustics = false;
 	
@@ -308,7 +305,7 @@ colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, color
 					}
 					
 					// Russian roulette for terminating paths with low probability 
-					if(russian_roulette)
+					if(depth > russianRouletteMinBounces)
 					{
 						float random_value = prng();
 						float probability = throughput.maximum();
@@ -381,7 +378,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	int shadowDepth = 5;
 	int path_samples = 32;
 	int bounces = 3;
-	bool russian_roulette = false;
+	int russian_roulette_min_bounces = 0;
 	int raydepth = 5;
 	const std::string *cMethod=0;
 	bool do_AO=false;
@@ -397,7 +394,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("shadowDepth", shadowDepth);
 	params.getParam("path_samples", path_samples);
 	params.getParam("bounces", bounces);
-	params.getParam("russian_roulette", russian_roulette);
+	params.getParam("russian_roulette_min_bounces", russian_roulette_min_bounces);
 	params.getParam("no_recursive", noRec);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
@@ -432,7 +429,7 @@ integrator_t* pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	inte->nPaths = path_samples;
 	inte->invNPaths = 1.f / (float)path_samples;
 	inte->maxBounces = bounces;
-	inte->russian_roulette = russian_roulette;
+	inte->russianRouletteMinBounces = russian_roulette_min_bounces;
 	inte->no_recursive = noRec;
 	// Background settings
 	inte->transpBackground = bg_transp;
