@@ -173,7 +173,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 	float dx=0.5, dy=0.5, d1=1.0/(float)n_samples;
 	float lens_u=0.5f, lens_v=0.5f;
 	float wt, wt_dummy;
-	random_t prng(offset*(x*a.Y+a.X)+123);
+	random_t prng(rand()+offset*(x*a.Y+a.X)+123);
 	renderState_t rstate(&prng);
 	rstate.threadID = threadID;
 	rstate.cam = camera;
@@ -607,7 +607,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 	unsigned int curr=0;
 
 	surfacePoint_t sp;
-	random_t prng(offset*(4517)+123);
+	random_t prng(rand()+offset*(4517)+123);
 	renderState_t state(&prng);
 	unsigned char userdata[USER_DATA_SIZE+7];
 	state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
