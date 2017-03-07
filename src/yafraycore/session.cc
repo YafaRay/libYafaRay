@@ -23,6 +23,9 @@
 #include <boost/filesystem.hpp>
 #include <yafraycore/photon.h>
 #include <yaf_version.h>
+#if defined(_WIN32)
+	#include <windows.h>
+#endif
 
 __BEGIN_YAFRAY
 
