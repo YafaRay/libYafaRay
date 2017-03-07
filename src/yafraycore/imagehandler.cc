@@ -93,10 +93,11 @@ void imageHandler_t::generateMipMaps()
 {
 	if(imgBuffer.empty()) return;
 
+#ifdef HAVE_OPENCV	
 	int imgIndex = 0;
 	//bool blur_seamless = true;
 	int w = m_width, h = m_height;
-	
+
 	Y_VERBOSE << "ImageHandler: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << yendl;
 	
 	cv::Mat A(h, w, CV_32FC4);
@@ -148,6 +149,9 @@ void imageHandler_t::generateMipMaps()
 	}
 	
 	Y_VERBOSE << "ImageHandler: mipmap generation done: " << imgIndex << " mipmaps generated." << yendl;
+#else
+	Y_WARNING << "ImageHandler: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << yendl;
+#endif
 }
 
 
