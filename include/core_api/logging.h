@@ -25,12 +25,19 @@
 #define Y_CONSOLE_VERBOSITY_H
 
 #include <iostream>
+#include <iomanip>
 #include <ctime>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <utilities/threadUtils.h>
+
+//for Y_DEBUG printing of variable name + value. For example:  Y_DEBUG PRTEXT(Integration1) PR(color) PR(ray.dir) PREND;
+#define PRPREC(precision) << std::setprecision(precision)
+#define PRTEXT(text) << ' ' << #text
+#define PR(var) << ' ' << #var << '=' << var
+#define PREND << yendl
 
 __BEGIN_YAFRAY
 
