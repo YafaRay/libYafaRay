@@ -401,17 +401,17 @@ YAFRAYCORE_EXPORT color_t convergenceAccell(const color_t &cn_1,const color_t &c
 //Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
 static float linearRGB_from_XYZ_D65[3][3] =
 {
-	 { 3.2406255, -1.537208,  -0.4986286 },
-	 {-0.9689307,  1.8757561,  0.0415175 },
-	 { 0.0557101, -0.2040211,  1.0569959 }
+	 { 3.2406255f, -1.537208f,  -0.4986286f },
+	 {-0.9689307f,  1.8757561f,  0.0415175f },
+	 { 0.0557101f, -0.2040211f,  1.0569959f }
 };
 
 //Inverse matrices
 static float XYZ_D65_from_linearRGB[3][3] =
 {
-	{ 0.412400,   0.357600,   0.180500 },
-	{ 0.212600,   0.715200,   0.072200 },
-	{ 0.019300,   0.119200,   0.950500 }
+	{ 0.412400f,   0.357600f,   0.180500f },
+	{ 0.212600f,   0.715200f,   0.072200f },
+	{ 0.019300f,   0.119200f,   0.950500f }
 };
 
 inline float color_t::linearRGB_from_sRGB(float value_sRGB)
