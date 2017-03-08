@@ -44,7 +44,12 @@ std::string sysInfoGetCompiler()
 #elif BOOST_COMP_LLVM
 	return "LLVM";
 #elif BOOST_COMP_MSVC
-	return "MSVC";
+	std::stringstream compiler;
+	compiler << "VS";
+	if(_MSC_VER == 1800) compiler << "2013";
+	else if(_MSC_VER == 1900) compiler << "2015";
+	else if(_MSC_VER == 1910) compiler << "2017";
+	return compiler.str();
 #else
 	return "";
 #endif
