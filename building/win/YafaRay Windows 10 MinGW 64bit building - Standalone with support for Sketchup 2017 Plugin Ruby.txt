@@ -1,5 +1,5 @@
-# Windows 10 64bit MinGW Standalone (with support for Sketchup 2016 "su2yafaray" Plugin / Ruby v2.0.0)
-# building procedure (only valid for YafaRay v3.1.2 or higher)
+# Windows 10 64bit MinGW Standalone (with support for Sketchup 2017 "su2yafaray" Plugin / Ruby v2.2.4)
+# building procedure (only valid for YafaRay v3.2.0 or higher)
 # NOTE: This procedure generates a "yafaray_v3" folder that can be used by 3rd party software, or by
 # executing yafaray_v3/bin/yafaray-xml to render a YafaRay XML scene file
 # If using the Sketchup 2016 "su2yafaray" plugin, copy the "bin" folder into the "su2yafaray" folder
@@ -9,8 +9,12 @@
 # You can find out the Sketchup Ruby version by opening the Ruby Console from within Sketchup and executing
 # RUBY_VERSION
 
-# Install Ruby 2.0.0 from http://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-2.0.0-p648-x64.exe
-Select customized, leave default options and set the destination folder "C:\Ruby200_64"
+
+# Download and install Sketchup Make 2017
+# Execute Sketchup, choose default template and afterwards close it. **This step is necessary so it generates the user personal folders for proper plugin installation later **
+
+# Install Ruby 2.2.4 from https://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-2.2.4-x64.exe
+Leave default options and set the destination folder "C:\Ruby224_64"
 
 
 # Install Python 3.5.1 Windows 64bit installer into the folder C:\Python351_64
@@ -62,13 +66,13 @@ mkdir -p $HOME/yafa-libs64/build/include/python3.5/
 cp C:/Python351_64/include/* $HOME/yafa-libs64/build/include/python3.5/
 cp C:/Python351_64/python35.dll $HOME/yafa-libs64/build/lib/
 
-# Copy Ruby v2.0.0 from the already installed Python in C:\Ruby_200_64
-cp C:/Ruby200_64/include/ruby-2.0.0/ruby.h $HOME/yafa-libs64/build/include/
-cp -R C:/Ruby200_64/include/ruby-2.0.0/ruby $HOME/yafa-libs64/build/include/
-cp C:/Ruby200_64/include/ruby-2.0.0/x64-mingw32/ruby/config.h $HOME/yafa-libs64/build/include/ruby/
-cp C:/Ruby200_64/bin/ruby*.exe $HOME/yafa-libs64/build/bin
-cp C:/Ruby200_64/bin/*.dll $HOME/yafa-libs64/build/bin
-cp C:/Ruby200_64/lib/*.a $HOME/yafa-libs64/build/lib
+# Copy Ruby v2.2.4 from the already installed Ruby in C:\Ruby_226_64
+cp C:/Ruby224_64/include/ruby-2.2.0/ruby.h $HOME/yafa-libs64/build/include/
+cp -R C:/Ruby224_64/include/ruby-2.2.0/ruby $HOME/yafa-libs64/build/include/
+cp C:/Ruby224_64/include/ruby-2.2.0/x64-mingw32/ruby/config.h $HOME/yafa-libs64/build/include/ruby/
+cp C:/Ruby224_64/bin/ruby*.exe $HOME/yafa-libs64/build/bin
+cp C:/Ruby224_64/bin/*.dll $HOME/yafa-libs64/build/bin
+cp C:/Ruby224_64/lib/*.a $HOME/yafa-libs64/build/lib
 
 # DOWNLOADING YAFARAY AND SETTING UP FOLDERS
 mkdir -p $HOME/yafa-dev64/src $HOME/yafa-dev64/make $HOME/yafa-dev64/build
@@ -112,7 +116,7 @@ C:\mingw64\mingw64-shell.exe
 mv /usr/bin/sh.exe /usr/bin/shNONO.exe
 
 cd $HOME/yafa-dev64/make
-cmake $HOME/yafa-dev64/src/Core -G "MinGW Makefiles"  -DRUBY_LIBRARY=C:/msys64/home/usuario/yafa-libs64/build/lib/libx64-msvcrt-ruby200.dll.a
+cmake $HOME/yafa-dev64/src/Core -G "MinGW Makefiles"  -DRUBY_LIBRARY=C:/msys64/home/$USER/yafa-libs64/build/lib/libx64-msvcrt-ruby220.dll.a
 
 # Note: "-j9" uses 9 threads in this example for speeding up the building process. It can be changed to "-j<number of threads>" depending on the number of cores of the processor used for building YafaRay.
 mingw32-make -j9
@@ -150,14 +154,15 @@ cp /mingw64/bin/libImath-2_2.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libjpeg-8.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libtiffxx-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libtiff-5.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
-cp $HOME/yafa-libs64/build/bin/x64-msvcrt-ruby200.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
+cp $HOME/yafa-libs64/build/bin/x64-msvcrt-ruby220.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp $HOME/yafa-libs64/build/lib/python35.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/libgmp-10.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/QtCore4.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp /mingw64/bin/QtGui4.dll $HOME/yafa-dev64/build/yafaray_v3/bin/
 cp $HOME/yafa-dev64/build/yafaray_v3/bin/yafqt.dll $HOME/yafa-dev64/build/yafaray_v3/bin/yafqt.so
 mv $HOME/yafa-dev64/build/yafaray_v3/bin/yafaray_v3_interface_ruby.dll $HOME/yafa-dev64/build/yafaray_v3/bin/yafaray_v3_interface_ruby.so
-
+cp -R C:/msys64/home/$USER/yafa-dev64/src/su2yafaray/* C:/Users/$USER/AppData/Roaming/SketchUp/SketchUp\ 2017/SketchUp/Plugins
+cp -R C:/msys64/home/$USER/yafa-dev64/build/yafaray_v3/bin C:/Users/$USER/AppData/Roaming/SketchUp/SketchUp\ 2017/SketchUp/Plugins/su2yafaray/
 
 #Restore sh.exe
 mv /usr/bin/shNONO.exe /usr/bin/sh.exe
@@ -168,11 +173,7 @@ cd $HOME/yafa-dev64/build/yafaray_v3/share/yafaray/tests/test01/
 $HOME/yafa-dev64/build/yafaray_v3/bin/yafaray-xml -f png test01.xml test01_render
 
 
-# Testing with Sketchup 2016 (optional)
-- Download and install Sketchup 2016
-- Execute Sketchup, choose default template and afterwards close it.
-- Copy the files&folders C:\msys64\home\(user name)\yafa-dev64\src\su2yafaray\* into C:\Users\(user name)\AppData\Roaming\SketchUp\SketchUp 2016\SketchUp\Plugins
-- Copy the folder C:\msys64\home\(user name)\yafa-dev64\build\yafaray_v3\bin into C:\Users\(user name)\AppData\Roaming\SketchUp\SketchUp 2016\SketchUp\Plugins\su2yafaray\bin
-- Execute Sketchup now. There should be a button to render using YafaRay and a menu Extensions->YafaRay to select settings, etc.
+# Testing with Sketchup 2017
+- Execute Sketchup. There should be a button to render using YafaRay and a menu Extensions->YafaRay to select settings, etc.
 
 Note: the Sketchup plugin and the Qt graphical interface are in a pre-alpha state, probably quite incomplete.
