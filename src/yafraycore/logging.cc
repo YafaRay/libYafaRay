@@ -190,6 +190,7 @@ void yafarayLog_t::clearMemoryLog()
 void yafarayLog_t::clearAll()
 {
 	clearMemoryLog();
+	statsClear();
 	mImagePath = "";
 	mLoggingTitle = "";
 	mLoggingAuthor = "";
@@ -419,6 +420,42 @@ int yafarayLog_t::getBadgeHeight() const
 	
 	return badgeHeight;
 }
+
+
+void yafarayLog_t::statsPrint(bool sorted) const
+{
+	std::cout << "name, index, value" << std::endl;
+	std::vector<std::pair<std::string, double>> vectorPrint(mDiagStats.begin(), mDiagStats.end());
+	if(sorted) std::sort(vectorPrint.begin(), vectorPrint.end());
+	for (auto& it: vectorPrint) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+}
+
+void yafarayLog_t::statsSaveToFile(std::string filePath, bool sorted) const
+{
+	std::ofstream statsFile;
+	statsFile.open(filePath);
+	statsFile << "name, index, value" << std::endl;
+	std::vector<std::pair<std::string, double>> vectorPrint(mDiagStats.begin(), mDiagStats.end());
+	if(sorted) std::sort(vectorPrint.begin(), vectorPrint.end());
+	for (auto& it: vectorPrint) statsFile << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	statsFile.close();
+}
+
+void yafarayLog_t::statsAdd(std::string statName, double statValue, double index)
+{
+	std::stringstream ss;
+	ss << statName << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1+std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
+	mutx.lock();
+	mDiagStats[ss.str()] += statValue;
+	mutx.unlock();
+}
 		
+void yafarayLog_t::statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep, double incrementAmount)
+{
+	double index = floor(statValue / bucketPrecisionStep) * bucketPrecisionStep;
+	statsAdd(statName, incrementAmount, index);
+}
+
+
 __END_YAFRAY
 

@@ -160,6 +160,21 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
 	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
 	}
     }
+
+    if(yafLog.getSaveStats())
+    {
+	std::string fStatsName = path + base_name + "_stats.csv";
+	yafLog.statsSaveToFile(fStatsName+".tmp", /*sorted=*/ true);
+	try
+	{	
+	    boost::filesystem::copy_file(fStatsName+".tmp",fStatsName,boost::filesystem::copy_option::overwrite_if_exists);
+	    boost::filesystem::remove(fStatsName+".tmp");
+	}
+	catch(const boost::filesystem::filesystem_error& e)
+	{
+	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
+	}
+    }
 }
 
 

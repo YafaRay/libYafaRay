@@ -31,6 +31,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <utilities/threadUtils.h>
 
 //for Y_DEBUG printing of variable name + value. For example:  Y_DEBUG PRTEXT(Integration1) PR(color) PR(ray.dir) PREND;
@@ -100,6 +104,8 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 
 		bool getSaveLog() const { return mSaveLog; }
 		bool getSaveHTML() const { return mSaveHTML; }
+		bool getSaveStats() const { return !statsEmpty(); }
+
 		bool getUseParamsBadge() { return mDrawParams; }
 		bool isParamsBadgeTop() { return (mDrawParams && mParamsBadgeTop); }
 		std::string getLoggingTitle() const { return mLoggingTitle; }
@@ -130,6 +136,20 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string printDate(std::time_t datetime) const;
 		int vlevel_from_string(std::string strVLevel) const;
 		
+		void statsClear() { mDiagStats.clear(); }
+		void statsPrint(bool sorted=false) const;
+		void statsSaveToFile(std::string filePath, bool sorted=false) const;
+		size_t statsSize() const { return mDiagStats.size(); }
+		bool statsEmpty() const { return mDiagStats.empty(); }
+
+		void statsAdd(std::string statName, int statValue, double index=0.0) { statsAdd(statName, (double) statValue, index); }
+		void statsAdd(std::string statName, float statValue, double index=0.0) { statsAdd(statName, (double) statValue, index); }
+		void statsAdd(std::string statName, double statValue, double index=0.0);
+
+		void statsIncrementBucket(std::string statName, int statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
+		void statsIncrementBucket(std::string statName, float statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
+		void statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0);
+
 		std::mutex mutx;  //To try to avoid garbled output when there are several threads trying to output data to the log
 
 		template <typename T>
@@ -178,7 +198,9 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		bool mConsoleLogColorsEnabled = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previousConsoleEventDateTime = 0;
 		std::time_t previousLogEventDateTime = 0;
+		std::unordered_map <std::string,double> mDiagStats;
 };
+
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;
 
