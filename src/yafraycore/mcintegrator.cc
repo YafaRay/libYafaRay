@@ -29,6 +29,7 @@
 #include <utilities/mcqmc.h>
 #include <core_api/renderpasses.h>
 #include <core_api/camera.h>
+#include <core_api/imagefilm.h>
 
 #ifdef __clang__
 #define inline  // aka inline removal
@@ -61,12 +62,13 @@ inline color_t mcIntegrator_t::estimateOneDirectLight(renderState_t &state, cons
 	if(lightNum == 0) return color_t(0.f); //??? if you get this far the lights must be >= 1 but, what the hell... :)
 
 	Halton hal2(2);
-	hal2.setStart(n-1);
 
+	hal2.setStart(imageFilm->getBaseSamplingOffset() + correlativeSampleNumber[state.threadID]-1); //Probably with this change the parameter "n" is no longer necessary, but I will keep it just in case I have to revert back this change!
 	int lnum = std::min((int)(hal2.getNext() * (float)lightNum), lightNum - 1);
 
+	++correlativeSampleNumber[state.threadID];
+	
 	return doLightEstimation(state, lights[lnum], sp, wo, lnum, colorPasses) * lightNum;
-	//return col * nLights;
 }
 
 inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *light, const surfacePoint_t &sp, const vector3d_t &wo, const unsigned int  &loffs, colorPasses_t &colorPasses) const

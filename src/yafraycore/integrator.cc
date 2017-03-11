@@ -42,6 +42,9 @@
 
 __BEGIN_YAFRAY
 
+
+std::vector<int> tiledIntegrator_t::correlativeSampleNumber(0);
+
 void tiledIntegrator_t::renderWorker(int mNumView, tiledIntegrator_t *integrator, scene_t *scene, imageFilm_t *imageFilm, threadControl_t *control, int threadID, int samples, int offset, bool adaptive, int AA_pass)
 {
 	renderArea_t a;
@@ -185,6 +188,10 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	if(scene->pass_enabled(PASS_INT_Z_DEPTH_NORM) || scene->pass_enabled(PASS_INT_MIST)) precalcDepths();
 
 	preRender();
+
+	correlativeSampleNumber.clear();
+	correlativeSampleNumber.resize(scene->getNumThreads());
+	std::fill(correlativeSampleNumber.begin(), correlativeSampleNumber.end(), 0);
 
 	int acumAASamples = AA_samples;
 		

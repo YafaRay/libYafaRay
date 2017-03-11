@@ -53,7 +53,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		float maxDepth; //!< Inverse of max depth from camera within the scene boundaries
 		float minDepth; //!< Distance between camera and the closest object on the scene
 		bool diffRaysEnabled;	//!< Differential rays enabled/disabled - for future motion blur / interference features
-
+		static std::vector<int> correlativeSampleNumber;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
 };
 
 struct threadControl_t
