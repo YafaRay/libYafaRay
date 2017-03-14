@@ -7,7 +7,7 @@
 
 __BEGIN_YAFRAY
 
-struct surfacePoint_t;
+class surfacePoint_t;
 class background_t;
 
 enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1<<1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!

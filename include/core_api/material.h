@@ -25,7 +25,7 @@ class YAFRAYCORE_EXPORT BSDF_t
 };
 */
 
-struct surfacePoint_t;
+class surfacePoint_t;
 struct renderState_t;
 class volumeHandler_t;
 

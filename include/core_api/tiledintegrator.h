@@ -8,7 +8,15 @@
 
 __BEGIN_YAFRAY
 
-class threadControl_t;
+class threadControl_t
+{
+	public:
+		threadControl_t() : finishedThreads(0) {}
+		std::mutex m;
+		std::condition_variable c; //!< condition variable to signal main thread
+		std::vector<renderArea_t> areas; //!< area to be output to e.g. blender, if any
+		volatile int finishedThreads; //!< number of finished threads, lock countCV when increasing/reading!
+};
 
 class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 {
@@ -54,15 +62,6 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		float minDepth; //!< Distance between camera and the closest object on the scene
 		bool diffRaysEnabled;	//!< Differential rays enabled/disabled - for future motion blur / interference features
 		static std::vector<int> correlativeSampleNumber;  //!< Used to sample lights more uniformly when using estimateOneDirectLight
-};
-
-struct threadControl_t
-{
-	threadControl_t() : finishedThreads(0) {}
-	std::mutex m;
-	std::condition_variable c; //!< condition variable to signal main thread
-	std::vector<renderArea_t> areas; //!< area to be output to e.g. blender, if any
-	volatile int finishedThreads; //!< number of finished threads, lock countCV when increasing/reading!
 };
 
 __END_YAFRAY

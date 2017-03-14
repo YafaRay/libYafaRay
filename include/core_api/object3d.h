@@ -15,7 +15,7 @@ __BEGIN_YAFRAY
 
 class light_t;
 class primitive_t;
-struct surfacePoint_t;
+class surfacePoint_t;
 
 class YAFRAYCORE_EXPORT object3d_t
 {
