@@ -195,6 +195,11 @@ std::string session_t::getPathYafaRayXml()
 	return mPathYafaRayXml;
 }
 
+std::string session_t::getConfiguredRuntimeSearchPathYafaRayPlugins()
+{
+	return YAF_RUNTIME_SEARCH_PLUGIN_DIR;
+}
+
 std::string session_t::getPathImageOutput()
 {
 	if(mPathImageOutput.empty())

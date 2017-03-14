@@ -5,8 +5,6 @@
 #include <core_api/color_console.h>
 #include <core_api/session.h>
 
-#define YAF_RUNTIME_SEARCH_PLUGIN_DIR "@YAF_RUNTIME_SEARCH_PLUGIN_DIR@"
-
 #define MIN_RAYDIST @YAF_MIN_RAY_DIST@
 #define YAF_SHADOW_BIAS @YAF_SHADOW_BIAS@
 

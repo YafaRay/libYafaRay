@@ -66,6 +66,7 @@ class YAFRAYCORE_EXPORT session_t
 		float currentPassPercent();
 		bool isInteractive();
 		std::string getPathYafaRayXml();
+		std::string getConfiguredRuntimeSearchPathYafaRayPlugins();
 		std::string getPathImageOutput();
 		std::string getYafaRayCoreVersion();
 						
