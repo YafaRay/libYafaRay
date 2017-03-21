@@ -125,7 +125,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		//! Enables/Disables a light density estimation image
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
-		void setNumSamples(int n){ numSamples = n; }
+		void setNumDensitySamples(int n){ numDensitySamples = n; }
 		/*! Sets the film color space and gamma correction */
 		void setColorSpace(colorSpaces_t color_space, float gammaVal);
 		/*! Sets the film color space and gamma correction for optional secondary file output */
@@ -221,8 +221,8 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		std::mutex imageMutex, splitterMutex, outMutex, densityImageMutex;
 		bool split = true;
 		bool abort = false;
-		bool estimateDensity;
-		int numSamples;
+		bool estimateDensity = false;
+		int numDensitySamples = 0;
 		imageSpliter_t *splitter = nullptr;
 		progressBar_t *pbar = nullptr;
 		renderEnvironment_t *env;

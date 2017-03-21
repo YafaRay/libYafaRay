@@ -262,7 +262,7 @@ void biDirIntegrator_t::cleanup()
 		for(int i=0; i<MAX_PATH_LENGTH; ++i) free(pathData.lightPath[i].userdata);
 		for(int i=0; i<MAX_PATH_LENGTH; ++i) free(pathData.eyePath[i].userdata);
 	}
-	lightImage->setNumSamples(nPaths); //dirty hack...
+	lightImage->setNumDensitySamples(nPaths); //dirty hack...
 }
 
 /* ============================================================

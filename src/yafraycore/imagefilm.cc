@@ -722,9 +722,9 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	Y_WARNING << "imageFilm: Text on the parameters badge won't be available." << yendl;
 #endif
 
-	float multi = 0.f;
+	float densityFactor = 0.f;
 
-	if(estimateDensity) multi = (float) (w * h) / (float) numSamples;
+	if(estimateDensity && numDensitySamples > 0) densityFactor = (float) (w * h) / (float) numDensitySamples;
 
     std::vector<colorA_t> colExtPasses(imagePasses.size(), colorA_t(0.f));
 
@@ -762,7 +762,8 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
                     else colExtPasses[idx] = colorA_t(0.f);
                 }
 								
-				if(estimateDensity && (flags & IF_DENSITYIMAGE) && idx == 0) colExtPasses[idx] += (*densityImage)(i, j) * multi;
+				if(estimateDensity && (flags & IF_DENSITYIMAGE) && idx == 0 && densityFactor > 0.f) colExtPasses[idx] += colorA_t((*densityImage)(i, j) * densityFactor, 0.f);
+                
 				colExtPasses[idx].clampRGB0();
 				
 				if(out2) colExtPasses2[idx] = colExtPasses[idx];
@@ -1060,7 +1061,7 @@ void imageFilm_t::addDensitySample(const color_t& c, int x, int y, float dx, flo
 		}
 	}
 
-	++numSamples;
+	++numDensitySamples;
 
 	densityImageMutex.unlock();
 }
