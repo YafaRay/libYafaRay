@@ -1,5 +1,85 @@
 YafaRay Core code ChangeLog
 ===========================
+Important: read the README file for installation instructions and important information about YafaRay
+
+This is an abbreviated list of changes. The full/detailed list of changes can be seen at:
+* YafaRay Core code: https://github.com/YafaRay/Core/commits/master
+
+
+
+YafaRay v3.2.0 (2017-03-21)
+---------------------------
+
+Feature changes/additions in v3.2.0:
+------------------------------------
+* IMPORTANT: Support for Texture Mipmaps / Ray Differentials, see: http://yafaray.org/node/695
+    - Modifier all ImageHandlers to standardise access and make them more flexible. BIG changes to ImageHandlers.
+    - Added new Grayscale internal buffers (optional)
+    - Reorganized all Interpolation and GetColor code
+    - Added MipMap capability to ImageHandlers
+    - Added Trilinear MipMap interpolation based on Ray Differentials.
+    - Added EWA MipMap interpolation based on Ray Differentials
+    - Heavily modified IBL blur function, to use mipmaps with manually calculated mipmap level instead of the previous dedicated "IBL blur" process
+
+* Path Tracing integrator: added new Russian Roulette parameter to speed up path tracing, see: http://www.yafaray.org/node/775
+    The relevant parameter will be "russian_roulette_min_bounces".
+    - If this parameter is set to 0, russian roulette will be enabled.
+    - If set to the same value specified in depth (max bounces), russian roulette will be disabled
+    - If set to a value between 0 and max bounces, then russian roulette will only start be applied after this number of bounces, so we can get decent sampling in dark areas for example and get a good speedup with less noise.
+    - Lower values of this parameter will result in faster (but somewhat noisier) renders.
+
+* yafaray-xml: better autodetection of plugins path, but in some cases "-pp" may still be needed
+
+* Building system: many changes to make the building process easier and more integrated with Git
+
+* Building system: standalone builds generated again
+
+* Building system: added building instructions and test scenes
+
+* QT4 support reintroduced and updated for YafaRay v3, but still in a basic state, many features not available yet for the Qt interface
+
+* Re-added ability to generate Sketchup plugins again
+
+* Texture mapping: allow MirrorX,MirrorY even when Repeat = 1
+
+
+Bug fixes in v3.2.0:
+--------------------
+* IMPORTANT: Path/Photon OneDirectLight - attempt to sample lights more uniformly, see: http://www.yafaray.org/node/803
+This has been a significant bug, that went unnoticed for a very long time and was causing severe artifacts in Photon Mapping and Path Tracing when lights were not uniformly lighting the scene. Now with this fix, renders should be much more correct and hopefully more realistic!
+
+* IMPORTANT: all integrators, SPPM and path roulette: Fixing non-randomness repetitive patterns, see: http://www.yafaray.org/node/792
+Another important bug that went unnoticed for a very long time. A lack of randomness caused severe patterns in BiDirectional integrator and probably some artifacts (in less extent) in the others. We hope this change helps to achieve more correct and realistic results now.
+
+* IMPORTANT: big changes to textures interpolation and colorspace processing, see: http://yafaray.org/node/787
+    - I found out that YafaRay was doing the texture interpolation *after* decoding the texels color space. This was causing significant differences in color between standard bilinear/bicubic and when using trilinear or EWA mipmaps.
+
+    - The Core code has been modified so from v3.2.0 onwards all internal image buffers will be converted to "linear RGB" during the texture loading process. That will allow a correct color interpolation process, and probably slightly faster than before. Hopefully this should improve color fidelity respect to the original texture images used for the scene.
+
+    - Also, all textures will be "optimized" by default. I think it's clear by now that optimized textures greatly improve memory usage and apparently don't cause slowdowns (might even make it slightly faster due to reduced RAM access?). To accomodate the extra color information necessary to store "linear RGB" values in the optimized buffers, their size will be around 20-25% bigger respect to v3.1.1, therefore a RAM usage increase will happen now compared with previous versions.
+
+    - For optimal results, from now on the user will be responsible for selecting correct ColorSpaces for all textures, including bump map, normal map, etc. For example for Non-RGB / Stencil / Bump / Normal maps, etc, textures are typically already linear and the user should select "linearRGB" in the texture properties, but if the user (by mistake) keeps the default sRGB for them, YafaRay will (incorrectly) apply the sRGB->LinearRGB conversion causing the values to be incorrect. However, I've added a "fail safe" so for any "float" textures, bump maps, normal maps, etc, when getting colors after interpolatio YafaRay will to a "inverse" color conversion to the original Color Space. This way, even a mistake in user's color space selection in bump maps, normal maps, etc, will not cause any significant problems in the image as they will be converted back to their original color space. However, in this case rendering will be slower and potential artifacts can appear due to interpolation taking place in the wrong color space. For optimal results, the user must select correctly the color space for all textures.
+    
+* Bidirectional integrator changes:
+    - Will be supported again, although will be considered "unstable" until the (many) issues it has are completely fixed.
+    - Fixed issue with excessive brightness that happened after render finished.
+
+* Fix for SPPM sudden brightness change when reaching approx 4,300 million photons. See: http://www.yafaray.org/node/772
+
+* Fixed bug that caused many extra render passes to be generated in some cases
+
+* Fixed crash when using Blender Exporter and Core with Ruby bindings support enabled
+
+* Image Texture Interpolation fixes, see: http://www.yafaray.org/node/783
+
+* Angular camera: fixed wrong renders due to incorrect default clipping, see: http://yafaray.org/node/779
+
+* Fixed EXR MultiLayer image file saving
+
+* Fixed uninitialized values generated by Ambient Occlusion sampling
+
+* Several other fixes and improvements, especially for the building system and tools for developers.
+
 
 
 YafaRay v3.1.1-beta (2016-09-25)
