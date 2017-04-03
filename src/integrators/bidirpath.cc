@@ -273,11 +273,8 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	color_t col(0.f);
 	surfacePoint_t sp;
 	ray_t testray = ray;
-	float alpha;
+	float alpha = 1.f;
 		
-	if(transpBackground) alpha=0.0;
-	else alpha=1.0;
-	
 	if(scene->intersect(testray, sp))
 	{
 		vector3d_t wo = -ray.dir;
@@ -445,6 +442,8 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	}
 	else
 	{
+		if(transpBackground) alpha=0.f;
+		
 		if(background && !transpRefractedBackground)
 		{
 			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
