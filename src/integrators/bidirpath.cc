@@ -654,6 +654,13 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	ls.sp = &spLight;
 	// generate light sample, abort when none could be created:
 	if( !light->illumSample(z.sp, ls, lRay) ) return false;
+	
+	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
+	ls.sp->P = point3d_t(0.f, 0.f, 0.f);
+	vector3d_t wo = lRay.dir;
+	light->emitSample(wo, ls);
+	ls.flags = 0xFFFFFFFF;
+	
 	lcol = ls.col/(ls.pdf*lightNumPdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
 	vector3d_t vec = -lRay.dir;
