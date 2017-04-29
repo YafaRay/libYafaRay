@@ -669,7 +669,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	int xrep=1, yrep=1;
 	double minx=0.0, miny=0.0, maxx=1.0, maxy=1.0;
 	double cdist=0.0;
-	const std::string *clipmode=0;
+	const std::string *clipmode = nullptr;
 	bool mirror_x = false;
 	bool mirror_y = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;

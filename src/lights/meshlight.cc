@@ -190,7 +190,7 @@ bool meshLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipd
 	if(!tree) return false;
 	float dis;
 	intersectData_t bary;
-	triangle_t *hitt=0;
+	triangle_t *hitt = nullptr;
 	if(ray.tmax<0) dis=std::numeric_limits<float>::infinity();
 	else dis=ray.tmax;
 	// intersect with tree:

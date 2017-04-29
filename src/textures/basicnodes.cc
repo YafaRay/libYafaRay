@@ -319,8 +319,8 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
 shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment_t &render)
 {
-	const texture_t *tex=0;
-	const std::string *texname=0, *option=0;
+	const texture_t *tex = nullptr;
+	const std::string *texname = nullptr, *option = nullptr;
 	TEX_COORDS tc = TXC_GLOB;
 	TEX_PROJ maptype = TXP_PLAIN;
 	float bumpStr = 1.f;
@@ -456,7 +456,7 @@ void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfa
 
 bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 {
-	const std::string *name=0;
+	const std::string *name = nullptr;
 	if( params.getParam("input1", name) )
 	{
 		input1 = find(*name);

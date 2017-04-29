@@ -186,7 +186,7 @@ inline void writeParam(const std::string &name, const parameter_t &param, std::o
 	int i=0;
 	bool b=false;
 	double f=0.0;
-	const std::string *s=0;
+	const std::string *s = nullptr;
 	colorA_t c(0.f);
 	point3d_t p(0.f);
 	switch( param.type() )

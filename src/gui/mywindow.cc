@@ -74,7 +74,7 @@
 #include <QtGui/QFontDatabase>
 #include <QtCore/QSettings>
 
-static QApplication *app=0;
+static QApplication *app = nullptr;
 
 /**************************
  *

@@ -945,7 +945,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 	if(mode == 0)
 	{
 		if(!tree) return false;
-		triangle_t *hitt=0;
+		triangle_t *hitt = nullptr;
 		if( ! tree->Intersect(ray, dis, &hitt, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
 		hitt->getSurface(sp, h, data);
@@ -956,7 +956,7 @@ bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
 	else
 	{
 		if(!vtree) return false;
-		primitive_t *hitprim=0;
+		primitive_t *hitprim = nullptr;
 		if( ! vtree->Intersect(ray, dis, &hitprim, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
 		hitprim->getSurface(sp, h, data);
@@ -978,7 +978,7 @@ bool scene_t::intersect(const diffRay_t &ray, surfacePoint_t &sp) const
 	if(mode == 0)
 	{
 		if(!tree) return false;
-		triangle_t *hitt=0;
+		triangle_t *hitt = nullptr;
 		if( ! tree->Intersect(ray, dis, &hitt, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
 		hitt->getSurface(sp, h, data);
@@ -989,7 +989,7 @@ bool scene_t::intersect(const diffRay_t &ray, surfacePoint_t &sp) const
 	else
 	{
 		if(!vtree) return false;
-		primitive_t *hitprim=0;
+		primitive_t *hitprim = nullptr;
 		if( ! vtree->Intersect(ray, dis, &hitprim, Z, data) ){ return false; }
 		point3d_t h=ray.from + Z*ray.dir;
 		hitprim->getSurface(sp, h, data);
@@ -1012,7 +1012,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 	else  dis = sray.tmax - 2*sray.tmin;
 	if(mode==0)
 	{
-		triangle_t *hitt=0;
+		triangle_t *hitt = nullptr;
 		if(!tree) return false;
 		bool shadowed = tree->IntersectS(sray, dis, &hitt, shadowBias);
 		if(hitt)
@@ -1024,7 +1024,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 	}
 	else
 	{
-		primitive_t *hitt=0;
+		primitive_t *hitt = nullptr;
 		if(!vtree) return false;
 		bool shadowed = vtree->IntersectS(sray, dis, &hitt, shadowBias);
 		if(hitt)
@@ -1049,7 +1049,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	bool isect=false;
 	if(mode==0)
 	{
-		triangle_t *hitt=0;
+		triangle_t *hitt = nullptr;
 		if(tree) 
 		{
 			isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
@@ -1062,7 +1062,7 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	}
 	else
 	{
-		primitive_t *hitt=0;
+		primitive_t *hitt = nullptr;
 		if(vtree)
 		{
 			isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);

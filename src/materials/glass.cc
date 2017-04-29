@@ -365,7 +365,7 @@ material_t* glassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &param
 	double filt=0.f;
 	double disp_power=0.0;
 	color_t filtCol(1.f), absorp(1.f), srCol(1.f);
-	const std::string *name=0;
+	const std::string *name = nullptr;
 	bool fake_shad = false;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;

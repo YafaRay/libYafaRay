@@ -613,8 +613,8 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 		
 imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
 {
-	const std::string *name=0;
-	const std::string *tiles_order=0;
+	const std::string *name = nullptr;
+	const std::string *tiles_order = nullptr;
 	int width=320, height=240, xstart=0, ystart=0;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
@@ -860,7 +860,7 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 */
 bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
 {
-	const std::string *name=0;
+	const std::string *name = nullptr;
 	int AA_passes=1, AA_samples=1, AA_inc_samples=1, nthreads=-1, nthreads_photons=-1;
 	double AA_threshold=0.05;
 	float AA_resampled_floor=0.f;

@@ -115,9 +115,9 @@ void nodeMaterial_t::evalBump(nodeStack_t &stack, const renderState_t &state, su
 bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnvironment_t &render)
 {
 	bool error=false;
-	const std::string *type=0;
-    const std::string *name=0;
-    const std::string *element=0;
+	const std::string *type = nullptr;
+    const std::string *name = nullptr;
+    const std::string *element = nullptr;
 
 	auto i=paramsList.begin();
 	
@@ -151,7 +151,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 		}
 		
 		renderEnvironment_t::shader_factory_t *fac = render.getShaderNodeFactory(*type);
-		shaderNode_t *shader=0;
+		shaderNode_t *shader = nullptr;
 		
 		if(fac)
         {
@@ -204,7 +204,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 
 void nodeMaterial_t::parseNodes(const paraMap_t &params, std::vector<shaderNode_t *> &roots, std::map<std::string, shaderNode_t *> &nodeList)
 {
-    const std::string *name=0;
+    const std::string *name = nullptr;
 
     for(auto currentNode = nodeList.begin(); currentNode != nodeList.end(); ++currentNode)
     {

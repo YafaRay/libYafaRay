@@ -143,7 +143,7 @@ bool layerNode_t::isViewDependant() const
 
 bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 {
-	const std::string *name=0;
+	const std::string *name = nullptr;
 	if( params.getParam("input", name) )
 	{
 		input = find(*name);

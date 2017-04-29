@@ -74,7 +74,7 @@ object3d_t* sphere_factory(paraMap_t &params, renderEnvironment_t &env)
 	point3d_t center(0.f, 0.f, 0.f);
 	double radius(1.f);
 	const material_t *mat;
-	const std::string *matname=0;
+	const std::string *matname = nullptr;
 	params.getParam("center", center);
 	params.getParam("radius", radius);
 	params.getParam("material", matname);
