@@ -11,7 +11,7 @@ YafaRay development version (work in progress, not yet released)
 
 Feature changes/additions:
 --------------------------
-* None yet
+* "Flat Material" option added to Shiny Diffuse, requested by a certain user. Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
 
 Bug fixes:
 ----------

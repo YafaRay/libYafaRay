@@ -209,6 +209,9 @@ class YAFRAYCORE_EXPORT material_t
 
 		visibility_t getVisibility() const { return mVisibility; }
 		bool getReceiveShadows() const { return mReceiveShadows; }
+
+		bool isFlat() const { return mFlatMaterial; }
+
 		int getAdditionalDepth() const { return additionalDepth; }
 		
 		void applyWireFrame(float & value, float wireFrameAmount, const surfacePoint_t &sp) const;
@@ -251,6 +254,9 @@ class YAFRAYCORE_EXPORT material_t
         color_t mWireFrameColor = color_t(1.f); //!< Wireframe shading color
         
         float mSamplingFactor = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
+
+        bool mFlatMaterial = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
+
 		static float mHighestSamplingFactor;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.        
 };
 

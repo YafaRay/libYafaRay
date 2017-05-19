@@ -85,6 +85,7 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	bool castShadows = light->castShadows() && material->getReceiveShadows();
+
 	// handle lights with delta distribution, e.g. point and directional lights
 	if( light->diracLight() )
 	{
@@ -97,30 +98,31 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 			if (castShadows) shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 			else shadowed = false;
 			
+			float angleLightNormal = ( material->isFlat() ? 1.f : std::fabs(sp.N*lightRay.dir));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+
 			if(!shadowed || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 			{
                 if(!shadowed && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
 
 				color_t surfCol = material->eval(state, sp, wo, lightRay.dir, BSDF_ALL);
 				color_t transmitCol = scene->volIntegrator->transmittance(state, lightRay);
-				colorA_t tmpColNoShadow = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+				colorA_t tmpColNoShadow = surfCol * lcol * angleLightNormal * transmitCol;
 				if(trShad && castShadows) lcol *= scol;
-				colorA_t tmpCol = surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
 
 				if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 				{
-					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * lcol * angleLightNormal * transmitCol;
 					colDiffNoShadow += tmpColNoShadow;
 					if(!shadowed) colDiffDir += tmpCol;
 				}
 				
 				if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 				{
-					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+					color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * lcol * angleLightNormal * transmitCol;
 					if(!shadowed) colGlossyDir += tmpCol;
 				}
 				
-				if(!shadowed) col += surfCol * lcol * std::fabs(sp.N*lightRay.dir) * transmitCol;
+				if(!shadowed) col += surfCol * lcol * angleLightNormal * transmitCol;
 			}
 			
 			if(shadowed)
@@ -180,6 +182,8 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 
 					if((!shadowed && ls.pdf > 1e-6f) && colorPasses.enabled(PASS_INT_SHADOW)) colShadow += color_t(1.f);
 					
+					float angleLightNormal = ( material->isFlat() ? 1.f : std::fabs(sp.N*lightRay.dir));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+
 					if( canIntersect)
 					{
 						float mPdf = material->pdf(state, sp, wo, lightRay.dir, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
@@ -191,52 +195,52 @@ inline color_t mcIntegrator_t::doLightEstimation(renderState_t &state, light_t *
 							
 							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 							{
-								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * angleLightNormal * w / ls.pdf;
 								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
 								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 							}
 							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 							{
-								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * angleLightNormal * w / ls.pdf;
 								if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
 							}
 
-							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) * w / ls.pdf;
+							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * angleLightNormal * w / ls.pdf;
 						}
 						else
 						{
 							if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 							{
-								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+								color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * angleLightNormal / ls.pdf;
 								colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
 								if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 							}
 
 							if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 							{
-								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+								color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * angleLightNormal / ls.pdf;
 								if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
 							}
 
-							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * angleLightNormal / ls.pdf;
 						}
 					}
 					else
 					{
 						if(colorPasses.enabled(PASS_INT_DIFFUSE) || colorPasses.enabled(PASS_INT_DIFFUSE_NO_SHADOW))
 						{
-							color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							color_t tmpColNoLightColor = material->eval(state, sp, wo, lightRay.dir, BSDF_DIFFUSE) * angleLightNormal / ls.pdf;
 							colDiffNoShadow += tmpColNoLightColor * lsColNoShadow;
 							if((!shadowed && ls.pdf > 1e-6f)) colDiffDir += tmpColNoLightColor * ls.col;
 						}
 
 						if(colorPasses.enabled(PASS_INT_GLOSSY) && state.raylevel == 0)
 						{
-							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+							color_t tmpCol = material->eval(state, sp, wo, lightRay.dir, BSDF_GLOSSY, true) * ls.col * angleLightNormal / ls.pdf;
 							if((!shadowed && ls.pdf > 1e-6f)) colGlossyDir += tmpCol;
 						}
 
-						if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * std::fabs(sp.N*lightRay.dir) / ls.pdf;
+						if((!shadowed && ls.pdf > 1e-6f)) ccol += surfCol * ls.col * angleLightNormal / ls.pdf;
 					}
 				}
 				

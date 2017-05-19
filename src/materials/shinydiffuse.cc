@@ -254,7 +254,7 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
         if(mIsTranslucent) return dat->component[2] * mT * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
     }
 
-    if(N*wl < 0.0) return color_t(0.f);
+    if(N*wl < 0.0 && !mFlatMaterial) return color_t(0.f);
     float mD = mT*(1.f - dat->component[2]) * dat->component[3];
 
     if(mUseOrenNayar)
@@ -589,6 +589,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
     bool receive_shadows = true;
+    bool flat_material = false;
     float IOR = 1.33f;
     double transmitFilterStrength=1.0;
     int mat_pass_index = 0;
@@ -611,6 +612,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     params.getParam("transmit_filter",  transmitFilterStrength);
     
     params.getParam("receive_shadows",  receive_shadows);
+    params.getParam("flat_material",  flat_material);
     params.getParam("visibility",       sVisibility);
     params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
@@ -632,6 +634,7 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 
     mat->setMaterialIndex(mat_pass_index);
     mat->mReceiveShadows = receive_shadows;
+    mat->mFlatMaterial = flat_material;
 	mat->additionalDepth = additionaldepth;
 
     mat->mWireFrameAmount = WireFrameAmount;
