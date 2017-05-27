@@ -203,7 +203,10 @@ void yafarayLog_t::clearAll()
 
 yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 {
-	mutx.lock();
+#if !defined(_WIN32) || defined(__MINGW32__)
+	mutx.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+#else
+#endif
 	
 	mVerbLevel = verbosity_level;
 	
@@ -445,7 +448,10 @@ void yafarayLog_t::statsAdd(std::string statName, double statValue, double index
 {
 	std::stringstream ss;
 	ss << statName << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1+std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
-	mutx.lock();
+#if !defined(_WIN32) || defined(__MINGW32__)
+	mutx.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+#else
+#endif
 	mDiagStats[ss.str()] += statValue;
 	mutx.unlock();
 }
