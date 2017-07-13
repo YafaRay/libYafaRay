@@ -139,6 +139,7 @@ inline float fLog2(float x)
 	return (POLYLOG(m.f) * (m.f - one.f) + e.f);
 }
 
+#ifdef FAST_MATH
 inline float asmSqrt(float n)
 {
     float r = n;
@@ -167,6 +168,7 @@ inline float asmSqrt(float n)
 #endif
     return r;
 }
+#endif
 
 inline float fPow(float a, float b)
 {
