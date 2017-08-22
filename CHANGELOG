@@ -6,8 +6,8 @@ This is an abbreviated list of changes. The full/detailed list of changes can be
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
 
-YafaRay development version (work in progress, not yet released)
-----------------------------------------------------------------
+YafaRay v3.3.0 (2017-08-22)
+---------------------------
 
 Feature changes/additions:
 --------------------------
@@ -18,7 +18,7 @@ Bug fixes:
 * Bidirectional: fixed transparent background not working, was causing the entire render to have transparent alpha. See: http://www.yafaray.org/community/forum/viewtopic.php?f=15&t=5236
 * Bidirectional: fixes (horrible hacks in fact, but...) for unitialized values causing incorrect illumination in scenes
 * Fixed hang in Windows 7 when YafaRay is built using Visual Studio 2013.
-
+* Some building fixes
 
 
 YafaRay v3.2.0 (2017-03-21)
