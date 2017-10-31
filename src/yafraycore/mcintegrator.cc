@@ -997,7 +997,17 @@ inline void mcIntegrator_t::recursiveRaytrace(renderState_t &state, diffRay_t &r
 			{
 				if(tmpColorPasses.size() > 1) tmpColorPasses.reset_colors();
 
-				diffRay_t refRay(sp.P, dir[1], scene->rayMinDist);
+				diffRay_t refRay;
+				float transp_bias_factor = material->getTransparentBiasFactor();
+
+				if(transp_bias_factor > 0.f)
+				{
+					bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
+					if(transpbias_multiply_raydepth) transp_bias_factor *= state.raylevel;
+					refRay = diffRay_t(sp.P+dir[1]*transp_bias_factor, dir[1], scene->rayMinDist);
+				}
+				else refRay = diffRay_t(sp.P, dir[1], scene->rayMinDist);
+
 				if(diffRaysEnabled) spDiff.refractedRay(ray, refRay, material->getMatIOR());
 				colorA_t integ = integrate(state, refRay, tmpColorPasses, additionalDepth);
 

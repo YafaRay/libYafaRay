@@ -594,6 +594,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     double transmitFilterStrength=1.0;
     int mat_pass_index = 0;
 	int additionaldepth = 0;
+    float transparentbias_factor = 0.f;
+    bool transparentbias_multiply_raydepth = false;
 	float samplingfactor = 1.f;
     float WireFrameAmount = 0.f;           //!< Wireframe shading amount   
     float WireFrameThickness = 0.01f;      //!< Wireframe thickness
@@ -616,6 +618,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     params.getParam("visibility",       sVisibility);
     params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
+    params.getParam("transparentbias_factor",   transparentbias_factor);
+    params.getParam("transparentbias_multiply_raydepth",   transparentbias_multiply_raydepth);
 	params.getParam("samplingfactor",   samplingfactor);
 	
     params.getParam("wireframe_amount",  WireFrameAmount);
@@ -636,6 +640,8 @@ material_t* shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
     mat->mReceiveShadows = receive_shadows;
     mat->mFlatMaterial = flat_material;
 	mat->additionalDepth = additionaldepth;
+    mat->transparentBiasFactor = transparentbias_factor;
+    mat->transparentBiasMultiplyRayDepth = transparentbias_multiply_raydepth;
 
     mat->mWireFrameAmount = WireFrameAmount;
     mat->mWireFrameThickness = WireFrameThickness;

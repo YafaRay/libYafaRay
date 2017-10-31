@@ -213,6 +213,8 @@ class YAFRAYCORE_EXPORT material_t
 		bool isFlat() const { return mFlatMaterial; }
 
 		int getAdditionalDepth() const { return additionalDepth; }
+		float getTransparentBiasFactor() const { return transparentBiasFactor; }
+		bool getTransparentBiasMultiplyRayDepth() const { return transparentBiasMultiplyRayDepth; }
 		
 		void applyWireFrame(float & value, float wireFrameAmount, const surfacePoint_t &sp) const;
 		void applyWireFrame(color_t & col, float wireFrameAmount, const surfacePoint_t &sp) const;
@@ -247,7 +249,9 @@ class YAFRAYCORE_EXPORT material_t
         float materialIndexAutoNumber = 0.f;	//!< Material Index number automatically generated for the material-index-auto-abs (numeric) render pass
 		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 		int additionalDepth;	//!< Per-material additional ray-depth
-		
+		float transparentBiasFactor = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
+		bool transparentBiasMultiplyRayDepth = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
+
 		float mWireFrameAmount = 0.f;           //!< Wireframe shading amount   
         float mWireFrameThickness = 0.01f;      //!< Wireframe thickness
         float mWireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
