@@ -6,6 +6,17 @@ This is an abbreviated list of changes. The full/detailed list of changes can be
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
 
+YafaRay (development v3.x.x, work in progress)
+----------------------------------------------
+Feature changes/additions:
+--------------------------
+* New per-material transparency bias for Shiny Diffuse. When there are objects with many transparent surfaces stacked close together (such as leaves in a tree) sometimes black artifacts appear if the ray reaches the maximum depth. This can be solved by increasing the maximum ray depth, but the render times increase. I've added two new parameters for the Shiny Diffuse material to try to achieve a "trick", which is not realistic and may cause other artifacts but that should prevent the black areas without having to increase the maximum ray depth so much.
+
+Other changes:
+----------
+* Silenced some warnings while building in recent versions of gcc.
+
+
 YafaRay v3.3.0 (2017-08-22)
 ---------------------------
 
