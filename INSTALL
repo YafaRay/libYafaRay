@@ -1,3 +1,15 @@
 YafaRay uses CMake for the building process in Linux, Windows and MacOSX systems.
 
 See directory "building" for example procedures to build YafaRay
+
+Dependencies (full list)
+
+pthread (wrapper library for Windows)
+libxml (for xml loader)
+libjpeg
+libpngOpenEXR
+freetype-2
+zlib
+Qt
+
+#TODO add minimum required version numbers
