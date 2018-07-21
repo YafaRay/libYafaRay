@@ -12,11 +12,7 @@ add_definitions(-DBUILDING_YAFRAYCORE)
 
 add_library(yafaray_v3_core SHARED ${YF_CORE_SOURCES})
 
-if (UNIX)
-	set (DLLOAD_LIB "dl" )
-else (UNIX)
-	set (DLLOAD_LIB "")
-endif (UNIX)
+set (DLLOAD_LIB ${CMAKE_DL_LIBS})
 
 if(APPLE) # set rpath - Jens
 	add_custom_command(TARGET yafaray_v3_core POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray_v3_core.dylib)
