@@ -153,6 +153,8 @@ inline float asmSqrt(float n)
 		:"=m" (r)
 		:"m" (r)
 		);
+#elif defined (__clang__)
+        r = sqrtf(n);
 #elif defined(__GNUC__) && defined(__i386__)
     asm(
 		"fld %0;"
