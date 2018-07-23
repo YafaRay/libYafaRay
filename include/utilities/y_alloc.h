@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
-#if !defined(WIN32) && !defined(__APPLE__)
+#if defined(__FreeBSD__)
+	#include <stdlib.h>
+#elif !defined(WIN32) && !defined(__APPLE__)
 	#include <alloca.h>
 #elif defined (__MINGW32__) //Added by DarkTide to enable mingw32 compliation
 	#include <malloc.h>
