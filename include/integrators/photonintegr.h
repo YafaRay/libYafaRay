@@ -3,19 +3,26 @@
 #define Y_PHOTONINTEGR_H
 
 #include <yafray_config.h>
+
+#include <yafraycore/timer.h>
+#include <yafraycore/photon.h>
+#include <yafraycore/spectrum.h>
+#include <yafraycore/scr_halton.h>
+#include <yafraycore/monitor.h>
+
+#include <core_api/mcintegrator.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
-#include <core_api/mcintegrator.h>
-#include <yafraycore/photon.h>
-#include <yafraycore/monitor.h>
-#include <yafraycore/timer.h>
-#include <yafraycore/spectrum.h>
+
+#include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
 
+#include <sstream>
+#include <iomanip>
 
 __BEGIN_YAFRAY
 

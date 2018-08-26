@@ -20,11 +20,6 @@
  */
 
 #include <integrators/photonintegr.h>
-#include <utilities/mcqmc.h>
-#include <yafraycore/scr_halton.h>
-
-#include <sstream>
-#include <iomanip>
 
 __BEGIN_YAFRAY
 

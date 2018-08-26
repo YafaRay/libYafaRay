@@ -2,22 +2,28 @@
 #define Y_SPPM_H
 
 #include <yafray_config.h>
+#include <yafraycore/timer.h>
+
+#include <core_api/mcintegrator.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
+
+#include <sstream>
+
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
-#include <core_api/mcintegrator.h>
 #include <yafraycore/photon.h>
 #include <yafraycore/monitor.h>
-#include <yafraycore/timer.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/sample_utils.h>
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/hashgrid.h>
 #include <stdint.h>
+#include <cmath>
+#include <algorithm>
 
 __BEGIN_YAFRAY
 

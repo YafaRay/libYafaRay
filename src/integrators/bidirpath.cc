@@ -1,16 +1,10 @@
 // The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk.
 
+#include <integrators/bidirpath.h>
 
-//#include <mcqmc.h>
-#include <core_api/environment.h>
-#include <core_api/material.h>
-#include <core_api/tiledintegrator.h>
-#include <core_api/background.h>
-#include <core_api/light.h>
 #include <core_api/camera.h>
 #include <core_api/imagefilm.h>
 #include <integrators/integr_utils.h>
-#include <utilities/mcqmc.h>
 
 __BEGIN_YAFRAY
 
