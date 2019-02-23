@@ -19,11 +19,11 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <QtCore/QDebug>
-#include <QtGui/QApplication>
-#include <QtGui/QPushButton>
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEvent>
+#include <QDebug>
+#include <QApplication>
+#include <QPushButton>
+#include <QPainter>
+#include <QPaintEvent>
 #include "renderwidget.h"
 #include "events.h"
 #include <iostream>

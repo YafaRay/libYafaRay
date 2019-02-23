@@ -151,9 +151,7 @@ else(WITH_TIFF)
 endif(WITH_TIFF)
 
 if(WITH_QT)
-	find_package(Qt4 4.4.0 COMPONENTS QtCore QtGui REQUIRED)
-	# Qt enabling header
-	include(${QT_USE_FILE})
+	find_package(Qt5Widgets REQUIRED)
 	message("Using Qt: yes")
 else(WITH_QT)
 	message("Using Qt: no")

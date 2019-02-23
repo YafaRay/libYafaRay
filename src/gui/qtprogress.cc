@@ -22,7 +22,7 @@
 #include "qtprogress.h"
 #include "events.h"
 #include "mywindow.h"
-#include <QtCore/QCoreApplication>
+#include <QCoreApplication>
 
 QtProgress::QtProgress(MainWindow *window, int cwidth)
 : yafaray::ConsoleProgressBar_t(cwidth), m_win(window), m_currentStep(0), m_totalSteps(0)

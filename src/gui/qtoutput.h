@@ -24,7 +24,7 @@
 
 #include <core_api/output.h>
 #include "renderwidget.h"
-#include <QtGui/QImage>
+#include <QImage>
 
 class QWidget;
 

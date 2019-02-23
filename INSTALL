@@ -18,5 +18,5 @@ Dependencies:
     >=openexr-2.2.0
     >=python-3.5
     >=ruby-2.2
-    >=qt-4.8
+    >=qt-5
     

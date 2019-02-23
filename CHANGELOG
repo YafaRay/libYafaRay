@@ -14,6 +14,7 @@ Feature changes/additions:
 
 Dependencies changes:
 ---------------------
+* IMPORTANT: Migration from Qt4 to Qt5 as Qt4 reached End of Life
 * Dependency on meganz/mingw-std-threads made optional, because it's needed for old MinGW compilers but it causes conflicts with new MinGW compilers, so better to have it as an option in CMake (disabled by default)
 
 Other changes:

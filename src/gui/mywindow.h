@@ -23,8 +23,8 @@
 #ifndef MYWINDOW_H
 #define MYWINDOW_H
 
-#include <QtGui/QMainWindow>
-#include <QtCore/QTime>
+#include <QMainWindow>
+#include <QTime>
 #include <string>
 
 #include <gui/yafqtapi.h>

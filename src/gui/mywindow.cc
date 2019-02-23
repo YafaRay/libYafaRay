@@ -62,17 +62,17 @@
 #include <algorithm>
 
 // Qt Headers
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QScrollArea>
-#include <QtGui/QFileDialog>
+#include <QHBoxLayout>
+#include <QScrollArea>
+#include <QFileDialog>
 #include <QtCore/QDir>
-#include <QtGui/QImageWriter>
-#include <QtGui/QErrorMessage>
-#include <QtGui/QMessageBox>
-#include <QtGui/QKeyEvent>
-#include <QtGui/QDesktopWidget>
-#include <QtGui/QFontDatabase>
-#include <QtCore/QSettings>
+#include <QImageWriter>
+#include <QErrorMessage>
+#include <QMessageBox>
+#include <QKeyEvent>
+#include <QDesktopWidget>
+#include <QFontDatabase>
+#include <QSettings>
 
 static QApplication *app = nullptr;
 

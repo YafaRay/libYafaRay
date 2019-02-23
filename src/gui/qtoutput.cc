@@ -21,7 +21,7 @@
 
 #include "qtoutput.h"
 #include "events.h"
-#include <QtCore/QCoreApplication>
+#include <QCoreApplication>
 #include <iostream>
 #include <cstdlib>
 
@@ -44,7 +44,7 @@ bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t
 	int g = std::max(0,std::min(255, (int)(color.G * 255.f)));	
 	int b = std::max(0,std::min(255, (int)(color.B * 255.f)));
 	QRgb aval = Qt::white;
-	QRgb zval = Qt::black;
+	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if (alpha)
@@ -64,7 +64,7 @@ bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t
 	int g = std::max(0,std::min(255, (int)(colExtPasses.at(0).G * 255.f)));	
 	int b = std::max(0,std::min(255, (int)(colExtPasses.at(0).B * 255.f)));
 	QRgb aval = Qt::white;
-	QRgb zval = Qt::black;
+	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if (alpha)

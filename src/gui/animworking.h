@@ -22,7 +22,7 @@
 #ifndef ANIMWORKING_H
 #define ANIMWORKING_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 #include <vector>
 
 #define topFrame 50

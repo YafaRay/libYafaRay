@@ -21,8 +21,8 @@
 #ifndef WORKER_H
 #define WORKER_H
 
-#include <QtCore/QThread>
-#include <QtCore/QString>
+#include <QThread>
+#include <QString>
 
 class QtOutput;
 class MainWindow;

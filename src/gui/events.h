@@ -22,9 +22,9 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include <QtCore/QEvent>
-#include <QtCore/QRect>
-#include <QtCore/QString>
+#include <QEvent>
+#include <QRect>
+#include <QString>
 
 enum CustomEvents
 {

@@ -20,9 +20,9 @@
 
 
 #include "animworking.h"
-#include <QtGui/QPainter>
-#include <QtGui/QConicalGradient>
-#include <QtGui/QImage>
+#include <QPainter>
+#include <QConicalGradient>
+#include <QImage>
 
 // Animation Resources
 
