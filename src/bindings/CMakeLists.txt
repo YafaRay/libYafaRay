@@ -1,5 +1,7 @@
 #check for swig if needed
 
+cmake_policy(SET CMP0020 NEW)
+
 IF (WITH_YAF_PY_BINDINGS OR WITH_YAF_RUBY_BINDINGS)
 	
 	FIND_PACKAGE(YafSWIG REQUIRED)
