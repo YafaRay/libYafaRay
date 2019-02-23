@@ -12,6 +12,10 @@ Feature changes/additions:
 --------------------------
 * New per-material transparency bias for Shiny Diffuse. When there are objects with many transparent surfaces stacked close together (such as leaves in a tree) sometimes black artifacts appear if the ray reaches the maximum depth. This can be solved by increasing the maximum ray depth, but the render times increase. I've added two new parameters for the Shiny Diffuse material to try to achieve a "trick", which is not realistic and may cause other artifacts but that should prevent the black areas without having to increase the maximum ray depth so much.
 
+Dependencies changes:
+---------------------
+* Dependency on meganz/mingw-std-threads made optional, because it's needed for old MinGW compilers but it causes conflicts with new MinGW compilers, so better to have it as an option in CMake (disabled by default)
+
 Other changes:
 ----------
 * Silenced some warnings while building in recent versions of gcc.

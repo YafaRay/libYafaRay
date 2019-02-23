@@ -252,6 +252,8 @@ set(WITH_YAF_RUBY_BINDINGS OFF)
 ##set(FAST_MATH OFF)
 ##set(FAST_TRIG OFF)
 
+# Use MinGW-Std-Threads 3rd party library. Useful with old MinGW versions that do not include C++11 threads libraries or where they are slower than they should. Set it to OFF with newer versions of MinGW or a conflict might happen causing crashes, default: OFF
+##set(WITH_MINGW_STD_THREADS ON)
 
 
 ################################# End of file ##################################
