@@ -145,7 +145,7 @@ PyTypeObject yafTile_Type =
 	sizeof(YafTileObject_t),			/* tp_basicsize */
 	0,									/* tp_itemsize */
 	( destructor ) yaf_tile_dealloc,	/* tp_dealloc */
-	nullptr,                       		/* printfunc tp_print; */
+	0,                             		/* tp_print / tp_vectorcall_offset */
 	nullptr,								/* getattrfunc tp_getattr; */
 	nullptr,								/* setattrfunc tp_setattr; */
 	nullptr,								/* tp_compare */ /* DEPRECATED in python 3.0! */
