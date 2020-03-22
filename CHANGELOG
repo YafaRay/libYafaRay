@@ -6,8 +6,10 @@ This is an abbreviated list of changes. The full/detailed list of changes can be
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
 
-YafaRay (development v3.x.x, work in progress)
-----------------------------------------------
+YafaRay v3.4.0 (2020-03-22)
+---------------------------
+Note: don't mind the release date, the project has been mostly inactive for a long time, so only a few (although significant) changes since v3.3.0, but it was about time to give the last changes a proper release version number.
+
 Feature changes/additions:
 --------------------------
 * New per-material transparency bias for Shiny Diffuse. When there are objects with many transparent surfaces stacked close together (such as leaves in a tree) sometimes black artifacts appear if the ray reaches the maximum depth. This can be solved by increasing the maximum ray depth, but the render times increase. I've added two new parameters for the Shiny Diffuse material to try to achieve a "trick", which is not realistic and may cause other artifacts but that should prevent the black areas without having to increase the maximum ray depth so much.
@@ -16,6 +18,7 @@ Dependencies changes:
 ---------------------
 * IMPORTANT: Migration from Qt4 to Qt5 as Qt4 reached End of Life
 * Dependency on meganz/mingw-std-threads made optional, because it's needed for old MinGW compilers but it causes conflicts with new MinGW compilers, so better to have it as an option in CMake (disabled by default)
+* Compatibility fix for Python 3.8
 
 Other changes:
 ----------
