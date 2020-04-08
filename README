@@ -4,16 +4,13 @@ YafaRay is a free open-source montecarlo raytracing engine released under the LG
 
 For more information, see: http://www.yafaray.org
 
-Please post bugreports and feature requests here:
-http://www.yafaray.org/development/bugtracker/yafaray
-
 
 SOURCE CODE
 -----------
 YafaRay source code is hosted in GitHub.
 
 * YafaRay Core source code is available in: https://github.com/YafaRay/Core
-* YafaRay Blender-Exporter source code is available in: https://github.com/YafaRay/Blender-Exporter
+* YafaRay Blender-Exporter (for Blender v2.7x) source code is available in: https://github.com/YafaRay/Blender-Exporter
 
 
 RELEASES
@@ -24,14 +21,17 @@ There are two different types of YafaRay Releases:
 * Standalone Core Releases: they are intended to be used by 3rd party software and *not* to be used with Blender. 
 
 For the latest YafaRay Releases check for builds here:
-* http://www.yafaray.org/download
-* http://www.graphicall.org/yafaray
+* YafaRay Core: releases/binary files available in https://github.com/YafaRay/Core/releases
+* YafaRay Blender-Exporter (for Blender v2.7x): releases/binary files available in https://github.com/YafaRay/Blender-Exporter/releases
 
-or look into this forum post for other platform builds:
-http://www.yafaray.org/community/forum/viewforum.php?f=12
 
-Please post bugreports and feature requests here:
-http://www.yafaray.org/development/bugtracker/yafaray
+BUG REPORTS / FEATURE REQUESTS
+------------------------------
+Please post your bug reports and feature requests in the "Issues" tab of the corresponding GitHub Project
+
+NOTE: The old bugtracker in www.yafaray.org will *no longer* be used for bug tracking / feature requests.
+
+
 
 Thank you.
 
