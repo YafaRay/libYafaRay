@@ -11,4 +11,7 @@ target_link_libraries(orthographicCamera yafaray_v3_core)
 add_library(angularCamera SHARED angularCamera.cc)
 target_link_libraries(angularCamera yafaray_v3_core)
 
-install (TARGETS perspectiveCamera orthographicCamera angularCamera ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})
+add_library(equirectangularCamera SHARED equirectangularCamera.cc)
+target_link_libraries(equirectangularCamera yafaray_v3_core)
+
+install (TARGETS perspectiveCamera orthographicCamera angularCamera equirectangularCamera ${YAF_TARGET_TYPE} DESTINATION ${YAF_PLUGIN_DIR})

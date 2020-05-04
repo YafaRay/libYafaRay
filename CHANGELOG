@@ -5,6 +5,12 @@ Important: read the README file for installation instructions and important info
 This is an abbreviated list of changes. The full/detailed list of changes can be seen at:
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
+
+YafaRay (devel) (2020-05-04) for Blender 2.79:
+---------------------------------------------
+* Added Equirectangular camera
+
+
 YafaRay v3.4.1 (2020-04-08)
 ---------------------------
 * Changed documentation to state that any bug reporting and resolution will solely be done in the GitHub Project "Issues" tab. Bugs in the old yafaray.org bugtracker will not be processed anymore.
