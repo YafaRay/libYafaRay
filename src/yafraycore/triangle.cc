@@ -16,7 +16,7 @@ inline void triangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, int
 
 	float u = data.b0, v = data.b1, w = data.b2;
 
-	if(mesh->is_smooth)
+	if(mesh->is_smooth || mesh->normals_exported)
 	{
 		vector3d_t va = (na >= 0) ? mesh->getVertexNormal(na) : sp.Ng;
 		vector3d_t vb = (nb >= 0) ? mesh->getVertexNormal(nb) : sp.Ng;
@@ -644,7 +644,7 @@ void bsTriangle_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersec
 	float u = data.b0, v = data.b1, w = data.b2;
 
 	//todo: calculate smoothed normal...
-	/* if(mesh->is_smooth)
+	/* if(mesh->is_smooth || mesh->normals_exported)
 	{
 		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
 		sp.N = u*va + v*vb + w*vc;
