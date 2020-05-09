@@ -26,14 +26,18 @@
 __BEGIN_YAFRAY
 
 angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                           int _resx, int _resy, float asp, float angle, bool circ, bool orthographic,
+                           int _resx, int _resy, float asp, float angle, float max_angle, bool circ, const AngularProjection &projection,
                            float const near_clip_distance, float const far_clip_distance) :
-    camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance), hor_phi(angle*M_PI/180.f), circular(circ), orthographic(orthographic)
+    camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance), max_radius(max_angle / angle), circular(circ), projection(projection)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(camX,camY,camZ);
 
-	max_r = 1;
+	if(projection == AngularProjection::Orthographic) focal_length = 1.f / fSin(angle);
+	else if(projection == AngularProjection::Stereographic) focal_length = 1.f / 2.f / tan(angle / 2.f);
+	else if(projection == AngularProjection::EquisolidAngle) focal_length = 1.f / 2.f / fSin(angle / 2.f);
+	else if(projection == AngularProjection::Rectilinear) focal_length = 1.f / tan(angle);
+	else focal_length = 1.f / angle; //By default, AngularProjection::Equidistant
 }
 
 void angularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
@@ -56,12 +60,15 @@ ray_t angularCam_t::shootRay(float px, float py, float lu, float lv, float &wt) 
 	float v = 2.f * (py/(float)resy) - 1.f;
 	v *= aspect_ratio;
 	float radius = fSqrt(u*u + v*v);
-	if (circular && radius>max_r) { wt=0; return ray; }
+	if (circular && radius>max_radius) { wt=0; return ray; }
 	float theta=0;
 	if (!((u==0) && (v==0))) theta = atan2(v,u);
 	float phi = 0.f;
-	if(orthographic) phi = asin(radius) * hor_phi / M_PI_2;
-	else phi = radius * hor_phi;
+	if(projection == AngularProjection::Orthographic) phi = asin(radius/focal_length);
+	else if(projection == AngularProjection::Stereographic) phi = 2.f * atan(radius/(2.f*focal_length));
+	else if(projection == AngularProjection::EquisolidAngle) phi = 2.f * asin(radius/(2.f*focal_length));
+	else if(projection == AngularProjection::Rectilinear) phi = atan(radius/focal_length);
+	else phi = radius/focal_length; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
 	ray.dir = fSin(phi)*(fCos(theta)*vright + fSin(theta)*vup ) + fCos(phi)*vto;
 
@@ -75,8 +82,10 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	point3d_t from(0,1,0), to(0,0,0), up(0,1,1);
 	int resx=320, resy=200;
-	double aspect=1.0, angle=90, max_angle=90;
-	bool circular = true, mirrored = false, orthographic = false;
+	double aspect=1.0, angle_degrees=90, max_angle_degrees=90;
+	AngularProjection projection = AngularProjection::Equidistant;
+	std::string projectionString;
+	bool circular = true, mirrored = false;
 	float nearClip = 0.0f, farClip = -1.0e38f;
 	std::string viewName = "";
 
@@ -86,19 +95,24 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("resx", resx);
 	params.getParam("resy", resy);
 	params.getParam("aspect_ratio", aspect);
-	params.getParam("angle", angle);
-	max_angle = angle;
-	params.getParam("max_angle", max_angle);
+	params.getParam("angle", angle_degrees);
+	max_angle_degrees = angle_degrees;
+	params.getParam("max_angle", max_angle_degrees);
 	params.getParam("circular", circular);
 	params.getParam("mirrored", mirrored);
-	params.getParam("orthographic", orthographic);
+	params.getParam("projection", projectionString);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
     params.getParam("view_name", viewName);
-	
-    angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle, circular, orthographic, nearClip, farClip);
+
+    if(projectionString == "orthographic") projection = AngularProjection::Orthographic;
+    else if(projectionString == "stereographic") projection = AngularProjection::Stereographic;
+    else if(projectionString == "equisolid_angle") projection = AngularProjection::EquisolidAngle;
+    else if(projectionString == "rectilinear") projection = AngularProjection::Rectilinear;
+    else projection = AngularProjection::Equidistant;
+    
+    angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle_degrees*M_PI/180.f, max_angle_degrees*M_PI/180.f, circular, projection, nearClip, farClip);
 	if(mirrored) cam->vright *= -1.0;
-	cam->max_r = max_angle/angle;
 	
 	cam->view_name = viewName;
 	

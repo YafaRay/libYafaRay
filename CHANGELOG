@@ -6,6 +6,11 @@ This is an abbreviated list of changes. The full/detailed list of changes can be
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
 
+YafaRay v3.4.4 (2020-05-09)
+---------------------------
+* Angular camera: modified to add several types of angular projections and to fix new ortographic calculations.
+
+
 YafaRay v3.4.3 (2020-05-09)
 ---------------------------
 * Angular camera: added "Ortographic" projection.
