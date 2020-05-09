@@ -26,9 +26,9 @@
 __BEGIN_YAFRAY
 
 angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                           int _resx, int _resy, float asp, float angle, bool circ,
+                           int _resx, int _resy, float asp, float angle, bool circ, bool orthographic,
                            float const near_clip_distance, float const far_clip_distance) :
-    camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance), hor_phi(angle*M_PI/180.f), circular(circ)
+    camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance), hor_phi(angle*M_PI/180.f), circular(circ), orthographic(orthographic)
 {
 	// Initialize camera specific plane coordinates
 	setAxis(camX,camY,camZ);
@@ -59,7 +59,9 @@ ray_t angularCam_t::shootRay(float px, float py, float lu, float lv, float &wt) 
 	if (circular && radius>max_r) { wt=0; return ray; }
 	float theta=0;
 	if (!((u==0) && (v==0))) theta = atan2(v,u);
-	float phi = radius * hor_phi;
+	float phi = 0.f;
+	if(orthographic) phi = asin(radius) * hor_phi / M_PI_2;
+	else phi = radius * hor_phi;
 	//float sp = sin(phi);
 	ray.dir = fSin(phi)*(fCos(theta)*vright + fSin(theta)*vup ) + fCos(phi)*vto;
 
@@ -74,7 +76,7 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	point3d_t from(0,1,0), to(0,0,0), up(0,1,1);
 	int resx=320, resy=200;
 	double aspect=1.0, angle=90, max_angle=90;
-	bool circular = true, mirrored = false;
+	bool circular = true, mirrored = false, orthographic = false;
 	float nearClip = 0.0f, farClip = -1.0e38f;
 	std::string viewName = "";
 
@@ -89,11 +91,12 @@ camera_t* angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("max_angle", max_angle);
 	params.getParam("circular", circular);
 	params.getParam("mirrored", mirrored);
+	params.getParam("orthographic", orthographic);
     params.getParam("nearClip", nearClip);
     params.getParam("farClip", farClip);
     params.getParam("view_name", viewName);
 	
-    angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle, circular, nearClip, farClip);
+    angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle, circular, orthographic, nearClip, farClip);
 	if(mirrored) cam->vright *= -1.0;
 	cam->max_r = max_angle/angle;
 	
