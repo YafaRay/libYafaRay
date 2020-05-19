@@ -44,6 +44,10 @@ __BEGIN_YAFRAY
 class normal_t;
 class point3d_t;
 
+#pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 class YAFRAYCORE_EXPORT vector3d_t
 {
 	public:
@@ -83,12 +87,7 @@ class YAFRAYCORE_EXPORT vector3d_t
 		bool null()const { return ((x==0) && (y==0) && (z==0)); }
 		float sinFromVectors(const vector3d_t &v);
 
-#pragma GCC diagnostic push
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
 		vector3d_t& operator = (const vector3d_t &s) { x=s.x;  y=s.y;  z=s.z;  return *this;}
-#pragma GCC diagnostic pop
 		vector3d_t& operator +=(const vector3d_t &s) { x+=s.x;  y+=s.y;  z+=s.z;  return *this;}
 		vector3d_t& operator -=(const vector3d_t &s) { x-=s.x;  y-=s.y;  z-=s.z;  return *this;}
 		vector3d_t& operator /=(float s) { x/=s;  y/=s;  z/=s;  return *this;}
@@ -136,12 +135,8 @@ class YAFRAYCORE_EXPORT point3d_t
 		point3d_t(const vector3d_t &v): x(v.x),  y(v.y),  z(v.z) { }
 		void set(float ix, float iy, float iz=0) { x=ix;  y=iy;  z=iz; }
 		float length() const;
-#pragma GCC diagnostic push
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
+
 		point3d_t& operator= (const point3d_t &s) { x=s.x;  y=s.y;  z=s.z;  return *this; }
-#pragma GCC diagnostic pop
 		point3d_t& operator *=(float s) { x*=s;  y*=s;  z*=s;  return *this;}
 		point3d_t& operator +=(float s) { x+=s;  y+=s;  z+=s;  return *this;}
 		point3d_t& operator +=(const point3d_t &s) { x+=s.x;  y+=s.y;  z+=s.z;  return *this;}
@@ -159,6 +154,7 @@ class YAFRAYCORE_EXPORT point3d_t
 			ar & BOOST_SERIALIZATION_NVP(z);
 		}
 };
+#pragma GCC diagnostic pop
 
 
 inline vector3d_t::vector3d_t(const normal_t &n): x(n.x), y(n.y), z(n.z) { }

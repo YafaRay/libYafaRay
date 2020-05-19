@@ -87,7 +87,8 @@ if (WITH_YAF_PY_BINDINGS)
 	endif(NOT WIN32)
 	
 	message("Python header path: ${PYTHON_INCLUDE_DIR}")
-	include_directories(${YAF_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR})
+	include_directories(${YAF_INCLUDE_DIRS})
+	include_directories(SYSTEM ${PYTHON_INCLUDE_DIR})
 	include(${SWIG_USE_FILE})
 
 	if(YAF_PY_VERSION GREATER 3)
@@ -152,7 +153,8 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	endif(NOT WIN32)
 
-	include_directories(${YAF_INCLUDE_DIRS} ${RUBY_INCLUDE_DIR})
+	include_directories(${YAF_INCLUDE_DIRS})
+	include_directories(SYSTEM ${RUBY_INCLUDE_DIR})
 	include(${SWIG_USE_FILE})
 
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)

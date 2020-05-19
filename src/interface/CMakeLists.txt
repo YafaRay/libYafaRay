@@ -1,4 +1,5 @@
-include_directories(${YAF_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
+include_directories(${YAF_INCLUDE_DIRS})
+include_directories(SYSTEM ${LIBXML2_INCLUDE_DIR})
 
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
 

@@ -1,19 +1,20 @@
-include_directories(${YAF_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIR})
+include_directories(${YAF_INCLUDE_DIRS})
+include_directories(SYSTEM ${ZLIB_INCLUDE_DIR})
 
 if(WITH_OpenEXR)
-	include_directories(${OPENEXR_INCLUDE_DIRS})
+	include_directories(SYSTEM ${OPENEXR_INCLUDE_DIRS})
 endif(WITH_OpenEXR)
 
 if(WITH_JPEG)
-	include_directories(${JPEG_INCLUDE_DIR})
+	include_directories(SYSTEM ${JPEG_INCLUDE_DIR})
 endif(WITH_JPEG)
 
 if(WITH_PNG)
-	include_directories(${PNG_INCLUDE_DIR})
+	include_directories(SYSTEM ${PNG_INCLUDE_DIR})
 endif(WITH_PNG)
 
 if(WITH_TIFF)
-	include_directories(${TIFF_INCLUDE_DIR})
+	include_directories(SYSTEM ${TIFF_INCLUDE_DIR})
 endif(WITH_TIFF)
 
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
