@@ -182,7 +182,7 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 			s.pdf_back = s1.pdf_back;
 			s.col_back = s1.col_back;
 		}
-		col1 = col1;
+		//col1 = col1;
 		W = W1;
 	}
 	else if(!mat1Sampled && mat2Sampled)

@@ -1349,7 +1349,8 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 		ifs.read (memblock, 1);
 		bool binaryfile = false;
 		if(memblock[0] < '0') binaryfile = true;	//If first character in the film file is not an ASCII number then consider it a binary file
-		delete memblock;
+		delete[] memblock;
+		memblock = nullptr;
 		ifs.seekg (0, std::ios::beg);
 		
 		if(debugXMLformat)
