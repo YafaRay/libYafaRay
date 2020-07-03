@@ -2,7 +2,7 @@
  *
  * 			bound.h: Bound and tree api for general raytracing acceleration
  *      This is part of the yafray package
- *      Copyright (C) 2002  Alejandro Conty Estévez
+ *      Copyright (C) 2002  Alejandro Conty EstÃ©vez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

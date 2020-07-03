@@ -2,7 +2,7 @@
  *
  * 			vector3d.h: Vector 3d and point representation and manipulation api
  *      This is part of the yafray package
- *      Copyright (C) 2002 Alejandro Conty Estevez
+ *      Copyright (C) 2002 Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
