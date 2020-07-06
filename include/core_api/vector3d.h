@@ -44,8 +44,8 @@ __BEGIN_YAFRAY
 class normal_t;
 class point3d_t;
 
-#pragma GCC diagnostic push
 #if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 class YAFRAYCORE_EXPORT vector3d_t
@@ -154,7 +154,9 @@ class YAFRAYCORE_EXPORT point3d_t
 			ar & BOOST_SERIALIZATION_NVP(z);
 		}
 };
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 
 
 inline vector3d_t::vector3d_t(const normal_t &n): x(n.x), y(n.y), z(n.z) { }
