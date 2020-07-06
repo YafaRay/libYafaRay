@@ -22,6 +22,7 @@ YafaRay (git development)
         - Endianness could be an issue for non-Intel/AMD platforms like ARM, to be investigated in the future, but that's a problem for another day.
    - Removed all SysInfo Boost code and replaced it by a "CMake-building" generation. Renamed sysinfo classes as build_info.
         
+* CMake: made LibXML2 / ZLib optional. New CMake flag "WITH_XMLImport" to enable LibXML2. Now all the dependencies are finally optional and pure YafaRay library can be built without any dependencies.
 * Added back -pthread flag for gcc/g++ compilation to fix FreeBSD builds To fix FreeBSD build as requested in https://github.com/YafaRay/Core/issues/113
 * Removed some warnings for GCC. Also removed some Clang warnings as requested by https://github.com/YafaRay/Core/issues/110
 * Fixed some source file comments license boilerplate to remove wrongly encoded characters that were confusing some IDEs* 

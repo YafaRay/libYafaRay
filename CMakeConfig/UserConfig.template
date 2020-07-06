@@ -18,7 +18,7 @@ set(YAF_USER_CONFIG ON)
 
 ############################## Build configuration #############################
 
-# Enable DEBUG build mode for developer testing, default:ON
+# Enable DEBUG build mode for developer testing, default:OFF
 set(DEBUG_BUILD OFF)
 
 # Build font rendering with FreeType, default: ON
@@ -39,6 +39,9 @@ set(WITH_PNG ON)
 # Build TIFF image I/O plugin, default:ON
 set(WITH_TIFF ON)
 
+# Enable XML Import capability (required for XML Loader), default:ON
+set(WITH_XMLImport ON)
+
 # Enable XML Loader build, default:ON
 set(WITH_XML_LOADER ON)
 
@@ -48,11 +51,10 @@ set(WITH_YAF_PY_BINDINGS ON)
 # Enable the YafaRay Ruby bindings, default:OFF
 set(WITH_YAF_RUBY_BINDINGS OFF)
 
-# Enable Qt Gui build                                                          # Default: ON
-set(WITH_QT ON)
+# Enable Qt Gui build, default: OFF
+set(WITH_QT OFF)
 
-# Embed font for QT GUI (useful for some buggy QT installations)               #
-# Default: OFF
+# Embed font for QT GUI (useful for some buggy QT installations), default: OFF
 set(EMBED_FONT_QT OFF)
 
 
