@@ -25,7 +25,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <utilities/fileUtils.h>
+#include <core_api/file.h>
 
 #include "tgaUtils.h"
 
@@ -104,7 +104,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 	header.bitDepth = ((m_hasAlpha) ? 32 : 24 );
 	header.desc = TL | ((m_hasAlpha) ? alpha8 : noAlpha );
 		
-	FILE * fp = fileUnicodeOpen(name, "wb");
+	FILE * fp = file_t::open(name, "wb");
 
 	if (fp == nullptr)
 		return false;
@@ -188,7 +188,7 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 			}
 		}
 		fwrite(&footer, sizeof(tgaFooter_t), 1, fp);
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 	}
 	
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -417,7 +417,7 @@ bool tgaHandler_t::precheckFile(tgaHeader_t &header, const std::string &name, bo
 
 bool tgaHandler_t::loadFromFile(const std::string &name)
 {
-	FILE *fp = fileUnicodeOpen(name, "rb");
+	FILE *fp = file_t::open(name, "rb");
 
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
@@ -447,7 +447,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 	
 	if(!precheckFile(header, name, isGray, isRLE, hasColorMap, alphaBitDepth))
 	{
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 		return false;
 	}
 
@@ -572,7 +572,7 @@ bool tgaHandler_t::loadFromFile(const std::string &name)
 		}
 	}
 	
-	fileUnicodeClose(fp);
+	file_t::close(fp);
 	fp = nullptr;
 	
 	if (ColorMap) delete ColorMap;

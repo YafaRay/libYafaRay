@@ -23,6 +23,7 @@
 #include <core_api/imagefilm.h>
 #include <core_api/imagehandler.h>
 #include <core_api/scene.h>
+#include <core_api/file.h>
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
@@ -35,9 +36,6 @@
 #include <stdexcept>
 #include <iomanip>
 #include <utility>
-#include <boost/filesystem.hpp>
-#include <boost/foreach.hpp> 
-#include <boost/filesystem.hpp>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>
@@ -262,10 +260,7 @@ void imageFilm_t::init(int numPasses)
 	if(!output->isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
 		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-	
 		if(filmFileSaveLoad == FILM_FILE_LOAD_SAVE || filmFileSaveLoad == FILM_FILE_SAVE) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back. 
-
-		imageFilmUpdateCheckInfo(); //film load check data initialization. Make sure this is done after the Film Load operation (if any).
 	}
 }
 
@@ -661,7 +656,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
 	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
 
-	ssBadge << "\nYafaRay (" << version << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler(); 
+    ssBadge << "\nYafaRay (" << version << ")" << " " << buildInfoGetOS() << " " << buildInfoGetArchitecture() << " (" <<  buildInfoGetPlatform() << buildInfoGetCompiler() << ")";
 
 	ssBadge << std::setprecision(2);
 	double times = gTimer.getTimeNotStopping("rendert");
@@ -1339,48 +1334,129 @@ std::string imageFilm_t::getFilmPath() const
 
 bool imageFilm_t::imageFilmLoad(const std::string &filename)
 {
-	bool debugXMLformat = false;	//Enable only for debugging purposes
+	Y_INFO << "imageFilm: Loading film from: \"" << filename << yendl;
 
-	try
+	file_t file(filename);
+	if (!file.open("rb"))
 	{
-		std::ifstream ifs(filename, std::fstream::binary);
-		char *memblock = new char [1];
-		ifs.seekg (0, std::ios::beg);
-		ifs.read (memblock, 1);
-		bool binaryfile = false;
-		if(memblock[0] < '0') binaryfile = true;	//If first character in the film file is not an ASCII number then consider it a binary file
-		delete[] memblock;
-		memblock = nullptr;
-		ifs.seekg (0, std::ios::beg);
-		
-		if(debugXMLformat)
-		{
-			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in XML format" << yendl;
-			boost::archive::xml_iarchive ia(ifs);
-			ia >> BOOST_SERIALIZATION_NVP(*this);
-			ifs.close();
-		}
-		else if(binaryfile == true)
-		{
-			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Binary (non portable) format" << yendl;
-			boost::archive::binary_iarchive ia(ifs);
-			ia >> BOOST_SERIALIZATION_NVP(*this);
-			ifs.close();
-		}
-		else
-		{
-			Y_INFO << "imageFilm: Loading film from: \"" << filename << "\" in Text format" << yendl;
-			boost::archive::text_iarchive ia(ifs);
-			ia >> BOOST_SERIALIZATION_NVP(*this);
-			ifs.close();
-		}
-		Y_VERBOSE << "imageFilm: Film loaded from file." << yendl;
-		return true;
-	}
-	catch(std::exception& ex){
-        Y_WARNING << "imageFilm: error '" << ex.what() << "' while loading ImageFilm file: '" << filename << "'" << yendl;
+		Y_WARNING << "imageFilm file '" << filename << "' not found, aborting load operation";
 		return false;
-    }
+	}
+
+	std::string header;
+	file.read(header);
+	if(header != "YAF_FILMv1")
+	{
+		Y_WARNING << "imageFilm file '" << filename << "' does not contain a valid YafaRay image file";
+		file.close();
+		return false;
+	}
+	file.read(computerNode);
+	file.read(baseSamplingOffset);
+	file.read(samplingOffset);
+
+	int filmload_check_w;
+	file.read(filmload_check_w);
+	if(filmload_check_w != w)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << w << ", in reused/loaded film=" << filmload_check_w << yendl;
+		return false;
+	}
+
+	int filmload_check_h;
+	file.read(filmload_check_h);
+	if(filmload_check_h != h)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << h << ", in reused/loaded film=" << filmload_check_h << yendl;
+		return false;
+	}
+
+	int filmload_check_cx0;
+	file.read(filmload_check_cx0);
+	if(filmload_check_cx0 != cx0)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx0 << ", in reused/loaded film=" << filmload_check_cx0 << yendl;
+		return false;
+	}
+
+	int filmload_check_cx1;
+	file.read(filmload_check_cx1);
+	if(filmload_check_cx1 != cx1)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx1 << ", in reused/loaded film=" << filmload_check_cx1 << yendl;
+		return false;
+	}
+
+	int filmload_check_cy0;
+	file.read(filmload_check_cy0);
+	if(filmload_check_cy0 != cy0)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy0 << ", in reused/loaded film=" << filmload_check_cy0 << yendl;
+		return false;
+	}
+
+	int filmload_check_cy1;
+	file.read(filmload_check_cy1);
+	if(filmload_check_cy1 != cy1)
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check_cy1 << yendl;
+		return false;
+	}
+
+	int imagePasses_size;
+	file.read(imagePasses_size);
+    const renderPasses_t * renderPasses = env->getRenderPasses();
+	if(imagePasses_size != renderPasses->extPassesSize())
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << renderPasses->extPassesSize() << ", in reused/loaded film=" << imagePasses_size << yendl;
+		return false;
+	}
+	else imagePasses.resize(imagePasses_size);
+
+	int auxImagePasses_size;
+	file.read(auxImagePasses_size);
+	if(auxImagePasses_size != renderPasses->auxPassesSize())
+	{
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of auxiliar render passes, expected=" << renderPasses->auxPassesSize() << ", in reused/loaded film=" << auxImagePasses_size << yendl;
+		return false;
+	}
+	else auxImagePasses.resize(auxImagePasses_size);
+
+	for(auto &img : imagePasses)
+	{
+		img = new rgba2DImage_t(w, h);
+		for(int y=0; y < h; ++y)
+		{
+			for(int x=0; x < w; ++x)
+			{
+				pixel_t &p = (*img)(x, y);
+				file.read(p.col.R);
+				file.read(p.col.G);
+				file.read(p.col.B);
+				file.read(p.col.A);
+				file.read(p.weight);
+			}
+		}
+	}
+
+	for(auto &img : auxImagePasses)
+	{
+		img = new rgba2DImage_t(w, h);
+		for(int y=0; y < h; ++y)
+		{
+			for(int x=0; x < w; ++x)
+			{
+				pixel_t &p = (*img)(x, y);
+				file.read(p.col.R);
+				file.read(p.col.G);
+				file.read(p.col.B);
+				file.read(p.col.A);
+				file.read(p.weight);
+			}
+		}
+	}
+	file.close();
+	return true;
 }
 
 void imageFilm_t::imageFilmLoadAllInFolder()
@@ -1398,78 +1474,87 @@ void imageFilm_t::imageFilmLoadAllInFolder()
 		pbar->setTag(passString.str().c_str());
 	}
 	
-	std::string filmPath = getFilmPath();
-	
-	std::string baseImageFileName = boost::filesystem::path(session.getPathImageOutput()).stem().string();
+    const path_t pathImageOutput = session.getPathImageOutput();
+    std::string dir = pathImageOutput.getDirectory();
+	if(dir.empty()) dir = ".";	//If parent path is empty, set the path to the current folder
+    const std::vector<std::string> filesList = file_t::listFiles(dir);
 
-	std::string parentPath = boost::filesystem::path(session.getPathImageOutput()).parent_path().string();
-	if(parentPath.empty()) parentPath = ".";	//If parent path is empty, set the path to the current folder
-	const std::string target_path( parentPath );
-	std::vector<std::string> filmFilesList;
-	
-	try
-	{
-		boost::filesystem::directory_iterator it_end;
-		for(boost::filesystem::directory_iterator it( target_path ); it != it_end; ++it)
-		{
-			if(!boost::filesystem::is_regular_file(it->status())) continue;
-			if(it->path().extension().string() != ".film") continue;
-			if(it->path().stem().string().size() < baseImageFileName.size()) continue;
-			if(it->path().stem().string().compare(0, baseImageFileName.size(), baseImageFileName) != 0) continue;
-			filmFilesList.push_back(it->path().string());
-		}
-		std::sort(filmFilesList.begin(), filmFilesList.end());
+    const std::string baseImageFileName = pathImageOutput.getBaseName();
+    std::vector<std::string> filmFilePathsList;
+    for(const auto &fileName : filesList)
+    {
+		//Y_DEBUG PR(fileName) PREND;
+        if(file_t::exists(dir + "//" + fileName, true))
+        {
+            const path_t filePath { fileName };
+            const std::string ext = filePath.getExtension();
+            const std::string base = filePath.getBaseName();
+            const int base_rfind_result = base.rfind(baseImageFileName, 0);
+            
+            //Y_DEBUG PR(baseImageFileName) PR(fileName) PR(base) PR(ext) PR(base_rfind_result) PREND;
+            if(ext == "film" && base_rfind_result == 0)
+            {
+                filmFilePathsList.push_back(dir + "//" + fileName);
+                //Y_DEBUG << "Added: " << dir + "//" + fileName << yendl;
+            }
+        }
+    }
 
-		for(auto filmFile: filmFilesList)
-		{
-			imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
-			loadedFilm->imageFilmLoad(filmFile);
-			
-			for(size_t idx=0; idx<imagePasses.size(); ++idx)
-			{
-				for(int i=0; i<w; ++i)
-				{
-					for(int j=0; j<h; ++j)
-					{
-						rgba2DImage_t *loadedImageBuffer = loadedFilm->imagePasses[idx];
-						(*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
-						(*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
-					}
-				}
-			}
-			
-			for(size_t idx=0; idx<auxImagePasses.size(); ++idx)
-			{
-				for(int i=0; i<w; ++i)
-				{
-					for(int j=0; j<h; ++j)
-					{
-						rgba2DImage_t *loadedImageBuffer = loadedFilm->auxImagePasses[idx];
-						(*auxImagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
-						(*auxImagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
-					}
-				}
-			}
-			
-			if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
-			if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
-			
-			delete loadedFilm;
+    std::sort(filmFilePathsList.begin(), filmFilePathsList.end());
+    bool any_film_loaded = false;
+    for(const auto &filmFile: filmFilePathsList)
+    {
+        imageFilm_t *loadedFilm = new imageFilm_t(w, h, cx0, cy0, *output, 1.0, BOX, env);
+        if(!loadedFilm->imageFilmLoad(filmFile))
+        {
+			Y_WARNING << "ImageFilm: Could not load film file '" << filmFile << "'" << yendl;
+			continue;
 		}
-	}
-	catch(const boost::filesystem::filesystem_error& e)
-	{
-		Y_WARNING << "imageFilm: error during imageFilm loading process: \"" << e.what() << "\"" << yendl;
-	}
-	
+		else any_film_loaded = true;
+
+        for(size_t idx=0; idx<imagePasses.size(); ++idx)
+        {
+			rgba2DImage_t* loadedImageBuffer = loadedFilm->imagePasses[idx];
+			for(int i=0; i<w; ++i)
+            {
+                for(int j=0; j<h; ++j)
+                {
+                    (*imagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+                    (*imagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+                }
+            }
+        }
+
+        for(size_t idx=0; idx<auxImagePasses.size(); ++idx)
+        {
+			rgba2DImage_t* loadedImageBuffer = loadedFilm->auxImagePasses[idx];
+			for(int i=0; i<w; ++i)
+            {
+                for(int j=0; j<h; ++j)
+                {
+                    (*auxImagePasses[idx])(i,j).col += (*loadedImageBuffer)(i,j).col;
+                    (*auxImagePasses[idx])(i,j).weight += (*loadedImageBuffer)(i,j).weight;
+                }
+            }
+        }
+
+        if(samplingOffset < loadedFilm->samplingOffset) samplingOffset = loadedFilm->samplingOffset;
+        if(baseSamplingOffset < loadedFilm->baseSamplingOffset) baseSamplingOffset = loadedFilm->baseSamplingOffset;
+
+        delete loadedFilm;
+        
+        Y_VERBOSE << "ImageFilm: loaded film '" << filmFile << "'" << yendl;
+    }
+    
+    if(any_film_loaded) session.setStatusRenderResumed();
+
 	if(pbar) pbar->setTag(oldTag);
 }
 
 
 bool imageFilm_t::imageFilmSave()
 {
-	bool debugXMLformat = false;	//Enable only for debugging purposes
-	
+	bool result_ok = true;
 	std::stringstream passString;
 	passString << "Saving internal ImageFilm file";
 
@@ -1483,54 +1568,87 @@ bool imageFilm_t::imageFilmSave()
 		pbar->setTag(passString.str().c_str());
 	}
 
-	std::string filmPath = getFilmPath();
+	const std::string filmPath = getFilmPath();
+	file_t file(filmPath);
+	file.open("wb");
+	file.append("YAF_FILMv1");
+	file.append(computerNode);
+	file.append(baseSamplingOffset);
+	file.append(samplingOffset);
+	file.append(w);
+	file.append(h);
+	file.append(cx0);
+	file.append(cx1);
+	file.append(cy0);
+	file.append(cy1);
+	file.append((int) imagePasses.size());
+	file.append((int) auxImagePasses.size());
 
-	try
+	for(const auto &img : imagePasses)
 	{
-		std::ofstream ofs(filmPath+".tmp", std::fstream::binary);
+		const int img_w = img->getWidth();
+		if(img_w != w)
+		{
+			Y_WARNING << "ImageFilm saving problems, film width " << w << " different from internal 2D image width " << img_w << yendl;
+			result_ok = false;
+			break;
+		}
+		const int img_h = img->getHeight();
+		if(img_h != h)
+		{
+			Y_WARNING << "ImageFilm saving problems, film height " << h << " different from internal 2D image height " << img_h << yendl;
+			result_ok = false;
+			break;
+		}
 
-		if(debugXMLformat)
+		for(int y=0; y < h; ++y)
 		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in XML format" << yendl;
-			boost::archive::xml_oarchive oa(ofs);
-			oa << BOOST_SERIALIZATION_NVP(*this);
-			ofs.close();
+			for(int x=0; x < w; ++x)
+			{
+				const pixel_t &p = (*img)(x, y);
+				file.append(p.col.R);
+				file.append(p.col.G);
+				file.append(p.col.B);
+				file.append(p.col.A);
+				file.append(p.weight);
+			}
 		}
-		else if(filmFileSaveBinaryFormat)
-		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Binary (non portable) format" << yendl;
-			boost::archive::binary_oarchive oa(ofs);
-			oa << BOOST_SERIALIZATION_NVP(*this);
-			ofs.close();
-		}
-		else
-		{
-			Y_INFO << "imageFilm: Saving film to: \"" << filmPath << "\" in Text format" << yendl;
-			boost::archive::text_oarchive oa(ofs);
-			oa << BOOST_SERIALIZATION_NVP(*this);
-			ofs.close();
-		}
-	Y_VERBOSE << "imageFilm: Film saved to file." << yendl;
-	}
-	catch(std::exception& ex){
-        Y_WARNING << "imageFilm: error '" << ex.what() << "' while saving ImageFilm file: '" << filmPath << "'" << yendl;
-		if(pbar) pbar->setTag(oldTag);
-		return false;
-    }
-    
-	try
-	{
-		boost::filesystem::copy_file(filmPath+".tmp", filmPath, boost::filesystem::copy_option::overwrite_if_exists);
-		boost::filesystem::remove(filmPath+".tmp");
-	}
-	catch(const boost::filesystem::filesystem_error& e)
-	{
-		Y_WARNING << "imageFilm: file operation error \"" << e.what() << yendl;
 	}
 
+	for(const auto &img : auxImagePasses)
+	{
+		const int img_w = img->getWidth();
+		if(img_w != w)
+		{
+			Y_WARNING << "ImageFilm saving problems, film width " << w << " different from internal 2D image width " << img_w << yendl;
+			result_ok = false;
+			break;
+		}
+		const int img_h = img->getHeight();
+		if(img_h != h)
+		{
+			Y_WARNING << "ImageFilm saving problems, film height " << h << " different from internal 2D image height " << img_h << yendl;
+			result_ok = false;
+			break;
+		}
+
+		for(int y=0; y < h; ++y)
+		{
+			for(int x=0; x < w; ++x)
+			{
+				const pixel_t &p = (*img)(x, y);
+				file.append(p.col.R);
+				file.append(p.col.G);
+				file.append(p.col.B);
+				file.append(p.col.A);
+				file.append(p.weight);
+			}
+		}
+	}
+
+	file.close();
 	if(pbar) pbar->setTag(oldTag);
-	
-	return true;
+	return result_ok;
 }
 
 void imageFilm_t::imageFilmFileBackup() const
@@ -1548,89 +1666,17 @@ void imageFilm_t::imageFilmFileBackup() const
 		pbar->setTag(passString.str().c_str());
 	}
 
-	std::string filmPath = getFilmPath();
-	std::string filmPathBackup = filmPath+"-previous.bak";
+    const std::string filmPath = getFilmPath();
+    const std::string filmPathBackup = filmPath+"-previous.bak";
 	
-	if(boost::filesystem::exists(filmPath))
+    if(file_t::exists(filmPath, true))
 	{
 		Y_VERBOSE << "imageFilm: Creating backup of previously saved film to: \"" << filmPathBackup << "\"" << yendl;
-		try
-		{	
-			boost::filesystem::rename(filmPath, filmPathBackup);
-		}
-		catch(const boost::filesystem::filesystem_error& e)
-		{
-			Y_WARNING << "imageFilm: error during imageFilm file backup \"" << e.what() << "\"" << yendl;
-		}
+        const bool result_ok = file_t::rename(filmPath, filmPathBackup, true, true);
+        if(!result_ok) Y_WARNING << "imageFilm: error during imageFilm file backup" << yendl;
 	}
 	
 	if(pbar) pbar->setTag(oldTag);
-}
-
-void imageFilm_t::imageFilmUpdateCheckInfo()
-{
-	filmload_check.filmStructureVersion = FILM_STRUCTURE_VERSION;
-	filmload_check.w = w;
-	filmload_check.h = h;
-	filmload_check.cx0 = cx0;
-	filmload_check.cx1 = cx1;
-	filmload_check.cy0 = cy0;
-	filmload_check.cy1 = cy1;
-	filmload_check.numPasses = imagePasses.size();
-}
-
-bool imageFilm_t::imageFilmLoadCheckOk() const
-{
-    const renderPasses_t * renderPasses = env->getRenderPasses();
-    
-	bool checksOK = true;
-	
-	if(filmload_check.filmStructureVersion != FILM_STRUCTURE_VERSION)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Film structure version, expected=" << FILM_STRUCTURE_VERSION << ", in reused/loaded film=" << filmload_check.filmStructureVersion << yendl;
-	}	
-	if(filmload_check.w != w)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << w << ", in reused/loaded film=" << filmload_check.w << yendl;
-	}
-	if(filmload_check.h != h)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << h << ", in reused/loaded film=" << filmload_check.h << yendl;
-	}
-	if(filmload_check.cx0 != cx0)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx0 << ", in reused/loaded film=" << filmload_check.cx0 << yendl;
-	}
-	if(filmload_check.cx1 != cx1)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx1 << ", in reused/loaded film=" << filmload_check.cx1 << yendl;
-	}
-	if(filmload_check.cy0 != cy0)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy0 << ", in reused/loaded film=" << filmload_check.cy0 << yendl;
-	}
-	if(filmload_check.cy1 != cy1)
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check.cy1 << yendl;
-	}
-	if(filmload_check.numPasses != (size_t) renderPasses->extPassesSize())
-	{
-		checksOK = false;
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << renderPasses->extPassesSize() << ", in reused/loaded film=" << filmload_check.numPasses << yendl;
-	}
-	
-	if(!checksOK) Y_WARNING << "imageFilm: loading/reusing film failed because parameters are different. The film will be re-generated." << yendl;
-	
-	Y_DEBUG << "imageFilm: loading/reusing film check results=" << checksOK << ". Expected: film structure version=" << FILM_STRUCTURE_VERSION << ",w="<<w<<",h="<<h<<",cx="<<cx0<<",cy0="<<cy0<<",cx1="<<cx1<<",cy1="<<cy1<<",numPasses="<<renderPasses->extPassesSize()<<" .In Image File: film structure version="<<filmload_check.filmStructureVersion<<",w="<<filmload_check.w<<",h="<<filmload_check.h<<",cx="<<filmload_check.cx0<<",cy0="<<filmload_check.cy0<<",cx1="<<filmload_check.cx1<<",cy1="<<filmload_check.cy1<<",numPasses="<<filmload_check.numPasses << yendl;
-	
-	return checksOK;
 }
 
 

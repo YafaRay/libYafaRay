@@ -25,7 +25,10 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <utilities/fileUtils.h>
+#include <core_api/file.h>
+#if defined(_WIN32)
+#include <utilities/stringUtils.h>
+#endif //defined(_WIN32)
 
 namespace libtiff {
 	#include <tiffio.h>
@@ -70,8 +73,8 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
 #if defined(_WIN32)
-	std::wstring wname = utf8_to_wutf16(name);    
-	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	std::wstring wname = utf8_to_wutf16le(name);    
+	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *out = libtiff::TIFFOpen(name.c_str(), "w");
 #endif
@@ -183,8 +186,8 @@ bool tifHandler_t::loadFromFile(const std::string &name)
 	libtiff::uint32 w, h;
 	
 #if defined(_WIN32)
-	std::wstring wname = utf8_to_wutf16(name);
-	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16 (unicode) so we have to convert the UTF8 path to UTF16
+	std::wstring wname = utf8_to_wutf16le(name);
+	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *tif = libtiff::TIFFOpen(name.c_str(), "r");
 #endif

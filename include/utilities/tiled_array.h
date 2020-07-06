@@ -5,13 +5,6 @@
 #include <cstring>
 #include "y_alloc.h"
 
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-
 __BEGIN_YAFRAY
 
 template<class T, int logBlockSize> class tiledArray2D_t
@@ -83,17 +76,6 @@ protected:
 	T *data;
 	int nx, ny, xBlocks;
 	int blockSize, blockMask;
-
-	friend class boost::serialization::access;
-	template<class Archive> void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & BOOST_SERIALIZATION_NVP(data);
-		ar & BOOST_SERIALIZATION_NVP(nx);
-		ar & BOOST_SERIALIZATION_NVP(ny);
-		ar & BOOST_SERIALIZATION_NVP(xBlocks);
-		ar & BOOST_SERIALIZATION_NVP(blockSize);
-		ar & BOOST_SERIALIZATION_NVP(blockMask);
-	}
 };
 
 
@@ -151,18 +133,6 @@ template<int logBlockSize> class tiledBitArray2D_t
 		size_t nAlloc;
 		int nx, ny, xBlocks;
 		int blockSize, blockMask;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(data);
-			ar & BOOST_SERIALIZATION_NVP(nAlloc);
-			ar & BOOST_SERIALIZATION_NVP(nx);
-			ar & BOOST_SERIALIZATION_NVP(ny);
-			ar & BOOST_SERIALIZATION_NVP(xBlocks);
-			ar & BOOST_SERIALIZATION_NVP(blockSize);
-			ar & BOOST_SERIALIZATION_NVP(blockMask);
-		}
 };
 
 __END_YAFRAY

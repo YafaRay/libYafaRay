@@ -8,10 +8,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/array.hpp>
-
 __BEGIN_YAFRAY
 
 namespace kdtree {
@@ -44,14 +40,6 @@ struct kdNode
 		const T *data;
 	};
 	u_int32	flags;
-
-	friend class boost::serialization::access;
-	template<class Archive> void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & BOOST_SERIALIZATION_NVP(flags);
-		if(IsLeaf()) ar & BOOST_SERIALIZATION_NVP(data);
-		else ar & BOOST_SERIALIZATION_NVP(division);
-	}
 };
 
 template<class NodeData> struct CompareNode
@@ -89,29 +77,6 @@ class pointKdTree
 		mutable unsigned int Y_LOOKUPS, Y_PROCS;
 		int maxLevelThreads = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
 		std::mutex mutx;
-
-		friend class boost::serialization::access;
-		template<class Archive> void save(Archive & ar, const unsigned int version) const
-		{
-			ar & BOOST_SERIALIZATION_NVP(nElements);
-			ar & BOOST_SERIALIZATION_NVP(nextFreeNode);
-			ar & BOOST_SERIALIZATION_NVP(treeBound);
-			ar & BOOST_SERIALIZATION_NVP(Y_LOOKUPS);
-			ar & BOOST_SERIALIZATION_NVP(Y_PROCS);
-			ar & boost::serialization::make_array(nodes, nextFreeNode);
-		}
-		template<class Archive> void load(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(nElements);
-			ar & BOOST_SERIALIZATION_NVP(nextFreeNode);
-			ar & BOOST_SERIALIZATION_NVP(treeBound);
-			ar & BOOST_SERIALIZATION_NVP(Y_LOOKUPS);
-			ar & BOOST_SERIALIZATION_NVP(Y_PROCS);	
-			nodes = (kdNode<T> *)y_memalign(64, 4*nElements*sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
-			ar & boost::serialization::make_array(nodes, nextFreeNode);
-		}
-		
-		BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 template<class T>

@@ -28,8 +28,6 @@
 	#include <windows.h>
 #endif
 
-#include <boost/filesystem.hpp>
-
 #include <core_api/light.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
@@ -42,6 +40,7 @@
 #include <core_api/object3d.h>
 #include <core_api/volume.h>
 #include <yafraycore/std_primitives.h>
+#include <core_api/file.h>
 #include <string>
 #include <sstream>
 
@@ -71,7 +70,7 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-	Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << sysInfoGetOS() << sysInfoGetArchitecture() << sysInfoGetPlatform() << sysInfoGetCompiler() << yendl;
+    Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << buildInfoGetOS() << " " << buildInfoGetArchitecture() << " (" << buildInfoGetPlatform() << buildInfoGetCompiler() << ")" << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
 	session.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
@@ -150,7 +149,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 	// First check if the plugins path has been manually set and if it exists:
 	if(!path.empty())
 	{
-		if(boost::filesystem::exists( path ))
+        if(file_t::exists( path, false ))
 		{
 			Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
 			return true;
@@ -163,7 +162,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 	
 	// If the previous check does not work, check if the plugins path is in a subfolder of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
 	path = session.getPathYafaRayXml()+"/yafaray-plugins/";
-	if ( boost::filesystem::exists( path ) )
+    if ( file_t::exists( path, false ) )
 	{
 		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
 		return true;
@@ -175,7 +174,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 
 	// If the previous check does not work, check if the plugins path is in a "lib" subfolder of the parent of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
 	path = session.getPathYafaRayXml()+"/../lib/yafaray-plugins/";
-	if ( boost::filesystem::exists( path ) )
+    if ( file_t::exists( path, false ) )
 	{
 		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
 		return true;
@@ -187,7 +186,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 
 	// If the previous checks do not work, check if the plugins path is in the plugins search directory defined in CMake during the building process
 	path = std::string(session.getConfiguredRuntimeSearchPathYafaRayPlugins());
-	if ( boost::filesystem::exists( path ) )
+    if ( file_t::exists( path, false ) )
 	{
 		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
 		return true;
@@ -631,7 +630,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	double images_autosave_interval_seconds = 300.0;
 	std::string film_save_load_string = "none";
 	int film_save_load = FILM_FILE_NONE;
-	bool film_save_binary_format = true;
 	std::string film_autosave_interval_type_string = "none";
 	int film_autosave_interval_type = AUTOSAVE_NONE;
 	int film_autosave_interval_passes = 1;
@@ -656,7 +654,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
 	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
 	params.getParam("film_save_load", film_save_load_string);
-	params.getParam("film_save_binary_format", film_save_binary_format); // If enabled, it will autosave the Image Film in binary format (faster, smaller, but not portable). Otherwise it will autosave in text format (portable but bigger and slower)
 	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
 	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
 	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
@@ -733,7 +730,6 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	film->setImagesAutoSaveIntervalPasses(images_autosave_interval_passes);
 
 	film->setFilmFileSaveLoad(film_save_load);
-	film->setFilmFileSaveBinaryFormat(film_save_binary_format);
 	film->setFilmAutoSaveIntervalType(film_autosave_interval_type);
 	film->setFilmAutoSaveIntervalSeconds(film_autosave_interval_seconds);
 	film->setFilmAutoSaveIntervalPasses(film_autosave_interval_passes);
@@ -742,8 +738,7 @@ imageFilm_t* renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 
 	if(images_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << yendl;
 
-	if(film_save_load != FILM_FILE_NONE && film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving feature in binary format (smaller, faster but not portable among systems)" << yendl;
-	if(film_save_load != FILM_FILE_NONE && !film_save_binary_format) Y_INFO_ENV << "Enabling imageFilm file saving in text format (portable among systems but bigger and slower)" << yendl;
+	if(film_save_load != FILM_FILE_NONE) Y_INFO_ENV << "Enabling imageFilm file saving feature" << yendl;
 	if(film_save_load == FILM_FILE_LOAD_SAVE) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
 
 	if(film_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << yendl;

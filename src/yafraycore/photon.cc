@@ -1,5 +1,6 @@
 
 #include <yafraycore/photon.h>
+#include <core_api/file.h>
 
 __BEGIN_YAFRAY
 
@@ -48,60 +49,68 @@ void photonGather_t::operator()(const photon_t *photon, float dist2, float &maxD
 	}
 }
 
-bool photonMapLoad(photonMap_t * map, const std::string &filename, bool debugXMLformat)
+bool photonMap_t::load(const std::string &filename)
 {
-	try
+	clear();
+
+	file_t file(filename);
+	if (!file.open("rb"))
 	{
-		std::ifstream ifs(filename, std::fstream::binary);
-		
-		if(debugXMLformat)
-		{
-			boost::archive::xml_iarchive ia(ifs);
-			map->clear();
-			ia >> BOOST_SERIALIZATION_NVP(*map);
-			ifs.close();
-		}
-		else
-		{
-			boost::archive::binary_iarchive ia(ifs);
-			map->clear();
-			ia >> BOOST_SERIALIZATION_NVP(*map);
-			ifs.close();
-		}
-		return true;
-	}
-	catch(std::exception& ex){
-        // elminate any dangling references
-        map->clear();
-        Y_WARNING << "PhotonMap: error '" << ex.what() << "' while loading photon map file: '" << filename << "'" << yendl;
+		Y_WARNING << "PhotonMap file '" << filename << "' not found, aborting load operation";
 		return false;
-    }
+	}
+
+	std::string header;
+	file.read(header);
+	if(header != "YAF_PHOTONMAPv1")
+	{
+		Y_WARNING << "PhotonMap file '" << filename << "' does not contain a valid YafaRay photon map";
+		file.close();
+		return false;
+	}
+	file.read(name);
+	file.read(paths);
+	file.read(searchRadius);
+	file.read(threadsPKDtree);
+	size_t photons_size;
+	file.read(photons_size);
+	photons.resize(photons_size);
+	for(auto &p : photons)
+	{
+		file.read(p.pos.x);
+		file.read(p.pos.y);
+		file.read(p.pos.z);
+		file.read(p.c.R);
+		file.read(p.c.G);
+		file.read(p.c.B);
+	}
+	file.close();
+
+	updateTree();
+	return true;
 }
 
-bool photonMapSave(const photonMap_t * map, const std::string &filename, bool debugXMLformat)
+bool photonMap_t::save(const std::string &filename) const
 {
-	try
+	file_t file(filename);
+	file.open("wb");
+	file.append("YAF_PHOTONMAPv1");
+	file.append(name);
+	file.append(paths);
+	file.append(searchRadius);
+	file.append(threadsPKDtree);
+	file.append(photons.size());
+	for(const auto &p : photons)
 	{
-		std::ofstream ofs(filename, std::fstream::binary);
-
-		if(debugXMLformat)
-		{
-			boost::archive::xml_oarchive oa(ofs);
-			oa << BOOST_SERIALIZATION_NVP(*map);
-			ofs.close();
-		}
-		else
-		{
-			boost::archive::binary_oarchive oa(ofs);
-			oa << BOOST_SERIALIZATION_NVP(*map);
-			ofs.close();
-		}
-		return true;
+		file.append(p.pos.x);
+		file.append(p.pos.y);
+		file.append(p.pos.z);
+		file.append(p.c.R);
+		file.append(p.c.G);
+		file.append(p.c.B);
 	}
-	catch(std::exception& ex){
-        Y_WARNING << "PhotonMap: error '" << ex.what() << "' while saving photon map file: '" << filename << "'" << yendl;
-		return false;
-    }
+	file.close();
+	return true;
 }
 
 void photonMap_t::updateTree()

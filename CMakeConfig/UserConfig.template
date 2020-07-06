@@ -1,3 +1,4 @@
+
 ###############################################################################
 # UserConfig File                                                              
 ###############################################################################
@@ -17,7 +18,7 @@ set(YAF_USER_CONFIG ON)
 
 ############################## Build configuration #############################
 
-# Enable DEBUG build mode for developer testing, default:OFF
+# Enable DEBUG build mode for developer testing, default:ON
 set(DEBUG_BUILD OFF)
 
 # Build font rendering with FreeType, default: ON
@@ -47,10 +48,12 @@ set(WITH_YAF_PY_BINDINGS ON)
 # Enable the YafaRay Ruby bindings, default:OFF
 set(WITH_YAF_RUBY_BINDINGS OFF)
 
-# Enable Qt Gui build                                                          # Default: ON                                                                  set(WITH_QT ON)
+# Enable Qt Gui build                                                          # Default: ON
+set(WITH_QT ON)
 
 # Embed font for QT GUI (useful for some buggy QT installations)               #
-# Default: OFF                                                                 set(EMBED_FONT_QT OFF)
+# Default: OFF
+set(EMBED_FONT_QT OFF)
 
 
 ############################ Path setting variables ############################

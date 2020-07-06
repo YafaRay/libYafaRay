@@ -23,7 +23,6 @@
 
 #include <core_api/tiledintegrator.h>
 #include <yafraycore/photon.h>
-#include <boost/filesystem.hpp>
 
 __BEGIN_YAFRAY
 

@@ -8,8 +8,7 @@
 	#include <windows.h>
 #endif
 
-#include <boost/filesystem.hpp>
-
+#include <core_api/file.h>
 #include <core_api/scene.h>
 #include <core_api/environment.h>
 #include <core_api/integrator.h>
@@ -69,7 +68,8 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &signalHandler, nullptr);
 #endif
 
-	session.setPathYafaRayXml(boost::filesystem::system_complete(argv[0]).parent_path().string());
+    //FIXME DAVID: get absolute path from relative? session.setPathYafaRayXml(bsst::filesystem::system_complete(argv[0]).parent_path().string());
+    session.setPathYafaRayXml(path_t::getParent(argv[0]));
 
 	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
 

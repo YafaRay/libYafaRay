@@ -21,7 +21,7 @@ add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 if(WITH_OpenEXR)
 add_library(exrHandler SHARED exrHandler.cc)
-target_link_libraries(exrHandler yafaray_v3_core ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(exrHandler yafaray_v3_core ${OPENEXR_LIBRARIES} ${OpenCV_LIBRARIES})
 endif(WITH_OpenEXR)
 
 if(WITH_JPEG)

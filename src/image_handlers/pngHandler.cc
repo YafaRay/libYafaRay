@@ -25,7 +25,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <utilities/fileUtils.h>
+#include <core_api/file.h>
 
 #include <png.h>
 
@@ -83,7 +83,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 	int channels;
 	png_bytep *rowPointers = nullptr;
 	
-	FILE * fp = fileUnicodeOpen(name, "wb");
+	FILE * fp = file_t::open(name, "wb");
 
 	if(!fp)
 	{
@@ -93,7 +93,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr, imgIndex))
 	{
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 		return false;
 	}
 
@@ -177,7 +177,7 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 	png_destroy_write_struct(&pngPtr, &infoPtr);
 
-	fileUnicodeClose(fp);
+	file_t::close(fp);
 
 	// cleanup:
 	for(int i = 0; i < h; i++)
@@ -197,7 +197,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 	png_structp pngPtr = nullptr;
 	png_infop infoPtr = nullptr;
 
-	FILE *fp = fileUnicodeOpen(name, "rb");
+	FILE *fp = file_t::open(name, "rb");
 
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
@@ -217,7 +217,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
     if(!fillReadStructs(signature, pngPtr, infoPtr))
     {
-    	fileUnicodeClose(fp);
+    	file_t::close(fp);
     	return false;
     }
 
@@ -227,7 +227,7 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	readFromStructs(pngPtr, infoPtr);
 
-	fileUnicodeClose(fp);
+	file_t::close(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 

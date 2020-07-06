@@ -25,7 +25,7 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <utilities/fileUtils.h>
+#include <core_api/file.h>
 
 extern "C"
 {
@@ -102,7 +102,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	int x, y, ix;
 	yByte *scanline = nullptr;
 	
-	FILE * fp = fileUnicodeOpen(name, "wb");
+	FILE * fp = file_t::open(name, "wb");
 	
 	if (!fp)
 	{
@@ -191,7 +191,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	jpeg_finish_compress(&info);
 	jpeg_destroy_compress(&info);
 
-	fileUnicodeClose(fp);
+	file_t::close(fp);
 
 	if(m_hasAlpha)
 	{
@@ -199,7 +199,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << yendl;
 		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << yendl;
 
-		fp = fileUnicodeOpen(alphaname, "wb");
+		fp = file_t::open(alphaname, "wb");
 		
 		if (!fp)
 		{
@@ -245,7 +245,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		jpeg_finish_compress(&info);
 		jpeg_destroy_compress(&info);
 
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 	}
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -258,7 +258,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_decompress_struct info;
 	jpgErrorManager jerr;
 
-	FILE *fp = fileUnicodeOpen(name, "rb");
+	FILE *fp = file_t::open(name, "rb");
 
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 
@@ -276,7 +276,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	{
 		jpeg_destroy_decompress(&info);
 		
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 		
 		return false;
 	}
@@ -298,7 +298,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
 		
-		fileUnicodeClose(fp);
+		file_t::close(fp);
 		
 		return false;
 	}
@@ -373,7 +373,7 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_finish_decompress(&info);
 	jpeg_destroy_decompress(&info);
 	
-	fileUnicodeClose(fp);
+	file_t::close(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
 

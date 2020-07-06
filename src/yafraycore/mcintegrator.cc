@@ -497,9 +497,9 @@ bool mcIntegrator_t::createCausticMap()
 	if(photonMapProcessing == PHOTONS_LOAD)
 	{
 		pb->setTag("Loading caustic photon map from file...");
-		std::string filename = session.getPathImageOutput() + "_caustic.photonmap";
+		const std::string filename = session.getPathImageOutput() + "_caustic.photonmap";
 		Y_INFO << integratorName << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << yendl;
-		if(photonMapLoad(session.causticMap, filename))
+		if(session.causticMap->load(filename))
 		{
 			Y_VERBOSE << integratorName << ": Caustic map loaded." << yendl;
 			return true;
@@ -724,7 +724,7 @@ bool mcIntegrator_t::createCausticMap()
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = session.getPathImageOutput() + "_caustic.photonmap";
 			Y_INFO << integratorName << ": Saving caustic photon map to: " << filename << yendl;
-			if(photonMapSave(session.causticMap, filename)) Y_VERBOSE << integratorName << ": Caustic map saved." << yendl;
+			if(session.causticMap->save(filename)) Y_VERBOSE << integratorName << ": Caustic map saved." << yendl;
 		}
 				
 		if(!intpb) delete pb;

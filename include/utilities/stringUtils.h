@@ -27,7 +27,8 @@
 #include <string>
 #include <sstream>
 #include <cctype>
-#include <boost/locale/encoding_utf.hpp>
+#include <locale>
+#include <codecvt>
 
 __BEGIN_YAFRAY
 
@@ -70,23 +71,42 @@ inline std::vector<std::string> tokenize(std::string str, std::string delimiter 
 
 inline std::u32string utf8_to_wutf32(const std::string& utf8str)
 {
-    return boost::locale::conv::utf_to_utf<char32_t>(utf8str.c_str(), utf8str.c_str() + utf8str.size());
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+//Workaround for bug in VS2015/2017
+//https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
+    std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t> string_conversion;
+    return reinterpret_cast<const char32_t *> (string_conversion.from_bytes(utf8str).data());
+#else
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> string_conversion;
+    return string_conversion.from_bytes(utf8str);
+#endif
 }
 
 inline std::string wutf32_to_utf8(const std::u32string& wutf32str)
 {
-    return boost::locale::conv::utf_to_utf<char>(wutf32str.c_str(), wutf32str.c_str() + wutf32str.size());
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+//Workaround for bug in VS2015/2017
+//https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
+    std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t> string_conversion;
+    auto p = reinterpret_cast<const int32_t *>(wutf32str.data());
+    return string_conversion.to_bytes(p, p + wutf32str.size());
+#else
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> string_conversion;
+    return string_conversion.to_bytes(wutf32str);
+#endif
 }  
 
-inline std::wstring utf8_to_wutf16(const std::string& utf8str)
+inline std::wstring utf8_to_wutf16le(const std::string& utf8str)
 {
-    return boost::locale::conv::utf_to_utf<wchar_t>(utf8str.c_str(), utf8str.c_str() + utf8str.size());
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
+	return string_conversion.from_bytes(utf8str);
 }
 
-inline std::string wutf16_to_utf8(const std::wstring& wutf16str)
+inline std::string wutf16le_to_utf8(const std::wstring& wutf16str)
 {
-    return boost::locale::conv::utf_to_utf<char>(wutf16str.c_str(), wutf16str.c_str() + wutf16str.size());
-}  
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
+	return string_conversion.to_bytes(wutf16str);
+}
 
 __END_YAFRAY
 

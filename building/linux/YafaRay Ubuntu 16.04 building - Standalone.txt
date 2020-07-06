@@ -6,7 +6,7 @@
 sudo apt-get install -y git cmake cmake-curses-gui autoconf gcc g++ cpp swig
 
 # INSTALLING LIBRARY DEPENDENCIES
-sudo apt-get install -y python3-dev zlib1g-dev libpng-dev libfreetype6-dev libxml2-dev libtiff5-dev libboost-system-dev libboost-filesystem-dev libboost-serialization-dev libboost-locale-dev libopencv-dev libjpeg-dev libopenexr-dev
+sudo apt-get install -y python3-dev zlib1g-dev libpng-dev libfreetype6-dev libxml2-dev libtiff5-dev libopencv-dev libjpeg-dev libopenexr-dev
 
 # DOWNLOADING YAFARAY AND SETTING UP FOLDERS
 mkdir -p $HOME/yafa-dev/src $HOME/yafa-dev/make $HOME/yafa-dev/build

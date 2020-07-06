@@ -23,6 +23,7 @@
 #include <yafray_config.h>
 #include <algorithm>
 #include <yafraycore/photon.h>
+#include <core_api/file.h>
 
 __BEGIN_YAFRAY
 
@@ -45,141 +46,143 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 {
 	if(!mSaveLog) return;
 
-	std::ofstream txtLogFile;
-	txtLogFile.open(name.c_str());
+	std::stringstream ss;
 
-	txtLogFile << "YafaRay Image Log file " << std::endl << std::endl;
+	ss << "YafaRay Image Log file " << std::endl << std::endl;
 
-	txtLogFile << "Image: \"" << mImagePath << "\"" << std::endl << std::endl;
+	ss << "Image: \"" << mImagePath << "\"" << std::endl << std::endl;
 	
-	if(!mLoggingTitle.empty()) txtLogFile << "Title: \"" << mLoggingTitle << "\"" << std::endl;
-	if(!mLoggingAuthor.empty()) txtLogFile << "Author: \"" << mLoggingAuthor << "\"" <<  std::endl;
-	if(!mLoggingContact.empty()) txtLogFile << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
-	if(!mLoggingComments.empty()) txtLogFile << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
+	if(!mLoggingTitle.empty()) ss << "Title: \"" << mLoggingTitle << "\"" << std::endl;
+	if(!mLoggingAuthor.empty()) ss << "Author: \"" << mLoggingAuthor << "\"" <<  std::endl;
+	if(!mLoggingContact.empty()) ss << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
+	if(!mLoggingComments.empty()) ss << "Comments: \"" << mLoggingComments << "\"" <<  std::endl;
 
-	txtLogFile << std::endl << "Render Information:" << std::endl << "  " << mRenderInfo << std::endl << "  " << mRenderSettings << std::endl;
-	txtLogFile << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
+	ss << std::endl << "Render Information:" << std::endl << "  " << mRenderInfo << std::endl << "  " << mRenderSettings << std::endl;
+	ss << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
-		txtLogFile << std::endl;
+		ss << std::endl;
 		
 		for (auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
-			txtLogFile << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << " (" << printDuration(it->eventDuration) << ")] ";
+			ss << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << " (" << printDuration(it->eventDuration) << ")] ";
 
 			switch(it->mVerbLevel)
 			{
-				case VL_DEBUG:		txtLogFile << "DEBUG: "; break;
-				case VL_VERBOSE:	txtLogFile << "VERB: "; break;
-				case VL_INFO:		txtLogFile << "INFO: "; break;
-				case VL_PARAMS:		txtLogFile << "PARM: "; break;
-				case VL_WARNING:	txtLogFile << "WARNING: "; break;
-				case VL_ERROR:		txtLogFile << "ERROR: "; break;
-				default:			txtLogFile << "LOG: "; break;
+				case VL_DEBUG:		ss << "DEBUG: "; break;
+				case VL_VERBOSE:	ss << "VERB: "; break;
+				case VL_INFO:		ss << "INFO: "; break;
+				case VL_PARAMS:		ss << "PARM: "; break;
+				case VL_WARNING:	ss << "WARNING: "; break;
+				case VL_ERROR:		ss << "ERROR: "; break;
+				default:			ss << "LOG: "; break;
 			}
 
-			txtLogFile << it->eventDescription;
+			ss << it->eventDescription;
 		}
 	}
-	txtLogFile.close();
+
+	file_t logFile(name);
+    logFile.save(ss.str(), true);
 }
 
 void yafarayLog_t::saveHtmlLog(const std::string &name)
 {
 	if(!mSaveHTML) return;
 
-	std::ofstream htmlLogFile;
-	htmlLogFile.open(name.c_str());
+	std::stringstream ss;
 
 	std::string baseImgPath, baseImgFileName, imgExtension;
 
 	splitPath(mImagePath, baseImgPath, baseImgFileName, imgExtension);
 	
-	htmlLogFile << "<!DOCTYPE html>" << std::endl;
-	htmlLogFile << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
+	ss << "<!DOCTYPE html>" << std::endl;
+	ss << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
 	
-	htmlLogFile << "<title>YafaRay Log: " << baseImgFileName << imgExtension << "</title>" << std::endl;
+	ss << "<title>YafaRay Log: " << baseImgFileName << imgExtension << "</title>" << std::endl;
 	
-	htmlLogFile << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
+	ss << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
 
-	htmlLogFile << "<style>" << std::endl << "body {font-family: Verdana, sans-serif; font-size:0.8em;}" << std::endl << "header, nav, section, article, footer" << std::endl << "{border:1px solid grey; margin:5px; padding:8px;}" << std::endl << "nav ul {margin:0; padding:0;}" << std::endl << "nav ul li {display:inline; margin:5px;}" << std::endl;
+	ss << "<style>" << std::endl << "body {font-family: Verdana, sans-serif; font-size:0.8em;}" << std::endl << "header, nav, section, article, footer" << std::endl << "{border:1px solid grey; margin:5px; padding:8px;}" << std::endl << "nav ul {margin:0; padding:0;}" << std::endl << "nav ul li {display:inline; margin:5px;}" << std::endl;
 	
-	htmlLogFile << "table {" << std::endl;
-	htmlLogFile << "    width:100%;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "table, th, td {" << std::endl;
-	htmlLogFile << "    border: 1px solid black;" << std::endl;
-	htmlLogFile << "    border-collapse: collapse;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "th:first-child{" << std::endl;
-	htmlLogFile << "    width:1%;" << std::endl;
-	htmlLogFile << "    white-space:nowrap;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "th, td {" << std::endl;
-	htmlLogFile << "    padding: 5px;" << std::endl;
-	htmlLogFile << "    text-align: left;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "table#yafalog tr:nth-child(even) {" << std::endl;
-	htmlLogFile << "    background-color: #eee;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "table#yafalog tr:nth-child(odd) {" << std::endl;
-	htmlLogFile << "   background-color:#fff;" << std::endl;
-	htmlLogFile << "}" << std::endl;
-	htmlLogFile << "table#yafalog th	{" << std::endl;
-	htmlLogFile << "    background-color: black;" << std::endl;
-	htmlLogFile << "    color: white;" << std::endl;
-	htmlLogFile << "}" << std::endl;
+	ss << "table {" << std::endl;
+	ss << "    width:100%;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "table, th, td {" << std::endl;
+	ss << "    border: 1px solid black;" << std::endl;
+	ss << "    border-collapse: collapse;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "th:first-child{" << std::endl;
+	ss << "    width:1%;" << std::endl;
+	ss << "    white-space:nowrap;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "th, td {" << std::endl;
+	ss << "    padding: 5px;" << std::endl;
+	ss << "    text-align: left;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "table#yafalog tr:nth-child(even) {" << std::endl;
+	ss << "    background-color: #eee;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "table#yafalog tr:nth-child(odd) {" << std::endl;
+	ss << "   background-color:#fff;" << std::endl;
+	ss << "}" << std::endl;
+	ss << "table#yafalog th	{" << std::endl;
+	ss << "    background-color: black;" << std::endl;
+	ss << "    color: white;" << std::endl;
+	ss << "}" << std::endl;
 
-	htmlLogFile << "</style>" << std::endl << "</head>" << std::endl << std::endl;
+	ss << "</style>" << std::endl << "</head>" << std::endl << std::endl;
 
-	htmlLogFile << "<body>" << std::endl;
+	ss << "<body>" << std::endl;
 
-	//htmlLogFile << "<header>" << std::endl << "<h1>YafaRay Image HTML file</h1>" << std::endl << "</header>" << std::endl;
+	//ss << "<header>" << std::endl << "<h1>YafaRay Image HTML file</h1>" << std::endl << "</header>" << std::endl;
 	
 	std::string extLowerCase = imgExtension;
 	std::transform(extLowerCase.begin(), extLowerCase.end(),extLowerCase.begin(), ::tolower);
 	
-	if(!mImagePath.empty() && (extLowerCase == ".jpg" || extLowerCase == ".jpeg" || extLowerCase == ".png")) htmlLogFile << "<a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << imgExtension << "\"/></a>" << std::endl;
+	if(!mImagePath.empty() && (extLowerCase == ".jpg" || extLowerCase == ".jpeg" || extLowerCase == ".png")) ss << "<a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << imgExtension << "\"/></a>" << std::endl;
 
-	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << imgExtension << "</td></tr>" << std::endl;
-	if(!mLoggingTitle.empty()) htmlLogFile << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
-	if(!mLoggingAuthor.empty()) htmlLogFile << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
-	if(!mLoggingCustomIcon.empty()) htmlLogFile << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon <<"\"/></a></td></tr>" << std::endl;
-	if(!mLoggingContact.empty()) htmlLogFile << "<tr><th>Contact:</th><td>" << mLoggingContact << "</td></tr>" << std::endl;
-	if(!mLoggingComments.empty()) htmlLogFile << "<tr><th>Comments:</th><td>" << mLoggingComments << "</td></tr>" << std::endl;
-	htmlLogFile << "</table>" << std::endl;
+	ss << "<p /><table id=\"yafalog\">" << std::endl;
+	ss << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << imgExtension << "</td></tr>" << std::endl;
+	if(!mLoggingTitle.empty()) ss << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
+	if(!mLoggingAuthor.empty()) ss << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
+	if(!mLoggingCustomIcon.empty()) ss << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon <<"\"/></a></td></tr>" << std::endl;
+	if(!mLoggingContact.empty()) ss << "<tr><th>Contact:</th><td>" << mLoggingContact << "</td></tr>" << std::endl;
+	if(!mLoggingComments.empty()) ss << "<tr><th>Comments:</th><td>" << mLoggingComments << "</td></tr>" << std::endl;
+	ss << "</table>" << std::endl;
 
-	htmlLogFile << "<p /><table id=\"yafalog\">" << std::endl;
-	htmlLogFile << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings <<"</p></td></tr>" << std::endl;
-	htmlLogFile << "<tr><th>AA/Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
-	htmlLogFile << "</table>" << std::endl;
+	ss << "<p /><table id=\"yafalog\">" << std::endl;
+	ss << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings <<"</p></td></tr>" << std::endl;
+	ss << "<tr><th>AA/Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
+	ss << "</table>" << std::endl;
 
 	if(!m_MemoryLog.empty()) 
 	{
-		htmlLogFile << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
+		ss << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
 		for(auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
-			htmlLogFile << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td><td>" << printDuration(it->eventDuration) << "</td>";
+			ss << "<tr><td>" << printDate(it->eventDateTime) << "</td><td>" << printTime(it->eventDateTime) << "</td><td>" << printDuration(it->eventDuration) << "</td>";
 
 			switch(it->mVerbLevel)
 			{
-				case VL_DEBUG:		htmlLogFile << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
-				case VL_VERBOSE:	htmlLogFile << "<td BGCOLOR=#80ff80>VERB: "; break;
-				case VL_INFO:		htmlLogFile << "<td BGCOLOR=#40ff40>INFO: "; break;
-				case VL_PARAMS:		htmlLogFile << "<td BGCOLOR=#80ffff>PARM: "; break;
-				case VL_WARNING:	htmlLogFile << "<td BGCOLOR=#ffff00>WARNING: "; break;
-				case VL_ERROR:		htmlLogFile << "<td BGCOLOR=#ff4040>ERROR: "; break;
-				default:			htmlLogFile << "<td>LOG: "; break;
+				case VL_DEBUG:		ss << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
+				case VL_VERBOSE:	ss << "<td BGCOLOR=#80ff80>VERB: "; break;
+				case VL_INFO:		ss << "<td BGCOLOR=#40ff40>INFO: "; break;
+				case VL_PARAMS:		ss << "<td BGCOLOR=#80ffff>PARM: "; break;
+				case VL_WARNING:	ss << "<td BGCOLOR=#ffff00>WARNING: "; break;
+				case VL_ERROR:		ss << "<td BGCOLOR=#ff4040>ERROR: "; break;
+				default:			ss << "<td>LOG: "; break;
 			}
 
-			htmlLogFile << "</td><td>" << it->eventDescription << "</td></tr>";
+			ss << "</td><td>" << it->eventDescription << "</td></tr>";
 		}
-		htmlLogFile << std::endl << "</table></body></html>" << std::endl;
+		ss << std::endl << "</table></body></html>" << std::endl;
 	}
-	htmlLogFile.close();
+
+	file_t logFile(name);
+    logFile.save(ss.str(), true);
 }
 
 void yafarayLog_t::clearMemoryLog()
@@ -367,29 +370,11 @@ void yafarayLog_t::appendRenderSettings(const std::string &render_settings)
 }
 
 void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension)
-{
-    std::string fullFileName;
-
-    size_t sep = fullFilePath.find_last_of("\\/");
-    if (sep != std::string::npos)
-        fullFileName = fullFilePath.substr(sep + 1, fullFilePath.size() - sep - 1);
-
-    basePath = fullFilePath.substr(0, sep+1);
-
-    if(basePath == "") fullFileName = fullFilePath;
-
-    size_t dot = fullFileName.find_last_of(".");
-
-    if (dot != std::string::npos)
-    {
-        baseFileName = fullFileName.substr(0, dot);
-        extension  = fullFileName.substr(dot, fullFileName.size() - dot);
-    }
-    else
-    {
-        baseFileName = fullFileName;
-        extension  = "";
-    }
+{	//DEPRECATED: use path_t instead
+	path_t fullPath { fullFilePath };
+	basePath = fullPath.getDirectory();
+	baseFileName = fullPath.getBaseName();
+	extension = fullPath.getExtension();
 }               
 
 void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)

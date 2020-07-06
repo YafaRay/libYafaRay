@@ -26,19 +26,14 @@
 #include <yafraycore/timer.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
-
 #include <core_api/tiledintegrator.h>
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
 #include <core_api/surface.h>
 #include <core_api/material.h>
-
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
-#include <boost/filesystem.hpp>
-
 #include <sstream>
-#include <boost/filesystem.hpp>
 
 __BEGIN_YAFRAY
 

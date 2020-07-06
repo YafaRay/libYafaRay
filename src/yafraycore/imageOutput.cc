@@ -20,9 +20,9 @@
  *      
  */
 
+#include <core_api/file.h>
 #include <core_api/renderpasses.h>
 #include <yafraycore/imageOutput.h>
-#include <boost/filesystem.hpp>
 #include <sstream>
 #include <iomanip>
 
@@ -30,7 +30,10 @@ __BEGIN_YAFRAY
 
 imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
-	session.setPathImageOutput(boost::filesystem::change_extension(fname, "").string());
+    path_t path(name);
+    path_t outputPath(path.getDirectory(), path.getBaseName(), "");
+    //Y_DEBUG PR(name) PR(outputPath.getFullPath()) PREND;
+    session.setPathImageOutput(outputPath.getFullPath());
 }
 
 imageOutput_t::imageOutput_t()
@@ -134,76 +137,31 @@ void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
     if(yafLog.getSaveLog())
     {
 	std::string fLogName = path + base_name + "_log.txt";
-	yafLog.saveTxtLog(fLogName+".tmp");
-	try
-	{	
-	    boost::filesystem::copy_file(fLogName+".tmp",fLogName,boost::filesystem::copy_option::overwrite_if_exists);
-	    boost::filesystem::remove(fLogName+".tmp");
-	}
-	catch(const boost::filesystem::filesystem_error& e)
-	{
-	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
-	}
+	yafLog.saveTxtLog(fLogName);
     }
 
     if(yafLog.getSaveHTML())
     {
 	std::string fLogHtmlName = path + base_name + "_log.html";
-	yafLog.saveHtmlLog(fLogHtmlName+".tmp");
-	try
-	{
-	    boost::filesystem::copy_file(fLogHtmlName+".tmp",fLogHtmlName,boost::filesystem::copy_option::overwrite_if_exists);
-	    boost::filesystem::remove(fLogHtmlName+".tmp");
-	}
-	catch(const boost::filesystem::filesystem_error& e)
-	{
-	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
-	}
+	yafLog.saveHtmlLog(fLogHtmlName);
     }
 
     if(yafLog.getSaveStats())
     {
 	std::string fStatsName = path + base_name + "_stats.csv";
-	yafLog.statsSaveToFile(fStatsName+".tmp", /*sorted=*/ true);
-	try
-	{	
-	    boost::filesystem::copy_file(fStatsName+".tmp",fStatsName,boost::filesystem::copy_option::overwrite_if_exists);
-	    boost::filesystem::remove(fStatsName+".tmp");
-	}
-	catch(const boost::filesystem::filesystem_error& e)
-	{
-	    Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
-	}
+	yafLog.statsSaveToFile(fStatsName, /*sorted=*/ true);
     }
 }
 
 
 void imageOutput_t::saveImageFile(std::string filename, int idx)
 {
-    image->saveToFile(filename+".tmp", idx);
-    try
-    {
-	boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
-	boost::filesystem::remove(filename+".tmp");
-    }
-    catch(const boost::filesystem::filesystem_error& e)
-    {
-	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
-    }
+    image->saveToFile(filename, idx);
 }
 
 void imageOutput_t::saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses)
 {
-    image->saveToFileMultiChannel(filename+".tmp", renderPasses);
-    try
-    {
-	boost::filesystem::copy_file(filename+".tmp", filename, boost::filesystem::copy_option::overwrite_if_exists);
-	boost::filesystem::remove(filename+".tmp");
-    }
-    catch(const boost::filesystem::filesystem_error& e)
-    {
-	Y_WARNING << "Output: file operation error \"" << e.what() << yendl;
-    }
+    image->saveToFileMultiChannel(filename, renderPasses);
 }
 __END_YAFRAY
 

@@ -1,5 +1,5 @@
 /****************************************************************************
- *      sysinfo.h: YafaRay System Information
+ *      build_info.cc: YafaRay information about build
  *      This is part of the yafray package
  *		Copyright (C) 2016 David Bluecame
  * 		System Information, compilation information, etc
@@ -18,27 +18,31 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
-#ifndef Y_SYSINFO_H
-#define Y_SYSINFO_H
-
-#include <iostream>
-#include <ctime>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <boost/predef.h>
+#include <yafray_config.h>
+#include <core_api/build_info.h>
+#include <yaf_build.h>
 
 __BEGIN_YAFRAY
 
-extern YAFRAYCORE_EXPORT std::string sysInfoGetArchitecture();
-extern YAFRAYCORE_EXPORT std::string sysInfoGetCompiler();
-extern YAFRAYCORE_EXPORT std::string sysInfoGetOS();
-extern YAFRAYCORE_EXPORT std::string sysInfoGetPlatform();
-extern YAFRAYCORE_EXPORT std::string sysInfoGetHW();
-extern YAFRAYCORE_EXPORT std::string sysInfoGetRuntimeInformation();
+std::string buildInfoGetArchitecture()
+{
+    return YAFARAY_BUILD_ARCHITECTURE;
+}
+
+std::string buildInfoGetCompiler()
+{
+    return YAFARAY_BUILD_COMPILER;
+}
+
+std::string buildInfoGetOS()
+{
+    return YAFARAY_BUILD_OS;
+}
+
+std::string buildInfoGetPlatform()
+{
+    return YAFARAY_BUILD_PLATFORM;
+}
 
 __END_YAFRAY
 
-#endif

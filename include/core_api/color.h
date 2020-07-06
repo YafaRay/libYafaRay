@@ -31,11 +31,6 @@
 #include <cmath>
 #include <utilities/mathOptimizations.h>
 
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-
-#define COLOR_SIZE 3
-
 __BEGIN_YAFRAY
 
 enum colorSpaces_t
@@ -155,14 +150,6 @@ class YAFRAYCORE_EXPORT color_t
 				
 //	protected:
 		float R, G, B;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(R);
-			ar & BOOST_SERIALIZATION_NVP(G);
-			ar & BOOST_SERIALIZATION_NVP(B);
-		}
 };
 
 class YAFRAYCORE_EXPORT colorA_t : public color_t
@@ -232,13 +219,6 @@ class YAFRAYCORE_EXPORT colorA_t : public color_t
 
 //	protected:
 		float A;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(color_t);
-			ar & BOOST_SERIALIZATION_NVP(A);
-		}
 };
 
 class YAFRAYCORE_EXPORT rgbe_t

@@ -30,9 +30,6 @@
 #include <vector>
 #include <list>
 
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-
 __BEGIN_YAFRAY
 
 
@@ -136,13 +133,6 @@ class YAFRAYCORE_EXPORT bound_t
 //	protected: // Lynx; need these to be public.
 		//! Two points define the box
 		point3d_t a,g;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(a);
-			ar & BOOST_SERIALIZATION_NVP(g);
-		}
 };
 
 inline void bound_t::include(const point3d_t &p)

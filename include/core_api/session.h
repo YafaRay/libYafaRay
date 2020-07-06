@@ -29,7 +29,7 @@
 #include <string>
 
 #include <core_api/logging.h>
-#include <core_api/sysinfo.h>
+#include <core_api/build_info.h>
 
 __BEGIN_YAFRAY
 

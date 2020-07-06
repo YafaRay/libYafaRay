@@ -8,7 +8,7 @@
 sudo zypper install -y nano git cmake autoconf gcc gcc-c++ cpp swig
 
 # INSTALLING LIBRARY DEPENDENCIES
-sudo zypper install -y python3-devel zlib-devel libpng12-devel freetype2-devel libxml2-devel libtiff-devel boost_1_58_0-devel libjpeg62-devel opencv-devel openexr-devel
+sudo zypper install -y python3-devel zlib-devel libpng12-devel freetype2-devel libxml2-devel libtiff-devel libjpeg62-devel opencv-devel openexr-devel
 
 # INSTALLING BLENDER
 sudo zypper install -y blender 

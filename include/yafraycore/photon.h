@@ -7,13 +7,6 @@
 #include "pkdtree.h"
 #include <core_api/color.h>
 
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-
 __BEGIN_YAFRAY
 #define c255Ratio 81.16902097686662123083
 #define c256Ratio 40.74366543152520595687
@@ -84,9 +77,9 @@ class photon_t
 #ifdef _SMALL_PHOTONS
 			if(theta==255) return vector3d_t(0,0,0);
 			else return dirconverter.convert(theta,phi);
-#else
+#else //_SMALL_PHOTONS
 			return (vector3d_t)dir;
-#endif
+#endif //_SMALL_PHOTONS
 		};
 		void direction(const vector3d_t &d)
 		{
@@ -98,36 +91,21 @@ class photon_t
 				theta=cd.first;
 				phi=cd.second;
 			}
-#else
+#else //_SMALL_PHOTONS
 			dir=d;
-#endif
+#endif //_SMALL_PHOTONS
 		}
 	
 		point3d_t pos;
+
 #ifdef _SMALL_PHOTONS
 		rgbe_t c;
 		unsigned char theta,phi;
 
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(pos);
-			ar & BOOST_SERIALIZATION_NVP(c);
-			ar & BOOST_SERIALIZATION_NVP(theta);
-			ar & BOOST_SERIALIZATION_NVP(phi);
-		}
-#else
+#else //_SMALL_PHOTONS
 		color_t c;
 		normal_t dir;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(pos);
-			ar & BOOST_SERIALIZATION_NVP(c);
-			ar & BOOST_SERIALIZATION_NVP(dir);
-		}
-#endif
+#endif //_SMALL_PHOTONS
 };
 
 struct radData_t
@@ -172,6 +150,8 @@ class YAFRAYCORE_EXPORT photonMap_t
 	//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
 		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float &sqRadius) const;
 		const photon_t* findNearest(const point3d_t &P, const vector3d_t &n, float dist) const;
+		bool load(const std::string &filename);
+		bool save(const std::string &filename) const;
 		std::mutex mutx;
 
 	protected:
@@ -182,18 +162,6 @@ class YAFRAYCORE_EXPORT photonMap_t
 		kdtree::pointKdTree<photon_t> *tree;
 		std::string name;
 		int threadsPKDtree = 1;
-
-		friend class boost::serialization::access;
-		template<class Archive> void serialize(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(photons);
-			ar & BOOST_SERIALIZATION_NVP(paths);
-			ar & BOOST_SERIALIZATION_NVP(updated);
-			ar & BOOST_SERIALIZATION_NVP(searchRadius);
-			ar & BOOST_SERIALIZATION_NVP(name);
-			ar & BOOST_SERIALIZATION_NVP(threadsPKDtree);
-			ar & BOOST_SERIALIZATION_NVP(tree);
-		}
 };
 
 // photon "processes" for lookup
@@ -230,12 +198,6 @@ struct eliminatePhoton_t
 	}
 	const vector3d_t n;
 };
-
-
-YAFRAYCORE_EXPORT bool photonMapLoad(photonMap_t * map, const std::string &filename, bool debugXMLformat = false);
-
-YAFRAYCORE_EXPORT bool photonMapSave(const photonMap_t * map, const std::string &filename, bool debugXMLformat = false);
-
 
 __END_YAFRAY
 

@@ -6,6 +6,27 @@ This is an abbreviated list of changes. The full/detailed list of changes can be
 * YafaRay Core code: https://github.com/YafaRay/Core/commits/master
 
 
+YafaRay (git development)
+-------------------------
+* IMPORTANT: Removal of *all* Boost dependencies. I've implemented new Unicode File management and new ImageFilm/PhotonMap saving/loading system.
+   - All functionality depending on Boost has been rewritten from scratch to be able to remove Boost altogether.
+   - Implemented Unicode UTF8/UTF16 conversions for strings in POSIX and Windows systems
+   - Implemented Unicode UTF8/UTF16 file handling classes for Unicode paths in POSIX and Windows systems
+   - In the process of that implementation I fixed some issues that were pending for a long time:
+        - Now almost all files (including logs) are handled with the new file_t interface, so all works when using Unicode paths (logs were not correctly saved sometimes in Windows)
+        - No longer need for temporary files when using OpenEXR files with Unicode paths.
+   - Implemented new system to save / load ImageFilm and Photon Maps. The files generated with previous versions of YafaRay are *no longer valid* for this new method.
+        - I think the new system is faster and generates smaller files (still big, depending on the amount of info)
+        - Only drawback for now, when loading photon maps it has to regenerate the photon search KD tree, which is no longer saved in the photon map file.
+        - No longer need to have a separate binary/text format for portability. In principle it should work the same in Linux/Windows, etc.
+        - Endianness could be an issue for non-Intel/AMD platforms like ARM, to be investigated in the future, but that's a problem for another day.
+   - Removed all SysInfo Boost code and replaced it by a "CMake-building" generation. Renamed sysinfo classes as build_info.
+        
+* Added back -pthread flag for gcc/g++ compilation to fix FreeBSD builds To fix FreeBSD build as requested in https://github.com/YafaRay/Core/issues/113
+* Removed some warnings for GCC. Also removed some Clang warnings as requested by https://github.com/YafaRay/Core/issues/110
+* Fixed some source file comments license boilerplate to remove wrongly encoded characters that were confusing some IDEs* 
+
+
 YafaRay v3.4.4 (2020-05-09)
 ---------------------------
 * Angular camera: modified to add several types of angular projections and to fix new ortographic calculations.

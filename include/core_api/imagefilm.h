@@ -163,8 +163,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		void imageFilmLoadAllInFolder();
         bool imageFilmSave();
         void imageFilmFileBackup() const;
-		void imageFilmUpdateCheckInfo();
-		bool imageFilmLoadCheckOk() const;
 
         void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
         void setImagesAutoSaveIntervalSeconds(double interval_seconds) { imagesAutoSaveIntervalSeconds = interval_seconds; }
@@ -172,7 +170,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
         void resetImagesAutoSaveTimer() { imagesAutoSaveTimer = 0.0; }
 
         void setFilmFileSaveLoad(int film_file_save_load) { filmFileSaveLoad = film_file_save_load; }
-        void setFilmFileSaveBinaryFormat(bool binary_format) { filmFileSaveBinaryFormat = binary_format; }
         void setFilmAutoSaveIntervalType(int interval_type) { filmAutoSaveIntervalType = interval_type; }
         void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
         void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
@@ -249,63 +246,11 @@ class YAFRAYCORE_EXPORT imageFilm_t
 
 		//Options for Saving/AutoSaving/Loading the internal imageFilm image buffers
 		int filmFileSaveLoad = FILM_FILE_NONE;
-		bool filmFileSaveBinaryFormat = true;
 		int filmAutoSaveIntervalType = AUTOSAVE_NONE;
 		double filmAutoSaveIntervalSeconds = 300.0;
 		double filmAutoSaveTimer = 0.0; //Internal timer for Film AutoSave
 		int filmAutoSavePassCounter = 0;	//Internal counter for Film AutoSave
 		int filmAutoSaveIntervalPasses = 1;
-		
-        struct filmload_check_t
-        {
-			int w, h, cx0, cx1, cy0, cy1;
-			size_t numPasses;
-			std::string filmStructureVersion;
-			friend class boost::serialization::access;
-			template<class Archive> void serialize(Archive & ar, const unsigned int version)
-			{
-				ar & BOOST_SERIALIZATION_NVP(w);
-				ar & BOOST_SERIALIZATION_NVP(h);
-				ar & BOOST_SERIALIZATION_NVP(cx0);
-				ar & BOOST_SERIALIZATION_NVP(cx1);
-				ar & BOOST_SERIALIZATION_NVP(cy0);
-				ar & BOOST_SERIALIZATION_NVP(cy1);
-				ar & BOOST_SERIALIZATION_NVP(numPasses);
-				ar & BOOST_SERIALIZATION_NVP(filmStructureVersion);
-			}
-		};
-		
-		//IMPORTANT: change the FILM_STRUCTURE_VERSION string if there are significant changes in the film structure
-		#define FILM_STRUCTURE_VERSION "1.0"
-		
-		filmload_check_t filmload_check;
-        
-		friend class boost::serialization::access;
-		template<class Archive> void save(Archive & ar, const unsigned int version) const
-		{
-			Y_DEBUG<<"FilmSave computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
-			ar & BOOST_SERIALIZATION_NVP(filmload_check);
-			ar & BOOST_SERIALIZATION_NVP(samplingOffset);
-			ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
-			ar & BOOST_SERIALIZATION_NVP(computerNode);
-			ar & BOOST_SERIALIZATION_NVP(imagePasses);
-			ar & BOOST_SERIALIZATION_NVP(auxImagePasses);
-		}
-		template<class Archive> void load(Archive & ar, const unsigned int version)
-		{
-			ar & BOOST_SERIALIZATION_NVP(filmload_check);
-			if(imageFilmLoadCheckOk())
-			{
-				ar & BOOST_SERIALIZATION_NVP(samplingOffset);
-				ar & BOOST_SERIALIZATION_NVP(baseSamplingOffset);
-				ar & BOOST_SERIALIZATION_NVP(computerNode);
-				ar & BOOST_SERIALIZATION_NVP(imagePasses);
-				ar & BOOST_SERIALIZATION_NVP(auxImagePasses);
-				session.setStatusRenderResumed();
-				Y_DEBUG<<"FilmLoad computerNode="<<computerNode<<" baseSamplingOffset="<<baseSamplingOffset<<" samplingOffset="<<samplingOffset<<yendl;
-			}
-		}
-		BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 __END_YAFRAY

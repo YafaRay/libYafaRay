@@ -6,7 +6,6 @@ Dependencies:
   Mandatory:
     >=zlib-1.2.8
     >=libxml2-2.9.1
-    >=boost-1.5.8
   Optional, depending on options selected in CMake:
     meganz/mingw-std-threads
     >=opencv-3.1.0
@@ -20,3 +19,9 @@ Dependencies:
     >=ruby-2.2
     >=qt-5
     
+Notes about dependencies:
+ * OpenCV is used to do some image processing, most importantly texture mipmaps for Trilinear or EWA interpolations.
+ * Python is used only if the Python bindings are built (for example for the Blender Exporter)
+ * Ruby is used if the Ruby bindings are built (for example to create the Sketchup plugin)
+ * Qt is optional, used for the Sketchup plugin for example
+ 

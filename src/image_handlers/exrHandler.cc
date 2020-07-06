@@ -25,13 +25,14 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
-#include <utilities/fileUtils.h>
+#include <core_api/file.h>
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfVersion.h>
+#include <IexThrowErrnoExc.h>
 
 using namespace Imf;
 using namespace Imath;
@@ -40,6 +41,87 @@ __BEGIN_YAFRAY
 
 typedef genericScanlineBuffer_t<Rgba> halfRgbaScanlineImage_t;
 typedef genericScanlineBuffer_t<float> grayScanlineImage_t;
+
+//Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
+class C_IStream: public Imf::IStream
+{
+public:
+	C_IStream (FILE *file, const char fileName[]):
+	Imf::IStream (fileName), _file (file) {}
+	virtual bool read (char c[], int n);
+	virtual Int64 tellg ();
+	virtual void seekg (Int64 pos);
+	virtual void clear ();
+private:
+	FILE * _file;
+};
+
+bool C_IStream::read (char c[], int n)
+{
+	if (n != (int) fread (c, 1, n, _file))
+	{
+		// fread() failed, but the return value does not distinguish
+		// between I/O errors and end of file, so we call ferror() to
+		// determine what happened.
+		if (ferror (_file)) Iex::throwErrnoExc();
+		else throw Iex::InputExc ("Unexpected end of file.");
+	}
+	return feof (_file);
+}
+
+Int64 C_IStream::tellg ()
+{
+	return ftell (_file);
+}
+
+void C_IStream::seekg (Int64 pos)
+{
+	clearerr (_file);
+	fseek (_file, pos, SEEK_SET);
+}
+
+void C_IStream::clear ()
+{
+	clearerr (_file);
+}
+
+
+class C_OStream: public Imf::OStream
+{
+public:
+	C_OStream (FILE *file, const char fileName[]):
+	Imf::OStream (fileName), _file (file) {}
+	virtual void write (const char c[], int n);
+	virtual Int64 tellp ();
+	virtual void seekp (Int64 pos);
+private:
+	FILE * _file;
+};
+
+void C_OStream::write (const char c[], int n)
+{
+	if (n != (int) fwrite (c, 1, n, _file))
+	{
+		// fwrite() failed, but the return value does not distinguish
+		// between I/O errors and end of file, so we call ferror() to
+		// determine what happened.
+		if (ferror (_file)) Iex::throwErrnoExc();
+		else throw Iex::InputExc ("Unexpected end of file.");
+	}
+}
+
+Int64 C_OStream::tellp ()
+{
+	return ftell (_file);
+}
+
+void C_OStream::seekp (Int64 pos)
+{
+	clearerr (_file);
+	fseek (_file, pos, SEEK_SET);
+}
+
+
 
 class exrHandler_t: public imageHandler_t
 {
@@ -86,7 +168,9 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	header.channels().insert("B", Channel(HALF));
 	header.channels().insert("A", Channel(HALF));
 
-	OutputFile file(name.c_str(), header);
+	FILE *fp = file_t::open(name.c_str(), "wb");
+	C_OStream ostr (fp, name.c_str());
+	OutputFile file(ostr, header);
 
 	Imf::Array2D<Imf::Rgba> pixels;
 	pixels.resizeErase(h, w);
@@ -124,6 +208,11 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
 	}
+
+	file_t::close(fp);
+	fp = nullptr;
+
+	return true;
 }
 
 bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
@@ -205,7 +294,9 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
         fb.insert(channelA, Slice(HALF, data_ptr + 3*chan_size, totchan_size, w0 * totchan_size));
     }
     
-    OutputFile file(name.c_str(), header);    
+	FILE *fp = file_t::open(name.c_str(), "wb");
+	C_OStream ostr (fp, name.c_str());
+	OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
 	
 	try
@@ -231,13 +322,16 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		pixels.clear();
 		return false;
 	}
+
+	file_t::close(fp);
+	fp = nullptr;
+
+	return true;
 }
 
 bool exrHandler_t::loadFromFile(const std::string &name)
 {
-	std::string tempFilePathString = "";    //filename of the temporary exr file that will be generated to deal with the UTF16 ifstream path problems in OpenEXR libraries with MinGW
-
-	FILE *fp = fileUnicodeOpen(name.c_str(), "rb");
+	FILE *fp = file_t::open(name.c_str(), "rb");
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
 	
 	if(!fp)
@@ -249,39 +343,14 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 	{
 		char bytes[4];
 		fread(&bytes, 1, 4, fp);
-#if defined(_WIN32)		
-		fseek (fp , 0 , SEEK_SET);
-		auto tempFolder = boost::filesystem::temp_directory_path();
-		auto tempFile = boost::filesystem::unique_path();
-		tempFilePathString = tempFolder.string() + tempFile.string() + ".exr";
-		Y_VERBOSE << handlerName << ": Creating intermediate temporary file tempstr=" << tempFilePathString << yendl;
-		FILE *fpTemp = fopen(tempFilePathString.c_str(), "wb");
-		if(!fpTemp)
-		{
-			Y_ERROR << handlerName << ": Cannot create intermediate temporary file " << tempFilePathString << yendl;
-			return false;
-		}
-		//Copy original EXR texture contents into new temporary file, so we can circumvent the lack of UTF16 support in MinGW ifstream
-		unsigned char *copy_buffer = (unsigned char*) malloc(1024);
-		int numReadBytes = 0;
-		while((numReadBytes = fread(copy_buffer, sizeof(unsigned char), 1024, fp)) == 1024) fwrite(copy_buffer, sizeof(unsigned char), 1024, fpTemp);
-		fwrite(copy_buffer, sizeof(unsigned char), numReadBytes, fpTemp);
-		fclose(fpTemp);		
-		free(copy_buffer);
-#endif		
-		fclose(fp);
-		fp = nullptr;
 		if(!isImfMagic(bytes)) return false;
+		fseek(fp, 0, SEEK_SET);
 	}
 
 	try
 	{
-#if defined(_WIN32)
-		Y_INFO << handlerName << ": Loading intermediate temporary file tempstr=" << tempFilePathString << yendl;
-		RgbaInputFile file(tempFilePathString.c_str());		
-#else		
-		RgbaInputFile file(name.c_str());		
-#endif		
+		C_IStream istr (fp, name.c_str());
+		RgbaInputFile file (istr);
 		Box2i dw = file.dataWindow();
 
 		m_width  = dw.max.x - dw.min.x + 1;
@@ -320,10 +389,8 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		return false;
 	}
 
-#if defined(_WIN32)
-	Y_INFO << handlerName << ": Deleting intermediate temporary file tempstr=" << tempFilePathString << yendl;
-	std::remove(tempFilePathString.c_str());		
-#endif	
+	file_t::close(fp);
+	fp = nullptr;
 
 	return true;
 }
