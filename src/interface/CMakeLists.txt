@@ -1,10 +1,9 @@
 include_directories(${YAF_INCLUDE_DIRS})
-include_directories(SYSTEM ${LIBXML2_INCLUDE_DIR})
 
 add_definitions(-DBUILDING_YAFRAYPLUGIN)
 
 add_library(yafaray_v3_plugin SHARED yafrayinterface.cc xmlinterface.cc)
-target_link_libraries(yafaray_v3_plugin yafaray_v3_core ${LIBXML2_LIBRARY})
+target_link_libraries(yafaray_v3_plugin yafaray_v3_core)
 
 if(APPLE) # set rpath - Jens
 	add_custom_command(TARGET yafaray_v3_plugin POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray_v3_plugin.dylib)
