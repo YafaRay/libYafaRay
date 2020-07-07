@@ -132,7 +132,7 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 
 	for(auto i=plugins.begin();i!=plugins.end();++i)
 	{
-		sharedlibrary_t plug((path + "//" + *i).c_str());
+		dynamicLoadedLibrary_t plug((path + "//" + *i).c_str());
 		if(!plug.isOpen()) continue;
 		reg_t *registerPlugin;
 		registerPlugin=(reg_t *)plug.getSymbol("registerPlugin");

@@ -1,4 +1,4 @@
-#include <core_api/yafsystem.h>
+#include <core_api/dynamic_library.h>
 
 #ifndef WIN32
 	#include <dirent.h>
@@ -16,7 +16,7 @@ __BEGIN_YAFRAY
 
 #ifdef WIN32
 
-void sharedlibrary_t::open(const std::string &lib) 
+void dynamicLoadedLibrary_t::open(const std::string &lib)
 {
 	handle = LoadLibrary(lib.c_str());
 
@@ -32,7 +32,7 @@ void sharedlibrary_t::open(const std::string &lib)
 		refcount=new int(1);
 }
 
-void sharedlibrary_t::close() 
+void dynamicLoadedLibrary_t::close()
 {
 	if (handle != nullptr) 
 	{
@@ -42,7 +42,7 @@ void sharedlibrary_t::close()
 	}
 }
 
-void * sharedlibrary_t::getSymbol(const char *name) 
+void * dynamicLoadedLibrary_t::getSymbol(const char *name)
 {
 	if (handle != nullptr) 
 	{
@@ -59,7 +59,7 @@ void * sharedlibrary_t::getSymbol(const char *name)
 
 #else
 
-void sharedlibrary_t::open(const std::string &lib) 
+void dynamicLoadedLibrary_t::open(const std::string &lib)
 {
 	handle = dlopen(lib.c_str(),RTLD_NOW);
 	if (handle == nullptr) 
@@ -68,7 +68,7 @@ void sharedlibrary_t::open(const std::string &lib)
 		refcount=new int(1);
 }
 
-void sharedlibrary_t::close() 
+void dynamicLoadedLibrary_t::close()
 {
 	if (handle != nullptr) 
 	{
@@ -78,7 +78,7 @@ void sharedlibrary_t::close()
 	}
 }
 
-void * sharedlibrary_t::getSymbol(const char *name) 
+void * dynamicLoadedLibrary_t::getSymbol(const char *name)
 {
 	if (handle != nullptr) 
 	{
@@ -93,23 +93,23 @@ void * sharedlibrary_t::getSymbol(const char *name)
 
 #endif
 
-bool sharedlibrary_t::isOpen() 
+bool dynamicLoadedLibrary_t::isOpen()
 {
 	return handle != nullptr;
 }
 
-sharedlibrary_t::sharedlibrary_t() 
+dynamicLoadedLibrary_t::dynamicLoadedLibrary_t()
 {
   handle = nullptr;
 }
 
-sharedlibrary_t::sharedlibrary_t(const std::string &library) 
+dynamicLoadedLibrary_t::dynamicLoadedLibrary_t(const std::string &library)
   : handle(nullptr)
 {
   open(library);
 }
 
-sharedlibrary_t::sharedlibrary_t(const sharedlibrary_t &src) 
+dynamicLoadedLibrary_t::dynamicLoadedLibrary_t(const dynamicLoadedLibrary_t &src)
 {
   handle = src.handle;
   if (isOpen())
@@ -119,7 +119,7 @@ sharedlibrary_t::sharedlibrary_t(const sharedlibrary_t &src)
 	}
 }
 
-sharedlibrary_t::~sharedlibrary_t() 
+dynamicLoadedLibrary_t::~dynamicLoadedLibrary_t()
 {
 	if(isOpen())
 	{

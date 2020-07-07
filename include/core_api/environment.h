@@ -4,7 +4,7 @@
 #include <yafray_config.h>
 
 #include "params.h"
-#include "yafsystem.h"
+#include "dynamic_library.h"
 #include <list>
 #include <vector>
 #include <string>
@@ -101,7 +101,7 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		virtual ~renderEnvironment_t();
 		
 	protected:
-		std::list< sharedlibrary_t > 	pluginHandlers;
+		std::list< dynamicLoadedLibrary_t > 	pluginHandlers;
 		std::map<std::string,light_factory_t *> 	light_factory;
 		std::map<std::string,material_factory_t *> 	material_factory;
 		std::map<std::string,texture_factory_t *> 	texture_factory;

@@ -13,13 +13,13 @@
 
 __BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT sharedlibrary_t 
+class YAFRAYCORE_EXPORT dynamicLoadedLibrary_t
 {
 	public:
-	  sharedlibrary_t();
-	  sharedlibrary_t(const std::string &library);
-	  sharedlibrary_t(const sharedlibrary_t &src);
-	  ~sharedlibrary_t();
+	  dynamicLoadedLibrary_t();
+	  dynamicLoadedLibrary_t(const std::string &library);
+	  dynamicLoadedLibrary_t(const dynamicLoadedLibrary_t &src);
+	  ~dynamicLoadedLibrary_t();
 
 	  bool isOpen();
 	  void* getSymbol(const char *name);
