@@ -320,8 +320,8 @@ public:
 		return data[x][y];
 	}
 	
-	inline int getWidth() { return width; }
-	inline int getHeight() { return height; }
+	inline int getWidth() const { return width; }
+	inline int getHeight() const  { return height; }
 		
 protected:
 	std::vector< std::vector< T > > data;

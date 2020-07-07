@@ -32,10 +32,6 @@
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
 
-#if HAVE_FREETYPE
-struct FT_Bitmap_;
-#endif
-
 __BEGIN_YAFRAY
 
 /*!	This class recieves all rendered image samples.
@@ -178,10 +174,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
         int getImagePassIndexFromIntPassType(int intPassType);
         int getAuxImagePassIndexFromIntPassType(int intPassType);
         
-#if HAVE_FREETYPE
-		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
-#endif
-
 	protected:
 		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
 		std::vector<rgba2DImage_t*> auxImagePasses; //!< rgba color buffers for the auxiliary image passes

@@ -1114,11 +1114,11 @@ void imageFilm_t::setAANoiseParams(bool detect_color_noise, int dark_detection_t
 
 #if HAVE_FREETYPE
 
-void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
+void drawFontBitmap( const FT_Bitmap* bitmap, rgba2DImage_nw_t *badge_image, int x, int y, int w, int h)
 {
 	int i, j, p, q;
-	int x_max = std::min(static_cast<int>(x + bitmap->width), dpimage->getWidth());
-	int y_max = std::min(static_cast<int>(y + bitmap->rows), dpimage->getHeight());
+	int x_max = std::min(static_cast<int>(x + bitmap->width), badge_image->getWidth());
+	int y_max = std::min(static_cast<int>(y + bitmap->rows), badge_image->getHeight());
 	color_t textColor(1.f);
 
 	for ( i = x, p = 0; i < x_max; i++, p++ )
@@ -1131,7 +1131,7 @@ void imageFilm_t::drawFontBitmap( FT_Bitmap* bitmap, int x, int y)
 
 			if (tmpBuf > 0)
 			{
-				colorA_t &col = (*dpimage)(std::max(0,i), std::max(0,j));
+				colorA_t &col = (*badge_image)(std::max(0,i), std::max(0,j));
 				float alpha = (float) tmpBuf / 255.0;
 				col = colorA_t(alphaBlend((color_t)col, textColor, alpha), col.getA());
 			}
@@ -1246,7 +1246,7 @@ void imageFilm_t::drawRenderSettings(std::stringstream & ss)
 		FT_Render_Glyph( slot, FT_RENDER_MODE_NORMAL );
 
 		// Now, draw to our target surface (convert position)
-		drawFontBitmap( &slot->bitmap, slot->bitmap_left, -slot->bitmap_top);
+		drawFontBitmap( &slot->bitmap, dpimage, slot->bitmap_left, -slot->bitmap_top, w, h);
 
 		// increment pen position
 		pen.x += slot->advance.x;
