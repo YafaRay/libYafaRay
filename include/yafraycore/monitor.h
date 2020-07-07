@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_MONITOR_H
 #define Y_MONITOR_H

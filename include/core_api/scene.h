@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_SCENE_H
 #define Y_SCENE_H

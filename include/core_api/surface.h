@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 			surface.h: Surface sampling representation and api

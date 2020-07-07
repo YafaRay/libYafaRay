@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_MICROFACET_H
 #define Y_MICROFACET_H

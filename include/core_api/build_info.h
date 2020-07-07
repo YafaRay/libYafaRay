@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      sysinfo.h: YafaRay System Information
  *      This is part of the yafray package

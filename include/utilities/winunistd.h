@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Yafray_win32_unistd_h
 #define Yafray_win32_unistd_h
 

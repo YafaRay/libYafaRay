@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 		imageOutput.h: generic color output based on imageHandlers

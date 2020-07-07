@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_BLENDMAT_H
 #define Y_BLENDMAT_H
 

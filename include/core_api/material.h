@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_MATERIAL_H
 #define Y_MATERIAL_H

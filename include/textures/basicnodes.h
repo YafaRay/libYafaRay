@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_BASICNODES_H
 #define Y_BASICNODES_H

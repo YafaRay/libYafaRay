@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_BACKGROUND_H
 #define Y_BACKGROUND_H
 

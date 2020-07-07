@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_PERSPECTIVECAMERA_H
 #define Y_PERSPECTIVECAMERA_H

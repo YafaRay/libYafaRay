@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef __Y_RKDTREE_H
 #define __Y_RKDTREE_H
 

@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_LIGHT_H
 #define Y_LIGHT_H

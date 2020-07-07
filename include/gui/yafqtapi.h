@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_QTAPI_H
 #define Y_QTAPI_H
 

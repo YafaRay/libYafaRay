@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef __Y_HASHGRID_H
 #define __Y_HASHGRID_H
 

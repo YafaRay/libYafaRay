@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_VOLUMETRIC_H
 #define Y_VOLUMETRIC_H
 

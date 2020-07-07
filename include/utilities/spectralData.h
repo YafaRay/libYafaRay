@@ -1,3 +1,4 @@
+#pragma once
 /*
  * spectralData.h - Chromatic Match Functions from CIE Standard Observer 1932 2-Degrees
  *

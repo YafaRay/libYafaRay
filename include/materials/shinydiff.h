@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_SHINYDIFFMAT_H
 #define Y_SHINYDIFFMAT_H
 

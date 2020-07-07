@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 		imagehandler.h: image load and save abstract class

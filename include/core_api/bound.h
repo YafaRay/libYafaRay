@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 			bound.h: Bound and tree api for general raytracing acceleration

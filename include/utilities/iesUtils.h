@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 		iesUtils.h: utilities for parsing IES data files
  *      This is part of the yafaray package

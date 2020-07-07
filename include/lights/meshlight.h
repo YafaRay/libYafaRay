@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 			meshlight.h: a light source using a triangle mesh as shape
  *      This is part of the yafray package

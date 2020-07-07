@@ -1,6 +1,9 @@
+#pragma once
+
 #ifndef Y_SPECTRUM_H
 #define Y_SPECTRUM_H
 
+#include <yafray_constants.h>
 #include <core_api/color.h>
 
 __BEGIN_YAFRAY

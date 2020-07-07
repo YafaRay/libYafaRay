@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_IMAGESPLITTER_H
 #define Y_IMAGESPLITTER_H

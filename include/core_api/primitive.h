@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_PRIMITIVE_H
 #define Y_PRIMITIVE_H

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_SAMPLEUTILS_H
 #define Y_SAMPLEUTILS_H
 

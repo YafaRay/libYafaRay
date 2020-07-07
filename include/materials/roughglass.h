@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_ROUGHGLASS_H
 #define Y_ROUGHGLASS_H

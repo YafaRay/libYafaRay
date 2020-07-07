@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 			integr_utils.h: API for light integrator utilities
  *      This is part of the yafray package

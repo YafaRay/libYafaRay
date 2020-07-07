@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_BASICTEX_H
 #define Y_BASICTEX_H
 

@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_ORTHOGRAPHICCAMERA_H
 #define Y_ORTHOGRAPHICCAMERA_H

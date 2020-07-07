@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 			vector3d.h: Vector 3d and point representation and manipulation api

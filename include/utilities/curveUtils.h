@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 		curveUtils.cc: Curve interpolation utils
  *      This is part of the yafaray package

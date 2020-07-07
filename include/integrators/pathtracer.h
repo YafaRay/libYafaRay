@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_PATHTRACER_H
 #define Y_PATHTRACER_H

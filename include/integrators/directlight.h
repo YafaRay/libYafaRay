@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_DIRECTLIGHT_H
 #define Y_DIRECTLIGHT_H

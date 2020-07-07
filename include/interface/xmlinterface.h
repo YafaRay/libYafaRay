@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_XMLINTERFACE_H
 #define Y_XMLINTERFACE_H

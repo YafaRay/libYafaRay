@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  *      file.h: File handling classes with unicode paths

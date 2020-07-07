@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  * 		renderpasses.h: Render Passes functionality

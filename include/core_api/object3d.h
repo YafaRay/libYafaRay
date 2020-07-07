@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_OBJECT3D_H
 #define Y_OBJECT3D_H

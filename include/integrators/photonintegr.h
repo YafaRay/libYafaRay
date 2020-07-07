@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_PHOTONINTEGR_H
 #define Y_PHOTONINTEGR_H

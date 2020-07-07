@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_SHADERMAT_H
 #define Y_SHADERMAT_H

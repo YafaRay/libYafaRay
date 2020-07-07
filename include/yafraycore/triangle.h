@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_TRIANGLE_H
 #define Y_TRIANGLE_H

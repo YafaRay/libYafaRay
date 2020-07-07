@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_TIMER_H
 #define Y_TIMER_H
 

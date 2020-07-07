@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_SHADER_H
 #define Y_SHADER_H

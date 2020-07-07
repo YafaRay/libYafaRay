@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_RAY_H
 #define Y_RAY_H

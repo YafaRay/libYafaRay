@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 			bglight.h: a light source using the background
  *      This is part of the yafray package

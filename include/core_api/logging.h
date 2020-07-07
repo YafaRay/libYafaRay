@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      logging.h: YafaRay Logging control
  *      This is part of the yafray package

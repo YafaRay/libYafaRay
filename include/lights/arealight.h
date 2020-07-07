@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_AREALIGHT_H
 #define Y_AREALIGHT_H

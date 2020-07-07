@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *		mcintegrator.h: A basic abstract integrator for MC sampling
  *		This is part of the yafray package

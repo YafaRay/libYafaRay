@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      color_console.h: A console coloring utility
  *      This is part of the yafray package

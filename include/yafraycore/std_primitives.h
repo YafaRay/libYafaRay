@@ -1,7 +1,10 @@
+#pragma once
+
 
 #ifndef Y_STD_PRIMITIVE_H
 #define Y_STD_PRIMITIVE_H
 
+#include <yafray_constants.h>
 #include <core_api/primitive.h>
 
 __BEGIN_YAFRAY

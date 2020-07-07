@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 		interpolation.h: Some interpolation algorithms
  *      This is part of the yafaray package

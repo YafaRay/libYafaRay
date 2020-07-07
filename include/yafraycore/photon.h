@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_PHOTONMAP_H
 #define Y_PHOTONMAP_H

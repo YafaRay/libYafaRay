@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_SPPM_H
 #define Y_SPPM_H
 

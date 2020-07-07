@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_CONSTANTS_H
 #define Y_CONSTANTS_H
 

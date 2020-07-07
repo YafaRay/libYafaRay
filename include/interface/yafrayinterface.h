@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_YAFRAYINTERFACE_H
 #define Y_YAFRAYINTERFACE_H

@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_BIDIRPATH_H
 #define Y_BIDIRPATH_H

@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_TILEDINTEGRATOR_H
 #define Y_TILEDINTEGRATOR_H

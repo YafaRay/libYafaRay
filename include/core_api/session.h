@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      session.h: YafaRay Session control
  *      This is part of the yafray package

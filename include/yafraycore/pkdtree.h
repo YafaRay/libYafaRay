@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_PKDTREE_H
 #define Y_PKDTREE_H
 

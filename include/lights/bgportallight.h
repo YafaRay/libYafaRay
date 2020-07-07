@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 			bgportallight.h: a light source using a triangle mesh as portal
  *      This is part of the yafray package

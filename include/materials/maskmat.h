@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_MASKMAT_H
 #define Y_MASKMAT_H
 

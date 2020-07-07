@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *		integrator.h: the interface definition for light integrators
  *      This is part of the yafray package

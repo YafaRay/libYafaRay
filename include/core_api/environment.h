@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_ENVIRON_H
 #define Y_ENVIRON_H
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_SCRHALTON_H
 #define Y_SCRHALTON_H
 

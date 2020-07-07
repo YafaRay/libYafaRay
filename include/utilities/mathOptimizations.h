@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  *      mathOptimizations.h: Math aproximations to speed up things

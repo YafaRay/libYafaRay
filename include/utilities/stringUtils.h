@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  *      stringUtils.h: Some std::string manipulation utilities

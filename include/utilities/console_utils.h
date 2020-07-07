@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  * 		console_utils.h: General command line parsing and other utilities (soon)
  *      This is part of the YafaRay package

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_XMLPARSER_H
 #define Y_XMLPARSER_H
 

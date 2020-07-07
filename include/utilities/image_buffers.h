@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      image_buffers.h: An image buffer handler
  *      This is part of the yafray package

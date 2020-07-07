@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_MEMORYIO_H
 #define Y_MEMORYIO_H
 

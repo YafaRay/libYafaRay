@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_TEXTURE_H
 #define Y_TEXTURE_H
 

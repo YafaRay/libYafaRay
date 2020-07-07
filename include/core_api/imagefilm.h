@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *
  *      imagefilm.h: image data handling class

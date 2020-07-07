@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_LAYERNODE_H
 #define Y_LAYERNODE_H

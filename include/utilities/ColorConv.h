@@ -1,3 +1,4 @@
+#pragma once
 /*
  * colorConv.h: 	Color converter from CIE XYZ color space to CIE RGB
  *

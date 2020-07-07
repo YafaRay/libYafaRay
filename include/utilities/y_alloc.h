@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_ALLOC_H
 #define Y_ALLOC_H
 

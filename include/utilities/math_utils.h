@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_MATHUTIL_H
 #define Y_MATHUTIL_H
 

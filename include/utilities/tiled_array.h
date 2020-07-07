@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef Y_TILEDARRAY_H
 #define Y_TILEDARRAY_H
 

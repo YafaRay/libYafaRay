@@ -1,3 +1,4 @@
+#pragma once
 
 #ifndef Y_MESHTYPES_H
 #define Y_MESHTYPES_H
