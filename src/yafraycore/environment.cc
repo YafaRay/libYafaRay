@@ -128,11 +128,11 @@ void renderEnvironment_t::loadPlugins(const std::string &path)
 {
 	typedef void (reg_t)(renderEnvironment_t &);
 	Y_INFO_ENV << "Loading plugins ..." << yendl;
-	std::list<std::string> plugins=listDir(path);
+	std::vector<std::string> plugins=file_t::listFiles(path);
 
 	for(auto i=plugins.begin();i!=plugins.end();++i)
 	{
-		sharedlibrary_t plug(i->c_str());
+		sharedlibrary_t plug((path + "//" + *i).c_str());
 		if(!plug.isOpen()) continue;
 		reg_t *registerPlugin;
 		registerPlugin=(reg_t *)plug.getSymbol("registerPlugin");

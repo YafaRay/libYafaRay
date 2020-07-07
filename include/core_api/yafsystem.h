@@ -41,9 +41,6 @@ class YAFRAYCORE_EXPORT sharedlibrary_t
 #endif
 };
 
-YAFRAYCORE_EXPORT const std::list<std::string> & listDir(const std::string &dir);
-
-
 __END_YAFRAY
 
 #endif

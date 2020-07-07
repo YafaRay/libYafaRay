@@ -129,59 +129,5 @@ sharedlibrary_t::~sharedlibrary_t()
   }
 }
 
-
-const std::list<std::string> & listDir(const std::string &dir)
-{
-	static std::list<std::string> lista;
-	lista.clear();
-
-#if defined(WIN32)
-  std::string pattern = dir + "/*.dll";
-
-  // replace all the "/" with "\"
-  for (int i = 0; i < (int)pattern.length(); ++i) 
-    if (pattern[i] == '/') pattern[i] = '\\';
-
-  _finddata_t    FindData;
-  intptr_t       hFind;
-  int			 Result;
-
-  hFind = _findfirst(pattern.c_str(), &FindData);
-  if (hFind != -1)
-    Result = 0;
-  else
-    Result = 1;
-
-	while (Result == 0)
-	{
-		lista.push_back(dir+"/"+FindData.name);
-		Result = _findnext(hFind, &FindData);
-	}
-
-  _findclose(hFind);
-
-#else
-
-	DIR *directorio;
-	struct dirent *entrada;
-	struct stat estado;
-
-	directorio=opendir(dir.c_str());
-	if(directorio==nullptr) return lista;
-
-	entrada=readdir(directorio);
-	while(entrada!=nullptr) 
-	{
-		string full=dir+"/"+entrada->d_name;
-		stat(full.c_str(),&estado);
-		if(S_ISREG(estado.st_mode))
-			lista.push_back(full);
-    entrada=readdir(directorio);
-  }
-  closedir(directorio);
-#endif
-  return lista;
-}
-
 __END_YAFRAY
 
