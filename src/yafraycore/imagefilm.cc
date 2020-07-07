@@ -44,6 +44,10 @@
 #include FT_FREETYPE_H
 #endif
 
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
+
 __BEGIN_YAFRAY
 
 #define FILTER_TABLE_SIZE 16
@@ -1683,7 +1687,7 @@ void imageFilm_t::imageFilmFileBackup() const
 //The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 
-void imageFilm_t::edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const
+void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness)
 {	
 	//The result of the edges detection will be stored in the first component image of the vector 
 	

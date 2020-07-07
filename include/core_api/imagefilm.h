@@ -32,10 +32,6 @@
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
 
-#ifdef HAVE_OPENCV
-#include <opencv2/photo/photo.hpp>
-#endif
-
 #if HAVE_FREETYPE
 struct FT_Bitmap_;
 #endif
@@ -184,10 +180,6 @@ class YAFRAYCORE_EXPORT imageFilm_t
         
 #if HAVE_FREETYPE
 		void drawFontBitmap( FT_Bitmap_* bitmap, int x, int y);
-#endif
-
-#ifdef HAVE_OPENCV
-		void edgeImageDetection(std::vector<cv::Mat> & imageMat, float edge_threshold, int edge_thickness, float smoothness) const;
 #endif
 
 	protected:
