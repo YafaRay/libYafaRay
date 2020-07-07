@@ -31,10 +31,6 @@
 #include <string>
 #include <core_api/renderpasses.h>
 
-#ifdef HAVE_OPENCV
-#include <opencv2/photo/photo.hpp>
-#endif
-
 #ifdef HAVE_OPENEXR
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -92,6 +88,7 @@ public:
 	int getWidth() const { return m_width; }
 	int getHeight() const { return m_height; }
 	int getNumChannels() const { return m_num_channels; }
+	imageBuffer_t getDenoisedLDRBuffer(int h_lum, int h_col, float mix) const; //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
 
 	colorA_t getColor(int x, int y) const;
 	void setColor(int x, int y, const colorA_t & col);
@@ -101,6 +98,7 @@ protected:
 	int m_width;
 	int m_height;
 	int m_num_channels;
+	int m_optimization;
 	rgba2DImage_nw_t * rgba128_FloatImg = nullptr; //!< rgba standard float RGBA color buffer (for textures and mipmaps) or render passes depending on whether the image handler is used for input or output)
 	rgbaOptimizedImage_nw_t * rgba40_OptimizedImg = nullptr;	//!< optimized RGBA (32bit/pixel) with alpha buffer (for textures and mipmaps)
 	rgbaCompressedImage_nw_t * rgba24_CompressedImg = nullptr;	//!< compressed RGBA (24bit/pixel) LOSSY! with alpha buffer (for textures and mipmaps)

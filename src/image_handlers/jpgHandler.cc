@@ -131,61 +131,30 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 	scanline = new yByte[ w * 3 ];
 
+	imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-
-	if(m_Denoise)
-	{
-		cv::Mat A(h, w, CV_8UC3);
-		cv::Mat B(h, w, CV_8UC3);
-		cv::Mat_<cv::Vec3b> _A = A;
-		cv::Mat_<cv::Vec3b> _B = B;
-
-		for(y = 0; y < h; y++)
-		{
-			for (x = 0; x < w; x++)
-			{
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				_A(y, x)[0] = (col.getR() * 255);
-				_A(y, x)[1] = (col.getG() * 255);
-				_A(y, x)[2] = (col.getB() * 255);
-			}
-		}
-
-		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
-			
-		for(y = 0; y < h; y++)
-		{
-			for (x = 0; x < w; x++)
-			{
-				ix = x * 3;
-				scanline[ix]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
-				scanline[ix+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
-				scanline[ix+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
-			}
-
-			jpeg_write_scanlines(&info, &scanline, 1);
-		}
+	if(m_Denoise) {
+		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		buf = &denoised_buffer;
 	}
-	else
-#endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
-	{
-		for(y = 0; y < h; y++)
-		{
-			for (x = 0; x < w; x++)
-			{
-				ix = x * 3;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix]   = (yByte) (col.getR() * 255);
-				scanline[ix+1] = (yByte) (col.getG() * 255);
-				scanline[ix+2] = (yByte) (col.getB() * 255);
-			}
+#endif //HAVE_OPENCV
 
-			jpeg_write_scanlines(&info, &scanline, 1);
+	for(y = 0; y < h; y++)
+	{
+		for (x = 0; x < w; x++)
+		{
+			ix = x * 3;
+			colorA_t col = buf->getColor(x, y);
+			col.clampRGBA01();
+			scanline[ix]   = (yByte) (col.getR() * 255);
+			scanline[ix+1] = (yByte) (col.getG() * 255);
+			scanline[ix+2] = (yByte) (col.getB() * 255);
 		}
+
+		jpeg_write_scanlines(&info, &scanline, 1);
 	}
+
 	delete [] scanline;
 
 	jpeg_finish_compress(&info);

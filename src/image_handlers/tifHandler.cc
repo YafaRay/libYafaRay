@@ -99,80 +99,38 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
     
     libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytesPerScanline));
 
+	imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
+	if(m_Denoise) {
+		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		buf = &denoised_buffer;
+	}
+#endif //HAVE_OPENCV
 
-	if(m_Denoise)
+	for (int y = 0; y < h; y++)
 	{
-		cv::Mat A(h, w, CV_8UC3);
-		cv::Mat B(h, w, CV_8UC3);
-		cv::Mat_<cv::Vec3b> _A = A;
-		cv::Mat_<cv::Vec3b> _B = B;
-
-		for (int y = 0; y < h; y++)
+		for(int x = 0; x < w; x++)
 		{
-			for(int x = 0; x < w; x++)
-			{
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				_A(y, x)[0] = (col.getR() * 255);
-				_A(y, x)[1] = (col.getG() * 255);
-				_A(y, x)[2] = (col.getB() * 255);
-			}
+			int ix = x * channels;
+			colorA_t col = buf->getColor(x, y);
+			col.clampRGBA01();
+			scanline[ix]   = (yByte)(col.getR() * 255.f);
+			scanline[ix+1] = (yByte)(col.getG() * 255.f);
+			scanline[ix+2] = (yByte)(col.getB() * 255.f);
+			if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
 		}
 
-		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
-
-		for (int y = 0; y < h; y++)
+		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{
-			for(int x = 0; x < w; x++)
-			{
-				int ix = x * channels;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
-				scanline[ix+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
-				scanline[ix+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
-				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
-			}
-			
-			if(libtiff::TIFFWriteScanline(out, scanline, y, 0) < 0)
-			{
-				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-				libtiff::TIFFClose(out);
-				libtiff::_TIFFfree(scanline);
+			Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+			libtiff::TIFFClose(out);
+			libtiff::_TIFFfree(scanline);
 
-				return false;
-			}
+			return false;
 		}
 	}
-	else
-#endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
-	{
-		for (int y = 0; y < h; y++)
-		{
-			for(int x = 0; x < w; x++)
-			{
-				int ix = x * channels;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix]   = (yByte)(col.getR() * 255.f);
-				scanline[ix+1] = (yByte)(col.getG() * 255.f);
-				scanline[ix+2] = (yByte)(col.getB() * 255.f);
-				if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
-			}
-			
-			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
-			{
-				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-				libtiff::TIFFClose(out);
-				libtiff::_TIFFfree(scanline);
 
-				return false;
-			}
-		}
-	}
-	
 	libtiff::TIFFClose(out);
 	libtiff::_TIFFfree(scanline);
 	

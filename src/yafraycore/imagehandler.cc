@@ -20,11 +20,15 @@
 
 #include <core_api/imagehandler.h>
 
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
+
 
 __BEGIN_YAFRAY
 
 
-imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimization):m_width(width),m_height(height),m_num_channels(num_channels)
+imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimization):m_width(width),m_height(height),m_num_channels(num_channels),m_optimization(optimization)
 {
 	switch(optimization)
 	{
@@ -55,6 +59,58 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 #endif
 		default: break;
 	}
+}
+
+imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(int h_lum, int h_col, float mix) const
+{
+	imageBuffer_t denoised_buffer = imageBuffer_t(m_width, m_height, m_num_channels, m_optimization);
+
+#ifdef HAVE_OPENCV
+	cv::Mat A(m_height, m_width, CV_8UC3);
+	cv::Mat B(m_height, m_width, CV_8UC3);
+	cv::Mat_<cv::Vec3b> _A = A;
+	cv::Mat_<cv::Vec3b> _B = B;
+
+	for(int y = 0; y < m_height; y++)
+	{
+		for(int x = 0; x < m_width; x++)
+		{
+			colorA_t color = getColor(x, y);
+			color.clampRGBA01();
+
+			_A(y, x)[0] = (yByte) (color.getR() * 255);
+			_A(y, x)[1] = (yByte) (color.getG() * 255);
+			_A(y, x)[2] = (yByte) (color.getB() * 255);
+		}
+	}
+
+	cv::fastNlMeansDenoisingColored(A, B, h_lum, h_col, 7, 21);
+
+	for(int y = 0; y < m_height; y++)
+	{
+		for(int x = 0; x < m_width; x++)
+		{
+			colorA_t col;
+			col.R = (float) (mix * _B(y, x)[0] + (1.f-mix) * _A(y, x)[0]) / 255.0;
+			col.G = (float) (mix * _B(y, x)[1] + (1.f-mix) * _A(y, x)[1]) / 255.0;
+			col.B = (float) (mix * _B(y, x)[2] + (1.f-mix) * _A(y, x)[2]) / 255.0;
+			col.A = getColor(x, y).A;
+			denoised_buffer.setColor(x, y, colorA_t(_B(y, x)[0] / 255.0, _B(y, x)[1] / 255.0, _B(y, x)[2] / 255.0, getColor(x, y).A));
+		}
+	}
+#else //HAVE_OPENCV
+	//FIXME: Useless duplication work when OpenCV is not built in... avoid calling this function in the first place if OpenCV support not built.
+	//This is kept here for interface compatibility when OpenCV not built in.
+	for(int y = 0; y < m_height; y++)
+	{
+		for(int x = 0; x < m_width; x++)
+		{
+			denoised_buffer.setColor(x, y, getColor(x, y));
+		}
+	}
+	Y_WARNING << "ImageHandler: built without OpenCV support, image cannot be de-noised." << yendl;
+#endif //HAVE_OPENCV
+	return denoised_buffer;
 }
 
 imageBuffer_t::~imageBuffer_t()
@@ -164,6 +220,7 @@ colorA_t imageHandler_t::getPixel(int x, int y, int imgIndex)
 {
 	return imgBuffer.at(imgIndex)->getColor(x, y);
 }
+
 
 void imageHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
 {

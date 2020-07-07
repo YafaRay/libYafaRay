@@ -108,69 +108,31 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		rowPointers[i] = new yByte[ w * channels ];
 	}
 	
-	Y_DEBUG << "m_Denoise="<<m_Denoise<<" m_DenoiseHLum="<<m_DenoiseHLum<<" m_DenoiseHCol="<<m_DenoiseHCol<<yendl;
-
+	imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
+	if(m_Denoise) {
+		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		buf = &denoised_buffer;
+	}
+#endif //HAVE_OPENCV
 
-	if(m_Denoise)
+	for(int y = 0; y < h; y++)
 	{
-		cv::Mat A(h, w, CV_8UC3);
-		cv::Mat B(h, w, CV_8UC3);
-		cv::Mat_<cv::Vec3b> _A = A;
-		cv::Mat_<cv::Vec3b> _B = B;
-		
-		for(int y = 0; y < h; y++)
+		for(int x = 0; x < w; x++)
 		{
-			for(int x = 0; x < w; x++)
-			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
-				color.clampRGBA01();
+			colorA_t color = buf->getColor(x, y);
+			color.clampRGBA01();
 
-				_A(y, x)[0] = (color.getR() * 255);
-				_A(y, x)[1] = (color.getG() * 255);
-				_A(y, x)[2] = (color.getB() * 255);
-			}
-		}
+			int i = x * channels;
 
-		cv::fastNlMeansDenoisingColored(A, B, m_DenoiseHLum, m_DenoiseHCol, 7, 21);
-
-		for(int y = 0; y < h; y++)
-		{
-			for(int x = 0; x < w; x++)
-			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
-				color.clampRGBA01();
-
-				int i = x * channels;
-
-				rowPointers[y][i]   = (yByte) (m_DenoiseMix * _B(y, x)[0] + (1.f-m_DenoiseMix) * _A(y, x)[0]);
-				rowPointers[y][i+1] = (yByte) (m_DenoiseMix * _B(y, x)[1] + (1.f-m_DenoiseMix) * _A(y, x)[1]);
-				rowPointers[y][i+2] = (yByte) (m_DenoiseMix * _B(y, x)[2] + (1.f-m_DenoiseMix) * _A(y, x)[2]);
-				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
-			}
+			rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
+			rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
+			rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
+			if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
 		}
 	}
-	else
-#endif	//If YafaRay is not built with OpenCV, just do normal image processing and skip the denoise process
-	{
-		for(int y = 0; y < h; y++)
-		{
-			for(int x = 0; x < w; x++)
-			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
-				color.clampRGBA01();
 
-				int i = x * channels;
-
-				rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
-				rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
-				rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
-				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
-			}
-		}
-	}
-	
 	png_write_image(pngPtr, rowPointers);
 
 	png_write_end(pngPtr, nullptr);
