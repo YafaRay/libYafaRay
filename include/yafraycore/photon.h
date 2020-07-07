@@ -2,7 +2,7 @@
 #ifndef Y_PHOTONMAP_H
 #define Y_PHOTONMAP_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include "pkdtree.h"
 #include <core_api/color.h>
@@ -168,12 +168,12 @@ class YAFRAYCORE_EXPORT photonMap_t
 
 struct photonGather_t
 {
-	photonGather_t(u_int32 mp, const point3d_t &p);
+	photonGather_t(uint32_t mp, const point3d_t &p);
 	void operator()(const photon_t *photon, float dist2, float &maxDistSquared) const;
 	const point3d_t &p;
 	foundPhoton_t *photons;
-	u_int32 nLookup;
-	mutable u_int32 foundPhotons;
+	uint32_t nLookup;
+	mutable uint32_t foundPhotons;
 };
 
 struct nearestPhoton_t

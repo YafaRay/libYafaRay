@@ -1,4 +1,5 @@
 #include <yafraycore/hashgrid.h>
+#include <yafraycore/photon.h>
 
 __BEGIN_YAFRAY
 

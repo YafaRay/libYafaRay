@@ -1,10 +1,11 @@
 
 #include <interface/yafrayinterface.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
 #include <core_api/imagefilm.h>
-#include <core_api/integrator.h>
-#include <core_api/matrix4.h>
+#include <core_api/params.h>
 #include <signal.h>
 
 #ifdef WIN32

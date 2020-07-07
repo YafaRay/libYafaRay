@@ -21,6 +21,7 @@
 #ifndef Y_COLOR_CONSOLE_H
 #define Y_COLOR_CONSOLE_H
 
+#include <yafray_constants.h>
 #include <iostream>
 
 __BEGIN_YAFRAY

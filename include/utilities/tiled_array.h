@@ -1,7 +1,7 @@
 #ifndef Y_TILEDARRAY_H
 #define Y_TILEDARRAY_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <cstring>
 #include "y_alloc.h"
 

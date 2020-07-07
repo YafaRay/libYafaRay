@@ -22,6 +22,9 @@
 #include <lights/bglight.h>
 #include <core_api/background.h>
 #include <core_api/texture.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
+#include <core_api/surface.h>
 #include <utilities/sample_utils.h>
 
 __BEGIN_YAFRAY

@@ -20,6 +20,8 @@
  */
 
 // YafaRay Headers
+#include <core_api/logging.h>
+#include <core_api/color_console.h>
 #include <gui/yafqtapi.h>
 #include "mywindow.h"
 #include "worker.h"

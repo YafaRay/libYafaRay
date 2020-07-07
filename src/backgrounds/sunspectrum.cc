@@ -1,4 +1,4 @@
-#include<yafray_config.h>
+#include <yafray_constants.h>
 
 #include <yafraycore/spectrum.h>
 #include <algorithm>

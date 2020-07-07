@@ -23,12 +23,7 @@
 #ifndef Y_BUFFER_H
 #define Y_BUFFER_H
 
-#include<yafray_config.h>
-
-#include <cstdio>
-#include <iostream>
-#include <core_api/color.h>
-
+#include <yafray_constants.h>
 __BEGIN_YAFRAY
 
 template<typename T1, unsigned char T2>

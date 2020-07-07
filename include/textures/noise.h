@@ -4,7 +4,7 @@
 #include <core_api/vector3d.h>
 #include <core_api/color.h>
 
-#include <yafray_config.h>	
+#include <yafray_constants.h>	
 
 __BEGIN_YAFRAY
 

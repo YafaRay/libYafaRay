@@ -2,7 +2,7 @@
 #ifndef Y_DIRECTLIGHT_H
 #define Y_DIRECTLIGHT_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include <yafraycore/timer.h>
 

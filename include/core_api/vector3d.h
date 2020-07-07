@@ -22,8 +22,7 @@
 #ifndef Y_VECTOR3D_H
 #define Y_VECTOR3D_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <utilities/mathOptimizations.h>
 #include <iostream>
 

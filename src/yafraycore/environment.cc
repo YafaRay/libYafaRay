@@ -21,7 +21,14 @@
  *
  */
 
+#include <yafray_config.h>
 #include <core_api/environment.h>
+#include <core_api/scene.h>
+#include <core_api/session.h>
+#include <core_api/params.h>
+#include <core_api/dynamic_library.h>
+#include <core_api/output.h>
+#include <core_api/build_info.h>
 
 #ifdef _WIN32
 	#include <io.h>

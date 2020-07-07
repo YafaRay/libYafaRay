@@ -18,7 +18,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
  
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include <core_api/environment.h>
 #include <core_api/background.h>

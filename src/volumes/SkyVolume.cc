@@ -1,4 +1,4 @@
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include <core_api/ray.h>
 #include <core_api/color.h>
@@ -7,6 +7,7 @@
 #include <core_api/surface.h>
 #include <core_api/texture.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 #include <utilities/mcqmc.h>
 
 __BEGIN_YAFRAY

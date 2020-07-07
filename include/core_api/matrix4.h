@@ -22,11 +22,9 @@
 #ifndef __MATRIX4_H
 #define __MATRIX4_H
 
-#include<yafray_config.h>
-
-#include<iostream>
-//#include<cmath>
+#include <yafray_constants.h>
 #include "vector3d.h"
+#include<iostream>
 
 __BEGIN_YAFRAY
 

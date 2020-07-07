@@ -21,6 +21,7 @@
  */
 #include <core_api/color.h>
 #include <core_api/color_ramp.h>
+#include <core_api/logging.h>
 #include <iterator>
 
 #include<iostream>

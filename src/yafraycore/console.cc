@@ -1,9 +1,12 @@
 
 #include <yafraycore/monitor.h>
+#include <core_api/logging.h>
+#include <core_api/color_console.h>
 #include <utilities/math_utils.h>
-#include <iostream>
-#include <string>
-#include <iomanip>
+//#include <iostream>
+//#include <string>
+//#include <iomanip>
+
 #ifdef _MSC_VER
 #include <algorithm>
 #endif

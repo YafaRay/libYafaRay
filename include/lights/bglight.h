@@ -23,6 +23,7 @@
 
 #include <core_api/light.h>
 #include <core_api/environment.h>
+#include <core_api/vector3d.h>
 
 __BEGIN_YAFRAY
 

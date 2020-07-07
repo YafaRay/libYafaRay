@@ -1,21 +1,17 @@
-#include <yafray_config.h>
-#include <cstdlib>
-#include <cctype>
-#include <algorithm>
-#include <signal.h>
-
-#ifdef WIN32
-	#include <windows.h>
-#endif
-
+#include <yafray_constants.h>
+#include <core_api/session.h>
 #include <core_api/file.h>
 #include <core_api/scene.h>
 #include <core_api/environment.h>
-#include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
 #include <yafraycore/xmlparser.h>
 #include <utilities/console_utils.h>
 #include <yafraycore/imageOutput.h>
+#include <signal.h>
+
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 using namespace::yafaray;
 

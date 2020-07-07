@@ -1,8 +1,7 @@
 #ifndef Y_TIMER_H
 #define Y_TIMER_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <time.h>
 #include <string>
 #include <map>

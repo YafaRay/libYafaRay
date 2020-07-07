@@ -1,10 +1,9 @@
 #ifndef Y_PARAMS_H
 #define Y_PARAMS_H
 
-#include "color.h"
-#include "vector3d.h"
+#include <yafray_constants.h>
 #include "matrix4.h"
-
+#include "color.h"
 #include <map>
 #include <string>
 

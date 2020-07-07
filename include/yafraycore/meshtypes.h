@@ -2,11 +2,15 @@
 #ifndef Y_MESHTYPES_H
 #define Y_MESHTYPES_H
 
+#include <yafray_constants.h>
+#include <core_api/vector3d.h>
+#include <core_api/matrix4.h>
 #include <core_api/object3d.h>
-#include <yafraycore/triangle.h>
-
+#include <vector>
 
 __BEGIN_YAFRAY
+
+class bsTriangle_t;
 
 
 struct uv_t
@@ -131,8 +135,6 @@ class YAFRAYCORE_EXPORT triangleObjectInstance_t: public triangleObject_t
         triangleObject_t* mBase;
 	using object3d_t::getPrimitives;
 };
-
-#include <yafraycore/triangle_inline.h>
 
 __END_YAFRAY
 

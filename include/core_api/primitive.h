@@ -2,8 +2,7 @@
 #ifndef Y_PRIMITIVE_H
 #define Y_PRIMITIVE_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include "surface.h"
 #include "bound.h"
 #include "ray.h"

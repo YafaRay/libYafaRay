@@ -1,5 +1,6 @@
 
 #include <textures/layernode.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

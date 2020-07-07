@@ -79,7 +79,7 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 	if( logLeaves > 16.0 ) costRatio += 0.25*( logLeaves - 16.0 );
 	allBounds = new bound_t[totalPrims + TRI_CLIP_THRESH+1];
 	Y_VERBOSE << "Kd-Tree: Getting triangle bounds..." << yendl;
-	for(u_int32 i=0; i<totalPrims; i++)
+	for(uint32_t i=0; i<totalPrims; i++)
 	{
 		allBounds[i] = v[i]->getBound();
 		/* calc tree bound. Remember to upgrade bound_t class... */
@@ -96,15 +96,15 @@ triKdTree_t::triKdTree_t(const triangle_t **v, int np, int depth, int leafSize,
 	Y_VERBOSE << "Kd-Tree: Done." << yendl;
 	// get working memory for tree construction
 	boundEdge *edges[3];
-	u_int32 rMemSize = 3*totalPrims; // (maxDepth+1)*totalPrims;
-	u_int32 *leftPrims = new u_int32[std::max( (u_int32)2*TRI_CLIP_THRESH, totalPrims )];
-	u_int32 *rightPrims = new u_int32[rMemSize]; //just a rough guess, allocating worst case is insane!
+	uint32_t rMemSize = 3*totalPrims; // (maxDepth+1)*totalPrims;
+	uint32_t *leftPrims = new uint32_t[std::max( (uint32_t)2*TRI_CLIP_THRESH, totalPrims )];
+	uint32_t *rightPrims = new uint32_t[rMemSize]; //just a rough guess, allocating worst case is insane!
 	for (int i = 0; i < 3; ++i) edges[i] = new boundEdge[514/*2*totalPrims*/];
 	clip = new int[maxDepth+2];
 	cdata = (char*)y_memalign(64, (maxDepth+2)*TRI_CLIP_THRESH*CLIP_DATA_SIZE);
 	
 	// prepare data
-	for (u_int32 i = 0; i < totalPrims; i++) leftPrims[i] = i;//primNums[i] = i;
+	for (uint32_t i = 0; i < totalPrims; i++) leftPrims[i] = i;//primNums[i] = i;
 	for (int i = 0; i < maxDepth+2; i++) clip[i] = -1;
 	
 	/* build tree */
@@ -149,7 +149,7 @@ triKdTree_t::~triKdTree_t()
 */
 
 
-void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx, splitCost_t &split)
+void triKdTree_t::pigeonMinCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx, splitCost_t &split)
 {
 	bin_t bin[ KD_BINS+1 ];
 	float d[3];
@@ -298,7 +298,7 @@ void triKdTree_t::pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *pri
 	Cost function: Find the optimal split with SAH
 */
 
-void triKdTree_t::minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx,
+void triKdTree_t::minimalCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx,
 		const bound_t *pBounds, boundEdge *edges[3], splitCost_t &split)
 {
 	float d[3];
@@ -439,9 +439,9 @@ void triKdTree_t::minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primI
 				2 when neither current nor subsequent split reduced cost
 */
 
-int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums,
-		u_int32 *leftPrims, u_int32 *rightPrims, boundEdge *edges[3], //working memory
-		u_int32 rightMemSize, int depth, int badRefines ) // status
+int triKdTree_t::buildTree(uint32_t nPrims, bound_t &nodeBound, uint32_t *primNums,
+		uint32_t *leftPrims, uint32_t *rightPrims, boundEdge *edges[3], //working memory
+		uint32_t rightMemSize, int depth, int badRefines ) // status
 {
 	if (nextFreeNode == allocatedNodesCount) {
 		int newCount = 2*allocatedNodesCount;
@@ -471,7 +471,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 		for(unsigned int i=0; i<nPrims; ++i)
 		{
 			const triangle_t *ct = prims[ primNums[i] ];
-			u_int32 old_idx=0;
+			uint32_t old_idx=0;
 			if(clip[depth] >= 0) old_idx = primNums[i+nPrims];
 			if( ct->clipToBound(b_ext, clip[depth], allBounds[totalPrims+nOverl],
 				c_old + old_idx*CLIP_DATA_SIZE, c_new + nOverl*CLIP_DATA_SIZE) )
@@ -482,7 +482,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 			else ++_null_clip;
 		}
 		//copy back
-		memcpy(primNums, oPrims, nOverl*sizeof(u_int32));
+		memcpy(primNums, oPrims, nOverl*sizeof(uint32_t));
 		nPrims = nOverl;
 	}
 #endif
@@ -518,12 +518,12 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	}
 	
 	//todo: check working memory for child recursive calls
-	u_int32 remainingMem, *morePrims = nullptr, *nRightPrims;
-	u_int32 *oldRightPrims = rightPrims;
+	uint32_t remainingMem, *morePrims = nullptr, *nRightPrims;
+	uint32_t *oldRightPrims = rightPrims;
 	if(nPrims > rightMemSize || 2*TRI_CLIP_THRESH > rightMemSize ) // *possibly* not enough, get some more
 	{
 		remainingMem = nPrims * 3;
-		morePrims = new u_int32[remainingMem];
+		morePrims = new uint32_t[remainingMem];
 		nRightPrims = morePrims;
 	}
 	else
@@ -554,7 +554,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	else if(nPrims <= TRI_CLIP_THRESH)
 	{
 		int cindizes[TRI_CLIP_THRESH];
-		u_int32 oldPrims[TRI_CLIP_THRESH];
+		uint32_t oldPrims[TRI_CLIP_THRESH];
 		memcpy(oldPrims, primNums, nPrims*sizeof(int));
 		
 		for (int i=0; i<split.bestOffset; ++i)
@@ -606,7 +606,7 @@ int triKdTree_t::buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums
 	//advance right prims pointer
 	remainingMem -= n1;
 	
-	u_int32 curNode = nextFreeNode;
+	uint32_t curNode = nextFreeNode;
 	nodes[curNode].createInterior(split.bestAxis, splitPos);
 	++nextFreeNode;
 	bound_t boundL = nodeBound, boundR = nodeBound;
@@ -741,7 +741,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, float dist, triangle_t **tr, float
 		}
 				 
 		// Check for intersections inside leaf node
-		u_int32 nPrimitives = currNode->nPrimitives();
+		uint32_t nPrimitives = currNode->nPrimitives();
 		
 		if (nPrimitives == 1)
 		{
@@ -767,7 +767,7 @@ bool triKdTree_t::Intersect(const ray_t &ray, float dist, triangle_t **tr, float
 		{
 			triangle_t **prims = currNode->primitives;
 			
-			for (u_int32 i = 0; i < nPrimitives; ++i)
+			for (uint32_t i = 0; i < nPrimitives; ++i)
 			{
 				triangle_t *mp = prims[i];
 
@@ -897,7 +897,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, float dist, triangle_t **tr, floa
 		}
 				 
 		// Check for intersections inside leaf node
-		u_int32 nPrimitives = currNode->nPrimitives();
+		uint32_t nPrimitives = currNode->nPrimitives();
 		if (nPrimitives == 1)
 		{
 			triangle_t *mp = currNode->onePrimitive;
@@ -918,7 +918,7 @@ bool triKdTree_t::IntersectS(const ray_t &ray, float dist, triangle_t **tr, floa
 		else
 		{
 			triangle_t **prims = currNode->primitives;
-			for (u_int32 i = 0; i < nPrimitives; ++i)
+			for (uint32_t i = 0; i < nPrimitives; ++i)
 			{
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))
@@ -1058,7 +1058,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 		}
 				 
 		// Check for intersections inside leaf node
-		u_int32 nPrimitives = currNode->nPrimitives();
+		uint32_t nPrimitives = currNode->nPrimitives();
 
 		if (nPrimitives == 1)
 		{
@@ -1091,7 +1091,7 @@ bool triKdTree_t::IntersectTS(renderState_t &state, const ray_t &ray, int maxDep
 		else
 		{
 			triangle_t **prims = currNode->primitives;
-			for (u_int32 i = 0; i < nPrimitives; ++i)
+			for (uint32_t i = 0; i < nPrimitives; ++i)
 			{
 				triangle_t *mp = prims[i];
 				if (mp->intersect(ray, &t_hit, bary))

@@ -22,7 +22,7 @@ dirConverter_t::dirConverter_t()
 	}
 }
 
-photonGather_t::photonGather_t(u_int32 mp, const point3d_t &P): p(P)
+photonGather_t::photonGather_t(uint32_t mp, const point3d_t &P): p(P)
 {
 	photons = 0;
 	nLookup = mp;

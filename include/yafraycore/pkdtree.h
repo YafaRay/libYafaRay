@@ -1,14 +1,17 @@
 #ifndef Y_PKDTREE_H
 #define Y_PKDTREE_H
 
-#include <yafray_config.h>
-
-#include <utilities/y_alloc.h>
+#include <yafray_constants.h>
+#include <core_api/logging.h>
+#include <utilities/threadUtils.h>
 #include <core_api/bound.h>
-#include <algorithm>
 #include <vector>
+#include <utilities/y_alloc.h>
+//#include <algorithm>
 
 __BEGIN_YAFRAY
+
+class point3d_t;
 
 namespace kdtree {
 
@@ -32,14 +35,14 @@ struct kdNode
 	int 	SplitAxis() const { return flags & 3; }
 	int 	nPrimitives() const { return flags >> 2; }
 	bool 	IsLeaf() const { return (flags & 3) == 3; }
-	u_int32	getRightChild() const { return (flags >> 2); }
-	void 	setRightChild(u_int32 i) { flags = (flags&3) | (i << 2); }
+	uint32_t	getRightChild() const { return (flags >> 2); }
+	void 	setRightChild(uint32_t i) { flags = (flags&3) | (i << 2); }
 	union
 	{
 		float division;
 		const T *data;
 	};
-	u_int32	flags;
+	uint32_t	flags;
 };
 
 template<class NodeData> struct CompareNode
@@ -69,10 +72,10 @@ class pointKdTree
 			float s; 		//!< the split val of parent node
 			int axis; 		//!< the split axis of parent node
 		};
-		void buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims);
-		void buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes);
+		void buildTree(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims);
+		void buildTreeWorker(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes);
 		kdNode<T> *nodes;
-		u_int32 nElements, nextFreeNode;
+		uint32_t nElements, nextFreeNode;
 		bound_t treeBound;
 		mutable unsigned int Y_LOOKUPS, Y_PROCS;
 		int maxLevelThreads = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
@@ -96,11 +99,11 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat, const std::string &mapNam
 	
 	const T **elements = new const T*[nElements];
 	
-	for(u_int32 i=0; i<nElements; ++i) elements[i] = &dat[i];
+	for(uint32_t i=0; i<nElements; ++i) elements[i] = &dat[i];
 	
 	treeBound.set(dat[0].pos, dat[0].pos);
 	
-	for(u_int32 i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
+	for(uint32_t i=1; i<nElements; ++i) treeBound.include(dat[i].pos);
 	
 	maxLevelThreads = (int) std::ceil(std::log2((float) numThreads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
 	int realThreads = (int) pow(2.f, maxLevelThreads); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
@@ -115,13 +118,13 @@ pointKdTree<T>::pointKdTree(const std::vector<T> &dat, const std::string &mapNam
 }
 
 template<class T>
-void pointKdTree<T>::buildTree(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims)
+void pointKdTree<T>::buildTree(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims)
 {
 	buildTreeWorker(start, end, nodeBound, prims, 0, nextFreeNode, nodes);
 }
 
 template<class T>
-void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes)
+void pointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims, int level, uint32_t & localNextFreeNode, kdNode<T> * localNodes)
 {
 	++level;
 	if(end - start == 1)
@@ -135,7 +138,7 @@ void pointKdTree<T>::buildTreeWorker(u_int32 start, u_int32 end, bound_t &nodeBo
 	int splitEl = (start+end)/2;
 	std::nth_element(&prims[start], &prims[splitEl],
 					&prims[end], CompareNode<T>(splitAxis));
-	u_int32 curNode = localNextFreeNode;
+	uint32_t curNode = localNextFreeNode;
 	float splitPos = prims[splitEl]->pos[splitAxis];
 	localNodes[curNode].createInterior(splitAxis, splitPos);
 	++localNextFreeNode;

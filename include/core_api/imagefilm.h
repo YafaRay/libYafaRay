@@ -23,14 +23,11 @@
 #ifndef Y_IMAGEFILM_H
 #define Y_IMAGEFILM_H
 
-#include <yafray_config.h>
-
-#include "color.h"
-#include <core_api/output.h>
-#include <core_api/imagesplitter.h>
-#include <core_api/environment.h>
+#include <yafray_constants.h>
+#include "imagesplitter.h"
 #include <utilities/image_buffers.h>
 #include <utilities/tiled_array.h>
+#include <utilities/threadUtils.h>
 
 __BEGIN_YAFRAY
 
@@ -42,6 +39,8 @@ __BEGIN_YAFRAY
 class progressBar_t;
 class renderPasses_t;
 class colorPasses_t;
+class renderEnvironment_t;
+class colorOutput_t;
 
 // Image types define
 #define IF_IMAGE 1

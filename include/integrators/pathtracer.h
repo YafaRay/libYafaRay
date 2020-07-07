@@ -2,7 +2,7 @@
 #ifndef Y_PATHTRACER_H
 #define Y_PATHTRACER_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include <yafraycore/timer.h>
 #include <yafraycore/photon.h>
@@ -28,7 +28,7 @@ class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
         public:
                 pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
                 virtual bool preprocess();
-                virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0 /*, sampler_t &sam*/) const;
+                virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
                 static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
                 enum { NONE, PATH, PHOTON, BOTH };
         protected:

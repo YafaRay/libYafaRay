@@ -24,6 +24,8 @@
 #include <core_api/background.h>
 #include <core_api/texture.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 #include <utilities/sample_utils.h>
 #include <yafraycore/kdtree.h>
 

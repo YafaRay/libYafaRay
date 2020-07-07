@@ -13,8 +13,8 @@
  *
  */
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
+#include <core_api/logging.h>
 #include <core_api/environment.h>
 #include <core_api/background.h>
 #include <core_api/params.h>

@@ -1,9 +1,9 @@
+#pragma once
 
 #ifndef Y_ANGULARCAMERA_H
 #define Y_ANGULARCAMERA_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <core_api/camera.h>
 
 __BEGIN_YAFRAY

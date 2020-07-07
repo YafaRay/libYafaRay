@@ -21,10 +21,12 @@
 #ifndef Y_MCINTEGRATOR_H
 #define Y_MCINTEGRATOR_H
 
-#include <core_api/tiledintegrator.h>
-#include <yafraycore/photon.h>
+#include "tiledintegrator.h"
 
 __BEGIN_YAFRAY
+
+class background_t;
+class photon_t;
 
 enum photonMapProcessing_t
 {

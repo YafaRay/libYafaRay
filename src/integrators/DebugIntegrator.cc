@@ -18,12 +18,15 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
 #include <core_api/tiledintegrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
+#include <core_api/imagesplitter.h>
 #include <integrators/integr_utils.h>
 #include <yafraycore/photon.h>
 #include <utilities/mcqmc.h>
@@ -38,7 +41,7 @@ class YAFRAYPLUGIN_EXPORT DebugIntegrator : public tiledIntegrator_t
 	public:
 		DebugIntegrator(SurfaceProperties dt);
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		std::vector<light_t*> lights;
@@ -86,7 +89,7 @@ bool DebugIntegrator::preprocess()
 	return true;
 }
 
-colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
+colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	color_t col(0.0);
 	surfacePoint_t sp;

@@ -19,6 +19,11 @@
  */
 
 #include <integrators/sppm.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/volume.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 
@@ -850,7 +855,7 @@ void SPPM::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
+colorA_t SPPM::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	return colorA_t(0.f);
 }

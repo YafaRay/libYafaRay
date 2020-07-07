@@ -21,6 +21,8 @@
 #ifndef CURVEUTILS_H_
 #define CURVEUTILS_H_
 
+#include <yafray_constants.h>
+
 __BEGIN_YAFRAY
 
 //////////////////////////////////////////////////////////////////////////////

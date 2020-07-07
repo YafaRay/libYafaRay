@@ -1,7 +1,7 @@
 #ifndef Y_BLENDMAT_H
 #define Y_BLENDMAT_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/shader.h>
 #include <core_api/environment.h>

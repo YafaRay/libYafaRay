@@ -20,11 +20,11 @@
  *      
  */
 
+#include <yafraycore/imageOutput.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
 #include <core_api/file.h>
 #include <core_api/renderpasses.h>
-#include <yafraycore/imageOutput.h>
-#include <sstream>
-#include <iomanip>
 
 __BEGIN_YAFRAY
 

@@ -3,6 +3,8 @@
 #include <textures/layernode.h>
 #include <core_api/object3d.h>
 #include <core_api/camera.h>
+#include <core_api/params.h>
+#include <core_api/surface.h>
 #include <iomanip>
 
 __BEGIN_YAFRAY

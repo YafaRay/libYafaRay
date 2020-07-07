@@ -1,4 +1,4 @@
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 // base = 3
 int fp2[] = {	0, 1, 2 };

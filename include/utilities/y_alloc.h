@@ -1,11 +1,11 @@
 #ifndef Y_ALLOC_H
 #define Y_ALLOC_H
 
-#include <yafray_config.h>
-
-#include <stdlib.h>
+#include <yafray_constants.h>
 #include <vector>
 #include <algorithm>
+#include <cstdint>
+
 #if defined(__FreeBSD__)
 	#include <stdlib.h>
 #elif !defined(WIN32) && !defined(__APPLE__)
@@ -15,8 +15,6 @@
 #endif
 
 __BEGIN_YAFRAY
-
-typedef unsigned int u_int32;
 
 #if defined(_WIN32) && !defined(__MINGW32__) //Added by DarkTide to enable mingw32 compliation
 #define alloca _alloca
@@ -90,19 +88,19 @@ private:
 class MemoryArena {
 public:
 	// MemoryArena Public Methods
-	MemoryArena(u_int32 bs = 32768) {
+	MemoryArena(uint32_t bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
 		currentBlock = (char *)y_memalign(64, blockSize);
 	}
 	~MemoryArena() {
 		y_free(currentBlock);
-		for (u_int32 i = 0; i < usedBlocks.size(); ++i)
+		for (uint32_t i = 0; i < usedBlocks.size(); ++i)
 			y_free(usedBlocks[i]);
-		for (u_int32 i = 0; i < availableBlocks.size(); ++i)
+		for (uint32_t i = 0; i < availableBlocks.size(); ++i)
 			y_free(availableBlocks[i]);
 	}
-	void *Alloc(u_int32 sz) {
+	void *Alloc(uint32_t sz) {
 		// Round up _sz_ to minimum machine alignment
 		sz = ((sz + 7) & (~7));
 		if (curBlockPos + sz > blockSize) {
@@ -129,7 +127,7 @@ public:
 	}
 private:
 	// MemoryArena Private Data
-	u_int32 curBlockPos, blockSize;
+	uint32_t curBlockPos, blockSize;
 	char *currentBlock;
 	std::vector<char *> usedBlocks, availableBlocks;
 };

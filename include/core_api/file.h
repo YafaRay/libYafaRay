@@ -23,10 +23,9 @@
 #ifndef Y_FILE_H
 #define Y_FILE_H
 
-#include<yafray_config.h>
+#include <yafray_constants.h>
 #include <string>
 #include <vector>
-#include <cstdio>
 
 __BEGIN_YAFRAY
 

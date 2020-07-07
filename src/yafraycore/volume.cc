@@ -1,4 +1,5 @@
 #include <core_api/volume.h>
+#include <core_api/logging.h>
 #include <core_api/ray.h>
 #include <core_api/color.h>
 

@@ -26,16 +26,12 @@
 #include "yafray_constants.h"
 #include <utilities/image_buffers.h>
 
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <core_api/renderpasses.h>
-
 
 __BEGIN_YAFRAY
 
 typedef unsigned char yByte;
 typedef unsigned short yWord;
+class renderPasses_t;
 
 enum textureOptimization_t
 {

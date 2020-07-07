@@ -18,22 +18,24 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-
 #include <core_api/scene.h>
+#include <core_api/environment.h>
+#include <core_api/logging.h>
 #include <core_api/object3d.h>
-#include <core_api/camera.h>
+//#include <core_api/camera.h>
 #include <core_api/material.h>
 #include <core_api/light.h>
-#include <core_api/background.h>
+//#include <core_api/background.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
 #include <yafraycore/triangle.h>
-#include <yafraycore/kdtree.h>
+//#include <yafraycore/kdtree.h>
 #include <yafraycore/ray_kdtree.h>
-#include <yafraycore/timer.h>
-#include <yafraycore/scr_halton.h>
-#include <utilities/mcqmc.h>
-#include <utilities/sample_utils.h>
+//#include <yafraycore/timer.h>
+//#include <yafraycore/scr_halton.h>
+//#include <utilities/mcqmc.h>
+//#include <utilities/sample_utils.h>
+
 #ifdef __APPLE__
 	#include <sys/sysctl.h>
 #endif
@@ -63,6 +65,11 @@ scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(
 	AA_variance_pixels = 0;
 	AA_clamp_samples = 0.f;
 	AA_clamp_indirect = 0.f;
+}
+
+scene_t::scene_t(const scene_t &s)
+{
+	Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl;
 }
 
 scene_t::~scene_t()
@@ -1144,7 +1151,7 @@ bool scene_t::addObject(object3d_t *obj, objID_t &id)
 	}
 }
 
-bool scene_t::addInstance(objID_t baseObjectId, matrix4x4_t objToWorld)
+bool scene_t::addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld)
 {
 	if(mode != 0) return false;
 

@@ -19,10 +19,12 @@
  */
 
 #include <yafraycore/xmlparser.h>
+#include <core_api/logging.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
 #include <utilities/math_utils.h>
 #include <iomanip>
+
 #if HAVE_XML
 #include <libxml/parser.h>
 #endif

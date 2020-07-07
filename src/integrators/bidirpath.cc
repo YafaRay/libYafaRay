@@ -4,6 +4,8 @@
 
 #include <core_api/camera.h>
 #include <core_api/imagefilm.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 #include <integrators/integr_utils.h>
 
 __BEGIN_YAFRAY

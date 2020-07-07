@@ -1,7 +1,7 @@
 #ifndef Y_MASKMAT_H
 #define Y_MASKMAT_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/color_ramp.h>
 

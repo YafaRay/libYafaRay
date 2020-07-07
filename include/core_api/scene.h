@@ -2,14 +2,8 @@
 #ifndef Y_SCENE_H
 #define Y_SCENE_H
 
-#include <yafray_config.h>
-
-#include"color.h"
-#include"vector3d.h"
-#include <core_api/volume.h>
-#include <vector>
-#include <core_api/matrix4.h>
-#include <core_api/renderpasses.h>
+#include <yafray_constants.h>
+#include <utilities/threadUtils.h>
 
 #define USER_DATA_SIZE 1024
 
@@ -45,6 +39,11 @@ class volumeIntegrator_t;
 class imageFilm_t;
 class random_t;
 class renderEnvironment_t;
+class VolumeRegion;
+class renderPasses_t;
+class matrix4x4_t;
+class color_t;
+enum intPassTypes_t : int;
 
 typedef unsigned int objID_t;
 
@@ -145,7 +144,7 @@ class YAFRAYCORE_EXPORT scene_t
 	public:
 		scene_t(const renderEnvironment_t *render_environment);
 		~scene_t();
-		explicit scene_t(const scene_t &s) { Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl; }
+		explicit scene_t(const scene_t &s);
 		bool render();
 		void abort();
 		bool startGeometry();
@@ -170,7 +169,7 @@ class YAFRAYCORE_EXPORT scene_t
 		bool addMaterial(material_t *m, const char* name);
 		objID_t getNextFreeID();
 		bool addObject(object3d_t *obj, objID_t &id);
-        bool addInstance(objID_t baseObjectId, matrix4x4_t objToWorld);
+        bool addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld);
 		void addVolumeRegion(VolumeRegion* vr) { volumes.push_back(vr); }
 		void setCamera(camera_t *cam);
 		void setImageFilm(imageFilm_t *film);

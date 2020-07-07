@@ -20,10 +20,14 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#include <yafray_config.h>
-#include <algorithm>
-#include <yafraycore/photon.h>
+#include <yafray_constants.h>
+#include <core_api/logging.h>
 #include <core_api/file.h>
+#include <core_api/color_console.h>
+#include <algorithm>
+#include <iomanip>
+#include <fstream>
+#include <cmath>
 
 __BEGIN_YAFRAY
 
@@ -419,7 +423,7 @@ void yafarayLog_t::statsPrint(bool sorted) const
 }
 
 void yafarayLog_t::statsSaveToFile(std::string filePath, bool sorted) const
-{
+{ //FIXME: migrate to new file_t class
 	std::ofstream statsFile;
 	statsFile.open(filePath);
 	statsFile << "name, index, value" << std::endl;

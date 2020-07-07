@@ -23,17 +23,13 @@
 #ifndef Y_COLOR_H
 #define Y_COLOR_H
 
-#include <yafray_config.h>
-
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cmath>
+#include <yafray_constants.h>
 #include <utilities/mathOptimizations.h>
+#include <iostream>
 
 __BEGIN_YAFRAY
 
-enum colorSpaces_t
+enum colorSpaces_t : int
 {
 	RAW_MANUAL_GAMMA	= 1,
 	LINEAR_RGB		= 2,

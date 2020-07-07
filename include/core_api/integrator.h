@@ -22,12 +22,8 @@
 #ifndef Y_INTEGRATOR_H
 #define Y_INTEGRATOR_H
 
-#include <yafray_config.h>
-
-#include "scene.h"
-#include <yafraycore/monitor.h>
+#include <yafray_constants.h>
 #include <string>
-#include <core_api/renderpasses.h>
 
 __BEGIN_YAFRAY
 
@@ -35,8 +31,16 @@ __BEGIN_YAFRAY
 	hit by a given ray
 */
 
+class scene_t;
+class progressBar_t;
 class imageFilm_t;
 struct renderArea_t;
+class colorA_t;
+struct renderState_t;
+class ray_t;
+class diffRay_t;
+class colorPasses_t;
+
 
 class YAFRAYCORE_EXPORT integrator_t
 {
@@ -70,8 +74,7 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
-//		virtual bool setupSampler(sampler_t &sam);
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colPasses, int additionalDepth = 0 /*, sampler_t &sam*/) const = 0;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colPasses, int additionalDepth = 0) const = 0;
 	protected:
 		surfaceIntegrator_t() {} //don't use...
 };

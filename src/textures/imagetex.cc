@@ -19,12 +19,10 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <cstring>
-#include <cctype>
-#include <sstream>
-#include <iomanip>
 #include <textures/imagetex.h>
+#include <core_api/session.h>
 #include <utilities/stringUtils.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

@@ -21,21 +21,20 @@
  */
 
 #include <core_api/imagefilm.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/environment.h>
+#include <core_api/output.h>
 #include <core_api/imagehandler.h>
 #include <core_api/scene.h>
 #include <core_api/file.h>
+#include <core_api/params.h>
+#include <core_api/build_info.h>
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
 #include <resources/yafLogoTiny.h>
-
-#include <cstring>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include <iomanip>
-#include <utility>
 
 #if HAVE_FREETYPE
 #include <resources/guifont.h>

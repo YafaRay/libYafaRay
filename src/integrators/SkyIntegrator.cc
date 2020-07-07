@@ -1,9 +1,11 @@
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <core_api/environment.h>
+#include <core_api/scene.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
 #include <core_api/background.h>
 #include <core_api/light.h>
+#include <core_api/params.h>
 #include <integrators/integr_utils.h>
 #include <yafraycore/photon.h>
 #include <utilities/mcqmc.h>

@@ -21,6 +21,7 @@
 #include <yafraycore/std_primitives.h>
 #include <core_api/object3d.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

@@ -22,6 +22,7 @@
 #ifndef Y_BUILDINFO_H
 #define Y_BUILDINFO_H
 
+#include <yafray_constants.h>
 #include <string>
 
 __BEGIN_YAFRAY

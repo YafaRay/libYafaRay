@@ -1,7 +1,7 @@
 #ifndef Y_SPPM_H
 #define Y_SPPM_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <yafraycore/timer.h>
 
 #include <core_api/mcintegrator.h>
@@ -68,7 +68,7 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive);
 		/*! not used now, use traceGatherRay instead*/
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0 /*, sampler_t &sam*/) const;
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
 		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePPM();

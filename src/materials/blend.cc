@@ -20,6 +20,8 @@
  
 #include <materials/blendmat.h>
 #include <utilities/sample_utils.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 

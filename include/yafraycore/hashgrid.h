@@ -1,10 +1,18 @@
 #ifndef __Y_HASHGRID_H
 #define __Y_HASHGRID_H
 
+#include <yafray_constants.h>
+#include <core_api/bound.h>
 #include <list>
-#include <yafraycore/photon.h>
+#include <vector>
 
 __BEGIN_YAFRAY
+
+class photon_t;
+class foundPhoton_t;
+class bound_t;
+class point3d_t;
+
 
 class YAFRAYCORE_EXPORT hashGrid_t
 {

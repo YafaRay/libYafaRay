@@ -35,8 +35,5 @@
 	#include <condition_variable>
 #endif
 
-__BEGIN_YAFRAY
-
-__END_YAFRAY
 
 #endif

@@ -3,6 +3,7 @@
 #include <core_api/scene.h>
 #include <core_api/material.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

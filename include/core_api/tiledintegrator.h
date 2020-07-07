@@ -2,11 +2,19 @@
 #ifndef Y_TILEDINTEGRATOR_H
 #define Y_TILEDINTEGRATOR_H
 
-#include <core_api/integrator.h>
-#include <core_api/imagesplitter.h>
-#include <core_api/material.h>
+#include <yafray_constants.h>
+#include "integrator.h"
+#include "surface.h"
+#include <utilities/threadUtils.h>
+#include <vector>
 
 __BEGIN_YAFRAY
+
+class renderArea_t;
+class imageFilm_t;
+typedef unsigned int BSDF_t;
+class photonMap_t;
+class pdf1D_t;
 
 class threadControl_t
 {

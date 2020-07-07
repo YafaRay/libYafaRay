@@ -22,13 +22,8 @@
 #ifndef Y_COLOR_RAMP_H
 #define Y_COLOR_RAMP_H
 
-#include <yafray_config.h>
-
-#include <iostream>
+#include <yafray_constants.h>
 #include <vector>
-#include <string>
-#include <cmath>
-#include <utilities/mathOptimizations.h>
 
 __BEGIN_YAFRAY
 

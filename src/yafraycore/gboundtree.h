@@ -1,7 +1,7 @@
 #ifndef Y_BOUNDTREE_H
 #define Y_BOUNDTREE_H
 
-#include<yafray_config.h>
+#include <yafray_constants.h>
 
 #include <core_api/vector3d.h>
 #include <core_api/matrix4.h>

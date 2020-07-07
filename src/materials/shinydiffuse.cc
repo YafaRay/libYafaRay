@@ -1,5 +1,6 @@
 
 #include <materials/shinydiff.h>
+#include <core_api/params.h>
 #include <utilities/sample_utils.h>
 #include <materials/microfacet.h>
 

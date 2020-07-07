@@ -1,13 +1,11 @@
 /*
 Sutherland-Hodgman triangle clipping
 */
-#include<yafray_config.h>
+#include <yafray_constants.h>
 
 #include <core_api/bound.h>
+#include <core_api/logging.h>
 #include <string.h>
-#include <stdio.h>
-#include <algorithm>
-#include <iostream>
 
 __BEGIN_YAFRAY
 

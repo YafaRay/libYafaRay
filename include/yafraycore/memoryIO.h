@@ -1,7 +1,7 @@
 #ifndef Y_MEMORYIO_H
 #define Y_MEMORYIO_H
 
-#include <utilities/buffer.h>
+#include <yafray_constants.h>
 #include <core_api/output.h>
 
 __BEGIN_YAFRAY

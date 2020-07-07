@@ -1,4 +1,4 @@
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <core_api/environment.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>

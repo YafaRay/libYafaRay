@@ -23,7 +23,7 @@
 #include <core_api/environment.h>
 #include <utilities/sample_utils.h>
 #include <utilities/iesUtils.h>
-
+#include <core_api/params.h>
 
 
 __BEGIN_YAFRAY

@@ -20,6 +20,9 @@
  */
 
 #include <integrators/directlight.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
+#include <core_api/imagesplitter.h>
 
 __BEGIN_YAFRAY
 

@@ -1,8 +1,7 @@
 #ifndef Y_SCRHALTON_H
 #define Y_SCRHALTON_H
 
-#include <yafray_config.h>
-#include <core_api/vector3d.h>
+#include <yafray_constants.h>
 
 extern YAFRAYCORE_EXPORT const int* faure[];
 

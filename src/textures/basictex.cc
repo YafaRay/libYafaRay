@@ -1,6 +1,7 @@
 
 #include <textures/basictex.h>
 #include <textures/imagetex.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

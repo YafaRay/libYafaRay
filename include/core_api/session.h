@@ -22,14 +22,8 @@
 #ifndef Y_SESSION_H
 #define Y_SESSION_H
 
-#include <iostream>
-#include <ctime>
-#include <fstream>
-#include <sstream>
-#include <string>
-
-#include <core_api/logging.h>
-#include <core_api/build_info.h>
+#include <yafray_constants.h>
+#include <utilities/threadUtils.h>
 
 __BEGIN_YAFRAY
 

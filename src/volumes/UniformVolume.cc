@@ -1,3 +1,4 @@
+#include <core_api/logging.h>
 #include <core_api/ray.h>
 #include <core_api/color.h>
 #include <core_api/volume.h>
@@ -5,6 +6,7 @@
 #include <core_api/volume.h>
 #include <core_api/surface.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

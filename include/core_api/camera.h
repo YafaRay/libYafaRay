@@ -23,12 +23,13 @@
 #ifndef Y_CAMERA_H
 #define Y_CAMERA_H
 
-#include <yafray_config.h>
-
-#include <core_api/ray.h>
+#include <yafray_constants.h>
 #include <utilities/geometry.h>
 
 __BEGIN_YAFRAY
+
+class vector3d_t;
+class point3d_t;
 
 //! Camera base class.
 /*!

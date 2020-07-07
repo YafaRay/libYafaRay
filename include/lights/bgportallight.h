@@ -22,6 +22,7 @@
 #define Y_BGPORTALLIGHT_H
 
 #include <core_api/light.h>
+#include <core_api/vector3d.h>
 
 __BEGIN_YAFRAY
 

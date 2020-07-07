@@ -2,8 +2,7 @@
 #ifndef Y_RAY_H
 #define Y_RAY_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include "vector3d.h"
 
 __BEGIN_YAFRAY

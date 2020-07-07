@@ -1,7 +1,7 @@
 #ifndef __YAFSYSTEM_H
 #define __YAFSYSTEM_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #ifdef WIN32
 	#include <io.h>

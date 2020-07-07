@@ -1,15 +1,14 @@
 #ifndef Y_BACKGROUND_H
 #define Y_BACKGROUND_H
 
-#include <yafray_config.h>
-
-#include "color.h"
-#include "ray.h"
+#include <yafray_constants.h>
 
 __BEGIN_YAFRAY
 
 struct renderState_t;
 class light_t;
+class color_t;
+class ray_t;
 
 class YAFRAYCORE_EXPORT background_t
 {

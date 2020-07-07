@@ -5,6 +5,7 @@
 #include <core_api/shader.h>
 #include <core_api/texture.h>
 #include <core_api/environment.h>
+#include <core_api/matrix4.h>
 
 __BEGIN_YAFRAY
 

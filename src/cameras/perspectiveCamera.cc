@@ -22,6 +22,7 @@
 
 #include <cameras/perspectiveCamera.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 
 __BEGIN_YAFRAY
 

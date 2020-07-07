@@ -1,5 +1,9 @@
-#include <yafray_config.h>
+#include <yafray_constants.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/volume.h>
 #include <core_api/environment.h>
+#include <core_api/scene.h>
 #include <core_api/material.h>
 #include <core_api/integrator.h>
 #include <core_api/background.h>

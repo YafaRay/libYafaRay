@@ -23,14 +23,17 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <core_api/tiledintegrator.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/renderpasses.h>
+#include <core_api/material.h>
 #include <yafraycore/timer.h>
 #include <yafraycore/scr_halton.h>
-#include <yafraycore/spectrum.h>
-#include <core_api/tiledintegrator.h>
 #include <core_api/imagefilm.h>
 #include <core_api/camera.h>
-#include <core_api/surface.h>
-#include <core_api/material.h>
+#include <core_api/scene.h>
+#include <yafraycore/monitor.h>
 #include <utilities/mcqmc.h>
 #include <utilities/sample_utils.h>
 #include <sstream>

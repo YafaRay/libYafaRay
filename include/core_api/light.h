@@ -2,13 +2,17 @@
 #ifndef Y_LIGHT_H
 #define Y_LIGHT_H
 
-#include "ray.h"
-#include "scene.h"
+#include <yafray_constants.h>
+#include "color.h"
 
 __BEGIN_YAFRAY
 
 class surfacePoint_t;
 class background_t;
+class ray_t;
+class scene_t;
+class vector3d_t;
+class point3d_t;
 
 enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1<<1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!
 typedef unsigned int LIGHTF_t;

@@ -19,6 +19,8 @@
  */
 
 #include <core_api/imagehandler.h>
+#include <core_api/renderpasses.h>
+#include <core_api/logging.h>
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>

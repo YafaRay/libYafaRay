@@ -21,10 +21,8 @@
 #ifndef IESUTILS_H
 #define IESUTILS_H
 
-#include <iostream>
+#include <yafray_constants.h>
 #include <fstream>
-#include <sstream>
-#include <utilities/curveUtils.h>
 
 __BEGIN_YAFRAY
 //!TODO: Preblur data
@@ -145,6 +143,7 @@ float IESData_t::getRadiance(float h, float v) const {
 
 bool IESData_t::parseIESFile(const std::string iesFile)
 {
+	//FIXME: migrate to new file_t system
 	using namespace std;
 	
 	Y_VERBOSE << "IES Parser: Parsing IES file " << iesFile << yendl;

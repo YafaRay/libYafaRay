@@ -23,15 +23,10 @@
 #ifndef Y_BOUND_H
 #define Y_BOUND_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include "ray.h"
-//#include "matrix4.h"
-#include <vector>
-#include <list>
 
 __BEGIN_YAFRAY
-
 
 /** Bounding box
  *

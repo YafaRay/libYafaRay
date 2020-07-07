@@ -1,11 +1,11 @@
 #ifndef Y_SHINYDIFFMAT_H
 #define Y_SHINYDIFFMAT_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/shader.h>
 #include <core_api/environment.h>
-#include <core_api/color_ramp.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 

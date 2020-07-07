@@ -1,7 +1,9 @@
+#pragma once
 
 #ifndef Y_ARCHITECTCAMERA_H
 #define Y_ARCHITECTCAMERA_H
 
+#include <yafray_constants.h>
 #include <cameras/perspectiveCamera.h>
 
 __BEGIN_YAFRAY

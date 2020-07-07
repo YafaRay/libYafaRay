@@ -2,8 +2,6 @@
 #define GEOMETRY_H
 
 #include <yafray_constants.h>
-
-#include <core_api/vector3d.h>
 #include <core_api/ray.h>
 
 __BEGIN_YAFRAY

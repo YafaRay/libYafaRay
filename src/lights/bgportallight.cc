@@ -23,6 +23,8 @@
 #include <lights/bgportallight.h>
 #include <core_api/background.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 #include <utilities/sample_utils.h>
 #include <utilities/mcqmc.h>
 #include <yafraycore/kdtree.h>

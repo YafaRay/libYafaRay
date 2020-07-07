@@ -2,8 +2,7 @@
 #ifndef Y_PERSPECTIVECAMERA_H
 #define Y_PERSPECTIVECAMERA_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <core_api/camera.h>
 #include <vector>
 

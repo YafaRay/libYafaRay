@@ -20,6 +20,9 @@
  */
 
 #include <integrators/pathtracer.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
+#include <core_api/imagesplitter.h>
 
 __BEGIN_YAFRAY
 
@@ -104,7 +107,7 @@ bool pathIntegrator_t::preprocess()
 	return success;
 }
 
-colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/ /*, sampler_t &sam*/) const
+colorA_t pathIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
 {
 	static int calls=0;
 	++calls;

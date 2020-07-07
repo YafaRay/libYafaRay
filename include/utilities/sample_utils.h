@@ -1,6 +1,7 @@
 #ifndef Y_SAMPLEUTILS_H
 #define Y_SAMPLEUTILS_H
 
+#include <core_api/logging.h>
 #include <core_api/ray.h>
 #include <algorithm>
 #include <string.h>

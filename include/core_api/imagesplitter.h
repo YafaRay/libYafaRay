@@ -2,7 +2,7 @@
 #ifndef Y_IMAGESPLITTER_H
 #define Y_IMAGESPLITTER_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 #include <vector>
 #include <cmath>

@@ -1,4 +1,5 @@
 #include <yafraycore/meshtypes.h>
+#include <yafraycore/triangle.h>
 #include <cstdlib>
 
 __BEGIN_YAFRAY

@@ -2,7 +2,9 @@
 #ifndef Y_MONITOR_H
 #define Y_MONITOR_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
+#include <utilities/threadUtils.h>
+#include <string>
 
 __BEGIN_YAFRAY
 //! Progress bar abstract class with pure virtual members

@@ -21,10 +21,11 @@
  */
 #ifndef Y_SURFACE_H
 #define Y_SURFACE_H
+
+#include <yafray_constants.h>
 #include "vector3d.h"
 #include "color.h"
 
-#include<yafray_config.h>
 
 __BEGIN_YAFRAY
 class material_t;

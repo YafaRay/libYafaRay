@@ -2,13 +2,7 @@
 #ifndef Y_OBJECT3D_H
 #define Y_OBJECT3D_H
 
-#include <yafray_config.h>
-
-//#include "primitive.h"
-#include "matrix4.h"
-
-#include <vector>
-#include <map>
+#include <yafray_constants.h>
 #include "color.h"
 
 __BEGIN_YAFRAY
@@ -16,6 +10,8 @@ __BEGIN_YAFRAY
 class light_t;
 class primitive_t;
 class surfacePoint_t;
+class point3d_t;
+class vector3d_t;
 
 class YAFRAYCORE_EXPORT object3d_t
 {

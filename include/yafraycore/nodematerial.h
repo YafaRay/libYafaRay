@@ -2,7 +2,7 @@
 #ifndef Y_SHADERMAT_H
 #define Y_SHADERMAT_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <core_api/material.h>
 #include <core_api/shader.h>
 

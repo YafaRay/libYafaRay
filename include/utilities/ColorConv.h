@@ -14,9 +14,8 @@
 #ifndef COLOR_CONV_H_
 #define COLOR_CONV_H_
 
+#include <yafray_constants.h>
 #include <core_api/color.h>
-#include <utilities/mathOptimizations.h>
-
 
 __BEGIN_YAFRAY
 

@@ -20,10 +20,11 @@
  *      
  */
  
-#include <core_api/environment.h>
 #include <core_api/imagehandler.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/environment.h>
 #include <core_api/params.h>
-#include <core_api/scene.h>
 #include <utilities/math_utils.h>
 #include <core_api/file.h>
 

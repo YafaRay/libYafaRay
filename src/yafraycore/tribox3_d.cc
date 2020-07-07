@@ -1,6 +1,6 @@
 /********************************************************/
 /* AABB-triangle overlap test code                      */
-/* by Tomas Akenine-Möller                              */
+/* by Tomas Akenine-MÃ¶ller                              */
 /* Function: int triBoxOverlap(float boxcenter[3],      */
 /*          float boxhalfsize[3],float triverts[3][3]); */
 /* History:                                             */
@@ -15,7 +15,7 @@
 #include <stdio.h>
 // #include <pbrt.h>
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
 
 __BEGIN_YAFRAY
 

@@ -1,12 +1,15 @@
 #ifndef Y_TEXTURE_H
 #define Y_TEXTURE_H
 
-#include <yafray_config.h>
-#include "surface.h"
-#include <core_api/color_ramp.h>
-#include <core_api/imagehandler.h>
+#include <yafray_constants.h>
+#include "imagehandler.h"
+#include "color_ramp.h"
+#include "vector3d.h"
+#include "logging.h"
+#include <sstream>
 
 __BEGIN_YAFRAY
+
 
 class YAFRAYCORE_EXPORT texture_t
 {

@@ -1,15 +1,18 @@
 #ifndef Y_XMLPARSER_H
 #define Y_XMLPARSER_H
 
-#include "core_api/params.h"
+#include <yafray_constants.h>
+#include <core_api/params.h>
 #include <list>
 #include <vector>
+#include <string>
 
 __BEGIN_YAFRAY
 
 class scene_t;
 class renderEnvironment_t;
 class xmlParser_t;
+enum colorSpaces_t : int;
 
 YAFRAYCORE_EXPORT bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma);
 

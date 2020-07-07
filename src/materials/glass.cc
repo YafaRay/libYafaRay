@@ -17,11 +17,13 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#include <yafray_config.h>
+#include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
 #include <yafraycore/spectrum.h>
 #include <core_api/color_ramp.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 

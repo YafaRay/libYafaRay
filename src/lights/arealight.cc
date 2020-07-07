@@ -20,6 +20,8 @@
 
 #include <core_api/surface.h>
 #include <core_api/object3d.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 #include <lights/arealight.h>
 #include <lights/meshlight.h>
 #include <lights/bgportallight.h>

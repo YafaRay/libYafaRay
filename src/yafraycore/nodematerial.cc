@@ -1,5 +1,6 @@
 #include <yafraycore/nodematerial.h>
 #include <core_api/environment.h>
+#include <core_api/params.h>
 #include <set>
 
 __BEGIN_YAFRAY

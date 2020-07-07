@@ -2,8 +2,9 @@
 #ifndef Y_ROUGHGLASS_H
 #define Y_ROUGHGLASS_H
 
+#include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
-#include <core_api/color_ramp.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 

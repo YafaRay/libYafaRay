@@ -1,15 +1,9 @@
 #ifndef Y_ENVIRON_H
 #define Y_ENVIRON_H
 
-#include <yafray_config.h>
-
-#include "params.h"
-#include "dynamic_library.h"
+#include <yafray_constants.h>
+#include "renderpasses.h"
 #include <list>
-#include <vector>
-#include <string>
-#include <core_api/renderpasses.h>
-#include <core_api/logging.h>
 
 __BEGIN_YAFRAY
 class light_t;
@@ -28,6 +22,8 @@ class scene_t;
 class colorOutput_t;
 class progressBar_t;
 class imageHandler_t;
+class paraMap_t;
+class dynamicLoadedLibrary_t;
 
 class YAFRAYCORE_EXPORT renderEnvironment_t
 {

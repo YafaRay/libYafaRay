@@ -20,6 +20,11 @@
  */
 
 #include <integrators/photonintegr.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/volume.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 

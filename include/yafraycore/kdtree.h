@@ -1,20 +1,23 @@
 #ifndef __Y_KDTREE_H
 #define __Y_KDTREE_H
 
-#include <yafray_config.h>
-
-#include <algorithm>
-
+#include <yafray_constants.h>
+#include "meshtypes.h"
+#include "triangle.h"
 #include <utilities/y_alloc.h>
+#include <core_api/vector3d.h>
 #include <core_api/bound.h>
-#include <core_api/object3d.h>
-#include <yafraycore/meshtypes.h>
+#include <cstdint>
 
 __BEGIN_YAFRAY
 
 extern int Kd_inodes, Kd_leaves, _emptyKd_leaves, Kd_prims;
 
 struct renderState_t;
+class intersectData_t;
+class triangle_t;
+class ray_t;
+class color_t;
 
 #define PRIM_DAT_SIZE 32
 
@@ -26,7 +29,7 @@ struct renderState_t;
 class kdTreeNode
 {
 public:
-	void createLeaf(u_int32 *primIdx, int np, const triangle_t **prims, MemoryArena &arena)
+	void createLeaf(uint32_t *primIdx, int np, const triangle_t **prims, MemoryArena &arena)
 	{
 		primitives = 0;
 		flags = np << 2;
@@ -51,8 +54,8 @@ public:
 	int 	SplitAxis() const { return flags & 3; }
 	int 	nPrimitives() const { return flags >> 2; }
 	bool 	IsLeaf() const { return (flags & 3) == 3; }
-	u_int32	getRightChild() const { return (flags >> 2); }
-	void 	setRightChild(u_int32 i) { flags = (flags&3) | (i << 2); }	
+	uint32_t	getRightChild() const { return (flags >> 2); }
+	void 	setRightChild(uint32_t i) { flags = (flags&3) | (i << 2); }	
 	
 	union
 	{
@@ -60,7 +63,7 @@ public:
 		triangle_t** 	primitives;		//!< leaf: list of primitives
 		triangle_t*		onePrimitive;	//!< leaf: direct inxex of one primitive
 	};
-	u_int32	flags;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
+	uint32_t	flags;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
 /*! Serves to store the lower and upper bound edges of the primitives
@@ -137,16 +140,16 @@ public:
 	bound_t getBound(){ return treeBound; }
 	~triKdTree_t();
 private:
-	void pigeonMinCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx, splitCost_t &split);
-	void minimalCost(u_int32 nPrims, bound_t &nodeBound, u_int32 *primIdx,
+	void pigeonMinCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx, splitCost_t &split);
+	void minimalCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx,
 		const bound_t *allBounds, boundEdge *edges[3], splitCost_t &split);
-	int buildTree(u_int32 nPrims, bound_t &nodeBound, u_int32 *primNums,
-		u_int32 *leftPrims, u_int32 *rightPrims, boundEdge *edges[3],
-		u_int32 rightMemSize, int depth, int badRefines );
+	int buildTree(uint32_t nPrims, bound_t &nodeBound, uint32_t *primNums,
+		uint32_t *leftPrims, uint32_t *rightPrims, boundEdge *edges[3],
+		uint32_t rightMemSize, int depth, int badRefines );
 	
 	float 		costRatio; 	//!< node traversal cost divided by primitive intersection cost
 	float 		eBonus; 	//!< empty bonus
-	u_int32 	nextFreeNode, allocatedNodesCount, totalPrims;
+	uint32_t 	nextFreeNode, allocatedNodesCount, totalPrims;
 	int 		maxDepth;
 	unsigned int maxLeafSize;
 	bound_t 	treeBound; 	//!< overall space the tree encloses

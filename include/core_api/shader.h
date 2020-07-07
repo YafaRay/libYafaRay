@@ -2,12 +2,11 @@
 #ifndef Y_SHADER_H
 #define Y_SHADER_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include "scene.h"
-#include "ray.h"
-#include "surface.h"
-
+#include "color.h"
+#include <list>
+#include <map>
 
 __BEGIN_YAFRAY
 

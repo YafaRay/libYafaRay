@@ -19,13 +19,15 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *      
  */
- 
-#include <core_api/environment.h>
+
 #include <core_api/imagehandler.h>
+#include <core_api/logging.h>
+#include <core_api/session.h>
+#include <core_api/environment.h>
 #include <core_api/params.h>
-#include <core_api/scene.h>
 #include <utilities/math_utils.h>
 #include <core_api/file.h>
+
 #if defined(_WIN32)
 #include <utilities/stringUtils.h>
 #endif //defined(_WIN32)

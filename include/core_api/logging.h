@@ -24,18 +24,13 @@
 #ifndef Y_CONSOLE_VERBOSITY_H
 #define Y_CONSOLE_VERBOSITY_H
 
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <algorithm>
-#include <cmath>
-#include <limits>
+#include <yafray_constants.h>
 #include <utilities/threadUtils.h>
+#include <ctime>
+#include <iostream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
 
 //for Y_DEBUG printing of variable name + value. For example:  Y_DEBUG PRTEXT(Integration1) PR(color) PR(ray.dir) PREND;
 #define PRPREC(precision) << std::setprecision(precision)
@@ -201,8 +196,15 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::unordered_map <std::string,double> mDiagStats;
 };
 
-
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;
+
+#define Y_DEBUG yafLog.out(VL_DEBUG)
+#define Y_VERBOSE yafLog.out(VL_VERBOSE)
+#define Y_INFO yafLog.out(VL_INFO)
+#define Y_PARAMS yafLog.out(VL_PARAMS)
+#define Y_WARNING yafLog.out(VL_WARNING)
+#define Y_ERROR yafLog.out(VL_ERROR)
+#define yendl std::endl
 
 __END_YAFRAY
 

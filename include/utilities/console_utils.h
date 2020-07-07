@@ -21,7 +21,8 @@
 #ifndef Y_CONSOLE_UTILS_H
 #define Y_CONSOLE_UTILS_H
 
-#include <yafray_config.h>
+#include <yafray_constants.h>
+#include <core_api/logging.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>

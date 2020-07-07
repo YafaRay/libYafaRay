@@ -2,13 +2,12 @@
 #ifndef Y_MATERIAL_H
 #define Y_MATERIAL_H
 
-#include <yafray_config.h>
-
-//#include "scene.h"
-#include "ray.h"
+#include <yafray_constants.h>
+#include "color.h"
+#include "vector3d.h"
 #include "surface.h"
 #include "utilities/sample_utils.h"
-#include "core_api/object3d.h"
+#include "object3d.h"
 
 __BEGIN_YAFRAY
 

@@ -23,8 +23,7 @@
 #ifndef Y_RENDERPASSES_H
 #define Y_RENDERPASSES_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -35,7 +34,7 @@ __BEGIN_YAFRAY
 class color_t;
 class colorA_t;
 
-enum extPassTypes_t
+enum extPassTypes_t : int
 {
 	PASS_EXT_DISABLED				=	-1,
 	PASS_EXT_COMBINED				=	0,
@@ -103,14 +102,14 @@ enum extPassTypes_t
 	PASS_EXT_TOTAL_PASSES			//IMPORTANT: KEEP THIS ALWAYS IN THE LAST POSITION
 };
 
-enum externalPassTileTypes_t
+enum externalPassTileTypes_t : int
 {
 	PASS_EXT_TILE_1_GRAYSCALE		=	 1,
 	PASS_EXT_TILE_3_RGB				=	 3,
 	PASS_EXT_TILE_4_RGBA			=	 4
 };
 
-enum intPassTypes_t
+enum intPassTypes_t : int
 {
 	PASS_INT_DISABLED				=	-1,
 	PASS_INT_COMBINED				=	0,

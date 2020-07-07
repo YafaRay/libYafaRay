@@ -23,6 +23,7 @@
 #ifndef Y_IMAGE_OUTPUT_H
 #define Y_IMAGE_OUTPUT_H
 
+#include <yafray_constants.h>
 #include <core_api/imagehandler.h>
 #include <core_api/output.h>
 

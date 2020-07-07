@@ -1,18 +1,17 @@
 #ifndef Y_VOLUMETRIC_H
 #define Y_VOLUMETRIC_H
 
-#include <map>
-
-#include "ray.h"
+#include <yafray_constants.h>
+#include "bound.h"
 #include "color.h"
-#include <core_api/bound.h>
+#include <map>
 
 __BEGIN_YAFRAY
 
 struct renderState_t;
 struct pSample_t;
 class light_t;
-
+class ray_t;
 
 class volumeHandler_t
 {

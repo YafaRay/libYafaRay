@@ -19,17 +19,19 @@
  */
 
 #include <core_api/mcintegrator.h>
-#include <core_api/environment.h>
+#include <core_api/logging.h>
+#include <core_api/renderpasses.h>
 #include <core_api/material.h>
-#include <core_api/background.h>
+#include <core_api/scene.h>
+#include <core_api/volume.h>
+#include <core_api/session.h>
 #include <core_api/light.h>
-#include <yafraycore/photon.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/spectrum.h>
 #include <utilities/mcqmc.h>
-#include <core_api/renderpasses.h>
-#include <core_api/camera.h>
 #include <core_api/imagefilm.h>
+#include <yafraycore/monitor.h>
+#include <yafraycore/photon.h>
 
 #ifdef __clang__
 #define inline  // aka inline removal

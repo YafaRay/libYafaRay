@@ -2,8 +2,7 @@
 #ifndef Y_EQUIRECTANGULARCAMERA_H
 #define Y_EQUIRECTANGULARCAMERA_H
 
-#include <yafray_config.h>
-
+#include <yafray_constants.h>
 #include <core_api/camera.h>
 
 __BEGIN_YAFRAY

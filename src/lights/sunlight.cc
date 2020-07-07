@@ -21,6 +21,8 @@
 #include <core_api/light.h>
 #include <core_api/environment.h>
 #include <utilities/sample_utils.h>
+#include <core_api/params.h>
+#include <core_api/scene.h>
 
 __BEGIN_YAFRAY
 
