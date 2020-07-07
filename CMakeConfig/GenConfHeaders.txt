@@ -12,9 +12,6 @@ if(DEBUG_BUILD STREQUAL "ON")
 	set(DEBUG "-DEBUG")
 endif(DEBUG_BUILD STREQUAL "ON")
 
-if(WITH_OpenEXR STREQUAL "ON")
-	add_definitions(-DHAVE_OPENEXR)
-endif(WITH_OpenEXR STREQUAL "ON")
 
 include(CheckIncludeFiles)
 check_include_files(unistd.h HAVE_UNISTD_H)

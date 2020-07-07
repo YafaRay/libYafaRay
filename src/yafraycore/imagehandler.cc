@@ -50,13 +50,6 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
 			break;
 			
-#ifdef HAVE_OPENEXR
-		case TEX_OPTIMIZATION_HALF_FLOAT:
-			if(m_num_channels == 4) rgba64_HalfFloatImg = new rgbaHalfImage_nw_t(width, height);
-			else if(m_num_channels == 3) rgb48_HalfFloatImg = new rgbHalfImage_nw_t(width, height);
-			else if(m_num_channels == 1) gray16_HalfFloatImg = new grayHalfImage_nw_t(width, height);
-			break;
-#endif
 		default: break;
 	}
 }
@@ -123,12 +116,6 @@ imageBuffer_t::~imageBuffer_t()
 	if(rgb96_FloatImg) { delete rgb96_FloatImg; rgb96_FloatImg = nullptr; }
 	if(gray32_FloatImg) { delete gray32_FloatImg; gray32_FloatImg = nullptr; }
 	if(gray8_OptimizedImg) { delete gray8_OptimizedImg; gray8_OptimizedImg = nullptr; }
-	
-#ifdef HAVE_OPENEXR
-	if(rgba64_HalfFloatImg) { delete rgba64_HalfFloatImg; rgba64_HalfFloatImg = nullptr; }
-	if(rgb48_HalfFloatImg) { delete rgb48_HalfFloatImg; rgb48_HalfFloatImg = nullptr; }
-	if(gray16_HalfFloatImg) { delete gray16_HalfFloatImg; gray16_HalfFloatImg = nullptr; }
-#endif
 }
 
 

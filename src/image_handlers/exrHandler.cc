@@ -426,7 +426,7 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
  */
 	imageHandler_t *ih = new exrHandler_t();
 	
-	ih->setTextureOptimization(TEX_OPTIMIZATION_HALF_FLOAT);
+	ih->setTextureOptimization(TEX_OPTIMIZATION_NONE);
 
 	if(forOutput)
 	{
