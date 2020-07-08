@@ -22,22 +22,17 @@
 #include <core_api/environment.h>
 #include <core_api/logging.h>
 #include <core_api/object3d.h>
-//#include <core_api/camera.h>
 #include <core_api/material.h>
 #include <core_api/light.h>
-//#include <core_api/background.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
 #include <yafraycore/triangle.h>
-//#include <yafraycore/kdtree.h>
 #include <yafraycore/ray_kdtree.h>
-//#include <yafraycore/timer.h>
-//#include <yafraycore/scr_halton.h>
-//#include <utilities/mcqmc.h>
-//#include <utilities/sample_utils.h>
 
 #ifdef __APPLE__
 	#include <sys/sysctl.h>
+#elif _WIN32
+	#include <windows.h>
 #endif
 #include <iostream>
 #include <limits>

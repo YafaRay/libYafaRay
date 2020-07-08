@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
- *      sysinfo.h: YafaRay System Information
+ *      build_info.h: YafaRay information about build
  *      This is part of the yafray package
- *		Copyright (C) 2016 David Bluecame
+ *		Copyright (C) 2020 David Bluecame
  * 		System Information, compilation information, etc
  *
  *      This library is free software; you can redistribute it and/or

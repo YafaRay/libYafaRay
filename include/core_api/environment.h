@@ -5,6 +5,7 @@
 
 #include <yafray_constants.h>
 #include "renderpasses.h"
+#include "dynamic_library.h"
 #include <list>
 
 __BEGIN_YAFRAY
@@ -25,7 +26,6 @@ class colorOutput_t;
 class progressBar_t;
 class imageHandler_t;
 class paraMap_t;
-class dynamicLoadedLibrary_t;
 
 class YAFRAYCORE_EXPORT renderEnvironment_t
 {
