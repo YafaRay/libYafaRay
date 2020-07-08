@@ -1354,12 +1354,12 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 		file.close();
 		return false;
 	}
-	file.read(computerNode);
-	file.read(baseSamplingOffset);
-	file.read(samplingOffset);
+	file.read<unsigned int>(computerNode);
+	file.read<unsigned int>(baseSamplingOffset);
+	file.read<unsigned int>(samplingOffset);
 
 	int filmload_check_w;
-	file.read(filmload_check_w);
+	file.read<int>(filmload_check_w);
 	if(filmload_check_w != w)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Image width, expected=" << w << ", in reused/loaded film=" << filmload_check_w << yendl;
@@ -1367,7 +1367,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int filmload_check_h;
-	file.read(filmload_check_h);
+	file.read<int>(filmload_check_h);
 	if(filmload_check_h != h)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Image height, expected=" << h << ", in reused/loaded film=" << filmload_check_h << yendl;
@@ -1375,7 +1375,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int filmload_check_cx0;
-	file.read(filmload_check_cx0);
+	file.read<int>(filmload_check_cx0);
 	if(filmload_check_cx0 != cx0)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx0, expected=" << cx0 << ", in reused/loaded film=" << filmload_check_cx0 << yendl;
@@ -1383,7 +1383,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int filmload_check_cx1;
-	file.read(filmload_check_cx1);
+	file.read<int>(filmload_check_cx1);
 	if(filmload_check_cx1 != cx1)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cx1, expected=" << cx1 << ", in reused/loaded film=" << filmload_check_cx1 << yendl;
@@ -1391,7 +1391,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int filmload_check_cy0;
-	file.read(filmload_check_cy0);
+	file.read<int>(filmload_check_cy0);
 	if(filmload_check_cy0 != cy0)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy0, expected=" << cy0 << ", in reused/loaded film=" << filmload_check_cy0 << yendl;
@@ -1399,7 +1399,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int filmload_check_cy1;
-	file.read(filmload_check_cy1);
+	file.read<int>(filmload_check_cy1);
 	if(filmload_check_cy1 != cy1)
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Border cy1, expected=" << cy1 << ", in reused/loaded film=" << filmload_check_cy1 << yendl;
@@ -1407,7 +1407,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	}
 
 	int imagePasses_size;
-	file.read(imagePasses_size);
+	file.read<int>(imagePasses_size);
     const renderPasses_t * renderPasses = env->getRenderPasses();
 	if(imagePasses_size != renderPasses->extPassesSize())
 	{
@@ -1417,7 +1417,7 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 	else imagePasses.resize(imagePasses_size);
 
 	int auxImagePasses_size;
-	file.read(auxImagePasses_size);
+	file.read<int>(auxImagePasses_size);
 	if(auxImagePasses_size != renderPasses->auxPassesSize())
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of auxiliar render passes, expected=" << renderPasses->auxPassesSize() << ", in reused/loaded film=" << auxImagePasses_size << yendl;
@@ -1433,11 +1433,11 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 			for(int x=0; x < w; ++x)
 			{
 				pixel_t &p = (*img)(x, y);
-				file.read(p.col.R);
-				file.read(p.col.G);
-				file.read(p.col.B);
-				file.read(p.col.A);
-				file.read(p.weight);
+				file.read<float>(p.col.R);
+				file.read<float>(p.col.G);
+				file.read<float>(p.col.B);
+				file.read<float>(p.col.A);
+				file.read<float>(p.weight);
 			}
 		}
 	}
@@ -1450,11 +1450,11 @@ bool imageFilm_t::imageFilmLoad(const std::string &filename)
 			for(int x=0; x < w; ++x)
 			{
 				pixel_t &p = (*img)(x, y);
-				file.read(p.col.R);
-				file.read(p.col.G);
-				file.read(p.col.B);
-				file.read(p.col.A);
-				file.read(p.weight);
+				file.read<float>(p.col.R);
+				file.read<float>(p.col.G);
+				file.read<float>(p.col.B);
+				file.read<float>(p.col.A);
+				file.read<float>(p.weight);
 			}
 		}
 	}
@@ -1574,18 +1574,18 @@ bool imageFilm_t::imageFilmSave()
 	const std::string filmPath = getFilmPath();
 	file_t file(filmPath);
 	file.open("wb");
-	file.append("YAF_FILMv1");
-	file.append(computerNode);
-	file.append(baseSamplingOffset);
-	file.append(samplingOffset);
-	file.append(w);
-	file.append(h);
-	file.append(cx0);
-	file.append(cx1);
-	file.append(cy0);
-	file.append(cy1);
-	file.append((int) imagePasses.size());
-	file.append((int) auxImagePasses.size());
+	file.append(std::string("YAF_FILMv1"));
+	file.append<unsigned int>(computerNode);
+	file.append<unsigned int>(baseSamplingOffset);
+	file.append<unsigned int>(samplingOffset);
+	file.append<int>(w);
+	file.append<int>(h);
+	file.append<int>(cx0);
+	file.append<int>(cx1);
+	file.append<int>(cy0);
+	file.append<int>(cy1);
+	file.append<int>((int) imagePasses.size());
+	file.append<int>((int) auxImagePasses.size());
 
 	for(const auto &img : imagePasses)
 	{
@@ -1609,11 +1609,11 @@ bool imageFilm_t::imageFilmSave()
 			for(int x=0; x < w; ++x)
 			{
 				const pixel_t &p = (*img)(x, y);
-				file.append(p.col.R);
-				file.append(p.col.G);
-				file.append(p.col.B);
-				file.append(p.col.A);
-				file.append(p.weight);
+				file.append<float>(p.col.R);
+				file.append<float>(p.col.G);
+				file.append<float>(p.col.B);
+				file.append<float>(p.col.A);
+				file.append<float>(p.weight);
 			}
 		}
 	}
@@ -1640,11 +1640,11 @@ bool imageFilm_t::imageFilmSave()
 			for(int x=0; x < w; ++x)
 			{
 				const pixel_t &p = (*img)(x, y);
-				file.append(p.col.R);
-				file.append(p.col.G);
-				file.append(p.col.B);
-				file.append(p.col.A);
-				file.append(p.weight);
+				file.append<float>(p.col.R);
+				file.append<float>(p.col.G);
+				file.append<float>(p.col.B);
+				file.append<float>(p.col.A);
+				file.append<float>(p.weight);
 			}
 		}
 	}

@@ -180,31 +180,6 @@ bool file_t::read(std::string &str) const
 	return !str.empty();
 }
 
-bool file_t::read(char &c) const
-{
-	return file_t::read((char *) &c, sizeof(char));
-}
-
-bool file_t::read(int &i) const
-{
-	return file_t::read((char *) &i, sizeof(int));
-}
-
-bool file_t::read(unsigned int &u) const
-{
-	return file_t::read((char *) &u, sizeof(unsigned int));
-}
-
-bool file_t::read(size_t &s) const
-{
-	return file_t::read((char *) &s, sizeof(size_t));
-}
-
-bool file_t::read(float &f) const
-{
-	return file_t::read((char *) &f, sizeof(float));
-}
-
 bool file_t::read(char *buffer, size_t size) const
 {
 	if(!fp) return false;
@@ -212,35 +187,10 @@ bool file_t::read(char *buffer, size_t size) const
 	return true;
 }
 
-
 bool file_t::append(const std::string &str)
 {
-	return file_t::append(str.data(), str.size()) && file_t::append((char) 0);
-}
-
-bool file_t::append(char c)
-{
-	return file_t::append((const char *) &c, sizeof(char));
-}
-
-bool file_t::append(int i)
-{
-	return file_t::append((const char *) &i, sizeof(int));
-}
-
-bool file_t::append(unsigned int u)
-{
-	return file_t::append((const char *) &u, sizeof(unsigned int));
-}
-
-bool file_t::append(size_t s)
-{
-	return file_t::append((const char *) &s, sizeof(size_t));
-}
-
-bool file_t::append(float f)
-{
-	return file_t::append((const char *) &f, sizeof(float));
+	const char zero = 0x00;
+	return file_t::append(str.data(), str.size()) && file_t::append(&zero, sizeof(char));
 }
 
 bool file_t::append(const char *buffer, size_t size)

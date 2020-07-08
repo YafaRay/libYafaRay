@@ -68,17 +68,9 @@ public:
 	bool open(const std::string &accessMode);
 	int close();
 	bool read(std::string &str) const;
-	bool read(char &c) const;
-	bool read(int &i) const;
-	bool read(unsigned int &u) const;
-	bool read(size_t &s) const;
-	bool read(float &f) const;
+	template <typename T> bool read(T & value) const;
 	bool append(const std::string &str);
-	bool append(char c);
-	bool append(int i);
-	bool append(unsigned int u);
-	bool append(size_t s);
-	bool append(float f);
+	template <typename T> bool append(const T & value);
 protected:
 	bool save(const char *buffer, size_t size, bool with_temp);
 	bool read(char *buffer, size_t size) const;
@@ -86,6 +78,19 @@ protected:
 	path_t path;
 	FILE *fp = nullptr;
 };
+
+template <typename T> bool file_t::read(T& value) const
+{
+	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
+	return file_t::read((char*)&value, sizeof(T));
+}
+
+template <typename T> bool file_t::append(const T& value)
+{
+	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
+	return file_t::append((const char*)&value, sizeof(T));
+}
+
 
 __END_YAFRAY
 

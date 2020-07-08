@@ -69,20 +69,20 @@ bool photonMap_t::load(const std::string &filename)
 		return false;
 	}
 	file.read(name);
-	file.read(paths);
-	file.read(searchRadius);
-	file.read(threadsPKDtree);
-	size_t photons_size;
-	file.read(photons_size);
+	file.read<int>(paths);
+	file.read<float>(searchRadius);
+	file.read<int>(threadsPKDtree);
+	unsigned int photons_size;
+	file.read<unsigned int>(photons_size);
 	photons.resize(photons_size);
 	for(auto &p : photons)
 	{
-		file.read(p.pos.x);
-		file.read(p.pos.y);
-		file.read(p.pos.z);
-		file.read(p.c.R);
-		file.read(p.c.G);
-		file.read(p.c.B);
+		file.read<float>(p.pos.x);
+		file.read<float>(p.pos.y);
+		file.read<float>(p.pos.z);
+		file.read<float>(p.c.R);
+		file.read<float>(p.c.G);
+		file.read<float>(p.c.B);
 	}
 	file.close();
 
@@ -94,20 +94,20 @@ bool photonMap_t::save(const std::string &filename) const
 {
 	file_t file(filename);
 	file.open("wb");
-	file.append("YAF_PHOTONMAPv1");
+	file.append(std::string("YAF_PHOTONMAPv1"));
 	file.append(name);
-	file.append(paths);
-	file.append(searchRadius);
-	file.append(threadsPKDtree);
-	file.append(photons.size());
+	file.append<int>(paths);
+	file.append<float>(searchRadius);
+	file.append<int>(threadsPKDtree);
+	file.append<unsigned int>((unsigned int) photons.size());
 	for(const auto &p : photons)
 	{
-		file.append(p.pos.x);
-		file.append(p.pos.y);
-		file.append(p.pos.z);
-		file.append(p.c.R);
-		file.append(p.c.G);
-		file.append(p.c.B);
+		file.append<float>(p.pos.x);
+		file.append<float>(p.pos.y);
+		file.append<float>(p.pos.z);
+		file.append<float>(p.c.R);
+		file.append<float>(p.c.G);
+		file.append<float>(p.c.B);
 	}
 	file.close();
 	return true;
