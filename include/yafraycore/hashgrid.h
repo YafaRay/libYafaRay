@@ -11,7 +11,7 @@
 __BEGIN_YAFRAY
 
 class photon_t;
-class foundPhoton_t;
+struct foundPhoton_t;
 class bound_t;
 class point3d_t;
 

@@ -11,7 +11,7 @@
 
 __BEGIN_YAFRAY
 
-class renderArea_t;
+struct renderArea_t;
 class imageFilm_t;
 typedef unsigned int BSDF_t;
 class photonMap_t;
