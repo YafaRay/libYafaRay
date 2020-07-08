@@ -272,7 +272,7 @@ std::vector<std::string> file_t::listFiles(const std::string &directory)
    {
 	    do
 		{
-			if (findData.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE)
+			if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !(findData.dwFileAttributes & FILE_ATTRIBUTE_DEVICE))
 			{
 			 files.push_back(wutf16le_to_utf8(std::wstring(findData.cFileName)));
 			}
