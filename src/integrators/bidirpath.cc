@@ -139,7 +139,7 @@ protected:
 	bool use_bg;        //!< configuration; include background for GI
 	bool ibl;           //!< configuration; use background light, if available
 	bool include_bg;    //!< determined on precrocess;
-	int sDepth, rDepth, bounces;
+	int sDepth, bounces;
 	std::vector<light_t*> lights;
 	//mutable std::vector<pathVertex_t> lightPath, eyePath;
 	//mutable int nPaths;
@@ -243,6 +243,21 @@ bool biDirIntegrator_t::preprocess()
 	}
 	Y_DEBUG << integratorName << ": " << "Light pdf integral: " << integral/10000.f << yendl;
 	*/
+
+	std::stringstream set;
+	set << "Bidirectional  ";
+
+	if(trShad)
+	{
+		set << "ShadowDepth=" << sDepth << "  ";
+	}
+
+	if(useAmbientOcclusion)
+	{
+		set << "AO samples=" << aoSamples << " dist=" << aoDist << "  ";
+	}
+	
+	yafLog.appendRenderSettings(set.str());
 
 	return true;
 }
