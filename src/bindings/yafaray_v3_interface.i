@@ -15,11 +15,6 @@
 
 %array_functions(float, floatArray);
 
-namespace std
-{
-	%template(StrVector) vector<string>;
-}
-
 #ifdef SWIGPYTHON  // Begining of python specific code
 
 %{
