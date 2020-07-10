@@ -381,6 +381,9 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
     s.sampledFlags = choice[pick];
     W = (std::fabs(wi*sp.N))/(s.pdf*0.99f + 0.01f);
     
+    const float alpha = getAlpha(state, sp, wo);
+    W = W * (alpha) + 1.f * (1.f - alpha);
+    
     float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
     applyWireFrame(scolor, wireFrameAmount, sp);
     

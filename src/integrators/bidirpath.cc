@@ -884,7 +884,10 @@ color_t biDirIntegrator_t::evalPath(renderState_t &state, int s, int t, pathData
 	//unweighted contronution C*:
 	color_t C_uw = y.alpha * c_st * z.alpha;
 	ray_t conRay(y.sp.P, pd.w_l_e, 0.0005, pd.d_yz);
-	if(scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
+	color_t scol = color_t(0.f);
+	const bool shadowed = (trShad) ? scene->isShadowed(state, conRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index);
+	if(shadowed) return color_t(0.f);
+	if(trShad) C_uw *= scol;
 	return C_uw;
 }
 
@@ -893,11 +896,14 @@ color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd
 {
 	static int dbg=0;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
-	if(scene->isShadowed(state, lRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
+	color_t scol = color_t(0.f);
+	const bool shadowed = (trShad) ? scene->isShadowed(state, lRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lRay, mask_obj_index, mask_mat_index);
+	if(shadowed) return color_t(0.f);
+	
 	const pathVertex_t &z = pd.eyePath[t-1];
 	
-
 	color_t C_uw = lcol * pd.f_z * z.alpha * std::fabs(z.sp.N*lRay.dir); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
+	if(trShad) C_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
 	//if(dbg < 10) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << yendl;
 	++dbg;
@@ -911,14 +917,17 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 	const pathVertex_t &y = pd.lightPath[s-1];
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	ray_t conRay(y.sp.P, pd.w_l_e, 0.0005, pd.d_yz);
-	if(scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index)) return color_t(0.f);
+
+	color_t scol = color_t(0.f);
+	const bool shadowed = (trShad) ? scene->isShadowed(state, conRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, conRay, mask_obj_index, mask_mat_index);
+	if(shadowed) return color_t(0.f);
 
 	//eval material
 	state.userdata = y.userdata;
 	//color_t f_y = y.sp.material->eval(state, y.sp, y.wi, pd.w_l_e, BSDF_ALL);
 	//TODO:
 	color_t C_uw = y.alpha * M_PI * pd.f_y * pd.path[s].G;
-
+	if(trShad) C_uw *= scol;
 	return C_uw;
 }
 
@@ -1020,14 +1029,13 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, cons
 			col += material->emit(state, sp, wo) * s.pdf;
 		}
 
-		//shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
-		shadowed = scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
+		shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lightRay, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
 			float cos = std::fabs(sp.N * lightRay.dir);
-			//if(trShad) col += aoCol * scol * surfCol * cos * W;
-			col += aoCol * surfCol * cos * W;
+			if(trShad) col += aoCol * scol * surfCol * cos * W;
+			else col += aoCol * surfCol * cos * W;
 		}
 	}
 
@@ -1101,7 +1109,11 @@ integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t 
 	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
+	bool transpShad=false;
+	int shadowDepth=4;
 
+	params.getParam("transpShad", transpShad);
+	params.getParam("shadowDepth", shadowDepth);
 	params.getParam("do_AO", do_AO);
 	params.getParam("AO_samples", AO_samples);
 	params.getParam("AO_distance", AO_dist);
@@ -1109,7 +1121,7 @@ integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t 
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	
-	biDirIntegrator_t *inte = new biDirIntegrator_t();
+	biDirIntegrator_t *inte = new biDirIntegrator_t(transpShad, shadowDepth);
 
 	// AO settings
 	inte->useAmbientOcclusion = do_AO;
