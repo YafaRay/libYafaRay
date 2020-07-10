@@ -21,6 +21,12 @@ int triBoxOverlap(double boxcenter[3],double boxhalfsize[3],double triverts[3][3
 	othwise totally identically to vTriangle_t (when it actually ever
 	makes it into release)
 */
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 class YAFRAYCORE_EXPORT triangle_t
 {
 	friend class scene_t;
@@ -70,6 +76,10 @@ class YAFRAYCORE_EXPORT triangle_t
 		float intersectionBiasFactor;	//!< Intersection Bias factor based on longest edge to reduce 
 		vector3d_t edge1, edge2;
 };
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
 {

@@ -235,18 +235,18 @@ if(NOT WIN32)
 	endif(NOT YAF_BINDINGS_RUBY_DIR)
 
 	# build flags
-	set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
+	set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-result" CACHE STRING "Default compiler flags" FORCE)
 	
 	if(USER_RELEASE_OPTIMIZATION_FLAGS)
 		set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
 	else(USER_RELEASE_OPTIMIZATION_FLAGS)
-		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math")
+		set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result")
 	endif(USER_RELEASE_OPTIMIZATION_FLAGS)
 	
 	if(USER_DEBUG_OPTIMIZATION_FLAGS)
 		set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
 	else(USER_DEBUG_OPTIMIZATION_FLAGS)
-		set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb")
+		set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb -Wno-unused-result")
 	endif(USER_DEBUG_OPTIMIZATION_FLAGS)
 	
 	if(APPLE)
@@ -274,18 +274,18 @@ else(NOT WIN32)
 
 	# build flags
 	if(MINGW)
-		set(CMAKE_CXX_FLAGS "-Wall" CACHE STRING "Default compiler flags" FORCE)
+		set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-result" CACHE STRING "Default compiler flags" FORCE)
 
 		if(USER_RELEASE_OPTIMIZATION_FLAGS)
 			set(YAF_CXX_FLAGS_RELEASE ${USER_RELEASE_OPTIMIZATION_FLAGS})
 		else(USER_RELEASE_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math")
+			set(YAF_CXX_FLAGS_RELEASE "-Wall -std=c++11 -pthread -O3 -ffast-math -Wno-unused-result")
 		endif(USER_RELEASE_OPTIMIZATION_FLAGS)
 		
 		if(USER_DEBUG_OPTIMIZATION_FLAGS)
 			set(YAF_CXX_FLAGS_DEBUG ${USER_DEBUG_OPTIMIZATION_FLAGS})
 		else(USER_DEBUG_OPTIMIZATION_FLAGS)
-			set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb")
+			set(YAF_CXX_FLAGS_DEBUG "-Wall -std=c++11 -pthread -ggdb -Wno-unused-result")
 		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
 
 	else(MINGW)
