@@ -188,6 +188,8 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 {
 	int x;
 	const camera_t* camera = scene->getCamera();
+	const float x_start_film = imageFilm->getCX0();
+	const float y_start_film = imageFilm->getCY0();
 	x=camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
@@ -264,7 +266,7 @@ bool SPPM::renderTile(int numView, renderArea_t &a, int n_samples, int offset, b
 				c_ray.time = rstate.time;
 
 				//for sppm progressive
-				int index = i*camera->resX() + j;
+				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hitPoints[index];
 
 				GatherInfo gInfo = traceGatherRay(rstate, c_ray, hp, colorPasses);
