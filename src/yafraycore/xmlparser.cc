@@ -33,6 +33,26 @@
 
 __BEGIN_YAFRAY
 
+void xmlParser_t::setLastElementName(const char *element_name)
+{
+	if(element_name) current->last_element = std::string(element_name);
+	else current->last_element.clear();
+}
+
+void xmlParser_t::setLastElementNameAttrs(const char **element_attrs)
+{
+	current->last_element_attrs.clear();
+	if(element_attrs)
+	{
+		for(int n=0; element_attrs[n]; ++n)
+		{
+			if(n > 0) current->last_element_attrs += " ";
+			current->last_element_attrs += (std::string(element_attrs[n]));
+		}
+	}
+}
+
+
 #if HAVE_XML
 void startDocument(void *user_data)
 {
@@ -58,28 +78,43 @@ void endElement(void *user_data, const xmlChar *name)
 
 static void my_warning(void *user_data, const char *msg, ...) 
 {
+	xmlParser_t &parser = *((xmlParser_t *)user_data);
     va_list args;
-
     va_start(args, msg);
-    printf(msg, args);
+    const size_t message_size = 1000;
+    char message_buffer[message_size];
+    vsnprintf(message_buffer, message_size, msg, args);
+    Y_WARNING << "XMLParser warning: " << message_buffer;
+    Y_WARNING << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+    Y_WARNING << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
     va_end(args);
 }
 
 static void my_error(void *user_data, const char *msg, ...) 
 {
+	xmlParser_t &parser = *((xmlParser_t *)user_data);
     va_list args;
-
     va_start(args, msg);
-    printf(msg, args);
+    const size_t message_size = 1000;
+    char message_buffer[message_size];
+    vsnprintf(message_buffer, message_size, msg, args);
+    Y_ERROR << "XMLParser error: " << message_buffer;
+    Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+    Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
     va_end(args);
 }
 
 static void my_fatalError(void *user_data, const char *msg, ...) 
 {
+	xmlParser_t &parser = *((xmlParser_t *)user_data);
     va_list args;
-
     va_start(args, msg);
-    printf(msg, args);
+    const size_t message_size = 1000;
+    char message_buffer[message_size];
+    vsnprintf(message_buffer, message_size, msg, args);
+    Y_ERROR << "XMLParser fatal error: " << message_buffer;
+    Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+    Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
     va_end(args);
 }
 
@@ -284,6 +319,10 @@ void startEl_dummy(xmlParser_t &parser, const char *element, const char **attrs)
 
 void startEl_document(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Document");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
+
 	if( strcmp(element, "scene") ) Y_WARNING << "XMLParser: skipping <" << element << ">" << yendl; /* parser.error("Expected scene definition"); */
 	else
 	{
@@ -328,6 +367,10 @@ struct curve_dat_t
 
 void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Scene");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
+
 	std::string el(element), *name=0;
 	if( el == "material" || el == "integrator" || el == "light" || el == "texture" ||
 		el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes" || el == "logging_badge")
@@ -441,6 +484,10 @@ void endEl_scene(xmlParser_t &parser, const char *element)
 }
 void startEl_curve(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Curve");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
+
     std::string el(element);
     curve_dat_t *dat = (curve_dat_t *)parser.stateData();
 
@@ -492,6 +539,10 @@ void endEl_curve(xmlParser_t &parser, const char *element)
 // since we're supposed to be inside a mesh block, exit state on "mesh" element
 void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Mesh");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
+
 	std::string el(element);
 	mesh_dat_t *dat = (mesh_dat_t *)parser.stateData();
 	if(el == "p")
@@ -578,6 +629,10 @@ void endEl_mesh(xmlParser_t &parser, const char *element)
 
 void startEl_instance(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Instance");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
+
 	std::string el(element);
 	objID_t boi = *(objID_t *)parser.stateData();
 	if(el == "transform")
@@ -621,6 +676,9 @@ void endEl_instance(xmlParser_t &parser, const char *element)
 
 void startEl_parammap(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Params map");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
 	// support for lists of paramMaps
 	if(std::string(element) == "list_element")
 	{
@@ -688,26 +746,33 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 
 void startEl_paramlist(xmlParser_t &parser, const char *element, const char **attrs)
 {
+	parser.setLastSection("Params list");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(attrs);
 	parameter_t p;
 	parseParam(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 
-void endEl_paramlist(xmlParser_t &p, const char *element)
+void endEl_paramlist(xmlParser_t &parser, const char *element)
 {
 	if(std::string(element) == "list_element")
 	{
-		p.popState();
-		p.cparams = &p.params;
+		parser.popState();
+		parser.cparams = &parser.params;
 	}
 }
 
-void endEl_render(xmlParser_t &p, const char *element)
+void endEl_render(xmlParser_t &parser, const char *element)
 {
+	parser.setLastSection("render");
+	parser.setLastElementName(element);
+	parser.setLastElementNameAttrs(nullptr);
+	
 	if(!strcmp(element, "render"))
 	{
-		p.cparams = &p.params;
-		p.popState();
+		parser.cparams = &parser.params;
+		parser.popState();
 	}
 }
 

@@ -28,6 +28,9 @@ struct parserState_t
 	endElement_cb end;
 	void *userdata;
 	int level;
+	std::string last_section; //! to show last section previous to a XML Parser error
+	std::string last_element; //! to show last element previous to a XML Parser error
+	std::string last_element_attrs; //! to show last element attributes previous to a XML Parser error
 };
 
 class xmlParser_t
@@ -44,6 +47,12 @@ class xmlParser_t
 		int stateLevel() const { return current ? current->level : -1; }
 		colorSpaces_t getInputColorSpace() const { return inputColorSpace; }
 		float getInputGamma() const { return inputGamma; }
+		void setLastSection(const std::string &section) { current->last_section = section; }
+		void setLastElementName(const char *element_name);
+		void setLastElementNameAttrs(const char **element_attrs);
+		std::string getLastSection() const { return current->last_section; }
+		std::string getLastElementName() const { return current->last_element; }
+		std::string getLastElementNameAttrs() const { return current->last_element_attrs; }
 		
 		renderEnvironment_t *env;
 		scene_t *scene;
