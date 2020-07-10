@@ -56,7 +56,7 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 	}
 }
 
-imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(int h_lum, int h_col, float mix) const
+imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(float h_col, float h_lum, float mix) const
 {
 	imageBuffer_t denoised_buffer = imageBuffer_t(m_width, m_height, m_num_channels, m_optimization);
 
@@ -66,9 +66,9 @@ imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(int h_lum, int h_col, float mi
 	cv::Mat_<cv::Vec3b> _A = A;
 	cv::Mat_<cv::Vec3b> _B = B;
 
-	for(int y = 0; y < m_height; y++)
+	for(int y = 0; y < m_height; ++y)
 	{
-		for(int x = 0; x < m_width; x++)
+		for(int x = 0; x < m_width; ++x)
 		{
 			colorA_t color = getColor(x, y);
 			color.clampRGBA01();
@@ -81,24 +81,24 @@ imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(int h_lum, int h_col, float mi
 
 	cv::fastNlMeansDenoisingColored(A, B, h_lum, h_col, 7, 21);
 
-	for(int y = 0; y < m_height; y++)
+	for(int y = 0; y < m_height; ++y)
 	{
-		for(int x = 0; x < m_width; x++)
+		for(int x = 0; x < m_width; ++x)
 		{
 			colorA_t col;
-			col.R = (float) (mix * _B(y, x)[0] + (1.f-mix) * _A(y, x)[0]) / 255.0;
-			col.G = (float) (mix * _B(y, x)[1] + (1.f-mix) * _A(y, x)[1]) / 255.0;
-			col.B = (float) (mix * _B(y, x)[2] + (1.f-mix) * _A(y, x)[2]) / 255.0;
+			col.R = (mix * (float)_B(y, x)[0] + (1.f-mix) * (float)_A(y, x)[0]) / 255.0;
+			col.G = (mix * (float)_B(y, x)[1] + (1.f-mix) * (float)_A(y, x)[1]) / 255.0;
+			col.B = (mix * (float)_B(y, x)[2] + (1.f-mix) * (float)_A(y, x)[2]) / 255.0;
 			col.A = getColor(x, y).A;
-			denoised_buffer.setColor(x, y, colorA_t(_B(y, x)[0] / 255.0, _B(y, x)[1] / 255.0, _B(y, x)[2] / 255.0, getColor(x, y).A));
+			denoised_buffer.setColor(x, y, col);
 		}
 	}
 #else //HAVE_OPENCV
 	//FIXME: Useless duplication work when OpenCV is not built in... avoid calling this function in the first place if OpenCV support not built.
 	//This is kept here for interface compatibility when OpenCV not built in.
-	for(int y = 0; y < m_height; y++)
+	for(int y = 0; y < m_height; ++y)
 	{
-		for(int x = 0; x < m_width; x++)
+		for(int x = 0; x < m_width; ++x)
 		{
 			denoised_buffer.setColor(x, y, getColor(x, y));
 		}

@@ -114,33 +114,44 @@ bool tgaHandler_t::saveToFile(const std::string &name, int imgIndex)
 		fwrite(&header, sizeof(tgaHeader_t), 1, fp);
 		fwrite(imageId.c_str(), (size_t)header.idLength, 1, fp);
 
-		imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 		if(m_Denoise) {
 			imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
-			buf = &denoised_buffer;
-		}
-#endif //HAVE_OPENCV
+			for (int y = 0; y < h; y++) {
+				for (int x = 0; x < w; x++) {
+					colorA_t col = denoised_buffer.getColor(x, y);
+					col.clampRGBA01();
 
-		for (int y = 0; y < h; y++)
-		{
-			for (int x = 0; x < w; x++)
-			{
-				colorA_t col = buf->getColor(x, y);
-				col.clampRGBA01();
-
-				if(!m_hasAlpha)
-				{
-					tgaPixelRGB_t rgb;
-					rgb = (color_t) col;
-					fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					if (!m_hasAlpha) {
+						tgaPixelRGB_t rgb;
+						rgb = (color_t) col;
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					} else {
+						tgaPixelRGBA_t rgba;
+						rgba = col;
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
 				}
-				else
-				{
-					tgaPixelRGBA_t rgba;
-					rgba = col;
-					fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+			}
+		}
+		else
+#endif //HAVE_OPENCV
+		{
+			for (int y = 0; y < h; y++) {
+				for (int x = 0; x < w; x++) {
+					colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+					col.clampRGBA01();
+
+					if (!m_hasAlpha) {
+						tgaPixelRGB_t rgb;
+						rgb = (color_t) col;
+						fwrite(&rgb, sizeof(tgaPixelRGB_t), 1, fp);
+					} else {
+						tgaPixelRGBA_t rgba;
+						rgba = col;
+						fwrite(&rgba, sizeof(tgaPixelRGBA_t), 1, fp);
+					}
 				}
 			}
 		}

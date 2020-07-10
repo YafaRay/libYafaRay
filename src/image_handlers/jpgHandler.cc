@@ -132,28 +132,40 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 	scanline = new yByte[ w * 3 ];
 
-	imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 	if(m_Denoise) {
 		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
-		buf = &denoised_buffer;
-	}
-#endif //HAVE_OPENCV
-
-	for(y = 0; y < h; y++)
-	{
-		for (x = 0; x < w; x++)
+		for(y = 0; y < h; y++)
 		{
-			ix = x * 3;
-			colorA_t col = buf->getColor(x, y);
-			col.clampRGBA01();
-			scanline[ix]   = (yByte) (col.getR() * 255);
-			scanline[ix+1] = (yByte) (col.getG() * 255);
-			scanline[ix+2] = (yByte) (col.getB() * 255);
-		}
+			for (x = 0; x < w; x++)
+			{
+				ix = x * 3;
+				colorA_t col = denoised_buffer.getColor(x, y);
+				col.clampRGBA01();
+				scanline[ix]   = (yByte) (col.getR() * 255);
+				scanline[ix+1] = (yByte) (col.getG() * 255);
+				scanline[ix+2] = (yByte) (col.getB() * 255);
+			}
 
-		jpeg_write_scanlines(&info, &scanline, 1);
+			jpeg_write_scanlines(&info, &scanline, 1);
+		}
+	}
+	else
+#endif //HAVE_OPENCV
+	{
+		for (y = 0; y < h; y++) {
+			for (x = 0; x < w; x++) {
+				ix = x * 3;
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+				col.clampRGBA01();
+				scanline[ix] = (yByte) (col.getR() * 255);
+				scanline[ix + 1] = (yByte) (col.getG() * 255);
+				scanline[ix + 2] = (yByte) (col.getB() * 255);
+			}
+
+			jpeg_write_scanlines(&info, &scanline, 1);
+		}
 	}
 
 	delete [] scanline;

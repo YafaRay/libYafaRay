@@ -73,7 +73,7 @@ public:
 	int getWidth() const { return m_width; }
 	int getHeight() const { return m_height; }
 	int getNumChannels() const { return m_num_channels; }
-	imageBuffer_t getDenoisedLDRBuffer(int h_lum, int h_col, float mix) const; //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
+	imageBuffer_t getDenoisedLDRBuffer(float h_col, float h_lum, float mix) const; //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
 
 	colorA_t getColor(int x, int y) const;
 	void setColor(int x, int y, const colorA_t & col);

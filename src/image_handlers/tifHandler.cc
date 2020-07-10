@@ -101,35 +101,51 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
     
     libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytesPerScanline));
 
-	imageBuffer_t *buf = imgBuffer.at(imgIndex);
 //The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 	if(m_Denoise) {
 		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
-		buf = &denoised_buffer;
-	}
-#endif //HAVE_OPENCV
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				int ix = x * channels;
+				colorA_t col = denoised_buffer.getColor(x, y);
+				col.clampRGBA01();
+				scanline[ix] = (yByte) (col.getR() * 255.f);
+				scanline[ix + 1] = (yByte) (col.getG() * 255.f);
+				scanline[ix + 2] = (yByte) (col.getB() * 255.f);
+				if (m_hasAlpha) scanline[ix + 3] = (yByte) (col.getA() * 255.f);
+			}
 
-	for (int y = 0; y < h; y++)
-	{
-		for(int x = 0; x < w; x++)
-		{
-			int ix = x * channels;
-			colorA_t col = buf->getColor(x, y);
-			col.clampRGBA01();
-			scanline[ix]   = (yByte)(col.getR() * 255.f);
-			scanline[ix+1] = (yByte)(col.getG() * 255.f);
-			scanline[ix+2] = (yByte)(col.getB() * 255.f);
-			if(m_hasAlpha) scanline[ix+3] = (yByte)(col.getA() * 255.f);
+			if (TIFFWriteScanline(out, scanline, y, 0) < 0) {
+				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				libtiff::TIFFClose(out);
+				libtiff::_TIFFfree(scanline);
+
+				return false;
+			}
 		}
+	}
+	else
+#endif //HAVE_OPENCV
+	{
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				int ix = x * channels;
+				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
+				col.clampRGBA01();
+				scanline[ix] = (yByte) (col.getR() * 255.f);
+				scanline[ix + 1] = (yByte) (col.getG() * 255.f);
+				scanline[ix + 2] = (yByte) (col.getB() * 255.f);
+				if (m_hasAlpha) scanline[ix + 3] = (yByte) (col.getA() * 255.f);
+			}
 
-		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
-		{
-			Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
-			libtiff::TIFFClose(out);
-			libtiff::_TIFFfree(scanline);
+			if (TIFFWriteScanline(out, scanline, y, 0) < 0) {
+				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				libtiff::TIFFClose(out);
+				libtiff::_TIFFfree(scanline);
 
-			return false;
+				return false;
+			}
 		}
 	}
 
