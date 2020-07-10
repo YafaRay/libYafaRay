@@ -36,6 +36,7 @@ YafaRay v3.5.0 (2020-07-10)
 * OpenCV Denoise: better encapsulation and code reuse, at the expense of slower processing
 * Renamed yafsystem/sharedlibrary_t by a (clearer) dynamic_library/dynamicLoadedLibrary_t
 * Git: added .gitignore to ignore all "hidden" files starting with "." (i.e. IDE generated files)
+* Swig Ruby: avoid -Wsign-compare warning.
 
 
 YafaRay v3.4.4 (2020-05-09)
