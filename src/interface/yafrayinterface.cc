@@ -392,9 +392,9 @@ std::string yafrayInterface_t::getImageFullNameFromFormat(const std::string &for
 	return env->getImageFullNameFromFormat(format);
 }
 
-char* yafrayInterface_t::getVersion() const
+std::string yafrayInterface_t::getVersion() const
 {
-	return (char*)YAFARAY_BUILD_VERSION.c_str();
+	return YAFARAY_BUILD_VERSION;
 }
 
 void yafrayInterface_t::printDebug(const std::string &msg)

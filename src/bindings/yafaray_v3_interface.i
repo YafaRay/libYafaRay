@@ -784,7 +784,7 @@ namespace yafaray
 			virtual void setParamsBadgePosition(const std::string &badgePosition = "none");
 			virtual bool getDrawParams();
 
-			virtual char* getVersion() const; //!< Get version to check aginst the exporters
+			std::string getVersion() const; //!< Get version to check against the exporters
 			
 			/*! Console Printing wrappers to report in color with yafaray's own console coloring */
 			void printDebug(const std::string &msg);
