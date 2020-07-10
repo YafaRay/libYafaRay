@@ -26,20 +26,12 @@
 #include <core_api/light.h>
 #include <core_api/integrator.h>
 #include <core_api/imagefilm.h>
+#include <core_api/sysinfo.h>
 #include <yafraycore/triangle.h>
 #include <yafraycore/ray_kdtree.h>
-
-#ifdef __APPLE__
-	#include <sys/sysctl.h>
-#elif _WIN32
-	#include <windows.h>
-#endif
 #include <iostream>
 #include <limits>
 #include <sstream>
-#if HAVE_UNISTD_H
-	#include <unistd.h>
-#endif
 
 __BEGIN_YAFRAY
 
@@ -350,27 +342,8 @@ void scene_t::setNumThreads(int threads)
 	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		Y_VERBOSE << "Automatic Detection of Threads: Active." << yendl;
-
-#ifdef WIN32
-		SYSTEM_INFO info;
-		GetSystemInfo(&info);
-		nthreads = (int) info.dwNumberOfProcessors;
-#else
-	#	ifdef __APPLE__
-		int mib[2];
-		size_t len;
-
-		mib[0] = CTL_HW;
-		mib[1] = HW_NCPU;
-		len = sizeof(int);
-		sysctl(mib, 2, &nthreads, &len, nullptr, 0);
-	#	elif defined(__sgi)
-		nthreads = sysconf(_SC_NPROC_ONLN);
-	#	else
-		nthreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
-	#	endif
-#endif
-
+		const sysInfo_t sys_info;
+		nthreads = sys_info.getNumSystemThreads();
 		Y_VERBOSE << "Number of Threads supported: [" << nthreads << "]." << yendl;
 	}
 	else
@@ -393,27 +366,8 @@ void scene_t::setNumThreadsPhotons(int threads_photons)
 	if(nthreads_photons == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
 		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << yendl;
-
-#ifdef WIN32
-		SYSTEM_INFO info;
-		GetSystemInfo(&info);
-		nthreads_photons = (int) info.dwNumberOfProcessors;
-#else
-	#	ifdef __APPLE__
-		int mib[2];
-		size_t len;
-
-		mib[0] = CTL_HW;
-		mib[1] = HW_NCPU;
-		len = sizeof(int);
-		sysctl(mib, 2, &nthreads_photons, &len, nullptr, 0);
-	#	elif defined(__sgi)
-		nthreads_photons = sysconf(_SC_NPROC_ONLN);
-	#	else
-		nthreads_photons = (int)sysconf(_SC_NPROCESSORS_ONLN);
-	#	endif
-#endif
-
+		const sysInfo_t sys_info;
+		nthreads_photons = sys_info.getNumSystemThreads();
 		Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons << "]." << yendl;
 	}
 	else

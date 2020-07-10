@@ -21,6 +21,7 @@
  */
 
 #include <core_api/imagefilm.h>
+#include <yafray_config.h>
 #include <core_api/logging.h>
 #include <core_api/session.h>
 #include <core_api/environment.h>
@@ -29,7 +30,6 @@
 #include <core_api/scene.h>
 #include <core_api/file.h>
 #include <core_api/params.h>
-#include <core_api/build_info.h>
 #include <yafraycore/monitor.h>
 #include <yafraycore/timer.h>
 #include <utilities/math_utils.h>
@@ -649,8 +649,6 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	
 	if(out1 == out2) out1 = nullptr;	//if we are already flushing the secondary output (out2) as main output (out1), then disable out1 to avoid duplicated work
 
-	std::string version = session.getYafaRayCoreVersion();
-
 	std::stringstream ssBadge;
 
 	if(!yafLog.getLoggingTitle().empty()) ssBadge << yafLog.getLoggingTitle() << "\n";
@@ -659,7 +657,7 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
 	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
 
-    ssBadge << "\nYafaRay (" << version << ")" << " " << buildInfoGetOS() << " " << buildInfoGetArchitecture() << " (" <<  buildInfoGetPlatform() << buildInfoGetCompiler() << ")";
+    ssBadge << "\nYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" <<  YAFARAY_BUILD_PLATFORM << YAFARAY_BUILD_COMPILER << ")";
 
 	ssBadge << std::setprecision(2);
 	double times = gTimer.getTimeNotStopping("rendert");

@@ -1,4 +1,5 @@
 #include <yafray_constants.h>
+#include <yafray_config.h>
 #include <core_api/session.h>
 #include <core_api/file.h>
 #include <core_api/scene.h>
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
 	
 	if(parse.getFlag("v"))
 	{
-		Y_INFO << "YafaRay XML loader" << yendl << "Built with YafaRay Core version " << session.getYafaRayCoreVersion() << yendl;
+		Y_INFO << "YafaRay XML loader" << yendl << "Built with YafaRay Core version " << YAFARAY_BUILD_VERSION << yendl;
 		return 0;
 	}
 	

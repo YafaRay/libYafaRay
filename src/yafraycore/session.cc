@@ -20,7 +20,6 @@
  */
 #include <core_api/session.h>
 #include <yafraycore/photon.h>
-#include <yaf_version.h>
 
 #if defined(_WIN32)
 	#include <windows.h>
@@ -194,24 +193,9 @@ std::string session_t::getPathYafaRayXml()
 	return mPathYafaRayXml;
 }
 
-std::string session_t::getConfiguredRuntimeSearchPathYafaRayPlugins()
-{
-	return YAF_RUNTIME_SEARCH_PLUGIN_DIR;
-}
-
 std::string session_t::getPathImageOutput()
 {
 	return mPathImageOutput;
-}
-
-std::string session_t::getYafaRayCoreVersion()
-{
-	// This preprocessor macro is set by cmake during building in file yaf_version.h.cmake
-	// For example: cmake -DYAFARAY_CORE_VERSION="v1.2.3"
-	// the intention is to link the YafaRay Core version to the git information obtained, for example with:
-	// cmake /yafaray/src/Core -DYAFARAY_CORE_VERSION=`git --git-dir=/yafaray/src/Core/.git --work-tree=/yafaray/src/Core describe --dirty --always --tags --long`
-
-	return YAFARAY_CORE_VERSION;
 }
 
 __END_YAFRAY

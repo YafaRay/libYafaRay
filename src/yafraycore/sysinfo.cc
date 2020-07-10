@@ -1,8 +1,7 @@
 /****************************************************************************
- *      build_info.cc: YafaRay information about build
+ * 		sysinfo.cc: runtime system information
  *      This is part of the yafray package
- *		Copyright (C) 2020 David Bluecame
- * 		System Information, compilation information, etc
+ *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -18,31 +17,48 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-#include <yafray_constants.h>
-#include <core_api/build_info.h>
-#include <yaf_build.h>
+
+//Threads detection code moved here from scene.cc
+
+#include <core_api/sysinfo.h>
+#include <yafray_config.h>
+
+#ifdef __APPLE__
+	#include <sys/sysctl.h>
+#elif _WIN32
+	#include <windows.h>
+#endif
+#if HAVE_UNISTD_H
+	#include <unistd.h>
+#endif
 
 __BEGIN_YAFRAY
 
-std::string buildInfoGetArchitecture()
+int sysInfo_t::getNumSystemThreads() const
 {
-    return YAFARAY_BUILD_ARCHITECTURE;
-}
+	int nthreads = 1;
 
-std::string buildInfoGetCompiler()
-{
-    return YAFARAY_BUILD_COMPILER;
-}
+#ifdef WIN32
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+		nthreads = (int) info.dwNumberOfProcessors;
+#else
+	#	ifdef __APPLE__
+		int mib[2];
+		size_t len;
 
-std::string buildInfoGetOS()
-{
-    return YAFARAY_BUILD_OS;
-}
+		mib[0] = CTL_HW;
+		mib[1] = HW_NCPU;
+		len = sizeof(int);
+		sysctl(mib, 2, &nthreads, &len, nullptr, 0);
+	#	elif defined(__sgi)
+		nthreads = sysconf(_SC_NPROC_ONLN);
+	#	else
+		nthreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	#	endif
+#endif
 
-std::string buildInfoGetPlatform()
-{
-    return YAFARAY_BUILD_PLATFORM;
+	return nthreads;
 }
 
 __END_YAFRAY
-

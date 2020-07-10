@@ -1,9 +1,8 @@
 #pragma once
 /****************************************************************************
- *      build_info.h: YafaRay information about build
+ *      sysinfo.h: runtime system information
  *      This is part of the yafray package
  *		Copyright (C) 2020 David Bluecame
- * 		System Information, compilation information, etc
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -20,18 +19,18 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
  
-#ifndef Y_BUILDINFO_H
-#define Y_BUILDINFO_H
+#ifndef Y_SYSINFO_H
+#define Y_SYSINFO_H
 
 #include <yafray_constants.h>
-#include <string>
 
 __BEGIN_YAFRAY
 
-extern YAFRAYCORE_EXPORT std::string buildInfoGetArchitecture();
-extern YAFRAYCORE_EXPORT std::string buildInfoGetCompiler();
-extern YAFRAYCORE_EXPORT std::string buildInfoGetOS();
-extern YAFRAYCORE_EXPORT std::string buildInfoGetPlatform();
+class YAFRAYCORE_EXPORT sysInfo_t
+{
+	public:
+		int getNumSystemThreads() const;
+};
 
 __END_YAFRAY
 

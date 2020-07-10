@@ -15,9 +15,6 @@ endif(DEBUG_BUILD STREQUAL "ON")
 
 include(CheckIncludeFiles)
 check_include_files(unistd.h HAVE_UNISTD_H)
-configure_file(CMakeConfig/templates/yafray_config.h.cmake ${CMAKE_BINARY_DIR}/yafray_config.h)
-configure_file(CMakeConfig/templates/yaf_version.h.cmake ${CMAKE_BINARY_DIR}/yaf_version.h)
-
 
 set(YAFARAY_BUILD_COMPILER "${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
 
@@ -31,14 +28,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	set(YAFARAY_BUILD_ARCHITECTURE "32bit")
 endif()
 
-#if(WIN32)
-#	add_definitions(YAFARAY_BUILD_OS="Windows")
-#elseif(APPLE)
-#	add_definitions(YAFARAY_BUILD_OS="MacOS")
-#elseif(UNIX)
-#	add_definitions(YAFARAY_BUILD_OS="Linux")
-#endif()
-
 set(YAFARAY_BUILD_OS "${CMAKE_SYSTEM_NAME}")
 
-configure_file(CMakeConfig/templates/yaf_build.h.cmake ${CMAKE_BINARY_DIR}/yaf_build.h)
+
+configure_file(CMakeConfig/templates/yafray_config.h.cmake ${CMAKE_BINARY_DIR}/yafray_config.h)

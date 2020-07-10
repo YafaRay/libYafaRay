@@ -1,5 +1,6 @@
 
 #include <interface/yafrayinterface.h>
+#include <yafray_config.h>
 #include <core_api/logging.h>
 #include <core_api/session.h>
 #include <core_api/environment.h>
@@ -393,7 +394,7 @@ std::string yafrayInterface_t::getImageFullNameFromFormat(const std::string &for
 
 char* yafrayInterface_t::getVersion() const
 {
-	return (char*)session.getYafaRayCoreVersion().c_str();
+	return (char*)YAFARAY_BUILD_VERSION.c_str();
 }
 
 void yafrayInterface_t::printDebug(const std::string &msg)

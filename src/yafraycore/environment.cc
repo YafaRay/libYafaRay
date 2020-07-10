@@ -28,7 +28,6 @@
 #include <core_api/params.h>
 #include <core_api/dynamic_library.h>
 #include <core_api/output.h>
-#include <core_api/build_info.h>
 
 #ifdef _WIN32
 	#include <io.h>
@@ -77,7 +76,7 @@ __BEGIN_YAFRAY
 
 renderEnvironment_t::renderEnvironment_t()
 {	
-    Y_INFO << PACKAGE << " Core (" << session.getYafaRayCoreVersion() << ")" << " " << buildInfoGetOS() << " " << buildInfoGetArchitecture() << " (" << buildInfoGetPlatform() << buildInfoGetCompiler() << ")" << yendl;
+    Y_INFO << PACKAGE << " Core (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << YAFARAY_BUILD_PLATFORM << YAFARAY_BUILD_COMPILER << ")" << yendl;
 	object_factory["sphere"] = sphere_factory;
 	output2 = nullptr;
 	session.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
@@ -192,7 +191,7 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 	}
 
 	// If the previous checks do not work, check if the plugins path is in the plugins search directory defined in CMake during the building process
-	path = std::string(session.getConfiguredRuntimeSearchPathYafaRayPlugins());
+	path = std::string(YAFARAY_BUILD_SEARCH_PLUGIN_DIR);
     if ( file_t::exists( path, false ) )
 	{
 		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
