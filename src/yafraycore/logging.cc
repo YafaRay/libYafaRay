@@ -104,7 +104,7 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	ss << "<!DOCTYPE html>" << std::endl;
 	ss << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
 	
-	ss << "<title>YafaRay Log: " << baseImgFileName << imgExtension << "</title>" << std::endl;
+	ss << "<title>YafaRay Log: " << baseImgFileName << "." << imgExtension << "</title>" << std::endl;
 	
 	ss << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
 
@@ -145,10 +145,10 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	std::string extLowerCase = imgExtension;
 	std::transform(extLowerCase.begin(), extLowerCase.end(),extLowerCase.begin(), ::tolower);
 	
-	if(!mImagePath.empty() && (extLowerCase == ".jpg" || extLowerCase == ".jpeg" || extLowerCase == ".png")) ss << "<a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << imgExtension << "\"/></a>" << std::endl;
+	if(!mImagePath.empty() && (extLowerCase == "jpg" || extLowerCase == "jpeg" || extLowerCase == "png")) ss << "<a href=\"" << baseImgFileName << "." << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << "." << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << "." << imgExtension << "\"/></a>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
-	ss << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << imgExtension << "</td></tr>" << std::endl;
+	ss << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << "." << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << "." << imgExtension << "</td></tr>" << std::endl;
 	if(!mLoggingTitle.empty()) ss << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
 	if(!mLoggingAuthor.empty()) ss << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
 	if(!mLoggingCustomIcon.empty()) ss << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon <<"\"/></a></td></tr>" << std::endl;
