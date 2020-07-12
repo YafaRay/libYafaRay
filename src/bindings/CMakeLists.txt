@@ -107,6 +107,7 @@ if (WITH_YAF_PY_BINDINGS)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
 		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray_v3_interface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET(PYTHON_LIBRARIES "") #In MacOS, to avoid segfault 11 errors, do *NOT* link to any real python library, so it uses the undefined dynamic lookup to find the correct symbols.
 	endif(APPLE)
 
 	if(WITH_QT)
@@ -114,7 +115,6 @@ if (WITH_YAF_PY_BINDINGS)
 		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
 			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 		endif(APPLE)
-
 	endif(WITH_QT)
 
 	SWIG_LINK_LIBRARIES(yafaray_v3_interface yafaray_v3_core yafaray_v3_plugin ${PYTHON_LIBRARIES})
@@ -161,12 +161,22 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	set_source_files_properties(yafaray_v3_interface.i PROPERTIES CPLUSPLUS ON)
 	SWIG_ADD_MODULE(yafaray_v3_interface_ruby RUBY yafaray_v3_interface.i)
+
+	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
+		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray_v3_interface_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
+	endif(APPLE)
+
 	SWIG_LINK_LIBRARIES(yafaray_v3_interface_ruby yafaray_v3_core yafaray_v3_plugin ${RUBY_LIBRARY})
 	install(TARGETS ${SWIG_MODULE_yafaray_v3_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 	if(WITH_QT)
 		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
 		SWIG_ADD_MODULE(yafqt RUBY yafqt.i)
+		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
+			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+			SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
+		endif(APPLE)
 		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${RUBY_LIBRARY})
 		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 	endif(WITH_QT)

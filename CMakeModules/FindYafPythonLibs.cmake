@@ -107,25 +107,9 @@ ENDIF(Python_FRAMEWORKS)
 # cache entries because they are meant to specify the location of a single
 # library. We now set the variables listed by the documentation for this
 # module.
-if(WITH_OSX_ADDON)
-# for Blender2.5 OSX we need to link to the BF_python libs build by blender ! added a switch for a choice "blender-/general use" - Jens
-SET(PYTHON_INCLUDE_DIR ${YAF_USER_INCLUDE_DIRS}/Python${YAF_PY_VERSION} CACHE PATH "" FORCE)
-SET(PYTHON_LIBRARIES ${YAF_USER_LIBRARY_DIRS}/BF_pythonlibs/libbf_python_ext.a ${YAF_USER_LIBRARY_DIRS}/BF_pythonlibs/libbf_python.a)
-#	if (NOT YAF_OSX_PYTHON_INCLUDE_DIR)
-#		SET(PYTHON_INCLUDE_DIRS ${YAF_USER_INCLUDE_DIRS}/python3.2)
-#	else (NOT YAF_OSX_PYTHON_LIB)
-#		SET(PYTHON_INCLUDE_DIR ${YAF_OSX_PYTHON_INCLUDE_DIR})
-#	endif (NOT YAF_OSX_PYTHON_INCLUDE_DIR)
-#	if (NOT YAF_OSX_PYTHON_LIB)
-#		SET(PYTHON_LIBRARIES ${YAF_USER_LIBRARY_DIRS}/BF_pythonlibs/libbf_python_ext.a ${YAF_USER_LIBRARY_DIRS}/BF_pythonlibs/libbf_python.a)
-#	else (NOT YAF_OSX_PYTHON_LIB)
-#		SET(PYTHON_LIBRARIES ${YAF_OSX_PYTHON_LIB})
-#	endif (NOT YAF_OSX_PYTHON_LIB)
-else(WITH_OSX_ADDON)
 SET(PYTHON_INCLUDE_DIRS "${PYTHON_INCLUDE_DIR}")
 SET(PYTHON_LIBRARIES "${PYTHON_LIBRARY}")
 SET(PYTHON_DEBUG_LIBRARIES "${PYTHON_DEBUG_LIBRARY}")
-endif(WITH_OSX_ADDON)
 
 
 INCLUDE(FindPackageHandleStandardArgs)
