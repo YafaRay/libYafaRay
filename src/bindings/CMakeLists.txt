@@ -172,13 +172,13 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	if(WITH_QT)
 		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
-		SWIG_ADD_MODULE(yafqt RUBY yafqt.i)
+		SWIG_ADD_MODULE(yafqt_ruby RUBY yafqt.i)
 		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 			SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
 		endif(APPLE)
-		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${RUBY_LIBRARY})
-		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+		SWIG_LINK_LIBRARIES(yafqt_ruby yafarayqt ${RUBY_LIBRARY})
+		install(TARGETS ${SWIG_MODULE_yafqt_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 	endif(WITH_QT)
 
 endif (WITH_YAF_RUBY_BINDINGS)
