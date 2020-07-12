@@ -33,6 +33,8 @@
 
 __BEGIN_YAFRAY
 
+#if HAVE_XML
+
 void xmlParser_t::setLastElementName(const char *element_name)
 {
 	if(element_name) current->last_element = std::string(element_name);
@@ -52,8 +54,6 @@ void xmlParser_t::setLastElementNameAttrs(const char **element_attrs)
 	}
 }
 
-
-#if HAVE_XML
 void startDocument(void *user_data)
 {
 	//Empty
