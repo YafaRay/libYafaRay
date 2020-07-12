@@ -17,6 +17,10 @@ include(CheckIncludeFiles)
 check_include_files(unistd.h HAVE_UNISTD_H)
 
 set(YAFARAY_BUILD_COMPILER "${CMAKE_CXX_COMPILER_ID}") #-${CMAKE_CXX_COMPILER_VERSION}")
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+	set(YAFARAY_BUILD_COMPILER "GCC") #To avoid confusion, just name it GCC and not GNU when GCC is used
+endif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+	
 
 if(MINGW)
 	set(YAFARAY_BUILD_PLATFORM "MinGW")
