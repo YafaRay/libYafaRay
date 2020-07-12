@@ -657,7 +657,10 @@ void imageFilm_t::flush(int numView, int flags, colorOutput_t *out)
 	else if(yafLog.getLoggingAuthor().empty() && !yafLog.getLoggingContact().empty()) ssBadge << yafLog.getLoggingContact() << "\n";
 	if(!yafLog.getLoggingComments().empty()) ssBadge << yafLog.getLoggingComments() << "\n";
 
-    ssBadge << "\nYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" <<  YAFARAY_BUILD_PLATFORM << YAFARAY_BUILD_COMPILER << ")";
+	std::string compiler = YAFARAY_BUILD_COMPILER;
+	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
+
+	ssBadge << "\nYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" <<  compiler << ")";
 
 	ssBadge << std::setprecision(2);
 	double times = gTimer.getTimeNotStopping("rendert");
