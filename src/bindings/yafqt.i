@@ -1,4 +1,8 @@
-%module yafqt
+#if defined(SWIGRUBY)
+  %module yafqt_ruby
+#else
+  %module yafqt
+#endif
 
 %include "cpointer.i"
 %pointer_functions(float, floatp);
