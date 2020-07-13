@@ -170,6 +170,11 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	setWindowIcon(QIcon(yafIcon));
 
+#if defined(__APPLE__)
+	m_ui->menubar->setNativeMenuBar(false); //Otherwise the menus don't appear in MacOS for some weird reason
+	m_ui->toolBar->close(); //FIXME: I was unable to make the icons in the tool bar to show in MacOS, really weird... so for now we just hide the toolbar entirely in Mac
+#endif
+
 	renderSaved = false;
 	renderCancelled = false;
 	saveWithAlpha = false;
