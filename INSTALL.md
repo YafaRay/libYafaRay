@@ -1,6 +1,6 @@
-YafaRay uses CMake for the building process in Linux, Windows and MacOSX systems.
+libYafaRay uses CMake for the building process in Linux, Windows and MacOSX systems.
 
-See directory "building" for example procedures to build YafaRay
+See directory "building" for example procedures to build libYafaRay
 
 Dependencies:
   * Optional, depending on options selected in CMake:

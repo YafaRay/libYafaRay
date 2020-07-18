@@ -1,9 +1,24 @@
-YafaRay Core code ChangeLog
-===========================
+libYafaRay ChangeLog
+====================
 Important: read the README file for installation instructions and important information about YafaRay
 
 This is an abbreviated list of changes. The full/detailed list of changes can be seen at:
-* YafaRay Core code: https://github.com/YafaRay/Core/commits/master
+* libYafaRay code: https://github.com/YafaRay/libYafaRay
+
+
+(2020-07-18) VERY IMPORTANT! CHANGED GITHUB REPOSITORIES!!
+----------------------------------------------------------
+In order to have proper official GitHub YafaRay repositories that do not show as "forked" from other projects, we have created new GitHub repositories.
+
+Those new GitHub repositories are copies of the previous ones, and preserve all the history, commits, and contributors information. They also preserve the versions tags, although not the binaries for previous versions.
+
+The old repositories will not be deleted, but marked as "Archived" in Github, meaning that they will no longer be updated there. The binaries of releases v3.5.1 or older will be preserved in those archived repos.
+
+Distro maintainers and any other users who were linking/forking the original repos should switch to the new ones.
+
+We hope this change helps further development, sorry for the inconveniences!
+
+
 
 YafaRay v3.5.1 (2020-07-13)
 ---------------------------
