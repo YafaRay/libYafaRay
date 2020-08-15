@@ -34,7 +34,7 @@ class pdf1D_t;
 class bgLight_t : public light_t
 {
 	public:
-		bgLight_t(int sampl, bool invertIntersect = false, bool bLightEnabled=true, bool bCastShadows=true);
+		bgLight_t(int sampl, bool invertIntersect = false, bool bLightEnabled = true, bool bCastShadows = true);
 		virtual ~bgLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -46,10 +46,10 @@ class bgLight_t : public light_t
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }
-		virtual bool canIntersect() const{ return true; }
+		virtual bool canIntersect() const { return true; }
 		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		
+
 	protected:
 		void sample_dir(float s1, float s2, vector3d_t &dir, float &pdf, bool inv = false) const;
 		float dir_pdf(const vector3d_t dir) const;

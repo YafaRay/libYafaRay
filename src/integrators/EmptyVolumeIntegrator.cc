@@ -14,22 +14,25 @@ __BEGIN_YAFRAY
 
 // for removing all participating media effects
 
-class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public volumeIntegrator_t {
+class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public volumeIntegrator_t
+{
 	public:
-	EmptyVolumeIntegrator() {}
+		EmptyVolumeIntegrator() {}
 
-	virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const {
-		return color_t(1.f);
-	}
-	
-	virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const {
-		return colorA_t(0.f);
-	}
-	
-	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render)
-	{
-		return new EmptyVolumeIntegrator();
-	}
+		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const
+		{
+			return color_t(1.f);
+		}
+
+		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
+		{
+			return colorA_t(0.f);
+		}
+
+		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render)
+		{
+			return new EmptyVolumeIntegrator();
+		}
 
 };
 

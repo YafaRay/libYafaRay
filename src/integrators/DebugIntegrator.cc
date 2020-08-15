@@ -42,9 +42,9 @@ class YAFRAYPLUGIN_EXPORT DebugIntegrator : public tiledIntegrator_t
 		DebugIntegrator(SurfaceProperties dt);
 		virtual bool preprocess();
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const;
-		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
+		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
-		std::vector<light_t*> lights;
+		std::vector<light_t *> lights;
 		SurfaceProperties debugType;
 		bool showPN;
 };
@@ -59,28 +59,28 @@ DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
 	switch(dt)
 	{
 		case N:
-		yafLog.appendRenderSettings("N");
-		break;
+			yafLog.appendRenderSettings("N");
+			break;
 		case dPdU:
-		yafLog.appendRenderSettings("dPdU");
-		break;
+			yafLog.appendRenderSettings("dPdU");
+			break;
 		case dPdV:
-		yafLog.appendRenderSettings("dPdV");
-		break;
+			yafLog.appendRenderSettings("dPdV");
+			break;
 		case NU:
-		yafLog.appendRenderSettings("NU");
-		break;
+			yafLog.appendRenderSettings("NU");
+			break;
 		case NV:
-		yafLog.appendRenderSettings("NV");
-		break;
+			yafLog.appendRenderSettings("NV");
+			break;
 		case dSdU:
-		yafLog.appendRenderSettings("dSdU");
-		break;
+			yafLog.appendRenderSettings("dSdU");
+			break;
 		case dSdV:
-		yafLog.appendRenderSettings("dSdV");
-		break;
+			yafLog.appendRenderSettings("dSdV");
+			break;
 	}
-	
+
 	yafLog.appendRenderSettings("' | ");
 }
 
@@ -98,29 +98,30 @@ colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorP
 	//shoot ray into scene
 	if(scene->intersect(ray, sp))
 	{
-		if (showPN){
+		if(showPN)
+		{
 			// Normals perturbed by materials
-			unsigned char userdata[USER_DATA_SIZE+7];
+			unsigned char userdata[USER_DATA_SIZE + 7];
 			userdata[0] = 0;
-			state.userdata = (void *)( &userdata[7] - ( ((size_t)&userdata[7])&7 ) ); // pad userdata to 8 bytes
-			
+			state.userdata = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+
 			BSDF_t bsdfs;
 			const material_t *material = sp.material;
 			material->initBSDF(state, sp, bsdfs);
 		}
-		if (debugType == N)
+		if(debugType == N)
 			col = color_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f);
-		else if (debugType == dPdU)
+		else if(debugType == dPdU)
 			col = color_t((sp.dPdU.x + 1.f) * .5f, (sp.dPdU.y + 1.f) * .5f, (sp.dPdU.z + 1.f) * .5f);
-		else if (debugType == dPdV)
+		else if(debugType == dPdV)
 			col = color_t((sp.dPdV.x + 1.f) * .5f, (sp.dPdV.y + 1.f) * .5f, (sp.dPdV.z + 1.f) * .5f);
-		else if (debugType == NU)
+		else if(debugType == NU)
 			col = color_t((sp.NU.x + 1.f) * .5f, (sp.NU.y + 1.f) * .5f, (sp.NU.z + 1.f) * .5f);
-		else if (debugType == NV)
+		else if(debugType == NV)
 			col = color_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f);
-		else if (debugType == dSdU)
+		else if(debugType == dSdU)
 			col = color_t((sp.dSdU.x + 1.f) * .5f, (sp.dSdU.y + 1.f) * .5f, (sp.dSdU.z + 1.f) * .5f);
-		else if (debugType == dSdV)
+		else if(debugType == dSdV)
 			col = color_t((sp.dSdV.x + 1.f) * .5f, (sp.dSdV.y + 1.f) * .5f, (sp.dSdV.z + 1.f) * .5f);
 
 	}
@@ -129,7 +130,7 @@ colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorP
 	return colorA_t(col, 1.f);
 }
 
-integrator_t* DebugIntegrator::factory(paraMap_t &params, renderEnvironment_t &render)
+integrator_t *DebugIntegrator::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	int dt = 1;
 	bool pn = false;
@@ -147,7 +148,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerFactory("DebugIntegrator",DebugIntegrator::factory);
+		render.registerFactory("DebugIntegrator", DebugIntegrator::factory);
 	}
 
 }

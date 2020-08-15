@@ -37,7 +37,7 @@ ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0)
 
 void ConsoleProgressBar_t::init(int totalSteps)
 {
-	nSteps=totalSteps;
+	nSteps = totalSteps;
 	doneSteps = 0;
 	lastBarLen = 0;
 	printBar(totalBarLen, 0, 0);
@@ -47,11 +47,11 @@ void ConsoleProgressBar_t::update(int steps)
 {
 	doneSteps += steps;
 	float progress = (float) std::min(doneSteps, nSteps) / (float) nSteps;
-	int barLen = std::min(totalBarLen, (int)(totalBarLen*progress));
+	int barLen = std::min(totalBarLen, (int)(totalBarLen * progress));
 	if(!(barLen >= 0)) barLen = 0;
 	if(barLen > lastBarLen)
 	{
-		printBar(totalBarLen-barLen, barLen, (int) (100 * progress));
+		printBar(totalBarLen - barLen, barLen, (int)(100 * progress));
 	}
 	lastBarLen = barLen;
 }

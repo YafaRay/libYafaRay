@@ -32,7 +32,7 @@
 
 extern "C"
 {
-	#include <setjmp.h>
+#include <setjmp.h>
 }
 
 #include <cstdio>
@@ -43,24 +43,24 @@ __BEGIN_YAFRAY
 
 class pngHandler_t: public imageHandler_t
 {
-public:
-	pngHandler_t();
-	~pngHandler_t();
-	bool loadFromFile(const std::string &name);
-	bool loadFromMemory(const yByte *data, size_t size);
-	bool saveToFile(const std::string &name, int imgIndex = 0);
-	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
-private:
-	void readFromStructs(png_structp pngPtr, png_infop infoPtr);
-	bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
-	bool fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex);
+	public:
+		pngHandler_t();
+		~pngHandler_t();
+		bool loadFromFile(const std::string &name);
+		bool loadFromMemory(const yByte *data, size_t size);
+		bool saveToFile(const std::string &name, int imgIndex = 0);
+		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	private:
+		void readFromStructs(png_structp pngPtr, png_infop infoPtr);
+		bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
+		bool fillWriteStructs(FILE *fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex);
 };
 
 pngHandler_t::pngHandler_t()
 {
 	m_hasAlpha = false;
 	m_MultiLayer = false;
-	
+
 	handlerName = "PNGHandler";
 }
 
@@ -75,16 +75,16 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
 	png_structp pngPtr;
 	png_infop infoPtr;
 	int channels;
 	png_bytep *rowPointers = nullptr;
-	
-	FILE * fp = file_t::open(name, "wb");
+
+	FILE *fp = file_t::open(name, "wb");
 
 	if(!fp)
 	{
@@ -109,9 +109,10 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		rowPointers[i] = new yByte[ w * channels ];
 	}
 
-//The denoise functionality will only work if YafaRay is built with OpenCV support
+	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-	if(m_Denoise) {
+	if(m_Denoise)
+	{
 		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
 		for(int y = 0; y < h; y++)
 		{
@@ -123,26 +124,28 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 				int i = x * channels;
 
 				rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
-				rowPointers[y][i+1] = (yByte)(color.getG() * 255.f);
-				rowPointers[y][i+2] = (yByte)(color.getB() * 255.f);
-				if(m_hasAlpha) rowPointers[y][i+3] = (yByte)(color.getA() * 255.f);
+				rowPointers[y][i + 1] = (yByte)(color.getG() * 255.f);
+				rowPointers[y][i + 2] = (yByte)(color.getB() * 255.f);
+				if(m_hasAlpha) rowPointers[y][i + 3] = (yByte)(color.getA() * 255.f);
 			}
 		}
 	}
 	else
 #endif //HAVE_OPENCV
 	{
-		for (int y = 0; y < h; y++) {
-			for (int x = 0; x < w; x++) {
+		for(int y = 0; y < h; y++)
+		{
+			for(int x = 0; x < w; x++)
+			{
 				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
 				color.clampRGBA01();
 
 				int i = x * channels;
 
-				rowPointers[y][i] = (yByte) (color.getR() * 255.f);
-				rowPointers[y][i + 1] = (yByte) (color.getG() * 255.f);
-				rowPointers[y][i + 2] = (yByte) (color.getB() * 255.f);
-				if (m_hasAlpha) rowPointers[y][i + 3] = (yByte) (color.getA() * 255.f);
+				rowPointers[y][i] = (yByte)(color.getR() * 255.f);
+				rowPointers[y][i + 1] = (yByte)(color.getG() * 255.f);
+				rowPointers[y][i + 2] = (yByte)(color.getB() * 255.f);
+				if(m_hasAlpha) rowPointers[y][i + 3] = (yByte)(color.getA() * 255.f);
 			}
 		}
 	}
@@ -185,17 +188,17 @@ bool pngHandler_t::loadFromFile(const std::string &name)
 
 	yByte signature[8];
 
-    if(fread(signature, 1, 8, fp) != 8)
-    {
-    	 Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << yendl;
-    	 return false;
-    }
+	if(fread(signature, 1, 8, fp) != 8)
+	{
+		Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << yendl;
+		return false;
+	}
 
-    if(!fillReadStructs(signature, pngPtr, infoPtr))
-    {
-    	file_t::close(fp);
-    	return false;
-    }
+	if(!fillReadStructs(signature, pngPtr, infoPtr))
+	{
+		file_t::close(fp);
+		return false;
+	}
 
 	png_init_io(pngPtr, fp);
 
@@ -218,19 +221,19 @@ bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
 
 	yByte signature[8];
 
-    if(reader->read(signature, 8) < 8)
-    {
-    	 Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << yendl;
-    	 return false;
-    }
+	if(reader->read(signature, 8) < 8)
+	{
+		Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << yendl;
+		return false;
+	}
 
-    if(!fillReadStructs(signature, pngPtr, infoPtr))
-    {
-    	delete reader;
-    	return false;
-    }
+	if(!fillReadStructs(signature, pngPtr, infoPtr))
+	{
+		delete reader;
+		return false;
+	}
 
-	png_set_read_fn(pngPtr, (void*)reader, readFromMem);
+	png_set_read_fn(pngPtr, (void *)reader, readFromMem);
 
 	png_set_sig_bytes(pngPtr, 8);
 
@@ -243,11 +246,11 @@ bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
 
 bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr)
 {
-    if(png_sig_cmp(sig, 0, 8))
-    {
+	if(png_sig_cmp(sig, 0, 8))
+	{
 		Y_ERROR << handlerName << ": Data is not from a PNG image!" << yendl;
-    	return false;
-    }
+		return false;
+	}
 
 	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
@@ -272,7 +275,7 @@ bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &i
 	return true;
 }
 
-bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex)
+bool pngHandler_t::fillWriteStructs(FILE *fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex)
 {
 	int h = getHeight(imgIndex);
 	int w = getWidth(imgIndex);
@@ -300,8 +303,8 @@ bool pngHandler_t::fillWriteStructs(FILE* fp, unsigned int colorType, png_struct
 	png_init_io(pngPtr, fp);
 
 	png_set_IHDR(pngPtr, infoPtr, (png_uint_32) w, (png_uint_32) h,
-				 8, colorType, PNG_INTERLACE_NONE,
-				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	             8, colorType, PNG_INTERLACE_NONE,
+	             PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
 	png_write_info(pngPtr, infoPtr);
 
@@ -330,13 +333,13 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 
 		case PNG_COLOR_TYPE_PALETTE:
 			png_set_palette_to_rgb(pngPtr);
-			if (png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) numChan = 4;
+			if(png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) numChan = 4;
 			else numChan = 3;
 			break;
 
 		case PNG_COLOR_TYPE_GRAY:
 		case PNG_COLOR_TYPE_GRAY_ALPHA:
-			if (bitDepth < 8)
+			if(bitDepth < 8)
 			{
 				png_set_gray_to_rgb(pngPtr);
 				bitDepth = 8;
@@ -355,9 +358,9 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 
 	m_width = (int)w;
 	m_height = (int)h;
-	
+
 	clearImgBuffers();
-	
+
 	int nChannels = numChan;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
@@ -385,7 +388,7 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 		for(int y = 0; y < m_height; y++)
 		{
 			colorA_t color;
-			
+
 			int i = x * numChan * bitMult;
 			float c = 0.f;
 
@@ -395,19 +398,19 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				{
 					case 4:
 						color.set(rowPointers[y][i] * divisor,
-								  rowPointers[y][i+1] * divisor,
-								  rowPointers[y][i+2] * divisor,
-								  rowPointers[y][i+3] * divisor);
+						          rowPointers[y][i + 1] * divisor,
+						          rowPointers[y][i + 2] * divisor,
+						          rowPointers[y][i + 3] * divisor);
 						break;
 					case 3:
 						color.set(rowPointers[y][i] * divisor,
-								  rowPointers[y][i+1] * divisor,
-								  rowPointers[y][i+2] * divisor,
-								  1.f);
+						          rowPointers[y][i + 1] * divisor,
+						          rowPointers[y][i + 2] * divisor,
+						          1.f);
 						break;
 					case 2:
 						c = rowPointers[y][i] * divisor;
-						color.set(c, c, c, rowPointers[y][i+1] * divisor);
+						color.set(c, c, c, rowPointers[y][i + 1] * divisor);
 						break;
 					case 1:
 						c = rowPointers[y][i] * divisor;
@@ -420,28 +423,28 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 				switch(numChan)
 				{
 					case 4:
-						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i+1]) * divisor,
-								  (yWord)((rowPointers[y][i+2] << 8) | rowPointers[y][i+3]) * divisor,
-								  (yWord)((rowPointers[y][i+4] << 8) | rowPointers[y][i+5]) * divisor,
-								  (yWord)((rowPointers[y][i+6] << 8) | rowPointers[y][i+7]) * divisor);
+						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor,
+						          (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor,
+						          (yWord)((rowPointers[y][i + 4] << 8) | rowPointers[y][i + 5]) * divisor,
+						          (yWord)((rowPointers[y][i + 6] << 8) | rowPointers[y][i + 7]) * divisor);
 						break;
 					case 3:
-						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i+1]) * divisor,
-								  (yWord)((rowPointers[y][i+2] << 8) | rowPointers[y][i+3]) * divisor,
-								  (yWord)((rowPointers[y][i+4] << 8) | rowPointers[y][i+5]) * divisor,
-								  1.f);
+						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor,
+						          (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor,
+						          (yWord)((rowPointers[y][i + 4] << 8) | rowPointers[y][i + 5]) * divisor,
+						          1.f);
 						break;
 					case 2:
-						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i+1]) * divisor;
-						color.set(c, c, c, (yWord)((rowPointers[y][i+2] << 8) | rowPointers[y][i+3]) * divisor);
+						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor;
+						color.set(c, c, c, (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor);
 						break;
 					case 1:
-						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i+1]) * divisor;
+						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor;
 						color.set(c, c, c, 1.f);
 						break;
 				}
 			}
-			
+
 			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
 		}
 	}
@@ -481,7 +484,7 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("denoiseMix", denoiseMix);
 	params.getParam("img_grayscale", img_grayscale);
 
-	Y_DEBUG << "denoiseEnabled="<<denoiseEnabled<<" denoiseHLum="<<denoiseHLum<<" denoiseHCol="<<denoiseHCol<<yendl;
+	Y_DEBUG << "denoiseEnabled=" << denoiseEnabled << " denoiseHLum=" << denoiseHLum << " denoiseHCol=" << denoiseHCol << yendl;
 
 	imageHandler_t *ih = new pngHandler_t();
 

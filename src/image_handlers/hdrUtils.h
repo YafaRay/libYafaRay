@@ -50,17 +50,17 @@ struct rgbePixel_t
 		int e;
 		float v = c.maximum();
 
-		if (v < 1e-32)
+		if(v < 1e-32)
 		{
 			R = G = B = E = 0;
 		}
 		else
 		{
 			v = frexp(v, &e) * 255.9999 / v;
-			R = (yByte) (c.getR() * v);
-			G = (yByte) (c.getG() * v);
-			B = (yByte) (c.getB() * v);
-			E = (yByte) (e + 128);
+			R = (yByte)(c.getR() * v);
+			G = (yByte)(c.getG() * v);
+			B = (yByte)(c.getB() * v);
+			E = (yByte)(e + 128);
 		}
 
 		return *this;
@@ -76,7 +76,7 @@ struct rgbePixel_t
 		return *this;
 	}
 
-	yByte &operator [] (int i)
+	yByte &operator [](int i)
 	{
 		return (&R)[i];
 	}
@@ -86,8 +86,9 @@ struct rgbePixel_t
 		float f;
 
 		if(E)
-		{   /*nonzero pixel*/
-			f = fLdexp(1.0, E - (int) (128+8));
+		{
+			/*nonzero pixel*/
+			f = fLdexp(1.0, E - (int)(128 + 8));
 			return colorA_t(f * R, f * G, f * B, 1.0f);
 		}
 

@@ -21,7 +21,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 #ifndef Y_CONSOLE_VERBOSITY_H
 #define Y_CONSOLE_VERBOSITY_H
 
@@ -57,10 +57,10 @@ enum
 
 class YAFRAYCORE_EXPORT logEntry_t
 {
-	friend class yafarayLog_t;
-	
+		friend class yafarayLog_t;
+
 	public:
-		logEntry_t(std::time_t datetime, double duration, int verb_level, std::string description):eventDateTime(datetime),eventDuration(duration),mVerbLevel(verb_level),eventDescription(description) {}
+		logEntry_t(std::time_t datetime, double duration, int verb_level, std::string description): eventDateTime(datetime), eventDuration(duration), mVerbLevel(verb_level), eventDescription(description) {}
 
 	protected:
 		std::time_t eventDateTime;
@@ -68,14 +68,14 @@ class YAFRAYCORE_EXPORT logEntry_t
 		int mVerbLevel;
 		std::string eventDescription;
 };
-	
+
 
 class YAFRAYCORE_EXPORT yafarayLog_t
 {
 	public:
 		yafarayLog_t();
-		yafarayLog_t(const yafarayLog_t&);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
-		
+		yafarayLog_t(const yafarayLog_t &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
+
 		~yafarayLog_t();
 
 		void setConsoleMasterVerbosity(const std::string &strVLevel);
@@ -118,7 +118,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		bool getDrawRenderSettings() { return drawRenderSettings; }
 		int getBadgeHeight() const;
 		bool getConsoleLogColorsEnabled() const { return mConsoleLogColorsEnabled; }
-		
+
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
@@ -132,25 +132,25 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		std::string printDurationSimpleFormat(double duration) const;
 		std::string printDate(std::time_t datetime) const;
 		int vlevel_from_string(std::string strVLevel) const;
-		
+
 		void statsClear() { mDiagStats.clear(); }
-		void statsPrint(bool sorted=false) const;
-		void statsSaveToFile(std::string filePath, bool sorted=false) const;
+		void statsPrint(bool sorted = false) const;
+		void statsSaveToFile(std::string filePath, bool sorted = false) const;
 		size_t statsSize() const { return mDiagStats.size(); }
 		bool statsEmpty() const { return mDiagStats.empty(); }
 
-		void statsAdd(std::string statName, int statValue, double index=0.0) { statsAdd(statName, (double) statValue, index); }
-		void statsAdd(std::string statName, float statValue, double index=0.0) { statsAdd(statName, (double) statValue, index); }
-		void statsAdd(std::string statName, double statValue, double index=0.0);
+		void statsAdd(std::string statName, int statValue, double index = 0.0) { statsAdd(statName, (double) statValue, index); }
+		void statsAdd(std::string statName, float statValue, double index = 0.0) { statsAdd(statName, (double) statValue, index); }
+		void statsAdd(std::string statName, double statValue, double index = 0.0);
 
-		void statsIncrementBucket(std::string statName, int statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
-		void statsIncrementBucket(std::string statName, float statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
-		void statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep=1.0, double incrementAmount=1.0);
+		void statsIncrementBucket(std::string statName, int statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
+		void statsIncrementBucket(std::string statName, float statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
+		void statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0);
 
 		std::mutex mutx;  //To try to avoid garbled output when there are several threads trying to output data to the log
 
 		template <typename T>
-		yafarayLog_t & operator << ( const T &obj )
+		yafarayLog_t &operator << (const T &obj)
 		{
 			std::ostringstream tmpStream;
 			tmpStream << obj;
@@ -160,7 +160,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 			return *this;
 		}
 
-		yafarayLog_t & operator << ( std::ostream& (obj)(std::ostream&) )
+		yafarayLog_t &operator << (std::ostream & (obj)(std::ostream &))
 		{
 			std::ostringstream tmpStream;
 			tmpStream << obj;
@@ -195,7 +195,7 @@ class YAFRAYCORE_EXPORT yafarayLog_t
 		bool mConsoleLogColorsEnabled = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
 		std::time_t previousConsoleEventDateTime = 0;
 		std::time_t previousLogEventDateTime = 0;
-		std::unordered_map <std::string,double> mDiagStats;
+		std::unordered_map <std::string, double> mDiagStats;
 };
 
 extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;

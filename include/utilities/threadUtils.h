@@ -25,15 +25,15 @@
 #define Y_THREADUTILS_H
 
 #if defined(_WIN32) && defined(__MINGW32__) && defined(HAVE_MINGW_STD_THREADS) //If compiling for Windows with MinGW, the standard C++11 thread management is very slow, causing a performance drop. I'll be using the alternative (much faster) implementation from https://github.com/meganz/mingw-std-threads
-	#undef _GLIBCXX_HAS_GTHREADS
-	#include <mingw-std-threads/mingw.thread.h>
-	#include <mutex>
-	#include <mingw-std-threads/mingw.mutex.h>
-	#include <mingw-std-threads/mingw.condition_variable.h>
+#undef _GLIBCXX_HAS_GTHREADS
+#include <mingw-std-threads/mingw.thread.h>
+#include <mutex>
+#include <mingw-std-threads/mingw.mutex.h>
+#include <mingw-std-threads/mingw.condition_variable.h>
 #else
-	#include <thread>
-	#include <mutex>
-	#include <condition_variable>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #endif
 
 

@@ -11,7 +11,7 @@ __BEGIN_YAFRAY
 
 textureMapper_t::textureMapper_t(const texture_t *texture): tex(texture), bumpStr(0.02), doScalar(true)
 {
-	map_x=1; map_y=2, map_z=3;
+	map_x = 1; map_y = 2, map_z = 3;
 }
 
 void textureMapper_t::setup()
@@ -20,9 +20,9 @@ void textureMapper_t::setup()
 	{
 		int u, v, w;
 		tex->resolution(u, v, w);
-		dU = 1.f/(float)u;
-		dV = 1.f/(float)v;
-		if(tex->isThreeD()) dW = 1.f/(float)w;
+		dU = 1.f / (float)u;
+		dV = 1.f / (float)v;
+		if(tex->isThreeD()) dW = 1.f / (float)w;
 		else dW = 0.f;
 	}
 	else
@@ -37,7 +37,7 @@ void textureMapper_t::setup()
 
 	bumpStr /= scale.length();
 
-	if (!tex->isNormalmap())
+	if(!tex->isNormalmap())
 		bumpStr /= 100.0f;
 }
 
@@ -46,9 +46,10 @@ inline point3d_t tubemap(const point3d_t &p)
 {
 	point3d_t res;
 	res.y = p.z;
-	float d = p.x*p.x + p.y*p.y;
-	if (d>0) {
-		res.z = 1.0/fSqrt(d);
+	float d = p.x * p.x + p.y * p.y;
+	if(d > 0)
+	{
+		res.z = 1.0 / fSqrt(d);
 		res.x = -atan2(p.x, p.y) * M_1_PI;
 	}
 	else res.x = res.z = 0;
@@ -59,11 +60,12 @@ inline point3d_t tubemap(const point3d_t &p)
 inline point3d_t spheremap(const point3d_t &p)
 {
 	point3d_t res(0.f);
-	float d = p.x*p.x + p.y*p.y + p.z*p.z;
-	if (d>0) {
+	float d = p.x * p.x + p.y * p.y + p.z * p.z;
+	if(d > 0)
+	{
 		res.z = fSqrt(d);
-		if ((p.x!=0) && (p.y!=0)) res.x = -atan2(p.x, p.y) * M_1_PI;
-		res.y = 1.0f - 2.0f*(fAcos(p.z/res.z) * M_1_PI);
+		if((p.x != 0) && (p.y != 0)) res.x = -atan2(p.x, p.y) * M_1_PI;
+		res.y = 1.0f - 2.0f * (fAcos(p.z / res.z) * M_1_PI);
 	}
 	return res;
 }
@@ -77,14 +79,17 @@ inline point3d_t cubemap(const point3d_t &p, const vector3d_t &n)
 
 	int axis;
 
-	if (std::fabs(n.z) >= std::fabs(n.x) && std::fabs(n.z) >= std::fabs(n.y)) {
-		axis= 2;
+	if(std::fabs(n.z) >= std::fabs(n.x) && std::fabs(n.z) >= std::fabs(n.y))
+	{
+		axis = 2;
 	}
-	else if (std::fabs(n.y) >= std::fabs(n.x) && std::fabs(n.y) >= std::fabs(n.z)) {
-		axis= 1;
+	else if(std::fabs(n.y) >= std::fabs(n.x) && std::fabs(n.y) >= std::fabs(n.z))
+	{
+		axis = 1;
 	}
-	else {
-		axis= 0;
+	else
+	{
+		axis = 0;
 	}
 
 	return point3d_t(p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]]);
@@ -102,25 +107,25 @@ point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)con
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(tex_coords)
 	{
-		case TXC_UV:	texpt = point3d_t(2.0f*texpt.x-1.0f, 2.0f*texpt.y-1.0f, texpt.z); break;
+		case TXC_UV:	texpt = point3d_t(2.0f * texpt.x - 1.0f, 2.0f * texpt.y - 1.0f, texpt.z); break;
 		default: break;
 	}
 	// Texture axis mapping
 	float texmap[4] = {0, texpt.x, texpt.y, texpt.z};
-	texpt.x=texmap[map_x];
-	texpt.y=texmap[map_y];
-	texpt.z=texmap[map_z];
+	texpt.x = texmap[map_x];
+	texpt.y = texmap[map_y];
+	texpt.z = texmap[map_z];
 	// Texture coordinates mapping
 	switch(tex_maptype)
 	{
 		case TXP_TUBE:	texpt = tubemap(texpt); break;
-		case TXP_SPHERE:texpt = spheremap(texpt); break;
+		case TXP_SPHERE: texpt = spheremap(texpt); break;
 		case TXP_CUBE:	texpt = cubemap(texpt, N); break;
 		case TXP_PLAIN:	// texpt = flatmap(texpt); break;
 		default: break;
 	}
 	// Texture scale and offset
-	texpt = mult(texpt,scale) + offset;
+	texpt = mult(texpt, scale) + offset;
 
 	return texpt;
 }
@@ -138,19 +143,20 @@ void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfaceP
 		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
 		case TXC_TRAN:	texpt = mtx * sp.P; Ng = mtx * sp.Ng; break;  // apply 4x4 matrix of object for mapping also to true surface normals
 		case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
-		case TXC_NOR:	{	
-							vector3d_t camx, camy, camz;
-							state.cam->getAxis(camx,camy,camz);
-							texpt = point3d_t(sp.N*camx, -sp.N*camy, 0); Ng = sp.Ng;
-							break;
-						}
+		case TXC_NOR:
+		{
+			vector3d_t camx, camy, camz;
+			state.cam->getAxis(camx, camy, camz);
+			texpt = point3d_t(sp.N * camx, -sp.N * camy, 0); Ng = sp.Ng;
+			break;
+		}
 		case TXC_STICK:	// Not implemented yet use GLOB
 		case TXC_STRESS:// Not implemented yet use GLOB
 		case TXC_TAN:	// Not implemented yet use GLOB
 		case TXC_REFL:	// Not implemented yet use GLOB
 		case TXC_GLOB:	// GLOB mapped as default
 		default:		texpt = sp.P; Ng = sp.Ng;
-		break;
+			break;
 	}
 }
 
@@ -159,16 +165,16 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
-	mipMapParams_t * mipMapParams = nullptr;
-	
+	mipMapParams_t *mipMapParams = nullptr;
+
 	if((tex->getInterpolationType() == INTP_MIPMAP_TRILINEAR || tex->getInterpolationType() == INTP_MIPMAP_EWA) && sp.ray && sp.ray->hasDifferentials)
 	{
 		spDifferentials_t spDiff(sp, *(sp.ray));
 
 		getCoords(texpt, Ng, sp, state);
 
-		point3d_t texptorig=texpt;
-		
+		point3d_t texptorig = texpt;
+
 		texpt = doMapping(texptorig, Ng);
 
 		if(tex_coords == TXC_UV && sp.hasUV)
@@ -176,10 +182,10 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 			float dUdx = 0.f, dVdx = 0.f;
 			float dUdy = 0.f, dVdy = 0.f;
 			spDiff.getUVdifferentials(dUdx, dVdx, dUdy, dVdy);
-			
+
 			point3d_t texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdx, dVdx, 0.f), Ng) - texpt);
 			point3d_t texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdy, dVdy, 0.f), Ng) - texpt);
-			
+
 			mipMapParams = new mipMapParams_t(texpt_diffx.x, texpt_diffx.y, texpt_diffy.x, texpt_diffy.y);
 		}
 	}
@@ -189,8 +195,8 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 		texpt = doMapping(texpt, Ng);
 	}
 
-	stack[this->ID] = nodeResult_t(tex->getColor(texpt, mipMapParams), (doScalar) ? tex->getFloat(texpt, mipMapParams) : 0.f );
-	
+	stack[this->ID] = nodeResult_t(tex->getColor(texpt, mipMapParams), (doScalar) ? tex->getFloat(texpt, mipMapParams) : 0.f);
+
 	if(mipMapParams)
 	{
 		delete mipMapParams;
@@ -214,13 +220,13 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
 	getCoords(texpt, Ng, sp, state);
 
-	if (tex->discrete() && sp.hasUV && tex_coords == TXC_UV)  
+	if(tex->discrete() && sp.hasUV && tex_coords == TXC_UV)
 	{
 		texpt = doMapping(texpt, Ng);
 		colorA_t color(0.f);
 		vector3d_t norm(0.f);
 
-		if (tex->isNormalmap())
+		if(tex->isNormalmap())
 		{
 			// Get color from normal map texture
 			color = tex->getRawColor(texpt);
@@ -257,7 +263,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 
 		if(std::fabs(norm.z) > 1e-30f)
 		{
-			float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
+			float NF = 1.0 / norm.z * bumpStr; // normalizes z to 1, why?
 			du = norm.x * NF;
 			dv = norm.y * NF;
 		}
@@ -265,7 +271,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 	}
 	else
 	{
-		if (tex->isNormalmap())
+		if(tex->isNormalmap())
 		{
 			texpt = doMapping(texpt, Ng);
 			colorA_t color(0.f);
@@ -283,12 +289,12 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			// Convert norm into shading space
 			du = norm * sp.dSdU;
 			dv = norm * sp.dSdV;
-			
+
 			norm.normalize();
 
 			if(std::fabs(norm.z) > 1e-30f)
 			{
-				float NF = 1.0/norm.z * bumpStr; // normalizes z to 1, why?
+				float NF = 1.0 / norm.z * bumpStr; // normalizes z to 1, why?
 				du = norm.x * NF;
 				dv = norm.y * NF;
 			}
@@ -307,7 +313,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 			dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
 			du *= bumpStr;
 			dv *= bumpStr;
-			
+
 			if(tex_coords != TXC_UV)
 			{
 				du = -du;
@@ -316,21 +322,21 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		}
 	}
 
-	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f );
+	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f);
 }
 
-shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment_t &render)
+shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironment_t &render)
 {
 	const texture_t *tex = nullptr;
 	const std::string *texname = nullptr, *option = nullptr;
 	TEX_COORDS tc = TXC_GLOB;
 	TEX_PROJ maptype = TXP_PLAIN;
 	float bumpStr = 1.f;
-	bool scalar=true;
+	bool scalar = true;
 	int map[3] = { 1, 2, 3 };
 	point3d_t offset(0.f), scale(1.f);
 	matrix4x4_t mtx(1);
-	if( !params.getParam("texture", texname) )
+	if(!params.getParam("texture", texname))
 	{
 		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
 		return nullptr;
@@ -342,7 +348,7 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 		return nullptr;
 	}
 	textureMapper_t *tm = new textureMapper_t(tex);
-	if(params.getParam("texco", option) )
+	if(params.getParam("texco", option))
 	{
 		if(*option == "uv") tc = TXC_UV;
 		else if(*option == "global") tc = TXC_GLOB;
@@ -370,14 +376,14 @@ shaderNode_t* textureMapper_t::factory(const paraMap_t &params,renderEnvironment
 	params.getParam("proj_x", map[0]);
 	params.getParam("proj_y", map[1]);
 	params.getParam("proj_z", map[2]);
-	for(int i=0; i<3; ++i) map[i] = std::min(3, std::max(0, map[i]));
+	for(int i = 0; i < 3; ++i) map[i] = std::min(3, std::max(0, map[i]));
 	tm->tex_coords = tc;
 	tm->tex_maptype = maptype;
 	tm->map_x = map[0];
 	tm->map_y = map[1];
 	tm->map_z = map[2];
 	tm->scale = vector3d_t(scale);
-	tm->offset = vector3d_t(2*offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
+	tm->offset = vector3d_t(2 * offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
 	tm->doScalar = scalar;
 	tm->bumpStr = bumpStr;
 	tm->mtx = mtx;
@@ -399,11 +405,11 @@ void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	stack[this->ID] = nodeResult_t(color, value);
 }
 
-shaderNode_t* valueNode_t::factory(const paraMap_t &params,renderEnvironment_t &render)
+shaderNode_t *valueNode_t::factory(const paraMap_t &params, renderEnvironment_t &render)
 {
 	color_t col(1.f);
-	float alpha=1.f;
-	float val=1.f;
+	float alpha = 1.f;
+	float val = 1.f;
 	params.getParam("color", col);
 	params.getParam("alpha", alpha);
 	params.getParam("scalar", val);
@@ -459,7 +465,7 @@ void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfa
 bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 {
 	const std::string *name = nullptr;
-	if( params.getParam("input1", name) )
+	if(params.getParam("input1", name))
 	{
 		input1 = find(*name);
 		if(!input1)
@@ -474,7 +480,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 		return false;
 	}
 
-	if( params.getParam("input2", name) )
+	if(params.getParam("input2", name))
 	{
 		input2 = find(*name);
 		if(!input2)
@@ -489,7 +495,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 		return false;
 	}
 
-	if( params.getParam("factor", name) )
+	if(params.getParam("factor", name))
 	{
 		factor = find(*name);
 		if(!factor)
@@ -507,7 +513,7 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 	return true;
 }
 
-bool mixNode_t::getDependencies(std::vector<const shaderNode_t*> &dep) const
+bool mixNode_t::getDependencies(std::vector<const shaderNode_t *> &dep) const
 {
 	if(input1) dep.push_back(input1);
 	if(input2) dep.push_back(input2);
@@ -572,7 +578,7 @@ class screenNode_t: public mixNode_t
 			f1 = 1.f - f2;
 
 			colorA_t color = colorA_t(1.f) - (colorA_t(f1) + f2 * (1.f - cin2)) * (1.f - cin1);
-			float scalar   = 1.0 - (f1 + f2*(1.f - fin2)) * (1.f -  fin1);
+			float scalar   = 1.0 - (f1 + f2 * (1.f - fin2)) * (1.f -  fin1);
 			stack[this->ID] = nodeResult_t(color, scalar);
 		}
 };
@@ -587,11 +593,11 @@ class diffNode_t: public mixNode_t
 			getInputs(stack, cin1, cin2, fin1, fin2, f2);
 			f1 = 1.f - f2;
 
-			cin1.R = f1*cin1.R + f2*std::fabs(cin1.R - cin2.R);
-			cin1.G = f1*cin1.G + f2*std::fabs(cin1.G - cin2.G);
-			cin1.B = f1*cin1.B + f2*std::fabs(cin1.B - cin2.B);
-			cin1.A = f1*cin1.A + f2*std::fabs(cin1.A - cin2.A);
-			fin1   = f1*fin1   + f2*std::fabs(fin1 - fin2);
+			cin1.R = f1 * cin1.R + f2 * std::fabs(cin1.R - cin2.R);
+			cin1.G = f1 * cin1.G + f2 * std::fabs(cin1.G - cin2.G);
+			cin1.B = f1 * cin1.B + f2 * std::fabs(cin1.B - cin2.B);
+			cin1.A = f1 * cin1.A + f2 * std::fabs(cin1.A - cin2.A);
+			fin1   = f1 * fin1   + f2 * std::fabs(fin1 - fin2);
 			stack[this->ID] = nodeResult_t(cin1, fin1);
 		}
 };
@@ -647,20 +653,20 @@ class overlayNode_t: public mixNode_t
 			f1 = 1.f - f2;
 
 			colorA_t color;
-			color.R = (cin1.R < 0.5f) ? cin1.R * (f1 + 2.0f*f2*cin2.R) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.R)) * (1.0 - cin1.R);
-			color.G = (cin1.G < 0.5f) ? cin1.G * (f1 + 2.0f*f2*cin2.G) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.G)) * (1.0 - cin1.G);
-			color.B = (cin1.B < 0.5f) ? cin1.B * (f1 + 2.0f*f2*cin2.B) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.B)) * (1.0 - cin1.B);
-			color.A = (cin1.A < 0.5f) ? cin1.A * (f1 + 2.0f*f2*cin2.A) : 1.0 - (f1 + 2.0f*f2*(1.0 - cin2.A)) * (1.0 - cin1.A);
-			float scalar = (fin1 < 0.5f) ? fin1 * (f1 + 2.0f*f2*fin2) : 1.0 - (f1 + 2.0f*f2*(1.0 - fin2)) * (1.0 - fin1);
+			color.R = (cin1.R < 0.5f) ? cin1.R * (f1 + 2.0f * f2 * cin2.R) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.R)) * (1.0 - cin1.R);
+			color.G = (cin1.G < 0.5f) ? cin1.G * (f1 + 2.0f * f2 * cin2.G) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.G)) * (1.0 - cin1.G);
+			color.B = (cin1.B < 0.5f) ? cin1.B * (f1 + 2.0f * f2 * cin2.B) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.B)) * (1.0 - cin1.B);
+			color.A = (cin1.A < 0.5f) ? cin1.A * (f1 + 2.0f * f2 * cin2.A) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.A)) * (1.0 - cin1.A);
+			float scalar = (fin1 < 0.5f) ? fin1 * (f1 + 2.0f * f2 * fin2) : 1.0 - (f1 + 2.0f * f2 * (1.0 - fin2)) * (1.0 - fin1);
 			stack[this->ID] = nodeResult_t(color, scalar);
 		}
 };
 
 
-shaderNode_t* mixNode_t::factory(const paraMap_t &params,renderEnvironment_t &render)
+shaderNode_t *mixNode_t::factory(const paraMap_t &params, renderEnvironment_t &render)
 {
-	float val=0.5f;
-	int mode=0;
+	float val = 0.5f;
+	int mode = 0;
 	params.getParam("cfactor", val);
 	params.getParam("mode", mode);
 

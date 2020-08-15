@@ -52,7 +52,7 @@ void tiledIntegrator_t::renderWorker(int mNumView, tiledIntegrator_t *integrator
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 		integrator->preTile(a, samples, offset, adaptive, threadID);
 		integrator->renderTile(mNumView, a, samples, offset, adaptive, threadID, AA_pass);
-		
+
 		std::unique_lock<std::mutex> lk(control->m);
 		control->areas.push_back(a);
 		control->c.notify_one();
@@ -80,33 +80,33 @@ void tiledIntegrator_t::preTile(renderArea_t &a, int n_samples, int offset, bool
 
 void tiledIntegrator_t::precalcDepths()
 {
-	const camera_t* camera = scene->getCamera();
+	const camera_t *camera = scene->getCamera();
 
 	if(camera->getFarClip() > -1)
-    {
-        minDepth = camera->getNearClip();
-        maxDepth = camera->getFarClip();
-    }
-    else
-    {
-        diffRay_t ray;
-        // We sample the scene at render resolution to get the precision required for AA
-        int w = camera->resX();
-        int h = camera->resY();
-        float wt = 0.f; // Dummy variable
-        surfacePoint_t sp;
-        for(int i=0; i<h; ++i)
-        {
-            for(int j=0; j<w; ++j)
-            {
-                ray.tmax = -1.f;
-                ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
-                scene->intersect(ray, sp);
-                if(ray.tmax > maxDepth) maxDepth = ray.tmax;
-                if(ray.tmax < minDepth && ray.tmax >= 0.f) minDepth = ray.tmax;
-            }
-        }
-    }
+	{
+		minDepth = camera->getNearClip();
+		maxDepth = camera->getFarClip();
+	}
+	else
+	{
+		diffRay_t ray;
+		// We sample the scene at render resolution to get the precision required for AA
+		int w = camera->resX();
+		int h = camera->resY();
+		float wt = 0.f; // Dummy variable
+		surfacePoint_t sp;
+		for(int i = 0; i < h; ++i)
+		{
+			for(int j = 0; j < w; ++j)
+			{
+				ray.tmax = -1.f;
+				ray = camera->shootRay(i, j, 0.5f, 0.5f, wt);
+				scene->intersect(ray, sp);
+				if(ray.tmax > maxDepth) maxDepth = ray.tmax;
+				if(ray.tmax < minDepth && ray.tmax >= 0.f) minDepth = ray.tmax;
+			}
+		}
+	}
 	// we use the inverse multiplicative of the value aquired
 	if(maxDepth > 0.f) maxDepth = 1.f / (maxDepth - minDepth);
 }
@@ -116,15 +116,15 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	std::stringstream passString;
 	imageFilm = image;
 	scene->getAAParameters(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
-	
+
 	std::stringstream aaSettings;
 	aaSettings << " passes=" << AA_passes;
 	aaSettings << " samples=" << AA_samples << " inc_samples=" << AA_inc_samples << " resamp.floor=" << AA_resampled_floor << "\nsample.mul=" << AA_sample_multiplier_factor << " light.sam.mul=" << AA_light_sample_multiplier_factor << " ind.sam.mul=" << AA_indirect_sample_multiplier_factor << "\ncol.noise=" << AA_detect_color_noise;
-	
+
 	if(AA_dark_detection_type == DARK_DETECTION_LINEAR) aaSettings << " AA thr(lin)=" << AA_threshold << ",dark_fac=" << AA_dark_threshold_factor;
 	else if(AA_dark_detection_type == DARK_DETECTION_CURVE) aaSettings << " AA.thr(curve)";
 	else aaSettings << " AA thr=" << AA_threshold;
- 
+
 	aaSettings << " var.edge=" << AA_variance_edge_size << " var.pix=" << AA_variance_pixels << " clamp=" << AA_clamp_samples << " ind.clamp=" << AA_clamp_indirect;
 
 	yafLog.appendAANoiseSettings(aaSettings.str());
@@ -142,24 +142,24 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	Y_PARAMS << integratorName << ": Rendering " << AA_passes << " passes" << yendl;
 	Y_PARAMS << "Min. " << AA_samples << " samples" << yendl;
 	Y_PARAMS << AA_inc_samples << " per additional pass" << yendl;
-	Y_PARAMS << "Resampled pixels floor: "<< AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;
-	Y_VERBOSE << "AA_sample_multiplier_factor: "<< AA_sample_multiplier_factor << yendl;
-	Y_VERBOSE << "AA_light_sample_multiplier_factor: "<< AA_light_sample_multiplier_factor << yendl;
-	Y_VERBOSE << "AA_indirect_sample_multiplier_factor: "<< AA_indirect_sample_multiplier_factor << yendl;
-	Y_VERBOSE << "AA_detect_color_noise: "<< AA_detect_color_noise << yendl;
-	
-	if(AA_dark_detection_type == DARK_DETECTION_LINEAR)	Y_VERBOSE << "AA_threshold (linear): " << AA_threshold << ", dark factor: "<< AA_dark_threshold_factor << yendl;
+	Y_PARAMS << "Resampled pixels floor: " << AA_resampled_floor << "% (" << AA_resampled_floor_pixels << " pixels)" << yendl;
+	Y_VERBOSE << "AA_sample_multiplier_factor: " << AA_sample_multiplier_factor << yendl;
+	Y_VERBOSE << "AA_light_sample_multiplier_factor: " << AA_light_sample_multiplier_factor << yendl;
+	Y_VERBOSE << "AA_indirect_sample_multiplier_factor: " << AA_indirect_sample_multiplier_factor << yendl;
+	Y_VERBOSE << "AA_detect_color_noise: " << AA_detect_color_noise << yendl;
+
+	if(AA_dark_detection_type == DARK_DETECTION_LINEAR)	Y_VERBOSE << "AA_threshold (linear): " << AA_threshold << ", dark factor: " << AA_dark_threshold_factor << yendl;
 	else if(AA_dark_detection_type == DARK_DETECTION_CURVE)	Y_VERBOSE << "AA_threshold (curve)" << yendl;
 	else Y_VERBOSE << "AA threshold:" << AA_threshold << yendl;
-	
-	Y_VERBOSE << "AA_variance_edge_size: "<< AA_variance_edge_size << yendl;
-	Y_VERBOSE << "AA_variance_pixels: "<< AA_variance_pixels << yendl;
-	Y_VERBOSE << "AA_clamp_samples: "<< AA_clamp_samples << yendl;
-	Y_VERBOSE << "AA_clamp_indirect: "<< AA_clamp_indirect << yendl;
-	Y_PARAMS << "Max. " << AA_samples + std::max(0,AA_passes-1) * AA_inc_samples << " total samples" << yendl;
-	
+
+	Y_VERBOSE << "AA_variance_edge_size: " << AA_variance_edge_size << yendl;
+	Y_VERBOSE << "AA_variance_pixels: " << AA_variance_pixels << yendl;
+	Y_VERBOSE << "AA_clamp_samples: " << AA_clamp_samples << yendl;
+	Y_VERBOSE << "AA_clamp_indirect: " << AA_clamp_indirect << yendl;
+	Y_PARAMS << "Max. " << AA_samples + std::max(0, AA_passes - 1) * AA_inc_samples << " total samples" << yendl;
+
 	passString << "Rendering pass 1 of " << std::max(1, AA_passes) << "...";
-	
+
 	Y_INFO << passString.str() << yendl;
 	if(intpb) intpb->setTag(passString.str().c_str());
 
@@ -169,13 +169,13 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	imageFilm->init(AA_passes);
 	imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
-	if(session.renderResumed()) 
+	if(session.renderResumed())
 	{
 		passString.clear();
 		passString << "Combining ImageFilm files, skipping pass 1...";
 		if(intpb) intpb->setTag(passString.str().c_str());
 	}
-	
+
 	Y_INFO << integratorName << ": " << passString.str() << yendl;
 
 	maxDepth = 0.f;
@@ -192,29 +192,29 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 	std::fill(correlativeSampleNumber.begin(), correlativeSampleNumber.end(), 0);
 
 	int acumAASamples = AA_samples;
-		
+
 	if(session.renderResumed())
 	{
 		acumAASamples = imageFilm->getSamplingOffset();
 		renderPass(numView, 0, acumAASamples, false, 0);
 	}
 	else renderPass(numView, AA_samples, 0, false, 0);
-	
+
 	bool AAthresholdChanged = true;
 	int resampled_pixels = 0;
-	
-	for(int i=1; i<AA_passes; ++i)
+
+	for(int i = 1; i < AA_passes; ++i)
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
 
 		//scene->getSurfIntegrator()->setSampleMultiplier(scene->getSurfIntegrator()->getSampleMultiplier() * AA_sample_multiplier_factor);
-		
+
 		AA_sample_multiplier *= AA_sample_multiplier_factor;
 		AA_light_sample_multiplier *= AA_light_sample_multiplier_factor;
 		AA_indirect_sample_multiplier *= AA_indirect_sample_multiplier_factor;
-		
+
 		Y_INFO << integratorName << ": Sample multiplier = " << AA_sample_multiplier << ", Light Sample multiplier = " << AA_light_sample_multiplier << ", Indirect Sample multiplier = " << AA_indirect_sample_multiplier << yendl;
-		
+
 		imageFilm->setAANoiseParams(AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples);
 
 		if(resampled_pixels <= 0.f && !AAthresholdChanged)
@@ -227,25 +227,25 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 			imageFilm->setAAThreshold(AA_threshold);
 			resampled_pixels = imageFilm->nextPass(numView, true, integratorName);
 			AAthresholdChanged = false;
-		}		
-		
+		}
+
 		int AA_samples_mult = (int) ceilf(AA_inc_samples * AA_sample_multiplier);
 
-		Y_DEBUG << "acumAASamples="<<acumAASamples<<" AA_samples="<<AA_samples<<" AA_samples_mult="<<AA_samples_mult<<yendl;
-		
+		Y_DEBUG << "acumAASamples=" << acumAASamples << " AA_samples=" << AA_samples << " AA_samples_mult=" << AA_samples_mult << yendl;
+
 		if(resampled_pixels > 0) renderPass(numView, AA_samples_mult, acumAASamples, true, i);
 
 		acumAASamples += AA_samples_mult;
 
 		if(resampled_pixels < AA_resampled_floor_pixels)
 		{
-			float AA_variation_ratio = std::min(8.f, ((float) AA_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal. 
+			float AA_variation_ratio = std::min(8.f, ((float) AA_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal.
 			AA_threshold *= (1.f - 0.1f * AA_variation_ratio);
-			
+
 			Y_VERBOSE << integratorName << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << AA_resampled_floor_pixels << "): new AA Threshold (-" << AA_variation_ratio * 0.1f * 100.f << "%) for next pass = " << AA_threshold << yendl;
-			
+
 			if(AA_threshold > 0.f) AAthresholdChanged = true;
-		} 
+		}
 	}
 	maxDepth = 0.f;
 	gTimer.stop("rendert");
@@ -258,20 +258,20 @@ bool tiledIntegrator_t::render(int numView, imageFilm_t *image)
 
 bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number)
 {
-	Y_DEBUG << "Sampling: samples="<<samples<<" Offset=" << offset << " Base Offset="<< + imageFilm->getBaseSamplingOffset()<<"  AA_pass_number="<<AA_pass_number<<yendl;
+	Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + imageFilm->getBaseSamplingOffset() << "  AA_pass_number=" << AA_pass_number << yendl;
 	prePass(samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive);
 
 	int nthreads = scene->getNumThreads();
 
-	session.setStatusCurrentPass(AA_pass_number+1);
+	session.setStatusCurrentPass(AA_pass_number + 1);
 
 	imageFilm->setSamplingOffset(offset + samples);
 
-	if(nthreads>1)
+	if(nthreads > 1)
 	{
 		threadControl_t tc;
 		std::vector<std::thread> threads;
-		for(int i=0;i<nthreads;++i)
+		for(int i = 0; i < nthreads; ++i)
 		{
 			threads.push_back(std::thread(&tiledIntegrator_t::renderWorker, this, numView, this, scene, imageFilm, &tc, i, samples, (offset + imageFilm->getBaseSamplingOffset()), adaptive, AA_pass_number));
 		}
@@ -280,14 +280,14 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 		while(tc.finishedThreads < nthreads)
 		{
 			tc.c.wait(lk);
-			for(size_t i=0; i<tc.areas.size(); ++i)
-			{				
+			for(size_t i = 0; i < tc.areas.size(); ++i)
+			{
 				imageFilm->finishArea(numView, tc.areas[i]);
 			}
 			tc.areas.clear();
 		}
 
-		for(auto& t : threads) t.join();	//join all threads (although they probably have exited already, but not necessarily):
+		for(auto &t : threads) t.join();	//join all threads (although they probably have exited already, but not necessarily):
 	}
 	else
 	{
@@ -300,51 +300,51 @@ bool tiledIntegrator_t::renderPass(int numView, int samples, int offset, bool ad
 			imageFilm->finishArea(numView, a);
 		}
 	}
-		
+
 	return true; //hm...quite useless the return value :)
 }
 
 bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number)
 {
 	int x;
-	const camera_t* camera = scene->getCamera();
-	x=camera->resX();
+	const camera_t *camera = scene->getCamera();
+	x = camera->resX();
 	diffRay_t c_ray;
 	ray_t d_ray;
-	float dx=0.5, dy=0.5, d1=1.0/(float)n_samples;
-	float lens_u=0.5f, lens_v=0.5f;
+	float dx = 0.5, dy = 0.5, d1 = 1.0 / (float)n_samples;
+	float lens_u = 0.5f, lens_v = 0.5f;
 	float wt, wt_dummy;
-	random_t prng(rand()+offset*(x*a.Y+a.X)+123);
+	random_t prng(rand() + offset * (x * a.Y + a.X) + 123);
 	renderState_t rstate(&prng);
 	rstate.threadID = threadID;
 	rstate.cam = camera;
 	bool sampleLns = camera->sampleLense();
-	int pass_offs=offset, end_x=a.X+a.W, end_y=a.Y+a.H;
-	
+	int pass_offs = offset, end_x = a.X + a.W, end_y = a.Y + a.H;
+
 	int AA_max_possible_samples = AA_samples;
-	
-	for(int i=1; i<AA_passes; ++i)
+
+	for(int i = 1; i < AA_passes; ++i)
 	{
 		AA_max_possible_samples += ceilf(AA_inc_samples * pow(AA_sample_multiplier_factor, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
 	}
-	
+
 	float inv_AA_max_possible_samples = 1.f / ((float) AA_max_possible_samples);
 
 	Halton halU(3);
 	Halton halV(5);
 
-	const renderPasses_t * renderPasses = scene->getRenderPasses();
+	const renderPasses_t *renderPasses = scene->getRenderPasses();
 	colorPasses_t colorPasses(renderPasses);
 	colorPasses_t tmpPassesZero(renderPasses);
-	
-    rgba2DImage_t * samplingFactorImagePass = imageFilm->getImagePassFromIntPassType(PASS_INT_DEBUG_SAMPLING_FACTOR);
-	
-    int filmCX0 = imageFilm->getCX0();
-    int filmCY0 = imageFilm->getCY0();
-    
-	for(int i=a.Y; i<end_y; ++i)
+
+	rgba2DImage_t *samplingFactorImagePass = imageFilm->getImagePassFromIntPassType(PASS_INT_DEBUG_SAMPLING_FACTOR);
+
+	int filmCX0 = imageFilm->getCX0();
+	int filmCY0 = imageFilm->getCY0();
+
+	for(int i = a.Y; i < end_y; ++i)
 	{
-		for(int j=a.X; j<end_x; ++j)
+		for(int j = a.X; j < end_x; ++j)
 		{
 			if(scene->getSignals() & Y_SIG_ABORT) break;
 
@@ -357,57 +357,57 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 
 				if(samplingFactorImagePass)
 				{
-					matSampleFactor = (*samplingFactorImagePass)(j-filmCX0, i-filmCY0).normalized().R;
-                    
-                    if(imageFilm->getBackgroundResampling()) matSampleFactor = std::max(matSampleFactor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
-					
-					if(matSampleFactor > 0.f && matSampleFactor < 1.f) matSampleFactor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples. Otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing. However if the factor is equal to 0.f (as in the background) then no more samples will be shot 
+					matSampleFactor = (*samplingFactorImagePass)(j - filmCX0, i - filmCY0).normalized().R;
+
+					if(imageFilm->getBackgroundResampling()) matSampleFactor = std::max(matSampleFactor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
+
+					if(matSampleFactor > 0.f && matSampleFactor < 1.f) matSampleFactor = 1.f;	//This is to ensure in the edges between objects and background we always shoot samples. Otherwise we might not shoot enough samples at the boundaries with the background where they are needed for antialiasing. However if the factor is equal to 0.f (as in the background) then no more samples will be shot
 				}
 
 				if(matSampleFactor != 1.f)
 				{
 					n_samples_adjusted = (int) round((float) n_samples * matSampleFactor);
-					d1=1.0/(float)n_samples_adjusted;	//DAVID FIXME: is this correct???
+					d1 = 1.0 / (float)n_samples_adjusted;	//DAVID FIXME: is this correct???
 				}
 			}
 
 			//Y_DEBUG << "idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<yendl;
 
-			rstate.pixelNumber = x*i+j;
-			rstate.samplingOffs = fnv_32a_buf(i*fnv_32a_buf(j));//fnv_32a_buf(rstate.pixelNumber);
-			float toff = scrHalton(5, pass_offs+rstate.samplingOffs); // **shall be just the pass number...**
+			rstate.pixelNumber = x * i + j;
+			rstate.samplingOffs = fnv_32a_buf(i * fnv_32a_buf(j)); //fnv_32a_buf(rstate.pixelNumber);
+			float toff = scrHalton(5, pass_offs + rstate.samplingOffs); // **shall be just the pass number...**
 
-			halU.setStart(pass_offs+rstate.samplingOffs);
-			halV.setStart(pass_offs+rstate.samplingOffs);
+			halU.setStart(pass_offs + rstate.samplingOffs);
+			halV.setStart(pass_offs + rstate.samplingOffs);
 
-			for(int sample=0; sample<n_samples_adjusted; ++sample)
+			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
 				colorPasses.reset_colors();
 				rstate.setDefaults();
-				rstate.pixelSample = pass_offs+sample;
-				rstate.time = addMod1((float)sample*d1, toff);//(0.5+(float)sample)*d1;
+				rstate.pixelSample = pass_offs + sample;
+				rstate.time = addMod1((float)sample * d1, toff); //(0.5+(float)sample)*d1;
 
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
-				if(AA_passes>1)
+				if(AA_passes > 1)
 				{
 					dx = RI_vdC(rstate.pixelSample, rstate.samplingOffs);
 					dy = RI_S(rstate.pixelSample, rstate.samplingOffs);
 				}
 				else if(n_samples_adjusted > 1)
 				{
-					dx = (0.5+(float)sample)*d1;
-					dy = RI_LP(sample+rstate.samplingOffs);
+					dx = (0.5 + (float)sample) * d1;
+					dy = RI_LP(sample + rstate.samplingOffs);
 				}
-				
+
 				if(sampleLns)
 				{
 					lens_u = halU.getNext();
 					lens_v = halV.getNext();
 				}
-				c_ray = camera->shootRay(j+dx, i+dy, lens_u, lens_v, wt);
-				
-				if(wt==0.0)
+				c_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v, wt);
+
+				if(wt == 0.0)
 				{
 					imageFilm->addSample(tmpPassesZero, j, i, dx, dy, &a, sample, AA_pass_number, inv_AA_max_possible_samples);
 					continue;
@@ -415,19 +415,19 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 				if(diffRaysEnabled)
 				{
 					//setup ray differentials
-					d_ray = camera->shootRay(j+1+dx, i+dy, lens_u, lens_v, wt_dummy);
+					d_ray = camera->shootRay(j + 1 + dx, i + dy, lens_u, lens_v, wt_dummy);
 					c_ray.xfrom = d_ray.from;
 					c_ray.xdir = d_ray.dir;
-					d_ray = camera->shootRay(j+dx, i+1+dy, lens_u, lens_v, wt_dummy);
+					d_ray = camera->shootRay(j + dx, i + 1 + dy, lens_u, lens_v, wt_dummy);
 					c_ray.yfrom = d_ray.from;
 					c_ray.ydir = d_ray.dir;
 					c_ray.hasDifferentials = true;
 				}
-				
+
 				c_ray.time = rstate.time;
 
 				colorPasses(PASS_INT_COMBINED) = integrate(rstate, c_ray, colorPasses);
-				
+
 				if(colorPasses.enabled(PASS_INT_Z_DEPTH_NORM) || colorPasses.enabled(PASS_INT_Z_DEPTH_ABS) || colorPasses.enabled(PASS_INT_MIST))
 				{
 					float depth_abs = 0.f, depth_norm = 0.f;
@@ -439,7 +439,7 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 							depth_norm = 1.f - (c_ray.tmax - minDepth) * maxDepth; // Distance normalization
 						}
 						colorPasses.probe_set(PASS_INT_Z_DEPTH_NORM, colorA_t(depth_norm));
-						colorPasses.probe_set(PASS_INT_MIST, colorA_t(1.f-depth_norm));
+						colorPasses.probe_set(PASS_INT_MIST, colorA_t(1.f - depth_norm));
 					}
 					if(colorPasses.enabled(PASS_INT_Z_DEPTH_ABS))
 					{
@@ -451,13 +451,13 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 						colorPasses.probe_set(PASS_INT_Z_DEPTH_ABS, colorA_t(depth_abs));
 					}
 				}
-				
+
 				for(int idx = 0; idx < colorPasses.size(); ++idx)
 				{
 					if(colorPasses(idx).A > 1.f) colorPasses(idx).A = 1.f;
-					
+
 					intPassTypes_t intPassType = colorPasses.intPassTypeFromIndex(idx);
-										
+
 					switch(intPassType)
 					{
 						case PASS_INT_Z_DEPTH_NORM: break;
@@ -485,27 +485,27 @@ bool tiledIntegrator_t::renderTile(int numView, renderArea_t &a, int n_samples, 
 						case PASS_INT_AA_SAMPLES: break;
 
 						//Processing of mask render passes:
-						case PASS_INT_OBJ_INDEX_MASK: 
-						case PASS_INT_OBJ_INDEX_MASK_SHADOW: 
-						case PASS_INT_OBJ_INDEX_MASK_ALL: 
-						case PASS_INT_MAT_INDEX_MASK: 
+						case PASS_INT_OBJ_INDEX_MASK:
+						case PASS_INT_OBJ_INDEX_MASK_SHADOW:
+						case PASS_INT_OBJ_INDEX_MASK_ALL:
+						case PASS_INT_MAT_INDEX_MASK:
 						case PASS_INT_MAT_INDEX_MASK_SHADOW:
-						case PASS_INT_MAT_INDEX_MASK_ALL: 
+						case PASS_INT_MAT_INDEX_MASK_ALL:
 
-						colorPasses(idx).clampRGB01();
+							colorPasses(idx).clampRGB01();
 
-						if(colorPasses.get_pass_mask_invert())
-						{
-							colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
-						}
+							if(colorPasses.get_pass_mask_invert())
+							{
+								colorPasses(idx) = colorA_t(1.f) - colorPasses(idx);
+							}
 
-						if(!colorPasses.get_pass_mask_only())
-						{
-							colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
-							colCombined.A = 1.f;	
-							colorPasses(idx) *= colCombined;
-						}
-						break;
+							if(!colorPasses.get_pass_mask_only())
+							{
+								colorA_t colCombined = colorPasses(PASS_INT_COMBINED);
+								colCombined.A = 1.f;
+								colorPasses(idx) *= colCombined;
+							}
+							break;
 
 						default: colorPasses(idx) *= wt; break;
 					}
@@ -534,19 +534,19 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 	colorPasses.probe_set(PASS_INT_DEBUG_NV, colorA_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f, 1.f));
 
 	if(colorPasses.enabled(PASS_INT_REFLECT_ALL))
-    {
-        colorPasses(PASS_INT_REFLECT_ALL) = colorPasses(PASS_INT_REFLECT_PERFECT) + colorPasses(PASS_INT_GLOSSY) + colorPasses(PASS_INT_GLOSSY_INDIRECT);
-    }
-    
+	{
+		colorPasses(PASS_INT_REFLECT_ALL) = colorPasses(PASS_INT_REFLECT_PERFECT) + colorPasses(PASS_INT_GLOSSY) + colorPasses(PASS_INT_GLOSSY_INDIRECT);
+	}
+
 	if(colorPasses.enabled(PASS_INT_REFRACT_ALL))
-    {
-        colorPasses(PASS_INT_REFRACT_ALL) = colorPasses(PASS_INT_REFRACT_PERFECT) + colorPasses(PASS_INT_TRANS) + colorPasses(PASS_INT_TRANS_INDIRECT);
-    }
-        
-    if(colorPasses.enabled(PASS_INT_INDIRECT_ALL))
-    {
-        colorPasses(PASS_INT_INDIRECT_ALL) = colorPasses(PASS_INT_INDIRECT) + colorPasses(PASS_INT_DIFFUSE_INDIRECT);
-    }
+	{
+		colorPasses(PASS_INT_REFRACT_ALL) = colorPasses(PASS_INT_REFRACT_PERFECT) + colorPasses(PASS_INT_TRANS) + colorPasses(PASS_INT_TRANS_INDIRECT);
+	}
+
+	if(colorPasses.enabled(PASS_INT_INDIRECT_ALL))
+	{
+		colorPasses(PASS_INT_INDIRECT_ALL) = colorPasses(PASS_INT_INDIRECT) + colorPasses(PASS_INT_DIFFUSE_INDIRECT);
+	}
 
 	colorPasses.probe_set(PASS_INT_DIFFUSE_COLOR, sp.material->getDiffuseColor(state));
 	colorPasses.probe_set(PASS_INT_GLOSSY_COLOR, sp.material->getGlossyColor(state));
@@ -557,42 +557,42 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_NORM, sp.object->getNormObjectIndexColor());
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_AUTO, sp.object->getAutoObjectIndexColor());
 	colorPasses.probe_set(PASS_INT_OBJ_INDEX_AUTO_ABS, sp.object->getAutoObjectIndexNumber());
-	
+
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_ABS, sp.material->getAbsMaterialIndexColor());
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_NORM, sp.material->getNormMaterialIndexColor());
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_AUTO, sp.material->getAutoMaterialIndexColor());
 	colorPasses.probe_set(PASS_INT_MAT_INDEX_AUTO_ABS, sp.material->getAutoMaterialIndexNumber());
-	
+
 	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK))
 	{
-        if(sp.object->getAbsObjectIndex() == colorPasses.get_pass_mask_obj_index()) colorPasses(PASS_INT_OBJ_INDEX_MASK) = colorA_t(1.f);
-    }
+		if(sp.object->getAbsObjectIndex() == colorPasses.get_pass_mask_obj_index()) colorPasses(PASS_INT_OBJ_INDEX_MASK) = colorA_t(1.f);
+	}
 
 	if(colorPasses.enabled(PASS_INT_OBJ_INDEX_MASK_ALL))
 	{
-        colorPasses(PASS_INT_OBJ_INDEX_MASK_ALL) = colorPasses(PASS_INT_OBJ_INDEX_MASK) + colorPasses(PASS_INT_OBJ_INDEX_MASK_SHADOW);
+		colorPasses(PASS_INT_OBJ_INDEX_MASK_ALL) = colorPasses(PASS_INT_OBJ_INDEX_MASK) + colorPasses(PASS_INT_OBJ_INDEX_MASK_SHADOW);
 	}
 
 	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK))
 	{
-        if(sp.material->getAbsMaterialIndex() == colorPasses.get_pass_mask_mat_index()) colorPasses(PASS_INT_MAT_INDEX_MASK) = colorA_t(1.f);
+		if(sp.material->getAbsMaterialIndex() == colorPasses.get_pass_mask_mat_index()) colorPasses(PASS_INT_MAT_INDEX_MASK) = colorA_t(1.f);
 	}
 
 	if(colorPasses.enabled(PASS_INT_MAT_INDEX_MASK_ALL))
 	{
-        colorPasses(PASS_INT_MAT_INDEX_MASK_ALL) = colorPasses(PASS_INT_MAT_INDEX_MASK) + colorPasses(PASS_INT_MAT_INDEX_MASK_SHADOW);
+		colorPasses(PASS_INT_MAT_INDEX_MASK_ALL) = colorPasses(PASS_INT_MAT_INDEX_MASK) + colorPasses(PASS_INT_MAT_INDEX_MASK_SHADOW);
 	}
 
 	if(colorPasses.enabled(PASS_INT_DEBUG_WIREFRAME))
 	{
 		colorA_t wireframe_color = colorA_t(0.f, 0.f, 0.f, 0.f);
 		sp.material->applyWireFrame(wireframe_color, 1.f, sp);
-        colorPasses(PASS_INT_DEBUG_WIREFRAME) = wireframe_color;
+		colorPasses(PASS_INT_DEBUG_WIREFRAME) = wireframe_color;
 	}
 
 	if(colorPasses.enabled(PASS_INT_DEBUG_SAMPLING_FACTOR))
 	{
-        colorPasses(PASS_INT_DEBUG_SAMPLING_FACTOR) = colorA_t(sp.material->getSamplingFactor());
+		colorPasses(PASS_INT_DEBUG_SAMPLING_FACTOR) = colorA_t(sp.material->getSamplingFactor());
 	}
 
 	if(colorPasses.enabled(PASS_INT_DEBUG_DP_LENGTHS) || colorPasses.enabled(PASS_INT_DEBUG_DPDX) || colorPasses.enabled(PASS_INT_DEBUG_DPDY) || colorPasses.enabled(PASS_INT_DEBUG_DPDXY) || colorPasses.enabled(PASS_INT_DEBUG_DUDX_DVDX) || colorPasses.enabled(PASS_INT_DEBUG_DUDY_DVDY) || colorPasses.enabled(PASS_INT_DEBUG_DUDXY_DVDXY))
@@ -608,7 +608,7 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 		{
 			colorPasses.probe_set(PASS_INT_DEBUG_DPDX, colorA_t((spDiff.dPdx.x + 1.f) * .5f, (spDiff.dPdx.y + 1.f) * .5f, (spDiff.dPdx.z + 1.f) * .5f, 1.f));
 		}
-		
+
 		if(colorPasses.enabled(PASS_INT_DEBUG_DPDY))
 		{
 			colorPasses.probe_set(PASS_INT_DEBUG_DPDY, colorA_t((spDiff.dPdy.x + 1.f) * .5f, (spDiff.dPdy.y + 1.f) * .5f, (spDiff.dPdy.z + 1.f) * .5f, 1.f));
@@ -616,7 +616,7 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 
 		if(colorPasses.enabled(PASS_INT_DEBUG_DPDXY))
 		{
-			colorPasses.probe_set(PASS_INT_DEBUG_DPDXY, colorA_t((spDiff.dPdx.x+spDiff.dPdy.x + 1.f) * .5f, (spDiff.dPdx.y+spDiff.dPdy.y + 1.f) * .5f, (spDiff.dPdx.z+spDiff.dPdy.z + 1.f) * .5f, 1.f));
+			colorPasses.probe_set(PASS_INT_DEBUG_DPDXY, colorA_t((spDiff.dPdx.x + spDiff.dPdy.x + 1.f) * .5f, (spDiff.dPdx.y + spDiff.dPdy.y + 1.f) * .5f, (spDiff.dPdx.z + spDiff.dPdy.z + 1.f) * .5f, 1.f));
 		}
 
 		if(colorPasses.enabled(PASS_INT_DEBUG_DUDX_DVDX) || colorPasses.enabled(PASS_INT_DEBUG_DUDY_DVDY) || colorPasses.enabled(PASS_INT_DEBUG_DUDXY_DVDXY))
@@ -625,7 +625,7 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 			float dUdx = 0.f, dVdx = 0.f;
 			float dUdy = 0.f, dVdy = 0.f;
 			spDiff.getUVdifferentials(dUdx, dVdx, dUdy, dVdy);
-			
+
 			if(colorPasses.enabled(PASS_INT_DEBUG_DUDX_DVDX))
 			{
 				colorPasses.probe_set(PASS_INT_DEBUG_DUDX_DVDX, colorA_t((dUdx + 1.f) * .5f, (dVdx + 1.f) * .5f, 0.f, 1.f));
@@ -638,7 +638,7 @@ void tiledIntegrator_t::generateCommonRenderPasses(colorPasses_t &colorPasses, r
 
 			if(colorPasses.enabled(PASS_INT_DEBUG_DUDXY_DVDXY))
 			{
-				colorPasses.probe_set(PASS_INT_DEBUG_DUDXY_DVDXY, colorA_t((dUdx+dUdy + 1.f) * .5f, (dVdx+dVdy + 1.f) * .5f, 0.f, 1.f));
+				colorPasses.probe_set(PASS_INT_DEBUG_DUDXY_DVDXY, colorA_t((dUdx + dUdy + 1.f) * .5f, (dVdx + dVdy + 1.f) * .5f, 0.f, 1.f));
 			}
 
 		}

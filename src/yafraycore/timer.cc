@@ -1,9 +1,9 @@
 #include <yafraycore/timer.h>
 
 #ifdef _WIN32
-	#include <windows.h>
+#include <windows.h>
 #else
-	#include <unistd.h>
+#include <unistd.h>
 #endif
 
 __BEGIN_YAFRAY
@@ -19,8 +19,8 @@ bool timer_t::addEvent(const std::string &name)
 
 bool timer_t::start(const std::string &name)
 {
-	auto i=events.find(name);
-	if(i==events.end()) return false;
+	auto i = events.find(name);
+	if(i == events.end()) return false;
 #ifdef WIN32
 	i->second.start = clock();
 #else
@@ -33,8 +33,8 @@ bool timer_t::start(const std::string &name)
 
 bool timer_t::stop(const std::string &name)
 {
-	auto i=events.find(name);
-	if(i==events.end()) return false;
+	auto i = events.find(name);
+	if(i == events.end()) return false;
 	if(!(i->second.started))return false;
 #ifdef WIN32
 	i->second.finish = clock();
@@ -48,8 +48,8 @@ bool timer_t::stop(const std::string &name)
 
 bool timer_t::reset(const std::string &name)
 {
-	auto i=events.find(name);
-	if (i==events.end()) return false;
+	auto i = events.find(name);
+	if(i == events.end()) return false;
 	i->second.started = false;
 	i->second.stopped = false;
 	return true;
@@ -57,33 +57,33 @@ bool timer_t::reset(const std::string &name)
 
 double timer_t::getTime(const std::string &name)
 {
-	auto i=events.find(name);
-	if (i==events.end()) return -1;
+	auto i = events.find(name);
+	if(i == events.end()) return -1;
 #ifdef WIN32
-	else return ((double) (i->second.finish - i->second.start) ) / CLOCKS_PER_SEC;
+	else return ((double)(i->second.finish - i->second.start)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
 		const tdata_t &td = i->second;
-		return (td.tvf.tv_sec - td.tvs.tv_sec) + double(td.tvf.tv_usec - td.tvs.tv_usec)/1.0e6;
+		return (td.tvf.tv_sec - td.tvs.tv_sec) + double(td.tvf.tv_usec - td.tvs.tv_usec) / 1.0e6;
 	}
 #endif
 }
 
 double timer_t::getTimeNotStopping(const std::string &name)
 {
-	auto i=events.find(name);
-	if (i==events.end()) return -1;
+	auto i = events.find(name);
+	if(i == events.end()) return -1;
 #ifdef WIN32
-	else return ((double) (clock() - i->second.start) ) / CLOCKS_PER_SEC;
+	else return ((double)(clock() - i->second.start)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
 		timeval now;
 		struct timezone tz;
-		gettimeofday(&now, &tz);		
+		gettimeofday(&now, &tz);
 		const tdata_t &td = i->second;
-		return (now.tv_sec - td.tvs.tv_sec) + double(now.tv_usec - td.tvs.tv_usec)/1.0e6;
+		return (now.tv_sec - td.tvs.tv_sec) + double(now.tv_usec - td.tvs.tv_usec) / 1.0e6;
 	}
 #endif
 }
@@ -91,8 +91,8 @@ double timer_t::getTimeNotStopping(const std::string &name)
 
 bool timer_t::includes(const std::string &label)const
 {
-	auto i=events.find(label);
-	return (i==events.end()) ? false : true;
+	auto i = events.find(label);
+	return (i == events.end()) ? false : true;
 }
 
 void timer_t::splitTime(double t, double *secs, int *mins, int *hours, int *days)
@@ -103,19 +103,19 @@ void timer_t::splitTime(double t, double *secs, int *mins, int *hours, int *days
 	if(days)
 	{
 		*days = d;
-		times -= d*86400;
+		times -= d * 86400;
 	}
 	int h = times / 3600;
 	if(hours)
 	{
 		*hours = h;
-		times -= h*3600;
+		times -= h * 3600;
 	}
 	int m = times / 60;
 	if(mins)
 	{
 		*mins = m;
-		times -= m*60;
+		times -= m * 60;
 	}
 	*secs = t - double(s - times);
 }

@@ -145,11 +145,11 @@ AnimWorking::~AnimWorking()
 
 void AnimWorking::paintEvent(QPaintEvent *e)
 {
-	if (m_timerId < 0)
+	if(m_timerId < 0)
 		m_timerId = startTimer(40);
 
 	QPainter p(this);
-	p.drawPixmap(0,0, mSprites[mActFrame]);
+	p.drawPixmap(0, 0, mSprites[mActFrame]);
 }
 
 void AnimWorking::timerEvent(QTimerEvent *e)
@@ -158,7 +158,7 @@ void AnimWorking::timerEvent(QTimerEvent *e)
 	else mActFrame = 0;
 	update();
 
-	if (!isVisible())
+	if(!isVisible())
 	{
 		killTimer(m_timerId);
 		m_timerId = -1;

@@ -37,13 +37,13 @@ class xmlParser_t
 {
 	public:
 		xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma);
-		void pushState(startElement_cb start, endElement_cb end, void *userdata=nullptr);
+		void pushState(startElement_cb start, endElement_cb end, void *userdata = nullptr);
 		void popState();
-		void startElement(const char *element, const char **attrs){ ++level; if(current) current->start(*this, element, attrs); }
+		void startElement(const char *element, const char **attrs) { ++level; if(current) current->start(*this, element, attrs); }
 		void endElement(const char *element)	{ if(current) current->end(*this, element); --level; }
-		void* stateData(){ return current->userdata; }
-		void setParam(const std::string &name, parameter_t &param){ (*cparams)[name] = param; }
-		int currLevel() const{ return level; }
+		void *stateData() { return current->userdata; }
+		void setParam(const std::string &name, parameter_t &param) { (*cparams)[name] = param; }
+		int currLevel() const { return level; }
 		int stateLevel() const { return current ? current->level : -1; }
 		colorSpaces_t getInputColorSpace() const { return inputColorSpace; }
 		float getInputGamma() const { return inputGamma; }
@@ -53,7 +53,7 @@ class xmlParser_t
 		std::string getLastSection() const { return current->last_section; }
 		std::string getLastElementName() const { return current->last_element; }
 		std::string getLastElementNameAttrs() const { return current->last_element_attrs; }
-		
+
 		renderEnvironment_t *env;
 		scene_t *scene;
 		paraMap_t params, &render;

@@ -18,7 +18,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 #ifndef Y_COLOR_CONSOLE_H
 #define Y_COLOR_CONSOLE_H
 
@@ -59,33 +59,33 @@ struct YAFRAYCORE_EXPORT setColor
 	setColor() : fgCol(Default), bgCol(Default), intense(false) {}
 	setColor(yColor fgColor, yColor bgColor, bool intensecolor = false)
 	{
-		#ifdef _WIN32
+#ifdef _WIN32
 		fgCol = fgColor;
 		bgCol = (bgColor != Default) ? bgColor << 4 : Default;
-		#else
+#else
 		fgCol = (fgColor != Default) ? fgColor + 30 : Default;
 		bgCol = (bgColor != Default) ? bgColor + 40 : Default;
-		#endif
+#endif
 		intense = intensecolor;
 	}
 	setColor(yColor fgColor, bool intensecolor = false)
 	{
-		#ifdef _WIN32
+#ifdef _WIN32
 		fgCol = fgColor;
-		#else
+#else
 		fgCol = (fgColor != Default) ? fgColor + 30 : Default;
-		#endif
+#endif
 		bgCol = Default;
 		intense = intensecolor;
 	}
-	
+
 	yColor fgCol;
 	yColor bgCol;
 	bool intense;
 };
 
 
-YAFRAYCORE_EXPORT std::ostream &operator<<(std::ostream& o, const setColor& c);
+YAFRAYCORE_EXPORT std::ostream &operator<<(std::ostream &o, const setColor &c);
 
 __END_YAFRAY
 

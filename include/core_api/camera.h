@@ -40,8 +40,8 @@ class YAFRAYCORE_EXPORT camera_t
 {
 	public:
 		camera_t() { }
-        camera_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up, int _resx, int _resy, float aspect, float const near_clip_distance, float const far_clip_distance) :
-            position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (float)resy / (float)resx),camera_name(""), view_name("")
+		camera_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up, int _resx, int _resy, float aspect, float const near_clip_distance, float const far_clip_distance) :
+			position(pos), resx(_resx), resy(_resy), aspect_ratio(aspect * (float)resy / (float)resx), camera_name(""), view_name("")
 		{
 			// Calculate and store camera axis
 			camY = up - position;
@@ -52,16 +52,16 @@ class YAFRAYCORE_EXPORT camera_t
 			camY.normalize();
 			camZ.normalize();
 
-            near_plane.n = camZ;
-            near_plane.p = vector3d_t(position) + camZ * near_clip_distance;
+			near_plane.n = camZ;
+			near_plane.p = vector3d_t(position) + camZ * near_clip_distance;
 
-            far_plane.n = camZ;
-            far_plane.p = vector3d_t(position) + camZ * far_clip_distance;
+			far_plane.n = camZ;
+			far_plane.p = vector3d_t(position) + camZ * far_clip_distance;
 
-            nearClip = near_clip_distance;
-            farClip = far_clip_distance;
+			nearClip = near_clip_distance;
+			farClip = far_clip_distance;
 		}
-        virtual ~camera_t() {}
+		virtual ~camera_t() {}
 		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz) = 0; //!< Set camera axis
 		/*! Shoot a new ray from the camera gived image pixel coordinates px,py and lense dof effect */
 		virtual ray_t shootRay(float px, float py, float u, float v, float &wt) const = 0; //!< Shoot a new ray from the camera.
@@ -99,8 +99,8 @@ class YAFRAYCORE_EXPORT camera_t
 		std::string camera_name;       //<! Camera name
 		std::string view_name;       //<! View name for file saving and Blender MultiView environment
 
-        Plane near_plane, far_plane;
-        float nearClip, farClip;
+		Plane near_plane, far_plane;
+		float nearClip, farClip;
 };
 
 __END_YAFRAY

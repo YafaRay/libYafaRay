@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * 			color_ramp.cc: Color ramp type and operators implementation 
+ * 			color_ramp.cc: Color ramp type and operators implementation
  *      This is part of the yafray package
  *      Copyright (C) 2016  David Bluecame
  *
@@ -17,7 +17,7 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *      
+ *
  */
 #include <core_api/color.h>
 #include <core_api/color_ramp.h>
@@ -28,17 +28,17 @@
 
 __BEGIN_YAFRAY
 
-color_ramp_t::color_ramp_t(int mode, int interpolation, int hue_interpolation):ramp_mode(mode), ramp_interpolation(interpolation), ramp_hue_interpolation(hue_interpolation) {}
+color_ramp_t::color_ramp_t(int mode, int interpolation, int hue_interpolation): ramp_mode(mode), ramp_interpolation(interpolation), ramp_hue_interpolation(hue_interpolation) {}
 
 color_ramp_t::color_ramp_t(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr)
 {
-	Y_DEBUG << "modeStr='"<<modeStr<<"' interpolationStr='"<<interpolationStr<<"' hue_interpolationStr='"<<hue_interpolationStr<<"'"<<yendl;
+	Y_DEBUG << "modeStr='" << modeStr << "' interpolationStr='" << interpolationStr << "' hue_interpolationStr='" << hue_interpolationStr << "'" << yendl;
 	if(modeStr == "RGB" || modeStr == "rgb") ramp_mode = C_RAMP_RGB;
 	else if(modeStr == "HSV" || modeStr == "hsv") ramp_mode = C_RAMP_HSV;
 	else if(modeStr == "HSL" || modeStr == "hsl") ramp_mode = C_RAMP_HSL;
 	else ramp_mode = C_RAMP_RGB;
-	
-	if(interpolationStr == "CONSTANT" || interpolationStr == "constant" ) ramp_interpolation = C_RAMP_CONSTANT;
+
+	if(interpolationStr == "CONSTANT" || interpolationStr == "constant") ramp_interpolation = C_RAMP_CONSTANT;
 	else ramp_interpolation = C_RAMP_LINEAR;	//Other modes not supported yet
 
 	if(hue_interpolationStr == "NEAR" || hue_interpolationStr == "near") ramp_hue_interpolation = C_RAMP_HUE_NEAR;
@@ -48,21 +48,21 @@ color_ramp_t::color_ramp_t(std::string modeStr, std::string interpolationStr, st
 	else ramp_hue_interpolation = C_RAMP_HUE_NEAR;
 }
 
-void color_ramp_t::add_item(const colorA_t & color, float position)
+void color_ramp_t::add_item(const colorA_t &color, float position)
 {
 	ramp.push_back(color_ramp_item_t(color, position));
 	std::sort(ramp.begin(), ramp.end());
 }
 
-colorA_t interpolation_linear(float pos, const colorA_t & col1, float pos1, const colorA_t & col2, float pos2)
+colorA_t interpolation_linear(float pos, const colorA_t &col1, float pos1, const colorA_t &col2, float pos2)
 {
 	if(pos == pos1 || pos1 == pos2) return col1;
 	else if(pos == pos2) return col2;
-	
+
 	colorA_t diffCol21 = col2 - col1;
 	float diffPos21 = pos2 - pos1;
 	float diffPos = pos - pos1;
-	
+
 	return col1 + ((diffPos / diffPos21) * diffCol21);
 }
 
@@ -70,11 +70,11 @@ float interpolation_linear(float pos, float val1, float pos1, float val2, float 
 {
 	if(pos == pos1 || pos1 == pos2) return val1;
 	else if(pos == pos2) return val2;
-	
+
 	float diffVal21 = val2 - val1;
 	float diffPos21 = pos2 - pos1;
 	float diffPos = pos - pos1;
-	
+
 	return val1 + ((diffPos / diffPos21) * diffVal21);
 }
 
@@ -87,7 +87,7 @@ colorA_t color_ramp_t::get_color_interpolated(float pos) const
 	{
 		auto item_current = std::lower_bound(ramp.begin(), ramp.end(), pos);
 		auto item_previous = std::prev(item_current);
-		
+
 		if(ramp_mode == C_RAMP_RGB)
 		{
 			if(ramp_interpolation == C_RAMP_CONSTANT) result = item_current->color;
@@ -97,16 +97,16 @@ colorA_t color_ramp_t::get_color_interpolated(float pos) const
 		{
 			float pos1 = item_current->position;
 			float pos2 = item_previous->position;
-			float h1=0.f, s1=0.f, v1=0.f, a1=0.f;
-			float h2=0.f, s2=0.f, v2=0.f, a2=0.f;
-			float h=0.f, s=0.f, v=0.f, a=0.f;
-			
+			float h1 = 0.f, s1 = 0.f, v1 = 0.f, a1 = 0.f;
+			float h2 = 0.f, s2 = 0.f, v2 = 0.f, a2 = 0.f;
+			float h = 0.f, s = 0.f, v = 0.f, a = 0.f;
+
 			item_current->color.rgb_to_hsv(h1, s1, v1);
 			a1 = item_current->color.A;
-			
+
 			item_previous->color.rgb_to_hsv(h2, s2, v2);
 			a2 = item_previous->color.A;
-			
+
 			s = interpolation_linear(pos, s1, pos1, s2, pos2);
 			v = interpolation_linear(pos, v1, pos1, v2, pos2);
 			a = interpolation_linear(pos, a1, pos1, a2, pos2);
@@ -129,16 +129,16 @@ colorA_t color_ramp_t::get_color_interpolated(float pos) const
 		{
 			float pos1 = item_current->position;
 			float pos2 = item_previous->position;
-			float h1=0.f, s1=0.f, l1=0.f, a1=0.f;
-			float h2=0.f, s2=0.f, l2=0.f, a2=0.f;
-			float h=0.f, s=0.f, l=0.f, a=0.f;
-			
+			float h1 = 0.f, s1 = 0.f, l1 = 0.f, a1 = 0.f;
+			float h2 = 0.f, s2 = 0.f, l2 = 0.f, a2 = 0.f;
+			float h = 0.f, s = 0.f, l = 0.f, a = 0.f;
+
 			item_current->color.rgb_to_hsl(h1, s1, l1);
 			a1 = item_current->color.A;
-			
+
 			item_previous->color.rgb_to_hsl(h2, s2, l2);
 			a2 = item_previous->color.A;
-			
+
 			s = interpolation_linear(pos, s1, pos1, s2, pos2);
 			l = interpolation_linear(pos, l1, pos1, l2, pos2);
 			a = interpolation_linear(pos, a1, pos1, a2, pos2);

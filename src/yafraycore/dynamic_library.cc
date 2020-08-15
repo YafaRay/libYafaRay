@@ -1,11 +1,11 @@
 #include <core_api/dynamic_library.h>
 
 #ifndef WIN32
-	#include <dirent.h>
-	#include <dlfcn.h>
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <unistd.h>
+#include <dirent.h>
+#include <dlfcn.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 #include <iostream>
@@ -20,7 +20,8 @@ void dynamicLoadedLibrary_t::open(const std::string &lib)
 {
 	handle = LoadLibrary(lib.c_str());
 
-	if (handle == nullptr) {
+	if(handle == nullptr)
+	{
 		DWORD err_code = GetLastError();
 		const size_t err_buf_size = 64000;
 		char err_buf[err_buf_size] = {0};
@@ -28,13 +29,14 @@ void dynamicLoadedLibrary_t::open(const std::string &lib)
 
 		cerr << "failed to open " << lib << ", LoadLibrary error: ";
 		cerr << err_buf <<  " (" << err_code << ")" << endl;
-	} else
-		refcount=new int(1);
+	}
+	else
+		refcount = new int(1);
 }
 
 void dynamicLoadedLibrary_t::close()
 {
-	if (handle != nullptr) 
+	if(handle != nullptr)
 	{
 		FreeLibrary(handle);
 		handle = nullptr;
@@ -42,16 +44,16 @@ void dynamicLoadedLibrary_t::close()
 	}
 }
 
-void * dynamicLoadedLibrary_t::getSymbol(const char *name)
+void *dynamicLoadedLibrary_t::getSymbol(const char *name)
 {
-	if (handle != nullptr) 
+	if(handle != nullptr)
 	{
-		void *func = (void*)GetProcAddress(handle, name); //added explicit cast to enable mingw32 compilation (DarkTide)
-		if (func == nullptr)
+		void *func = (void *)GetProcAddress(handle, name); //added explicit cast to enable mingw32 compilation (DarkTide)
+		if(func == nullptr)
 			cerr << "GetProcAddress error: " << GetLastError() << endl;
 		return func;
-	} 
-	else 
+	}
+	else
 	{
 		return nullptr;
 	}
@@ -61,16 +63,16 @@ void * dynamicLoadedLibrary_t::getSymbol(const char *name)
 
 void dynamicLoadedLibrary_t::open(const std::string &lib)
 {
-	handle = dlopen(lib.c_str(),RTLD_NOW);
-	if (handle == nullptr) 
+	handle = dlopen(lib.c_str(), RTLD_NOW);
+	if(handle == nullptr)
 		cerr << "dlerror: " << dlerror() << endl;
 	else
-		refcount=new int(1);
+		refcount = new int(1);
 }
 
 void dynamicLoadedLibrary_t::close()
 {
-	if (handle != nullptr) 
+	if(handle != nullptr)
 	{
 		dlclose(handle);
 		handle = nullptr;
@@ -78,16 +80,16 @@ void dynamicLoadedLibrary_t::close()
 	}
 }
 
-void * dynamicLoadedLibrary_t::getSymbol(const char *name)
+void *dynamicLoadedLibrary_t::getSymbol(const char *name)
 {
-	if (handle != nullptr) 
+	if(handle != nullptr)
 	{
 		void *func = dlsym(handle, name);
-		if (func == nullptr) 
-			cerr<<"dlerror: "<<dlerror()<<endl;
+		if(func == nullptr)
+			cerr << "dlerror: " << dlerror() << endl;
 		return func;
-	} 
-	else 
+	}
+	else
 		return nullptr;
 }
 
@@ -100,22 +102,22 @@ bool dynamicLoadedLibrary_t::isOpen()
 
 dynamicLoadedLibrary_t::dynamicLoadedLibrary_t()
 {
-  handle = nullptr;
+	handle = nullptr;
 }
 
 dynamicLoadedLibrary_t::dynamicLoadedLibrary_t(const std::string &library)
-  : handle(nullptr)
+	: handle(nullptr)
 {
-  open(library);
+	open(library);
 }
 
 dynamicLoadedLibrary_t::dynamicLoadedLibrary_t(const dynamicLoadedLibrary_t &src)
 {
-  handle = src.handle;
-  if (isOpen())
+	handle = src.handle;
+	if(isOpen())
 	{
-		refcount=src.refcount;
-    addReference();
+		refcount = src.refcount;
+		addReference();
 	}
 }
 
@@ -126,7 +128,7 @@ dynamicLoadedLibrary_t::~dynamicLoadedLibrary_t()
 		removeReference();
 		if(!isUsed())
 			close();
-  }
+	}
 }
 
 __END_YAFRAY

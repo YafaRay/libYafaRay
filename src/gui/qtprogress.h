@@ -28,17 +28,17 @@ class MainWindow;
 
 class QtProgress : public yafaray::ConsoleProgressBar_t
 {
-public:
-	QtProgress(MainWindow *window, int cwidth = 80);
-	virtual ~QtProgress();
-	virtual void init(int totalSteps);
-	virtual void update(int steps=1);
-	virtual void setTag(const char *tag);
-	virtual void done();
-private:
-	MainWindow *m_win;
-	int m_currentStep;
-	int m_totalSteps;
+	public:
+		QtProgress(MainWindow *window, int cwidth = 80);
+		virtual ~QtProgress();
+		virtual void init(int totalSteps);
+		virtual void update(int steps = 1);
+		virtual void setTag(const char *tag);
+		virtual void done();
+	private:
+		MainWindow *m_win;
+		int m_currentStep;
+		int m_totalSteps;
 };
 
 #endif

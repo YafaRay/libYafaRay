@@ -29,10 +29,10 @@ __BEGIN_YAFRAY
 // --  renderPasses_t  -- //
 ////////////////////////////
 
-renderPasses_t::renderPasses_t():indexExtPasses(std::vector<int>(PASS_EXT_TOTAL_PASSES, -1)), indexIntPasses(std::vector<int>(PASS_INT_TOTAL_PASSES, -1)) //Creation of the external and internal passes indexes, initially all -1 (disabled)
-{ 
+renderPasses_t::renderPasses_t(): indexExtPasses(std::vector<int>(PASS_EXT_TOTAL_PASSES, -1)), indexIntPasses(std::vector<int>(PASS_INT_TOTAL_PASSES, -1)) //Creation of the external and internal passes indexes, initially all -1 (disabled)
+{
 	generate_pass_maps();
-	
+
 	extPass_add("Combined", "combined");	//by default we will have an external/internal Combined pass
 }
 
@@ -54,7 +54,7 @@ int renderPasses_t::intPassesSize() const
 void renderPasses_t::generate_pass_maps()
 {
 	//External Render passes - mapping String and External Pass Type
-	//IMPORTANT: the external strings MUST MATCH the pass property names in Blender. These must also match the property names in Blender-Exporter without the "pass_" prefix. 
+	//IMPORTANT: the external strings MUST MATCH the pass property names in Blender. These must also match the property names in Blender-Exporter without the "pass_" prefix.
 	extPassMapStringInt["Combined"] = PASS_EXT_COMBINED;
 	extPassMapStringInt["Depth"] = PASS_EXT_Z_DEPTH;	//From here, specific ext.passes for Blender Exporter
 	extPassMapStringInt["Vector"] = PASS_EXT_VECTOR;
@@ -117,7 +117,7 @@ void renderPasses_t::generate_pass_maps()
 	extPassMapStringInt["RenderPass_30"] = PASS_EXT_30;
 	extPassMapStringInt["RenderPass_31"] = PASS_EXT_31;
 	extPassMapStringInt["RenderPass_32"] = PASS_EXT_32;
-	
+
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = extPassMapStringInt.begin(); it != extPassMapStringInt.end(); ++it)
 	{
@@ -200,7 +200,7 @@ void renderPasses_t::generate_pass_maps()
 	intPassMapStringInt["debug-dudx-dvdx"] = PASS_INT_DEBUG_DUDX_DVDX;
 	intPassMapStringInt["debug-dudy-dvdy"] = PASS_INT_DEBUG_DUDY_DVDY;
 	intPassMapStringInt["debug-dudxy-dvdxy"] = PASS_INT_DEBUG_DUDXY_DVDXY;
-	
+
 	//Generation of reverse map (pass type -> pass_string)
 	for(auto it = intPassMapStringInt.begin(); it != intPassMapStringInt.end(); ++it)
 	{
@@ -208,16 +208,16 @@ void renderPasses_t::generate_pass_maps()
 	}
 }
 
-void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::string& sInternalPass)
+void renderPasses_t::extPass_add(const std::string &sExternalPass, const std::string &sInternalPass)
 {
-	extPassTypes_t extPassType = extPassTypeFromString(sExternalPass);	
+	extPassTypes_t extPassType = extPassTypeFromString(sExternalPass);
 	if(extPassType == PASS_EXT_DISABLED)
 	{
 		Y_ERROR << "Render Passes: error creating external pass \"" << sExternalPass << "\" (linked to internal pass \"" << sInternalPass << "\")" << yendl;
 		return;
 	}
-	
-	intPassTypes_t intPassType = intPassTypeFromString(sInternalPass);	
+
+	intPassTypes_t intPassType = intPassTypeFromString(sInternalPass);
 	if(intPassType == PASS_INT_DISABLED)
 	{
 		Y_ERROR << "Render Passes: error creating internal pass \"" << sInternalPass << "\" (linked to external pass \"" << sExternalPass << "\")" << yendl;
@@ -229,34 +229,34 @@ void renderPasses_t::extPass_add(const std::string& sExternalPass, const std::st
 		//Y_VERBOSE << "Render Passes: external pass type \"" << sExternalPass << "\" already exists, skipping." << yendl;
 		return;
 	}
-	
+
 	extPasses.push_back(extPass_t(extPassType, intPassType));
-	indexExtPasses.at(extPassType) = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) index of the external pass actually using that index 
+	indexExtPasses.at(extPassType) = extPasses.end() - extPasses.begin() - 1;	//Each external index entry represents one of the possible external passes types and will have the (sequence) index of the external pass actually using that index
 
 	if(sExternalPass != "Combined") Y_INFO << "Render Passes: added pass \"" << sExternalPass << "\" [" << extPassType << "]  (internal pass: \"" << sInternalPass << "\" [" << intPassType << "])" << yendl;
-    
-    intPass_add(intPassType);
+
+	intPass_add(intPassType);
 }
 
 void renderPasses_t::auxPass_add(intPassTypes_t intPassType)
-{	
+{
 	if(intPassType == PASS_INT_DISABLED) return;
 
 	for(int idx = 0; idx < extPassesSize(); ++idx)
 	{
 		if(intPassTypeFromExtPassIndex(idx) == intPassType) return;		//If the internal pass is already rendered into a certain external pass, the auxiliary pass is not necessary.
 	}
-	
+
 	for(int idx = 0; idx < auxPassesSize(); ++idx)
 	{
 		if(intPassTypeFromAuxPassIndex(idx) == intPassType) return;		//If the auxiliary pass already exists, do nothing.
 	}
 
 	auxPasses.push_back(auxPass_t(intPassType));
-    
-    intPass_add(intPassType);
-    
-    Y_VERBOSE << "Render Passes: auxiliary Render pass generated for internal pass type: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
+
+	intPass_add(intPassType);
+
+	Y_VERBOSE << "Render Passes: auxiliary Render pass generated for internal pass type: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
 
 void renderPasses_t::intPass_add(intPassTypes_t intPassType)
@@ -269,16 +269,16 @@ void renderPasses_t::intPass_add(intPassTypes_t intPassType)
 	}
 	intPasses.push_back(intPassType);
 	//std::sort(intPasses.begin(), intPasses.end());
-	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) index of the internal pass actually using that index 
-	
+	indexIntPasses.at(intPassType) = intPasses.end() - intPasses.begin() - 1;	//Each internal index entry represents one of the possible internal passes types and will have the (sequence) index of the internal pass actually using that index
+
 	if(intPassType != PASS_INT_COMBINED) Y_VERBOSE << "Render Passes: created internal pass: \"" << intPassTypeStringFromType(intPassType) << "\" [" << intPassType << "]" << yendl;
 }
 
 void renderPasses_t::auxPasses_generate()
 {
 	auxPass_add(PASS_INT_DEBUG_SAMPLING_FACTOR);	//This auxiliary pass will always be needed for material-specific number of samples calculation
-	
-	for(size_t idx=1; idx < intPasses.size(); ++idx)
+
+	for(size_t idx = 1; idx < intPasses.size(); ++idx)
 	{
 		//If any internal pass needs an auxiliary internal pass and/or auxiliary Render pass, enable also the auxiliary passes.
 		switch(intPasses.at(idx))
@@ -288,7 +288,7 @@ void renderPasses_t::auxPasses_generate()
 				intPass_add(PASS_INT_GLOSSY);
 				intPass_add(PASS_INT_GLOSSY_INDIRECT);
 				break;
-				
+
 			case PASS_INT_REFRACT_ALL:
 				intPass_add(PASS_INT_REFRACT_PERFECT);
 				intPass_add(PASS_INT_TRANS);
@@ -309,12 +309,12 @@ void renderPasses_t::auxPasses_generate()
 				intPass_add(PASS_INT_MAT_INDEX_MASK);
 				intPass_add(PASS_INT_MAT_INDEX_MASK_SHADOW);
 				break;
-			
+
 			case PASS_INT_DEBUG_FACES_EDGES:
 				auxPass_add(PASS_INT_NORMAL_GEOM);
 				auxPass_add(PASS_INT_Z_DEPTH_NORM);
 				break;
-			
+
 			case PASS_INT_DEBUG_OBJECTS_EDGES:
 				auxPass_add(PASS_INT_NORMAL_SMOOTH);
 				auxPass_add(PASS_INT_Z_DEPTH_NORM);
@@ -329,10 +329,10 @@ void renderPasses_t::auxPasses_generate()
 		}
 	}
 }
-        
+
 extPassTypes_t renderPasses_t::extPassTypeFromIndex(int extPassIndex) const { return extPasses.at(extPassIndex).extPassType; }
 intPassTypes_t renderPasses_t::intPassTypeFromIndex(int intPassIndex) const { return intPasses.at(intPassIndex); }
-	
+
 std::string renderPasses_t::extPassTypeStringFromIndex(int extPassIndex) const
 {
 	auto map_iterator = extPassMapIntString.find(extPasses.at(extPassIndex).extPassType);
@@ -367,19 +367,19 @@ intPassTypes_t renderPasses_t::intPassTypeFromString(std::string intPassTypeStri
 	if(map_iterator == intPassMapStringInt.end()) return PASS_INT_DISABLED;	//PASS_INT_DISABLED is returned if the string cannot be found
 	else return map_iterator->second;
 }
-        
+
 externalPassTileTypes_t renderPasses_t::tileType(int extPassIndex) const { return extPasses.at(extPassIndex).tileType; }
 
 intPassTypes_t renderPasses_t::intPassTypeFromExtPassIndex(int extPassIndex) const
 {
-    if(extPassesSize() > extPassIndex) return extPasses.at(extPassIndex).intPassType;
-    else return PASS_INT_DISABLED;
+	if(extPassesSize() > extPassIndex) return extPasses.at(extPassIndex).intPassType;
+	else return PASS_INT_DISABLED;
 }
 
 intPassTypes_t renderPasses_t::intPassTypeFromAuxPassIndex(int auxPassIndex) const
 {
-    if(auxPassesSize() > auxPassIndex) return auxPasses.at(auxPassIndex).intPassType;
-    else return PASS_INT_DISABLED;
+	if(auxPassesSize() > auxPassIndex) return auxPasses.at(auxPassIndex).intPassType;
+	else return PASS_INT_DISABLED;
 }
 
 int renderPasses_t::extPassIndexFromType(extPassTypes_t extPassType) const
@@ -404,8 +404,8 @@ void renderPasses_t::set_pass_mask_only(bool mask_only) { pass_mask_only = mask_
 ////////////////////////////
 
 extPass_t::extPass_t(extPassTypes_t extPassType, intPassTypes_t intPassType):
-			extPassType(extPassType), intPassType(intPassType)
-{ 
+	extPassType(extPassType), intPassType(intPassType)
+{
 	switch(extPassType)  //These are the tyle types needed for Blender
 	{
 		case PASS_EXT_COMBINED:		tileType = PASS_EXT_TILE_4_RGBA;		break;
@@ -426,8 +426,8 @@ extPass_t::extPass_t(extPassTypes_t extPassType, intPassTypes_t intPassType):
 ////////////////////////////
 
 auxPass_t::auxPass_t(intPassTypes_t intPassType):
-			intPassType(intPassType)
-{ 
+	intPassType(intPassType)
+{
 	//empty
 }
 
@@ -437,7 +437,7 @@ auxPass_t::auxPass_t(intPassTypes_t intPassType):
 // -- colorPasses_t -- //
 /////////////////////////
 
-colorPasses_t::colorPasses_t(const renderPasses_t *renderPasses):passDefinitions(renderPasses)
+colorPasses_t::colorPasses_t(const renderPasses_t *renderPasses): passDefinitions(renderPasses)
 {
 	//for performance, even if we don't actually use all the possible internal passes, we reserve a contiguous memory block
 	colVector.reserve(passDefinitions->intPasses.size());
@@ -446,7 +446,7 @@ colorPasses_t::colorPasses_t(const renderPasses_t *renderPasses):passDefinitions
 		colVector.push_back(init_color(passDefinitions->intPassTypeFromIndex(it - passDefinitions->intPasses.begin())));
 	}
 }
-        
+
 bool colorPasses_t::enabled(intPassTypes_t intPassType) const
 {
 	if(passDefinitions->intPassIndexFromType(intPassType) == -1) return false;
@@ -458,22 +458,22 @@ intPassTypes_t colorPasses_t::intPassTypeFromIndex(int intPassIndex) const
 	return passDefinitions->intPassTypeFromIndex(intPassIndex);
 }
 
-colorA_t& colorPasses_t::color(intPassTypes_t intPassType)
+colorA_t &colorPasses_t::color(intPassTypes_t intPassType)
 {
 	return colVector.at(passDefinitions->intPassIndexFromType(intPassType));
 }
-                
-colorA_t& colorPasses_t::color(int intPassIndex)
+
+colorA_t &colorPasses_t::color(int intPassIndex)
 {
 	return colVector.at(intPassIndex);
 }
-                
-colorA_t& colorPasses_t::operator()(intPassTypes_t intPassType)
+
+colorA_t &colorPasses_t::operator()(intPassTypes_t intPassType)
 {
 	return color(intPassType);
 }
 
-colorA_t& colorPasses_t::operator()(int intPassIndex)
+colorA_t &colorPasses_t::operator()(int intPassIndex)
 {
 	return color(intPassIndex);
 }
@@ -485,7 +485,7 @@ void colorPasses_t::reset_colors()
 		*it = init_color(intPassTypeFromIndex(it - colVector.begin()));
 	}
 }
-        
+
 colorA_t colorPasses_t::init_color(intPassTypes_t intPassType)
 {
 	switch(intPassType)    //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
@@ -499,7 +499,7 @@ colorA_t colorPasses_t::init_color(intPassTypes_t intPassType)
 		case PASS_INT_MAT_INDEX_MASK_SHADOW:
 		case PASS_INT_MAT_INDEX_MASK_ALL: return colorA_t(0.f, 0.f, 0.f, 0.f); break;
 		default: return colorA_t(0.f, 0.f, 0.f, 1.f); break;
-	}            
+	}
 }
 
 void colorPasses_t::multiply_colors(float factor)
@@ -510,61 +510,61 @@ void colorPasses_t::multiply_colors(float factor)
 	}
 }
 
-colorA_t colorPasses_t::probe_set(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const intPassTypes_t &intPassType, const colorA_t &renderedColor, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) = renderedColor;
-	
+
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_set(const intPassTypes_t& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_set(const intPassTypes_t &intPassType, const colorPasses_t &colorPasses, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
 		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
-		colVector.at(intPassIndex) = colorPasses.colVector.at(intPassIndex);	
+		colVector.at(intPassIndex) = colorPasses.colVector.at(intPassIndex);
 		return colorPasses.colVector.at(intPassIndex);
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorPasses_t::probe_add(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const intPassTypes_t &intPassType, const colorA_t &renderedColor, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) += renderedColor;
-	
+
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_add(const intPassTypes_t& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_add(const intPassTypes_t &intPassType, const colorPasses_t &colorPasses, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
 		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
-		colVector.at(intPassIndex) += colorPasses.colVector.at(intPassIndex);	
+		colVector.at(intPassIndex) += colorPasses.colVector.at(intPassIndex);
 		return  colorPasses.colVector.at(intPassIndex);
 	}
 	else return colorA_t(0.f);
 }
 
-colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colorA_t& renderedColor, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const intPassTypes_t &intPassType, const colorA_t &renderedColor, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType)) color(passDefinitions->intPassIndexFromType(intPassType)) *= renderedColor;
-	
+
 	return renderedColor;
 }
 
-colorA_t colorPasses_t::probe_mult(const intPassTypes_t& intPassType, const colorPasses_t& colorPasses, const bool& condition /*= true */)
+colorA_t colorPasses_t::probe_mult(const intPassTypes_t &intPassType, const colorPasses_t &colorPasses, const bool &condition /*= true */)
 {
 	if(condition && enabled(intPassType) && colorPasses.enabled(intPassType))
 	{
 		int intPassIndex = passDefinitions->intPassIndexFromType(intPassType);
-		colVector.at(intPassIndex) *= colorPasses.colVector.at(intPassIndex);	
+		colVector.at(intPassIndex) *= colorPasses.colVector.at(intPassIndex);
 		return colorPasses.colVector.at(intPassIndex);
 	}
 	else return colorA_t(0.f);
 }
 
-colorPasses_t & colorPasses_t::operator *= (float f)
+colorPasses_t &colorPasses_t::operator *= (float f)
 {
 	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
@@ -573,7 +573,7 @@ colorPasses_t & colorPasses_t::operator *= (float f)
 	return *this;
 }
 
-colorPasses_t & colorPasses_t::operator *= (const color_t &a)
+colorPasses_t &colorPasses_t::operator *= (const color_t &a)
 {
 	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
@@ -582,7 +582,7 @@ colorPasses_t & colorPasses_t::operator *= (const color_t &a)
 	return *this;
 }
 
-colorPasses_t & colorPasses_t::operator *= (const colorA_t &a)
+colorPasses_t &colorPasses_t::operator *= (const colorA_t &a)
 {
 	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{
@@ -591,7 +591,7 @@ colorPasses_t & colorPasses_t::operator *= (const colorA_t &a)
 	return *this;
 }
 
-colorPasses_t & colorPasses_t::operator += (const colorPasses_t &a)
+colorPasses_t &colorPasses_t::operator += (const colorPasses_t &a)
 {
 	for(auto it = colVector.begin(); it != colVector.end(); ++it)
 	{

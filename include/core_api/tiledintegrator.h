@@ -34,7 +34,7 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		virtual void preRender(); //!< Called before the render starts and after the minDepth and maxDepth are calculated
 		virtual void prePass(int samples, int offset, bool adaptive); //!< Called before the proper rendering of all the tiles starts
 		virtual void preTile(renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID); //!< Called brfore each tile is rendered
-		
+
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
 		virtual bool render(int numView, imageFilm_t *imageFilm);
@@ -42,12 +42,12 @@ class YAFRAYCORE_EXPORT tiledIntegrator_t: public surfaceIntegrator_t
 		virtual bool renderPass(int numView, int samples, int offset, bool adaptive, int AA_pass_number);
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(int numView, renderArea_t &a, int n_samples, int offset, bool adaptive, int threadID, int AA_pass_number = 0);
-		virtual void renderWorker(int mNumView, tiledIntegrator_t *integrator, scene_t *scene, imageFilm_t *imageFilm, threadControl_t *control, int threadID, int samples, int offset=0, bool adaptive=false, int AA_pass=0);
-		
-//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
+		virtual void renderWorker(int mNumView, tiledIntegrator_t *integrator, scene_t *scene, imageFilm_t *imageFilm, threadControl_t *control, int threadID, int samples, int offset = 0, bool adaptive = false, int AA_pass = 0);
+
+		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha) const;
 		virtual void precalcDepths();
 		virtual void generateCommonRenderPasses(colorPasses_t &colorPasses, renderState_t &state, const surfacePoint_t &sp, const diffRay_t &ray) const; //!< Generates render passes common to all integrators
-	
+
 	protected:
 		int AA_samples, AA_passes, AA_inc_samples;
 		float iAA_passes; //!< Inverse of AA_passes used for depth map

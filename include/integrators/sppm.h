@@ -37,7 +37,7 @@ typedef struct _HitPoint // actually are per-pixel variable, use to record the s
 	colorA_t constantRandiance; // record the direct light for this pixel
 
 	bool radiusSetted; // used by IRE to direct whether the initial radius is set or not.
-}HitPoint;
+} HitPoint;
 
 //used for gather ray to collect photon information
 typedef struct _GatherInfo
@@ -46,16 +46,16 @@ typedef struct _GatherInfo
 	colorA_t photonFlux;   // the unnormalized flux of photons that the gather ray collected
 	colorA_t constantRandiance; // the radiance from when the gather ray hit the lightsource
 
-	_GatherInfo(): photonCount(0), photonFlux(0.f),constantRandiance(0.f){}
+	_GatherInfo(): photonCount(0), photonFlux(0.f), constantRandiance(0.f) {}
 
-	_GatherInfo & operator +=(const _GatherInfo &g)
+	_GatherInfo &operator +=(const _GatherInfo &g)
 	{
 		photonCount += g.photonCount;
 		photonFlux += g.photonFlux;
 		constantRandiance += g.constantRandiance;
 		return (*this);
 	}
-}GatherInfo;
+} GatherInfo;
 
 
 class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
@@ -71,16 +71,16 @@ class YAFRAYPLUGIN_EXPORT SPPM: public mcIntegrator_t
 		virtual void prePass(int samples, int offset, bool adaptive);
 		/*! not used now, use traceGatherRay instead*/
 		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
-		static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
+		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePPM();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(renderState_t &state, diffRay_t &ray, HitPoint &hp, colorPasses_t &colorPasses);
-		void photonWorker(photonMap_t * diffuseMap, photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nPhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, random_t & prng);
-		
+		void photonWorker(photonMap_t *diffuseMap, photonMap_t *causticMap, int threadID, const scene_t *scene, unsigned int nPhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, random_t &prng);
+
 	protected:
 		hashGrid_t  photonGrid; // the hashgrid for holding photons
-		photonMap_t diffuseMap,causticMap; // photonmap
+		photonMap_t diffuseMap, causticMap; // photonmap
 		pdf1D_t *lightPowerD;
 		unsigned int nPhotons; //photon number to scatter
 		float dsRadius; // used to do initial radius estimate

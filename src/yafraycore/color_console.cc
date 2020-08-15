@@ -21,12 +21,12 @@
 #include <core_api/color_console.h>
 
 #ifdef _WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
 
 __BEGIN_YAFRAY
 
-std::ostream &operator << (std::ostream& o, const setColor& c)
+std::ostream &operator << (std::ostream &o, const setColor &c)
 {
 #if !defined(_WIN32)
 	o << "\033[" << (int)c.intense;
@@ -35,7 +35,7 @@ std::ostream &operator << (std::ostream& o, const setColor& c)
 	return (o << 'm');
 #else
 	static WORD origAttr = 0;
-	
+
 	if(origAttr == 0)
 	{
 		CONSOLE_SCREEN_BUFFER_INFO info;
@@ -44,10 +44,10 @@ std::ostream &operator << (std::ostream& o, const setColor& c)
 			origAttr = info.wAttributes;
 		}
 	}
-	
-	yColor newFgCol = (c.fgCol != Default) ?  (c.fgCol | ((WORD)c.intense << 3)) : (origAttr & 0x0F);
+
+	yColor newFgCol = (c.fgCol != Default) ? (c.fgCol | ((WORD)c.intense << 3)) : (origAttr & 0x0F);
 	yColor newBgCol = (c.bgCol != Default) ? c.bgCol : (origAttr & 0xF0);
-	
+
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), newBgCol | newFgCol);
 #endif
 	return o;

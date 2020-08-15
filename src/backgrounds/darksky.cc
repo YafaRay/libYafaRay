@@ -31,11 +31,11 @@ class darkSkyBackground_t: public background_t
 {
 	public:
 		darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
-							float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic);
-		virtual color_t operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed=false) const;
-		virtual color_t eval(const ray_t &ray, bool from_postprocessed=false) const;
+		                    float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic);
+		virtual color_t operator()(const ray_t &ray, renderState_t &state, bool from_postprocessed = false) const;
+		virtual color_t eval(const ray_t &ray, bool from_postprocessed = false) const;
 		virtual ~darkSkyBackground_t();
-		static background_t *factory(paraMap_t &,renderEnvironment_t &);
+		static background_t *factory(paraMap_t &, renderEnvironment_t &);
 		bool hasIBL() { return withIBL; }
 		bool shootsCaustic() { return shootCaustic; }
 		color_t getAttenuatedSunColor();
@@ -64,9 +64,9 @@ class darkSkyBackground_t: public background_t
 		bool shootDiffuse;
 };
 
-darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp,float av, float bv, float cv, float dv, float ev,
-										float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic):
-									   power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night), withIBL(ibl), shootCaustic(with_caustic)
+darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float pwr, float skyBright, bool clamp, float av, float bv, float cv, float dv, float ev,
+        float altitude, bool night, float exp, bool genc, ColorSpaces cs, bool ibl, bool with_caustic):
+	power(pwr * skyBright), skyBrightness(skyBright), convert(clamp, genc, cs, exp), alt(altitude), nightSky(night), withIBL(ibl), shootCaustic(with_caustic)
 {
 
 
@@ -78,10 +78,10 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float 
 
 	thetaS = fAcos(sunDir.z);
 
-	act = (nightSky)?"ON":"OFF";
+	act = (nightSky) ? "ON" : "OFF";
 	Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << yendl;
 	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << radToDeg(thetaS) << ")" << yendl;
-	act = (clamp)?"active.":"inactive.";
+	act = (clamp) ? "active." : "inactive.";
 	Y_VERBOSE << "DarkSky: RGB Clamping " << act << yendl;
 	Y_VERBOSE << "DarkSky: Altitude " << alt << yendl;
 
@@ -89,11 +89,11 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float 
 	cosTheta2 = cosThetaS * cosThetaS;
 	sinThetaS = fSin(thetaS);
 
-	theta2 = thetaS*thetaS;
-	theta3 = theta2*thetaS;
+	theta2 = thetaS * thetaS;
+	theta3 = theta2 * thetaS;
 
 	T = turb;
-	T2 = turb*turb;
+	T2 = turb * turb;
 
 	double chi = (0.44444444 - (T / 120.0)) * (M_PI - (2.0 * thetaS));
 
@@ -101,19 +101,19 @@ darkSkyBackground_t::darkSkyBackground_t(const point3d_t dir, float turb, float 
 	zenith_Y *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
 	zenith_x =
-	( 0.00165*theta3 - 0.00374*theta2 + 0.00209*thetaS          ) * T2 +
-	(-0.02902*theta3 + 0.06377*theta2 - 0.03202*thetaS + 0.00394) * T  +
-	( 0.11693*theta3 - 0.21196*theta2 + 0.06052*thetaS + 0.25885);
+	    (0.00165 * theta3 - 0.00374 * theta2 + 0.00209 * thetaS) * T2 +
+	    (-0.02902 * theta3 + 0.06377 * theta2 - 0.03202 * thetaS + 0.00394) * T  +
+	    (0.11693 * theta3 - 0.21196 * theta2 + 0.06052 * thetaS + 0.25885);
 
 	zenith_y =
-	( 0.00275*theta3 - 0.00610*theta2 + 0.00316*thetaS          ) * T2 +
-	(-0.04214*theta3 + 0.08970*theta2 - 0.04153*thetaS + 0.00515) * T  +
-	( 0.15346*theta3 - 0.26756*theta2 + 0.06669*thetaS + 0.26688);
+	    (0.00275 * theta3 - 0.00610 * theta2 + 0.00316 * thetaS) * T2 +
+	    (-0.04214 * theta3 + 0.08970 * theta2 - 0.04153 * thetaS + 0.00515) * T  +
+	    (0.15346 * theta3 - 0.26756 * theta2 + 0.06669 * thetaS + 0.26688);
 
-	perez_Y[0] = (( 0.17872 * T) - 1.46303) * av;
+	perez_Y[0] = ((0.17872 * T) - 1.46303) * av;
 	perez_Y[1] = ((-0.35540 * T) + 0.42749) * bv;
 	perez_Y[2] = ((-0.02266 * T) + 5.32505) * cv;
-	perez_Y[3] = (( 0.12064 * T) - 2.57705) * dv;
+	perez_Y[3] = ((0.12064 * T) - 2.57705) * dv;
 	perez_Y[4] = ((-0.06696 * T) + 0.37027) * ev;
 	perez_Y[5] = prePerez(perez_Y);
 
@@ -140,7 +140,7 @@ color_t darkSkyBackground_t::getAttenuatedSunColor()
 
 	if(nightSky)
 	{
-		lightColor *= color_t(0.8,0.8,1.0);
+		lightColor *= color_t(0.8, 0.8, 1.0);
 	}
 
 	return lightColor;
@@ -151,7 +151,7 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	int L;
 	double uL;
 	double kgLm, kwaLmw, mw;
-    double Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
+	double Rayleigh, Angstrom, Ozone, Gas, Water, m, lm, m1, mB, am, m4;
 	color_t sXYZ(0.0);
 	color_t spdf(0.0);
 
@@ -161,9 +161,9 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	double w = 2.0;
 
 	IrregularCurve ko(koAmplitudes, koWavelengths, 64);
-    IrregularCurve kg(kgAmplitudes, kgWavelengths, 4);
-    IrregularCurve kwa(kwaAmplitudes, kwaWavelengths, 13);
-    RegularCurve sunRadianceCurve(sunRadiance, 380, 750, 38);
+	IrregularCurve kg(kgAmplitudes, kgWavelengths, 4);
+	IrregularCurve kwa(kwaAmplitudes, kwaWavelengths, 13);
+	RegularCurve sunRadianceCurve(sunRadiance, 380, 750, 38);
 
 	m = 1.0 / (cosThetaS + 0.15 * fPow(93.885f - radToDeg(thetaS), -1.253f));
 	mw = m * w;
@@ -174,7 +174,7 @@ color_t darkSkyBackground_t::getSunColorFromSunRad()
 	am = -a * m;
 	m4 = -4.08 * m;
 
-	for(L = 380; L < 750; L+=5)
+	for(L = 380; L < 750; L += 5)
 	{
 		uL = L * 0.001;
 		kgLm = kg(L) * m;
@@ -199,7 +199,7 @@ darkSkyBackground_t::~darkSkyBackground_t()
 
 double darkSkyBackground_t::prePerez(const double *perez)
 {
-	double pNum = ((1 + perez[0] * fExp(perez[1])) * (1 +( perez[2] * fExp(perez[3] * thetaS) ) + (perez[4] * cosTheta2)));
+	double pNum = ((1 + perez[0] * fExp(perez[1])) * (1 + (perez[2] * fExp(perez[3] * thetaS)) + (perez[4] * cosTheta2)));
 	if(pNum == 0.0) return 0.0;
 
 	return 1.0 / pNum;
@@ -207,7 +207,7 @@ double darkSkyBackground_t::prePerez(const double *perez)
 
 double darkSkyBackground_t::PerezFunction(const double *lam, double cosTheta, double gamma, double cosGamma2, double lvz) const
 {
-	double num = ( (1 + lam[0] * fExp(lam[1]/cosTheta) ) * (1 + lam[2] * fExp(lam[3]*gamma)  + lam[4] * cosGamma2));
+	double num = ((1 + lam[0] * fExp(lam[1] / cosTheta)) * (1 + lam[2] * fExp(lam[3] * gamma)  + lam[4] * cosGamma2));
 	return lvz * num * lam[5];
 }
 
@@ -226,21 +226,21 @@ inline color_t darkSkyBackground_t::getSkyCol(const ray_t &ray) const
 	if(cosTheta <= 0.0) cosTheta = 1e-6;
 
 	cosGamma = Iw * sunDir;
-    cosGamma2 = cosGamma * cosGamma;
+	cosGamma2 = cosGamma * cosGamma;
 	gamma = fAcos(cosGamma);
 
 	x = PerezFunction(perez_x, cosTheta, gamma, cosGamma2, zenith_x);
 	y = PerezFunction(perez_y, cosTheta, gamma, cosGamma2, zenith_y);
 	Y = PerezFunction(perez_Y, cosTheta, gamma, cosGamma2, zenith_Y) * 6.66666667e-5;
 
-	skyCol = convert.fromxyY(x,y,Y);
+	skyCol = convert.fromxyY(x, y, Y);
 
-	if(nightSky) skyCol *= color_t(0.05,0.05,0.08);
+	if(nightSky) skyCol *= color_t(0.05, 0.05, 0.08);
 
 	return skyCol * skyBrightness;
 }
 
-color_t darkSkyBackground_t::operator() (const ray_t &ray, renderState_t &state, bool from_postprocessed) const
+color_t darkSkyBackground_t::operator()(const ray_t &ray, renderState_t &state, bool from_postprocessed) const
 {
 	color_t ret = getSkyCol(ray);
 	return ret;
@@ -252,9 +252,9 @@ color_t darkSkyBackground_t::eval(const ray_t &ray, bool from_postprocessed) con
 	return ret;
 }
 
-background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t &render)
+background_t *darkSkyBackground_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	point3d_t dir(1,1,1);
+	point3d_t dir(1, 1, 1);
 	float turb = 4.0;
 	float altitude = 0.0;
 	int bgl_samples = 8;
@@ -319,9 +319,9 @@ background_t *darkSkyBackground_t::factory(paraMap_t &params,renderEnvironment_t
 	}
 
 	darkSkyBackground_t *darkSky = new darkSkyBackground_t(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
-																altitude, night, exp, gammaEnc, colorS, bgl, caus);
+	        altitude, night, exp, gammaEnc, colorS, bgl, caus);
 
-	if (add_sun && radToDeg(fAcos(dir.z)) < 100.0)
+	if(add_sun && radToDeg(fAcos(dir.z)) < 100.0)
 	{
 		vector3d_t d(dir);
 		d.normalize();
@@ -377,7 +377,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerFactory("darksky",darkSkyBackground_t::factory);
+		render.registerFactory("darksky", darkSkyBackground_t::factory);
 	}
 
 }

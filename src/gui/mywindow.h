@@ -31,12 +31,12 @@
 
 namespace Ui
 {
-	class WindowBase;
+class WindowBase;
 }
 
 namespace yafaray
 {
-	class yafrayInterface_t;
+class yafrayInterface_t;
 }
 
 class AnimWorking;
@@ -47,59 +47,59 @@ class QErrorMessage;
 
 class MainWindow : public QMainWindow
 {
-	Q_OBJECT
-public:
-	MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings);
-	~MainWindow();
+		Q_OBJECT
+	public:
+		MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings);
+		~MainWindow();
 
-	virtual bool event(QEvent *e);
-	void adjustWindow();
+		virtual bool event(QEvent *e);
+		void adjustWindow();
 
-protected:
-	virtual bool eventFilter(QObject *obj, QEvent* event);
-	virtual void keyPressEvent(QKeyEvent* event);
-	void closeEvent(QCloseEvent *e);
-	bool closeUnsaved();
-	bool saveDlg();
+	protected:
+		virtual bool eventFilter(QObject *obj, QEvent *event);
+		virtual void keyPressEvent(QKeyEvent *event);
+		void closeEvent(QCloseEvent *e);
+		bool closeUnsaved();
+		bool saveDlg();
 
-public slots:
-	void slotRender();
-	void slotFinished();
-	void slotEnableDisable(bool enable = true);
-	void slotSaveAs();
-	void slotCancel();
-	void setAlpha(bool checked);
-	void showColor(bool checked);
-	void showAlpha(bool checked);
-	//FIXME: void showDepth(bool checked);
-	void setAskSave(bool checked);
-	//FIXME: void setSaveDepth(bool checked);
-	void setDrawParams(bool checked);
-	void zoomIn();
-	void zoomOut();
+	public slots:
+		void slotRender();
+		void slotFinished();
+		void slotEnableDisable(bool enable = true);
+		void slotSaveAs();
+		void slotCancel();
+		void setAlpha(bool checked);
+		void showColor(bool checked);
+		void showAlpha(bool checked);
+		//FIXME: void showDepth(bool checked);
+		void setAskSave(bool checked);
+		//FIXME: void setSaveDepth(bool checked);
+		void setDrawParams(bool checked);
+		void zoomIn();
+		void zoomOut();
 
-private:
-	Ui::WindowBase *m_ui;
-	RenderWidget *m_render;
-	QtOutput *m_output;
-	Worker *m_worker;
-	yafaray::yafrayInterface_t *interf;
-	QString m_outputPath;
-	QString m_lastPath;
-	int res_x, res_y, b_x, b_y;
-	std::string fileName;
-	bool autoClose;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
-	bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened
-	bool autoSaveAlpha;	// if true, the automatically saved image contains no alpha channel
-	bool saveWithAlpha;
-	bool saveWithDepth;
-	bool useDrawParams;
-	QTime timeMeasure;		// time measure for the render
-	AnimWorking* anim;
-	bool renderSaved;
-	bool renderCancelled;
-	bool use_zbuf;
-	bool askUnsaved;
+	private:
+		Ui::WindowBase *m_ui;
+		RenderWidget *m_render;
+		QtOutput *m_output;
+		Worker *m_worker;
+		yafaray::yafrayInterface_t *interf;
+		QString m_outputPath;
+		QString m_lastPath;
+		int res_x, res_y, b_x, b_y;
+		std::string fileName;
+		bool autoClose;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
+		bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened
+		bool autoSaveAlpha;	// if true, the automatically saved image contains no alpha channel
+		bool saveWithAlpha;
+		bool saveWithDepth;
+		bool useDrawParams;
+		QTime timeMeasure;		// time measure for the render
+		AnimWorking *anim;
+		bool renderSaved;
+		bool renderCancelled;
+		bool use_zbuf;
+		bool askUnsaved;
 };
 
 #endif

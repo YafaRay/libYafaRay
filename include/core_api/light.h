@@ -15,12 +15,12 @@ class scene_t;
 class vector3d_t;
 class point3d_t;
 
-enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1<<1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!
+enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1 << 1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!
 typedef unsigned int LIGHTF_t;
 
 struct lSample_t
 {
-	lSample_t(surfacePoint_t *s_p=nullptr): sp(s_p) {}
+	lSample_t(surfacePoint_t *s_p = nullptr): sp(s_p) {}
 	float s1, s2; //<! 2d sample value for choosing a surface point on the light.
 	float s3, s4; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
 	float pdf; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
@@ -42,7 +42,7 @@ class light_t
 		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const = 0;
 		//! create a sample of light emission, similar to emitPhoton, just more suited for bidirectional methods
 		/*! fill in s.dirPdf, s.areaPdf, s.col and s.flags, and s.sp if not nullptr */
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const{return color_t(0.f);};
+		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const {return color_t(0.f);};
 		//! indicate whether the light has a dirac delta distribution or not
 		virtual bool diracLight() const = 0;
 		//! illuminate a given surface point, generating sample s, fill in s.sp if not nullptr; Set ray to test visibility by integrator
@@ -60,7 +60,7 @@ class light_t
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf=0.f; dirPdf=0.f; }
+		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf = 0.f; dirPdf = 0.f; }
 		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 8; }
 		virtual ~light_t() {}
@@ -78,14 +78,14 @@ class light_t
 		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
 		void setClampIntersect(float clamp) { lClampIntersect = clamp; }
 
-		light_t(): flags(LIGHT_NONE),lLightEnabled(true),lCastShadows(true),lShootCaustic(true),lShootDiffuse(true),lPhotonOnly(false) {}
+		light_t(): flags(LIGHT_NONE), lLightEnabled(true), lCastShadows(true), lShootCaustic(true), lShootDiffuse(true), lPhotonOnly(false) {}
 		light_t(LIGHTF_t _flags): flags(_flags) {}
 		LIGHTF_t getFlags() const { return flags; }
 
 	protected:
 		LIGHTF_t flags;
-		background_t* background;
-	    bool lLightEnabled; //!< enable/disable light
+		background_t *background;
+		bool lLightEnabled; //!< enable/disable light
 		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
 		bool lShootCaustic; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
 		bool lShootDiffuse; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)

@@ -29,18 +29,18 @@
 
 class AnimWorking : public QWidget
 {
-    Q_OBJECT
+		Q_OBJECT
 
-public:
-    AnimWorking(QWidget *parent = 0);
-    ~AnimWorking();
-protected:
-	void paintEvent(QPaintEvent *e);
-	void timerEvent(QTimerEvent *e);
-private:
-	std::vector<QPixmap> mSprites;
-	size_t mActFrame;
-	int m_timerId;
+	public:
+		AnimWorking(QWidget *parent = 0);
+		~AnimWorking();
+	protected:
+		void paintEvent(QPaintEvent *e);
+		void timerEvent(QTimerEvent *e);
+	private:
+		std::vector<QPixmap> mSprites;
+		size_t mActFrame;
+		int m_timerId;
 };
 
 #endif // ANIMWORKING_H

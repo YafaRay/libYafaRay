@@ -22,7 +22,7 @@
 #include <yafraycore/photon.h>
 
 #if defined(_WIN32)
-	#include <windows.h>
+#include <windows.h>
 #endif
 
 __BEGIN_YAFRAY
@@ -33,7 +33,7 @@ yafarayLog_t yafLog = yafarayLog_t();
 // Initialization of the master session instance
 session_t session = session_t();
 
-session_t::session_t(const session_t&)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one session object anyway so it should be ok.
+session_t::session_t(const session_t &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one session object anyway so it should be ok.
 {
 }
 
@@ -62,7 +62,7 @@ session_t::~session_t()
 void session_t::setStatusRenderStarted()
 {
 	mutx.lock();
-	
+
 	mRenderInProgress = true;
 	mRenderFinished = false;
 	mRenderResumed = false;
@@ -70,39 +70,39 @@ void session_t::setStatusRenderStarted()
 	mTotalPasses = 0;
 	mCurrentPass = 0;
 	mCurrentPassPercent = 0.f;
-	
+
 	mutx.unlock();
 }
 
 void session_t::setStatusRenderResumed()
 {
 	mutx.lock();
-	
+
 	mRenderInProgress = true;
 	mRenderFinished = false;
 	mRenderResumed = true;
 	mRenderAborted = false;
-	
+
 	mutx.unlock();
 }
 
 void session_t::setStatusRenderFinished()
 {
 	mutx.lock();
-	
+
 	mRenderInProgress = false;
 	mRenderFinished = true;
-	
+
 	mutx.unlock();
 }
 
 void session_t::setStatusRenderAborted()
 {
 	mutx.lock();
-	
+
 	mRenderInProgress = false;
 	mRenderAborted = true;
-	
+
 	mutx.unlock();
 }
 

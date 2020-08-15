@@ -34,27 +34,27 @@ __BEGIN_YAFRAY
 
 class IESData_t
 {
-public:
+	public:
 
-	IESData_t();
-	~IESData_t();
-	bool parseIESFile(const std::string file);
-	float getRadiance(float hAng, float vAng) const;
-	float getMaxVAngle() const { return maxVAngle; }
-	
-private:
+		IESData_t();
+		~IESData_t();
+		bool parseIESFile(const std::string file);
+		float getRadiance(float hAng, float vAng) const;
+		float getMaxVAngle() const { return maxVAngle; }
 
-	
-	float* vertAngleMap; //<! vertical spherical angles
-	float* horAngleMap; //<! horizontal sperical angles
-	float** radMap; //<! spherical radiance map corresponding with entries to the angle maps
-	int horAngles; //<! number of angles in the 2 directions
-	int vertAngles;
-	
-	float maxRad;
-	float maxVAngle;
-	
-	int type;
+	private:
+
+
+		float *vertAngleMap; //<! vertical spherical angles
+		float *horAngleMap; //<! horizontal sperical angles
+		float **radMap; //<! spherical radiance map corresponding with entries to the angle maps
+		int horAngles; //<! number of angles in the 2 directions
+		int vertAngles;
+
+		float maxRad;
+		float maxVAngle;
+
+		int type;
 };
 
 IESData_t::IESData_t()
@@ -73,12 +73,13 @@ IESData_t::~IESData_t()
 }
 
 //! hAng and vAng in degrees, returns the radiance at that angle
-float IESData_t::getRadiance(float h, float v) const {
-	
+float IESData_t::getRadiance(float h, float v) const
+{
+
 	int x = 0, y = 0;
 	float rad = 0.f;
 	float hAng = 0.f, vAng = 0.f;
-	
+
 	if(type == TYPE_C)
 	{
 		hAng = h;
@@ -95,48 +96,48 @@ float IESData_t::getRadiance(float h, float v) const {
 		}
 	}
 
-	if(hAng > 180.f && horAngleMap[horAngles-1] <= 180.f) hAng = 360.f - hAng;
-	if(hAng > 90.f && horAngleMap[horAngles-1] <= 90.f) hAng -= 90.f;
-	
-	if(vAng > 90.f && vertAngleMap[vertAngles-1] <= 90.f) vAng -= 90.f;
-	
-	for(int i = 0;i < horAngles; i++)
+	if(hAng > 180.f && horAngleMap[horAngles - 1] <= 180.f) hAng = 360.f - hAng;
+	if(hAng > 90.f && horAngleMap[horAngles - 1] <= 90.f) hAng -= 90.f;
+
+	if(vAng > 90.f && vertAngleMap[vertAngles - 1] <= 90.f) vAng -= 90.f;
+
+	for(int i = 0; i < horAngles; i++)
 	{
-		if(horAngleMap[i] <= hAng && horAngleMap[i+1] > hAng)
+		if(horAngleMap[i] <= hAng && horAngleMap[i + 1] > hAng)
 		{
 			x = i;
 		}
 	}
 
-	for(int i = 0;i < vertAngles; i++)
+	for(int i = 0; i < vertAngles; i++)
 	{
-		if(vertAngleMap[i] <= vAng && vertAngleMap[i+1] > vAng)
+		if(vertAngleMap[i] <= vAng && vertAngleMap[i + 1] > vAng)
 		{
 			y = i;
 			break;
 		}
 	}
-	
-	
+
+
 	if(hAng == horAngleMap[x] && vAng == vertAngleMap[y])
 	{
 		rad = radMap[x][y];
 	}
 	else
 	{
-		int x1 = x, x2 = x+1;
-		int y1 = y, y2 = y+1;
-		
+		int x1 = x, x2 = x + 1;
+		int y1 = y, y2 = y + 1;
+
 		float dX = (hAng - horAngleMap[x1]) / (horAngleMap[x2] - horAngleMap[x1]);
 		float dY = (vAng - vertAngleMap[y1]) / (vertAngleMap[y2] - vertAngleMap[y1]);
-		
+
 		float rx1 = ((1.f - dX) * radMap[x1][y1]) + (dX * radMap[x2][y1]);
 		float rx2 = ((1.f - dX) * radMap[x1][y2]) + (dX * radMap[x2][y2]);
-		
+
 		rad = ((1.f - dY) * rx1) + (dY * rx2);
 	}
 
-	
+
 	return (rad * maxRad);
 }
 
@@ -146,23 +147,23 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 {
 	//FIXME: migrate to new file_t system
 	using namespace std;
-	
+
 	Y_VERBOSE << "IES Parser: Parsing IES file " << iesFile << yendl;
-	
+
 	ifstream fin(iesFile.c_str(), std::ios::in);
-	
-	if (!fin)
+
+	if(!fin)
 	{
 		Y_ERROR << "IES Parser: Could not open IES file: " << iesFile << yendl;
 		return false;
 	}
 
 	//get length of file:
-    fin.seekg (0, fin.end);
-    int length = fin.tellg();
-    fin.seekg (0, fin.beg);
-	
-	if (length < 7)
+	fin.seekg(0, fin.end);
+	int length = fin.tellg();
+	fin.seekg(0, fin.beg);
+
+	if(length < 7)
 	{
 		Y_ERROR << "IES Parser: file is too small, only " << length << " bytes long." << yendl;
 		return false;
@@ -172,39 +173,39 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	char ies_check_characters[7];
 	fin.get(ies_check_characters, 7);
 	Y_DEBUG << "std::string(ies_check_characters)=" << std::string(ies_check_characters) << yendl;
-	
-	if (std::string(ies_check_characters) != "IESNA:")
+
+	if(std::string(ies_check_characters) != "IESNA:")
 	{
 		Y_ERROR << "IES Parser: wrong file format, first characters are not \"IESNA:\"" << yendl;
 		return false;
 	}
-	
+
 	//rewind file to beginning again
-    fin.seekg (0, fin.beg);
-    
+	fin.seekg(0, fin.beg);
+
 	string line;
 	string dummy;
-	
+
 	fin >> line;
-	
-	while (line.find("TILT=") == string::npos)
+
+	while(line.find("TILT=") == string::npos)
 	{
 		fin >> line;
 	}
-	
+
 	if(line.find("TILT=") != string::npos)
 	{
 		if(line == "TILT=INCLUDE")
 		{
 			Y_VERBOSE << "IES Parser: Tilt data included in IES file." << yendl << "Skiping..." << yendl;
-			
+
 			int pairs = 0;
-			
+
 			fin >> line;
 			fin >> pairs;
-			
+
 			for(int i = 0; i < (pairs * 2); i++) fin >> line;
-			
+
 			Y_VERBOSE << "IES Parser: Tilt data skipped." << yendl;
 		}
 		else if(line == "TILT=NONE")
@@ -219,14 +220,14 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	else
 	{
 		fin.close();
-	
+
 		Y_WARNING << "IES Parser: Tilt not found IES invalid!" << yendl;
-		
+
 		return false;
 	}
-	
+
 	float candelaMult = 0.f;
-	
+
 	fin >> line;
 	Y_VERBOSE << "IES Parser: Number of lamps: " << line << yendl;
 	fin >> line;
@@ -243,9 +244,9 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	Y_VERBOSE << "IES Parser: Photometric Type: " << type << yendl;
 	fin >> line;
 	Y_VERBOSE << "IES Parser: Units Type: " << line << yendl;
-	
+
 	float w = 0.f, l = 0.f, h = 0.f;
-	
+
 	fin >> w;
 	fin >> l;
 	fin >> h;
@@ -253,7 +254,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	Y_VERBOSE << "IES Parser: Luminous opening dimensions:" << yendl;
 	Y_VERBOSE << "IES Parser: (Width, Length, Height) = (" << w << ", " << l << ", " << h << ")" << yendl;
 	Y_VERBOSE << "IES Parser: Lamp Geometry: ";
-	
+
 	//Check geometry type
 	if(w == 0.f && l == 0.f && h == 0.f)
 	{
@@ -299,7 +300,7 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	{
 		Y_VERBOSE << "Elipsoid Light (Along length)" << yendl;
 	}
-	
+
 	fin >> line;
 	Y_VERBOSE << "IES Parser: Ballast Factor: " << line << yendl;
 	fin >> line;
@@ -308,18 +309,18 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	Y_VERBOSE << "IES Parser: Input Watts: " << line << yendl;
 
 	vertAngleMap = new float[vertAngles];
-	
+
 	maxVAngle = 0.f;
 
 	Y_VERBOSE << "IES Parser: Vertical Angle Map:" << yendl;
 
-	for (int i = 0; i < vertAngles; ++i)
+	for(int i = 0; i < vertAngles; ++i)
 	{
 		fin >> vertAngleMap[i];
 		if(maxVAngle < vertAngleMap[i]) maxVAngle = vertAngleMap[i];
 		std::cout << vertAngleMap[i] << ", ";
 	}
-	
+
 	std::cout << yendl;
 
 	if(vertAngleMap[0] > 0.f)
@@ -327,33 +328,33 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 		Y_VERBOSE << "IES Parser: Vertical Angle Map (transformed):" << yendl;
 		float minus = vertAngleMap[0];
 		maxVAngle -= minus;
-		for (int i = 0; i < vertAngles; ++i)
+		for(int i = 0; i < vertAngles; ++i)
 		{
 			vertAngleMap[i] -= minus;
 			std::cout << vertAngleMap[i] << ", ";
 		}
 		std::cout << std::endl;
 	}
-	
+
 	Y_VERBOSE << "IES Parser: Max vertical angle (degrees): " << maxVAngle << yendl;
-	
+
 	maxVAngle = degToRad(maxVAngle);
 
 	Y_VERBOSE << "IES Parser: Max vertical angle (radians): " << maxVAngle << yendl;
-	
+
 	bool hAdjust = false;
-	
+
 	if(type == TYPE_C && horAngles == 1)
 	{
 		horAngles++;
 		hAdjust = true;
 	}
-	
+
 	horAngleMap = new float[horAngles];
-	
+
 	Y_VERBOSE << "IES Parser: Horizontal Angle Map:" << yendl;
-	
-	for (int i = 0; i < horAngles; ++i)
+
+	for(int i = 0; i < horAngles; ++i)
 	{
 		if(i == horAngles - 1 && hAdjust) horAngleMap[i] = 180.f;
 		else fin >> horAngleMap[i];
@@ -362,26 +363,26 @@ bool IESData_t::parseIESFile(const std::string iesFile)
 	std::cout << std::endl;
 
 	maxRad = 0.f;
-	
+
 	radMap = new float*[horAngles];
-	for (int i = 0; i < horAngles; ++i)
+	for(int i = 0; i < horAngles; ++i)
 	{
 		radMap[i] = new float[vertAngles];
-		for (int j = 0; j < vertAngles; ++j)
+		for(int j = 0; j < vertAngles; ++j)
 		{
-			if(i == horAngles - 1 && hAdjust) radMap[i][j] = radMap[i-1][j];
+			if(i == horAngles - 1 && hAdjust) radMap[i][j] = radMap[i - 1][j];
 			else  fin >> radMap[i][j];
 			if(maxRad < radMap[i][j]) maxRad = radMap[i][j];
 		}
 	}
-	
+
 	Y_VERBOSE << "IES Parser: maxRad = " << maxRad << yendl;
 	maxRad = 1.f / maxRad;
-	
+
 	fin.close();
-	
+
 	Y_VERBOSE << "IES Parser: IES File parsed successfully" << yendl;
-	
+
 	return true;
 }
 

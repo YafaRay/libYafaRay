@@ -37,15 +37,15 @@ class scene_t;
 
 class Worker : public QThread
 {
-	Q_OBJECT
-public:
-	Worker(yafaray::yafrayInterface_t *env, MainWindow *w, QtOutput *output);
-	void run();
-private:
-	yafaray::yafrayInterface_t *m_env;
-	QtOutput *m_output;
-	MainWindow *m_win;
-	bool m_valid;
+		Q_OBJECT
+	public:
+		Worker(yafaray::yafrayInterface_t *env, MainWindow *w, QtOutput *output);
+		void run();
+	private:
+		yafaray::yafrayInterface_t *m_env;
+		QtOutput *m_output;
+		MainWindow *m_win;
+		bool m_valid;
 };
 
 #endif

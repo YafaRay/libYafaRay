@@ -19,7 +19,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 #ifndef Y_SESSION_H
 #define Y_SESSION_H
 
@@ -34,10 +34,10 @@ class YAFRAYCORE_EXPORT session_t
 {
 	public:
 		session_t();
-		session_t(const session_t&);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
-		
+		session_t(const session_t &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
+
 		~session_t();
-				
+
 		void setStatusRenderStarted();
 		void setStatusRenderResumed();
 		void setStatusRenderFinished();
@@ -49,26 +49,26 @@ class YAFRAYCORE_EXPORT session_t
 		void setPathYafaRayXml(std::string path);
 		void setPathImageOutput(std::string path);
 		void setDifferentialRaysEnabled(bool value) { mRayDifferentialsEnabled = value; }
-		
+
 		bool renderInProgress();
 		bool renderResumed();
 		bool renderFinished();
 		bool renderAborted();
 		bool getDifferentialRaysEnabled() const { return mRayDifferentialsEnabled; }
-		
+
 		int totalPasses();
 		int currentPass();
 		float currentPassPercent();
 		bool isInteractive();
 		std::string getPathYafaRayXml();
 		std::string getPathImageOutput();
-						
-		photonMap_t * causticMap = nullptr;
-		photonMap_t * diffuseMap = nullptr;
-		photonMap_t * radianceMap = nullptr;
-		
+
+		photonMap_t *causticMap = nullptr;
+		photonMap_t *diffuseMap = nullptr;
+		photonMap_t *radianceMap = nullptr;
+
 		std::mutex mutx;
-	
+
 	protected:
 		bool mRenderInProgress = false;
 		bool mRenderFinished = false;

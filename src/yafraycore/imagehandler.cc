@@ -30,7 +30,7 @@
 __BEGIN_YAFRAY
 
 
-imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimization):m_width(width),m_height(height),m_num_channels(num_channels),m_optimization(optimization)
+imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimization): m_width(width), m_height(height), m_num_channels(num_channels), m_optimization(optimization)
 {
 	switch(optimization)
 	{
@@ -39,19 +39,19 @@ imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimi
 			else if(m_num_channels == 3) rgb96_FloatImg = new rgb2DImage_nw_t(width, height);
 			else if(m_num_channels == 1) gray32_FloatImg = new gray2DImage_nw_t(width, height);
 			break;
-			
+
 		case TEX_OPTIMIZATION_OPTIMIZED:
 			if(m_num_channels == 4) rgba40_OptimizedImg = new rgbaOptimizedImage_nw_t(width, height);
 			else if(m_num_channels == 3) rgb32_OptimizedImg = new rgbOptimizedImage_nw_t(width, height);
 			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
 			break;
-			
+
 		case TEX_OPTIMIZATION_COMPRESSED:
 			if(m_num_channels == 4) rgba24_CompressedImg = new rgbaCompressedImage_nw_t(width, height);
 			else if(m_num_channels == 3) rgb16_CompressedImg = new rgbCompressedImage_nw_t(width, height);
 			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
 			break;
-			
+
 		default: break;
 	}
 }
@@ -73,9 +73,9 @@ imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(float h_col, float h_lum, floa
 			colorA_t color = getColor(x, y);
 			color.clampRGBA01();
 
-			_A(y, x)[0] = (yByte) (color.getR() * 255);
-			_A(y, x)[1] = (yByte) (color.getG() * 255);
-			_A(y, x)[2] = (yByte) (color.getB() * 255);
+			_A(y, x)[0] = (yByte)(color.getR() * 255);
+			_A(y, x)[1] = (yByte)(color.getG() * 255);
+			_A(y, x)[2] = (yByte)(color.getB() * 255);
 		}
 	}
 
@@ -86,9 +86,9 @@ imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(float h_col, float h_lum, floa
 		for(int x = 0; x < m_width; ++x)
 		{
 			colorA_t col;
-			col.R = (mix * (float)_B(y, x)[0] + (1.f-mix) * (float)_A(y, x)[0]) / 255.0;
-			col.G = (mix * (float)_B(y, x)[1] + (1.f-mix) * (float)_A(y, x)[1]) / 255.0;
-			col.B = (mix * (float)_B(y, x)[2] + (1.f-mix) * (float)_A(y, x)[2]) / 255.0;
+			col.R = (mix * (float)_B(y, x)[0] + (1.f - mix) * (float)_A(y, x)[0]) / 255.0;
+			col.G = (mix * (float)_B(y, x)[1] + (1.f - mix) * (float)_A(y, x)[1]) / 255.0;
+			col.B = (mix * (float)_B(y, x)[2] + (1.f - mix) * (float)_A(y, x)[2]) / 255.0;
 			col.A = getColor(x, y).A;
 			denoised_buffer.setColor(x, y, col);
 		}
@@ -138,16 +138,16 @@ void imageHandler_t::generateMipMaps()
 {
 	if(imgBuffer.empty()) return;
 
-#ifdef HAVE_OPENCV	
+#ifdef HAVE_OPENCV
 	int imgIndex = 0;
 	//bool blur_seamless = true;
 	int w = m_width, h = m_height;
 
 	Y_VERBOSE << "ImageHandler: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << yendl;
-	
+
 	cv::Mat A(h, w, CV_32FC4);
 	cv::Mat_<cv::Vec4f> _A = A;
-	
+
 	for(int j = 0; j < h; ++j)
 	{
 		for(int i = 0; i < w; ++i)
@@ -160,15 +160,15 @@ void imageHandler_t::generateMipMaps()
 			_A(j, i)[3] = color.getA();
 		}
 	}
-	
+
 	//Mipmap generation using the temporary full float buffer to reduce information loss
 	while(w > 1 || h > 1)
 	{
 		int w2 = (w + 1) / 2;
 		int h2 = (h + 1) / 2;
 		++imgIndex;
-		imgBuffer.push_back(new imageBuffer_t(w2, h2, imgBuffer.at(imgIndex-1)->getNumChannels(), getTextureOptimization()));
-		
+		imgBuffer.push_back(new imageBuffer_t(w2, h2, imgBuffer.at(imgIndex - 1)->getNumChannels(), getTextureOptimization()));
+
 		cv::Mat B(h2, w2, CV_32FC4);
 		cv::Mat_<cv::Vec4f> _B = B;
 		cv::resize(A, B, cv::Size(w2, h2), 0, 0, cv::INTER_AREA);
@@ -192,7 +192,7 @@ void imageHandler_t::generateMipMaps()
 		h = h2;
 		Y_DEBUG << "ImageHandler: generated mipmap " << imgIndex << " [" << w2 << " x " << h2 << "]" << yendl;
 	}
-	
+
 	Y_VERBOSE << "ImageHandler: mipmap generation done: " << imgIndex << " mipmaps generated." << yendl;
 #else
 	Y_WARNING << "ImageHandler: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << yendl;
@@ -220,7 +220,7 @@ void imageHandler_t::initForOutput(int width, int height, const renderPasses_t *
 	m_DenoiseHCol = denoiseHCol;
 	m_DenoiseMix = denoiseMix;
 	m_grayscale = grayscale;
-    
+
 	int nChannels = 3;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;

@@ -4,19 +4,20 @@
 #define Y_QTAPI_H
 
 #ifdef BUILDING_QTPLUGIN
-  #define YAFARAY_QT_EXPORT YF_EXPORT
+#define YAFARAY_QT_EXPORT YF_EXPORT
 #else
-  #define YAFARAY_QT_EXPORT YF_IMPORT
+#define YAFARAY_QT_EXPORT YF_IMPORT
 #endif
 #include <interface/yafrayinterface.h>
 #include <string>
 
 namespace yafaray
 {
-	class yafrayInterface_t;
+class yafrayInterface_t;
 }
 
-struct YAFARAY_QT_EXPORT Settings {
+struct YAFARAY_QT_EXPORT Settings
+{
 	bool autoSave;
 	bool autoSaveAlpha;
 	bool closeAfterFinish;

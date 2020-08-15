@@ -12,7 +12,7 @@ class areaLight_t : public light_t
 {
 	public:
 		areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-					const color_t &col, float inte, int nsam, bool bLightEnabled=true, bool bCastShadows=true);
+		            const color_t &col, float inte, int nsam, bool bLightEnabled = true, bool bCastShadows = true);
 		~areaLight_t();
 		virtual void init(scene_t &scene);
 		virtual color_t totalEnergy() const;
@@ -21,7 +21,7 @@ class areaLight_t : public light_t
 		virtual bool diracLight() const { return false; }
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
 		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
-		virtual bool canIntersect() const{ return true; }
+		virtual bool canIntersect() const { return true; }
 		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wi, float &areaPdf, float &dirPdf, float &cos_wo) const;
@@ -29,7 +29,7 @@ class areaLight_t : public light_t
 		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		point3d_t corner, c2, c3, c4;
-		vector3d_t toX,toY, normal, fnormal;
+		vector3d_t toX, toY, normal, fnormal;
 		vector3d_t du, dv; //!< directions for hemisampler (emitting photons)
 		color_t color; //!< includes intensity amplification! so...
 		int samples;

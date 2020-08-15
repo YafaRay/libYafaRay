@@ -19,7 +19,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
- 
+
 #include <core_api/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,7 +30,7 @@
 #else //defined(_WIN32)
 #include <dirent.h>
 #endif //defined(_WIN32)
-#include <iostream> 
+#include <iostream>
 #include <ctime>
 
 __BEGIN_YAFRAY
@@ -46,21 +46,21 @@ path_t::path_t(const std::string &fullPath)
 {
 	std::string fullName;
 	const size_t sep = fullPath.find_last_of("\\/");
-	if (sep != std::string::npos)
+	if(sep != std::string::npos)
 	{
-		fullName = fullPath.substr((sep+1), fullPath.size() - (sep+1));
+		fullName = fullPath.substr((sep + 1), fullPath.size() - (sep + 1));
 		directory = fullPath.substr(0, sep);
 	}
-	else directory = fullPath.substr(0, sep+1);
+	else directory = fullPath.substr(0, sep + 1);
 
 	if(directory.empty()) fullName = fullPath;
 
 	const size_t dot = fullName.find_last_of(".");
 
-	if (dot != std::string::npos)
+	if(dot != std::string::npos)
 	{
 		baseName = fullName.substr(0, dot);
-		extension = fullName.substr(dot+1, fullName.size() - (dot+1));
+		extension = fullName.substr(dot + 1, fullName.size() - (dot + 1));
 	}
 	else
 	{
@@ -76,8 +76,8 @@ std::string path_t::getParent(const std::string &path)
 {
 	std::string parent;
 	const size_t sep = path.find_last_of("\\/");
-	if (sep != std::string::npos) parent = path.substr(0, sep);
-	else parent = path.substr(0, sep+1);
+	if(sep != std::string::npos) parent = path.substr(0, sep);
+	else parent = path.substr(0, sep + 1);
 	return parent;
 }
 std::string path_t::getParentDirectory() const
@@ -208,7 +208,7 @@ int file_t::close()
 	return result;
 }
 
-FILE * file_t::open(const std::string &path, const std::string &accessMode)
+FILE *file_t::open(const std::string &path, const std::string &accessMode)
 {
 	FILE *fp = nullptr;
 #if defined(_WIN32)
@@ -223,12 +223,12 @@ FILE * file_t::open(const std::string &path, const std::string &accessMode)
 	return fp;
 }
 
-FILE * file_t::open(const path_t &path, const std::string &accessMode)
+FILE *file_t::open(const path_t &path, const std::string &accessMode)
 {
 	return file_t::open(path.getFullPath(), accessMode);
 }
 
-int file_t::close(FILE * fp)
+int file_t::close(FILE *fp)
 {
 	return ::fclose(fp);
 }
@@ -239,7 +239,7 @@ bool file_t::exists(const std::string &path, bool files_only)
 	const std::wstring wPath = utf8_to_wutf16le(path);
 	struct _stat buf;
 	errno = 0;
-	/*const int result = */::_wstat( wPath.c_str(), &buf );
+	/*const int result = */::_wstat(wPath.c_str(), &buf);
 	const int errsav = errno;
 	char timebuf[26];
 	const errno_t err = ::ctime_s(timebuf, 26, &buf.st_mtime);
@@ -247,7 +247,7 @@ bool file_t::exists(const std::string &path, bool files_only)
 #else //_WIN32
 	struct stat buf;
 	errno = 0;
-	/*const int result = */::lstat( path.c_str(), &buf ); //use regular stat or else use lstat so it does not follow symlinks?
+	/*const int result = */::lstat(path.c_str(), &buf);   //use regular stat or else use lstat so it does not follow symlinks?
 	const int errsav = errno;
 #endif //_WIN32
 	//Y_DEBUG << "Result stat: " << result << yendl;
@@ -265,23 +265,23 @@ std::vector<std::string> file_t::listFiles(const std::string &directory)
 {
 	std::vector<std::string> files;
 #if defined(_WIN32)
-   ::WIN32_FIND_DATAW findData;
-   ::HANDLE hFind = INVALID_HANDLE_VALUE;
-   hFind = ::FindFirstFileW(utf8_to_wutf16le(directory + "/*").c_str(), &findData);
-   if(hFind != INVALID_HANDLE_VALUE)
-   {
-	    do
+	::WIN32_FIND_DATAW findData;
+	::HANDLE hFind = INVALID_HANDLE_VALUE;
+	hFind = ::FindFirstFileW(utf8_to_wutf16le(directory + "/*").c_str(), &findData);
+	if(hFind != INVALID_HANDLE_VALUE)
+	{
+		do
 		{
-			if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !(findData.dwFileAttributes & FILE_ATTRIBUTE_DEVICE))
+			if(!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !(findData.dwFileAttributes & FILE_ATTRIBUTE_DEVICE))
 			{
-			 files.push_back(wutf16le_to_utf8(std::wstring(findData.cFileName)));
+				files.push_back(wutf16le_to_utf8(std::wstring(findData.cFileName)));
 			}
 		}
-		while (::FindNextFileW(hFind, &findData) != 0);
-   }
-   ::FindClose(hFind);
-   return files;
-   
+		while(::FindNextFileW(hFind, &findData) != 0);
+	}
+	::FindClose(hFind);
+	return files;
+
 #else //_WIN32
 	errno = 0;
 	::DIR *dirp = opendir(directory.c_str());
@@ -290,7 +290,7 @@ std::vector<std::string> file_t::listFiles(const std::string &directory)
 	{
 		while((dir = readdir(dirp)))
 		{
-			if (dir->d_type == DT_REG) files.push_back(std::string(dir->d_name));
+			if(dir->d_type == DT_REG) files.push_back(std::string(dir->d_name));
 		}
 		closedir(dirp);
 	}

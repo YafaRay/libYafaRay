@@ -41,7 +41,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 {
 	public:
 		mcIntegrator_t() {};
-	
+
 	protected:
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		virtual color_t estimateAllDirectLight(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const;
@@ -59,7 +59,7 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual void causticWorker(photonMap_t * causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, pdf1D_t *lightPowerD, int numLights, const std::string &integratorName, const std::vector<light_t *> &causLights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot);
+		virtual void causticWorker(photonMap_t *causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, pdf1D_t *lightPowerD, int numLights, const std::string &integratorName, const std::vector<light_t *> &causLights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot);
 
 		int rDepth; //! Ray depth
 		bool trShad; //! Use transparent shadows
@@ -71,18 +71,18 @@ class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
 		float causRadius; //! Caustic search radius for estimation
 		int causDepth; //! Caustic photons max path depth
 		pdf1D_t *lightPowerD;
-		
+
 		bool useAmbientOcclusion; //! Use ambient occlusion
 		int aoSamples; //! Ambient occlusion samples
 		float aoDist; //! Ambient occlusion distance
 		color_t aoCol; //! Ambient occlusion color
-		
+
 		photonMapProcessing_t photonMapProcessing = PHOTONS_GENERATE_ONLY;
-		
+
 		background_t *background; //! Background shader
 		int nPaths; //! Number of samples for mc raytracing
 		int maxBounces; //! Max. path depth for mc raytracing
-		std::vector<light_t*> lights; //! An array containing all the scene lights
+		std::vector<light_t *> lights; //! An array containing all the scene lights
 		bool transpBackground; //! Render background as transparent
 		bool transpRefractedBackground; //! Render refractions of background as transparent
 };

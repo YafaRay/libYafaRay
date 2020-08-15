@@ -35,7 +35,7 @@ yafarayLog_t::yafarayLog_t()
 {
 }
 
-yafarayLog_t::yafarayLog_t(const yafarayLog_t&)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one log object in the session anyway so it should be ok.
+yafarayLog_t::yafarayLog_t(const yafarayLog_t &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one log object in the session anyway so it should be ok.
 {
 }
 
@@ -55,7 +55,7 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	ss << "YafaRay Image Log file " << std::endl << std::endl;
 
 	ss << "Image: \"" << mImagePath << "\"" << std::endl << std::endl;
-	
+
 	if(!mLoggingTitle.empty()) ss << "Title: \"" << mLoggingTitle << "\"" << std::endl;
 	if(!mLoggingAuthor.empty()) ss << "Author: \"" << mLoggingAuthor << "\"" <<  std::endl;
 	if(!mLoggingContact.empty()) ss << "Contact: \"" << mLoggingContact << "\"" <<  std::endl;
@@ -64,11 +64,11 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	ss << std::endl << "Render Information:" << std::endl << "  " << mRenderInfo << std::endl << "  " << mRenderSettings << std::endl;
 	ss << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << mAANoiseSettings << std::endl;
 
-	if(!m_MemoryLog.empty()) 
+	if(!m_MemoryLog.empty())
 	{
 		ss << std::endl;
-		
-		for (auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
+
+		for(auto it = m_MemoryLog.begin() ; it != m_MemoryLog.end(); ++it)
 		{
 			ss << "[" << printDate(it->eventDateTime) << " " << printTime(it->eventDateTime) << " (" << printDuration(it->eventDuration) << ")] ";
 
@@ -88,7 +88,7 @@ void yafarayLog_t::saveTxtLog(const std::string &name)
 	}
 
 	file_t logFile(name);
-    logFile.save(ss.str(), true);
+	logFile.save(ss.str(), true);
 }
 
 void yafarayLog_t::saveHtmlLog(const std::string &name)
@@ -100,16 +100,16 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	std::string baseImgPath, baseImgFileName, imgExtension;
 
 	splitPath(mImagePath, baseImgPath, baseImgFileName, imgExtension);
-	
+
 	ss << "<!DOCTYPE html>" << std::endl;
 	ss << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
-	
+
 	ss << "<title>YafaRay Log: " << baseImgFileName << "." << imgExtension << "</title>" << std::endl;
-	
+
 	ss << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
 
 	ss << "<style>" << std::endl << "body {font-family: Verdana, sans-serif; font-size:0.8em;}" << std::endl << "header, nav, section, article, footer" << std::endl << "{border:1px solid grey; margin:5px; padding:8px;}" << std::endl << "nav ul {margin:0; padding:0;}" << std::endl << "nav ul li {display:inline; margin:5px;}" << std::endl;
-	
+
 	ss << "table {" << std::endl;
 	ss << "    width:100%;" << std::endl;
 	ss << "}" << std::endl;
@@ -141,27 +141,27 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	ss << "<body>" << std::endl;
 
 	//ss << "<header>" << std::endl << "<h1>YafaRay Image HTML file</h1>" << std::endl << "</header>" << std::endl;
-	
+
 	std::string extLowerCase = imgExtension;
-	std::transform(extLowerCase.begin(), extLowerCase.end(),extLowerCase.begin(), ::tolower);
-	
+	std::transform(extLowerCase.begin(), extLowerCase.end(), extLowerCase.begin(), ::tolower);
+
 	if(!mImagePath.empty() && (extLowerCase == "jpg" || extLowerCase == "jpeg" || extLowerCase == "png")) ss << "<a href=\"" << baseImgFileName << "." << imgExtension << "\" target=\"_blank\">" << "<img src=\"" << baseImgFileName << "." << imgExtension << "\" width=\"768\" alt=\"" << baseImgFileName << "." << imgExtension << "\"/></a>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
 	ss << "<tr><th>Image file:</th><td><a href=\"" << baseImgFileName << "." << imgExtension << "\" target=\"_blank\"</a>" << baseImgFileName << "." << imgExtension << "</td></tr>" << std::endl;
 	if(!mLoggingTitle.empty()) ss << "<tr><th>Title:</th><td>" << mLoggingTitle << "</td></tr>" << std::endl;
 	if(!mLoggingAuthor.empty()) ss << "<tr><th>Author:</th><td>" << mLoggingAuthor << "</td></tr>" << std::endl;
-	if(!mLoggingCustomIcon.empty()) ss << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon <<"\"/></a></td></tr>" << std::endl;
+	if(!mLoggingCustomIcon.empty()) ss << "<tr><th></th><td><a href=\"" << mLoggingCustomIcon << "\" target=\"_blank\">" << "<img src=\"" << mLoggingCustomIcon << "\" width=\"80\" alt=\"" << mLoggingCustomIcon << "\"/></a></td></tr>" << std::endl;
 	if(!mLoggingContact.empty()) ss << "<tr><th>Contact:</th><td>" << mLoggingContact << "</td></tr>" << std::endl;
 	if(!mLoggingComments.empty()) ss << "<tr><th>Comments:</th><td>" << mLoggingComments << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
-	ss << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings <<"</p></td></tr>" << std::endl;
+	ss << "<tr><th>Render Information:</th><td><p>" << mRenderInfo << "</p><p>" << mRenderSettings << "</p></td></tr>" << std::endl;
 	ss << "<tr><th>AA/Noise Control Settings:</th><td>" << mAANoiseSettings << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
 
-	if(!m_MemoryLog.empty()) 
+	if(!m_MemoryLog.empty())
 	{
 		ss << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
@@ -186,12 +186,12 @@ void yafarayLog_t::saveHtmlLog(const std::string &name)
 	}
 
 	file_t logFile(name);
-    logFile.save(ss.str(), true);
+	logFile.save(ss.str(), true);
 }
 
 void yafarayLog_t::clearMemoryLog()
 {
-	m_MemoryLog.clear();	
+	m_MemoryLog.clear();
 }
 
 void yafarayLog_t::clearAll()
@@ -208,32 +208,32 @@ void yafarayLog_t::clearAll()
 	mRenderSettings = "";
 }
 
-yafarayLog_t & yafarayLog_t::out(int verbosity_level)
+yafarayLog_t &yafarayLog_t::out(int verbosity_level)
 {
 #if !defined(_WIN32) || defined(__MINGW32__)
 	mutx.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
 #else
 #endif
-	
+
 	mVerbLevel = verbosity_level;
-	
+
 	std::time_t current_datetime = std::time(nullptr);
 
 	if(mVerbLevel <= mLogMasterVerbLevel)
 	{
 		if(previousLogEventDateTime == 0) previousLogEventDateTime = current_datetime;
 		double duration = std::difftime(current_datetime, previousLogEventDateTime);
-		
+
 		m_MemoryLog.push_back(logEntry_t(current_datetime, duration, mVerbLevel, ""));
-		
+
 		previousLogEventDateTime = current_datetime;
 	}
-		
-	if(mVerbLevel <= mConsoleMasterVerbLevel) 
+
+	if(mVerbLevel <= mConsoleMasterVerbLevel)
 	{
 		if(previousConsoleEventDateTime == 0) previousConsoleEventDateTime = current_datetime;
 		double duration = std::difftime(current_datetime, previousConsoleEventDateTime);
-		
+
 		if(mConsoleLogColorsEnabled)
 		{
 			switch(mVerbLevel)
@@ -263,21 +263,21 @@ yafarayLog_t & yafarayLog_t::out(int verbosity_level)
 
 		if(duration == 0) std::cout << ": ";
 		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
-		
+
 		if(mConsoleLogColorsEnabled) std::cout << setColor();
-		
+
 		previousConsoleEventDateTime = current_datetime;
 	}
-	
+
 	mutx.unlock();
-	
+
 	return *this;
 }
 
 int yafarayLog_t::vlevel_from_string(std::string strVLevel) const
 {
 	int vlevel;
-	
+
 	if(strVLevel == "debug") vlevel = VL_DEBUG;
 	else if(strVLevel == "verbose") vlevel = VL_VERBOSE;
 	else if(strVLevel == "info") vlevel = VL_INFO;
@@ -287,79 +287,79 @@ int yafarayLog_t::vlevel_from_string(std::string strVLevel) const
 	else if(strVLevel == "mute") vlevel = VL_MUTE;
 	else if(strVLevel == "disabled") vlevel = VL_MUTE;
 	else vlevel = VL_VERBOSE;
-	
+
 	return vlevel;
 }
 
 void yafarayLog_t::setConsoleMasterVerbosity(const std::string &strVLevel)
 {
 	int vlevel = vlevel_from_string(strVLevel);
-	mConsoleMasterVerbLevel = std::max( (int)VL_MUTE , std::min( vlevel, (int)VL_DEBUG ) );
+	mConsoleMasterVerbLevel = std::max((int)VL_MUTE, std::min(vlevel, (int)VL_DEBUG));
 }
 
 void yafarayLog_t::setLogMasterVerbosity(const std::string &strVLevel)
 {
 	int vlevel = vlevel_from_string(strVLevel);
-	mLogMasterVerbLevel = std::max( (int)VL_MUTE , std::min( vlevel, (int)VL_DEBUG ) );
+	mLogMasterVerbLevel = std::max((int)VL_MUTE, std::min(vlevel, (int)VL_DEBUG));
 }
 
 std::string yafarayLog_t::printTime(std::time_t datetime) const
 {
 	char mbstr[20];
-	std::strftime( mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime) );
+	std::strftime(mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime));
 	return std::string(mbstr);
 }
 
 std::string yafarayLog_t::printDate(std::time_t datetime) const
 {
 	char mbstr[20];
-	std::strftime( mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime) );
+	std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime));
 	return std::string(mbstr);
 }
 
 std::string yafarayLog_t::printDuration(double duration) const
 {
 	std::ostringstream strDur;
-	
+
 	int duration_int = (int) duration;
 	int hours = duration_int / 3600;
 	int minutes = (duration_int % 3600) / 60;
 	int seconds = duration_int % 60;
-	
+
 	if(hours == 0) strDur << "     ";
 	else strDur << "+" << std::setw(3) << hours << "h";
 
 	if(hours == 0 && minutes == 0) strDur << "    ";
-	else if (hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
+	else if(hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
 	else strDur << " " << std::setw(2) << minutes << "m";
 
 	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "    ";
-	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
+	else if(hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
 	else strDur << " " << std::setw(2) << seconds << "s";
-	
+
 	return std::string(strDur.str());
 }
 
 std::string yafarayLog_t::printDurationSimpleFormat(double duration) const
 {
 	std::ostringstream strDur;
-	
+
 	int duration_int = (int) duration;
 	int hours = duration_int / 3600;
 	int minutes = (duration_int % 3600) / 60;
 	int seconds = duration_int % 60;
-	
+
 	if(hours == 0) strDur << "";
 	else strDur << "+" << std::setw(2) << hours << "h";
 
 	if(hours == 0 && minutes == 0) strDur << "";
-	else if (hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
+	else if(hours == 0 && minutes != 0) strDur << "+" << std::setw(2) << minutes << "m";
 	else strDur << "" << std::setw(2) << minutes << "m";
 
 	if(hours == 0 && minutes == 0 && seconds == 0) strDur << "";
-	else if (hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
+	else if(hours == 0 && minutes == 0 && seconds != 0) strDur << "+" << std::setw(2) << seconds << "s";
 	else strDur << "" << std::setw(2) << seconds << "s";
-	
+
 	return std::string(strDur.str());
 }
 
@@ -374,15 +374,16 @@ void yafarayLog_t::appendRenderSettings(const std::string &render_settings)
 }
 
 void yafarayLog_t::splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension)
-{	//DEPRECATED: use path_t instead
+{
+	//DEPRECATED: use path_t instead
 	path_t fullPath { fullFilePath };
 	basePath = fullPath.getDirectory();
 	baseFileName = fullPath.getBaseName();
 	extension = fullPath.getExtension();
-}               
+}
 
 void yafarayLog_t::setParamsBadgePosition(const std::string &badgePosition)
-{ 
+{
 	if(badgePosition == "top")
 	{
 		mDrawParams = true;
@@ -407,9 +408,9 @@ int yafarayLog_t::getBadgeHeight() const
 	if(drawAANoiseSettings && drawRenderSettings) badgeHeight = 150;
 	else if(!drawAANoiseSettings && !drawRenderSettings) badgeHeight = 70;
 	else badgeHeight = 110;
-	
+
 	badgeHeight = (int) std::ceil(badgeHeight * mLoggingFontSizeFactor);
-	
+
 	return badgeHeight;
 }
 
@@ -419,24 +420,25 @@ void yafarayLog_t::statsPrint(bool sorted) const
 	std::cout << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vectorPrint(mDiagStats.begin(), mDiagStats.end());
 	if(sorted) std::sort(vectorPrint.begin(), vectorPrint.end());
-	for (auto& it: vectorPrint) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	for(auto &it : vectorPrint) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
 }
 
 void yafarayLog_t::statsSaveToFile(std::string filePath, bool sorted) const
-{ //FIXME: migrate to new file_t class
+{
+	//FIXME: migrate to new file_t class
 	std::ofstream statsFile;
 	statsFile.open(filePath);
 	statsFile << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vectorPrint(mDiagStats.begin(), mDiagStats.end());
 	if(sorted) std::sort(vectorPrint.begin(), vectorPrint.end());
-	for (auto& it: vectorPrint) statsFile << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	for(auto &it : vectorPrint) statsFile << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
 	statsFile.close();
 }
 
 void yafarayLog_t::statsAdd(std::string statName, double statValue, double index)
 {
 	std::stringstream ss;
-	ss << statName << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1+std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
+	ss << statName << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1 + std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
 #if !defined(_WIN32) || defined(__MINGW32__)
 	mutx.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
 #else
@@ -444,7 +446,7 @@ void yafarayLog_t::statsAdd(std::string statName, double statValue, double index
 	mDiagStats[ss.str()] += statValue;
 	mutx.unlock();
 }
-		
+
 void yafarayLog_t::statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep, double incrementAmount)
 {
 	double index = floor(statValue / bucketPrecisionStep) * bucketPrecisionStep;

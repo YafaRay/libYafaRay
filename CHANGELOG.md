@@ -19,6 +19,12 @@ Distro maintainers and any other users who were linking/forking the original rep
 We hope this change helps further development, sorry for the inconveniences!
 
 
+libYafaRay (development)
+------------------------
+* Moved to new GitHub repositories
+* Applied AStyle to harmonise the C++ formatting
+
+
 
 YafaRay v3.5.1 (2020-07-13)
 ---------------------------

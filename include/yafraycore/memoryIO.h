@@ -13,7 +13,7 @@ class renderPasses_t;
 class YAFRAYCORE_EXPORT memoryIO_t : public colorOutput_t
 {
 	public:
-		memoryIO_t(int resx, int resy, float* iMem);
+		memoryIO_t(int resx, int resy, float *iMem);
 		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
 		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
 		void flush(int numView, const renderPasses_t *renderPasses);
@@ -21,7 +21,7 @@ class YAFRAYCORE_EXPORT memoryIO_t : public colorOutput_t
 		virtual ~memoryIO_t();
 	protected:
 		int sizex, sizey;
-		float* imageMem;
+		float *imageMem;
 };
 
 

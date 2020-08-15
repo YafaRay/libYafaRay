@@ -31,32 +31,32 @@ template<typename T1, unsigned char T2>
 class /*YAFRAYCORE_EXPORT*/ gBuf_t // no need to export this...not instantiated in yafraycore even
 {
 	public :
-		gBuf_t(int x,int y)
+		gBuf_t(int x, int y)
 		{
-			data = new T1 [x*y*T2];
+			data = new T1 [x * y * T2];
 			mx = x;
 			my = y;
 		}
 
-		gBuf_t() { data=nullptr; }
-		~gBuf_t() { if (data) delete[] data; }
+		gBuf_t() { data = nullptr; }
+		~gBuf_t() { if(data) delete[] data; }
 
-		void set(int x,int y)
+		void set(int x, int y)
 		{
-			if (data) delete[] data;
-			data = new T1 [x*y*T2];
+			if(data) delete[] data;
+			data = new T1 [x * y * T2];
 			mx = x;
 			my = y;
 		}
 
-		T1 * operator()(int x,int y) { return &data[(y*mx+x)*T2]; }
+		T1 *operator()(int x, int y) { return &data[(y * mx + x) * T2]; }
 
-		gBuf_t & operator = (const gBuf_t &source)
+		gBuf_t &operator = (const gBuf_t &source)
 		{
-			if ((mx!=source.mx) || (my!=source.my)) std::cerr << "Error, trying to assign buffers of a different size\n";
-			if ((data == nullptr) || (source.data == nullptr)) std::cerr << "Assigning unallocated buffers\n";
-			int total = mx*my*T2;
-			for(int i=0;i<total;++i)
+			if((mx != source.mx) || (my != source.my)) std::cerr << "Error, trying to assign buffers of a different size\n";
+			if((data == nullptr) || (source.data == nullptr)) std::cerr << "Assigning unallocated buffers\n";
+			int total = mx * my * T2;
+			for(int i = 0; i < total; ++i)
 				data[i] = source.data[i];
 			return *this;
 		}
@@ -75,63 +75,63 @@ template<class T>
 class Buffer_t
 {
 	public :
-		Buffer_t(int x,int y);
-		Buffer_t() {data=nullptr;};
+		Buffer_t(int x, int y);
+		Buffer_t() {data = nullptr;};
 		~Buffer_t();
 
-		void set(int x,int y);
-		T & operator()(int x,int y) {return data[y*mx+x];};
-		T * buffer(int x, int y) {return &data[y*mx+x];};
-		const T & operator()(int x,int y)const {return data[y*mx+x];};
-		Buffer_t<T> & operator = (const Buffer_t<T> &source);
+		void set(int x, int y);
+		T &operator()(int x, int y) {return data[y * mx + x];};
+		T *buffer(int x, int y) {return &data[y * mx + x];};
+		const T &operator()(int x, int y)const {return data[y * mx + x];};
+		Buffer_t<T> &operator = (const Buffer_t<T> &source);
 		int resx() const {return mx;};
 		int resy() const {return my;};
 	protected :
 		T *data;
-		int mx,my;
+		int mx, my;
 };
 
 template<class T>
 Buffer_t<T>::Buffer_t(int x, int y)
 {
-	data=new T [x*y];
-	mx=x;
-	my=y;
+	data = new T [x * y];
+	mx = x;
+	my = y;
 }
 
 template<class T>
 Buffer_t<T>::~Buffer_t()
 {
-	if(data!=nullptr)
+	if(data != nullptr)
 		delete [] data;
 }
 
 template<class T>
 void Buffer_t<T>::set(int x, int y)
 {
-	if(data!=nullptr)
+	if(data != nullptr)
 		delete [] data;
-	data=new T [x*y];
-	mx=x;
-	my=y;
+	data = new T [x * y];
+	mx = x;
+	my = y;
 }
 
 template<class T>
-Buffer_t<T> & Buffer_t<T>::operator = (const Buffer_t<T> &source)
+Buffer_t<T> &Buffer_t<T>::operator = (const Buffer_t<T> &source)
 {
-	if( (mx!=source.mx) || (my!=source.my) )
+	if((mx != source.mx) || (my != source.my))
 	{
-		std::cout<<"Error, trying to assign  buffers of a diferent size\n";
+		std::cout << "Error, trying to assign  buffers of a diferent size\n";
 	}
-	if( (data == nullptr) || (source.data == nullptr) )
+	if((data == nullptr) || (source.data == nullptr))
 	{
-		std::cout<<"Assigning unallocated buffers\n";
+		std::cout << "Assigning unallocated buffers\n";
 	}
-	int total=mx*my;
-	for(int i=0;i<total;++i) data[i]=source.data[i];
-	
+	int total = mx * my;
+	for(int i = 0; i < total; ++i) data[i] = source.data[i];
+
 	return *this;
-	
+
 }
 
 __END_YAFRAY

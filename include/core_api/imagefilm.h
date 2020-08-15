@@ -81,9 +81,9 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		};
 
 		/*! imageFilm_t Constructor */
-		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize=1.0, filterType filt=BOX,
-		renderEnvironment_t *e = nullptr, bool showSamMask = false, int tSize = 32,
-		imageSpliter_t::tilesOrderType tOrder=imageSpliter_t::LINEAR, bool pmA = false);
+		imageFilm_t(int width, int height, int xstart, int ystart, colorOutput_t &out, float filterSize = 1.0, filterType filt = BOX,
+		            renderEnvironment_t *e = nullptr, bool showSamMask = false, int tSize = 32,
+		            imageSpliter_t::tilesOrderType tOrder = imageSpliter_t::LINEAR, bool pmA = false);
 		/*! imageFilm_t Destructor */
 		~imageFilm_t();
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
@@ -117,7 +117,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		//! Enables/Disables a light density estimation image
 		void setDensityEstimation(bool enable);
 		//! set number of samples for correct density estimation (if enabled)
-		void setNumDensitySamples(int n){ numDensitySamples = n; }
+		void setNumDensitySamples(int n) { numDensitySamples = n; }
 		/*! Sets the film color space and gamma correction */
 		void setColorSpace(colorSpaces_t color_space, float gammaVal);
 		/*! Sets the film color space and gamma correction for optional secondary file output */
@@ -125,58 +125,58 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		/*! Sets the film premultiply option for optional secondary file output */
 		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
-		void setAAThreshold(float thresh){ AA_thesh=thresh; }
+		void setAAThreshold(float thresh) { AA_thesh = thresh; }
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(progressBar_t *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
-		int getTotalPixels() const { return w*h; };
+		int getTotalPixels() const { return w * h; };
 		void setAANoiseParams(bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
-		void drawRenderSettings(std::stringstream & ss);
-        float dark_threshold_curve_interpolate(float pixel_brightness);
-        int getWidth() const { return w; }
-        int getHeight() const { return h; }
-        int getCX0() const { return cx0; }
-        int getCY0() const { return cy0; }
-        int getTileSize() const { return tileSize; }
-        int getCurrentPass() const { return nPass; }
-        int getNumPasses() const { return nPasses; }
-        bool getBackgroundResampling() const { return backgroundResampling; }
-        void setBackgroundResampling(bool background_resampling) { backgroundResampling = background_resampling; }
-        unsigned int getComputerNode() const { return computerNode; }
-        unsigned int getBaseSamplingOffset() const { return baseSamplingOffset + computerNode * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
-        unsigned int getSamplingOffset() const { return samplingOffset; }
-        void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
-        void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
-        void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
-		
+		void drawRenderSettings(std::stringstream &ss);
+		float dark_threshold_curve_interpolate(float pixel_brightness);
+		int getWidth() const { return w; }
+		int getHeight() const { return h; }
+		int getCX0() const { return cx0; }
+		int getCY0() const { return cy0; }
+		int getTileSize() const { return tileSize; }
+		int getCurrentPass() const { return nPass; }
+		int getNumPasses() const { return nPasses; }
+		bool getBackgroundResampling() const { return backgroundResampling; }
+		void setBackgroundResampling(bool background_resampling) { backgroundResampling = background_resampling; }
+		unsigned int getComputerNode() const { return computerNode; }
+		unsigned int getBaseSamplingOffset() const { return baseSamplingOffset + computerNode * 100000; } //We give to each computer node a "reserved space" of 100,000 samples
+		unsigned int getSamplingOffset() const { return samplingOffset; }
+		void setComputerNode(unsigned int computer_node) { computerNode = computer_node; }
+		void setBaseSamplingOffset(unsigned int offset) { baseSamplingOffset = offset; }
+		void setSamplingOffset(unsigned int offset) { samplingOffset = offset; }
+
 		std::string getFilmPath() const;
-        bool imageFilmLoad(const std::string &filename);
+		bool imageFilmLoad(const std::string &filename);
 		void imageFilmLoadAllInFolder();
-        bool imageFilmSave();
-        void imageFilmFileBackup() const;
+		bool imageFilmSave();
+		void imageFilmFileBackup() const;
 
-        void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
-        void setImagesAutoSaveIntervalSeconds(double interval_seconds) { imagesAutoSaveIntervalSeconds = interval_seconds; }
-        void setImagesAutoSaveIntervalPasses(int interval_passes) { imagesAutoSaveIntervalPasses = interval_passes; }
-        void resetImagesAutoSaveTimer() { imagesAutoSaveTimer = 0.0; }
+		void setImagesAutoSaveIntervalType(int interval_type) { imagesAutoSaveIntervalType = interval_type; }
+		void setImagesAutoSaveIntervalSeconds(double interval_seconds) { imagesAutoSaveIntervalSeconds = interval_seconds; }
+		void setImagesAutoSaveIntervalPasses(int interval_passes) { imagesAutoSaveIntervalPasses = interval_passes; }
+		void resetImagesAutoSaveTimer() { imagesAutoSaveTimer = 0.0; }
 
-        void setFilmFileSaveLoad(int film_file_save_load) { filmFileSaveLoad = film_file_save_load; }
-        void setFilmAutoSaveIntervalType(int interval_type) { filmAutoSaveIntervalType = interval_type; }
-        void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
-        void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
-        void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
+		void setFilmFileSaveLoad(int film_file_save_load) { filmFileSaveLoad = film_file_save_load; }
+		void setFilmAutoSaveIntervalType(int interval_type) { filmAutoSaveIntervalType = interval_type; }
+		void setFilmAutoSaveIntervalSeconds(double interval_seconds) { filmAutoSaveIntervalSeconds = interval_seconds; }
+		void setFilmAutoSaveIntervalPasses(int interval_passes) { filmAutoSaveIntervalPasses = interval_passes; }
+		void resetFilmAutoSaveTimer() { filmAutoSaveTimer = 0.0; }
 
-		void generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
-		void generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t * out1, int out1displacement = 0, colorOutput_t * out2 = nullptr, int out2displacement = 0);
-		
-		rgba2DImage_t * getImagePassFromIntPassType(int intPassType);
-        int getImagePassIndexFromIntPassType(int intPassType);
-        int getAuxImagePassIndexFromIntPassType(int intPassType);
-        
+		void generateDebugFacesEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t *out1, int out1displacement = 0, colorOutput_t *out2 = nullptr, int out2displacement = 0);
+		void generateToonAndDebugObjectEdges(int numView, int idxPass, int xstart, int width, int ystart, int height, bool drawborder, colorOutput_t *out1, int out1displacement = 0, colorOutput_t *out2 = nullptr, int out2displacement = 0);
+
+		rgba2DImage_t *getImagePassFromIntPassType(int intPassType);
+		int getImagePassIndexFromIntPassType(int intPassType);
+		int getAuxImagePassIndexFromIntPassType(int intPassType);
+
 	protected:
-		std::vector<rgba2DImage_t*> imagePasses; //!< rgba color buffers for the render passes
-		std::vector<rgba2DImage_t*> auxImagePasses; //!< rgba color buffers for the auxiliary image passes
+		std::vector<rgba2DImage_t *> imagePasses; //!< rgba color buffers for the render passes
+		std::vector<rgba2DImage_t *> auxImagePasses; //!< rgba color buffers for the auxiliary image passes
 		rgb2DImage_nw_t *densityImage; //!< storage for z-buffer channel
 		rgba2DImage_nw_t *dpimage; //!< render parameters badge image
 		tiledBitArray2D_t<3> *flags = nullptr; //!< flags for adaptive AA sampling;
@@ -190,7 +190,7 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		float gamma2 = 1.f;				//For optional secondary file output
 		float AA_thesh;
 		bool AA_detect_color_noise;
-        int AA_dark_detection_type;
+		int AA_dark_detection_type;
 		float AA_dark_threshold_factor;
 		int AA_variance_edge_size;
 		int AA_variance_pixels;
@@ -214,12 +214,12 @@ class YAFRAYCORE_EXPORT imageFilm_t
 		bool premultAlpha;
 		bool premultAlpha2 = false;	//For optional secondary file output
 		int nPasses;
-        bool backgroundResampling = true;   //If false, the background will not be resampled in subsequent adaptative AA passes
+		bool backgroundResampling = true;   //If false, the background will not be resampled in subsequent adaptative AA passes
 
-        //Options for Film saving/loading correct sampling, as well as multi computer film saving
-        unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
-        unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
-        unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms
+		//Options for Film saving/loading correct sampling, as well as multi computer film saving
+		unsigned int baseSamplingOffset = 0;	//Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
+		unsigned int samplingOffset = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
+		unsigned int computerNode = 0;	//Computer node in multi-computer render environments/render farms
 
 		//Options for AutoSaving output images
 		int imagesAutoSaveIntervalType = AUTOSAVE_NONE;

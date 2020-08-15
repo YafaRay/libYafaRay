@@ -7,7 +7,7 @@
 __BEGIN_YAFRAY
 
 
-memoryIO_t::memoryIO_t ( int resx, int resy, float* iMem )
+memoryIO_t::memoryIO_t (int resx, int resy, float *iMem)
 {
 	sizex = resx;
 	sizey = resy;

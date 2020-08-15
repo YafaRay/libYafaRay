@@ -25,8 +25,8 @@ class layerNode_t: public shaderNode_t
 		virtual bool isViewDependant() const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find);
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const;
-		virtual bool getDependencies(std::vector<const shaderNode_t*> &dep) const;
-		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
+		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const;
+		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		const shaderNode_t *input, *upperLayer;
 		unsigned int texflag;

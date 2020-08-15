@@ -41,19 +41,19 @@ void QtOutput::setRenderSize(const QSize &s)
 
 bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, int idx, const yafaray::colorA_t &color, bool alpha)
 {
-	int r = std::max(0,std::min(255, (int)(color.R * 255.f)));
-	int g = std::max(0,std::min(255, (int)(color.G * 255.f)));	
-	int b = std::max(0,std::min(255, (int)(color.B * 255.f)));
+	int r = std::max(0, std::min(255, (int)(color.R * 255.f)));
+	int g = std::max(0, std::min(255, (int)(color.G * 255.f)));
+	int b = std::max(0, std::min(255, (int)(color.B * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
-	if (alpha)
+	if(alpha)
 	{
-		int a = std::max(0,std::min(255, (int)(color.A * 255.f)));
+		int a = std::max(0, std::min(255, (int)(color.A * 255.f)));
 		aval = qRgb(a, a, a);
 	}
-	
+
 	renderBuffer->setPixel(x, y, rgb, aval, alpha);
 
 	return true;
@@ -61,19 +61,19 @@ bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t
 
 bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha)
 {
-	int r = std::max(0,std::min(255, (int)(colExtPasses.at(0).R * 255.f)));
-	int g = std::max(0,std::min(255, (int)(colExtPasses.at(0).G * 255.f)));	
-	int b = std::max(0,std::min(255, (int)(colExtPasses.at(0).B * 255.f)));
+	int r = std::max(0, std::min(255, (int)(colExtPasses.at(0).R * 255.f)));
+	int g = std::max(0, std::min(255, (int)(colExtPasses.at(0).G * 255.f)));
+	int b = std::max(0, std::min(255, (int)(colExtPasses.at(0).B * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
-	if (alpha)
+	if(alpha)
 	{
-		int a = std::max(0,std::min(255, (int)(colExtPasses.at(0).A * 255.f)));
+		int a = std::max(0, std::min(255, (int)(colExtPasses.at(0).A * 255.f)));
 		aval = qRgb(a, a, a);
 	}
-	
+
 	renderBuffer->setPixel(x, y, rgb, aval, alpha);
 
 	return true;
@@ -86,10 +86,10 @@ void QtOutput::flush(int numView, const yafaray::renderPasses_t *renderPasses)
 
 void QtOutput::flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses)
 {
-	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(x0,y0,x1-x0,y1-y0)));
+	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(x0, y0, x1 - x0, y1 - y0)));
 }
 
 void QtOutput::highliteArea(int numView, int x0, int y0, int x1, int y1)
 {
-	QCoreApplication::postEvent(renderBuffer, new GuiAreaHighliteEvent(QRect(x0,y0,x1-x0,y1-y0)));
+	QCoreApplication::postEvent(renderBuffer, new GuiAreaHighliteEvent(QRect(x0, y0, x1 - x0, y1 - y0)));
 }

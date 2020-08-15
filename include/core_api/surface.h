@@ -46,8 +46,8 @@ class intersectData_t
 		float b1 = 0.f;
 		float b2 = 0.f;
 		float t = 0.f;
-		const vector3d_t * edge1 = nullptr;
-		const vector3d_t * edge2 = nullptr;
+		const vector3d_t *edge1 = nullptr;
+		const vector3d_t *edge2 = nullptr;
 };
 
 /*! This holds a sampled surface point's data
@@ -59,12 +59,12 @@ class YAFRAYCORE_EXPORT surfacePoint_t
 {
 	public:
 		float getDistToNearestEdge() const;
-	
+
 		//int object; //!< the object owner of the point.
 		const material_t *material; //!< the surface material
 		const light_t *light; //!< light source if surface point is on a light
 		const object3d_t *object; //!< object the prim belongs to
-	//	point2d_t screenpos; // only used with 'win' texture coord. mode
+		//	point2d_t screenpos; // only used with 'win' texture coord. mode
 		void *origin;
 		intersectData_t data;
 
@@ -74,7 +74,7 @@ class YAFRAYCORE_EXPORT surfacePoint_t
 		vector3d_t orcoNg; //!< the untransformed geometric normal.
 		point3d_t P; //!< the (world) position.
 		point3d_t orcoP;
-	//	color_t vertex_col;
+		//	color_t vertex_col;
 		bool hasUV;
 		bool hasOrco;
 		bool available;
@@ -94,9 +94,9 @@ class YAFRAYCORE_EXPORT surfacePoint_t
 		//float dudNV;
 		//float dvdNU;
 		//float dvdNV;
-		
+
 		// Differential ray for mipmaps calculations
-		const diffRay_t * ray = nullptr;
+		const diffRay_t *ray = nullptr;
 };
 
 inline float surfacePoint_t::getDistToNearestEdge() const
@@ -105,21 +105,21 @@ inline float surfacePoint_t::getDistToNearestEdge() const
 	{
 		float edge1len = data.edge1->length();
 		float edge2len = data.edge2->length();
-		float edge12len = (*(data.edge1) + *(data.edge2)).length() * 0.5f;
-		
+		float edge12len = (*(data.edge1) + * (data.edge2)).length() * 0.5f;
+
 		float edge1dist = data.b1 * edge1len;
 		float edge2dist = data.b2 * edge2len;
 		float edge12dist = data.b0 * edge12len;
-						
+
 		float edgeMinDist = std::min(edge12dist, std::min(edge1dist, edge2dist));
-		
+
 		return edgeMinDist;
 	}
 	else return std::numeric_limits<float>::infinity();
 }
 
 
-YAFRAYCORE_EXPORT surfacePoint_t blend_surface_points(surfacePoint_t const& sp_0, surfacePoint_t const& sp_1, float const alpha);
+YAFRAYCORE_EXPORT surfacePoint_t blend_surface_points(surfacePoint_t const &sp_0, surfacePoint_t const &sp_1, float const alpha);
 
 /*! computes and stores the additional data for surface intersections for
 	differential rays */

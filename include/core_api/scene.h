@@ -55,11 +55,11 @@ typedef unsigned int objID_t;
 */
 struct YAFRAYCORE_EXPORT renderState_t
 {
-	renderState_t():raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
+	renderState_t(): raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
 		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(nullptr) {};
-	renderState_t(random_t *rand):raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
+	renderState_t(random_t *rand): raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
 		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(rand) {};
-	~renderState_t(){};
+	~renderState_t() {};
 
 	int raylevel;
 	float depth;
@@ -94,9 +94,9 @@ struct YAFRAYCORE_EXPORT renderState_t
 		dc1 = dc2 = 0.f;
 		traveled = 0;
 	}
-	
-//	protected:
-	explicit renderState_t(const renderState_t &r):prng(r.prng) {}//forbiden
+
+	//	protected:
+	explicit renderState_t(const renderState_t &r): prng(r.prng) {} //forbiden
 };
 
 __END_YAFRAY
@@ -150,9 +150,9 @@ class YAFRAYCORE_EXPORT scene_t
 		void abort();
 		bool startGeometry();
 		bool endGeometry();
-		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV=false, int type=0, int object_pass_index=0);
+		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV = false, int type = 0, int object_pass_index = 0);
 		bool endTriMesh();
-		bool startCurveMesh(objID_t id, int vertices, int object_pass_index=0);
+		bool startCurveMesh(objID_t id, int vertices, int object_pass_index = 0);
 		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
 		int  addVertex(const point3d_t &p);
 		int  addVertex(const point3d_t &p, const point3d_t &orco);
@@ -167,27 +167,27 @@ class YAFRAYCORE_EXPORT scene_t
 		bool update();
 
 		bool addLight(light_t *l);
-		bool addMaterial(material_t *m, const char* name);
+		bool addMaterial(material_t *m, const char *name);
 		objID_t getNextFreeID();
 		bool addObject(object3d_t *obj, objID_t &id);
-        bool addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld);
-		void addVolumeRegion(VolumeRegion* vr) { volumes.push_back(vr); }
+		bool addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld);
+		void addVolumeRegion(VolumeRegion *vr) { volumes.push_back(vr); }
 		void setCamera(camera_t *cam);
 		void setImageFilm(imageFilm_t *film);
 		void setBackground(background_t *bg);
 		void setSurfIntegrator(surfaceIntegrator_t *s);
-		surfaceIntegrator_t* getSurfIntegrator() const { return surfIntegrator; }
+		surfaceIntegrator_t *getSurfIntegrator() const { return surfIntegrator; }
 		void setVolIntegrator(volumeIntegrator_t *v);
 		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect);
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setMode(int m){ mode = m; }
-		background_t* getBackground() const;
-		triangleObject_t* getMesh(objID_t id) const;
-		object3d_t* getObject(objID_t id) const;
-		std::vector<VolumeRegion*> getVolumes() const { return volumes; }
-		const camera_t* getCamera() const { return camera; }
-		imageFilm_t* getImageFilm() const { return imageFilm; }
+		void setMode(int m) { mode = m; }
+		background_t *getBackground() const;
+		triangleObject_t *getMesh(objID_t id) const;
+		object3d_t *getObject(objID_t id) const;
+		std::vector<VolumeRegion *> getVolumes() const { return volumes; }
+		const camera_t *getCamera() const { return camera; }
+		imageFilm_t *getImageFilm() const { return imageFilm; }
 		bound_t getSceneBound() const;
 		int getNumThreads() const { return nthreads; }
 		int getNumThreadsPhotons() const { return nthreads_photons; }
@@ -198,12 +198,13 @@ class YAFRAYCORE_EXPORT scene_t
 		bool intersect(const diffRay_t &ray, surfacePoint_t &sp) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
-		const renderPasses_t* getRenderPasses() const;
+		const renderPasses_t *getRenderPasses() const;
 		bool pass_enabled(intPassTypes_t intPassType) const;
 
 		enum sceneState { READY, GEOMETRY, OBJECT, VMAP };
-		enum changeFlags { C_NONE=0, C_GEOM=1, C_LIGHT= 1<<1, C_OTHER=1<<2,
-							C_ALL=C_GEOM|C_LIGHT|C_OTHER };
+		enum changeFlags { C_NONE = 0, C_GEOM = 1, C_LIGHT = 1 << 1, C_OTHER = 1 << 2,
+		                   C_ALL = C_GEOM | C_LIGHT | C_OTHER
+		                 };
 
 		std::vector<light_t *> lights;
 		volumeIntegrator_t *volIntegrator;
@@ -219,9 +220,9 @@ class YAFRAYCORE_EXPORT scene_t
 		sceneGeometryState_t state;
 		std::map<objID_t, object3d_t *> objects;
 		std::map<objID_t, objData_t> meshes;
-        std::map< std::string, material_t * > materials;
+		std::map< std::string, material_t * > materials;
 		std::vector<VolumeRegion *> volumes;
-        camera_t *camera;
+		camera_t *camera;
 		imageFilm_t *imageFilm;
 		triKdTree_t *tree; //!< kdTree for triangle-only mode
 		kdTree_t<primitive_t> *vtree; //!< kdTree for universal mode

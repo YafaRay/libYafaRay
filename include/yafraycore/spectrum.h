@@ -17,13 +17,13 @@ YAFRAYCORE_EXPORT color_t wl2XYZ(float wl);
 
 static inline float getIOR(float w, float CauchyA, float CauchyB)
 {
-	float wl = 300.0*w + 400.0;
-	return CauchyA + CauchyB/(wl*wl);
+	float wl = 300.0 * w + 400.0;
+	return CauchyA + CauchyB / (wl * wl);
 }
 
 static inline void wl2rgb(float w, color_t &wl_col)
 {
-	float wl = 300.0*w + 400.0;
+	float wl = 300.0 * w + 400.0;
 	wl2rgb_fromCIE(wl, wl_col);
 	wl_col *= 2.214032659670777114f;
 }

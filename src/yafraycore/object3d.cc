@@ -9,7 +9,7 @@ unsigned int object3d_t::objectIndexAuto = 0;	//Initially this class shared vari
 
 
 triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
-    has_orco(hasOrco), has_uv(hasUV), is_smooth(false), normals_exported(false)
+	has_orco(hasOrco), has_uv(hasUV), is_smooth(false), normals_exported(false)
 {
 	triangles.reserve(ntris);
 	if(hasUV)
@@ -29,14 +29,14 @@ triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
 
 int triangleObject_t::getPrimitives(const triangle_t **prims)
 {
-	for(unsigned int i=0; i < triangles.size(); ++i)
+	for(unsigned int i = 0; i < triangles.size(); ++i)
 	{
 		prims[i] = &(triangles[i]);
 	}
 	return triangles.size();
 }
 
-triangle_t* triangleObject_t::addTriangle(const triangle_t &t)
+triangle_t *triangleObject_t::addTriangle(const triangle_t &t)
 {
 	triangles.push_back(t);
 	triangles.back().selfIndex = triangles.size() - 1;
@@ -45,7 +45,7 @@ triangle_t* triangleObject_t::addTriangle(const triangle_t &t)
 
 void triangleObject_t::finish()
 {
-	for(auto i=triangles.begin(); i!= triangles.end(); ++i)
+	for(auto i = triangles.begin(); i != triangles.end(); ++i)
 	{
 		i->recNormal();
 	}
@@ -102,25 +102,25 @@ meshObject_t::meshObject_t(int ntris, bool hasUV, bool hasOrco):
 
 int meshObject_t::getPrimitives(const primitive_t **prims) const
 {
-	int n=0;
-	for(unsigned int i=0; i < triangles.size(); ++i, ++n)
+	int n = 0;
+	for(unsigned int i = 0; i < triangles.size(); ++i, ++n)
 	{
 		prims[n] = &(triangles[i]);
 	}
-	for(unsigned int i=0; i < s_triangles.size(); ++i, ++n)
+	for(unsigned int i = 0; i < s_triangles.size(); ++i, ++n)
 	{
 		prims[n] = &(s_triangles[i]);
 	}
 	return n;
 }
 
-primitive_t* meshObject_t::addTriangle(const vTriangle_t &t)
+primitive_t *meshObject_t::addTriangle(const vTriangle_t &t)
 {
 	triangles.push_back(t);
 	return &(triangles.back());
 }
 
-primitive_t* meshObject_t::addBsTriangle(const bsTriangle_t &t)
+primitive_t *meshObject_t::addBsTriangle(const bsTriangle_t &t)
 {
 	s_triangles.push_back(t);
 	return &(triangles.back());
@@ -128,7 +128,7 @@ primitive_t* meshObject_t::addBsTriangle(const bsTriangle_t &t)
 
 void meshObject_t::finish()
 {
-	for(auto i=triangles.begin(); i!= triangles.end(); ++i)
+	for(auto i = triangles.begin(); i != triangles.end(); ++i)
 	{
 		i->recNormal();
 	}

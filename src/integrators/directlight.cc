@@ -67,18 +67,18 @@ bool directLighting_t::preprocess()
 	if(usePhotonCaustics)
 	{
 		success = createCausticMap();
-		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch <<" radius=" << causRadius << " depth=" << causDepth << "  ";
-		
-	if(photonMapProcessing == PHOTONS_LOAD)
-	{
-		set << " (loading photon maps from file)";
+		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch << " radius=" << causRadius << " depth=" << causDepth << "  ";
+
+		if(photonMapProcessing == PHOTONS_LOAD)
+		{
+			set << " (loading photon maps from file)";
+		}
+		else if(photonMapProcessing == PHOTONS_REUSE)
+		{
+			set << " (reusing photon maps from memory)";
+		}
+		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
 	}
-	else if(photonMapProcessing == PHOTONS_REUSE)
-	{
-		set << " (reusing photon maps from memory)";
-	}
-	else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
-}
 
 	gTimer.stop("prepass");
 	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " (" << scene->getNumThreadsPhotons() << " thread(s))" << yendl;
@@ -87,7 +87,7 @@ bool directLighting_t::preprocess()
 
 	yafLog.appendRenderSettings(set.str());
 
-	for (std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << yendl;
+	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << yendl;
 
 	return success;
 }
@@ -100,8 +100,8 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	void *o_udat = state.userdata;
 	bool oldIncludeLights = state.includeLights;
 
-	if(transpBackground) alpha=0.0;
-	else alpha=1.0;
+	if(transpBackground) alpha = 0.0;
+	else alpha = 1.0;
 
 	// Shoot ray into scene
 
@@ -114,13 +114,13 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 		state.userdata = (void *) userdata;
 		vector3d_t wo = -ray.dir;
 		if(state.raylevel == 0) state.includeLights = true;
-		
+
 		material->initBSDF(state, sp, bsdfs);
 
 		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
 
 
-		if(bsdfs & BSDF_EMIT) 
+		if(bsdfs & BSDF_EMIT)
 		{
 			col += colorPasses.probe_set(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
 		}
@@ -128,10 +128,10 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 		if(bsdfs & BSDF_DIFFUSE)
 		{
 			col += estimateAllDirectLight(state, sp, wo, colorPasses);
-			
+
 			if(usePhotonCaustics)
 			{
-				if(AA_clamp_indirect>0)
+				if(AA_clamp_indirect > 0)
 				{
 					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
 					tmpCol.clampProportionalRGB(AA_clamp_indirect);
@@ -148,7 +148,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp, ray);
-			
+
 			if(colorPasses.enabled(PASS_INT_AO))
 			{
 				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
@@ -159,7 +159,7 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
-		
+
 		if(transpRefractedBackground)
 		{
 			float m_alpha = material->getAlpha(state, sp, wo);
@@ -181,24 +181,24 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
 	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
 
-	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
-	
+	if(transpBackground) alpha = std::max(alpha, 1.f - colVolTransmittance.R);
+
 	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
 	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
 
 	col = (col * colVolTransmittance) + colVolIntegration;
-	
+
 	return colorA_t(col, alpha);
 }
 
-integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
+integrator_t *directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	bool transpShad=false;
-	bool caustics=false;
-	bool do_AO=false;
-	int shadowDepth=5;
-	int raydepth=5, cDepth=10;
-	int search=100, photons=500000;
+	bool transpShad = false;
+	bool caustics = false;
+	bool do_AO = false;
+	int shadowDepth = 5;
+	int raydepth = 5, cDepth = 10;
+	int search = 100, photons = 500000;
 	int AO_samples = 32;
 	double cRad = 0.25;
 	double AO_dist = 1.0;
@@ -238,12 +238,12 @@ integrator_t* directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 	// Background settings
 	inte->transpBackground = bg_transp;
 	inte->transpRefractedBackground = bg_transp_refract;
-	
+
 	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
 	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
 	else if(photon_maps_processing_str == "reuse-previous") inte->photonMapProcessing = PHOTONS_REUSE;
 	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
-	
+
 	return inte;
 }
 
@@ -252,7 +252,7 @@ extern "C"
 
 	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
 	{
-		render.registerFactory("directlighting",directLighting_t::factory);
+		render.registerFactory("directlighting", directLighting_t::factory);
 	}
 
 }

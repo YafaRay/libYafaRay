@@ -8,17 +8,17 @@ YAFRAYCORE_EXPORT dirConverter_t dirconverter;
 
 dirConverter_t::dirConverter_t()
 {
-	for(int i=0;i<255;++i)
+	for(int i = 0; i < 255; ++i)
 	{
-		float angle=(float)i * cInv255Ratio;
-		costheta[i]=fCos(angle);
-		sintheta[i]=fSin(angle);
+		float angle = (float)i * cInv255Ratio;
+		costheta[i] = fCos(angle);
+		sintheta[i] = fSin(angle);
 	}
-	for(int i=0;i<256;++i)
+	for(int i = 0; i < 256; ++i)
 	{
-		float angle=(float)i * cInv256Ratio;
-		cosphi[i]=fCos(angle);
-		sinphi[i]=fSin(angle);
+		float angle = (float)i * cInv256Ratio;
+		cosphi[i] = fCos(angle);
+		sinphi[i] = fSin(angle);
 	}
 }
 
@@ -32,18 +32,21 @@ photonGather_t::photonGather_t(uint32_t mp, const point3d_t &P): p(P)
 void photonGather_t::operator()(const photon_t *photon, float dist2, float &maxDistSquared) const
 {
 	// Do usual photon heap management
-	if (foundPhotons < nLookup) {
+	if(foundPhotons < nLookup)
+	{
 		// Add photon to unordered array of photons
 		photons[foundPhotons++] = foundPhoton_t(photon, dist2);
-		if (foundPhotons == nLookup) {
-				std::make_heap(&photons[0], &photons[nLookup]);
-				maxDistSquared = photons[0].distSquare;
+		if(foundPhotons == nLookup)
+		{
+			std::make_heap(&photons[0], &photons[nLookup]);
+			maxDistSquared = photons[0].distSquare;
 		}
 	}
-	else {
+	else
+	{
 		// Remove most distant photon from heap and add new photon
 		std::pop_heap(&photons[0], &photons[nLookup]);
-		photons[nLookup-1] = foundPhoton_t(photon, dist2);
+		photons[nLookup - 1] = foundPhoton_t(photon, dist2);
 		std::push_heap(&photons[0], &photons[nLookup]);
 		maxDistSquared = photons[0].distSquare;
 	}
@@ -54,7 +57,7 @@ bool photonMap_t::load(const std::string &filename)
 	clear();
 
 	file_t file(filename);
-	if (!file.open("rb"))
+	if(!file.open("rb"))
 	{
 		Y_WARNING << "PhotonMap file '" << filename << "' not found, aborting load operation";
 		return false;
@@ -121,7 +124,7 @@ void photonMap_t::updateTree()
 		tree = new kdtree::pointKdTree<photon_t>(photons, name, threadsPKDtree);
 		updated = true;
 	}
-	else tree=0;
+	else tree = 0;
 }
 
 int photonMap_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float &sqRadius) const
@@ -132,7 +135,7 @@ int photonMap_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K
 	return proc.foundPhotons;
 }
 
-const photon_t* photonMap_t::findNearest(const point3d_t &P, const vector3d_t &n, float dist) const
+const photon_t *photonMap_t::findNearest(const point3d_t &P, const vector3d_t &n, float dist) const
 {
 	nearestPhoton_t proc(P, n);
 	//float dist=std::numeric_limits<float>::infinity(); //really bad idea...

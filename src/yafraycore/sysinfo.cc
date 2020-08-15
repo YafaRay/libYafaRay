@@ -24,12 +24,12 @@
 #include <yafray_config.h>
 
 #ifdef __APPLE__
-	#include <sys/sysctl.h>
+#include <sys/sysctl.h>
 #elif _WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
 #if HAVE_UNISTD_H
-	#include <unistd.h>
+#include <unistd.h>
 #endif
 
 __BEGIN_YAFRAY
@@ -39,23 +39,23 @@ int sysInfo_t::getNumSystemThreads() const
 	int nthreads = 1;
 
 #ifdef WIN32
-		SYSTEM_INFO info;
-		GetSystemInfo(&info);
-		nthreads = (int) info.dwNumberOfProcessors;
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	nthreads = (int) info.dwNumberOfProcessors;
 #else
-	#	ifdef __APPLE__
-		int mib[2];
-		size_t len;
+#	ifdef __APPLE__
+	int mib[2];
+	size_t len;
 
-		mib[0] = CTL_HW;
-		mib[1] = HW_NCPU;
-		len = sizeof(int);
-		sysctl(mib, 2, &nthreads, &len, nullptr, 0);
-	#	elif defined(__sgi)
-		nthreads = sysconf(_SC_NPROC_ONLN);
-	#	else
-		nthreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
-	#	endif
+	mib[0] = CTL_HW;
+	mib[1] = HW_NCPU;
+	len = sizeof(int);
+	sysctl(mib, 2, &nthreads, &len, nullptr, 0);
+#	elif defined(__sgi)
+	nthreads = sysconf(_SC_NPROC_ONLN);
+#	else
+	nthreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
+#	endif
 #endif
 
 	return nthreads;

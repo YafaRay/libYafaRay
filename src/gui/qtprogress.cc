@@ -25,9 +25,9 @@
 #include <QCoreApplication>
 
 QtProgress::QtProgress(MainWindow *window, int cwidth)
-: yafaray::ConsoleProgressBar_t(cwidth), m_win(window), m_currentStep(0), m_totalSteps(0)
+	: yafaray::ConsoleProgressBar_t(cwidth), m_win(window), m_currentStep(0), m_totalSteps(0)
 {
-	
+
 }
 
 QtProgress::~QtProgress()
@@ -55,13 +55,13 @@ void QtProgress::done()
 {
 	m_currentStep = m_totalSteps;
 	QCoreApplication::postEvent(m_win, new ProgressUpdateEvent(m_currentStep));
-	
+
 	//yafaray::ConsoleProgressBar_t::done();
 }
 
 void QtProgress::setTag(const char *tag)
 {
 	QCoreApplication::postEvent(m_win, new ProgressUpdateTagEvent(tag));
-	
+
 	//yafaray::ConsoleProgressBar_t::done();
 }

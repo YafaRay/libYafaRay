@@ -88,19 +88,19 @@ struct tgaHeader_t
 		bitDepth = 0;
 		desc = 0;
 	}
-// General image info
+	// General image info
 
 	yByte idLength;
 	yByte ColorMapType; // 0 or 1 (off or on)
 	yByte imageType; // one of tgaImageDataTypes
 
-// ColorMap desc
+	// ColorMap desc
 
 	yWord cmFirstEntryIndex; // Used to offset the start of the ColorMap, ie. start at entry 127 out of 256 entries
 	yWord cmNumberOfEntries;
 	yByte cmEntryBitDepth; // 15, 16, 24 or 32
 
-// Image descriptor
+	// Image descriptor
 
 	yWord xOrigin; // used for Truevision TARGA display devices (anybody still has one?)
 	yWord yOrigin; // used for Truevision TARGA display devices
@@ -137,7 +137,7 @@ struct tgaPixelRGB_t
 	yByte B;
 	yByte G;
 	yByte R;
-	tgaPixelRGB_t & operator = (const color_t &c)
+	tgaPixelRGB_t &operator = (const color_t &c)
 	{
 		R = (yByte)(c.getR() * 255.f);
 		G = (yByte)(c.getG() * 255.f);
@@ -152,7 +152,7 @@ struct tgaPixelRGBA_t
 	yByte G;
 	yByte R;
 	yByte A;
-	tgaPixelRGBA_t & operator = (const colorA_t &c)
+	tgaPixelRGBA_t &operator = (const colorA_t &c)
 	{
 		R = (yByte)(c.getR() * 255.f);
 		G = (yByte)(c.getG() * 255.f);

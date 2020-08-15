@@ -46,7 +46,7 @@ void xmlParser_t::setLastElementNameAttrs(const char **element_attrs)
 	current->last_element_attrs.clear();
 	if(element_attrs)
 	{
-		for(int n=0; element_attrs[n]; ++n)
+		for(int n = 0; element_attrs[n]; ++n)
 		{
 			if(n > 0) current->last_element_attrs += " ";
 			current->last_element_attrs += (std::string(element_attrs[n]));
@@ -64,7 +64,7 @@ void endDocument(void *user_data)
 	//Empty
 }
 
-void startElement(void * user_data, const xmlChar * name, const xmlChar **attrs)
+void startElement(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
 	xmlParser_t &parser = *((xmlParser_t *)user_data);
 	parser.startElement((const char *)name, (const char **)attrs);
@@ -76,83 +76,83 @@ void endElement(void *user_data, const xmlChar *name)
 	parser.endElement((const char *)name);
 }
 
-static void my_warning(void *user_data, const char *msg, ...) 
+static void my_warning(void *user_data, const char *msg, ...)
 {
 	xmlParser_t &parser = *((xmlParser_t *)user_data);
-    va_list args;
-    va_start(args, msg);
-    const size_t message_size = 1000;
-    char message_buffer[message_size];
-    vsnprintf(message_buffer, message_size, msg, args);
-    Y_WARNING << "XMLParser warning: " << message_buffer;
-    Y_WARNING << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-    Y_WARNING << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
-    va_end(args);
+	va_list args;
+	va_start(args, msg);
+	const size_t message_size = 1000;
+	char message_buffer[message_size];
+	vsnprintf(message_buffer, message_size, msg, args);
+	Y_WARNING << "XMLParser warning: " << message_buffer;
+	Y_WARNING << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+	Y_WARNING << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	va_end(args);
 }
 
-static void my_error(void *user_data, const char *msg, ...) 
+static void my_error(void *user_data, const char *msg, ...)
 {
 	xmlParser_t &parser = *((xmlParser_t *)user_data);
-    va_list args;
-    va_start(args, msg);
-    const size_t message_size = 1000;
-    char message_buffer[message_size];
-    vsnprintf(message_buffer, message_size, msg, args);
-    Y_ERROR << "XMLParser error: " << message_buffer;
-    Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-    Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
-    va_end(args);
+	va_list args;
+	va_start(args, msg);
+	const size_t message_size = 1000;
+	char message_buffer[message_size];
+	vsnprintf(message_buffer, message_size, msg, args);
+	Y_ERROR << "XMLParser error: " << message_buffer;
+	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	va_end(args);
 }
 
-static void my_fatalError(void *user_data, const char *msg, ...) 
+static void my_fatalError(void *user_data, const char *msg, ...)
 {
 	xmlParser_t &parser = *((xmlParser_t *)user_data);
-    va_list args;
-    va_start(args, msg);
-    const size_t message_size = 1000;
-    char message_buffer[message_size];
-    vsnprintf(message_buffer, message_size, msg, args);
-    Y_ERROR << "XMLParser fatal error: " << message_buffer;
-    Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-    Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
-    va_end(args);
+	va_list args;
+	va_start(args, msg);
+	const size_t message_size = 1000;
+	char message_buffer[message_size];
+	vsnprintf(message_buffer, message_size, msg, args);
+	Y_ERROR << "XMLParser fatal error: " << message_buffer;
+	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
+	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	va_end(args);
 }
 
 static xmlSAXHandler my_handler =
 {
 	nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  startDocument, //  startDocumentSAXFunc startDocument;
-  endDocument, //  endDocumentSAXFunc endDocument;
-  startElement, //  startElementSAXFunc startElement;
-  endElement, //  endElementSAXFunc endElement;
-  nullptr,
-  nullptr, //  charactersSAXFunc characters;
-  nullptr,
-  nullptr,
-  nullptr,
-  my_warning,
-  my_error,
-  my_fatalError
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	startDocument, //  startDocumentSAXFunc startDocument;
+	endDocument, //  endDocumentSAXFunc endDocument;
+	startElement, //  startElementSAXFunc startElement;
+	endElement, //  endElementSAXFunc endElement;
+	nullptr,
+	nullptr, //  charactersSAXFunc characters;
+	nullptr,
+	nullptr,
+	nullptr,
+	my_warning,
+	my_error,
+	my_fatalError
 };
 #endif // HAVE_XML
 
 bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma)
 {
 #if HAVE_XML
-	
+
 	colorSpaces_t input_color_space = RAW_MANUAL_GAMMA;
-	
+
 	if(color_space_string == "sRGB") input_color_space = SRGB;
 	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;
 	else if(color_space_string == "LinearRGB") input_color_space = LINEAR_RGB;
@@ -160,8 +160,8 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 	else input_color_space = SRGB;
 
 	xmlParser_t parser(env, scene, render, input_color_space, input_gamma);
-	
-	if (xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
+
+	if(xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
 	{
 		Y_ERROR << "XMLParser: Parsing the file " << filename << yendl;
 		return false;
@@ -207,11 +207,11 @@ void xmlParser_t::popState()
 / utility functions...
 =============================================================*/
 
-inline bool str2bool(const char *s){ return strcmp(s, "true") ? false : true; }
+inline bool str2bool(const char *s) { return strcmp(s, "true") ? false : true; }
 
 static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 {
-	for( ;attrs && attrs[0]; attrs += 2)
+	for(; attrs && attrs[0]; attrs += 2)
 	{
 		if(attrs[0][0] == 'o')
 		{
@@ -249,7 +249,7 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 static bool parseNormal(const char **attrs, normal_t &n)
 {
 	int compoRead = 0;
-	for( ;attrs && attrs[0]; attrs += 2)
+	for(; attrs && attrs[0]; attrs += 2)
 	{
 		if(attrs[0][1] != 0)
 		{
@@ -274,33 +274,33 @@ void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
 	if(!attrs[2]) // only one attribute => bool, integer or float value
 	{
 		std::string name(attrs[0]);
-		if(name == "ival"){ int i = atoi(attrs[1]); param = parameter_t(i); return; }
-		else if(name == "fval"){ double f = atof(attrs[1]); param = parameter_t(f); return; }
-		else if(name == "bval"){ bool b = str2bool(attrs[1]); param = parameter_t(b); return; }
-		else if(name == "sval"){ param = parameter_t(std::string(attrs[1])); return; }
+		if(name == "ival") { int i = atoi(attrs[1]); param = parameter_t(i); return; }
+		else if(name == "fval") { double f = atof(attrs[1]); param = parameter_t(f); return; }
+		else if(name == "bval") { bool b = str2bool(attrs[1]); param = parameter_t(b); return; }
+		else if(name == "sval") { param = parameter_t(std::string(attrs[1])); return; }
 	}
-	colorA_t c(0.f); point3d_t p(0,0,0);
-	int type=TYPE_NONE;
-	for(int n=0; attrs[n]; ++n)
+	colorA_t c(0.f); point3d_t p(0, 0, 0);
+	int type = TYPE_NONE;
+	for(int n = 0; attrs[n]; ++n)
 	{
 		if(attrs[n][1] != '\0') continue;
 		switch(attrs[n][0])
 		{
-			case 'x': p.x = atof(attrs[n+1]); type = TYPE_POINT; break;
-			case 'y': p.y = atof(attrs[n+1]); type = TYPE_POINT; break;
-			case 'z': p.z = atof(attrs[n+1]); type = TYPE_POINT; break;
-			
-			case 'r': c.R = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'g': c.G = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'b': c.B = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
-			case 'a': c.A = (float)atof(attrs[n+1]); type = TYPE_COLOR; break;
+			case 'x': p.x = atof(attrs[n + 1]); type = TYPE_POINT; break;
+			case 'y': p.y = atof(attrs[n + 1]); type = TYPE_POINT; break;
+			case 'z': p.z = atof(attrs[n + 1]); type = TYPE_POINT; break;
+
+			case 'r': c.R = (float)atof(attrs[n + 1]); type = TYPE_COLOR; break;
+			case 'g': c.G = (float)atof(attrs[n + 1]); type = TYPE_COLOR; break;
+			case 'b': c.B = (float)atof(attrs[n + 1]); type = TYPE_COLOR; break;
+			case 'a': c.A = (float)atof(attrs[n + 1]); type = TYPE_COLOR; break;
 		}
 	}
-	
+
 	switch(type)
 	{
 		case TYPE_POINT: param = parameter_t(p); break;
-		case TYPE_COLOR: 
+		case TYPE_COLOR:
 			c.linearRGB_from_ColorSpace(parser.getInputColorSpace(), parser.getInputGamma());
 			param = parameter_t(c);
 			break;
@@ -323,16 +323,16 @@ void startEl_document(xmlParser_t &parser, const char *element, const char **att
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	if( strcmp(element, "scene") ) Y_WARNING << "XMLParser: skipping <" << element << ">" << yendl; /* parser.error("Expected scene definition"); */
+	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: skipping <" << element << ">" << yendl;   /* parser.error("Expected scene definition"); */
 	else
 	{
-		for( ;attrs && attrs[0]; attrs += 2)
+		for(; attrs && attrs[0]; attrs += 2)
 		{
-			if(!strcmp(attrs[0], "type") )
+			if(!strcmp(attrs[0], "type"))
 			{
 				std::string val(attrs[1]);
-				if		(val == "triangle")  parser.scene->setMode(0);
-				else if	(val == "universal") parser.scene->setMode(1);
+				if(val == "triangle")  parser.scene->setMode(0);
+				else if(val == "universal") parser.scene->setMode(1);
 			}
 		}
 		parser.pushState(startEl_scene, endEl_scene);
@@ -356,10 +356,10 @@ struct mesh_dat_t
 
 struct curve_dat_t
 {
-    curve_dat_t(): ID(0), mat(nullptr), strandStart(0), strandEnd(0), strandShape(0) {};
-    objID_t ID;
-    const material_t *mat;
-    float strandStart, strandEnd, strandShape;
+	curve_dat_t(): ID(0), mat(nullptr), strandStart(0), strandEnd(0), strandShape(0) {};
+	objID_t ID;
+	const material_t *mat;
+	float strandStart, strandEnd, strandShape;
 };
 
 // scene-state, i.e. expect only primary elements
@@ -371,9 +371,9 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	std::string el(element), *name=0;
-	if( el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-		el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes" || el == "logging_badge")
+	std::string el(element), *name = 0;
+	if(el == "material" || el == "integrator" || el == "light" || el == "texture" ||
+	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes" || el == "logging_badge")
 	{
 		if(!attrs[0])
 		{
@@ -391,17 +391,17 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	else if(el == "mesh")
 	{
 		mesh_dat_t *md = new mesh_dat_t();
-		int vertices=0, triangles=0, type=0, id=-1, obj_pass_index=0;
-		for(int n=0; attrs[n]; ++n)
+		int vertices = 0, triangles = 0, type = 0, id = -1, obj_pass_index = 0;
+		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
-			if(name == "has_orco") md->has_orco = str2bool(attrs[n+1]);
-			else if(name == "has_uv") md->has_uv = str2bool(attrs[n+1]);
-			else if(name == "vertices") vertices = atoi(attrs[n+1]);
-			else if(name == "faces") triangles = atoi(attrs[n+1]);
-			else if(name == "type")	type = atoi(attrs[n+1]);
-			else if(name == "id" ) id = atoi(attrs[n+1]);
-			else if(name == "obj_pass_index" ) obj_pass_index = atoi(attrs[n+1]);
+			if(name == "has_orco") md->has_orco = str2bool(attrs[n + 1]);
+			else if(name == "has_uv") md->has_uv = str2bool(attrs[n + 1]);
+			else if(name == "vertices") vertices = atoi(attrs[n + 1]);
+			else if(name == "faces") triangles = atoi(attrs[n + 1]);
+			else if(name == "type")	type = atoi(attrs[n + 1]);
+			else if(name == "id") id = atoi(attrs[n + 1]);
+			else if(name == "obj_pass_index") obj_pass_index = atoi(attrs[n + 1]);
 		}
 		parser.pushState(startEl_mesh, endEl_mesh, md);
 		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
@@ -409,7 +409,7 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		// Get a new object ID if we did not get one
 		if(id == -1) md->ID = parser.scene->getNextFreeID();
 		else md->ID = id;
-		
+
 		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type, obj_pass_index))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
@@ -417,13 +417,13 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	}
 	else if(el == "smooth")
 	{
-		unsigned int ID=0;
-		float angle=181;
-		for(int n=0; attrs[n]; ++n)
+		unsigned int ID = 0;
+		float angle = 181;
+		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
-			if(name == "ID") ID = atoi(attrs[n+1]);
-			else if(name == "angle") angle = atof(attrs[n+1]);
+			if(name == "ID") ID = atoi(attrs[n + 1]);
+			else if(name == "angle") angle = atof(attrs[n + 1]);
 		}
 		//not optimal to take ID blind...
 		parser.scene->startGeometry();
@@ -437,40 +437,40 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 		parser.cparams = &parser.render;
 		parser.pushState(startEl_parammap, endEl_render);
 	}
-    else if(el == "instance")
+	else if(el == "instance")
 	{
-		objID_t * base_object_id = new objID_t();
-        *base_object_id = -1;
-		for(int n=0; attrs[n]; n++)
+		objID_t *base_object_id = new objID_t();
+		*base_object_id = -1;
+		for(int n = 0; attrs[n]; n++)
 		{
 			std::string name(attrs[n]);
-			if(name == "base_object_id") *base_object_id = atoi(attrs[n+1]);
+			if(name == "base_object_id") *base_object_id = atoi(attrs[n + 1]);
 		}
-		parser.pushState(startEl_instance,endEl_instance, base_object_id);	
+		parser.pushState(startEl_instance, endEl_instance, base_object_id);
 	}
 	else if(el == "curve")
-    {
-        curve_dat_t *cvd = new curve_dat_t();
-        int vertex = 0, idc = -1;
-        // attribute's loop
-        for(int n=0; attrs[n]; ++n)
-        {
-            std::string name(attrs[n]);
-            if(name == "vertices") vertex = atoi(attrs[n+1]);
-            else if(name == "id" ) idc = atoi(attrs[n+1]);
-        }
-        parser.pushState(startEl_curve, endEl_curve, cvd);
-        if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
+	{
+		curve_dat_t *cvd = new curve_dat_t();
+		int vertex = 0, idc = -1;
+		// attribute's loop
+		for(int n = 0; attrs[n]; ++n)
+		{
+			std::string name(attrs[n]);
+			if(name == "vertices") vertex = atoi(attrs[n + 1]);
+			else if(name == "id") idc = atoi(attrs[n + 1]);
+		}
+		parser.pushState(startEl_curve, endEl_curve, cvd);
+		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
 
-        // Get a new object ID if we did not get one
-        if(idc == -1) cvd->ID = parser.scene->getNextFreeID();
-        else cvd->ID = idc;
+		// Get a new object ID if we did not get one
+		if(idc == -1) cvd->ID = parser.scene->getNextFreeID();
+		else cvd->ID = idc;
 
-        if(!parser.scene->startCurveMesh(cvd->ID, vertex))
-        {
-            Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << yendl;
-        }
-    }
+		if(!parser.scene->startCurveMesh(cvd->ID, vertex))
+		{
+			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << yendl;
+		}
+	}
 	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << yendl;
 }
 
@@ -488,51 +488,51 @@ void startEl_curve(xmlParser_t &parser, const char *element, const char **attrs)
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-    std::string el(element);
-    curve_dat_t *dat = (curve_dat_t *)parser.stateData();
+	std::string el(element);
+	curve_dat_t *dat = (curve_dat_t *)parser.stateData();
 
-    if(el == "p")
-    {
-        point3d_t p, op;
-        if(!parsePoint(attrs, p, op)) return;
-        parser.scene->addVertex(p);
-    }
-    else if(el == "strand_start")
-    {
-        dat->strandStart = atof(attrs[1]);
-    }
-    else if(el == "strand_end")
-    {
-        dat->strandEnd = atof(attrs[1]);
-    }
-    else if(el == "strand_shape")
-    {
-        dat->strandShape = atof(attrs[1]);
+	if(el == "p")
+	{
+		point3d_t p, op;
+		if(!parsePoint(attrs, p, op)) return;
+		parser.scene->addVertex(p);
+	}
+	else if(el == "strand_start")
+	{
+		dat->strandStart = atof(attrs[1]);
+	}
+	else if(el == "strand_end")
+	{
+		dat->strandEnd = atof(attrs[1]);
+	}
+	else if(el == "strand_shape")
+	{
+		dat->strandShape = atof(attrs[1]);
 
-    }
-    else if(el == "set_material")
-    {
-        std::string mat_name(attrs[1]);
-        dat->mat = parser.env->getMaterial(mat_name);
-        if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
-    }
+	}
+	else if(el == "set_material")
+	{
+		std::string mat_name(attrs[1]);
+		dat->mat = parser.env->getMaterial(mat_name);
+		if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
+	}
 }
 void endEl_curve(xmlParser_t &parser, const char *element)
 {
-    if(std::string(element) == "curve")
-    {
-        curve_dat_t *cd = (curve_dat_t *)parser.stateData();
-        if(!parser.scene->endCurveMesh(cd->mat, cd->strandStart, cd->strandEnd, cd->strandShape))
-        {
-            Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << yendl;
-        }
-        if(!parser.scene->endGeometry())
-        {
-            Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
-        }
-        delete cd;
-        parser.popState();
-    }
+	if(std::string(element) == "curve")
+	{
+		curve_dat_t *cd = (curve_dat_t *)parser.stateData();
+		if(!parser.scene->endCurveMesh(cd->mat, cd->strandStart, cd->strandEnd, cd->strandShape))
+		{
+			Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << yendl;
+		}
+		if(!parser.scene->endGeometry())
+		{
+			Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
+		}
+		delete cd;
+		parser.popState();
+	}
 }
 
 // mesh-state, i.e. expect only points (vertices), faces and material settings
@@ -560,16 +560,16 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 	}
 	else if(el == "f")
 	{
-		int a=0, b=0, c=0, uv_a=0, uv_b=0, uv_c=0;
-		for( ;attrs && attrs[0]; attrs += 2)
+		int a = 0, b = 0, c = 0, uv_a = 0, uv_b = 0, uv_c = 0;
+		for(; attrs && attrs[0]; attrs += 2)
 		{
-			if(attrs[0][1]==0) switch(attrs[0][0])
-			{
-				case 'a' : a = atoi(attrs[1]); break;
-				case 'b' : b = atoi(attrs[1]); break;
-				case 'c' : c = atoi(attrs[1]); break;
-				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << yendl;
-			}
+			if(attrs[0][1] == 0) switch(attrs[0][0])
+				{
+					case 'a' : a = atoi(attrs[1]); break;
+					case 'b' : b = atoi(attrs[1]); break;
+					case 'c' : c = atoi(attrs[1]); break;
+					default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << yendl;
+				}
 			else
 			{
 				if(!strcmp(attrs[0], "uv_a")) 	   uv_a = atoi(attrs[1]);
@@ -582,22 +582,22 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 	}
 	else if(el == "uv")
 	{
-		float u=0, v=0;
-		for( ;attrs && attrs[0]; attrs += 2)
+		float u = 0, v = 0;
+		for(; attrs && attrs[0]; attrs += 2)
 		{
 			switch(attrs[0][0])
 			{
 				case 'u': u = atof(attrs[1]);
 					if(!(isValidFloat(u)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0]<<"="<<attrs[1]<<". Replacing with 0.0." << yendl;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << yendl;
 						u = 0.f;
 					}
 					break;
 				case 'v': v = atof(attrs[1]);
 					if(!(isValidFloat(v)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0]<<"="<<attrs[1]<<". Replacing with 0.0." << yendl;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << yendl;
 						v = 0.f;
 					}
 					break;
@@ -638,34 +638,34 @@ void startEl_instance(xmlParser_t &parser, const char *element, const char **att
 	if(el == "transform")
 	{
 		float m[4][4];
-		for(int n=0; attrs[n]; ++n)
+		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
-			if(name ==  "m00") m[0][0] = atof(attrs[n+1]); 
-			else if(name ==  "m01") m[0][1] = atof(attrs[n+1]); 
-			else if(name ==  "m02") m[0][2] = atof(attrs[n+1]); 
-			else if(name ==  "m03") m[0][3] = atof(attrs[n+1]); 
-			else if(name ==  "m10") m[1][0] = atof(attrs[n+1]); 
-			else if(name ==  "m11") m[1][1] = atof(attrs[n+1]); 
-			else if(name ==  "m12") m[1][2] = atof(attrs[n+1]); 
-			else if(name ==  "m13") m[1][3] = atof(attrs[n+1]); 
-			else if(name ==  "m20") m[2][0] = atof(attrs[n+1]); 
-			else if(name ==  "m21") m[2][1] = atof(attrs[n+1]); 
-			else if(name ==  "m22") m[2][2] = atof(attrs[n+1]); 
-			else if(name ==  "m23") m[2][3] = atof(attrs[n+1]); 
-			else if(name ==  "m30") m[3][0] = atof(attrs[n+1]); 
-			else if(name ==  "m31") m[3][1] = atof(attrs[n+1]); 
-			else if(name ==  "m32") m[3][2] = atof(attrs[n+1]); 
-			else if(name ==  "m33") m[3][3] = atof(attrs[n+1]); 
+			if(name ==  "m00") m[0][0] = atof(attrs[n + 1]);
+			else if(name ==  "m01") m[0][1] = atof(attrs[n + 1]);
+			else if(name ==  "m02") m[0][2] = atof(attrs[n + 1]);
+			else if(name ==  "m03") m[0][3] = atof(attrs[n + 1]);
+			else if(name ==  "m10") m[1][0] = atof(attrs[n + 1]);
+			else if(name ==  "m11") m[1][1] = atof(attrs[n + 1]);
+			else if(name ==  "m12") m[1][2] = atof(attrs[n + 1]);
+			else if(name ==  "m13") m[1][3] = atof(attrs[n + 1]);
+			else if(name ==  "m20") m[2][0] = atof(attrs[n + 1]);
+			else if(name ==  "m21") m[2][1] = atof(attrs[n + 1]);
+			else if(name ==  "m22") m[2][2] = atof(attrs[n + 1]);
+			else if(name ==  "m23") m[2][3] = atof(attrs[n + 1]);
+			else if(name ==  "m30") m[3][0] = atof(attrs[n + 1]);
+			else if(name ==  "m31") m[3][1] = atof(attrs[n + 1]);
+			else if(name ==  "m32") m[3][2] = atof(attrs[n + 1]);
+			else if(name ==  "m33") m[3][3] = atof(attrs[n + 1]);
 		}
 		matrix4x4_t *m4 = new matrix4x4_t(m);
-		parser.scene->addInstance(boi,*m4);
+		parser.scene->addInstance(boi, *m4);
 	}
 }
 
 void endEl_instance(xmlParser_t &parser, const char *element)
 {
-	if(std::string(element) == "instance" )
+	if(std::string(element) == "instance")
 	{
 		parser.popState();
 	}
@@ -694,7 +694,7 @@ void startEl_parammap(xmlParser_t &parser, const char *element, const char **att
 
 void endEl_parammap(xmlParser_t &p, const char *element)
 {
-	bool exit_state= (p.currLevel() == p.stateLevel());	
+	bool exit_state = (p.currLevel() == p.stateLevel());
 	if(exit_state)
 	{
 		std::string el(element);
@@ -725,8 +725,8 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			}
 			else if(el == "volumeregion")
 			{
-				VolumeRegion* vr = p.env->createVolumeRegion(*name, p.params);
-				if (vr) p.scene->addVolumeRegion(vr);
+				VolumeRegion *vr = p.env->createVolumeRegion(*name, p.params);
+				if(vr) p.scene->addVolumeRegion(vr);
 			}
 			else if(el == "render_passes")
 			{
@@ -738,7 +738,7 @@ void endEl_parammap(xmlParser_t &p, const char *element)
 			}
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << yendl;
 		}
-		
+
 		if(name) delete name;
 		p.popState(); p.params.clear(); p.eparams.clear();
 	}
@@ -768,7 +768,7 @@ void endEl_render(xmlParser_t &parser, const char *element)
 	parser.setLastSection("render");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(nullptr);
-	
+
 	if(!strcmp(element, "render"))
 	{
 		parser.cparams = &parser.params;

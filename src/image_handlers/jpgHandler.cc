@@ -17,7 +17,7 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *      
+ *
  */
 
 #include <core_api/imagehandler.h>
@@ -30,8 +30,8 @@
 
 extern "C"
 {
-	#include <setjmp.h>
-	#include <jpeglib.h>
+#include <setjmp.h>
+#include <jpeglib.h>
 }
 
 __BEGIN_YAFRAY
@@ -67,19 +67,19 @@ void jpgExitOnError(j_common_ptr info)
 
 class jpgHandler_t: public imageHandler_t
 {
-public:
-	jpgHandler_t();
-	~jpgHandler_t();
-	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name, int imgIndex = 0);
-	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	public:
+		jpgHandler_t();
+		~jpgHandler_t();
+		bool loadFromFile(const std::string &name);
+		bool saveToFile(const std::string &name, int imgIndex = 0);
+		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
 };
 
 jpgHandler_t::jpgHandler_t()
 {
 	m_hasAlpha = false;
 	m_MultiLayer = false;
-	
+
 	handlerName = "JPEGHandler";
 }
 
@@ -94,7 +94,7 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
+	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
 	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
 
@@ -102,15 +102,15 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	struct jpgErrorManager jerr;
 	int x, y, ix;
 	yByte *scanline = nullptr;
-	
-	FILE * fp = file_t::open(name, "wb");
-	
-	if (!fp)
+
+	FILE *fp = file_t::open(name, "wb");
+
+	if(!fp)
 	{
 		Y_ERROR << handlerName << ": Cannot open file for writing " << name << yendl;
 		return false;
 	}
-	
+
 	info.err = jpeg_std_error(&jerr.pub);
 	info.err->output_message = jpgErrorMessage;
 	jerr.pub.error_exit = jpgExitOnError;
@@ -122,30 +122,31 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	info.image_height = h;
 	info.in_color_space = JCS_RGB;
 	info.input_components = 3;
-	
+
 	jpeg_set_defaults(&info);
-	
+
 	info.dct_method = JDCT_FLOAT;
 	jpeg_set_quality(&info, 100, TRUE);
-	
+
 	jpeg_start_compress(&info, TRUE);
 
 	scanline = new yByte[ w * 3 ];
 
-//The denoise functionality will only work if YafaRay is built with OpenCV support
+	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-	if(m_Denoise) {
+	if(m_Denoise)
+	{
 		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
 		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < w; x++)
+			for(x = 0; x < w; x++)
 			{
 				ix = x * 3;
 				colorA_t col = denoised_buffer.getColor(x, y);
 				col.clampRGBA01();
-				scanline[ix]   = (yByte) (col.getR() * 255);
-				scanline[ix+1] = (yByte) (col.getG() * 255);
-				scanline[ix+2] = (yByte) (col.getB() * 255);
+				scanline[ix]   = (yByte)(col.getR() * 255);
+				scanline[ix + 1] = (yByte)(col.getG() * 255);
+				scanline[ix + 2] = (yByte)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -154,14 +155,16 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	else
 #endif //HAVE_OPENCV
 	{
-		for (y = 0; y < h; y++) {
-			for (x = 0; x < w; x++) {
+		for(y = 0; y < h; y++)
+		{
+			for(x = 0; x < w; x++)
+			{
 				ix = x * 3;
 				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
 				col.clampRGBA01();
-				scanline[ix] = (yByte) (col.getR() * 255);
-				scanline[ix + 1] = (yByte) (col.getG() * 255);
-				scanline[ix + 2] = (yByte) (col.getB() * 255);
+				scanline[ix] = (yByte)(col.getR() * 255);
+				scanline[ix + 1] = (yByte)(col.getG() * 255);
+				scanline[ix + 2] = (yByte)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -182,13 +185,13 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << yendl;
 
 		fp = file_t::open(alphaname, "wb");
-		
-		if (!fp)
+
+		if(!fp)
 		{
 			Y_ERROR << handlerName << ": Cannot open file for writing " << alphaname << yendl;
 			return false;
 		}
-		
+
 		info.err = jpeg_std_error(&jerr.pub);
 		info.err->output_message = jpgErrorMessage;
 		jerr.pub.error_exit = jpgExitOnError;
@@ -200,19 +203,19 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		info.image_height = h;
 		info.in_color_space = JCS_GRAYSCALE;
 		info.input_components = 1;
-		
+
 		jpeg_set_defaults(&info);
-		
+
 		info.dct_method = JDCT_FLOAT;
 		jpeg_set_quality(&info, 100, TRUE);
-		
+
 		jpeg_start_compress(&info, TRUE);
 
 		scanline = new yByte[ w ];
 
 		for(y = 0; y < h; y++)
 		{
-			for (x = 0; x < w; x++)
+			for(x = 0; x < w; x++)
 			{
 				float col = std::max(0.f, std::min(1.f, imgBuffer.at(imgIndex)->getColor(x, y).getA()));
 
@@ -254,12 +257,12 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	info.err->output_message = jpgErrorMessage;
 	jerr.pub.error_exit = jpgExitOnError;
 
-	if (setjmp(jerr.setjmp_buffer))
+	if(setjmp(jerr.setjmp_buffer))
 	{
 		jpeg_destroy_decompress(&info);
-		
+
 		file_t::close(fp);
-		
+
 		return false;
 	}
 
@@ -273,44 +276,44 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	bool isRGB  = ((info.out_color_space == JCS_RGB) & (info.output_components == 3));
 	bool isCMYK = ((info.out_color_space == JCS_CMYK) & (info.output_components == 4));// TODO: findout if blender's non-standard jpeg + alpha comply with this or not, the code for conversion is below
 
-	if ((!isGray) && (!isRGB) && (!isCMYK))
+	if((!isGray) && (!isRGB) && (!isCMYK))
 	{
 		Y_ERROR << handlerName << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << yendl;
-		
+
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
-		
+
 		file_t::close(fp);
-		
+
 		return false;
 	}
-	
+
 	m_hasAlpha = false;
 	m_width = info.output_width;
 	m_height = info.output_height;
 
 	clearImgBuffers();
-	
+
 	int nChannels = 3;
 	if(m_grayscale) nChannels = 1;
 	else if(m_hasAlpha) nChannels = 4;
 
 	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
-	
-	yByte* scanline = new yByte[m_width * info.output_components];
-	
+
+	yByte *scanline = new yByte[m_width * info.output_components];
+
 	int y = 0;
 	int ix = 0;
-	
-	while ( info.output_scanline < info.output_height )
+
+	while(info.output_scanline < info.output_height)
 	{
 		jpeg_read_scanlines(&info, &scanline, 1);
-		
-		for (int x = 0; x < m_width; x++)
+
+		for(int x = 0; x < m_width; x++)
 		{
 			colorA_t color;
-			
-			if (isGray)
+
+			if(isGray)
 			{
 				float colscan = scanline[x] * inv8;
 				color.set(colscan, colscan, colscan, 1.f);
@@ -318,43 +321,43 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 			else if(isRGB)
 			{
 				ix = x * 3;
-				color.set( scanline[ix] * inv8,
-									 scanline[ix+1] * inv8,
-									 scanline[ix+2] * inv8,
-									 1.f);
+				color.set(scanline[ix] * inv8,
+				          scanline[ix + 1] * inv8,
+				          scanline[ix + 2] * inv8,
+				          1.f);
 			}
 			else if(isCMYK)
 			{
 				ix = x * 4;
-				float K = scanline[ix+3] * inv8;
+				float K = scanline[ix + 3] * inv8;
 				float iK = 1.f - K;
-				
-				color.set( 1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f), 
-									 1.f - std::max((scanline[ix+1] * inv8 * iK) + K, 1.f),
-									 1.f - std::max((scanline[ix+2] * inv8 * iK) + K, 1.f),
-									 1.f);
+
+				color.set(1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f),
+				          1.f - std::max((scanline[ix + 1] * inv8 * iK) + K, 1.f),
+				          1.f - std::max((scanline[ix + 2] * inv8 * iK) + K, 1.f),
+				          1.f);
 			}
 			else // this is probabbly (surely) never executed, i need to research further; this assumes blender non-standard jpeg + alpha
 			{
 				ix = x * 4;
-				float A = scanline[ix+3] * inv8;
+				float A = scanline[ix + 3] * inv8;
 				float iA = 1.f - A;
-				color.set( std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
-									 std::max(0.f, std::min((scanline[ix+1] * inv8) - iA, 1.f)),
-									 std::max(0.f, std::min((scanline[ix+2] * inv8) - iA, 1.f)),
-									 A);
+				color.set(std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
+				          std::max(0.f, std::min((scanline[ix + 1] * inv8) - iA, 1.f)),
+				          std::max(0.f, std::min((scanline[ix + 2] * inv8) - iA, 1.f)),
+				          A);
 			}
-			
+
 			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
 		}
 		y++;
 	}
-	
+
 	delete [] scanline;
 
 	jpeg_finish_decompress(&info);
 	jpeg_destroy_decompress(&info);
-	
+
 	file_t::close(fp);
 
 	Y_VERBOSE << handlerName << ": Done." << yendl;
@@ -386,13 +389,13 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	params.getParam("img_grayscale", img_grayscale);
 
 	imageHandler_t *ih = new jpgHandler_t();
-	
+
 	if(forOutput)
 	{
 		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
 		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
 	}
-	
+
 	return ih;
 }
 

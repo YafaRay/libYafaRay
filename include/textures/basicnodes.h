@@ -11,7 +11,7 @@
 __BEGIN_YAFRAY
 
 enum TEX_COORDS {TXC_UV, TXC_GLOB, TXC_ORCO, TXC_TRAN, TXC_NOR, TXC_REFL, TXC_WIN, TXC_STICK, TXC_STRESS, TXC_TAN };
-enum TEX_PROJ {TXP_PLAIN=0, TXP_CUBE, TXP_TUBE, TXP_SPHERE};
+enum TEX_PROJ {TXP_PLAIN = 0, TXP_CUBE, TXP_TUBE, TXP_SPHERE};
 
 class textureMapper_t: public shaderNode_t
 {
@@ -22,7 +22,7 @@ class textureMapper_t: public shaderNode_t
 		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const;
-		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
+		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void setup();
 		void getCoords(point3d_t &texpt, vector3d_t &Ng, const surfacePoint_t &sp, const renderState_t &state) const;
@@ -47,7 +47,7 @@ class valueNode_t: public shaderNode_t
 		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
 		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) { return true; };
-		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
+		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		colorA_t color;
 		float value;
@@ -61,8 +61,8 @@ class mixNode_t: public shaderNode_t
 		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
 		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find);
-		virtual bool getDependencies(std::vector<const shaderNode_t*> &dep) const;
-		static shaderNode_t* factory(const paraMap_t &params,renderEnvironment_t &render);
+		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const;
+		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void getInputs(nodeStack_t &stack, colorA_t &cin1, colorA_t &cin2, float &fin1, float &fin2, float &f2) const;
 		colorA_t col1, col2;

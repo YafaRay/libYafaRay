@@ -70,40 +70,40 @@ cliParserOption_t::cliParserOption_t(ystring sOpt, ystring lOpt, bool isFlag, ys
 class cliParser_t
 {
 	public:
-	cliParser_t() {} //! Default constructor for 2 step init
-	cliParser_t( int argc, char **argv, int cleanArgsNum, int cleanOptArgsNum, const ystring cleanArgError); //! One step init constructor
-	~cliParser_t();
-	void setCommandLineArgs( int argc, char **argv); //! Initialization method for 2 step init
-	void setCleanArgsNumber(int argNum, int optArg, const ystring cleanArgError); //! Configures the parser to get arguments non-paired at the end of the command string with optional arg number
-	void setOption(ystring sOpt, ystring lOpt, bool isFlag, ystring desc); //! Option registrer method, it adds a valid parsing option to the list
-	ystring getOptionString(const ystring sOpt, const ystring lOpt = ""); //! Retrieves the string value asociated with the option if any, if no option returns an empty string
-	int getOptionInteger(const ystring sOpt, const ystring lOpt = ""); //! Retrieves the integer value asociated with the option if any, if no option returns -65535
-	bool getFlag(const ystring sOpt, const ystring lOpt = ""); //! Returns true is the flas was set in command line, false else
-	bool isSet(const ystring sOpt, const ystring lOpt = ""); //! Returns true if the option was set on the command line (only for paired options)
-	yvector<ystring> getCleanArgs() const;
-	void setAppName(const ystring name, const ystring bUsage);
-	void printUsage() const; //! Prints usage instructions with the registrered options
-	void printError() const; //! Prints error found during parsing (if any)
-	void clearOptions(); //! Clears the registrered options list
-	bool parseCommandLine(); //! Parses the input values from command line and fills the values on the right options if they exist on the args
-	
+		cliParser_t() {} //! Default constructor for 2 step init
+		cliParser_t(int argc, char **argv, int cleanArgsNum, int cleanOptArgsNum, const ystring cleanArgError);  //! One step init constructor
+		~cliParser_t();
+		void setCommandLineArgs(int argc, char **argv);  //! Initialization method for 2 step init
+		void setCleanArgsNumber(int argNum, int optArg, const ystring cleanArgError); //! Configures the parser to get arguments non-paired at the end of the command string with optional arg number
+		void setOption(ystring sOpt, ystring lOpt, bool isFlag, ystring desc); //! Option registrer method, it adds a valid parsing option to the list
+		ystring getOptionString(const ystring sOpt, const ystring lOpt = ""); //! Retrieves the string value asociated with the option if any, if no option returns an empty string
+		int getOptionInteger(const ystring sOpt, const ystring lOpt = ""); //! Retrieves the integer value asociated with the option if any, if no option returns -65535
+		bool getFlag(const ystring sOpt, const ystring lOpt = ""); //! Returns true is the flas was set in command line, false else
+		bool isSet(const ystring sOpt, const ystring lOpt = ""); //! Returns true if the option was set on the command line (only for paired options)
+		yvector<ystring> getCleanArgs() const;
+		void setAppName(const ystring name, const ystring bUsage);
+		void printUsage() const; //! Prints usage instructions with the registrered options
+		void printError() const; //! Prints error found during parsing (if any)
+		void clearOptions(); //! Clears the registrered options list
+		bool parseCommandLine(); //! Parses the input values from command line and fills the values on the right options if they exist on the args
+
 	private:
-	size_t argCount; //! Input arguments count
-	ystring appName; //! Holds the app name used in the usage construction, defaults to argv[0]
-	ystring binName; //! Holds the name of the executabl binary (argv[0])
-	ystring basicUsage; //! Holds the basic usage instructions of the command
-	yvector<ystring> argValues; //! Holds argv values
-	yvector<ystring> cleanValues; //! Holds clean (non-paired options) values
-	yvector<cliParserOption_t*> regOptions; //! Holds registrered options
-	size_t cleanArgs;
-	size_t cleanArgsOptional;
-	ystring cleanArgsError;
-	ystring parseError;
+		size_t argCount; //! Input arguments count
+		ystring appName; //! Holds the app name used in the usage construction, defaults to argv[0]
+		ystring binName; //! Holds the name of the executabl binary (argv[0])
+		ystring basicUsage; //! Holds the basic usage instructions of the command
+		yvector<ystring> argValues; //! Holds argv values
+		yvector<ystring> cleanValues; //! Holds clean (non-paired options) values
+		yvector<cliParserOption_t *> regOptions; //! Holds registrered options
+		size_t cleanArgs;
+		size_t cleanArgsOptional;
+		ystring cleanArgsError;
+		ystring parseError;
 };
 
 cliParser_t::cliParser_t(int argc, char **argv, int cleanArgsNum, int cleanOptArgsNum, const ystring cleanArgError)
 {
-	setCommandLineArgs( argc, argv );
+	setCommandLineArgs(argc, argv);
 	setCleanArgsNumber(cleanArgsNum, cleanOptArgsNum, cleanArgError);
 }
 
@@ -112,7 +112,7 @@ cliParser_t::~cliParser_t()
 	clearOptions();
 }
 
-void cliParser_t::setCommandLineArgs( int argc, char **argv)
+void cliParser_t::setCommandLineArgs(int argc, char **argv)
 {
 	argCount = (size_t)argc;
 	argValues.clear();
@@ -140,7 +140,7 @@ ystring cliParser_t::getOptionString(const ystring sOpt, const ystring lOpt)
 {
 	ystring cmpSOpt = "-" + sOpt;
 	ystring cmpLOpt = "--" + lOpt;
-	
+
 	for(size_t j = 0; j < regOptions.size(); j++)
 	{
 		if(regOptions[j]->shortOpt.compare(cmpSOpt) == 0 || regOptions[j]->longOpt.compare(cmpLOpt) == 0)
@@ -151,7 +151,7 @@ ystring cliParser_t::getOptionString(const ystring sOpt, const ystring lOpt)
 			}
 		}
 	}
-	
+
 	return ystring("");
 }
 
@@ -160,7 +160,7 @@ int cliParser_t::getOptionInteger(const ystring sOpt, const ystring lOpt)
 	int ret = -65535;
 	ystring cmpSOpt = "-" + sOpt;
 	ystring cmpLOpt = "--" + lOpt;
-	
+
 	for(size_t j = 0; j < regOptions.size(); j++)
 	{
 		if(regOptions[j]->shortOpt.compare(cmpSOpt) == 0 || regOptions[j]->longOpt.compare(cmpLOpt) == 0)
@@ -175,7 +175,7 @@ int cliParser_t::getOptionInteger(const ystring sOpt, const ystring lOpt)
 			}
 		}
 	}
-	
+
 	return ret;
 }
 
@@ -183,7 +183,7 @@ bool cliParser_t::getFlag(const ystring sOpt, const ystring lOpt)
 {
 	ystring cmpSOpt = "-" + sOpt;
 	ystring cmpLOpt = "--" + lOpt;
-	
+
 	for(size_t j = 0; j < regOptions.size(); j++)
 	{
 		if(regOptions[j]->shortOpt.compare(cmpSOpt) == 0 || regOptions[j]->longOpt.compare(cmpLOpt) == 0)
@@ -194,7 +194,7 @@ bool cliParser_t::getFlag(const ystring sOpt, const ystring lOpt)
 			}
 		}
 	}
-	
+
 	return false;
 }
 
@@ -202,7 +202,7 @@ bool cliParser_t::isSet(const ystring sOpt, const ystring lOpt)
 {
 	ystring cmpSOpt = "-" + sOpt;
 	ystring cmpLOpt = "--" + lOpt;
-	
+
 	for(size_t j = 0; j < regOptions.size(); j++)
 	{
 		if(regOptions[j]->shortOpt.compare(cmpSOpt) == 0 || regOptions[j]->longOpt.compare(cmpLOpt) == 0)
@@ -213,7 +213,7 @@ bool cliParser_t::isSet(const ystring sOpt, const ystring lOpt)
 			}
 		}
 	}
-	
+
 	return false;
 }
 
@@ -232,16 +232,16 @@ void cliParser_t::setAppName(const ystring name, const ystring bUsage)
 void cliParser_t::printUsage() const
 {
 	Y_INFO << appName << yendl
-	<< "Usage: " << binName << " " << basicUsage << yendl
-	<< "OPTIONS:" << yendl;
+	       << "Usage: " << binName << " " << basicUsage << yendl
+	       << "OPTIONS:" << yendl;
 	for(size_t i = 0; i < regOptions.size(); i++)
 	{
 		ysstream name;
 		name << regOptions[i]->shortOpt << ", " << regOptions[i]->longOpt << (regOptions[i]->isFlag ? "" : " <value>");
 		std::cout << "    "
-		<< std::setiosflags(std::ios::left) << std::setw(35)
-		<< name.str()
-		<< regOptions[i]->desc << yendl;
+		          << std::setiosflags(std::ios::left) << std::setw(35)
+		          << name.str()
+		          << regOptions[i]->desc << yendl;
 	}
 	Y_INFO << "Usage instructions end." << yendl;
 }
@@ -271,8 +271,8 @@ bool cliParser_t::parseCommandLine()
 	{
 		if((i >= argValues.size() - (cleanArgs - cleanArgsOptional)) || (i >= argValues.size() - cleanArgs))
 		{
-			if(argValues[i].compare(0,1,"-") != 0)
-			{ 
+			if(argValues[i].compare(0, 1, "-") != 0)
+			{
 				cleanValues.push_back(argValues[i]);
 				continue;
 			}
@@ -287,8 +287,8 @@ bool cliParser_t::parseCommandLine()
 					if(i < argValues.size())
 					{
 						i++;
-						if(argValues[i].compare(0,1,"-") != 0)
-						{ 
+						if(argValues[i].compare(0, 1, "-") != 0)
+						{
 							regOptions[j]->value.clear();
 							regOptions[j]->value.append(argValues[i]);
 							regOptions[j]->isSet = true;
@@ -314,14 +314,14 @@ bool cliParser_t::parseCommandLine()
 			}
 		}
 	}
-	
+
 	if(cleanValues.size() < cleanArgs && cleanValues.size() < cleanArgs - cleanArgsOptional)
 	{
 		error << cleanArgsError;
 		parseError = error.str();
 		return false;
 	}
-	
+
 	return true;
 }
 

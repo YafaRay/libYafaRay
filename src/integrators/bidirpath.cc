@@ -28,19 +28,19 @@ __BEGIN_YAFRAY
 */
 class pathVertex_t
 {
-public:
-	surfacePoint_t sp;  //!< surface point at which the path vertex lies
-	BSDF_t flags;       //!< flags of the sampled BSDF component (not all components of the sp!)
-	color_t alpha;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
-	color_t f_s;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
-	vector3d_t wi, wo;  //!< sampled direction for next vertex (if available)
-	float ds;           //!< squared distance between x_i-1 and x_i
-	float G;            //!< geometric factor G(x_i-1, x_i), required for MIS
-	float qi_wo;        //!< russian roulette probability for terminating path
-	float qi_wi;        //!< russian roulette probability for terminating path when generating path in opposite direction
-	float cos_wi, cos_wo; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
-	float pdf_wi, pdf_wo; //!< the pdf for sampling wi from wo and wo from wi respectively
-	void *userdata;     //!< user data of the material at sp (required for sampling and evaluating)
+	public:
+		surfacePoint_t sp;  //!< surface point at which the path vertex lies
+		BSDF_t flags;       //!< flags of the sampled BSDF component (not all components of the sp!)
+		color_t alpha;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
+		color_t f_s;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
+		vector3d_t wi, wo;  //!< sampled direction for next vertex (if available)
+		float ds;           //!< squared distance between x_i-1 and x_i
+		float G;            //!< geometric factor G(x_i-1, x_i), required for MIS
+		float qi_wo;        //!< russian roulette probability for terminating path
+		float qi_wi;        //!< russian roulette probability for terminating path when generating path in opposite direction
+		float cos_wi, cos_wo; //!< (absolute) cosine of the incoming (wi) and sampled (wo) path direction
+		float pdf_wi, pdf_wo; //!< the pdf for sampling wi from wo and wo from wi respectively
+		void *userdata;     //!< user data of the material at sp (required for sampling and evaluating)
 };
 
 /*! vertices of a connected path going forward from light to eye;
@@ -66,7 +66,7 @@ struct pathEvalVert_t
 void clear_path(std::vector<pathEvalVert_t> &p, int s, int t)
 {
 #if _BIDIR_DEBUG
-	for(int i=0; i<s+t; ++i)
+	for(int i = 0; i < s + t; ++i)
 	{
 		pathEvalVert_t &v = p[i];
 		v.pdf_f = -1.f;
@@ -80,12 +80,12 @@ void clear_path(std::vector<pathEvalVert_t> &p, int s, int t)
 void check_path(std::vector<pathEvalVert_t> &p, int s, int t)
 {
 #if _BIDIR_DEBUG
-	for(int i=0; i<s+t; ++i)
+	for(int i = 0; i < s + t; ++i)
 	{
 		pathEvalVert_t &v = p[i];
-		if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
-		if(v.pdf_b == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
-		if(v.G == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s="<<s<<" t="<<t<<")\n" << yendl;
+		if(v.pdf_f == -1.f) Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_f uninitialized! (s=" << s << " t=" << t << ")\n" << yendl;
+		if(v.pdf_b == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].pdf_b uninitialized! (s=" << s << " t=" << t << ")\n" << yendl;
+		if(v.G == -1.f)  Y_DEBUG << integratorName << ": " << "path[" << i << "].G uninitialized! (s=" << s << " t=" << t << ")\n" << yendl;
 	}
 #endif
 }
@@ -94,68 +94,68 @@ void check_path(std::vector<pathEvalVert_t> &p, int s, int t)
     i.e. connection of light vertex y_s with eye vertex z_t */
 class pathData_t
 {
-public:
-	std::vector<pathVertex_t> lightPath, eyePath;
-	std::vector<pathEvalVert_t> path;
-	//pathCon_t pc;
-	// additional information for current path connection:
-	vector3d_t w_l_e;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
-	color_t f_y, f_z;       //!< f for light and eye vertex that are connected
-	float u, v;            //!< current position on image plane
-	float d_yz;             //!< distance between y_s to z_t
-	const light_t *light;   //!< the light source to which the current path is connected
-	//float pdf_Ad_0;       //!< pdf for direct lighting strategy
-	float pdf_emit, pdf_illum;  //!< light pdfs required to calculate p1 for direct lighting strategy
-	bool singularL;         //!< true if light has zero area (point lights for example)
-	int nPaths;             //!< number of paths that have been sampled (for current thread and image)
+	public:
+		std::vector<pathVertex_t> lightPath, eyePath;
+		std::vector<pathEvalVert_t> path;
+		//pathCon_t pc;
+		// additional information for current path connection:
+		vector3d_t w_l_e;       //!< direction of edge from light to eye vertex, i.e. y_s to z_t
+		color_t f_y, f_z;       //!< f for light and eye vertex that are connected
+		float u, v;            //!< current position on image plane
+		float d_yz;             //!< distance between y_s to z_t
+		const light_t *light;   //!< the light source to which the current path is connected
+		//float pdf_Ad_0;       //!< pdf for direct lighting strategy
+		float pdf_emit, pdf_illum;  //!< light pdfs required to calculate p1 for direct lighting strategy
+		bool singularL;         //!< true if light has zero area (point lights for example)
+		int nPaths;             //!< number of paths that have been sampled (for current thread and image)
 };
 
 class YAFRAYPLUGIN_EXPORT biDirIntegrator_t: public tiledIntegrator_t
 {
-public:
-	biDirIntegrator_t(bool transpShad=false, int shadowDepth=4);
-	virtual ~biDirIntegrator_t();
-	virtual bool preprocess();
-	virtual void cleanup();
-	virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
-	static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
-	color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-	color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-protected:
-	int createPath(renderState_t &state, ray_t &start, std::vector<pathVertex_t> &path, int maxLen) const;
-	color_t evalPath(renderState_t &state, int s, int t, pathData_t &pd) const;
-	color_t evalLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, const color_t &lcol) const;
-	color_t evalPathE(renderState_t &state, int s, pathData_t &pd) const;
-	bool connectPaths(renderState_t &state, int s, int t, pathData_t &pd) const;
-	bool connectLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, color_t &lcol) const;
-	bool connectPathE(renderState_t &state, int s, pathData_t &pd) const;
-	//color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc)const;
-	float pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const;
-	float pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const;
+	public:
+		biDirIntegrator_t(bool transpShad = false, int shadowDepth = 4);
+		virtual ~biDirIntegrator_t();
+		virtual bool preprocess();
+		virtual void cleanup();
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
+		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+	protected:
+		int createPath(renderState_t &state, ray_t &start, std::vector<pathVertex_t> &path, int maxLen) const;
+		color_t evalPath(renderState_t &state, int s, int t, pathData_t &pd) const;
+		color_t evalLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, const color_t &lcol) const;
+		color_t evalPathE(renderState_t &state, int s, pathData_t &pd) const;
+		bool connectPaths(renderState_t &state, int s, int t, pathData_t &pd) const;
+		bool connectLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, color_t &lcol) const;
+		bool connectPathE(renderState_t &state, int s, pathData_t &pd) const;
+		//color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc)const;
+		float pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const;
+		float pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const;
 
-	background_t *background;
-	const camera_t *cam;
-	bool trShad;        //!< calculate transparent shadows for transparent objects
-	bool use_bg;        //!< configuration; include background for GI
-	bool ibl;           //!< configuration; use background light, if available
-	bool include_bg;    //!< determined on precrocess;
-	int sDepth, bounces;
-	std::vector<light_t*> lights;
-	//mutable std::vector<pathVertex_t> lightPath, eyePath;
-	//mutable int nPaths;
-	//mutable pathData_t pathData;
-	mutable std::vector<pathData_t> threadData;
-	pdf1D_t *lightPowerD;
-	float fNumLights;
-	std::map <const light_t*, float> invLightPowerD;
-	imageFilm_t *lightImage;
-	
-	bool useAmbientOcclusion; //! Use ambient occlusion
-	int aoSamples; //! Ambient occlusion samples
-	float aoDist; //! Ambient occlusion distance
-	color_t aoCol; //! Ambient occlusion color
-	bool transpBackground; //! Render background as transparent
-	bool transpRefractedBackground; //! Render refractions of background as transparent
+		background_t *background;
+		const camera_t *cam;
+		bool trShad;        //!< calculate transparent shadows for transparent objects
+		bool use_bg;        //!< configuration; include background for GI
+		bool ibl;           //!< configuration; use background light, if available
+		bool include_bg;    //!< determined on precrocess;
+		int sDepth, bounces;
+		std::vector<light_t *> lights;
+		//mutable std::vector<pathVertex_t> lightPath, eyePath;
+		//mutable int nPaths;
+		//mutable pathData_t pathData;
+		mutable std::vector<pathData_t> threadData;
+		pdf1D_t *lightPowerD;
+		float fNumLights;
+		std::map <const light_t *, float> invLightPowerD;
+		imageFilm_t *lightImage;
+
+		bool useAmbientOcclusion; //! Use ambient occlusion
+		int aoSamples; //! Ambient occlusion samples
+		float aoDist; //! Ambient occlusion distance
+		color_t aoCol; //! Ambient occlusion color
+		bool transpBackground; //! Render background as transparent
+		bool transpRefractedBackground; //! Render refractions of background as transparent
 };
 
 biDirIntegrator_t::biDirIntegrator_t(bool transpShad, int shadowDepth): trShad(transpShad), sDepth(shadowDepth),
@@ -180,26 +180,26 @@ bool biDirIntegrator_t::preprocess()
 	lights = scene->lights;
 
 	threadData.resize(scene->getNumThreads());
-	for(int t=0; t<scene->getNumThreads(); ++t)
+	for(int t = 0; t < scene->getNumThreads(); ++t)
 	{
 		pathData_t &pathData = threadData[t];
 		pathData.eyePath.resize(MAX_PATH_LENGTH);
 		pathData.lightPath.resize(MAX_PATH_LENGTH);
-		pathData.path.resize(MAX_PATH_LENGTH*2 + 1);
-		for(int i=0; i<MAX_PATH_LENGTH; ++i) pathData.lightPath[i].userdata = malloc(USER_DATA_SIZE);
-		for(int i=0; i<MAX_PATH_LENGTH; ++i) pathData.eyePath[i].userdata = malloc(USER_DATA_SIZE);
+		pathData.path.resize(MAX_PATH_LENGTH * 2 + 1);
+		for(int i = 0; i < MAX_PATH_LENGTH; ++i) pathData.lightPath[i].userdata = malloc(USER_DATA_SIZE);
+		for(int i = 0; i < MAX_PATH_LENGTH; ++i) pathData.eyePath[i].userdata = malloc(USER_DATA_SIZE);
 		pathData.nPaths = 0;
 	}
 	// initialize userdata (todo!)
 	int numLights = lights.size();
 	fNumLights = 1.f / (float) numLights;
 	float *energies = new float[numLights];
-	for(int i=0; i<numLights; ++i) energies[i] = lights[i]->totalEnergy().energy();
+	for(int i = 0; i < numLights; ++i) energies[i] = lights[i]->totalEnergy().energy();
 	lightPowerD = new pdf1D_t(energies, numLights);
 
-	for(int i=0; i<numLights; ++i) invLightPowerD[lights[i]] = lightPowerD->func[i] * lightPowerD->invIntegral;
+	for(int i = 0; i < numLights; ++i) invLightPowerD[lights[i]] = lightPowerD->func[i] * lightPowerD->invIntegral;
 
-	for(int i=0; i<numLights; ++i) Y_DEBUG << integratorName << ": " << energies[i] << " (" << lightPowerD->func[i] << ") " << yendl;
+	for(int i = 0; i < numLights; ++i) Y_DEBUG << integratorName << ": " << energies[i] << " (" << lightPowerD->func[i] << ") " << yendl;
 	Y_DEBUG << integratorName << ": preprocess(): lights: " << numLights << " invIntegral:" << lightPowerD->invIntegral << yendl;
 
 	delete[] energies;
@@ -256,7 +256,7 @@ bool biDirIntegrator_t::preprocess()
 	{
 		set << "AO samples=" << aoSamples << " dist=" << aoDist << "  ";
 	}
-	
+
 	yafLog.appendRenderSettings(set.str());
 
 	return true;
@@ -264,14 +264,14 @@ bool biDirIntegrator_t::preprocess()
 
 void biDirIntegrator_t::cleanup()
 {
-//	Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << yendl;
-	int nPaths=0;
-	for(int i=0; i<(int)threadData.size(); ++i)
+	//	Y_DEBUG << integratorName << ": " << "cleanup: flushing light image" << yendl;
+	int nPaths = 0;
+	for(int i = 0; i < (int)threadData.size(); ++i)
 	{
 		pathData_t &pathData = threadData[i];
 		nPaths += pathData.nPaths;
-		for(int i=0; i<MAX_PATH_LENGTH; ++i) free(pathData.lightPath[i].userdata);
-		for(int i=0; i<MAX_PATH_LENGTH; ++i) free(pathData.eyePath[i].userdata);
+		for(int i = 0; i < MAX_PATH_LENGTH; ++i) free(pathData.lightPath[i].userdata);
+		for(int i = 0; i < MAX_PATH_LENGTH; ++i) free(pathData.eyePath[i].userdata);
 	}
 	lightImage->setNumDensitySamples(nPaths); //dirty hack...
 }
@@ -285,18 +285,18 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	surfacePoint_t sp;
 	ray_t testray = ray;
 	float alpha = 1.f;
-		
+
 	if(scene->intersect(testray, sp))
 	{
 		vector3d_t wo = -ray.dir;
-		static int dbg=0;
+		static int dbg = 0;
 		state.includeLights = true;
 		pathData_t &pathData = threadData[state.threadID];
 		++pathData.nPaths;
 		random_t &prng = *(state.prng);
 		pathVertex_t &ve = pathData.eyePath.front();
 		pathVertex_t &vl = pathData.lightPath.front();
-		int nEye=1, nLight=1;
+		int nEye = 1, nLight = 1;
 		// setup ve
 		ve.f_s = color_t(1.f); // some random guess...need to read up on importance paths
 		ve.alpha = color_t(1.f);
@@ -306,7 +306,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		float cu, cv;
 		float camPdf = 0.0;
 		cam->project(ray, 0, 0, cu, cv, camPdf);
-        if(camPdf == 0.f) camPdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway. 
+		if(camPdf == 0.f) camPdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway.
 		ve.pdf_wo = camPdf;
 		ve.f_s = color_t(camPdf);
 		// /temporary
@@ -326,19 +326,19 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 		int lightNum = lightPowerD->DSample(prng(), &lightNumPdf);
 		lightNumPdf *= fNumLights;
 		lSample_t ls;
-		ls.s1=prng(), ls.s2=prng(), ls.s3=prng(), ls.s4=prng();
+		ls.s1 = prng(), ls.s2 = prng(), ls.s3 = prng(), ls.s4 = prng();
 		ls.sp = &vl.sp;
 		color_t pcol = lights.size() > 0 ? lights[lightNum]->emitSample(lray.dir, ls) : color_t(0.f);
 		lray.from = vl.sp.P;
 		// test!
 		ls.areaPdf *= lightNumPdf;
 
-		if(dbg<10) Y_DEBUG << integratorName << ": " << "lightNumPdf=" << lightNumPdf << yendl;
+		if(dbg < 10) Y_DEBUG << integratorName << ": " << "lightNumPdf=" << lightNumPdf << yendl;
 		++dbg;
 
 		// setup vl
 		vl.f_s = color_t(1.f); // veach set this to L_e^(1)(y0->y1), a BSDF like value; not available yet, cancels out anyway when using direct lighting
-		vl.alpha = pcol/ls.areaPdf; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
+		vl.alpha = pcol / ls.areaPdf; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
 		vl.G = 0.f; //unused actually...
 		vl.qi_wo = vl.qi_wi = 1.f; // definitely no russian roulette here...
 		vl.cos_wo = (ls.flags & LIGHT_SINGULAR) ? 1.0 : std::fabs(vl.sp.N * lray.dir); //singularities have no surface, hence no normal
@@ -350,7 +350,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 
 		// create lightPath
 		nLight = createPath(state, lray, pathData.lightPath, MAX_PATH_LENGTH);
-		if(nLight>1)
+		if(nLight > 1)
 		{
 			pathData.pdf_illum = lights[lightNum]->illumPdf(pathData.lightPath[1].sp, vl.sp) * lightNumPdf;
 			pathData.pdf_emit = ls.areaPdf * pathData.lightPath[1].ds / vl.cos_wo;
@@ -360,7 +360,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 
 #if _DO_LIGHTIMAGE
 		// TEST! create a light image (t == 1)
-		for(int s=2; s<=nLight; ++s)
+		for(int s = 2; s <= nLight; ++s)
 		{
 			clear_path(pathData.path, s, 1);
 			if(!connectPathE(state, s, pathData)) continue;
@@ -379,19 +379,19 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 #endif
 
 		float wt;
-		for(int t=2; t<=nEye; ++t)
+		for(int t = 2; t <= nEye; ++t)
 		{
 			//directly hit a light?
-			if(pathData.eyePath[t-1].sp.light)
+			if(pathData.eyePath[t - 1].sp.light)
 			{
 				// pathWeight_0t computes required probabilities, since no connection is required
 				clear_path(pathData.path, 0, t);
 				// unless someone proves the necessity, directly visible lights (s+t==2) will never be connected via light vertices
-				wt = (t==2) ? 1.f : pathWeight_0t(state, t, pathData);
+				wt = (t == 2) ? 1.f : pathWeight_0t(state, t, pathData);
 				if(wt > 0.f)
 				{
 					//eval is done in place here...
-					pathVertex_t v = pathData.eyePath[t-1];
+					pathVertex_t v = pathData.eyePath[t - 1];
 					state.userdata = v.userdata;
 					color_t emit = v.sp.material->emit(state, v.sp, v.wi);
 					col += wt * v.alpha * emit;
@@ -419,7 +419,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 			// light paths with one vertices are handled by classic direct light sampling (like regular path tracing)
 			// hence we start with s=2 here. currently the sampling probability is the same though, so weights are unaffected
 			pathData.light = lights.size() > 0 ? lights[lightNum] : 0;
-			for(int s=2; s<=nLight; ++s)
+			for(int s = 2; s <= nLight; ++s)
 			{
 				clear_path(pathData.path, s, t);
 				if(!connectPaths(state, s, t, pathData)) continue;
@@ -431,15 +431,15 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 				}
 			}
 		}
-		
+
 		if(colorPasses.size() > 1 && state.raylevel == 0)
 		{
 			generateCommonRenderPasses(colorPasses, state, sp, ray);
-			
+
 			if(colorPasses.enabled(PASS_INT_AO))
 			{
 				BSDF_t bsdfs;
-				
+
 				sp.material->initBSDF(state, sp, bsdfs);
 
 				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
@@ -453,24 +453,24 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 	}
 	else
 	{
-		if(transpBackground) alpha=0.f;
-		
+		if(transpBackground) alpha = 0.f;
+
 		if(background && !transpRefractedBackground)
 		{
 			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
 		}
 	}
-	
+
 	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
 	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
 
-	if(transpBackground) alpha = std::max(alpha, 1.f-colVolTransmittance.R);
+	if(transpBackground) alpha = std::max(alpha, 1.f - colVolTransmittance.R);
 
 	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
 	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
-	
-	col = (col * colVolTransmittance) + colVolIntegration;	
-	
+
+	col = (col * colVolTransmittance) + colVolIntegration;
+
 	return colorA_t(col, alpha);
 }
 
@@ -481,7 +481,7 @@ colorA_t biDirIntegrator_t::integrate(renderState_t &state, diffRay_t &ray, colo
 
 int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vector<pathVertex_t> &path, int maxLen) const
 {
-	static int dbg=0;
+	static int dbg = 0;
 	random_t &prng = *state.prng;
 	ray_t ray(start);
 	BSDF_t mBSDF;
@@ -490,7 +490,7 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 	while(nVert < maxLen)
 	{
 		pathVertex_t &v = path[nVert];
-		const pathVertex_t &v_prev = path[nVert-1];
+		const pathVertex_t &v_prev = path[nVert - 1];
 		if(!scene->intersect(ray, v.sp)) break;
 		const material_t *mat = v.sp.material;
 		// compute alpha_i+1 = alpha_i * fs(wi, wo) / P_proj(wo), where P_proj = bsdf_pdf(wo) / cos(wo*N)
@@ -501,7 +501,7 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 		v.G = v_prev.cos_wo * v.cos_wi / v.ds;
 		++nVert;
 		state.userdata = v.userdata;
-        //if(dbg<10) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << yendl;
+		//if(dbg<10) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << yendl;
 		mat->initBSDF(state, v.sp, mBSDF);
 		// create tentative sample for next path segment
 		sample_t s(prng(), prng(), BSDF_ALL, true);
@@ -513,7 +513,7 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 		// use russian roulette on tentative sample to decide on path termination, unless path is too short
 		if(nVert > MIN_PATH_LENGTH)
 		{
-			v.qi_wo = std::min( 0.98f, v.f_s.col2bri()*v.cos_wo / v.pdf_wo );
+			v.qi_wo = std::min(0.98f, v.f_s.col2bri() * v.cos_wo / v.pdf_wo);
 			if(prng() > v.qi_wo) break; // terminate path with russian roulette
 		}
 		else v.qi_wo = 1.f;
@@ -523,15 +523,15 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 			// other materials don't return pdf_back and col_back yet
 			//v.pdf_wi = s.pdf;
 			v.pdf_wi = s.pdf_back;
-			v.qi_wi = std::min( 0.98f, s.col_back.col2bri()*v.cos_wi / v.pdf_wi );
+			v.qi_wi = std::min(0.98f, s.col_back.col2bri() * v.cos_wi / v.pdf_wi);
 		}
 		else
 		{
 			v.pdf_wi = mat->pdf(state, v.sp, ray.dir, v.wi, BSDF_ALL); // all BSDFs? think so...
-			v.qi_wi = std::min( 0.98f, v.f_s.col2bri()*v.cos_wi / v.pdf_wi );
+			v.qi_wi = std::min(0.98f, v.f_s.col2bri() * v.cos_wi / v.pdf_wi);
 		}
-		if(v.qi_wi < 0) Y_DEBUG << integratorName << ": " << "v["<<nVert<<"].qi_wi="<<v.qi_wi<<" ("<<v.f_s.col2bri()<<" "<<v.cos_wi<<" "<<v.pdf_wi<<")\n"
-			                          <<"\t"<<v.pdf_wo<<"  flags:"<<s.sampledFlags<<yendl;
+		if(v.qi_wi < 0) Y_DEBUG << integratorName << ": " << "v[" << nVert << "].qi_wi=" << v.qi_wi << " (" << v.f_s.col2bri() << " " << v.cos_wi << " " << v.pdf_wi << ")\n"
+			                        << "\t" << v.pdf_wo << "  flags:" << s.sampledFlags << yendl;
 
 		v.flags = s.sampledFlags;
 		v.wo = ray.dir;
@@ -546,26 +546,26 @@ int biDirIntegrator_t::createPath(renderState_t &state, ray_t &start, std::vecto
 // small utilities to make code easier (well...less impossible) to read...
 inline void copyLightSubpath(pathData_t &pd, int s, int t)
 {
-	for(int i=0; i<s-1; ++i)
+	for(int i = 0; i < s - 1; ++i)
 	{
 		const pathVertex_t &v = pd.lightPath[i];
-		pd.path[i].pdf_f = v.pdf_wo/v.cos_wo;
-		pd.path[i].pdf_b = v.pdf_wi/v.cos_wi;
+		pd.path[i].pdf_f = v.pdf_wo / v.cos_wo;
+		pd.path[i].pdf_b = v.pdf_wi / v.cos_wi;
 		pd.path[i].specular = v.flags & BSDF_SPECULAR;
 		pd.path[i].G = v.G;
 	}
-	pd.path[s-1].G = pd.lightPath[s-1].G;
+	pd.path[s - 1].G = pd.lightPath[s - 1].G;
 }
 
 inline void copyEyeSubpath(pathData_t &pd, int s, int t)
 {
-	for(int i=s+1, j=t-2; j>=0; ++i, --j)
+	for(int i = s + 1, j = t - 2; j >= 0; ++i, --j)
 	{
 		const pathVertex_t &v = pd.eyePath[j];
-		pd.path[i].pdf_f = v.pdf_wi/v.cos_wi;
-		pd.path[i].pdf_b = v.pdf_wo/v.cos_wo;
+		pd.path[i].pdf_f = v.pdf_wi / v.cos_wi;
+		pd.path[i].pdf_b = v.pdf_wo / v.cos_wo;
 		pd.path[i].specular = v.flags & BSDF_SPECULAR;
-		pd.path[i].G = pd.eyePath[j+1].G;
+		pd.path[i].G = pd.eyePath[j + 1].G;
 	}
 }
 
@@ -578,9 +578,9 @@ inline void copyEyeSubpath(pathData_t &pd, int s, int t)
 //===  connect paths with s and t > 1  ===//
 inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, pathData_t &pd) const
 {
-	const pathVertex_t &y = pd.lightPath[s-1];
-	const pathVertex_t &z = pd.eyePath[t-1];
-	pathEvalVert_t &x_l = pd.path[s-1];
+	const pathVertex_t &y = pd.lightPath[s - 1];
+	const pathVertex_t &z = pd.eyePath[t - 1];
+	pathEvalVert_t &x_l = pd.path[s - 1];
 	pathEvalVert_t &x_e = pd.path[s];
 	// precompute stuff in pc that is specific to the current connection of sub-paths
 	vector3d_t vec = z.sp.P - y.sp.P;
@@ -617,25 +617,25 @@ inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, 
 	copyEyeSubpath(pd, s, t);
 
 	// calculate qi's...
-	if(s>MIN_PATH_LENGTH) x_l.pdf_f *= std::min( 0.98f, pd.f_y.col2bri()/* *cos_y */ / x_l.pdf_f );
-	if(s+1>MIN_PATH_LENGTH) x_e.pdf_f *= std::min( 0.98f, pd.f_z.col2bri()/* *y.cos_wi */ / x_e.pdf_f );
+	if(s > MIN_PATH_LENGTH) x_l.pdf_f *= std::min(0.98f, pd.f_y.col2bri()/* *cos_y */ / x_l.pdf_f);
+	if(s + 1 > MIN_PATH_LENGTH) x_e.pdf_f *= std::min(0.98f, pd.f_z.col2bri()/* *y.cos_wi */ / x_e.pdf_f);
 	// backward:
-	if(t+1>MIN_PATH_LENGTH) x_l.pdf_b *= std::min( 0.98f, pd.f_y.col2bri()/* *y.cos_wi */ / x_l.pdf_b );
-	if(t>MIN_PATH_LENGTH) x_e.pdf_b *= std::min( 0.98f, pd.f_z.col2bri()/* *cos_z */ / x_e.pdf_b );
+	if(t + 1 > MIN_PATH_LENGTH) x_l.pdf_b *= std::min(0.98f, pd.f_y.col2bri()/* *y.cos_wi */ / x_l.pdf_b);
+	if(t > MIN_PATH_LENGTH) x_e.pdf_b *= std::min(0.98f, pd.f_z.col2bri()/* *cos_z */ / x_e.pdf_b);
 
 	// multiply probabilities with qi's
-	int k = s+t-1;
+	int k = s + t - 1;
 	// forward:
-	for(int i=MIN_PATH_LENGTH, s1=s-1; i<s1; ++i)
+	for(int i = MIN_PATH_LENGTH, s1 = s - 1; i < s1; ++i)
 		pd.path[i].pdf_f *= pd.lightPath[i].qi_wo;
-	for(int i=std::max(MIN_PATH_LENGTH,s+1), st=s+t; i<st; ++i)
-		pd.path[i].pdf_f *= pd.eyePath[k-i].qi_wi;
+	for(int i = std::max(MIN_PATH_LENGTH, s + 1), st = s + t; i < st; ++i)
+		pd.path[i].pdf_f *= pd.eyePath[k - i].qi_wi;
 
 	//backward:
-	for(int i=MIN_PATH_LENGTH, t1=t-1; i<t1; ++i)
-		pd.path[k-i].pdf_b *= pd.eyePath[i].qi_wo;
-	for(int i=std::max(MIN_PATH_LENGTH,t+1), st=s+t; i<st; ++i)
-		pd.path[k-i].pdf_b *= pd.lightPath[k-i].qi_wi;
+	for(int i = MIN_PATH_LENGTH, t1 = t - 1; i < t1; ++i)
+		pd.path[k - i].pdf_b *= pd.eyePath[i].qi_wo;
+	for(int i = std::max(MIN_PATH_LENGTH, t + 1), st = s + t; i < st; ++i)
+		pd.path[k - i].pdf_b *= pd.lightPath[k - i].qi_wi;
 	return true;
 }
 
@@ -643,7 +643,7 @@ inline bool biDirIntegrator_t::connectPaths(renderState_t &state, int s, int t, 
 inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, color_t &lcol) const
 {
 	// create light sample with direct lighting strategy:
-	const pathVertex_t &z = pd.eyePath[t-1];
+	const pathVertex_t &z = pd.eyePath[t - 1];
 	lRay.from = z.sp.P;
 	lRay.tmin = 0.0005;
 	int nLightsI = lights.size();
@@ -651,7 +651,7 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	float lightNumPdf, cos_wo;
 	int lnum = lightPowerD->DSample((*state.prng)(), &lightNumPdf);
 	lightNumPdf *= fNumLights;
-	if(lnum > nLightsI-1) lnum = nLightsI-1;
+	if(lnum > nLightsI - 1) lnum = nLightsI - 1;
 	const light_t *light = lights[lnum];
 	surfacePoint_t spLight;
 
@@ -664,15 +664,15 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	}
 	ls.sp = &spLight;
 	// generate light sample, abort when none could be created:
-	if( !light->illumSample(z.sp, ls, lRay) ) return false;
-	
+	if(!light->illumSample(z.sp, ls, lRay)) return false;
+
 	//FIXME DAVID: another series of horrible hacks to avoid uninitialized values and incorrect renders in bidir. However, this should be properly solved by implementing correctly the functions needed by bidir in the lights and materials, and correcting the bidir integrator itself...
 	ls.sp->P = point3d_t(0.f, 0.f, 0.f);
 	vector3d_t wo = lRay.dir;
 	light->emitSample(wo, ls);
 	ls.flags = 0xFFFFFFFF;
-	
-	lcol = ls.col/(ls.pdf*lightNumPdf); //shouldn't really do that division, better use proper c_st in evalLPath...
+
+	lcol = ls.col / (ls.pdf * lightNumPdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
 	vector3d_t vec = -lRay.dir;
 	light->emitPdf(spLight, vec, pd.path[0].pdf_A_0, pd.path[0].pdf_f, cos_wo);
@@ -688,7 +688,7 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	//pathEvalVert_t &x_l = pd.path[0];
 	pathEvalVert_t &x_e = pd.path[1];
 	float cos_z = std::fabs(z.sp.N * vec);
-	x_e.G = std::fabs(cos_wo * cos_z) / (lRay.tmax*lRay.tmax); // or use Ng??
+	x_e.G = std::fabs(cos_wo * cos_z) / (lRay.tmax * lRay.tmax); // or use Ng??
 	pd.w_l_e = vec;
 	pd.d_yz = lRay.tmax;
 	state.userdata = z.userdata;
@@ -709,26 +709,26 @@ inline bool biDirIntegrator_t::connectLPath(renderState_t &state, int t, pathDat
 	// calculate qi's...
 	// backward:
 	//if(t+1>MIN_PATH_LENGTH) x_l.pdf_b *= std::min( 0.98f, pd.f_y.col2bri()*y.cos_wi / x_l.pdf_b ); //unused/meaningless(?)
-	if(t>MIN_PATH_LENGTH) x_e.pdf_b *= std::min( 0.98f, pd.f_z.col2bri()/* *cos_z */ / x_e.pdf_b );
+	if(t > MIN_PATH_LENGTH) x_e.pdf_b *= std::min(0.98f, pd.f_z.col2bri()/* *cos_z */ / x_e.pdf_b);
 
 	// multiply probabilities with qi's
 	int k = t;
 	// forward:
-	for(int i=std::max(MIN_PATH_LENGTH,2), st=t+1; i<st; ++i)
-		pd.path[i].pdf_f *= pd.eyePath[st-i-1].qi_wi;
+	for(int i = std::max(MIN_PATH_LENGTH, 2), st = t + 1; i < st; ++i)
+		pd.path[i].pdf_f *= pd.eyePath[st - i - 1].qi_wi;
 
 	//backward:
-	for(int i=MIN_PATH_LENGTH, t1=t-1; i<t1; ++i)
-		pd.path[k-i].pdf_b *= pd.eyePath[i].qi_wo;
+	for(int i = MIN_PATH_LENGTH, t1 = t - 1; i < t1; ++i)
+		pd.path[k - i].pdf_b *= pd.eyePath[i].qi_wo;
 	return true;
 }
 
 // connect path with t==1 (s>1)
 inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathData_t &pd) const
 {
-	const pathVertex_t &y = pd.lightPath[s-1];
+	const pathVertex_t &y = pd.lightPath[s - 1];
 	const pathVertex_t &z = pd.eyePath[0];
-	pathEvalVert_t &x_l = pd.path[s-1];
+	pathEvalVert_t &x_l = pd.path[s - 1];
 	pathEvalVert_t &x_e = pd.path[s];
 
 	vector3d_t vec = z.sp.P - y.sp.P;
@@ -736,7 +736,7 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
 	float cos_y = std::fabs(y.sp.N * vec);
 
 	ray_t wo(z.sp.P, -vec);
-	if(! cam->project(wo, 0, 0, pd.u, pd.v, x_e.pdf_b) ) return false;
+	if(! cam->project(wo, 0, 0, pd.u, pd.v, x_e.pdf_b)) return false;
 
 	x_e.specular = false; // cannot query yet...
 
@@ -758,18 +758,18 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
 	copyLightSubpath(pd, s, 1);
 
 	// calculate qi's...
-	if(s>MIN_PATH_LENGTH) x_l.pdf_f *= std::min( 0.98f, pd.f_y.col2bri()/* *cos_y */ / x_l.pdf_f );
+	if(s > MIN_PATH_LENGTH) x_l.pdf_f *= std::min(0.98f, pd.f_y.col2bri()/* *cos_y */ / x_l.pdf_f);
 	//if(s+1>MIN_PATH_LENGTH) x_e.pdf_f *= std::min( 0.98f, pd.f_z.col2bri()*y.cos_wi / x_e.pdf_f );
 
 	// multiply probabilities with qi's
 	int k = s;
 	// forward:
-	for(int i=MIN_PATH_LENGTH, s1=s-1; i<s1; ++i)
+	for(int i = MIN_PATH_LENGTH, s1 = s - 1; i < s1; ++i)
 		pd.path[i].pdf_f *= pd.lightPath[i].qi_wo;
 
 	//backward:
-	for(int i=std::max(MIN_PATH_LENGTH,2), st=s+1; i<st; ++i) //FIXME: why st=s+1 and not just s?
-		pd.path[k-i].pdf_b *= pd.lightPath[k-i].qi_wi;
+	for(int i = std::max(MIN_PATH_LENGTH, 2), st = s + 1; i < st; ++i) //FIXME: why st=s+1 and not just s?
+		pd.path[k - i].pdf_b *= pd.lightPath[k - i].qi_wi;
 	return true;
 }
 
@@ -782,48 +782,48 @@ inline bool biDirIntegrator_t::connectPathE(renderState_t &state, int s, pathDat
 float biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const
 {
 	const std::vector<pathEvalVert_t> &path = pd.path;
-	float pr[2*MAX_PATH_LENGTH+1], p[2*MAX_PATH_LENGTH+1];
+	float pr[2 * MAX_PATH_LENGTH + 1], p[2 * MAX_PATH_LENGTH + 1];
 	p[s] = 1.f;
 	// "forward" weights (towards eye), ratio pr_i here is p_i+1 / p_i
-	int k = s+t-1;
-	for(int i=s; i<k; ++i)
+	int k = s + t - 1;
+	for(int i = s; i < k; ++i)
 	{
-		pr[i] = ( path[i-1].pdf_f * path[i].G ) / ( path[i+1].pdf_b * path[i+1].G );
-		p[i+1] = p[i] * pr[i];
+		pr[i] = (path[i - 1].pdf_f * path[i].G) / (path[i + 1].pdf_b * path[i + 1].G);
+		p[i + 1] = p[i] * pr[i];
 	}
 	// "backward" weights (towards light), ratio pr_i here is p_i / p_i+1
-	for(int i=s-1; i>0; --i)
+	for(int i = s - 1; i > 0; --i)
 	{
-		pr[i] = ( path[i+1].pdf_b * path[i+1].G ) / ( path[i-1].pdf_f * path[i].G );
-		p[i] = p[i+1] * pr[i];
+		pr[i] = (path[i + 1].pdf_b * path[i + 1].G) / (path[i - 1].pdf_f * path[i].G);
+		p[i] = p[i + 1] * pr[i];
 	}
 	// do p_0/p_1...
-	pr[0] =  ( path[1].pdf_b * path[1].G ) / path[0].pdf_A_0;
+	pr[0] = (path[1].pdf_b * path[1].G) / path[0].pdf_A_0;
 	p[0] = p[1] * pr[0];
 	// p_k+1/p_k is zero currently, hitting the camera lens in general should be very seldom anyway...
-	p[k+1] = 0.f;
+	p[k + 1] = 0.f;
 #if !(_DO_LIGHTIMAGE)
 	p[k] = 0.f; // cannot intersect camera yet...
 #endif
 	// treat specular scatter events.
 	// specular x_i makes p_i (join x_i-1 and x_i) and p_i+1 (join x_i and x_i+1) = 0:
-	for(int i=0; i<=k; ++i)
+	for(int i = 0; i <= k; ++i)
 	{
 		if(path[i].specular)
 		{
 			p[i] = 0.f;
-			p[i+1] = 0.f;
+			p[i + 1] = 0.f;
 		}
 	}
 	if(pd.singularL) p[0] = 0.f;
 	// correct p1 with direct lighting strategy:
 	else if(pd.pdf_emit < -1.0e-12 || pd.pdf_emit > +1.0e-12) p[1] *= pd.pdf_illum / pd.pdf_emit; //test! workaround for incomplete pdf funcs of lights
-	else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work. 
+	else return 1.f;	//FIXME: horrible workaround for the problem of Bidir render black randomly (depending on whether you compiled with debug or -O3, depending on whether you started Blender directly or using gdb, etc), when using Sky Sun. All this part of the Bidir integrator is horrible anyway, so for now I'm just trying to make it work.
 	// do MIS...maximum heuristic, particularly simple, if there's a more likely sample method, weight is zero, otherwise 1
 	float weight = 1.f;
 
-	for(int i=s-1; i>=0; --i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f;	//FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
-	for(int i=s+1; i<=k+1; ++i) if(p[i] > p[s] && !(p[i]<-1.0e36) && !(p[i]>1.0e36) && !(p[s]<-1.0e36) && !(p[s]>1.0e36)) weight=0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	for(int i = s - 1; i >= 0; --i) if(p[i] > p[s] && !(p[i] < -1.0e36) && !(p[i] > 1.0e36) && !(p[s] < -1.0e36) && !(p[s] > 1.0e36)) weight = 0.f;	//FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
+	for(int i = s + 1; i <= k + 1; ++i) if(p[i] > p[s] && !(p[i] < -1.0e36) && !(p[i] > 1.0e36) && !(p[s] < -1.0e36) && !(p[s] > 1.0e36)) weight = 0.f; //FIXME: manual check for very big positive/negative values (horrible fix) for for the problem of Bidir render black when compiling with -O3 --fast-math.
 
 	return weight;
 }
@@ -832,13 +832,13 @@ float biDirIntegrator_t::pathWeight(renderState_t &state, int s, int t, pathData
 float biDirIntegrator_t::pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const
 {
 	const std::vector<pathEvalVert_t> &path = pd.path;
-	const pathVertex_t &vl = pd.eyePath[t-1];
+	const pathVertex_t &vl = pd.eyePath[t - 1];
 	// since we need no connect, complete some probabilities here:
 	float lightNumPdf = invLightPowerD.find(vl.sp.light)->second;
 	lightNumPdf *= fNumLights;
 	float cos_wo;
 	// direct lighting pdf...
-	float pdf_illum = vl.sp.light->illumPdf(pd.eyePath[t-2].sp, vl.sp) * lightNumPdf;
+	float pdf_illum = vl.sp.light->illumPdf(pd.eyePath[t - 2].sp, vl.sp) * lightNumPdf;
 	if(pdf_illum < 1e-6f) return 0.f;
 
 	vl.sp.light->emitPdf(vl.sp, vl.wi, pd.path[0].pdf_A_0, pd.path[0].pdf_f, cos_wo);
@@ -851,34 +851,34 @@ float biDirIntegrator_t::pathWeight_0t(renderState_t &state, int t, pathData_t &
 
 	// == standard weighting procedure now == //
 
-	float pr, p[2*MAX_PATH_LENGTH+1];
+	float pr, p[2 * MAX_PATH_LENGTH + 1];
 
 	p[0] = 1;
-	p[1] = path[0].pdf_A_0 / ( path[1].pdf_b * path[1].G );
+	p[1] = path[0].pdf_A_0 / (path[1].pdf_b * path[1].G);
 
-	int k = t-1;
-	for(int i=1; i<k; ++i)
+	int k = t - 1;
+	for(int i = 1; i < k; ++i)
 	{
-		pr = ( path[i-1].pdf_f * path[i].G ) / ( path[i+1].pdf_b * path[i+1].G );
-		p[i+1] = p[i] * pr;
+		pr = (path[i - 1].pdf_f * path[i].G) / (path[i + 1].pdf_b * path[i + 1].G);
+		p[i + 1] = p[i] * pr;
 	}
 
 	// p_k+1/p_k is zero currently, hitting the camera lens in general should be very seldom anyway...
-	p[k+1] = 0.f;
+	p[k + 1] = 0.f;
 #if !(_DO_LIGHTIMAGE)
 	p[k] = 0.f; // cannot intersect camera yet...
 #endif
 	// treat specular scatter events.
-	for(int i=0; i<=k; ++i)
+	for(int i = 0; i <= k; ++i)
 	{
-		if(path[i].specular) p[i] = p[i+1] = 0.f;
+		if(path[i].specular) p[i] = p[i + 1] = 0.f;
 	}
 	// correct p1 with direct lighting strategy:
 	p[1] *= pdf_illum / pdf_emit;
 
 	// do MIS...maximum heuristic, particularly simple, if there's a more likely sample method, weight is zero, otherwise 1
 	float weight = 1.f;
-	for(int i=1; i<=t; ++i) if(p[i] > 1.f) weight=0.f;
+	for(int i = 1; i <= t; ++i) if(p[i] > 1.f) weight = 0.f;
 
 	return weight;
 }
@@ -891,8 +891,8 @@ float biDirIntegrator_t::pathWeight_0t(renderState_t &state, int t, pathData_t &
 
 color_t biDirIntegrator_t::evalPath(renderState_t &state, int s, int t, pathData_t &pd) const
 {
-	const pathVertex_t &y = pd.lightPath[s-1];
-	const pathVertex_t &z = pd.eyePath[t-1];
+	const pathVertex_t &y = pd.lightPath[s - 1];
+	const pathVertex_t &z = pd.eyePath[t - 1];
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 
 	color_t c_st = pd.f_y * pd.path[s].G * pd.f_z;
@@ -909,15 +909,15 @@ color_t biDirIntegrator_t::evalPath(renderState_t &state, int s, int t, pathData
 //===  eval paths with s==1 (direct lighting strategy)  ===//
 color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, const color_t &lcol) const
 {
-	static int dbg=0;
+	static int dbg = 0;
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	color_t scol = color_t(0.f);
 	const bool shadowed = (trShad) ? scene->isShadowed(state, lRay, sDepth, scol, mask_obj_index, mask_mat_index) : scene->isShadowed(state, lRay, mask_obj_index, mask_mat_index);
 	if(shadowed) return color_t(0.f);
-	
-	const pathVertex_t &z = pd.eyePath[t-1];
-	
-	color_t C_uw = lcol * pd.f_z * z.alpha * std::fabs(z.sp.N*lRay.dir); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
+
+	const pathVertex_t &z = pd.eyePath[t - 1];
+
+	color_t C_uw = lcol * pd.f_z * z.alpha * std::fabs(z.sp.N * lRay.dir); // f_y, cos_x0_f and r^2 computed in connectLPath...(light pdf)
 	if(trShad) C_uw *= scol;
 	// hence c_st is only cos_x1_b * f_z...like path tracing
 	//if(dbg < 10) Y_DEBUG << integratorName << ": " << "evalLPath(): f_z:" << pd.f_z << " C_uw:" << C_uw << yendl;
@@ -929,7 +929,7 @@ color_t biDirIntegrator_t::evalLPath(renderState_t &state, int t, pathData_t &pd
 //almost same as evalPath, just that there is no material on one end but a camera sensor function (soon...)
 color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd) const
 {
-	const pathVertex_t &y = pd.lightPath[s-1];
+	const pathVertex_t &y = pd.lightPath[s - 1];
 	float mask_obj_index = 0.f, mask_mat_index = 0.f;
 	ray_t conRay(y.sp.P, pd.w_l_e, 0.0005, pd.d_yz);
 
@@ -1018,8 +1018,8 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, cons
 	Halton hal2(2);
 	Halton hal3(3);
 
-	hal2.setStart(offs-1);
-	hal3.setStart(offs-1);
+	hal2.setStart(offs - 1);
+	hal3.setStart(offs - 1);
 
 	for(int i = 0; i < n; ++i)
 	{
@@ -1036,7 +1036,7 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPass(renderState_t &state, cons
 
 		float W = 0.f;
 
-		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT );
+		sample_t s(s1, s2, BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_REFLECT);
 		surfCol = material->sample(state, sp, wo, lightRay.dir, s, W);
 
 		if(material->getFlags() & BSDF_EMIT)
@@ -1075,8 +1075,8 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, 
 	Halton hal2(2);
 	Halton hal3(3);
 
-	hal2.setStart(offs-1);
-	hal3.setStart(offs-1);
+	hal2.setStart(offs - 1);
+	hal3.setStart(offs - 1);
 
 	for(int i = 0; i < n; ++i)
 	{
@@ -1093,7 +1093,7 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, 
 
 		float W = 0.f;
 
-		sample_t s(s1, s2, BSDF_ALL );
+		sample_t s(s1, s2, BSDF_ALL);
 		surfCol = material->sampleClay(state, sp, wo, lightRay.dir, s, W);
 		s.pdf = 1.f;
 
@@ -1116,16 +1116,16 @@ color_t biDirIntegrator_t::sampleAmbientOcclusionPassClay(renderState_t &state, 
 }
 
 
-integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &render)
+integrator_t *biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	bool do_AO=false;
+	bool do_AO = false;
 	int AO_samples = 32;
 	double AO_dist = 1.0;
 	color_t AO_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
-	bool transpShad=false;
-	int shadowDepth=4;
+	bool transpShad = false;
+	int shadowDepth = 4;
 
 	params.getParam("transpShad", transpShad);
 	params.getParam("shadowDepth", shadowDepth);
@@ -1135,7 +1135,7 @@ integrator_t* biDirIntegrator_t::factory(paraMap_t &params, renderEnvironment_t 
 	params.getParam("AO_color", AO_col);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
-	
+
 	biDirIntegrator_t *inte = new biDirIntegrator_t(transpShad, shadowDepth);
 
 	// AO settings

@@ -46,94 +46,94 @@ typedef genericScanlineBuffer_t<float> grayScanlineImage_t;
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
 class C_IStream: public Imf::IStream
 {
-public:
-	C_IStream (FILE *file, const char fileName[]):
-	Imf::IStream (fileName), _file (file) {}
-	virtual bool read (char c[], int n);
-	virtual Int64 tellg ();
-	virtual void seekg (Int64 pos);
-	virtual void clear ();
-private:
-	FILE * _file;
+	public:
+		C_IStream(FILE *file, const char fileName[]):
+			Imf::IStream(fileName), _file(file) {}
+		virtual bool read(char c[], int n);
+		virtual Int64 tellg();
+		virtual void seekg(Int64 pos);
+		virtual void clear();
+	private:
+		FILE *_file;
 };
 
-bool C_IStream::read (char c[], int n)
+bool C_IStream::read(char c[], int n)
 {
-	if (n != (int) fread (c, 1, n, _file))
+	if(n != (int) fread(c, 1, n, _file))
 	{
 		// fread() failed, but the return value does not distinguish
 		// between I/O errors and end of file, so we call ferror() to
 		// determine what happened.
-		if (ferror (_file)) Iex::throwErrnoExc();
-		else throw Iex::InputExc ("Unexpected end of file.");
+		if(ferror(_file)) Iex::throwErrnoExc();
+		else throw Iex::InputExc("Unexpected end of file.");
 	}
-	return feof (_file);
+	return feof(_file);
 }
 
-Int64 C_IStream::tellg ()
+Int64 C_IStream::tellg()
 {
-	return ftell (_file);
+	return ftell(_file);
 }
 
-void C_IStream::seekg (Int64 pos)
+void C_IStream::seekg(Int64 pos)
 {
-	clearerr (_file);
-	fseek (_file, pos, SEEK_SET);
+	clearerr(_file);
+	fseek(_file, pos, SEEK_SET);
 }
 
-void C_IStream::clear ()
+void C_IStream::clear()
 {
-	clearerr (_file);
+	clearerr(_file);
 }
 
 
 class C_OStream: public Imf::OStream
 {
-public:
-	C_OStream (FILE *file, const char fileName[]):
-	Imf::OStream (fileName), _file (file) {}
-	virtual void write (const char c[], int n);
-	virtual Int64 tellp ();
-	virtual void seekp (Int64 pos);
-private:
-	FILE * _file;
+	public:
+		C_OStream(FILE *file, const char fileName[]):
+			Imf::OStream(fileName), _file(file) {}
+		virtual void write(const char c[], int n);
+		virtual Int64 tellp();
+		virtual void seekp(Int64 pos);
+	private:
+		FILE *_file;
 };
 
-void C_OStream::write (const char c[], int n)
+void C_OStream::write(const char c[], int n)
 {
-	if (n != (int) fwrite (c, 1, n, _file))
+	if(n != (int) fwrite(c, 1, n, _file))
 	{
 		// fwrite() failed, but the return value does not distinguish
 		// between I/O errors and end of file, so we call ferror() to
 		// determine what happened.
-		if (ferror (_file)) Iex::throwErrnoExc();
-		else throw Iex::InputExc ("Unexpected end of file.");
+		if(ferror(_file)) Iex::throwErrnoExc();
+		else throw Iex::InputExc("Unexpected end of file.");
 	}
 }
 
-Int64 C_OStream::tellp ()
+Int64 C_OStream::tellp()
 {
-	return ftell (_file);
+	return ftell(_file);
 }
 
-void C_OStream::seekp (Int64 pos)
+void C_OStream::seekp(Int64 pos)
 {
-	clearerr (_file);
-	fseek (_file, pos, SEEK_SET);
+	clearerr(_file);
+	fseek(_file, pos, SEEK_SET);
 }
 
 
 
 class exrHandler_t: public imageHandler_t
 {
-public:
-	exrHandler_t();
-	~exrHandler_t();
-	bool loadFromFile(const std::string &name);
-	bool saveToFile(const std::string &name, int imgIndex = 0);
-    bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
-	static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	bool isHDR() { return true; }
+	public:
+		exrHandler_t();
+		~exrHandler_t();
+		bool loadFromFile(const std::string &name);
+		bool saveToFile(const std::string &name, int imgIndex = 0);
+		bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
+		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		bool isHDR() { return true; }
 };
 
 exrHandler_t::exrHandler_t()
@@ -152,13 +152,13 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	int w = getWidth(imgIndex);
 
 	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << ( m_hasAlpha ? "A" : "" ) << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	else Y_INFO << handlerName << ": Saving RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
-	int totchan_size = num_colchan*chan_size;
+	int totchan_size = num_colchan * chan_size;
 
 	Header header(w, h);
 
@@ -170,7 +170,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	header.channels().insert("A", Channel(HALF));
 
 	FILE *fp = file_t::open(name.c_str(), "wb");
-	C_OStream ostr (fp, name.c_str());
+	C_OStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 
 	Imf::Array2D<Imf::Rgba> pixels;
@@ -188,13 +188,13 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 		}
 	}
 
-	char* data_ptr = (char *)&pixels[0][0];
-	
+	char *data_ptr = (char *)&pixels[0][0];
+
 	FrameBuffer fb;
-	fb.insert("R", Slice(HALF, data_ptr              , totchan_size, w * totchan_size));
+	fb.insert("R", Slice(HALF, data_ptr, totchan_size, w * totchan_size));
 	fb.insert("G", Slice(HALF, data_ptr +   chan_size, totchan_size, w * totchan_size));
-	fb.insert("B", Slice(HALF, data_ptr + 2*chan_size, totchan_size, w * totchan_size));
-	fb.insert("A", Slice(HALF, data_ptr + 3*chan_size, totchan_size, w * totchan_size));
+	fb.insert("B", Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w * totchan_size));
+	fb.insert("A", Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w * totchan_size));
 
 	file.setFrameBuffer(fb);
 
@@ -204,7 +204,7 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 		Y_VERBOSE << handlerName << ": Done." << yendl;
 		return true;
 	}
-	catch (const std::exception &exc)
+	catch(const std::exception &exc)
 	{
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
@@ -227,51 +227,51 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		if(imgBuffer.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
 		if(imgBuffer.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
 	}
-	
+
 	if(!allImageBuffersSameSize)
 	{
 		Y_ERROR << handlerName << ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format." << yendl;
 		return false;
 	}
 
-    std::string extPassName;
+	std::string extPassName;
 
 	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length()-4);
-    
-    if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-    else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
+
+	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
-	int totchan_size = num_colchan*chan_size;
-	
-    Header header(w0, h0);
-    FrameBuffer fb;
+	int totchan_size = num_colchan * chan_size;
+
+	Header header(w0, h0);
+	FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
-    
+
 	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
 
-    for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
-    {
-		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";        
+	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	{
+		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";
 		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
-        
-        const std::string channelR_string = extPassName + "R";
-        const std::string channelG_string = extPassName + "G";
-        const std::string channelB_string = extPassName + "B";
-        const std::string channelA_string = extPassName + "A";
-        
-        const char* channelR = channelR_string.c_str();
-        const char* channelG = channelG_string.c_str();
-        const char* channelB = channelB_string.c_str();
-        const char* channelA = channelA_string.c_str();
-        
-        header.channels().insert(channelR, Channel(HALF));
-        header.channels().insert(channelG, Channel(HALF));
-        header.channels().insert(channelB, Channel(HALF));
-        header.channels().insert(channelA, Channel(HALF));
- 
+
+		const std::string channelR_string = extPassName + "R";
+		const std::string channelG_string = extPassName + "G";
+		const std::string channelB_string = extPassName + "B";
+		const std::string channelA_string = extPassName + "A";
+
+		const char *channelR = channelR_string.c_str();
+		const char *channelG = channelG_string.c_str();
+		const char *channelB = channelB_string.c_str();
+		const char *channelA = channelA_string.c_str();
+
+		header.channels().insert(channelR, Channel(HALF));
+		header.channels().insert(channelG, Channel(HALF));
+		header.channels().insert(channelB, Channel(HALF));
+		header.channels().insert(channelA, Channel(HALF));
+
 		pixels.push_back(new Imf::Array2D<Imf::Rgba>);
 		pixels.at(idx)->resizeErase(h0, w0);
 
@@ -287,19 +287,19 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 			}
 		}
 
-		char* data_ptr = (char *)&(*pixels.at(idx))[0][0];
+		char *data_ptr = (char *) & (*pixels.at(idx))[0][0];
 
-        fb.insert(channelR, Slice(HALF, data_ptr              , totchan_size, w0 * totchan_size));
-        fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, w0 * totchan_size));
-        fb.insert(channelB, Slice(HALF, data_ptr + 2*chan_size, totchan_size, w0 * totchan_size));
-        fb.insert(channelA, Slice(HALF, data_ptr + 3*chan_size, totchan_size, w0 * totchan_size));
-    }
-    
+		fb.insert(channelR, Slice(HALF, data_ptr, totchan_size, w0 * totchan_size));
+		fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, w0 * totchan_size));
+		fb.insert(channelB, Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w0 * totchan_size));
+		fb.insert(channelA, Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w0 * totchan_size));
+	}
+
 	FILE *fp = file_t::open(name.c_str(), "wb");
-	C_OStream ostr (fp, name.c_str());
+	C_OStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
-	
+
 	try
 	{
 		file.writePixels(h0);
@@ -312,7 +312,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		pixels.clear();
 		return true;
 	}
-	catch (const std::exception &exc)
+	catch(const std::exception &exc)
 	{
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		for(size_t idx = 0; idx < pixels.size(); ++idx)
@@ -334,7 +334,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 {
 	FILE *fp = file_t::open(name.c_str(), "rb");
 	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
-	
+
 	if(!fp)
 	{
 		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
@@ -350,8 +350,8 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 
 	try
 	{
-		C_IStream istr (fp, name.c_str());
-		RgbaInputFile file (istr);
+		C_IStream istr(fp, name.c_str());
+		RgbaInputFile file(istr);
 		Box2i dw = file.dataWindow();
 
 		m_width  = dw.max.x - dw.min.x + 1;
@@ -370,7 +370,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 		pixels.resizeErase(m_width, m_height);
 		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * m_height, m_height, 1);
 		file.readPixels(dw.min.y, dw.max.y);
-		
+
 		for(int i = 0; i < m_width; ++i)
 		{
 			for(int j = 0; j < m_height; ++j)
@@ -384,7 +384,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 			}
 		}
 	}
-	catch (const std::exception &exc)
+	catch(const std::exception &exc)
 	{
 		Y_ERROR << handlerName << ": " << exc.what() << yendl;
 		return false;
@@ -396,7 +396,7 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 	return true;
 }
 
-imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &render)
+imageHandler_t *exrHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	int pixtype = HALF;
 	int compression = ZIP_COMPRESSION;
@@ -419,14 +419,14 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params,renderEnvironment_t &ren
 	params.getParam("for_output", forOutput);
 	params.getParam("img_multilayer", multiLayer);
 	params.getParam("img_grayscale", img_grayscale);
-/*	//Denoise is not available for HDR/EXR images
- * 	params.getParam("denoiseEnabled", denoiseEnabled);
- *	params.getParam("denoiseHLum", denoiseHLum);
- *	params.getParam("denoiseHCol", denoiseHCol);
- *	params.getParam("denoiseMix", denoiseMix);
- */
+	/*	//Denoise is not available for HDR/EXR images
+	 * 	params.getParam("denoiseEnabled", denoiseEnabled);
+	 *	params.getParam("denoiseHLum", denoiseHLum);
+	 *	params.getParam("denoiseHCol", denoiseHCol);
+	 *	params.getParam("denoiseMix", denoiseMix);
+	 */
 	imageHandler_t *ih = new exrHandler_t();
-	
+
 	ih->setTextureOptimization(TEX_OPTIMIZATION_NONE);
 
 	if(forOutput)

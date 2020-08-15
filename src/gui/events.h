@@ -34,48 +34,48 @@ enum CustomEvents
 	ProgressUpdateTag
 };
 
-// this event is just to trigger an update in a widget from 
+// this event is just to trigger an update in a widget from
 // outside the main thread
 class GuiUpdateEvent : public QEvent
 {
-public:
-	GuiUpdateEvent(const QRect &rect, bool fullUpdate = false);
-	inline QRect rect() { return m_rect; }
-	inline bool fullUpdate() { return m_full; }
-private:
-	QRect m_rect;
-	bool m_full;
+	public:
+		GuiUpdateEvent(const QRect &rect, bool fullUpdate = false);
+		inline QRect rect() { return m_rect; }
+		inline bool fullUpdate() { return m_full; }
+	private:
+		QRect m_rect;
+		bool m_full;
 };
 
 class GuiAreaHighliteEvent : public QEvent
 {
-public:
-	GuiAreaHighliteEvent(const QRect &rect);
-	inline QRect rect() { return m_rect; }
-private:
-	QRect m_rect;
+	public:
+		GuiAreaHighliteEvent(const QRect &rect);
+		inline QRect rect() { return m_rect; }
+	private:
+		QRect m_rect;
 };
 
 class ProgressUpdateEvent : public QEvent
 {
-public:
-	ProgressUpdateEvent(int progress, int min = -1, int max = -1);
-	inline int progress() { return m_progress; }
-	inline int min() { return m_min; }
-	inline int max() { return m_max; }
-private:
-	int m_progress;
-	int m_min;
-	int m_max;
+	public:
+		ProgressUpdateEvent(int progress, int min = -1, int max = -1);
+		inline int progress() { return m_progress; }
+		inline int min() { return m_min; }
+		inline int max() { return m_max; }
+	private:
+		int m_progress;
+		int m_min;
+		int m_max;
 };
 
 class ProgressUpdateTagEvent : public QEvent
 {
-public:
-	ProgressUpdateTagEvent(const char *tag);
-	inline QString &tag() { return m_tag; }
-private:
-	QString m_tag;
+	public:
+		ProgressUpdateTagEvent(const char *tag);
+		inline QString &tag() { return m_tag; }
+	private:
+		QString m_tag;
 };
 
 #endif

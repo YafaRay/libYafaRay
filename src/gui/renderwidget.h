@@ -32,62 +32,62 @@
 
 class RenderWidget: public QLabel
 {
-	Q_OBJECT
-public:
+		Q_OBJECT
+	public:
 
-	RenderWidget(QScrollArea *parent = 0, bool use_zbuffer = false);
-	~RenderWidget();
+		RenderWidget(QScrollArea *parent = 0, bool use_zbuffer = false);
+		~RenderWidget();
 
-	void setup(const QSize &s);
-private:
-	void initBuffers();
-public:
-	void setRenderBorderStart(const QPoint &start) { borderStart = start; }
+		void setup(const QSize &s);
+	private:
+		void initBuffers();
+	public:
+		void setRenderBorderStart(const QPoint &start) { borderStart = start; }
 
-	void startRendering();
-	bool isRendering() { return rendering; }
-	void finishRendering();
+		void startRendering();
+		bool isRendering() { return rendering; }
+		void finishRendering();
 
-	void setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha);
+		void setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha);
 
-	void paintColorBuffer();
-	void paintAlpha();
+		void paintColorBuffer();
+		void paintAlpha();
 
-private:
-	void zoom(float f, QPoint mPos);
-public:
-	void zoomIn(QPoint mPos);
-	void zoomOut(QPoint mPos);
+	private:
+		void zoom(float f, QPoint mPos);
+	public:
+		void zoomIn(QPoint mPos);
+		void zoomOut(QPoint mPos);
 
-	bool event(QEvent *e);
-protected:
-	virtual void paintEvent(QPaintEvent *e);
-	virtual void wheelEvent(QWheelEvent* evt);
-	virtual void mousePressEvent(QMouseEvent *e);
-	virtual void mouseReleaseEvent(QMouseEvent *e);
-	virtual void mouseMoveEvent(QMouseEvent *e);
+		bool event(QEvent *e);
+	protected:
+		virtual void paintEvent(QPaintEvent *e);
+		virtual void wheelEvent(QWheelEvent *evt);
+		virtual void mousePressEvent(QMouseEvent *e);
+		virtual void mouseReleaseEvent(QMouseEvent *e);
+		virtual void mouseMoveEvent(QMouseEvent *e);
 
-private:
-	bool use_zbuf;
-	bool rendering;
-	bool panning;
+	private:
+		bool use_zbuf;
+		bool rendering;
+		bool panning;
 
-	QPoint borderStart;
-	QSize imageSize;
-	float scaleFactor;
+		QPoint borderStart;
+		QSize imageSize;
+		float scaleFactor;
 
-	QPoint panPos;
-	QPoint barPos;
-	QScrollArea *owner;
-	QScrollBar *hBar;
-	QScrollBar *vBar;
+		QPoint panPos;
+		QPoint barPos;
+		QScrollArea *owner;
+		QScrollBar *hBar;
+		QScrollBar *vBar;
 
-	QPixmap pix;
-	QMutex bufferMutex;
+		QPixmap pix;
+		QMutex bufferMutex;
 
-	QImage colorBuffer;
-	QImage alphaChannel;
-	QImage *activeBuffer;
+		QImage colorBuffer;
+		QImage alphaChannel;
+		QImage *activeBuffer;
 };
 
 #endif

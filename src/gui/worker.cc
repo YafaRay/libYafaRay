@@ -26,7 +26,7 @@
 #include <interface/yafrayinterface.h>
 
 Worker::Worker(yafaray::yafrayInterface_t *env, MainWindow *win, QtOutput *output)
-: QThread(), m_env(env),  m_output(output), m_win(win)
+	: QThread(), m_env(env),  m_output(output), m_win(win)
 {
 }
 

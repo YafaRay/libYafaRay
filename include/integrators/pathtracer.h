@@ -26,18 +26,18 @@ __BEGIN_YAFRAY
 
 class YAFRAYPLUGIN_EXPORT pathIntegrator_t: public mcIntegrator_t
 {
-        public:
-                pathIntegrator_t(bool transpShad=false, int shadowDepth=4);
-                virtual bool preprocess();
-                virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
-                static integrator_t* factory(paraMap_t &params, renderEnvironment_t &render);
-                enum { NONE, PATH, PHOTON, BOTH };
-        protected:
-                bool traceCaustics; //!< use path tracing for caustics (determined by causticType)
-                bool no_recursive;
-                float invNPaths;
-                int causticType;
-                int russianRouletteMinBounces;  //!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
+	public:
+		pathIntegrator_t(bool transpShad = false, int shadowDepth = 4);
+		virtual bool preprocess();
+		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
+		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		enum { NONE, PATH, PHOTON, BOTH };
+	protected:
+		bool traceCaustics; //!< use path tracing for caustics (determined by causticType)
+		bool no_recursive;
+		float invNPaths;
+		int causticType;
+		int russianRouletteMinBounces;  //!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
 };
 
 __END_YAFRAY

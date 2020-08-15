@@ -17,7 +17,7 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *      
+ *
  */
 
 #include <yafraycore/imageOutput.h>
@@ -28,12 +28,12 @@
 
 __BEGIN_YAFRAY
 
-imageOutput_t::imageOutput_t(imageHandler_t * handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
+imageOutput_t::imageOutput_t(imageHandler_t *handle, const std::string &name, int bx, int by) : image(handle), fname(name), bX(bx), bY(by)
 {
-    path_t path(name);
-    path_t outputPath(path.getDirectory(), path.getBaseName(), "");
-    //Y_DEBUG PR(name) PR(outputPath.getFullPath()) PREND;
-    session.setPathImageOutput(outputPath.getFullPath());
+	path_t path(name);
+	path_t outputPath(path.getDirectory(), path.getBaseName(), "");
+	//Y_DEBUG PR(name) PR(outputPath.getFullPath()) PREND;
+	session.setPathImageOutput(outputPath.getFullPath());
 }
 
 imageOutput_t::imageOutput_t()
@@ -48,10 +48,10 @@ imageOutput_t::~imageOutput_t()
 
 bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha)
 {
-    colorA_t col(0.f);
-    col.set(color.R, color.G, color.B, ( (alpha || idx > 0) ? color.A : 1.f ) );
-    image->putPixel(x + bX , y + bY, col, idx);
-    return true;
+	colorA_t col(0.f);
+	col.set(color.R, color.G, color.B, ((alpha || idx > 0) ? color.A : 1.f));
+	image->putPixel(x + bX, y + bY, col, idx);
+	return true;
 }
 
 bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
@@ -61,8 +61,8 @@ bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *re
 		for(size_t idx = 0; idx < colExtPasses.size(); ++idx)
 		{
 			colorA_t col(0.f);
-			col.set(colExtPasses[idx].R, colExtPasses[idx].G, colExtPasses[idx].B, ( (alpha || idx > 0) ? colExtPasses[idx].A : 1.f ) );
-			image->putPixel(x + bX , y + bY, col, idx);
+			col.set(colExtPasses[idx].R, colExtPasses[idx].G, colExtPasses[idx].B, ((alpha || idx > 0) ? colExtPasses[idx].A : 1.f));
+			image->putPixel(x + bX, y + bY, col, idx);
 		}
 	}
 	return true;
@@ -70,98 +70,98 @@ bool imageOutput_t::putPixel(int numView, int x, int y, const renderPasses_t *re
 
 void imageOutput_t::flush(int numView, const renderPasses_t *renderPasses)
 {
-    std::string fnamePass, path, name, base_name, ext, num_view="";
+	std::string fnamePass, path, name, base_name, ext, num_view = "";
 
-    size_t sep = fname.find_last_of("\\/");
-    if (sep != std::string::npos)
-        name = fname.substr(sep + 1, fname.size() - sep - 1);
+	size_t sep = fname.find_last_of("\\/");
+	if(sep != std::string::npos)
+		name = fname.substr(sep + 1, fname.size() - sep - 1);
 
-    path = fname.substr(0, sep+1);
+	path = fname.substr(0, sep + 1);
 
-    if(path == "") name = fname;
+	if(path == "") name = fname;
 
-    size_t dot = name.find_last_of(".");
+	size_t dot = name.find_last_of(".");
 
-    if (dot != std::string::npos)
-    {
-        base_name = name.substr(0, dot);
-        ext  = name.substr(dot, name.size() - dot);
-    }
-    else
-    {
-        base_name = name;
-        ext  = "";
-    }
-                
-    std::string view_name = renderPasses->view_names.at(numView);
-    
-    if(view_name != "") base_name += " (view " + view_name + ")";
+	if(dot != std::string::npos)
+	{
+		base_name = name.substr(0, dot);
+		ext  = name.substr(dot, name.size() - dot);
+	}
+	else
+	{
+		base_name = name;
+		ext  = "";
+	}
 
-    if(image)
-    {
-        if(image->isMultiLayer())
-        {
-            if(numView == 0)
-	    {
-		saveImageFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
-	    }
-         
-            fnamePass = path + base_name + " [" + "multilayer" + "]"+ ext;
-            saveImageFileMultiChannel(fnamePass, renderPasses);
+	std::string view_name = renderPasses->view_names.at(numView);
 
-	    yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
-        }
-        else
-        {
-            for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
-            {
-                std::string passName = renderPasses->intPassTypeStringFromType(renderPasses->intPassTypeFromExtPassIndex(idx));
-                
-                if(numView == 0 && idx == 0)
+	if(view_name != "") base_name += " (view " + view_name + ")";
+
+	if(image)
+	{
+		if(image->isMultiLayer())
 		{
-		    saveImageFile(fname, idx);  //default image filename, when not using views nor passes and for reloading into Blender
-		    yafLog.setImagePath(fname); //to show the image in the HTML log output
+			if(numView == 0)
+			{
+				saveImageFile(fname, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+			}
+
+			fnamePass = path + base_name + " [" + "multilayer" + "]" + ext;
+			saveImageFileMultiChannel(fnamePass, renderPasses);
+
+			yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
 		}
-		
-		if(passName != "not found" && (renderPasses->extPassesSize()>=2 || renderPasses->view_names.size() >= 2))
-                {
-                    fnamePass = path + base_name + " [pass " + passName + "]"+ ext;
-                    saveImageFile(fnamePass, idx);
+		else
+		{
+			for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
+			{
+				std::string passName = renderPasses->intPassTypeStringFromType(renderPasses->intPassTypeFromExtPassIndex(idx));
 
-		    if(idx == 0) yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
-                }
-            }
-        }
-    }
-    
-    if(yafLog.getSaveLog())
-    {
-	std::string fLogName = path + base_name + "_log.txt";
-	yafLog.saveTxtLog(fLogName);
-    }
+				if(numView == 0 && idx == 0)
+				{
+					saveImageFile(fname, idx);  //default image filename, when not using views nor passes and for reloading into Blender
+					yafLog.setImagePath(fname); //to show the image in the HTML log output
+				}
 
-    if(yafLog.getSaveHTML())
-    {
-	std::string fLogHtmlName = path + base_name + "_log.html";
-	yafLog.saveHtmlLog(fLogHtmlName);
-    }
+				if(passName != "not found" && (renderPasses->extPassesSize() >= 2 || renderPasses->view_names.size() >= 2))
+				{
+					fnamePass = path + base_name + " [pass " + passName + "]" + ext;
+					saveImageFile(fnamePass, idx);
 
-    if(yafLog.getSaveStats())
-    {
-	std::string fStatsName = path + base_name + "_stats.csv";
-	yafLog.statsSaveToFile(fStatsName, /*sorted=*/ true);
-    }
+					if(idx == 0) yafLog.setImagePath(fnamePass); //to show the image in the HTML log output
+				}
+			}
+		}
+	}
+
+	if(yafLog.getSaveLog())
+	{
+		std::string fLogName = path + base_name + "_log.txt";
+		yafLog.saveTxtLog(fLogName);
+	}
+
+	if(yafLog.getSaveHTML())
+	{
+		std::string fLogHtmlName = path + base_name + "_log.html";
+		yafLog.saveHtmlLog(fLogHtmlName);
+	}
+
+	if(yafLog.getSaveStats())
+	{
+		std::string fStatsName = path + base_name + "_stats.csv";
+		yafLog.statsSaveToFile(fStatsName, /*sorted=*/ true);
+	}
 }
 
 
 void imageOutput_t::saveImageFile(std::string filename, int idx)
 {
-    image->saveToFile(filename, idx);
+	image->saveToFile(filename, idx);
 }
 
 void imageOutput_t::saveImageFileMultiChannel(std::string filename, const renderPasses_t *renderPasses)
 {
-    image->saveToFileMultiChannel(filename, renderPasses);
+	image->saveToFileMultiChannel(filename, renderPasses);
 }
 __END_YAFRAY
 

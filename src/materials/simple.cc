@@ -17,7 +17,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 #include <core_api/material.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
@@ -37,13 +37,13 @@ __BEGIN_YAFRAY
 class lightMat_t: public material_t
 {
 	public:
-		lightMat_t(color_t lightC, bool ds=false);
-        virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes=bsdfFlags; }
+		lightMat_t(color_t lightC, bool ds = false);
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes = bsdfFlags; }
 		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const {return color_t(0.0);}
 		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
 		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
-		static material_t* factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env);
+		static material_t *factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env);
 	protected:
 		color_t lightCol;
 		bool doubleSided;
@@ -65,25 +65,25 @@ color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, c
 {
 	if(!state.includeLights) return color_t(0.f);
 	if(doubleSided) return lightCol;
-	
-	float angle = wo*sp.N;
-	return (angle>0) ? lightCol : color_t(0.f);
+
+	float angle = wo * sp.N;
+	return (angle > 0) ? lightCol : color_t(0.f);
 }
 
 float lightMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
 	return 0.f;
 }
-material_t* lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env)
+material_t *lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env)
 {
 	color_t col(1.0);
 	double power = 1.0;
 	bool ds = false;
-	
+
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("double_sided", ds);
-	return new lightMat_t(col*(float)power, ds);
+	return new lightMat_t(col * (float)power, ds);
 }
 
 extern "C"

@@ -53,7 +53,7 @@
 
 // GUI Font
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-	#include <resources/guifont.h>
+#include <resources/guifont.h>
 #endif
 
 // End of resources inclusion
@@ -86,11 +86,11 @@ static QApplication *app = nullptr;
 
 void initGui()
 {
-	static int argc=0;
+	static int argc = 0;
 
 	if(!QApplication::instance())
 	{
-#if defined(__APPLE__) 
+#if defined(__APPLE__)
 		QApplication::instance()->setAttribute(Qt::AA_MacPluginApplication);
 		QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
 #endif
@@ -98,7 +98,7 @@ void initGui()
 		Y_INFO << "Starting Qt graphical interface..." << yendl;
 		app = new QApplication(argc, 0);
 	}
-	else app = static_cast<QApplication*>(QApplication::instance());
+	else app = static_cast<QApplication *>(QApplication::instance());
 }
 
 int createRenderWidget(yafaray::yafrayInterface_t *interf, int xsize, int ysize, int bStartX, int bStartY, Settings settings)
@@ -113,7 +113,7 @@ int createRenderWidget(yafaray::yafrayInterface_t *interf, int xsize, int ysize,
 
 
 MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings)
-: QMainWindow(), interf(env), res_x(resx), res_y(resy), b_x(bStartX), b_y(bStartY), use_zbuf(false)
+	: QMainWindow(), interf(env), res_x(resx), res_y(resy), b_x(bStartX), b_y(bStartY), use_zbuf(false)
 {
 	QCoreApplication::setOrganizationName("YafaRay Team");
 	QCoreApplication::setOrganizationDomain("yafaray.org");
@@ -152,17 +152,17 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	quitIcon.loadFromData(quit_icon, quit_icon_size);
 
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char*)guifont, guifont_size));
+	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char *)guifont, guifont_size));
 	QStringList fam = QFontDatabase::applicationFontFamilies(fId);
 	QFont gFont = QFont(fam[0]);
 	gFont.setPointSize(8);
 	QApplication::setFont(gFont);
 #else
-	#if defined(__APPLE__)
+#if defined(__APPLE__)
 	QFont gFont = QApplication::font();
 	gFont.setPointSize(13);
 	QApplication::setFont(gFont);
-	#endif
+#endif
 #endif
 
 	m_ui = new Ui::WindowBase();
@@ -192,7 +192,7 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	// animation widget
 	anim = new AnimWorking(m_ui->renderArea);
-	anim->resize(200,87);
+	anim->resize(200, 87);
 
 	this->move(20, 20);
 
@@ -230,25 +230,25 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 
 	// actions
 	connect(m_ui->actionRender, SIGNAL(triggered(bool)),
-			this, SLOT(slotRender()));
+	        this, SLOT(slotRender()));
 	connect(m_ui->actionCancel, SIGNAL(triggered(bool)),
-			this, SLOT(slotCancel()));
+	        this, SLOT(slotCancel()));
 	connect(m_ui->actionSave_As, SIGNAL(triggered(bool)),
-			this, SLOT(slotSaveAs()));
+	        this, SLOT(slotSaveAs()));
 	connect(m_ui->actionQuit, SIGNAL(triggered(bool)),
-			this, SLOT(close()));
+	        this, SLOT(close()));
 	connect(m_ui->actionZoom_In, SIGNAL(triggered(bool)),
-			this, SLOT(zoomIn()));
+	        this, SLOT(zoomIn()));
 	connect(m_ui->actionZoom_Out, SIGNAL(triggered(bool)),
-			this, SLOT(zoomOut()));
+	        this, SLOT(zoomOut()));
 	connect(m_ui->actionSaveAlpha, SIGNAL(triggered(bool)),
-			this, SLOT(setAlpha(bool)));
+	        this, SLOT(setAlpha(bool)));
 	connect(m_ui->actionShowAlpha, SIGNAL(triggered(bool)),
-			this, SLOT(showAlpha(bool)));
+	        this, SLOT(showAlpha(bool)));
 	connect(m_ui->actionShowRGB, SIGNAL(triggered(bool)),
-			this, SLOT(showColor(bool)));
+	        this, SLOT(showColor(bool)));
 	connect(m_ui->actionAskSave, SIGNAL(triggered(bool)),
-			this, SLOT(setAskSave(bool)));
+	        this, SLOT(setAskSave(bool)));
 	//FIXME: connect(m_ui->actionDrawParams, SIGNAL(triggered(bool)),
 	//FIXME:		this, SLOT(setDrawParams(bool)));
 
@@ -257,14 +257,14 @@ MainWindow::MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int 
 	m_ui->actionDrawParams->setChecked(useDrawParams);
 
 	// offset when using border rendering
-	m_render->setRenderBorderStart( QPoint(bStartX, bStartY) );
+	m_render->setRenderBorderStart(QPoint(bStartX, bStartY));
 
 	autoSave = settings.autoSave;
 	autoSaveAlpha = settings.autoSaveAlpha;
 	autoClose = settings.closeAfterFinish;
 	saveWithAlpha = autoSaveAlpha;
 
-	if (autoSave)
+	if(autoSave)
 	{
 		this->fileName = settings.fileName;
 		this->setWindowTitle(this->windowTitle() + QString(" (") + QString(fileName.c_str()) + QString(")"));
@@ -284,20 +284,20 @@ MainWindow::~MainWindow()
 
 bool MainWindow::event(QEvent *e)
 {
-	if (e->type() == (QEvent::Type)ProgressUpdate)
+	if(e->type() == (QEvent::Type)ProgressUpdate)
 	{
-		ProgressUpdateEvent *p = static_cast<ProgressUpdateEvent*>(e);
-		if (p->min() >= 0)
+		ProgressUpdateEvent *p = static_cast<ProgressUpdateEvent *>(e);
+		if(p->min() >= 0)
 			m_ui->progressbar->setMinimum(p->min());
-		if (p->max() >= 0)
+		if(p->max() >= 0)
 			m_ui->progressbar->setMaximum(p->max());
 		m_ui->progressbar->setValue(p->progress());
 		return true;
 	}
 
-	if (e->type() == (QEvent::Type)ProgressUpdateTag)
+	if(e->type() == (QEvent::Type)ProgressUpdateTag)
 	{
-		ProgressUpdateTagEvent *p = static_cast<ProgressUpdateTagEvent*>(e);
+		ProgressUpdateTagEvent *p = static_cast<ProgressUpdateTagEvent *>(e);
 		if(p->tag().contains("Rendering")) anim->hide();
 		m_ui->yafLabel->setText(p->tag());
 		return true;
@@ -341,10 +341,10 @@ void MainWindow::slotFinished()
 	using namespace yafaray;
 	QString rt = "";
 
-	if (autoSave)
+	if(autoSave)
 	{
 		Y_INFO << " Image saved to " << fileName;
-		if (autoSaveAlpha) std::cout << " with alpha" << yendl;
+		if(autoSaveAlpha) std::cout << " with alpha" << yendl;
 		else std::cout << " without alpha" << yendl;
 
 		using namespace yafaray;
@@ -370,7 +370,7 @@ void MainWindow::slotFinished()
 		delete ih;
 		delete out;
 
-		if (autoClose)
+		if(autoClose)
 		{
 			if(renderCancelled) app->exit(1);
 			else app->quit();
@@ -422,7 +422,7 @@ void MainWindow::slotFinished()
 
 	slotEnableDisable(true);
 
-	if (autoClose)
+	if(autoClose)
 	{
 		if(renderCancelled) app->exit(1);
 		else app->quit();
@@ -440,9 +440,9 @@ void MainWindow::slotEnableDisable(bool enable)
 	m_ui->actionRender->setVisible(enable);
 	m_ui->cancelButton->setVisible(!enable);
 	m_ui->actionCancel->setVisible(!enable);
- 	m_ui->actionZoom_In->setEnabled(enable);
- 	m_ui->actionZoom_Out->setEnabled(enable);
- 	m_ui->actionDrawParams->setEnabled(enable);
+	m_ui->actionZoom_In->setEnabled(enable);
+	m_ui->actionZoom_Out->setEnabled(enable);
+	m_ui->actionDrawParams->setEnabled(enable);
 }
 
 void MainWindow::setAlpha(bool checked)
@@ -525,32 +525,32 @@ bool MainWindow::saveDlg()
 	std::sort(formatList.begin(), formatList.end());
 	std::sort(formatDesc.begin(), formatDesc.end());
 
-	for (size_t i = 0; i < formatList.size(); ++i)
+	for(size_t i = 0; i < formatList.size(); ++i)
 	{
 		formats += QString::fromStdString(formatDesc[i]) + " (*." + QString::fromStdString(formatList[i]) + ")";
-		if(i < formatList.size() - 1 ) formats += ";;";
+		if(i < formatList.size() - 1) formats += ";;";
 	}
 
-	if (m_lastPath.isNull())
+	if(m_lastPath.isNull())
 		m_lastPath = QDir::currentPath();
 
 	QString selectedFilter;
 	renderSaved = false;
 	QString fileName = QFileDialog::getSaveFileName(this, tr("YafaRay Save Image"), m_lastPath,
-			formats, &selectedFilter);
+	                   formats, &selectedFilter);
 
 	// "re"extract the actual file ending
 	selectedFilter.remove(0, selectedFilter.indexOf("."));
 	selectedFilter.remove(selectedFilter.indexOf(")"), 2);
 
-	if (!fileName.endsWith(selectedFilter, Qt::CaseInsensitive))
+	if(!fileName.endsWith(selectedFilter, Qt::CaseInsensitive))
 	{
 		fileName.append(selectedFilter.toLower());
 	}
 
 	selectedFilter.remove(0, 1); // Remove the dot "."
 
-	if (!fileName.isNull())
+	if(!fileName.isNull())
 	{
 		using namespace yafaray;
 		interf->paramsClearAll();
@@ -574,7 +574,7 @@ bool MainWindow::saveDlg()
 
 		QString savemesg;
 		savemesg.append("Render ");
-		savemesg.append(( (use_zbuf) ? "(RGBA + Z) " : "(RGBA) " ));
+		savemesg.append(((use_zbuf) ? "(RGBA + Z) " : "(RGBA) "));
 		savemesg.append("saved.");
 
 		m_ui->yafLabel->setText(savemesg);
@@ -591,7 +591,7 @@ bool MainWindow::closeUnsaved()
 	if(!renderSaved && !m_render->isRendering() && askUnsaved)
 	{
 		QMessageBox msgBox(QMessageBox::Question, "YafaRay Question", "The render hasn't been saved, if you close, it will be lost.",
-						   QMessageBox::NoButton, this);
+		                   QMessageBox::NoButton, this);
 
 		msgBox.setInformativeText("Do you want to save your render before closing?");
 		QPushButton *discard = msgBox.addButton("Close without Saving", QMessageBox::DestructiveRole);
@@ -617,14 +617,14 @@ void MainWindow::slotCancel()
 	m_worker->wait();
 }
 
-void MainWindow::keyPressEvent(QKeyEvent* event)
+void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-	if (event->key() == Qt::Key_Escape)	close();
+	if(event->key() == Qt::Key_Escape)	close();
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent* event)
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-	if (event->type() == QEvent::Resize)
+	if(event->type() == QEvent::Resize)
 	{
 		// move the animwidget over the render area
 		QRect r = anim->rect();
@@ -636,20 +636,20 @@ bool MainWindow::eventFilter(QObject *obj, QEvent* event)
 
 void MainWindow::zoomOut()
 {
-	m_render->zoomOut(QPoint(0,0));
+	m_render->zoomOut(QPoint(0, 0));
 }
 
 void MainWindow::zoomIn()
 {
-	m_render->zoomIn(QPoint(0,0));
+	m_render->zoomIn(QPoint(0, 0));
 }
 
 void MainWindow::adjustWindow()
 {
- 	QRect scrGeom = QApplication::desktop()->availableGeometry();
+	QRect scrGeom = QApplication::desktop()->availableGeometry();
 
-	int w = std::min(res_x + 10, scrGeom.width()-60);
-	int h = std::min(res_y + 10, scrGeom.height()-160);
+	int w = std::min(res_x + 10, scrGeom.width() - 60);
+	int h = std::min(res_y + 10, scrGeom.height() - 160);
 
 	m_ui->renderArea->setMaximumSize(w, h);
 	m_ui->renderArea->setMinimumSize(w, h);

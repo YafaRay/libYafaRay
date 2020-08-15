@@ -27,49 +27,49 @@ __BEGIN_YAFRAY
 
 class pngDataReader_t
 {
-public:
+	public:
 
-	pngDataReader_t(const yByte *d, size_t s):size(s), cursor(0)
-	{
-		data = new yByte[size];
-		for(size_t i = 0;i<size;i++)
+		pngDataReader_t(const yByte *d, size_t s): size(s), cursor(0)
 		{
-			data[i] = d[i];
-		}
-	}
-
-	~pngDataReader_t()
-	{
-		delete [] data;
-		data = nullptr;
-	}
-
-	size_t read(yByte* buf, size_t s)
-	{
-		if(cursor > size) return 0;
-		size_t i;
-
-		for(i = 0;i < s && cursor < size;cursor++, i++)
-		{
-			buf[i] = data[cursor];
+			data = new yByte[size];
+			for(size_t i = 0; i < size; i++)
+			{
+				data[i] = d[i];
+			}
 		}
 
-		return i;
-	}
+		~pngDataReader_t()
+		{
+			delete [] data;
+			data = nullptr;
+		}
 
-private:
-	yByte *data;
-	size_t size;
-	size_t cursor;
+		size_t read(yByte *buf, size_t s)
+		{
+			if(cursor > size) return 0;
+			size_t i;
+
+			for(i = 0; i < s && cursor < size; cursor++, i++)
+			{
+				buf[i] = data[cursor];
+			}
+
+			return i;
+		}
+
+	private:
+		yByte *data;
+		size_t size;
+		size_t cursor;
 };
 
 void readFromMem(png_structp pngPtr, png_bytep buffer, png_size_t bytesToRead)
 {
-   pngDataReader_t *img = (pngDataReader_t*) png_get_io_ptr(pngPtr);
+	pngDataReader_t *img = (pngDataReader_t *) png_get_io_ptr(pngPtr);
 
-   if(img == nullptr) png_error(pngPtr, "The image data pointer is null!!");
+	if(img == nullptr) png_error(pngPtr, "The image data pointer is null!!");
 
-   if(img->read((yByte*)buffer, (size_t)bytesToRead) < bytesToRead) png_warning(pngPtr, "EOF Found while reading image data");
+	if(img->read((yByte *)buffer, (size_t)bytesToRead) < bytesToRead) png_warning(pngPtr, "EOF Found while reading image data");
 }
 
 __END_YAFRAY

@@ -10,7 +10,7 @@
 #include <signal.h>
 
 #ifdef WIN32
-	#include <windows.h>
+#include <windows.h>
 #endif
 
 __BEGIN_YAFRAY
@@ -18,10 +18,11 @@ __BEGIN_YAFRAY
 scene_t *globalScene = nullptr;
 
 #ifdef WIN32
-BOOL WINAPI ctrl_c_handler(DWORD signal) {
+BOOL WINAPI ctrl_c_handler(DWORD signal)
+{
 	if(globalScene)
 	{
-		globalScene->abort(); 
+		globalScene->abort();
 		session.setStatusRenderAborted();
 		Y_WARNING << "Interface: Render aborted by user." << yendl;
 	}
@@ -31,14 +32,14 @@ BOOL WINAPI ctrl_c_handler(DWORD signal) {
 		Y_WARNING << "Interface: Render aborted by user." << yendl;
 		exit(1);
 	}
-    return TRUE;
+	return TRUE;
 }
 #else
 void ctrl_c_handler(int signal)
 {
 	if(globalScene)
 	{
-		globalScene->abort(); 
+		globalScene->abort();
 		session.setStatusRenderAborted();
 		Y_WARNING << "Interface: Render aborted by user." << yendl;
 	}
@@ -47,7 +48,7 @@ void ctrl_c_handler(int signal)
 		session.setStatusRenderAborted();
 		Y_WARNING << "Interface: Render aborted by user." << yendl;
 		exit(1);
-	}	
+	}
 }
 #endif
 
@@ -94,13 +95,13 @@ void yafrayInterface_t::loadPlugins(const char *path)
 	else
 	{
 		std::string plugPath;
-		if( env->getPluginPath(plugPath) )
+		if(env->getPluginPath(plugPath))
 		{
 			env->loadPlugins(plugPath);
 		}
 	}
 }
-	
+
 
 void yafrayInterface_t::clearAll()
 {
@@ -150,7 +151,8 @@ bool yafrayInterface_t::startGeometry() { return scene->startGeometry(); }
 
 bool yafrayInterface_t::endGeometry() { return scene->endGeometry(); }
 
-unsigned int yafrayInterface_t::getNextFreeID() {
+unsigned int yafrayInterface_t::getNextFreeID()
+{
 	objID_t id;
 	id = scene->getNextFreeID();
 	return id;
@@ -164,8 +166,8 @@ bool yafrayInterface_t::startTriMesh(unsigned int id, int vertices, int triangle
 
 bool yafrayInterface_t::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
 {
-        bool success = scene->startCurveMesh(id, vertices, obj_pass_index);
-        return success;
+	bool success = scene->startCurveMesh(id, vertices, obj_pass_index);
+	return success;
 }
 
 
@@ -174,7 +176,7 @@ bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int tria
 	Y_WARNING << "Interface: This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << yendl;
 	objID_t _id;
 	_id = scene->getNextFreeID();
-	if ( _id > 0 )
+	if(_id > 0)
 	{
 		bool success = scene->startTriMesh(_id, vertices, triangles, hasOrco, hasUV, type, obj_pass_index);
 		*id = _id;
@@ -189,16 +191,16 @@ bool yafrayInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int tria
 bool yafrayInterface_t::endTriMesh() { return scene->endTriMesh(); }
 bool yafrayInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape) { return scene->endCurveMesh(mat, strandStart, strandEnd, strandShape); }
 
-int  yafrayInterface_t::addVertex(double x, double y, double z) { return scene->addVertex( point3d_t(x,y,z) ); }
+int  yafrayInterface_t::addVertex(double x, double y, double z) { return scene->addVertex(point3d_t(x, y, z)); }
 
 int  yafrayInterface_t::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
-	return scene->addVertex(point3d_t(x,y,z), point3d_t(ox,oy,oz));
+	return scene->addVertex(point3d_t(x, y, z), point3d_t(ox, oy, oz));
 }
 
 void yafrayInterface_t::addNormal(double x, double y, double z)
 {
-	scene->addNormal( normal_t(x,y,z) );
+	scene->addNormal(normal_t(x, y, z));
 }
 
 bool yafrayInterface_t::addTriangle(int a, int b, int c, const material_t *mat) { return scene->addTriangle(a, b, c, mat); }
@@ -217,74 +219,74 @@ bool yafrayInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objTo
 	return scene->addInstance(baseObjectId, objToWorld);
 }
 // paraMap_t related functions:
-void yafrayInterface_t::paramsSetPoint(const char* name, double x, double y, double z)
+void yafrayInterface_t::paramsSetPoint(const char *name, double x, double y, double z)
 {
-	(*cparams)[std::string(name)] = parameter_t(point3d_t(x,y,z));
+	(*cparams)[std::string(name)] = parameter_t(point3d_t(x, y, z));
 }
 
-void yafrayInterface_t::paramsSetString(const char* name, const char* s)
+void yafrayInterface_t::paramsSetString(const char *name, const char *s)
 {
 	(*cparams)[std::string(name)] = parameter_t(std::string(s));
 }
 
-void yafrayInterface_t::paramsSetBool(const char* name, bool b)
+void yafrayInterface_t::paramsSetBool(const char *name, bool b)
 {
 	(*cparams)[std::string(name)] = parameter_t(b);
 }
 
-void yafrayInterface_t::paramsSetInt(const char* name, int i)
+void yafrayInterface_t::paramsSetInt(const char *name, int i)
 {
 	(*cparams)[std::string(name)] = parameter_t(i);
 }
 
-void yafrayInterface_t::paramsSetFloat(const char* name, double f)
+void yafrayInterface_t::paramsSetFloat(const char *name, double f)
 {
 	(*cparams)[std::string(name)] = parameter_t(f);
 }
 
-void yafrayInterface_t::paramsSetColor(const char* name, float r, float g, float b, float a)
+void yafrayInterface_t::paramsSetColor(const char *name, float r, float g, float b, float a)
 {
-	colorA_t col(r,g,b,a);
+	colorA_t col(r, g, b, a);
 	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
-void yafrayInterface_t::paramsSetColor(const char* name, float *rgb, bool with_alpha)
+void yafrayInterface_t::paramsSetColor(const char *name, float *rgb, bool with_alpha)
 {
-	colorA_t col(rgb[0],rgb[1],rgb[2], (with_alpha ? rgb[3] : 1.f));
+	colorA_t col(rgb[0], rgb[1], rgb[2], (with_alpha ? rgb[3] : 1.f));
 	col.linearRGB_from_ColorSpace(inputColorSpace, inputGamma);
 	(*cparams)[std::string(name)] = parameter_t(col);
 }
 
-void yafrayInterface_t::paramsSetMatrix(const char* name, float m[4][4], bool transpose)
+void yafrayInterface_t::paramsSetMatrix(const char *name, float m[4][4], bool transpose)
 {
 	if(transpose)	cparams->setMatrix(std::string(name), matrix4x4_t(m).transpose());
 	else		cparams->setMatrix(std::string(name), matrix4x4_t(m));
 }
 
-void yafrayInterface_t::paramsSetMatrix(const char* name, double m[4][4], bool transpose)
+void yafrayInterface_t::paramsSetMatrix(const char *name, double m[4][4], bool transpose)
 {
 	if(transpose)	cparams->setMatrix(std::string(name), matrix4x4_t(m).transpose());
 	else		cparams->setMatrix(std::string(name), matrix4x4_t(m));
 }
 
-void yafrayInterface_t::paramsSetMemMatrix(const char* name, float* matrix, bool transpose)
+void yafrayInterface_t::paramsSetMemMatrix(const char *name, float *matrix, bool transpose)
 {
 	float mat[4][4];
-	int i,j;
-	for(i= 0; i < 4; i++)
-		for(j= 0; j < 4; j++)
-			mat[i][j] = *(matrix+i*4+j);
+	int i, j;
+	for(i = 0; i < 4; i++)
+		for(j = 0; j < 4; j++)
+			mat[i][j] = *(matrix + i * 4 + j);
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void yafrayInterface_t::paramsSetMemMatrix(const char* name, double* matrix, bool transpose)
+void yafrayInterface_t::paramsSetMemMatrix(const char *name, double *matrix, bool transpose)
 {
 	double mat[4][4];
-	int i,j;
-	for(i= 0; i < 4; i++)
-		for(j= 0; j < 4; j++)
-			mat[i][j] = *(matrix+i*4+j);
+	int i, j;
+	for(i = 0; i < 4; i++)
+		for(j = 0; j < 4; j++)
+			mat[i][j] = *(matrix + i * 4 + j);
 	paramsSetMatrix(name, mat, transpose);
 }
 
@@ -295,7 +297,7 @@ void yafrayInterface_t::setInputColorSpace(std::string color_space_string, float
 	else if(color_space_string == "LinearRGB") inputColorSpace = LINEAR_RGB;
 	else if(color_space_string == "Raw_Manual_Gamma") inputColorSpace = RAW_MANUAL_GAMMA;
 	else inputColorSpace = SRGB;
-	
+
 	inputGamma = gammaVal;
 }
 
@@ -323,44 +325,44 @@ void yafrayInterface_t::paramsEndList()
 	cparams = params;
 }
 
-light_t* yafrayInterface_t::createLight(const char* name)
+light_t *yafrayInterface_t::createLight(const char *name)
 {
-	light_t* light = env->createLight(name, *params);
+	light_t *light = env->createLight(name, *params);
 	if(light) scene->addLight(light);
 	return light;
 }
 
-texture_t* 		yafrayInterface_t::createTexture(const char* name) { return env->createTexture(name, *params); }
-material_t* 	yafrayInterface_t::createMaterial(const char* name) { return env->createMaterial(name, *params, *eparams); }
-camera_t* 		yafrayInterface_t::createCamera(const char* name)
+texture_t 		*yafrayInterface_t::createTexture(const char *name) { return env->createTexture(name, *params); }
+material_t 	*yafrayInterface_t::createMaterial(const char *name) { return env->createMaterial(name, *params, *eparams); }
+camera_t 		*yafrayInterface_t::createCamera(const char *name)
 {
 	camera_t *camera = env->createCamera(name, *params);
 	return camera;
 }
-background_t* 	yafrayInterface_t::createBackground(const char* name) { return env->createBackground(name, *params); }
-integrator_t* 	yafrayInterface_t::createIntegrator(const char* name) { return env->createIntegrator(name, *params); }
-imageHandler_t* yafrayInterface_t::createImageHandler(const char* name, bool addToTable) { return env->createImageHandler(name, *params, addToTable); }
+background_t 	*yafrayInterface_t::createBackground(const char *name) { return env->createBackground(name, *params); }
+integrator_t 	*yafrayInterface_t::createIntegrator(const char *name) { return env->createIntegrator(name, *params); }
+imageHandler_t *yafrayInterface_t::createImageHandler(const char *name, bool addToTable) { return env->createImageHandler(name, *params, addToTable); }
 
-VolumeRegion* 	yafrayInterface_t::createVolumeRegion(const char* name)
+VolumeRegion 	*yafrayInterface_t::createVolumeRegion(const char *name)
 {
-	VolumeRegion* vr = env->createVolumeRegion(name, *params);
-	if (!vr) return nullptr;
+	VolumeRegion *vr = env->createVolumeRegion(name, *params);
+	if(!vr) return nullptr;
 	scene->addVolumeRegion(vr);
 	return nullptr;
 }
 
-unsigned int yafrayInterface_t::createObject(const char* name)
+unsigned int yafrayInterface_t::createObject(const char *name)
 {
 	object3d_t *object = env->createObject(name, *params);
 	if(!object) return 0;
 	objID_t id;
-	if( scene->addObject(object, id) ) return id;
+	if(scene->addObject(object, id)) return id;
 	return 0;
 }
 
 void yafrayInterface_t::abort()
 {
-	if(scene) scene->abort(); 
+	if(scene) scene->abort();
 	session.setStatusRenderAborted();
 	Y_WARNING << "Interface: Render aborted by user." << yendl;
 }
@@ -429,7 +431,7 @@ void yafrayInterface_t::printError(const std::string &msg)
 
 void yafrayInterface_t::render(colorOutput_t &output, progressBar_t *pb)
 {
-	if(! env->setupScene(*scene, *params, output, pb) ) return;
+	if(! env->setupScene(*scene, *params, output, pb)) return;
 	session.setStatusRenderStarted();
 	scene->render();
 	film = scene->getImageFilm();
@@ -444,9 +446,9 @@ void yafrayInterface_t::setParamsBadgePosition(const std::string &badgePosition)
 bool yafrayInterface_t::getDrawParams()
 {
 	bool dp = false;
-	
+
 	dp = yafLog.getUseParamsBadge();
-	
+
 	return dp;
 }
 
@@ -469,7 +471,7 @@ void yafrayInterface_t::setLogVerbosityLevel(const std::string &strVLevel)
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT yafrayInterface_t* getYafray()
+	YAFRAYPLUGIN_EXPORT yafrayInterface_t *getYafray()
 	{
 		return new yafrayInterface_t();
 	}

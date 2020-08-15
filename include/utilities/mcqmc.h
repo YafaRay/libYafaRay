@@ -11,110 +11,112 @@ __BEGIN_YAFRAY
 // calculation of value must be double prec.
 class Halton
 {
-public:
+	public:
 
-	Halton()
-	{
-		//Empty
-	}
-
-	Halton(int base)
-	{
-		setBase(base);
-	}
-
-	void setBase(int base)
-	{
-		mBase = base;
-		mInvBase = 1.0 / (double) base;
-		mValue = 0;
-	}
-
-	void reset()
-	{
-		mValue=0.0;
-	}
-
-	inline void setStart(unsigned int i)
-	{
-		double factor = mInvBase;
-
-		mValue = 0.0;
-
-		while (i > 0)
+		Halton()
 		{
-			mValue += (double) (i % mBase) * factor;
-			i /= mBase;
-			factor *= mInvBase;
+			//Empty
 		}
-	}
 
-	inline float getNext()
-	{
-		double r = 0.9999999999 - mValue;
-		if (mInvBase < r)
+		Halton(int base)
 		{
-			mValue += mInvBase;
+			setBase(base);
 		}
-		else
+
+		void setBase(int base)
 		{
-			double hh = 0.0, h = mInvBase;
-			while (h >= r)
+			mBase = base;
+			mInvBase = 1.0 / (double) base;
+			mValue = 0;
+		}
+
+		void reset()
+		{
+			mValue = 0.0;
+		}
+
+		inline void setStart(unsigned int i)
+		{
+			double factor = mInvBase;
+
+			mValue = 0.0;
+
+			while(i > 0)
 			{
-				hh = h;
-				h *= mInvBase;
+				mValue += (double)(i % mBase) * factor;
+				i /= mBase;
+				factor *= mInvBase;
 			}
-
-			mValue += hh + h - 1.0;
 		}
-		return std::max(0.f, std::min(1.f, (float)mValue));
-	}
 
-private:
-	unsigned int mBase;
-	double mInvBase;
-	double mValue;
+		inline float getNext()
+		{
+			double r = 0.9999999999 - mValue;
+			if(mInvBase < r)
+			{
+				mValue += mInvBase;
+			}
+			else
+			{
+				double hh = 0.0, h = mInvBase;
+				while(h >= r)
+				{
+					hh = h;
+					h *= mInvBase;
+				}
+
+				mValue += hh + h - 1.0;
+			}
+			return std::max(0.f, std::min(1.f, (float)mValue));
+		}
+
+	private:
+		unsigned int mBase;
+		double mInvBase;
+		double mValue;
 };
 
 
 // fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
 #define multRatio (0.00000000023283064365386962890625)
-inline float RI_vdC(unsigned int bits, unsigned int r=0)
+inline float RI_vdC(unsigned int bits, unsigned int r = 0)
 {
-	bits = ( bits << 16) | ( bits >> 16);
+	bits = (bits << 16) | (bits >> 16);
 	bits = ((bits & 0x00ff00ff) << 8) | ((bits & 0xff00ff00) >> 8);
 	bits = ((bits & 0x0f0f0f0f) << 4) | ((bits & 0xf0f0f0f0) >> 4);
 	bits = ((bits & 0x33333333) << 2) | ((bits & 0xcccccccc) >> 2);
 	bits = ((bits & 0x55555555) << 1) | ((bits & 0xaaaaaaaa) >> 1);
-	return std::max(0.f,std::min(1.f,(float)((double)(bits^r) * multRatio)));
+	return std::max(0.f, std::min(1.f, (float)((double)(bits ^ r) * multRatio)));
 }
 
-inline float RI_S(unsigned int i, unsigned int r=0)
+inline float RI_S(unsigned int i, unsigned int r = 0)
 {
-	for (unsigned int v=1<<31; i; i>>=1, v^=v>>1)
-		if (i & 1) r ^= v;
-	return std::max(0.f,std::min(1.f,((float)((double) r * multRatio))));
+	for(unsigned int v = 1 << 31; i; i >>= 1, v ^= v >> 1)
+		if(i & 1) r ^= v;
+	return std::max(0.f, std::min(1.f, ((float)((double) r * multRatio))));
 }
 
-inline float RI_LP(unsigned int i, unsigned int r=0)
+inline float RI_LP(unsigned int i, unsigned int r = 0)
 {
-	for (unsigned int v=1<<31; i; i>>=1, v|=v>>1)
-		if (i & 1) r ^= v;
-	return std::max(0.f,std::min(1.f,((float)((double)r * multRatio))));
+	for(unsigned int v = 1 << 31; i; i >>= 1, v |= v >> 1)
+		if(i & 1) r ^= v;
+	return std::max(0.f, std::min(1.f, ((float)((double)r * multRatio))));
 }
 
 
 inline int nextPrime(int lastPrime)
 {
 	int newPrime = lastPrime + (lastPrime & 1) + 1;
-	for (;;) {
-		int dv=3;  bool ispr=true;
-		while ((ispr) && (dv*dv<=newPrime)) {
-			ispr = ((newPrime % dv)!=0);
+	for(;;)
+	{
+		int dv = 3;  bool ispr = true;
+		while((ispr) && (dv * dv <= newPrime))
+		{
+			ispr = ((newPrime % dv) != 0);
 			dv += 2;
 		}
-		if (ispr) break;
+		if(ispr) break;
 		newPrime += 2;
 	}
 	return newPrime;
@@ -141,7 +143,7 @@ inline unsigned int fnv_32a_buf(unsigned int value)
 	Fnv32_u val;
 	val.in = value;
 
-	for (int i = 0; i<4; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		hash ^= val.out[i];
 		hash *= FNV_32_PRIME;
@@ -170,10 +172,10 @@ class random_t
 		random_t(unsigned int seed): x(30903), c(seed) {}
 		double operator()()
 		{
-			unsigned int xh = x>>16, xl = x & 65535;
+			unsigned int xh = x >> 16, xl = x & 65535;
 			x = x * y_a + c;
-			c = xh*y_ah + ((xh*y_al) >> 16) + ((xl*y_ah) >> 16);
-			if (xl*y_al >= ~c + 1) c++;
+			c = xh * y_ah + ((xh * y_al) >> 16) + ((xl * y_ah) >> 16);
+			if(xl * y_al >= ~c + 1) c++;
 			return (double)x * multRatio;
 		}
 	protected:

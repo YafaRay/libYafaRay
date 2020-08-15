@@ -32,7 +32,8 @@
 /	RenderWidget implementation
 /=====================================*/
 
-RenderWidget::RenderWidget(QScrollArea *parent, bool use_zbuffer): QLabel((QWidget*)parent), use_zbuf(use_zbuffer) {
+RenderWidget::RenderWidget(QScrollArea *parent, bool use_zbuffer): QLabel((QWidget *)parent), use_zbuf(use_zbuffer)
+{
 	borderStart = QPoint(0, 0);
 	rendering = true;
 	scaleFactor = 1.0;
@@ -99,7 +100,7 @@ void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha
 	int iy = y + borderStart.y();
 
 	colorBuffer.setPixel(ix, iy, color);
-	if (withAlpha) alphaChannel.setPixel(ix, iy, alpha);
+	if(withAlpha) alphaChannel.setPixel(ix, iy, alpha);
 }
 
 void RenderWidget::paintColorBuffer()
@@ -156,13 +157,13 @@ void RenderWidget::zoomOut(QPoint mPos)
 
 bool RenderWidget::event(QEvent *e)
 {
-	if (e->type() == (QEvent::Type)GuiUpdate && rendering)
+	if(e->type() == (QEvent::Type)GuiUpdate && rendering)
 	{
-		GuiUpdateEvent *ge = (GuiUpdateEvent*)e;
+		GuiUpdateEvent *ge = (GuiUpdateEvent *)e;
 
 		ge->accept();
 
-		if (ge->fullUpdate())
+		if(ge->fullUpdate())
 		{
 			bufferMutex.lock();
 			QPainter p(&pix);
@@ -182,15 +183,15 @@ bool RenderWidget::event(QEvent *e)
 
 		return true;
 	}
-	else if (e->type() == (QEvent::Type)GuiAreaHighlite && rendering)
+	else if(e->type() == (QEvent::Type)GuiAreaHighlite && rendering)
 	{
-		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent*)e;
+		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent *)e;
 		bufferMutex.lock();
 		QPainter p(&pix);
 
 		ge->accept();
 
-		int lineL = std::min( 4, std::min( ge->rect().height()-1, ge->rect().width()-1 ) );
+		int lineL = std::min(4, std::min(ge->rect().height() - 1, ge->rect().width() - 1));
 		QPoint tr(ge->rect().topRight());
 		QPoint tl(ge->rect().topLeft());
 		QPoint br(ge->rect().bottomRight());
@@ -225,13 +226,13 @@ bool RenderWidget::event(QEvent *e)
 
 void RenderWidget::paintEvent(QPaintEvent *e)
 {
-    QRect r = e->rect();
-    QPainter painter(this);
-    painter.setClipRegion(e->region());
-    painter.drawPixmap(r, pix, r);
+	QRect r = e->rect();
+	QPainter painter(this);
+	painter.setClipRegion(e->region());
+	painter.drawPixmap(r, pix, r);
 }
 
-void RenderWidget::wheelEvent(QWheelEvent* e)
+void RenderWidget::wheelEvent(QWheelEvent *e)
 {
 	e->accept();
 

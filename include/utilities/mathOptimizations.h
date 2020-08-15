@@ -39,7 +39,7 @@
 #include <algorithm>
 
 // Reference defines, this should be defined by the standard cmath header
-// Unfortunately this fails in MinGW GCC v4.9.2, so I have to enable the "manual" definitions copied from math.h 
+// Unfortunately this fails in MinGW GCC v4.9.2, so I have to enable the "manual" definitions copied from math.h
 // Redefine only if they are not already defined by the standard headers
 
 #ifndef M_E
@@ -143,33 +143,33 @@ inline float fLog2(float x)
 #ifdef FAST_MATH
 inline float asmSqrt(float n)
 {
-    float r = n;
+	float r = n;
 #ifdef _MSC_VER
 	r = sqrt(n);
 #elif defined (__APPLE__)
 	asm(
-		"flds %0;"
-		"fsqrt;"
-		"fstps %0"
-		:"=m" (r)
-		:"m" (r)
-		);
+	    "flds %0;"
+	    "fsqrt;"
+	    "fstps %0"
+	    :"=m"(r)
+	    :"m"(r)
+	);
 #elif defined (__clang__)
-        r = sqrtf(n);
+	r = sqrtf(n);
 #elif defined(__GNUC__) && defined(__i386__)
-    asm(
-		"fld %0;"
-		"fsqrt;"
-		"fstp %0"
-		:"=m" (r)
-		:"m" (r)
-		);
+	asm(
+	    "fld %0;"
+	    "fsqrt;"
+	    "fstp %0"
+	    :"=m"(r)
+	    :"m"(r)
+	);
 #elif defined(__GNUC__) && defined(__x86_64__)
 	r = sqrt(n);
 #else
-    r = fsqrt(n);
+	r = fsqrt(n);
 #endif
-    return r;
+	return r;
 }
 #endif
 
@@ -178,7 +178,7 @@ inline float fPow(float a, float b)
 #ifdef FAST_MATH
 	return fExp2(fLog2(a) * b);
 #else
-	return pow(a,b);
+	return pow(a, b);
 #endif
 }
 
@@ -234,7 +234,7 @@ inline float fSin(float x)
 
 	x = ((float)M_4_PI * x) - ((float)M_4_PI2 * x * std::fabs(x));
 	float result = CONST_P * (x * std::fabs(x) - x) + x;
-  //Make sure that the function is in the valid range [-1.0,+1.0]
+	//Make sure that the function is in the valid range [-1.0,+1.0]
 	if(result <= -1.0) return -1.0f;
 	else if(result >= 1.0) return 1.0f;
 	else return result;
@@ -255,16 +255,16 @@ inline float fCos(float x)
 inline float fAcos(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
-	if(x<=-1.0) return((float)M_PI);
-	else if(x>=1.0) return(0.0);
+	if(x <= -1.0) return((float)M_PI);
+	else if(x >= 1.0) return(0.0);
 	else return acos(x);
 }
 
 inline float fAsin(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
-	if(x<=-1.0) return((float)-M_PI_2);
-	else if(x>=1.0) return((float)M_PI_2);
+	if(x <= -1.0) return((float) - M_PI_2);
+	else if(x >= 1.0) return((float)M_PI_2);
 	else return asin(x);
 }
 

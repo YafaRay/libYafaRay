@@ -54,13 +54,13 @@ enum color_ramp_hue_interpolation_t
 
 class YAFRAYCORE_EXPORT color_ramp_item_t
 {
-	friend class color_ramp_t;
-	
+		friend class color_ramp_t;
+
 	public:
 		color_ramp_item_t(float pos) : position(pos) {}
-		color_ramp_item_t(const colorA_t & col, float pos) : color(col), position(pos) {}
-		bool operator < (const color_ramp_item_t& item) const {	return (position < item.position); }
-		bool operator > (const color_ramp_item_t& item) const {	return (position > item.position); }
+		color_ramp_item_t(const colorA_t &col, float pos) : color(col), position(pos) {}
+		bool operator < (const color_ramp_item_t &item) const {	return (position < item.position); }
+		bool operator > (const color_ramp_item_t &item) const {	return (position > item.position); }
 
 	protected:
 		colorA_t color = colorA_t(0.f, 0.f, 0.f, 1.f);
@@ -72,9 +72,9 @@ class YAFRAYCORE_EXPORT color_ramp_t
 	public:
 		color_ramp_t(int mode, int interpolation, int hue_interpolation);
 		color_ramp_t(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr);
-		void add_item(const colorA_t & color, float position);
+		void add_item(const colorA_t &color, float position);
 		colorA_t get_color_interpolated(float pos) const;
-		
+
 	protected:
 		int ramp_mode = C_RAMP_RGB;
 		int ramp_interpolation = C_RAMP_LINEAR;

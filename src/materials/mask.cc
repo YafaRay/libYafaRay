@@ -17,7 +17,7 @@
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
- 
+
 #include <yafray_constants.h>
 #include <materials/maskmat.h>
 #include <core_api/texture.h>
@@ -31,9 +31,9 @@ __BEGIN_YAFRAY
 maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, float thresh, visibility_t eVisibility):
 	mat1(m1), mat2(m2), threshold(thresh)
 {
-    mVisibility = eVisibility;
+	mVisibility = eVisibility;
 	bsdfFlags = mat1->getFlags() | mat2->getFlags();
-	
+
 	mVisibility = eVisibility;
 }
 
@@ -44,7 +44,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 	evalNodes(state, sp, allNodes, stack);
 	float val = mask->getScalar(stack); //mask->getFloat(sp.P);
 	bool mv = val > threshold;
-	*(bool*)state.userdata = mv;
+	*(bool *)state.userdata = mv;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) mat2->initBSDF(state, sp, bsdfTypes);
 	else   mat1->initBSDF(state, sp, bsdfTypes);
@@ -53,7 +53,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 
 color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	color_t col;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) col = mat2->eval(state, sp, wo, wi, bsdfs);
@@ -64,7 +64,7 @@ color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, co
 
 color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	color_t col;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) col = mat2->sample(state, sp, wo, wi, s, W);
@@ -75,7 +75,7 @@ color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, 
 
 float maskMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	float pdf;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) pdf = mat2->pdf(state, sp, wo, wi, bsdfs);
@@ -100,9 +100,9 @@ color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoin
 }
 
 void maskMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-								 bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
+                            bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) mat2->getSpecular(state, sp, wo, reflect, refract, dir, col);
 	else   mat1->getSpecular(state, sp, wo, reflect, refract, dir, col);
@@ -111,7 +111,7 @@ void maskMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp
 
 color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	color_t col;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) col = mat2->emit(state, sp, wo);
@@ -122,7 +122,7 @@ color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, co
 
 float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
 {
-	bool mv = *(bool*)state.userdata;
+	bool mv = *(bool *)state.userdata;
 	float alpha;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
 	if(mv) alpha = mat2->getAlpha(state, sp, wo);
@@ -131,45 +131,45 @@ float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, 
 	return alpha;
 }
 
-material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
+material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
 {
 	const std::string *name = nullptr;
-	const material_t *m1=nullptr, *m2=nullptr;
+	const material_t *m1 = nullptr, *m2 = nullptr;
 	double thresh = 0.5;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	bool receive_shadows = true;
-	
+
 	params.getParam("threshold", thresh);
-	if(! params.getParam("material1", name) ) return nullptr;
+	if(! params.getParam("material1", name)) return nullptr;
 	m1 = env.getMaterial(*name);
-	if(! params.getParam("material2", name) ) return nullptr;
+	if(! params.getParam("material2", name)) return nullptr;
 	m2 = env.getMaterial(*name);
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = env.getTexture(*name);
-	
+
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", sVisibility);
-	
+
 	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
 	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
 	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
 	else if(sVisibility == "invisible") visibility = INVISIBLE;
 	else visibility = NORMAL_VISIBLE;
-	
-	if(m1==nullptr || m2==nullptr ) return nullptr;
-	
+
+	if(m1 == nullptr || m2 == nullptr) return nullptr;
+
 	maskMat_t *mat = new maskMat_t(m1, m2, thresh, visibility);
 
 	mat->mReceiveShadows = receive_shadows;
-	
+
 	std::vector<shaderNode_t *> roots;
 	if(mat->loadNodes(eparams, env))
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i=mat->mShadersTable.find(*name);
-			if(i!=mat->mShadersTable.end()){ mat->mask = i->second; roots.push_back(mat->mask); }
+			auto i = mat->mShadersTable.find(*name);
+			if(i != mat->mShadersTable.end()) { mat->mask = i->second; roots.push_back(mat->mask); }
 			else
 			{
 				Y_ERROR << "MaskMat: Mask shader node '" << *name << "' does not exist!" << yendl;
@@ -186,7 +186,7 @@ material_t* maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	}
 	mat->solveNodesOrder(roots);
 	size_t inputReq = std::max(m1->getReqMem(), m2->getReqMem());
-	mat->reqMem = std::max( mat->reqNodeMem, sizeof(bool) + inputReq);
+	mat->reqMem = std::max(mat->reqNodeMem, sizeof(bool) + inputReq);
 	return mat;
 }
 
