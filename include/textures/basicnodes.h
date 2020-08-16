@@ -17,16 +17,16 @@ class textureMapper_t: public shaderNode_t
 {
 	public:
 		textureMapper_t(const texture_t *texture);
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
-		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const;
+		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) { return true; };
-		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const;
+		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
 		void setup();
 		void getCoords(point3d_t &texpt, vector3d_t &Ng, const surfacePoint_t &sp, const renderState_t &state) const;
-		point3d_t doMapping(const point3d_t &p, const vector3d_t &N)const;
+		point3d_t doMapping(const point3d_t &p, const vector3d_t &N) const;
 		TEX_COORDS 	tex_coords;
 		TEX_PROJ tex_maptype;
 		int map_x, map_y, map_z; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
@@ -44,8 +44,8 @@ class valueNode_t: public shaderNode_t
 {
 	public:
 		valueNode_t(colorA_t col, float val): color(col), value(val) {}
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) { return true; };
 		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:
@@ -58,8 +58,8 @@ class mixNode_t: public shaderNode_t
 	public:
 		mixNode_t();
 		mixNode_t(float val);
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find);
 		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const;
 		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);

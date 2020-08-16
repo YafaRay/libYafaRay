@@ -129,7 +129,7 @@ class YAFRAYPLUGIN_EXPORT biDirIntegrator_t: public tiledIntegrator_t
 		bool connectPaths(renderState_t &state, int s, int t, pathData_t &pd) const;
 		bool connectLPath(renderState_t &state, int t, pathData_t &pd, ray_t &lRay, color_t &lcol) const;
 		bool connectPathE(renderState_t &state, int s, pathData_t &pd) const;
-		//color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc)const;
+		//color_t estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc) const;
 		float pathWeight(renderState_t &state, int s, int t, pathData_t &pd) const;
 		float pathWeight_0t(renderState_t &state, int t, pathData_t &pd) const;
 
@@ -948,7 +948,7 @@ color_t biDirIntegrator_t::evalPathE(renderState_t &state, int s, pathData_t &pd
 
 ////
 
-/* inline color_t biDirIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc)const
+/* inline color_t biDirIntegrator_t::estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc) const
 {
     color_t lcol(0.0), scol, col(0.0);
     ray_t lightRay;

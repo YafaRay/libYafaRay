@@ -63,8 +63,8 @@ class imageSpliter_t
 		*/
 		bool getArea(int n, renderArea_t &area);
 
-		bool empty()const {return regions.empty();};
-		int size()const {return regions.size();};
+		bool empty() const {return regions.empty();};
+		int size() const {return regions.size();};
 
 	protected:
 		friend class imageSpliterCentreSorter_t;

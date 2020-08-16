@@ -45,13 +45,13 @@ class YAFRAYCORE_EXPORT renderEnvironment_t
 		typedef VolumeRegion	*volumeregion_factory_t(paraMap_t &, renderEnvironment_t &);
 		typedef imageHandler_t	*imagehandler_factory_t(paraMap_t &, renderEnvironment_t &);
 
-		virtual material_t *getMaterial(const std::string &name)const;
-		virtual texture_t *getTexture(const std::string &name)const;
-		virtual shaderNode_t *getShaderNode(const std::string &name)const;
-		camera_t *getCamera(const std::string &name)const;
-		shader_factory_t *getShaderNodeFactory(const std::string &name)const;
-		background_t 	*getBackground(const std::string &name)const;
-		integrator_t 	*getIntegrator(const std::string &name)const;
+		virtual material_t *getMaterial(const std::string &name) const;
+		virtual texture_t *getTexture(const std::string &name) const;
+		virtual shaderNode_t *getShaderNode(const std::string &name) const;
+		camera_t *getCamera(const std::string &name) const;
+		shader_factory_t *getShaderNodeFactory(const std::string &name) const;
+		background_t 	*getBackground(const std::string &name) const;
+		integrator_t 	*getIntegrator(const std::string &name) const;
 		scene_t 		*getScene() { return curren_scene; };
 
 		light_t 		*createLight(const std::string &name, paraMap_t &params);

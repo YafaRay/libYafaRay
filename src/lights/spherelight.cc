@@ -47,7 +47,7 @@ class sphereLight_t : public light_t
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual bool diracLight() const { return false; }
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
+		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const { return false; }
 		virtual bool canIntersect() const { return false; }
 		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;

@@ -31,15 +31,15 @@ class glassMat_t: public nodeMaterial_t
 {
 	public:
 		glassMat_t(float IOR, color_t filtC, const color_t &srcol, double disp_pow, bool fakeS, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const {return 0.f;}
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const;
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const {return color_t(0.0);}
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
+		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const {return 0.f;}
 		virtual bool isTransparent() const { return fakeShadow; }
-		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
-		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const;
+		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
+		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const;
 		virtual float getMatIOR() const;
 		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 		virtual color_t getGlossyColor(const renderState_t &state) const
@@ -97,7 +97,7 @@ glassMat_t::glassMat_t(float IOR, color_t filtC, const color_t &srcol, double di
 	mVisibility = eVisibility;
 }
 
-void glassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void glassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	nodeStack_t stack(state.userdata);
 	if(bumpS) evalBump(stack, state, sp, bumpS);
@@ -110,7 +110,7 @@ void glassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t
 
 #define matches(bits, flags) ((bits & (flags)) == (flags))
 
-color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	nodeStack_t stack(state.userdata);
 	if(!(s.flags & BSDF_SPECULAR) && !((s.flags & bsdfFlags & BSDF_DISPERSIVE) && state.chromatic))
@@ -264,7 +264,7 @@ color_t glassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	return color_t(0.f);
 }
 
-color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
@@ -277,7 +277,7 @@ color_t glassMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	return result;
 }
 
-float glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 	float alpha = 1.0 - getTransparency(state, sp, wo).energy();
@@ -289,7 +289,7 @@ float glassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp,
 }
 
 void glassMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                             bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const
+                             bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const
 {
 	nodeStack_t stack(state.userdata);
 	bool outside = sp.Ng * wo > 0;
@@ -504,18 +504,18 @@ class mirrorMat_t: public material_t
 			refCol = rCol * refVal;
 			bsdfFlags = BSDF_SPECULAR;
 		}
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes = bsdfFlags; }
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes = bsdfFlags; }
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const {return color_t(0.0);}
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
+		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const;
 		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 	protected:
 		color_t refCol;
 		float ref;
 };
 
-color_t mirrorMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t mirrorMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	wi = reflect_dir(sp.N, wo);
 	s.sampledFlags = BSDF_SPECULAR | BSDF_REFLECT;
@@ -524,7 +524,7 @@ color_t mirrorMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 }
 
 void mirrorMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                              bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const
+                              bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const
 {
 	col[0] = refCol;
 	col[1] = color_t(1.0);
@@ -553,13 +553,13 @@ class nullMat_t: public material_t
 {
 	public:
 		nullMat_t() { }
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes)const { bsdfTypes = BSDF_NONE; }
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false)const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes = BSDF_NONE; }
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const {return color_t(0.0);}
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
 		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 };
 
-color_t nullMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t nullMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	s.pdf = 0.f;
 	W = 0.f;

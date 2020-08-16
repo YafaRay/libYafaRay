@@ -26,12 +26,12 @@ class YAFRAYCORE_EXPORT nodeMaterial_t: public material_t
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
 		void solveNodesOrder(const std::vector<shaderNode_t *> &roots);
 		void getNodeList(const shaderNode_t *root, std::vector<shaderNode_t *> &nodes);
-		void evalNodes(const renderState_t &state, const surfacePoint_t &sp, const std::vector<shaderNode_t *> &nodes, nodeStack_t &stack)const
+		void evalNodes(const renderState_t &state, const surfacePoint_t &sp, const std::vector<shaderNode_t *> &nodes, nodeStack_t &stack) const
 		{
 			auto end = nodes.end();
 			for(auto iter = nodes.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
 		}
-		void evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS)const;
+		void evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS) const;
 		/*! filter out nodes with specific properties */
 		void filterNodes(const std::vector<shaderNode_t *> &input, std::vector<shaderNode_t *> &output, int flags);
 		virtual ~nodeMaterial_t();

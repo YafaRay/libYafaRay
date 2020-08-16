@@ -70,10 +70,10 @@ class photon_t
 		//			dir.normalize();
 		//			direction(dir);
 		//		};
-		const point3d_t &position()const {return pos;};
-		const color_t color()const {return c;};
+		const point3d_t &position() const {return pos;};
+		const color_t color() const {return c;};
 		void color(const color_t &col) {c = col;};
-		vector3d_t direction()const
+		vector3d_t direction() const
 		{
 #ifdef _SMALL_PHOTONS
 			if(theta == 255) return vector3d_t(0, 0, 0);

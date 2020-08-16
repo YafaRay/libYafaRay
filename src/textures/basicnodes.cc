@@ -101,7 +101,7 @@ inline point3d_t flatmap(const point3d_t &p)
 	return p;
 }
 
-point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N)const
+point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N) const
 {
 	point3d_t texpt(p);
 	// Texture coordinates standardized, if needed, to -1..1
@@ -161,7 +161,7 @@ void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfaceP
 }
 
 
-void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
@@ -205,14 +205,14 @@ void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const
 }
 
 // Basically you shouldn't call this anyway, but for the sake of consistency, redirect:
-void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const
+void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
 {
 	eval(stack, state, sp);
 }
 
 // Normal perturbation
 
-void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	point3d_t texpt(0.f);
 	vector3d_t Ng(0.f);
@@ -395,12 +395,12 @@ shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironmen
 /  The most simple node you could imagine...
 /  ========================================== */
 
-void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	stack[this->ID] = nodeResult_t(color, value);
 }
 
-void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const
+void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
 {
 	stack[this->ID] = nodeResult_t(color, value);
 }
@@ -426,7 +426,7 @@ mixNode_t::mixNode_t(): cfactor(0.f), input1(0), input2(0), factor(0)
 mixNode_t::mixNode_t(float val): cfactor(val), input1(0), input2(0), factor(0)
 {}
 
-void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	float f2 = (factor) ? factor->getScalar(stack) : cfactor;
 	float f1 = 1.f - f2, fin1, fin2;
@@ -457,7 +457,7 @@ void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfa
 	stack[this->ID] = nodeResult_t(color, scalar);
 }
 
-void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const
+void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
 {
 	eval(stack, state, sp);
 }
@@ -524,7 +524,7 @@ bool mixNode_t::getDependencies(std::vector<const shaderNode_t *> &dep) const
 class addNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -539,7 +539,7 @@ class addNode_t: public mixNode_t
 class multNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f1, f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -555,7 +555,7 @@ class multNode_t: public mixNode_t
 class subNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -570,7 +570,7 @@ class subNode_t: public mixNode_t
 class screenNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f1, f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -586,7 +586,7 @@ class screenNode_t: public mixNode_t
 class diffNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f1, f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -605,7 +605,7 @@ class diffNode_t: public mixNode_t
 class darkNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -625,7 +625,7 @@ class darkNode_t: public mixNode_t
 class lightNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f2, fin1, fin2;
 			colorA_t cin1, cin2;
@@ -645,7 +645,7 @@ class lightNode_t: public mixNode_t
 class overlayNode_t: public mixNode_t
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{
 			float f1, f2, fin1, fin2;
 			colorA_t cin1, cin2;

@@ -223,7 +223,7 @@ class YAFRAYCORE_EXPORT rgbe_t
 	public:
 		rgbe_t() {rgbe[3] = 0;};
 		rgbe_t(const color_t &s);
-		operator color_t ()const
+		operator color_t () const
 		{
 			color_t res;
 			float f;

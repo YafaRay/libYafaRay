@@ -42,7 +42,7 @@ class bgLight_t : public light_t
 		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
 		virtual bool diracLight() const { return false; }
 		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi)const { return false; }
+		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const { return false; }
 		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
 		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
 		virtual int nSamples() const { return samples; }

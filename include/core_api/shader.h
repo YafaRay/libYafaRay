@@ -60,13 +60,13 @@ class YAFRAYCORE_EXPORT shaderNode_t
 		/*! evaluate the shader for given surface point; result has to be put on stack (using stack[ID]).
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const = 0;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const = 0;
 		/*! evaluate the shader for given surface point and directions; otherwise same behavious than the other eval.
 			Should only be called when the node returns true on isViewDependant() */
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const = 0;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const = 0;
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
-		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 		{stack[this->ID] = nodeResult_t(colorA_t(0.f), 0.f);}
 		/*! indicate whether the shader value depends on wi and wo */
 		virtual bool isViewDependant() const { return false; }
@@ -79,16 +79,16 @@ class YAFRAYCORE_EXPORT shaderNode_t
 			\return true if there exist dependencies, false if it does not depend on any other nodes */
 		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const { return false; }
 		/*! get the color value calculated on eval */
-		colorA_t getColor(const nodeStack_t &stack)const { return stack(this->ID).col; }
+		colorA_t getColor(const nodeStack_t &stack) const { return stack(this->ID).col; }
 		/*! get the scalar value calculated on eval */
-		float getScalar(const nodeStack_t &stack)const { return stack(this->ID).f; }
+		float getScalar(const nodeStack_t &stack) const { return stack(this->ID).f; }
 		//! get the (approximate) partial derivatives df/dNU and df/dNV
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
-		void getDerivative(const nodeStack_t &stack, float &du, float &dv)const
+		void getDerivative(const nodeStack_t &stack, float &du, float &dv) const
 		{ du = stack(this->ID).col.R; dv = stack(this->ID).col.G; }
-		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const {du=0.f, dv=0.f;} */
+		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
 		unsigned int ID;
 };
 

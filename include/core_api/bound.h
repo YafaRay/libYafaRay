@@ -67,23 +67,23 @@ class YAFRAYCORE_EXPORT bound_t
 		bound_t(const bound_t &r, const bound_t &l);
 		//! Sets the bound like the constructor
 		void set(const point3d_t &_a, const point3d_t &_g) { a = _a; g = _g; };
-		void get(point3d_t &_a, point3d_t &_g)const { _a = a; _g = g; };
+		void get(point3d_t &_a, point3d_t &_g) const { _a = a; _g = g; };
 
 		//! Returns true if the given ray crosses the bound
-		//bool cross(const point3d_t &from,const vector3d_t &ray)const;
+		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist
-		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist)const;
-		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist)const;
-		bool cross(const ray_t &ray, float &enter, float &leave, const float dist)const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist) const;
+		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist) const;
+		bool cross(const ray_t &ray, float &enter, float &leave, const float dist) const;
 
 		//! Returns the volume of the bound
 		float vol() const;
 		//! Returns the lenght along X axis
-		float longX()const {return g.x - a.x;};
+		float longX() const {return g.x - a.x;};
 		//! Returns the lenght along Y axis
-		float longY()const {return g.y - a.y;};
+		float longY() const {return g.y - a.y;};
 		//! Returns the lenght along Y axis
-		float longZ()const {return g.z - a.z;};
+		float longZ() const {return g.z - a.z;};
 		//! Cuts the bound to have the given max X
 		void setMaxX(float X) {g.x = X;};
 		//! Cuts the bound to have the given min X
@@ -101,16 +101,16 @@ class YAFRAYCORE_EXPORT bound_t
 		//! Adjust bound size to include point p
 		void include(const point3d_t &p);
 		//! Returns true if the point is inside the bound
-		bool includes(const point3d_t &pn)const
+		bool includes(const point3d_t &pn) const
 		{
 			return ((pn.x >= a.x) && (pn.x <= g.x) &&
 			        (pn.y >= a.y) && (pn.y <= g.y) &&
 			        (pn.z >= a.z) && (pn.z <= g.z));
 		};
-		float centerX()const {return (g.x + a.x) * 0.5;};
-		float centerY()const {return (g.y + a.y) * 0.5;};
-		float centerZ()const {return (g.z + a.z) * 0.5;};
-		point3d_t center()const {return (g + a) * 0.5;};
+		float centerX() const {return (g.x + a.x) * 0.5;};
+		float centerY() const {return (g.y + a.y) * 0.5;};
+		float centerZ() const {return (g.z + a.z) * 0.5;};
+		point3d_t center() const {return (g + a) * 0.5;};
 		int largestAxis()
 		{
 			vector3d_t d = g - a;
@@ -141,7 +141,7 @@ inline void bound_t::include(const point3d_t &p)
 	g.z = std::max(g.z, p.z);
 }
 
-inline bool bound_t::cross(const ray_t &ray, float &enter, float &leave, const float dist)const
+inline bool bound_t::cross(const ray_t &ray, float &enter, float &leave, const float dist) const
 {
 	// Smits method
 	const point3d_t &a0 = a, &a1 = g;

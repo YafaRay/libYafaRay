@@ -83,7 +83,7 @@ class YAFRAYCORE_EXPORT vector3d_t
 		}
 		float length() const;
 		float lengthSqr() const { return x * x + y * y + z * z; }
-		bool null()const { return ((x == 0) && (y == 0) && (z == 0)); }
+		bool null() const { return ((x == 0) && (y == 0) && (z == 0)); }
 		float sinFromVectors(const vector3d_t &v);
 
 		vector3d_t &operator = (const vector3d_t &s) { x = s.x;  y = s.y;  z = s.z;  return *this;}
@@ -243,7 +243,7 @@ inline point3d_t mult(const point3d_t &a, const vector3d_t &b)
 	return point3d_t(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
-inline float vector3d_t::length()const
+inline float vector3d_t::length() const
 {
 	return fSqrt(x * x + y * y + z * z);
 }

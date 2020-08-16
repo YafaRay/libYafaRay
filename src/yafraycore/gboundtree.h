@@ -22,20 +22,20 @@ class gBoundTreeNode_t
 
 		~gBoundTreeNode_t() {if(_left != nullptr) {delete _left; delete _right;} };
 
-		bool isLeaf()const  {return (_left == nullptr);};
+		bool isLeaf() const  {return (_left == nullptr);};
 		gBoundTreeNode_t<T> *right() {return _right;};
-		const gBoundTreeNode_t<T> *right()const {return _right;};
+		const gBoundTreeNode_t<T> *right() const {return _right;};
 		gBoundTreeNode_t<T> *left() {return _left;};
-		const gBoundTreeNode_t<T> *left()const {return _left;};
+		const gBoundTreeNode_t<T> *left() const {return _left;};
 		gBoundTreeNode_t<T> *parent() {return _parent;};
-		const gBoundTreeNode_t<T> *parent()const {return _parent;};
+		const gBoundTreeNode_t<T> *parent() const {return _parent;};
 		std::vector<T> &child() {return _child;};
-		const std::vector<T> &child()const {return _child;};
+		const std::vector<T> &child() const {return _child;};
 		bound_t &getBound() {return bound;};
-		const bound_t &getBound()const {return bound;};
+		const bound_t &getBound() const {return bound;};
 
-		typename std::vector<T>::const_iterator begin()const {return _child.begin();};
-		typename std::vector<T>::const_iterator end()const {return _child.end();};
+		typename std::vector<T>::const_iterator begin() const {return _child.begin();};
+		typename std::vector<T>::const_iterator end() const {return _child.end();};
 	protected:
 		gBoundTreeNode_t<T> *_left;
 		gBoundTreeNode_t<T> *_right;
@@ -304,13 +304,13 @@ class gBoundTree_t
 		}
 		~gBoundTree_t() { if(tree != nullptr) delete tree; }
 
-		lookup(const point3d_t &P, const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K, float &radius, float mincos)const;
+		lookup(const point3d_t &P, const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K, float &radius, float mincos) const;
 	private:
 		gBoundTreeNode_t<const storedPhoton_t *> *tree;
 }
 
 template<class T>
-gBoundTree_t<T>::lookup(const point3d_t &P, const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K, float &radius, float mincos)const
+gBoundTree_t<T>::lookup(const point3d_t &P, const vector3d_t &N, std::vector<foundPhoton_t> &found, unsigned int K, float &radius, float mincos) const
 {
 	foundPhoton_t temp;
 	compareFound_f cfound;

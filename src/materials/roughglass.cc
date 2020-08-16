@@ -169,7 +169,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	return ret;
 }
 
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const
+color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const
 {
 	nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
@@ -288,7 +288,7 @@ color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t
 	return ret;
 }
 
-color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
@@ -301,7 +301,7 @@ color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfa
 	return result;
 }
 
-float roughGlassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float roughGlassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 

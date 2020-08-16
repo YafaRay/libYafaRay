@@ -48,7 +48,7 @@ class YAFRAYCORE_EXPORT parameter_t
 		bool getVal(color_t &c)		const {used = true; if(vtype == TYPE_COLOR) {c.R = C[0], c.G = C[1], c.B = C[2]; return true;} return false;};
 		bool getVal(colorA_t &c)	const {used = true; if(vtype == TYPE_COLOR) {c.R = C[0], c.G = C[1], c.B = C[2], c.A = C[3]; return true;} return false;};
 		//! return the type of the parameter_t
-		int type()const { return vtype; }
+		int type() const { return vtype; }
 		// operator= assigns new value, be aware that this may change the parameter type!
 		parameter_t &operator = (const std::string &s) { vtype = TYPE_STRING; str = s; return *this; }
 		parameter_t &operator = (int i) { vtype = TYPE_INT; ival = i; return *this; }
@@ -93,8 +93,8 @@ class YAFRAYCORE_EXPORT paraMap_t
 			if(i != mdicc.end()) { m = i->second; return true; }
 			return false;
 		}
-		//		virtual bool includes(const std::string &label,int type)const;
-		//		virtual void checkUnused(const std::string &env)const;
+		//		virtual bool includes(const std::string &label,int type) const;
+		//		virtual void checkUnused(const std::string &env) const;
 		parameter_t &operator [](const std::string &key) { return dicc[key]; };
 		void setMatrix(const std::string &key, const matrix4x4_t &m) { mdicc[key] = m; }
 

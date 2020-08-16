@@ -30,7 +30,7 @@ class YAFRAYCORE_EXPORT dynamicLoadedLibrary_t
 		void close();
 		void addReference() { (*refcount)++; };
 		void removeReference() { (*refcount)--; };
-		bool isUsed()const {return ((*refcount) > 0);};
+		bool isUsed() const {return ((*refcount) > 0);};
 
 
 		int *refcount;

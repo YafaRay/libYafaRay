@@ -41,12 +41,12 @@ class coatedGlossyMat_t: public nodeMaterial_t
 {
 	public:
 		coatedGlossyMat_t(const color_t &col, const color_t &dcol, const color_t &mirCol, float mirrorStrength, float reflect, float diff, float ior, float expo, bool as_diff, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false)const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const;
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false) const;
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
+		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
 		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const;
+		                         bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const;
 		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 
 		virtual color_t getDiffuseColor(const renderState_t &state) const
@@ -135,7 +135,7 @@ coatedGlossyMat_t::coatedGlossyMat_t(const color_t &col, const color_t &dcol, co
 	mVisibility = eVisibility;
 }
 
-void coatedGlossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void coatedGlossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	dat->stack = (char *)state.userdata + sizeof(MDat_t);
@@ -198,7 +198,7 @@ float coatedGlossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, c
 
 }
 
-color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
+color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	color_t col(0.f);
@@ -255,7 +255,7 @@ color_t coatedGlossyMat_t::eval(const renderState_t &state, const surfacePoint_t
 	return col;
 }
 
-color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	nodeStack_t stack(dat->stack);
@@ -439,7 +439,7 @@ color_t coatedGlossyMat_t::sample(const renderState_t &state, const surfacePoint
 	return scolor;
 }
 
-float coatedGlossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags)const
+float coatedGlossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	nodeStack_t stack(dat->stack);
@@ -487,7 +487,7 @@ float coatedGlossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
 }
 
 void coatedGlossyMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                                    bool &refl, bool &refr, vector3d_t *const dir, color_t *const col)const
+                                    bool &refl, bool &refr, vector3d_t *const dir, color_t *const col) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	nodeStack_t stack(dat->stack);

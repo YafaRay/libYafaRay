@@ -28,7 +28,7 @@ class YAFRAYCORE_EXPORT timer_t
 		static void splitTime(double t, double *secs, int *mins = nullptr, int *hours = nullptr, int *days = nullptr);
 
 	protected:
-		bool includes(const std::string &label)const;
+		bool includes(const std::string &label) const;
 
 		struct tdata_t
 		{

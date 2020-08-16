@@ -19,12 +19,12 @@ class layerNode_t: public shaderNode_t
 {
 	public:
 		layerNode_t(unsigned tflag, float col_fac, float var_fac, float def_val, colorA_t def_col, mix_modes mmod);
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const;
-		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
+		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const;
+		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
 		virtual bool isViewDependant() const;
 		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find);
-		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv)const;
+		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const;
 		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
 	protected:

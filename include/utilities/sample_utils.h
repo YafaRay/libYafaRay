@@ -107,7 +107,7 @@ class pdf1D_t
 		{
 			delete[] func, delete[] cdf;
 		}
-		float Sample(float u, float *pdf)const
+		float Sample(float u, float *pdf) const
 		{
 			// Find surrounding cdf segments
 			float *ptr = std::lower_bound(cdf, cdf + count + 1, u);
@@ -124,7 +124,7 @@ class pdf1D_t
 		}
 		// take a discrete sample.
 		// determines an index in the array from which the CDF was taked from, rather than a sample in [0;1]
-		int DSample(float u, float *pdf)const
+		int DSample(float u, float *pdf) const
 		{
 			if(u == 0.f)
 			{

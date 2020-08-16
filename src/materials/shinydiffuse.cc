@@ -143,7 +143,7 @@ static inline void accumulate(const float *component, float *accum, float Kr)
 	accum[3] = component[3] * acc;
 }
 
-void shinyDiffuseMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void shinyDiffuseMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	memset(dat, 0, 8 * sizeof(float));
@@ -224,7 +224,7 @@ float shinyDiffuseMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, c
 }
 
 
-color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval)const
+color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval) const
 {
 	float cos_Ng_wo = sp.Ng * wo;
 	float cos_Ng_wl = sp.Ng * wl;
@@ -275,7 +275,7 @@ color_t shinyDiffuseMat_t::eval(const renderState_t &state, const surfacePoint_t
 	return result;
 }
 
-color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
@@ -288,7 +288,7 @@ color_t shinyDiffuseMat_t::emit(const renderState_t &state, const surfacePoint_t
 	return result;
 }
 
-color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	float accumC[4];
 	float cos_Ng_wo = sp.Ng * wo, cos_Ng_wi, cos_N;
@@ -390,7 +390,7 @@ color_t shinyDiffuseMat_t::sample(const renderState_t &state, const surfacePoint
 	return scolor;
 }
 
-float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
 	if(!(bsdfs & BSDF_DIFFUSE)) return 0.f;
 
@@ -454,7 +454,7 @@ float shinyDiffuseMat_t::pdf(const renderState_t &state, const surfacePoint_t &s
  *  @param  wi Array of two vectors to record reflected ray direction (wi[0]) and refracted ray direction (wi[1])
  *  @param  col Array of two colors to record reflected ray color (col[0]) and refracted ray color (col[1])
  */
-void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &doReflect, bool &doRefract, vector3d_t *const wi, color_t *const col)const
+void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &doReflect, bool &doRefract, vector3d_t *const wi, color_t *const col) const
 {
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);
@@ -510,7 +510,7 @@ void shinyDiffuseMat_t::getSpecular(const renderState_t &state, const surfacePoi
 	applyWireFrame(col, wireFrameAmount, sp);
 }
 
-color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	if(!mIsTransparent) return color_t(0.f);
 
@@ -549,7 +549,7 @@ color_t shinyDiffuseMat_t::getTransparency(const renderState_t &state, const sur
 	return result;
 }
 
-float shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float shinyDiffuseMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	SDDat_t *dat = (SDDat_t *)state.userdata;
 	nodeStack_t stack(dat->nodeStack);

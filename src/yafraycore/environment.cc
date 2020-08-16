@@ -209,42 +209,42 @@ bool renderEnvironment_t::getPluginPath(std::string &path)
 }
 
 
-material_t *renderEnvironment_t::getMaterial(const std::string &name)const
+material_t *renderEnvironment_t::getMaterial(const std::string &name) const
 {
 	auto i = material_table.find(name);
 	if(i != material_table.end()) return i->second;
 	else return nullptr;
 }
 
-texture_t *renderEnvironment_t::getTexture(const std::string &name)const
+texture_t *renderEnvironment_t::getTexture(const std::string &name) const
 {
 	auto i = texture_table.find(name);
 	if(i != texture_table.end()) return i->second;
 	else return nullptr;
 }
 
-camera_t *renderEnvironment_t::getCamera(const std::string &name)const
+camera_t *renderEnvironment_t::getCamera(const std::string &name) const
 {
 	auto i = camera_table.find(name);
 	if(i != camera_table.end()) return i->second;
 	else return nullptr;
 }
 
-background_t *renderEnvironment_t::getBackground(const std::string &name)const
+background_t *renderEnvironment_t::getBackground(const std::string &name) const
 {
 	auto i = background_table.find(name);
 	if(i != background_table.end()) return i->second;
 	else return nullptr;
 }
 
-integrator_t *renderEnvironment_t::getIntegrator(const std::string &name)const
+integrator_t *renderEnvironment_t::getIntegrator(const std::string &name) const
 {
 	auto i = integrator_table.find(name);
 	if(i != integrator_table.end()) return i->second;
 	else return nullptr;
 }
 
-shaderNode_t *renderEnvironment_t::getShaderNode(const std::string &name)const
+shaderNode_t *renderEnvironment_t::getShaderNode(const std::string &name) const
 {
 	auto i = shader_table.find(name);
 	if(i != shader_table.end()) return i->second;
@@ -1144,7 +1144,7 @@ std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &f
 	return ret;
 }
 
-renderEnvironment_t::shader_factory_t *renderEnvironment_t::getShaderNodeFactory(const std::string &name)const
+renderEnvironment_t::shader_factory_t *renderEnvironment_t::getShaderNodeFactory(const std::string &name) const
 {
 	auto i = shader_factory.find(name);
 	if(i != shader_factory.end()) return i->second;

@@ -33,10 +33,10 @@ class glossyMat_t: public nodeMaterial_t
 {
 	public:
 		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false)const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const;
+		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const;
+		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false) const;
+		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
+		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
 		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
 
 		struct MDat_t
@@ -103,7 +103,7 @@ glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect,
 	mVisibility = eVisibility;
 }
 
-void glossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void glossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	dat->stack = (char *)state.userdata + sizeof(MDat_t);
@@ -165,7 +165,7 @@ float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const v
 	}
 }
 
-color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
+color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval) const
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
@@ -228,7 +228,7 @@ color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, 
 }
 
 
-color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	float cos_Ng_wo = sp.Ng * wo;
@@ -411,7 +411,7 @@ color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp
 	return scolor;
 }
 
-float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags)const
+float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags) const
 {
 	MDat_t *dat = (MDat_t *)state.userdata;
 	nodeStack_t stack(dat->stack);

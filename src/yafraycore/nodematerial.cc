@@ -104,7 +104,7 @@ void nodeMaterial_t::filterNodes(const std::vector<shaderNode_t *> &input, std::
 	}
 }
 
-void nodeMaterial_t::evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS)const
+void nodeMaterial_t::evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS) const
 {
 	auto end = bumpNodes.end();
 	for(auto iter = bumpNodes.begin(); iter != end; ++iter)(*iter)->evalDerivative(stack, state, sp);

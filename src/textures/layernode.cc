@@ -9,7 +9,7 @@ layerNode_t::layerNode_t(unsigned tflag, float col_fac, float val_fac, float def
 	default_col(def_col), mode(mmod), do_color(false), do_scalar(false), color_input(false)
 {}
 
-void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	colorA_t rcol, texcolor;
 	float rval, Tin = 0.f, Ta = 1.f, stencilTin = 1.f;
@@ -97,12 +97,12 @@ void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const sur
 	stack[this->ID] = nodeResult_t(rcol, rval);
 }
 
-void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi)const
+void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
 {
 	eval(stack, state, sp);
 }
 
-void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp)const
+void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
 {
 	colorA_t texcolor;
 	float rdu = 0.f, rdv = 0.f, tdu, tdv;

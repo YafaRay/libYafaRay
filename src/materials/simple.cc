@@ -54,14 +54,14 @@ lightMat_t::lightMat_t(color_t lightC, bool ds): lightCol(lightC), doubleSided(d
 	bsdfFlags = BSDF_EMIT;
 }
 
-color_t lightMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t lightMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	s.pdf = 0.f;
 	W = 0.f;
 	return color_t(0.f);
 }
 
-color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	if(!state.includeLights) return color_t(0.f);
 	if(doubleSided) return lightCol;

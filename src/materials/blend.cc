@@ -71,7 +71,7 @@ inline void blendMat_t::getBlendVal(const renderState_t &state, const surfacePoi
 	ival = std::min(1.f, std::max(0.f, 1.f - val));
 }
 
-void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	void *old_udat = state.userdata;
 
@@ -100,7 +100,7 @@ void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t
 	state.userdata = old_udat;
 }
 
-color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval)const
+color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -125,7 +125,7 @@ color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, c
 	return col1;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -210,7 +210,7 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 	return col1;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W)const
+color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -233,7 +233,7 @@ color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp,
 }
 
 
-float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
@@ -254,7 +254,7 @@ float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, cons
 }
 
 void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                             bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
+                             bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -331,7 +331,7 @@ bool blendMat_t::isTransparent() const
 	return mat1->isTransparent() || mat2->isTransparent();
 }
 
-color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -357,7 +357,7 @@ color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoi
 	return col1;
 }
 
-float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -391,7 +391,7 @@ float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp,
 	return result;
 }
 
-color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 
@@ -444,7 +444,7 @@ bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	return ret;
 }
 
-const volumeHandler_t *blendMat_t::getVolumeHandler(bool inside)const
+const volumeHandler_t *blendMat_t::getVolumeHandler(bool inside) const
 {
 	const volumeHandler_t *vol1 = mat1->getVolumeHandler(inside);
 	const volumeHandler_t *vol2 = mat2->getVolumeHandler(inside);

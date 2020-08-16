@@ -38,7 +38,7 @@ maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, float thresh, v
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
-void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes)const
+void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
 {
 	nodeStack_t stack(state.userdata);
 	evalNodes(state, sp, allNodes, stack);
@@ -51,7 +51,7 @@ void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t 
 	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
 }
 
-color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval)const
+color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval) const
 {
 	bool mv = *(bool *)state.userdata;
 	color_t col;
@@ -62,7 +62,7 @@ color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, co
 	return col;
 }
 
-color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W)const
+color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
 {
 	bool mv = *(bool *)state.userdata;
 	color_t col;
@@ -73,7 +73,7 @@ color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, 
 	return col;
 }
 
-float maskMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs)const
+float maskMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
 {
 	bool mv = *(bool *)state.userdata;
 	float pdf;
@@ -89,7 +89,7 @@ bool maskMat_t::isTransparent() const
 	return mat1->isTransparent() || mat2->isTransparent();
 }
 
-color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	nodeStack_t stack(state.userdata);
 	evalNodes(state, sp, allNodes, stack);
@@ -100,7 +100,7 @@ color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoin
 }
 
 void maskMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                            bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col)const
+                            bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const
 {
 	bool mv = *(bool *)state.userdata;
 	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
@@ -109,7 +109,7 @@ void maskMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp
 	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
 }
 
-color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	bool mv = *(bool *)state.userdata;
 	color_t col;
@@ -120,7 +120,7 @@ color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, co
 	return col;
 }
 
-float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo)const
+float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
 {
 	bool mv = *(bool *)state.userdata;
 	float alpha;

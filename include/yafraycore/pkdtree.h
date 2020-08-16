@@ -66,7 +66,7 @@ class pointKdTree
 		pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads = 1);
 		~pointKdTree() { if(nodes) y_free(nodes); }
 		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared) const;
-		double lookupStat()const { return double(Y_PROCS) / double(Y_LOOKUPS); } //!< ratio of photons tested per lookup call
+		double lookupStat() const { return double(Y_PROCS) / double(Y_LOOKUPS); } //!< ratio of photons tested per lookup call
 	protected:
 		template<class LookupProc> void recursiveLookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared, int nodeNum) const;
 		struct KdStack

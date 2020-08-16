@@ -89,7 +89,7 @@ double timer_t::getTimeNotStopping(const std::string &name)
 }
 
 
-bool timer_t::includes(const std::string &label)const
+bool timer_t::includes(const std::string &label) const
 {
 	auto i = events.find(label);
 	return (i == events.end()) ? false : true;

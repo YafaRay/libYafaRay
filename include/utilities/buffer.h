@@ -82,7 +82,7 @@ class Buffer_t
 		void set(int x, int y);
 		T &operator()(int x, int y) {return data[y * mx + x];};
 		T *buffer(int x, int y) {return &data[y * mx + x];};
-		const T &operator()(int x, int y)const {return data[y * mx + x];};
+		const T &operator()(int x, int y) const {return data[y * mx + x];};
 		Buffer_t<T> &operator = (const Buffer_t<T> &source);
 		int resx() const {return mx;};
 		int resy() const {return my;};

@@ -51,7 +51,7 @@ bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t 
 	return false;
 }
 
-color_t material_t::getReflectivity(const renderState_t &state, const surfacePoint_t &sp, BSDF_t flags)const
+color_t material_t::getReflectivity(const renderState_t &state, const surfacePoint_t &sp, BSDF_t flags) const
 {
 	if(!(flags & (BSDF_TRANSMIT | BSDF_REFLECT) & bsdfFlags)) return color_t(0.f);
 	float s1, s2, s3, s4, W = 0.f;
