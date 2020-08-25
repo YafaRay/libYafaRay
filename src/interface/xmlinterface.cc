@@ -3,6 +3,7 @@
 #include <core_api/logging.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
+#include <core_api/matrix4.h>
 #include <core_api/params.h>
 
 __BEGIN_YAFRAY
@@ -184,47 +185,64 @@ bool xmlInterface_t::smoothMesh(unsigned int id, double angle)
 	return true;
 }
 
-inline void writeParam(const std::string &name, const parameter_t &param, std::ofstream &xmlFile, colorSpaces_t XMLColorSpace, float XMLGamma)
-{
-	int i = 0;
-	bool b = false;
-	double f = 0.0;
-	const std::string *s = nullptr;
-	colorA_t c(0.f);
-	point3d_t p(0.f);
-	switch(param.type())
-	{
-		case TYPE_INT:
-			param.getVal(i);
-			xmlFile << "<" << name << " ival=\"" << i << "\"/>\n"; break;
-		case TYPE_BOOL:
-			param.getVal(b);
-			xmlFile << "<" << name << " bval=\"" << b << "\"/>\n"; break;
-		case TYPE_FLOAT:
-			param.getVal(f);
-			xmlFile << "<" << name << " fval=\"" << f << "\"/>\n"; break;
-		case TYPE_STRING:
-			param.getVal(s);
-			if(!s) break;
-			xmlFile << "<" << name << " sval=\"" << *s << "\"/>\n"; break;
-		case TYPE_POINT:
-			param.getVal(p);
-			xmlFile << "<" << name << " x=\"" << p.x << "\" y=\"" << p.y << "\" z=\"" << p.z << "\"/>\n"; break;
-		case TYPE_COLOR:
-			param.getVal(c);
-			c.ColorSpace_from_linearRGB(XMLColorSpace, XMLGamma);	//Color values are encoded to the desired color space before saving them to the XML file
-			xmlFile << "<" << name << " r=\"" << c.R << "\" g=\"" << c.G << "\" b=\"" << c.B << "\" a=\"" << c.A << "\"/>\n"; break;
-		default:
-			std::cerr << "unknown parameter type!\n";
-	}
-}
-
 void writeMatrix(const std::string &name, const matrix4x4_t &m, std::ofstream &xmlFile)
 {
 	xmlFile << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2]  << "\" m03=\"" << m[0][3] << "\""
-	        << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2]  << "\" m13=\"" << m[1][3] << "\""
-	        << " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2]  << "\" m23=\"" << m[2][3] << "\""
-	        << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2]  << "\" m33=\"" << m[3][3] << "\"/>";
+			<< " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2]  << "\" m13=\"" << m[1][3] << "\""
+			<< " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2]  << "\" m23=\"" << m[2][3] << "\""
+			<< " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2]  << "\" m33=\"" << m[3][3] << "\"/>";
+}
+
+inline void writeParam(const std::string &name, const parameter_t &param, std::ofstream &xmlFile, colorSpaces_t XMLColorSpace, float XMLGamma)
+{
+	const parameter_t::Type type = param.type();
+	if(type == parameter_t::Int)
+	{
+		int i = 0;
+		param.getVal(i);
+		xmlFile << "<" << name << " ival=\"" << i << "\"/>\n";
+	}
+	else if(type == parameter_t::Bool)
+	{
+		bool b = false;
+		param.getVal(b);
+		xmlFile << "<" << name << " bval=\"" << b << "\"/>\n";
+	}
+	else if(type == parameter_t::Float)
+	{
+		double f = 0.0;
+		param.getVal(f);
+		xmlFile << "<" << name << " fval=\"" << f << "\"/>\n";
+	}
+	else if(type == parameter_t::String)
+	{
+		std::string s;
+		param.getVal(s);
+		if(!s.empty()) xmlFile << "<" << name << " sval=\"" << s << "\"/>\n";
+	}
+	else if(type == parameter_t::Point)
+	{
+		point3d_t p(0.f);
+		param.getVal(p);
+		xmlFile << "<" << name << " x=\"" << p.x << "\" y=\"" << p.y << "\" z=\"" << p.z << "\"/>\n";
+	}
+	else if(type == parameter_t::Color)
+	{
+		colorA_t c(0.f);
+		param.getVal(c);
+		c.ColorSpace_from_linearRGB(XMLColorSpace, XMLGamma);    //Color values are encoded to the desired color space before saving them to the XML file
+		xmlFile << "<" << name << " r=\"" << c.R << "\" g=\"" << c.G << "\" b=\"" << c.B << "\" a=\"" << c.A << "\"/>\n";
+	}
+	else if(type == parameter_t::Matrix)
+	{
+		matrix4x4_t m;
+		param.getVal(m);
+		writeMatrix(name, m, xmlFile);
+	}
+	else
+	{
+		std::cerr << "unknown parameter type!\n";
+	}
 }
 
 bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
@@ -238,17 +256,10 @@ bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWor
 void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
 {
 	std::string tabs(indent, '\t');
-	const std::map< std::string, parameter_t > *dict = pmap.getDict();
-	for(auto ip = dict->begin(); ip != dict->end(); ++ip)
+	for(const auto &p : pmap)
 	{
 		xmlFile << tabs;
-		writeParam(ip->first, ip->second, xmlFile, XMLColorSpace, XMLGamma);
-	}
-	const std::map< std::string, matrix4x4_t > *mdict = pmap.getMDict();
-	for(auto im = mdict->begin(); im != mdict->end(); ++im)
-	{
-		xmlFile << tabs;
-		writeMatrix(im->first, im->second, xmlFile);
+		writeParam(p.first, p.second, xmlFile, XMLColorSpace, XMLGamma);
 	}
 }
 

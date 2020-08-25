@@ -1,5 +1,6 @@
 #include <yafray_constants.h>
 #include <yafray_config.h>
+#include <core_api/params.h>
 #include <core_api/session.h>
 #include <core_api/file.h>
 #include <core_api/scene.h>

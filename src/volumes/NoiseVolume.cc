@@ -64,7 +64,7 @@ VolumeRegion *NoiseVolume::factory(paraMap_t &params, renderEnvironment_t &rende
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
 	int attSc = 1;
-	const std::string *texName = nullptr;
+	std::string texName;
 
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);
@@ -82,17 +82,17 @@ VolumeRegion *NoiseVolume::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("attgridScale", attSc);
 	params.getParam("texture", texName);
 
-	if(!texName)
+	if(texName.empty())
 	{
 		Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << yendl;
 		return nullptr;
 	}
 
-	texture_t *noise = render.getTexture(*texName);
+	texture_t *noise = render.getTexture(texName);
 
 	if(!noise)
 	{
-		Y_VERBOSE << "NoiseVolume: Noise texture '" << *texName << "' couldn't be found, the volume region won't be created." << yendl;
+		Y_VERBOSE << "NoiseVolume: Noise texture '" << texName << "' couldn't be found, the volume region won't be created." << yendl;
 		return nullptr;
 	}
 

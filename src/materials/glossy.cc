@@ -478,7 +478,7 @@ material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
 	color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 
-	const std::string *name = nullptr;
+	std::string name;
 	params.getParam("color", col);
 	params.getParam("diffuse_color", dcol);
 	params.getParam("diffuse_reflect", diff);
@@ -529,7 +529,7 @@ material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 
 	if(params.getParam("diffuse_brdf", name))
 	{
-		if(*name == "Oren-Nayar")
+		if(name == "Oren-Nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

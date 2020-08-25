@@ -661,10 +661,10 @@ material_t *shinyDiffuseMat_t::factory(paraMap_t &params, std::list<paraMap_t> &
 		mat->mHasFresnelEffect = true;
 	}
 
-	const std::string *name = nullptr;
+	std::string name;
 	if(params.getParam("diffuse_brdf", name))
 	{
-		if(*name == "oren_nayar")
+		if(name == "oren_nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

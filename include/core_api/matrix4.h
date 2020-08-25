@@ -20,12 +20,12 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef __MATRIX4_H
-#define __MATRIX4_H
+#ifndef YAFARAY_MATRIX4_H
+#define YAFARAY_MATRIX4_H
 
 #include <yafray_constants.h>
 #include "vector3d.h"
-#include<iostream>
+#include <iostream>
 
 __BEGIN_YAFRAY
 
@@ -48,23 +48,22 @@ class YAFRAYCORE_EXPORT matrix4x4_t
 		void rotateY(float degrees);
 		void rotateZ(float degrees);
 		void scale(float sx, float sy, float sz);
-		int invalid() const { return _invalid; }
-		const float *operator [](int i) const { return matrix[i]; }
-		float *operator [](int i) { return matrix[i]; }
+		int invalid() const { return invalid_; }
+		const float *operator [](int i) const { return matrix_[i]; }
+		float *operator [](int i) { return matrix_[i]; }
 		void setVal(int row, int col, float val)
 		{
-			matrix[row][col] = val;
+			matrix_[row][col] = val;
 		}
 
 		float getVal(int row, int col)
 		{
-			return matrix[row][col];
+			return matrix_[row][col];
 		}
 
-	protected:
-
-		float  matrix[4][4];
-		int _invalid;
+	private:
+		float matrix_[4][4];
+		int invalid_;
 };
 
 inline matrix4x4_t  operator * (const matrix4x4_t &a, const matrix4x4_t &b)

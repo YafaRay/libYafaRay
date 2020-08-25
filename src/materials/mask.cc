@@ -133,7 +133,7 @@ float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, 
 
 material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
 {
-	const std::string *name = nullptr;
+	std::string name;
 	const material_t *m1 = nullptr, *m2 = nullptr;
 	double thresh = 0.5;
 	std::string sVisibility = "normal";
@@ -142,9 +142,9 @@ material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 
 	params.getParam("threshold", thresh);
 	if(! params.getParam("material1", name)) return nullptr;
-	m1 = env.getMaterial(*name);
+	m1 = env.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m2 = env.getMaterial(*name);
+	m2 = env.getMaterial(name);
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = env.getTexture(*name);
 
@@ -168,11 +168,11 @@ material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->mShadersTable.find(*name);
+			auto i = mat->mShadersTable.find(name);
 			if(i != mat->mShadersTable.end()) { mat->mask = i->second; roots.push_back(mat->mask); }
 			else
 			{
-				Y_ERROR << "MaskMat: Mask shader node '" << *name << "' does not exist!" << yendl;
+				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << yendl;
 				delete mat;
 				return nullptr;
 			}

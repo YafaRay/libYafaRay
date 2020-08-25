@@ -116,9 +116,9 @@ void nodeMaterial_t::evalBump(nodeStack_t &stack, const renderState_t &state, su
 bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnvironment_t &render)
 {
 	bool error = false;
-	const std::string *type = nullptr;
-	const std::string *name = nullptr;
-	const std::string *element = nullptr;
+	std::string type;
+	std::string name;
+	std::string element;
 
 	auto i = paramsList.begin();
 
@@ -126,7 +126,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 	{
 		if(i->getParam("element", element))
 		{
-			if(*element != "shader_node") continue;
+			if(element != "shader_node") continue;
 		}
 		else Y_WARNING << "NodeMaterial: No element type given; assuming shader node" << yendl;
 
@@ -137,7 +137,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 			break;
 		}
 
-		if(mShadersTable.find(*name) != mShadersTable.end())
+		if(mShadersTable.find(name) != mShadersTable.end())
 		{
 			Y_ERROR << "NodeMaterial: Multiple nodes with identically names!" << yendl;
 			error = true;
@@ -151,7 +151,7 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 			break;
 		}
 
-		renderEnvironment_t::shader_factory_t *fac = render.getShaderNodeFactory(*type);
+		renderEnvironment_t::shader_factory_t *fac = render.getShaderNodeFactory(type);
 		shaderNode_t *shader = nullptr;
 
 		if(fac)
@@ -160,20 +160,20 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 		}
 		else
 		{
-			Y_ERROR << "NodeMaterial: Don't know how to create shader node of type '" << *type << "'!" << yendl;
+			Y_ERROR << "NodeMaterial: Don't know how to create shader node of type '" << type << "'!" << yendl;
 			error = true;
 			break;
 		}
 
 		if(shader)
 		{
-			mShadersTable[*name] = shader;
+			mShadersTable[name] = shader;
 			allNodes.push_back(shader);
-			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << *name << "'! (" << (void *)shader << ")" << yendl;
+			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shader << ")" << yendl;
 		}
 		else
 		{
-			Y_ERROR << "NodeMaterial: No shader node was constructed by plugin '" << *type << "'!" << yendl;
+			Y_ERROR << "NodeMaterial: No shader node was constructed by plugin '" << type << "'!" << yendl;
 			error = true;
 			break;
 		}
@@ -205,20 +205,20 @@ bool nodeMaterial_t::loadNodes(const std::list<paraMap_t> &paramsList, renderEnv
 
 void nodeMaterial_t::parseNodes(const paraMap_t &params, std::vector<shaderNode_t *> &roots, std::map<std::string, shaderNode_t *> &nodeList)
 {
-	const std::string *name = nullptr;
+	std::string name;
 
 	for(auto currentNode = nodeList.begin(); currentNode != nodeList.end(); ++currentNode)
 	{
 		if(params.getParam(currentNode->first, name))
 		{
-			auto i = mShadersTable.find(*name);
+			auto i = mShadersTable.find(name);
 
 			if(i != mShadersTable.end())
 			{
 				currentNode->second = i->second;
 				roots.push_back(currentNode->second);
 			}
-			else Y_WARNING << "Shader node " << currentNode->first << " '" << *name << "' does not exist!" << yendl;
+			else Y_WARNING << "Shader node " << currentNode->first << " '" << name << "' does not exist!" << yendl;
 		}
 	}
 }

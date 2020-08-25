@@ -6,7 +6,7 @@ set(YF_CORE_SOURCES bound.cc dynamic_library.cc file.cc environment.cc console.c
 					matrix4.cc object3d.cc timer.cc kdtree.cc ray_kdtree.cc hashgrid.cc tribox3_d.cc
 					triclip.cc scene.cc imagefilm.cc imagesplitter.cc material.cc nodematerial.cc
 					triangle.cc vector3d.cc photon.cc xmlparser.cc spectrum.cc volume.cc
-					surface.cc integrator.cc mcintegrator.cc
+					surface.cc integrator.cc mcintegrator.cc params.cc
 					imageOutput.cc memoryIO.cc imagehandler.cc ${headers})
 
 add_definitions(-DBUILDING_YAFRAYCORE)

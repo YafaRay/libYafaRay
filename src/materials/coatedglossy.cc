@@ -543,7 +543,7 @@ material_t *coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 	double ior = 1.4;
 	bool as_diff = true;
 	bool aniso = false;
-	const std::string *name = nullptr;
+	std::string name;
 	std::string sVisibility = "normal";
 	visibility_t visibility = NORMAL_VISIBLE;
 	int mat_pass_index = 0;
@@ -610,7 +610,7 @@ material_t *coatedGlossyMat_t::factory(paraMap_t &params, std::list< paraMap_t >
 
 	if(params.getParam("diffuse_brdf", name))
 	{
-		if(*name == "Oren-Nayar")
+		if(name == "Oren-Nayar")
 		{
 			double sigma = 0.1;
 			params.getParam("sigma", sigma);

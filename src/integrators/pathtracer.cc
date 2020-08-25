@@ -352,7 +352,7 @@ integrator_t *pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	int bounces = 3;
 	int russian_roulette_min_bounces = 0;
 	int raydepth = 5;
-	const std::string *cMethod = 0;
+	std::string cMethod;
 	bool do_AO = false;
 	int AO_samples = 32;
 	double AO_dist = 1.0;
@@ -380,9 +380,9 @@ integrator_t *pathIntegrator_t::factory(paraMap_t &params, renderEnvironment_t &
 	if(params.getParam("caustic_type", cMethod))
 	{
 		bool usePhotons = false;
-		if(*cMethod == "photon") { inte->causticType = PHOTON; usePhotons = true; }
-		else if(*cMethod == "both") { inte->causticType = BOTH; usePhotons = true; }
-		else if(*cMethod == "none") inte->causticType = NONE;
+		if(cMethod == "photon") { inte->causticType = PHOTON; usePhotons = true; }
+		else if(cMethod == "both") { inte->causticType = BOTH; usePhotons = true; }
+		else if(cMethod == "none") inte->causticType = NONE;
 		if(usePhotons)
 		{
 			double cRad = 0.25;

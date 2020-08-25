@@ -198,8 +198,7 @@ bool perspectiveCam_t::sampleLense() const { return aperture != 0; }
 
 camera_t *perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	std::string _bkhtype = "disk1", _bkhbias = "uniform";
-	const std::string *bkhtype = &_bkhtype, *bkhbias = &_bkhbias;
+	std::string bkhtype = "disk1", bkhbias = "uniform";
 	point3d_t from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
 	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
@@ -223,16 +222,16 @@ camera_t *perspectiveCam_t::factory(paraMap_t &params, renderEnvironment_t &rend
 	params.getParam("view_name", viewName);
 
 	bokehType bt = BK_DISK1;
-	if(*bkhtype == "disk2")			bt = BK_DISK2;
-	else if(*bkhtype == "triangle")	bt = BK_TRI;
-	else if(*bkhtype == "square")	bt = BK_SQR;
-	else if(*bkhtype == "pentagon")	bt = BK_PENTA;
-	else if(*bkhtype == "hexagon")	bt = BK_HEXA;
-	else if(*bkhtype == "ring")		bt = BK_RING;
+	if(bkhtype == "disk2")			bt = BK_DISK2;
+	else if(bkhtype == "triangle")	bt = BK_TRI;
+	else if(bkhtype == "square")	bt = BK_SQR;
+	else if(bkhtype == "pentagon")	bt = BK_PENTA;
+	else if(bkhtype == "hexagon")	bt = BK_HEXA;
+	else if(bkhtype == "ring")		bt = BK_RING;
 	// bokeh bias
 	bkhBiasType bbt = BB_NONE;
-	if(*bkhbias == "center") 		bbt = BB_CENTER;
-	else if(*bkhbias == "edge") 		bbt = BB_EDGE;
+	if(bkhbias == "center") 		bbt = BB_CENTER;
+	else if(bkhbias == "edge") 		bbt = BB_EDGE;
 
 	perspectiveCam_t *cam = new perspectiveCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, nearClip, farClip);
 

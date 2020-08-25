@@ -621,8 +621,8 @@ void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
 
 imageFilm_t *renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
 {
-	const std::string *name = nullptr;
-	const std::string *tiles_order = nullptr;
+	std::string name;
+	std::string tiles_order;
 	int width = 320, height = 240, xstart = 0, ystart = 0;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
@@ -698,23 +698,15 @@ imageFilm_t *renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
 
 	imageFilm_t::filterType type = imageFilm_t::BOX;
-	if(name)
-	{
-		if(*name == "mitchell") type = imageFilm_t::MITCHELL;
-		else if(*name == "gauss") type = imageFilm_t::GAUSS;
-		else if(*name == "lanczos") type = imageFilm_t::LANCZOS;
-		else type = imageFilm_t::BOX;
-	}
-	else Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
+	if(name == "mitchell") type = imageFilm_t::MITCHELL;
+	else if(name == "gauss") type = imageFilm_t::GAUSS;
+	else if(name == "lanczos") type = imageFilm_t::LANCZOS;
+	else if(name != "box") Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
 
 	imageSpliter_t::tilesOrderType tilesOrder = imageSpliter_t::CENTRE_RANDOM;
-	if(tiles_order)
-	{
-		if(*tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
-		else if(*tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
-		else if(*tiles_order == "centre") tilesOrder = imageSpliter_t::CENTRE_RANDOM;
-	}
-	else Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << yendl; // this is info imho not a warning
+	if(tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
+	else if(tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
+	else if(tiles_order != "centre") Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << yendl; // this is info imho not a warning
 
 	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult);
 
@@ -821,13 +813,13 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	bool logging_saveHTML = false;
 	bool logging_drawRenderSettings = true;
 	bool logging_drawAANoiseSettings = true;
-	const std::string *logging_paramsBadgePosition = nullptr;
-	const std::string *logging_title = nullptr;
-	const std::string *logging_author = nullptr;
-	const std::string *logging_contact = nullptr;
-	const std::string *logging_comments = nullptr;
-	const std::string *logging_customIcon = nullptr;
-	const std::string *logging_fontPath = nullptr;
+	std::string logging_paramsBadgePosition;
+	std::string logging_title;
+	std::string logging_author;
+	std::string logging_contact;
+	std::string logging_comments;
+	std::string logging_customIcon;
+	std::string logging_fontPath;
 	float logging_fontSizeFactor = 1.f;
 
 	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
@@ -847,13 +839,13 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	yafLog.setSaveHTML(logging_saveHTML);
 	yafLog.setDrawRenderSettings(logging_drawRenderSettings);
 	yafLog.setDrawAANoiseSettings(logging_drawAANoiseSettings);
-	if(logging_paramsBadgePosition) yafLog.setParamsBadgePosition(*logging_paramsBadgePosition);
-	if(logging_title) yafLog.setLoggingTitle(*logging_title);
-	if(logging_author) yafLog.setLoggingAuthor(*logging_author);
-	if(logging_contact) yafLog.setLoggingContact(*logging_contact);
-	if(logging_comments) yafLog.setLoggingComments(*logging_comments);
-	if(logging_customIcon) yafLog.setLoggingCustomIcon(*logging_customIcon);
-	if(logging_fontPath) yafLog.setLoggingFontPath(*logging_fontPath);
+	yafLog.setParamsBadgePosition(logging_paramsBadgePosition);
+	yafLog.setLoggingTitle(logging_title);
+	yafLog.setLoggingAuthor(logging_author);
+	yafLog.setLoggingContact(logging_contact);
+	yafLog.setLoggingComments(logging_comments);
+	yafLog.setLoggingCustomIcon(logging_customIcon);
+	yafLog.setLoggingFontPath(logging_fontPath);
 	yafLog.setLoggingFontSizeFactor(logging_fontSizeFactor);
 }
 
@@ -864,7 +856,7 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 */
 bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
 {
-	const std::string *name = nullptr;
+	std::string name;
 	int AA_passes = 1, AA_samples = 1, AA_inc_samples = 1, nthreads = -1, nthreads_photons = -1;
 	double AA_threshold = 0.05;
 	float AA_resampled_floor = 0.f;
@@ -901,7 +893,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		return false;
 	}
 
-	integrator_t *inte = this->getIntegrator(*name);
+	integrator_t *inte = this->getIntegrator(name);
 
 	if(!inte)
 	{
@@ -921,12 +913,12 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 		return false;
 	}
 
-	integrator_t *volInte = this->getIntegrator(*name);
+	integrator_t *volInte = this->getIntegrator(name);
 
 	background_t *backg = nullptr;
 	if(params.getParam("background_name", name))
 	{
-		backg = this->getBackground(*name);
+		backg = this->getBackground(name);
 		if(!backg) Y_ERROR_ENV << "please specify an _existing_ Background!!" << yendl;
 	}
 
@@ -969,7 +961,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("filter_type", name); // AA filter type
 
 	std::stringstream aaSettings;
-	aaSettings << "AA Settings (" << ((name) ? *name : "box") << "): Tile size=" << film->getTileSize();
+	aaSettings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << film->getTileSize();
 	yafLog.appendAANoiseSettings(aaSettings.str());
 
 	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;

@@ -460,7 +460,7 @@ const volumeHandler_t *blendMat_t::getVolumeHandler(bool inside) const
 
 material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &env)
 {
-	const std::string *name = nullptr;
+	std::string name;
 	const material_t *m1 = nullptr, *m2 = nullptr;
 	double blend_val = 0.5;
 	std::string sVisibility = "normal";
@@ -474,9 +474,9 @@ material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
 
 	if(! params.getParam("material1", name)) return nullptr;
-	m1 = env.getMaterial(*name);
+	m1 = env.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m2 = env.getMaterial(*name);
+	m2 = env.getMaterial(name);
 	params.getParam("blend_value", blend_val);
 
 	params.getParam("receive_shadows", receive_shadows);
@@ -514,7 +514,7 @@ material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->mShadersTable.find(*name);
+			auto i = mat->mShadersTable.find(name);
 			if(i != mat->mShadersTable.end())
 			{
 				mat->blendS = i->second;
@@ -523,7 +523,7 @@ material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 			}
 			else
 			{
-				Y_ERROR << "Blend: Blend shader node '" << *name << "' does not exist!" << yendl;
+				Y_ERROR << "Blend: Blend shader node '" << name << "' does not exist!" << yendl;
 				delete mat;
 				return nullptr;
 			}

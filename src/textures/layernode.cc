@@ -144,13 +144,13 @@ bool layerNode_t::isViewDependant() const
 
 bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 {
-	const std::string *name = nullptr;
+	std::string name;
 	if(params.getParam("input", name))
 	{
-		input = find(*name);
+		input = find(name);
 		if(!input)
 		{
-			Y_WARNING << "LayerNode: Couldn't get input " << *name << yendl;
+			Y_WARNING << "LayerNode: Couldn't get input " << name << yendl;
 			return false;
 		}
 	}
@@ -162,10 +162,10 @@ bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find
 
 	if(params.getParam("upper_layer", name))
 	{
-		upperLayer = find(*name);
+		upperLayer = find(name);
 		if(!upperLayer)
 		{
-			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << *name << yendl;
+			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << yendl;
 			return false;
 		}
 	}

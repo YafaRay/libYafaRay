@@ -139,8 +139,8 @@ color_t textureBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
 background_t *textureBackground_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
 	texture_t *tex = nullptr;
-	const std::string *texname = nullptr;
-	const std::string *mapping = nullptr;
+	std::string texname;
+	std::string mapping;
 	PROJECTION pr = spherical;
 	float power = 1.0, rot = 0.0;
 	bool IBL = false;
@@ -156,15 +156,15 @@ background_t *textureBackground_t::factory(paraMap_t &params, renderEnvironment_
 		Y_ERROR << "TextureBackground: No texture given for texture background!" << yendl;
 		return nullptr;
 	}
-	tex = render.getTexture(*texname);
+	tex = render.getTexture(texname);
 	if(!tex)
 	{
-		Y_ERROR << "TextureBackground: Texture '" << *texname << "' for textureback not existant!" << yendl;
+		Y_ERROR << "TextureBackground: Texture '" << texname << "' for textureback not existant!" << yendl;
 		return nullptr;
 	}
 	if(params.getParam("mapping", mapping))
 	{
-		if(*mapping == "probe" || *mapping == "angular") pr = angular;
+		if(mapping == "probe" || mapping == "angular") pr = angular;
 	}
 	params.getParam("ibl", IBL);
 	params.getParam("smartibl_blur", IBL_blur);

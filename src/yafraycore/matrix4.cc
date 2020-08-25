@@ -21,43 +21,41 @@
  */
 
 #include <core_api/matrix4.h>
-using namespace std;
-#include <cstdlib>
-#include <algorithm>
+#include <core_api/logging.h>
 
 __BEGIN_YAFRAY
 
-matrix4x4_t::matrix4x4_t(const float init): _invalid(0)
+matrix4x4_t::matrix4x4_t(const float init): invalid_(0)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; ++j)
 		{
 			if(i == j)
-				matrix[i][j] = (float)init;
+				matrix_[i][j] = (float)init;
 			else
-				matrix[i][j] = 0;
+				matrix_[i][j] = 0;
 		}
 }
 
-matrix4x4_t::matrix4x4_t(const matrix4x4_t &source): _invalid(source._invalid)
+matrix4x4_t::matrix4x4_t(const matrix4x4_t &source): invalid_(source.invalid_)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
-			matrix[i][j] = source[i][j];
+			matrix_[i][j] = source[i][j];
 }
 
 matrix4x4_t::matrix4x4_t(const float source[4][4])
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
-			matrix[i][j] = source[i][j];
+			matrix_[i][j] = source[i][j];
 }
 
 matrix4x4_t::matrix4x4_t(const double source[4][4])
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
-			matrix[i][j] = source[i][j];
+			matrix_[i][j] = source[i][j];
 }
 
 #define SWAP(m,i,b)\
@@ -78,33 +76,33 @@ matrix4x4_t &matrix4x4_t::inverse()
 		int ci = 0;
 		for(int k = i; k < 4; ++k)
 		{
-			if(std::fabs(matrix[k][i]) > max)
+			if(std::fabs(matrix_[k][i]) > max)
 			{
-				max = std::fabs(matrix[k][i]);
+				max = std::fabs(matrix_[k][i]);
 				ci = k;
 			}
 		}
 		if(max == 0)
 		{
-			cout << "Error mu grave invirtiendo matriz\n";
-			cout << i << "\n";
-			_invalid = 1;
+			Y_ERROR << "Serious error inverting matrix" << yendl;
+			Y_ERROR << i << yendl;
+			invalid_ = 1;
 		}
-		SWAP(matrix, i, ci); SWAP(iden, i, ci);
-		float factor = matrix[i][i];
-		DIV(matrix, i, factor); DIV(iden, i, factor);
+		SWAP(matrix_, i, ci); SWAP(iden, i, ci);
+		float factor = matrix_[i][i];
+		DIV(matrix_, i, factor); DIV(iden, i, factor);
 		for(int k = 0; k < 4; ++k)
 		{
 			if(k != i)
 			{
-				factor = matrix[k][i];
-				RES(matrix, k, i, factor); RES(iden, k, i, factor);
+				factor = matrix_[k][i];
+				RES(matrix_, k, i, factor); RES(iden, k, i, factor);
 			}
 		}
 	}
 	for(int i = 0; i < 4; ++i)
 		for(int j = 0; j < 4; ++j)
-			matrix[i][j] = iden[i][j];
+			matrix_[i][j] = iden[i][j];
 	return *this;
 }
 
@@ -112,7 +110,7 @@ matrix4x4_t &matrix4x4_t::transpose()
 {
 	for(int i = 0; i < 3; ++i)
 		for(int j = i + 1; j < 4; ++j)
-			std::swap(matrix[i][j], matrix[j][i]);
+			std::swap(matrix_[i][j], matrix_[j][i]);
 	return *this;
 }
 
@@ -178,9 +176,9 @@ void matrix4x4_t::rotateY(float degrees)
 
 void matrix4x4_t::scale(float sx, float sy, float sz)
 {
-	matrix[0][0] *= sx;  matrix[1][0] *= sx;  matrix[2][0] *= sx;
-	matrix[0][1] *= sy;  matrix[1][1] *= sy;  matrix[2][1] *= sy;
-	matrix[0][2] *= sz;  matrix[1][2] *= sz;  matrix[2][2] *= sz;
+	matrix_[0][0] *= sx; matrix_[1][0] *= sx; matrix_[2][0] *= sx;
+	matrix_[0][1] *= sy; matrix_[1][1] *= sy; matrix_[2][1] *= sy;
+	matrix_[0][2] *= sz; matrix_[1][2] *= sz; matrix_[2][2] *= sz;
 }
 
 
@@ -190,13 +188,13 @@ void matrix4x4_t::identity()
 		for(int j = 0; j < 4; ++j)
 		{
 			if(i == j)
-				matrix[i][j] = 1.0;
+				matrix_[i][j] = 1.0;
 			else
-				matrix[i][j] = 0;
+				matrix_[i][j] = 0;
 		}
 }
 
-ostream &operator << (ostream &out, matrix4x4_t &m)
+std::ostream &operator << (std::ostream &out, matrix4x4_t &m)
 {
 	out << "/ " << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << " \\\n";
 	out << "| " << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << " |\n";

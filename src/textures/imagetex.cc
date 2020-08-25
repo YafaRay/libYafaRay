@@ -530,22 +530,22 @@ void textureImage_t::generateEWALookupTable()
 	}
 }
 
-int string2cliptype(const std::string *clipname)
+int string2cliptype(const std::string &clipname)
 {
 	// default "repeat"
 	int	tex_clipmode = TCL_REPEAT;
-	if(!clipname) return tex_clipmode;
-	if(*clipname == "extend")			tex_clipmode = TCL_EXTEND;
-	else if(*clipname == "clip")		tex_clipmode = TCL_CLIP;
-	else if(*clipname == "clipcube")	tex_clipmode = TCL_CLIPCUBE;
-	else if(*clipname == "checker")	tex_clipmode = TCL_CHECKER;
+	if(clipname.empty()) return tex_clipmode;
+	if(clipname == "extend")		tex_clipmode = TCL_EXTEND;
+	else if(clipname == "clip")		tex_clipmode = TCL_CLIP;
+	else if(clipname == "clipcube")	tex_clipmode = TCL_CLIPCUBE;
+	else if(clipname == "checker")	tex_clipmode = TCL_CHECKER;
 	return tex_clipmode;
 }
 
 texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &render)
 {
-	const std::string *name = nullptr;
-	const std::string *intpstr = nullptr;
+	std::string name;
+	std::string intpstr;
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
@@ -565,7 +565,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("texture_optimization", texture_optimization_string);
 	params.getParam("img_grayscale", img_grayscale);
 
-	if(!name)
+	if(name.empty())
 	{
 		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << yendl;
 		return nullptr;
@@ -574,18 +574,15 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	// interpolation type, bilinear default
 	int intp = INTP_BILINEAR;
 
-	if(intpstr)
-	{
-		if(*intpstr == "none") intp = INTP_NONE;
-		else if(*intpstr == "bicubic") intp = INTP_BICUBIC;
-		else if(*intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
-		else if(*intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
-	}
+	if(intpstr == "none") intp = INTP_NONE;
+	else if(intpstr == "bicubic") intp = INTP_BICUBIC;
+	else if(intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
+	else if(intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
 
-	size_t lDot = name->rfind(".") + 1;
-	size_t lSlash = name->rfind("/") + 1;
+	size_t lDot = name.rfind(".") + 1;
+	size_t lSlash = name.rfind("/") + 1;
 
-	std::string ext = toLower(name->substr(lDot));
+	std::string ext = toLower(name.substr(lDot));
 
 	std::string fmt = render.getImageFormatFromExtension(ext);
 
@@ -599,7 +596,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	ihpm["type"] = fmt;
 	ihpm["for_output"] = false;
 	std::string ihname = "ih";
-	ihname.append(toLower(name->substr(lSlash, lDot - lSlash - 1)));
+	ihname.append(toLower(name.substr(lSlash, lDot - lSlash - 1)));
 
 	ih = render.createImageHandler(ihname, ihpm);
 
@@ -635,7 +632,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	ih->setTextureOptimization(texture_optimization);	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	ih->setGrayScaleSetting(img_grayscale);
 
-	if(!ih->loadFromFile(*name))
+	if(!ih->loadFromFile(name))
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
 		return nullptr;
@@ -674,7 +671,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	int xrep = 1, yrep = 1;
 	double minx = 0.0, miny = 0.0, maxx = 1.0, maxy = 1.0;
 	double cdist = 0.0;
-	const std::string *clipmode = nullptr;
+	std::string clipmode;
 	bool mirror_x = false;
 	bool mirror_y = false;
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;

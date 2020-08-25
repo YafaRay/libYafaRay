@@ -75,12 +75,12 @@ object3d_t *sphere_factory(paraMap_t &params, renderEnvironment_t &env)
 	point3d_t center(0.f, 0.f, 0.f);
 	double radius(1.f);
 	const material_t *mat;
-	const std::string *matname = nullptr;
+	std::string matname;
 	params.getParam("center", center);
 	params.getParam("radius", radius);
 	params.getParam("material", matname);
-	if(!matname) return nullptr;
-	mat = env.getMaterial(*matname);
+	if(matname.empty()) return nullptr;
+	mat = env.getMaterial(matname);
 	if(!mat) return nullptr;
 	sphere_t *sphere = new sphere_t(center, radius, mat);
 	return new primObject_t(sphere);

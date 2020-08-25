@@ -5,6 +5,7 @@
 #include <core_api/session.h>
 #include <core_api/environment.h>
 #include <core_api/scene.h>
+#include <core_api/matrix4.h>
 #include <core_api/imagefilm.h>
 #include <core_api/params.h>
 #include <signal.h>
@@ -260,14 +261,14 @@ void yafrayInterface_t::paramsSetColor(const char *name, float *rgb, bool with_a
 
 void yafrayInterface_t::paramsSetMatrix(const char *name, float m[4][4], bool transpose)
 {
-	if(transpose)	cparams->setMatrix(std::string(name), matrix4x4_t(m).transpose());
-	else		cparams->setMatrix(std::string(name), matrix4x4_t(m));
+	if(transpose)	(*cparams)[std::string(name)] = matrix4x4_t(m).transpose();
+	else		(*cparams)[std::string(name)] = matrix4x4_t(m);
 }
 
 void yafrayInterface_t::paramsSetMatrix(const char *name, double m[4][4], bool transpose)
 {
-	if(transpose)	cparams->setMatrix(std::string(name), matrix4x4_t(m).transpose());
-	else		cparams->setMatrix(std::string(name), matrix4x4_t(m));
+	if(transpose)	(*cparams)[std::string(name)] = matrix4x4_t(m).transpose();
+	else		(*cparams)[std::string(name)] = matrix4x4_t(m);
 }
 
 void yafrayInterface_t::paramsSetMemMatrix(const char *name, float *matrix, bool transpose)

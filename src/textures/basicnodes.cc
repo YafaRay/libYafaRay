@@ -328,7 +328,7 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironment_t &render)
 {
 	const texture_t *tex = nullptr;
-	const std::string *texname = nullptr, *option = nullptr;
+	std::string texname, option;
 	TEX_COORDS tc = TXC_GLOB;
 	TEX_PROJ maptype = TXP_PLAIN;
 	float bumpStr = 1.f;
@@ -341,7 +341,7 @@ shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironmen
 		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
 		return nullptr;
 	}
-	tex = render.getTexture(*texname);
+	tex = render.getTexture(texname);
 	if(!tex)
 	{
 		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << yendl;
@@ -350,25 +350,25 @@ shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironmen
 	textureMapper_t *tm = new textureMapper_t(tex);
 	if(params.getParam("texco", option))
 	{
-		if(*option == "uv") tc = TXC_UV;
-		else if(*option == "global") tc = TXC_GLOB;
-		else if(*option == "orco") tc = TXC_ORCO;
-		else if(*option == "transformed") tc = TXC_TRAN;
-		else if(*option == "window") tc = TXC_WIN;
-		else if(*option == "normal") tc = TXC_NOR;
-		else if(*option == "reflect") tc = TXC_REFL;
-		else if(*option == "stick") tc = TXC_STICK;
-		else if(*option == "stress") tc = TXC_STRESS;
-		else if(*option == "tangent") tc = TXC_TAN;
+		if(option == "uv") tc = TXC_UV;
+		else if(option == "global") tc = TXC_GLOB;
+		else if(option == "orco") tc = TXC_ORCO;
+		else if(option == "transformed") tc = TXC_TRAN;
+		else if(option == "window") tc = TXC_WIN;
+		else if(option == "normal") tc = TXC_NOR;
+		else if(option == "reflect") tc = TXC_REFL;
+		else if(option == "stick") tc = TXC_STICK;
+		else if(option == "stress") tc = TXC_STRESS;
+		else if(option == "tangent") tc = TXC_TAN;
 	}
 	if(params.getParam("mapping", option) && tex->discrete())
 	{
-		if(*option == "plain") maptype = TXP_PLAIN;
-		else if(*option == "cube") maptype = TXP_CUBE;
-		else if(*option == "tube") maptype = TXP_TUBE;
-		else if(*option == "sphere") maptype = TXP_SPHERE;
+		if(option == "plain") maptype = TXP_PLAIN;
+		else if(option == "cube") maptype = TXP_CUBE;
+		else if(option == "tube") maptype = TXP_TUBE;
+		else if(option == "sphere") maptype = TXP_SPHERE;
 	}
-	params.getMatrix("transform", mtx);
+	params.getParam("transform", mtx);
 	params.getParam("scale", scale);
 	params.getParam("offset", offset);
 	params.getParam("do_scalar", scalar);
@@ -464,13 +464,13 @@ void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfa
 
 bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 {
-	const std::string *name = nullptr;
+	std::string name;
 	if(params.getParam("input1", name))
 	{
-		input1 = find(*name);
+		input1 = find(name);
 		if(!input1)
 		{
-			Y_ERROR << "MixNode: Couldn't get input1 " << *name << yendl;
+			Y_ERROR << "MixNode: Couldn't get input1 " << name << yendl;
 			return false;
 		}
 	}
@@ -482,10 +482,10 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 
 	if(params.getParam("input2", name))
 	{
-		input2 = find(*name);
+		input2 = find(name);
 		if(!input2)
 		{
-			Y_ERROR << "MixNode: Couldn't get input2 " << *name << yendl;
+			Y_ERROR << "MixNode: Couldn't get input2 " << name << yendl;
 			return false;
 		}
 	}
@@ -497,10 +497,10 @@ bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
 
 	if(params.getParam("factor", name))
 	{
-		factor = find(*name);
+		factor = find(name);
 		if(!factor)
 		{
-			Y_ERROR << "MixNode: Couldn't get factor " << *name << yendl;
+			Y_ERROR << "MixNode: Couldn't get factor " << name << yendl;
 			return false;
 		}
 	}
