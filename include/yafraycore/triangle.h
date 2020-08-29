@@ -1,20 +1,20 @@
 #pragma once
 
-#ifndef Y_TRIANGLE_H
-#define Y_TRIANGLE_H
+#ifndef YAFARAY_TRIANGLE_H
+#define YAFARAY_TRIANGLE_H
 
 #include <yafray_constants.h>
 #include <yafray_config.h>
 #include "meshtypes.h"
 #include <core_api/primitive.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-#define Y_MIN3(a,b,c) ( ((a)>(b)) ? ( ((b)>(c))?(c):(b)):( ((a)>(c))?(c):(a)) )
-#define Y_MAX3(a,b,c) ( ((a)<(b)) ? ( ((b)>(c))?(b):(c)):( ((a)>(c))?(a):(c)) )
+#define Y_MIN_3(a,b,c) ( ((a)>(b)) ? ( ((b)>(c))?(c):(b)):( ((a)>(c))?(c):(a)) )
+#define Y_MAX_3(a,b,c) ( ((a)<(b)) ? ( ((b)>(c))?(b):(c)):( ((a)>(c))?(a):(c)) )
 
 // triBoxOverlap() is in src/yafraycore/tribox3_d.cc!
-int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3][3]);
+int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts);
 
 
 /*! non-inherited triangle, so no virtual functions to allow inlining
@@ -27,339 +27,339 @@ int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3]
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
-class YAFRAYCORE_EXPORT triangle_t
+class YAFRAYCORE_EXPORT Triangle
 {
-		friend class scene_t;
-		friend class triangleObject_t;
-		friend class triangleInstance_t;
+		friend class Scene;
+		friend class TriangleObject;
+		friend class TriangleInstance;
 
 	public:
-		triangle_t(): pa(-1), pb(-1), pc(-1), na(-1), nb(-1), nc(-1), mesh(nullptr), intersectionBiasFactor(0.f), edge1(0.f), edge2(0.f) { /* Empty */ }
-		virtual ~triangle_t() { }
-		triangle_t(int ia, int ib, int ic, triangleObject_t *m): pa(ia), pb(ib), pc(ic), na(-1), nb(-1), nc(-1), mesh(m), intersectionBiasFactor(0.f), edge1(0.f), edge2(0.f) {  updateIntersectionCachedValues(); }
-		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
-		virtual bound_t getBound() const;
-		virtual bool intersectsBound(exBound_t &eb) const;
+		Triangle(): pa_(-1), pb_(-1), pc_(-1), na_(-1), nb_(-1), nc_(-1), mesh_(nullptr), intersection_bias_factor_(0.f), edge_1_(0.f), edge_2_(0.f) { /* Empty */ }
+		virtual ~Triangle() { }
+		Triangle(int ia, int ib, int ic, TriangleObject *m): pa_(ia), pb_(ib), pc_(ic), na_(-1), nb_(-1), nc_(-1), mesh_(m), intersection_bias_factor_(0.f), edge_1_(0.f), edge_2_(0.f) {  updateIntersectionCachedValues(); }
+		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const;
+		virtual Bound getBound() const;
+		virtual bool intersectsBound(ExBound &eb) const;
 		virtual bool clippingSupport() const { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
-		virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
-		virtual const material_t *getMaterial() const { return material; }
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
+		virtual bool clipToBound(double bound[2][3], int axis, Bound &clipped, void *d_old, void *d_new) const;
+		virtual const Material *getMaterial() const { return material_; }
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const;
 		virtual float surfaceArea() const;
-		virtual void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
+		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const;
 
-		virtual vector3d_t getNormal() const { return vector3d_t(normal); }
-		void setVertexIndices(int a, int b, int c) { pa = a, pb = b, pc = c; updateIntersectionCachedValues(); }
-		void setMaterial(const material_t *m) { material = m; }
-		void setNormals(int a, int b, int c) { na = a, nb = b, nc = c; }
+		virtual Vec3 getNormal() const { return Vec3(normal_); }
+		void setVertexIndices(int a, int b, int c) { pa_ = a, pb_ = b, pc_ = c; updateIntersectionCachedValues(); }
+		void setMaterial(const Material *m) { material_ = m; }
+		void setNormals(int a, int b, int c) { na_ = a, nb_ = b, nc_ = c; }
 		virtual void recNormal();
-		size_t getIndex() const { return selfIndex; }
-		bool operator == (triangle_t const &a) const
+		size_t getIndex() const { return self_index_; }
+		bool operator == (Triangle const &a) const
 		{
-			return selfIndex == a.selfIndex;
+			return self_index_ == a.self_index_;
 		}
-		friend std::ostream &operator << (std::ostream &out, const triangle_t &t)
+		friend std::ostream &operator << (std::ostream &out, const Triangle &t)
 		{
-			out << "[ idx = " << t.selfIndex << " (" << t.pa << "," << t.pb << "," << t.pc << ")]";
+			out << "[ idx = " << t.self_index_ << " (" << t.pa_ << "," << t.pb_ << "," << t.pc_ << ")]";
 			return out;
 		}
-		virtual const triangleObject_t *getMesh() const { return mesh; }
+		virtual const TriangleObject *getMesh() const { return mesh_; }
 		virtual void updateIntersectionCachedValues();
 
 	private:
-		int pa, pb, pc; //!< indices in point array, referenced in mesh.
-		int na, nb, nc; //!< indices in normal array, if mesh is smoothed.
-		const material_t *material;
-		vector3d_t normal; //!< the geometric normal
-		const triangleObject_t *mesh;
-		size_t selfIndex;
-		float intersectionBiasFactor;	//!< Intersection Bias factor based on longest edge to reduce
-		vector3d_t edge1, edge2;
+		int pa_, pb_, pc_; //!< indices in point array, referenced in mesh.
+		int na_, nb_, nc_; //!< indices in normal array, if mesh is smoothed.
+		const Material *material_;
+		Vec3 normal_; //!< the geometric normal
+		const TriangleObject *mesh_;
+		size_t self_index_;
+		float intersection_bias_factor_;	//!< Intersection Bias factor based on longest edge to reduce
+		Vec3 edge_1_, edge_2_;
 };
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
-class YAFRAYCORE_EXPORT triangleInstance_t: public triangle_t
+class YAFRAYCORE_EXPORT TriangleInstance: public Triangle
 {
-		friend class scene_t;
-		friend class triangleObjectInstance_t;
+		friend class Scene;
+		friend class TriangleObjectInstance;
 
 	public:
-		triangleInstance_t(): mBase(nullptr), mesh(nullptr) { }
-		triangleInstance_t(triangle_t *base, triangleObjectInstance_t *m): mBase(base), mesh(m) { updateIntersectionCachedValues();}
-		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
-		virtual bound_t getBound() const;
-		virtual bool intersectsBound(exBound_t &eb) const;
+		TriangleInstance(): m_base_(nullptr), mesh_(nullptr) { }
+		TriangleInstance(Triangle *base, TriangleObjectInstance *m): m_base_(base), mesh_(m) { updateIntersectionCachedValues();}
+		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const;
+		virtual Bound getBound() const;
+		virtual bool intersectsBound(ExBound &eb) const;
 		virtual bool clippingSupport() const { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
-		virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
-		virtual const material_t *getMaterial() const { return mBase->getMaterial(); }
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
+		virtual bool clipToBound(double bound[2][3], int axis, Bound &clipped, void *d_old, void *d_new) const;
+		virtual const Material *getMaterial() const { return m_base_->getMaterial(); }
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const;
 		virtual float surfaceArea() const;
-		virtual void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
+		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const;
 
-		virtual vector3d_t getNormal() const;
+		virtual Vec3 getNormal() const;
 		virtual void recNormal() { /* Empty */ };
 		virtual void updateIntersectionCachedValues();
 
 	private:
-		const triangle_t *mBase;
-		const triangleObjectInstance_t *mesh;
+		const Triangle *m_base_;
+		const TriangleObjectInstance *mesh_;
 };
 
 /*! inherited triangle, so has virtual functions; connected to meshObject_t;
 	otherwise identical to triangle_t
 */
 
-class YAFRAYCORE_EXPORT vTriangle_t: public primitive_t
+class YAFRAYCORE_EXPORT VTriangle: public Primitive
 {
-		friend class scene_t;
+		friend class Scene;
 	public:
-		vTriangle_t() {};
-		vTriangle_t(int ia, int ib, int ic, meshObject_t *m): pa(ia), pb(ib), pc(ic),
-			na(-1), nb(-1), nc(-1), mesh(m) { /*recNormal();*/ };
-		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
-		virtual bound_t getBound() const;
-		virtual bool intersectsBound(exBound_t &eb) const;
+		VTriangle() {};
+		VTriangle(int ia, int ib, int ic, MeshObject *m): pa_(ia), pb_(ib), pc_(ic),
+														  na_(-1), nb_(-1), nc_(-1), mesh_(m) { /*recNormal();*/ };
+		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const;
+		virtual Bound getBound() const;
+		virtual bool intersectsBound(ExBound &eb) const;
 		virtual bool clippingSupport() const { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
-		virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
-		virtual const material_t *getMaterial() const { return material; }
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
+		virtual bool clipToBound(double bound[2][3], int axis, Bound &clipped, void *d_old, void *d_new) const;
+		virtual const Material *getMaterial() const { return material_; }
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const;
 
 		// following are methods which are not part of primitive interface:
-		void setMaterial(const material_t *m) { material = m; }
-		void setNormals(int a, int b, int c) { na = a, nb = b, nc = c; }
-		vector3d_t getNormal() { return vector3d_t(normal); }
+		void setMaterial(const Material *m) { material_ = m; }
+		void setNormals(int a, int b, int c) { na_ = a, nb_ = b, nc_ = c; }
+		Vec3 getNormal() { return Vec3(normal_); }
 		float surfaceArea() const;
-		void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
+		void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const;
 		void recNormal();
 
 	protected:
-		int pa, pb, pc; //!< indices in point array, referenced in mesh.
-		int na, nb, nc; //!< indices in normal array, if mesh is smoothed.
-		normal_t normal; //!< the geometric normal
-		const material_t *material;
-		const meshObject_t *mesh;
+		int pa_, pb_, pc_; //!< indices in point array, referenced in mesh.
+		int na_, nb_, nc_; //!< indices in normal array, if mesh is smoothed.
+		Normal normal_; //!< the geometric normal
+		const Material *material_;
+		const MeshObject *mesh_;
 };
 
 /*! a triangle supporting time based deformation described by a quadratic bezier spline */
-class YAFRAYCORE_EXPORT bsTriangle_t: public primitive_t
+class YAFRAYCORE_EXPORT BsTriangle: public Primitive
 {
-		friend class scene_t;
+		friend class Scene;
 	public:
-		bsTriangle_t() {};
-		bsTriangle_t(int ia, int ib, int ic, meshObject_t *m): pa(ia), pb(ib), pc(ic),
-			na(-1), nb(-1), nc(-1), mesh(m) { };
-		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
-		virtual bound_t getBound() const;
+		BsTriangle() {};
+		BsTriangle(int ia, int ib, int ic, MeshObject *m): pa_(ia), pb_(ib), pc_(ic),
+														   na_(-1), nb_(-1), nc_(-1), mesh_(m) { };
+		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const;
+		virtual Bound getBound() const;
 		//virtual bool intersectsBound(exBound_t &eb) const;
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		//virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const;
-		virtual const material_t *getMaterial() const { return material; }
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
+		virtual const Material *getMaterial() const { return material_; }
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const;
 
 		// following are methods which are not part of primitive interface:
-		void setMaterial(const material_t *m) { material = m; }
-		void setNormals(int a, int b, int c) { na = a, nb = b, nc = c; }
+		void setMaterial(const Material *m) { material_ = m; }
+		void setNormals(int a, int b, int c) { na_ = a, nb_ = b, nc_ = c; }
 		//float surfaceArea() const;
 		//void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const;
 
 	protected:
-		int pa, pb, pc; //!< indices in point array, referenced in mesh.
-		int na, nb, nc; //!< indices in normal array, if mesh is smoothed.
+		int pa_, pb_, pc_; //!< indices in point array, referenced in mesh.
+		int na_, nb_, nc_; //!< indices in normal array, if mesh is smoothed.
 		//normal_t normal; //!< the geometric normal
-		const material_t *material;
-		const meshObject_t *mesh;
+		const Material *material_;
+		const MeshObject *mesh_;
 };
 
-inline void triangle_t::updateIntersectionCachedValues()
+inline void Triangle::updateIntersectionCachedValues()
 {
-	point3d_t const &a = mesh->getVertex(pa);
-	point3d_t const &b = mesh->getVertex(pb);
-	point3d_t const &c = mesh->getVertex(pc);
+	Point3 const &a = mesh_->getVertex(pa_);
+	Point3 const &b = mesh_->getVertex(pb_);
+	Point3 const &c = mesh_->getVertex(pc_);
 
-	edge1 = b - a;
-	edge2 = c - a;
+	edge_1_ = b - a;
+	edge_2_ = c - a;
 
-	intersectionBiasFactor = 0.1f * MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	intersection_bias_factor_ = 0.1f * MIN_RAYDIST * std::max(edge_1_.length(), edge_2_.length());
 }
 
 
-inline void triangleInstance_t::updateIntersectionCachedValues()
+inline void TriangleInstance::updateIntersectionCachedValues()
 {
-	point3d_t const &a = mesh->getVertex(mBase->pa);
-	point3d_t const &b = mesh->getVertex(mBase->pb);
-	point3d_t const &c = mesh->getVertex(mBase->pc);
+	Point3 const &a = mesh_->getVertex(m_base_->pa_);
+	Point3 const &b = mesh_->getVertex(m_base_->pb_);
+	Point3 const &c = mesh_->getVertex(m_base_->pc_);
 
-	edge1 = b - a;
-	edge2 = c - a;
+	edge_1_ = b - a;
+	edge_2_ = c - a;
 
-	intersectionBiasFactor = 0.1f * MIN_RAYDIST * std::max(edge1.length(), edge2.length());
+	intersection_bias_factor_ = 0.1f * MIN_RAYDIST * std::max(edge_1_.length(), edge_2_.length());
 }
 
 
-inline bool triangle_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
+inline bool Triangle::intersect(const Ray &ray, float *t, IntersectData &data) const
 {
 	// Tomas Möller and Ben Trumbore ray intersection scheme
 	// Getting the barycentric coordinates of the hit point
 	// const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
 
-	point3d_t const &a = mesh->getVertex(pa);
+	Point3 const &a = mesh_->getVertex(pa_);
 
-	vector3d_t pvec = ray.dir ^ edge2;
-	float det = edge1 * pvec;
+	Vec3 pvec = ray.dir_ ^edge_2_;
+	float det = edge_1_ * pvec;
 
-	float epsilon = intersectionBiasFactor;
+	float epsilon = intersection_bias_factor_;
 
 	if(det > -epsilon && det < epsilon) return false;
 
 	float inv_det = 1.f / det;
-	vector3d_t tvec = ray.from - a;
+	Vec3 tvec = ray.from_ - a;
 	float u = (tvec * pvec) * inv_det;
 
 	if(u < 0.f || u > 1.f) return false;
 
-	vector3d_t qvec = tvec ^ edge1;
-	float v = (ray.dir * qvec) * inv_det;
+	Vec3 qvec = tvec ^edge_1_;
+	float v = (ray.dir_ * qvec) * inv_det;
 
 	if((v < 0.f) || ((u + v) > 1.f)) return false;
 
-	*t = edge2 * qvec * inv_det;
+	*t = edge_2_ * qvec * inv_det;
 
 	if(*t < epsilon) return false;
 
-	data.b1 = u;
-	data.b2 = v;
-	data.b0 = 1 - u - v;
-	data.edge1 = &edge1;
-	data.edge2 = &edge2;
+	data.b_1_ = u;
+	data.b_2_ = v;
+	data.b_0_ = 1 - u - v;
+	data.edge_1_ = &edge_1_;
+	data.edge_2_ = &edge_2_;
 	return true;
 }
 
-inline bound_t triangle_t::getBound() const
+inline Bound Triangle::getBound() const
 {
-	point3d_t const &a = mesh->getVertex(pa);
-	point3d_t const &b = mesh->getVertex(pb);
-	point3d_t const &c = mesh->getVertex(pc);
+	Point3 const &a = mesh_->getVertex(pa_);
+	Point3 const &b = mesh_->getVertex(pb_);
+	Point3 const &c = mesh_->getVertex(pc_);
 
-	point3d_t l, h;
-	l.x = Y_MIN3(a.x, b.x, c.x);
-	l.y = Y_MIN3(a.y, b.y, c.y);
-	l.z = Y_MIN3(a.z, b.z, c.z);
-	h.x = Y_MAX3(a.x, b.x, c.x);
-	h.y = Y_MAX3(a.y, b.y, c.y);
-	h.z = Y_MAX3(a.z, b.z, c.z);
-	return bound_t(l, h);
+	Point3 l, h;
+	l.x_ = Y_MIN_3(a.x_, b.x_, c.x_);
+	l.y_ = Y_MIN_3(a.y_, b.y_, c.y_);
+	l.z_ = Y_MIN_3(a.z_, b.z_, c.z_);
+	h.x_ = Y_MAX_3(a.x_, b.x_, c.x_);
+	h.y_ = Y_MAX_3(a.y_, b.y_, c.y_);
+	h.z_ = Y_MAX_3(a.z_, b.z_, c.z_);
+	return Bound(l, h);
 }
 
-inline bool triangle_t::intersectsBound(exBound_t &eb) const
+inline bool Triangle::intersectsBound(ExBound &eb) const
 {
-	double tPoints[3][3];
+	double t_points[3][3];
 
-	point3d_t const &a = mesh->getVertex(pa);
-	point3d_t const &b = mesh->getVertex(pb);
-	point3d_t const &c = mesh->getVertex(pc);
+	Point3 const &a = mesh_->getVertex(pa_);
+	Point3 const &b = mesh_->getVertex(pb_);
+	Point3 const &c = mesh_->getVertex(pc_);
 
 	for(int j = 0; j < 3; ++j)
 	{
-		tPoints[0][j] = a[j];
-		tPoints[1][j] = b[j];
-		tPoints[2][j] = c[j];
+		t_points[0][j] = a[j];
+		t_points[1][j] = b[j];
+		t_points[2][j] = c[j];
 	}
 	// triBoxOverlap() is in src/yafraycore/tribox3_d.cc!
-	return triBoxOverlap(eb.center, eb.halfSize, tPoints);
+	return triBoxOverlap__(eb.center_, eb.half_size_, (double **) t_points);
 }
 
-inline void triangle_t::recNormal()
+inline void Triangle::recNormal()
 {
-	point3d_t const &a = mesh->getVertex(pa);
-	point3d_t const &b = mesh->getVertex(pb);
-	point3d_t const &c = mesh->getVertex(pc);
+	Point3 const &a = mesh_->getVertex(pa_);
+	Point3 const &b = mesh_->getVertex(pb_);
+	Point3 const &c = mesh_->getVertex(pc_);
 
-	normal = ((b - a) ^ (c - a)).normalize();
+	normal_ = ((b - a) ^ (c - a)).normalize();
 }
 
 // triangleInstance_t inlined functions
 
-inline bool triangleInstance_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
+inline bool TriangleInstance::intersect(const Ray &ray, float *t, IntersectData &data) const
 {
 	// Tomas Möller and Ben Trumbore ray intersection scheme
 	// Getting the barycentric coordinates of the hit point
-	point3d_t const &a = mesh->getVertex(mBase->pa);
+	Point3 const &a = mesh_->getVertex(m_base_->pa_);
 
-	vector3d_t pvec = ray.dir ^ edge2;
-	float det = edge1 * pvec;
+	Vec3 pvec = ray.dir_ ^edge_2_;
+	float det = edge_1_ * pvec;
 
-	float epsilon = intersectionBiasFactor;
+	float epsilon = intersection_bias_factor_;
 
 	if(det > -epsilon && det < epsilon) return false;
 
 	float inv_det = 1.f / det;
-	vector3d_t tvec = ray.from - a;
+	Vec3 tvec = ray.from_ - a;
 	float u = (tvec * pvec) * inv_det;
 
 	if(u < 0.f || u > 1.f) return false;
 
-	vector3d_t qvec = tvec ^ edge1;
-	float v = (ray.dir * qvec) * inv_det;
+	Vec3 qvec = tvec ^edge_1_;
+	float v = (ray.dir_ * qvec) * inv_det;
 
 	if((v < 0.f) || ((u + v) > 1.f)) return false;
 
-	*t = edge2 * qvec * inv_det;
+	*t = edge_2_ * qvec * inv_det;
 
 	if(*t < epsilon) return false;
 
-	data.b1 = u;
-	data.b2 = v;
-	data.b0 = 1 - u - v;
-	data.edge1 = &edge1;
-	data.edge2 = &edge2;
+	data.b_1_ = u;
+	data.b_2_ = v;
+	data.b_0_ = 1 - u - v;
+	data.edge_1_ = &edge_1_;
+	data.edge_2_ = &edge_2_;
 	return true;
 }
 
-inline bound_t triangleInstance_t::getBound() const
+inline Bound TriangleInstance::getBound() const
 {
-	point3d_t const &a = mesh->getVertex(mBase->pa);
-	point3d_t const &b = mesh->getVertex(mBase->pb);
-	point3d_t const &c = mesh->getVertex(mBase->pc);
+	Point3 const &a = mesh_->getVertex(m_base_->pa_);
+	Point3 const &b = mesh_->getVertex(m_base_->pb_);
+	Point3 const &c = mesh_->getVertex(m_base_->pc_);
 
-	point3d_t l, h;
-	l.x = Y_MIN3(a.x, b.x, c.x);
-	l.y = Y_MIN3(a.y, b.y, c.y);
-	l.z = Y_MIN3(a.z, b.z, c.z);
-	h.x = Y_MAX3(a.x, b.x, c.x);
-	h.y = Y_MAX3(a.y, b.y, c.y);
-	h.z = Y_MAX3(a.z, b.z, c.z);
-	return bound_t(l, h);
+	Point3 l, h;
+	l.x_ = Y_MIN_3(a.x_, b.x_, c.x_);
+	l.y_ = Y_MIN_3(a.y_, b.y_, c.y_);
+	l.z_ = Y_MIN_3(a.z_, b.z_, c.z_);
+	h.x_ = Y_MAX_3(a.x_, b.x_, c.x_);
+	h.y_ = Y_MAX_3(a.y_, b.y_, c.y_);
+	h.z_ = Y_MAX_3(a.z_, b.z_, c.z_);
+	return Bound(l, h);
 }
 
-inline bool triangleInstance_t::intersectsBound(exBound_t &eb) const
+inline bool TriangleInstance::intersectsBound(ExBound &eb) const
 {
-	double tPoints[3][3];
+	double t_points[3][3];
 
-	point3d_t const &a = mesh->getVertex(mBase->pa);
-	point3d_t const &b = mesh->getVertex(mBase->pb);
-	point3d_t const &c = mesh->getVertex(mBase->pc);
+	Point3 const &a = mesh_->getVertex(m_base_->pa_);
+	Point3 const &b = mesh_->getVertex(m_base_->pb_);
+	Point3 const &c = mesh_->getVertex(m_base_->pc_);
 
 	for(int j = 0; j < 3; ++j)
 	{
-		tPoints[0][j] = a[j];
-		tPoints[1][j] = b[j];
-		tPoints[2][j] = c[j];
+		t_points[0][j] = a[j];
+		t_points[1][j] = b[j];
+		t_points[2][j] = c[j];
 	}
 	// triBoxOverlap() is in src/yafraycore/tribox3_d.cc!
-	return triBoxOverlap(eb.center, eb.halfSize, tPoints);
+	return triBoxOverlap__(eb.center_, eb.half_size_, (double **) t_points);
 }
 
-inline vector3d_t triangleInstance_t::getNormal() const
+inline Vec3 TriangleInstance::getNormal() const
 {
-	return vector3d_t(mesh->objToWorld * mBase->normal).normalize();
+	return Vec3(mesh_->obj_to_world_ * m_base_->normal_).normalize();
 }
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_TRIANGLE_H
+#endif // YAFARAY_TRIANGLE_H

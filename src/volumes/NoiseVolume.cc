@@ -11,48 +11,48 @@
 #include <utilities/mcqmc.h>
 #include <utilities/mathOptimizations.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
+struct RenderState;
+struct PSample;
 
 class NoiseVolume : public DensityVolume
 {
 	public:
 
-		NoiseVolume(color_t sa, color_t ss, color_t le, float gg, float cov, float sharp, float dens,
-		            point3d_t pmin, point3d_t pmax, int attgridScale, texture_t *noise) :
-			DensityVolume(sa, ss, le, gg, pmin, pmax, attgridScale)
+		NoiseVolume(Rgb sa, Rgb ss, Rgb le, float gg, float cov, float sharp, float dens,
+					Point3 pmin, Point3 pmax, int attgrid_scale, Texture *noise) :
+			DensityVolume(sa, ss, le, gg, pmin, pmax, attgrid_scale)
 		{
-			texDistNoise = noise;
-			cover = cov;
-			sharpness = sharp * sharp;
-			density = dens;
+			tex_dist_noise_ = noise;
+			cover_ = cov;
+			sharpness_ = sharp * sharp;
+			density_ = dens;
 		}
 
-		virtual float Density(point3d_t p);
+		virtual float density(Point3 p);
 
-		static VolumeRegion *factory(paraMap_t &params, renderEnvironment_t &render);
+		static VolumeRegion *factory(ParamMap &params, RenderEnvironment &render);
 
 	protected:
 
-		texture_t *texDistNoise;
-		float cover;
-		float sharpness;
-		float density;
+		Texture *tex_dist_noise_;
+		float cover_;
+		float sharpness_;
+		float density_;
 };
 
-float NoiseVolume::Density(const point3d_t p)
+float NoiseVolume::density(Point3 p)
 {
-	float d = texDistNoise->getColor(p * 0.1f).energy();
+	float d = tex_dist_noise_->getColor(p * 0.1f).energy();
 
-	d = 1.0f / (1.0f + fExp(sharpness * (1.0f - cover - d)));
-	d *= density;
+	d = 1.0f / (1.0f + fExp__(sharpness_ * (1.0f - cover_ - d)));
+	d *= density_;
 
 	return d;
 }
 
-VolumeRegion *NoiseVolume::factory(paraMap_t &params, renderEnvironment_t &render)
+VolumeRegion *NoiseVolume::factory(ParamMap &params, RenderEnvironment &render)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -63,8 +63,8 @@ VolumeRegion *NoiseVolume::factory(paraMap_t &params, renderEnvironment_t &rende
 	float dens = 1.0f;
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
-	int attSc = 1;
-	std::string texName;
+	int att_sc = 1;
+	std::string tex_name;
 
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);
@@ -79,34 +79,34 @@ VolumeRegion *NoiseVolume::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("maxX", max[0]);
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
-	params.getParam("attgridScale", attSc);
-	params.getParam("texture", texName);
+	params.getParam("attgridScale", att_sc);
+	params.getParam("texture", tex_name);
 
-	if(texName.empty())
+	if(tex_name.empty())
 	{
-		Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << yendl;
+		Y_VERBOSE << "NoiseVolume: Noise texture not set, the volume region won't be created." << YENDL;
 		return nullptr;
 	}
 
-	texture_t *noise = render.getTexture(texName);
+	Texture *noise = render.getTexture(tex_name);
 
 	if(!noise)
 	{
-		Y_VERBOSE << "NoiseVolume: Noise texture '" << texName << "' couldn't be found, the volume region won't be created." << yendl;
+		Y_VERBOSE << "NoiseVolume: Noise texture '" << tex_name << "' couldn't be found, the volume region won't be created." << YENDL;
 		return nullptr;
 	}
 
-	NoiseVolume *vol = new NoiseVolume(color_t(sa), color_t(ss), color_t(le), g, cov, sharp, dens,
-	                                   point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]), attSc, noise);
+	NoiseVolume *vol = new NoiseVolume(Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens,
+									   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise);
 	return vol;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("NoiseVolume", NoiseVolume::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

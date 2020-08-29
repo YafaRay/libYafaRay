@@ -19,13 +19,13 @@
  */
 
 
-#ifndef ANIMWORKING_H
-#define ANIMWORKING_H
+#ifndef YAFARAY_ANIMWORKING_H
+#define YAFARAY_ANIMWORKING_H
 
 #include <QWidget>
 #include <vector>
 
-#define topFrame 50
+#define TOP_FRAME 50
 
 class AnimWorking : public QWidget
 {
@@ -38,9 +38,9 @@ class AnimWorking : public QWidget
 		void paintEvent(QPaintEvent *e);
 		void timerEvent(QTimerEvent *e);
 	private:
-		std::vector<QPixmap> mSprites;
-		size_t mActFrame;
-		int m_timerId;
+		std::vector<QPixmap> m_sprites_;
+		size_t m_act_frame_;
+		int m_timer_id_;
 };
 
-#endif // ANIMWORKING_H
+#endif // YAFARAY_ANIMWORKING_H

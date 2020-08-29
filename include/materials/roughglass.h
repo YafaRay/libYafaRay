@@ -1,61 +1,61 @@
 #pragma once
 
-#ifndef Y_ROUGHGLASS_H
-#define Y_ROUGHGLASS_H
+#ifndef YAFARAY_ROUGHGLASS_H
+#define YAFARAY_ROUGHGLASS_H
 
 #include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
 #include <core_api/scene.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class roughGlassMat_t: public nodeMaterial_t
+class RoughGlassMaterial: public NodeMaterial
 {
 	public:
-		roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false) const { return 0.f; }
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const { return 0.f; }
-		virtual bool isTransparent() const { return fakeShadow; }
-		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual float getMatIOR() const;
-		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
-		virtual color_t getGlossyColor(const renderState_t &state) const
+		RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = NormalVisible);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, unsigned int &bsdf_types) const;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval = false) const { return 0.f; }
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const { return 0.f; }
+		virtual bool isTransparent() const { return fake_shadow_; }
+		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual float getMatIor() const;
+		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
+		virtual Rgb getGlossyColor(const RenderState &state) const
 		{
-			nodeStack_t stack(state.userdata);
-			return (mirColS ? mirColS->getColor(stack) : specRefCol);
+			NodeStack stack(state.userdata_);
+			return (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);
 		}
-		virtual color_t getTransColor(const renderState_t &state) const
+		virtual Rgb getTransColor(const RenderState &state) const
 		{
-			nodeStack_t stack(state.userdata);
-			return (filterColS ? filterColS->getColor(stack) : filterCol);
+			NodeStack stack(state.userdata_);
+			return (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_);
 		}
-		virtual color_t getMirrorColor(const renderState_t &state) const
+		virtual Rgb getMirrorColor(const RenderState &state) const
 		{
-			nodeStack_t stack(state.userdata);
-			return (mirColS ? mirColS->getColor(stack) : specRefCol);
+			NodeStack stack(state.userdata_);
+			return (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);
 		}
 
 	protected:
-		shaderNode_t *bumpS = nullptr;
-		shaderNode_t *mirColS = nullptr;
-		shaderNode_t *roughnessS = nullptr;
-		shaderNode_t *iorS = nullptr;
-		shaderNode_t *filterColS = nullptr;
-		shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
-		color_t filterCol, specRefCol;
-		color_t beer_sigma_a;
-		float ior;
-		float a2;
-		float a;
-		bool absorb = false, disperse = false, fakeShadow;
-		float dispersion_power;
-		float CauchyA, CauchyB;
+		ShaderNode *bump_shader_ = nullptr;
+		ShaderNode *mirror_color_shader_ = nullptr;
+		ShaderNode *roughness_shader_ = nullptr;
+		ShaderNode *ior_shader_ = nullptr;
+		ShaderNode *filter_col_shader_ = nullptr;
+		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		Rgb filter_color_, specular_reflection_color_;
+		Rgb beer_sigma_a_;
+		float ior_;
+		float a_2_;
+		float a_;
+		bool absorb_ = false, disperse_ = false, fake_shadow_;
+		float dispersion_power_;
+		float cauchy_a_, cauchy_b_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_ROUGHGLASS_H
+#endif // YAFARAY_ROUGHGLASS_H

@@ -8,38 +8,36 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
+struct RenderState;
+struct PSample;
 
-class ExpDensityVolume : public DensityVolume
+class ExpDensityVolume final : public DensityVolume
 {
 	public:
+		static VolumeRegion *factory(ParamMap &params, RenderEnvironment &render);
 
-		ExpDensityVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale, float aa, float bb) :
-			DensityVolume(sa, ss, le, gg, pmin, pmax, attgridScale)
+	private:
+		ExpDensityVolume(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale, float aa, float bb) :
+			DensityVolume(sa, ss, le, gg, pmin, pmax, attgrid_scale)
 		{
-			a = aa;
-			b = bb;
-			Y_VERBOSE << "ExpDensityVolume vol: " << s_a << " " << s_s << " " << l_e << " " << a << " " << b << yendl;
+			a_ = aa;
+			b_ = bb;
+			Y_VERBOSE << "ExpDensityVolume vol: " << s_a_ << " " << s_s_ << " " << l_e_ << " " << a_ << " " << b_ << YENDL;
 		}
+		virtual float density(Point3 p) override;
 
-		virtual float Density(point3d_t p);
-
-		static VolumeRegion *factory(paraMap_t &params, renderEnvironment_t &render);
-
-	protected:
-		float a, b;
+		float a_, b_;
 };
 
-float ExpDensityVolume::Density(point3d_t p)
+float ExpDensityVolume::density(Point3 p)
 {
-	float height = p.z - bBox.a.z;
-	return a * fExp(-b * height);
+	float height = p.z_ - b_box_.a_.z_;
+	return a_ * fExp__(-b_ * height);
 }
 
-VolumeRegion *ExpDensityVolume::factory(paraMap_t &params, renderEnvironment_t &render)
+VolumeRegion *ExpDensityVolume::factory(ParamMap &params, RenderEnvironment &render)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -49,7 +47,7 @@ VolumeRegion *ExpDensityVolume::factory(paraMap_t &params, renderEnvironment_t &
 	float b = 1.f;
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
-	int attSc = 1;
+	int att_sc = 1;
 
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);
@@ -63,19 +61,19 @@ VolumeRegion *ExpDensityVolume::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("maxX", max[0]);
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
-	params.getParam("attgridScale", attSc);
+	params.getParam("attgridScale", att_sc);
 
-	ExpDensityVolume *vol = new ExpDensityVolume(color_t(sa), color_t(ss), color_t(le), g,
-	        point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]), attSc, a, b);
+	ExpDensityVolume *vol = new ExpDensityVolume(Rgb(sa), Rgb(ss), Rgb(le), g,
+												 Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, a, b);
 	return vol;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("ExpDensityVolume", ExpDensityVolume::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

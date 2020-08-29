@@ -28,187 +28,182 @@
 #include <utilities/sample_utils.h>
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 //int hit_t1=0, hit_t2=0;
 
-areaLight_t::areaLight_t(const point3d_t &c, const vector3d_t &v1, const vector3d_t &v2,
-                         const color_t &col, float inte, int nsam, bool bLightEnabled, bool bCastShadows):
-	corner(c), toX(v1), toY(v2), samples(nsam), intensity(inte)
+AreaLight::AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
+					 const Rgb &col, float inte, int nsam, bool light_enabled, bool cast_shadows):
+		corner_(c), to_x_(v_1), to_y_(v_2), samples_(nsam), intensity_(inte)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
+	light_enabled_ = light_enabled;
+	cast_shadows_ = cast_shadows;
 
-	fnormal = toY ^ toX; //f normal is "flipped" normal direction...
-	color = col * inte * M_PI;
-	area = fnormal.normLen();
-	invArea = 1.0 / area;
+	fnormal_ = to_y_ ^ to_x_; //f normal is "flipped" normal direction...
+	color_ = col * inte * M_PI;
+	area_ = fnormal_.normLen();
+	inv_area_ = 1.0 / area_;
 
-	normal = -fnormal;
-	du = toX;
-	du.normalize();
-	dv = normal ^ du;
-	c2 = corner + toX;
-	c3 = corner + (toX + toY);
-	c4 = corner + toY;
+	normal_ = -fnormal_;
+	du_ = to_x_;
+	du_.normalize();
+	dv_ = normal_ ^ du_;
+	c_2_ = corner_ + to_x_;
+	c_3_ = corner_ + (to_x_ + to_y_);
+	c_4_ = corner_ + to_y_;
 }
 
-areaLight_t::~areaLight_t()
+void AreaLight::init(Scene &scene)
 {
-	// Empty
-}
-
-void areaLight_t::init(scene_t &scene)
-{
-	if(objID)
+	if(object_id_)
 	{
-		object3d_t *obj = scene.getObject(objID);
+		Object3D *obj = scene.getObject(object_id_);
 		if(obj) obj->setLight(this);
-		else Y_WARNING << "AreaLight: Invalid object ID given!" << yendl;
+		else Y_WARNING << "AreaLight: Invalid object ID given!" << YENDL;
 	}
 }
 
-color_t areaLight_t::totalEnergy() const { return color * area; }
+Rgb AreaLight::totalEnergy() const { return color_ * area_; }
 
-bool areaLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
 	//get point on area light and vector to surface point:
-	point3d_t p = corner + s.s1 * toX + s.s2 * toY;
-	vector3d_t ldir = p - sp.P;
+	Point3 p = corner_ + s.s_1_ * to_x_ + s.s_2_ * to_y_;
+	Vec3 ldir = p - sp.p_;
 	//normalize vec and compute inverse square distance
 	float dist_sqr = ldir.lengthSqr();
-	float dist = fSqrt(dist_sqr);
+	float dist = fSqrt__(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f / dist;
-	float cos_angle = ldir * fnormal;
+	float cos_angle = ldir * fnormal_;
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 
 	// fill direction
-	wi.tmax = dist;
-	wi.dir = ldir;
+	wi.tmax_ = dist;
+	wi.dir_ = ldir;
 
-	s.col = color;
+	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
-	s.pdf = dist_sqr * M_PI / (area * cos_angle);
-	s.flags = LIGHT_NONE; // no delta functions...
-	if(s.sp)
+	s.pdf_ = dist_sqr * M_PI / (area_ * cos_angle);
+	s.flags_ = LightNone; // no delta functions...
+	if(s.sp_)
 	{
-		s.sp->P = p;
-		s.sp->N = s.sp->Ng = normal;
+		s.sp_->p_ = p;
+		s.sp_->n_ = s.sp_->ng_ = normal_;
 	}
 	return true;
 }
 
-color_t areaLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	ipdf = area/*  * M_PI */; // really two pi?
-	ray.from = corner + s3 * toX + s4 * toY;
-	ray.dir = SampleCosHemisphere(normal, du, dv, s1, s2);
-	return color;
+	ipdf = area_/*  * M_PI */; // really two pi?
+	ray.from_ = corner_ + s_3 * to_x_ + s_4 * to_y_;
+	ray.dir_ = sampleCosHemisphere__(normal_, du_, dv_, s_1, s_2);
+	return color_;
 }
 
-color_t areaLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.areaPdf = invArea * M_PI;
-	s.sp->P = corner + s.s3 * toX + s.s4 * toY;
-	wo = SampleCosHemisphere(normal, du, dv, s.s1, s.s2);
-	s.sp->N = s.sp->Ng = normal;
-	s.dirPdf = std::fabs(normal * wo);
-	s.flags = LIGHT_NONE; // no delta functions...
-	return color; // still not 100% sure this is correct without cosine...
+	s.area_pdf_ = inv_area_ * M_PI;
+	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
+	wo = sampleCosHemisphere__(normal_, du_, dv_, s.s_1_, s.s_2_);
+	s.sp_->n_ = s.sp_->ng_ = normal_;
+	s.dir_pdf_ = std::fabs(normal_ * wo);
+	s.flags_ = LightNone; // no delta functions...
+	return color_; // still not 100% sure this is correct without cosine...
 }
 
-inline bool triIntersect(const point3d_t &a, const point3d_t &b, const point3d_t &c, const ray_t &ray, float &t)
+inline bool triIntersect__(const Point3 &a, const Point3 &b, const Point3 &c, const Ray &ray, float &t)
 {
-	vector3d_t edge1, edge2, tvec, pvec, qvec;
+	Vec3 edge_1, edge_2, tvec, pvec, qvec;
 	float det, inv_det, u, v;
-	edge1 = b - a;
-	edge2 = c - a;
-	pvec = ray.dir ^ edge2;
-	det = edge1 * pvec;
+	edge_1 = b - a;
+	edge_2 = c - a;
+	pvec = ray.dir_ ^ edge_2;
+	det = edge_1 * pvec;
 	if(det == 0.0) return false;
 	inv_det = 1.0 / det;
-	tvec = ray.from - a;
+	tvec = ray.from_ - a;
 	u = (tvec * pvec) * inv_det;
 	if(u < 0.0 || u > 1.0) return false;
-	qvec = tvec ^ edge1;
-	v = (ray.dir * qvec) * inv_det;
+	qvec = tvec ^ edge_1;
+	v = (ray.dir_ * qvec) * inv_det;
 	if((v < 0.0) || ((u + v) > 1.0)) return false;
-	t = edge2 * qvec * inv_det;
+	t = edge_2 * qvec * inv_det;
 
 	return true;
 }
 
-bool areaLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool AreaLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	float cos_angle = ray.dir * fnormal;
+	float cos_angle = ray.dir_ * fnormal_;
 	//no light if point is behind area light (single sided!)
 	if(cos_angle <= 0) return false;
 
-	if(!triIntersect(corner, c2, c3, ray, t))
+	if(!triIntersect__(corner_, c_2_, c_3_, ray, t))
 	{
-		if(!triIntersect(corner, c3, c4, ray, t)) return false;
+		if(!triIntersect__(corner_, c_3_, c_4_, ray, t)) return false;
 	}
 	if(!(t > 1.0e-10f)) return false;
 
-	col = color;
+	col = color_;
 	// pdf = distance^2 / area * cos(norm, ldir); ipdf = 1/pdf;
-	ipdf = 1.f / (t * t) * area * cos_angle * M_1_PI;
+	ipdf = 1.f / (t * t) * area_ * cos_angle * M_1_PI;
 	return true;
 }
 
-float areaLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
+float AreaLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	vector3d_t wi = sp_light.P - sp.P;
-	float r2 = wi.normLenSqr();
-	float cos_n = wi * fnormal;
-	return cos_n > 0 ? r2 * M_PI / (area * cos_n) : 0.f;
+	Vec3 wi = sp_light.p_ - sp.p_;
+	float r_2 = wi.normLenSqr();
+	float cos_n = wi * fnormal_;
+	return cos_n > 0 ? r_2 * M_PI / (area_ * cos_n) : 0.f;
 }
 
-void areaLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
+void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	areaPdf = invArea * M_PI;
-	cos_wo = wo * sp.N;
-	dirPdf = cos_wo > 0 ? cos_wo : 0.f;
+	area_pdf = inv_area_ * M_PI;
+	cos_wo = wo * sp.n_;
+	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-light_t *areaLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *AreaLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t corner(0.0);
-	point3d_t p1(0.0);
-	point3d_t p2(0.0);
-	color_t color(1.0);
+	Point3 corner(0.0);
+	Point3 p_1(0.0);
+	Point3 p_2(0.0);
+	Rgb color(1.0);
 	float power = 1.0;
 	int samples = 4;
 	int object = 0;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
-	bool pOnly = false;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool p_only = false;
 
 	params.getParam("corner", corner);
-	params.getParam("point1", p1);
-	params.getParam("point2", p2);
+	params.getParam("point1", p_1);
+	params.getParam("point2", p_2);
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("samples", samples);
 	params.getParam("object", object);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
 
-	areaLight_t *light = new areaLight_t(corner, p1 - corner, p2 - corner, color, power, samples, lightEnabled, castShadows);
+	AreaLight *light = new AreaLight(corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows);
 
-	light->objID = (unsigned int)object;
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->object_id_ = (unsigned int)object;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
@@ -216,12 +211,12 @@ light_t *areaLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("arealight", areaLight_t::factory);
-		render.registerFactory("bgPortalLight", bgPortalLight_t::factory);
-		render.registerFactory("meshlight", meshLight_t::factory);
+		render.registerFactory("arealight", AreaLight::factory);
+		render.registerFactory("bgPortalLight", BackgroundPortalLight::factory);
+		render.registerFactory("meshlight", MeshLight::factory);
 	}
 
 }
-__END_YAFRAY
+END_YAFRAY

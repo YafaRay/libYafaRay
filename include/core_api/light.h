@@ -1,99 +1,97 @@
 #pragma once
 
-#ifndef Y_LIGHT_H
-#define Y_LIGHT_H
+#ifndef YAFARAY_LIGHT_H
+#define YAFARAY_LIGHT_H
 
 #include <yafray_constants.h>
 #include "color.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class surfacePoint_t;
-class background_t;
-class ray_t;
-class scene_t;
-class vector3d_t;
-class point3d_t;
+class SurfacePoint;
+class Background;
+class Ray;
+class Scene;
+class Vec3;
+class Point3;
 
-enum { LIGHT_NONE = 0, LIGHT_DIRACDIR = 1, LIGHT_SINGULAR = 1 << 1 }; // "LIGHT_DIRACDIR" *must* be same as "BSDF_SPECULAR" (material.h)!
-typedef unsigned int LIGHTF_t;
+enum LightFlags : unsigned int { LightNone = 0, LightDiracdir = 1, LightSingular = 1 << 1 }; // "LightDiracdir" *must* be same as "BsdfSpecular" (material.h)!
 
-struct lSample_t
+struct LSample
 {
-	lSample_t(surfacePoint_t *s_p = nullptr): sp(s_p) {}
-	float s1, s2; //<! 2d sample value for choosing a surface point on the light.
-	float s3, s4; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
-	float pdf; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
-	float dirPdf; //<! probability density for generating this sample direction (emitSample)
-	float areaPdf; //<! probability density for generating this sample point on light surface (emitSample)
-	color_t col; //<! color of the generated sample
-	LIGHTF_t flags; //<! flags of the sampled light source
-	surfacePoint_t *sp; //!< surface point on the light source, may only be complete enough to call other light methods with it!
+	LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
+	float s_1_, s_2_; //<! 2d sample value for choosing a surface point on the light.
+	float s_3_, s_4_; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
+	float pdf_; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
+	float dir_pdf_; //<! probability density for generating this sample direction (emitSample)
+	float area_pdf_; //<! probability density for generating this sample point on light surface (emitSample)
+	Rgb col_; //<! color of the generated sample
+	LightFlags flags_; //<! flags of the sampled light source
+	SurfacePoint *sp_; //!< surface point on the light source, may only be complete enough to call other light methods with it!
 };
 
-class light_t
+class Light
 {
 	public:
+		Light(): flags_(LightNone), light_enabled_(true), cast_shadows_(true), shoot_caustic_(true), shoot_diffuse_(true), photon_only_(false) {}
+		Light(LightFlags flags): flags_(flags) {}
+		virtual ~Light() {}
 		//! allow for preprocessing when scene loading has finished
-		virtual void init(scene_t &scene) {}
+		virtual void init(Scene &scene) {}
 		//! total energy emmitted during whole frame
-		virtual color_t totalEnergy() const = 0;
+		virtual Rgb totalEnergy() const = 0;
 		//! emit a photon
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const = 0;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const = 0;
 		//! create a sample of light emission, similar to emitPhoton, just more suited for bidirectional methods
 		/*! fill in s.dirPdf, s.areaPdf, s.col and s.flags, and s.sp if not nullptr */
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const {return color_t(0.f);};
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const {return Rgb(0.f);};
 		//! indicate whether the light has a dirac delta distribution or not
 		virtual bool diracLight() const = 0;
 		//! illuminate a given surface point, generating sample s, fill in s.sp if not nullptr; Set ray to test visibility by integrator
 		/*! fill in s.pdf, s.col and s.flags */
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const = 0;
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const = 0;
 		//! illuminate a given surfance point; Set ray to test visibility by integrator. Only for dirac lights.
 		/*!	return false only if no light is emitted towards sp, e.g. outside cone angle of spot light	*/
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const = 0;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const = 0;
 		//! indicate whether the light can intersect with a ray (by the intersect function)
 		virtual bool canIntersect() const { return false; }
 		//! intersect the light source with a ray, giving back distance, energy and 1/PDF
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const { return false; }
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const { return false; }
 		//! get the pdf for sampling the incoming direction wi at surface point sp (illumSample!)
 		/*! this method requires an intersection point with the light (sp_light). Otherwise, use intersect() */
-		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const { return 0.f; }
+		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const { return 0.f; }
 		//! get the pdf values for sampling point sp on the light and outgoing direction wo when emitting energy (emitSample, NOT illumSample)
 		/*! sp should've been generated from illumSample or emitSample, and may only be complete enough to call light functions! */
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const { areaPdf = 0.f; dirPdf = 0.f; }
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const { area_pdf = 0.f; dir_pdf = 0.f; }
 		//! (preferred) number of samples for direct lighting
 		virtual int nSamples() const { return 8; }
-		virtual ~light_t() {}
 		//! This method must be called right after the factory is called on a background light or the light will fail
-		virtual void setBackground(background_t *bg) { background = bg; }
+		virtual void setBackground(Background *bg) { background_ = bg; }
 		//! Enable/disable entire light source
-		bool lightEnabled() const { return lLightEnabled;}
-		bool castShadows() const { return lCastShadows; }
+		bool lightEnabled() const { return light_enabled_;}
+		bool castShadows() const { return cast_shadows_; }
 		//! checks if the light can shoot caustic photons (photonmap integrator)
-		bool shootsCausticP() const { return lShootCaustic; }
+		bool shootsCausticP() const { return shoot_caustic_; }
 		//! checks if the light can shoot diffuse photons (photonmap integrator)
-		bool shootsDiffuseP() const { return lShootDiffuse; }
+		bool shootsDiffuseP() const { return shoot_diffuse_; }
 		//! checks if the light is a photon-only light (only shoots photons, not illuminating)
-		bool photonOnly() const { return lPhotonOnly; }
+		bool photonOnly() const { return photon_only_; }
 		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
-		void setClampIntersect(float clamp) { lClampIntersect = clamp; }
-
-		light_t(): flags(LIGHT_NONE), lLightEnabled(true), lCastShadows(true), lShootCaustic(true), lShootDiffuse(true), lPhotonOnly(false) {}
-		light_t(LIGHTF_t _flags): flags(_flags) {}
-		LIGHTF_t getFlags() const { return flags; }
+		void setClampIntersect(float clamp) { clamp_intersect_ = clamp; }
+		LightFlags getFlags() const { return flags_; }
 
 	protected:
-		LIGHTF_t flags;
-		background_t *background;
-		bool lLightEnabled; //!< enable/disable light
-		bool lCastShadows; //!< enable/disable if the light should cast direct shadows
-		bool lShootCaustic; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
-		bool lShootDiffuse; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
-		bool lPhotonOnly; //!<enable/disable if the light is a photon-only light (only shoots photons, not illuminating)
-		float lClampIntersect = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
+		LightFlags flags_;
+		Background *background_ = nullptr;
+		bool light_enabled_; //!< enable/disable light
+		bool cast_shadows_; //!< enable/disable if the light should cast direct shadows
+		bool shoot_caustic_; //!<enable/disable if the light can shoot caustic photons (photonmap integrator)
+		bool shoot_diffuse_; //!<enable/disable if the light can shoot diffuse photons (photonmap integrator)
+		bool photon_only_; //!<enable/disable if the light is a photon-only light (only shoots photons, not illuminating)
+		float clamp_intersect_ = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_LIGHT_H
+#endif // YAFARAY_LIGHT_H

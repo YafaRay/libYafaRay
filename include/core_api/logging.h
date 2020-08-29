@@ -22,8 +22,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_CONSOLE_VERBOSITY_H
-#define Y_CONSOLE_VERBOSITY_H
+#ifndef YAFARAY_LOGGING_H
+#define YAFARAY_LOGGING_H
 
 #include <yafray_constants.h>
 #include <utilities/threadUtils.h>
@@ -38,176 +38,166 @@
 #define PRPREC(precision) << std::setprecision(precision)
 #define PRTEXT(text) << ' ' << #text
 #define PR(var) << ' ' << #var << '=' << var
-#define PREND << yendl
+#define PREND << YENDL
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class photonMap_t;
+class PhotonMap;
 
-enum
+class YAFRAYCORE_EXPORT LogEntry
 {
-	VL_MUTE = 0,
-	VL_ERROR,
-	VL_WARNING,
-	VL_PARAMS,
-	VL_INFO,
-	VL_VERBOSE,
-	VL_DEBUG,
-};
-
-class YAFRAYCORE_EXPORT logEntry_t
-{
-		friend class yafarayLog_t;
+		friend class Logger;
 
 	public:
-		logEntry_t(std::time_t datetime, double duration, int verb_level, std::string description): eventDateTime(datetime), eventDuration(duration), mVerbLevel(verb_level), eventDescription(description) {}
+		LogEntry(std::time_t datetime, double duration, int verb_level, std::string description): event_date_time_(datetime), event_duration_(duration), verbosity_level_(verb_level), event_description_(description) {}
 
 	protected:
-		std::time_t eventDateTime;
-		double eventDuration;
-		int mVerbLevel;
-		std::string eventDescription;
+		std::time_t event_date_time_;
+		double event_duration_;
+		int verbosity_level_;
+		std::string event_description_;
 };
 
 
-class YAFRAYCORE_EXPORT yafarayLog_t
+class YAFRAYCORE_EXPORT Logger
 {
 	public:
-		yafarayLog_t();
-		yafarayLog_t(const yafarayLog_t &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
+		enum { VlMute = 0, VlError, VlWarning, VlParams, VlInfo, VlVerbose, VlDebug, };
+		Logger();
+		Logger(const Logger &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
 
-		~yafarayLog_t();
+		~Logger();
 
-		void setConsoleMasterVerbosity(const std::string &strVLevel);
-		void setLogMasterVerbosity(const std::string &strVLevel);
+		void setConsoleMasterVerbosity(const std::string &str_v_level);
+		void setLogMasterVerbosity(const std::string &str_v_level);
 
-		void setSaveLog(bool save_log) { mSaveLog = save_log; }
-		void setSaveHTML(bool save_html) { mSaveHTML = save_html; }
-		void setParamsBadgePosition(const std::string &badgePosition);
-		void setLoggingTitle(const std::string &title) { mLoggingTitle = title; }
-		void setLoggingAuthor(const std::string &author) { mLoggingAuthor = author; }
-		void setLoggingContact(const std::string &contact) { mLoggingContact = contact; }
-		void setLoggingComments(const std::string &comments) { mLoggingComments = comments; }
-		void setLoggingCustomIcon(const std::string &iconPath) { mLoggingCustomIcon = iconPath; }
-		void setLoggingFontPath(const std::string &fontPath) { mLoggingFontPath = fontPath; }
-		void setLoggingFontSizeFactor(float &fontSizeFactor) { mLoggingFontSizeFactor = fontSizeFactor; }
-		void setImagePath(const std::string &path) { mImagePath = path; }
-		void appendAANoiseSettings(const std::string &aa_noise_settings);
+		void setSaveLog(bool save_log) { save_log_ = save_log; }
+		void setSaveHtml(bool save_html) { save_html_ = save_html; }
+		void setParamsBadgePosition(const std::string &badge_position);
+		void setLoggingTitle(const std::string &title) { title_ = title; }
+		void setLoggingAuthor(const std::string &author) { author_ = author; }
+		void setLoggingContact(const std::string &contact) { contact_ = contact; }
+		void setLoggingComments(const std::string &comments) { comments_ = comments; }
+		void setLoggingCustomIcon(const std::string &icon_path) { custom_icon_ = icon_path; }
+		void setLoggingFontPath(const std::string &font_path) { font_path_ = font_path; }
+		void setLoggingFontSizeFactor(float &font_size_factor) { font_size_factor_ = font_size_factor; }
+		void setImagePath(const std::string &path) { image_path_ = path; }
+		void appendAaNoiseSettings(const std::string &aa_noise_settings);
 		void appendRenderSettings(const std::string &render_settings);
-		void setRenderInfo(const std::string &render_info) { mRenderInfo = render_info; }
-		void setDrawAANoiseSettings(bool draw_noise_settings) { drawAANoiseSettings = draw_noise_settings; }
-		void setDrawRenderSettings(bool draw_render_settings) { drawRenderSettings = draw_render_settings; }
-		void setConsoleLogColorsEnabled(bool console_log_colors_enabled) { mConsoleLogColorsEnabled = console_log_colors_enabled; }
+		void setRenderInfo(const std::string &render_info) { render_info_ = render_info; }
+		void setDrawAaNoiseSettings(bool draw_noise_settings) { draw_aa_noise_settings_ = draw_noise_settings; }
+		void setDrawRenderSettings(bool draw_render_settings) { draw_render_settings_ = draw_render_settings; }
+		void setConsoleLogColorsEnabled(bool console_log_colors_enabled) { console_log_colors_enabled_ = console_log_colors_enabled; }
 
-		bool getSaveLog() const { return mSaveLog; }
-		bool getSaveHTML() const { return mSaveHTML; }
+		bool getSaveLog() const { return save_log_; }
+		bool getSaveHtml() const { return save_html_; }
 		bool getSaveStats() const { return !statsEmpty(); }
 
-		bool getUseParamsBadge() { return mDrawParams; }
-		bool isParamsBadgeTop() { return (mDrawParams && mParamsBadgeTop); }
-		std::string getLoggingTitle() const { return mLoggingTitle; }
-		std::string getLoggingAuthor() const { return mLoggingAuthor; }
-		std::string getLoggingContact() const { return mLoggingContact; }
-		std::string getLoggingComments() const { return mLoggingComments; }
-		std::string getLoggingCustomIcon() const { return mLoggingCustomIcon; }
-		std::string getLoggingFontPath() const { return mLoggingFontPath; }
-		float getLoggingFontSizeFactor() const { return mLoggingFontSizeFactor; }
-		std::string getAANoiseSettings() const { return mAANoiseSettings; }
-		std::string getRenderSettings() const { return mRenderSettings; }
-		bool getDrawAANoiseSettings() { return drawAANoiseSettings; }
-		bool getDrawRenderSettings() { return drawRenderSettings; }
+		bool getUseParamsBadge() { return draw_params_; }
+		bool isParamsBadgeTop() { return (draw_params_ && params_badge_top_); }
+		std::string getLoggingTitle() const { return title_; }
+		std::string getLoggingAuthor() const { return author_; }
+		std::string getLoggingContact() const { return contact_; }
+		std::string getLoggingComments() const { return comments_; }
+		std::string getLoggingCustomIcon() const { return custom_icon_; }
+		std::string getLoggingFontPath() const { return font_path_; }
+		float getLoggingFontSizeFactor() const { return font_size_factor_; }
+		std::string getAaNoiseSettings() const { return aa_noise_settings_; }
+		std::string getRenderSettings() const { return render_settings_; }
+		bool getDrawAaNoiseSettings() { return draw_aa_noise_settings_; }
+		bool getDrawRenderSettings() { return draw_render_settings_; }
 		int getBadgeHeight() const;
-		bool getConsoleLogColorsEnabled() const { return mConsoleLogColorsEnabled; }
+		bool getConsoleLogColorsEnabled() const { return console_log_colors_enabled_; }
 
 		void saveTxtLog(const std::string &name);
 		void saveHtmlLog(const std::string &name);
 		void clearMemoryLog();
 		void clearAll();
-		void splitPath(const std::string &fullFilePath, std::string &basePath, std::string &baseFileName, std::string &extension);
-		yafarayLog_t &out(int verbosity_level);
+		void splitPath(const std::string &full_file_path, std::string &base_path, std::string &base_file_name, std::string &extension);
+		Logger &out(int verbosity_level);
 		void setConsoleMasterVerbosity(int vlevel);
 		void setLogMasterVerbosity(int vlevel);
 		std::string printTime(std::time_t datetime) const;
 		std::string printDuration(double duration) const;
 		std::string printDurationSimpleFormat(double duration) const;
 		std::string printDate(std::time_t datetime) const;
-		int vlevel_from_string(std::string strVLevel) const;
+		int vlevelFromString(std::string str_v_level) const;
 
-		void statsClear() { mDiagStats.clear(); }
+		void statsClear() { diagnostics_stats_.clear(); }
 		void statsPrint(bool sorted = false) const;
-		void statsSaveToFile(std::string filePath, bool sorted = false) const;
-		size_t statsSize() const { return mDiagStats.size(); }
-		bool statsEmpty() const { return mDiagStats.empty(); }
+		void statsSaveToFile(std::string file_path, bool sorted = false) const;
+		size_t statsSize() const { return diagnostics_stats_.size(); }
+		bool statsEmpty() const { return diagnostics_stats_.empty(); }
 
-		void statsAdd(std::string statName, int statValue, double index = 0.0) { statsAdd(statName, (double) statValue, index); }
-		void statsAdd(std::string statName, float statValue, double index = 0.0) { statsAdd(statName, (double) statValue, index); }
-		void statsAdd(std::string statName, double statValue, double index = 0.0);
+		void statsAdd(std::string stat_name, int stat_value, double index = 0.0) { statsAdd(stat_name, (double) stat_value, index); }
+		void statsAdd(std::string stat_name, float stat_value, double index = 0.0) { statsAdd(stat_name, (double) stat_value, index); }
+		void statsAdd(std::string stat_name, double stat_value, double index = 0.0);
 
-		void statsIncrementBucket(std::string statName, int statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
-		void statsIncrementBucket(std::string statName, float statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0) { statsIncrementBucket(statName, (double) statValue, bucketPrecisionStep, incrementAmount); }
-		void statsIncrementBucket(std::string statName, double statValue, double bucketPrecisionStep = 1.0, double incrementAmount = 1.0);
+		void statsIncrementBucket(std::string stat_name, int stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
+		void statsIncrementBucket(std::string stat_name, float stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
+		void statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0);
 
-		std::mutex mutx;  //To try to avoid garbled output when there are several threads trying to output data to the log
+		std::mutex mutx_;  //To try to avoid garbled output when there are several threads trying to output data to the log
 
 		template <typename T>
-		yafarayLog_t &operator << (const T &obj)
+		Logger &operator << (const T &obj)
 		{
-			std::ostringstream tmpStream;
-			tmpStream << obj;
+			std::ostringstream tmp_stream;
+			tmp_stream << obj;
 
-			if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
-			if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
+			if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+			if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
 			return *this;
 		}
 
-		yafarayLog_t &operator << (std::ostream & (obj)(std::ostream &))
+		Logger &operator << (std::ostream & (obj)(std::ostream &))
 		{
-			std::ostringstream tmpStream;
-			tmpStream << obj;
+			std::ostringstream tmp_stream;
+			tmp_stream << obj;
 
-			if(mVerbLevel <= mConsoleMasterVerbLevel) std::cout << obj;
-			if(mVerbLevel <= mLogMasterVerbLevel && !m_MemoryLog.empty()) m_MemoryLog.back().eventDescription += tmpStream.str();
+			if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+			if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
 			return *this;
 		}
 
 	protected:
-		int mVerbLevel = VL_INFO;
-		int mConsoleMasterVerbLevel = VL_INFO;
-		int mLogMasterVerbLevel = VL_VERBOSE;
-		std::vector<logEntry_t> m_MemoryLog;	//Log entries stored in memory
-		std::string mImagePath = "";
-		bool mParamsBadgeTop = true;//If enabled, draw badge in the top of the image instead of the bottom
-		bool mDrawParams = false;	//Enable/disable drawing params badge in exported images
-		bool mSaveLog = false;		//Enable/disable text log file saving with exported images
-		bool mSaveHTML = false;		//Enable/disable HTML file saving with exported images
-		std::string mLoggingTitle;
-		std::string mLoggingAuthor;
-		std::string mLoggingContact;
-		std::string mLoggingComments;
-		std::string mLoggingCustomIcon;
-		std::string mLoggingFontPath;
-		float mLoggingFontSizeFactor = 1.f;
-		std::string mAANoiseSettings;
-		std::string mRenderSettings;
-		std::string mRenderInfo;
-		bool drawAANoiseSettings = true;
-		bool drawRenderSettings = true;
-		bool mConsoleLogColorsEnabled = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
-		std::time_t previousConsoleEventDateTime = 0;
-		std::time_t previousLogEventDateTime = 0;
-		std::unordered_map <std::string, double> mDiagStats;
+		int verbosity_level_ = VlInfo;
+		int console_master_verbosity_level_ = VlInfo;
+		int log_master_verbosity_level_ = VlVerbose;
+		std::vector<LogEntry> memory_log_;	//Log entries stored in memory
+		std::string image_path_ = "";
+		bool params_badge_top_ = true;//If enabled, draw badge in the top of the image instead of the bottom
+		bool draw_params_ = false;	//Enable/disable drawing params badge in exported images
+		bool save_log_ = false;		//Enable/disable text log file saving with exported images
+		bool save_html_ = false;		//Enable/disable HTML file saving with exported images
+		std::string title_;
+		std::string author_;
+		std::string contact_;
+		std::string comments_;
+		std::string custom_icon_;
+		std::string font_path_;
+		float font_size_factor_ = 1.f;
+		std::string aa_noise_settings_;
+		std::string render_settings_;
+		std::string render_info_;
+		bool draw_aa_noise_settings_ = true;
+		bool draw_render_settings_ = true;
+		bool console_log_colors_enabled_ = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes
+		std::time_t previous_console_event_date_time_ = 0;
+		std::time_t previous_log_event_date_time_ = 0;
+		std::unordered_map <std::string, double> diagnostics_stats_;
 };
 
-extern YAFRAYCORE_EXPORT yafarayLog_t yafLog;
+extern YAFRAYCORE_EXPORT Logger logger__;
 
-#define Y_DEBUG yafLog.out(VL_DEBUG)
-#define Y_VERBOSE yafLog.out(VL_VERBOSE)
-#define Y_INFO yafLog.out(VL_INFO)
-#define Y_PARAMS yafLog.out(VL_PARAMS)
-#define Y_WARNING yafLog.out(VL_WARNING)
-#define Y_ERROR yafLog.out(VL_ERROR)
-#define yendl std::endl
+#define Y_DEBUG logger__.out(yafaray4::Logger::VlDebug)
+#define Y_VERBOSE logger__.out(yafaray4::Logger::VlVerbose)
+#define Y_INFO logger__.out(yafaray4::Logger::VlInfo)
+#define Y_PARAMS logger__.out(yafaray4::Logger::VlParams)
+#define Y_WARNING logger__.out(yafaray4::Logger::VlWarning)
+#define Y_ERROR logger__.out(yafaray4::Logger::VlError)
+#define YENDL std::endl
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

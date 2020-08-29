@@ -20,23 +20,23 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_SESSION_H
-#define Y_SESSION_H
+#ifndef YAFARAY_SESSION_H
+#define YAFARAY_SESSION_H
 
 #include <yafray_constants.h>
 #include <utilities/threadUtils.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class photonMap_t;
+class PhotonMap;
 
-class YAFRAYCORE_EXPORT session_t
+class YAFRAYCORE_EXPORT Session
 {
 	public:
-		session_t();
-		session_t(const session_t &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
+		Session();
+		Session(const Session &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
 
-		~session_t();
+		~Session();
 
 		void setStatusRenderStarted();
 		void setStatusRenderResumed();
@@ -48,13 +48,13 @@ class YAFRAYCORE_EXPORT session_t
 		void setInteractive(bool interactive);
 		void setPathYafaRayXml(std::string path);
 		void setPathImageOutput(std::string path);
-		void setDifferentialRaysEnabled(bool value) { mRayDifferentialsEnabled = value; }
+		void setDifferentialRaysEnabled(bool value) { ray_differentials_enabled_ = value; }
 
 		bool renderInProgress();
 		bool renderResumed();
 		bool renderFinished();
 		bool renderAborted();
-		bool getDifferentialRaysEnabled() const { return mRayDifferentialsEnabled; }
+		bool getDifferentialRaysEnabled() const { return ray_differentials_enabled_; }
 
 		int totalPasses();
 		int currentPass();
@@ -63,28 +63,28 @@ class YAFRAYCORE_EXPORT session_t
 		std::string getPathYafaRayXml();
 		std::string getPathImageOutput();
 
-		photonMap_t *causticMap = nullptr;
-		photonMap_t *diffuseMap = nullptr;
-		photonMap_t *radianceMap = nullptr;
+		PhotonMap *caustic_map_ = nullptr;
+		PhotonMap *diffuse_map_ = nullptr;
+		PhotonMap *radiance_map_ = nullptr;
 
-		std::mutex mutx;
+		std::mutex mutx_;
 
 	protected:
-		bool mRenderInProgress = false;
-		bool mRenderFinished = false;
-		bool mRenderResumed = false;
-		bool mRenderAborted = false;
-		bool mRayDifferentialsEnabled = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
-		int mTotalPasses = 0;
-		int mCurrentPass = 0;
-		float mCurrentPassPercent = 0.f;
-		bool mInteractive = false;
-		std::string mPathYafaRayXml;
-		std::string mPathImageOutput;
+		bool render_in_progress_ = false;
+		bool render_finished_ = false;
+		bool render_resumed_ = false;
+		bool render_aborted_ = false;
+		bool ray_differentials_enabled_ = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
+		int total_passes_ = 0;
+		int current_pass_ = 0;
+		float current_pass_percent_ = 0.f;
+		bool interactive_ = false;
+		std::string path_yafa_ray_xml_;
+		std::string path_image_output_;
 };
 
-extern YAFRAYCORE_EXPORT session_t session;
+extern YAFRAYCORE_EXPORT Session session__;
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

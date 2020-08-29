@@ -1,104 +1,104 @@
 #include <yafraycore/hashgrid.h>
 #include <yafraycore/photon.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-hashGrid_t::hashGrid_t(double _cellSize, unsigned int _gridSize, yafaray::bound_t _bBox)
-	: cellSize(_cellSize), gridSize(_gridSize), bBox(_bBox)
+HashGrid::HashGrid(double cell_size, unsigned int grid_size, yafaray4::Bound b_box)
+	: cell_size_(cell_size), grid_size_(grid_size), bounding_box_(b_box)
 {
-	invcellSize = 1. / cellSize;
+	inv_cell_size_ = 1. / cell_size;
 }
 
-void hashGrid_t::setParm(double _cellSize, unsigned int _gridSize, bound_t _bBox)
+void HashGrid::setParm(double cell_size, unsigned int grid_size, Bound b_box)
 {
-	cellSize = _cellSize;
-	invcellSize = 1. / cellSize;
-	gridSize = _gridSize;
-	bBox = _bBox;
+	cell_size = cell_size;
+	inv_cell_size_ = 1. / cell_size;
+	grid_size_ = grid_size;
+	bounding_box_ = b_box;
 }
 
-void hashGrid_t::clear()
+void HashGrid::clear()
 {
-	photons.clear();
+	photons_.clear();
 }
 
-void hashGrid_t::pushPhoton(photon_t &p)
+void HashGrid::pushPhoton(Photon &p)
 {
-	photons.push_back(p);
+	photons_.push_back(p);
 }
 
 
-void hashGrid_t::updateGrid()
+void HashGrid::updateGrid()
 {
 
-	if(!hashGrid)
+	if(!hash_grid_)
 	{
-		hashGrid = new std::list<photon_t *> *[gridSize];
+		hash_grid_ = new std::list<Photon *> *[grid_size_];
 
-		for(unsigned int i = 0; i < gridSize; ++i)
-			hashGrid[i] = nullptr;
+		for(unsigned int i = 0; i < grid_size_; ++i)
+			hash_grid_[i] = nullptr;
 	}
 	else
 	{
-		for(unsigned int i = 0; i < gridSize; ++i)
+		for(unsigned int i = 0; i < grid_size_; ++i)
 		{
-			if(hashGrid[i])
+			if(hash_grid_[i])
 			{
 				//delete hashGrid[i];
-				hashGrid[i]->clear(); // fix me! too many time consumed here
+				hash_grid_[i]->clear(); // fix me! too many time consumed here
 				//hashGrid[i] = nullptr;
 			}
 		}
 	}
 
 	//travel the vector to build the Grid
-	for(auto itr = photons.begin(); itr != photons.end(); ++itr)
+	for(auto itr = photons_.begin(); itr != photons_.end(); ++itr)
 	{
-		point3d_t hashindex  = ((*itr).pos - bBox.a) * invcellSize;
+		Point3 hashindex  = ((*itr).pos_ - bounding_box_.a_) * inv_cell_size_;
 
-		int ix = abs(int(hashindex.x));
-		int iy = abs(int(hashindex.y));
-		int iz = abs(int(hashindex.z));
+		int ix = abs(int(hashindex.x_));
+		int iy = abs(int(hashindex.y_));
+		int iz = abs(int(hashindex.z_));
 
-		unsigned int index = Hash(ix, iy, iz);
+		unsigned int index = hash(ix, iy, iz);
 
-		if(hashGrid[index] == nullptr)
-			hashGrid[index] = new std::list<photon_t *>();
+		if(hash_grid_[index] == nullptr)
+			hash_grid_[index] = new std::list<Photon *>();
 
-		hashGrid[index]->push_front(&(*itr));
+		hash_grid_[index]->push_front(&(*itr));
 	}
 	unsigned int notused = 0;
-	for(unsigned int i = 0; i < gridSize; ++i)
+	for(unsigned int i = 0; i < grid_size_; ++i)
 	{
-		if(!hashGrid[i] || hashGrid[i]->size() == 0) notused++;
+		if(!hash_grid_[i] || hash_grid_[i]->size() == 0) notused++;
 	}
 	Y_VERBOSE << "HashGrid: there are " << notused << " enties not used!" << std::endl;
 }
 
-unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float sqRadius)
+unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius)
 {
 	unsigned int count = 0;
-	float radius = sqrt(sqRadius);
+	float radius = sqrt(sq_radius);
 
-	point3d_t rad(radius, radius, radius);
-	point3d_t bMin = ((P - rad) - bBox.a) * invcellSize;
-	point3d_t bMax = ((P + rad) - bBox.a) * invcellSize;
+	Point3 rad(radius, radius, radius);
+	Point3 b_min = ((p - rad) - bounding_box_.a_) * inv_cell_size_;
+	Point3 b_max = ((p + rad) - bounding_box_.a_) * inv_cell_size_;
 
-	for(int iz = abs(int(bMin.z)); iz <= abs(int(bMax.z)); iz++)
+	for(int iz = abs(int(b_min.z_)); iz <= abs(int(b_max.z_)); iz++)
 	{
-		for(int iy = abs(int(bMin.y)); iy <= abs(int(bMax.y)); iy++)
+		for(int iy = abs(int(b_min.y_)); iy <= abs(int(b_max.y_)); iy++)
 		{
-			for(int ix = abs(int(bMin.x)); ix <= abs(int(bMax.x)); ix++)
+			for(int ix = abs(int(b_min.x_)); ix <= abs(int(b_max.x_)); ix++)
 			{
-				int hv = Hash(ix, iy, iz);
+				int hv = hash(ix, iy, iz);
 
-				if(hashGrid[hv] == nullptr) continue;
+				if(hash_grid_[hv] == nullptr) continue;
 
-				for(auto itr = hashGrid[hv]->begin(); itr != hashGrid[hv]->end(); ++itr)
+				for(auto itr = hash_grid_[hv]->begin(); itr != hash_grid_[hv]->end(); ++itr)
 				{
-					if(((*itr)->pos - P).lengthSqr() < sqRadius)
+					if(((*itr)->pos_ - p).lengthSqr() < sq_radius)
 					{
-						found[count++] = foundPhoton_t((*itr), sqRadius);
+						found[count++] = FoundPhoton((*itr), sq_radius);
 					}
 				}
 			}
@@ -107,4 +107,4 @@ unsigned int hashGrid_t::gather(const point3d_t &P, foundPhoton_t *found, unsign
 	return count;
 }
 
-__END_YAFRAY
+END_YAFRAY

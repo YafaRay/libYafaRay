@@ -24,143 +24,143 @@
 #include <core_api/scene.h>
 #include <core_api/imagesplitter.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-directLighting_t::directLighting_t(bool transpShad, int shadowDepth, int rayDepth)
+DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth, int ray_depth)
 {
-	type = SURFACE;
-	causRadius = 0.25;
-	causDepth = 10;
-	nCausPhotons = 100000;
-	nCausSearch = 100;
-	trShad = transpShad;
-	usePhotonCaustics = false;
-	sDepth = shadowDepth;
-	rDepth = rayDepth;
-	integratorName = "DirectLight";
-	integratorShortName = "DL";
+	type_ = Surface;
+	caus_radius_ = 0.25;
+	caus_depth_ = 10;
+	n_caus_photons_ = 100000;
+	n_caus_search_ = 100;
+	tr_shad_ = transp_shad;
+	use_photon_caustics_ = false;
+	s_depth_ = shadow_depth;
+	r_depth_ = ray_depth;
+	integrator_name_ = "DirectLight";
+	integrator_short_name_ = "DL";
 }
 
-bool directLighting_t::preprocess()
+bool DirectLightIntegrator::preprocess()
 {
 	bool success = true;
 	std::stringstream set;
-	gTimer.addEvent("prepass");
-	gTimer.start("prepass");
+	g_timer__.addEvent("prepass");
+	g_timer__.start("prepass");
 
 	set << "Direct Light  ";
 
-	if(trShad)
+	if(tr_shad_)
 	{
-		set << "ShadowDepth=" << sDepth << "  ";
+		set << "ShadowDepth=" << s_depth_ << "  ";
 	}
-	set << "RayDepth=" << rDepth << "  ";
+	set << "RayDepth=" << r_depth_ << "  ";
 
-	if(useAmbientOcclusion)
+	if(use_ambient_occlusion_)
 	{
-		set << "AO samples=" << aoSamples << " dist=" << aoDist << "  ";
+		set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
 	}
 
-	background = scene->getBackground();
-	lights = scene->lights;
+	background_ = scene_->getBackground();
+	lights_ = scene_->lights_;
 
-	if(usePhotonCaustics)
+	if(use_photon_caustics_)
 	{
 		success = createCausticMap();
-		set << "\nCaustic photons=" << nCausPhotons << " search=" << nCausSearch << " radius=" << causRadius << " depth=" << causDepth << "  ";
+		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 
-		if(photonMapProcessing == PHOTONS_LOAD)
+		if(photon_map_processing_ == PhotonsLoad)
 		{
 			set << " (loading photon maps from file)";
 		}
-		else if(photonMapProcessing == PHOTONS_REUSE)
+		else if(photon_map_processing_ == PhotonsReuse)
 		{
 			set << " (reusing photon maps from memory)";
 		}
-		else if(photonMapProcessing == PHOTONS_GENERATE_AND_SAVE) set << " (saving photon maps to file)";
+		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	gTimer.stop("prepass");
-	Y_INFO << integratorName << ": Photonmap building time: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " (" << scene->getNumThreadsPhotons() << " thread(s))" << yendl;
+	g_timer__.stop("prepass");
+	Y_INFO << integrator_name_ << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << gTimer.getTime("prepass") << "s" << " [" << scene->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
-	yafLog.appendRenderSettings(set.str());
+	logger__.appendRenderSettings(set.str());
 
-	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << yendl;
+	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
 
 	return success;
 }
 
-colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
+Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
 {
-	color_t col(0.0);
+	Rgb col(0.0);
 	float alpha;
-	surfacePoint_t sp;
-	void *o_udat = state.userdata;
-	bool oldIncludeLights = state.includeLights;
+	SurfacePoint sp;
+	void *o_udat = state.userdata_;
+	bool old_include_lights = state.include_lights_;
 
-	if(transpBackground) alpha = 0.0;
+	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
 	// Shoot ray into scene
 
-	if(scene->intersect(ray, sp)) // If it hits
+	if(scene_->intersect(ray, sp)) // If it hits
 	{
 		unsigned char userdata[USER_DATA_SIZE];
-		const material_t *material = sp.material;
-		BSDF_t bsdfs;
+		const Material *material = sp.material_;
+		Bsdf_t bsdfs;
 
-		state.userdata = (void *) userdata;
-		vector3d_t wo = -ray.dir;
-		if(state.raylevel == 0) state.includeLights = true;
+		state.userdata_ = (void *) userdata;
+		Vec3 wo = -ray.dir_;
+		if(state.raylevel_ == 0) state.include_lights_ = true;
 
-		material->initBSDF(state, sp, bsdfs);
+		material->initBsdf(state, sp, bsdfs);
 
-		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
+		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 
-		if(bsdfs & BSDF_EMIT)
+		if(bsdfs & BsdfEmit)
 		{
-			col += colorPasses.probe_set(PASS_INT_EMIT, material->emit(state, sp, wo), state.raylevel == 0);
+			col += color_passes.probeSet(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
 		}
 
-		if(bsdfs & BSDF_DIFFUSE)
+		if(bsdfs & BsdfDiffuse)
 		{
-			col += estimateAllDirectLight(state, sp, wo, colorPasses);
+			col += estimateAllDirectLight(state, sp, wo, color_passes);
 
-			if(usePhotonCaustics)
+			if(use_photon_caustics_)
 			{
-				if(AA_clamp_indirect > 0)
+				if(aa_clamp_indirect_ > 0)
 				{
-					color_t tmpCol = estimateCausticPhotons(state, sp, wo);
-					tmpCol.clampProportionalRGB(AA_clamp_indirect);
-					col += colorPasses.probe_add(PASS_INT_INDIRECT, tmpCol, state.raylevel == 0);
+					Rgb tmp_col = estimateCausticPhotons(state, sp, wo);
+					tmp_col.clampProportionalRgb(aa_clamp_indirect_);
+					col += color_passes.probeAdd(PassIntIndirect, tmp_col, state.raylevel_ == 0);
 				}
-				else col += colorPasses.probe_add(PASS_INT_INDIRECT, estimateCausticPhotons(state, sp, wo), state.raylevel == 0);
+				else col += color_passes.probeAdd(PassIntIndirect, estimateCausticPhotons(state, sp, wo), state.raylevel_ == 0);
 			}
 
-			if(useAmbientOcclusion) col += sampleAmbientOcclusion(state, sp, wo);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, colorPasses, additionalDepth);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, color_passes, additional_depth);
 
-		if(colorPasses.size() > 1 && state.raylevel == 0)
+		if(color_passes.size() > 1 && state.raylevel_ == 0)
 		{
-			generateCommonRenderPasses(colorPasses, state, sp, ray);
+			generateCommonRenderPasses(color_passes, state, sp, ray);
 
-			if(colorPasses.enabled(PASS_INT_AO))
+			if(color_passes.enabled(PassIntAo))
 			{
-				colorPasses(PASS_INT_AO) = sampleAmbientOcclusionPass(state, sp, wo);
+				color_passes(PassIntAo) = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(colorPasses.enabled(PASS_INT_AO_CLAY))
+			if(color_passes.enabled(PassIntAoClay))
 			{
-				colorPasses(PASS_INT_AO_CLAY) = sampleAmbientOcclusionPassClay(state, sp, wo);
+				color_passes(PassIntAoClay) = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 
-		if(transpRefractedBackground)
+		if(transp_refracted_background_)
 		{
 			float m_alpha = material->getAlpha(state, sp, wo);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
@@ -169,80 +169,80 @@ colorA_t directLighting_t::integrate(renderState_t &state, diffRay_t &ray, color
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background && !transpRefractedBackground)
+		if(background_ && !transp_refracted_background_)
 		{
-			col += colorPasses.probe_set(PASS_INT_ENV, (*background)(ray, state), state.raylevel == 0);
+			col += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
 		}
 	}
 
-	state.userdata = o_udat;
-	state.includeLights = oldIncludeLights;
+	state.userdata_ = o_udat;
+	state.include_lights_ = old_include_lights;
 
-	color_t colVolTransmittance = scene->volIntegrator->transmittance(state, ray);
-	color_t colVolIntegration = scene->volIntegrator->integrate(state, ray, colorPasses);
+	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
+	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray, color_passes);
 
-	if(transpBackground) alpha = std::max(alpha, 1.f - colVolTransmittance.R);
+	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	colorPasses.probe_set(PASS_INT_VOLUME_TRANSMITTANCE, colVolTransmittance);
-	colorPasses.probe_set(PASS_INT_VOLUME_INTEGRATION, colVolIntegration);
+	color_passes.probeSet(PassIntVolumeTransmittance, col_vol_transmittance);
+	color_passes.probeSet(PassIntVolumeIntegration, col_vol_integration);
 
-	col = (col * colVolTransmittance) + colVolIntegration;
+	col = (col * col_vol_transmittance) + col_vol_integration;
 
-	return colorA_t(col, alpha);
+	return Rgba(col, alpha);
 }
 
-integrator_t *directLighting_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Integrator *DirectLightIntegrator::factory(ParamMap &params, RenderEnvironment &render)
 {
-	bool transpShad = false;
+	bool transp_shad = false;
 	bool caustics = false;
-	bool do_AO = false;
-	int shadowDepth = 5;
-	int raydepth = 5, cDepth = 10;
+	bool do_ao = false;
+	int shadow_depth = 5;
+	int raydepth = 5, c_depth = 10;
 	int search = 100, photons = 500000;
-	int AO_samples = 32;
-	double cRad = 0.25;
-	double AO_dist = 1.0;
-	color_t AO_col(1.f);
+	int ao_samples = 32;
+	double c_rad = 0.25;
+	double ao_dist = 1.0;
+	Rgb ao_col(1.f);
 	bool bg_transp = false;
 	bool bg_transp_refract = false;
 	std::string photon_maps_processing_str = "generate";
 
 	params.getParam("raydepth", raydepth);
-	params.getParam("transpShad", transpShad);
-	params.getParam("shadowDepth", shadowDepth);
+	params.getParam("transpShad", transp_shad);
+	params.getParam("shadowDepth", shadow_depth);
 	params.getParam("caustics", caustics);
 	params.getParam("photons", photons);
 	params.getParam("caustic_mix", search);
-	params.getParam("caustic_depth", cDepth);
-	params.getParam("caustic_radius", cRad);
-	params.getParam("do_AO", do_AO);
-	params.getParam("AO_samples", AO_samples);
-	params.getParam("AO_distance", AO_dist);
-	params.getParam("AO_color", AO_col);
+	params.getParam("caustic_depth", c_depth);
+	params.getParam("caustic_radius", c_rad);
+	params.getParam("do_AO", do_ao);
+	params.getParam("AO_samples", ao_samples);
+	params.getParam("AO_distance", ao_dist);
+	params.getParam("AO_color", ao_col);
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	directLighting_t *inte = new directLighting_t(transpShad, shadowDepth, raydepth);
+	DirectLightIntegrator *inte = new DirectLightIntegrator(transp_shad, shadow_depth, raydepth);
 	// caustic settings
-	inte->usePhotonCaustics = caustics;
-	inte->nCausPhotons = photons;
-	inte->nCausSearch = search;
-	inte->causDepth = cDepth;
-	inte->causRadius = cRad;
+	inte->use_photon_caustics_ = caustics;
+	inte->n_caus_photons_ = photons;
+	inte->n_caus_search_ = search;
+	inte->caus_depth_ = c_depth;
+	inte->caus_radius_ = c_rad;
 	// AO settings
-	inte->useAmbientOcclusion = do_AO;
-	inte->aoSamples = AO_samples;
-	inte->aoDist = AO_dist;
-	inte->aoCol = AO_col;
+	inte->use_ambient_occlusion_ = do_ao;
+	inte->ao_samples_ = ao_samples;
+	inte->ao_dist_ = ao_dist;
+	inte->ao_col_ = ao_col;
 	// Background settings
-	inte->transpBackground = bg_transp;
-	inte->transpRefractedBackground = bg_transp_refract;
+	inte->transp_background_ = bg_transp;
+	inte->transp_refracted_background_ = bg_transp_refract;
 
-	if(photon_maps_processing_str == "generate-save") inte->photonMapProcessing = PHOTONS_GENERATE_AND_SAVE;
-	else if(photon_maps_processing_str == "load") inte->photonMapProcessing = PHOTONS_LOAD;
-	else if(photon_maps_processing_str == "reuse-previous") inte->photonMapProcessing = PHOTONS_REUSE;
-	else inte->photonMapProcessing = PHOTONS_GENERATE_ONLY;
+	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
+	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;
+	else if(photon_maps_processing_str == "reuse-previous") inte->photon_map_processing_ = PhotonsReuse;
+	else inte->photon_map_processing_ = PhotonsGenerateOnly;
 
 	return inte;
 }
@@ -250,11 +250,11 @@ integrator_t *directLighting_t::factory(paraMap_t &params, renderEnvironment_t &
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("directlighting", directLighting_t::factory);
+		render.registerFactory("directlighting", DirectLightIntegrator::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -4,44 +4,44 @@
 #include <yafraycore/memoryIO.h>
 #include <cstdlib>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-memoryIO_t::memoryIO_t (int resx, int resy, float *iMem)
+MemoryInputOutput::MemoryInputOutput (int resx, int resy, float *i_mem)
 {
-	sizex = resx;
-	sizey = resy;
-	imageMem = iMem; // iMem must be a valid pointer to memory of the size: sizex * sizey * 4 * sizeof(float)
+	sizex_ = resx;
+	sizey_ = resy;
+	image_mem_ = i_mem; // iMem must be a valid pointer to memory of the size: sizex * sizey * 4 * sizeof(float)
 }
 
 // Depth channel support?
 
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool memoryIO_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha)
+bool MemoryInputOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha)
 {
-	imageMem[(x + sizex * y) * 4 + 0] = color.R;
-	imageMem[(x + sizex * y) * 4 + 0] = color.G;
-	imageMem[(x + sizex * y) * 4 + 0] = color.B;
-	if(!alpha) imageMem[(x + sizex * y) * 4 + 3] = 1.f;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = color.r_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = color.g_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = color.b_;
+	if(!alpha) image_mem_[(x + sizex_ * y) * 4 + 3] = 1.f;
 
 	return true;
 }
 
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool memoryIO_t::putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha)
+bool MemoryInputOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha)
 {
-	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).R;
-	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).G;
-	imageMem[(x + sizex * y) * 4 + 0] = colExtPasses.at(0).B;
-	if(!alpha) imageMem[(x + sizex * y) * 4 + 3] = 1.f;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).r_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).g_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).b_;
+	if(!alpha) image_mem_[(x + sizex_ * y) * 4 + 3] = 1.f;
 
 	return true;
 }
 
-void memoryIO_t::flush(int numView, const renderPasses_t *renderPasses) { }
+void MemoryInputOutput::flush(int num_view, const RenderPasses *render_passes) { }
 
-memoryIO_t::~memoryIO_t() { }
+MemoryInputOutput::~MemoryInputOutput() { }
 
 
-__END_YAFRAY
+END_YAFRAY
 

@@ -1,5 +1,5 @@
-#ifndef __YAFSYSTEM_H
-#define __YAFSYSTEM_H
+#ifndef YAFARAY_DYNAMIC_LIBRARY_H
+#define YAFARAY_DYNAMIC_LIBRARY_H
 
 #include <yafray_constants.h>
 
@@ -11,36 +11,34 @@
 #include <list>
 #include <string>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT dynamicLoadedLibrary_t
+class YAFRAYCORE_EXPORT DynamicLoadedLibrary final
 {
 	public:
-		dynamicLoadedLibrary_t();
-		dynamicLoadedLibrary_t(const std::string &library);
-		dynamicLoadedLibrary_t(const dynamicLoadedLibrary_t &src);
-		~dynamicLoadedLibrary_t();
+		DynamicLoadedLibrary();
+		DynamicLoadedLibrary(const std::string &library);
+		DynamicLoadedLibrary(const DynamicLoadedLibrary &src);
+		~DynamicLoadedLibrary();
 
 		bool isOpen();
 		void *getSymbol(const char *name);
 
-	protected:
-
+	private:
 		void open(const std::string &library);
 		void close();
-		void addReference() { (*refcount)++; };
-		void removeReference() { (*refcount)--; };
-		bool isUsed() const {return ((*refcount) > 0);};
+		void addReference() { (*refcount_)++; };
+		void removeReference() { (*refcount_)--; };
+		bool isUsed() const {return ((*refcount_) > 0);};
 
-
-		int *refcount;
+		int *refcount_;
 #ifdef WIN32
-		HINSTANCE handle;
+		HINSTANCE handle_;
 #else
-		void *handle;
+		void *handle_;
 #endif
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

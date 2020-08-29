@@ -33,90 +33,90 @@
 #include <limits>
 #include <sstream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-scene_t::scene_t(const renderEnvironment_t *render_environment):  volIntegrator(nullptr), camera(nullptr), imageFilm(nullptr), tree(nullptr), vtree(nullptr), background(nullptr), surfIntegrator(nullptr),	AA_samples(1), AA_passes(1), AA_threshold(0.05), nthreads(1), nthreads_photons(1), mode(1), signals(0), env(render_environment)
+Scene::Scene(const RenderEnvironment *render_environment): vol_integrator_(nullptr), camera_(nullptr), image_film_(nullptr), tree_(nullptr), vtree_(nullptr), background_(nullptr), surf_integrator_(nullptr), aa_samples_(1), aa_passes_(1), aa_threshold_(0.05), nthreads_(1), nthreads_photons_(1), mode_(1), signals_(0), env_(render_environment)
 {
-	state.changes = C_ALL;
-	state.stack.push_front(READY);
-	state.nextFreeID = std::numeric_limits<int>::max();
-	state.curObj = nullptr;
+	state_.changes_ = CAll;
+	state_.stack_.push_front(Ready);
+	state_.next_free_id_ = std::numeric_limits<int>::max();
+	state_.cur_obj_ = nullptr;
 
-	AA_resampled_floor = 0.f;
-	AA_sample_multiplier_factor = 1.f;
-	AA_light_sample_multiplier_factor = 1.f;
-	AA_indirect_sample_multiplier_factor = 1.f;
-	AA_detect_color_noise = false;
-	AA_dark_threshold_factor = 0.f;
-	AA_variance_edge_size = 10;
-	AA_variance_pixels = 0;
-	AA_clamp_samples = 0.f;
-	AA_clamp_indirect = 0.f;
+	aa_resampled_floor_ = 0.f;
+	aa_sample_multiplier_factor_ = 1.f;
+	aa_light_sample_multiplier_factor_ = 1.f;
+	aa_indirect_sample_multiplier_factor_ = 1.f;
+	aa_detect_color_noise_ = false;
+	aa_dark_threshold_factor_ = 0.f;
+	aa_variance_edge_size_ = 10;
+	aa_variance_pixels_ = 0;
+	aa_clamp_samples_ = 0.f;
+	aa_clamp_indirect_ = 0.f;
 }
 
-scene_t::scene_t(const scene_t &s)
+Scene::Scene(const Scene &s)
 {
-	Y_ERROR << "Scene: You may NOT use the copy constructor!" << yendl;
+	Y_ERROR << "Scene: You may NOT use the copy constructor!" << YENDL;
 }
 
-scene_t::~scene_t()
+Scene::~Scene()
 {
-	if(tree) delete tree;
-	if(vtree) delete vtree;
-	for(auto i = meshes.begin(); i != meshes.end(); ++i)
+	if(tree_) delete tree_;
+	if(vtree_) delete vtree_;
+	for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 	{
-		if(i->second.type == TRIM)
-			delete i->second.obj;
+		if(i->second.type_ == TRIM)
+			delete i->second.obj_;
 		else
-			delete i->second.mobj;
+			delete i->second.mobj_;
 	}
 }
 
-void scene_t::abort()
+void Scene::abort()
 {
-	sig_mutex.lock();
-	signals |= Y_SIG_ABORT;
-	sig_mutex.unlock();
+	sig_mutex_.lock();
+	signals_ |= Y_SIG_ABORT;
+	sig_mutex_.unlock();
 }
 
-int scene_t::getSignals() const
+int Scene::getSignals() const
 {
 	int sig;
-	sig_mutex.lock();
-	sig = signals;
-	sig_mutex.unlock();
+	sig_mutex_.lock();
+	sig = signals_;
+	sig_mutex_.unlock();
 	return sig;
 }
 
-void scene_t::getAAParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
+void Scene::getAaParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, DarkDetectionType &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
 {
-	samples = AA_samples;
-	passes = AA_passes;
-	inc_samples = AA_inc_samples;
-	threshold = AA_threshold;
-	resampled_floor = AA_resampled_floor;
-	sample_multiplier_factor = AA_sample_multiplier_factor;
-	light_sample_multiplier_factor = AA_light_sample_multiplier_factor;
-	indirect_sample_multiplier_factor = AA_indirect_sample_multiplier_factor;
-	detect_color_noise = AA_detect_color_noise;
-	dark_detection_type = AA_dark_detection_type;
-	dark_threshold_factor = AA_dark_threshold_factor;
-	variance_edge_size = AA_variance_edge_size;
-	variance_pixels = AA_variance_pixels;
-	clamp_samples = AA_clamp_samples;
-	clamp_indirect = AA_clamp_indirect;
+	samples = aa_samples_;
+	passes = aa_passes_;
+	inc_samples = aa_inc_samples_;
+	threshold = aa_threshold_;
+	resampled_floor = aa_resampled_floor_;
+	sample_multiplier_factor = aa_sample_multiplier_factor_;
+	light_sample_multiplier_factor = aa_light_sample_multiplier_factor_;
+	indirect_sample_multiplier_factor = aa_indirect_sample_multiplier_factor_;
+	detect_color_noise = aa_detect_color_noise_;
+	dark_detection_type = aa_dark_detection_type_;
+	dark_threshold_factor = aa_dark_threshold_factor_;
+	variance_edge_size = aa_variance_edge_size_;
+	variance_pixels = aa_variance_pixels_;
+	clamp_samples = aa_clamp_samples_;
+	clamp_indirect = aa_clamp_indirect_;
 }
 
-bool scene_t::startGeometry()
+bool Scene::startGeometry()
 {
-	if(state.stack.front() != READY) return false;
-	state.stack.push_front(GEOMETRY);
+	if(state_.stack_.front() != Ready) return false;
+	state_.stack_.push_front(Geometry);
 	return true;
 }
 
-bool scene_t::endGeometry()
+bool Scene::endGeometry()
 {
-	if(state.stack.front() != GEOMETRY) return false;
+	if(state_.stack_.front() != Geometry) return false;
 	// in case objects share arrays, so they all need to be updated
 	// after each object change, uncomment the below block again:
 	// don't forget to update the mesh object iterators!
@@ -126,75 +126,75 @@ bool scene_t::endGeometry()
 			objData_t &dat = (*i).second;
 			dat.obj->setContext(dat.points.begin(), dat.normals.begin() );
 		}*/
-	state.stack.pop_front();
+	state_.stack_.pop_front();
 	return true;
 }
 
-bool scene_t::startCurveMesh(objID_t id, int vertices, int obj_pass_index)
+bool Scene::startCurveMesh(ObjId_t id, int vertices, int obj_pass_index)
 {
-	if(state.stack.front() != GEOMETRY) return false;
+	if(state_.stack_.front() != Geometry) return false;
 	int ptype = 0 & 0xFF;
 
-	objData_t &nObj = meshes[id];
+	ObjData &n_obj = meshes_[id];
 
 	//TODO: switch?
 	// Allocate triangles to render the curve
-	nObj.obj = new triangleObject_t(2 * (vertices - 1), true, false);
-	nObj.obj->setObjectIndex(obj_pass_index);
-	nObj.type = ptype;
-	state.stack.push_front(OBJECT);
-	state.changes |= C_GEOM;
-	state.orco = false;
-	state.curObj = &nObj;
+	n_obj.obj_ = new TriangleObject(2 * (vertices - 1), true, false);
+	n_obj.obj_->setObjectIndex(obj_pass_index);
+	n_obj.type_ = ptype;
+	state_.stack_.push_front(Object);
+	state_.changes_ |= CGeom;
+	state_.orco_ = false;
+	state_.cur_obj_ = &n_obj;
 
-	nObj.obj->points.reserve(2 * vertices);
+	n_obj.obj_->points_.reserve(2 * vertices);
 	return true;
 }
 
-bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape)
+bool Scene::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape)
 {
-	if(state.stack.front() != OBJECT) return false;
+	if(state_.stack_.front() != Object) return false;
 
 	// TODO: Check if we have at least 2 vertex...
 	// TODO: math optimizations
 
 	// extrude vertices and create faces
-	std::vector<point3d_t> &points = state.curObj->obj->points;
+	std::vector<Point3> &points = state_.cur_obj_->obj_->points_;
 	float r;	//current radius
 	int i;
-	point3d_t o, a, b;
-	vector3d_t N(0), u(0), v(0);
+	Point3 o, a, b;
+	Vec3 N(0), u(0), v(0);
 	int n = points.size();
 	// Vertex extruding
 	for(i = 0; i < n; i++)
 	{
 		o = points[i];
-		if(strandShape < 0)
+		if(strand_shape < 0)
 		{
-			r = strandStart + pow((float)i / (n - 1), 1 + strandShape) * (strandEnd - strandStart);
+			r = strand_start + pow((float)i / (n - 1), 1 + strand_shape) * (strand_end - strand_start);
 		}
 		else
 		{
-			r = strandStart + (1 - pow(((float)(n - i - 1)) / (n - 1), 1 - strandShape)) * (strandEnd - strandStart);
+			r = strand_start + (1 - pow(((float)(n - i - 1)) / (n - 1), 1 - strand_shape)) * (strand_end - strand_start);
 		}
 		// Last point keep previous tangent plane
 		if(i < n - 1)
 		{
 			N = points[i + 1] - points[i];
 			N.normalize();
-			createCS(N, u, v);
+			createCs__(N, u, v);
 		}
 		// TODO: thikness?
 		a = o - (0.5 * r * v) - 1.5 * r / sqrt(3.f) * u;
 		b = o - (0.5 * r * v) + 1.5 * r / sqrt(3.f) * u;
 
-		state.curObj->obj->points.push_back(a);
-		state.curObj->obj->points.push_back(b);
+		state_.cur_obj_->obj_->points_.push_back(a);
+		state_.cur_obj_->obj_->points_.push_back(b);
 	}
 
 	// Face fill
-	triangle_t tri;
-	int a1, a2, a3, b1, b2, b3;
+	Triangle tri;
+	int a_1, a_2, a_3, b_1, b_2, b_3;
 	float su, sv;
 	int iu, iv;
 	for(i = 0; i < n - 1; i++)
@@ -202,246 +202,246 @@ bool scene_t::endCurveMesh(const material_t *mat, float strandStart, float stran
 		// 1D particles UV mapping
 		su = (float)i / (n - 1);
 		sv = su + 1. / (n - 1);
-		iu = addUV(su, su);
-		iv = addUV(sv, sv);
-		a1 = i;
-		a2 = 2 * i + n;
-		a3 = a2 + 1;
-		b1 = i + 1;
-		b2 = a2 + 2;
-		b3 = b2 + 1;
+		iu = addUv(su, su);
+		iv = addUv(sv, sv);
+		a_1 = i;
+		a_2 = 2 * i + n;
+		a_3 = a_2 + 1;
+		b_1 = i + 1;
+		b_2 = a_2 + 2;
+		b_3 = b_2 + 1;
 		// Close bottom
 		if(i == 0)
 		{
-			tri = triangle_t(a1, a3, a2, state.curObj->obj);
+			tri = Triangle(a_1, a_3, a_2, state_.cur_obj_->obj_);
 			tri.setMaterial(mat);
-			state.curTri = state.curObj->obj->addTriangle(tri);
-			state.curObj->obj->uv_offsets.push_back(iu);
-			state.curObj->obj->uv_offsets.push_back(iu);
-			state.curObj->obj->uv_offsets.push_back(iu);
+			state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
 		}
 
 		// Fill
-		tri = triangle_t(a1, b2, b1, state.curObj->obj);
+		tri = Triangle(a_1, b_2, b_1, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
 		// StrandUV
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iv);
-		state.curObj->obj->uv_offsets.push_back(iv);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = triangle_t(a1, a2, b2, state.curObj->obj);
+		tri = Triangle(a_1, a_2, b_2, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iv);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = triangle_t(a2, b3, b2, state.curObj->obj);
+		tri = Triangle(a_2, b_3, b_2, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iv);
-		state.curObj->obj->uv_offsets.push_back(iv);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = triangle_t(a2, a3, b3, state.curObj->obj);
+		tri = Triangle(a_2, a_3, b_3, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iv);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = triangle_t(b3, a3, a1, state.curObj->obj);
+		tri = Triangle(b_3, a_3, a_1, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
-		state.curObj->obj->uv_offsets.push_back(iv);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iu);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
 
-		tri = triangle_t(b3, a1, b1, state.curObj->obj);
+		tri = Triangle(b_3, a_1, b_1, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state.curTri = state.curObj->obj->addTriangle(tri);
-		state.curObj->obj->uv_offsets.push_back(iv);
-		state.curObj->obj->uv_offsets.push_back(iu);
-		state.curObj->obj->uv_offsets.push_back(iv);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
 	}
 	// Close top
-	tri = triangle_t(i, 2 * i + n, 2 * i + n + 1, state.curObj->obj);
+	tri = Triangle(i, 2 * i + n, 2 * i + n + 1, state_.cur_obj_->obj_);
 	tri.setMaterial(mat);
-	state.curTri = state.curObj->obj->addTriangle(tri);
-	state.curObj->obj->uv_offsets.push_back(iv);
-	state.curObj->obj->uv_offsets.push_back(iv);
-	state.curObj->obj->uv_offsets.push_back(iv);
+	state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-	state.curObj->obj->finish();
+	state_.cur_obj_->obj_->finish();
 
-	state.stack.pop_front();
+	state_.stack_.pop_front();
 	return true;
 }
 
-bool scene_t::startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
+bool Scene::startTriMesh(ObjId_t id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
-	if(state.stack.front() != GEOMETRY) return false;
+	if(state_.stack_.front() != Geometry) return false;
 	int ptype = type & 0xFF;
 	if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
 
-	objData_t &nObj = meshes[id];
+	ObjData &n_obj = meshes_[id];
 	switch(ptype)
 	{
-		case TRIM:	nObj.obj = new triangleObject_t(triangles, hasUV, hasOrco);
-			nObj.obj->setVisibility(!(type & INVISIBLEM));
-			nObj.obj->useAsBaseObject((type & BASEMESH));
-			nObj.obj->setObjectIndex(obj_pass_index);
+		case TRIM: n_obj.obj_ = new TriangleObject(triangles, has_uv, has_orco);
+			n_obj.obj_->setVisibility(!(type & INVISIBLEM));
+			n_obj.obj_->useAsBaseObject((type & BASEMESH));
+			n_obj.obj_->setObjectIndex(obj_pass_index);
 			break;
 		case VTRIM:
-		case MTRIM:	nObj.mobj = new meshObject_t(triangles, hasUV, hasOrco);
-			nObj.mobj->setVisibility(!(type & INVISIBLEM));
-			nObj.obj->setObjectIndex(obj_pass_index);
+		case MTRIM: n_obj.mobj_ = new MeshObject(triangles, has_uv, has_orco);
+			n_obj.mobj_->setVisibility(!(type & INVISIBLEM));
+			n_obj.obj_->setObjectIndex(obj_pass_index);
 			break;
 		default: return false;
 	}
-	nObj.type = ptype;
-	state.stack.push_front(OBJECT);
-	state.changes |= C_GEOM;
-	state.orco = hasOrco;
-	state.curObj = &nObj;
+	n_obj.type_ = ptype;
+	state_.stack_.push_front(Object);
+	state_.changes_ |= CGeom;
+	state_.orco_ = has_orco;
+	state_.cur_obj_ = &n_obj;
 
 	return true;
 }
 
-bool scene_t::endTriMesh()
+bool Scene::endTriMesh()
 {
-	if(state.stack.front() != OBJECT) return false;
+	if(state_.stack_.front() != Object) return false;
 
-	if(state.curObj->type == TRIM)
+	if(state_.cur_obj_->type_ == TRIM)
 	{
-		if(state.curObj->obj->has_uv)
+		if(state_.cur_obj_->obj_->has_uv_)
 		{
-			if(state.curObj->obj->uv_offsets.size() != 3 * state.curObj->obj->triangles.size())
+			if(state_.cur_obj_->obj_->uv_offsets_.size() != 3 * state_.cur_obj_->obj_->triangles_.size())
 			{
-				Y_ERROR << "Scene: UV-offsets mismatch!" << yendl;
+				Y_ERROR << "Scene: UV-offsets mismatch!" << YENDL;
 				return false;
 			}
 		}
 
 		//calculate geometric normals of tris
-		state.curObj->obj->finish();
+		state_.cur_obj_->obj_->finish();
 	}
 	else
 	{
-		state.curObj->mobj->finish();
+		state_.cur_obj_->mobj_->finish();
 	}
 
-	state.stack.pop_front();
+	state_.stack_.pop_front();
 	return true;
 }
 
-void scene_t::setNumThreads(int threads)
+void Scene::setNumThreads(int threads)
 {
-	nthreads = threads;
+	nthreads_ = threads;
 
-	if(nthreads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	if(nthreads_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_VERBOSE << "Automatic Detection of Threads: Active." << yendl;
-		const sysInfo_t sys_info;
-		nthreads = sys_info.getNumSystemThreads();
-		Y_VERBOSE << "Number of Threads supported: [" << nthreads << "]." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads: Active." << YENDL;
+		const SysInfo sys_info;
+		nthreads_ = sys_info.getNumSystemThreads();
+		Y_VERBOSE << "Number of Threads supported: [" << nthreads_ << "]." << YENDL;
 	}
 	else
 	{
-		Y_VERBOSE << "Automatic Detection of Threads: Inactive." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads: Inactive." << YENDL;
 	}
 
-	Y_PARAMS << "Using [" << nthreads << "] Threads." << yendl;
+	Y_PARAMS << "Using [" << nthreads_ << "] Threads." << YENDL;
 
 	std::stringstream set;
-	set << "CPU threads=" << nthreads << std::endl;
+	set << "CPU threads=" << nthreads_ << std::endl;
 
-	yafLog.appendRenderSettings(set.str());
+	logger__.appendRenderSettings(set.str());
 }
 
-void scene_t::setNumThreadsPhotons(int threads_photons)
+void Scene::setNumThreadsPhotons(int threads_photons)
 {
-	nthreads_photons = threads_photons;
+	nthreads_photons_ = threads_photons;
 
-	if(nthreads_photons == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	if(nthreads_photons_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
 	{
-		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << yendl;
-		const sysInfo_t sys_info;
-		nthreads_photons = sys_info.getNumSystemThreads();
-		Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons << "]." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Active." << YENDL;
+		const SysInfo sys_info;
+		nthreads_photons_ = sys_info.getNumSystemThreads();
+		Y_VERBOSE << "Number of Threads supported for Photon Mapping: [" << nthreads_photons_ << "]." << YENDL;
 	}
 	else
 	{
-		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << yendl;
+		Y_VERBOSE << "Automatic Detection of Threads for Photon Mapping: Inactive." << YENDL;
 	}
 
-	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons << "] Threads." << yendl;
+	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons_ << "] Threads." << YENDL;
 }
 
-#define prepareEdges(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
+#define PREPARE_EDGES(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
 			e2 = vertices[v2] - vertices[q];
 
-bool scene_t::smoothMesh(objID_t id, float angle)
+bool Scene::smoothMesh(ObjId_t id, float angle)
 {
-	if(state.stack.front() != GEOMETRY) return false;
-	objData_t *odat;
+	if(state_.stack_.front() != Geometry) return false;
+	ObjData *odat;
 	if(id)
 	{
-		auto it = meshes.find(id);
-		if(it == meshes.end()) return false;
+		auto it = meshes_.find(id);
+		if(it == meshes_.end()) return false;
 		odat = &(it->second);
 	}
 	else
 	{
-		odat = state.curObj;
+		odat = state_.cur_obj_;
 		if(!odat) return false;
 	}
 
-	if(odat->obj->normals_exported && odat->obj->points.size() == odat->obj->normals.size())
+	if(odat->obj_->normals_exported_ && odat->obj_->points_.size() == odat->obj_->normals_.size())
 	{
-		odat->obj->is_smooth = true;
+		odat->obj_->is_smooth_ = true;
 		return true;
 	}
 
 	// cannot smooth other mesh types yet...
-	if(odat->type > 0) return false;
+	if(odat->type_ > 0) return false;
 	unsigned int idx = 0;
-	std::vector<normal_t> &normals = odat->obj->normals;
-	std::vector<triangle_t> &triangles = odat->obj->triangles;
-	size_t points = odat->obj->points.size();
-	std::vector<triangle_t>::iterator tri;
-	std::vector<point3d_t> const &vertices = odat->obj->points;
+	std::vector<Normal> &normals = odat->obj_->normals_;
+	std::vector<Triangle> &triangles = odat->obj_->triangles_;
+	size_t points = odat->obj_->points_.size();
+	std::vector<Triangle>::iterator tri;
+	std::vector<Point3> const &vertices = odat->obj_->points_;
 
 	normals.reserve(points);
-	normals.resize(points, normal_t(0, 0, 0));
+	normals.resize(points, Normal(0, 0, 0));
 
 	if(angle >= 180)
 	{
 		for(tri = triangles.begin(); tri != triangles.end(); ++tri)
 		{
 
-			vector3d_t n = tri->getNormal();
-			vector3d_t e1, e2;
+			Vec3 n = tri->getNormal();
+			Vec3 e1, e2;
 			float alpha = 0;
 
-			prepareEdges(tri->pa, tri->pb, tri->pc)
+			PREPARE_EDGES(tri->pa_, tri->pb_, tri->pc_)
 			alpha = e1.sinFromVectors(e2);
 
-			normals[tri->pa] += n * alpha;
+			normals[tri->pa_] += n * alpha;
 
-			prepareEdges(tri->pb, tri->pa, tri->pc)
+			PREPARE_EDGES(tri->pb_, tri->pa_, tri->pc_)
 			alpha = e1.sinFromVectors(e2);
 
-			normals[tri->pb] += n * alpha;
+			normals[tri->pb_] += n * alpha;
 
-			prepareEdges(tri->pc, tri->pa, tri->pb)
+			PREPARE_EDGES(tri->pc_, tri->pa_, tri->pb_)
 			alpha = e1.sinFromVectors(e2);
 
-			normals[tri->pc] += n * alpha;
+			normals[tri->pc_] += n * alpha;
 
-			tri->setNormals(tri->pa, tri->pb, tri->pc);
+			tri->setNormals(tri->pa_, tri->pb_, tri->pc_);
 		}
 
 		for(idx = 0; idx < normals.size(); ++idx) normals[idx].normalize();
@@ -449,54 +449,54 @@ bool scene_t::smoothMesh(objID_t id, float angle)
 	}
 	else if(angle > 0.1) // angle dependant smoothing
 	{
-		float thresh = fCos(degToRad(angle));
-		std::vector<vector3d_t> vnormals;
+		float thresh = fCos__(DEG_TO_RAD(angle));
+		std::vector<Vec3> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex
-		std::vector<std::vector<triangle_t *>> vface(points);
+		std::vector<std::vector<Triangle *>> vface(points);
 		std::vector<std::vector<float>> alphas(points);
 		for(tri = triangles.begin(); tri != triangles.end(); ++tri)
 		{
-			vector3d_t e1, e2;
+			Vec3 e1, e2;
 
-			prepareEdges(tri->pa, tri->pb, tri->pc)
-			alphas[tri->pa].push_back(e1.sinFromVectors(e2));
-			vface[tri->pa].push_back(&(*tri));
+			PREPARE_EDGES(tri->pa_, tri->pb_, tri->pc_)
+			alphas[tri->pa_].push_back(e1.sinFromVectors(e2));
+			vface[tri->pa_].push_back(&(*tri));
 
-			prepareEdges(tri->pb, tri->pa, tri->pc)
-			alphas[tri->pb].push_back(e1.sinFromVectors(e2));
-			vface[tri->pb].push_back(&(*tri));
+			PREPARE_EDGES(tri->pb_, tri->pa_, tri->pc_)
+			alphas[tri->pb_].push_back(e1.sinFromVectors(e2));
+			vface[tri->pb_].push_back(&(*tri));
 
-			prepareEdges(tri->pc, tri->pa, tri->pb)
-			alphas[tri->pc].push_back(e1.sinFromVectors(e2));
-			vface[tri->pc].push_back(&(*tri));
+			PREPARE_EDGES(tri->pc_, tri->pa_, tri->pb_)
+			alphas[tri->pc_].push_back(e1.sinFromVectors(e2));
+			vface[tri->pc_].push_back(&(*tri));
 		}
 		for(int i = 0; i < (int)vface.size(); ++i)
 		{
-			std::vector<triangle_t *> &tris = vface[i];
+			std::vector<Triangle *> &tris = vface[i];
 			int j = 0;
 			for(auto fi = tris.begin(); fi != tris.end(); ++fi)
 			{
-				triangle_t *f = *fi;
+				Triangle *f = *fi;
 				bool smooth = false;
 				// calculate vertex normal for face
-				vector3d_t vnorm, fnorm;
+				Vec3 vnorm, fnorm;
 
 				fnorm = f->getNormal();
 				vnorm = fnorm * alphas[i][j];
 				int k = 0;
-				for(auto f2 = tris.begin(); f2 != tris.end(); ++f2)
+				for(auto f_2 = tris.begin(); f_2 != tris.end(); ++f_2)
 				{
-					if(**fi == **f2)
+					if(**fi == **f_2)
 					{
 						k++;
 						continue;
 					}
-					vector3d_t f2norm = (*f2)->getNormal();
-					if((fnorm * f2norm) > thresh)
+					Vec3 f_2_norm = (*f_2)->getNormal();
+					if((fnorm * f_2_norm) > thresh)
 					{
 						smooth = true;
-						vnorm += f2norm * alphas[i][k];
+						vnorm += f_2_norm * alphas[i][k];
 					}
 					k++;
 				}
@@ -519,16 +519,16 @@ bool scene_t::smoothMesh(objID_t id, float angle)
 						n_idx = normals.size();
 						vnormals.push_back(vnorm);
 						vn_index.push_back(n_idx);
-						normals.push_back(normal_t(vnorm));
+						normals.push_back(Normal(vnorm));
 					}
 				}
 				// set vertex normal to idx
-				if(f->pa == i) f->na = n_idx;
-				else if(f->pb == i) f->nb = n_idx;
-				else if(f->pc == i) f->nc = n_idx;
+				if(f->pa_ == i) f->na_ = n_idx;
+				else if(f->pb_ == i) f->nb_ = n_idx;
+				else if(f->pc_ == i) f->nc_ = n_idx;
 				else
 				{
-					Y_ERROR << "Scene: Mesh smoothing error!" << yendl;
+					Y_ERROR << "Scene: Mesh smoothing error!" << YENDL;
 					return false;
 				}
 				j++;
@@ -538,18 +538,18 @@ bool scene_t::smoothMesh(objID_t id, float angle)
 		}
 	}
 
-	odat->obj->is_smooth = true;
+	odat->obj_->is_smooth_ = true;
 
 	return true;
 }
 
-int scene_t::addVertex(const point3d_t &p)
+int Scene::addVertex(const Point3 &p)
 {
-	if(state.stack.front() != OBJECT) return -1;
-	state.curObj->obj->points.push_back(p);
-	if(state.curObj->type == MTRIM)
+	if(state_.stack_.front() != Object) return -1;
+	state_.cur_obj_->obj_->points_.push_back(p);
+	if(state_.cur_obj_->type_ == MTRIM)
 	{
-		std::vector<point3d_t> &points = state.curObj->mobj->points;
+		std::vector<Point3> &points = state_.cur_obj_->mobj_->points_;
 		int n = points.size();
 		if(n % 3 == 0)
 		{
@@ -559,420 +559,420 @@ int scene_t::addVertex(const point3d_t &p)
 		return (n - 1) / 3;
 	}
 
-	state.curObj->lastVertId = state.curObj->obj->points.size() - 1;
+	state_.cur_obj_->last_vert_id_ = state_.cur_obj_->obj_->points_.size() - 1;
 
-	return state.curObj->lastVertId;
+	return state_.cur_obj_->last_vert_id_;
 }
 
-int scene_t::addVertex(const point3d_t &p, const point3d_t &orco)
+int Scene::addVertex(const Point3 &p, const Point3 &orco)
 {
-	if(state.stack.front() != OBJECT) return -1;
+	if(state_.stack_.front() != Object) return -1;
 
-	switch(state.curObj->type)
+	switch(state_.cur_obj_->type_)
 	{
 		case TRIM:
-			state.curObj->obj->points.push_back(p);
-			state.curObj->obj->points.push_back(orco);
-			state.curObj->lastVertId = (state.curObj->obj->points.size() - 1) / 2;
+			state_.cur_obj_->obj_->points_.push_back(p);
+			state_.cur_obj_->obj_->points_.push_back(orco);
+			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->obj_->points_.size() - 1) / 2;
 			break;
 
 		case VTRIM:
-			state.curObj->mobj->points.push_back(p);
-			state.curObj->mobj->points.push_back(orco);
-			state.curObj->lastVertId = (state.curObj->mobj->points.size() - 1) / 2;
+			state_.cur_obj_->mobj_->points_.push_back(p);
+			state_.cur_obj_->mobj_->points_.push_back(orco);
+			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->mobj_->points_.size() - 1) / 2;
 			break;
 
 		case MTRIM:
 			return addVertex(p);
 	}
 
-	return state.curObj->lastVertId;
+	return state_.cur_obj_->last_vert_id_;
 }
 
-void scene_t::addNormal(const normal_t &n)
+void Scene::addNormal(const Normal &n)
 {
-	if(mode != 0)
+	if(mode_ != 0)
 	{
-		Y_WARNING << "Normal exporting is only supported for triangle mode" << yendl;
+		Y_WARNING << "Normal exporting is only supported for triangle mode" << YENDL;
 		return;
 	}
-	if(state.curObj->obj->points.size() > state.curObj->lastVertId && state.curObj->obj->points.size() > state.curObj->obj->normals.size())
+	if(state_.cur_obj_->obj_->points_.size() > state_.cur_obj_->last_vert_id_ && state_.cur_obj_->obj_->points_.size() > state_.cur_obj_->obj_->normals_.size())
 	{
-		if(state.curObj->obj->normals.size() < state.curObj->obj->points.size())
-			state.curObj->obj->normals.resize(state.curObj->obj->points.size());
+		if(state_.cur_obj_->obj_->normals_.size() < state_.cur_obj_->obj_->points_.size())
+			state_.cur_obj_->obj_->normals_.resize(state_.cur_obj_->obj_->points_.size());
 
-		state.curObj->obj->normals[state.curObj->lastVertId] = n;
-		state.curObj->obj->normals_exported = true;
+		state_.cur_obj_->obj_->normals_[state_.cur_obj_->last_vert_id_] = n;
+		state_.cur_obj_->obj_->normals_exported_ = true;
 	}
 }
 
-bool scene_t::addTriangle(int a, int b, int c, const material_t *mat)
+bool Scene::addTriangle(int a, int b, int c, const Material *mat)
 {
-	if(state.stack.front() != OBJECT) return false;
-	if(state.curObj->type == MTRIM)
+	if(state_.stack_.front() != Object) return false;
+	if(state_.cur_obj_->type_ == MTRIM)
 	{
-		bsTriangle_t tri(3 * a, 3 * b, 3 * c, state.curObj->mobj);
+		BsTriangle tri(3 * a, 3 * b, 3 * c, state_.cur_obj_->mobj_);
 		tri.setMaterial(mat);
-		state.curObj->mobj->addBsTriangle(tri);
+		state_.cur_obj_->mobj_->addBsTriangle(tri);
 	}
-	else if(state.curObj->type == VTRIM)
+	else if(state_.cur_obj_->type_ == VTRIM)
 	{
-		if(state.orco) a *= 2, b *= 2, c *= 2;
-		vTriangle_t tri(a, b, c, state.curObj->mobj);
+		if(state_.orco_) a *= 2, b *= 2, c *= 2;
+		VTriangle tri(a, b, c, state_.cur_obj_->mobj_);
 		tri.setMaterial(mat);
-		state.curObj->mobj->addTriangle(tri);
+		state_.cur_obj_->mobj_->addTriangle(tri);
 	}
 	else
 	{
-		if(state.orco) a *= 2, b *= 2, c *= 2;
-		triangle_t tri(a, b, c, state.curObj->obj);
+		if(state_.orco_) a *= 2, b *= 2, c *= 2;
+		Triangle tri(a, b, c, state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		if(state.curObj->obj->normals_exported)
+		if(state_.cur_obj_->obj_->normals_exported_)
 		{
-			if(state.orco)
+			if(state_.orco_)
 			{
 				// Since the vertex indexes are duplicated with orco
 				// we divide by 2: a / 2 == a >> 1 since is an integer division
-				tri.na = a >> 1;
-				tri.nb = b >> 1;
-				tri.nc = c >> 1;
+				tri.na_ = a >> 1;
+				tri.nb_ = b >> 1;
+				tri.nc_ = c >> 1;
 			}
 			else
 			{
-				tri.na = a;
-				tri.nb = b;
-				tri.nc = c;
+				tri.na_ = a;
+				tri.nb_ = b;
+				tri.nc_ = c;
 			}
 		}
-		state.curTri = state.curObj->obj->addTriangle(tri);
+		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
 	}
 	return true;
 }
 
-bool scene_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat)
+bool Scene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat)
 {
 	if(!addTriangle(a, b, c, mat)) return false;
 
-	if(state.curObj->type == TRIM)
+	if(state_.cur_obj_->type_ == TRIM)
 	{
-		state.curObj->obj->uv_offsets.push_back(uv_a);
-		state.curObj->obj->uv_offsets.push_back(uv_b);
-		state.curObj->obj->uv_offsets.push_back(uv_c);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_a);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_b);
+		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_c);
 	}
 	else
 	{
-		state.curObj->mobj->uv_offsets.push_back(uv_a);
-		state.curObj->mobj->uv_offsets.push_back(uv_b);
-		state.curObj->mobj->uv_offsets.push_back(uv_c);
+		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_a);
+		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_b);
+		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_c);
 	}
 
 	return true;
 }
 
-int scene_t::addUV(float u, float v)
+int Scene::addUv(float u, float v)
 {
-	if(state.stack.front() != OBJECT) return false;
-	if(state.curObj->type == TRIM)
+	if(state_.stack_.front() != Object) return false;
+	if(state_.cur_obj_->type_ == TRIM)
 	{
-		state.curObj->obj->uv_values.push_back(uv_t(u, v));
-		return (int)state.curObj->obj->uv_values.size() - 1;
+		state_.cur_obj_->obj_->uv_values_.push_back(Uv(u, v));
+		return (int)state_.cur_obj_->obj_->uv_values_.size() - 1;
 	}
 	else
 	{
-		state.curObj->mobj->uv_values.push_back(uv_t(u, v));
-		return (int)state.curObj->mobj->uv_values.size() - 1;
+		state_.cur_obj_->mobj_->uv_values_.push_back(Uv(u, v));
+		return (int)state_.cur_obj_->mobj_->uv_values_.size() - 1;
 	}
 	return -1;
 }
 
-bool scene_t::addLight(light_t *l)
+bool Scene::addLight(Light *l)
 {
 	if(l != 0)
 	{
 		if(!l->lightEnabled()) return false; //if a light is disabled, don't add it to the list of lights
-		lights.push_back(l);
-		state.changes |= C_LIGHT;
+		lights_.push_back(l);
+		state_.changes_ |= CLight;
 		return true;
 	}
 	return false;
 }
 
-void scene_t::setCamera(camera_t *cam)
+void Scene::setCamera(Camera *cam)
 {
-	camera = cam;
+	camera_ = cam;
 }
 
-void scene_t::setImageFilm(imageFilm_t *film)
+void Scene::setImageFilm(ImageFilm *film)
 {
-	imageFilm = film;
+	image_film_ = film;
 }
 
-void scene_t::setBackground(background_t *bg)
+void Scene::setBackground(Background *bg)
 {
-	background = bg;
+	background_ = bg;
 }
 
-void scene_t::setSurfIntegrator(surfaceIntegrator_t *s)
+void Scene::setSurfIntegrator(SurfaceIntegrator *s)
 {
-	surfIntegrator = s;
-	surfIntegrator->setScene(this);
-	state.changes |= C_OTHER;
+	surf_integrator_ = s;
+	surf_integrator_->setScene(this);
+	state_.changes_ |= COther;
 }
 
-void scene_t::setVolIntegrator(volumeIntegrator_t *v)
+void Scene::setVolIntegrator(VolumeIntegrator *v)
 {
-	volIntegrator = v;
-	volIntegrator->setScene(this);
-	state.changes |= C_OTHER;
+	vol_integrator_ = v;
+	vol_integrator_->setScene(this);
+	state_.changes_ |= COther;
 }
 
-background_t *scene_t::getBackground() const
+Background *Scene::getBackground() const
 {
-	return background;
+	return background_;
 }
 
-triangleObject_t *scene_t::getMesh(objID_t id) const
+TriangleObject *Scene::getMesh(ObjId_t id) const
 {
-	auto i = meshes.find(id);
-	return (i == meshes.end()) ? 0 : i->second.obj;
+	auto i = meshes_.find(id);
+	return (i == meshes_.end()) ? 0 : i->second.obj_;
 }
 
-object3d_t *scene_t::getObject(objID_t id) const
+Object3D *Scene::getObject(ObjId_t id) const
 {
-	auto i = meshes.find(id);
-	if(i != meshes.end())
+	auto i = meshes_.find(id);
+	if(i != meshes_.end())
 	{
-		if(i->second.type == TRIM) return i->second.obj;
-		else return i->second.mobj;
+		if(i->second.type_ == TRIM) return i->second.obj_;
+		else return i->second.mobj_;
 	}
 	else
 	{
-		auto oi = objects.find(id);
-		if(oi != objects.end()) return oi->second;
+		auto oi = objects_.find(id);
+		if(oi != objects_.end()) return oi->second;
 	}
 	return nullptr;
 }
 
-bound_t scene_t::getSceneBound() const
+Bound Scene::getSceneBound() const
 {
-	return sceneBound;
+	return scene_bound_;
 }
 
-void scene_t::setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
+void Scene::setAntialiasing(int num_samples, int num_passes, int inc_samples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
 {
-	AA_samples = std::max(1, numSamples);
-	AA_passes = numPasses;
-	AA_inc_samples = (incSamples > 0) ? incSamples : AA_samples;
-	AA_threshold = (float)threshold;
-	AA_resampled_floor = resampled_floor;
-	AA_sample_multiplier_factor = sample_multiplier_factor;
-	AA_light_sample_multiplier_factor = light_sample_multiplier_factor;
-	AA_indirect_sample_multiplier_factor = indirect_sample_multiplier_factor;
-	AA_detect_color_noise = detect_color_noise;
-	AA_dark_detection_type = dark_detection_type;
-	AA_dark_threshold_factor = dark_threshold_factor;
-	AA_variance_edge_size = variance_edge_size;
-	AA_variance_pixels = variance_pixels;
-	AA_clamp_samples = clamp_samples;
-	AA_clamp_indirect = clamp_indirect;
+	aa_samples_ = std::max(1, num_samples);
+	aa_passes_ = num_passes;
+	aa_inc_samples_ = (inc_samples > 0) ? inc_samples : aa_samples_;
+	aa_threshold_ = (float)threshold;
+	aa_resampled_floor_ = resampled_floor;
+	aa_sample_multiplier_factor_ = sample_multiplier_factor;
+	aa_light_sample_multiplier_factor_ = light_sample_multiplier_factor;
+	aa_indirect_sample_multiplier_factor_ = indirect_sample_multiplier_factor;
+	aa_detect_color_noise_ = detect_color_noise;
+	aa_dark_detection_type_ = dark_detection_type;
+	aa_dark_threshold_factor_ = dark_threshold_factor;
+	aa_variance_edge_size_ = variance_edge_size;
+	aa_variance_pixels_ = variance_pixels;
+	aa_clamp_samples_ = clamp_samples;
+	aa_clamp_indirect_ = clamp_indirect;
 }
 
 /*! update scene state to prepare for rendering.
 	\return false if something vital to render the scene is missing
 			true otherwise
 */
-bool scene_t::update()
+bool Scene::update()
 {
-	Y_VERBOSE << "Scene: Mode \"" << ((mode == 0) ? "Triangle" : "Universal") << "\"" << yendl;
-	if(!camera || !imageFilm) return false;
-	if(state.changes & C_GEOM)
+	Y_VERBOSE << "Scene: Mode \"" << ((mode_ == 0) ? "Triangle" : "Universal") << "\"" << YENDL;
+	if(!camera_ || !image_film_) return false;
+	if(state_.changes_ & CGeom)
 	{
-		if(tree) delete tree;
-		if(vtree) delete vtree;
-		tree = nullptr, vtree = nullptr;
+		if(tree_) delete tree_;
+		if(vtree_) delete vtree_;
+		tree_ = nullptr, vtree_ = nullptr;
 		int nprims = 0;
-		if(mode == 0)
+		if(mode_ == 0)
 		{
-			for(auto i = meshes.begin(); i != meshes.end(); ++i)
+			for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 			{
-				objData_t &dat = (*i).second;
+				ObjData &dat = (*i).second;
 
-				if(!dat.obj->isVisible()) continue;
-				if(dat.obj->isBaseObject()) continue;
+				if(!dat.obj_->isVisible()) continue;
+				if(dat.obj_->isBaseObject()) continue;
 
-				if(dat.type == TRIM) nprims += dat.obj->numPrimitives();
+				if(dat.type_ == TRIM) nprims += dat.obj_->numPrimitives();
 			}
 			if(nprims > 0)
 			{
-				const triangle_t **tris = new const triangle_t *[nprims];
-				const triangle_t **insert = tris;
-				for(auto i = meshes.begin(); i != meshes.end(); ++i)
+				const Triangle **tris = new const Triangle *[nprims];
+				const Triangle **insert = tris;
+				for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 				{
-					objData_t &dat = (*i).second;
+					ObjData &dat = (*i).second;
 
-					if(!dat.obj->isVisible()) continue;
-					if(dat.obj->isBaseObject()) continue;
+					if(!dat.obj_->isVisible()) continue;
+					if(dat.obj_->isBaseObject()) continue;
 
-					if(dat.type == TRIM) insert += dat.obj->getPrimitives(insert);
+					if(dat.type_ == TRIM) insert += dat.obj_->getPrimitives(insert);
 				}
-				tree = new triKdTree_t(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
+				tree_ = new TriKdTree(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
 				delete [] tris;
-				sceneBound = tree->getBound();
+				scene_bound_ = tree_->getBound();
 				Y_VERBOSE << "Scene: New scene bound is:" <<
-				          "(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
-				          sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
+						  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
+						  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-				if(shadowBiasAuto) shadowBias = YAF_SHADOW_BIAS;
-				if(rayMinDistAuto) rayMinDist = MIN_RAYDIST;
+				if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
+				if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
 
-				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << (shadowBiasAuto ? " (auto)" : "") << ", Ray Min Dist=" << rayMinDist << (rayMinDistAuto ? " (auto)" : "") << yendl;
+				Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 			}
-			else Y_WARNING << "Scene: Scene is empty..." << yendl;
+			else Y_WARNING << "Scene: Scene is empty..." << YENDL;
 		}
 		else
 		{
-			for(auto i = meshes.begin(); i != meshes.end(); ++i)
+			for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 			{
-				objData_t &dat = (*i).second;
-				if(dat.type != TRIM) nprims += dat.mobj->numPrimitives();
+				ObjData &dat = (*i).second;
+				if(dat.type_ != TRIM) nprims += dat.mobj_->numPrimitives();
 			}
 			// include all non-mesh objects; eventually make a common map...
-			for(auto i = objects.begin(); i != objects.end(); ++i)
+			for(auto i = objects_.begin(); i != objects_.end(); ++i)
 			{
 				nprims += i->second->numPrimitives();
 			}
 			if(nprims > 0)
 			{
-				const primitive_t **tris = new const primitive_t *[nprims];
-				const primitive_t **insert = tris;
-				for(auto i = meshes.begin(); i != meshes.end(); ++i)
+				const Primitive **tris = new const Primitive *[nprims];
+				const Primitive **insert = tris;
+				for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 				{
-					objData_t &dat = (*i).second;
-					if(dat.type != TRIM) insert += dat.mobj->getPrimitives(insert);
+					ObjData &dat = (*i).second;
+					if(dat.type_ != TRIM) insert += dat.mobj_->getPrimitives(insert);
 				}
-				for(auto i = objects.begin(); i != objects.end(); ++i)
+				for(auto i = objects_.begin(); i != objects_.end(); ++i)
 				{
 					insert += i->second->getPrimitives(insert);
 				}
-				vtree = new kdTree_t<primitive_t>(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
+				vtree_ = new KdTree<Primitive>(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
 				delete [] tris;
-				sceneBound = vtree->getBound();
-				Y_VERBOSE << "Scene: New scene bound is:" << yendl <<
-				          "(" << sceneBound.a.x << ", " << sceneBound.a.y << ", " << sceneBound.a.z << "), (" <<
-				          sceneBound.g.x << ", " << sceneBound.g.y << ", " << sceneBound.g.z << ")" << yendl;
+				scene_bound_ = vtree_->getBound();
+				Y_VERBOSE << "Scene: New scene bound is:" << YENDL <<
+						  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
+						  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-				if(shadowBiasAuto) shadowBias = YAF_SHADOW_BIAS;
-				if(rayMinDistAuto) rayMinDist = MIN_RAYDIST;
+				if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
+				if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
 
-				Y_INFO << "Scene: total scene dimensions: X=" << sceneBound.longX() << ", Y=" << sceneBound.longY() << ", Z=" << sceneBound.longZ() << ", volume=" << sceneBound.vol() << ", Shadow Bias=" << shadowBias << (shadowBiasAuto ? " (auto)" : "") << ", Ray Min Dist=" << rayMinDist << (rayMinDistAuto ? " (auto)" : "") << yendl;
+				Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 
 			}
-			else Y_ERROR << "Scene: Scene is empty..." << yendl;
+			else Y_ERROR << "Scene: Scene is empty..." << YENDL;
 		}
 	}
 
-	for(unsigned int i = 0; i < lights.size(); ++i) lights[i]->init(*this);
+	for(unsigned int i = 0; i < lights_.size(); ++i) lights_[i]->init(*this);
 
-	if(!surfIntegrator)
+	if(!surf_integrator_)
 	{
-		Y_ERROR << "Scene: No surface integrator, bailing out..." << yendl;
+		Y_ERROR << "Scene: No surface integrator, bailing out..." << YENDL;
 		return false;
 	}
 
-	if(state.changes != C_NONE)
+	if(state_.changes_ != CNone)
 	{
-		std::stringstream inteSettings;
+		std::stringstream inte_settings;
 
-		bool success = (surfIntegrator->preprocess() && volIntegrator->preprocess());
+		bool success = (surf_integrator_->preprocess() && vol_integrator_->preprocess());
 
 		if(!success) return false;
 	}
 
-	state.changes = C_NONE;
+	state_.changes_ = CNone;
 
 	return true;
 }
 
-bool scene_t::intersect(const ray_t &ray, surfacePoint_t &sp) const
+bool Scene::intersect(const Ray &ray, SurfacePoint &sp) const
 {
-	float dis, Z;
-	intersectData_t data;
-	if(ray.tmax < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax;
+	float dis, z;
+	IntersectData data;
+	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
+	else dis = ray.tmax_;
 	// intersect with tree:
-	if(mode == 0)
+	if(mode_ == 0)
 	{
-		if(!tree) return false;
-		triangle_t *hitt = nullptr;
-		if(! tree->Intersect(ray, dis, &hitt, Z, data)) { return false; }
-		point3d_t h = ray.from + Z * ray.dir;
+		if(!tree_) return false;
+		Triangle *hitt = nullptr;
+		if(!tree_->intersect(ray, dis, &hitt, z, data)) { return false; }
+		Point3 h = ray.from_ + z * ray.dir_;
 		hitt->getSurface(sp, h, data);
-		sp.origin = hitt;
-		sp.data = data;
-		sp.ray = nullptr;
+		sp.origin_ = hitt;
+		sp.data_ = data;
+		sp.ray_ = nullptr;
 	}
 	else
 	{
-		if(!vtree) return false;
-		primitive_t *hitprim = nullptr;
-		if(! vtree->Intersect(ray, dis, &hitprim, Z, data)) { return false; }
-		point3d_t h = ray.from + Z * ray.dir;
+		if(!vtree_) return false;
+		Primitive *hitprim = nullptr;
+		if(!vtree_->intersect(ray, dis, &hitprim, z, data)) { return false; }
+		Point3 h = ray.from_ + z * ray.dir_;
 		hitprim->getSurface(sp, h, data);
-		sp.origin = hitprim;
-		sp.data = data;
-		sp.ray = nullptr;
+		sp.origin_ = hitprim;
+		sp.data_ = data;
+		sp.ray_ = nullptr;
 	}
-	ray.tmax = Z;
+	ray.tmax_ = z;
 	return true;
 }
 
-bool scene_t::intersect(const diffRay_t &ray, surfacePoint_t &sp) const
+bool Scene::intersect(const DiffRay &ray, SurfacePoint &sp) const
 {
-	float dis, Z;
-	intersectData_t data;
-	if(ray.tmax < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax;
+	float dis, z;
+	IntersectData data;
+	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
+	else dis = ray.tmax_;
 	// intersect with tree:
-	if(mode == 0)
+	if(mode_ == 0)
 	{
-		if(!tree) return false;
-		triangle_t *hitt = nullptr;
-		if(! tree->Intersect(ray, dis, &hitt, Z, data)) { return false; }
-		point3d_t h = ray.from + Z * ray.dir;
+		if(!tree_) return false;
+		Triangle *hitt = nullptr;
+		if(!tree_->intersect(ray, dis, &hitt, z, data)) { return false; }
+		Point3 h = ray.from_ + z * ray.dir_;
 		hitt->getSurface(sp, h, data);
-		sp.origin = hitt;
-		sp.data = data;
-		sp.ray = &ray;
+		sp.origin_ = hitt;
+		sp.data_ = data;
+		sp.ray_ = &ray;
 	}
 	else
 	{
-		if(!vtree) return false;
-		primitive_t *hitprim = nullptr;
-		if(! vtree->Intersect(ray, dis, &hitprim, Z, data)) { return false; }
-		point3d_t h = ray.from + Z * ray.dir;
+		if(!vtree_) return false;
+		Primitive *hitprim = nullptr;
+		if(!vtree_->intersect(ray, dis, &hitprim, z, data)) { return false; }
+		Point3 h = ray.from_ + z * ray.dir_;
 		hitprim->getSurface(sp, h, data);
-		sp.origin = hitprim;
-		sp.data = data;
-		sp.ray = &ray;
+		sp.origin_ = hitprim;
+		sp.data_ = data;
+		sp.ray_ = &ray;
 	}
-	ray.tmax = Z;
+	ray.tmax_ = z;
 	return true;
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const
+bool Scene::isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const
 {
 
-	ray_t sray(ray);
-	sray.from += sray.dir * sray.tmin;
-	sray.time = state.time;
+	Ray sray(ray);
+	sray.from_ += sray.dir_ * sray.tmin_;
+	sray.time_ = state.time_;
 	float dis;
-	if(ray.tmax < 0)	dis = std::numeric_limits<float>::infinity();
-	else  dis = sray.tmax - 2 * sray.tmin;
-	if(mode == 0)
+	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
+	else  dis = sray.tmax_ - 2 * sray.tmin_;
+	if(mode_ == 0)
 	{
-		triangle_t *hitt = nullptr;
-		if(!tree) return false;
-		bool shadowed = tree->IntersectS(sray, dis, &hitt, shadowBias);
+		Triangle *hitt = nullptr;
+		if(!tree_) return false;
+		bool shadowed = tree_->intersectS(sray, dis, &hitt, shadow_bias_);
 		if(hitt)
 		{
 			if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
@@ -982,9 +982,9 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 	}
 	else
 	{
-		primitive_t *hitt = nullptr;
-		if(!vtree) return false;
-		bool shadowed = vtree->IntersectS(sray, dis, &hitt, shadowBias);
+		Primitive *hitt = nullptr;
+		if(!vtree_) return false;
+		bool shadowed = vtree_->intersectS(sray, dis, &hitt, shadow_bias_);
 		if(hitt)
 		{
 			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
@@ -993,24 +993,24 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, float &obj_inde
 	}
 }
 
-bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const
+bool Scene::isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const
 {
-	ray_t sray(ray);
-	sray.from += sray.dir * sray.tmin;
+	Ray sray(ray);
+	sray.from_ += sray.dir_ * sray.tmin_;
 	float dis;
-	if(ray.tmax < 0)	dis = std::numeric_limits<float>::infinity();
-	else  dis = sray.tmax - 2 * sray.tmin;
-	filt = color_t(1.0);
-	void *odat = state.userdata;
+	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
+	else  dis = sray.tmax_ - 2 * sray.tmin_;
+	filt = Rgb(1.0);
+	void *odat = state.userdata_;
 	unsigned char userdata[USER_DATA_SIZE + 7];
-	state.userdata = (void *)(((size_t)&userdata[7]) & (~7));  // pad userdata to 8 bytes
+	state.userdata_ = (void *)(((size_t)&userdata[7]) & (~7));  // pad userdata to 8 bytes
 	bool isect = false;
-	if(mode == 0)
+	if(mode_ == 0)
 	{
-		triangle_t *hitt = nullptr;
-		if(tree)
+		Triangle *hitt = nullptr;
+		if(tree_)
 		{
-			isect = tree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			isect = tree_->intersectTs(state, sray, max_depth, dis, &hitt, filt, shadow_bias_);
 			if(hitt)
 			{
 				if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
@@ -1020,80 +1020,80 @@ bool scene_t::isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, c
 	}
 	else
 	{
-		primitive_t *hitt = nullptr;
-		if(vtree)
+		Primitive *hitt = nullptr;
+		if(vtree_)
 		{
-			isect = vtree->IntersectTS(state, sray, maxDepth, dis, &hitt, filt, shadowBias);
+			isect = vtree_->intersectTs(state, sray, max_depth, dis, &hitt, filt, shadow_bias_);
 			if(hitt)
 			{
 				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 			}
 		}
 	}
-	state.userdata = odat;
+	state.userdata_ = odat;
 	return isect;
 }
 
-bool scene_t::render()
+bool Scene::render()
 {
-	sig_mutex.lock();
-	signals = 0;
-	sig_mutex.unlock();
+	sig_mutex_.lock();
+	signals_ = 0;
+	sig_mutex_.unlock();
 
 	bool success = false;
 
-	const std::map<std::string, camera_t *> *camera_table = env->getCameraTable();
+	const std::map<std::string, Camera *> *camera_table = env_->getCameraTable();
 
 	if(camera_table->size() == 0)
 	{
-		Y_ERROR << "No cameras/views found, exiting." << yendl;
+		Y_ERROR << "No cameras/views found, exiting." << YENDL;
 		return false;
 	}
 
 	for(auto cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
 	{
-		int numView = distance(camera_table->begin(), cam_table_entry);
-		camera_t *cam = cam_table_entry->second;
+		int num_view = distance(camera_table->begin(), cam_table_entry);
+		Camera *cam = cam_table_entry->second;
 		setCamera(cam);
 		if(!update()) return false;
 
-		success = surfIntegrator->render(numView, imageFilm);
+		success = surf_integrator_->render(num_view, image_film_);
 
-		surfIntegrator->cleanup();
-		imageFilm->flush(numView);
+		surf_integrator_->cleanup();
+		image_film_->flush(num_view);
 	}
 
 	return success;
 }
 
 //! does not do anything yet...maybe never will
-bool scene_t::addMaterial(material_t *m, const char *name) { return false; }
+bool Scene::addMaterial(Material *m, const char *name) { return false; }
 
-objID_t scene_t::getNextFreeID()
+ObjId_t Scene::getNextFreeId()
 {
-	objID_t id;
-	id = state.nextFreeID;
+	ObjId_t id;
+	id = state_.next_free_id_;
 
 	//create new entry for object, assert that no ID collision happens:
-	if(meshes.find(id) != meshes.end())
+	if(meshes_.find(id) != meshes_.end())
 	{
-		Y_ERROR << "Scene: Object ID already in use!" << yendl;
-		--state.nextFreeID;
-		return getNextFreeID();
+		Y_ERROR << "Scene: Object ID already in use!" << YENDL;
+		--state_.next_free_id_;
+		return getNextFreeId();
 	}
 
-	--state.nextFreeID;
+	--state_.next_free_id_;
 
 	return id;
 }
 
-bool scene_t::addObject(object3d_t *obj, objID_t &id)
+bool Scene::addObject(Object3D *obj, ObjId_t &id)
 {
-	id = getNextFreeID();
+	id = getNextFreeId();
 	if(id > 0)
 	{
 		//create new triangle object:
-		objects[id] = obj;
+		objects_[id] = obj;
 		return true;
 	}
 	else
@@ -1102,24 +1102,24 @@ bool scene_t::addObject(object3d_t *obj, objID_t &id)
 	}
 }
 
-bool scene_t::addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld)
+bool Scene::addInstance(ObjId_t base_object_id, const Matrix4 &obj_to_world)
 {
-	if(mode != 0) return false;
+	if(mode_ != 0) return false;
 
-	if(meshes.find(baseObjectId) == meshes.end())
+	if(meshes_.find(base_object_id) == meshes_.end())
 	{
-		Y_ERROR << "Base mesh for instance doesn't exist " << baseObjectId << yendl;
+		Y_ERROR << "Base mesh for instance doesn't exist " << base_object_id << YENDL;
 		return false;
 	}
 
-	int id = getNextFreeID();
+	int id = getNextFreeId();
 
 	if(id > 0)
 	{
-		objData_t &od = meshes[id];
-		objData_t &base = meshes[baseObjectId];
+		ObjData &od = meshes_[id];
+		ObjData &base = meshes_[base_object_id];
 
-		od.obj = new triangleObjectInstance_t(base.obj, objToWorld);
+		od.obj_ = new TriangleObjectInstance(base.obj_, obj_to_world);
 
 		return true;
 	}
@@ -1129,8 +1129,8 @@ bool scene_t::addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld)
 	}
 }
 
-const renderPasses_t *scene_t::getRenderPasses() const { return env->getRenderPasses(); }
-bool scene_t::pass_enabled(intPassTypes_t intPassType) const { return env->getRenderPasses()->pass_enabled(intPassType); }
+const RenderPasses *Scene::getRenderPasses() const { return env_->getRenderPasses(); }
+bool Scene::passEnabled(IntPassTypes int_pass_type) const { return env_->getRenderPasses()->passEnabled(int_pass_type); }
 
 
-__END_YAFRAY
+END_YAFRAY

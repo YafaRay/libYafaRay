@@ -7,71 +7,71 @@
 #include <core_api/surface.h>
 #include <iomanip>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-textureMapper_t::textureMapper_t(const texture_t *texture): tex(texture), bumpStr(0.02), doScalar(true)
+TextureMapperNode::TextureMapperNode(const Texture *texture): tex_(texture), bump_str_(0.02), do_scalar_(true)
 {
-	map_x = 1; map_y = 2, map_z = 3;
+	map_x_ = 1; map_y_ = 2, map_z_ = 3;
 }
 
-void textureMapper_t::setup()
+void TextureMapperNode::setup()
 {
-	if(tex->discrete())
+	if(tex_->discrete())
 	{
 		int u, v, w;
-		tex->resolution(u, v, w);
-		dU = 1.f / (float)u;
-		dV = 1.f / (float)v;
-		if(tex->isThreeD()) dW = 1.f / (float)w;
-		else dW = 0.f;
+		tex_->resolution(u, v, w);
+		d_u_ = 1.f / (float)u;
+		d_v_ = 1.f / (float)v;
+		if(tex_->isThreeD()) d_w_ = 1.f / (float)w;
+		else d_w_ = 0.f;
 	}
 	else
 	{
 		float step = 0.0002f;
-		dU = dV = dW = step;
+		d_u_ = d_v_ = d_w_ = step;
 	}
 
-	pDU = point3d_t(dU, 0, 0);
-	pDV = point3d_t(0, dV, 0);
-	pDW = point3d_t(0, 0, dW);
+	p_du_ = Point3(d_u_, 0, 0);
+	p_dv_ = Point3(0, d_v_, 0);
+	p_dw_ = Point3(0, 0, d_w_);
 
-	bumpStr /= scale.length();
+	bump_str_ /= scale_.length();
 
-	if(!tex->isNormalmap())
-		bumpStr /= 100.0f;
+	if(!tex_->isNormalmap())
+		bump_str_ /= 100.0f;
 }
 
 // Map the texture to a cylinder
-inline point3d_t tubemap(const point3d_t &p)
+inline Point3 tubemap__(const Point3 &p)
 {
-	point3d_t res;
-	res.y = p.z;
-	float d = p.x * p.x + p.y * p.y;
+	Point3 res;
+	res.y_ = p.z_;
+	float d = p.x_ * p.x_ + p.y_ * p.y_;
 	if(d > 0)
 	{
-		res.z = 1.0 / fSqrt(d);
-		res.x = -atan2(p.x, p.y) * M_1_PI;
+		res.z_ = 1.0 / fSqrt__(d);
+		res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
 	}
-	else res.x = res.z = 0;
+	else res.x_ = res.z_ = 0;
 	return res;
 }
 
 // Map the texture to a sphere
-inline point3d_t spheremap(const point3d_t &p)
+inline Point3 spheremap__(const Point3 &p)
 {
-	point3d_t res(0.f);
-	float d = p.x * p.x + p.y * p.y + p.z * p.z;
+	Point3 res(0.f);
+	float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
 	if(d > 0)
 	{
-		res.z = fSqrt(d);
-		if((p.x != 0) && (p.y != 0)) res.x = -atan2(p.x, p.y) * M_1_PI;
-		res.y = 1.0f - 2.0f * (fAcos(p.z / res.z) * M_1_PI);
+		res.z_ = fSqrt__(d);
+		if((p.x_ != 0) && (p.y_ != 0)) res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
+		res.y_ = 1.0f - 2.0f * (fAcos__(p.z_ / res.z_) * M_1_PI);
 	}
 	return res;
 }
 
 // Map the texture to a cube
-inline point3d_t cubemap(const point3d_t &p, const vector3d_t &n)
+inline Point3 cubemap__(const Point3 &p, const Vec3 &n)
 {
 	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
 	// int axis = std::fabs(n.x) > std::fabs(n.y) ? (std::fabs(n.x) > std::fabs(n.z) ? 0 : 2) : (std::fabs(n.y) > std::fabs(n.z) ? 1 : 2);
@@ -79,11 +79,11 @@ inline point3d_t cubemap(const point3d_t &p, const vector3d_t &n)
 
 	int axis;
 
-	if(std::fabs(n.z) >= std::fabs(n.x) && std::fabs(n.z) >= std::fabs(n.y))
+	if(std::fabs(n.z_) >= std::fabs(n.x_) && std::fabs(n.z_) >= std::fabs(n.y_))
 	{
 		axis = 2;
 	}
-	else if(std::fabs(n.y) >= std::fabs(n.x) && std::fabs(n.y) >= std::fabs(n.z))
+	else if(std::fabs(n.y_) >= std::fabs(n.x_) && std::fabs(n.y_) >= std::fabs(n.z_))
 	{
 		axis = 1;
 	}
@@ -92,211 +92,211 @@ inline point3d_t cubemap(const point3d_t &p, const vector3d_t &n)
 		axis = 0;
 	}
 
-	return point3d_t(p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]]);
+	return Point3(p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]]);
 }
 
 // Map the texture to a plane but it should not be used by now as it does nothing, it's just for completeness sake
-inline point3d_t flatmap(const point3d_t &p)
+inline Point3 flatmap__(const Point3 &p)
 {
 	return p;
 }
 
-point3d_t textureMapper_t::doMapping(const point3d_t &p, const vector3d_t &N) const
+Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 {
-	point3d_t texpt(p);
+	Point3 texpt(p);
 	// Texture coordinates standardized, if needed, to -1..1
-	switch(tex_coords)
+	switch(coords_)
 	{
-		case TXC_UV:	texpt = point3d_t(2.0f * texpt.x - 1.0f, 2.0f * texpt.y - 1.0f, texpt.z); break;
+		case Uv: texpt = Point3(2.0f * texpt.x_ - 1.0f, 2.0f * texpt.y_ - 1.0f, texpt.z_); break;
 		default: break;
 	}
 	// Texture axis mapping
-	float texmap[4] = {0, texpt.x, texpt.y, texpt.z};
-	texpt.x = texmap[map_x];
-	texpt.y = texmap[map_y];
-	texpt.z = texmap[map_z];
+	float texmap[4] = {0, texpt.x_, texpt.y_, texpt.z_};
+	texpt.x_ = texmap[map_x_];
+	texpt.y_ = texmap[map_y_];
+	texpt.z_ = texmap[map_z_];
 	// Texture coordinates mapping
-	switch(tex_maptype)
+	switch(projection_)
 	{
-		case TXP_TUBE:	texpt = tubemap(texpt); break;
-		case TXP_SPHERE: texpt = spheremap(texpt); break;
-		case TXP_CUBE:	texpt = cubemap(texpt, N); break;
-		case TXP_PLAIN:	// texpt = flatmap(texpt); break;
+		case Tube:	texpt = tubemap__(texpt); break;
+		case Sphere: texpt = spheremap__(texpt); break;
+		case Cube:	texpt = cubemap__(texpt, n); break;
+		case Plain:	// texpt = flatmap(texpt); break;
 		default: break;
 	}
 	// Texture scale and offset
-	texpt = mult(texpt, scale) + offset;
+	texpt = mult__(texpt, scale_) + offset_;
 
 	return texpt;
 }
 
-point3d_t eval_uv(const surfacePoint_t &sp)
+Point3 evalUv__(const SurfacePoint &sp)
 {
-	return point3d_t(sp.U, sp.V, 0.f);
+	return Point3(sp.u_, sp.v_, 0.f);
 }
 
-void textureMapper_t::getCoords(point3d_t &texpt, vector3d_t &Ng, const surfacePoint_t &sp, const renderState_t &state) const
+void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderState &state) const
 {
-	switch(tex_coords)
+	switch(coords_)
 	{
-		case TXC_UV:	texpt = eval_uv(sp); Ng = sp.Ng; break;
-		case TXC_ORCO:	texpt = sp.orcoP; Ng = sp.orcoNg; break;
-		case TXC_TRAN:	texpt = mtx * sp.P; Ng = mtx * sp.Ng; break;  // apply 4x4 matrix of object for mapping also to true surface normals
-		case TXC_WIN:	texpt = state.cam->screenproject(sp.P); Ng = sp.Ng; break;
-		case TXC_NOR:
+		case Uv: texpt = evalUv__(sp); ng = sp.ng_; break;
+		case Orco:	texpt = sp.orco_p_; ng = sp.orco_ng_; break;
+		case Tran:	texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
+		case Win:	texpt = state.cam_->screenproject(sp.p_); ng = sp.ng_; break;
+		case Nor:
 		{
-			vector3d_t camx, camy, camz;
-			state.cam->getAxis(camx, camy, camz);
-			texpt = point3d_t(sp.N * camx, -sp.N * camy, 0); Ng = sp.Ng;
+			Vec3 camx, camy, camz;
+			state.cam_->getAxis(camx, camy, camz);
+			texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0); ng = sp.ng_;
 			break;
 		}
-		case TXC_STICK:	// Not implemented yet use GLOB
-		case TXC_STRESS:// Not implemented yet use GLOB
-		case TXC_TAN:	// Not implemented yet use GLOB
-		case TXC_REFL:	// Not implemented yet use GLOB
-		case TXC_GLOB:	// GLOB mapped as default
-		default:		texpt = sp.P; Ng = sp.Ng;
+		case Stick:	// Not implemented yet use GLOB
+		case Stress:// Not implemented yet use GLOB
+		case Tan:	// Not implemented yet use GLOB
+		case Refl:	// Not implemented yet use GLOB
+		case Glob:	// GLOB mapped as default
+		default:		texpt = sp.p_; ng = sp.ng_;
 			break;
 	}
 }
 
 
-void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	point3d_t texpt(0.f);
-	vector3d_t Ng(0.f);
-	mipMapParams_t *mipMapParams = nullptr;
+	Point3 texpt(0.f);
+	Vec3 ng(0.f);
+	MipMapParams *mip_map_params = nullptr;
 
-	if((tex->getInterpolationType() == INTP_MIPMAP_TRILINEAR || tex->getInterpolationType() == INTP_MIPMAP_EWA) && sp.ray && sp.ray->hasDifferentials)
+	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_ && sp.ray_->has_differentials_)
 	{
-		spDifferentials_t spDiff(sp, *(sp.ray));
+		SpDifferentials sp_diff(sp, *(sp.ray_));
 
-		getCoords(texpt, Ng, sp, state);
+		getCoords(texpt, ng, sp, state);
 
-		point3d_t texptorig = texpt;
+		Point3 texptorig = texpt;
 
-		texpt = doMapping(texptorig, Ng);
+		texpt = doMapping(texptorig, ng);
 
-		if(tex_coords == TXC_UV && sp.hasUV)
+		if(coords_ == Uv && sp.has_uv_)
 		{
-			float dUdx = 0.f, dVdx = 0.f;
-			float dUdy = 0.f, dVdy = 0.f;
-			spDiff.getUVdifferentials(dUdx, dVdx, dUdy, dVdy);
+			float du_dx = 0.f, dv_dx = 0.f;
+			float du_dy = 0.f, dv_dy = 0.f;
+			sp_diff.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 
-			point3d_t texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdx, dVdx, 0.f), Ng) - texpt);
-			point3d_t texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * point3d_t(dUdy, dVdy, 0.f), Ng) - texpt);
+			Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
+			Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
 
-			mipMapParams = new mipMapParams_t(texpt_diffx.x, texpt_diffx.y, texpt_diffy.x, texpt_diffy.y);
+			mip_map_params = new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_);
 		}
 	}
 	else
 	{
-		getCoords(texpt, Ng, sp, state);
-		texpt = doMapping(texpt, Ng);
+		getCoords(texpt, ng, sp, state);
+		texpt = doMapping(texpt, ng);
 	}
 
-	stack[this->ID] = nodeResult_t(tex->getColor(texpt, mipMapParams), (doScalar) ? tex->getFloat(texpt, mipMapParams) : 0.f);
+	stack[this->id_] = NodeResult(tex_->getColor(texpt, mip_map_params), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params) : 0.f);
 
-	if(mipMapParams)
+	if(mip_map_params)
 	{
-		delete mipMapParams;
-		mipMapParams = nullptr;
+		delete mip_map_params;
+		mip_map_params = nullptr;
 	}
 }
 
 // Basically you shouldn't call this anyway, but for the sake of consistency, redirect:
-void textureMapper_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
+void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
 	eval(stack, state, sp);
 }
 
 // Normal perturbation
 
-void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	point3d_t texpt(0.f);
-	vector3d_t Ng(0.f);
+	Point3 texpt(0.f);
+	Vec3 ng(0.f);
 	float du = 0.0f, dv = 0.0f;
 
-	getCoords(texpt, Ng, sp, state);
+	getCoords(texpt, ng, sp, state);
 
-	if(tex->discrete() && sp.hasUV && tex_coords == TXC_UV)
+	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
 	{
-		texpt = doMapping(texpt, Ng);
-		colorA_t color(0.f);
-		vector3d_t norm(0.f);
+		texpt = doMapping(texpt, ng);
+		Rgba color(0.f);
+		Vec3 norm(0.f);
 
-		if(tex->isNormalmap())
+		if(tex_->isNormalmap())
 		{
 			// Get color from normal map texture
-			color = tex->getRawColor(texpt);
+			color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
-			norm.x = color.getR();
-			norm.y = color.getG();
-			norm.z = color.getB();
+			norm.x_ = color.getR();
+			norm.y_ = color.getG();
+			norm.z_ = color.getB();
 			norm = (2.f * norm) - 1.f;
 
 			// Convert norm into shading space
-			du = norm * sp.dSdU;
-			dv = norm * sp.dSdV;
+			du = norm * sp.ds_du_;
+			dv = norm * sp.ds_dv_;
 		}
 		else
 		{
-			point3d_t i0 = (texpt - pDU);
-			point3d_t i1 = (texpt + pDU);
-			point3d_t j0 = (texpt - pDV);
-			point3d_t j1 = (texpt + pDV);
-			float dfdu = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-			float dfdv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
+			Point3 i_0 = (texpt - p_du_);
+			Point3 i_1 = (texpt + p_du_);
+			Point3 j_0 = (texpt - p_dv_);
+			Point3 j_1 = (texpt + p_dv_);
+			float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
+			float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
-			vector3d_t vecU = sp.dSdU;
-			vector3d_t vecV = sp.dSdV;
-			vecU.z = dfdu;
-			vecV.z = dfdv;
+			Vec3 vec_u = sp.ds_du_;
+			Vec3 vec_v = sp.ds_dv_;
+			vec_u.z_ = dfdu;
+			vec_v.z_ = dfdv;
 			// now we have two vectors NU/NV/df; Solve plane equation to get 1/0/df and 0/1/df (i.e. dNUdf and dNVdf)
-			norm = vecU ^ vecV;
+			norm = vec_u ^ vec_v;
 		}
 
 		norm.normalize();
 
-		if(std::fabs(norm.z) > 1e-30f)
+		if(std::fabs(norm.z_) > 1e-30f)
 		{
-			float NF = 1.0 / norm.z * bumpStr; // normalizes z to 1, why?
-			du = norm.x * NF;
-			dv = norm.y * NF;
+			float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
+			du = norm.x_ * nf;
+			dv = norm.y_ * nf;
 		}
 		else du = dv = 0.f;
 	}
 	else
 	{
-		if(tex->isNormalmap())
+		if(tex_->isNormalmap())
 		{
-			texpt = doMapping(texpt, Ng);
-			colorA_t color(0.f);
-			vector3d_t norm(0.f);
+			texpt = doMapping(texpt, ng);
+			Rgba color(0.f);
+			Vec3 norm(0.f);
 
 			// Get color from normal map texture
-			color = tex->getRawColor(texpt);
+			color = tex_->getRawColor(texpt);
 
 			// Assign normal map RGB colors to vector norm
-			norm.x = color.getR();
-			norm.y = color.getG();
-			norm.z = color.getB();
+			norm.x_ = color.getR();
+			norm.y_ = color.getG();
+			norm.z_ = color.getB();
 			norm = (2.f * norm) - 1.f;
 
 			// Convert norm into shading space
-			du = norm * sp.dSdU;
-			dv = norm * sp.dSdV;
+			du = norm * sp.ds_du_;
+			dv = norm * sp.ds_dv_;
 
 			norm.normalize();
 
-			if(std::fabs(norm.z) > 1e-30f)
+			if(std::fabs(norm.z_) > 1e-30f)
 			{
-				float NF = 1.0 / norm.z * bumpStr; // normalizes z to 1, why?
-				du = norm.x * NF;
-				dv = norm.y * NF;
+				float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
+				du = norm.x_ * nf;
+				dv = norm.y_ * nf;
 			}
 			else du = dv = 0.f;
 		}
@@ -304,17 +304,17 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		{
 			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
 			// weird things may happen when objects are rotated, i.e. incorrect bump change
-			point3d_t i0 = doMapping(texpt - dU * sp.NU, Ng);
-			point3d_t i1 = doMapping(texpt + dU * sp.NU, Ng);
-			point3d_t j0 = doMapping(texpt - dV * sp.NV, Ng);
-			point3d_t j1 = doMapping(texpt + dV * sp.NV, Ng);
+			Point3 i_0 = doMapping(texpt - d_u_ * sp.nu_, ng);
+			Point3 i_1 = doMapping(texpt + d_u_ * sp.nu_, ng);
+			Point3 j_0 = doMapping(texpt - d_v_ * sp.nv_, ng);
+			Point3 j_1 = doMapping(texpt + d_v_ * sp.nv_, ng);
 
-			du = (tex->getFloat(i0) - tex->getFloat(i1)) / dU;
-			dv = (tex->getFloat(j0) - tex->getFloat(j1)) / dV;
-			du *= bumpStr;
-			dv *= bumpStr;
+			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
+			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
+			du *= bump_str_;
+			dv *= bump_str_;
 
-			if(tex_coords != TXC_UV)
+			if(coords_ != Uv)
 			{
 				du = -du;
 				dv = -dv;
@@ -322,71 +322,71 @@ void textureMapper_t::evalDerivative(nodeStack_t &stack, const renderState_t &st
 		}
 	}
 
-	stack[this->ID] = nodeResult_t(colorA_t(du, dv, 0.f, 0.f), 0.f);
+	stack[this->id_] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironment_t &render)
+ShaderNode *TextureMapperNode::factory(const ParamMap &params, RenderEnvironment &render)
 {
-	const texture_t *tex = nullptr;
+	const Texture *tex = nullptr;
 	std::string texname, option;
-	TEX_COORDS tc = TXC_GLOB;
-	TEX_PROJ maptype = TXP_PLAIN;
-	float bumpStr = 1.f;
+	Coords tc = Glob;
+	Projection projection = Plain;
+	float bump_str = 1.f;
 	bool scalar = true;
 	int map[3] = { 1, 2, 3 };
-	point3d_t offset(0.f), scale(1.f);
-	matrix4x4_t mtx(1);
+	Point3 offset(0.f), scale(1.f);
+	Matrix4 mtx(1);
 	if(!params.getParam("texture", texname))
 	{
-		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << yendl;
+		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << YENDL;
 		return nullptr;
 	}
 	tex = render.getTexture(texname);
 	if(!tex)
 	{
-		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << yendl;
+		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << YENDL;
 		return nullptr;
 	}
-	textureMapper_t *tm = new textureMapper_t(tex);
+	TextureMapperNode *tm = new TextureMapperNode(tex);
 	if(params.getParam("texco", option))
 	{
-		if(option == "uv") tc = TXC_UV;
-		else if(option == "global") tc = TXC_GLOB;
-		else if(option == "orco") tc = TXC_ORCO;
-		else if(option == "transformed") tc = TXC_TRAN;
-		else if(option == "window") tc = TXC_WIN;
-		else if(option == "normal") tc = TXC_NOR;
-		else if(option == "reflect") tc = TXC_REFL;
-		else if(option == "stick") tc = TXC_STICK;
-		else if(option == "stress") tc = TXC_STRESS;
-		else if(option == "tangent") tc = TXC_TAN;
+		if(option == "uv") tc = Uv;
+		else if(option == "global") tc = Glob;
+		else if(option == "orco") tc = Orco;
+		else if(option == "transformed") tc = Tran;
+		else if(option == "window") tc = Win;
+		else if(option == "normal") tc = Nor;
+		else if(option == "reflect") tc = Refl;
+		else if(option == "stick") tc = Stick;
+		else if(option == "stress") tc = Stress;
+		else if(option == "tangent") tc = Tan;
 	}
 	if(params.getParam("mapping", option) && tex->discrete())
 	{
-		if(option == "plain") maptype = TXP_PLAIN;
-		else if(option == "cube") maptype = TXP_CUBE;
-		else if(option == "tube") maptype = TXP_TUBE;
-		else if(option == "sphere") maptype = TXP_SPHERE;
+		if(option == "plain") projection = Plain;
+		else if(option == "cube") projection = Cube;
+		else if(option == "tube") projection = Tube;
+		else if(option == "sphere") projection = Sphere;
 	}
 	params.getParam("transform", mtx);
 	params.getParam("scale", scale);
 	params.getParam("offset", offset);
 	params.getParam("do_scalar", scalar);
-	params.getParam("bump_strength", bumpStr);
+	params.getParam("bump_strength", bump_str);
 	params.getParam("proj_x", map[0]);
 	params.getParam("proj_y", map[1]);
 	params.getParam("proj_z", map[2]);
 	for(int i = 0; i < 3; ++i) map[i] = std::min(3, std::max(0, map[i]));
-	tm->tex_coords = tc;
-	tm->tex_maptype = maptype;
-	tm->map_x = map[0];
-	tm->map_y = map[1];
-	tm->map_z = map[2];
-	tm->scale = vector3d_t(scale);
-	tm->offset = vector3d_t(2 * offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
-	tm->doScalar = scalar;
-	tm->bumpStr = bumpStr;
-	tm->mtx = mtx;
+	tm->coords_ = tc;
+	tm->projection_ = projection;
+	tm->map_x_ = map[0];
+	tm->map_y_ = map[1];
+	tm->map_z_ = map[2];
+	tm->scale_ = Vec3(scale);
+	tm->offset_ = Vec3(2 * offset);	// Offset need to be doubled due to -1..1 texture standardized wich results in a 2 wide width/height
+	tm->do_scalar_ = scalar;
+	tm->bump_str_ = bump_str;
+	tm->mtx_ = mtx;
 	tm->setup();
 	return tm;
 }
@@ -395,275 +395,275 @@ shaderNode_t *textureMapper_t::factory(const paraMap_t &params, renderEnvironmen
 /  The most simple node you could imagine...
 /  ========================================== */
 
-void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	stack[this->ID] = nodeResult_t(color, value);
+	stack[this->id_] = NodeResult(color_, value_);
 }
 
-void valueNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
+void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
-	stack[this->ID] = nodeResult_t(color, value);
+	stack[this->id_] = NodeResult(color_, value_);
 }
 
-shaderNode_t *valueNode_t::factory(const paraMap_t &params, renderEnvironment_t &render)
+ShaderNode *ValueNode::factory(const ParamMap &params, RenderEnvironment &render)
 {
-	color_t col(1.f);
+	Rgb col(1.f);
 	float alpha = 1.f;
 	float val = 1.f;
 	params.getParam("color", col);
 	params.getParam("alpha", alpha);
 	params.getParam("scalar", val);
-	return new valueNode_t(colorA_t(col, alpha), val);
+	return new ValueNode(Rgba(col, alpha), val);
 }
 
 /* ==========================================
 /  A simple mix node, could be used to derive other math nodes
 / ========================================== */
 
-mixNode_t::mixNode_t(): cfactor(0.f), input1(0), input2(0), factor(0)
+MixNode::MixNode(): cfactor_(0.f), input_1_(0), input_2_(0), factor_(0)
 {}
 
-mixNode_t::mixNode_t(float val): cfactor(val), input1(0), input2(0), factor(0)
+MixNode::MixNode(float val): cfactor_(val), input_1_(0), input_2_(0), factor_(0)
 {}
 
-void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	float f2 = (factor) ? factor->getScalar(stack) : cfactor;
-	float f1 = 1.f - f2, fin1, fin2;
-	colorA_t cin1, cin2;
-	if(input1)
+	float f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
+	float f_1 = 1.f - f_2, fin_1, fin_2;
+	Rgba cin_1, cin_2;
+	if(input_1_)
 	{
-		cin1 = input1->getColor(stack);
-		fin1 = input1->getScalar(stack);
+		cin_1 = input_1_->getColor(stack);
+		fin_1 = input_1_->getScalar(stack);
 	}
 	else
 	{
-		cin1 = col1;
-		fin1 = val1;
+		cin_1 = col_1_;
+		fin_1 = val_1_;
 	}
-	if(input2)
+	if(input_2_)
 	{
-		cin2 = input2->getColor(stack);
-		fin2 = input2->getScalar(stack);
+		cin_2 = input_2_->getColor(stack);
+		fin_2 = input_2_->getScalar(stack);
 	}
 	else
 	{
-		cin2 = col2;
-		fin2 = val2;
+		cin_2 = col_2_;
+		fin_2 = val_2_;
 	}
 
-	colorA_t color = f1 * cin1 + f2 * cin2;
-	float   scalar = f1 * fin1 + f2 * fin2;
-	stack[this->ID] = nodeResult_t(color, scalar);
+	Rgba color = f_1 * cin_1 + f_2 * cin_2;
+	float   scalar = f_1 * fin_1 + f_2 * fin_2;
+	stack[this->id_] = NodeResult(color, scalar);
 }
 
-void mixNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
+void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
 	eval(stack, state, sp);
 }
 
-bool mixNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
+bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
 {
 	std::string name;
 	if(params.getParam("input1", name))
 	{
-		input1 = find(name);
-		if(!input1)
+		input_1_ = find(name);
+		if(!input_1_)
 		{
-			Y_ERROR << "MixNode: Couldn't get input1 " << name << yendl;
+			Y_ERROR << "MixNode: Couldn't get input1 " << name << YENDL;
 			return false;
 		}
 	}
-	else if(!params.getParam("color1", col1))
+	else if(!params.getParam("color1", col_1_))
 	{
-		Y_ERROR << "MixNode: Color1 not set" << yendl;
+		Y_ERROR << "MixNode: Color1 not set" << YENDL;
 		return false;
 	}
 
 	if(params.getParam("input2", name))
 	{
-		input2 = find(name);
-		if(!input2)
+		input_2_ = find(name);
+		if(!input_2_)
 		{
-			Y_ERROR << "MixNode: Couldn't get input2 " << name << yendl;
+			Y_ERROR << "MixNode: Couldn't get input2 " << name << YENDL;
 			return false;
 		}
 	}
-	else if(!params.getParam("color2", col2))
+	else if(!params.getParam("color2", col_2_))
 	{
-		Y_ERROR << "MixNode: Color2 not set" << yendl;
+		Y_ERROR << "MixNode: Color2 not set" << YENDL;
 		return false;
 	}
 
 	if(params.getParam("factor", name))
 	{
-		factor = find(name);
-		if(!factor)
+		factor_ = find(name);
+		if(!factor_)
 		{
-			Y_ERROR << "MixNode: Couldn't get factor " << name << yendl;
+			Y_ERROR << "MixNode: Couldn't get factor " << name << YENDL;
 			return false;
 		}
 	}
-	else if(!params.getParam("value", cfactor))
+	else if(!params.getParam("value", cfactor_))
 	{
-		Y_ERROR << "MixNode: Value not set" << yendl;
+		Y_ERROR << "MixNode: Value not set" << YENDL;
 		return false;
 	}
 
 	return true;
 }
 
-bool mixNode_t::getDependencies(std::vector<const shaderNode_t *> &dep) const
+bool MixNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 {
-	if(input1) dep.push_back(input1);
-	if(input2) dep.push_back(input2);
-	if(factor) dep.push_back(factor);
+	if(input_1_) dep.push_back(input_1_);
+	if(input_2_) dep.push_back(input_2_);
+	if(factor_) dep.push_back(factor_);
 	return !dep.empty();
 }
 
-class addNode_t: public mixNode_t
+class AddNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
+			float f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 
-			cin1 += f2 * cin2;
-			fin1 += f2 * fin2;
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_1 += f_2 * cin_2;
+			fin_1 += f_2 * fin_2;
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class multNode_t: public mixNode_t
+class MultNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f1, f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			f1 = 1.f - f2;
+			float f_1, f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
+			f_1 = 1.f - f_2;
 
-			cin1 *= colorA_t(f1) + f2 * cin2;
-			fin2 *= f1 + f2 * fin2;
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_1 *= Rgba(f_1) + f_2 * cin_2;
+			fin_2 *= f_1 + f_2 * fin_2;
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class subNode_t: public mixNode_t
+class SubNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
+			float f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 
-			cin1 -= f2 * cin2;
-			fin1 -= f2 * fin2;
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_1 -= f_2 * cin_2;
+			fin_1 -= f_2 * fin_2;
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class screenNode_t: public mixNode_t
+class ScreenNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f1, f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			f1 = 1.f - f2;
+			float f_1, f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
+			f_1 = 1.f - f_2;
 
-			colorA_t color = colorA_t(1.f) - (colorA_t(f1) + f2 * (1.f - cin2)) * (1.f - cin1);
-			float scalar   = 1.0 - (f1 + f2 * (1.f - fin2)) * (1.f -  fin1);
-			stack[this->ID] = nodeResult_t(color, scalar);
+			Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
+			float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
+			stack[this->id_] = NodeResult(color, scalar);
 		}
 };
 
-class diffNode_t: public mixNode_t
+class DiffNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f1, f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			f1 = 1.f - f2;
+			float f_1, f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
+			f_1 = 1.f - f_2;
 
-			cin1.R = f1 * cin1.R + f2 * std::fabs(cin1.R - cin2.R);
-			cin1.G = f1 * cin1.G + f2 * std::fabs(cin1.G - cin2.G);
-			cin1.B = f1 * cin1.B + f2 * std::fabs(cin1.B - cin2.B);
-			cin1.A = f1 * cin1.A + f2 * std::fabs(cin1.A - cin2.A);
-			fin1   = f1 * fin1   + f2 * std::fabs(fin1 - fin2);
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_1.r_ = f_1 * cin_1.r_ + f_2 * std::fabs(cin_1.r_ - cin_2.r_);
+			cin_1.g_ = f_1 * cin_1.g_ + f_2 * std::fabs(cin_1.g_ - cin_2.g_);
+			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::fabs(cin_1.b_ - cin_2.b_);
+			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::fabs(cin_1.a_ - cin_2.a_);
+			fin_1   = f_1 * fin_1 + f_2 * std::fabs(fin_1 - fin_2);
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class darkNode_t: public mixNode_t
+class DarkNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
+			float f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 
-			cin2 *= f2;
-			if(cin2.R < cin1.R) cin1.R = cin2.R;
-			if(cin2.G < cin1.G) cin1.G = cin2.G;
-			if(cin2.B < cin1.B) cin1.B = cin2.B;
-			if(cin2.A < cin1.A) cin1.A = cin2.A;
-			fin2 *= f2;
-			if(fin2 < fin1) fin1 = fin2;
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_2 *= f_2;
+			if(cin_2.r_ < cin_1.r_) cin_1.r_ = cin_2.r_;
+			if(cin_2.g_ < cin_1.g_) cin_1.g_ = cin_2.g_;
+			if(cin_2.b_ < cin_1.b_) cin_1.b_ = cin_2.b_;
+			if(cin_2.a_ < cin_1.a_) cin_1.a_ = cin_2.a_;
+			fin_2 *= f_2;
+			if(fin_2 < fin_1) fin_1 = fin_2;
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class lightNode_t: public mixNode_t
+class LightNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
+			float f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 
-			cin2 *= f2;
-			if(cin2.R > cin1.R) cin1.R = cin2.R;
-			if(cin2.G > cin1.G) cin1.G = cin2.G;
-			if(cin2.B > cin1.B) cin1.B = cin2.B;
-			if(cin2.A > cin1.A) cin1.A = cin2.A;
-			fin2 *= f2;
-			if(fin2 > fin1) fin1 = fin2;
-			stack[this->ID] = nodeResult_t(cin1, fin1);
+			cin_2 *= f_2;
+			if(cin_2.r_ > cin_1.r_) cin_1.r_ = cin_2.r_;
+			if(cin_2.g_ > cin_1.g_) cin_1.g_ = cin_2.g_;
+			if(cin_2.b_ > cin_1.b_) cin_1.b_ = cin_2.b_;
+			if(cin_2.a_ > cin_1.a_) cin_1.a_ = cin_2.a_;
+			fin_2 *= f_2;
+			if(fin_2 > fin_1) fin_1 = fin_2;
+			stack[this->id_] = NodeResult(cin_1, fin_1);
 		}
 };
 
-class overlayNode_t: public mixNode_t
+class OverlayNode: public MixNode
 {
 	public:
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 		{
-			float f1, f2, fin1, fin2;
-			colorA_t cin1, cin2;
-			getInputs(stack, cin1, cin2, fin1, fin2, f2);
-			f1 = 1.f - f2;
+			float f_1, f_2, fin_1, fin_2;
+			Rgba cin_1, cin_2;
+			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
+			f_1 = 1.f - f_2;
 
-			colorA_t color;
-			color.R = (cin1.R < 0.5f) ? cin1.R * (f1 + 2.0f * f2 * cin2.R) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.R)) * (1.0 - cin1.R);
-			color.G = (cin1.G < 0.5f) ? cin1.G * (f1 + 2.0f * f2 * cin2.G) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.G)) * (1.0 - cin1.G);
-			color.B = (cin1.B < 0.5f) ? cin1.B * (f1 + 2.0f * f2 * cin2.B) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.B)) * (1.0 - cin1.B);
-			color.A = (cin1.A < 0.5f) ? cin1.A * (f1 + 2.0f * f2 * cin2.A) : 1.0 - (f1 + 2.0f * f2 * (1.0 - cin2.A)) * (1.0 - cin1.A);
-			float scalar = (fin1 < 0.5f) ? fin1 * (f1 + 2.0f * f2 * fin2) : 1.0 - (f1 + 2.0f * f2 * (1.0 - fin2)) * (1.0 - fin1);
-			stack[this->ID] = nodeResult_t(color, scalar);
+			Rgba color;
+			color.r_ = (cin_1.r_ < 0.5f) ? cin_1.r_ * (f_1 + 2.0f * f_2 * cin_2.r_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.r_)) * (1.0 - cin_1.r_);
+			color.g_ = (cin_1.g_ < 0.5f) ? cin_1.g_ * (f_1 + 2.0f * f_2 * cin_2.g_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.g_)) * (1.0 - cin_1.g_);
+			color.b_ = (cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.0f * f_2 * cin_2.b_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.b_)) * (1.0 - cin_1.b_);
+			color.a_ = (cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.0f * f_2 * cin_2.a_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.a_)) * (1.0 - cin_1.a_);
+			float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
+			stack[this->id_] = NodeResult(color, scalar);
 		}
 };
 
 
-shaderNode_t *mixNode_t::factory(const paraMap_t &params, renderEnvironment_t &render)
+ShaderNode *MixNode::factory(const ParamMap &params, RenderEnvironment &render)
 {
 	float val = 0.5f;
 	int mode = 0;
@@ -672,30 +672,30 @@ shaderNode_t *mixNode_t::factory(const paraMap_t &params, renderEnvironment_t &r
 
 	switch(mode)
 	{
-		case MN_MIX: 		return new mixNode_t(val);
-		case MN_ADD: 		return new addNode_t();
-		case MN_MULT: 		return new multNode_t();
-		case MN_SUB: 		return new subNode_t();
-		case MN_SCREEN:		return new screenNode_t();
-		case MN_DIFF:		return new diffNode_t();
-		case MN_DARK:		return new darkNode_t();
-		case MN_LIGHT:		return new lightNode_t();
-		case MN_OVERLAY:	return new overlayNode_t();
+		case MnMix: 		return new MixNode(val);
+		case MnAdd: 		return new AddNode();
+		case MnMult: 		return new MultNode();
+		case MnSub: 		return new SubNode();
+		case MnScreen:		return new ScreenNode();
+		case MnDiff:		return new DiffNode();
+		case MnDark:		return new DarkNode();
+		case MnLight:		return new LightNode();
+		case MnOverlay:	return new OverlayNode();
 	}
-	return new mixNode_t(val);
+	return new MixNode(val);
 }
 
 // ==================
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("texture_mapper", textureMapper_t::factory);
-		render.registerFactory("value", valueNode_t::factory);
-		render.registerFactory("mix", mixNode_t::factory);
-		render.registerFactory("layer", layerNode_t::factory);
+		render.registerFactory("texture_mapper", TextureMapperNode::factory);
+		render.registerFactory("value", ValueNode::factory);
+		render.registerFactory("mix", MixNode::factory);
+		render.registerFactory("layer", LayerNode::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

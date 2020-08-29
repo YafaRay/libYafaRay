@@ -23,35 +23,35 @@
 #include <core_api/vector3d.h>
 #include <core_api/matrix4.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-std::ostream &operator << (std::ostream &out, const vector3d_t &v)
+std::ostream &operator << (std::ostream &out, const Vec3 &v)
 {
-	out << "(" << v.x << "," << v.y << "," << v.z << ")";
+	out << "(" << v.x_ << "," << v.y_ << "," << v.z_ << ")";
 	return out;
 }
 
 
-std::ostream &operator << (std::ostream &out, const point3d_t &p)
+std::ostream &operator << (std::ostream &out, const Point3 &p)
 {
-	out << "(" << p.x << "," << p.y << "," << p.z << ")";
+	out << "(" << p.x_ << "," << p.y_ << "," << p.z_ << ")";
 	return out;
 }
 
 
-bool  operator == (const vector3d_t &a, const vector3d_t &b)
+bool  operator == (const Vec3 &a, const Vec3 &b)
 {
-	if(a.x != b.x) return false;
-	if(a.y != b.y) return false;
-	if(a.z != b.z) return false;
+	if(a.x_ != b.x_) return false;
+	if(a.y_ != b.y_) return false;
+	if(a.z_ != b.z_) return false;
 	return true;
 }
 
-bool  operator != (const vector3d_t &a, const vector3d_t &b)
+bool  operator != (const Vec3 &a, const Vec3 &b)
 {
-	if(a.x != b.x) return true;
-	if(a.y != b.y) return true;
-	if(a.z != b.z) return true;
+	if(a.x_ != b.x_) return true;
+	if(a.y_ != b.y_) return true;
+	if(a.z_ != b.z_) return true;
 	return false;
 }
 
@@ -79,15 +79,15 @@ bool  operator != (const vector3d_t &a, const vector3d_t &b)
 
 /*! refract a ray given the IOR. All directions (n, wi and wo) point away from the intersection point.
 	\return true when refraction was possible, false when total inner reflrection occurs (wo is not computed then)
-	\param IOR Index of refraction, or precisely the ratio of eta_t/eta_i, where eta_i is by definition the
+	\param ior Index of refraction, or precisely the ratio of eta_t/eta_i, where eta_i is by definition the
 				medium in which n points. E.g. "outside" is air, "inside" is water, the normal points outside,
 				IOR = eta_air / eta_water = 1.33
 */
-bool refract(const vector3d_t &n, const vector3d_t &wi, vector3d_t &wo, float IOR)
+bool refract__(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 {
-	vector3d_t N = n, I, T;
-	float eta = IOR;
-	I = -wi;
+	Vec3 N = n, i;
+	float eta = ior;
+	i = -wi;
 	float cos_v_n = wi * n;
 	if((cos_v_n) < 0)
 	{
@@ -96,65 +96,65 @@ bool refract(const vector3d_t &n, const vector3d_t &wi, vector3d_t &wo, float IO
 	}
 	else
 	{
-		eta = 1.0 / IOR;
+		eta = 1.0 / ior;
 	}
 	float k = 1 - eta * eta * (1 - cos_v_n * cos_v_n);
 	if(k <= 0.f) return false;
 
-	wo = eta * I + (eta * cos_v_n - fSqrt(k)) * N;
+	wo = eta * i + (eta * cos_v_n - fSqrt__(k)) * N;
 	wo.normalize();
 
 	return true;
 }
 
-void fresnel(const vector3d_t &I, const vector3d_t &n, float IOR, float &Kr, float &Kt)
+void fresnel__(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
 {
 	float eta;
-	vector3d_t N;
+	Vec3 N;
 
-	if((I * n) < 0)
+	if((i * n) < 0)
 	{
 		//eta=1.0/IOR;
-		eta = IOR;
+		eta = ior;
 		N = -n;
 	}
 	else
 	{
-		eta = IOR;
+		eta = ior;
 		N = n;
 	}
-	float c = I * N;
+	float c = i * N;
 	float g = eta * eta + c * c - 1;
 	if(g <= 0)
 		g = 0;
 	else
-		g = fSqrt(g);
+		g = fSqrt__(g);
 	float aux = c * (g + c);
 
-	Kr = ((0.5 * (g - c) * (g - c)) / ((g + c) * (g + c))) *
-	     (1 + ((aux - 1) * (aux - 1)) / ((aux + 1) * (aux + 1)));
-	if(Kr < 1.0)
-		Kt = 1 - Kr;
+	kr = ((0.5 * (g - c) * (g - c)) / ((g + c) * (g + c))) *
+		 (1 + ((aux - 1) * (aux - 1)) / ((aux + 1) * (aux + 1)));
+	if(kr < 1.0)
+		kt = 1 - kr;
 	else
-		Kt = 0;
+		kt = 0;
 }
 
 
 // 'Faster' Schlick fresnel approximation,
-void fast_fresnel(const vector3d_t &I, const vector3d_t &n, float IORF,
-                  float &Kr, float &Kt)
+void fastFresnel__(const Vec3 &i, const Vec3 &n, float iorf,
+				   float &kr, float &kt)
 {
-	float t = 1 - (I * n);
+	float t = 1 - (i * n);
 	//t = (t<0)?0:((t>1)?1:t);
-	float t2 = t * t;
-	Kr = IORF + (1 - IORF) * t2 * t2 * t;
-	Kt = 1 - Kr;
+	float t_2 = t * t;
+	kr = iorf + (1 - iorf) * t_2 * t_2 * t;
+	kt = 1 - kr;
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
-void ShirleyDisk(float r1, float r2, float &u, float &v)
+void shirleyDisk__(float r_1, float r_2, float &u, float &v)
 {
-	float phi = 0, r = 0, a = 2 * r1 - 1, b = 2 * r2 - 1;
+	float phi = 0, r = 0, a = 2 * r_1 - 1, b = 2 * r_2 - 1;
 	if(a > -b)
 	{
 		if(a > b)  	// Reg.1
@@ -184,56 +184,56 @@ void ShirleyDisk(float r1, float r2, float &u, float &v)
 				phi = 0;
 		}
 	}
-	u = r * fCos(phi);
-	v = r * fSin(phi);
+	u = r * fCos__(phi);
+	v = r * fSin__(phi);
 }
 
 
 
-YAFRAYCORE_EXPORT int myseed = 123212;
+YAFRAYCORE_EXPORT int myseed__ = 123212;
 
-vector3d_t randomVectorCone(const vector3d_t &D,
-                            const vector3d_t &U, const vector3d_t &V,
-                            float cosang, float z1, float z2)
+Vec3 randomVectorCone__(const Vec3 &d,
+						const Vec3 &u, const Vec3 &v,
+						float cosang, float z_1, float z_2)
 {
-	float t1 = M_2PI * z1, t2 = 1.0 - (1.0 - cosang) * z2;
-	return (U * fCos(t1) + V * fSin(t1)) * fSqrt(1.0 - t2 * t2) + D * t2;
+	float t_1 = M_2PI * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
+	return (u * fCos__(t_1) + v * fSin__(t_1)) * fSqrt__(1.0 - t_2 * t_2) + d * t_2;
 }
 
-vector3d_t randomVectorCone(const vector3d_t &dir, float cangle, float r1, float r2)
+Vec3 randomVectorCone__(const Vec3 &dir, float cangle, float r_1, float r_2)
 {
-	vector3d_t u, v;
-	createCS(dir, u, v);
-	return randomVectorCone(dir, u, v, cangle, r1, r2);
+	Vec3 u, v;
+	createCs__(dir, u, v);
+	return randomVectorCone__(dir, u, v, cangle, r_1, r_2);
 }
 
-vector3d_t discreteVectorCone(const vector3d_t &dir, float cangle, int sample, int square)
+Vec3 discreteVectorCone__(const Vec3 &dir, float cangle, int sample, int square)
 {
-	float r1 = (float)(sample / square) / (float)square;
-	float r2 = (float)(sample % square) / (float)square;
-	float tt = M_2PI * r1;
-	float ss = fAcos(1.0 - (1.0 - cangle) * r2);
-	vector3d_t	vx(fCos(ss), fSin(ss)*fCos(tt), fSin(ss)*fSin(tt));
-	vector3d_t	i(1, 0, 0), c;
-	matrix4x4_t M(1);
-	if((std::fabs(dir.y) > 0.0) || (std::fabs(dir.z) > 0.0))
+	float r_1 = (float)(sample / square) / (float)square;
+	float r_2 = (float)(sample % square) / (float)square;
+	float tt = M_2PI * r_1;
+	float ss = fAcos__(1.0 - (1.0 - cangle) * r_2);
+	Vec3	vx(fCos__(ss), fSin__(ss) * fCos__(tt), fSin__(ss) * fSin__(tt));
+	Vec3	i(1, 0, 0), c;
+	Matrix4 m(1);
+	if((std::fabs(dir.y_) > 0.0) || (std::fabs(dir.z_) > 0.0))
 	{
-		M[0][0] = dir.x;
-		M[1][0] = dir.y;
-		M[2][0] = dir.z;
+		m[0][0] = dir.x_;
+		m[1][0] = dir.y_;
+		m[2][0] = dir.z_;
 		c = i ^ dir;
 		c.normalize();
-		M[0][1] = c.x;
-		M[1][1] = c.y;
-		M[2][1] = c.z;
+		m[0][1] = c.x_;
+		m[1][1] = c.y_;
+		m[2][1] = c.z_;
 		c = dir ^ c;
 		c.normalize();
-		M[0][2] = c.x;
-		M[1][2] = c.y;
-		M[2][2] = c.z;
+		m[0][2] = c.x_;
+		m[1][2] = c.y_;
+		m[2][2] = c.z_;
 	}
-	else if(dir.x < 0.0) M[0][0] = -1.0;
-	return M * vx;
+	else if(dir.x_ < 0.0) m[0][0] = -1.0;
+	return m * vx;
 }
 
-__END_YAFRAY
+END_YAFRAY

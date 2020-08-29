@@ -12,135 +12,130 @@
  *
  */
 
-#ifndef COLOR_CONV_H_
-#define COLOR_CONV_H_
+#ifndef YAFARAY_COLORCONV_H
+#define YAFARAY_COLORCONV_H
 
 #include <yafray_constants.h>
 #include <core_api/color.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-enum ColorSpaces
-{
-	cieRGB_E_CS,
-	cieRGB_D50_CS,
-	sRGB_D50_CS,
-	sRGB_D65_CS
-};
-
-static float cieRGB_E[9] =
+constexpr float cie_rgb_e__[9] =
 {
 	2.3706743, -0.9000405, -0.4706338,
 	-0.5138850,  1.4253036,  0.0885814,
 	0.0052982, -0.0146949,  1.0093968
 };
 
-static float cieRGB_D50[9] =
+constexpr float cie_rgb_d_50__[9] =
 {
 	2.3638081, -0.8676030, -0.4988161,
 	-0.5005940,  1.3962369,  0.1047562,
 	0.0141712, -0.0306400,  1.2323842
 };
 
-static float sRGB_D65[9] =
+constexpr float s_rgb_d_65__[9] =
 {
 	3.2404542, -1.5371385, -0.4985314,
 	-0.9692660,  1.8760108,  0.0415560,
 	0.0556434, -0.2040259,  1.0572252
 };
 
-static float sRGB_D50[9] =
+constexpr float s_rgb_d_50__[9] =
 {
 	3.1338561, -1.6168667, -0.4906146,
 	-0.9787684,  1.9161415,  0.0334540,
 	0.0719453, -0.2289914,  1.4052427
 };
 
-class ColorConv
+class ColorConv final
 {
 	public:
-		ColorConv(bool cl = false, bool gEnc = false, ColorSpaces cs = cieRGB_E_CS, float exposure = 0.f) :
-			simpleGEnc(1.0 / 2.2), clamp(cl), exp(exposure), colorSpace(cs), encodeGamma(gEnc)
-		{
-			switch(colorSpace)
-			{
-				case cieRGB_E_CS:
-					mat = cieRGB_E;
-					break;
-
-				case cieRGB_D50_CS:
-					mat = cieRGB_D50;
-					break;
-
-				case sRGB_D50_CS:
-					mat = sRGB_D50;
-					break;
-
-				case sRGB_D65_CS:
-					mat = sRGB_D65;
-					break;
-			}
-		};
-		color_t fromXYZ(color_t &c, bool forceGamma = false) const;
-		color_t fromXYZ(float x, float y, float z, bool forceGamma = false) const;
-		color_t fromxyY(float x, float y, float Y) const;
-		color_t fromxyY2XYZ(float x, float y, float Y) const;
+		enum ColorSpace { CieRgbECs, CieRgbD50Cs, SRgbD50Cs, SRgbD65Cs };
+		ColorConv(bool cl = false, bool g_enc = false, ColorSpace cs = CieRgbECs, float exposure = 0.f);
+		Rgb fromXyz(Rgb &c, bool force_gamma = false) const;
+		Rgb fromXyz(float x, float y, float z, bool force_gamma = false) const;
+		Rgb fromxyY(float x, float y, float Y) const;
+		Rgb fromxyY2Xyz(float x, float y, float Y) const;
 
 	private:
-
-		float simpleGEnc;
-		bool clamp;
-		float exp;
-		ColorSpaces colorSpace;
-		float *mat;
-		bool encodeGamma;
-
 		float sGammaEnc(float v) const;
+
+		float simple_g_enc_;
+		bool clamp_;
+		float exp_;
+		ColorSpace color_space_;
+		const float *mat_ = nullptr;
+		bool encode_gamma_;
 };
 
-inline color_t ColorConv::fromXYZ(float x, float y, float z, bool forceGamma) const
-{
-	color_t ret(0.f);
 
-	if(encodeGamma || forceGamma)
+inline ColorConv::ColorConv(bool cl, bool g_enc, ColorSpace cs, float exposure) :
+		simple_g_enc_(1.0 / 2.2), clamp_(cl), exp_(exposure), color_space_(cs), encode_gamma_(g_enc)
+{
+	switch(color_space_)
+	{
+		case CieRgbECs:
+			mat_ = cie_rgb_e__;
+			break;
+
+		case CieRgbD50Cs:
+			mat_ = cie_rgb_d_50__;
+			break;
+
+		case SRgbD50Cs:
+			mat_ = s_rgb_d_50__;
+			break;
+
+		case SRgbD65Cs:
+			mat_ = s_rgb_d_65__;
+			break;
+	}
+};
+
+inline Rgb ColorConv::fromXyz(float x, float y, float z, bool force_gamma) const
+{
+	Rgb ret(0.f);
+
+	if(encode_gamma_ || force_gamma)
 	{
 		ret.set(
-		    sGammaEnc((mat[0] * x) + (mat[1] * y) + (mat[2] * z)),
-		    sGammaEnc((mat[3] * x) + (mat[4] * y) + (mat[5] * z)),
-		    sGammaEnc((mat[6] * x) + (mat[7] * y) + (mat[8] * z))
+		    sGammaEnc((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
+		    sGammaEnc((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
+		    sGammaEnc((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
 		);
 	}
 	else
 	{
 		ret.set(
-		    ((mat[0] * x) + (mat[1] * y) + (mat[2] * z)),
-		    ((mat[3] * x) + (mat[4] * y) + (mat[5] * z)),
-		    ((mat[6] * x) + (mat[7] * y) + (mat[8] * z))
+		    ((mat_[0] * x) + (mat_[1] * y) + (mat_[2] * z)),
+		    ((mat_[3] * x) + (mat_[4] * y) + (mat_[5] * z)),
+		    ((mat_[6] * x) + (mat_[7] * y) + (mat_[8] * z))
 		);
 	}
 
-	if(clamp) ret.clampRGB01();
+	if(clamp_) ret.clampRgb01();
 
 	return ret;
 }
 
-inline color_t ColorConv::fromXYZ(color_t &c, bool forceGamma) const
+inline Rgb ColorConv::fromXyz(Rgb &c, bool force_gamma) const
 {
-	return fromXYZ(c.R, c.G, c.B, forceGamma);
+	return fromXyz(c.r_, c.g_, c.b_, force_gamma);
 }
 
-inline color_t ColorConv::fromxyY(float x, float y, float Y) const
+inline Rgb ColorConv::fromxyY(float x, float y, float Y) const
 {
-	color_t tempCol = fromxyY2XYZ(x, y, Y);
-	return fromXYZ(tempCol);
+	Rgb temp_col = fromxyY2Xyz(x, y, Y);
+	return fromXyz(temp_col);
 }
 
-inline color_t ColorConv::fromxyY2XYZ(float x, float y, float Y) const
+inline Rgb ColorConv::fromxyY2Xyz(float x, float y, float Y) const
 {
-	color_t ret(0.0);
-	float ratio, X, Z;
+	Rgb ret(0.0);
+	float ratio, X, z;
 
-	if(exp > 0.f) Y = fExp(Y * exp) - 1.f;
+	if(exp_ > 0.f) Y = fExp__(Y * exp_) - 1.f;
 
 	if(y != 0.0)
 	{
@@ -152,18 +147,18 @@ inline color_t ColorConv::fromxyY2XYZ(float x, float y, float Y) const
 	}
 
 	X = x * ratio;
-	Z = (1.0 - x - y) * ratio;
+	z = (1.0 - x - y) * ratio;
 
-	ret.set(X, Y, Z);
+	ret.set(X, Y, z);
 
 	return ret;
 }
 
 inline float ColorConv::sGammaEnc(float v) const
 {
-	return fPow(v, simpleGEnc);;
+	return fPow__(v, simple_g_enc_);
 }
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif /* COLOR_CONV_H_ */
+#endif /* YAFARAY_COLORCONV_H */

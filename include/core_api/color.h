@@ -21,366 +21,320 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef Y_COLOR_H
-#define Y_COLOR_H
+#ifndef YAFARAY_COLOR_H
+#define YAFARAY_COLOR_H
 
 #include <yafray_constants.h>
 #include <utilities/mathOptimizations.h>
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-enum colorSpaces_t : int
+enum ColorSpace : int
 {
-	RAW_MANUAL_GAMMA	= 1,
-	LINEAR_RGB		= 2,
-	SRGB			= 3,
-	XYZ_D65			= 4
+	RawManualGamma	= 1,
+	LinearRgb		= 2,
+	Srgb			= 3,
+	XyzD65			= 4
 };
 
-class YAFRAYCORE_EXPORT color_t
+class YAFRAYCORE_EXPORT Rgb
 {
-		friend color_t operator * (const color_t &a, const color_t &b);
-		friend color_t operator * (const float f, const color_t &b);
-		friend color_t operator * (const color_t &b, const float f);
-		friend color_t operator / (const color_t &b, const float f);
-		friend color_t operator + (const color_t &a, const color_t &b);
-		friend color_t operator - (const color_t &a, const color_t &b);
-		friend float maxAbsDiff(const color_t &a, const color_t &b);
-		friend YAFRAYCORE_EXPORT void operator >> (unsigned char *data, color_t &c);
-		friend YAFRAYCORE_EXPORT void operator << (unsigned char *data, const color_t &c);
-		friend YAFRAYCORE_EXPORT void operator >> (float *data, color_t &c);
-		friend YAFRAYCORE_EXPORT void operator << (float *data, const color_t &c);
-		friend YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const color_t c);
-		friend YAFRAYCORE_EXPORT color_t mix(const color_t &a, const color_t &b, float point);
-		friend YAFRAYCORE_EXPORT color_t convergenceAccell(const color_t &cn_1, const color_t &cn0, const color_t &cn1);
 	public:
-		color_t() { R = G = B = 0; }
-		color_t(float r, float g, float b) {R = r; G = g; B = b;};
-		color_t(float g) { R = G = B = g; }
-		color_t(float af[3]) { R = af[0];  G = af[1];  B = af[2]; }
-		bool isBlack() const { return ((R == 0) && (G == 0) && (B == 0)); }
-		bool isNaN() const { return (std::isnan(R) || std::isnan(G) || std::isnan(B)); }
-		bool isInf() const { return (std::isinf(R) || std::isinf(G) || std::isinf(B)); }
-		~color_t() {}
-		void set(float r, float g, float b) { R = r;  G = g;  B = b; }
+		Rgb() = default;
+		Rgb(float r, float g, float b) : r_(r), g_(g), b_(b) { }
+		Rgb(float f) : r_(f), g_(f), b_(f) { }
+		Rgb(float af[3]) : r_(af[0]), g_(af[1]), b_(af[2]) { }
+		bool isBlack() const { return ((r_ == 0) && (g_ == 0) && (b_ == 0)); }
+		bool isNaN() const { return (std::isnan(r_) || std::isnan(g_) || std::isnan(b_)); }
+		bool isInf() const { return (std::isinf(r_) || std::isinf(g_) || std::isinf(b_)); }
+		void set(float r, float g, float b) { r_ = r; g_ = g; b_ = b; }
 
-		color_t &operator +=(const color_t &c);
-		color_t &operator -=(const color_t &c);
-		color_t &operator *=(const color_t &c);
-		color_t &operator *=(float f);
+		Rgb &operator +=(const Rgb &c);
+		Rgb &operator -=(const Rgb &c);
+		Rgb &operator *=(const Rgb &c);
+		Rgb &operator *=(float f);
 
-		float energy() const {return (R + G + B) * 0.333333f;};
+		float energy() const {return (r_ + g_ + b_) * 0.333333f;};
 		// Using ITU/Photometric values Y = 0.2126 R + 0.7152 G + 0.0722 B
-		float col2bri() const { return (0.2126f * R + 0.7152f * G + 0.0722f * B); }
-		float abscol2bri() const { return (0.2126f * std::fabs(R) + 0.7152f * std::fabs(G) + 0.0722f * std::fabs(B)); }
-		void gammaAdjust(float g) { R = fPow(R, g); G = fPow(G, g); B = fPow(B, g); }
-		void expgam_Adjust(float e, float g, bool clamp_rgb);
-		float getR() const { return R; }
-		float getG() const { return G; }
-		float getB() const { return B; }
+		float col2Bri() const { return (0.2126f * r_ + 0.7152f * g_ + 0.0722f * b_); }
+		float abscol2Bri() const { return (0.2126f * std::fabs(r_) + 0.7152f * std::fabs(g_) + 0.0722f * std::fabs(b_)); }
+		void gammaAdjust(float g) { r_ = fPow__(r_, g); g_ = fPow__(g_, g); b_ = fPow__(b_, g); }
+		void expgamAdjust(float e, float g, bool clamp_rgb);
+		float getR() const { return r_; }
+		float getG() const { return g_; }
+		float getB() const { return b_; }
 
 		// used in blendershader
-		void invertRGB()
+		void invertRgb()
 		{
-			if(R != 0.f) R = 1.f / R;
-			if(G != 0.f) G = 1.f / G;
-			if(B != 0.f) B = 1.f / B;
+			if(r_ != 0.f) r_ = 1.f / r_;
+			if(g_ != 0.f) g_ = 1.f / g_;
+			if(b_ != 0.f) b_ = 1.f / b_;
 		}
-		void absRGB() { R = std::fabs(R);  G = std::fabs(G);  B = std::fabs(B); }
-		void darkenRGB(const color_t &col)
+		void absRgb() { r_ = std::fabs(r_); g_ = std::fabs(g_); b_ = std::fabs(b_); }
+		void darkenRgb(const Rgb &col)
 		{
-			if(R > col.R) R = col.R;
-			if(G > col.G) G = col.G;
-			if(B > col.B) B = col.B;
+			if(r_ > col.r_) r_ = col.r_;
+			if(g_ > col.g_) g_ = col.g_;
+			if(b_ > col.b_) b_ = col.b_;
 		}
-		void lightenRGB(const color_t &col)
+		void lightenRgb(const Rgb &col)
 		{
-			if(R < col.R) R = col.R;
-			if(G < col.G) G = col.G;
-			if(B < col.B) B = col.B;
-		}
-
-		void black() { R = G = B = 0; }
-		float minimum() const { return std::min(R, std::min(G, B)); }
-		float maximum() const { return std::max(R, std::max(G, B)); }
-		float absmax() const { return std::max(std::fabs(R), std::max(std::fabs(G), std::fabs(B))); }
-		void clampRGB0()
-		{
-			if(R < 0.0) R = 0.0;
-			if(G < 0.0) G = 0.0;
-			if(B < 0.0) B = 0.0;
+			if(r_ < col.r_) r_ = col.r_;
+			if(g_ < col.g_) g_ = col.g_;
+			if(b_ < col.b_) b_ = col.b_;
 		}
 
-		void clampRGB01()
+		void black() { r_ = g_ = b_ = 0; }
+		float minimum() const { return std::min(r_, std::min(g_, b_)); }
+		float maximum() const { return std::max(r_, std::max(g_, b_)); }
+		float absmax() const { return std::max(std::fabs(r_), std::max(std::fabs(g_), std::fabs(b_))); }
+		void clampRgb0()
 		{
-			if(R < 0.0) R = 0.0; else if(R > 1.0) R = 1.0;
-			if(G < 0.0) G = 0.0; else if(G > 1.0) G = 1.0;
-			if(B < 0.0) B = 0.0; else if(B > 1.0) B = 1.0;
+			if(r_ < 0.0) r_ = 0.0;
+			if(g_ < 0.0) g_ = 0.0;
+			if(b_ < 0.0) b_ = 0.0;
 		}
 
-		void blend(const color_t &col, float blend_factor)
+		void clampRgb01()
 		{
-			R = R * (1.f - blend_factor) + col.R * blend_factor;
-			G = G * (1.f - blend_factor) + col.G * blend_factor;
-			B = B * (1.f - blend_factor) + col.B * blend_factor;
+			if(r_ < 0.0) r_ = 0.0; else if(r_ > 1.0) r_ = 1.0;
+			if(g_ < 0.0) g_ = 0.0; else if(g_ > 1.0) g_ = 1.0;
+			if(b_ < 0.0) b_ = 0.0; else if(b_ > 1.0) b_ = 1.0;
 		}
 
-		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer
+		void blend(const Rgb &col, float blend_factor)
 		{
-			R = ceilf(R);
-			G = ceilf(G);
-			B = ceilf(B);
-		}
-
-		void clampProportionalRGB(float maxValue);
-
-		float linearRGB_from_sRGB(float value_sRGB);
-		float sRGB_from_linearRGB(float value_linearRGB);
-
-		void linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma);
-		void ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma);
-		void rgb_to_hsv(float &h, float &s, float &v) const;
-		void hsv_to_rgb(const float &h, const float &s, const float &v);
-		void rgb_to_hsl(float &h, float &s, float &l) const;
-		void hsl_to_rgb(const float &h, const float &s, const float &l);
-
-		//	protected:
-		float R, G, B;
-};
-
-class YAFRAYCORE_EXPORT colorA_t : public color_t
-{
-		friend colorA_t operator * (const colorA_t &a, const colorA_t &b);
-		friend colorA_t operator * (const float f, const colorA_t &b);
-		friend colorA_t operator * (const colorA_t &b, const float f);
-		friend colorA_t operator / (const colorA_t &b, const float f);
-		friend colorA_t operator + (const colorA_t &a, const colorA_t &b);
-		friend colorA_t operator - (const colorA_t &a, const colorA_t &b);
-		friend YAFRAYCORE_EXPORT void operator >> (unsigned char *data, colorA_t &c);
-		friend YAFRAYCORE_EXPORT void operator << (unsigned char *data, const colorA_t &c);
-		friend YAFRAYCORE_EXPORT void operator >> (float *data, colorA_t &c);
-		friend YAFRAYCORE_EXPORT void operator << (float *data, const colorA_t &c);
-		friend YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const colorA_t c);
-		friend YAFRAYCORE_EXPORT colorA_t mix(const colorA_t &a, const colorA_t &b, float point);
-	public:
-		colorA_t(): A(1.f) { }
-		colorA_t(const color_t &c): color_t(c), A(1.f) { }
-		colorA_t(const color_t &c, float a): color_t(c), A(a) { }
-		colorA_t(float r, float g, float b, float a = 1.f): color_t(r, g, b), A(a) { }
-		colorA_t(float g): color_t(g), A(g) { }
-		colorA_t(float g, float a): color_t(g), A(a) { }
-		colorA_t(float af[4]): color_t(af), A(af[3]) { }
-		~colorA_t() {};
-
-		void set(float r, float g, float b, float a = 1.f) { color_t::set(r, g, b);  A = a; }
-
-		colorA_t &operator +=(const colorA_t &c);
-		colorA_t &operator -=(const colorA_t &c);
-		colorA_t &operator *=(const colorA_t &c);
-		colorA_t &operator *=(float f);
-
-		void alphaPremultiply() { R *= A; G *= A; B *= A; }
-		float getA() const { return A; }
-		void setAlpha(float a) { A = a; }
-
-		void clampRGBA0()
-		{
-			clampRGB0();
-			if(A < 0.0) A = 0.0;
-		}
-
-		void clampRGBA01()
-		{
-			clampRGB01();
-			if(A < 0.0) A = 0.0; else if(A > 1.0) A = 1.0;
-		}
-
-		void blend(const colorA_t &col, float blend_factor)
-		{
-			R = R * (1.f - blend_factor) + col.R * blend_factor;
-			G = G * (1.f - blend_factor) + col.G * blend_factor;
-			B = B * (1.f - blend_factor) + col.B * blend_factor;
-			A = A * (1.f - blend_factor) + col.A * blend_factor;
+			r_ = r_ * (1.f - blend_factor) + col.r_ * blend_factor;
+			g_ = g_ * (1.f - blend_factor) + col.g_ * blend_factor;
+			b_ = b_ * (1.f - blend_factor) + col.b_ * blend_factor;
 		}
 
 		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer
 		{
-			R = ceilf(R);
-			G = ceilf(G);
-			B = ceilf(B);
-			A = ceilf(A);
+			r_ = ceilf(r_);
+			g_ = ceilf(g_);
+			b_ = ceilf(b_);
 		}
 
-		float colorDifference(colorA_t color2, bool useRGBcomponents = false);
+		void clampProportionalRgb(float max_value);
 
-		//	protected:
-		float A;
+		float linearRgbFromSRgb(float value_s_rgb);
+		float sRgbFromLinearRgb(float value_linear_rgb);
+
+		void linearRgbFromColorSpace(ColorSpace color_space, float gamma);
+		void colorSpaceFromLinearRgb(ColorSpace color_space, float gamma);
+		void rgbToHsv(float &h, float &s, float &v) const;
+		void hsvToRgb(const float &h, const float &s, const float &v);
+		void rgbToHsl(float &h, float &s, float &l) const;
+		void hslToRgb(const float &h, const float &s, const float &l);
+
+		float r_ = 0.f;
+		float g_ = 0.f;
+		float b_ = 0.f;
 };
 
-class YAFRAYCORE_EXPORT rgbe_t
+class YAFRAYCORE_EXPORT Rgba final : public Rgb
 {
 	public:
-		rgbe_t() {rgbe[3] = 0;};
-		rgbe_t(const color_t &s);
-		operator color_t () const
+		Rgba() = default;
+		Rgba(const Rgb &c): Rgb(c), a_(1.f) { }
+		Rgba(const Rgb &c, float a): Rgb(c), a_(a) { }
+		Rgba(float r, float g, float b, float a = 1.f): Rgb(r, g, b), a_(a) { }
+		Rgba(float g): Rgb(g), a_(g) { }
+		Rgba(float g, float a): Rgb(g), a_(a) { }
+		Rgba(float af[4]): Rgb(af), a_(af[3]) { }
+
+		void set(float r, float g, float b, float a = 1.f) { Rgb::set(r, g, b); a_ = a; }
+
+		Rgba &operator +=(const Rgba &c);
+		Rgba &operator -=(const Rgba &c);
+		Rgba &operator *=(const Rgba &c);
+		Rgba &operator *=(float f);
+
+		void alphaPremultiply() { r_ *= a_; g_ *= a_; b_ *= a_; }
+		float getA() const { return a_; }
+		void setAlpha(float a) { a_ = a; }
+
+		void clampRgba0()
 		{
-			color_t res;
+			clampRgb0();
+			if(a_ < 0.0) a_ = 0.0;
+		}
+
+		void clampRgba01()
+		{
+			clampRgb01();
+			if(a_ < 0.0) a_ = 0.0; else if(a_ > 1.0) a_ = 1.0;
+		}
+
+		void blend(const Rgba &col, float blend_factor)
+		{
+			r_ = r_ * (1.f - blend_factor) + col.r_ * blend_factor;
+			g_ = g_ * (1.f - blend_factor) + col.g_ * blend_factor;
+			b_ = b_ * (1.f - blend_factor) + col.b_ * blend_factor;
+			a_ = a_ * (1.f - blend_factor) + col.a_ * blend_factor;
+		}
+
+		void ceil() //Mainly used for Absolute Object/Material Index passes, to correct the antialiasing and ceil the "mixed" values to the upper integer
+		{
+			r_ = ceilf(r_);
+			g_ = ceilf(g_);
+			b_ = ceilf(b_);
+			a_ = ceilf(a_);
+		}
+
+		float colorDifference(Rgba color_2, bool use_rg_bcomponents = false);
+
+		float a_ = 1.f;
+};
+
+class YAFRAYCORE_EXPORT Rgbe final
+{
+	public:
+		Rgbe() { rgbe_[3] = 0;};
+		Rgbe(const Rgb &s);
+		operator Rgb () const
+		{
+			Rgb res;
 			float f;
-			if(rgbe[3])
+			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
-				f = fLdexp(1.0, rgbe[3] - (int)(128 + 8));
-				return color_t(rgbe[0] * f, rgbe[1] * f, rgbe[2] * f);
+				f = fLdexp__(1.0, rgbe_[3] - (int) (128 + 8));
+				return Rgb(rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f);
 			}
-			else return color_t(0, 0, 0);
+			else return Rgb(0, 0, 0);
 		}
 		//		unsigned char& operator [] (int i){ return rgbe[i]; }
 
 		//	protected:
-		unsigned char rgbe[4];
+		unsigned char rgbe_[4];
 };
 
-inline void color_t::expgam_Adjust(float e, float g, bool clamp_rgb)
+inline void Rgb::expgamAdjust(float e, float g, bool clamp_rgb)
 {
 	if((e == 0.f) && (g == 1.f))
 	{
-		if(clamp_rgb) clampRGB01();
+		if(clamp_rgb) clampRgb01();
 		return;
 	}
 	if(e != 0.f)
 	{
 		// exposure adjust
-		clampRGB0();
-		R = 1.f - fExp(R * e);
-		G = 1.f - fExp(G * e);
-		B = 1.f - fExp(B * e);
+		clampRgb0();
+		r_ = 1.f - fExp__(r_ * e);
+		g_ = 1.f - fExp__(g_ * e);
+		b_ = 1.f - fExp__(b_ * e);
 	}
 	if(g != 1.f)
 	{
 		// gamma adjust
-		clampRGB0();
-		R = fPow(R, g);
-		G = fPow(G, g);
-		B = fPow(B, g);
+		clampRgb0();
+		r_ = fPow__(r_, g);
+		g_ = fPow__(g_, g);
+		b_ = fPow__(b_, g);
 	}
 }
 
-YAFRAYCORE_EXPORT void operator >> (unsigned char *data, color_t &c);
-YAFRAYCORE_EXPORT void operator << (unsigned char *data, const color_t &c);
-YAFRAYCORE_EXPORT void operator >> (float *data, color_t &c);
-YAFRAYCORE_EXPORT void operator << (float *data, const color_t &c);
-YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const color_t c);
-YAFRAYCORE_EXPORT color_t mix(const color_t &a, const color_t &b, float point);
+YAFRAYCORE_EXPORT void operator >> (unsigned char *data, Rgb &c);
+YAFRAYCORE_EXPORT void operator << (unsigned char *data, const Rgb &c);
+YAFRAYCORE_EXPORT void operator >> (float *data, Rgb &c);
+YAFRAYCORE_EXPORT void operator << (float *data, const Rgb &c);
+YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const Rgb c);
+YAFRAYCORE_EXPORT Rgb mix__(const Rgb &a, const Rgb &b, float point);
 
-YAFRAYCORE_EXPORT void operator >> (unsigned char *data, colorA_t &c);
-YAFRAYCORE_EXPORT void operator << (unsigned char *data, const colorA_t &c);
-YAFRAYCORE_EXPORT void operator >> (float *data, colorA_t &c);
-YAFRAYCORE_EXPORT void operator << (float *data, const colorA_t &c);
-YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const colorA_t c);
-YAFRAYCORE_EXPORT colorA_t mix(const colorA_t &a, const colorA_t &b, float point);
+YAFRAYCORE_EXPORT void operator >> (unsigned char *data, Rgba &c);
+YAFRAYCORE_EXPORT void operator << (unsigned char *data, const Rgba &c);
+YAFRAYCORE_EXPORT void operator >> (float *data, Rgba &c);
+YAFRAYCORE_EXPORT void operator << (float *data, const Rgba &c);
+YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, const Rgba c);
+YAFRAYCORE_EXPORT Rgba mix__(const Rgba &a, const Rgba &b, float point);
 
 
-inline color_t operator * (const color_t &a, const color_t &b)
+inline Rgb operator * (const Rgb &a, const Rgb &b)
 {
-	return color_t(a.R * b.R, a.G * b.G, a.B * b.B);
+	return Rgb(a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_);
 }
 
-inline color_t operator * (const float f, const color_t &b)
+inline Rgb operator * (const float f, const Rgb &b)
 {
-	return color_t(f * b.R, f * b.G, f * b.B);
+	return Rgb(f * b.r_, f * b.g_, f * b.b_);
 }
 
-inline color_t operator * (const color_t &b, const float f)
+inline Rgb operator * (const Rgb &b, const float f)
 {
-	return color_t(f * b.R, f * b.G, f * b.B);
+	return Rgb(f * b.r_, f * b.g_, f * b.b_);
 }
 
-inline color_t operator / (const color_t &b, float f)
+inline Rgb operator / (const Rgb &b, float f)
 {
-	return color_t(b.R / f, b.G / f, b.B / f);
+	return Rgb(b.r_ / f, b.g_ / f, b.b_ / f);
 }
 
-inline color_t operator + (const color_t &a, const color_t &b)
+inline Rgb operator + (const Rgb &a, const Rgb &b)
 {
-	return color_t(a.R + b.R, a.G + b.G, a.B + b.B);
+	return Rgb(a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_);
 }
 
-inline color_t operator - (const color_t &a, const color_t &b)
+inline Rgb operator - (const Rgb &a, const Rgb &b)
 {
-	return color_t(a.R - b.R, a.G - b.G, a.B - b.B);
+	return Rgb(a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_);
 }
 
-/*
-inline color_t & color_t::operator *=(const color_t &c)
-{
-	FLUSH_3DNOW();
-	MMX_LOAD64(MM0,c.R);
-	MMX_LOAD32(MM1,c.B);
-	MMX_LOAD64(MM2,R);
-	MMX_LOAD32(MM3,B);
-	MMX_MULF(MM0,MM2);
-	MMX_MULF(MM1,MM3);
-	MMX_STORE64(R,MM0);
-	MMX_STORE32(B,MM1);
-	FLUSH_3DNOW();
-	return *this;
-}*/
+inline Rgb &Rgb::operator +=(const Rgb &c)
+{ r_ += c.r_; g_ += c.g_; b_ += c.b_;  return *this; }
+inline Rgb &Rgb::operator *=(const Rgb &c)
+{ r_ *= c.r_; g_ *= c.g_; b_ *= c.b_;  return *this; }
+inline Rgb &Rgb::operator *=(float f)
+{ r_ *= f; g_ *= f; b_ *= f;  return *this; }
+inline Rgb &Rgb::operator -=(const Rgb &c)
+{ r_ -= c.r_; g_ -= c.g_; b_ -= c.b_;  return *this; }
 
-inline color_t &color_t::operator +=(const color_t &c)
-{ R += c.R;  G += c.G;  B += c.B;  return *this; }
-inline color_t &color_t::operator *=(const color_t &c)
-{ R *= c.R;  G *= c.G;  B *= c.B;  return *this; }
-inline color_t &color_t::operator *=(float f)
-{ R *= f;  G *= f;  B *= f;  return *this; }
-inline color_t &color_t::operator -=(const color_t &c)
-{ R -= c.R;  G -= c.G;  B -= c.B;  return *this; }
-
-inline colorA_t operator * (const colorA_t &a, const colorA_t &b)
+inline Rgba operator * (const Rgba &a, const Rgba &b)
 {
-	return colorA_t(a.R * b.R, a.G * b.G, a.B * b.B, a.A * b.A);
+	return Rgba(a.r_ * b.r_, a.g_ * b.g_, a.b_ * b.b_, a.a_ * b.a_);
 }
 
-inline colorA_t operator * (const float f, const colorA_t &b)
+inline Rgba operator * (const float f, const Rgba &b)
 {
-	return colorA_t(f * b.R, f * b.G, f * b.B, f * b.A);
+	return Rgba(f * b.r_, f * b.g_, f * b.b_, f * b.a_);
 }
 
-inline colorA_t operator * (const colorA_t &b, const float f)
+inline Rgba operator * (const Rgba &b, const float f)
 {
-	return colorA_t(f * b.R, f * b.G, f * b.B, f * b.A);
+	return Rgba(f * b.r_, f * b.g_, f * b.b_, f * b.a_);
 }
 
-inline colorA_t operator / (const colorA_t &b, float f)
+inline Rgba operator / (const Rgba &b, float f)
 {
 	if(f != 0) f = 1.0 / f;
-	return colorA_t(b.R * f, b.G * f, b.B * f, b.A * f);
+	return Rgba(b.r_ * f, b.g_ * f, b.b_ * f, b.a_ * f);
 }
 
-inline colorA_t operator + (const colorA_t &a, const colorA_t &b)
+inline Rgba operator + (const Rgba &a, const Rgba &b)
 {
-	return colorA_t(a.R + b.R, a.G + b.G, a.B + b.B, a.A + b.A);
+	return Rgba(a.r_ + b.r_, a.g_ + b.g_, a.b_ + b.b_, a.a_ + b.a_);
 }
 
-inline colorA_t operator - (const colorA_t &a, const colorA_t &b)
+inline Rgba operator - (const Rgba &a, const Rgba &b)
 {
-	return colorA_t(a.R - b.R, a.G - b.G, a.B - b.B, a.A - b.A);
+	return Rgba(a.r_ - b.r_, a.g_ - b.g_, a.b_ - b.b_, a.a_ - b.a_);
 }
 
-inline colorA_t &colorA_t::operator +=(const colorA_t &c) { R += c.R;  G += c.G;  B += c.B;  A += c.A;  return *this; }
-inline colorA_t &colorA_t::operator *=(const colorA_t &c) { R *= c.R;  G *= c.G;  B *= c.B;  A *= c.A;  return *this; }
-inline colorA_t &colorA_t::operator *=(float f) { R *= f;  G *= f;  B *= f;  A *= f;  return *this; }
-inline colorA_t &colorA_t::operator -=(const colorA_t &c) { R -= c.R;  G -= c.G;  B -= c.B;  A -= c.A;  return *this; }
+inline Rgba &Rgba::operator +=(const Rgba &c) { r_ += c.r_; g_ += c.g_; b_ += c.b_; a_ += c.a_;  return *this; }
+inline Rgba &Rgba::operator *=(const Rgba &c) { r_ *= c.r_; g_ *= c.g_; b_ *= c.b_; a_ *= c.a_;  return *this; }
+inline Rgba &Rgba::operator *=(float f) { r_ *= f; g_ *= f; b_ *= f; a_ *= f;  return *this; }
+inline Rgba &Rgba::operator -=(const Rgba &c) { r_ -= c.r_; g_ -= c.g_; b_ -= c.b_; a_ -= c.a_;  return *this; }
 
-inline float maxAbsDiff(const color_t &a, const color_t &b)
+inline float maxAbsDiff__(const Rgb &a, const Rgb &b)
 {
 	return (a - b).absmax();
 }
 
-YAFRAYCORE_EXPORT color_t convergenceAccell(const color_t &cn_1, const color_t &cn0, const color_t &cn1);
-
 //Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
-static float linearRGB_from_XYZ_D65[3][3] =
+static float linear_rgb_from_xyz_d_65__[3][3] =
 {
 	{ 3.2406255f, -1.537208f,  -0.4986286f },
 	{-0.9689307f,  1.8757561f,  0.0415175f },
@@ -388,212 +342,212 @@ static float linearRGB_from_XYZ_D65[3][3] =
 };
 
 //Inverse matrices
-static float XYZ_D65_from_linearRGB[3][3] =
+static float xyz_d_65_from_linear_rgb__[3][3] =
 {
 	{ 0.412400f,   0.357600f,   0.180500f },
 	{ 0.212600f,   0.715200f,   0.072200f },
 	{ 0.019300f,   0.119200f,   0.950500f }
 };
 
-inline float color_t::linearRGB_from_sRGB(float value_sRGB)
+inline float Rgb::linearRgbFromSRgb(float value_s_rgb)
 {
 	//Calculations from http://www.color.org/chardata/rgb/sRGB.pdf
-	if(value_sRGB <= 0.04045f) return (value_sRGB / 12.92f);
-	else return fPow(((value_sRGB + 0.055f) / 1.055f), 2.4f);
+	if(value_s_rgb <= 0.04045f) return (value_s_rgb / 12.92f);
+	else return fPow__(((value_s_rgb + 0.055f) / 1.055f), 2.4f);
 }
 
-inline float color_t::sRGB_from_linearRGB(float value_linearRGB)
+inline float Rgb::sRgbFromLinearRgb(float value_linear_rgb)
 {
 	//Calculations from http://www.color.org/chardata/rgb/sRGB.pdf
-	if(value_linearRGB <= 0.0031308f) return (value_linearRGB * 12.92f);
-	else return ((1.055f * fPow(value_linearRGB, 0.416667f)) - 0.055f); //0,416667f = 1/2.4
+	if(value_linear_rgb <= 0.0031308f) return (value_linear_rgb * 12.92f);
+	else return ((1.055f * fPow__(value_linear_rgb, 0.416667f)) - 0.055f); //0,416667f = 1/2.4
 }
 
-inline void color_t::linearRGB_from_ColorSpace(colorSpaces_t colorSpace, float gamma)
+inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 {
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
-	if(colorSpace == SRGB)
+	if(color_space == Srgb)
 	{
-		R = linearRGB_from_sRGB(R);
-		G = linearRGB_from_sRGB(G);
-		B = linearRGB_from_sRGB(B);
+		r_ = linearRgbFromSRgb(r_);
+		g_ = linearRgbFromSRgb(g_);
+		b_ = linearRgbFromSRgb(b_);
 	}
-	else if(colorSpace == XYZ_D65)
+	else if(color_space == XyzD65)
 	{
-		float oldR = R, oldG = G, oldB = B;
-		R = linearRGB_from_XYZ_D65[0][0] * oldR + linearRGB_from_XYZ_D65[0][1] * oldG + linearRGB_from_XYZ_D65[0][2] * oldB;
-		G = linearRGB_from_XYZ_D65[1][0] * oldR + linearRGB_from_XYZ_D65[1][1] * oldG + linearRGB_from_XYZ_D65[1][2] * oldB;
-		B = linearRGB_from_XYZ_D65[2][0] * oldR + linearRGB_from_XYZ_D65[2][1] * oldG + linearRGB_from_XYZ_D65[2][2] * oldB;
+		float old_r = r_, old_g = g_, old_b = b_;
+		r_ = linear_rgb_from_xyz_d_65__[0][0] * old_r + linear_rgb_from_xyz_d_65__[0][1] * old_g + linear_rgb_from_xyz_d_65__[0][2] * old_b;
+		g_ = linear_rgb_from_xyz_d_65__[1][0] * old_r + linear_rgb_from_xyz_d_65__[1][1] * old_g + linear_rgb_from_xyz_d_65__[1][2] * old_b;
+		b_ = linear_rgb_from_xyz_d_65__[2][0] * old_r + linear_rgb_from_xyz_d_65__[2][1] * old_g + linear_rgb_from_xyz_d_65__[2][2] * old_b;
 	}
-	else if(colorSpace == RAW_MANUAL_GAMMA && gamma != 1.f)
+	else if(color_space == RawManualGamma && gamma != 1.f)
 	{
 		gammaAdjust(gamma);
 	}
 }
 
-inline void color_t::ColorSpace_from_linearRGB(colorSpaces_t colorSpace, float gamma)
+inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 {
 	//NOTE: Alpha value is not converted from linear to color space and vice versa. Should it be converted?
-	if(colorSpace == SRGB)
+	if(color_space == Srgb)
 	{
-		R = sRGB_from_linearRGB(R);
-		G = sRGB_from_linearRGB(G);
-		B = sRGB_from_linearRGB(B);
+		r_ = sRgbFromLinearRgb(r_);
+		g_ = sRgbFromLinearRgb(g_);
+		b_ = sRgbFromLinearRgb(b_);
 	}
-	else if(colorSpace == XYZ_D65)
+	else if(color_space == XyzD65)
 	{
-		float oldR = R, oldG = G, oldB = B;
-		R = XYZ_D65_from_linearRGB[0][0] * oldR + XYZ_D65_from_linearRGB[0][1] * oldG + XYZ_D65_from_linearRGB[0][2] * oldB;
-		G = XYZ_D65_from_linearRGB[1][0] * oldR + XYZ_D65_from_linearRGB[1][1] * oldG + XYZ_D65_from_linearRGB[1][2] * oldB;
-		B = XYZ_D65_from_linearRGB[2][0] * oldR + XYZ_D65_from_linearRGB[2][1] * oldG + XYZ_D65_from_linearRGB[2][2] * oldB;
+		float old_r = r_, old_g = g_, old_b = b_;
+		r_ = xyz_d_65_from_linear_rgb__[0][0] * old_r + xyz_d_65_from_linear_rgb__[0][1] * old_g + xyz_d_65_from_linear_rgb__[0][2] * old_b;
+		g_ = xyz_d_65_from_linear_rgb__[1][0] * old_r + xyz_d_65_from_linear_rgb__[1][1] * old_g + xyz_d_65_from_linear_rgb__[1][2] * old_b;
+		b_ = xyz_d_65_from_linear_rgb__[2][0] * old_r + xyz_d_65_from_linear_rgb__[2][1] * old_g + xyz_d_65_from_linear_rgb__[2][2] * old_b;
 	}
-	else if(colorSpace == RAW_MANUAL_GAMMA && gamma != 1.f)
+	else if(color_space == RawManualGamma && gamma != 1.f)
 	{
 		if(gamma <= 0.f) gamma = 1.0e-2f;	//Arbitrary lower boundary limit for the output gamma, to avoid division by 0
-		float invGamma = 1.f / gamma;
-		gammaAdjust(invGamma);
+		float inv_gamma = 1.f / gamma;
+		gammaAdjust(inv_gamma);
 	}
 }
 
-inline void color_t::clampProportionalRGB(float maxValue)	//Function to clamp the current color to a maximum value, but keeping the relationship between the color components. So it will find the R,G,B component with the highest value, clamp it to the maxValue, and adjust proportionally the other two components
+inline void Rgb::clampProportionalRgb(float max_value)	//Function to clamp the current color to a maximum value, but keeping the relationship between the color components. So it will find the R,G,B component with the highest value, clamp it to the maxValue, and adjust proportionally the other two components
 {
-	if(maxValue > 0.f)	//If maxValue is 0, no clamping is done at all.
+	if(max_value > 0.f)	//If maxValue is 0, no clamping is done at all.
 	{
 		//If we have to clamp the result, calculate the maximum RGB component, clamp it and scale the other components acordingly to preserve color information.
 
-		float maxRGB = std::max(R, std::max(G, B));
-		float proportionalAdjustment = maxValue / maxRGB;
+		float max_rgb = std::max(r_, std::max(g_, b_));
+		float proportional_adjustment = max_value / max_rgb;
 
-		if(maxRGB > maxValue)
+		if(max_rgb > max_value)
 		{
-			if(R >= maxRGB)
+			if(r_ >= max_rgb)
 			{
-				R = maxValue;
-				G *= proportionalAdjustment;
-				B *= proportionalAdjustment;
+				r_ = max_value;
+				g_ *= proportional_adjustment;
+				b_ *= proportional_adjustment;
 			}
 
-			else if(G >= maxRGB)
+			else if(g_ >= max_rgb)
 			{
-				G = maxValue;
-				R *= proportionalAdjustment;
-				B *= proportionalAdjustment;
+				g_ = max_value;
+				r_ *= proportional_adjustment;
+				b_ *= proportional_adjustment;
 			}
 
 			else
 			{
-				B = maxValue;
-				R *= proportionalAdjustment;
-				G *= proportionalAdjustment;
+				b_ = max_value;
+				r_ *= proportional_adjustment;
+				g_ *= proportional_adjustment;
 			}
 		}
 	}
 }
 
-inline float colorA_t::colorDifference(colorA_t color2, bool useRGBcomponents)
+inline float Rgba::colorDifference(Rgba color_2, bool use_rg_bcomponents)
 {
-	float colorDifference = std::fabs(color2.col2bri() - col2bri());
+	float color_difference = std::fabs(color_2.col2Bri() - col2Bri());
 
-	if(useRGBcomponents)
+	if(use_rg_bcomponents)
 	{
-		float Rdiff = std::fabs(color2.R - R);
-		float Gdiff = std::fabs(color2.G - G);
-		float Bdiff = std::fabs(color2.B - B);
-		float Adiff = std::fabs(color2.A - A);
+		float rdiff = std::fabs(color_2.r_ - r_);
+		float gdiff = std::fabs(color_2.g_ - g_);
+		float bdiff = std::fabs(color_2.b_ - b_);
+		float adiff = std::fabs(color_2.a_ - a_);
 
-		if(colorDifference < Rdiff) colorDifference = Rdiff;
-		if(colorDifference < Gdiff) colorDifference = Gdiff;
-		if(colorDifference < Bdiff) colorDifference = Bdiff;
-		if(colorDifference < Adiff) colorDifference = Adiff;
+		if(color_difference < rdiff) color_difference = rdiff;
+		if(color_difference < gdiff) color_difference = gdiff;
+		if(color_difference < bdiff) color_difference = bdiff;
+		if(color_difference < adiff) color_difference = adiff;
 	}
 
-	return colorDifference;
+	return color_difference;
 }
 
-inline void color_t::rgb_to_hsv(float &h, float &s, float &v) const
+inline void Rgb::rgbToHsv(float &h, float &s, float &v) const
 {
 	//HSV-RGB Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
 
-	float R1 = std::max(R, 0.f);
-	float G1 = std::max(G, 0.f);
-	float B1 = std::max(B, 0.f);
+	float r_1 = std::max(r_, 0.f);
+	float g_1 = std::max(g_, 0.f);
+	float b_1 = std::max(b_, 0.f);
 
-	float M = std::max(std::max(R1, G1), B1);
-	float m = std::min(std::min(R1, G1), B1);
-	float C = M - m;
-	v = M;
+	float max_component = std::max(std::max(r_1, g_1), b_1);
+	float min_component = std::min(std::min(r_1, g_1), b_1);
+	float range = max_component - min_component;
+	v = max_component;
 
-	if(std::fabs(C) < 1.0e-6f) { h = 0.f; s = 0.f; }
-	else if(M == R1) { h = std::fmod((G1 - B1) / C, 6.f);	s = C / std::max(v, 1.0e-6f); }
-	else if(M == G1) { h = ((B1 - R1) / C) + 2.f;	s = C / std::max(v, 1.0e-6f); }
-	else if(M == B1) { h = ((R1 - G1) / C) + 4.f;	s = C / std::max(v, 1.0e-6f); }
+	if(std::fabs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
+	else if(max_component == r_1) { h = std::fmod((g_1 - b_1) / range, 6.f); s = range / std::max(v, 1.0e-6f); }
+	else if(max_component == g_1) { h = ((b_1 - r_1) / range) + 2.f; s = range / std::max(v, 1.0e-6f); }
+	else if(max_component == b_1) { h = ((r_1 - g_1) / range) + 4.f; s = range / std::max(v, 1.0e-6f); }
 	else { h = 0.f; s = 0.f; v = 0.f; }
 
 	if(h < 0.f) h += 6.f;
 }
 
-inline void color_t::hsv_to_rgb(const float &h, const float &s, const float &v)
+inline void Rgb::hsvToRgb(const float &h, const float &s, const float &v)
 {
 	//RGB-HSV Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
-	float C = v * s;
-	float X = C * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
-	float m = v - C;
-	float R1 = 0.f, G1 = 0.f, B1 = 0.f;
+	float c = v * s;
+	float x = c * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
+	float m = v - c;
+	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 
-	if(h >= 0.f && h < 1.f) { R1 = C; G1 = X; B1 = 0.f; }
-	else if(h >= 1.f && h < 2.f) { R1 = X; G1 = C; B1 = 0.f; }
-	else if(h >= 2.f && h < 3.f) { R1 = 0.f; G1 = C; B1 = X; }
-	else if(h >= 3.f && h < 4.f) { R1 = 0.f; G1 = X; B1 = C; }
-	else if(h >= 4.f && h < 5.f) { R1 = X; G1 = 0.f; B1 = C; }
-	else if(h >= 5.f && h < 6.f) { R1 = C; G1 = 0.f; B1 = X; }
+	if(h >= 0.f && h < 1.f) { r_1 = c; g_1 = x; b_1 = 0.f; }
+	else if(h >= 1.f && h < 2.f) { r_1 = x; g_1 = c; b_1 = 0.f; }
+	else if(h >= 2.f && h < 3.f) { r_1 = 0.f; g_1 = c; b_1 = x; }
+	else if(h >= 3.f && h < 4.f) { r_1 = 0.f; g_1 = x; b_1 = c; }
+	else if(h >= 4.f && h < 5.f) { r_1 = x; g_1 = 0.f; b_1 = c; }
+	else if(h >= 5.f && h < 6.f) { r_1 = c; g_1 = 0.f; b_1 = x; }
 
-	R = R1 + m;
-	G = G1 + m;
-	B = B1 + m;
+	r_ = r_1 + m;
+	g_ = g_1 + m;
+	b_ = b_1 + m;
 }
 
-inline void color_t::rgb_to_hsl(float &h, float &s, float &l) const
+inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 {
 	//hsl-RGB Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
 
-	float R1 = std::max(R, 0.f);
-	float G1 = std::max(G, 0.f);
-	float B1 = std::max(B, 0.f);
+	float r_1 = std::max(r_, 0.f);
+	float g_1 = std::max(g_, 0.f);
+	float b_1 = std::max(b_, 0.f);
 
-	float M = std::max(std::max(R1, G1), B1);
-	float m = std::min(std::min(R1, G1), B1);
-	float C = M - m;
-	l = 0.5f * (M + m);
+	float max_component = std::max(std::max(r_1, g_1), b_1);
+	float min_component = std::min(std::min(r_1, g_1), b_1);
+	float range = max_component - min_component;
+	l = 0.5f * (max_component + min_component);
 
-	if(std::fabs(C) < 1.0e-6f) { h = 0.f; s = 0.f; }
-	else if(M == R1) { h = std::fmod((G1 - B1) / C, 6.f);	s = C / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
-	else if(M == G1) { h = ((B1 - R1) / C) + 2.f;	s = C / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
-	else if(M == B1) { h = ((R1 - G1) / C) + 4.f;	s = C / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
+	if(std::fabs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
+	else if(max_component == r_1) { h = std::fmod((g_1 - b_1) / range, 6.f); s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
+	else if(max_component == g_1) { h = ((b_1 - r_1) / range) + 2.f; s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
+	else if(max_component == b_1) { h = ((r_1 - g_1) / range) + 4.f; s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
 	else { h = 0.f; s = 0.f; l = 0.f; }
 
 	if(h < 0.f) h += 6.f;
 }
 
-inline void color_t::hsl_to_rgb(const float &h, const float &s, const float &l)
+inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
 {
 	//RGB-hsl Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
-	float C = (1.f - std::fabs((2.f * l) - 1.f)) * s;
-	float X = C * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
-	float m = l - 0.5f * C;
-	float R1 = 0.f, G1 = 0.f, B1 = 0.f;
+	float c = (1.f - std::fabs((2.f * l) - 1.f)) * s;
+	float x = c * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
+	float m = l - 0.5f * c;
+	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 
-	if(h >= 0.f && h < 1.f) { R1 = C; G1 = X; B1 = 0.f; }
-	else if(h >= 1.f && h < 2.f) { R1 = X; G1 = C; B1 = 0.f; }
-	else if(h >= 2.f && h < 3.f) { R1 = 0.f; G1 = C; B1 = X; }
-	else if(h >= 3.f && h < 4.f) { R1 = 0.f; G1 = X; B1 = C; }
-	else if(h >= 4.f && h < 5.f) { R1 = X; G1 = 0.f; B1 = C; }
-	else if(h >= 5.f && h < 6.f) { R1 = C; G1 = 0.f; B1 = X; }
+	if(h >= 0.f && h < 1.f) { r_1 = c; g_1 = x; b_1 = 0.f; }
+	else if(h >= 1.f && h < 2.f) { r_1 = x; g_1 = c; b_1 = 0.f; }
+	else if(h >= 2.f && h < 3.f) { r_1 = 0.f; g_1 = c; b_1 = x; }
+	else if(h >= 3.f && h < 4.f) { r_1 = 0.f; g_1 = x; b_1 = c; }
+	else if(h >= 4.f && h < 5.f) { r_1 = x; g_1 = 0.f; b_1 = c; }
+	else if(h >= 5.f && h < 6.f) { r_1 = c; g_1 = 0.f; b_1 = x; }
 
-	R = R1 + m;
-	G = G1 + m;
-	B = B1 + m;
+	r_ = r_1 + m;
+	g_ = g_1 + m;
+	b_ = b_1 + m;
 }
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_COLOR_H
+#endif // YAFARAY_COLOR_H

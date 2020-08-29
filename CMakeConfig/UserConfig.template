@@ -119,7 +119,7 @@ set(EMBED_FONT_QT OFF)
 ##set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
 
 # The Core include files instalation dir                                                
-# Default: include/yafaray                                                       
+# Default: include/yafaray
 #                                                                              
 # Note: include files will not be installed when building as Blender AddOn
 # By default: ${USER_INSTALL_PREFIX}/include/yafaray
@@ -127,7 +127,7 @@ set(EMBED_FONT_QT OFF)
 ##set(YAF_INCL_DIR "include/yafaray")
 
 # The Core documentation instalation dir                                                
-# Default: share/doc/yafaray                                                       
+# Default: share/doc/yafaray
 #                                                                              
 # Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter docs will be used instead
 # By default: ${USER_INSTALL_PREFIX}/share/doc/yafaray

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_MATERIAL_H
-#define Y_MATERIAL_H
+#ifndef YAFARAY_MATERIAL_H
+#define YAFARAY_MATERIAL_H
 
 #include <yafray_constants.h>
 #include "color.h"
@@ -10,7 +10,7 @@
 #include "utilities/sample_utils.h"
 #include "object3d.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #define FACE_FORWARD(Ng,N,I) ((((Ng)*(I))<0) ? (-N) : (N))
 /*
@@ -20,115 +20,115 @@ class YAFRAYCORE_EXPORT BSDF_t
 	BSDF_t(){};
 	virtual ~BSDF_t(){};
 	BSDF_t(const surfacePoint_t &sp, void* userdata);
-	virtual color_t sample(const vector3d_t &wo, vector3d_t &wi, float s1, float s2, void* userdata) = 0;
-	virtual color_t eval(const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, void* userdata) = 0;
+	virtual Rgb sample(const vector3d_t &wo, vector3d_t &wi, float s1, float s2, void* userdata) = 0;
+	virtual Rgb eval(const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, void* userdata) = 0;
 };
 */
 
-class surfacePoint_t;
-struct renderState_t;
-class volumeHandler_t;
+class SurfacePoint;
+struct RenderState;
+class VolumeHandler;
 
-enum bsdfFlags_t
+enum BsdfFlags
 {
-	BSDF_NONE		= 0x0000,
-	BSDF_SPECULAR	= 0x0001,
-	BSDF_GLOSSY		= 0x0002,
-	BSDF_DIFFUSE	= 0x0004,
-	BSDF_DISPERSIVE	= 0x0008,
-	BSDF_REFLECT	= 0x0010,
-	BSDF_TRANSMIT	= 0x0020,
-	BSDF_FILTER		= 0x0040,
-	BSDF_EMIT		= 0x0080,
-	BSDF_VOLUMETRIC = 0x0100,
-	BSDF_ALL_SPECULAR = BSDF_SPECULAR | BSDF_REFLECT | BSDF_TRANSMIT,
-	BSDF_ALL_GLOSSY = BSDF_GLOSSY | BSDF_REFLECT | BSDF_TRANSMIT,
-	BSDF_ALL = BSDF_SPECULAR | BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT | BSDF_FILTER
+	BsdfNone		= 0x0000,
+	BsdfSpecular	= 0x0001,
+	BsdfGlossy		= 0x0002,
+	BsdfDiffuse	= 0x0004,
+	BsdfDispersive	= 0x0008,
+	BsdfReflect	= 0x0010,
+	BsdfTransmit	= 0x0020,
+	BsdfFilter		= 0x0040,
+	BsdfEmit		= 0x0080,
+	BsdfVolumetric = 0x0100,
+	BsdfAllSpecular = BsdfSpecular | BsdfReflect | BsdfTransmit,
+	BsdfAllGlossy = BsdfGlossy | BsdfReflect | BsdfTransmit,
+	BsdfAll = BsdfSpecular | BsdfGlossy | BsdfDiffuse | BsdfDispersive | BsdfReflect | BsdfTransmit | BsdfFilter
 };
 
-typedef unsigned int BSDF_t;
+typedef unsigned int Bsdf_t;
 
-struct sample_t
+struct Sample
 {
-	sample_t(float s_1, float s_2, BSDF_t sflags = BSDF_ALL, bool revrs = false):
-		s1(s_1), s2(s_2), pdf(0.f), flags(sflags), sampledFlags(BSDF_NONE), reverse(revrs) {}
-	float s1, s2;
-	float pdf;
-	BSDF_t flags, sampledFlags;
-	bool reverse; //!< if true, the sample method shall return the probability/color for swapped incoming/outgoing dir
-	float pdf_back;
-	color_t col_back;
+	Sample(float s_1, float s_2, Bsdf_t sflags = BsdfAll, bool revrs = false):
+			s_1_(s_1), s_2_(s_2), pdf_(0.f), flags_(sflags), sampled_flags_(BsdfNone), reverse_(revrs) {}
+	float s_1_, s_2_;
+	float pdf_;
+	Bsdf_t flags_, sampled_flags_;
+	bool reverse_; //!< if true, the sample method shall return the probability/color for swapped incoming/outgoing dir
+	float pdf_back_;
+	Rgb col_back_;
 };
 
-struct pSample_t: public sample_t // << whats with the public?? structs inherit publicly by default *DarkTide
+struct PSample final : public Sample // << whats with the public?? structs inherit publicly by default *DarkTide
 {
-	pSample_t(float s_1, float s_2, float s_3, BSDF_t sflags, const color_t &l_col, const color_t &transm = color_t(1.f)):
-		sample_t(s_1, s_2, sflags), s3(s_3), lcol(l_col), alpha(transm) {}
-	float s3;
-	const color_t lcol; //!< the photon color from last scattering
-	const color_t alpha; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
-	color_t color; //!< the new color after scattering, i.e. what will be lcol for next scatter.
+	PSample(float s_1, float s_2, float s_3, Bsdf_t sflags, const Rgb &l_col, const Rgb &transm = Rgb(1.f)):
+			Sample(s_1, s_2, sflags), s_3_(s_3), lcol_(l_col), alpha_(transm) {}
+	float s_3_;
+	const Rgb lcol_; //!< the photon color from last scattering
+	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
+	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
 
-enum visibility_t
+enum Visibility
 {
-	NORMAL_VISIBLE			= 0,
-	VISIBLE_NO_SHADOWS		= 1,
-	INVISIBLE_SHADOWS_ONLY	= 2,
-	INVISIBLE				= 3
+	NormalVisible			= 0,
+	VisibleNoShadows		= 1,
+	InvisibleShadowsOnly	= 2,
+	Invisible				= 3
 };
 
 
-class YAFRAYCORE_EXPORT material_t
+class YAFRAYCORE_EXPORT Material
 {
 	public:
-		material_t(): bsdfFlags(BSDF_NONE), mVisibility(NORMAL_VISIBLE), mReceiveShadows(true), reqMem(0), volI(nullptr), volO(nullptr), additionalDepth(0)
+		Material(): bsdf_flags_(BsdfNone), visibility_(NormalVisible), receive_shadows_(true), req_mem_(0), vol_i_(nullptr), vol_o_(nullptr), additional_depth_(0)
 		{
-			materialIndexAuto++;
-			srand(materialIndexAuto);
-			float R, G, B;
+			material_index_auto_++;
+			srand(material_index_auto_);
+			float r, g, b;
 			do
 			{
-				R = (float)(rand() % 8) / 8.f;
-				G = (float)(rand() % 8) / 8.f;
-				B = (float)(rand() % 8) / 8.f;
+				r = (float)(rand() % 8) / 8.f;
+				g = (float)(rand() % 8) / 8.f;
+				b = (float)(rand() % 8) / 8.f;
 			}
-			while(R + G + B < 0.5f);
-			materialIndexAutoColor = color_t(R, G, B);
-			materialIndexAutoNumber = materialIndexAuto;
+			while(r + g + b < 0.5f);
+			material_index_auto_color_ = Rgb(r, g, b);
+			material_index_auto_number_ = material_index_auto_;
 		}
-		virtual ~material_t() { resetMaterialIndex(); }
+		virtual ~Material() { resetMaterialIndex(); }
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
 			holds a pointer to preallocated userdata to save data that only depends on the current sp,
 			like texture lookups etc.
-			\param bsdfTypes returns flags for all bsdf components the material has
+			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const = 0;
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t types, bool force_eval = false) const = 0;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t types, bool force_eval = false) const = 0;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
-			\param W returns the weight for importance sampling
+			\param w returns the weight for importance sampling
 		*/
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const = 0;// {return color_t(0.f);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const {return color_t(0.f);}
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const = 0;// {return Rgb(0.f);}
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const {return Rgb(0.f);}
 
-		virtual color_t sampleClay(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+		virtual Rgb sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 		{
-			vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s.s1, s.s2);
-			s.pdf = std::fabs(wi * N);
-			W = (std::fabs(wi * sp.N)) / (s.pdf * 0.99f + 0.01f);
-			return color_t(1.0f);	//Clay color White 100%
+			Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
+			s.pdf_ = std::fabs(wi * n);
+			w = (std::fabs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
+			return Rgb(1.0f);	//Clay color White 100%
 		}
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const {return 0.f;}
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const {return 0.f;}
 
 
 		/*! indicate whether light can (partially) pass the material without getting refracted,
@@ -139,221 +139,221 @@ class YAFRAYCORE_EXPORT material_t
 
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/
-		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const { return color_t(0.0); }
+		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
 			Typical use: recursive raytracing of integrators.
 			\param dir dir[0] returns reflected direction, dir[1] refracted direction
 			\param col col[0] returns reflected spectrum, dir[1] refracted spectrum */
-		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-		                         bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const
+		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 		{ reflect = false; refract = false; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
-		virtual color_t getReflectivity(const renderState_t &state, const surfacePoint_t &sp, BSDF_t flags) const;
+		virtual Rgb getReflectivity(const RenderState &state, const SurfacePoint &sp, Bsdf_t flags) const;
 
 		/*!	allow light emitting materials, for realizing correctly visible area lights.
 			default implementation returns black obviously.	*/
-		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const { return color_t(0.0); }
+		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
-		virtual const volumeHandler_t *getVolumeHandler(bool inside) const { return inside ? volI : volO; }
+		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_ : vol_o_; }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
-		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const { return 1.f; }
+		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return 1.f; }
 
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
-		virtual bool scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const;
+		virtual bool scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const;
 
-		BSDF_t getFlags() const { return bsdfFlags; }
+		Bsdf_t getFlags() const { return bsdf_flags_; }
 		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
 			returns the required amount of "userdata" memory for all the functions that require a render state */
-		size_t getReqMem() const { return reqMem; }
+		size_t getReqMem() const { return req_mem_; }
 
 		/*! Get materials IOR (for refracted photons) */
 
-		virtual float getMatIOR() const { return 1.5f; }
-		virtual color_t getDiffuseColor(const renderState_t &state) const { return color_t(0.f); }
-		virtual color_t getGlossyColor(const renderState_t &state) const { return color_t(0.f); }
-		virtual color_t getTransColor(const renderState_t &state) const { return color_t(0.f); }
-		virtual color_t getMirrorColor(const renderState_t &state) const { return color_t(0.f); }
-		virtual color_t getSubSurfaceColor(const renderState_t &state) const { return color_t(0.f); }
-		void setMaterialIndex(const float &newMatIndex)
+		virtual float getMatIor() const { return 1.5f; }
+		virtual Rgb getDiffuseColor(const RenderState &state) const { return Rgb(0.f); }
+		virtual Rgb getGlossyColor(const RenderState &state) const { return Rgb(0.f); }
+		virtual Rgb getTransColor(const RenderState &state) const { return Rgb(0.f); }
+		virtual Rgb getMirrorColor(const RenderState &state) const { return Rgb(0.f); }
+		virtual Rgb getSubSurfaceColor(const RenderState &state) const { return Rgb(0.f); }
+		void setMaterialIndex(const float &new_mat_index)
 		{
-			materialIndex = newMatIndex;
-			if(highestMaterialIndex < materialIndex) highestMaterialIndex = materialIndex;
+			material_index_ = new_mat_index;
+			if(material_index_highest_ < material_index_) material_index_highest_ = material_index_;
 		}
-		void resetMaterialIndex() { highestMaterialIndex = 1.f; materialIndexAuto = 0; }
-		void setMaterialIndex(const int &newMatIndex) { setMaterialIndex((float) newMatIndex); }
-		float getAbsMaterialIndex() const { return materialIndex; }
-		float getNormMaterialIndex() const { return (materialIndex / highestMaterialIndex); }
-		color_t getAbsMaterialIndexColor() const
+		void resetMaterialIndex() { material_index_highest_ = 1.f; material_index_auto_ = 0; }
+		void setMaterialIndex(const int &new_mat_index) { setMaterialIndex((float) new_mat_index); }
+		float getAbsMaterialIndex() const { return material_index_; }
+		float getNormMaterialIndex() const { return (material_index_ / material_index_highest_); }
+		Rgb getAbsMaterialIndexColor() const
 		{
-			return color_t(materialIndex);
+			return Rgb(material_index_);
 		}
-		color_t getNormMaterialIndexColor() const
+		Rgb getNormMaterialIndexColor() const
 		{
-			float normalizedMaterialIndex = getNormMaterialIndex();
-			return color_t(normalizedMaterialIndex);
+			float normalized_material_index = getNormMaterialIndex();
+			return Rgb(normalized_material_index);
 		}
-		color_t getAutoMaterialIndexColor() const
+		Rgb getAutoMaterialIndexColor() const
 		{
-			return materialIndexAutoColor;
+			return material_index_auto_color_;
 		}
-		color_t getAutoMaterialIndexNumber() const
+		Rgb getAutoMaterialIndexNumber() const
 		{
-			return materialIndexAutoNumber;
+			return material_index_auto_number_;
 		}
 
-		visibility_t getVisibility() const { return mVisibility; }
-		bool getReceiveShadows() const { return mReceiveShadows; }
+		Visibility getVisibility() const { return visibility_; }
+		bool getReceiveShadows() const { return receive_shadows_; }
 
-		bool isFlat() const { return mFlatMaterial; }
+		bool isFlat() const { return flat_material_; }
 
-		int getAdditionalDepth() const { return additionalDepth; }
-		float getTransparentBiasFactor() const { return transparentBiasFactor; }
-		bool getTransparentBiasMultiplyRayDepth() const { return transparentBiasMultiplyRayDepth; }
+		int getAdditionalDepth() const { return additional_depth_; }
+		float getTransparentBiasFactor() const { return transparent_bias_factor_; }
+		bool getTransparentBiasMultiplyRayDepth() const { return transparent_bias_multiply_ray_depth_; }
 
-		void applyWireFrame(float &value, float wireFrameAmount, const surfacePoint_t &sp) const;
-		void applyWireFrame(color_t &col, float wireFrameAmount, const surfacePoint_t &sp) const;
-		void applyWireFrame(color_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const;
-		void applyWireFrame(colorA_t &col, float wireFrameAmount, const surfacePoint_t &sp) const;
-		void applyWireFrame(colorA_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const;
+		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
+		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
+		void applyWireFrame(Rgb *const col, float wire_frame_amount, const SurfacePoint &sp) const;
+		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;
+		void applyWireFrame(Rgba *const col, float wire_frame_amount, const SurfacePoint &sp) const;
 
-		void setSamplingFactor(const float &newSamplingFactor)
+		void setSamplingFactor(const float &new_sampling_factor)
 		{
-			mSamplingFactor = newSamplingFactor;
-			if(mHighestSamplingFactor < mSamplingFactor) mHighestSamplingFactor = mSamplingFactor;
+			sampling_factor_ = new_sampling_factor;
+			if(highest_sampling_factor_ < sampling_factor_) highest_sampling_factor_ = sampling_factor_;
 		}
-		float getSamplingFactor() const { return mSamplingFactor; }
+		float getSamplingFactor() const { return sampling_factor_; }
 
 	protected:
 		/* small function to apply bump mapping to a surface point
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
-		void applyBump(surfacePoint_t &sp, float dfdNU, float dfdNV) const;
+		void applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const;
 
-		BSDF_t bsdfFlags;
+		Bsdf_t bsdf_flags_;
 
-		visibility_t mVisibility; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
+		Visibility visibility_; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
-		bool mReceiveShadows; //!< enables/disables material reception of shadows.
+		bool receive_shadows_; //!< enables/disables material reception of shadows.
 
-		size_t reqMem; //!< the amount of "temporary" memory required to compute/store surface point specific data
-		volumeHandler_t *volI; //!< volumetric handler for space inside material (opposed to surface normal)
-		volumeHandler_t *volO; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-		float materialIndex;	//!< Material Index for the material-index render pass
-		static unsigned int materialIndexAuto;	//!< Material Index automatically generated for the material-index-auto render pass
-		color_t materialIndexAutoColor;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
-		float materialIndexAutoNumber = 0.f;	//!< Material Index number automatically generated for the material-index-auto-abs (numeric) render pass
-		static float highestMaterialIndex;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
-		int additionalDepth;	//!< Per-material additional ray-depth
-		float transparentBiasFactor = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
-		bool transparentBiasMultiplyRayDepth = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
+		size_t req_mem_; //!< the amount of "temporary" memory required to compute/store surface point specific data
+		VolumeHandler *vol_i_ = nullptr; //!< volumetric handler for space inside material (opposed to surface normal)
+		VolumeHandler *vol_o_ = nullptr; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
+		float material_index_;	//!< Material Index for the material-index render pass
+		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
+		Rgb material_index_auto_color_;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
+		float material_index_auto_number_ = 0.f;	//!< Material Index number automatically generated for the material-index-auto-abs (numeric) render pass
+		static float material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
+		int additional_depth_;	//!< Per-material additional ray-depth
+		float transparent_bias_factor_ = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
+		bool transparent_bias_multiply_ray_depth_ = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
 
-		float mWireFrameAmount = 0.f;           //!< Wireframe shading amount
-		float mWireFrameThickness = 0.01f;      //!< Wireframe thickness
-		float mWireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-		color_t mWireFrameColor = color_t(1.f); //!< Wireframe shading color
+		float wireframe_amount_ = 0.f;           //!< Wireframe shading amount
+		float wireframe_thickness_ = 0.01f;      //!< Wireframe thickness
+		float wireframe_exponent_ = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+		Rgb wireframe_color_ = Rgb(1.f); //!< Wireframe shading color
 
-		float mSamplingFactor = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
+		float sampling_factor_ = 1.f;	//!< Material sampling factor, to allow some materials to receive more samples than others
 
-		bool mFlatMaterial = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
+		bool flat_material_ = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
 
-		static float mHighestSamplingFactor;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
+		static float highest_sampling_factor_;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
 };
 
 
-inline void material_t::applyWireFrame(float &value, float wireFrameAmount, const surfacePoint_t &sp) const
+inline void Material::applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
 	{
 		float dist = sp.getDistToNearestEdge();
-		if(dist <= mWireFrameThickness)
+		if(dist <= wireframe_thickness_)
 		{
-			if(mWireFrameExponent > 0.f)
+			if(wireframe_exponent_ > 0.f)
 			{
-				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
-			value = value * (1.f - wireFrameAmount);
+			value = value * (1.f - wire_frame_amount);
 		}
 	}
 }
 
-inline void material_t::applyWireFrame(color_t &col, float wireFrameAmount, const surfacePoint_t &sp) const
+inline void Material::applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
 	{
 		float dist = sp.getDistToNearestEdge();
-		if(dist <= mWireFrameThickness)
+		if(dist <= wireframe_thickness_)
 		{
-			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
-			if(mWireFrameExponent > 0.f)
+			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+			if(wireframe_exponent_ > 0.f)
 			{
-				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
-			col.blend(wireFrameCol, wireFrameAmount);
+			col.blend(wire_frame_col, wire_frame_amount);
 		}
 	}
 }
 
-inline void material_t::applyWireFrame(color_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const
+inline void Material::applyWireFrame(Rgb *const col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
 	{
 		float dist = sp.getDistToNearestEdge();
-		if(dist <= mWireFrameThickness)
+		if(dist <= wireframe_thickness_)
 		{
-			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
-			if(mWireFrameExponent > 0.f)
+			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+			if(wireframe_exponent_ > 0.f)
 			{
-				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
-			col[0].blend(wireFrameCol, wireFrameAmount);
-			col[1].blend(wireFrameCol, wireFrameAmount);
+			col[0].blend(wire_frame_col, wire_frame_amount);
+			col[1].blend(wire_frame_col, wire_frame_amount);
 		}
 	}
 }
 
-inline void material_t::applyWireFrame(colorA_t &col, float wireFrameAmount, const surfacePoint_t &sp) const
+inline void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
 	{
 		float dist = sp.getDistToNearestEdge();
-		if(dist <= mWireFrameThickness)
+		if(dist <= wireframe_thickness_)
 		{
-			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
-			if(mWireFrameExponent > 0.f)
+			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+			if(wireframe_exponent_ > 0.f)
 			{
-				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
-			col.blend(wireFrameCol, wireFrameAmount);
-			col.A = wireFrameAmount;
+			col.blend(wire_frame_col, wire_frame_amount);
+			col.a_ = wire_frame_amount;
 		}
 	}
 }
 
-inline void material_t::applyWireFrame(colorA_t *const col, float wireFrameAmount, const surfacePoint_t &sp) const
+inline void Material::applyWireFrame(Rgba *const col, float wire_frame_amount, const SurfacePoint &sp) const
 {
-	if(wireFrameAmount > 0.f && mWireFrameThickness > 0.f)
+	if(wire_frame_amount > 0.f && wireframe_thickness_ > 0.f)
 	{
 		float dist = sp.getDistToNearestEdge();
-		if(dist <= mWireFrameThickness)
+		if(dist <= wireframe_thickness_)
 		{
-			color_t wireFrameCol = mWireFrameColor * wireFrameAmount;
-			if(mWireFrameExponent > 0.f)
+			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
+			if(wireframe_exponent_ > 0.f)
 			{
-				wireFrameAmount *= std::pow((mWireFrameThickness - dist) / mWireFrameThickness, mWireFrameExponent);
+				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
-			col[0].blend(wireFrameCol, wireFrameAmount);
-			col[0].A = wireFrameAmount;
-			col[1].blend(wireFrameCol, wireFrameAmount);
-			col[1].A = wireFrameAmount;
+			col[0].blend(wire_frame_col, wire_frame_amount);
+			col[0].a_ = wire_frame_amount;
+			col[1].blend(wire_frame_col, wire_frame_amount);
+			col[1].a_ = wire_frame_amount;
 		}
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_MATERIAL_H
+#endif // YAFARAY_MATERIAL_H

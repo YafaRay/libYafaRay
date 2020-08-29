@@ -7,12 +7,12 @@
  *      Author: Rodrigo Placencia (DarkTide)
  *
  */
-#ifndef SPECTRALDATA_H_
-#define SPECTRALDATA_H_
+#ifndef YAFARAY_SPECTRALDATA_H
+#define YAFARAY_SPECTRALDATA_H
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-static const float chromaMatch2Deg[95][3] = //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
+static const float chroma_match_2_deg__[95][3] = //[Lambda][chromacord] Wavelength range 360-830 @ 5nm interval
 {
 	{0.000129900000, 0.000003917000, 0.000606100000}, {0.000232100000, 0.000006965000, 0.001086000000},
 	{0.000414900000, 0.000012390000, 0.001946000000}, {0.000741600000, 0.000022020000, 0.003486000000},
@@ -72,7 +72,7 @@ static const float chromaMatch2Deg[95][3] = //[Lambda][chromacord] Wavelength ra
 	{0.000002522525, 0.000000910930, 0.000000000000}, {0.000001776509, 0.000000641530, 0.000000000000},
 	{0.000001251141, 0.000000451810, 0.000000000000}
 };
-static const float koWavelengths[64] =
+static const float ko_wavelengths__[64] =
 {
 	300, 305, 310, 315, 320, 325, 330, 335, 340, 345, 350, 355, 445, 450, 455, 460,
 	465, 470, 475, 480, 485, 490, 495, 500, 505, 510, 515, 520,	525, 530, 535, 540,
@@ -80,7 +80,7 @@ static const float koWavelengths[64] =
 	640, 650, 660, 670, 680, 690, 700, 710, 720, 730, 740, 750, 760, 770, 780, 790
 };
 
-static const float koAmplitudes[64] =
+static const float ko_amplitudes__[64] =
 {
 	10.0,  4.8,  2.7, 1.35,   .8, .380, .160, .075,  .04, .019, .007,   .0, .003, .003, .004, .006,
 	.008, .009, .012, .014,	.017, .021,	.025,  .03, .035,  .04, .045, .048,	.057, .063,  .07, .075,
@@ -89,30 +89,30 @@ static const float koAmplitudes[64] =
 };
 
 
-static const float kgWavelengths[4] =
+static const float kg_wavelengths__[4] =
 {
 	759,  760,  770,  771
 };
 
-static const float kgAmplitudes[4] =
+static const float kg_amplitudes__[4] =
 {
 	0,  3.0,  0.210,  0
 };
 
-static const float kwaWavelengths[13] =
+static const float kwa_wavelengths__[13] =
 {
 	689,  690,  700,  710,  720,  730,  740,
 	750,  760,  770,  780,  790,  800
 };
 
-static const float kwaAmplitudes[13] =
+static const float kwa_amplitudes__[13] =
 {
 	0.00000, 0.01600, 0.02400, 0.01250, 1.0000, 0.8700, 0.06100,
 	0.00100, 0.00001, 0.00001, 0.00060, 0.0175, 0.0360
 };
 
 //Sun Spectral Radiance [W / (m^2 sr nm)]
-static const float sunRadiance[38] =
+static const float sun_radiance__[38] =
 {
 	1.65590e+2,
 	1.62337e+2,
@@ -154,32 +154,32 @@ static const float sunRadiance[38] =
 	1.82592e+2
 };
 
-color_t chromaMatch(float wl)
+Rgb chromaMatch__(float wl)
 {
-	color_t r(0.0);
+	Rgb r(0.0);
 	if(wl < 360 || wl > 830) return r;
 	int i = (int)((wl - 360) / 5);
-	r.set(chromaMatch2Deg[i][0], chromaMatch2Deg[i][1], chromaMatch2Deg[i][2]);
+	r.set(chroma_match_2_deg__[i][0], chroma_match_2_deg__[i][1], chroma_match_2_deg__[i][2]);
 	return r;
 }
 
 //lazy experiment
-float wavelengthMatch(float x, float y, float z)
+float wavelengthMatch__(float x, float y, float z)
 {
-	int x0 = -1;
-	int x1 = -1;
+	int x_0 = -1;
+	int x_1 = -1;
 
 	for(int i = 0; i < 95; i++)
 	{
-		if((chromaMatch2Deg[i][0] == x) && (chromaMatch2Deg[i][1] == y) && (chromaMatch2Deg[i][2] == z)) return i + 360.0;
+		if((chroma_match_2_deg__[i][0] == x) && (chroma_match_2_deg__[i][1] == y) && (chroma_match_2_deg__[i][2] == z)) return i + 360.0;
 
-		if((x0 = -1 && chromaMatch2Deg[i][0] < x) && (chromaMatch2Deg[i][1] < y) && (chromaMatch2Deg[i][2] < z)) x0 = i;
-		if((x1 = -1 && chromaMatch2Deg[i][0] > x) && (chromaMatch2Deg[i][1] > y) && (chromaMatch2Deg[i][2] > z)) x1 = i;
+		if((x_0 = -1 && chroma_match_2_deg__[i][0] < x) && (chroma_match_2_deg__[i][1] < y) && (chroma_match_2_deg__[i][2] < z)) x_0 = i;
+		if((x_1 = -1 && chroma_match_2_deg__[i][0] > x) && (chroma_match_2_deg__[i][1] > y) && (chroma_match_2_deg__[i][2] > z)) x_1 = i;
 	}
 
-	return 360.0 + (x1 - x0) / 2;
+	return 360.0 + (x_1 - x_0) / 2;
 }
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif /* SPECTRALDATA_H_ */
+#endif /* YAFARAY_SPECTRALDATA_H */

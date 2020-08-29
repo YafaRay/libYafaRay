@@ -21,35 +21,35 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef Y_COUTPUT_H
-#define Y_COUTPUT_H
+#ifndef YAFARAY_OUTPUT_H
+#define YAFARAY_OUTPUT_H
 
 #include "yafray_constants.h"
 #include <vector>
 #include <string>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class renderPasses_t;
-class colorA_t;
+class RenderPasses;
+class Rgba;
 
 /*! Base class for rendering output containers */
 
-class colorOutput_t
+class ColorOutput
 {
 	public:
-		virtual ~colorOutput_t() {};
-		virtual void initTilesPasses(int totalViews, int numExtPasses) {};
-		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true) = 0;
-		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true) = 0;
-		virtual void flush(int numView, const renderPasses_t *renderPasses) = 0;
-		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) = 0;
-		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1) {};
+		virtual ~ColorOutput() {};
+		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) = 0;
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) = 0;
+		virtual void flush(int num_view, const RenderPasses *render_passes) = 0;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) = 0;
+		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) {};
 		virtual bool isImageOutput() { return false; }
 		virtual bool isPreview() { return false; }
 		virtual std::string getDenoiseParams() const { return ""; }
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_COUTPUT_H
+#endif // YAFARAY_OUTPUT_H

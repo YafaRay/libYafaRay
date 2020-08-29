@@ -1,112 +1,112 @@
 #pragma once
 
-#ifndef Y_OBJECT3D_H
-#define Y_OBJECT3D_H
+#ifndef YAFARAY_OBJECT3D_H
+#define YAFARAY_OBJECT3D_H
 
 #include <yafray_constants.h>
 #include "color.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class light_t;
-class primitive_t;
-class surfacePoint_t;
-class point3d_t;
-class vector3d_t;
+class Light;
+class Primitive;
+class SurfacePoint;
+class Point3;
+class Vec3;
 
-class YAFRAYCORE_EXPORT object3d_t
+class YAFRAYCORE_EXPORT Object3D
 {
 	public:
-		object3d_t(): light(nullptr), visible(true), is_base_mesh(false), objectIndex(0.f)
+		Object3D(): light_(nullptr), visible_(true), is_base_mesh_(false), object_index_(0.f)
 		{
-			objectIndexAuto++;
-			srand(objectIndexAuto);
-			float R, G, B;
+			object_index_auto_++;
+			srand(object_index_auto_);
+			float r, g, b;
 			do
 			{
-				R = (float)(rand() % 8) / 8.f;
-				G = (float)(rand() % 8) / 8.f;
-				B = (float)(rand() % 8) / 8.f;
+				r = (float)(rand() % 8) / 8.f;
+				g = (float)(rand() % 8) / 8.f;
+				b = (float)(rand() % 8) / 8.f;
 			}
-			while(R + G + B < 0.5f);
-			objectIndexAutoColor = color_t(R, G, B);
-			objectIndexAutoNumber = objectIndexAuto;
+			while(r + g + b < 0.5f);
+			object_index_auto_color_ = Rgb(r, g, b);
+			object_index_auto_number_ = object_index_auto_;
 		}
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		virtual int numPrimitives() const = 0;
 		/*! write the primitive pointers to the given array
 			\return number of written primitives */
-		virtual int getPrimitives(const primitive_t **prims) const { return 0; }
+		virtual int getPrimitives(const Primitive **prims) const { return 0; }
 		/*! set a light source to be associated with this object */
-		virtual void setLight(const light_t *l) { light = l; }
+		virtual void setLight(const Light *l) { light_ = l; }
 		/*! query whether object surface can be sampled right now */
 		virtual bool canSample() { return false; }
 		/*! try to enable sampling (may require additional memory and preprocessing time, if supported) */
 		virtual bool enableSampling() { return false; }
 		/*! sample object surface */
-		virtual void sample(float s1, float s2, point3d_t &p, vector3d_t &n) const {};
+		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const {};
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
-		void setVisibility(bool v) { visible = v; }
+		void setVisibility(bool v) { visible_ = v; }
 		/*! Indicates that this object should be used as base object for instances */
-		void useAsBaseObject(bool v) { is_base_mesh = v; }
+		void useAsBaseObject(bool v) { is_base_mesh_ = v; }
 		/*! Returns if this object should be used for rendering. */
-		bool isVisible() const { return visible; }
+		bool isVisible() const { return visible_; }
 		/*! Returns if this object is used as base object for instances. */
-		bool isBaseObject() const { return is_base_mesh; }
-		virtual ~object3d_t() { resetObjectIndex(); }
-		void setObjectIndex(const float &newObjIndex)
+		bool isBaseObject() const { return is_base_mesh_; }
+		virtual ~Object3D() { resetObjectIndex(); }
+		void setObjectIndex(const float &new_obj_index)
 		{
-			objectIndex = newObjIndex;
-			if(highestObjectIndex < objectIndex) highestObjectIndex = objectIndex;
+			object_index_ = new_obj_index;
+			if(highest_object_index_ < object_index_) highest_object_index_ = object_index_;
 		}
-		void resetObjectIndex() { highestObjectIndex = 1.f; objectIndexAuto = 0; }
-		void setObjectIndex(const int &newObjIndex) { setObjectIndex((float) newObjIndex); }
-		float getAbsObjectIndex() const { return objectIndex; }
-		float getNormObjectIndex() const { return (objectIndex / highestObjectIndex); }
-		color_t getAbsObjectIndexColor() const
+		void resetObjectIndex() { highest_object_index_ = 1.f; object_index_auto_ = 0; }
+		void setObjectIndex(const int &new_obj_index) { setObjectIndex((float) new_obj_index); }
+		float getAbsObjectIndex() const { return object_index_; }
+		float getNormObjectIndex() const { return (object_index_ / highest_object_index_); }
+		Rgb getAbsObjectIndexColor() const
 		{
-			return color_t(objectIndex);
+			return Rgb(object_index_);
 		}
-		color_t getNormObjectIndexColor() const
+		Rgb getNormObjectIndexColor() const
 		{
-			float normalizedObjectIndex = getNormObjectIndex();
-			return color_t(normalizedObjectIndex);
+			float normalized_object_index = getNormObjectIndex();
+			return Rgb(normalized_object_index);
 		}
-		color_t getAutoObjectIndexColor() const
+		Rgb getAutoObjectIndexColor() const
 		{
-			return objectIndexAutoColor;
+			return object_index_auto_color_;
 		}
-		color_t getAutoObjectIndexNumber() const
+		Rgb getAutoObjectIndexNumber() const
 		{
-			return objectIndexAutoNumber;
+			return object_index_auto_number_;
 		}
 
 	protected:
-		const light_t *light;
-		bool visible; //!< toggle whether geometry is visible or only guidance for other stuff
-		bool is_base_mesh;
-		float objectIndex;	//!< Object Index for the object-index render pass
-		static unsigned int objectIndexAuto;	//!< Object Index automatically generated for the object-index-auto render pass
-		color_t objectIndexAutoColor;	//!< Object Index color automatically generated for the object-index-auto color render pass
-		color_t objectIndexAutoNumber = 0.f;	//!< Object Index number automatically generated for the object-index-auto-abs numeric render pass
-		static float highestObjectIndex;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
+		const Light *light_;
+		bool visible_; //!< toggle whether geometry is visible or only guidance for other stuff
+		bool is_base_mesh_;
+		float object_index_;	//!< Object Index for the object-index render pass
+		static unsigned int object_index_auto_;	//!< Object Index automatically generated for the object-index-auto render pass
+		Rgb object_index_auto_color_;	//!< Object Index color automatically generated for the object-index-auto color render pass
+		Rgb object_index_auto_number_ = 0.f;	//!< Object Index number automatically generated for the object-index-auto-abs numeric render pass
+		static float highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
 };
 
 
 
 /*! simple "container" to handle primitives as objects, for objects that
 	consist of just one primitive like spheres etc. */
-class primObject_t : public object3d_t
+class PrimObject : public Object3D
 {
 	public:
-		primObject_t(primitive_t *p): prim(p) { };
+		PrimObject(Primitive *p): prim_(p) { };
 		virtual int numPrimitives() const { return 1; }
-		virtual int getPrimitives(const primitive_t **prims) const { *prims = prim; return 1; }
+		virtual int getPrimitives(const Primitive **prims) const { *prims = prim_; return 1; }
 	private:
-		primitive_t *prim;
+		Primitive *prim_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_OBJECT3D_H
+#endif // YAFARAY_OBJECT3D_H

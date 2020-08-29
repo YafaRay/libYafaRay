@@ -15,40 +15,40 @@
 #include <windows.h>
 #endif
 
-using namespace::yafaray;
+using namespace::yafaray4;
 
-scene_t *globalScene = nullptr;
+Scene *global_scene__ = nullptr;
 
 #ifdef WIN32
-BOOL WINAPI ctrl_c_handler(DWORD signal)
+BOOL WINAPI ctrlCHandler__(DWORD signal)
 {
-	if(globalScene)
+	if(global_scene__)
 	{
-		globalScene->abort();
-		session.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		global_scene__->abort();
+		session__.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << YENDL;
 	}
 	else
 	{
-		session.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		session__.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << YENDL;
 		exit(1);
 	}
 	return TRUE;
 }
 #else
-void ctrl_c_handler(int signal)
+void ctrlCHandler__(int signal)
 {
-	if(globalScene)
+	if(global_scene__)
 	{
-		globalScene->abort();
-		session.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		global_scene__->abort();
+		session__.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << YENDL;
 	}
 	else
 	{
-		session.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << yendl;
+		session__.setStatusRenderAborted();
+		Y_WARNING << "Interface: Render aborted by user." << YENDL;
 		exit(1);
 	}
 }
@@ -58,19 +58,19 @@ int main(int argc, char *argv[])
 {
 	//handle CTRL+C events
 #ifdef WIN32
-	SetConsoleCtrlHandler(ctrl_c_handler, true);
+	SetConsoleCtrlHandler(ctrlCHandler__, true);
 #else
-	struct sigaction signalHandler;
-	signalHandler.sa_handler = ctrl_c_handler;
-	sigemptyset(&signalHandler.sa_mask);
-	signalHandler.sa_flags = 0;
-	sigaction(SIGINT, &signalHandler, nullptr);
+	struct ::sigaction signal_handler;
+	signal_handler.sa_handler = ctrlCHandler__;
+	sigemptyset(&signal_handler.sa_mask);
+	signal_handler.sa_flags = 0;
+	sigaction(SIGINT, &signal_handler, nullptr);
 #endif
 
 	//FIXME DAVID: get absolute path from relative? session.setPathYafaRayXml(bsst::filesystem::system_complete(argv[0]).parent_path().string());
-	session.setPathYafaRayXml(path_t::getParent(argv[0]));
+	session__.setPathYafaRayXml(Path::getParent(argv[0]));
 
-	cliParser_t parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
+	CliParser parse(argc, argv, 2, 1, "You need to set at least a yafaray's valid XML file.");
 
 	parse.setAppName("YafaRay XML loader",
 	                 "[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
@@ -84,33 +84,33 @@ int main(int argc, char *argv[])
 
 	bool console_colors_disabled = parse.getFlag("ccd");
 
-	if(console_colors_disabled) yafLog.setConsoleLogColorsEnabled(false);
-	else yafLog.setConsoleLogColorsEnabled(true);
+	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
+	else logger__.setConsoleLogColorsEnabled(true);
 
-	renderEnvironment_t *env = new renderEnvironment_t();
+	RenderEnvironment *env = new RenderEnvironment();
 
 	// Plugin load
 	std::string ppath = parse.getOptionString("pp");
-	std::string verbLevel = parse.getOptionString("vl");
-	std::string logVerbLevel = parse.getOptionString("lvl");
+	std::string verb_level = parse.getOptionString("vl");
+	std::string log_verb_level = parse.getOptionString("lvl");
 
-	if(verbLevel.empty()) yafLog.setConsoleMasterVerbosity("info");
-	else yafLog.setConsoleMasterVerbosity(verbLevel);
+	if(verb_level.empty()) logger__.setConsoleMasterVerbosity("info");
+	else logger__.setConsoleMasterVerbosity(verb_level);
 
-	if(logVerbLevel.empty()) yafLog.setLogMasterVerbosity("verbose");
-	else yafLog.setLogMasterVerbosity(logVerbLevel);
+	if(log_verb_level.empty()) logger__.setLogMasterVerbosity("verbose");
+	else logger__.setLogMasterVerbosity(log_verb_level);
 
 
-	bool pluginPathFound = env->getPluginPath(ppath);
+	bool plugin_path_found = env->getPluginPath(ppath);
 
-	if(pluginPathFound)
+	if(plugin_path_found)
 	{
-		Y_INFO << "The plugins path is: " << ppath << yendl;
+		Y_INFO << "The plugins path is: " << ppath << YENDL;
 		env->loadPlugins(ppath);
 	}
 	else
 	{
-		Y_ERROR << "Getting plugins path from render environment failed!" << yendl;
+		Y_ERROR << "Getting plugins path from render environment failed!" << YENDL;
 		parse.printError();
 		parse.printUsage();
 		return 1;
@@ -118,18 +118,18 @@ int main(int argc, char *argv[])
 
 	std::vector<std::string> formats = env->listImageHandlers();
 
-	std::string formatString = "";
+	std::string format_string = "";
 	for(size_t i = 0; i < formats.size(); i++)
 	{
-		formatString.append("                                       " + formats[i]);
-		if(i < formats.size() - 1) formatString.append("\n");
+		format_string.append("                                       " + formats[i]);
+		if(i < formats.size() - 1) format_string.append("\n");
 	}
 
 	parse.setOption("v", "version", true, "Displays this program's version.");
 	parse.setOption("h", "help", true, "Displays this help text.");
 	parse.setOption("op", "output-path", false, "Uses the path in <value> as rendered image output path.");
 	parse.setOption("ics", "input-color-space", false, "Sets color space for input color values.\n                                       This does not affect textures, as they have individual color\n                                       space parameters in the XML file.\n                                       Available options:\n\n                                       LinearRGB (default)\n                                       sRGB\n                                       XYZ (experimental)\n");
-	parse.setOption("f", "format", false, "Sets the output image format, available formats are:\n\n" + formatString + "\n                                       Default: tga.\n");
+	parse.setOption("f", "format", false, "Sets the output image format, available formats are:\n\n" + format_string + "\n                                       Default: tga.\n");
 	parse.setOption("ml", "multilayer", true, "Enables multi-layer image output (only in certain formats as EXR)");
 	parse.setOption("t", "threads", false, "Overrides threads setting on the XML file, for auto selection use -1.");
 	parse.setOption("a", "with-alpha", true, "Enables saving the image with alpha channel.");
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 	parse.setOption("z", "z-buffer", true, "Enables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 	parse.setOption("nz", "no-z-buffer", true, "Disables the rendering of the depth map (Z-Buffer) (this flag overrides XML setting).");
 
-	bool parseOk = parse.parseCommandLine();
+	bool parse_ok = parse.parseCommandLine();
 
 	if(parse.getFlag("h"))
 	{
@@ -148,11 +148,11 @@ int main(int argc, char *argv[])
 
 	if(parse.getFlag("v"))
 	{
-		Y_INFO << "YafaRay XML loader" << yendl << "Built with YafaRay Core version " << YAFARAY_BUILD_VERSION << yendl;
+		Y_INFO << "YafaRay XML loader" << YENDL << "Built with YafaRay Core version " << YAFARAY_BUILD_VERSION << YENDL;
 		return 0;
 	}
 
-	if(!parseOk)
+	if(!parse_ok)
 	{
 		parse.printError();
 		parse.printUsage();
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 	std::string format = parse.getOptionString("f");
 	bool multilayer = parse.getFlag("ml");
 
-	std::string outputPath = parse.getOptionString("op");
+	std::string output_path = parse.getOptionString("op");
 	std::string input_color_space_string = parse.getOptionString("ics");
 	if(input_color_space_string.empty()) input_color_space_string = "LinearRGB";
 	float input_gamma = 1.f;	//TODO: there is no parse.getOptionFloat available for now, so no way to have the additional option of entering an arbitrary manual input gamma yet. Maybe in the future...
@@ -172,16 +172,16 @@ int main(int argc, char *argv[])
 	bool nozbuf = parse.getFlag("nz");
 
 	if(format.empty()) format = "tga";
-	bool formatValid = false;
+	bool format_valid = false;
 
 	for(size_t i = 0; i < formats.size(); i++)
 	{
-		if(formats[i].find(format) != std::string::npos) formatValid = true;
+		if(formats[i].find(format) != std::string::npos) format_valid = true;
 	}
 
-	if(!formatValid)
+	if(!format_valid)
 	{
-		Y_ERROR << "Couldn't find any valid image format, image handlers missing?" << yendl;
+		Y_ERROR << "Couldn't find any valid image format, image handlers missing?" << YENDL;
 		return 1;
 	}
 
@@ -192,34 +192,34 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	std::string outName = "yafray." + format;
+	std::string out_name = "yafray." + format;
 
-	if(files.size() > 1) outName = files[1] + "." + format;
+	if(files.size() > 1) out_name = files[1] + "." + format;
 
-	std::string xmlFile = files[0];
+	std::string xml_file = files[0];
 
 	// Set the full output path with filename
-	if(outputPath.empty())
+	if(output_path.empty())
 	{
-		outputPath = outName;
+		output_path = out_name;
 	}
-	else if(outputPath.at(outputPath.length() - 1) == '/')
+	else if(output_path.at(output_path.length() - 1) == '/')
 	{
-		outputPath += outName;
+		output_path += out_name;
 	}
-	else if(outputPath.at(outputPath.length() - 1) != '/')
+	else if(output_path.at(output_path.length() - 1) != '/')
 	{
-		outputPath += "/" + outName;
+		output_path += "/" + out_name;
 	}
 
-	scene_t *scene = new scene_t(env);
+	Scene *scene = new Scene(env);
 
-	globalScene = scene;	//for the CTRL+C handler
+	global_scene__ = scene;	//for the CTRL+C handler
 
 	env->setScene(scene);
-	paraMap_t render;
+	ParamMap render;
 
-	bool success = parse_xml_file(xmlFile.c_str(), scene, env, render, input_color_space_string, input_gamma);
+	bool success = parseXmlFile__(xml_file.c_str(), scene, env, render, input_color_space_string, input_gamma);
 	if(!success) exit(1);
 
 	int width = 320, height = 240;
@@ -230,33 +230,33 @@ int main(int argc, char *argv[])
 	render.getParam("ystart", by); // border render y start
 
 	//image output denoise options
-	bool denoiseEnabled = false;
-	int denoiseHCol = 5, denoiseHLum = 5;
-	float denoiseMix = 0.8;
-	render.getParam("denoiseEnabled", denoiseEnabled);
-	render.getParam("denoiseHCol", denoiseHCol);
-	render.getParam("denoiseHLum", denoiseHLum);
-	render.getParam("denoiseMix", denoiseMix);
+	bool denoise_enabled = false;
+	int denoise_h_col = 5, denoise_h_lum = 5;
+	float denoise_mix = 0.8;
+	render.getParam("denoiseEnabled", denoise_enabled);
+	render.getParam("denoiseHCol", denoise_h_col);
+	render.getParam("denoiseHLum", denoise_h_lum);
+	render.getParam("denoiseMix", denoise_mix);
 
 	if(threads >= -1) render["threads"] = threads;
 
-	std::string logFileTypes = parse.getOptionString("l");
-	if(logFileTypes == "none")
+	std::string log_file_types = parse.getOptionString("l");
+	if(log_file_types == "none")
 	{
 		render["logging_saveLog"] = false;
 		render["logging_saveHTML"] = false;
 	}
-	if(logFileTypes == "txt")
+	if(log_file_types == "txt")
 	{
 		render["logging_saveLog"] = true;
 		render["logging_saveHTML"] = false;
 	}
-	if(logFileTypes == "html")
+	if(log_file_types == "html")
 	{
 		render["logging_saveLog"] = false;
 		render["logging_saveHTML"] = true;
 	}
-	if(logFileTypes == "txt+html")
+	if(log_file_types == "txt+html")
 	{
 		render["logging_saveLog"] = true;
 		render["logging_saveHTML"] = true;
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 	if(!params_badge_position.empty())
 	{
 		render["logging_paramsBadgePosition"] = params_badge_position;
-		yafLog.setParamsBadgePosition(params_badge_position);
+		logger__.setParamsBadgePosition(params_badge_position);
 	}
 
 	if(zbuf) render["z_channel"] = true;
@@ -276,33 +276,33 @@ int main(int argc, char *argv[])
 	render.getParam("z_channel", use_zbuf);
 
 	// create output
-	colorOutput_t *out = nullptr;
+	ColorOutput *out = nullptr;
 
-	paraMap_t ihParams;
-	ihParams["type"] = format;
-	ihParams["width"] = width;
-	ihParams["height"] = height;
-	ihParams["alpha_channel"] = alpha;
-	ihParams["z_channel"] = use_zbuf;
-	ihParams["img_multilayer"] = multilayer;
-	ihParams["denoiseEnabled"] = denoiseEnabled;
-	ihParams["denoiseHCol"] = denoiseHCol;
-	ihParams["denoiseHLum"] = denoiseHLum;
-	ihParams["denoiseMix"] = denoiseMix;
+	ParamMap ih_params;
+	ih_params["type"] = format;
+	ih_params["width"] = width;
+	ih_params["height"] = height;
+	ih_params["alpha_channel"] = alpha;
+	ih_params["z_channel"] = use_zbuf;
+	ih_params["img_multilayer"] = multilayer;
+	ih_params["denoiseEnabled"] = denoise_enabled;
+	ih_params["denoiseHCol"] = denoise_h_col;
+	ih_params["denoiseHLum"] = denoise_h_lum;
+	ih_params["denoiseMix"] = denoise_mix;
 
-	imageHandler_t *ih = env->createImageHandler("outFile", ihParams);
+	ImageHandler *ih = env->createImageHandler("outFile", ih_params);
 
 	if(ih)
 	{
-		out = new imageOutput_t(ih, outputPath, 0, 0);
+		out = new ImageOutput(ih, output_path, 0, 0);
 		if(!out) return 1;
 	}
 	else return 1;
 
 	if(! env->setupScene(*scene, render, *out)) return 1;
-	imageFilm_t *film = scene->getImageFilm();
-	session.setInteractive(false);
-	session.setStatusRenderStarted();
+	ImageFilm *film = scene->getImageFilm();
+	session__.setInteractive(false);
+	session__.setStatusRenderStarted();
 	scene->render();
 
 	env->clearAll();

@@ -2,25 +2,25 @@
 #include <core_api/bound.h>
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-bound_t::bound_t(const bound_t &r, const bound_t &l)
+Bound::Bound(const Bound &r, const Bound &l)
 {
-	float minx = std::min(r.a.x, l.a.x);
-	float miny = std::min(r.a.y, l.a.y);
-	float minz = std::min(r.a.z, l.a.z);
-	float maxx = std::max(r.g.x, l.g.x);
-	float maxy = std::max(r.g.y, l.g.y);
-	float maxz = std::max(r.g.z, l.g.z);
-	a.set(minx, miny, minz);
-	g.set(maxx, maxy, maxz);
+	float minx = std::min(r.a_.x_, l.a_.x_);
+	float miny = std::min(r.a_.y_, l.a_.y_);
+	float minz = std::min(r.a_.z_, l.a_.z_);
+	float maxx = std::max(r.g_.x_, l.g_.x_);
+	float maxy = std::max(r.g_.y_, l.g_.y_);
+	float maxz = std::max(r.g_.z_, l.g_.z_);
+	a_.set(minx, miny, minz);
+	g_.set(maxx, maxy, maxz);
 }
 
-float bound_t::vol() const
+float Bound::vol() const
 {
-	float ret = (g.y - a.y) * (g.x - a.x) * (g.z - a.z);
+	float ret = (g_.y_ - a_.y_) * (g_.x_ - a_.x_) * (g_.z_ - a_.z_);
 
 	return ret;
 }
 
-__END_YAFRAY
+END_YAFRAY

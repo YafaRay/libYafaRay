@@ -24,55 +24,55 @@
 #include <utilities/sample_utils.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class spotLight_t : public light_t
+class SpotLight : public Light
 {
 	public:
-		spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, float angle, float falloff, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled = true, bool bCastShadows = true);
-		virtual ~spotLight_t();
-		virtual color_t totalEnergy() const;
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
-		virtual bool diracLight() const { return !softShadows; }
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
-		virtual bool canIntersect() const { return softShadows; }
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		virtual int nSamples() const { return samples; };
+		SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
+		virtual ~SpotLight();
+		virtual Rgb totalEnergy() const;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const;
+		virtual bool diracLight() const { return !soft_shadows_; }
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const;
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const;
+		virtual bool canIntersect() const { return soft_shadows_; }
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const;
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		virtual int nSamples() const { return samples_; };
 	protected:
-		point3d_t position;
-		vector3d_t dir; //!< orientation of the spot cone
-		vector3d_t ndir; //!< negative orientation (-dir)
-		vector3d_t du, dv; //!< form a coordinate system with dir, to sample directions
-		float cosStart, cosEnd; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
-		float icosDiff; //<! 1.0/(cosStart-cosEnd);
-		color_t color; //<! color, premulitplied by light intensity
-		float intensity;
-		pdf1D_t *pdf;
-		float interv1, interv2;
+		Point3 position_;
+		Vec3 dir_; //!< orientation of the spot cone
+		Vec3 ndir_; //!< negative orientation (-dir)
+		Vec3 du_, dv_; //!< form a coordinate system with dir, to sample directions
+		float cos_start_, cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
+		float icos_diff_; //<! 1.0/(cosStart-cosEnd);
+		Rgb color_; //<! color, premulitplied by light intensity
+		float intensity_;
+		Pdf1D *pdf_;
+		float interv_1_, interv_2_;
 
-		bool softShadows;
-		float shadowFuzzy;
-		int samples;
+		bool soft_shadows_;
+		float shadow_fuzzy_;
+		int samples_;
 };
 
-spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, float angle, float falloff, bool sSha, int smpl, float ssfuzzy, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_SINGULAR), position(from), intensity(power), softShadows(sSha), shadowFuzzy(ssfuzzy), samples(smpl)
+SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled, bool b_cast_shadows):
+		Light(LightSingular), position_(from), intensity_(power), soft_shadows_(s_sha), shadow_fuzzy_(ssfuzzy), samples_(smpl)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	ndir = (from - to).normalize();
-	dir = -ndir;
-	color = col * power;
-	createCS(dir, du, dv);
-	double rad_angle = degToRad(angle);
+	light_enabled_ = b_light_enabled;
+	cast_shadows_ = b_cast_shadows;
+	ndir_ = (from - to).normalize();
+	dir_ = -ndir_;
+	color_ = col * power;
+	createCs__(dir_, du_, dv_);
+	double rad_angle = DEG_TO_RAD(angle);
 	double rad_inner_angle = rad_angle * (1.f - falloff);
-	cosStart = fCos(rad_inner_angle);
-	cosEnd = fCos(rad_angle);
-	icosDiff = 1.0 / (cosStart - cosEnd);
+	cos_start_ = fCos__(rad_inner_angle);
+	cos_end_ = fCos__(rad_angle);
+	icos_diff_ = 1.0 / (cos_start_ - cos_end_);
 
 	float *f = new float[65];
 
@@ -82,7 +82,7 @@ spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color
 		f[i] = v * v * (3.f - 2.f * v);
 	}
 
-	pdf = new pdf1D_t(f, 65);
+	pdf_ = new Pdf1D(f, 65);
 
 	delete [] f;
 
@@ -93,216 +93,216 @@ spotLight_t::spotLight_t(const point3d_t &from, const point3d_t &to, const color
 		|------|--------|-----------------|
 	*/
 
-	interv1 = (1.0 - cosStart);
-	interv2 = 0.5 * (cosStart - cosEnd); // as said, energy linear to delta cos, integral is 0.5;
-	float sum = std::fabs(interv1) + std::fabs(interv2);
+	interv_1_ = (1.0 - cos_start_);
+	interv_2_ = 0.5 * (cos_start_ - cos_end_); // as said, energy linear to delta cos, integral is 0.5;
+	float sum = std::fabs(interv_1_) + std::fabs(interv_2_);
 	if(sum > 0.f) sum = 1.0 / sum;
-	interv1 *= sum;
-	interv2 *= sum;
+	interv_1_ *= sum;
+	interv_2_ *= sum;
 }
 
-spotLight_t::~spotLight_t()
+SpotLight::~SpotLight()
 {
-	if(pdf) delete pdf;
+	if(pdf_) delete pdf_;
 }
 
-color_t spotLight_t::totalEnergy() const
+Rgb SpotLight::totalEnergy() const
 {
-	return color * M_2PI * (1.f - 0.5f * (cosStart + cosEnd));
+	return color_ * M_2PI * (1.f - 0.5f * (cos_start_ + cos_end_));
 }
 
-bool spotLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
+bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t ldir(position - sp.P);
+	Vec3 ldir(position_ - sp.p_);
 	float dist_sqr = ldir * ldir;
-	float dist = fSqrt(dist_sqr);
+	float dist = fSqrt__(dist_sqr);
 	if(dist == 0.0) return false;
 
 	float idist_sqr = 1.f / (dist_sqr);
 	ldir *= 1.f / dist; //normalize
 
-	float cosa = ndir * ldir;
+	float cosa = ndir_ * ldir;
 
-	if(cosa < cosEnd) return false; //outside cone
-	if(cosa >= cosStart) // not affected by falloff
+	if(cosa < cos_end_) return false; //outside cone
+	if(cosa >= cos_start_) // not affected by falloff
 	{
-		col = color * (float)idist_sqr;
+		col = color_ * (float)idist_sqr;
 	}
 	else
 	{
-		float v = (cosa - cosEnd) * icosDiff;
+		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		col = color * (float)(v * idist_sqr);
+		col = color_ * (float)(v * idist_sqr);
 	}
 
-	wi.tmax = dist;
-	wi.dir = ldir;
+	wi.tmax_ = dist;
+	wi.dir_ = ldir;
 	return true;
 }
 
-bool spotLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t ldir(position - sp.P);
+	Vec3 ldir(position_ - sp.p_);
 	float dist_sqr = ldir * ldir;
 	if(dist_sqr == 0.0) return false;
-	float dist = fSqrt(dist_sqr);
+	float dist = fSqrt__(dist_sqr);
 
 	ldir *= 1.f / dist; //normalize
 
-	float cosa = ndir * ldir;
-	if(cosa < cosEnd) return false; //outside cone
+	float cosa = ndir_ * ldir;
+	if(cosa < cos_end_) return false; //outside cone
 
-	wi.tmax = dist;
-	wi.dir = sampleCone(ldir, du, dv, cosEnd, s.s1 * shadowFuzzy, s.s2 * shadowFuzzy);
+	wi.tmax_ = dist;
+	wi.dir_ = sampleCone__(ldir, du_, dv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
 
-	if(cosa >= cosStart) // not affected by falloff
+	if(cosa >= cos_start_) // not affected by falloff
 	{
-		s.col = color;
+		s.col_ = color_;
 	}
 	else
 	{
-		float v = (cosa - cosEnd) * icosDiff;
+		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		s.col = color * (float)v;
+		s.col_ = color_ * (float)v;
 	}
 
-	s.flags = flags;
-	s.pdf = dist_sqr;
+	s.flags_ = flags_;
+	s.pdf_ = dist_sqr;
 
 	//FIXME: I don't quite understand how pdf is calculated in the spotlight, but something looks wrong when dist<1.f, so I'm applying a manual correction to keep s.pdf >= 1 always, and "move" the effect of the distance to the color itself. This is a horrible patch but at least solves a problem causing darker light when distance between spotlight and surface is less than 1.f
-	if(s.pdf < 1.f)
+	if(s.pdf_ < 1.f)
 	{
-		s.pdf = 1.f;
-		s.col = s.col / dist_sqr;
+		s.pdf_ = 1.f;
+		s.col_ = s.col_ / dist_sqr;
 	}
 
 	return true;
 }
 
-color_t spotLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	ray.from = position;
+	ray.from_ = position_;
 
-	if(s3 <= interv1) // sample from cone not affected by falloff:
+	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
-		ray.dir = sampleCone(dir, du, dv, cosStart, s1, s2);
-		ipdf = M_2PI * (1.f - cosStart) / interv1;
+		ray.dir_ = sampleCone__(dir_, du_, dv_, cos_start_, s_1, s_2);
+		ipdf = M_2PI * (1.f - cos_start_) / interv_1_;
 	}
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm2 = pdf->Sample(s2, &spdf) * pdf->invCount;
-		ipdf = M_2PI * (cosStart - cosEnd) / (interv2 * spdf);
-		double cosAng = cosEnd + (cosStart - cosEnd) * (double)sm2;
-		double sinAng = fSqrt(1.0 - cosAng * cosAng);
-		float t1 = M_2PI * s1;
-		ray.dir = (du * fCos(t1) + dv * fSin(t1)) * (float)sinAng + dir * (float)cosAng;
-		return color * spdf * pdf->integral; // scale is just the actual falloff function, since spdf is func * invIntegral...
+		float sm_2 = pdf_->sample(s_2, &spdf) * pdf_->inv_count_;
+		ipdf = M_2PI * (cos_start_ - cos_end_) / (interv_2_ * spdf);
+		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
+		double sin_ang = fSqrt__(1.0 - cos_ang * cos_ang);
+		float t_1 = M_2PI * s_1;
+		ray.dir_ = (du_ * fCos__(t_1) + dv_ * fSin__(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
+		return color_ * spdf * pdf_->integral_; // scale is just the actual falloff function, since spdf is func * invIntegral...
 	}
-	return color;
+	return color_;
 }
 
-color_t spotLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.sp->P = position;
-	s.areaPdf = 1.f;
-	s.flags = flags;
-	if(s.s3 <= interv1) // sample from cone not affected by falloff:
+	s.sp_->p_ = position_;
+	s.area_pdf_ = 1.f;
+	s.flags_ = flags_;
+	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
-		wo = sampleCone(dir, du, dv, cosStart, s.s1, s.s2);
-		s.dirPdf = interv1 / (M_2PI * (1.f - cosStart));
+		wo = sampleCone__(dir_, du_, dv_, cos_start_, s.s_1_, s.s_2_);
+		s.dir_pdf_ = interv_1_ / (M_2PI * (1.f - cos_start_));
 	}
 	else // sample in the falloff area
 	{
 		float spdf;
-		float sm2 = pdf->Sample(s.s2, &spdf) * pdf->invCount;
-		s.dirPdf = (interv2 * spdf) / (M_2PI * (cosStart - cosEnd));
-		double cosAng = cosEnd + (cosStart - cosEnd) * (double)sm2;
-		double sinAng = fSqrt(1.0 - cosAng * cosAng);
-		float t1 = M_2PI * s.s1;
-		wo = (du * fCos(t1) + dv * fSin(t1)) * (float)sinAng + dir * (float)cosAng;
-		float v = sm2 * sm2 * (3.f - 2.f * sm2);
-		return color * v;
+		float sm_2 = pdf_->sample(s.s_2_, &spdf) * pdf_->inv_count_;
+		s.dir_pdf_ = (interv_2_ * spdf) / (M_2PI * (cos_start_ - cos_end_));
+		double cos_ang = cos_end_ + (cos_start_ - cos_end_) * (double)sm_2;
+		double sin_ang = fSqrt__(1.0 - cos_ang * cos_ang);
+		float t_1 = M_2PI * s.s_1_;
+		wo = (du_ * fCos__(t_1) + dv_ * fSin__(t_1)) * (float)sin_ang + dir_ * (float)cos_ang;
+		float v = sm_2 * sm_2 * (3.f - 2.f * sm_2);
+		return color_ * v;
 	}
-	return color;
+	return color_;
 }
 
-void spotLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
+void SpotLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	areaPdf = 1.f;
+	area_pdf = 1.f;
 	cos_wo = 1.f;
 
-	float cosa = dir * wo;
-	if(cosa < cosEnd) dirPdf = 0.f;
-	else if(cosa >= cosStart) // not affected by falloff
+	float cosa = dir_ * wo;
+	if(cosa < cos_end_) dir_pdf = 0.f;
+	else if(cosa >= cos_start_) // not affected by falloff
 	{
-		dirPdf = interv1 / (M_2PI * (1.f - cosStart));
+		dir_pdf = interv_1_ / (M_2PI * (1.f - cos_start_));
 	}
 	else
 	{
-		float v = (cosa - cosEnd) * icosDiff;
+		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		dirPdf = interv2 * v * 2.f / (M_2PI * (cosStart - cosEnd));   //divide by integral of v (0.5)?
+		dir_pdf = interv_2_ * v * 2.f / (M_2PI * (cos_start_ - cos_end_));   //divide by integral of v (0.5)?
 	}
 }
-bool spotLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	float cosA = dir * ray.dir;
+	float cos_a = dir_ * ray.dir_;
 
-	if(cosA == 0.f) return false;
+	if(cos_a == 0.f) return false;
 
-	t = (dir * vector3d_t(position - ray.from)) / cosA;
+	t = (dir_ * Vec3(position_ - ray.from_)) / cos_a;
 
 	if(t < 0.f) return false;
 
-	vector3d_t P(ray.from + point3d_t(t * ray.dir));
+	Vec3 p(ray.from_ + Point3(t * ray.dir_));
 
-	if(dir * vector3d_t(P - position) == 0)
+	if(dir_ * Vec3(p - position_) == 0)
 	{
-		if(P * P <= 1e-2)
+		if(p * p <= 1e-2)
 		{
-			float cosa = dir * ray.dir;
+			float cosa = dir_ * ray.dir_;
 
-			if(cosa < cosEnd) return false; //outside cone
+			if(cosa < cos_end_) return false; //outside cone
 
-			if(cosa >= cosStart) // not affected by falloff
+			if(cosa >= cos_start_) // not affected by falloff
 			{
-				col = color;
+				col = color_;
 			}
 			else
 			{
-				float v = (cosa - cosEnd) * icosDiff;
+				float v = (cosa - cos_end_) * icos_diff_;
 				v = v * v * (3.f - 2.f * v);
-				col = color * v;
+				col = color_ * v;
 			}
 
 			ipdf = 1.f / (t * t);
-			Y_VERBOSE << "SpotLight: ipdf, color = " << ipdf << ", " << color << yendl;
+			Y_VERBOSE << "SpotLight: ipdf, color = " << ipdf << ", " << color_ << YENDL;
 			return true;
 		}
 	}
 	return false;
 }
 
-light_t *spotLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *SpotLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0.0);
-	point3d_t to(0.f, 0.f, -1.f);
-	color_t color(1.0);
+	Point3 from(0.0);
+	Point3 to(0.f, 0.f, -1.f);
+	Rgb color(1.0);
 	float power = 1.0;
 	float angle = 45, falloff = 0.15;
-	bool pOnly = false;
-	bool softShadows = false;
+	bool p_only = false;
+	bool soft_shadows = false;
 	int smpl = 8;
 	float ssfuzzy = 1.f;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -310,20 +310,20 @@ light_t *spotLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("power", power);
 	params.getParam("cone_angle", angle);
 	params.getParam("blend", falloff);
-	params.getParam("photon_only", pOnly);
-	params.getParam("soft_shadows", softShadows);
+	params.getParam("photon_only", p_only);
+	params.getParam("soft_shadows", soft_shadows);
 	params.getParam("shadowFuzzyness", ssfuzzy);
 	params.getParam("samples", smpl);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
 
-	spotLight_t *light = new spotLight_t(from, to, color, power, angle, falloff, softShadows, smpl, ssfuzzy, lightEnabled, castShadows);
+	SpotLight *light = new SpotLight(from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows);
 
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
@@ -331,10 +331,10 @@ light_t *spotLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("spotlight", spotLight_t::factory);
+		render.registerFactory("spotlight", SpotLight::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

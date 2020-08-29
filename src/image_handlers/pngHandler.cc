@@ -39,94 +39,94 @@ extern "C"
 
 #include "pngUtils.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class pngHandler_t: public imageHandler_t
+class PngHandler: public ImageHandler
 {
 	public:
-		pngHandler_t();
-		~pngHandler_t();
+		PngHandler();
+		~PngHandler();
 		bool loadFromFile(const std::string &name);
-		bool loadFromMemory(const yByte *data, size_t size);
-		bool saveToFile(const std::string &name, int imgIndex = 0);
-		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		bool loadFromMemory(const YByte_t *data, size_t size);
+		bool saveToFile(const std::string &name, int img_index = 0);
+		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
 	private:
-		void readFromStructs(png_structp pngPtr, png_infop infoPtr);
-		bool fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr);
-		bool fillWriteStructs(FILE *fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex);
+		void readFromStructs(png_structp png_ptr, png_infop info_ptr);
+		bool fillReadStructs(YByte_t *sig, png_structp &png_ptr, png_infop &info_ptr);
+		bool fillWriteStructs(FILE *fp, unsigned int rgbype, png_structp &png_ptr, png_infop &info_ptr, int img_index);
 };
 
-pngHandler_t::pngHandler_t()
+PngHandler::PngHandler()
 {
-	m_hasAlpha = false;
-	m_MultiLayer = false;
+	has_alpha_ = false;
+	multi_layer_ = false;
 
-	handlerName = "PNGHandler";
+	handler_name_ = "PNGHandler";
 }
 
-pngHandler_t::~pngHandler_t()
+PngHandler::~PngHandler()
 {
 	clearImgBuffers();
 }
 
-bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
+bool PngHandler::saveToFile(const std::string &name, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
-	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	std::string name_without_tmp = name;
+	name_without_tmp.erase(name_without_tmp.length() - 4);
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	else Y_INFO << handler_name_ << ": Saving RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
-	png_structp pngPtr;
-	png_infop infoPtr;
+	png_structp png_ptr;
+	png_infop info_ptr;
 	int channels;
-	png_bytep *rowPointers = nullptr;
+	png_bytep *row_pointers = nullptr;
 
-	FILE *fp = file_t::open(name, "wb");
+	FILE *fp = File::open(name, "wb");
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file " << name << YENDL;
 		return false;
 	}
 
-	if(!fillWriteStructs(fp, (m_hasAlpha) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, pngPtr, infoPtr, imgIndex))
+	if(!fillWriteStructs(fp, (has_alpha_) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB, png_ptr, info_ptr, img_index))
 	{
-		file_t::close(fp);
+		File::close(fp);
 		return false;
 	}
 
-	rowPointers = new png_bytep[h];
+	row_pointers = new png_bytep[h];
 
 	channels = 3;
 
-	if(m_hasAlpha) channels++;
+	if(has_alpha_) channels++;
 
 	for(int i = 0; i < h; i++)
 	{
-		rowPointers[i] = new yByte[ w * channels ];
+		row_pointers[i] = new YByte_t[w * channels ];
 	}
 
 	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-	if(m_Denoise)
+	if(denoise_)
 	{
-		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = denoised_buffer.getColor(x, y);
-				color.clampRGBA01();
+				Rgba color = denoised_buffer.getColor(x, y);
+				color.clampRgba01();
 
 				int i = x * channels;
 
-				rowPointers[y][i]   = (yByte)(color.getR() * 255.f);
-				rowPointers[y][i + 1] = (yByte)(color.getG() * 255.f);
-				rowPointers[y][i + 2] = (yByte)(color.getB() * 255.f);
-				if(m_hasAlpha) rowPointers[y][i + 3] = (yByte)(color.getA() * 255.f);
+				row_pointers[y][i]   = (YByte_t)(color.getR() * 255.f);
+				row_pointers[y][i + 1] = (YByte_t)(color.getG() * 255.f);
+				row_pointers[y][i + 2] = (YByte_t)(color.getB() * 255.f);
+				if(has_alpha_) row_pointers[y][i + 3] = (YByte_t)(color.getA() * 255.f);
 			}
 		}
 	}
@@ -137,218 +137,218 @@ bool pngHandler_t::saveToFile(const std::string &name, int imgIndex)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				colorA_t color = imgBuffer.at(imgIndex)->getColor(x, y);
-				color.clampRGBA01();
+				Rgba color = img_buffer_.at(img_index)->getColor(x, y);
+				color.clampRgba01();
 
 				int i = x * channels;
 
-				rowPointers[y][i] = (yByte)(color.getR() * 255.f);
-				rowPointers[y][i + 1] = (yByte)(color.getG() * 255.f);
-				rowPointers[y][i + 2] = (yByte)(color.getB() * 255.f);
-				if(m_hasAlpha) rowPointers[y][i + 3] = (yByte)(color.getA() * 255.f);
+				row_pointers[y][i] = (YByte_t)(color.getR() * 255.f);
+				row_pointers[y][i + 1] = (YByte_t)(color.getG() * 255.f);
+				row_pointers[y][i + 2] = (YByte_t)(color.getB() * 255.f);
+				if(has_alpha_) row_pointers[y][i + 3] = (YByte_t)(color.getA() * 255.f);
 			}
 		}
 	}
 
-	png_write_image(pngPtr, rowPointers);
+	png_write_image(png_ptr, row_pointers);
 
-	png_write_end(pngPtr, nullptr);
+	png_write_end(png_ptr, nullptr);
 
-	png_destroy_write_struct(&pngPtr, &infoPtr);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
 
-	file_t::close(fp);
+	File::close(fp);
 
 	// cleanup:
 	for(int i = 0; i < h; i++)
 	{
-		delete [] rowPointers[i];
+		delete [] row_pointers[i];
 	}
 
-	delete[] rowPointers;
+	delete[] row_pointers;
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-bool pngHandler_t::loadFromFile(const std::string &name)
+bool PngHandler::loadFromFile(const std::string &name)
 {
-	png_structp pngPtr = nullptr;
-	png_infop infoPtr = nullptr;
+	png_structp png_ptr = nullptr;
+	png_infop info_ptr = nullptr;
 
-	FILE *fp = file_t::open(name, "rb");
+	FILE *fp = File::open(name, "rb");
 
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+	Y_INFO << handler_name_ << ": Loading image \"" << name << "\"..." << YENDL;
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file " << name << YENDL;
 		return false;
 	}
 
-	yByte signature[8];
+	YByte_t signature[8];
 
 	if(fread(signature, 1, 8, fp) != 8)
 	{
-		Y_ERROR << handlerName << ": EOF found or error reading image file while reading PNG signature." << yendl;
+		Y_ERROR << handler_name_ << ": EOF found or error reading image file while reading PNG signature." << YENDL;
 		return false;
 	}
 
-	if(!fillReadStructs(signature, pngPtr, infoPtr))
+	if(!fillReadStructs(signature, png_ptr, info_ptr))
 	{
-		file_t::close(fp);
+		File::close(fp);
 		return false;
 	}
 
-	png_init_io(pngPtr, fp);
+	png_init_io(png_ptr, fp);
 
-	png_set_sig_bytes(pngPtr, 8);
+	png_set_sig_bytes(png_ptr, 8);
 
-	readFromStructs(pngPtr, infoPtr);
+	readFromStructs(png_ptr, info_ptr);
 
-	file_t::close(fp);
+	File::close(fp);
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
-bool pngHandler_t::loadFromMemory(const yByte *data, size_t size)
+bool PngHandler::loadFromMemory(const YByte_t *data, size_t size)
 {
-	png_structp pngPtr = nullptr;
-	png_infop infoPtr = nullptr;
+	png_structp png_ptr = nullptr;
+	png_infop info_ptr = nullptr;
 
-	pngDataReader_t *reader = new pngDataReader_t(data, size);
+	PngDataReader *reader = new PngDataReader(data, size);
 
-	yByte signature[8];
+	YByte_t signature[8];
 
 	if(reader->read(signature, 8) < 8)
 	{
-		Y_ERROR << handlerName << ": EOF found on image data while reading PNG signature." << yendl;
+		Y_ERROR << handler_name_ << ": EOF found on image data while reading PNG signature." << YENDL;
 		return false;
 	}
 
-	if(!fillReadStructs(signature, pngPtr, infoPtr))
+	if(!fillReadStructs(signature, png_ptr, info_ptr))
 	{
 		delete reader;
 		return false;
 	}
 
-	png_set_read_fn(pngPtr, (void *)reader, readFromMem);
+	png_set_read_fn(png_ptr, (void *) reader, readFromMem__);
 
-	png_set_sig_bytes(pngPtr, 8);
+	png_set_sig_bytes(png_ptr, 8);
 
-	readFromStructs(pngPtr, infoPtr);
+	readFromStructs(png_ptr, info_ptr);
 
 	delete reader;
 
 	return true;
 }
 
-bool pngHandler_t::fillReadStructs(yByte *sig, png_structp &pngPtr, png_infop &infoPtr)
+bool PngHandler::fillReadStructs(YByte_t *sig, png_structp &png_ptr, png_infop &info_ptr)
 {
 	if(png_sig_cmp(sig, 0, 8))
 	{
-		Y_ERROR << handlerName << ": Data is not from a PNG image!" << yendl;
+		Y_ERROR << handler_name_ << ": Data is not from a PNG image!" << YENDL;
 		return false;
 	}
 
-	if(!(pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
+	if(!(png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
-		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
+		Y_ERROR << handler_name_ << ": Allocation of png struct failed!" << YENDL;
 		return false;
 	}
 
-	if(!(infoPtr = png_create_info_struct(pngPtr)))
+	if(!(info_ptr = png_create_info_struct(png_ptr)))
 	{
-		png_destroy_read_struct(&pngPtr, nullptr, nullptr);
-		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
+		png_destroy_read_struct(&png_ptr, nullptr, nullptr);
+		Y_ERROR << handler_name_ << ": Allocation of png info failed!" << YENDL;
 		return false;
 	}
 
-	if(setjmp(png_jmpbuf(pngPtr)))
+	if(setjmp(png_jmpbuf(png_ptr)))
 	{
-		png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
-		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
+		png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+		Y_ERROR << handler_name_ << ": Long jump triggered error!" << YENDL;
 		return false;
 	}
 
 	return true;
 }
 
-bool pngHandler_t::fillWriteStructs(FILE *fp, unsigned int colorType, png_structp &pngPtr, png_infop &infoPtr, int imgIndex)
+bool PngHandler::fillWriteStructs(FILE *fp, unsigned int rgbype, png_structp &png_ptr, png_infop &info_ptr, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
-	if(!(pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
+	if(!(png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)))
 	{
-		Y_ERROR << handlerName << ": Allocation of png struct failed!" << yendl;
+		Y_ERROR << handler_name_ << ": Allocation of png struct failed!" << YENDL;
 		return false;
 	}
 
-	if(!(infoPtr = png_create_info_struct(pngPtr)))
+	if(!(info_ptr = png_create_info_struct(png_ptr)))
 	{
-		png_destroy_read_struct(&pngPtr, nullptr, nullptr);
-		Y_ERROR << handlerName << ": Allocation of png info failed!" << yendl;
+		png_destroy_read_struct(&png_ptr, nullptr, nullptr);
+		Y_ERROR << handler_name_ << ": Allocation of png info failed!" << YENDL;
 		return false;
 	}
 
-	if(setjmp(png_jmpbuf(pngPtr)))
+	if(setjmp(png_jmpbuf(png_ptr)))
 	{
-		png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
-		Y_ERROR << handlerName << ": Long jump triggered error!" << yendl;
+		png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+		Y_ERROR << handler_name_ << ": Long jump triggered error!" << YENDL;
 		return false;
 	}
 
-	png_init_io(pngPtr, fp);
+	png_init_io(png_ptr, fp);
 
-	png_set_IHDR(pngPtr, infoPtr, (png_uint_32) w, (png_uint_32) h,
-	             8, colorType, PNG_INTERLACE_NONE,
-	             PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_set_IHDR(png_ptr, info_ptr, (png_uint_32) w, (png_uint_32) h,
+				 8, rgbype, PNG_INTERLACE_NONE,
+				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-	png_write_info(pngPtr, infoPtr);
+	png_write_info(png_ptr, info_ptr);
 
 	return true;
 }
 
-void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
+void PngHandler::readFromStructs(png_structp png_ptr, png_infop info_ptr)
 {
 	png_uint_32 w, h;
 
-	int bitDepth, colorType;
+	int bit_depth, rgbype;
 
-	png_read_info(pngPtr, infoPtr);
+	png_read_info(png_ptr, info_ptr);
 
-	png_get_IHDR(pngPtr, infoPtr, &w, &h, &bitDepth, &colorType, nullptr, nullptr, nullptr);
+	png_get_IHDR(png_ptr, info_ptr, &w, &h, &bit_depth, &rgbype, nullptr, nullptr, nullptr);
 
-	int numChan = png_get_channels(pngPtr, infoPtr);
+	int num_chan = png_get_channels(png_ptr, info_ptr);
 
-	switch(colorType)
+	switch(rgbype)
 	{
 		case PNG_COLOR_TYPE_RGB:
 			break;
 		case PNG_COLOR_TYPE_RGB_ALPHA:
-			m_hasAlpha = true;
+			has_alpha_ = true;
 			break;
 
 		case PNG_COLOR_TYPE_PALETTE:
-			png_set_palette_to_rgb(pngPtr);
-			if(png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) numChan = 4;
-			else numChan = 3;
+			png_set_palette_to_rgb(png_ptr);
+			if(png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) num_chan = 4;
+			else num_chan = 3;
 			break;
 
 		case PNG_COLOR_TYPE_GRAY:
 		case PNG_COLOR_TYPE_GRAY_ALPHA:
-			if(bitDepth < 8)
+			if(bit_depth < 8)
 			{
-				png_set_gray_to_rgb(pngPtr);
-				bitDepth = 8;
+				png_set_gray_to_rgb(png_ptr);
+				bit_depth = 8;
 			}
 			break;
 
 		default:
-			Y_ERROR << handlerName << ": PNG type is not supported!" << yendl;
-			longjmp(png_jmpbuf(pngPtr), 1);
+			Y_ERROR << handler_name_ << ": PNG type is not supported!" << YENDL;
+			longjmp(png_jmpbuf(png_ptr), 1);
 	}
 
 	// yes i know w and h are unsigned ints and the value can be much bigger, i'll think if a different memeber var is really needed since...
@@ -356,142 +356,142 @@ void pngHandler_t::readFromStructs(png_structp pngPtr, png_infop infoPtr)
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 
-	m_width = (int)w;
-	m_height = (int)h;
+	width_ = (int)w;
+	height_ = (int)h;
 
 	clearImgBuffers();
 
-	int nChannels = numChan;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
+	int n_channels = num_chan;
+	if(grayscale_) n_channels = 1;
+	else if(has_alpha_) n_channels = 4;
 
-	imgBuffer.push_back(new imageBuffer_t(w, h, nChannels, getTextureOptimization()));
+	img_buffer_.push_back(new ImageBuffer(w, h, n_channels, getTextureOptimization()));
 
-	png_bytepp rowPointers = new png_bytep[m_height];
+	png_bytepp row_pointers = new png_bytep[height_];
 
-	int bitMult = 1;
-	if(bitDepth == 16) bitMult = 2;
+	int bit_mult = 1;
+	if(bit_depth == 16) bit_mult = 2;
 
-	for(int i = 0; i < m_height; i++)
+	for(int i = 0; i < height_; i++)
 	{
-		rowPointers[i] = new yByte[ m_width * numChan * bitMult ];
+		row_pointers[i] = new YByte_t[width_ * num_chan * bit_mult ];
 	}
 
-	png_read_image(pngPtr, rowPointers);
+	png_read_image(png_ptr, row_pointers);
 
 	float divisor = 1.f;
-	if(bitDepth == 8) divisor = inv8;
-	else if(bitDepth == 16) divisor = inv16;
+	if(bit_depth == 8) divisor = INV_8;
+	else if(bit_depth == 16) divisor = INV_16;
 
-	for(int x = 0; x < m_width; x++)
+	for(int x = 0; x < width_; x++)
 	{
-		for(int y = 0; y < m_height; y++)
+		for(int y = 0; y < height_; y++)
 		{
-			colorA_t color;
+			Rgba color;
 
-			int i = x * numChan * bitMult;
+			int i = x * num_chan * bit_mult;
 			float c = 0.f;
 
-			if(bitDepth < 16)
+			if(bit_depth < 16)
 			{
-				switch(numChan)
+				switch(num_chan)
 				{
 					case 4:
-						color.set(rowPointers[y][i] * divisor,
-						          rowPointers[y][i + 1] * divisor,
-						          rowPointers[y][i + 2] * divisor,
-						          rowPointers[y][i + 3] * divisor);
+						color.set(row_pointers[y][i] * divisor,
+								  row_pointers[y][i + 1] * divisor,
+								  row_pointers[y][i + 2] * divisor,
+								  row_pointers[y][i + 3] * divisor);
 						break;
 					case 3:
-						color.set(rowPointers[y][i] * divisor,
-						          rowPointers[y][i + 1] * divisor,
-						          rowPointers[y][i + 2] * divisor,
-						          1.f);
+						color.set(row_pointers[y][i] * divisor,
+								  row_pointers[y][i + 1] * divisor,
+								  row_pointers[y][i + 2] * divisor,
+								  1.f);
 						break;
 					case 2:
-						c = rowPointers[y][i] * divisor;
-						color.set(c, c, c, rowPointers[y][i + 1] * divisor);
+						c = row_pointers[y][i] * divisor;
+						color.set(c, c, c, row_pointers[y][i + 1] * divisor);
 						break;
 					case 1:
-						c = rowPointers[y][i] * divisor;
+						c = row_pointers[y][i] * divisor;
 						color.set(c, c, c, 1.f);
 						break;
 				}
 			}
 			else
 			{
-				switch(numChan)
+				switch(num_chan)
 				{
 					case 4:
-						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor,
-						          (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor,
-						          (yWord)((rowPointers[y][i + 4] << 8) | rowPointers[y][i + 5]) * divisor,
-						          (yWord)((rowPointers[y][i + 6] << 8) | rowPointers[y][i + 7]) * divisor);
+						color.set((YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
+								  (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
+								  (YWord_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
+								  (YWord_t)((row_pointers[y][i + 6] << 8) | row_pointers[y][i + 7]) * divisor);
 						break;
 					case 3:
-						color.set((yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor,
-						          (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor,
-						          (yWord)((rowPointers[y][i + 4] << 8) | rowPointers[y][i + 5]) * divisor,
+						color.set((YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
+								  (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
+								  (YWord_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
 						          1.f);
 						break;
 					case 2:
-						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor;
-						color.set(c, c, c, (yWord)((rowPointers[y][i + 2] << 8) | rowPointers[y][i + 3]) * divisor);
+						c = (YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
+						color.set(c, c, c, (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor);
 						break;
 					case 1:
-						c = (yWord)((rowPointers[y][i] << 8) | rowPointers[y][i + 1]) * divisor;
+						c = (YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
 						color.set(c, c, c, 1.f);
 						break;
 				}
 			}
 
-			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
+			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
 		}
 	}
 
-	png_read_end(pngPtr, infoPtr);
+	png_read_end(png_ptr, info_ptr);
 
-	png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
+	png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
 	// cleanup:
-	for(int i = 0; i < m_height; i++)
+	for(int i = 0; i < height_; i++)
 	{
-		delete [] rowPointers[i];
+		delete [] row_pointers[i];
 	}
 
-	delete[] rowPointers;
+	delete[] row_pointers;
 }
 
-imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
+ImageHandler *PngHandler::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int width = 0;
 	int height = 0;
-	bool withAlpha = false;
-	bool forOutput = true;
+	bool with_alpha = false;
+	bool for_output = true;
 	bool img_grayscale = false;
-	bool denoiseEnabled = false;
-	int denoiseHLum = 3;
-	int denoiseHCol = 3;
-	float denoiseMix = 0.8f;
+	bool denoise_enabled = false;
+	int denoise_h_lum = 3;
+	int denoise_h_col = 3;
+	float denoise_mix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
-	params.getParam("alpha_channel", withAlpha);
-	params.getParam("for_output", forOutput);
-	params.getParam("denoiseEnabled", denoiseEnabled);
-	params.getParam("denoiseHLum", denoiseHLum);
-	params.getParam("denoiseHCol", denoiseHCol);
-	params.getParam("denoiseMix", denoiseMix);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("for_output", for_output);
+	params.getParam("denoiseEnabled", denoise_enabled);
+	params.getParam("denoiseHLum", denoise_h_lum);
+	params.getParam("denoiseHCol", denoise_h_col);
+	params.getParam("denoiseMix", denoise_mix);
 	params.getParam("img_grayscale", img_grayscale);
 
-	Y_DEBUG << "denoiseEnabled=" << denoiseEnabled << " denoiseHLum=" << denoiseHLum << " denoiseHCol=" << denoiseHCol << yendl;
+	Y_DEBUG << "denoiseEnabled=" << denoise_enabled << " denoiseHLum=" << denoise_h_lum << " denoiseHCol=" << denoise_h_col << YENDL;
 
-	imageHandler_t *ih = new pngHandler_t();
+	ImageHandler *ih = new PngHandler();
 
-	if(forOutput)
+	if(for_output)
 	{
-		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
+		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;
@@ -500,11 +500,11 @@ imageHandler_t *pngHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerImageHandler("png", "png", "PNG [Portable Network Graphics]", pngHandler_t::factory);
+		render.registerImageHandler("png", "png", "PNG [Portable Network Graphics]", PngHandler::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

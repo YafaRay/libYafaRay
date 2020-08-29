@@ -29,259 +29,259 @@
 
 #include <utilities/sample_utils.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class textureBackground_t: public background_t
+class TextureBackground: public Background
 {
 	public:
-		enum PROJECTION
+		enum Projection
 		{
-			spherical = 0,
-			angular
+			Spherical = 0,
+			Angular
 		};
 
-		textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
-		virtual color_t operator()(const ray_t &ray, renderState_t &state, bool use_ibl_blur = false) const;
-		virtual color_t eval(const ray_t &ray, bool use_ibl_blur = false) const;
-		virtual ~textureBackground_t();
-		static background_t *factory(paraMap_t &, renderEnvironment_t &);
-		bool hasIBL() { return withIBL; }
-		bool shootsCaustic() { return shootCaustic; }
+		TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
+		virtual Rgb operator()(const Ray &ray, RenderState &state, bool use_ibl_blur = false) const;
+		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const;
+		virtual ~TextureBackground();
+		static Background *factory(ParamMap &, RenderEnvironment &);
+		bool hasIbl() { return with_ibl_; }
+		bool shootsCaustic() { return shoot_caustic_; }
 
 	protected:
-		const texture_t *tex;
-		PROJECTION project;
-		float power;
-		float rotation;
-		float sin_r, cos_r;
-		bool withIBL;
-		float IBL_Blur_mipmap_level; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
-		bool shootCaustic;
-		bool shootDiffuse;
+		const Texture *tex_;
+		Projection project_;
+		float power_;
+		float rotation_;
+		float sin_r_, cos_r_;
+		bool with_ibl_;
+		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
+		bool shoot_caustic_;
+		bool shoot_diffuse_;
 };
 
-class constBackground_t: public background_t
+class ConstantBackground: public Background
 {
 	public:
-		constBackground_t(color_t col, bool ibl, bool with_caustic);
-		virtual color_t operator()(const ray_t &ray, renderState_t &state, bool use_ibl_blur = false) const;
-		virtual color_t eval(const ray_t &ray, bool use_ibl_blur = false) const;
-		virtual ~constBackground_t();
-		static background_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		bool hasIBL() { return withIBL; }
-		bool shootsCaustic() { return shootCaustic; }
+		ConstantBackground(Rgb col, bool ibl, bool with_caustic);
+		virtual Rgb operator()(const Ray &ray, RenderState &state, bool use_ibl_blur = false) const;
+		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const;
+		virtual ~ConstantBackground();
+		static Background *factory(ParamMap &params, RenderEnvironment &render);
+		bool hasIbl() { return with_ibl_; }
+		bool shootsCaustic() { return shoot_caustic_; }
 	protected:
-		color_t color;
-		bool withIBL;
-		bool shootCaustic;
-		bool shootDiffuse;
+		Rgb color_;
+		bool with_ibl_;
+		bool shoot_caustic_;
+		bool shoot_diffuse_;
 };
 
 
-textureBackground_t::textureBackground_t(const texture_t *texture, PROJECTION proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
-	tex(texture), project(proj), power(bpower), withIBL(ibl), IBL_Blur_mipmap_level(pow(ibl_blur, 2.f)), shootCaustic(with_caustic)
+TextureBackground::TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
+		tex_(texture), project_(proj), power_(bpower), with_ibl_(ibl), ibl_blur_mipmap_level_(pow(ibl_blur, 2.f)), shoot_caustic_(with_caustic)
 {
-	rotation = 2.0f * rot / 360.f;
-	sin_r = fSin(M_PI * rotation);
-	cos_r = fCos(M_PI * rotation);
+	rotation_ = 2.0f * rot / 360.f;
+	sin_r_ = fSin__(M_PI * rotation_);
+	cos_r_ = fCos__(M_PI * rotation_);
 }
 
-textureBackground_t::~textureBackground_t()
+TextureBackground::~TextureBackground()
 {
 	// Empty
 }
 
-color_t textureBackground_t::operator()(const ray_t &ray, renderState_t &state, bool use_ibl_blur) const
+Rgb TextureBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
 {
 	return eval(ray, use_ibl_blur);
 }
 
-color_t textureBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
+Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 {
 	float u = 0.f, v = 0.f;
 
-	if(project == angular)
+	if(project_ == Angular)
 	{
-		point3d_t dir(ray.dir);
-		dir.x = ray.dir.x * cos_r + ray.dir.y * sin_r;
-		dir.y = ray.dir.x * -sin_r + ray.dir.y * cos_r;
-		angmap(dir, u, v);
+		Point3 dir(ray.dir_);
+		dir.x_ = ray.dir_.x_ * cos_r_ + ray.dir_.y_ * sin_r_;
+		dir.y_ = ray.dir_.x_ * -sin_r_ + ray.dir_.y_ * cos_r_;
+		angmap__(dir, u, v);
 	}
 	else
 	{
-		spheremap(ray.dir, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
+		spheremap__(ray.dir_, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
 		// Put u,v in -1,1 range for mapping
 		u = 2.f * u - 1.f;
 		v = 2.f * v - 1.f;
-		u += rotation;
+		u += rotation_;
 		if(u > 1.f) u -= 2.f;
 	}
 
-	color_t ret;
+	Rgb ret;
 	if(use_ibl_blur)
 	{
-		mipMapParams_t *mipMapParams = new mipMapParams_t(IBL_Blur_mipmap_level);
-		ret = tex->getColor(point3d_t(u, v, 0.f), mipMapParams);
-		delete mipMapParams;
-		mipMapParams = nullptr;
+		MipMapParams *mip_map_params = new MipMapParams(ibl_blur_mipmap_level_);
+		ret = tex_->getColor(Point3(u, v, 0.f), mip_map_params);
+		delete mip_map_params;
+		mip_map_params = nullptr;
 	}
-	else ret = tex->getColor(point3d_t(u, v, 0.f));
+	else ret = tex_->getColor(Point3(u, v, 0.f));
 
-	float minComponent = 1.0e-5f;
+	float min_component = 1.0e-5f;
 
-	if(ret.R < minComponent) ret.R = minComponent;
-	if(ret.G < minComponent) ret.G = minComponent;
-	if(ret.B < minComponent) ret.B = minComponent;
+	if(ret.r_ < min_component) ret.r_ = min_component;
+	if(ret.g_ < min_component) ret.g_ = min_component;
+	if(ret.b_ < min_component) ret.b_ = min_component;
 
-	return power * ret;
+	return power_ * ret;
 }
 
-background_t *textureBackground_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Background *TextureBackground::factory(ParamMap &params, RenderEnvironment &render)
 {
-	texture_t *tex = nullptr;
+	Texture *tex = nullptr;
 	std::string texname;
 	std::string mapping;
-	PROJECTION pr = spherical;
+	Projection pr = Spherical;
 	float power = 1.0, rot = 0.0;
-	bool IBL = false;
-	float IBL_blur = 0.f;
-	float IBL_clamp_sampling = 0.f;
-	int IBL_sam = 16;
+	bool ibl = false;
+	float ibl_blur = 0.f;
+	float ibl_clamp_sampling = 0.f;
+	int ibl_sam = 16;
 	bool caust = true;
 	bool diffuse = true;
-	bool castShadows = true;
+	bool cast_shadows = true;
 
 	if(!params.getParam("texture", texname))
 	{
-		Y_ERROR << "TextureBackground: No texture given for texture background!" << yendl;
+		Y_ERROR << "TextureBackground: No texture given for texture background!" << YENDL;
 		return nullptr;
 	}
 	tex = render.getTexture(texname);
 	if(!tex)
 	{
-		Y_ERROR << "TextureBackground: Texture '" << texname << "' for textureback not existant!" << yendl;
+		Y_ERROR << "TextureBackground: Texture '" << texname << "' for textureback not existant!" << YENDL;
 		return nullptr;
 	}
 	if(params.getParam("mapping", mapping))
 	{
-		if(mapping == "probe" || mapping == "angular") pr = angular;
+		if(mapping == "probe" || mapping == "angular") pr = Angular;
 	}
-	params.getParam("ibl", IBL);
-	params.getParam("smartibl_blur", IBL_blur);
-	params.getParam("ibl_clamp_sampling", IBL_clamp_sampling);
-	params.getParam("ibl_samples", IBL_sam);
+	params.getParam("ibl", ibl);
+	params.getParam("smartibl_blur", ibl_blur);
+	params.getParam("ibl_clamp_sampling", ibl_clamp_sampling);
+	params.getParam("ibl_samples", ibl_sam);
 	params.getParam("power", power);
 	params.getParam("rotation", rot);
 	params.getParam("with_caustic", caust);
 	params.getParam("with_diffuse", diffuse);
-	params.getParam("cast_shadows", castShadows);
+	params.getParam("cast_shadows", cast_shadows);
 
-	background_t *texBG = new textureBackground_t(tex, pr, power, rot, IBL, IBL_blur, caust);
+	Background *tex_bg = new TextureBackground(tex, pr, power, rot, ibl, ibl_blur, caust);
 
-	if(IBL)
+	if(ibl)
 	{
-		paraMap_t bgp;
+		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
-		bgp["samples"] = IBL_sam;
+		bgp["samples"] = ibl_sam;
 		bgp["with_caustic"] = caust;
 		bgp["with_diffuse"] = diffuse;
 		bgp["abs_intersect"] = false; //this used to be (pr == angular);  but that caused the IBL light to be in the wrong place (see http://www.yafaray.org/node/714) I don't understand why this was set that way, we should keep an eye on this.
-		bgp["cast_shadows"] = castShadows;
+		bgp["cast_shadows"] = cast_shadows;
 
-		if(IBL_blur > 0.f)
+		if(ibl_blur > 0.f)
 		{
-			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << IBL_blur << yendl;
+			Y_INFO << "TextureBackground: starting background SmartIBL blurring with IBL Blur factor=" << ibl_blur << YENDL;
 			tex->generateMipMaps();
-			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << yendl;
+			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << YENDL;
 		}
 
-		light_t *bglight = render.createLight("textureBackground_bgLight", bgp);
+		Light *bglight = render.createLight("textureBackground_bgLight", bgp);
 
-		bglight->setBackground(texBG);
+		bglight->setBackground(tex_bg);
 
-		if(IBL_clamp_sampling > 0.f)
+		if(ibl_clamp_sampling > 0.f)
 		{
-			Y_INFO << "TextureBackground: using IBL sampling clamp=" << IBL_clamp_sampling << yendl;
+			Y_INFO << "TextureBackground: using IBL sampling clamp=" << ibl_clamp_sampling << YENDL;
 
-			bglight->setClampIntersect(IBL_clamp_sampling);
+			bglight->setClampIntersect(ibl_clamp_sampling);
 		}
 
 		if(bglight) render.getScene()->addLight(bglight);
 	}
 
-	return texBG;
+	return tex_bg;
 }
 
 /* ========================================
 / minimalistic background...
 / ========================================= */
 
-constBackground_t::constBackground_t(color_t col, bool ibl, bool with_caustic) : color(col), withIBL(ibl), shootCaustic(with_caustic)
+ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : color_(col), with_ibl_(ibl), shoot_caustic_(with_caustic)
 {
 	// Empty
 }
-constBackground_t::~constBackground_t()
+ConstantBackground::~ConstantBackground()
 {
 	// Empty
 }
 
-color_t constBackground_t::operator()(const ray_t &ray, renderState_t &state, bool use_ibl_blur) const
+Rgb ConstantBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
 {
-	return color;
+	return color_;
 }
 
-color_t constBackground_t::eval(const ray_t &ray, bool use_ibl_blur) const
+Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
 {
-	return color;
+	return color_;
 }
 
-background_t *constBackground_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Background *ConstantBackground::factory(ParamMap &params, RenderEnvironment &render)
 {
-	color_t col(0.f);
+	Rgb col(0.f);
 	float power = 1.0;
-	int IBL_sam = 16;
-	bool IBL = false;
-	bool castShadows = true;
+	int ibl_sam = 16;
+	bool ibl = false;
+	bool cast_shadows = true;
 	bool caus = true;
 	bool diff = true;
 
 	params.getParam("color", col);
 	params.getParam("power", power);
-	params.getParam("ibl", IBL);
-	params.getParam("ibl_samples", IBL_sam);
-	params.getParam("cast_shadows", castShadows);
+	params.getParam("ibl", ibl);
+	params.getParam("ibl_samples", ibl_sam);
+	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	background_t *constBG = new constBackground_t(col * power, IBL, true);
+	Background *const_bg = new ConstantBackground(col * power, ibl, true);
 
-	if(IBL)
+	if(ibl)
 	{
-		paraMap_t bgp;
+		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
-		bgp["samples"] = IBL_sam;
+		bgp["samples"] = ibl_sam;
 		bgp["with_caustic"] = caus;
 		bgp["with_diffuse"] = diff;
-		bgp["cast_shadows"] = castShadows;
+		bgp["cast_shadows"] = cast_shadows;
 
-		light_t *bglight = render.createLight("constantBackground_bgLight", bgp);
+		Light *bglight = render.createLight("constantBackground_bgLight", bgp);
 
-		bglight->setBackground(constBG);
+		bglight->setBackground(const_bg);
 
 		if(bglight) render.getScene()->addLight(bglight);
 	}
 
-	return constBG;
+	return const_bg;
 }
 
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("textureback", textureBackground_t::factory);
-		render.registerFactory("constant", constBackground_t::factory);
+		render.registerFactory("textureback", TextureBackground::factory);
+		render.registerFactory("constant", ConstantBackground::factory);
 	}
 
 }
-__END_YAFRAY
+END_YAFRAY

@@ -23,91 +23,91 @@
 using namespace std;
 #include<iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-void operator >> (unsigned char *data, color_t &c)
+void operator >> (unsigned char *data, Rgb &c)
 {
-	c.R = ((float) data[0]) / ((float)255);
-	c.G = ((float) data[1]) / ((float)255);
-	c.B = ((float) data[2]) / ((float)255);
+	c.r_ = ((float) data[0]) / ((float)255);
+	c.g_ = ((float) data[1]) / ((float)255);
+	c.b_ = ((float) data[2]) / ((float)255);
 }
 
-void operator << (unsigned char *data, const color_t &c)
+void operator << (unsigned char *data, const Rgb &c)
 {
 	//	data[0]=(char) (((c.R<(float)0) ? 0 : ((c.R>(float)1) ? 255 : (((float)255)*c.R) )) );
 	//	data[1]=(char) (((c.G<(float)0) ? 0 : ((c.G>(float)1) ? 255 : (((float)255)*c.G) )) );
 	//	data[2]=(char) (((c.B<(float)0) ? 0 : ((c.B>(float)1) ? 255 : (((float)255)*c.B) )) );
-	data[0] = (c.R < 0.f) ? 0 : ((c.R >= 1.f) ? 255 : (unsigned char)(255.f * c.R));
-	data[1] = (c.G < 0.f) ? 0 : ((c.G >= 1.f) ? 255 : (unsigned char)(255.f * c.G));
-	data[2] = (c.B < 0.f) ? 0 : ((c.B >= 1.f) ? 255 : (unsigned char)(255.f * c.B));
+	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : (unsigned char)(255.f * c.r_));
+	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : (unsigned char)(255.f * c.g_));
+	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : (unsigned char)(255.f * c.b_));
 }
 
-void operator >> (unsigned char *data, colorA_t &c)
+void operator >> (unsigned char *data, Rgba &c)
 {
-	c.R = ((float) data[0]) / ((float)255);
-	c.G = ((float) data[1]) / ((float)255);
-	c.B = ((float) data[2]) / ((float)255);
-	c.A = ((float) data[3]) / ((float)255);
+	c.r_ = ((float) data[0]) / ((float)255);
+	c.g_ = ((float) data[1]) / ((float)255);
+	c.b_ = ((float) data[2]) / ((float)255);
+	c.a_ = ((float) data[3]) / ((float)255);
 }
 
 
-void operator << (unsigned char *data, const colorA_t &c)
+void operator << (unsigned char *data, const Rgba &c)
 {
 	//	data[0]=(char) (((c.R<(float)0) ? 0 : ((c.R>(float)1) ? 255 : (((float)255)*c.R) )) );
 	//	data[1]=(char) (((c.G<(float)0) ? 0 : ((c.G>(float)1) ? 255 : (((float)255)*c.G) )) );
 	//	data[2]=(char) (((c.B<(float)0) ? 0 : ((c.B>(float)1) ? 255 : (((float)255)*c.B) )) );
 	//	data[3]=(char) (((c.A<(float)0) ? 0 : ((c.A>(float)1) ? 255 : (((float)255)*c.A) )) );
-	data[0] = (c.R < 0.f) ? 0 : ((c.R >= 1.f) ? 255 : (unsigned char)(255.f * c.R));
-	data[1] = (c.G < 0.f) ? 0 : ((c.G >= 1.f) ? 255 : (unsigned char)(255.f * c.G));
-	data[2] = (c.B < 0.f) ? 0 : ((c.B >= 1.f) ? 255 : (unsigned char)(255.f * c.B));
-	data[3] = (c.A < 0.f) ? 0 : ((c.A >= 1.f) ? 255 : (unsigned char)(255.f * c.A));
+	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : (unsigned char)(255.f * c.r_));
+	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : (unsigned char)(255.f * c.g_));
+	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : (unsigned char)(255.f * c.b_));
+	data[3] = (c.a_ < 0.f) ? 0 : ((c.a_ >= 1.f) ? 255 : (unsigned char)(255.f * c.a_));
 }
 
-void operator >> (float *data, color_t &c)
+void operator >> (float *data, Rgb &c)
 {
-	c.R = data[0];
-	c.G = data[1];
-	c.B = data[2];
-}
-
-
-void operator << (float *data, const color_t &c)
-{
-	data[0] = c.R;
-	data[1] = c.G;
-	data[2] = c.B;
-}
-
-void operator >> (float *data, colorA_t &c)
-{
-	c.R = data[0];
-	c.G = data[1];
-	c.B = data[2];
-	c.A = data[3];
+	c.r_ = data[0];
+	c.g_ = data[1];
+	c.b_ = data[2];
 }
 
 
-void operator << (float *data, const colorA_t &c)
+void operator << (float *data, const Rgb &c)
 {
-	data[0] = c.R;
-	data[1] = c.G;
-	data[2] = c.B;
-	data[3] = c.A;
+	data[0] = c.r_;
+	data[1] = c.g_;
+	data[2] = c.b_;
 }
 
-ostream &operator << (ostream &out, const color_t c)
+void operator >> (float *data, Rgba &c)
 {
-	out << "[" << c.R << " " << c.G << " " << c.B << "]";
+	c.r_ = data[0];
+	c.g_ = data[1];
+	c.b_ = data[2];
+	c.a_ = data[3];
+}
+
+
+void operator << (float *data, const Rgba &c)
+{
+	data[0] = c.r_;
+	data[1] = c.g_;
+	data[2] = c.b_;
+	data[3] = c.a_;
+}
+
+ostream &operator << (ostream &out, const Rgb c)
+{
+	out << "[" << c.r_ << " " << c.g_ << " " << c.b_ << "]";
 	return out;
 }
 
-ostream &operator << (ostream &out, const colorA_t c)
+ostream &operator << (ostream &out, const Rgba c)
 {
-	out << "[" << c.R << ", " << c.G << ", " << c.B << ", " << c.A << "]";
+	out << "[" << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << "]";
 	return out;
 }
 
-color_t mix(const color_t &a, const color_t &b, float point)
+Rgb mix__(const Rgb &a, const Rgb &b, float point)
 {
 	if(point <= 0.0) return b;
 	if(point >= 1.0) return a;
@@ -115,7 +115,7 @@ color_t mix(const color_t &a, const color_t &b, float point)
 	return (a * point + (1 - point) * b);
 }
 
-colorA_t mix(const colorA_t &a, const colorA_t &b, float point)
+Rgba mix__(const Rgba &a, const Rgba &b, float point)
 {
 	if(point <= 0.0) return b;
 	if(point >= 1.0) return a;
@@ -123,43 +123,22 @@ colorA_t mix(const colorA_t &a, const colorA_t &b, float point)
 	return (a * point + (1 - point) * b);
 }
 
-color_t convergenceAccell(const color_t &cn_1, const color_t &cn0, const color_t &cn1)
-{
-	float r = (cn1.R - 2.0 * cn0.R + cn_1.R);
-	if(r != 0.0)
-		r = cn1.R - ((cn1.R - cn0.R) * (cn1.R - cn0.R)) / r;
-	else
-		r = cn1.R;
-	float g = (cn1.G - 2.0 * cn0.G + cn_1.G);
-	if(g != 0.0)
-		g = cn1.G - ((cn1.G - cn0.G) * (cn1.G - cn0.G)) / g;
-	else
-		g = cn1.G;
-	float b = (cn1.B - 2.0 * cn0.B + cn_1.B);
-	if(b != 0.0)
-		b = cn1.B - ((cn1.B - cn0.B) * (cn1.B - cn0.B)) / b;
-	else
-		b = cn1.B;
-
-	return color_t(r, g, b);
-}
-
-rgbe_t::rgbe_t(const color_t &s)
+Rgbe::Rgbe(const Rgb &s)
 {
 	float v = s.getR();
 	if(s.getG() > v) v = s.getG();
 	if(s.getB() > v) v = s.getB();
 	if(v < 1e-32f)
-		rgbe[0] = rgbe[1] = rgbe[2] = rgbe[3] = 0;
+		rgbe_[0] = rgbe_[1] = rgbe_[2] = rgbe_[3] = 0;
 	else
 	{
 		int e;
 		v = frexp(v, &e) * 256.0 / v;
-		rgbe[0] = (unsigned char)(s.getR() * v);
-		rgbe[1] = (unsigned char)(s.getG() * v);
-		rgbe[2] = (unsigned char)(s.getB() * v);
-		rgbe[3] = (unsigned char)(e + 128);
+		rgbe_[0] = (unsigned char)(s.getR() * v);
+		rgbe_[1] = (unsigned char)(s.getG() * v);
+		rgbe_[2] = (unsigned char)(s.getB() * v);
+		rgbe_[3] = (unsigned char)(e + 128);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

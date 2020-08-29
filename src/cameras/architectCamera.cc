@@ -24,83 +24,79 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-architectCam_t::architectCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                               int _resx, int _resy, float aspect,
-                               float df, float ap, float dofd, bokehType bt, bkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
-	: perspectiveCam_t(pos, look, up, _resx, _resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
+ArchitectCamera::ArchitectCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+								 int resx, int resy, float aspect,
+								 float df, float ap, float dofd, BokehType bt, BkhBiasType bbt, float bro, float const near_clip_distance, float const far_clip_distance)
+	: PerspectiveCamera(pos, look, up, resx, resy, aspect, df, ap, dofd, bt, bbt, bro, near_clip_distance, far_clip_distance)
 {
 	// Initialize camera specific plane coordinates
-	setAxis(camX, camY, camZ);
+	setAxis(cam_x_, cam_y_, cam_z_);
 
-	int ns = (int)bkhtype;
+	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = degToRad(bro), wi = (M_2PI) / (float)ns;
+		float w = DEG_TO_RAD(bro), wi = (M_2PI) / (float)ns;
 		ns = (ns + 2) * 2;
-		LS.resize(ns);
+		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)
 		{
-			LS[i] = fCos(w);
-			LS[i + 1] = fSin(w);
+			ls_[i] = fCos__(w);
+			ls_[i + 1] = fSin__(w);
 			w += wi;
 		}
 	}
 }
 
-architectCam_t::~architectCam_t()
+void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 {
+	cam_x_ = vx;
+	cam_y_ = vy;
+	cam_z_ = vz;
+
+	dof_rt_ = cam_x_ * aperture_; // for dof, premul with aperture
+	dof_up_ = cam_y_ * aperture_;
+
+	vright_ = cam_x_;
+	vup_ = aspect_ratio_ * Vec3(0, 0, -1);
+	vto_ = (cam_z_ * focal_distance_) - 0.5 * (vup_ + vright_);
+	vup_ /= (float)resy_;
+	vright_ /= (float)resx_;
 }
 
-void architectCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
-{
-	camX = vx;
-	camY = vy;
-	camZ = vz;
-
-	dof_rt = camX * aperture; // for dof, premul with aperture
-	dof_up = camY * aperture;
-
-	vright = camX;
-	vup = aspect_ratio * vector3d_t(0, 0, -1);
-	vto = (camZ * focal_distance) - 0.5 * (vup + vright);
-	vup /= (float)resy;
-	vright /= (float)resx;
-}
-
-point3d_t architectCam_t::screenproject(const point3d_t &p) const
+Point3 ArchitectCamera::screenproject(const Point3 &p) const
 {
 	// FIXME
-	point3d_t s;
-	vector3d_t dir = p - position;
+	Point3 s;
+	Vec3 dir = p - position_;
 
 	// project p to pixel plane:
-	vector3d_t camy = vector3d_t(0, 0, 1);
-	vector3d_t camz = camy ^ camX;
-	vector3d_t camx = camz ^ camy;
+	Vec3 camy = Vec3(0, 0, 1);
+	Vec3 camz = camy ^cam_x_;
+	Vec3 camx = camz ^camy;
 
 	float dx = dir * camx;
-	float dy = dir * camY;
+	float dy = dir * cam_y_;
 	float dz = dir * camz;
 
-	s.y = 2 * dy * focal_distance / (dz * aspect_ratio);
+	s.y_ = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
 	// Needs focal_distance correction
-	float fod = (focal_distance) * camy * camY / (camx * camX);
-	s.x = 2 * dx * fod / dz;
-	s.z = 0;
+	float fod = (focal_distance_) * camy * cam_y_ / (camx * cam_x_);
+	s.x_ = 2 * dx * fod / dz;
+	s.z_ = 0;
 
 	return s;
 }
 
-camera_t *architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Camera *ArchitectCamera::factory(ParamMap &params, RenderEnvironment &render)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
-	point3d_t from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
 	float aspect = 1, dfocal = 1, apt = 0, dofd = 0, bkhrot = 0;
-	float nearClip = 0.0f, farClip = -1.0f;
-	std::string viewName = "";
+	float near_clip = 0.0f, far_clip = -1.0f;
+	std::string view_name = "";
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -114,24 +110,24 @@ camera_t *architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 	params.getParam("bokeh_bias", bkhbias);
 	params.getParam("bokeh_rotation", bkhrot);
 	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", nearClip);
-	params.getParam("farClip", farClip);
-	params.getParam("view_name", viewName);
+	params.getParam("nearClip", near_clip);
+	params.getParam("farClip", far_clip);
+	params.getParam("view_name", view_name);
 
-	bokehType bt = BK_DISK1;
-	if(bkhtype == "disk2")			bt = BK_DISK2;
-	else if(bkhtype == "triangle")	bt = BK_TRI;
-	else if(bkhtype == "square")	bt = BK_SQR;
-	else if(bkhtype == "pentagon")	bt = BK_PENTA;
-	else if(bkhtype == "hexagon")	bt = BK_HEXA;
-	else if(bkhtype == "ring")		bt = BK_RING;
+	BokehType bt = BkDisk1;
+	if(bkhtype == "disk2")			bt = BkDisk2;
+	else if(bkhtype == "triangle")	bt = BkTri;
+	else if(bkhtype == "square")	bt = BkSqr;
+	else if(bkhtype == "pentagon")	bt = BkPenta;
+	else if(bkhtype == "hexagon")	bt = BkHexa;
+	else if(bkhtype == "ring")		bt = BkRing;
 	// bokeh bias
-	bkhBiasType bbt = BB_NONE;
-	if(bkhbias == "center") 		bbt = BB_CENTER;
-	else if(bkhbias == "edge") 		bbt = BB_EDGE;
-	architectCam_t *cam = new architectCam_t(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, nearClip, farClip);
+	BkhBiasType bbt = BbNone;
+	if(bkhbias == "center") 		bbt = BbCenter;
+	else if(bkhbias == "edge") 		bbt = BbEdge;
+	ArchitectCamera *cam = new ArchitectCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 
-	cam->view_name = viewName;
+	cam->view_name_ = view_name;
 
 	return cam;
 }
@@ -139,12 +135,12 @@ camera_t *architectCam_t::factory(paraMap_t &params, renderEnvironment_t &render
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("perspective",   perspectiveCam_t::factory);
-		render.registerFactory("architect",	architectCam_t::factory);
+		render.registerFactory("perspective", PerspectiveCamera::factory);
+		render.registerFactory("architect", ArchitectCamera::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -1,13 +1,13 @@
 #pragma once
 
-#ifndef Y_LAYERNODE_H
-#define Y_LAYERNODE_H
+#ifndef YAFARAY_LAYERNODE_H
+#define YAFARAY_LAYERNODE_H
 
 #include <core_api/shader.h>
 #include <core_api/texture.h>
 #include <core_api/environment.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 // texture flag
 #define TXF_RGBTOINT    1
@@ -15,31 +15,31 @@ __BEGIN_YAFRAY
 #define TXF_NEGATIVE    4
 #define TXF_ALPHAMIX    8
 
-class layerNode_t: public shaderNode_t
+class LayerNode: public ShaderNode
 {
 	public:
-		layerNode_t(unsigned tflag, float col_fac, float var_fac, float def_val, colorA_t def_col, mix_modes mmod);
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const;
-		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const;
+		LayerNode(unsigned tflag, float col_fac, float var_fac, float def_val, Rgba def_col, MixModes mmod);
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const;
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const;
+		virtual void evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const;
 		virtual bool isViewDependant() const;
-		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find);
+		virtual bool configInputs(const ParamMap &params, const NodeFinder &find);
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
-		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const;
-		static shaderNode_t *factory(const paraMap_t &params, renderEnvironment_t &render);
+		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const;
+		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
 	protected:
-		const shaderNode_t *input, *upperLayer;
-		unsigned int texflag;
-		float colfac;
-		float valfac;
-		float default_val, upper_val;
-		colorA_t default_col, upper_col;
-		mix_modes mode;
-		bool do_color, do_scalar, color_input, use_alpha;
+		const ShaderNode *input_, *upper_layer_;
+		unsigned int texflag_;
+		float colfac_;
+		float valfac_;
+		float default_val_, upper_val_;
+		Rgba default_col_, upper_col_;
+		MixModes mode_;
+		bool do_color_, do_scalar_, color_input_, use_alpha_;
 };
 
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_LAYERNODE_H
+#endif // YAFARAY_LAYERNODE_H

@@ -1,32 +1,32 @@
 #pragma once
 
-#ifndef Y_ORTHOGRAPHICCAMERA_H
-#define Y_ORTHOGRAPHICCAMERA_H
+#ifndef YAFARAY_ORTHOGRAPHICCAMERA_H
+#define YAFARAY_ORTHOGRAPHICCAMERA_H
 
 #include <yafray_constants.h>
 #include <core_api/camera.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class paraMap_t;
-class renderEnvironment_t;
+class ParamMap;
+class RenderEnvironment;
 
-class orthoCam_t: public camera_t
+class OrthographicCamera: public Camera
 {
 	public:
-		orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-		           int _resx, int _resy, float aspect, float scale,
-		           float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
-		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz);
-		virtual ray_t shootRay(float px, float py, float lu, float lv, float &wt) const;
-		virtual point3d_t screenproject(const point3d_t &p) const;
+		OrthographicCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+						   int resx, int resy, float aspect, float scale,
+						   float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
+		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz);
+		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const;
+		virtual Point3 screenproject(const Point3 &p) const;
 
-		static camera_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		static Camera *factory(ParamMap &params, RenderEnvironment &render);
 	protected:
-		float scale;
-		point3d_t pos;
+		float scale_;
+		Point3 pos_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_ORTHOGRAPHICCAMERA_H
+#endif // YAFARAY_ORTHOGRAPHICCAMERA_H

@@ -24,69 +24,69 @@
 #include <utilities/stringUtils.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-float *textureImage_t::ewaWeightLut = nullptr;
+float *ImageTexture::ewa_weight_lut_ = nullptr;
 
-textureImage_t::textureImage_t(imageHandler_t *ih, int intp, float gamma, colorSpaces_t color_space):
-	image(ih), colorSpace(color_space), gamma(gamma), mirrorX(false), mirrorY(false)
+ImageTexture::ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space):
+		image_(ih), color_space_(color_space), gamma_(gamma), mirror_x_(false), mirror_y_(false)
 {
-	intp_type = intp;
+	interpolation_type_ = interpolation_type;
 }
 
-textureImage_t::~textureImage_t()
+ImageTexture::~ImageTexture()
 {
 	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
-	image = nullptr;
+	image_ = nullptr;
 }
 
-void textureImage_t::resolution(int &x, int &y, int &z) const
+void ImageTexture::resolution(int &x, int &y, int &z) const
 {
-	x = image->getWidth();
-	y = image->getHeight();
+	x = image_->getWidth();
+	y = image_->getHeight();
 	z = 0;
 }
 
-colorA_t textureImage_t::interpolateImage(const point3d_t &p, mipMapParams_t *mmParams) const
+Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	if(mmParams && mmParams->forceImageLevel > 0.f) return mipMapsTrilinearInterpolation(p, mmParams);
+	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) return mipMapsTrilinearInterpolation(p, mipmap_params);
 
-	colorA_t interpolatedColor(0.f);
+	Rgba interpolated_color(0.f);
 
-	switch(intp_type)
+	switch(interpolation_type_)
 	{
-		case INTP_NONE: interpolatedColor = noInterpolation(p); break;
-		case INTP_BICUBIC: interpolatedColor = bicubicInterpolation(p); break;
-		case INTP_MIPMAP_TRILINEAR:
-			if(mmParams) interpolatedColor = mipMapsTrilinearInterpolation(p, mmParams);
-			else interpolatedColor = bilinearInterpolation(p);
+		case InterpolationType::None: interpolated_color = noInterpolation(p); break;
+		case InterpolationType::Bicubic: interpolated_color = bicubicInterpolation(p); break;
+		case InterpolationType::Trilinear:
+			if(mipmap_params) interpolated_color = mipMapsTrilinearInterpolation(p, mipmap_params);
+			else interpolated_color = bilinearInterpolation(p);
 			break;
-		case INTP_MIPMAP_EWA:
-			if(mmParams) interpolatedColor = mipMapsEWAInterpolation(p, ewa_max_anisotropy, mmParams);
-			else interpolatedColor = bilinearInterpolation(p);
+		case InterpolationType::Ewa:
+			if(mipmap_params) interpolated_color = mipMapsEwaInterpolation(p, ewa_max_anisotropy_, mipmap_params);
+			else interpolated_color = bilinearInterpolation(p);
 			break;
-		case INTP_BILINEAR:
-		default: 			interpolatedColor = bilinearInterpolation(p); break;	//By default use Bilinear
+		case InterpolationType::Bilinear:
+		default: interpolated_color = bilinearInterpolation(p); break;	//By default use Bilinear
 	}
 
-	return interpolatedColor;
+	return interpolated_color;
 }
 
-colorA_t textureImage_t::getColor(const point3d_t &p, mipMapParams_t *mmParams) const
+Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	point3d_t p1 = point3d_t(p.x, -p.y, p.z);
-	colorA_t ret(0.f);
+	Point3 p_1 = Point3(p.x_, -p.y_, p.z_);
+	Rgba ret(0.f);
 
-	bool outside = doMapping(p1);
+	bool outside = doMapping(p_1);
 
 	if(outside) return ret;
 
-	ret = interpolateImage(p1, mmParams);
+	ret = interpolateImage(p_1, mipmap_params);
 
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getRawColor(const point3d_t &p, mipMapParams_t *mmParams) const
+Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
 
@@ -96,31 +96,31 @@ colorA_t textureImage_t::getRawColor(const point3d_t &p, mipMapParams_t *mmParam
 
 	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
 
-	colorA_t ret = getColor(p, mmParams);
-	ret.ColorSpace_from_linearRGB(colorSpace, gamma);
+	Rgba ret = getColor(p, mipmap_params);
+	ret.colorSpaceFromLinearRgb(color_space_, gamma_);
 
 	return ret;
 }
 
-colorA_t textureImage_t::getColor(int x, int y, int z, mipMapParams_t *mmParams) const
+Rgba ImageTexture::getColor(int x, int y, int z, const MipMapParams *mipmap_params) const
 {
-	int resx = image->getWidth();
-	int resy = image->getHeight();
+	int resx = image_->getWidth();
+	int resy = image_->getHeight();
 
 	y = resy - y; //on occasion change image storage from bottom to top...
 
 	x = std::max(0, std::min(resx - 1, x));
 	y = std::max(0, std::min(resy - 1, y));
 
-	colorA_t ret(0.f);
+	Rgba ret(0.f);
 
-	if(mmParams && mmParams->forceImageLevel > 0.f) ret = image->getPixel(x, y, (int) floorf(mmParams->forceImageLevel * image->getHighestImgIndex()));
-	else ret = image->getPixel(x, y);
+	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) ret = image_->getPixel(x, y, (int) floorf(mipmap_params->force_image_level_ * image_->getHighestImgIndex()));
+	else ret = image_->getPixel(x, y);
 
 	return applyAdjustments(ret);
 }
 
-colorA_t textureImage_t::getRawColor(int x, int y, int z, mipMapParams_t *mmParams) const
+Rgba ImageTexture::getRawColor(int x, int y, int z, const MipMapParams *mipmap_params) const
 {
 	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
 
@@ -130,128 +130,128 @@ colorA_t textureImage_t::getRawColor(int x, int y, int z, mipMapParams_t *mmPara
 
 	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
 
-	colorA_t ret = getColor(x, y, z, mmParams);
-	ret.ColorSpace_from_linearRGB(colorSpace, gamma);
+	Rgba ret = getColor(x, y, z, mipmap_params);
+	ret.colorSpaceFromLinearRgb(color_space_, gamma_);
 
 	return ret;
 }
 
-bool textureImage_t::doMapping(point3d_t &texpt) const
+bool ImageTexture::doMapping(Point3 &texpt) const
 {
 	bool outside = false;
 
 	texpt = 0.5f * texpt + 0.5f;
 	// repeat, only valid for REPEAT clipmode
-	if(tex_clipmode == TCL_REPEAT)
+	if(tex_clip_mode_ == TexClipMode::Repeat)
 	{
 
-		if(xrepeat > 1) texpt.x *= (float)xrepeat;
-		if(yrepeat > 1) texpt.y *= (float)yrepeat;
+		if(xrepeat_ > 1) texpt.x_ *= (float)xrepeat_;
+		if(yrepeat_ > 1) texpt.y_ *= (float)yrepeat_;
 
-		if(mirrorX && int(ceilf(texpt.x)) % 2 == 0) texpt.x = -texpt.x;
-		if(mirrorY && int(ceilf(texpt.y)) % 2 == 0) texpt.y = -texpt.y;
+		if(mirror_x_ && int(ceilf(texpt.x_)) % 2 == 0) texpt.x_ = -texpt.x_;
+		if(mirror_y_ && int(ceilf(texpt.y_)) % 2 == 0) texpt.y_ = -texpt.y_;
 
-		if(texpt.x > 1.f) texpt.x -= int(texpt.x);
-		else if(texpt.x < 0.f) texpt.x += 1 - int(texpt.x);
+		if(texpt.x_ > 1.f) texpt.x_ -= int(texpt.x_);
+		else if(texpt.x_ < 0.f) texpt.x_ += 1 - int(texpt.x_);
 
-		if(texpt.y > 1.f) texpt.y -= int(texpt.y);
-		else if(texpt.y < 0.f) texpt.y += 1 - int(texpt.y);
+		if(texpt.y_ > 1.f) texpt.y_ -= int(texpt.y_);
+		else if(texpt.y_ < 0.f) texpt.y_ += 1 - int(texpt.y_);
 	}
 
 	// crop
-	if(cropx) texpt.x = cropminx + texpt.x * (cropmaxx - cropminx);
-	if(cropy) texpt.y = cropminy + texpt.y * (cropmaxy - cropminy);
+	if(cropx_) texpt.x_ = cropminx_ + texpt.x_ * (cropmaxx_ - cropminx_);
+	if(cropy_) texpt.y_ = cropminy_ + texpt.y_ * (cropmaxy_ - cropminy_);
 
 	// rot90
-	if(rot90) std::swap(texpt.x, texpt.y);
+	if(rot_90_) std::swap(texpt.x_, texpt.y_);
 
 	// clipping
-	switch(tex_clipmode)
+	switch(tex_clip_mode_)
 	{
-		case TCL_CLIPCUBE:
+		case TexClipMode::ClipCube:
 		{
-			if((texpt.x < 0) || (texpt.x > 1) || (texpt.y < 0) || (texpt.y > 1) || (texpt.z < -1) || (texpt.z > 1))
+			if((texpt.x_ < 0) || (texpt.x_ > 1) || (texpt.y_ < 0) || (texpt.y_ > 1) || (texpt.z_ < -1) || (texpt.z_ > 1))
 				outside = true;
 			break;
 		}
-		case TCL_CHECKER:
+		case TexClipMode::Checker:
 		{
-			int xs = (int)floor(texpt.x), ys = (int)floor(texpt.y);
-			texpt.x -= xs;
-			texpt.y -= ys;
-			if(!checker_odd && !((xs + ys) & 1))
+			int xs = (int)floor(texpt.x_), ys = (int)floor(texpt.y_);
+			texpt.x_ -= xs;
+			texpt.y_ -= ys;
+			if(!checker_odd_ && !((xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
-			if(!checker_even && ((xs + ys) & 1))
+			if(!checker_even_ && ((xs + ys) & 1))
 			{
 				outside = true;
 				break;
 			}
 			// scale around center, (0.5, 0.5)
-			if(checker_dist < 1.0)
+			if(checker_dist_ < 1.0)
 			{
-				texpt.x = (texpt.x - 0.5) / (1.0 - checker_dist) + 0.5;
-				texpt.y = (texpt.y - 0.5) / (1.0 - checker_dist) + 0.5;
+				texpt.x_ = (texpt.x_ - 0.5) / (1.0 - checker_dist_) + 0.5;
+				texpt.y_ = (texpt.y_ - 0.5) / (1.0 - checker_dist_) + 0.5;
 			}
 			// continue to TCL_CLIP
 		}
-		case TCL_CLIP:
+		case TexClipMode::Clip:
 		{
-			if((texpt.x < 0) || (texpt.x > 1) || (texpt.y < 0) || (texpt.y > 1))
+			if((texpt.x_ < 0) || (texpt.x_ > 1) || (texpt.y_ < 0) || (texpt.y_ > 1))
 				outside = true;
 			break;
 		}
-		case TCL_EXTEND:
+		case TexClipMode::Extend:
 		{
-			if(texpt.x > 0.99999f) texpt.x = 0.99999f; else if(texpt.x < 0) texpt.x = 0;
-			if(texpt.y > 0.99999f) texpt.y = 0.99999f; else if(texpt.y < 0) texpt.y = 0;
+			if(texpt.x_ > 0.99999f) texpt.x_ = 0.99999f; else if(texpt.x_ < 0) texpt.x_ = 0;
+			if(texpt.y_ > 0.99999f) texpt.y_ = 0.99999f; else if(texpt.y_ < 0) texpt.y_ = 0;
 			// no break, fall thru to TEX_REPEAT
 		}
 		default:
-		case TCL_REPEAT: outside = false;
+		case TexClipMode::Repeat: outside = false;
 	}
 	return outside;
 }
 
-void textureImage_t::setCrop(float minx, float miny, float maxx, float maxy)
+void ImageTexture::setCrop(float minx, float miny, float maxx, float maxy)
 {
-	cropminx = minx, cropmaxx = maxx, cropminy = miny, cropmaxy = maxy;
-	cropx = ((cropminx != 0.0) || (cropmaxx != 1.0));
-	cropy = ((cropminy != 0.0) || (cropmaxy != 1.0));
+	cropminx_ = minx, cropmaxx_ = maxx, cropminy_ = miny, cropmaxy_ = maxy;
+	cropx_ = ((cropminx_ != 0.0) || (cropmaxx_ != 1.0));
+	cropy_ = ((cropminy_ != 0.0) || (cropmaxy_ != 1.0));
 }
 
-void textureImage_t::findTextureInterpolationCoordinates(int &coord0, int &coord1, int &coord2, int &coord3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const
+void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const
 {
 	if(repeat)
 	{
-		coord1 = ((int)coord_float) % resolution;
+		coord_1 = ((int)coord_float) % resolution;
 
 		if(mirror)
 		{
 
 			if(coord_float < 0.f)
 			{
-				coord0 = 1 % resolution;
-				coord2 = coord1;
-				coord3 = coord0;
+				coord_0 = 1 % resolution;
+				coord_2 = coord_1;
+				coord_3 = coord_0;
 				coord_decimal_part = -coord_float;
 			}
 			else if(coord_float >= resolution - 1.f)
 			{
-				coord0 = (resolution + resolution - 1) % resolution;
-				coord2 = coord1;
-				coord3 = coord0;
+				coord_0 = (resolution + resolution - 1) % resolution;
+				coord_2 = coord_1;
+				coord_3 = coord_0;
 				coord_decimal_part = coord_float - ((int)coord_float);
 			}
 			else
 			{
-				coord0 = (resolution + coord1 - 1) % resolution;
-				coord2 = coord1 + 1;
-				if(coord2 >= resolution) coord2 = (resolution + resolution - coord2) % resolution;
-				coord3 = coord1 + 2;
-				if(coord3 >= resolution) coord3 = (resolution + resolution - coord3) % resolution;
+				coord_0 = (resolution + coord_1 - 1) % resolution;
+				coord_2 = coord_1 + 1;
+				if(coord_2 >= resolution) coord_2 = (resolution + resolution - coord_2) % resolution;
+				coord_3 = coord_1 + 2;
+				if(coord_3 >= resolution) coord_3 = (resolution + resolution - coord_3) % resolution;
 				coord_decimal_part = coord_float - ((int)coord_float);
 			}
 		}
@@ -259,187 +259,187 @@ void textureImage_t::findTextureInterpolationCoordinates(int &coord0, int &coord
 		{
 			if(coord_float > 0.f)
 			{
-				coord0 = (resolution + coord1 - 1) % resolution;
-				coord2 = (coord1 + 1) % resolution;
-				coord3 = (coord1 + 2) % resolution;
+				coord_0 = (resolution + coord_1 - 1) % resolution;
+				coord_2 = (coord_1 + 1) % resolution;
+				coord_3 = (coord_1 + 2) % resolution;
 				coord_decimal_part = coord_float - ((int)coord_float);
 			}
 			else
 			{
-				coord0 = 1 % resolution;
-				coord2 = (resolution - 1) % resolution;
-				coord3 = (resolution - 2) % resolution;
+				coord_0 = 1 % resolution;
+				coord_2 = (resolution - 1) % resolution;
+				coord_3 = (resolution - 2) % resolution;
 				coord_decimal_part = -coord_float;
 			}
 		}
 	}
 	else
 	{
-		coord1 = std::max(0, std::min(resolution - 1, ((int)coord_float)));
+		coord_1 = std::max(0, std::min(resolution - 1, ((int)coord_float)));
 
-		if(coord_float > 0.f) coord2 = std::min(resolution - 1, coord1 + 1);
-		else coord2 = 0;
+		if(coord_float > 0.f) coord_2 = std::min(resolution - 1, coord_1 + 1);
+		else coord_2 = 0;
 
-		coord0 = std::max(0, coord1 - 1);
-		coord3 = std::min(resolution - 1, coord2 + 1);
+		coord_0 = std::max(0, coord_1 - 1);
+		coord_3 = std::min(resolution - 1, coord_2 + 1);
 
 		coord_decimal_part = coord_float - floor(coord_float);
 	}
 }
 
-colorA_t textureImage_t::noInterpolation(const point3d_t &p, int mipmaplevel) const
+Rgba ImageTexture::noInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	int resx = image->getWidth(mipmaplevel);
-	int resy = image->getHeight(mipmaplevel);
+	int resx = image_->getWidth(mipmaplevel);
+	int resy = image_->getHeight(mipmaplevel);
 
-	float xf = ((float)resx * (p.x - floor(p.x)));
-	float yf = ((float)resy * (p.y - floor(p.y)));
+	float xf = ((float)resx * (p.x_ - floor(p.x_)));
+	float yf = ((float)resy * (p.y_ - floor(p.y_)));
 
-	int x0, x1, x2, x3, y0, y1, y2, y3;
+	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode == TCL_REPEAT, mirrorX);
-	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode == TCL_REPEAT, mirrorY);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
 
-	return image->getPixel(x1, y1, mipmaplevel);
+	return image_->getPixel(x_1, y_1, mipmaplevel);
 }
 
-colorA_t textureImage_t::bilinearInterpolation(const point3d_t &p, int mipmaplevel) const
+Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	int resx = image->getWidth(mipmaplevel);
-	int resy = image->getHeight(mipmaplevel);
+	int resx = image_->getWidth(mipmaplevel);
+	int resy = image_->getHeight(mipmaplevel);
 
-	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
-	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+	float xf = ((float)resx * (p.x_ - floor(p.x_))) - 0.5f;
+	float yf = ((float)resy * (p.y_ - floor(p.y_))) - 0.5f;
 
-	int x0, x1, x2, x3, y0, y1, y2, y3;
+	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode == TCL_REPEAT, mirrorX);
-	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode == TCL_REPEAT, mirrorY);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
 
-	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
+	Rgba c_11 = image_->getPixel(x_1, y_1, mipmaplevel);
+	Rgba c_21 = image_->getPixel(x_2, y_1, mipmaplevel);
+	Rgba c_12 = image_->getPixel(x_1, y_2, mipmaplevel);
+	Rgba c_22 = image_->getPixel(x_2, y_2, mipmaplevel);
 
-	float w11 = (1 - dx) * (1 - dy);
-	float w12 = (1 - dx) * dy;
-	float w21 = dx * (1 - dy);
-	float w22 = dx * dy;
+	float w_11 = (1 - dx) * (1 - dy);
+	float w_12 = (1 - dx) * dy;
+	float w_21 = dx * (1 - dy);
+	float w_22 = dx * dy;
 
-	return (w11 * c11) + (w12 * c12) + (w21 * c21) + (w22 * c22);
+	return (w_11 * c_11) + (w_12 * c_12) + (w_21 * c_21) + (w_22 * c_22);
 }
 
-colorA_t textureImage_t::bicubicInterpolation(const point3d_t &p, int mipmaplevel) const
+Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	int resx = image->getWidth(mipmaplevel);
-	int resy = image->getHeight(mipmaplevel);
+	int resx = image_->getWidth(mipmaplevel);
+	int resy = image_->getHeight(mipmaplevel);
 
-	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
-	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+	float xf = ((float)resx * (p.x_ - floor(p.x_))) - 0.5f;
+	float yf = ((float)resy * (p.y_ - floor(p.y_))) - 0.5f;
 
-	int x0, x1, x2, x3, y0, y1, y2, y3;
+	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x0, x1, x2, x3, dx, xf, resx, tex_clipmode == TCL_REPEAT, mirrorX);
-	findTextureInterpolationCoordinates(y0, y1, y2, y3, dy, yf, resy, tex_clipmode == TCL_REPEAT, mirrorY);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
 
-	colorA_t c00 = image->getPixel(x0, y0, mipmaplevel);
-	colorA_t c01 = image->getPixel(x0, y1, mipmaplevel);
-	colorA_t c02 = image->getPixel(x0, y2, mipmaplevel);
-	colorA_t c03 = image->getPixel(x0, y3, mipmaplevel);
+	Rgba c_00 = image_->getPixel(x_0, y_0, mipmaplevel);
+	Rgba c_01 = image_->getPixel(x_0, y_1, mipmaplevel);
+	Rgba c_02 = image_->getPixel(x_0, y_2, mipmaplevel);
+	Rgba c_03 = image_->getPixel(x_0, y_3, mipmaplevel);
 
-	colorA_t c10 = image->getPixel(x1, y0, mipmaplevel);
-	colorA_t c11 = image->getPixel(x1, y1, mipmaplevel);
-	colorA_t c12 = image->getPixel(x1, y2, mipmaplevel);
-	colorA_t c13 = image->getPixel(x1, y3, mipmaplevel);
+	Rgba c_10 = image_->getPixel(x_1, y_0, mipmaplevel);
+	Rgba c_11 = image_->getPixel(x_1, y_1, mipmaplevel);
+	Rgba c_12 = image_->getPixel(x_1, y_2, mipmaplevel);
+	Rgba c_13 = image_->getPixel(x_1, y_3, mipmaplevel);
 
-	colorA_t c20 = image->getPixel(x2, y0, mipmaplevel);
-	colorA_t c21 = image->getPixel(x2, y1, mipmaplevel);
-	colorA_t c22 = image->getPixel(x2, y2, mipmaplevel);
-	colorA_t c23 = image->getPixel(x2, y3, mipmaplevel);
+	Rgba c_20 = image_->getPixel(x_2, y_0, mipmaplevel);
+	Rgba c_21 = image_->getPixel(x_2, y_1, mipmaplevel);
+	Rgba c_22 = image_->getPixel(x_2, y_2, mipmaplevel);
+	Rgba c_23 = image_->getPixel(x_2, y_3, mipmaplevel);
 
-	colorA_t c30 = image->getPixel(x3, y0, mipmaplevel);
-	colorA_t c31 = image->getPixel(x3, y1, mipmaplevel);
-	colorA_t c32 = image->getPixel(x3, y2, mipmaplevel);
-	colorA_t c33 = image->getPixel(x3, y3, mipmaplevel);
+	Rgba c_30 = image_->getPixel(x_3, y_0, mipmaplevel);
+	Rgba c_31 = image_->getPixel(x_3, y_1, mipmaplevel);
+	Rgba c_32 = image_->getPixel(x_3, y_2, mipmaplevel);
+	Rgba c_33 = image_->getPixel(x_3, y_3, mipmaplevel);
 
-	colorA_t cy0 = CubicInterpolate(c00, c10, c20, c30, dx);
-	colorA_t cy1 = CubicInterpolate(c01, c11, c21, c31, dx);
-	colorA_t cy2 = CubicInterpolate(c02, c12, c22, c32, dx);
-	colorA_t cy3 = CubicInterpolate(c03, c13, c23, c33, dx);
+	Rgba cy_0 = cubicInterpolate__(c_00, c_10, c_20, c_30, dx);
+	Rgba cy_1 = cubicInterpolate__(c_01, c_11, c_21, c_31, dx);
+	Rgba cy_2 = cubicInterpolate__(c_02, c_12, c_22, c_32, dx);
+	Rgba cy_3 = cubicInterpolate__(c_03, c_13, c_23, c_33, dx);
 
-	return CubicInterpolate(cy0, cy1, cy2, cy3, dy);
+	return cubicInterpolate__(cy_0, cy_1, cy_2, cy_3, dy);
 }
 
-colorA_t textureImage_t::mipMapsTrilinearInterpolation(const point3d_t &p, mipMapParams_t *mmParams) const
+Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float dS = std::max(fabsf(mmParams->dSdx), fabsf(mmParams->dSdy)) * image->getWidth();
-	float dT = std::max(fabsf(mmParams->dTdx), fabsf(mmParams->dTdy)) * image->getHeight();
-	float mipmaplevel = 0.5f * log2(dS * dS + dT * dT);
+	float ds = std::max(fabsf(mipmap_params->ds_dx_), fabsf(mipmap_params->ds_dy_)) * image_->getWidth();
+	float dt = std::max(fabsf(mipmap_params->dt_dx_), fabsf(mipmap_params->dt_dy_)) * image_->getHeight();
+	float mipmaplevel = 0.5f * log2(ds * ds + dt * dt);
 
-	if(mmParams->forceImageLevel > 0.f) mipmaplevel = mmParams->forceImageLevel * image->getHighestImgIndex();
+	if(mipmap_params->force_image_level_ > 0.f) mipmaplevel = mipmap_params->force_image_level_ * image_->getHighestImgIndex();
 
-	mipmaplevel += trilinear_level_bias;
+	mipmaplevel += trilinear_level_bias_;
 
-	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image->getHighestImgIndex());
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image_->getHighestImgIndex());
 
-	int mipmaplevelA = (int) floor(mipmaplevel);
-	int mipmaplevelB = (int) ceil(mipmaplevel);
-	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
+	int mipmaplevel_a = (int) floor(mipmaplevel);
+	int mipmaplevel_b = (int) ceil(mipmaplevel);
+	float mipmaplevel_delta = mipmaplevel - (float) mipmaplevel_a;
 
-	colorA_t col = bilinearInterpolation(p, mipmaplevelA);
-	colorA_t colB = bilinearInterpolation(p, mipmaplevelB);
+	Rgba col = bilinearInterpolation(p, mipmaplevel_a);
+	Rgba col_b = bilinearInterpolation(p, mipmaplevel_b);
 
-	col.blend(colB, mipmaplevelDelta);
+	col.blend(col_b, mipmaplevel_delta);
 
 	return col;
 }
 
 //All EWA interpolation/calculation code has been adapted from PBRT v2 (https://github.com/mmp/pbrt-v2). see LICENSES file
 
-colorA_t textureImage_t::mipMapsEWAInterpolation(const point3d_t &p, float maxAnisotropy, mipMapParams_t *mmParams) const
+Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const
 {
-	float dS0 = fabsf(mmParams->dSdx);
-	float dS1 = fabsf(mmParams->dSdy);
-	float dT0 = fabsf(mmParams->dTdx);
-	float dT1 = fabsf(mmParams->dTdy);
+	float ds_0 = fabsf(mipmap_params->ds_dx_);
+	float ds_1 = fabsf(mipmap_params->ds_dy_);
+	float dt_0 = fabsf(mipmap_params->dt_dx_);
+	float dt_1 = fabsf(mipmap_params->dt_dy_);
 
-	if((dS0 * dS0 + dT0 * dT0) < (dS1 * dS1 + dT1 * dT1))
+	if((ds_0 * ds_0 + dt_0 * dt_0) < (ds_1 * ds_1 + dt_1 * dt_1))
 	{
-		std::swap(dS0, dS1);
-		std::swap(dT0, dT1);
+		std::swap(ds_0, ds_1);
+		std::swap(dt_0, dt_1);
 	}
 
-	float majorLength = sqrtf(dS0 * dS0 + dT0 * dT0);
-	float minorLength = sqrtf(dS1 * dS1 + dT1 * dT1);
+	float major_length = sqrtf(ds_0 * ds_0 + dt_0 * dt_0);
+	float minor_length = sqrtf(ds_1 * ds_1 + dt_1 * dt_1);
 
-	if((minorLength * maxAnisotropy < majorLength) && (minorLength > 0.f))
+	if((minor_length * max_anisotropy < major_length) && (minor_length > 0.f))
 	{
-		float scale = majorLength / (minorLength * maxAnisotropy);
-		dS1 *= scale;
-		dT1 *= scale;
-		minorLength *= scale;
+		float scale = major_length / (minor_length * max_anisotropy);
+		ds_1 *= scale;
+		dt_1 *= scale;
+		minor_length *= scale;
 	}
 
-	if(minorLength <= 0.f) return bilinearInterpolation(p);
+	if(minor_length <= 0.f) return bilinearInterpolation(p);
 
-	float mipmaplevel = image->getHighestImgIndex() - 1.f + log2(minorLength);
+	float mipmaplevel = image_->getHighestImgIndex() - 1.f + log2(minor_length);
 
-	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image->getHighestImgIndex());
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), (float) image_->getHighestImgIndex());
 
 
-	int mipmaplevelA = (int) floor(mipmaplevel);
-	int mipmaplevelB = (int) ceil(mipmaplevel);
-	float mipmaplevelDelta = mipmaplevel - (float) mipmaplevelA;
+	int mipmaplevel_a = (int) floor(mipmaplevel);
+	int mipmaplevel_b = (int) ceil(mipmaplevel);
+	float mipmaplevel_delta = mipmaplevel - (float) mipmaplevel_a;
 
-	colorA_t col = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelA);
-	colorA_t colB = EWAEllipticCalculation(p, dS0, dT0, dS1, dT1, mipmaplevelB);
+	Rgba col = ewaEllipticCalculation(p, ds_0, dt_0, ds_1, dt_1, mipmaplevel_a);
+	Rgba col_b = ewaEllipticCalculation(p, ds_0, dt_0, ds_1, dt_1, mipmaplevel_b);
 
-	col.blend(colB, mipmaplevelDelta);
+	col.blend(col_b, mipmaplevel_delta);
 
 	return col;
 }
 
-inline int Mod(int a, int b)
+inline int mod__(int a, int b)
 {
 	int n = int(a / b);
 	a -= n * b;
@@ -447,102 +447,102 @@ inline int Mod(int a, int b)
 	return a;
 }
 
-colorA_t textureImage_t::EWAEllipticCalculation(const point3d_t &p, float dS0, float dT0, float dS1, float dT1, int mipmaplevel) const
+Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float d_s_0, float d_t_0, float d_s_1, float d_t_1, int mipmaplevel) const
 {
-	if(mipmaplevel >= image->getHighestImgIndex())
+	if(mipmaplevel >= image_->getHighestImgIndex())
 	{
-		int resx = image->getWidth(mipmaplevel);
-		int resy = image->getHeight(mipmaplevel);
+		int resx = image_->getWidth(mipmaplevel);
+		int resy = image_->getHeight(mipmaplevel);
 
-		return image->getPixel(Mod(p.x, resx), Mod(p.y, resy), image->getHighestImgIndex());
+		return image_->getPixel(mod__(p.x_, resx), mod__(p.y_, resy), image_->getHighestImgIndex());
 	}
 
-	int resx = image->getWidth(mipmaplevel);
-	int resy = image->getHeight(mipmaplevel);
+	int resx = image_->getWidth(mipmaplevel);
+	int resy = image_->getHeight(mipmaplevel);
 
-	float xf = ((float)resx * (p.x - floor(p.x))) - 0.5f;
-	float yf = ((float)resy * (p.y - floor(p.y))) - 0.5f;
+	float xf = ((float)resx * (p.x_ - floor(p.x_))) - 0.5f;
+	float yf = ((float)resy * (p.y_ - floor(p.y_))) - 0.5f;
 
-	dS0 *= resx;
-	dS1 *= resx;
-	dT0 *= resy;
-	dT1 *= resy;
+	d_s_0 *= resx;
+	d_s_1 *= resx;
+	d_t_0 *= resy;
+	d_t_1 *= resy;
 
-	float A = dT0 * dT0 + dT1 * dT1 + 1;
-	float B = -2.f * (dS0 * dT0 + dS1 * dT1);
-	float C = dS0 * dS0 + dS1 * dS1 + 1;
-	float invF = 1.f / (A * C - B * B * 0.25f);
-	A *= invF;
-	B *= invF;
-	C *= invF;
+	float a = d_t_0 * d_t_0 + d_t_1 * d_t_1 + 1;
+	float b = -2.f * (d_s_0 * d_t_0 + d_s_1 * d_t_1);
+	float c = d_s_0 * d_s_0 + d_s_1 * d_s_1 + 1;
+	float inv_f = 1.f / (a * c - b * b * 0.25f);
+	a *= inv_f;
+	b *= inv_f;
+	c *= inv_f;
 
-	float det = -B * B + 4.f * A * C;
-	float invDet = 1.f / det;
-	float uSqrt = sqrtf(det * C);
-	float vSqrt = sqrtf(A * det);
+	float det = -b * b + 4.f * a * c;
+	float inv_det = 1.f / det;
+	float u_sqrt = sqrtf(det * c);
+	float v_sqrt = sqrtf(a * det);
 
-	int s0 = (int) ceilf(xf - 2.f * invDet * uSqrt);
-	int s1 = (int) floorf(xf + 2.f * invDet * uSqrt);
-	int t0 = (int) ceilf(yf - 2.f * invDet * vSqrt);
-	int t1 = (int) floorf(yf + 2.f * invDet * vSqrt);
+	int s_0 = (int) ceilf(xf - 2.f * inv_det * u_sqrt);
+	int s_1 = (int) floorf(xf + 2.f * inv_det * u_sqrt);
+	int t_0 = (int) ceilf(yf - 2.f * inv_det * v_sqrt);
+	int t_1 = (int) floorf(yf + 2.f * inv_det * v_sqrt);
 
-	colorA_t sumCol(0.f);
+	Rgba sum_col(0.f);
 
-	float sumWts = 0.f;
-	for(int it = t0; it <= t1; ++it)
+	float sum_wts = 0.f;
+	for(int it = t_0; it <= t_1; ++it)
 	{
 		float tt = it - yf;
-		for(int is = s0; is <= s1; ++is)
+		for(int is = s_0; is <= s_1; ++is)
 		{
 			float ss = is - xf;
 
-			float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
-			if(r2 < 1.f)
+			float r_2 = a * ss * ss + b * ss * tt + c * tt * tt;
+			if(r_2 < 1.f)
 			{
-				float weight = ewaWeightLut[std::min((int)floorf(r2 * EWA_WEIGHT_LUT_SIZE), EWA_WEIGHT_LUT_SIZE - 1)];
-				int ismod = Mod(is, resx);
-				int itmod = Mod(it, resy);
+				float weight = ewa_weight_lut_[std::min((int)floorf(r_2 * ewa_weight_lut_size_), ewa_weight_lut_size_ - 1)];
+				int ismod = mod__(is, resx);
+				int itmod = mod__(it, resy);
 
-				sumCol += image->getPixel(ismod, itmod, mipmaplevel) * weight;
-				sumWts += weight;
+				sum_col += image_->getPixel(ismod, itmod, mipmaplevel) * weight;
+				sum_wts += weight;
 			}
 		}
 	}
 
-	if(sumWts > 0.f) sumCol = sumCol / sumWts;
-	else sumCol = colorA_t(0.f);
+	if(sum_wts > 0.f) sum_col = sum_col / sum_wts;
+	else sum_col = Rgba(0.f);
 
-	return sumCol;
+	return sum_col;
 }
 
-void textureImage_t::generateEWALookupTable()
+void ImageTexture::generateEwaLookupTable()
 {
-	if(!ewaWeightLut)
+	if(!ewa_weight_lut_)
 	{
-		Y_DEBUG << "** GENERATING EWA LOOKUP **" << yendl;
-		ewaWeightLut = (float *) malloc(sizeof(float) * EWA_WEIGHT_LUT_SIZE);
-		for(int i = 0; i < EWA_WEIGHT_LUT_SIZE; ++i)
+		Y_DEBUG << "** GENERATING EWA LOOKUP **" << YENDL;
+		ewa_weight_lut_ = (float *) malloc(sizeof(float) * ewa_weight_lut_size_);
+		for(int i = 0; i < ewa_weight_lut_size_; ++i)
 		{
 			float alpha = 2.f;
-			float r2 = float(i) / float(EWA_WEIGHT_LUT_SIZE - 1);
-			ewaWeightLut[i] = expf(-alpha * r2) - expf(-alpha);
+			float r_2 = float(i) / float(ewa_weight_lut_size_ - 1);
+			ewa_weight_lut_[i] = expf(-alpha * r_2) - expf(-alpha);
 		}
 	}
 }
 
-int string2cliptype(const std::string &clipname)
+ImageTexture::TexClipMode string2Cliptype__(const std::string &clipname)
 {
 	// default "repeat"
-	int	tex_clipmode = TCL_REPEAT;
+	ImageTexture::TexClipMode	tex_clipmode = ImageTexture::TexClipMode::Repeat;
 	if(clipname.empty()) return tex_clipmode;
-	if(clipname == "extend")		tex_clipmode = TCL_EXTEND;
-	else if(clipname == "clip")		tex_clipmode = TCL_CLIP;
-	else if(clipname == "clipcube")	tex_clipmode = TCL_CLIPCUBE;
-	else if(clipname == "checker")	tex_clipmode = TCL_CHECKER;
+	if(clipname == "extend")		tex_clipmode = ImageTexture::TexClipMode::Extend;
+	else if(clipname == "clip")		tex_clipmode = ImageTexture::TexClipMode::Clip;
+	else if(clipname == "clipcube")	tex_clipmode = ImageTexture::TexClipMode::ClipCube;
+	else if(clipname == "checker")	tex_clipmode = ImageTexture::TexClipMode::Checker;
 	return tex_clipmode;
 }
 
-texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Texture *ImageTexture::factory(ParamMap &params, RenderEnvironment &render)
 {
 	std::string name;
 	std::string intpstr;
@@ -550,12 +550,12 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	double expadj = 0.0;
 	bool normalmap = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
-	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
+	ColorSpace color_space = RawManualGamma;
 	std::string texture_optimization_string = "optimized";
-	textureOptimization_t texture_optimization = TEX_OPTIMIZATION_OPTIMIZED;
+	TextureOptimization texture_optimization = TextureOptimization::Optimized;
 	bool img_grayscale = false;
-	textureImage_t *tex = nullptr;
-	imageHandler_t *ih = nullptr;
+	ImageTexture *tex = nullptr;
+	ImageHandler *ih = nullptr;
 	params.getParam("interpolate", intpstr);
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -567,65 +567,65 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 
 	if(name.empty())
 	{
-		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << yendl;
+		Y_ERROR << "ImageTexture: Required argument filename not found for image texture" << YENDL;
 		return nullptr;
 	}
 
 	// interpolation type, bilinear default
-	int intp = INTP_BILINEAR;
+	InterpolationType interpolation_type = InterpolationType::Bilinear;
 
-	if(intpstr == "none") intp = INTP_NONE;
-	else if(intpstr == "bicubic") intp = INTP_BICUBIC;
-	else if(intpstr == "mipmap_trilinear") intp = INTP_MIPMAP_TRILINEAR;
-	else if(intpstr == "mipmap_ewa") intp = INTP_MIPMAP_EWA;
+	if(intpstr == "none") interpolation_type = InterpolationType::None;
+	else if(intpstr == "bicubic") interpolation_type = InterpolationType::Bicubic;
+	else if(intpstr == "mipmap_trilinear") interpolation_type = InterpolationType::Trilinear;
+	else if(intpstr == "mipmap_ewa") interpolation_type = InterpolationType::Ewa;
 
-	size_t lDot = name.rfind(".") + 1;
-	size_t lSlash = name.rfind("/") + 1;
+	size_t l_dot = name.rfind(".") + 1;
+	size_t l_slash = name.rfind("/") + 1;
 
-	std::string ext = toLower(name.substr(lDot));
+	std::string ext = toLower__(name.substr(l_dot));
 
 	std::string fmt = render.getImageFormatFromExtension(ext);
 
 	if(fmt == "")
 	{
-		Y_ERROR << "ImageTexture: Image extension not recognized, dropping texture." << yendl;
+		Y_ERROR << "ImageTexture: Image extension not recognized, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	paraMap_t ihpm;
+	ParamMap ihpm;
 	ihpm["type"] = fmt;
 	ihpm["for_output"] = false;
 	std::string ihname = "ih";
-	ihname.append(toLower(name.substr(lSlash, lDot - lSlash - 1)));
+	ihname.append(toLower__(name.substr(l_slash, l_dot - l_slash - 1)));
 
 	ih = render.createImageHandler(ihname, ihpm);
 
 	if(!ih)
 	{
-		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << yendl;
+		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << YENDL;
 		return nullptr;
 	}
 
 
-	if(ih->isHDR())
+	if(ih->isHdr())
 	{
-		if(color_space_string != "LinearRGB") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string << "' and the gamma setting." << yendl;
-		color_space = LINEAR_RGB;
-		if(texture_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string << "'" << yendl;
-		texture_optimization = TEX_OPTIMIZATION_NONE;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
+		if(color_space_string != "LinearRGB") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string << "' and the gamma setting." << YENDL;
+		color_space = LinearRgb;
+		if(texture_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string << "'" << YENDL;
+		texture_optimization = TextureOptimization::None;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	}
 	else
 	{
-		if(color_space_string == "sRGB") color_space = SRGB;
-		else if(color_space_string == "XYZ") color_space = XYZ_D65;
-		else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
-		else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
-		else color_space = SRGB;
+		if(color_space_string == "sRGB") color_space = Srgb;
+		else if(color_space_string == "XYZ") color_space = XyzD65;
+		else if(color_space_string == "LinearRGB") color_space = LinearRgb;
+		else if(color_space_string == "Raw_Manual_Gamma") color_space = RawManualGamma;
+		else color_space = Srgb;
 
-		if(texture_optimization_string == "none") texture_optimization = TEX_OPTIMIZATION_NONE;
-		else if(texture_optimization_string == "optimized") texture_optimization = TEX_OPTIMIZATION_OPTIMIZED;
-		else if(texture_optimization_string == "compressed") texture_optimization = TEX_OPTIMIZATION_COMPRESSED;
-		else texture_optimization = TEX_OPTIMIZATION_NONE;
+		if(texture_optimization_string == "none") texture_optimization = TextureOptimization::None;
+		else if(texture_optimization_string == "optimized") texture_optimization = TextureOptimization::Optimized;
+		else if(texture_optimization_string == "compressed") texture_optimization = TextureOptimization::Compressed;
+		else texture_optimization = TextureOptimization::None;
 	}
 
 	ih->setColorSpace(color_space, gamma);
@@ -634,25 +634,25 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 
 	if(!ih->loadFromFile(name))
 	{
-		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << yendl;
+		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	tex = new textureImage_t(ih, intp, gamma, color_space);
+	tex = new ImageTexture(ih, interpolation_type, gamma, color_space);
 
 	if(!tex)
 	{
-		Y_ERROR << "ImageTexture: Couldn't create image texture." << yendl;
+		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;
 		return nullptr;
 	}
 
-	if(intp == INTP_MIPMAP_TRILINEAR || intp == INTP_MIPMAP_EWA)
+	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
 		ih->generateMipMaps();
-		if(!session.getDifferentialRaysEnabled())
+		if(!session__.getDifferentialRaysEnabled())
 		{
-			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << yendl;
-			session.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
+			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
+			session__.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
@@ -665,7 +665,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	}
 
 	// setup image
-	bool rot90 = false;
+	bool rot_90 = false;
 	bool even_tiles = false, odd_tiles = true;
 	bool use_alpha = true, calc_alpha = false;
 	int xrep = 1, yrep = 1;
@@ -685,7 +685,7 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("cropmin_y", miny);
 	params.getParam("cropmax_x", maxx);
 	params.getParam("cropmax_y", maxy);
-	params.getParam("rot90", rot90);
+	params.getParam("rot90", rot_90);
 	params.getParam("clipping", clipmode);
 	params.getParam("even_tiles", even_tiles);
 	params.getParam("odd_tiles", odd_tiles);
@@ -706,28 +706,28 @@ texture_t *textureImage_t::factory(paraMap_t &params, renderEnvironment_t &rende
 	params.getParam("adj_hue", hue);
 	params.getParam("adj_clamp", clamp);
 
-	tex->xrepeat = xrep;
-	tex->yrepeat = yrep;
-	tex->rot90 = rot90;
+	tex->xrepeat_ = xrep;
+	tex->yrepeat_ = yrep;
+	tex->rot_90_ = rot_90;
 	tex->setCrop(minx, miny, maxx, maxy);
-	tex->use_alpha = use_alpha;
-	tex->calc_alpha = calc_alpha;
-	tex->normalmap = normalmap;
-	tex->tex_clipmode = string2cliptype(clipmode);
-	tex->checker_even = even_tiles;
-	tex->checker_odd = odd_tiles;
-	tex->checker_dist = cdist;
-	tex->mirrorX = mirror_x;
-	tex->mirrorY = mirror_y;
+	tex->use_alpha_ = use_alpha;
+	tex->calc_alpha_ = calc_alpha;
+	tex->normalmap_ = normalmap;
+	tex->tex_clip_mode_ = string2Cliptype__(clipmode);
+	tex->checker_even_ = even_tiles;
+	tex->checker_odd_ = odd_tiles;
+	tex->checker_dist_ = cdist;
+	tex->mirror_x_ = mirror_x;
+	tex->mirror_y_ = mirror_y;
 
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 
-	tex->trilinear_level_bias = trilinear_level_bias;
-	tex->ewa_max_anisotropy = ewa_max_anisotropy;
+	tex->trilinear_level_bias_ = trilinear_level_bias;
+	tex->ewa_max_anisotropy_ = ewa_max_anisotropy;
 
-	if(intp == INTP_MIPMAP_EWA) tex->generateEWALookupTable();
+	if(interpolation_type == InterpolationType::Ewa) tex->generateEwaLookupTable();
 
 	return tex;
 }
 
-__END_YAFRAY
+END_YAFRAY

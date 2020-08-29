@@ -1,52 +1,46 @@
 #pragma once
 
-#ifndef __Y_HASHGRID_H
-#define __Y_HASHGRID_H
+#ifndef YAFARAY_HASHGRID_H
+#define YAFARAY_HASHGRID_H
 
 #include <yafray_constants.h>
 #include <core_api/bound.h>
 #include <list>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class photon_t;
-struct foundPhoton_t;
-class bound_t;
-class point3d_t;
+class Photon;
+struct FoundPhoton;
+class Bound;
+class Point3;
 
 
-class YAFRAYCORE_EXPORT hashGrid_t
+class YAFRAYCORE_EXPORT HashGrid final
 {
 	public:
-		hashGrid_t() {hashGrid = nullptr;}
-
-		hashGrid_t(double _cellSize, unsigned int _gridSize, bound_t _bBox);
-
-		void setParm(double _cellSize, unsigned int _gridSize, bound_t _bBox);
-
+		HashGrid() { hash_grid_ = nullptr;}
+		HashGrid(double cell_size, unsigned int grid_size, Bound b_box);
+		void setParm(double cell_size, unsigned int grid_size, Bound b_box);
 		void clear(); //remove all the photons in the grid;
-
 		void updateGrid(); //build the hashgrid
-
-		void pushPhoton(photon_t &p);
-
-		unsigned int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float radius);
+		void pushPhoton(Photon &p);
+		unsigned int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius);
 
 	private:
-		unsigned int Hash(const int ix, const int iy, const int iz)
+		unsigned int hash(const int ix, const int iy, const int iz)
 		{
-			return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+			return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % grid_size_;
 		}
 
 	public:
-		double cellSize, invcellSize;
-		unsigned int gridSize;
-		bound_t bBox;
-		std::vector<photon_t>photons;
-		std::list<photon_t *> **hashGrid;
+		double cell_size_, inv_cell_size_;
+		unsigned int grid_size_;
+		Bound bounding_box_;
+		std::vector<Photon>photons_;
+		std::list<Photon *> **hash_grid_;
 };
 
 
-__END_YAFRAY
+END_YAFRAY
 #endif

@@ -26,153 +26,153 @@
 #include <core_api/params.h>
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-maskMat_t::maskMat_t(const material_t *m1, const material_t *m2, float thresh, visibility_t eVisibility):
-	mat1(m1), mat2(m2), threshold(thresh)
+MaskMaterial::MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility):
+		mat_1_(m_1), mat_2_(m_2), threshold_(thresh)
 {
-	mVisibility = eVisibility;
-	bsdfFlags = mat1->getFlags() | mat2->getFlags();
+	visibility_ = visibility;
+	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
 
-	mVisibility = eVisibility;
+	visibility_ = visibility;
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
-void maskMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
+void MaskMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
 {
-	nodeStack_t stack(state.userdata);
-	evalNodes(state, sp, allNodes, stack);
-	float val = mask->getScalar(stack); //mask->getFloat(sp.P);
-	bool mv = val > threshold;
-	*(bool *)state.userdata = mv;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) mat2->initBSDF(state, sp, bsdfTypes);
-	else   mat1->initBSDF(state, sp, bsdfTypes);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	NodeStack stack(state.userdata_);
+	evalNodes(state, sp, all_nodes_, stack);
+	float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
+	bool mv = val > threshold_;
+	*(bool *)state.userdata_ = mv;
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) mat_2_->initBsdf(state, sp, bsdf_types);
+	else mat_1_->initBsdf(state, sp, bsdf_types);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 }
 
-color_t maskMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval) const
+Rgb MaskMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval) const
 {
-	bool mv = *(bool *)state.userdata;
-	color_t col;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) col = mat2->eval(state, sp, wo, wi, bsdfs);
-	else   col = mat1->eval(state, sp, wo, wi, bsdfs);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	bool mv = *(bool *)state.userdata_;
+	Rgb col;
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) col = mat_2_->eval(state, sp, wo, wi, bsdfs);
+	else   col = mat_1_->eval(state, sp, wo, wi, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 	return col;
 }
 
-color_t maskMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+Rgb MaskMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	bool mv = *(bool *)state.userdata;
-	color_t col;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) col = mat2->sample(state, sp, wo, wi, s, W);
-	else   col = mat1->sample(state, sp, wo, wi, s, W);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	bool mv = *(bool *)state.userdata_;
+	Rgb col;
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) col = mat_2_->sample(state, sp, wo, wi, s, w);
+	else   col = mat_1_->sample(state, sp, wo, wi, s, w);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 	return col;
 }
 
-float maskMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
+float MaskMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
 {
-	bool mv = *(bool *)state.userdata;
+	bool mv = *(bool *)state.userdata_;
 	float pdf;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) pdf = mat2->pdf(state, sp, wo, wi, bsdfs);
-	else   pdf = mat1->pdf(state, sp, wo, wi, bsdfs);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) pdf = mat_2_->pdf(state, sp, wo, wi, bsdfs);
+	else   pdf = mat_1_->pdf(state, sp, wo, wi, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 	return pdf;
 }
 
-bool maskMat_t::isTransparent() const
+bool MaskMaterial::isTransparent() const
 {
-	return mat1->isTransparent() || mat2->isTransparent();
+	return mat_1_->isTransparent() || mat_2_->isTransparent();
 }
 
-color_t maskMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb MaskMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
-	evalNodes(state, sp, allNodes, stack);
-	float val = mask->getScalar(stack);
+	NodeStack stack(state.userdata_);
+	evalNodes(state, sp, all_nodes_, stack);
+	float val = mask_->getScalar(stack);
 	bool mv = val > 0.5;
-	if(mv) return mat2->getTransparency(state, sp, wo);
-	else   return mat1->getTransparency(state, sp, wo);
+	if(mv) return mat_2_->getTransparency(state, sp, wo);
+	else   return mat_1_->getTransparency(state, sp, wo);
 }
 
-void maskMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                            bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const
+void MaskMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+							   bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 {
-	bool mv = *(bool *)state.userdata;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) mat2->getSpecular(state, sp, wo, reflect, refract, dir, col);
-	else   mat1->getSpecular(state, sp, wo, reflect, refract, dir, col);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	bool mv = *(bool *)state.userdata_;
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) mat_2_->getSpecular(state, sp, wo, reflect, refract, dir, col);
+	else   mat_1_->getSpecular(state, sp, wo, reflect, refract, dir, col);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 }
 
-color_t maskMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb MaskMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	bool mv = *(bool *)state.userdata;
-	color_t col;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) col = mat2->emit(state, sp, wo);
-	else   col = mat1->emit(state, sp, wo);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	bool mv = *(bool *)state.userdata_;
+	Rgb col;
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) col = mat_2_->emit(state, sp, wo);
+	else   col = mat_1_->emit(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 	return col;
 }
 
-float maskMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+float MaskMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	bool mv = *(bool *)state.userdata;
+	bool mv = *(bool *)state.userdata_;
 	float alpha;
-	state.userdata = PTR_ADD(state.userdata, sizeof(bool));
-	if(mv) alpha = mat2->getAlpha(state, sp, wo);
-	else   alpha = mat1->getAlpha(state, sp, wo);
-	state.userdata = PTR_ADD(state.userdata, -sizeof(bool));
+	state.userdata_ = PTR_ADD(state.userdata_, sizeof(bool));
+	if(mv) alpha = mat_2_->getAlpha(state, sp, wo);
+	else   alpha = mat_1_->getAlpha(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, -sizeof(bool));
 	return alpha;
 }
 
-material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparams, renderEnvironment_t &env)
+Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, RenderEnvironment &env)
 {
 	std::string name;
-	const material_t *m1 = nullptr, *m2 = nullptr;
+	const Material *m_1 = nullptr, *m_2 = nullptr;
 	double thresh = 0.5;
-	std::string sVisibility = "normal";
-	visibility_t visibility = NORMAL_VISIBLE;
+	std::string s_visibility = "normal";
+	Visibility visibility = NormalVisible;
 	bool receive_shadows = true;
 
 	params.getParam("threshold", thresh);
 	if(! params.getParam("material1", name)) return nullptr;
-	m1 = env.getMaterial(name);
+	m_1 = env.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m2 = env.getMaterial(name);
+	m_2 = env.getMaterial(name);
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = env.getTexture(*name);
 
 	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", sVisibility);
+	params.getParam("visibility", s_visibility);
 
-	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
-	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
-	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
-	else if(sVisibility == "invisible") visibility = INVISIBLE;
-	else visibility = NORMAL_VISIBLE;
+	if(s_visibility == "normal") visibility = NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Invisible;
+	else visibility = NormalVisible;
 
-	if(m1 == nullptr || m2 == nullptr) return nullptr;
+	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 
-	maskMat_t *mat = new maskMat_t(m1, m2, thresh, visibility);
+	MaskMaterial *mat = new MaskMaterial(m_1, m_2, thresh, visibility);
 
-	mat->mReceiveShadows = receive_shadows;
+	mat->receive_shadows_ = receive_shadows;
 
-	std::vector<shaderNode_t *> roots;
+	std::vector<ShaderNode *> roots;
 	if(mat->loadNodes(eparams, env))
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->mShadersTable.find(name);
-			if(i != mat->mShadersTable.end()) { mat->mask = i->second; roots.push_back(mat->mask); }
+			auto i = mat->m_shaders_table_.find(name);
+			if(i != mat->m_shaders_table_.end()) { mat->mask_ = i->second; roots.push_back(mat->mask_); }
 			else
 			{
-				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << yendl;
+				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << YENDL;
 				delete mat;
 				return nullptr;
 			}
@@ -180,14 +180,14 @@ material_t *maskMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparam
 	}
 	else
 	{
-		Y_ERROR << "MaskMat: loadNodes() failed!" << yendl;
+		Y_ERROR << "MaskMat: loadNodes() failed!" << YENDL;
 		delete mat;
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);
-	size_t inputReq = std::max(m1->getReqMem(), m2->getReqMem());
-	mat->reqMem = std::max(mat->reqNodeMem, sizeof(bool) + inputReq);
+	size_t input_req = std::max(m_1->getReqMem(), m_2->getReqMem());
+	mat->req_mem_ = std::max(mat->req_node_mem_, sizeof(bool) + input_req);
 	return mat;
 }
 
-__END_YAFRAY
+END_YAFRAY

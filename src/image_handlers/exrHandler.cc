@@ -38,123 +38,125 @@
 using namespace Imf;
 using namespace Imath;
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-typedef genericScanlineBuffer_t<Rgba> halfRgbaScanlineImage_t;
-typedef genericScanlineBuffer_t<float> grayScanlineImage_t;
+typedef GenericScanlineBuffer<Rgba> HalfRgbaScanlineImage_t;
+typedef GenericScanlineBuffer<float> GrayScanlineImage_t;
 
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
-class C_IStream: public Imf::IStream
+class CiStream: public Imf::IStream
 {
 	public:
-		C_IStream(FILE *file, const char fileName[]):
-			Imf::IStream(fileName), _file(file) {}
+		CiStream(FILE *file, const char file_name[]):
+				Imf::IStream(file_name), file_(file) {}
 		virtual bool read(char c[], int n);
 		virtual Int64 tellg();
 		virtual void seekg(Int64 pos);
 		virtual void clear();
 	private:
-		FILE *_file;
+		FILE *file_;
 };
 
-bool C_IStream::read(char c[], int n)
+bool CiStream::read(char c[], int n)
 {
-	if(n != (int) fread(c, 1, n, _file))
+	if(n != (int) fread(c, 1, n, file_))
 	{
 		// fread() failed, but the return value does not distinguish
 		// between I/O errors and end of file, so we call ferror() to
 		// determine what happened.
-		if(ferror(_file)) Iex::throwErrnoExc();
+		if(ferror(file_)) Iex::throwErrnoExc();
 		else throw Iex::InputExc("Unexpected end of file.");
 	}
-	return feof(_file);
+	return feof(file_);
 }
 
-Int64 C_IStream::tellg()
+Int64 CiStream::tellg()
 {
-	return ftell(_file);
+	return ftell(file_);
 }
 
-void C_IStream::seekg(Int64 pos)
+void CiStream::seekg(Int64 pos)
 {
-	clearerr(_file);
-	fseek(_file, pos, SEEK_SET);
+	clearerr(file_);
+	fseek(file_, pos, SEEK_SET);
 }
 
-void C_IStream::clear()
+void CiStream::clear()
 {
-	clearerr(_file);
+	clearerr(file_);
 }
 
 
-class C_OStream: public Imf::OStream
+class CoStream: public Imf::OStream
 {
 	public:
-		C_OStream(FILE *file, const char fileName[]):
-			Imf::OStream(fileName), _file(file) {}
+		CoStream(FILE *file, const char file_name[]):
+				Imf::OStream(file_name), file_(file) {}
 		virtual void write(const char c[], int n);
 		virtual Int64 tellp();
 		virtual void seekp(Int64 pos);
 	private:
-		FILE *_file;
+		FILE *file_;
 };
 
-void C_OStream::write(const char c[], int n)
+void CoStream::write(const char c[], int n)
 {
-	if(n != (int) fwrite(c, 1, n, _file))
+	if(n != (int) fwrite(c, 1, n, file_))
 	{
 		// fwrite() failed, but the return value does not distinguish
 		// between I/O errors and end of file, so we call ferror() to
 		// determine what happened.
-		if(ferror(_file)) Iex::throwErrnoExc();
+		if(ferror(file_)) Iex::throwErrnoExc();
 		else throw Iex::InputExc("Unexpected end of file.");
 	}
 }
 
-Int64 C_OStream::tellp()
+Int64 CoStream::tellp()
 {
-	return ftell(_file);
+	return ftell(file_);
 }
 
-void C_OStream::seekp(Int64 pos)
+void CoStream::seekp(Int64 pos)
 {
-	clearerr(_file);
-	fseek(_file, pos, SEEK_SET);
+	clearerr(file_);
+	fseek(file_, pos, SEEK_SET);
 }
 
 
 
-class exrHandler_t: public imageHandler_t
+class ExrHandler final : public ImageHandler
 {
 	public:
-		exrHandler_t();
-		~exrHandler_t();
-		bool loadFromFile(const std::string &name);
-		bool saveToFile(const std::string &name, int imgIndex = 0);
-		bool saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses);
-		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		bool isHDR() { return true; }
+		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		ExrHandler();
+		~ExrHandler();
+		bool loadFromFile(const std::string &name) override;
+		bool saveToFile(const std::string &name, int img_index = 0) override;
+		bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) override;
+		bool isHdr() const override { return true; }
 };
 
-exrHandler_t::exrHandler_t()
+ExrHandler::ExrHandler()
 {
-	handlerName = "EXRHandler";
+	handler_name_ = "EXRHandler";
 }
 
-exrHandler_t::~exrHandler_t()
+ExrHandler::~ExrHandler()
 {
 	clearImgBuffers();
 }
 
-bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
+bool ExrHandler::saveToFile(const std::string &name, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
-	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	std::string name_without_tmp = name;
+	name_without_tmp.erase(name_without_tmp.length() - 4);
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	else Y_INFO << handler_name_ << ": Saving RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
@@ -169,8 +171,8 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	header.channels().insert("B", Channel(HALF));
 	header.channels().insert("A", Channel(HALF));
 
-	FILE *fp = file_t::open(name.c_str(), "wb");
-	C_OStream ostr(fp, name.c_str());
+	FILE *fp = File::open(name.c_str(), "wb");
+	CoStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 
 	Imf::Array2D<Imf::Rgba> pixels;
@@ -180,11 +182,11 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			colorA_t col = imgBuffer.at(imgIndex)->getColor(i, j);
-			pixels[j][i].r = col.R;
-			pixels[j][i].g = col.G;
-			pixels[j][i].b = col.B;
-			pixels[j][i].a = col.A;
+			Rgba col = img_buffer_.at(img_index)->getColor(i, j);
+			pixels[j][i].r = col.r_;
+			pixels[j][i].g = col.g_;
+			pixels[j][i].b = col.b_;
+			pixels[j][i].a = col.a_;
 		}
 	}
 
@@ -201,109 +203,109 @@ bool exrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	try
 	{
 		file.writePixels(h);
-		Y_VERBOSE << handlerName << ": Done." << yendl;
+		Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 		return true;
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << handlerName << ": " << exc.what() << yendl;
+		Y_ERROR << handler_name_ << ": " << exc.what() << YENDL;
 		return false;
 	}
 
-	file_t::close(fp);
+	File::close(fp);
 	fp = nullptr;
 
 	return true;
 }
 
-bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderPasses_t *renderPasses)
+bool ExrHandler::saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes)
 {
-	int h0 = imgBuffer.at(0)->getHeight();
-	int w0 = imgBuffer.at(0)->getWidth();
+	int h_0 = img_buffer_.at(0)->getHeight();
+	int w_0 = img_buffer_.at(0)->getWidth();
 
-	bool allImageBuffersSameSize = true;
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	bool all_image_buffers_same_size = true;
+	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
 	{
-		if(imgBuffer.at(idx)->getHeight() != h0) allImageBuffersSameSize = false;
-		if(imgBuffer.at(idx)->getWidth() != w0) allImageBuffersSameSize = false;
+		if(img_buffer_.at(idx)->getHeight() != h_0) all_image_buffers_same_size = false;
+		if(img_buffer_.at(idx)->getWidth() != w_0) all_image_buffers_same_size = false;
 	}
 
-	if(!allImageBuffersSameSize)
+	if(!all_image_buffers_same_size)
 	{
-		Y_ERROR << handlerName << ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format." << yendl;
+		Y_ERROR << handler_name_ << ": Saving Multilayer EXR failed: not all the images in the imageBuffer have the same size. Make sure all images in buffer have the same size or use a non-multilayered EXR format." << YENDL;
 		return false;
 	}
 
-	std::string extPassName;
+	std::string ext_pass_name;
 
-	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
+	std::string name_without_tmp = name;
+	name_without_tmp.erase(name_without_tmp.length() - 4);
 
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-	else Y_INFO << handlerName << ": Saving Multilayer EXR" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") Multilayer EXR" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	else Y_INFO << handler_name_ << ": Saving Multilayer EXR" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
 	int chan_size = sizeof(half);
 	const int num_colchan = 4;
 	int totchan_size = num_colchan * chan_size;
 
-	Header header(w0, h0);
+	Header header(w_0, h_0);
 	FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
 
 	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
 
-	for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
 	{
-		extPassName = "RenderLayer." + renderPasses->extPassTypeStringFromIndex(idx) + ".";
-		Y_VERBOSE << "    Writing EXR Layer: " << renderPasses->extPassTypeStringFromIndex(idx) << yendl;
+		ext_pass_name = "RenderLayer." + render_passes->extPassTypeStringFromIndex(idx) + ".";
+		Y_VERBOSE << "    Writing EXR Layer: " << render_passes->extPassTypeStringFromIndex(idx) << YENDL;
 
-		const std::string channelR_string = extPassName + "R";
-		const std::string channelG_string = extPassName + "G";
-		const std::string channelB_string = extPassName + "B";
-		const std::string channelA_string = extPassName + "A";
+		const std::string channel_r_string = ext_pass_name + "R";
+		const std::string channel_g_string = ext_pass_name + "G";
+		const std::string channel_b_string = ext_pass_name + "B";
+		const std::string channel_a_string = ext_pass_name + "A";
 
-		const char *channelR = channelR_string.c_str();
-		const char *channelG = channelG_string.c_str();
-		const char *channelB = channelB_string.c_str();
-		const char *channelA = channelA_string.c_str();
+		const char *channel_r = channel_r_string.c_str();
+		const char *channel_g = channel_g_string.c_str();
+		const char *channel_b = channel_b_string.c_str();
+		const char *channel_a = channel_a_string.c_str();
 
-		header.channels().insert(channelR, Channel(HALF));
-		header.channels().insert(channelG, Channel(HALF));
-		header.channels().insert(channelB, Channel(HALF));
-		header.channels().insert(channelA, Channel(HALF));
+		header.channels().insert(channel_r, Channel(HALF));
+		header.channels().insert(channel_g, Channel(HALF));
+		header.channels().insert(channel_b, Channel(HALF));
+		header.channels().insert(channel_a, Channel(HALF));
 
 		pixels.push_back(new Imf::Array2D<Imf::Rgba>);
-		pixels.at(idx)->resizeErase(h0, w0);
+		pixels.at(idx)->resizeErase(h_0, w_0);
 
-		for(int i = 0; i < w0; ++i)
+		for(int i = 0; i < w_0; ++i)
 		{
-			for(int j = 0; j < h0; ++j)
+			for(int j = 0; j < h_0; ++j)
 			{
-				colorA_t col = imgBuffer.at(idx)->getColor(i, j);
-				(*pixels.at(idx))[j][i].r = col.R;
-				(*pixels.at(idx))[j][i].g = col.G;
-				(*pixels.at(idx))[j][i].b = col.B;
-				(*pixels.at(idx))[j][i].a = col.A;
+				Rgba col = img_buffer_.at(idx)->getColor(i, j);
+				(*pixels.at(idx))[j][i].r = col.r_;
+				(*pixels.at(idx))[j][i].g = col.g_;
+				(*pixels.at(idx))[j][i].b = col.b_;
+				(*pixels.at(idx))[j][i].a = col.a_;
 			}
 		}
 
 		char *data_ptr = (char *) & (*pixels.at(idx))[0][0];
 
-		fb.insert(channelR, Slice(HALF, data_ptr, totchan_size, w0 * totchan_size));
-		fb.insert(channelG, Slice(HALF, data_ptr +   chan_size, totchan_size, w0 * totchan_size));
-		fb.insert(channelB, Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w0 * totchan_size));
-		fb.insert(channelA, Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w0 * totchan_size));
+		fb.insert(channel_r, Slice(HALF, data_ptr, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_g, Slice(HALF, data_ptr + chan_size, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_b, Slice(HALF, data_ptr + 2 * chan_size, totchan_size, w_0 * totchan_size));
+		fb.insert(channel_a, Slice(HALF, data_ptr + 3 * chan_size, totchan_size, w_0 * totchan_size));
 	}
 
-	FILE *fp = file_t::open(name.c_str(), "wb");
-	C_OStream ostr(fp, name.c_str());
+	FILE *fp = File::open(name.c_str(), "wb");
+	CoStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
 
 	try
 	{
-		file.writePixels(h0);
-		Y_VERBOSE << handlerName << ": Done." << yendl;
+		file.writePixels(h_0);
+		Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 		for(size_t idx = 0; idx < pixels.size(); ++idx)
 		{
 			delete pixels.at(idx);
@@ -314,7 +316,7 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << handlerName << ": " << exc.what() << yendl;
+		Y_ERROR << handler_name_ << ": " << exc.what() << YENDL;
 		for(size_t idx = 0; idx < pixels.size(); ++idx)
 		{
 			delete pixels.at(idx);
@@ -324,20 +326,20 @@ bool exrHandler_t::saveToFileMultiChannel(const std::string &name, const renderP
 		return false;
 	}
 
-	file_t::close(fp);
+	File::close(fp);
 	fp = nullptr;
 
 	return true;
 }
 
-bool exrHandler_t::loadFromFile(const std::string &name)
+bool ExrHandler::loadFromFile(const std::string &name)
 {
-	FILE *fp = file_t::open(name.c_str(), "rb");
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+	FILE *fp = File::open(name.c_str(), "rb");
+	Y_INFO << handler_name_ << ": Loading image \"" << name << "\"..." << YENDL;
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file " << name << YENDL;
 		return false;
 	}
 	else
@@ -350,74 +352,74 @@ bool exrHandler_t::loadFromFile(const std::string &name)
 
 	try
 	{
-		C_IStream istr(fp, name.c_str());
+		CiStream istr(fp, name.c_str());
 		RgbaInputFile file(istr);
 		Box2i dw = file.dataWindow();
 
-		m_width  = dw.max.x - dw.min.x + 1;
-		m_height = dw.max.y - dw.min.y + 1;
-		m_hasAlpha = true;
+		width_  = dw.max.x - dw.min.x + 1;
+		height_ = dw.max.y - dw.min.y + 1;
+		has_alpha_ = true;
 
 		clearImgBuffers();
 
-		int nChannels = 3;
-		if(m_grayscale) nChannels = 1;
-		else if(m_hasAlpha) nChannels = 4;
+		int n_channels = 3;
+		if(grayscale_) n_channels = 1;
+		else if(has_alpha_) n_channels = 4;
 
-		imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+		img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
 
 		Imf::Array2D<Imf::Rgba> pixels;
-		pixels.resizeErase(m_width, m_height);
-		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * m_height, m_height, 1);
+		pixels.resizeErase(width_, height_);
+		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height_, height_, 1);
 		file.readPixels(dw.min.y, dw.max.y);
 
-		for(int i = 0; i < m_width; ++i)
+		for(int i = 0; i < width_; ++i)
 		{
-			for(int j = 0; j < m_height; ++j)
+			for(int j = 0; j < height_; ++j)
 			{
-				colorA_t col;
-				col.R = pixels[i][j].r;
-				col.G = pixels[i][j].g;
-				col.B = pixels[i][j].b;
-				col.A = pixels[i][j].a;
-				imgBuffer.at(0)->setColor(i, j, col, m_colorSpace, m_gamma);
+				Rgba col;
+				col.r_ = pixels[i][j].r;
+				col.g_ = pixels[i][j].g;
+				col.b_ = pixels[i][j].b;
+				col.a_ = pixels[i][j].a;
+				img_buffer_.at(0)->setColor(i, j, col, color_space_, gamma_);
 			}
 		}
 	}
 	catch(const std::exception &exc)
 	{
-		Y_ERROR << handlerName << ": " << exc.what() << yendl;
+		Y_ERROR << handler_name_ << ": " << exc.what() << YENDL;
 		return false;
 	}
 
-	file_t::close(fp);
+	File::close(fp);
 	fp = nullptr;
 
 	return true;
 }
 
-imageHandler_t *exrHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
+ImageHandler *ExrHandler::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int pixtype = HALF;
 	int compression = ZIP_COMPRESSION;
 	int width = 0;
 	int height = 0;
-	bool withAlpha = false;
-	bool forOutput = true;
-	bool multiLayer = false;
+	bool with_alpha = false;
+	bool for_output = true;
+	bool multi_layer = false;
 	bool img_grayscale = false;
-	bool denoiseEnabled = false;
-	int denoiseHLum = 3;
-	int denoiseHCol = 3;
-	float denoiseMix = 0.8f;
+	bool denoise_enabled = false;
+	int denoise_h_lum = 3;
+	int denoise_h_col = 3;
+	float denoise_mix = 0.8f;
 
 	params.getParam("pixel_type", pixtype);
 	params.getParam("compression", compression);
 	params.getParam("width", width);
 	params.getParam("height", height);
-	params.getParam("alpha_channel", withAlpha);
-	params.getParam("for_output", forOutput);
-	params.getParam("img_multilayer", multiLayer);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("for_output", for_output);
+	params.getParam("img_multilayer", multi_layer);
 	params.getParam("img_grayscale", img_grayscale);
 	/*	//Denoise is not available for HDR/EXR images
 	 * 	params.getParam("denoiseEnabled", denoiseEnabled);
@@ -425,14 +427,14 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	 *	params.getParam("denoiseHCol", denoiseHCol);
 	 *	params.getParam("denoiseMix", denoiseMix);
 	 */
-	imageHandler_t *ih = new exrHandler_t();
+	ImageHandler *ih = new ExrHandler();
 
-	ih->setTextureOptimization(TEX_OPTIMIZATION_NONE);
+	ih->setTextureOptimization(TextureOptimization::None);
 
-	if(forOutput)
+	if(for_output)
 	{
-		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, multiLayer, img_grayscale);
+		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, multi_layer, img_grayscale);
 	}
 
 	return ih;
@@ -441,10 +443,10 @@ imageHandler_t *exrHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerImageHandler("exr", "exr", "EXR [IL&M OpenEXR]", exrHandler_t::factory);
+		render.registerImageHandler("exr", "exr", "EXR [IL&M OpenEXR]", ExrHandler::factory);
 	}
 
 }
-__END_YAFRAY
+END_YAFRAY

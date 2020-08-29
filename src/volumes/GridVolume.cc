@@ -13,54 +13,53 @@
 #include <fstream>
 #include <cstdlib>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
+struct RenderState;
+struct PSample;
 
-class GridVolume : public DensityVolume
+class GridVolume final : public DensityVolume
 {
 	public:
-
-		GridVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax)
+		GridVolume(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax)
 		{
-			bBox = bound_t(pmin, pmax);
-			s_a = sa;
-			s_s = ss;
-			l_e = le;
-			g = gg;
-			haveS_a = (s_a.energy() > 1e-4f);
-			haveS_s = (s_s.energy() > 1e-4f);
-			haveL_e = (l_e.energy() > 1e-4f);
+			b_box_ = Bound(pmin, pmax);
+			s_a_ = sa;
+			s_s_ = ss;
+			l_e_ = le;
+			g_ = gg;
+			have_s_a_ = (s_a_.energy() > 1e-4f);
+			have_s_s_ = (s_s_.energy() > 1e-4f);
+			have_l_e_ = (l_e_.energy() > 1e-4f);
 
-			std::ifstream inputStream;
-			inputStream.open("/home/public/3dkram/cloud2_3.df3");
-			if(!inputStream) Y_ERROR << "GridVolume: Error opening input stream" << yendl;
+			std::ifstream input_stream;
+			input_stream.open("/home/public/3dkram/cloud2_3.df3");
+			if(!input_stream) Y_ERROR << "GridVolume: Error opening input stream" << YENDL;
 
-			inputStream.seekg(0, std::ios_base::beg);
-			std::ifstream::pos_type begin_pos = inputStream.tellg();
-			inputStream.seekg(0, std::ios_base::end);
-			int fileSize = static_cast<int>(inputStream.tellg() - begin_pos);
-			fileSize -= 6;
-			inputStream.seekg(0, std::ios_base::beg);
+			input_stream.seekg(0, std::ios_base::beg);
+			std::ifstream::pos_type begin_pos = input_stream.tellg();
+			input_stream.seekg(0, std::ios_base::end);
+			int file_size = static_cast<int>(input_stream.tellg() - begin_pos);
+			file_size -= 6;
+			input_stream.seekg(0, std::ios_base::beg);
 
 			int dim[3];
 			for(int i = 0; i < 3; ++i)
 			{
-				short i0 = 0, i1 = 0;
-				inputStream.read((char *)&i0, 1);
-				inputStream.read((char *)&i1, 1);
-				Y_VERBOSE << "GridVolume: " << i0 << " " << i1 << yendl;
-				dim[i] = (((unsigned short)i0 << 8) | (unsigned short)i1);
+				short i_0 = 0, i_1 = 0;
+				input_stream.read((char *)&i_0, 1);
+				input_stream.read((char *)&i_1, 1);
+				Y_VERBOSE << "GridVolume: " << i_0 << " " << i_1 << YENDL;
+				dim[i] = (((unsigned short)i_0 << 8) | (unsigned short)i_1);
 			}
 
-			int sizePerVoxel = fileSize / (dim[0] * dim[1] * dim[2]);
+			int size_per_voxel = file_size / (dim[0] * dim[1] * dim[2]);
 
-			Y_VERBOSE << "GridVolume: " <<  dim[0] <<  " " << dim[1] <<  " " << dim[2] << " " << fileSize << " " << sizePerVoxel << yendl;
+			Y_VERBOSE << "GridVolume: " << dim[0] << " " << dim[1] << " " << dim[2] << " " << file_size << " " << size_per_voxel << YENDL;
 
-			sizeX = dim[0];
-			sizeY = dim[1];
-			sizeZ = dim[2];
+			size_x_ = dim[0];
+			size_y_ = dim[1];
+			size_z_ = dim[2];
 
 			/*
 			sizeX = 60;
@@ -68,25 +67,25 @@ class GridVolume : public DensityVolume
 			sizeZ = 60;
 			*/
 
-			grid = (float ***)malloc(sizeX * sizeof(float));
-			for(int x = 0; x < sizeX; ++x)
+			grid_ = (float ***)malloc(size_x_ * sizeof(float));
+			for(int x = 0; x < size_x_; ++x)
 			{
-				grid[x] = (float **)malloc(sizeY * sizeof(float));
-				for(int y = 0; y < sizeY; ++y)
+				grid_[x] = (float **)malloc(size_y_ * sizeof(float));
+				for(int y = 0; y < size_y_; ++y)
 				{
-					grid[x][y] = (float *)malloc(sizeZ * sizeof(float));
+					grid_[x][y] = (float *)malloc(size_z_ * sizeof(float));
 				}
 			}
 
-			for(int z = 0; z < sizeZ; ++z)
+			for(int z = 0; z < size_z_; ++z)
 			{
-				for(int y = 0; y < sizeY; ++y)
+				for(int y = 0; y < size_y_; ++y)
 				{
-					for(int x = 0; x < sizeX; ++x)
+					for(int x = 0; x < size_x_; ++x)
 					{
 						int voxel = 0;
-						inputStream.read((char *)&voxel, 1);
-						grid[x][y][z] = voxel / 255.f;
+						input_stream.read((char *)&voxel, 1);
+						grid_[x][y][z] = voxel / 255.f;
 						/*
 						float r = sizeX / 2.f;
 						float r2 = r*r;
@@ -97,69 +96,69 @@ class GridVolume : public DensityVolume
 				}
 			}
 
-			Y_VERBOSE << "GridVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << "]" << yendl;
+			Y_VERBOSE << "GridVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << "]" << YENDL;
 		}
 
 		~GridVolume()
 		{
-			Y_VERBOSE << "GridVolume: Freeing grid data" << yendl;
+			Y_VERBOSE << "GridVolume: Freeing grid data" << YENDL;
 
-			for(int x = 0; x < sizeX; ++x)
+			for(int x = 0; x < size_x_; ++x)
 			{
-				for(int y = 0; y < sizeY; ++y)
+				for(int y = 0; y < size_y_; ++y)
 				{
-					free(grid[x][y]);
+					free(grid_[x][y]);
 				}
-				free(grid[x]);
+				free(grid_[x]);
 			}
-			free(grid);
+			free(grid_);
 		}
 
-		virtual float Density(point3d_t p);
+		virtual float density(Point3 p);
 
-		static VolumeRegion *factory(paraMap_t &params, renderEnvironment_t &render);
+		static VolumeRegion *factory(ParamMap &params, RenderEnvironment &render);
 
-	protected:
-		float ***grid;
-		int sizeX, sizeY, sizeZ;
+	private:
+		float ***grid_ = nullptr;
+		int size_x_, size_y_, size_z_;
 };
 
-inline float min(float a, float b) { return (a > b) ? b : a; }
-inline float max(float a, float b) { return (a < b) ? b : a; }
+inline float min__(float a, float b) { return (a > b) ? b : a; }
+inline float max__(float a, float b) { return (a < b) ? b : a; }
 
 
-float GridVolume::Density(const point3d_t p)
+float GridVolume::density(Point3 p)
 {
-	float x = (p.x - bBox.a.x) / bBox.longX() * sizeX - .5f;
-	float y = (p.y - bBox.a.y) / bBox.longY() * sizeY - .5f;
-	float z = (p.z - bBox.a.z) / bBox.longZ() * sizeZ - .5f;
+	float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * size_x_ - .5f;
+	float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * size_y_ - .5f;
+	float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * size_z_ - .5f;
 
-	int x0 = max(0, floor(x));
-	int y0 = max(0, floor(y));
-	int z0 = max(0, floor(z));
+	int x_0 = max__(0, floor(x));
+	int y_0 = max__(0, floor(y));
+	int z_0 = max__(0, floor(z));
 
-	int x1 = min(sizeX - 1, ceil(x));
-	int y1 = min(sizeY - 1, ceil(y));
-	int z1 = min(sizeZ - 1, ceil(z));
+	int x_1 = min__(size_x_ - 1, ceil(x));
+	int y_1 = min__(size_y_ - 1, ceil(y));
+	int z_1 = min__(size_z_ - 1, ceil(z));
 
-	float xd = x - x0;
-	float yd = y - y0;
-	float zd = z - z0;
+	float xd = x - x_0;
+	float yd = y - y_0;
+	float zd = z - z_0;
 
-	float i1 = grid[x0][y0][z0] * (1 - zd) + grid[x0][y0][z1] * zd;
-	float i2 = grid[x0][y1][z0] * (1 - zd) + grid[x0][y1][z1] * zd;
-	float j1 = grid[x1][y0][z0] * (1 - zd) + grid[x1][y0][z1] * zd;
-	float j2 = grid[x1][y1][z0] * (1 - zd) + grid[x1][y1][z1] * zd;
+	float i_1 = grid_[x_0][y_0][z_0] * (1 - zd) + grid_[x_0][y_0][z_1] * zd;
+	float i_2 = grid_[x_0][y_1][z_0] * (1 - zd) + grid_[x_0][y_1][z_1] * zd;
+	float j_1 = grid_[x_1][y_0][z_0] * (1 - zd) + grid_[x_1][y_0][z_1] * zd;
+	float j_2 = grid_[x_1][y_1][z_0] * (1 - zd) + grid_[x_1][y_1][z_1] * zd;
 
-	float w1 = i1 * (1 - yd) + i2 * yd;
-	float w2 = j1 * (1 - yd) + j2 * yd;
+	float w_1 = i_1 * (1 - yd) + i_2 * yd;
+	float w_2 = j_1 * (1 - yd) + j_2 * yd;
 
-	float dens = w1 * (1 - xd) + w2 * xd;
+	float dens = w_1 * (1 - xd) + w_2 * xd;
 
 	return dens;
 }
 
-VolumeRegion *GridVolume::factory(paraMap_t &params, renderEnvironment_t &render)
+VolumeRegion *GridVolume::factory(ParamMap &params, RenderEnvironment &render)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -178,17 +177,17 @@ VolumeRegion *GridVolume::factory(paraMap_t &params, renderEnvironment_t &render
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	GridVolume *vol = new GridVolume(color_t(sa), color_t(ss), color_t(le), g,
-	                                 point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]));
+	GridVolume *vol = new GridVolume(Rgb(sa), Rgb(ss), Rgb(le), g,
+									 Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
 	return vol;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("GridVolume", GridVolume::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

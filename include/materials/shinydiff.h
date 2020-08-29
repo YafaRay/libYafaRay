@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_SHINYDIFFMAT_H
-#define Y_SHINYDIFFMAT_H
+#ifndef YAFARAY_SHINYDIFF_H
+#define YAFARAY_SHINYDIFF_H
 
 #include <yafray_constants.h>
 #include <yafraycore/nodematerial.h>
@@ -9,7 +9,7 @@
 #include <core_api/environment.h>
 #include <core_api/scene.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 /*! A general purpose material for basic diffuse and specular reflecting
     surfaces with transparency and translucency support.
@@ -24,119 +24,119 @@ __BEGIN_YAFRAY
     The remaining (l"') light is either reflected diffuse or absorbed.
 */
 
-class shinyDiffuseMat_t: public nodeMaterial_t
+class ShinyDiffuseMaterial: public NodeMaterial
 {
 	public:
-		shinyDiffuseMat_t(const color_t &diffuseColor, const color_t &mirrorColor, float diffuseStrength, float transparencyStrength = 0.0, float translucencyStrength = 0.0, float mirrorStrength = 0.0, float emitStrength = 0.0, float transmitFilterStrength = 1.0, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual ~shinyDiffuseMat_t();
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
-		virtual bool isTransparent() const { return mIsTransparent; }
-		virtual color_t getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const; // { return emitCol; }
-		virtual void getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const;
-		virtual float getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual color_t getDiffuseColor(const renderState_t &state) const
+		ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = NormalVisible);
+		virtual ~ShinyDiffuseMaterial();
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t bsdfs, bool force_eval = false) const;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const;
+		virtual bool isTransparent() const { return m_is_transparent_; }
+		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const; // { return emitCol; }
+		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const;
+		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual Rgb getDiffuseColor(const RenderState &state) const
 		{
-			SDDat_t *dat = (SDDat_t *)state.userdata;
-			nodeStack_t stack(dat->nodeStack);
+			SdDat *dat = (SdDat *)state.userdata_;
+			NodeStack stack(dat->node_stack_);
 
-			if(mIsDiffuse) return (mDiffuseReflShader ? mDiffuseReflShader->getScalar(stack) : mDiffuseStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
-			else return color_t(0.f);
+			if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(stack) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+			else return Rgb(0.f);
 		}
-		virtual color_t getGlossyColor(const renderState_t &state) const
+		virtual Rgb getGlossyColor(const RenderState &state) const
 		{
-			SDDat_t *dat = (SDDat_t *)state.userdata;
-			nodeStack_t stack(dat->nodeStack);
+			SdDat *dat = (SdDat *)state.userdata_;
+			NodeStack stack(dat->node_stack_);
 
-			if(mIsMirror) return (mMirrorShader ? mMirrorShader->getScalar(stack) : mMirrorStrength) * (mMirrorColorShader ? mMirrorColorShader->getColor(stack) : mMirrorColor);
-			else return color_t(0.f);
+			if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
+			else return Rgb(0.f);
 		}
-		virtual color_t getTransColor(const renderState_t &state) const
+		virtual Rgb getTransColor(const RenderState &state) const
 		{
-			SDDat_t *dat = (SDDat_t *)state.userdata;
-			nodeStack_t stack(dat->nodeStack);
+			SdDat *dat = (SdDat *)state.userdata_;
+			NodeStack stack(dat->node_stack_);
 
-			if(mIsTransparent) return (mTransparencyShader ? mTransparencyShader->getScalar(stack) : mTransparencyStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
-			else return color_t(0.f);
+			if(m_is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(stack) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+			else return Rgb(0.f);
 		}
-		virtual color_t getMirrorColor(const renderState_t &state) const
+		virtual Rgb getMirrorColor(const RenderState &state) const
 		{
-			SDDat_t *dat = (SDDat_t *)state.userdata;
-			nodeStack_t stack(dat->nodeStack);
+			SdDat *dat = (SdDat *)state.userdata_;
+			NodeStack stack(dat->node_stack_);
 
-			if(mIsMirror) return (mMirrorShader ? mMirrorShader->getScalar(stack) : mMirrorStrength) * (mMirrorColorShader ? mMirrorColorShader->getColor(stack) : mMirrorColor);
-			else return color_t(0.f);
+			if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
+			else return Rgb(0.f);
 		}
-		virtual color_t getSubSurfaceColor(const renderState_t &state) const
+		virtual Rgb getSubSurfaceColor(const RenderState &state) const
 		{
-			SDDat_t *dat = (SDDat_t *)state.userdata;
-			nodeStack_t stack(dat->nodeStack);
+			SdDat *dat = (SdDat *)state.userdata_;
+			NodeStack stack(dat->node_stack_);
 
-			if(mIsTranslucent) return (mTranslucencyShader ? mTranslucencyShader->getScalar(stack) : mTranslucencyStrength) * (mDiffuseShader ? mDiffuseShader->getColor(stack) : mDiffuseColor);
-			else return color_t(0.f);
+			if(m_is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(stack) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+			else return Rgb(0.f);
 		}
 
-		static material_t *factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &render);
+		static Material *factory(ParamMap &params, std::list<ParamMap> &params_list, RenderEnvironment &render);
 
-		struct SDDat_t
+		struct SdDat
 		{
-			float component[4];
-			void *nodeStack;
+			float component_[4];
+			void *node_stack_;
 		};
 
 	protected:
 		void config();
-		int getComponents(const bool *useNode, nodeStack_t &stack, float *component) const;
-		void getFresnel(const vector3d_t &wo, const vector3d_t &N, float &Kr, float &currentIORSquared) const;
+		int getComponents(const bool *use_node, NodeStack &stack, float *component) const;
+		void getFresnel(const Vec3 &wo, const Vec3 &n, float &kr, float &current_ior_squared) const;
 
 		void initOrenNayar(double sigma);
-		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
+		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
-		bool mIsTransparent = false;                  //!< Boolean value which is true if you have transparent component
-		bool mIsTranslucent = false;                  //!< Boolean value which is true if you have translucent component
-		bool mIsMirror = false;                       //!< Boolean value which is true if you have specular reflection component
-		bool mIsDiffuse = false;                      //!< Boolean value which is true if you have diffuse component
+		bool m_is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
+		bool m_is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component
+		bool is_mirror_ = false;                       //!< Boolean value which is true if you have specular reflection component
+		bool is_diffuse_ = false;                      //!< Boolean value which is true if you have diffuse component
 
-		bool mHasFresnelEffect = false;               //!< Boolean value which is true if you have Fresnel specular effect
-		float IOR = 1.f;                              //!< IOR
-		float mIOR_Squared = 1.f;                     //!< Squared IOR
+		bool m_has_fresnel_effect_ = false;               //!< Boolean value which is true if you have Fresnel specular effect
+		float ior_ = 1.f;                              //!< IOR
+		float m_ior_squared_ = 1.f;                     //!< Squared IOR
 
-		bool viNodes[4], vdNodes[4];                  //!< describes if the nodes are viewdependant or not (if available)
-		shaderNode_t *mDiffuseShader = nullptr;       //!< Shader node for diffuse color
-		shaderNode_t *mBumpShader = nullptr;          //!< Shader node for bump
-		shaderNode_t *mTransparencyShader = nullptr;  //!< Shader node for transparency strength (float)
-		shaderNode_t *mTranslucencyShader = nullptr;  //!< Shader node for translucency strength (float)
-		shaderNode_t *mMirrorShader = nullptr;        //!< Shader node for specular reflection strength (float)
-		shaderNode_t *mMirrorColorShader = nullptr;   //!< Shader node for specular reflection color
-		shaderNode_t *mSigmaOrenShader = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		shaderNode_t *mDiffuseReflShader = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		shaderNode_t *iorS = nullptr;                 //!< Shader node for IOR value (float)
-		shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
+		bool vi_nodes_[4], vd_nodes_[4];                  //!< describes if the nodes are viewdependant or not (if available)
+		ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
+		ShaderNode *bump_shader_ = nullptr;          //!< Shader node for bump
+		ShaderNode *transparency_shader_ = nullptr;  //!< Shader node for transparency strength (float)
+		ShaderNode *translucency_shader_ = nullptr;  //!< Shader node for translucency strength (float)
+		ShaderNode *mirror_shader_ = nullptr;        //!< Shader node for specular reflection strength (float)
+		ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
+		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
+		ShaderNode *diffuse_refl_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
+		ShaderNode *ior_s_ = nullptr;                 //!< Shader node for IOR value (float)
+		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 
-		color_t mDiffuseColor;              //!< BSDF Diffuse component color
-		color_t mEmitColor;                 //!< Emit color
-		color_t mMirrorColor;               //!< BSDF Mirror component color
-		float mMirrorStrength;              //!< BSDF Specular reflection component strength when not textured
-		float mTransparencyStrength;        //!< BSDF Transparency component strength when not textured
-		float mTranslucencyStrength;        //!< BSDF Translucency component strength when not textured
-		float mDiffuseStrength;             //!< BSDF Diffuse component strength when not textured
-		float mEmitStrength;                //!< Emit strength
-		float mTransmitFilterStrength;      //!< determines how strong light passing through material gets tinted
+		Rgb diffuse_color_;              //!< BSDF Diffuse component color
+		Rgb emit_color_;                 //!< Emit color
+		Rgb mirror_color_;               //!< BSDF Mirror component color
+		float mirror_strength_;              //!< BSDF Specular reflection component strength when not textured
+		float transparency_strength_;        //!< BSDF Transparency component strength when not textured
+		float translucency_strength_;        //!< BSDF Translucency component strength when not textured
+		float diffuse_strength_;             //!< BSDF Diffuse component strength when not textured
+		float emit_strength_;                //!< Emit strength
+		float transmit_filter_strength_;      //!< determines how strong light passing through material gets tinted
 
-		bool mUseOrenNayar = false;         //!< Use Oren Nayar reflectance (default Lambertian)
-		float mOrenNayar_A = 0.f;           //!< Oren Nayar A coefficient
-		float mOrenNayar_B = 0.f;           //!< Oren Nayar B coefficient
+		bool use_oren_nayar_ = false;         //!< Use Oren Nayar reflectance (default Lambertian)
+		float oren_nayar_a_ = 0.f;           //!< Oren Nayar A coefficient
+		float oren_nayar_b_ = 0.f;           //!< Oren Nayar B coefficient
 
-		int nBSDF = 0;
+		int n_bsdf_ = 0;
 
-		BSDF_t cFlags[4];                   //!< list the BSDF components that are present
-		int cIndex[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)
+		Bsdf_t c_flags_[4];                   //!< list the BSDF components that are present
+		int c_index_[4];                      //!< list the index of the BSDF components (0=specular reflection, 1=specular transparency, 2=translucency, 3=diffuse reflection)
 };
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_SHINYDIFFMAT_H
+#endif // YAFARAY_SHINYDIFF_H

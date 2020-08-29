@@ -20,17 +20,19 @@
  *
  */
 
-__BEGIN_YAFRAY
+#include <yafray_constants.h>
 
-enum tgaImageDataType
+BEGIN_YAFRAY
+
+enum TgaImageDataType
 {
-	noData = 0,
-	uncColorMap,
-	uncTrueColor,
-	uncGray,
-	rleColorMap = 9,
-	rleTrueColor,
-	rleGray
+	NoData = 0,
+	UncColorMap,
+	UncTrueColor,
+	UncGray,
+	RleColorMap = 9,
+	RleTrueColor,
+	RleGray
 };
 
 // TGA image origin corner descriptions
@@ -40,74 +42,74 @@ enum tgaImageDataType
 #define TL 					0x20
 #define TR 					0x30
 
-#define noAlpha 			0x00
-#define alpha8  			0x08
+#define NO_ALPHA 			0x00
+#define ALPHA_8  			0x08
 
 // Mask defines
 //15/16 bit color masking for BGRA color order on tga files
 // B    |G    |R    |A
 // 11111|11111|11111|1
-#define BlueMask  			0xF800 // 11111|00000|00000|0
-#define GreenMask 			0x07C0 // 00000|11111|00000|0
-#define RedMask   			0x003E // 00000|00000|11111|0
-#define AlphaMask 			0x0001 // 00000|00000|00000|1
+#define BLUE_MASK  			0xF800 // 11111|00000|00000|0
+#define GREEN_MASK 			0x07C0 // 00000|11111|00000|0
+#define RED_MASK   			0x003E // 00000|00000|11111|0
+#define ALPHA_MASK 			0x0001 // 00000|00000|00000|1
 
 // 8Bit gray + 8Bit alpha in 16Bit packets
-#define alphaGrayMask8Bit	0xFF00 // 11111111|00000000
-#define grayMask8Bit		0x00FF // 00000000|11111111
+#define ALPHA_GRAY_MASK_8_BIT	0xFF00 // 11111111|00000000
+#define GRAY_MASK_8_BIT		0x00FF // 00000000|11111111
 
 // Image description bit masks
-#define alphaBitDepthMask 	0x0F   // 00|00|1111
-#define TopMask 			0x20   // 00|10|0000
-#define LeftMask			0x10   // 00|01|0000
+#define ALPHA_BIT_DEPTH_MASK 	0x0F   // 00|00|1111
+#define TOP_MASK 			0x20   // 00|10|0000
+#define LEFT_MASK			0x10   // 00|01|0000
 
-#define rlePackMask			0x80   // 1|0000000
-#define rleRepMask			0x7F   // 0|1111111
+#define RLE_PACK_MASK			0x80   // 1|0000000
+#define RLE_REP_MASK			0x7F   // 0|1111111
 
-#define inv31  0.03225806451612903226 // 1 / 31
-#define inv255 0.00392156862745098039 // 1 / 255
+#define INV_31  0.03225806451612903226 // 1 / 31
+#define INV_255 0.00392156862745098039 // 1 / 255
 
-const char *tgaSignature = "TRUEVISION-XFILE.\0";
+const char *tga_signature__ = "TRUEVISION-XFILE.\0";
 
 #pragma pack(push, 1)
 
-struct tgaHeader_t
+struct TgaHeader
 {
-	tgaHeader_t()
+	TgaHeader()
 	{
-		idLength = 0;
-		ColorMapType = 0;
-		imageType = 0;
-		cmFirstEntryIndex = 0;
-		cmNumberOfEntries = 0;
-		cmEntryBitDepth = 0;
-		xOrigin = 0;
-		yOrigin = 0;
-		width = 0;
-		height = 0;
-		bitDepth = 0;
-		desc = 0;
+		id_length_ = 0;
+		color_map_type_ = 0;
+		image_type_ = 0;
+		cm_first_entry_index_ = 0;
+		cm_number_of_entries_ = 0;
+		cm_entry_bit_depth_ = 0;
+		x_origin_ = 0;
+		y_origin_ = 0;
+		width_ = 0;
+		height_ = 0;
+		bit_depth_ = 0;
+		desc_ = 0;
 	}
 	// General image info
 
-	yByte idLength;
-	yByte ColorMapType; // 0 or 1 (off or on)
-	yByte imageType; // one of tgaImageDataTypes
+	YByte_t id_length_;
+	YByte_t color_map_type_; // 0 or 1 (off or on)
+	YByte_t image_type_; // one of tgaImageDataTypes
 
 	// ColorMap desc
 
-	yWord cmFirstEntryIndex; // Used to offset the start of the ColorMap, ie. start at entry 127 out of 256 entries
-	yWord cmNumberOfEntries;
-	yByte cmEntryBitDepth; // 15, 16, 24 or 32
+	YWord_t cm_first_entry_index_; // Used to offset the start of the ColorMap, ie. start at entry 127 out of 256 entries
+	YWord_t cm_number_of_entries_;
+	YByte_t cm_entry_bit_depth_; // 15, 16, 24 or 32
 
 	// Image descriptor
 
-	yWord xOrigin; // used for Truevision TARGA display devices (anybody still has one?)
-	yWord yOrigin; // used for Truevision TARGA display devices
-	yWord width; // 0-65535
-	yWord height; // 0-65535
-	yByte bitDepth; // 8, 15, 16, 24 or 32
-	yByte desc; // order of data from most significant bit:
+	YWord_t x_origin_; // used for Truevision TARGA display devices (anybody still has one?)
+	YWord_t y_origin_; // used for Truevision TARGA display devices
+	YWord_t width_; // 0-65535
+	YWord_t height_; // 0-65535
+	YByte_t bit_depth_; // 8, 15, 16, 24 or 32
+	YByte_t desc_; // order of data from most significant bit:
 	// |--|--|----| <- 8 bits total
 	//  RR BL AlBD
 	// RR = 00 <- Reserved
@@ -118,50 +120,50 @@ struct tgaHeader_t
 	// AlBD is the bitdepth of the alpha channel, if 0 no alpha channel is defined, valid range 0-8
 };
 
-struct tgaFooter_t
+struct TgaFooter
 {
-	tgaFooter_t()
+	TgaFooter()
 	{
-		extOffset = 0;
-		devAreaOffset = 0;
+		ext_offset_ = 0;
+		dev_area_offset_ = 0;
 		for(int i = 0; i < 18; i++)
-			signature[i] = tgaSignature[i];
+			signature_[i] = tga_signature__[i];
 	}
-	int extOffset;
-	int devAreaOffset;
-	char signature[18];
+	int ext_offset_;
+	int dev_area_offset_;
+	char signature_[18];
 };
 
-struct tgaPixelRGB_t
+struct TgaPixelRgb
 {
-	yByte B;
-	yByte G;
-	yByte R;
-	tgaPixelRGB_t &operator = (const color_t &c)
+	YByte_t b_;
+	YByte_t g_;
+	YByte_t r_;
+	TgaPixelRgb &operator = (const Rgb &c)
 	{
-		R = (yByte)(c.getR() * 255.f);
-		G = (yByte)(c.getG() * 255.f);
-		B = (yByte)(c.getB() * 255.f);
+		r_ = (YByte_t)(c.getR() * 255.f);
+		g_ = (YByte_t)(c.getG() * 255.f);
+		b_ = (YByte_t)(c.getB() * 255.f);
 		return *this;
 	}
 };
 
-struct tgaPixelRGBA_t
+struct TgaPixelRgba
 {
-	yByte B;
-	yByte G;
-	yByte R;
-	yByte A;
-	tgaPixelRGBA_t &operator = (const colorA_t &c)
+	YByte_t b_;
+	YByte_t g_;
+	YByte_t r_;
+	YByte_t a_;
+	TgaPixelRgba &operator = (const Rgba &c)
 	{
-		R = (yByte)(c.getR() * 255.f);
-		G = (yByte)(c.getG() * 255.f);
-		B = (yByte)(c.getB() * 255.f);
-		A = (yByte)(c.getA() * 255.f);
+		r_ = (YByte_t)(c.getR() * 255.f);
+		g_ = (YByte_t)(c.getG() * 255.f);
+		b_ = (YByte_t)(c.getB() * 255.f);
+		a_ = (YByte_t)(c.getA() * 255.f);
 		return *this;
 	}
 };
 
 #pragma pack(pop)
 
-__END_YAFRAY
+END_YAFRAY

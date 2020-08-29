@@ -5,109 +5,107 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-class beer_t: public volumeHandler_t
+class BeerVolumeHandler : public VolumeHandler
 {
 	public:
-		beer_t(const color_t &sigma): sigma_a(sigma) {};
-		beer_t(const color_t &acol, double dist);
-		virtual bool transmittance(const renderState_t &state, const ray_t &ray, color_t &col) const;
-		virtual bool scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const;
-		virtual color_t getSubSurfaceColor(const renderState_t &state) const
-		{
-			return sigma_a;
-		}
+		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &env);
+		BeerVolumeHandler(const Rgb &sigma): sigma_a_(sigma) {};
+		BeerVolumeHandler(const Rgb &acol, double dist);
 
-		static volumeHandler_t *factory(const paraMap_t &params, renderEnvironment_t &env);
-	protected:
-		color_t sigma_a;
+	private:
+		virtual bool transmittance(const RenderState &state, const Ray &ray, Rgb &col) const override;
+		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const override;
+		Rgb getSubSurfaceColor(const RenderState &state) const { return sigma_a_; }
+		Rgb sigma_a_;
 };
 
 
-beer_t::beer_t(const color_t &acol, double dist)
+BeerVolumeHandler::BeerVolumeHandler(const Rgb &acol, double dist)
 {
 	const float maxlog = log(1e38);
-	sigma_a.R = (acol.R > 1e-38) ? -log(acol.R) : maxlog;
-	sigma_a.G = (acol.G > 1e-38) ? -log(acol.G) : maxlog;
-	sigma_a.B = (acol.B > 1e-38) ? -log(acol.B) : maxlog;
-	if(dist != 0.f) sigma_a *= 1.f / dist;
+	sigma_a_.r_ = (acol.r_ > 1e-38) ? -log(acol.r_) : maxlog;
+	sigma_a_.g_ = (acol.g_ > 1e-38) ? -log(acol.g_) : maxlog;
+	sigma_a_.b_ = (acol.b_ > 1e-38) ? -log(acol.b_) : maxlog;
+	if(dist != 0.f) sigma_a_ *= 1.f / dist;
 }
 
-bool beer_t::transmittance(const renderState_t &state, const ray_t &ray, color_t &col) const
+bool BeerVolumeHandler::transmittance(const RenderState &state, const Ray &ray, Rgb &col) const
 {
-	if(ray.tmax < 0.f || ray.tmax > 1e30f) //infinity check...
+	if(ray.tmax_ < 0.f || ray.tmax_ > 1e30f) //infinity check...
 	{
-		col = color_t(0.f, 0.f, 0.f);
+		col = Rgb(0.f, 0.f, 0.f);
 		return true;
 	}
-	float dist = ray.tmax; // maybe substract ray.tmin...
-	color_t be(-dist * sigma_a);
-	col = color_t(fExp(be.getR()), fExp(be.getG()), fExp(be.getB()));
+	float dist = ray.tmax_; // maybe substract ray.tmin...
+	Rgb be(-dist * sigma_a_);
+	col = Rgb(fExp__(be.getR()), fExp__(be.getG()), fExp__(be.getB()));
 	return true;
 }
 
-bool beer_t::scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const
+bool BeerVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const
 {
 	return false;
 }
 
-volumeHandler_t *beer_t::factory(const paraMap_t &params, renderEnvironment_t &env)
+VolumeHandler *BeerVolumeHandler::factory(const ParamMap &params, RenderEnvironment &env)
 {
-	color_t a_col(0.5f);
+	Rgb a_col(0.5f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
-	return new beer_t(a_col, dist);
+	return new BeerVolumeHandler(a_col, dist);
 }
 
 //============================
 
-class sss_t: public beer_t
+class SssVolumeHandler final : public BeerVolumeHandler
 {
 	public:
-		sss_t(const color_t &a_col, const color_t &s_col, double dist);
-		//virtual bool transmittance(const renderState_t &state, const ray_t &ray, color_t &col) const { return false; };
-		virtual bool scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const;
+		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &env);
 
-		static volumeHandler_t *factory(const paraMap_t &params, renderEnvironment_t &env);
-	protected:
-		float dist_s;
-		color_t scatter_col;
+	private:
+		SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist);
+		//virtual bool transmittance(const renderState_t &state, const ray_t &ray, Rgb &col) const { return false; };
+		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const override;
+
+		float dist_s_;
+		Rgb scatter_col_;
 };
 
-sss_t::sss_t(const color_t &a_col, const color_t &s_col, double dist):
-	beer_t(a_col, dist), dist_s(dist), scatter_col(s_col)
+SssVolumeHandler::SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist):
+		BeerVolumeHandler(a_col, dist), dist_s_(dist), scatter_col_(s_col)
 {}
 
-bool sss_t::scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const
+bool SssVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const
 {
-	float dist = -dist_s * log(s.s1);
-	if(dist >= ray.tmax) return false;
-	sRay.from = ray.from + dist * ray.dir;
-	sRay.dir = SampleSphere(s.s2, s.s3);
-	s.color = scatter_col;
+	float dist = -dist_s_ * log(s.s_1_);
+	if(dist >= ray.tmax_) return false;
+	s_ray.from_ = ray.from_ + dist * ray.dir_;
+	s_ray.dir_ = sampleSphere__(s.s_2_, s.s_3_);
+	s.color_ = scatter_col_;
 	return true;
 }
 
-volumeHandler_t *sss_t::factory(const paraMap_t &params, renderEnvironment_t &env)
+VolumeHandler *SssVolumeHandler::factory(const ParamMap &params, RenderEnvironment &env)
 {
-	color_t a_col(0.5f), s_col(0.8f);
+	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;
 	params.getParam("absorption_col", a_col);
 	params.getParam("absorption_dist", dist);
 	params.getParam("scatter_col", s_col);
-	return new sss_t(a_col, s_col, dist);
+	return new SssVolumeHandler(a_col, s_col, dist);
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("beer", beer_t::factory);
-		render.registerFactory("sss", sss_t::factory);
+		render.registerFactory("beer", BeerVolumeHandler::factory);
+		render.registerFactory("sss", SssVolumeHandler::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

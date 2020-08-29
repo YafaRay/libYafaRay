@@ -6,96 +6,96 @@
 #include <unistd.h>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-timer_t gTimer;
+Timer g_timer__;
 
-bool timer_t::addEvent(const std::string &name)
+bool Timer::addEvent(const std::string &name)
 {
 	if(includes(name)) return false;
-	else events[name] = tdata_t();
+	else events_[name] = Tdata();
 	return true;
 }
 
-bool timer_t::start(const std::string &name)
+bool Timer::start(const std::string &name)
 {
-	auto i = events.find(name);
-	if(i == events.end()) return false;
+	auto i = events_.find(name);
+	if(i == events_.end()) return false;
 #ifdef WIN32
-	i->second.start = clock();
+	i->second.start_ = clock();
 #else
-	struct timezone tz;
-	gettimeofday(&i->second.tvs, &tz);
+	struct ::timezone tz;
+	gettimeofday(&i->second.tvs_, &tz);
 #endif
-	i->second.started = true;
+	i->second.started_ = true;
 	return true;
 }
 
-bool timer_t::stop(const std::string &name)
+bool Timer::stop(const std::string &name)
 {
-	auto i = events.find(name);
-	if(i == events.end()) return false;
-	if(!(i->second.started))return false;
+	auto i = events_.find(name);
+	if(i == events_.end()) return false;
+	if(!(i->second.started_))return false;
 #ifdef WIN32
-	i->second.finish = clock();
+	i->second.finish_ = clock();
 #else
-	struct timezone tz;
-	gettimeofday(&i->second.tvf, &tz);
+	struct ::timezone tz;
+	gettimeofday(&i->second.tvf_, &tz);
 #endif
-	i->second.stopped = true;
+	i->second.stopped_ = true;
 	return true;
 }
 
-bool timer_t::reset(const std::string &name)
+bool Timer::reset(const std::string &name)
 {
-	auto i = events.find(name);
-	if(i == events.end()) return false;
-	i->second.started = false;
-	i->second.stopped = false;
+	auto i = events_.find(name);
+	if(i == events_.end()) return false;
+	i->second.started_ = false;
+	i->second.stopped_ = false;
 	return true;
 }
 
-double timer_t::getTime(const std::string &name)
+double Timer::getTime(const std::string &name)
 {
-	auto i = events.find(name);
-	if(i == events.end()) return -1;
+	auto i = events_.find(name);
+	if(i == events_.end()) return -1;
 #ifdef WIN32
-	else return ((double)(i->second.finish - i->second.start)) / CLOCKS_PER_SEC;
+	else return ((double)(i->second.finish_ - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
-		const tdata_t &td = i->second;
-		return (td.tvf.tv_sec - td.tvs.tv_sec) + double(td.tvf.tv_usec - td.tvs.tv_usec) / 1.0e6;
+		const Tdata &td = i->second;
+		return (td.tvf_.tv_sec - td.tvs_.tv_sec) + double(td.tvf_.tv_usec - td.tvs_.tv_usec) / 1.0e6;
 	}
 #endif
 }
 
-double timer_t::getTimeNotStopping(const std::string &name)
+double Timer::getTimeNotStopping(const std::string &name)
 {
-	auto i = events.find(name);
-	if(i == events.end()) return -1;
+	auto i = events_.find(name);
+	if(i == events_.end()) return -1;
 #ifdef WIN32
-	else return ((double)(clock() - i->second.start)) / CLOCKS_PER_SEC;
+	else return ((double)(clock() - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
 		timeval now;
-		struct timezone tz;
+		struct ::timezone tz;
 		gettimeofday(&now, &tz);
-		const tdata_t &td = i->second;
-		return (now.tv_sec - td.tvs.tv_sec) + double(now.tv_usec - td.tvs.tv_usec) / 1.0e6;
+		const Tdata &td = i->second;
+		return (now.tv_sec - td.tvs_.tv_sec) + double(now.tv_usec - td.tvs_.tv_usec) / 1.0e6;
 	}
 #endif
 }
 
 
-bool timer_t::includes(const std::string &label) const
+bool Timer::includes(const std::string &label) const
 {
-	auto i = events.find(label);
-	return (i == events.end()) ? false : true;
+	auto i = events_.find(label);
+	return (i == events_.end()) ? false : true;
 }
 
-void timer_t::splitTime(double t, double *secs, int *mins, int *hours, int *days)
+void Timer::splitTime(double t, double *secs, int *mins, int *hours, int *days)
 {
 	int times = (int)t;
 	int s = times;
@@ -120,4 +120,4 @@ void timer_t::splitTime(double t, double *secs, int *mins, int *hours, int *days
 	*secs = t - double(s - times);
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -19,19 +19,19 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_SYSINFO_H
-#define Y_SYSINFO_H
+#ifndef YAFARAY_SYSINFO_H
+#define YAFARAY_SYSINFO_H
 
 #include <yafray_constants.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT sysInfo_t
+class YAFRAYCORE_EXPORT SysInfo
 {
 	public:
 		int getNumSystemThreads() const;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

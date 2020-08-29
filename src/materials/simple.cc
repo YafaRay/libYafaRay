@@ -32,67 +32,67 @@ other properties than emiting light in conformance to uniform
 surface light sources (area, sphere, mesh lights...)
 =============================================================*/
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class lightMat_t: public material_t
+class LightMaterial: public Material
 {
 	public:
-		lightMat_t(color_t lightC, bool ds = false);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, unsigned int &bsdfTypes) const { bsdfTypes = bsdfFlags; }
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval = false) const {return color_t(0.0);}
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
-		virtual color_t emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
-		static material_t *factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env);
+		LightMaterial(Rgb light_c, bool ds = false);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, unsigned int &bsdf_types) const { bsdf_types = bsdf_flags_; }
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t bsdfs, bool force_eval = false) const {return Rgb(0.0);}
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const;
+		static Material *factory(ParamMap &params, std::list< ParamMap > &eparans, RenderEnvironment &env);
 	protected:
-		color_t lightCol;
-		bool doubleSided;
+		Rgb light_col_;
+		bool double_sided_;
 };
 
-lightMat_t::lightMat_t(color_t lightC, bool ds): lightCol(lightC), doubleSided(ds)
+LightMaterial::LightMaterial(Rgb light_c, bool ds): light_col_(light_c), double_sided_(ds)
 {
-	bsdfFlags = BSDF_EMIT;
+	bsdf_flags_ = BsdfEmit;
 }
 
-color_t lightMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+Rgb LightMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	s.pdf = 0.f;
-	W = 0.f;
-	return color_t(0.f);
+	s.pdf_ = 0.f;
+	w = 0.f;
+	return Rgb(0.f);
 }
 
-color_t lightMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb LightMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!state.includeLights) return color_t(0.f);
-	if(doubleSided) return lightCol;
+	if(!state.include_lights_) return Rgb(0.f);
+	if(double_sided_) return light_col_;
 
-	float angle = wo * sp.N;
-	return (angle > 0) ? lightCol : color_t(0.f);
+	float angle = wo * sp.n_;
+	return (angle > 0) ? light_col_ : Rgb(0.f);
 }
 
-float lightMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
+float LightMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
 {
 	return 0.f;
 }
-material_t *lightMat_t::factory(paraMap_t &params, std::list< paraMap_t > &eparans, renderEnvironment_t &env)
+Material *LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, RenderEnvironment &env)
 {
-	color_t col(1.0);
+	Rgb col(1.0);
 	double power = 1.0;
 	bool ds = false;
 
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("double_sided", ds);
-	return new lightMat_t(col * (float)power, ds);
+	return new LightMaterial(col * (float)power, ds);
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("light_mat", lightMat_t::factory);
-		render.registerFactory("mask_mat", maskMat_t::factory);
+		render.registerFactory("light_mat", LightMaterial::factory);
+		render.registerFactory("mask_mat", MaskMaterial::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

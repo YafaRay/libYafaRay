@@ -11,61 +11,61 @@
 #include <algorithm>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-#define printBar(progEmpty, progFull, per) \
+#define PRINT_BAR(progEmpty, progFull, per) \
 std::cout << "\r"; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Green); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Green); \
 std::cout << "Progress: "; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Red, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Red, true); \
 std::cout << "["; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Green, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Green, true); \
 std::cout << std::string(progFull, '#') << std::string(progEmpty, ' '); \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Red, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Red, true); \
 std::cout << "] "; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(); \
 std::cout << "("; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(Yellow, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Yellow, true); \
 std::cout << per << "%"; \
-if(yafLog.getConsoleLogColorsEnabled()) std::cout << setColor(); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(); \
 std::cout << ")" << std::flush
 
-ConsoleProgressBar_t::ConsoleProgressBar_t(int cwidth): width(cwidth), nSteps(0), doneSteps(0)
+ConsoleProgressBar::ConsoleProgressBar(int cwidth): width_(cwidth), n_steps_(0), done_steps_(0)
 {
-	totalBarLen = width - 22;
+	total_bar_len_ = width_ - 22;
 }
 
-void ConsoleProgressBar_t::init(int totalSteps)
+void ConsoleProgressBar::init(int total_steps)
 {
-	nSteps = totalSteps;
-	doneSteps = 0;
-	lastBarLen = 0;
-	printBar(totalBarLen, 0, 0);
+	n_steps_ = total_steps;
+	done_steps_ = 0;
+	last_bar_len_ = 0;
+	PRINT_BAR(total_bar_len_, 0, 0);
 }
 
-void ConsoleProgressBar_t::update(int steps)
+void ConsoleProgressBar::update(int steps)
 {
-	doneSteps += steps;
-	float progress = (float) std::min(doneSteps, nSteps) / (float) nSteps;
-	int barLen = std::min(totalBarLen, (int)(totalBarLen * progress));
-	if(!(barLen >= 0)) barLen = 0;
-	if(barLen > lastBarLen)
+	done_steps_ += steps;
+	float progress = (float) std::min(done_steps_, n_steps_) / (float) n_steps_;
+	int bar_len = std::min(total_bar_len_, (int)(total_bar_len_ * progress));
+	if(!(bar_len >= 0)) bar_len = 0;
+	if(bar_len > last_bar_len_)
 	{
-		printBar(totalBarLen - barLen, barLen, (int)(100 * progress));
+		PRINT_BAR(total_bar_len_ - bar_len, bar_len, (int)(100 * progress));
 	}
-	lastBarLen = barLen;
+	last_bar_len_ = bar_len;
 }
 
-void ConsoleProgressBar_t::done()
+void ConsoleProgressBar::done()
 {
-	printBar(0, totalBarLen, 100) << yendl;
+	PRINT_BAR(0, total_bar_len_, 100) << YENDL;
 }
 
-float ConsoleProgressBar_t::getPercent() const
+float ConsoleProgressBar::getPercent() const
 {
 	float progress = 0.f;
-	if(nSteps != 0) progress = 100.f * RoundFloatPrecision((float) std::min(doneSteps, nSteps) / (float) nSteps, 0.01);
+	if(n_steps_ != 0) progress = 100.f * roundFloatPrecision__((float) std::min(done_steps_, n_steps_) / (float) n_steps_, 0.01);
 	return progress;
 }
 
-__END_YAFRAY
+END_YAFRAY

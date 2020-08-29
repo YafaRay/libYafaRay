@@ -19,24 +19,24 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_INTEGR_UTILS_H
-#define Y_INTEGR_UTILS_H
+#ifndef YAFARAY_INTEGR_UTILS_H
+#define YAFARAY_INTEGR_UTILS_H
 
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 #include <yafraycore/monitor.h>
 #include <string>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class photonMap_t;
+class PhotonMap;
 
 //from common.cc
-color_t estimateDirect_PH(renderState_t &state, const surfacePoint_t &sp, const std::vector<light_t *> &lights, scene_t *scene, const vector3d_t &wo, bool trShad, int sDepth);
-color_t estimatePhotons(renderState_t &state, const surfacePoint_t &sp, const photonMap_t &map, const vector3d_t &wo, int nSearch, float radius);
+Rgb estimateDirectPh__(RenderState &state, const SurfacePoint &sp, const std::vector<Light *> &lights, Scene *scene, const Vec3 &wo, bool tr_shad, int s_depth);
+Rgb estimatePhotons__(RenderState &state, const SurfacePoint &sp, const PhotonMap &map, const Vec3 &wo, int n_search, float radius);
 
-bool createCausticMap(const scene_t &scene, const std::vector<light_t *> &all_lights, photonMap_t &cMap, int depth, int count, progressBar_t *pb = nullptr, std::string intName = "None");
+bool createCausticMap__(const Scene &scene, const std::vector<Light *> &all_lights, PhotonMap &c_map, int depth, int count, ProgressBar *pb = nullptr, std::string int_name = "None");
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_INTEGR_UTILS_H
+#endif // YAFARAY_INTEGR_UTILS_H

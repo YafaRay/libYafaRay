@@ -21,22 +21,22 @@
 
 #include "events.h"
 
-GuiUpdateEvent::GuiUpdateEvent(const QRect &rect, bool fullUpdate)
-	: QEvent((QEvent::Type)GuiUpdate), m_rect(rect), m_full(fullUpdate)
+GuiUpdateEvent::GuiUpdateEvent(const QRect &rect, bool full_update)
+	: QEvent((QEvent::Type)GuiUpdate), m_rect_(rect), m_full_(full_update)
 {
 }
 
 GuiAreaHighliteEvent::GuiAreaHighliteEvent(const QRect &rect)
-	: QEvent((QEvent::Type)GuiAreaHighlite), m_rect(rect)
+	: QEvent((QEvent::Type)GuiAreaHighlite), m_rect_(rect)
 {
 }
 
 ProgressUpdateEvent::ProgressUpdateEvent(int progress, int min, int max)
-	: QEvent((QEvent::Type)ProgressUpdate), m_progress(progress), m_min(min), m_max(max)
+	: QEvent((QEvent::Type)ProgressUpdate), m_progress_(progress), m_min_(min), m_max_(max)
 {
 }
 
 ProgressUpdateTagEvent::ProgressUpdateTagEvent(const char *tag)
-	: QEvent((QEvent::Type)ProgressUpdateTag), m_tag(tag)
+	: QEvent((QEvent::Type)ProgressUpdateTag), m_tag_(tag)
 {
 }

@@ -19,51 +19,52 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_BACKGROUNDLIGHT_H
-#define Y_BACKGROUNDLIGHT_H
+#ifndef YAFARAY_BGLIGHT_H
+#define YAFARAY_BGLIGHT_H
 
 #include <core_api/light.h>
 #include <core_api/environment.h>
 #include <core_api/vector3d.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class background_t;
-class pdf1D_t;
+class Background;
+class Pdf1D;
 
-class bgLight_t : public light_t
+class BackgroundLight final : public Light
 {
 	public:
-		bgLight_t(int sampl, bool invertIntersect = false, bool bLightEnabled = true, bool bCastShadows = true);
-		virtual ~bgLight_t();
-		virtual void init(scene_t &scene);
-		virtual color_t totalEnergy() const;
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
-		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const { return false; }
-		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
-		virtual int nSamples() const { return samples; }
-		virtual bool canIntersect() const { return true; }
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
 
-	protected:
-		void sample_dir(float s1, float s2, vector3d_t &dir, float &pdf, bool inv = false) const;
-		float dir_pdf(const vector3d_t dir) const;
-		float CalcFromSample(float s1, float s2, float &u, float &v, bool inv = false) const;
-		float CalcFromDir(const vector3d_t &dir, float &u, float &v, bool inv = false) const;
-		pdf1D_t **uDist, *vDist;
-		int samples;
-		point3d_t worldCenter;
-		float worldRadius;
-		float aPdf, iaPdf;
-		float worldPIFactor;
-		bool absInter;
+	private:
+		BackgroundLight(int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
+		virtual ~BackgroundLight() override;
+		virtual void init(Scene &scene) override;
+		virtual Rgb totalEnergy() const override;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		virtual bool diracLight() const override { return false; }
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
+		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		virtual int nSamples() const override { return samples_; }
+		virtual bool canIntersect() const override { return true; }
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		void sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, bool inv = false) const;
+		float dirPdf(const Vec3 dir) const;
+		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
+		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
+
+		Pdf1D **u_dist_ = nullptr, *v_dist_ = nullptr;
+		int samples_;
+		Point3 world_center_;
+		float world_radius_;
+		float a_pdf_, ia_pdf_;
+		float world_pi_factor_;
+		bool abs_inter_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_BACKGROUNDLIGHT_H
+#endif // YAFARAY_BGLIGHT_H

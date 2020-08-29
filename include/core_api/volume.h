@@ -1,84 +1,84 @@
 #pragma once
 
-#ifndef Y_VOLUMETRIC_H
-#define Y_VOLUMETRIC_H
+#ifndef YAFARAY_VOLUME_H
+#define YAFARAY_VOLUME_H
 
 #include <yafray_constants.h>
 #include "bound.h"
 #include "color.h"
 #include <map>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
-class light_t;
-class ray_t;
+struct RenderState;
+struct PSample;
+class Light;
+class Ray;
 
-class volumeHandler_t
+class VolumeHandler
 {
 	public:
-		virtual bool transmittance(const renderState_t &state, const ray_t &ray, color_t &col) const = 0;
-		virtual bool scatter(const renderState_t &state, const ray_t &ray, ray_t &sRay, pSample_t &s) const = 0;
-		virtual ~volumeHandler_t() {}
+		virtual bool transmittance(const RenderState &state, const Ray &ray, Rgb &col) const = 0;
+		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
+		virtual ~VolumeHandler() {}
 };
 
 class YAFRAYCORE_EXPORT VolumeRegion
 {
 	public:
 		VolumeRegion() {}
-		VolumeRegion(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale)
+		VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale)
 		{
-			bBox = bound_t(pmin, pmax);
-			s_a = sa;
-			s_s = ss;
-			l_e = le;
-			g = gg;
-			haveS_a = (s_a.energy() > 1e-4f);
-			haveS_s = (s_s.energy() > 1e-4f);
-			haveL_e = (l_e.energy() > 1e-4f);
-			attGridX = 8 * attgridScale;
-			attGridY = 8 * attgridScale;
-			attGridZ = 8 * attgridScale;
+			b_box_ = Bound(pmin, pmax);
+			s_a_ = sa;
+			s_s_ = ss;
+			l_e_ = le;
+			g_ = gg;
+			have_s_a_ = (s_a_.energy() > 1e-4f);
+			have_s_s_ = (s_s_.energy() > 1e-4f);
+			have_l_e_ = (l_e_.energy() > 1e-4f);
+			att_grid_x_ = 8 * attgrid_scale;
+			att_grid_y_ = 8 * attgrid_scale;
+			att_grid_z_ = 8 * attgrid_scale;
 		}
 
 		virtual ~VolumeRegion() {}
 
-		virtual color_t sigma_a(const point3d_t &p, const vector3d_t &v) = 0;
-		virtual color_t sigma_s(const point3d_t &p, const vector3d_t &v) = 0;
-		virtual color_t emission(const point3d_t &p, const vector3d_t &v) = 0;
-		virtual color_t sigma_t(const point3d_t &p, const vector3d_t &v)
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) = 0;
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) = 0;
+		virtual Rgb emission(const Point3 &p, const Vec3 &v) = 0;
+		virtual Rgb sigmaT(const Point3 &p, const Vec3 &v)
 		{
-			return sigma_a(p, v) + sigma_s(p, v);
+			return sigmaA(p, v) + sigmaS(p, v);
 		}
 
-		float attenuation(const point3d_t p, light_t *l);
+		float attenuation(const Point3 p, Light *l);
 
 		// w_l: dir *from* the light, w_s: direction, into which should be scattered
-		virtual float p(const vector3d_t &w_l, const vector3d_t &w_s)
+		virtual float p(const Vec3 &w_l, const Vec3 &w_s)
 		{
-			float k = 1.55f * g - .55f * g * g * g;
+			float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 			float kcostheta = k * (w_l * w_s);
 			return 1.f / (4.f * M_PI) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta));
 		}
 
-		virtual color_t tau(const ray_t &ray, float step, float offset) = 0;
+		virtual Rgb tau(const Ray &ray, float step, float offset) = 0;
 
-		bool intersect(const ray_t &ray, float &t0, float &t1)
+		bool intersect(const Ray &ray, float &t_0, float &t_1)
 		{
-			return bBox.cross(ray, t0, t1, 10000.f);
+			return b_box_.cross(ray, t_0, t_1, 10000.f);
 		}
 
-		bound_t getBB() { return bBox; }
+		Bound getBb() { return b_box_; }
 
-		std::map<light_t *, float *> attenuationGridMap;
-		int attGridX, attGridY, attGridZ; // FIXME: un-hardcode
+		std::map<Light *, float *> attenuation_grid_map_;
+		int att_grid_x_, att_grid_y_, att_grid_z_; // FIXME: un-hardcode
 
 	protected:
-		bound_t bBox;
-		color_t s_a, s_s, l_e;
-		bool haveS_a, haveS_s, haveL_e;
-		float g;
+		Bound b_box_;
+		Rgb s_a_, s_s_, l_e_;
+		bool have_s_a_, have_s_s_, have_l_e_;
+		float g_;
 		// TODO: add transform for BB
 };
 
@@ -86,53 +86,53 @@ class YAFRAYCORE_EXPORT DensityVolume : public VolumeRegion
 {
 	public:
 		DensityVolume() {}
-		DensityVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale) :
-			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgridScale) {}
+		DensityVolume(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 
 		virtual ~DensityVolume() {}
 
-		virtual float Density(point3d_t p) = 0;
+		virtual float density(Point3 p) = 0;
 
-		virtual color_t tau(const ray_t &ray, float stepSize, float offset);
+		virtual Rgb tau(const Ray &ray, float step_size, float offset);
 
-		color_t sigma_a(const point3d_t &p, const vector3d_t &v)
+		Rgb sigmaA(const Point3 &p, const Vec3 &v)
 		{
-			if(!haveS_a) return color_t(0.f);
-			if(bBox.includes(p))
+			if(!have_s_a_) return Rgb(0.f);
+			if(b_box_.includes(p))
 			{
-				return s_a * Density(p);
+				return s_a_ * density(p);
 			}
 			else
-				return color_t(0.f);
+				return Rgb(0.f);
 
 		}
 
-		color_t sigma_s(const point3d_t &p, const vector3d_t &v)
+		Rgb sigmaS(const Point3 &p, const Vec3 &v)
 		{
-			if(!haveS_s) return color_t(0.f);
-			if(bBox.includes(p))
+			if(!have_s_s_) return Rgb(0.f);
+			if(b_box_.includes(p))
 			{
-				return s_s * Density(p);
+				return s_s_ * density(p);
 			}
 			else
-				return color_t(0.f);
+				return Rgb(0.f);
 		}
 
-		color_t emission(const point3d_t &p, const vector3d_t &v)
+		Rgb emission(const Point3 &p, const Vec3 &v)
 		{
-			if(!haveL_e) return color_t(0.f);
-			if(bBox.includes(p))
+			if(!have_l_e_) return Rgb(0.f);
+			if(b_box_.includes(p))
 			{
-				return l_e * Density(p);
+				return l_e_ * density(p);
 			}
 			else
-				return color_t(0.f);
+				return Rgb(0.f);
 		}
 
 };
 
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_VOLUMETRIC_H
+#endif // YAFARAY_VOLUME_H

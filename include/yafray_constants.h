@@ -1,12 +1,12 @@
 #pragma once
 
-#ifndef Y_CONSTANTS_H
-#define Y_CONSTANTS_H
+#ifndef YAFARAY_YAFRAY_CONSTANTS_H
+#define YAFARAY_YAFRAY_CONSTANTS_H
 
-#define __BEGIN_YAFRAY namespace yafaray {
-#define __END_YAFRAY }
+#define BEGIN_YAFRAY namespace yafaray4 {
+#define END_YAFRAY }
 
-#define PACKAGE "YafaRay"
+#define PACKAGE "libYafaRay"
 
 #if (__GNUC__ > 3)
 #define GCC_HASCLASSVISIBILITY
@@ -39,4 +39,4 @@
 #define YAFRAYPLUGIN_EXPORT YF_IMPORT
 #endif
 
-#endif // Y_CONSTANTS_H
+#endif // YAFARAY_YAFRAY_CONSTANTS_H

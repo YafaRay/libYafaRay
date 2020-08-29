@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_MESHTYPES_H
-#define Y_MESHTYPES_H
+#ifndef YAFARAY_MESHTYPES_H
+#define YAFARAY_MESHTYPES_H
 
 #include <yafray_constants.h>
 #include <core_api/vector3d.h>
@@ -9,55 +9,55 @@
 #include <core_api/object3d.h>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class bsTriangle_t;
+class BsTriangle;
 
 
-struct uv_t
+struct Uv
 {
-	uv_t(float _u, float _v): u(_u), v(_v) {};
-	float u, v;
+	Uv(float u, float v): u_(u), v_(v) {};
+	float u_, v_;
 };
 
-class triangle_t;
-class vTriangle_t;
-class triangleInstance_t;
-class triangleObjectInstance_t;
+class Triangle;
+class VTriangle;
+class TriangleInstance;
+class TriangleObjectInstance;
 
 /*!	meshObject_t holds various polygonal primitives
 */
 
-class YAFRAYCORE_EXPORT meshObject_t: public object3d_t
+class YAFRAYCORE_EXPORT MeshObject: public Object3D
 {
-		friend class vTriangle_t;
-		friend class bsTriangle_t;
-		friend class scene_t;
+		friend class VTriangle;
+		friend class BsTriangle;
+		friend class Scene;
 	public:
-		meshObject_t(int ntris, bool hasUV = false, bool hasOrco = false);
+		MeshObject(int ntris, bool has_uv = false, bool has_orco = false);
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		int numPrimitives() const { return triangles.size() + s_triangles.size(); }
-		int getPrimitives(const primitive_t **prims) const;
+		int numPrimitives() const { return triangles_.size() + s_triangles_.size(); }
+		int getPrimitives(const Primitive **prims) const;
 
-		primitive_t *addTriangle(const vTriangle_t &t);
-		primitive_t *addBsTriangle(const bsTriangle_t &t);
+		Primitive *addTriangle(const VTriangle &t);
+		Primitive *addBsTriangle(const BsTriangle &t);
 
 		//void setContext(std::vector<point3d_t>::iterator p, std::vector<normal_t>::iterator n);
-		void setLight(const light_t *l) { light = l; }
+		void setLight(const Light *l) { light_ = l; }
 		void finish();
 	protected:
-		std::vector<vTriangle_t> triangles;
-		std::vector<bsTriangle_t> s_triangles;
-		std::vector<point3d_t> points;
-		std::vector<normal_t> normals;
-		std::vector<int> uv_offsets;
-		std::vector<uv_t> uv_values;
-		bool has_orco;
-		bool has_uv;
-		bool has_vcol;
-		bool is_smooth;
-		const light_t *light;
+		std::vector<VTriangle> triangles_;
+		std::vector<BsTriangle> s_triangles_;
+		std::vector<Point3> points_;
+		std::vector<Normal> normals_;
+		std::vector<int> uv_offsets_;
+		std::vector<Uv> uv_values_;
+		bool has_orco_;
+		bool has_uv_;
+		bool has_vcol_;
+		bool is_smooth_;
+		const Light *light_;
 };
 
 /*!	This is a special version of meshObject_t!
@@ -65,80 +65,78 @@ class YAFRAYCORE_EXPORT meshObject_t: public object3d_t
 	see declaration if triangle_t for more details!
 */
 
-class YAFRAYCORE_EXPORT triangleObject_t: public object3d_t
+class YAFRAYCORE_EXPORT TriangleObject: public Object3D
 {
-		friend class triangle_t;
-		friend class triangleInstance_t;
-		friend class scene_t;
-		friend class triangleObjectInstance_t;
+		friend class Triangle;
+		friend class TriangleInstance;
+		friend class Scene;
+		friend class TriangleObjectInstance;
 	public:
-		triangleObject_t() : has_orco(false), has_uv(false), is_smooth(false), normals_exported(false) { /* Empty */ }
-		triangleObject_t(int ntris, bool hasUV = false, bool hasOrco = false);
+		TriangleObject() : has_orco_(false), has_uv_(false), is_smooth_(false), normals_exported_(false) { /* Empty */ }
+		TriangleObject(int ntris, bool has_uv = false, bool has_orco = false);
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const { return triangles.size(); }
-		virtual int getPrimitives(const triangle_t **prims);
+		virtual int numPrimitives() const { return triangles_.size(); }
+		virtual int getPrimitives(const Triangle **prims);
 
-		triangle_t *addTriangle(const triangle_t &t);
+		Triangle *addTriangle(const Triangle &t);
 
 		virtual void finish();
 
-		inline virtual vector3d_t getVertexNormal(int index) const
+		inline virtual Vec3 getVertexNormal(int index) const
 		{
-			return vector3d_t(normals[index]);
+			return Vec3(normals_[index]);
 		}
 
-		inline virtual point3d_t getVertex(int index) const
+		inline virtual Point3 getVertex(int index) const
 		{
-			return points[index];
+			return points_[index];
 		}
 
 	private:
-		std::vector<triangle_t> triangles;
-		std::vector<point3d_t> points;
-		std::vector<normal_t> normals;
-		std::vector<int> uv_offsets;
-		std::vector<uv_t> uv_values;
-		using object3d_t::getPrimitives;
+		std::vector<Triangle> triangles_;
+		std::vector<Point3> points_;
+		std::vector<Normal> normals_;
+		std::vector<int> uv_offsets_;
+		std::vector<Uv> uv_values_;
 	protected:
-		bool has_orco;
-		bool has_uv;
-		bool is_smooth;
-		bool normals_exported;
+		bool has_orco_;
+		bool has_uv_;
+		bool is_smooth_;
+		bool normals_exported_;
 };
 
-class YAFRAYCORE_EXPORT triangleObjectInstance_t: public triangleObject_t
+class YAFRAYCORE_EXPORT TriangleObjectInstance: public TriangleObject
 {
-		friend class triangleInstance_t;
-		friend class scene_t;
+		friend class TriangleInstance;
+		friend class Scene;
 	public:
-		triangleObjectInstance_t(triangleObject_t *base, matrix4x4_t obj2World);
+		TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world);
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const { return triangles.size(); }
-		virtual int getPrimitives(const triangle_t **prims);
+		virtual int numPrimitives() const { return triangles_.size(); }
+		virtual int getPrimitives(const Triangle **prims);
 
 		virtual void finish();
 
-		inline virtual vector3d_t getVertexNormal(int index) const
+		inline virtual Vec3 getVertexNormal(int index) const
 		{
-			return vector3d_t(objToWorld * mBase->normals[index]);
+			return Vec3(obj_to_world_ * m_base_->normals_[index]);
 		}
 
-		inline virtual point3d_t getVertex(int index) const
+		inline virtual Point3 getVertex(int index) const
 		{
-			return objToWorld * mBase->points[index];
+			return obj_to_world_ * m_base_->points_[index];
 		}
 
 	private:
-		std::vector<triangleInstance_t> triangles;
-		matrix4x4_t objToWorld;
-		triangleObject_t *mBase;
-		using object3d_t::getPrimitives;
+		std::vector<TriangleInstance> triangles_;
+		Matrix4 obj_to_world_;
+		TriangleObject *m_base_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 
-#endif //Y_MESHTYPES_H
+#endif //YAFARAY_MESHTYPES_H
 

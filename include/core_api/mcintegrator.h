@@ -19,74 +19,74 @@
  *		Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_MCINTEGRATOR_H
-#define Y_MCINTEGRATOR_H
+#ifndef YAFARAY_MCINTEGRATOR_H
+#define YAFARAY_MCINTEGRATOR_H
 
 #include "tiledintegrator.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class background_t;
-class photon_t;
+class Background;
+class Photon;
 
-enum photonMapProcessing_t
+enum PhotonMapProcessing
 {
-	PHOTONS_GENERATE_ONLY,
-	PHOTONS_GENERATE_AND_SAVE,
-	PHOTONS_LOAD,
-	PHOTONS_REUSE
+	PhotonsGenerateOnly,
+	PhotonsGenerateAndSave,
+	PhotonsLoad,
+	PhotonsReuse
 };
 
-class YAFRAYCORE_EXPORT mcIntegrator_t: public tiledIntegrator_t
+class YAFRAYCORE_EXPORT MonteCarloIntegrator: public TiledIntegrator
 {
 	public:
-		mcIntegrator_t() {};
+		MonteCarloIntegrator() {};
 
 	protected:
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
-		virtual color_t estimateAllDirectLight(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const;
+		virtual Rgb estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
 		/*! Like previous but for only one random light source for a given surface point */
-		virtual color_t estimateOneDirectLight(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, int n, colorPasses_t &colorPasses) const;
+		virtual Rgb estimateOneDirectLight(RenderState &state, const SurfacePoint &sp, Vec3 wo, int n, ColorPasses &color_passes) const;
 		/*! Does the actual light estimation on a specific light for the given surface point */
-		virtual color_t doLightEstimation(renderState_t &state, light_t *light, const surfacePoint_t &sp, const vector3d_t &wo, const unsigned int &loffs, colorPasses_t &colorPasses) const;
+		virtual Rgb doLightEstimation(RenderState &state, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorPasses &color_passes) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, color_t &col, float &alpha, colorPasses_t &colorPasses, int additionalDepth) const;
+		virtual void recursiveRaytrace(RenderState &state, DiffRay &ray, Bsdf_t bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, ColorPasses &color_passes, int additional_depth) const;
 		/*! Creates and prepares the caustic photon map */
 		virtual bool createCausticMap();
 		/*! Estimates caustic photons for a given surface point */
-		virtual color_t estimateCausticPhotons(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
+		virtual Rgb estimateCausticPhotons(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		virtual color_t sampleAmbientOcclusion(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual color_t sampleAmbientOcclusionPass(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual color_t sampleAmbientOcclusionPassClay(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const;
-		virtual void causticWorker(photonMap_t *causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, pdf1D_t *lightPowerD, int numLights, const std::string &integratorName, const std::vector<light_t *> &causLights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot);
+		virtual Rgb sampleAmbientOcclusion(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual Rgb sampleAmbientOcclusionPass(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual Rgb sampleAmbientOcclusionPassClay(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::string &integrator_name, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
 
-		int rDepth; //! Ray depth
-		bool trShad; //! Use transparent shadows
-		int sDepth; //! Shadow depth for transparent shadows
+		int r_depth_; //! Ray depth
+		bool tr_shad_; //! Use transparent shadows
+		int s_depth_; //! Shadow depth for transparent shadows
 
-		bool usePhotonCaustics; //! Use photon caustics
-		unsigned int nCausPhotons; //! Number of caustic photons (to be shoot but it should be the target
-		int nCausSearch; //! Amount of caustic photons to be gathered in estimation
-		float causRadius; //! Caustic search radius for estimation
-		int causDepth; //! Caustic photons max path depth
-		pdf1D_t *lightPowerD;
+		bool use_photon_caustics_; //! Use photon caustics
+		unsigned int n_caus_photons_; //! Number of caustic photons (to be shoot but it should be the target
+		int n_caus_search_; //! Amount of caustic photons to be gathered in estimation
+		float caus_radius_; //! Caustic search radius for estimation
+		int caus_depth_; //! Caustic photons max path depth
+		Pdf1D *light_power_d_;
 
-		bool useAmbientOcclusion; //! Use ambient occlusion
-		int aoSamples; //! Ambient occlusion samples
-		float aoDist; //! Ambient occlusion distance
-		color_t aoCol; //! Ambient occlusion color
+		bool use_ambient_occlusion_; //! Use ambient occlusion
+		int ao_samples_; //! Ambient occlusion samples
+		float ao_dist_; //! Ambient occlusion distance
+		Rgb ao_col_; //! Ambient occlusion color
 
-		photonMapProcessing_t photonMapProcessing = PHOTONS_GENERATE_ONLY;
+		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
 
-		background_t *background; //! Background shader
-		int nPaths; //! Number of samples for mc raytracing
-		int maxBounces; //! Max. path depth for mc raytracing
-		std::vector<light_t *> lights; //! An array containing all the scene lights
-		bool transpBackground; //! Render background as transparent
-		bool transpRefractedBackground; //! Render refractions of background as transparent
+		Background *background_; //! Background shader
+		int n_paths_; //! Number of samples for mc raytracing
+		int max_bounces_; //! Max. path depth for mc raytracing
+		std::vector<Light *> lights_; //! An array containing all the scene lights
+		bool transp_background_; //! Render background as transparent
+		bool transp_refracted_background_; //! Render refractions of background as transparent
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

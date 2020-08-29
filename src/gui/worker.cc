@@ -25,12 +25,12 @@
 
 #include <interface/yafrayinterface.h>
 
-Worker::Worker(yafaray::yafrayInterface_t *env, MainWindow *win, QtOutput *output)
-	: QThread(), m_env(env),  m_output(output), m_win(win)
+Worker::Worker(yafaray4::Interface *env, MainWindow *win, QtOutput *output)
+	: QThread(), env_(env), output_(output), win_(win)
 {
 }
 
 void Worker::run()
 {
-	m_env->render(*m_output, new QtProgress(m_win));
+	env_->render(*output_, new QtProgress(win_));
 }

@@ -1,205 +1,190 @@
 #pragma once
 
-#ifndef Y_BASICTEX_H
-#define Y_BASICTEX_H
+#ifndef YAFARAY_BASICTEX_H
+#define YAFARAY_BASICTEX_H
 
 #include <core_api/texture.h>
 #include <core_api/environment.h>
 #include <textures/noise.h>
 #include <utilities/buffer.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class textureClouds_t : public texture_t
+class CloudsTexture final : public Texture
 {
 	public:
-		textureClouds_t(int dep, float sz, bool hd,
-		                const color_t &c1, const color_t &c2,
-		                const std::string &ntype, const std::string &btype);
-		virtual ~textureClouds_t();
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
+	private:
+		CloudsTexture(int dep, float sz, bool hd,
+					  const Rgb &c_1, const Rgb &c_2,
+					  const std::string &ntype, const std::string &btype);
+		virtual ~CloudsTexture() override;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		int depth, bias;
-		float size;
-		bool hard;
-		color_t color1, color2;
-		noiseGenerator_t *nGen;
+		int depth_, bias_;
+		float size_;
+		bool hard_;
+		Rgb color_1_, color_2_;
+		NoiseGenerator *n_gen_ = nullptr;
 };
 
 
-class textureMarble_t : public texture_t
+class MarbleTexture final : public Texture
 {
 	public:
-		textureMarble_t(int oct, float sz, const color_t &c1, const color_t &c2,
-		                float _turb, float shp, bool hrd, const std::string &ntype, const std::string &shape);
-		virtual ~textureMarble_t()
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
+					  float turb, float shp, bool hrd, const std::string &ntype, const std::string &shape);
+		virtual ~MarbleTexture() override
 		{
-			if(nGen)
+			if(n_gen_)
 			{
-				delete nGen;
-				nGen = nullptr;
+				delete n_gen_;
+				n_gen_ = nullptr;
 			}
 		}
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
-
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		int octaves;
-		color_t color1, color2;
-		float turb, sharpness, size;
-		bool hard;
-		noiseGenerator_t *nGen;
-		enum {SIN, SAW, TRI} wshape;
+		int octaves_;
+		Rgb color_1_, color_2_;
+		float turb_, sharpness_, size_;
+		bool hard_;
+		NoiseGenerator *n_gen_ = nullptr;
+		enum {Sin, Saw, Tri} wshape_;
 };
 
-class textureWood_t : public texture_t
+class WoodTexture final : public Texture
 {
 	public:
-		textureWood_t(int oct, float sz, const color_t &c1, const color_t &c2, float _turb,
-		              bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape);
-		virtual ~textureWood_t()
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
+					bool hrd, const std::string &ntype, const std::string &wtype, const std::string &shape);
+		virtual ~WoodTexture() override
 		{
-			if(nGen)
+			if(n_gen_)
 			{
-				delete nGen;
-				nGen = nullptr;
+				delete n_gen_;
+				n_gen_ = nullptr;
 			}
 		}
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
-
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		int octaves;
-		color_t color1, color2;
-		float turb, size;
-		bool hard, rings;
-		noiseGenerator_t *nGen;
-		enum {SIN, SAW, TRI} wshape;
+		int octaves_;
+		Rgb color_1_, color_2_;
+		float turb_, size_;
+		bool hard_, rings_;
+		NoiseGenerator *n_gen_ = nullptr;
+		enum {Sin, Saw, Tri} wshape_;
 };
 
-class textureVoronoi_t : public texture_t
+class VoronoiTexture final : public Texture
 {
 	public:
-		textureVoronoi_t(const color_t &c1, const color_t &c2,
-		                 int ct,
-		                 float _w1, float _w2, float _w3, float _w4,
-		                 float mex, float sz,
-		                 float isc, const std::string &dname);
-		virtual ~textureVoronoi_t() {}
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+	private:
+		VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
+					   int ct,
+					   float w_1, float w_2, float w_3, float w_4,
+					   float mex, float sz,
+					   float isc, const std::string &dname);
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
-
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		color_t color1, color2;
-		float w1, w2, w3, w4;	// feature weights
-		float aw1, aw2, aw3, aw4;	// absolute value of above
-		float size;
-		int coltype;	// color return type
-		float iscale;	// intensity scale
-		voronoi_t vGen;
+		Rgb color_1_, color_2_;
+		float w_1_, w_2_, w_3_, w_4_;	// feature weights
+		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
+		float size_;
+		int coltype_;	// color return type
+		float iscale_;	// intensity scale
+		VoronoiNoiseGenerator v_gen_;
 };
 
-class textureMusgrave_t : public texture_t
+class MusgraveTexture final : public Texture
 {
 	public:
-		textureMusgrave_t(const color_t &c1, const color_t &c2,
-		                  float H, float lacu, float octs, float offs, float gain,
-		                  float _size, float _iscale,
-		                  const std::string &ntype, const std::string &mtype);
-		virtual ~textureMusgrave_t();
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+	private:
+		MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
+						float h, float lacu, float octs, float offs, float gain,
+						float size, float iscale,
+						const std::string &ntype, const std::string &mtype);
+		virtual ~MusgraveTexture() override;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
-
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-
-	protected:
-		color_t color1, color2;
-		float size, iscale;
-		noiseGenerator_t *nGen;
-		musgrave_t *mGen;
+		Rgb color_1_, color_2_;
+		float size_, iscale_;
+		NoiseGenerator *n_gen_ = nullptr;
+		Musgrave *m_gen_ = nullptr;
 };
 
-class textureDistortedNoise_t : public texture_t
+class DistortedNoiseTexture final : public Texture
 {
 	public:
-		textureDistortedNoise_t(const color_t &c1, const color_t &c2,
-		                        float _distort, float _size,
-		                        const std::string &noiseb1, const std::string noiseb2);
-		virtual ~textureDistortedNoise_t();
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+	private:
+		DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
+							  float distort, float size,
+							  const std::string &noiseb_1, const std::string noiseb_2);
+		virtual ~DistortedNoiseTexture() override;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void getInterpolationStep(float &step) const override { step = size_; };
 
-		virtual void getInterpolationStep(float &step) const { step = size; };
-
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-
-	protected:
-		color_t color1, color2;
-		float distort, size;
-		noiseGenerator_t *nGen1, *nGen2;
+		Rgb color_1_, color_2_;
+		float distort_, size_;
+		NoiseGenerator *n_gen_1_ = nullptr, *n_gen_2_ = nullptr;
 };
 
 /*! RGB cube.
 	basically a simple visualization of the RGB color space,
 	just goes r in x, g in y and b in z inside the unit cube. */
 
-class rgbCube_t : public texture_t
+class RgbCubeTexture final : public Texture
 {
 	public:
-		rgbCube_t() {}
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	private:
+		RgbCubeTexture() = default;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 };
 
-enum blendProgressionType_t
-{
-	TEX_BLEND_LINEAR,
-	TEX_BLEND_QUADRATIC,
-	TEX_BLEND_EASING,
-	TEX_BLEND_DIAGONAL,
-	TEX_BLEND_SPHERICAL,
-	TEX_BLEND_QUADRATIC_SPHERE,
-	TEX_BLEND_RADIAL,
-};
-
-class textureBlend_t : public texture_t
+class BlendTexture final : public Texture
 {
 	public:
-		textureBlend_t(const std::string &stype, bool use_flip_axis);
-		virtual ~textureBlend_t();
+		static Texture *factory(ParamMap &params, RenderEnvironment &render);
 
-		virtual colorA_t getColor(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
-		virtual float getFloat(const point3d_t &p, mipMapParams_t *mmParams = nullptr) const;
+	private:
+		enum ProgressionType : int { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
+		BlendTexture(const std::string &stype, bool use_flip_axis);
+		virtual ~BlendTexture() override;
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 
-		static texture_t *factory(paraMap_t &params, renderEnvironment_t &render);
-
-	protected:
-		int blendProgressionType = TEX_BLEND_LINEAR;
-		bool m_use_flip_axis = false;
+		ProgressionType progression_type_ = Linear;
+		bool use_flip_axis_ = false;
 };
-__END_YAFRAY
 
-#endif // Y_BASICTEX_H
+END_YAFRAY
+
+#endif // YAFARAY_BASICTEX_H

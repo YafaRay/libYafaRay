@@ -2,61 +2,61 @@
 #include <yafraycore/photon.h>
 #include <core_api/file.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-YAFRAYCORE_EXPORT dirConverter_t dirconverter;
+YAFRAYCORE_EXPORT DirConverter dirconverter__;
 
-dirConverter_t::dirConverter_t()
+DirConverter::DirConverter()
 {
 	for(int i = 0; i < 255; ++i)
 	{
-		float angle = (float)i * cInv255Ratio;
-		costheta[i] = fCos(angle);
-		sintheta[i] = fSin(angle);
+		float angle = (float)i * C_INV_255_RATIO;
+		costheta_[i] = fCos__(angle);
+		sintheta_[i] = fSin__(angle);
 	}
 	for(int i = 0; i < 256; ++i)
 	{
-		float angle = (float)i * cInv256Ratio;
-		cosphi[i] = fCos(angle);
-		sinphi[i] = fSin(angle);
+		float angle = (float)i * C_INV_256_RATIO;
+		cosphi_[i] = fCos__(angle);
+		sinphi_[i] = fSin__(angle);
 	}
 }
 
-photonGather_t::photonGather_t(uint32_t mp, const point3d_t &P): p(P)
+PhotonGather::PhotonGather(uint32_t mp, const Point3 &p): p_(p)
 {
-	photons = 0;
-	nLookup = mp;
-	foundPhotons = 0;
+	photons_ = 0;
+	n_lookup_ = mp;
+	found_photons_ = 0;
 }
 
-void photonGather_t::operator()(const photon_t *photon, float dist2, float &maxDistSquared) const
+void PhotonGather::operator()(const Photon *photon, float dist_2, float &max_dist_squared) const
 {
 	// Do usual photon heap management
-	if(foundPhotons < nLookup)
+	if(found_photons_ < n_lookup_)
 	{
 		// Add photon to unordered array of photons
-		photons[foundPhotons++] = foundPhoton_t(photon, dist2);
-		if(foundPhotons == nLookup)
+		photons_[found_photons_++] = FoundPhoton(photon, dist_2);
+		if(found_photons_ == n_lookup_)
 		{
-			std::make_heap(&photons[0], &photons[nLookup]);
-			maxDistSquared = photons[0].distSquare;
+			std::make_heap(&photons_[0], &photons_[n_lookup_]);
+			max_dist_squared = photons_[0].dist_square_;
 		}
 	}
 	else
 	{
 		// Remove most distant photon from heap and add new photon
-		std::pop_heap(&photons[0], &photons[nLookup]);
-		photons[nLookup - 1] = foundPhoton_t(photon, dist2);
-		std::push_heap(&photons[0], &photons[nLookup]);
-		maxDistSquared = photons[0].distSquare;
+		std::pop_heap(&photons_[0], &photons_[n_lookup_]);
+		photons_[n_lookup_ - 1] = FoundPhoton(photon, dist_2);
+		std::push_heap(&photons_[0], &photons_[n_lookup_]);
+		max_dist_squared = photons_[0].dist_square_;
 	}
 }
 
-bool photonMap_t::load(const std::string &filename)
+bool PhotonMap::load(const std::string &filename)
 {
 	clear();
 
-	file_t file(filename);
+	File file(filename);
 	if(!file.open("rb"))
 	{
 		Y_WARNING << "PhotonMap file '" << filename << "' not found, aborting load operation";
@@ -71,21 +71,21 @@ bool photonMap_t::load(const std::string &filename)
 		file.close();
 		return false;
 	}
-	file.read(name);
-	file.read<int>(paths);
-	file.read<float>(searchRadius);
-	file.read<int>(threadsPKDtree);
+	file.read(name_);
+	file.read<int>(paths_);
+	file.read<float>(search_radius_);
+	file.read<int>(threads_pkd_tree_);
 	unsigned int photons_size;
 	file.read<unsigned int>(photons_size);
-	photons.resize(photons_size);
-	for(auto &p : photons)
+	photons_.resize(photons_size);
+	for(auto &p : photons_)
 	{
-		file.read<float>(p.pos.x);
-		file.read<float>(p.pos.y);
-		file.read<float>(p.pos.z);
-		file.read<float>(p.c.R);
-		file.read<float>(p.c.G);
-		file.read<float>(p.c.B);
+		file.read<float>(p.pos_.x_);
+		file.read<float>(p.pos_.y_);
+		file.read<float>(p.pos_.z_);
+		file.read<float>(p.c_.r_);
+		file.read<float>(p.c_.g_);
+		file.read<float>(p.c_.b_);
 	}
 	file.close();
 
@@ -93,54 +93,54 @@ bool photonMap_t::load(const std::string &filename)
 	return true;
 }
 
-bool photonMap_t::save(const std::string &filename) const
+bool PhotonMap::save(const std::string &filename) const
 {
-	file_t file(filename);
+	File file(filename);
 	file.open("wb");
 	file.append(std::string("YAF_PHOTONMAPv1"));
-	file.append(name);
-	file.append<int>(paths);
-	file.append<float>(searchRadius);
-	file.append<int>(threadsPKDtree);
-	file.append<unsigned int>((unsigned int) photons.size());
-	for(const auto &p : photons)
+	file.append(name_);
+	file.append<int>(paths_);
+	file.append<float>(search_radius_);
+	file.append<int>(threads_pkd_tree_);
+	file.append<unsigned int>((unsigned int) photons_.size());
+	for(const auto &p : photons_)
 	{
-		file.append<float>(p.pos.x);
-		file.append<float>(p.pos.y);
-		file.append<float>(p.pos.z);
-		file.append<float>(p.c.R);
-		file.append<float>(p.c.G);
-		file.append<float>(p.c.B);
+		file.append<float>(p.pos_.x_);
+		file.append<float>(p.pos_.y_);
+		file.append<float>(p.pos_.z_);
+		file.append<float>(p.c_.r_);
+		file.append<float>(p.c_.g_);
+		file.append<float>(p.c_.b_);
 	}
 	file.close();
 	return true;
 }
 
-void photonMap_t::updateTree()
+void PhotonMap::updateTree()
 {
-	if(tree) delete tree;
-	if(photons.size() > 0)
+	if(tree_) delete tree_;
+	if(photons_.size() > 0)
 	{
-		tree = new kdtree::pointKdTree<photon_t>(photons, name, threadsPKDtree);
-		updated = true;
+		tree_ = new kdtree::PointKdTree<Photon>(photons_, name_, threads_pkd_tree_);
+		updated_ = true;
 	}
-	else tree = 0;
+	else tree_ = 0;
 }
 
-int photonMap_t::gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float &sqRadius) const
+int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const
 {
-	photonGather_t proc(K, P);
-	proc.photons = found;
-	tree->lookup(P, proc, sqRadius);
-	return proc.foundPhotons;
+	PhotonGather proc(k, p);
+	proc.photons_ = found;
+	tree_->lookup(p, proc, sq_radius);
+	return proc.found_photons_;
 }
 
-const photon_t *photonMap_t::findNearest(const point3d_t &P, const vector3d_t &n, float dist) const
+const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist) const
 {
-	nearestPhoton_t proc(P, n);
+	NearestPhoton proc(p, n);
 	//float dist=std::numeric_limits<float>::infinity(); //really bad idea...
-	tree->lookup(P, proc, dist);
-	return proc.nearest;
+	tree_->lookup(p, proc, dist);
+	return proc.nearest_;
 }
 
-__END_YAFRAY
+END_YAFRAY

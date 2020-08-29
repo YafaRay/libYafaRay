@@ -97,42 +97,42 @@ if (WITH_YAF_PY_BINDINGS)
 		set(CMAKE_SWIG_FLAGS -c++)
 	endif(YAF_PY_VERSION GREATER 3)
 
-	set_source_files_properties(yafaray_v3_interface.i PROPERTIES CPLUSPLUS ON)
+	set_source_files_properties(yafaray4_interface.i PROPERTIES CPLUSPLUS ON)
 
 	if(WITH_QT)
-		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
+		set_source_files_properties(yafaray4_qt_interface.i PROPERTIES CPLUSPLUS ON)
 	endif(WITH_QT)
 
-	SWIG_ADD_MODULE(yafaray_v3_interface PYTHON yafaray_v3_interface.i)
+	SWIG_ADD_MODULE(yafaray4_interface PYTHON yafaray4_interface.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray_v3_interface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray4_interface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 		SET(PYTHON_LIBRARIES "") #In MacOS, to avoid segfault 11 errors, do *NOT* link to any real python library, so it uses the undefined dynamic lookup to find the correct symbols.
 	endif(APPLE)
 
 	if(WITH_QT)
-		SWIG_ADD_MODULE(yafqt PYTHON yafqt.i)
+		SWIG_ADD_MODULE(yafaray4_qt_interface PYTHON yafaray4_qt_interface.i)
 		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray4_qt_interface_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 		endif(APPLE)
 	endif(WITH_QT)
 
-	SWIG_LINK_LIBRARIES(yafaray_v3_interface yafaray_v3_core yafaray_v3_plugin ${PYTHON_LIBRARIES})
+	SWIG_LINK_LIBRARIES(yafaray4_interface yafaray4_core yafaray4_plugin ${PYTHON_LIBRARIES})
 
 	if(WITH_QT)
-		SWIG_LINK_LIBRARIES(yafqt yafarayqt ${PYTHON_LIBRARIES})
+		SWIG_LINK_LIBRARIES(yafaray4_qt_interface yafaray4_qt ${PYTHON_LIBRARIES})
 	endif(WITH_QT)
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET ${SWIG_MODULE_yafaray_v3_interface_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafaray_v3_interface.so)
+	add_custom_command(TARGET ${SWIG_MODULE_yafaray4_interface_REAL_NAME} POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ _yafaray4_interface.so)
 endif(APPLE)
 
-	install(TARGETS ${SWIG_MODULE_yafaray_v3_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafaray_v3_interface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(TARGETS ${SWIG_MODULE_yafaray4_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafaray4_interface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
 
 	if(WITH_QT)
-		install(TARGETS ${SWIG_MODULE_yafqt_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
-		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafqt.py DESTINATION ${YAF_BINDINGS_PY_DIR})
+		install(TARGETS ${SWIG_MODULE_yafaray4_qt_interface_REAL_NAME} DESTINATION ${YAF_BINDINGS_PY_DIR})
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/yafaray4_qt_interface.py DESTINATION ${YAF_BINDINGS_PY_DIR})
 	endif(WITH_QT)
 
 endif (WITH_YAF_PY_BINDINGS)
@@ -159,26 +159,26 @@ if (WITH_YAF_RUBY_BINDINGS)
 
 	set(CMAKE_SWIG_FLAGS -c++ -w-801)
 
-	set_source_files_properties(yafaray_v3_interface.i PROPERTIES CPLUSPLUS ON)
-	SWIG_ADD_MODULE(yafaray_v3_interface_ruby RUBY yafaray_v3_interface.i)
+	set_source_files_properties(yafaray4_interface.i PROPERTIES CPLUSPLUS ON)
+	SWIG_ADD_MODULE(yafaray4_interface_ruby RUBY yafaray4_interface.i)
 
 	if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray_v3_interface_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+		SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray4_interface_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 		SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
 	endif(APPLE)
 
-	SWIG_LINK_LIBRARIES(yafaray_v3_interface_ruby yafaray_v3_core yafaray_v3_plugin ${RUBY_LIBRARY})
-	install(TARGETS ${SWIG_MODULE_yafaray_v3_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+	SWIG_LINK_LIBRARIES(yafaray4_interface_ruby yafaray4_core yafaray4_plugin ${RUBY_LIBRARY})
+	install(TARGETS ${SWIG_MODULE_yafaray4_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 	if(WITH_QT)
-		set_source_files_properties(yafqt.i PROPERTIES CPLUSPLUS ON)
-		SWIG_ADD_MODULE(yafqt_ruby RUBY yafqt.i)
+		set_source_files_properties(yafaray4_qt_interface.i PROPERTIES CPLUSPLUS ON)
+		SWIG_ADD_MODULE(yafaray4_qt_interface_ruby RUBY yafaray4_qt_interface.i)
 		if(APPLE) # use dynamic lookup for helping dlopen to find symbols properly - Jens
-			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafqt_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+			SET_TARGET_PROPERTIES(${SWIG_MODULE_yafaray4_qt_interface_ruby_REAL_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 			SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
 		endif(APPLE)
-		SWIG_LINK_LIBRARIES(yafqt_ruby yafarayqt ${RUBY_LIBRARY})
-		install(TARGETS ${SWIG_MODULE_yafqt_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
+		SWIG_LINK_LIBRARIES(yafaray4_qt_interface_ruby yafaray4_qt ${RUBY_LIBRARY})
+		install(TARGETS ${SWIG_MODULE_yafaray4_qt_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 	endif(WITH_QT)
 
 endif (WITH_YAF_RUBY_BINDINGS)

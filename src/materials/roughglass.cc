@@ -26,440 +26,440 @@
 #include <core_api/params.h>
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-roughGlassMat_t::roughGlassMat_t(float IOR, color_t filtC, const color_t &srcol, bool fakeS, float alpha, float disp_pow, visibility_t eVisibility):
-	filterCol(filtC), specRefCol(srcol), ior(IOR), a2(alpha * alpha), a(alpha), fakeShadow(fakeS), dispersion_power(disp_pow)
+RoughGlassMaterial::RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility):
+		filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), a_(alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
-	mVisibility = eVisibility;
-	bsdfFlags = BSDF_ALL_GLOSSY;
-	if(fakeS) bsdfFlags |= BSDF_FILTER;
+	visibility_ = e_visibility;
+	bsdf_flags_ = BsdfAllGlossy;
+	if(fake_s) bsdf_flags_ |= BsdfFilter;
 	if(disp_pow > 0.0)
 	{
-		disperse = true;
-		CauchyCoefficients(IOR, disp_pow, CauchyA, CauchyB);
-		bsdfFlags |= BSDF_DISPERSIVE;
+		disperse_ = true;
+		cauchyCoefficients__(ior, disp_pow, cauchy_a_, cauchy_b_);
+		bsdf_flags_ |= BsdfDispersive;
 	}
 
-	mVisibility = eVisibility;
+	visibility_ = e_visibility;
 }
 
-void roughGlassMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
+void RoughGlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
 {
-	nodeStack_t stack(state.userdata);
-	if(bumpS) evalBump(stack, state, sp, bumpS);
+	NodeStack stack(state.userdata_);
+	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
 
 	//eval viewindependent nodes
-	auto end = allViewindep.end();
-	for(auto iter = allViewindep.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
-	bsdfTypes = bsdfFlags;
+	auto end = all_viewindep_.end();
+	for(auto iter = all_viewindep_.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
+	bsdf_types = bsdf_flags_;
 }
 
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	nodeStack_t stack(state.userdata);
-	vector3d_t refdir, N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	bool outside = sp.Ng * wo > 0.f;
+	NodeStack stack(state.userdata_);
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	bool outside = sp.ng_ * wo > 0.f;
 
-	s.pdf = 1.f;
+	s.pdf_ = 1.f;
 
-	float alpha_texture = roughnessS ? roughnessS->getScalar(stack) + 0.001f : 0.001f;
-	float alpha2 = roughnessS ? alpha_texture * alpha_texture : a2;
-	float cosTheta, tanTheta2;
+	float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(stack) + 0.001f : 0.001f;
+	float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
+	float cos_theta, tan_theta_2;
 
-	vector3d_t H(0.f);
-	GGX_Sample(H, alpha2, s.s1, s.s2);
-	H = H.x * sp.NU + H.y * sp.NV + H.z * N;
-	H.normalize();
+	Vec3 h(0.f);
+	ggxSample__(h, alpha_2, s.s_1_, s.s_2_);
+	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
+	h.normalize();
 
-	float cur_ior = ior;
+	float cur_ior = ior_;
 
-	if(iorS)
+	if(ior_shader_)
 	{
-		cur_ior += iorS->getScalar(stack);
+		cur_ior += ior_shader_->getScalar(stack);
 	}
 
-	if(disperse && state.chromatic)
+	if(disperse_ && state.chromatic_)
 	{
-		float cur_cauchyA = CauchyA;
-		float cur_cauchyB = CauchyB;
+		float cur_cauchy_a = cauchy_a_;
+		float cur_cauchy_b = cauchy_b_;
 
-		if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
-		cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
+		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor__(state.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	float glossy;
-	float glossy_D = 0.f;
-	float glossy_G = 0.f;
-	float wiN, woN, wiH, woH;
-	float Jacobian = 0.f;
+	float glossy_d = 0.f;
+	float glossy_g = 0.f;
+	float wi_n, wo_n, wi_h, wo_h;
+	float jacobian = 0.f;
 
-	cosTheta = H * N;
-	float cosTheta2 = cosTheta * cosTheta;
-	tanTheta2 = (1.f - cosTheta2) / std::max(1.0e-8f, cosTheta2);
+	cos_theta = h * n;
+	float cos_theta_2 = cos_theta * cos_theta;
+	tan_theta_2 = (1.f - cos_theta_2) / std::max(1.0e-8f, cos_theta_2);
 
-	if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+	if(cos_theta > 0.f) glossy_d = ggxD__(alpha_2, cos_theta_2, tan_theta_2);
 
-	woH = wo * H;
-	woN = wo * N;
+	wo_h = wo * h;
+	wo_n = wo * n;
 
-	float Kr, Kt;
+	float kr, kt;
 
-	color_t ret(0.f);
+	Rgb ret(0.f);
 
-	if(refractMicrofacet(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, H, woH, woN, Kr, Kt))
+	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, wo_n, kr, kt))
 	{
-		if(s.s1 < Kt && (s.flags & BSDF_TRANSMIT))
+		if(s.s_1_ < kt && (s.flags_ & BsdfTransmit))
 		{
-			wiN = wi * N;
-			wiH = wi * H;
+			wi_n = wi * n;
+			wi_h = wi * h;
 
-			if((wiH * wiN) > 0.f && (woH * woN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			float IORwi = 1.f;
-			float IORwo = 1.f;
+			float ior_wi = 1.f;
+			float ior_wo = 1.f;
 
-			if(outside)	IORwi = cur_ior;
-			else IORwo = cur_ior;
+			if(outside) ior_wi = cur_ior;
+			else ior_wo = cur_ior;
 
-			float ht = IORwo * woH + IORwi * wiH;
-			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
+			float ht = ior_wo * wo_h + ior_wi * wi_h;
+			jacobian = (ior_wi * ior_wi) / std::max(1.0e-8f, ht * ht);
 
-			glossy = std::fabs((woH * wiH) / (wiN * woN)) * Kt * glossy_G * glossy_D * Jacobian;
+			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
-			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
+			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfDispersive : BsdfGlossy) | BsdfTransmit;
 
-			ret = (glossy * (filterColS ? filterColS->getColor(stack) : filterCol));
-			W = std::fabs(wiN) / std::max(0.1f, s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
+			w = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
-		else if(s.flags & BSDF_REFLECT)
+		else if(s.flags_ & BsdfReflect)
 		{
-			reflectMicrofacet(wo, wi, H, woH);
+			reflectMicrofacet__(wo, wi, h, wo_h);
 
-			wiN = wi * N;
-			wiH = wi * H;
+			wi_n = wi * n;
+			wi_h = wi * h;
 
-			glossy_G = GGX_G(alpha2, wiN, woN);
+			glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			Jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wiH)));
-			glossy = (Kr * glossy_G * glossy_D) / std::max(1.0e-8f, (4.f * std::fabs(woN * wiN)));
+			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wi_h)));
+			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
 
-			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
-			s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
+			s.sampled_flags_ = BsdfGlossy | BsdfReflect;
 
-			ret = (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
+			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
-			W = std::fabs(wiN) / std::max(0.1f, s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 	}
 	else // TIR
 	{
 		wi = wo;
-		wi.reflect(H);
-		s.sampledFlags = BSDF_GLOSSY | BSDF_REFLECT;
+		wi.reflect(h);
+		s.sampled_flags_ = BsdfGlossy | BsdfReflect;
 		ret = 1.f;
-		W = 1.f;
+		w = 1.f;
 	}
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(ret, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(ret, wire_frame_amount, sp);
 
 	return ret;
 }
 
-color_t roughGlassMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const
+Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
-	nodeStack_t stack(state.userdata);
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	bool outside = sp.Ng * wo > 0.f;
+	NodeStack stack(state.userdata_);
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	bool outside = sp.ng_ * wo > 0.f;
 
-	s.pdf = 1.f;
+	s.pdf_ = 1.f;
 
-	float alpha_texture = roughnessS ? roughnessS->getScalar(stack) + 0.001f : 0.001f;
-	float alpha2 = roughnessS ? alpha_texture * alpha_texture : a2;
-	float cosTheta, tanTheta2;
+	float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(stack) + 0.001f : 0.001f;
+	float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
+	float cos_theta, tan_theta_2;
 
-	vector3d_t H(0.f);
-	vector3d_t wi;
-	GGX_Sample(H, alpha2, s.s1, s.s2);
-	H = H.x * sp.NU + H.y * sp.NV + H.z * N;
-	H.normalize();
+	Vec3 h(0.f);
+	Vec3 wi;
+	ggxSample__(h, alpha_2, s.s_1_, s.s_2_);
+	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
+	h.normalize();
 
-	float cur_ior = ior;
+	float cur_ior = ior_;
 
-	if(iorS)
+	if(ior_shader_)
 	{
-		cur_ior += iorS->getScalar(stack);
+		cur_ior += ior_shader_->getScalar(stack);
 	}
 
-	if(disperse && state.chromatic)
+	if(disperse_ && state.chromatic_)
 	{
-		float cur_cauchyA = CauchyA;
-		float cur_cauchyB = CauchyB;
+		float cur_cauchy_a = cauchy_a_;
+		float cur_cauchy_b = cauchy_b_;
 
-		if(iorS) CauchyCoefficients(cur_ior, dispersion_power, cur_cauchyA, cur_cauchyB);
-		cur_ior = getIOR(state.wavelength, cur_cauchyA, cur_cauchyB);
+		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor__(state.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	float glossy;
-	float glossy_D = 0.f;
-	float glossy_G = 0.f;
-	float wiN, woN, wiH, woH;
-	float Jacobian = 0.f;
+	float glossy_d = 0.f;
+	float glossy_g = 0.f;
+	float wi_n, wo_n, wi_h, wo_h;
+	float jacobian = 0.f;
 
-	cosTheta = H * N;
-	float cosTheta2 = cosTheta * cosTheta;
-	tanTheta2 = (1.f - cosTheta2) / std::max(1.0e-8f, cosTheta2);
+	cos_theta = h * n;
+	float cos_theta_2 = cos_theta * cos_theta;
+	tan_theta_2 = (1.f - cos_theta_2) / std::max(1.0e-8f, cos_theta_2);
 
-	if(cosTheta > 0.f) glossy_D = GGX_D(alpha2, cosTheta2, tanTheta2);
+	if(cos_theta > 0.f) glossy_d = ggxD__(alpha_2, cos_theta_2, tan_theta_2);
 
-	woH = wo * H;
-	woN = wo * N;
+	wo_h = wo * h;
+	wo_n = wo * n;
 
-	float Kr, Kt;
+	float kr, kt;
 
-	color_t ret(0.f);
-	s.sampledFlags = 0;
+	Rgb ret(0.f);
+	s.sampled_flags_ = 0;
 
-	if(refractMicrofacet(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, H, woH, woN, Kr, Kt))
+	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, wo_n, kr, kt))
 	{
-		if(s.flags & BSDF_TRANSMIT)
+		if(s.flags_ & BsdfTransmit)
 		{
-			wiN = wi * N;
-			wiH = wi * H;
+			wi_n = wi * n;
+			wi_h = wi * h;
 
-			if((wiH * wiN) > 0.f && (woH * woN) > 0.f) glossy_G = GGX_G(alpha2, wiN, woN);
+			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			float IORwi = 1.f;
-			float IORwo = 1.f;
+			float ior_wi = 1.f;
+			float ior_wo = 1.f;
 
-			if(outside)	IORwi = cur_ior;
-			else IORwo = cur_ior;
+			if(outside) ior_wi = cur_ior;
+			else ior_wo = cur_ior;
 
-			float ht = IORwo * woH + IORwi * wiH;
-			Jacobian = (IORwi * IORwi) / std::max(1.0e-8f, ht * ht);
+			float ht = ior_wo * wo_h + ior_wi * wi_h;
+			jacobian = (ior_wi * ior_wi) / std::max(1.0e-8f, ht * ht);
 
-			glossy = std::fabs((woH * wiH) / (wiN * woN)) * Kt * glossy_G * glossy_D * Jacobian;
+			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian * std::fabs(wiH));
-			s.sampledFlags = ((disperse && state.chromatic) ? BSDF_DISPERSIVE : BSDF_GLOSSY) | BSDF_TRANSMIT;
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
+			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfDispersive : BsdfGlossy) | BsdfTransmit;
 
-			ret = (glossy * (filterColS ? filterColS->getColor(stack) : filterCol));
-			W[0] = std::fabs(wiN) / std::max(0.1f, s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
+			w[0] = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
 		}
-		if(s.flags & BSDF_REFLECT)
+		if(s.flags_ & BsdfReflect)
 		{
-			reflectMicrofacet(wo, wi, H, woH);
+			reflectMicrofacet__(wo, wi, h, wo_h);
 
-			wiN = wi * N;
-			wiH = wi * H;
+			wi_n = wi * n;
+			wi_h = wi * h;
 
-			glossy_G = GGX_G(alpha2, wiN, woN);
+			glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			Jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wiH)));
-			glossy = (Kr * glossy_G * glossy_D) / std::max(1.0e-8f, (4.f * std::fabs(woN * wiN)));
+			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wi_h)));
+			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
 
-			s.pdf = GGX_Pdf(glossy_D, cosTheta, Jacobian);
-			s.sampledFlags |= BSDF_GLOSSY | BSDF_REFLECT;
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
+			s.sampled_flags_ |= BsdfGlossy | BsdfReflect;
 
-			tcol = (glossy * (mirColS ? mirColS->getColor(stack) : specRefCol));
+			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
-			W[1] = std::fabs(wiN) / std::max(0.1f, s.pdf); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w[1] = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[1] = wi;
 		}
 	}
 	else // TIR
 	{
 		wi = wo;
-		wi.reflect(H);
-		s.sampledFlags |= BSDF_GLOSSY | BSDF_REFLECT;
+		wi.reflect(h);
+		s.sampled_flags_ |= BsdfGlossy | BsdfReflect;
 		dir[0] = wi;
 		ret = 1.f;
-		W[0] = 1.f;
+		w[0] = 1.f;
 	}
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(ret, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(ret, wire_frame_amount, sp);
 
 	return ret;
 }
 
-color_t roughGlassMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb RoughGlassMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
-	float Kr, Kt;
-	fresnel(wo, N, (iorS ? iorS->getScalar(stack) : ior), Kr, Kt);
-	color_t result = Kt * (filterColS ? filterColS->getColor(stack) : filterCol);
+	NodeStack stack(state.userdata_);
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	float kr, kt;
+	fresnel__(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
+	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_);
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(result, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
 
-float roughGlassMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+float RoughGlassMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float alpha = std::max(0.f, std::min(1.f, 1.f - getTransparency(state, sp, wo).energy()));
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(alpha, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(alpha, wire_frame_amount, sp);
 	return alpha;
 }
 
-float roughGlassMat_t::getMatIOR() const
+float RoughGlassMaterial::getMatIor() const
 {
-	return ior;
+	return ior_;
 }
 
-material_t *roughGlassMat_t::factory(paraMap_t &params, std::list< paraMap_t > &paramList, renderEnvironment_t &render)
+Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
 {
-	float IOR = 1.4;
+	float ior = 1.4;
 	float filt = 0.f;
 	float alpha = 0.5f;
 	float disp_power = 0.0;
-	color_t filtCol(1.f), absorp(1.f), srCol(1.f);
+	Rgb filt_col(1.f), absorp(1.f), sr_col(1.f);
 	std::string name;
 	bool fake_shad = false;
-	std::string sVisibility = "normal";
-	visibility_t visibility = NORMAL_VISIBLE;
+	std::string s_visibility = "normal";
+	Visibility visibility = NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
 	float samplingfactor = 1.f;
-	float WireFrameAmount = 0.f;           //!< Wireframe shading amount
-	float WireFrameThickness = 0.01f;      //!< Wireframe thickness
-	float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
+	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
+	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
+	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
-	params.getParam("IOR", IOR);
-	params.getParam("filter_color", filtCol);
+	params.getParam("IOR", ior);
+	params.getParam("filter_color", filt_col);
 	params.getParam("transmit_filter", filt);
-	params.getParam("mirror_color", srCol);
+	params.getParam("mirror_color", sr_col);
 	params.getParam("alpha", alpha);
 	params.getParam("dispersion_power", disp_power);
 	params.getParam("fake_shadows", fake_shad);
 
 	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", sVisibility);
+	params.getParam("visibility", s_visibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
 	params.getParam("samplingfactor",   samplingfactor);
 
-	params.getParam("wireframe_amount",  WireFrameAmount);
-	params.getParam("wireframe_thickness",  WireFrameThickness);
-	params.getParam("wireframe_exponent",  WireFrameExponent);
-	params.getParam("wireframe_color",  WireFrameColor);
+	params.getParam("wireframe_amount", wire_frame_amount);
+	params.getParam("wireframe_thickness", wire_frame_thickness);
+	params.getParam("wireframe_exponent", wire_frame_exponent);
+	params.getParam("wireframe_color", wire_frame_color);
 
-	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
-	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
-	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
-	else if(sVisibility == "invisible") visibility = INVISIBLE;
-	else visibility = NORMAL_VISIBLE;
+	if(s_visibility == "normal") visibility = NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Invisible;
+	else visibility = NormalVisible;
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
-	roughGlassMat_t *mat = new roughGlassMat_t(IOR, filt * filtCol + color_t(1.f - filt), srCol, fake_shad, alpha, disp_power, visibility);
+	RoughGlassMaterial *mat = new RoughGlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
-	mat->mReceiveShadows = receive_shadows;
-	mat->additionalDepth = additionaldepth;
+	mat->receive_shadows_ = receive_shadows;
+	mat->additional_depth_ = additionaldepth;
 
-	mat->mWireFrameAmount = WireFrameAmount;
-	mat->mWireFrameThickness = WireFrameThickness;
-	mat->mWireFrameExponent = WireFrameExponent;
-	mat->mWireFrameColor = WireFrameColor;
+	mat->wireframe_amount_ = wire_frame_amount;
+	mat->wireframe_thickness_ = wire_frame_thickness;
+	mat->wireframe_exponent_ = wire_frame_exponent;
+	mat->wireframe_color_ = wire_frame_color;
 
 	mat->setSamplingFactor(samplingfactor);
 
 	if(params.getParam("absorption", absorp))
 	{
 		double dist = 1.f;
-		if(absorp.R < 1.f || absorp.G < 1.f || absorp.B < 1.f)
+		if(absorp.r_ < 1.f || absorp.g_ < 1.f || absorp.b_ < 1.f)
 		{
 			//deprecated method:
-			color_t sigma(0.f);
+			Rgb sigma(0.f);
 			if(params.getParam("absorption_dist", dist))
 			{
 				const float maxlog = log(1e38);
-				sigma.R = (absorp.R > 1e-38) ? -log(absorp.R) : maxlog;
-				sigma.G = (absorp.G > 1e-38) ? -log(absorp.G) : maxlog;
-				sigma.B = (absorp.B > 1e-38) ? -log(absorp.B) : maxlog;
+				sigma.r_ = (absorp.r_ > 1e-38) ? -log(absorp.r_) : maxlog;
+				sigma.g_ = (absorp.g_ > 1e-38) ? -log(absorp.g_) : maxlog;
+				sigma.b_ = (absorp.b_ > 1e-38) ? -log(absorp.b_) : maxlog;
 				if(dist != 0.f) sigma *= 1.f / dist;
 			}
-			mat->absorb = true;
-			mat->beer_sigma_a = sigma;
-			mat->bsdfFlags |= BSDF_VOLUMETRIC;
+			mat->absorb_ = true;
+			mat->beer_sigma_a_ = sigma;
+			mat->bsdf_flags_ |= BsdfVolumetric;
 			// creat volume handler (backwards compatibility)
 			if(params.getParam("name", name))
 			{
-				paraMap_t map;
+				ParamMap map;
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
-				map["absorption_dist"] = parameter_t(dist);
-				mat->volI = render.createVolumeH(name, map);
-				mat->bsdfFlags |= BSDF_VOLUMETRIC;
+				map["absorption_dist"] = Parameter(dist);
+				mat->vol_i_ = render.createVolumeH(name, map);
+				mat->bsdf_flags_ |= BsdfVolumetric;
 			}
 		}
 	}
 
-	std::vector<shaderNode_t *> roots;
-	std::map<std::string, shaderNode_t *> nodeList;
+	std::vector<ShaderNode *> roots;
+	std::map<std::string, ShaderNode *> node_list;
 
 	// Prepare our node list
-	nodeList["mirror_color_shader"] = nullptr;
-	nodeList["bump_shader"] = nullptr;
-	nodeList["filter_color_shader"] = nullptr;
-	nodeList["IOR_shader"] = nullptr;
-	nodeList["wireframe_shader"] = nullptr;
-	nodeList["roughness_shader"] = nullptr;
+	node_list["mirror_color_shader"] = nullptr;
+	node_list["bump_shader"] = nullptr;
+	node_list["filter_color_shader"] = nullptr;
+	node_list["IOR_shader"] = nullptr;
+	node_list["wireframe_shader"] = nullptr;
+	node_list["roughness_shader"] = nullptr;
 
-	if(mat->loadNodes(paramList, render))
+	if(mat->loadNodes(param_list, render))
 	{
-		mat->parseNodes(params, roots, nodeList);
+		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "RoughGlass: loadNodes() failed!" << yendl;
+	else Y_ERROR << "RoughGlass: loadNodes() failed!" << YENDL;
 
-	mat->mirColS = nodeList["mirror_color_shader"];
-	mat->bumpS = nodeList["bump_shader"];
-	mat->filterColS = nodeList["filter_color_shader"];
-	mat->iorS = nodeList["IOR_shader"];
-	mat->mWireFrameShader = nodeList["wireframe_shader"];
-	mat->roughnessS = nodeList["roughness_shader"];
+	mat->mirror_color_shader_ = node_list["mirror_color_shader"];
+	mat->bump_shader_ = node_list["bump_shader"];
+	mat->filter_col_shader_ = node_list["filter_color_shader"];
+	mat->ior_shader_ = node_list["IOR_shader"];
+	mat->wireframe_shader_ = node_list["wireframe_shader"];
+	mat->roughness_shader_ = node_list["roughness_shader"];
 
 	// solve nodes order
 	if(!roots.empty())
 	{
 		mat->solveNodesOrder(roots);
-		std::vector<shaderNode_t *> colorNodes;
-		if(mat->mirColS) mat->getNodeList(mat->mirColS, colorNodes);
-		if(mat->roughnessS) mat->getNodeList(mat->roughnessS, colorNodes);
-		if(mat->iorS) mat->getNodeList(mat->iorS, colorNodes);
-		if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
-		if(mat->filterColS) mat->getNodeList(mat->filterColS, colorNodes);
-		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
-		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
-		if(mat->bumpS)
+		std::vector<ShaderNode *> color_nodes;
+		if(mat->mirror_color_shader_) mat->getNodeList(mat->mirror_color_shader_, color_nodes);
+		if(mat->roughness_shader_) mat->getNodeList(mat->roughness_shader_, color_nodes);
+		if(mat->ior_shader_) mat->getNodeList(mat->ior_shader_, color_nodes);
+		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, color_nodes);
+		if(mat->filter_col_shader_) mat->getNodeList(mat->filter_col_shader_, color_nodes);
+		mat->filterNodes(color_nodes, mat->all_viewdep_, ViewDep);
+		mat->filterNodes(color_nodes, mat->all_viewindep_, ViewIndep);
+		if(mat->bump_shader_)
 		{
-			mat->getNodeList(mat->bumpS, mat->bumpNodes);
+			mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 		}
 	}
-	mat->reqMem = mat->reqNodeMem;
+	mat->req_mem_ = mat->req_node_mem_;
 
 	return mat;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("rough_glass", roughGlassMat_t::factory);
+		render.registerFactory("rough_glass", RoughGlassMaterial::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -24,71 +24,71 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-angularCam_t::angularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                           int _resx, int _resy, float asp, float angle, float max_angle, bool circ, const AngularProjection &projection,
-                           float const near_clip_distance, float const far_clip_distance) :
-	camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance), max_radius(max_angle / angle), circular(circ), projection(projection)
+AngularCamera::AngularCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+							 int resx, int resy, float asp, float angle, float max_angle, bool circ, const AngularProjection &projection,
+							 float const near_clip_distance, float const far_clip_distance) :
+		Camera(pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance), max_radius_(max_angle / angle), circular_(circ), projection_(projection)
 {
 	// Initialize camera specific plane coordinates
-	setAxis(camX, camY, camZ);
+	setAxis(cam_x_, cam_y_, cam_z_);
 
-	if(projection == AngularProjection::Orthographic) focal_length = 1.f / fSin(angle);
-	else if(projection == AngularProjection::Stereographic) focal_length = 1.f / 2.f / tan(angle / 2.f);
-	else if(projection == AngularProjection::EquisolidAngle) focal_length = 1.f / 2.f / fSin(angle / 2.f);
-	else if(projection == AngularProjection::Rectilinear) focal_length = 1.f / tan(angle);
-	else focal_length = 1.f / angle; //By default, AngularProjection::Equidistant
+	if(projection == AngularProjection::Orthographic) focal_length_ = 1.f / fSin__(angle);
+	else if(projection == AngularProjection::Stereographic) focal_length_ = 1.f / 2.f / tan(angle / 2.f);
+	else if(projection == AngularProjection::EquisolidAngle) focal_length_ = 1.f / 2.f / fSin__(angle / 2.f);
+	else if(projection == AngularProjection::Rectilinear) focal_length_ = 1.f / tan(angle);
+	else focal_length_ = 1.f / angle; //By default, AngularProjection::Equidistant
 }
 
-void angularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
+void AngularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 {
-	camX = vx;
-	camY = vy;
-	camZ = vz;
+	cam_x_ = vx;
+	cam_y_ = vy;
+	cam_z_ = vz;
 
-	vright = camX;
-	vup = camY;
-	vto = camZ;
+	vright_ = cam_x_;
+	vup_ = cam_y_;
+	vto_ = cam_z_;
 }
 
-ray_t angularCam_t::shootRay(float px, float py, float lu, float lv, float &wt) const
+Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
-	ray_t ray;
+	Ray ray;
 	wt = 1;	// for now always 1, or 0 when circular and outside angle
-	ray.from = position;
-	float u = 1.f - 2.f * (px / (float)resx);
-	float v = 2.f * (py / (float)resy) - 1.f;
-	v *= aspect_ratio;
-	float radius = fSqrt(u * u + v * v);
-	if(circular && radius > max_radius) { wt = 0; return ray; }
+	ray.from_ = position_;
+	float u = 1.f - 2.f * (px / (float)resx_);
+	float v = 2.f * (py / (float)resy_) - 1.f;
+	v *= aspect_ratio_;
+	float radius = fSqrt__(u * u + v * v);
+	if(circular_ && radius > max_radius_) { wt = 0; return ray; }
 	float theta = 0;
 	if(!((u == 0) && (v == 0))) theta = atan2(v, u);
 	float phi = 0.f;
-	if(projection == AngularProjection::Orthographic) phi = asin(radius / focal_length);
-	else if(projection == AngularProjection::Stereographic) phi = 2.f * atan(radius / (2.f * focal_length));
-	else if(projection == AngularProjection::EquisolidAngle) phi = 2.f * asin(radius / (2.f * focal_length));
-	else if(projection == AngularProjection::Rectilinear) phi = atan(radius / focal_length);
-	else phi = radius / focal_length; //By default, AngularProjection::Equidistant
+	if(projection_ == AngularProjection::Orthographic) phi = asin(radius / focal_length_);
+	else if(projection_ == AngularProjection::Stereographic) phi = 2.f * atan(radius / (2.f * focal_length_));
+	else if(projection_ == AngularProjection::EquisolidAngle) phi = 2.f * asin(radius / (2.f * focal_length_));
+	else if(projection_ == AngularProjection::Rectilinear) phi = atan(radius / focal_length_);
+	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
-	ray.dir = fSin(phi) * (fCos(theta) * vright + fSin(theta) * vup) + fCos(phi) * vto;
+	ray.dir_ = fSin__(phi) * (fCos__(theta) * vright_ + fSin__(theta) * vup_) + fCos__(phi) * vto_;
 
-	ray.tmin = ray_plane_intersection(ray, near_plane);
-	ray.tmax = ray_plane_intersection(ray, far_plane);
+	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
+	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
 
 	return ray;
 }
 
-camera_t *angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Camera *AngularCamera::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
 	double aspect = 1.0, angle_degrees = 90, max_angle_degrees = 90;
 	AngularProjection projection = AngularProjection::Equidistant;
-	std::string projectionString;
+	std::string projection_string;
 	bool circular = true, mirrored = false;
-	float nearClip = 0.0f, farClip = -1.0e38f;
-	std::string viewName = "";
+	float near_clip = 0.0f, far_clip = -1.0e38f;
+	std::string view_name;
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -101,40 +101,40 @@ camera_t *angularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("max_angle", max_angle_degrees);
 	params.getParam("circular", circular);
 	params.getParam("mirrored", mirrored);
-	params.getParam("projection", projectionString);
-	params.getParam("nearClip", nearClip);
-	params.getParam("farClip", farClip);
-	params.getParam("view_name", viewName);
+	params.getParam("projection", projection_string);
+	params.getParam("nearClip", near_clip);
+	params.getParam("farClip", far_clip);
+	params.getParam("view_name", view_name);
 
-	if(projectionString == "orthographic") projection = AngularProjection::Orthographic;
-	else if(projectionString == "stereographic") projection = AngularProjection::Stereographic;
-	else if(projectionString == "equisolid_angle") projection = AngularProjection::EquisolidAngle;
-	else if(projectionString == "rectilinear") projection = AngularProjection::Rectilinear;
+	if(projection_string == "orthographic") projection = AngularProjection::Orthographic;
+	else if(projection_string == "stereographic") projection = AngularProjection::Stereographic;
+	else if(projection_string == "equisolid_angle") projection = AngularProjection::EquisolidAngle;
+	else if(projection_string == "rectilinear") projection = AngularProjection::Rectilinear;
 	else projection = AngularProjection::Equidistant;
 
-	angularCam_t *cam = new angularCam_t(from, to, up, resx, resy, aspect, angle_degrees * M_PI / 180.f, max_angle_degrees * M_PI / 180.f, circular, projection, nearClip, farClip);
-	if(mirrored) cam->vright *= -1.0;
+	AngularCamera *cam = new AngularCamera(from, to, up, resx, resy, aspect, angle_degrees * M_PI / 180.f, max_angle_degrees * M_PI / 180.f, circular, projection, near_clip, far_clip);
+	if(mirrored) cam->vright_ *= -1.0;
 
-	cam->view_name = viewName;
+	cam->view_name_ = view_name;
 
 	return cam;
 }
 
-point3d_t angularCam_t::screenproject(const point3d_t &p) const
+Point3 AngularCamera::screenproject(const Point3 &p) const
 {
 	//FIXME
-	point3d_t s;
-	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	Point3 s;
+	Vec3 dir = Vec3(p) - Vec3(position_);
 	dir.normalize();
 
 	// project p to pixel plane:
-	float dx = camX * dir;
-	float dy = camY * dir;
-	float dz = camZ * dir;
+	float dx = cam_x_ * dir;
+	float dy = cam_y_ * dir;
+	float dz = cam_z_ * dir;
 
-	s.x = -dx / (4.0 * M_PI * dz);
-	s.y = -dy / (4.0 * M_PI * dz);
-	s.z = 0;
+	s.x_ = -dx / (4.0 * M_PI * dz);
+	s.y_ = -dy / (4.0 * M_PI * dz);
+	s.z_ = 0;
 
 	return s;
 }
@@ -142,11 +142,11 @@ point3d_t angularCam_t::screenproject(const point3d_t &p) const
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("angular",	angularCam_t::factory);
+		render.registerFactory("angular", AngularCamera::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

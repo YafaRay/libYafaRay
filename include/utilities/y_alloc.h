@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_ALLOC_H
-#define Y_ALLOC_H
+#ifndef YAFARAY_Y_ALLOC_H
+#define YAFARAY_Y_ALLOC_H
 
 #include <yafray_constants.h>
 #include <vector>
@@ -16,13 +16,13 @@
 #include <malloc.h>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #if defined(_WIN32) && !defined(__MINGW32__) //Added by DarkTide to enable mingw32 compliation
 #define alloca _alloca
 #endif
 
-inline void *y_memalign(size_t bound, size_t size)
+inline void *yMemalign__(size_t bound, size_t size)
 {
 #if (defined (_WIN32) && (defined (_MSC_VER)) || defined (__MINGW32__)) //Added by DarkTide to enable mingw32 compliation
 	return _aligned_malloc(size, bound);
@@ -44,7 +44,7 @@ inline void *y_memalign(size_t bound, size_t size)
 #endif
 }
 
-inline void y_free(void *ptr)
+inline void yFree__(void *ptr)
 {
 #if (defined (_WIN32) && (defined (_MSC_VER)) || defined (__MINGW32__)) //Added by DarkTide to enable mingw32 compliation
 	_aligned_free(ptr);
@@ -60,38 +60,38 @@ template <class T> class ObjectArena
 		// ObjectArena Public Methods
 		ObjectArena()
 		{
-			nAvailable = 0;
+			n_available_ = 0;
 		}
-		T *Alloc()
+		T *alloc()
 		{
-			if(nAvailable == 0)
+			if(n_available_ == 0)
 			{
-				int nAlloc = std::max((unsigned long)16,
-				                      (unsigned long)(65536 / sizeof(T)));
-				mem = (T *)y_memalign(64, nAlloc * sizeof(T));
-				nAvailable = nAlloc;
-				toDelete.push_back(mem);
+				int n_alloc = std::max((unsigned long)16,
+									   (unsigned long)(65536 / sizeof(T)));
+				mem_ = (T *) yMemalign__(64, n_alloc * sizeof(T));
+				n_available_ = n_alloc;
+				to_delete_.push_back(mem_);
 			}
-			--nAvailable;
-			return mem++;
+			--n_available_;
+			return mem_++;
 		}
 		operator T *()
 		{
-			return Alloc();
+			return alloc();
 		}
-		~ObjectArena() { FreeAll(); }
-		void FreeAll()
+		~ObjectArena() { freeAll(); }
+		void freeAll()
 		{
-			for(unsigned int i = 0; i < toDelete.size(); ++i)
-				y_free(toDelete[i]);
-			toDelete.erase(toDelete.begin(), toDelete.end());
-			nAvailable = 0;
+			for(unsigned int i = 0; i < to_delete_.size(); ++i)
+				yFree__(to_delete_[i]);
+			to_delete_.erase(to_delete_.begin(), to_delete_.end());
+			n_available_ = 0;
 		}
 	private:
 		// ObjectArena Private Data
-		T *mem;
-		int nAvailable;
-		std::vector<T *> toDelete;
+		T *mem_;
+		int n_available_;
+		std::vector<T *> to_delete_;
 };
 
 class MemoryArena
@@ -100,54 +100,54 @@ class MemoryArena
 		// MemoryArena Public Methods
 		MemoryArena(uint32_t bs = 32768)
 		{
-			blockSize = bs;
-			curBlockPos = 0;
-			currentBlock = (char *)y_memalign(64, blockSize);
+			block_size_ = bs;
+			cur_block_pos_ = 0;
+			current_block_ = (char *) yMemalign__(64, block_size_);
 		}
 		~MemoryArena()
 		{
-			y_free(currentBlock);
-			for(uint32_t i = 0; i < usedBlocks.size(); ++i)
-				y_free(usedBlocks[i]);
-			for(uint32_t i = 0; i < availableBlocks.size(); ++i)
-				y_free(availableBlocks[i]);
+			yFree__(current_block_);
+			for(uint32_t i = 0; i < used_blocks_.size(); ++i)
+				yFree__(used_blocks_[i]);
+			for(uint32_t i = 0; i < available_blocks_.size(); ++i)
+				yFree__(available_blocks_[i]);
 		}
-		void *Alloc(uint32_t sz)
+		void *alloc(uint32_t sz)
 		{
 			// Round up _sz_ to minimum machine alignment
 			sz = ((sz + 7) & (~7));
-			if(curBlockPos + sz > blockSize)
+			if(cur_block_pos_ + sz > block_size_)
 			{
 				// Get new block of memory for _MemoryArena_
-				usedBlocks.push_back(currentBlock);
-				if(availableBlocks.size() && sz <= blockSize)
+				used_blocks_.push_back(current_block_);
+				if(available_blocks_.size() && sz <= block_size_)
 				{
-					currentBlock = availableBlocks.back();
-					availableBlocks.pop_back();
+					current_block_ = available_blocks_.back();
+					available_blocks_.pop_back();
 				}
 				else
-					currentBlock = (char *)y_memalign(64, (std::max(sz, blockSize)));
-				curBlockPos = 0;
+					current_block_ = (char *) yMemalign__(64, (std::max(sz, block_size_)));
+				cur_block_pos_ = 0;
 			}
-			void *ret = currentBlock + curBlockPos;
-			curBlockPos += sz;
+			void *ret = current_block_ + cur_block_pos_;
+			cur_block_pos_ += sz;
 			return ret;
 		}
-		void FreeAll()
+		void freeAll()
 		{
-			curBlockPos = 0;
-			while(usedBlocks.size())
+			cur_block_pos_ = 0;
+			while(used_blocks_.size())
 			{
-				availableBlocks.push_back(usedBlocks.back());
-				usedBlocks.pop_back();
+				available_blocks_.push_back(used_blocks_.back());
+				used_blocks_.pop_back();
 			}
 		}
 	private:
 		// MemoryArena Private Data
-		uint32_t curBlockPos, blockSize;
-		char *currentBlock;
-		std::vector<char *> usedBlocks, availableBlocks;
+		uint32_t cur_block_pos_, block_size_;
+		char *current_block_;
+		std::vector<char *> used_blocks_, available_blocks_;
 };
 
-__END_YAFRAY
-#endif // Y_ALLOC_H
+END_YAFRAY
+#endif // YAFARAY_Y_ALLOC_H

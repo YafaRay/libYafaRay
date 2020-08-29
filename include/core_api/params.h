@@ -8,31 +8,31 @@
 #include <vector>
 #include <string>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class color_t;
-class colorA_t;
-class point3d_t;
-class matrix4x4_t;
+class Rgb;
+class Rgba;
+class Point3;
+class Matrix4;
 
 /*! a class that can hold exactly one value of a range types.
 */
-class YAFRAYCORE_EXPORT parameter_t
+class YAFRAYCORE_EXPORT Parameter
 {
 	public:
 		enum Type : int { None = -1, Int = 1, Bool, Float, String, Point, Color, Matrix };
 		//! return the type of the parameter_t
 		Type type() const { return type_; }
 
-		parameter_t() = default;
-		parameter_t(const std::string &s);
-		parameter_t(int i);
-		parameter_t(bool b);
-		parameter_t(float f);
-		parameter_t(double f);
-		parameter_t(const point3d_t &p);
-		parameter_t(const colorA_t &c);
-		parameter_t(const matrix4x4_t &m);
+		Parameter() = default;
+		Parameter(const std::string &s);
+		Parameter(int i);
+		Parameter(bool b);
+		Parameter(float f);
+		Parameter(double f);
+		Parameter(const Point3 &p);
+		Parameter(const Rgba &c);
+		Parameter(const Matrix4 &m);
 
 		// return parameter value in reference parameter, return true if
 		// the parameter type matches, false otherwise.
@@ -41,19 +41,19 @@ class YAFRAYCORE_EXPORT parameter_t
 		bool getVal(bool &b) const;
 		bool getVal(float &f) const;
 		bool getVal(double &f) const;
-		bool getVal(point3d_t &p) const;
-		bool getVal(color_t &c) const;
-		bool getVal(colorA_t &c) const;
-		bool getVal(matrix4x4_t &m) const;
+		bool getVal(Point3 &p) const;
+		bool getVal(Rgb &c) const;
+		bool getVal(Rgba &c) const;
+		bool getVal(Matrix4 &m) const;
 
 		// operator= assigns new value, be aware that this may change the parameter type!
-		parameter_t &operator = (const std::string &s);
-		parameter_t &operator = (int i);
-		parameter_t &operator = (bool b);
-		parameter_t &operator = (float f);
-		parameter_t &operator = (const point3d_t &p);
-		parameter_t &operator = (const colorA_t &c);
-		parameter_t &operator = (const matrix4x4_t &m);
+		Parameter &operator = (const std::string &s);
+		Parameter &operator = (int i);
+		Parameter &operator = (bool b);
+		Parameter &operator = (float f);
+		Parameter &operator = (const Point3 &p);
+		Parameter &operator = (const Rgba &c);
+		Parameter &operator = (const Matrix4 &m);
 
 	private:
 		Type type_ = None; //!< type of the stored value
@@ -67,10 +67,10 @@ class YAFRAYCORE_EXPORT parameter_t
 		std::vector<float> vval_;
 };
 
-class YAFRAYCORE_EXPORT paraMap_t
+class YAFRAYCORE_EXPORT ParamMap
 {
 	public:
-		paraMap_t() = default;
+		ParamMap() = default;
 		//! template function to get a value, available types are those of parameter_t::getVal()
 		template <class T>
 		bool getParam(const std::string &name, T &val) const
@@ -79,15 +79,15 @@ class YAFRAYCORE_EXPORT paraMap_t
 			if(i != dicc_.end()) return i->second.getVal(val);
 			return false;
 		}
-		parameter_t &operator [](const std::string &key);
+		Parameter &operator [](const std::string &key);
 
 		void clear();
-		std::map<std::string, parameter_t>::const_iterator begin() const;
-		std::map<std::string, parameter_t>::const_iterator end() const;
+		std::map<std::string, Parameter>::const_iterator begin() const;
+		std::map<std::string, Parameter>::const_iterator end() const;
 
 	private:
-		std::map<std::string, parameter_t> dicc_;
+		std::map<std::string, Parameter> dicc_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 #endif // YAFARAY_PARAMS_H

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef Y_STRINGUTILS_H
-#define Y_STRINGUTILS_H
+#ifndef YAFARAY_STRINGUTILS_H
+#define YAFARAY_STRINGUTILS_H
 
 #include <string>
 #include <sstream>
@@ -31,10 +31,10 @@
 #include <locale>
 #include <codecvt>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 template <class T>
-inline void converter(std::string str, T &val)
+inline void converter__(std::string str, T &val)
 {
 	std::stringstream conv;
 
@@ -42,7 +42,7 @@ inline void converter(std::string str, T &val)
 	conv >> std::skipws >> val;
 }
 
-inline std::string toLower(const std::string &in)
+inline std::string toLower__(const std::string &in)
 {
 	std::string out = in;
 
@@ -54,61 +54,61 @@ inline std::string toLower(const std::string &in)
 	return out;
 }
 
-inline std::vector<std::string> tokenize(std::string str, std::string delimiter = " ")
+inline std::vector<std::string> tokenize__(std::string str, std::string delimiter = " ")
 {
 	std::vector<std::string> result;
-	size_t lastPos = str.find_first_not_of(delimiter, 0);
-	size_t pos = str.find_first_of(delimiter, lastPos);
+	size_t last_pos = str.find_first_not_of(delimiter, 0);
+	size_t pos = str.find_first_of(delimiter, last_pos);
 
-	while(std::string::npos != pos || std::string::npos != lastPos)
+	while(std::string::npos != pos || std::string::npos != last_pos)
 	{
-		result.push_back(str.substr(lastPos, pos - lastPos));
-		lastPos = str.find_first_not_of(delimiter, pos);
-		pos = str.find_first_of(delimiter, lastPos);
+		result.push_back(str.substr(last_pos, pos - last_pos));
+		last_pos = str.find_first_not_of(delimiter, pos);
+		pos = str.find_first_of(delimiter, last_pos);
 	}
 
 	return result;
 }
 
-inline std::u32string utf8_to_wutf32(const std::string &utf8str)
+inline std::u32string utf8ToWutf32__(const std::string &utf_8_str)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 	//Workaround for bug in VS2015/2017
 	//https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
 	std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t> string_conversion;
-	return reinterpret_cast<const char32_t *>(string_conversion.from_bytes(utf8str).data());
+	return reinterpret_cast<const char32_t *>(string_conversion.from_bytes(utf_8_str).data());
 #else
 	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> string_conversion;
-	return string_conversion.from_bytes(utf8str);
+	return string_conversion.from_bytes(utf_8_str);
 #endif
 }
 
-inline std::string wutf32_to_utf8(const std::u32string &wutf32str)
+inline std::string wutf32ToUtf8__(const std::u32string &wutf_32_str)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 	//Workaround for bug in VS2015/2017
 	//https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
 	std::wstring_convert<std::codecvt_utf8<int32_t>, int32_t> string_conversion;
-	auto p = reinterpret_cast<const int32_t *>(wutf32str.data());
-	return string_conversion.to_bytes(p, p + wutf32str.size());
+	auto p = reinterpret_cast<const int32_t *>(wutf_32_str.data());
+	return string_conversion.to_bytes(p, p + wutf_32_str.size());
 #else
 	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> string_conversion;
-	return string_conversion.to_bytes(wutf32str);
+	return string_conversion.to_bytes(wutf_32_str);
 #endif
 }
 
-inline std::wstring utf8_to_wutf16le(const std::string &utf8str)
+inline std::wstring utf8ToWutf16Le__(const std::string &utf_8_str)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
-	return string_conversion.from_bytes(utf8str);
+	return string_conversion.from_bytes(utf_8_str);
 }
 
-inline std::string wutf16le_to_utf8(const std::wstring &wutf16str)
+inline std::string wutf16LeToUtf8__(const std::wstring &wutf_16_str)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
-	return string_conversion.to_bytes(wutf16str);
+	return string_conversion.to_bytes(wutf_16_str);
 }
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

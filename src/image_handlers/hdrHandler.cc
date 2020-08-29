@@ -36,144 +36,144 @@
 
 #include "hdrUtils.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class hdrHandler_t: public imageHandler_t
+class HdrHandler final : public ImageHandler
 {
 	public:
-		hdrHandler_t();
-		~hdrHandler_t();
-		bool loadFromFile(const std::string &name);
-		bool saveToFile(const std::string &name, int imgIndex = 0);
-		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		bool isHDR() { return true; }
+		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
 
 	private:
-		bool writeHeader(std::ofstream &file, int imgIndex);
-		bool writeScanline(std::ofstream &file, rgbePixel_t *scanline, int imgIndex);
+		HdrHandler();
+		~HdrHandler();
+		bool loadFromFile(const std::string &name) override;
+		bool saveToFile(const std::string &name, int img_index = 0) override;
+		bool isHdr() const override { return true; }
+		bool writeHeader(std::ofstream &file, int img_index);
+		bool writeScanline(std::ofstream &file, RgbePixel *scanline, int img_index);
 		bool readHeader(FILE *fp); //!< Reads file header and detects if the file is valid
-		bool readORLE(FILE *fp, int y, int scanWidth); //!< Reads the scanline with the original Radiance RLE schema or without compression
-		bool readARLE(FILE *fp, int y, int scanWidth); //!< Reads a scanline with Adaptative RLE schema
+		bool readOrle(FILE *fp, int y, int scan_width); //!< Reads the scanline with the original Radiance RLE schema or without compression
+		bool readArle(FILE *fp, int y, int scan_width); //!< Reads a scanline with Adaptative RLE schema
 
-		rgbeHeader_t header;
+		RgbeHeaderT header_;
 };
 
-hdrHandler_t::hdrHandler_t()
+HdrHandler::HdrHandler()
 {
-	m_hasAlpha = false;
-	m_MultiLayer = false;
+	has_alpha_ = false;
+	multi_layer_ = false;
 
-	handlerName = "hdrHandler";
+	handler_name_ = "hdrHandler";
 }
 
-hdrHandler_t::~hdrHandler_t()
+HdrHandler::~HdrHandler()
 {
 	clearImgBuffers();
 }
 
-bool hdrHandler_t::loadFromFile(const std::string &name)
+bool HdrHandler::loadFromFile(const std::string &name)
 {
-	FILE *fp = file_t::open(name, "rb");
+	FILE *fp = File::open(name, "rb");
 
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+	Y_INFO << handler_name_ << ": Loading image \"" << name << "\"..." << YENDL;
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file " << name << YENDL;
 		return false;
 	}
 
 	if(!readHeader(fp))
 	{
-		Y_ERROR << handlerName << ": An error has occurred while reading the header..." << yendl;
-		file_t::close(fp);
+		Y_ERROR << handler_name_ << ": An error has occurred while reading the header..." << YENDL;
+		File::close(fp);
 		return false;
 	}
 
 	// discard old image data
 	clearImgBuffers();
 
-	m_hasAlpha = false;	//FIXME: why is alpha false in HDR??
-	int nChannels = 4;	//FIXME: despite alpha being false, number of channels was 4 anyway. I'm keeping this just in case, but I think it should be 3??
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
+	has_alpha_ = false;	//FIXME: why is alpha false in HDR??
+	int n_channels = 4;	//FIXME: despite alpha being false, number of channels was 4 anyway. I'm keeping this just in case, but I think it should be 3??
+	if(grayscale_) n_channels = 1;
+	else if(has_alpha_) n_channels = 4;
 
-	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
 
-	int scanWidth = (header.yFirst) ? m_width : m_height;
+	int scan_width = (header_.y_first_) ? width_ : height_;
 
 	// run length encoding is not allowed so read flat and exit
-	if((scanWidth < 8) || (scanWidth > 0x7fff))
+	if((scan_width < 8) || (scan_width > 0x7fff))
 	{
-		for(int y = header.min[0]; y != header.max[0]; y += header.step[0])
+		for(int y = header_.min_[0]; y != header_.max_[0]; y += header_.step_[0])
 		{
-			if(!readORLE(fp, y, scanWidth))
+			if(!readOrle(fp, y, scan_width))
 			{
-				Y_ERROR << handlerName << ": An error has occurred while reading uncompressed scanline..." << yendl;
-				file_t::close(fp);
+				Y_ERROR << handler_name_ << ": An error has occurred while reading uncompressed scanline..." << YENDL;
+				File::close(fp);
 				return false;
 			}
 		}
-		file_t::close(fp);
+		File::close(fp);
 		return true;
 	}
 
-	for(int y = header.min[0]; y != header.max[0]; y += header.step[0])
+	for(int y = header_.min_[0]; y != header_.max_[0]; y += header_.step_[0])
 	{
-		rgbePixel_t pix;
+		RgbePixel pix;
 
-		if(fread((char *)&pix, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
+		if(fread((char *)&pix, 1, sizeof(RgbePixel), fp) != sizeof(RgbePixel))
 		{
-			Y_ERROR << handlerName << ": An error has occurred while reading scanline start..." << yendl;
-			file_t::close(fp);
+			Y_ERROR << handler_name_ << ": An error has occurred while reading scanline start..." << YENDL;
+			File::close(fp);
 			return false;
 		}
 
 		if(feof(fp))
 		{
-			Y_ERROR << handlerName << ": EOF reached while reading scanline start..." << yendl;
-			file_t::close(fp);
+			Y_ERROR << handler_name_ << ": EOF reached while reading scanline start..." << YENDL;
+			File::close(fp);
 			return false;
 		}
 
-		if(pix.isARLEDesc())  // Adaptaive RLE schema encoding
+		if(pix.isArleDesc())  // Adaptaive RLE schema encoding
 		{
-			if(pix.getARLECount() > scanWidth)
+			if(pix.getArleCount() > scan_width)
 			{
-				Y_ERROR << handlerName << ": Error reading, invalid ARLE scanline width..." << yendl;
-				file_t::close(fp);
+				Y_ERROR << handler_name_ << ": Error reading, invalid ARLE scanline width..." << YENDL;
+				File::close(fp);
 				return false;
 			}
 
-			if(!readARLE(fp, y, pix.getARLECount()))
+			if(!readArle(fp, y, pix.getArleCount()))
 			{
-				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
-				file_t::close(fp);
+				Y_ERROR << handler_name_ << ": An error has occurred while reading ARLE scanline..." << YENDL;
+				File::close(fp);
 				return false;
 			}
 		}
 		else // Original RLE schema encoding or raw without compression
 		{
 			// rewind the read pixel to start reading from the begining of the scanline
-			fseek(fp, (long int) - sizeof(rgbePixel_t), SEEK_CUR);
+			fseek(fp, (long int) - sizeof(RgbePixel), SEEK_CUR);
 
-			if(!readORLE(fp, y, scanWidth))
+			if(!readOrle(fp, y, scan_width))
 			{
-				Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline..." << yendl;
-				file_t::close(fp);
+				Y_ERROR << handler_name_ << ": An error has occurred while reading RLE scanline..." << YENDL;
+				File::close(fp);
 				return false;
 			}
 		}
 	}
 
-	file_t::close(fp);
+	File::close(fp);
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-bool hdrHandler_t::readHeader(FILE *fp)
+bool HdrHandler::readHeader(FILE *fp)
 {
 	std::string line;
 	int line_size = 1000;
@@ -184,14 +184,14 @@ bool hdrHandler_t::readHeader(FILE *fp)
 
 	if(line.find("#?") == std::string::npos)
 	{
-		Y_ERROR << handlerName << ": File is not a valid Radiance RBGE image..." << yendl;
+		Y_ERROR << handler_name_ << ": File is not a valid Radiance RBGE image..." << YENDL;
 		free(linebuf);
 		return false;
 	}
 
-	size_t foundPos = 0;
+	size_t found_pos = 0;
 
-	header.exposure = 1.f;
+	header_.exposure_ = 1.f;
 
 	// search for optional flags
 	for(;;)
@@ -204,20 +204,20 @@ bool hdrHandler_t::readHeader(FILE *fp)
 		//Find variables
 		// We only check for the most used tags and ignore the rest
 
-		if((foundPos = line.find("FORMAT=")) != std::string::npos)
+		if((found_pos = line.find("FORMAT=")) != std::string::npos)
 		{
-			if(line.substr(foundPos + 7).find("32-bit_rle_rgbe") == std::string::npos)
+			if(line.substr(found_pos + 7).find("32-bit_rle_rgbe") == std::string::npos)
 			{
-				Y_ERROR << handlerName << ": Sorry this is an XYZE file, only RGBE images are supported..." << yendl;
+				Y_ERROR << handler_name_ << ": Sorry this is an XYZE file, only RGBE images are supported..." << YENDL;
 				free(linebuf);
 				return false;
 			}
 		}
-		else if((foundPos = line.find("EXPOSURE=")) != std::string::npos)
+		else if((found_pos = line.find("EXPOSURE=")) != std::string::npos)
 		{
 			float exp = 0.f;
-			converter(line.substr(foundPos + 9), exp);
-			header.exposure *= exp; // Exposure is cumulative if several EXPOSURE tags exist on the file
+			converter__(line.substr(found_pos + 9), exp);
+			header_.exposure_ *= exp; // Exposure is cumulative if several EXPOSURE tags exist on the file
 		}
 	}
 
@@ -225,79 +225,79 @@ bool hdrHandler_t::readHeader(FILE *fp)
 	fgets(linebuf, line_size, fp);
 	line = std::string(linebuf);
 
-	std::vector<std::string> sizeOrient = tokenize(line);
+	std::vector<std::string> size_orient = tokenize__(line);
 
-	header.yFirst = (sizeOrient[0].find("Y") != std::string::npos);
+	header_.y_first_ = (size_orient[0].find("Y") != std::string::npos);
 
 	int w = 3, h = 1;
 	int x = 2, y = 0;
 	int f = 0, s = 1;
 
-	if(!header.yFirst)
+	if(!header_.y_first_)
 	{
 		w = 1; h = 3;
 		x = 0; y = 2;
 		f = 1; s = 0;
 	}
 
-	converter(sizeOrient[w], m_width);
-	converter(sizeOrient[h], m_height);
+	converter__(size_orient[w], width_);
+	converter__(size_orient[h], height_);
 
 	// Set the reading order to fit yafaray's image coordinates
-	bool fromLeft = (sizeOrient[x].find("+") != std::string::npos);
-	bool fromTop = (sizeOrient[y].find("-") != std::string::npos);
+	bool from_left = (size_orient[x].find("+") != std::string::npos);
+	bool from_top = (size_orient[y].find("-") != std::string::npos);
 
-	header.min[f] = 0;
-	header.max[f] = m_height;
-	header.step[f] = 1;
+	header_.min_[f] = 0;
+	header_.max_[f] = height_;
+	header_.step_[f] = 1;
 
-	header.min[s] = 0;
-	header.max[s] = m_width;
-	header.step[s] = 1;
+	header_.min_[s] = 0;
+	header_.max_[s] = width_;
+	header_.step_[s] = 1;
 
-	if(!fromLeft)
+	if(!from_left)
 	{
-		header.min[s] = m_width - 1;
-		header.max[s] = -1;
-		header.step[s] = -1;
+		header_.min_[s] = width_ - 1;
+		header_.max_[s] = -1;
+		header_.step_[s] = -1;
 	}
 
-	if(!fromTop)
+	if(!from_top)
 	{
-		header.min[f] = m_height - 1;
-		header.max[f] = -1;
-		header.step[f] = -1;
+		header_.min_[f] = height_ - 1;
+		header_.max_[f] = -1;
+		header_.step_[f] = -1;
 	}
 
 	free(linebuf);
 	return true;
 }
 
-bool hdrHandler_t::readORLE(FILE *fp, int y, int scanWidth)
+bool HdrHandler::readOrle(FILE *fp, int y, int scan_width)
 {
-	rgbePixel_t *scanline = new rgbePixel_t[scanWidth]; // Scanline buffer
+	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
 	int rshift = 0;
 	int count;
-	int x = header.min[1];
+	int x = header_.min_[1];
 
-	rgbePixel_t pixel;
+	RgbePixel pixel;
 
-	while(x < scanWidth)
+	while(x < scan_width)
 	{
-		if(fread((char *)&pixel, 1, sizeof(rgbePixel_t), fp) != sizeof(rgbePixel_t))
+		if(fread((char *)&pixel, 1, sizeof(RgbePixel), fp) != sizeof(RgbePixel))
 		{
-			Y_ERROR << handlerName << ": An error has occurred while reading RLE scanline header..." << yendl;
+			Y_ERROR << handler_name_ << ": An error has occurred while reading RLE scanline header..." << YENDL;
 			return false;
 		}
 
 		// RLE encoded
-		if(pixel.isORLEDesc())
+		if(pixel.isOrleDesc())
 		{
-			count = pixel.getORLECount(rshift);
+			count = pixel.getOrleCount(rshift);
 
-			if(count > scanWidth - x)
+			if(count > scan_width - x)
 			{
-				Y_ERROR << handlerName << ": Scanline width greater than image width..." << yendl;
+				Y_ERROR << handler_name_ << ": Scanline width greater than image width..." << YENDL;
 				return false;
 			}
 
@@ -317,10 +317,10 @@ bool hdrHandler_t::readORLE(FILE *fp, int y, int scanWidth)
 	int j = 0;
 
 	// put the pixels on the main buffer
-	for(int x = header.min[1]; x != header.max[1]; x += header.max[1])
+	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.max_[1])
 	{
-		if(header.yFirst) imgBuffer.at(0)->setColor(x, y, scanline[j].getRGBA(), m_colorSpace, m_gamma);
-		else imgBuffer.at(0)->setColor(y, x, scanline[j].getRGBA(), m_colorSpace, m_gamma);
+		if(header_.y_first_) img_buffer_.at(0)->setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
+		else img_buffer_.at(0)->setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
 		j++;
 	}
 
@@ -330,15 +330,15 @@ bool hdrHandler_t::readORLE(FILE *fp, int y, int scanWidth)
 	return true;
 }
 
-bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
+bool HdrHandler::readArle(FILE *fp, int y, int scan_width)
 {
-	rgbePixel_t *scanline = new rgbePixel_t[scanWidth]; // Scanline buffer
-	yByte count = 0; // run description
-	yByte col = 0; // color component
+	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
+	YByte_t count = 0; // run description
+	YByte_t col = 0; // color component
 
 	if(scanline == nullptr)
 	{
-		Y_ERROR << handlerName << ": Unable to allocate buffer memory..." << yendl;
+		Y_ERROR << handler_name_ << ": Unable to allocate buffer memory..." << YENDL;
 		return false;
 	}
 
@@ -348,11 +348,11 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 	for(int chan = 0; chan < 4; chan++)
 	{
 		j = 0;
-		while(j < scanWidth)
+		while(j < scan_width)
 		{
 			if(fread((char *)&count, 1, 1, fp) != 1)
 			{
-				Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
+				Y_ERROR << handler_name_ << ": An error has occurred while reading ARLE scanline..." << YENDL;
 				return false;
 			}
 
@@ -360,15 +360,15 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 			{
 				count &= 0x7F; // get the value without the run flag (value mask: 01111111)
 
-				if(count + j > scanWidth)
+				if(count + j > scan_width)
 				{
-					Y_ERROR << handlerName << ": Run width greater than image width..." << yendl;
+					Y_ERROR << handler_name_ << ": Run width greater than image width..." << YENDL;
 					return false;
 				}
 
 				if(fread((char *)&col, 1, 1, fp) != 1)
 				{
-					Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
+					Y_ERROR << handler_name_ << ": An error has occurred while reading ARLE scanline..." << YENDL;
 					return false;
 				}
 
@@ -376,9 +376,9 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 			}
 			else // else is a non-run raw values
 			{
-				if(count + j > scanWidth)
+				if(count + j > scan_width)
 				{
-					Y_ERROR << handlerName << ": Non-run width greater than image width or equal to zero..." << yendl;
+					Y_ERROR << handler_name_ << ": Non-run width greater than image width or equal to zero..." << YENDL;
 					return false;
 				}
 
@@ -386,7 +386,7 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 				{
 					if(fread((char *)&col, 1, 1, fp) != 1)
 					{
-						Y_ERROR << handlerName << ": An error has occurred while reading ARLE scanline..." << yendl;
+						Y_ERROR << handler_name_ << ": An error has occurred while reading ARLE scanline..." << YENDL;
 						return false;
 					}
 					scanline[j++][chan] = col;
@@ -398,10 +398,10 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 	j = 0;
 
 	// put the pixels on the main buffer
-	for(int x = header.min[1]; x != header.max[1]; x += header.step[1])
+	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.step_[1])
 	{
-		if(header.yFirst) imgBuffer.at(0)->setColor(x, y, scanline[j].getRGBA(), m_colorSpace, m_gamma);
-		else imgBuffer.at(0)->setColor(y, x, scanline[j].getRGBA(), m_colorSpace, m_gamma);
+		if(header_.y_first_) img_buffer_.at(0)->setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
+		else img_buffer_.at(0)->setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
 		j++;
 	}
 
@@ -411,10 +411,10 @@ bool hdrHandler_t::readARLE(FILE *fp, int y, int scanWidth)
 	return true;
 }
 
-bool hdrHandler_t::saveToFile(const std::string &name, int imgIndex)
+bool HdrHandler::saveToFile(const std::string &name, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
 	std::ofstream file(name.c_str(), std::ios::out | std::ios::binary);
 
@@ -424,35 +424,35 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imgIndex)
 	}
 	else
 	{
-		std::string nameWithoutTmp = name;
-		nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
-		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams()  << yendl;
-		else Y_INFO << handlerName << ": Saving RGBE file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-		if(m_hasAlpha) Y_VERBOSE << handlerName << ": Ignoring alpha channel." << yendl;
+		std::string name_without_tmp = name;
+		name_without_tmp.erase(name_without_tmp.length() - 4);
+		if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGBE file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+		else Y_INFO << handler_name_ << ": Saving RGBE file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+		if(has_alpha_) Y_VERBOSE << handler_name_ << ": Ignoring alpha channel." << YENDL;
 
-		writeHeader(file, imgIndex);
+		writeHeader(file, img_index);
 
-		rgbePixel_t signature; //scanline start signature for adaptative RLE
+		RgbePixel signature; //scanline start signature for adaptative RLE
 		signature.setScanlineStart(w); //setup the signature
 
-		rgbePixel_t *scanline = new rgbePixel_t[w];
+		RgbePixel *scanline = new RgbePixel[w];
 
 		// write using adaptive-rle encoding
 		for(int y = 0; y < h; y++)
 		{
 			// write scanline start signature
-			file.write((char *)&signature, sizeof(rgbePixel_t));
+			file.write((char *)&signature, sizeof(RgbePixel));
 
 			// fill the scanline buffer
 			for(int x = 0; x < w; x++)
 			{
-				scanline[x] = getPixel(x, y, imgIndex);
+				scanline[x] = getPixel(x, y, img_index);
 			}
 
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
-			if(!writeScanline(file, scanline, imgIndex))
+			if(!writeScanline(file, scanline, img_index))
 			{
-				Y_ERROR << handlerName << ": An error has occurred during scanline saving..." << yendl;
+				Y_ERROR << handler_name_ << ": An error has occurred during scanline saving..." << YENDL;
 				return false;
 			}
 		}
@@ -460,33 +460,33 @@ bool hdrHandler_t::saveToFile(const std::string &name, int imgIndex)
 		file.close();
 	}
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-bool hdrHandler_t::writeHeader(std::ofstream &file, int imgIndex)
+bool HdrHandler::writeHeader(std::ofstream &file, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
 	if(h <= 0 || w <= 0) return false;
 
-	file << "#?" << header.programType << "\n";
+	file << "#?" << header_.program_type_ << "\n";
 	file << "# Image created with YafaRay\n";
-	file << "EXPOSURE=" << header.exposure << "\n";
+	file << "EXPOSURE=" << header_.exposure_ << "\n";
 	file << "FORMAT=32-bit_rle_rgbe\n\n";
 	file << "-Y " << h << " +X " << w << "\n";
 
 	return true;
 }
 
-bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline, int imgIndex)
+bool HdrHandler::writeScanline(std::ofstream &file, RgbePixel *scanline, int img_index)
 {
-	int w = getWidth(imgIndex);
+	int w = getWidth(img_index);
 
 	int cur, beg_run, run_count, old_run_count, nonrun_count;
-	yByte runDesc;
+	YByte_t run_desc;
 
 	// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
 	for(int chan = 0; chan < 4; chan++)
@@ -512,8 +512,8 @@ bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline, int
 			// write short run
 			if((old_run_count > 1) && (old_run_count == beg_run - cur))
 			{
-				runDesc = 128 + old_run_count;
-				file.write((const char *)&runDesc, 1);
+				run_desc = 128 + old_run_count;
+				file.write((const char *)&run_desc, 1);
 				file.write((const char *)&scanline[cur][chan], 1);
 				cur = beg_run;
 			}
@@ -526,8 +526,8 @@ bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline, int
 				// Non run count can't be greater than 128
 				if(nonrun_count > 128) nonrun_count = 128;
 
-				runDesc = nonrun_count;
-				file.write((const char *)&runDesc, 1);
+				run_desc = nonrun_count;
+				file.write((const char *)&run_desc, 1);
 
 				for(int i = 0; i < nonrun_count; i++)
 				{
@@ -540,8 +540,8 @@ bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline, int
 			// write out next run if one was found
 			if(run_count >= 4)
 			{
-				runDesc = 128 + run_count;
-				file.write((const char *)&runDesc, 1);
+				run_desc = 128 + run_count;
+				file.write((const char *)&run_desc, 1);
 				file.write((const char *)&scanline[beg_run][chan], 1);
 				cur += run_count;
 			}
@@ -554,22 +554,22 @@ bool hdrHandler_t::writeScanline(std::ofstream &file, rgbePixel_t *scanline, int
 	return true;
 }
 
-imageHandler_t *hdrHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
+ImageHandler *HdrHandler::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int width = 0;
 	int height = 0;
-	bool withAlpha = false;
-	bool forOutput = true;
+	bool with_alpha = false;
+	bool for_output = true;
 	bool img_grayscale = false;
-	bool denoiseEnabled = false;
-	int denoiseHLum = 3;
-	int denoiseHCol = 3;
-	float denoiseMix = 0.8f;
+	bool denoise_enabled = false;
+	int denoise_h_lum = 3;
+	int denoise_h_col = 3;
+	float denoise_mix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
-	params.getParam("alpha_channel", withAlpha);
-	params.getParam("for_output", forOutput);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("for_output", for_output);
 	params.getParam("img_grayscale", img_grayscale);
 	/*	//Denoise is not available for HDR/EXR images
 	 * 	params.getParam("denoiseEnabled", denoiseEnabled);
@@ -577,14 +577,14 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 	 *	params.getParam("denoiseHCol", denoiseHCol);
 	 *	params.getParam("denoiseMix", denoiseMix);
 	 */
-	imageHandler_t *ih = new hdrHandler_t();
+	ImageHandler *ih = new HdrHandler();
 
-	ih->setTextureOptimization(TEX_OPTIMIZATION_NONE);
+	ih->setTextureOptimization(TextureOptimization::None);
 
-	if(forOutput)
+	if(for_output)
 	{
-		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
+		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;
@@ -593,10 +593,10 @@ imageHandler_t *hdrHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerImageHandler("hdr", "hdr pic", "HDR [Radiance RGBE]", hdrHandler_t::factory);
+		render.registerImageHandler("hdr", "hdr pic", "HDR [Radiance RGBE]", HdrHandler::factory);
 	}
 
 }
-__END_YAFRAY
+END_YAFRAY

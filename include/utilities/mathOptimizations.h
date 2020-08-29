@@ -32,8 +32,8 @@
  *
  */
 
-#ifndef Y_MATHOPTIMIZATIONS_H
-#define Y_MATHOPTIMIZATIONS_H
+#ifndef YAFARAY_MATHOPTIMIZATIONS_H
+#define YAFARAY_MATHOPTIMIZATIONS_H
 
 #include <cmath>
 #include <algorithm>
@@ -83,7 +83,7 @@
 #endif
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #define M_2PI		6.28318530717958647692 // PI * 2
 #define M_PI2		9.86960440108935861882 // PI ^ 2
@@ -91,57 +91,57 @@ __BEGIN_YAFRAY
 #define M_4_PI		1.27323954473516268615 // 4 / PI
 #define M_4_PI2		0.40528473456935108578 // 4 / PI ^ 2
 
-#define degToRad(deg) (deg * 0.01745329251994329576922)  // deg * PI / 180
-#define radToDeg(rad) (rad * 57.29577951308232087684636) // rad * 180 / PI
+#define DEG_TO_RAD(deg) (deg * 0.01745329251994329576922)  // deg * PI / 180
+#define RAD_TO_DEG(rad) (rad * 57.29577951308232087684636) // rad * 180 / PI
 
 //FIXME: All the overloaded double definitions have been added to fix the "white dots" problems and they seem to work fine. However several of them should be refined in the future to include constants with the correct precision for the doubles calculations.
 
 #define POLYEXP(x) (float)(x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
 #define POLYLOG(x) (float)(x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
 
-#define f_HI 129.00000f
-#define f_LOW -126.99999f
+#define F_HI 129.00000f
+#define F_LOW -126.99999f
 
 #define LOG_EXP 0x7F800000
 #define LOG_MANT 0x7FFFFF
 
 #define CONST_P 0.225f
 
-union bitTwiddler
+union BitTwiddler
 {
-	int i;
-	float f;
+	int i_;
+	float f_;
 };
 
-inline float fExp2(float x)
+inline float fExp2__(float x)
 {
-	bitTwiddler ipart, fpart;
-	bitTwiddler expipart;
+	BitTwiddler ipart, fpart;
+	BitTwiddler expipart;
 
-	x = std::min(x, f_HI);
-	x = std::max(x, f_LOW);
+	x = std::min(x, F_HI);
+	x = std::max(x, F_LOW);
 
-	ipart.i = (int)(x - 0.5f);
-	fpart.f = (x - (float)(ipart.i));
-	expipart.i = ((ipart.i + 127) << 23);
+	ipart.i_ = (int)(x - 0.5f);
+	fpart.f_ = (x - (float)(ipart.i_));
+	expipart.i_ = ((ipart.i_ + 127) << 23);
 
-	return (expipart.f * POLYEXP(fpart.f));
+	return (expipart.f_ * POLYEXP(fpart.f_));
 }
 
-inline float fLog2(float x)
+inline float fLog2__(float x)
 {
-	bitTwiddler one, i, m, e;
+	BitTwiddler one, i, m, e;
 
-	one.f = 1.0f;
-	i.f = x;
-	e.f = (float)(((i.i & LOG_EXP) >> 23) - 127);
-	m.i = ((i.i & LOG_MANT) | one.i);
+	one.f_ = 1.0f;
+	i.f_ = x;
+	e.f_ = (float)(((i.i_ & LOG_EXP) >> 23) - 127);
+	m.i_ = ((i.i_ & LOG_MANT) | one.i_);
 
-	return (POLYLOG(m.f) * (m.f - one.f) + e.f);
+	return (POLYLOG(m.f_) * (m.f_ - one.f_) + e.f_);
 }
 
 #ifdef FAST_MATH
-inline float asmSqrt(float n)
+inline float asmSqrt__(float n)
 {
 	float r = n;
 #ifdef _MSC_VER
@@ -173,43 +173,43 @@ inline float asmSqrt(float n)
 }
 #endif
 
-inline float fPow(float a, float b)
+inline float fPow__(float a, float b)
 {
 #ifdef FAST_MATH
-	return fExp2(fLog2(a) * b);
+	return fExp2__(fLog2__(a) * b);
 #else
 	return pow(a, b);
 #endif
 }
 
-inline float fLog(float a)
+inline float fLog__(float a)
 {
 #ifdef FAST_MATH
-	return fLog2(a) * (float) M_LN2;
+	return fLog2__(a) * (float) M_LN2;
 #else
 	return log(a);
 #endif
 }
 
-inline float fExp(float a)
+inline float fExp__(float a)
 {
 #ifdef FAST_MATH
-	return fExp2((float)M_LOG2E * a);
+	return fExp2__((float) M_LOG2E * a);
 #else
 	return exp(a);
 #endif
 }
 
-inline float fSqrt(float a)
+inline float fSqrt__(float a)
 {
 #ifdef FAST_MATH
-	return asmSqrt(a);
+	return asmSqrt__(a);
 #else
 	return sqrt(a);
 #endif
 }
 
-inline float fLdexp(float x, int a)
+inline float fLdexp__(float x, int a)
 {
 #ifdef FAST_MATH
 	//return x * fPow(2.0, a);
@@ -219,7 +219,7 @@ inline float fLdexp(float x, int a)
 #endif
 }
 
-inline float fSin(float x)
+inline float fSin__(float x)
 {
 #ifdef FAST_TRIG
 	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * (float)M_1_2PI)) * (float)M_2PI; //float modulo x % M_2PI
@@ -243,16 +243,16 @@ inline float fSin(float x)
 #endif
 }
 
-inline float fCos(float x)
+inline float fCos__(float x)
 {
 #ifdef FAST_TRIG
-	return fSin(x + (float)M_PI_2);
+	return fSin__(x + (float) M_PI_2);
 #else
 	return cos(x);
 #endif
 }
 
-inline float fAcos(float x)
+inline float fAcos__(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.0) return((float)M_PI);
@@ -260,7 +260,7 @@ inline float fAcos(float x)
 	else return acos(x);
 }
 
-inline float fAsin(float x)
+inline float fAsin__(float x)
 {
 	//checks if variable gets out of domain [-1.0,+1.0], so you get the range limit instead of NaN
 	if(x <= -1.0) return((float) - M_PI_2);
@@ -268,6 +268,6 @@ inline float fAsin(float x)
 	else return asin(x);
 }
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

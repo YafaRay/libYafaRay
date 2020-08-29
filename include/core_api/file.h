@@ -21,77 +21,79 @@
  *
  */
 
-#ifndef Y_FILE_H
-#define Y_FILE_H
+#ifndef YAFARAY_FILE_H
+#define YAFARAY_FILE_H
 
 #include <yafray_constants.h>
 #include <string>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT path_t
+class YAFRAYCORE_EXPORT Path final
 {
 	public:
-		path_t(const std::string &fullPath);
-		path_t(const std::string &directory, const std::string &baseName, const std::string &extension);
-		std::string getDirectory() const { return directory; }
-		std::string getBaseName() const { return baseName; }
-		std::string getExtension() const { return extension; }
+		Path(const std::string &full_path);
+		Path(const std::string &directory, const std::string &base_name, const std::string &extension);
+		std::string getDirectory() const { return directory_; }
+		std::string getBaseName() const { return base_name_; }
+		std::string getExtension() const { return extension_; }
 		std::string getParentDirectory() const;
 		std::string getFullPath() const;
-		void setDirectory(const std::string &dir) { directory = dir; }
-		void setBaseName(const std::string &name) { baseName = name; }
-		void setExtension(const std::string &ext) { extension = ext; }
+		void setDirectory(const std::string &dir) { directory_ = dir; }
+		void setBaseName(const std::string &name) { base_name_ = name; }
+		void setExtension(const std::string &ext) { extension_ = ext; }
 		static std::string getParent(const std::string &path);
-	protected:
-		std::string directory;
-		std::string baseName;
-		std::string extension;
+
+	private:
+		std::string directory_;
+		std::string base_name_;
+		std::string extension_;
 };
 
 
-class YAFRAYCORE_EXPORT file_t
+class YAFRAYCORE_EXPORT File final
 {
 	public:
-		file_t(const std::string &path);
-		file_t(const path_t &path);
-		~file_t();
+		File(const std::string &path);
+		File(const Path &path);
+		~File();
 		bool save(const std::string &str, bool with_tmp);
-		static FILE *open(const std::string &path, const std::string &accessMode);
-		static FILE *open(const path_t &path, const std::string &accessMode);
+		static FILE *open(const std::string &path, const std::string &access_mode);
+		static FILE *open(const Path &path, const std::string &access_mode);
 		static int close(FILE *fp);
 		static bool exists(const std::string &path, bool files_only);
 		static bool remove(const std::string &path, bool files_only);
-		static bool rename(const std::string &pathOld, const std::string &pathNew, bool overwrite, bool files_only);
+		static bool rename(const std::string &path_old, const std::string &path_new, bool overwrite, bool files_only);
 		static std::vector<std::string> listFiles(const std::string &directory);
-		bool open(const std::string &accessMode);
+		bool open(const std::string &access_mode);
 		int close();
 		bool read(std::string &str) const;
 		template <typename T> bool read(T &value) const;
 		bool append(const std::string &str);
 		template <typename T> bool append(const T &value);
-	protected:
+
+	private:
 		bool save(const char *buffer, size_t size, bool with_temp);
 		bool read(char *buffer, size_t size) const;
 		bool append(const char *buffer, size_t size);
-		path_t path;
-		FILE *fp = nullptr;
+		Path path_;
+		FILE *fp_ = nullptr;
 };
 
-template <typename T> bool file_t::read(T &value) const
+template <typename T> bool File::read(T &value) const
 {
 	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
-	return file_t::read((char *)&value, sizeof(T));
+	return File::read((char *)&value, sizeof(T));
 }
 
-template <typename T> bool file_t::append(const T &value)
+template <typename T> bool File::append(const T &value)
 {
 	static_assert(std::is_pod<T>::value, "T must be a plain old data (POD) type like char, int32_t, float, etc");
-	return file_t::append((const char *)&value, sizeof(T));
+	return File::append((const char *)&value, sizeof(T));
 }
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif //Y_FILE_H
+#endif //YAFARAY_FILE_H

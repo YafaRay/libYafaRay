@@ -25,178 +25,178 @@
 #include <windows.h>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 // Initialization of the master instance of yafLog
-yafarayLog_t yafLog = yafarayLog_t();
+Logger logger__ = Logger();
 
 // Initialization of the master session instance
-session_t session = session_t();
+Session session__ = Session();
 
-session_t::session_t(const session_t &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one session object anyway so it should be ok.
+Session::Session(const Session &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one session object anyway so it should be ok.
 {
 }
 
-session_t::session_t()
+Session::Session()
 {
-	Y_VERBOSE << "Session:started" << yendl;
+	Y_VERBOSE << "Session:started" << YENDL;
 #if defined(_WIN32)
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #endif
-	causticMap = new photonMap_t;
-	causticMap->setName("Caustic Photon Map");
-	diffuseMap = new photonMap_t;
-	diffuseMap->setName("Diffuse Photon Map");
-	radianceMap = new photonMap_t;
-	radianceMap->setName("FG Radiance Photon Map");
+	caustic_map_ = new PhotonMap;
+	caustic_map_->setName("Caustic Photon Map");
+	diffuse_map_ = new PhotonMap;
+	diffuse_map_->setName("Diffuse Photon Map");
+	radiance_map_ = new PhotonMap;
+	radiance_map_->setName("FG Radiance Photon Map");
 }
 
-session_t::~session_t()
+Session::~Session()
 {
-	delete radianceMap;
-	delete diffuseMap;
-	delete causticMap;
-	Y_VERBOSE << "Session: ended" << yendl;
+	delete radiance_map_;
+	delete diffuse_map_;
+	delete caustic_map_;
+	Y_VERBOSE << "Session: ended" << YENDL;
 }
 
-void session_t::setStatusRenderStarted()
+void Session::setStatusRenderStarted()
 {
-	mutx.lock();
+	mutx_.lock();
 
-	mRenderInProgress = true;
-	mRenderFinished = false;
-	mRenderResumed = false;
-	mRenderAborted = false;
-	mTotalPasses = 0;
-	mCurrentPass = 0;
-	mCurrentPassPercent = 0.f;
+	render_in_progress_ = true;
+	render_finished_ = false;
+	render_resumed_ = false;
+	render_aborted_ = false;
+	total_passes_ = 0;
+	current_pass_ = 0;
+	current_pass_percent_ = 0.f;
 
-	mutx.unlock();
+	mutx_.unlock();
 }
 
-void session_t::setStatusRenderResumed()
+void Session::setStatusRenderResumed()
 {
-	mutx.lock();
+	mutx_.lock();
 
-	mRenderInProgress = true;
-	mRenderFinished = false;
-	mRenderResumed = true;
-	mRenderAborted = false;
+	render_in_progress_ = true;
+	render_finished_ = false;
+	render_resumed_ = true;
+	render_aborted_ = false;
 
-	mutx.unlock();
+	mutx_.unlock();
 }
 
-void session_t::setStatusRenderFinished()
+void Session::setStatusRenderFinished()
 {
-	mutx.lock();
+	mutx_.lock();
 
-	mRenderInProgress = false;
-	mRenderFinished = true;
+	render_in_progress_ = false;
+	render_finished_ = true;
 
-	mutx.unlock();
+	mutx_.unlock();
 }
 
-void session_t::setStatusRenderAborted()
+void Session::setStatusRenderAborted()
 {
-	mutx.lock();
+	mutx_.lock();
 
-	mRenderInProgress = false;
-	mRenderAborted = true;
+	render_in_progress_ = false;
+	render_aborted_ = true;
 
-	mutx.unlock();
+	mutx_.unlock();
 }
 
-void session_t::setStatusTotalPasses(int total_passes)
+void Session::setStatusTotalPasses(int total_passes)
 {
-	mutx.lock();
-	mTotalPasses = total_passes;
-	mutx.unlock();
+	mutx_.lock();
+	total_passes_ = total_passes;
+	mutx_.unlock();
 }
 
-void session_t::setStatusCurrentPass(int current_pass)
+void Session::setStatusCurrentPass(int current_pass)
 {
-	mutx.lock();
-	mCurrentPass = current_pass;
-	mutx.unlock();
+	mutx_.lock();
+	current_pass_ = current_pass;
+	mutx_.unlock();
 }
 
-void session_t::setStatusCurrentPassPercent(float current_pass_percent)
+void Session::setStatusCurrentPassPercent(float current_pass_percent)
 {
-	mutx.lock();
-	mCurrentPassPercent = current_pass_percent;
-	mutx.unlock();
+	mutx_.lock();
+	current_pass_percent_ = current_pass_percent;
+	mutx_.unlock();
 }
 
-void session_t::setInteractive(bool interactive)
+void Session::setInteractive(bool interactive)
 {
-	mutx.lock();
-	mInteractive = interactive;
-	mutx.unlock();
+	mutx_.lock();
+	interactive_ = interactive;
+	mutx_.unlock();
 }
 
-void session_t::setPathYafaRayXml(std::string path)
+void Session::setPathYafaRayXml(std::string path)
 {
-	mutx.lock();
-	mPathYafaRayXml = path;
-	mutx.unlock();
+	mutx_.lock();
+	path_yafa_ray_xml_ = path;
+	mutx_.unlock();
 }
 
-void session_t::setPathImageOutput(std::string path)
+void Session::setPathImageOutput(std::string path)
 {
-	mutx.lock();
-	mPathImageOutput = path;
-	mutx.unlock();
+	mutx_.lock();
+	path_image_output_ = path;
+	mutx_.unlock();
 }
 
-bool session_t::renderInProgress()
+bool Session::renderInProgress()
 {
-	return mRenderInProgress;
+	return render_in_progress_;
 }
 
-bool session_t::renderResumed()
+bool Session::renderResumed()
 {
-	return mRenderResumed;
+	return render_resumed_;
 }
 
-bool session_t::renderFinished()
+bool Session::renderFinished()
 {
-	return mRenderFinished;
+	return render_finished_;
 }
 
-bool session_t::renderAborted()
+bool Session::renderAborted()
 {
-	return mRenderAborted;
+	return render_aborted_;
 }
 
-int session_t::totalPasses()
+int Session::totalPasses()
 {
-	return mTotalPasses;
+	return total_passes_;
 }
 
-int session_t::currentPass()
+int Session::currentPass()
 {
-	return mCurrentPass;
+	return current_pass_;
 }
 
-float session_t::currentPassPercent()
+float Session::currentPassPercent()
 {
-	return mCurrentPassPercent;
+	return current_pass_percent_;
 }
 
-bool session_t::isInteractive()
+bool Session::isInteractive()
 {
-	return mInteractive;
+	return interactive_;
 }
 
-std::string session_t::getPathYafaRayXml()
+std::string Session::getPathYafaRayXml()
 {
-	return mPathYafaRayXml;
+	return path_yafa_ray_xml_;
 }
 
-std::string session_t::getPathImageOutput()
+std::string Session::getPathImageOutput()
 {
-	return mPathImageOutput;
+	return path_image_output_;
 }
 
-__END_YAFRAY
+END_YAFRAY
 

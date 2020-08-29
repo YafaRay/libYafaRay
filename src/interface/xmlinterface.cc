@@ -6,238 +6,238 @@
 #include <core_api/matrix4.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-xmlInterface_t::xmlInterface_t(): last_mat(nullptr), nextObj(0), XMLGamma(1.f), XMLColorSpace(RAW_MANUAL_GAMMA)
+XmlInterface::XmlInterface(): last_mat_(nullptr), next_obj_(0), xml_gamma_(1.f), xml_color_space_(RawManualGamma)
 {
-	xmlName = "yafaray.xml";
+	xml_name_ = "yafaray.xml";
 }
 
 // xml environment doesn't need any plugins...
-void xmlInterface_t::loadPlugins(const char *path) { }
+void XmlInterface::loadPlugins(const char *path) { }
 
 
-void xmlInterface_t::clearAll()
+void XmlInterface::clearAll()
 {
-	Y_VERBOSE << "XMLInterface: cleaning up..." << yendl;
-	env->clearAll();
-	materials.clear();
-	if(xmlFile.is_open())
+	Y_VERBOSE << "XMLInterface: cleaning up..." << YENDL;
+	env_->clearAll();
+	materials_.clear();
+	if(xml_file_.is_open())
 	{
-		xmlFile.flush();
-		xmlFile.close();
+		xml_file_.flush();
+		xml_file_.close();
 	}
-	params->clear();
-	eparams->clear();
-	cparams = params;
-	nmat = 0;
-	nextObj = 0;
+	params_->clear();
+	eparams_->clear();
+	cparams_ = params_;
+	nmat_ = 0;
+	next_obj_ = 0;
 }
 
-bool xmlInterface_t::startScene(int type)
+bool XmlInterface::startScene(int type)
 {
-	xmlFile.open(xmlName.c_str());
-	if(!xmlFile.is_open())
+	xml_file_.open(xml_name_.c_str());
+	if(!xml_file_.is_open())
 	{
-		Y_ERROR << "XMLInterface: Couldn't open " << xmlName << yendl;
+		Y_ERROR << "XMLInterface: Couldn't open " << xml_name_ << YENDL;
 		return false;
 	}
-	else Y_INFO << "XMLInterface: Writing scene to: " << xmlName << yendl;
-	xmlFile << std::boolalpha;
-	xmlFile << "<?xml version=\"1.0\"?>" << yendl;
-	xmlFile << "<scene type=\"";
-	if(type == 0) xmlFile << "triangle";
-	else 		xmlFile << "universal";
-	xmlFile << "\">" << yendl;
+	else Y_INFO << "XMLInterface: Writing scene to: " << xml_name_ << YENDL;
+	xml_file_ << std::boolalpha;
+	xml_file_ << "<?xml version=\"1.0\"?>" << YENDL;
+	xml_file_ << "<scene type=\"";
+	if(type == 0) xml_file_ << "triangle";
+	else 		xml_file_ << "universal";
+	xml_file_ << "\">" << YENDL;
 	return true;
 }
 
-bool xmlInterface_t::setLoggingAndBadgeSettings()
+bool XmlInterface::setLoggingAndBadgeSettings()
 {
-	xmlFile << "\n<logging_badge name=\"logging_badge\">\n";
-	writeParamMap(*params);
-	params->clear();
-	xmlFile << "</logging_badge>\n";
+	xml_file_ << "\n<logging_badge name=\"logging_badge\">\n";
+	writeParamMap(*params_);
+	params_->clear();
+	xml_file_ << "</logging_badge>\n";
 	return true;
 }
 
-bool xmlInterface_t::setupRenderPasses()
+bool XmlInterface::setupRenderPasses()
 {
-	xmlFile << "\n<render_passes name=\"render_passes\">\n";
-	writeParamMap(*params);
-	params->clear();
-	xmlFile << "</render_passes>\n";
+	xml_file_ << "\n<render_passes name=\"render_passes\">\n";
+	writeParamMap(*params_);
+	params_->clear();
+	xml_file_ << "</render_passes>\n";
 	return true;
 }
 
-void xmlInterface_t::setOutfile(const char *fname)
+void XmlInterface::setOutfile(const char *fname)
 {
-	xmlName = std::string(fname);
+	xml_name_ = std::string(fname);
 }
 
-bool xmlInterface_t::startGeometry() { return true; }
+bool XmlInterface::startGeometry() { return true; }
 
-bool xmlInterface_t::endGeometry() { return true; }
+bool XmlInterface::endGeometry() { return true; }
 
-unsigned int xmlInterface_t::getNextFreeID()
+unsigned int XmlInterface::getNextFreeId()
 {
-	return ++nextObj;
+	return ++next_obj_;
 }
 
 
-bool xmlInterface_t::startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
+bool XmlInterface::startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
-	last_mat = nullptr;
-	n_uvs = 0;
-	xmlFile << "\n<mesh id=\"" << id << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
-	        << "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
+	last_mat_ = nullptr;
+	n_uvs_ = 0;
+	xml_file_ << "\n<mesh id=\"" << id << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
+			  << "\" has_orco=\"" << has_orco << "\" has_uv=\"" << has_uv << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool xmlInterface_t::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
+bool XmlInterface::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
 {
-	xmlFile << "\n<curve id=\"" << id << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
+	xml_file_ << "\n<curve id=\"" << id << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool xmlInterface_t::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV, int type, int obj_pass_index)
+bool XmlInterface::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
-	*id = ++nextObj;
-	last_mat = nullptr;
-	n_uvs = 0;
-	xmlFile << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
-	        << "\" has_orco=\"" << hasOrco << "\" has_uv=\"" << hasUV << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
+	*id = ++next_obj_;
+	last_mat_ = nullptr;
+	n_uvs_ = 0;
+	xml_file_ << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
+			  << "\" has_orco=\"" << has_orco << "\" has_uv=\"" << has_uv << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool xmlInterface_t::endTriMesh()
+bool XmlInterface::endTriMesh()
 {
-	xmlFile << "</mesh>\n";
+	xml_file_ << "</mesh>\n";
 	return true;
 }
 
-bool xmlInterface_t::endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape)
+bool XmlInterface::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape)
 {
-	auto i = materials.find(mat);
-	if(i == materials.end()) return false;
-	xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n"
-	        << "\t\t\t<strand_start fval=\"" << strandStart << "\"/>\n"
-	        << "\t\t\t<strand_end fval=\"" << strandEnd << "\"/>\n"
-	        << "\t\t\t<strand_shape fval=\"" << strandShape << "\"/>\n"
-	        << "</curve>\n";
+	auto i = materials_.find(mat);
+	if(i == materials_.end()) return false;
+	xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n"
+			  << "\t\t\t<strand_start fval=\"" << strand_start << "\"/>\n"
+			  << "\t\t\t<strand_end fval=\"" << strand_end << "\"/>\n"
+			  << "\t\t\t<strand_shape fval=\"" << strand_shape << "\"/>\n"
+			  << "</curve>\n";
 	return true;
 }
 
-int  xmlInterface_t::addVertex(double x, double y, double z)
+int  XmlInterface::addVertex(double x, double y, double z)
 {
-	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	xml_file_ << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 	return 0;
 }
 
-int  xmlInterface_t::addVertex(double x, double y, double z, double ox, double oy, double oz)
+int  XmlInterface::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
-	xmlFile << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
-	        << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
+	xml_file_ << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
+			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
 	return 0;
 }
 
-void xmlInterface_t::addNormal(double x, double y, double z)
+void XmlInterface::addNormal(double x, double y, double z)
 {
-	xmlFile << "\t\t\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	xml_file_ << "\t\t\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
-bool xmlInterface_t::addTriangle(int a, int b, int c, const material_t *mat)
+bool XmlInterface::addTriangle(int a, int b, int c, const Material *mat)
 {
-	if(mat != last_mat) //need to set current material
+	if(mat != last_mat_) //need to set current material
 	{
-		auto i = materials.find(mat);
-		if(i == materials.end()) return false;
-		xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
-		last_mat = mat;
+		auto i = materials_.find(mat);
+		if(i == materials_.end()) return false;
+		xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
+		last_mat_ = mat;
 	}
-	xmlFile << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
+	xml_file_ << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
 	return true;
 }
 
-bool xmlInterface_t::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat)
+bool XmlInterface::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat)
 {
-	if(mat != last_mat) //need to set current material
+	if(mat != last_mat_) //need to set current material
 	{
-		auto i = materials.find(mat);
-		if(i == materials.end()) return false;
-		xmlFile << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
-		last_mat = mat;
+		auto i = materials_.find(mat);
+		if(i == materials_.end()) return false;
+		xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
+		last_mat_ = mat;
 	}
-	xmlFile << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
-	        << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
+	xml_file_ << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
+			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
 	return true;
 }
 
-int xmlInterface_t::addUV(float u, float v)
+int XmlInterface::addUv(float u, float v)
 {
-	xmlFile << "\t\t\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
-	return n_uvs++;
+	xml_file_ << "\t\t\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
+	return n_uvs_++;
 }
 
-bool xmlInterface_t::smoothMesh(unsigned int id, double angle)
+bool XmlInterface::smoothMesh(unsigned int id, double angle)
 {
-	xmlFile << "<smooth ID=\"" << id << "\" angle=\"" << angle << "\"/>\n";
+	xml_file_ << "<smooth ID=\"" << id << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 
-void writeMatrix(const std::string &name, const matrix4x4_t &m, std::ofstream &xmlFile)
+void writeMatrix__(const std::string &name, const Matrix4 &m, std::ofstream &xml_file)
 {
-	xmlFile << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2]  << "\" m03=\"" << m[0][3] << "\""
-			<< " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2]  << "\" m13=\"" << m[1][3] << "\""
-			<< " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2]  << "\" m23=\"" << m[2][3] << "\""
-			<< " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2]  << "\" m33=\"" << m[3][3] << "\"/>";
+	xml_file << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
+			 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
+			 << " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2] << "\" m23=\"" << m[2][3] << "\""
+			 << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2] << "\" m33=\"" << m[3][3] << "\"/>";
 }
 
-inline void writeParam(const std::string &name, const parameter_t &param, std::ofstream &xmlFile, colorSpaces_t XMLColorSpace, float XMLGamma)
+inline void writeParam__(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma)
 {
-	const parameter_t::Type type = param.type();
-	if(type == parameter_t::Int)
+	const Parameter::Type type = param.type();
+	if(type == Parameter::Int)
 	{
 		int i = 0;
 		param.getVal(i);
-		xmlFile << "<" << name << " ival=\"" << i << "\"/>\n";
+		xml_file << "<" << name << " ival=\"" << i << "\"/>\n";
 	}
-	else if(type == parameter_t::Bool)
+	else if(type == Parameter::Bool)
 	{
 		bool b = false;
 		param.getVal(b);
-		xmlFile << "<" << name << " bval=\"" << b << "\"/>\n";
+		xml_file << "<" << name << " bval=\"" << b << "\"/>\n";
 	}
-	else if(type == parameter_t::Float)
+	else if(type == Parameter::Float)
 	{
 		double f = 0.0;
 		param.getVal(f);
-		xmlFile << "<" << name << " fval=\"" << f << "\"/>\n";
+		xml_file << "<" << name << " fval=\"" << f << "\"/>\n";
 	}
-	else if(type == parameter_t::String)
+	else if(type == Parameter::String)
 	{
 		std::string s;
 		param.getVal(s);
-		if(!s.empty()) xmlFile << "<" << name << " sval=\"" << s << "\"/>\n";
+		if(!s.empty()) xml_file << "<" << name << " sval=\"" << s << "\"/>\n";
 	}
-	else if(type == parameter_t::Point)
+	else if(type == Parameter::Point)
 	{
-		point3d_t p(0.f);
+		Point3 p(0.f);
 		param.getVal(p);
-		xmlFile << "<" << name << " x=\"" << p.x << "\" y=\"" << p.y << "\" z=\"" << p.z << "\"/>\n";
+		xml_file << "<" << name << " x=\"" << p.x_ << "\" y=\"" << p.y_ << "\" z=\"" << p.z_ << "\"/>\n";
 	}
-	else if(type == parameter_t::Color)
+	else if(type == Parameter::Color)
 	{
-		colorA_t c(0.f);
+		Rgba c(0.f);
 		param.getVal(c);
-		c.ColorSpace_from_linearRGB(XMLColorSpace, XMLGamma);    //Color values are encoded to the desired color space before saving them to the XML file
-		xmlFile << "<" << name << " r=\"" << c.R << "\" g=\"" << c.G << "\" b=\"" << c.B << "\" a=\"" << c.A << "\"/>\n";
+		c.colorSpaceFromLinearRgb(xml_color_space, xml_gamma);    //Color values are encoded to the desired color space before saving them to the XML file
+		xml_file << "<" << name << " r=\"" << c.r_ << "\" g=\"" << c.g_ << "\" b=\"" << c.b_ << "\" a=\"" << c.a_ << "\"/>\n";
 	}
-	else if(type == parameter_t::Matrix)
+	else if(type == Parameter::Matrix)
 	{
-		matrix4x4_t m;
+		Matrix4 m;
 		param.getVal(m);
-		writeMatrix(name, m, xmlFile);
+		writeMatrix__(name, m, xml_file);
 	}
 	else
 	{
@@ -245,130 +245,130 @@ inline void writeParam(const std::string &name, const parameter_t &param, std::o
 	}
 }
 
-bool xmlInterface_t::addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld)
+bool XmlInterface::addInstance(unsigned int base_object_id, Matrix4 obj_to_world)
 {
-	xmlFile << "\n<instance base_object_id=\"" << baseObjectId << "\" >\n\t";
-	writeMatrix("transform", objToWorld, xmlFile);
-	xmlFile << "\n</instance>\n";
+	xml_file_ << "\n<instance base_object_id=\"" << base_object_id << "\" >\n\t";
+	writeMatrix__("transform", obj_to_world, xml_file_);
+	xml_file_ << "\n</instance>\n";
 	return true;
 }
 
-void xmlInterface_t::writeParamMap(const paraMap_t &pmap, int indent)
+void XmlInterface::writeParamMap(const ParamMap &pmap, int indent)
 {
 	std::string tabs(indent, '\t');
 	for(const auto &p : pmap)
 	{
-		xmlFile << tabs;
-		writeParam(p.first, p.second, xmlFile, XMLColorSpace, XMLGamma);
+		xml_file_ << tabs;
+		writeParam__(p.first, p.second, xml_file_, xml_color_space_, xml_gamma_);
 	}
 }
 
-void xmlInterface_t::writeParamList(int indent)
+void XmlInterface::writeParamList(int indent)
 {
 	std::string tabs(indent, '\t');
 
-	auto ip = eparams->begin();
-	auto end = eparams->end();
+	auto ip = eparams_->begin();
+	auto end = eparams_->end();
 
 	for(; ip != end; ++ip)
 	{
-		xmlFile << tabs << "<list_element>\n";
+		xml_file_ << tabs << "<list_element>\n";
 		writeParamMap(*ip, indent + 1);
-		xmlFile << tabs << "</list_element>\n";
+		xml_file_ << tabs << "</list_element>\n";
 	}
 }
 
-light_t 		*xmlInterface_t::createLight(const char *name)
+Light 		*XmlInterface::createLight(const char *name)
 {
-	xmlFile << "\n<light name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</light>\n";
+	xml_file_ << "\n<light name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</light>\n";
 	return nullptr;
 }
 
-texture_t 		*xmlInterface_t::createTexture(const char *name)
+Texture 		*XmlInterface::createTexture(const char *name)
 {
-	xmlFile << "\n<texture name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</texture>\n";
+	xml_file_ << "\n<texture name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</texture>\n";
 	return nullptr;
 }
 
-material_t 	*xmlInterface_t::createMaterial(const char *name)
+Material 	*XmlInterface::createMaterial(const char *name)
 {
-	material_t *matp = (material_t *)++nmat;
-	materials[matp] = std::string(name);
-	xmlFile << "\n<material name=\"" << name << "\">\n";
-	writeParamMap(*params);
+	Material *matp = (Material *)++nmat_;
+	materials_[matp] = std::string(name);
+	xml_file_ << "\n<material name=\"" << name << "\">\n";
+	writeParamMap(*params_);
 	writeParamList(1);
-	xmlFile << "</material>\n";
+	xml_file_ << "</material>\n";
 	return matp;
 }
-camera_t 		*xmlInterface_t::createCamera(const char *name)
+Camera 		*XmlInterface::createCamera(const char *name)
 {
-	xmlFile << "\n<camera name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</camera>\n";
+	xml_file_ << "\n<camera name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</camera>\n";
 	return nullptr;
 }
-background_t 	*xmlInterface_t::createBackground(const char *name)
+Background 	*XmlInterface::createBackground(const char *name)
 {
-	xmlFile << "\n<background name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</background>\n";
+	xml_file_ << "\n<background name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</background>\n";
 	return nullptr;
 }
-integrator_t 	*xmlInterface_t::createIntegrator(const char *name)
+Integrator 	*XmlInterface::createIntegrator(const char *name)
 {
-	xmlFile << "\n<integrator name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</integrator>\n";
-	return nullptr;
-}
-
-VolumeRegion 	*xmlInterface_t::createVolumeRegion(const char *name)
-{
-	xmlFile << "\n<volumeregion name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</volumeregion>\n";
+	xml_file_ << "\n<integrator name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</integrator>\n";
 	return nullptr;
 }
 
-unsigned int 	xmlInterface_t::createObject(const char *name)
+VolumeRegion 	*XmlInterface::createVolumeRegion(const char *name)
 {
-	xmlFile << "\n<object name=\"" << name << "\">\n";
-	writeParamMap(*params);
-	xmlFile << "</object>\n";
-	return ++nextObj;
+	xml_file_ << "\n<volumeregion name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</volumeregion>\n";
+	return nullptr;
 }
 
-void xmlInterface_t::render(colorOutput_t &output, progressBar_t *pb)
+unsigned int 	XmlInterface::createObject(const char *name)
 {
-	xmlFile << "\n<render>\n";
-	writeParamMap(*params);
-	xmlFile << "</render>\n";
-	xmlFile << "</scene>" << yendl;
-	xmlFile.flush();
-	xmlFile.close();
+	xml_file_ << "\n<object name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</object>\n";
+	return ++next_obj_;
 }
 
-void xmlInterface_t::setXMLColorSpace(std::string color_space_string, float gammaVal)
+void XmlInterface::render(ColorOutput &output, ProgressBar *pb)
 {
-	if(color_space_string == "sRGB") XMLColorSpace = SRGB;
-	else if(color_space_string == "XYZ") XMLColorSpace = XYZ_D65;
-	else if(color_space_string == "LinearRGB") XMLColorSpace = LINEAR_RGB;
-	else if(color_space_string == "Raw_Manual_Gamma") XMLColorSpace = RAW_MANUAL_GAMMA;
-	else XMLColorSpace = SRGB;
+	xml_file_ << "\n<render>\n";
+	writeParamMap(*params_);
+	xml_file_ << "</render>\n";
+	xml_file_ << "</scene>" << YENDL;
+	xml_file_.flush();
+	xml_file_.close();
+}
 
-	XMLGamma = gammaVal;
+void XmlInterface::setXmlColorSpace(std::string color_space_string, float gamma_val)
+{
+	if(color_space_string == "sRGB") xml_color_space_ = Srgb;
+	else if(color_space_string == "XYZ") xml_color_space_ = XyzD65;
+	else if(color_space_string == "LinearRGB") xml_color_space_ = LinearRgb;
+	else if(color_space_string == "Raw_Manual_Gamma") xml_color_space_ = RawManualGamma;
+	else xml_color_space_ = Srgb;
+
+	xml_gamma_ = gamma_val;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT xmlInterface_t *getYafrayXML()
+	YAFRAYPLUGIN_EXPORT XmlInterface *getYafrayXml__()
 	{
-		return new xmlInterface_t();
+		return new XmlInterface();
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

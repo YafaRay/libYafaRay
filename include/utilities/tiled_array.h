@@ -1,145 +1,145 @@
 #pragma once
 
-#ifndef Y_TILEDARRAY_H
-#define Y_TILEDARRAY_H
+#ifndef YAFARAY_TILED_ARRAY_H
+#define YAFARAY_TILED_ARRAY_H
 
 #include <yafray_constants.h>
 #include <cstring>
 #include "y_alloc.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-template<class T, int logBlockSize> class tiledArray2D_t
+template<class T, int logBlockSize> class TiledArray2D
 {
 	public:
-		tiledArray2D_t(): data(nullptr), nx(0), ny(0), xBlocks(0)
+		TiledArray2D(): data_(nullptr), nx_(0), ny_(0), x_blocks_(0)
 		{
-			blockSize = 1 << logBlockSize;
-			blockMask = blockSize - 1;
+			block_size_ = 1 << logBlockSize;
+			block_mask_ = block_size_ - 1;
 		}
-		tiledArray2D_t(int x, int y, bool init = false): nx(x), ny(y)
+		TiledArray2D(int x, int y, bool init = false): nx_(x), ny_(y)
 		{
-			blockSize = 1 << logBlockSize;
-			blockMask = blockSize - 1;
-			xBlocks = roundUp(x) >> logBlockSize;
-			int nAlloc = roundUp(x) * roundUp(y);
-			data = (T *)y_memalign(64, nAlloc * sizeof(T));
+			block_size_ = 1 << logBlockSize;
+			block_mask_ = block_size_ - 1;
+			x_blocks_ = roundUp(x) >> logBlockSize;
+			int n_alloc = roundUp(x) * roundUp(y);
+			data_ = (T *) yMemalign__(64, n_alloc * sizeof(T));
 			if(init)
 			{
-				for(int i = 0; i < nAlloc; ++i) new(&data[i]) T();
+				for(int i = 0; i < n_alloc; ++i) new(&data_[i]) T();
 			}
 		}
 		void resize(int x, int y, bool init = false)
 		{
-			xBlocks = roundUp(x) >> logBlockSize;
-			int nAlloc = roundUp(x) * roundUp(y);
-			T *old = data;
-			if(old) y_free(old);
-			data = (T *)y_memalign(64, nAlloc * sizeof(T));
+			x_blocks_ = roundUp(x) >> logBlockSize;
+			int n_alloc = roundUp(x) * roundUp(y);
+			T *old = data_;
+			if(old) yFree__(old);
+			data_ = (T *) yMemalign__(64, n_alloc * sizeof(T));
 			if(init)
 			{
-				for(int i = 0; i < nAlloc; ++i) new(&data[i]) T();
+				for(int i = 0; i < n_alloc; ++i) new(&data_[i]) T();
 			}
-			nx = x; ny = y;
-			xBlocks = roundUp(x) >> logBlockSize;
+			nx_ = x; ny_ = y;
+			x_blocks_ = roundUp(x) >> logBlockSize;
 		}
-		int tileSize() const { return blockSize; }
-		int xSize() const { return nx; }
-		int ySize() const { return ny; }
-		T *getData() { return data; }
-		unsigned int size() const { return roundUp(nx) * roundUp(ny); }
+		int tileSize() const { return block_size_; }
+		int xSize() const { return nx_; }
+		int ySize() const { return ny_; }
+		T *getData() { return data_; }
+		unsigned int size() const { return roundUp(nx_) * roundUp(ny_); }
 		int roundUp(int x) const
 		{
-			return (x + blockSize - 1) & ~(blockSize - 1);
+			return (x + block_size_ - 1) & ~(block_size_ - 1);
 		}
 
-		~tiledArray2D_t()
+		~TiledArray2D()
 		{
-			for(int i = 0; i < nx * ny; ++i)
-				data[i].~T();
-			if(data) y_free(data);
+			for(int i = 0; i < nx_ * ny_; ++i)
+				data_[i].~t_();
+			if(data_) yFree__(data_);
 		}
 		T &operator()(int x, int y)
 		{
 			int bx = block(x), by = block(y);
 			int ox = offset(x), oy = offset(y);
-			int offset = (xBlocks * by + bx) << (logBlockSize * 2);
+			int offset = (x_blocks_ * by + bx) << (logBlockSize * 2);
 			offset += (oy << logBlockSize) + ox;
-			return data[offset];
+			return data_[offset];
 		}
 		const T &operator()(int x, int y) const
 		{
 			int bx = block(x), by = block(y);
 			int ox = offset(x), oy = offset(y);
-			int offset = (xBlocks * by + bx) << (logBlockSize * 2);
+			int offset = (x_blocks_ * by + bx) << (logBlockSize * 2);
 			offset += (oy << logBlockSize) + ox;
-			return data[offset];
+			return data_[offset];
 		}
 	protected:
 		int block(int a) const { return (a >> logBlockSize); }
-		int offset(int a) const { return (a & blockMask); }
+		int offset(int a) const { return (a & block_mask_); }
 		// BlockedArray Private Data
-		T *data;
-		int nx, ny, xBlocks;
-		int blockSize, blockMask;
+		T *data_;
+		int nx_, ny_, x_blocks_;
+		int block_size_, block_mask_;
 };
 
 
-template<int logBlockSize> class tiledBitArray2D_t
+template<int logBlockSize> class TiledBitArray2D
 {
 	public:
-		tiledBitArray2D_t(int x, int y, bool init = false): nx(x), ny(y)
+		TiledBitArray2D(int x, int y, bool init = false): nx_(x), ny_(y)
 		{
-			blockSize = 1 << logBlockSize;
-			blockMask = blockSize - 1;
-			xBlocks = roundUp(x) >> logBlockSize;
-			nAlloc = roundUp(x) * roundUp(y);
-			data = (unsigned int *)y_memalign(64, nAlloc * sizeof(unsigned int));
-			if(init) std::memset(data, 0, nAlloc);
+			block_size_ = 1 << logBlockSize;
+			block_mask_ = block_size_ - 1;
+			x_blocks_ = roundUp(x) >> logBlockSize;
+			n_alloc_ = roundUp(x) * roundUp(y);
+			data_ = (unsigned int *) yMemalign__(64, n_alloc_ * sizeof(unsigned int));
+			if(init) std::memset(data_, 0, n_alloc_);
 		}
-		~tiledBitArray2D_t() { if(data) y_free(data); }
-		int roundUp(int x) const { return (x + blockSize - 1) & ~(blockSize - 1); }
-		void clear() { std::memset(data, 0, nAlloc); }
+		~TiledBitArray2D() { if(data_) yFree__(data_); }
+		int roundUp(int x) const { return (x + block_size_ - 1) & ~(block_size_ - 1); }
+		void clear() { std::memset(data_, 0, n_alloc_); }
 		void setBit(int x, int y)
 		{
 			int bx = block(x), by = block(y);
 			int ox = offset(x), oy = offset(y);
-			int block_offset = (xBlocks * by + bx) << ((logBlockSize) * 2);
+			int block_offset = (x_blocks_ * by + bx) << ((logBlockSize) * 2);
 			int bit_offset = block_offset + ((oy << logBlockSize) | ox);
 			int el_offset = bit_offset >> 5;
 			int word_offset = bit_offset & 31;
-			data[el_offset] |= (1 << word_offset);
+			data_[el_offset] |= (1 << word_offset);
 		}
 		void clearBit(int x, int y)
 		{
 			int bx = block(x), by = block(y);
 			int ox = offset(x), oy = offset(y);
-			int block_offset = (xBlocks * by + bx) << ((logBlockSize) * 2);
+			int block_offset = (x_blocks_ * by + bx) << ((logBlockSize) * 2);
 			int bit_offset = block_offset + ((oy << logBlockSize) | ox);
 			int el_offset = bit_offset >> 5;
 			int word_offset = bit_offset & 31;
-			data[el_offset] &= ~(1 << word_offset);
+			data_[el_offset] &= ~(1 << word_offset);
 		}
 		bool getBit(int x, int y)
 		{
 			int bx = block(x), by = block(y);
 			int ox = offset(x), oy = offset(y);
-			int block_offset = (xBlocks * by + bx) << ((logBlockSize) * 2);
+			int block_offset = (x_blocks_ * by + bx) << ((logBlockSize) * 2);
 			int bit_offset = block_offset + ((oy << logBlockSize) | ox);
 			int el_offset = bit_offset >> 5;
 			int word_offset = bit_offset & 31;
-			return data[el_offset] & (1 << word_offset);
+			return data_[el_offset] & (1 << word_offset);
 		}
 	protected:
-		tiledBitArray2D_t();
+		TiledBitArray2D();
 		int block(int a) const { return (a >> logBlockSize); }
-		int offset(int a) const { return (a & blockMask); }
+		int offset(int a) const { return (a & block_mask_); }
 		// BlockedArray Private Data
-		unsigned int *data;
-		size_t nAlloc;
-		int nx, ny, xBlocks;
-		int blockSize, blockMask;
+		unsigned int *data_;
+		size_t n_alloc_;
+		int nx_, ny_, x_blocks_;
+		int block_size_, block_mask_;
 };
 
-__END_YAFRAY
-#endif // Y_TILEDARRAY_H
+END_YAFRAY
+#endif // YAFARAY_TILED_ARRAY_H

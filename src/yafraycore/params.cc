@@ -3,25 +3,25 @@
 #include <core_api/color.h>
 #include <core_api/matrix4.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-parameter_t::parameter_t(const std::string &s) : type_(String) { sval_ = s; }
-parameter_t::parameter_t(int i) : type_(Int) { ival_ = i; }
-parameter_t::parameter_t(bool b) : type_(Bool) { bval_ = b; }
-parameter_t::parameter_t(float f) : type_(Float) { fval_ = f; }
-parameter_t::parameter_t(double f) : type_(Float) { fval_ = f; }
+Parameter::Parameter(const std::string &s) : type_(String) { sval_ = s; }
+Parameter::Parameter(int i) : type_(Int) { ival_ = i; }
+Parameter::Parameter(bool b) : type_(Bool) { bval_ = b; }
+Parameter::Parameter(float f) : type_(Float) { fval_ = f; }
+Parameter::Parameter(double f) : type_(Float) { fval_ = f; }
 
-parameter_t::parameter_t(const point3d_t &p) : type_(Point)
+Parameter::Parameter(const Point3 &p) : type_(Point)
 {
-	vval_.resize(3); vval_.at(0) = p.x, vval_.at(1) = p.y, vval_.at(2) = p.z;
+	vval_.resize(3); vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
 }
 
-parameter_t::parameter_t(const colorA_t &c) : type_(Color)
+Parameter::Parameter(const Rgba &c) : type_(Color)
 {
-	vval_.resize(4); vval_.at(0) = c.R, vval_.at(1) = c.G, vval_.at(2) = c.B, vval_.at(3) = c.A;
+	vval_.resize(4); vval_.at(0) = c.r_, vval_.at(1) = c.g_, vval_.at(2) = c.b_, vval_.at(3) = c.a_;
 }
 
-parameter_t::parameter_t(const matrix4x4_t &m) : type_(Matrix)
+Parameter::Parameter(const Matrix4 &m) : type_(Matrix)
 {
 	vval_.resize(16);
 	for(int i = 0; i < 4; ++i)
@@ -29,40 +29,40 @@ parameter_t::parameter_t(const matrix4x4_t &m) : type_(Matrix)
 			vval_.at(i * 4 + j) = m[i][j];
 }
 
-bool parameter_t::getVal(std::string &s) const {if(type_ == String) { s = sval_; return true;} return false;}
-bool parameter_t::getVal(int &i) const {if(type_ == Int)  { i = ival_; return true;} return false;}
-bool parameter_t::getVal(bool &b) const {if(type_ == Bool)  { b = bval_; return true;} return false;}
-bool parameter_t::getVal(float &f) const {if(type_ == Float) { f = (float)fval_; return true;} return false;}
-bool parameter_t::getVal(double &f) const {if(type_ == Float) { f = fval_; return true;} return false;}
+bool Parameter::getVal(std::string &s) const {if(type_ == String) { s = sval_; return true;} return false;}
+bool Parameter::getVal(int &i) const {if(type_ == Int)  { i = ival_; return true;} return false;}
+bool Parameter::getVal(bool &b) const {if(type_ == Bool)  { b = bval_; return true;} return false;}
+bool Parameter::getVal(float &f) const {if(type_ == Float) { f = (float)fval_; return true;} return false;}
+bool Parameter::getVal(double &f) const {if(type_ == Float) { f = fval_; return true;} return false;}
 
-bool parameter_t::getVal(point3d_t &p) const {
+bool Parameter::getVal(Point3 &p) const {
 	if(type_ == Point)
 	{
-		p.x = vval_.at(0), p.y = vval_.at(1), p.z = vval_.at(2);
+		p.x_ = vval_.at(0), p.y_ = vval_.at(1), p.z_ = vval_.at(2);
 		return true;
 	}
 	return false;
 }
 
-bool parameter_t::getVal(color_t &c) const {
+bool Parameter::getVal(Rgb &c) const {
 	if(type_ == Color)
 	{
-		c.R = vval_.at(0), c.G = vval_.at(1), c.B = vval_.at(2);
+		c.r_ = vval_.at(0), c.g_ = vval_.at(1), c.b_ = vval_.at(2);
 		return true;
 	}
 	return false;
 }
 
-bool parameter_t::getVal(colorA_t &c) const {
+bool Parameter::getVal(Rgba &c) const {
 	if(type_ == Color)
 	{
-		c.R = vval_.at(0), c.G = vval_.at(1), c.B = vval_.at(2), c.A = vval_.at(3);
+		c.r_ = vval_.at(0), c.g_ = vval_.at(1), c.b_ = vval_.at(2), c.a_ = vval_.at(3);
 		return true;
 	}
 	return false;
 }
 
-bool parameter_t::getVal(matrix4x4_t &m) const
+bool Parameter::getVal(Matrix4 &m) const
 {
 	if(type_ == Matrix)
 	{
@@ -74,48 +74,48 @@ bool parameter_t::getVal(matrix4x4_t &m) const
 	return false;
 }
 
-parameter_t &parameter_t::operator=(const std::string &s)
+Parameter &Parameter::operator=(const std::string &s)
 {
 	if(type_ != String) { type_ = String; vval_.clear(); }
 	sval_ = s;
 	return *this;
 }
 
-parameter_t &parameter_t::operator=(int i)
+Parameter &Parameter::operator=(int i)
 {
 	if(type_ != Int) { type_ = Int; vval_.clear(); sval_.clear(); }
 	ival_ = i;
 	return *this;
 }
 
-parameter_t &parameter_t::operator=(bool b)
+Parameter &Parameter::operator=(bool b)
 {
 	if(type_ != Bool) { type_ = Bool; vval_.clear(); sval_.clear(); }
 	bval_ = b;
 	return *this;
 }
 
-parameter_t &parameter_t::operator=(float f)
+Parameter &Parameter::operator=(float f)
 {
 	if(type_ != Float) { type_ = Float; vval_.clear(); sval_.clear(); }
 	fval_ = f;
 	return *this;
 }
 
-parameter_t &parameter_t::operator=(const point3d_t &p)
+Parameter &Parameter::operator=(const Point3 &p)
 {
 	if(type_ != Point) { type_ = Point; sval_.clear(); vval_.resize(3); }
-	vval_.at(0) = p.x, vval_.at(1) = p.y, vval_.at(2) = p.z;
+	vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
 	return *this;
 }
-parameter_t &parameter_t::operator=(const colorA_t &c)
+Parameter &Parameter::operator=(const Rgba &c)
 {
 	if(type_ != Color) { type_ = Color; sval_.clear(); vval_.resize(4); }
-	vval_.at(0) = c.R, vval_.at(1) = c.G, vval_.at(2) = c.B, vval_.at(3) = c.A;
+	vval_.at(0) = c.r_, vval_.at(1) = c.g_, vval_.at(2) = c.b_, vval_.at(3) = c.a_;
 	return *this;
 }
 
-parameter_t &parameter_t::operator=(const matrix4x4_t &m)
+Parameter &Parameter::operator=(const Matrix4 &m)
 {
 	if(type_ != Matrix) { type_ = Matrix; sval_.clear(); vval_.resize(16); }
 	for(int i = 0; i < 4; ++i)
@@ -124,10 +124,10 @@ parameter_t &parameter_t::operator=(const matrix4x4_t &m)
 	return *this;
 }
 
-parameter_t &paraMap_t::operator[](const std::string &key) { return dicc_[key]; }
-void paraMap_t::clear() { dicc_.clear(); }
+Parameter &ParamMap::operator[](const std::string &key) { return dicc_[key]; }
+void ParamMap::clear() { dicc_.clear(); }
 
-std::map<std::string, parameter_t>::const_iterator paraMap_t::begin() const { return dicc_.begin(); }
-std::map<std::string, parameter_t>::const_iterator paraMap_t::end() const { return dicc_.end(); }
+std::map<std::string, Parameter>::const_iterator ParamMap::begin() const { return dicc_.begin(); }
+std::map<std::string, Parameter>::const_iterator ParamMap::end() const { return dicc_.end(); }
 
-__END_YAFRAY
+END_YAFRAY

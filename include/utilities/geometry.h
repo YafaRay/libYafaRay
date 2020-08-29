@@ -1,24 +1,24 @@
 #pragma once
 
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#ifndef YAFARAY_GEOMETRY_H
+#define YAFARAY_GEOMETRY_H
 
 #include <yafray_constants.h>
 #include <core_api/ray.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 struct Plane
 {
-	vector3d_t p;
-	vector3d_t n;
+	Vec3 p_;
+	Vec3 n_;
 };
 
-inline float ray_plane_intersection(ray_t const &ray, Plane const &plane)
+inline float rayPlaneIntersection__(Ray const &ray, Plane const &plane)
 {
-	return plane.n * (plane.p - vector3d_t(ray.from)) / (ray.dir * plane.n);
+	return plane.n_ * (plane.p_ - Vec3(ray.from_)) / (ray.dir_ * plane.n_);
 }
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // GEOMETRY_H
+#endif // YAFARAY_GEOMETRY_H

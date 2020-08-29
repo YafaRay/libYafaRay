@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_YAFRAYINTERFACE_H
-#define Y_YAFRAYINTERFACE_H
+#ifndef YAFARAY_YAFRAYINTERFACE_H
+#define YAFARAY_YAFRAYINTERFACE_H
 
 #include <yafray_constants.h>
 #include <list>
@@ -10,29 +10,29 @@
 #include <core_api/color.h>
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class light_t;
-class texture_t;
-class material_t;
-class camera_t;
-class background_t;
-class integrator_t;
+class Light;
+class Texture;
+class Material;
+class Camera;
+class Background;
+class Integrator;
 class VolumeRegion;
-class scene_t;
-class renderEnvironment_t;
-class colorOutput_t;
-class paraMap_t;
-class imageFilm_t;
-class imageHandler_t;
-class progressBar_t;
-class matrix4x4_t;
+class Scene;
+class RenderEnvironment;
+class ColorOutput;
+class ParamMap;
+class ImageFilm;
+class ImageHandler;
+class ProgressBar;
+class Matrix4;
 
-class YAFRAYPLUGIN_EXPORT yafrayInterface_t
+class YAFRAYPLUGIN_EXPORT Interface
 {
 	public:
-		yafrayInterface_t();
-		virtual ~yafrayInterface_t();
+		Interface();
+		virtual ~Interface();
 		// directly related to scene_t:
 		virtual void loadPlugins(const char *path); //!< load plugins from path, if nullptr load from default path, if available.
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
@@ -41,20 +41,20 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 			in this state only vertices, UVs and triangles can be created
 			\param id returns the ID of the created mesh
 		*/
-		virtual unsigned int getNextFreeID();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool hasOrco, bool hasUV = false, int type = 0, int obj_pass_index = 0);
+		virtual unsigned int getNextFreeId();
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
 		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool hasOrco, bool hasUV = false, int type = 0, int obj_pass_index = 0);
+		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
-		virtual bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape); //!< end current mesh and return to geometry state
+		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 		virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c, const material_t *mat); //!< add a triangle given vertex indices and material pointer
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat); //!< add a triangle given vertex and uv indices and material pointer
-		virtual int  addUV(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
+		virtual bool addTriangle(int a, int b, int c, const Material *mat); //!< add a triangle given vertex indices and material pointer
+		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat); //!< add a triangle given vertex and uv indices and material pointer
+		virtual int  addUv(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
 		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual bool addInstance(unsigned int baseObjectId, matrix4x4_t objToWorld);
+		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char *name, double x, double y, double z);
@@ -73,33 +73,33 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
 		// functions directly related to renderEnvironment_t
-		virtual light_t 		*createLight(const char *name);
-		virtual texture_t 		*createTexture(const char *name);
-		virtual material_t 	*createMaterial(const char *name);
-		virtual camera_t 		*createCamera(const char *name);
-		virtual background_t 	*createBackground(const char *name);
-		virtual integrator_t 	*createIntegrator(const char *name);
+		virtual Light 		*createLight(const char *name);
+		virtual Texture 		*createTexture(const char *name);
+		virtual Material 	*createMaterial(const char *name);
+		virtual Camera 		*createCamera(const char *name);
+		virtual Background 	*createBackground(const char *name);
+		virtual Integrator 	*createIntegrator(const char *name);
 		virtual VolumeRegion 	*createVolumeRegion(const char *name);
-		virtual imageHandler_t	*createImageHandler(const char *name, bool addToTable = true);  //!< The addToTable parameter, if true, allows to avoid the interface from taking ownership of the image handler
+		virtual ImageHandler	*createImageHandler(const char *name, bool add_to_table = true);  //!< The addToTable parameter, if true, allows to avoid the interface from taking ownership of the image handler
 		virtual unsigned int 	createObject(const char *name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(colorOutput_t &output, progressBar_t *pb = nullptr); //!< render the scene...
+		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
 		virtual bool startScene(int type = 0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
 		virtual void abort();
-		virtual paraMap_t *getRenderParameters() { return params; }
-		virtual bool getRenderedImage(int numView, colorOutput_t &output); //!< put the rendered image to output
+		virtual ParamMap *getRenderParameters() { return params_; }
+		virtual bool getRenderedImage(int num_view, ColorOutput &output); //!< put the rendered image to output
 		virtual std::vector<std::string> listImageHandlers();
 		virtual std::vector<std::string> listImageHandlersFullName();
 		virtual std::string getImageFormatFromFullName(const std::string &fullname);
 		virtual std::string getImageFullNameFromFormat(const std::string &format);
 
-		void setConsoleVerbosityLevel(const std::string &strVLevel);
-		void setLogVerbosityLevel(const std::string &strVLevel);
+		void setConsoleVerbosityLevel(const std::string &str_v_level);
+		void setLogVerbosityLevel(const std::string &str_v_level);
 
-		virtual void setParamsBadgePosition(const std::string &badgePosition = "none");
+		virtual void setParamsBadgePosition(const std::string &badge_position = "none");
 		virtual bool getDrawParams();
 
 		std::string getVersion() const; //!< Get version to check against the exporters
@@ -112,23 +112,23 @@ class YAFRAYPLUGIN_EXPORT yafrayInterface_t
 		void printWarning(const std::string &msg);
 		void printError(const std::string &msg);
 
-		void setInputColorSpace(std::string color_space_string, float gammaVal);
-		void setOutput2(colorOutput_t *out2);
+		void setInputColorSpace(std::string color_space_string, float gamma_val);
+		void setOutput2(ColorOutput *out_2);
 
 	protected:
-		paraMap_t *params;
-		std::list<paraMap_t> *eparams; //! for materials that need to define a whole shader tree etc.
-		paraMap_t *cparams; //! just a pointer to the current paramMap, either params or a eparams element
-		renderEnvironment_t *env;
-		scene_t *scene;
-		imageFilm_t *film;
-		float inputGamma;
-		colorSpaces_t inputColorSpace;
+		ParamMap *params_;
+		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
+		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
+		RenderEnvironment *env_;
+		Scene *scene_;
+		ImageFilm *film_;
+		float input_gamma_;
+		ColorSpace input_color_space_;
 };
 
-typedef yafrayInterface_t *interfaceConstructor();
+typedef Interface *InterfaceConstructor_t();
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_YAFRAYINTERFACE_H
+#endif // YAFARAY_YAFRAYINTERFACE_H

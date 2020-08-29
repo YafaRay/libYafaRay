@@ -32,9 +32,9 @@
 #include <unistd.h>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-int sysInfo_t::getNumSystemThreads() const
+int SysInfo::getNumSystemThreads() const
 {
 	int nthreads = 1;
 
@@ -61,4 +61,4 @@ int sysInfo_t::getNumSystemThreads() const
 	return nthreads;
 }
 
-__END_YAFRAY
+END_YAFRAY

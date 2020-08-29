@@ -10,26 +10,26 @@
 #include <yafraycore/scr_halton.h>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 // for removing all participating media effects
 
-class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public volumeIntegrator_t
+class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public VolumeIntegrator
 {
 	public:
 		EmptyVolumeIntegrator() {}
 
-		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const
 		{
-			return color_t(1.f);
+			return Rgb(1.f);
 		}
 
-		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
 		{
-			return colorA_t(0.f);
+			return Rgba(0.f);
 		}
 
-		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render)
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render)
 		{
 			return new EmptyVolumeIntegrator();
 		}
@@ -39,11 +39,11 @@ class YAFRAYPLUGIN_EXPORT EmptyVolumeIntegrator : public volumeIntegrator_t
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("none", EmptyVolumeIntegrator::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

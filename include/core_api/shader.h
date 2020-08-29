@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_SHADER_H
-#define Y_SHADER_H
+#ifndef YAFARAY_SHADER_H
+#define YAFARAY_SHADER_H
 
 #include <yafray_constants.h>
 #include "scene.h"
@@ -9,154 +9,154 @@
 #include <list>
 #include <map>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class paraMap_t;
-class shaderNode_t;
+class ParamMap;
+class ShaderNode;
 
-struct nodeResult_t
+struct NodeResult
 {
-	nodeResult_t() {}
-	nodeResult_t(colorA_t color, float fval): col(color), f(fval) {}
-	colorA_t col;
-	float f;
+	NodeResult() {}
+	NodeResult(Rgba color, float fval): col_(color), f_(fval) {}
+	Rgba col_;
+	float f_;
 };
 
-class nodeStack_t
+class NodeStack
 {
 	public:
-		nodeStack_t() { dat = nullptr; }
-		nodeStack_t(void *data) { dat = (nodeResult_t *)data; }
-		const nodeResult_t &operator()(unsigned int ID) const
+		NodeStack() { dat_ = nullptr; }
+		NodeStack(void *data) { dat_ = (NodeResult *)data; }
+		const NodeResult &operator()(unsigned int id) const
 		{
-			return dat[ID];//*(dat+ID);
+			return dat_[id];//*(dat+ID);
 		}
-		nodeResult_t &operator[](unsigned int ID)
+		NodeResult &operator[](unsigned int id)
 		{
-			return dat[ID];//*(dat+ID);
+			return dat_[id];//*(dat+ID);
 		}
 	private:
-		nodeResult_t *dat;
+		NodeResult *dat_;
 };
 
-class YAFRAYCORE_EXPORT nodeFinder_t
+class YAFRAYCORE_EXPORT NodeFinder
 {
 	public:
-		virtual const shaderNode_t *operator()(const std::string &name) const = 0;
-		virtual ~nodeFinder_t() {};
+		virtual const ShaderNode *operator()(const std::string &name) const = 0;
+		virtual ~NodeFinder() {};
 };
 
-enum mix_modes { MN_MIX = 0, MN_ADD, MN_MULT, MN_SUB, MN_SCREEN, MN_DIV, MN_DIFF, MN_DARK, MN_LIGHT, MN_OVERLAY };
+enum MixModes { MnMix = 0, MnAdd, MnMult, MnSub, MnScreen, MnDiv, MnDiff, MnDark, MnLight, MnOverlay };
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.
 	Note that a "shader" only associates a color or scalar with a surface point,
 	nothing more and nothing less. The material behaviour is implemented in the
 	material_t class, NOT the shader classes.
 */
-class YAFRAYCORE_EXPORT shaderNode_t
+class YAFRAYCORE_EXPORT ShaderNode
 {
 	public:
-		virtual ~shaderNode_t() {}
+		virtual ~ShaderNode() {}
 		/*! evaluate the shader for given surface point; result has to be put on stack (using stack[ID]).
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const = 0;
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const = 0;
 		/*! evaluate the shader for given surface point and directions; otherwise same behavious than the other eval.
 			Should only be called when the node returns true on isViewDependant() */
-		virtual void eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const = 0;
+		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const = 0;
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
-		virtual void evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
-		{stack[this->ID] = nodeResult_t(colorA_t(0.f), 0.f);}
+		virtual void evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		{stack[this->id_] = NodeResult(Rgba(0.f), 0.f);}
 		/*! indicate whether the shader value depends on wi and wo */
 		virtual bool isViewDependant() const { return false; }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
-		virtual bool configInputs(const paraMap_t &params, const nodeFinder_t &find) = 0;
+		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) = 0;
 		//! return the nodes on which the output of this one depends
 		/*! you may only call this after successfully calling configInputs!
 			\param dep empty (!) vector to return the dependencies
 			\return true if there exist dependencies, false if it does not depend on any other nodes */
-		virtual bool getDependencies(std::vector<const shaderNode_t *> &dep) const { return false; }
+		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const { return false; }
 		/*! get the color value calculated on eval */
-		colorA_t getColor(const nodeStack_t &stack) const { return stack(this->ID).col; }
+		Rgba getColor(const NodeStack &stack) const { return stack(this->id_).col_; }
 		/*! get the scalar value calculated on eval */
-		float getScalar(const nodeStack_t &stack) const { return stack(this->ID).f; }
+		float getScalar(const NodeStack &stack) const { return stack(this->id_).f_; }
 		//! get the (approximate) partial derivatives df/dNU and df/dNV
 		/*! where f is the shader function, and NU/NV/N build the shading coordinate system
 			\param du df/dNU
 			\param dv df/dNV	*/
-		void getDerivative(const nodeStack_t &stack, float &du, float &dv) const
-		{ du = stack(this->ID).col.R; dv = stack(this->ID).col.G; }
+		void getDerivative(const NodeStack &stack, float &du, float &dv) const
+		{ du = stack(this->id_).col_.r_; dv = stack(this->id_).col_.g_; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
-		unsigned int ID;
+		unsigned int id_;
 };
 
 ///////////////////////////
 
-inline color_t texture_rgb_blend(const color_t &tex, const color_t &out, float fact, float facg, mix_modes blendtype)
+inline Rgb textureRgbBlend__(const Rgb &tex, const Rgb &out, float fact, float facg, MixModes blendtype)
 {
 
 	switch(blendtype)
 	{
-		case MN_MULT:
+		case MnMult:
 			fact *= facg;
-			return (color_t(1.f - facg) + fact * tex) * out;
+			return (Rgb(1.f - facg) + fact * tex) * out;
 
-		case MN_SCREEN:
+		case MnScreen:
 		{
-			color_t white(1.0);
+			Rgb white(1.0);
 			fact *= facg;
-			return white - (color_t(1.f - facg) + fact * (white - tex)) * (white - out);
+			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
 		}
 
-		case MN_SUB:
+		case MnSub:
 			fact = -fact;
-		case MN_ADD:
+		case MnAdd:
 			fact *= facg;
 			return fact * tex + out;
 
-		case MN_DIV:
+		case MnDiv:
 		{
 			fact *= facg;
-			color_t itex(tex);
-			itex.invertRGB();
+			Rgb itex(tex);
+			itex.invertRgb();
 			return (1.f - fact) * out + fact * out * itex;
 		}
 
-		case MN_DIFF:
+		case MnDiff:
 		{
 			fact *= facg;
-			color_t tmo(tex - out);
-			tmo.absRGB();
+			Rgb tmo(tex - out);
+			tmo.absRgb();
 			return (1.f - fact) * out + fact * tmo;
 		}
 
-		case MN_DARK:
+		case MnDark:
 		{
 			fact *= facg;
-			color_t col(fact * tex);
-			col.darkenRGB(out);
+			Rgb col(fact * tex);
+			col.darkenRgb(out);
 			return col;
 		}
 
-		case MN_LIGHT:
+		case MnLight:
 		{
 			fact *= facg;
-			color_t col(fact * tex);
-			col.lightenRGB(out);
+			Rgb col(fact * tex);
+			col.lightenRgb(out);
 			return col;
 		}
 
 		default:
-		case MN_MIX:
+		case MnMix:
 			fact *= facg;
 			return fact * tex + (1.f - fact) * out;
 	}
 
 }
 
-inline float texture_value_blend(float tex, float out, float fact, float facg, mix_modes blendtype, bool flip = false)
+inline float textureValueBlend__(float tex, float out, float fact, float facg, MixModes blendtype, bool flip = false)
 {
 	fact *= facg;
 	float facm = 1.f - fact;
@@ -164,34 +164,34 @@ inline float texture_value_blend(float tex, float out, float fact, float facg, m
 
 	switch(blendtype)
 	{
-		case MN_MULT:
+		case MnMult:
 			facm = 1.f - facg;
 			return (facm + fact * tex) * out;
 
-		case MN_SCREEN:
+		case MnScreen:
 			facm = 1.f - facg;
 			return 1.f - (facm + fact * (1.f - tex)) * (1.f - out);
 
-		case MN_SUB:
+		case MnSub:
 			fact = -fact;
-		case MN_ADD:
+		case MnAdd:
 			return fact * tex + out;
 
-		case MN_DIV:
+		case MnDiv:
 			if(tex == 0.f) return 0.f;
 			return facm * out + fact * out / tex;
 
-		case MN_DIFF:
+		case MnDiff:
 			return facm * out + fact * std::fabs(tex - out);
 
-		case MN_DARK:
+		case MnDark:
 		{
 			float col = fact * tex;
 			if(col < out) return col;
 			return out;
 		}
 
-		case MN_LIGHT:
+		case MnLight:
 		{
 			float col = fact * tex;
 			if(col > out) return col;
@@ -199,12 +199,12 @@ inline float texture_value_blend(float tex, float out, float fact, float facg, m
 		}
 
 		default:
-		case MN_MIX:
+		case MnMix:
 			return fact * tex + facm * out;
 	}
 }
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_SHADER_H
+#endif // YAFARAY_SHADER_H

@@ -1,7 +1,7 @@
 
 
-int saveas_icon_size = 1760;
-unsigned char saveas_icon[] =
+int saveas_icon_size__ = 1760;
+unsigned char saveas_icon__[] =
 {
 
 	137, 80, 78, 71, 13, 10, 26, 10,  0,  0,  0, 13, 73, 72, 68, 82,  0,  0,  0, 32,  0,  0,  0, 32,  8,  6,  0,  0,  0, 115, 122, 122,

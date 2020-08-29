@@ -1,7 +1,7 @@
 #if defined(SWIGRUBY)
-  %module yafqt_ruby
+  %module yafaray4_qt_interface_ruby
 #else
-  %module yafqt
+  %module yafaray4_qt_interface
 #endif
 
 %include "cpointer.i"
@@ -20,12 +20,12 @@
 %}
 
 struct Settings {
-    bool autoSave;
-    bool autoSaveAlpha;
-    bool closeAfterFinish;
-    std::string fileName;
+    bool auto_save_;
+    bool auto_save_alpha_;
+    bool close_after_finish_;
+    std::string file_name_;
 };
 
-void initGui();
-int createRenderWidget(yafaray::yafrayInterface_t *interf, int xsize, int ysize, int bStartX, int bStartY, Settings settings);
+void initGui__();
+int createRenderWidget__(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings);
 

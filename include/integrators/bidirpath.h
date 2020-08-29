@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_BIDIRPATH_H
-#define Y_BIDIRPATH_H
+#ifndef YAFARAY_BIDIRPATH_H
+#define YAFARAY_BIDIRPATH_H
 
 
 #include <core_api/tiledintegrator.h>
@@ -12,9 +12,9 @@
 
 #include <utilities/mcqmc.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // BIDIRPATH 
+#endif // YAFARAY_BIDIRPATH_H

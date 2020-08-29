@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * 			color_ramp.cc: Color ramp type and operators implementation
+ * 			color()ramp.cc: Color ramp type and operators implementation
  *      This is part of the yafray package
  *      Copyright (C) 2016  David Bluecame
  *
@@ -26,140 +26,140 @@
 
 #include<iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-color_ramp_t::color_ramp_t(int mode, int interpolation, int hue_interpolation): ramp_mode(mode), ramp_interpolation(interpolation), ramp_hue_interpolation(hue_interpolation) {}
+ColorRamp::ColorRamp(Mode mode, Interpolation interpolation, HueInterpolation hue_interpolation): mode_(mode), interpolation_(interpolation), hue_interpolation_(hue_interpolation) {}
 
-color_ramp_t::color_ramp_t(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr)
+ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str)
 {
-	Y_DEBUG << "modeStr='" << modeStr << "' interpolationStr='" << interpolationStr << "' hue_interpolationStr='" << hue_interpolationStr << "'" << yendl;
-	if(modeStr == "RGB" || modeStr == "rgb") ramp_mode = C_RAMP_RGB;
-	else if(modeStr == "HSV" || modeStr == "hsv") ramp_mode = C_RAMP_HSV;
-	else if(modeStr == "HSL" || modeStr == "hsl") ramp_mode = C_RAMP_HSL;
-	else ramp_mode = C_RAMP_RGB;
+	Y_DEBUG << "modeStr='" << mode_str << "' interpolationStr='" << interpolation_str << "' hue_interpolationStr='" << hue_interpolation_str << "'" << YENDL;
+	if(mode_str == "RGB" || mode_str == "rgb") mode_ = Rgb;
+	else if(mode_str == "HSV" || mode_str == "hsv") mode_ = Hsv;
+	else if(mode_str == "HSL" || mode_str == "hsl") mode_ = Hsl;
+	else mode_ = Rgb;
 
-	if(interpolationStr == "CONSTANT" || interpolationStr == "constant") ramp_interpolation = C_RAMP_CONSTANT;
-	else ramp_interpolation = C_RAMP_LINEAR;	//Other modes not supported yet
+	if(interpolation_str == "CONSTANT" || interpolation_str == "constant") interpolation_ = Constant;
+	else interpolation_ = Linear;	//Other modes not supported yet
 
-	if(hue_interpolationStr == "NEAR" || hue_interpolationStr == "near") ramp_hue_interpolation = C_RAMP_HUE_NEAR;
-	else if(hue_interpolationStr == "FAR" || hue_interpolationStr == "far") ramp_hue_interpolation = C_RAMP_HUE_FAR;
-	else if(hue_interpolationStr == "CW" || hue_interpolationStr == "cw") ramp_hue_interpolation = C_RAMP_HUE_CLOCKWISE;
-	else if(hue_interpolationStr == "CCW" || hue_interpolationStr == "ccw") ramp_hue_interpolation = C_RAMP_HUE_COUNTERCLOCKWISE;
-	else ramp_hue_interpolation = C_RAMP_HUE_NEAR;
+	if(hue_interpolation_str == "NEAR" || hue_interpolation_str == "near") hue_interpolation_ = Near;
+	else if(hue_interpolation_str == "FAR" || hue_interpolation_str == "far") hue_interpolation_ = Far;
+	else if(hue_interpolation_str == "CW" || hue_interpolation_str == "cw") hue_interpolation_ = Clockwise;
+	else if(hue_interpolation_str == "CCW" || hue_interpolation_str == "ccw") hue_interpolation_ = Counterclockwise;
+	else hue_interpolation_ = Near;
 }
 
-void color_ramp_t::add_item(const colorA_t &color, float position)
+void ColorRamp::addItem(const Rgba &color, float position)
 {
-	ramp.push_back(color_ramp_item_t(color, position));
-	std::sort(ramp.begin(), ramp.end());
+	ramp_.push_back(ColorRampItem(color, position));
+	std::sort(ramp_.begin(), ramp_.end());
 }
 
-colorA_t interpolation_linear(float pos, const colorA_t &col1, float pos1, const colorA_t &col2, float pos2)
+Rgba interpolationLinear__(float pos, const Rgba &col_1, float pos_1, const Rgba &col_2, float pos_2)
 {
-	if(pos == pos1 || pos1 == pos2) return col1;
-	else if(pos == pos2) return col2;
+	if(pos == pos_1 || pos_1 == pos_2) return col_1;
+	else if(pos == pos_2) return col_2;
 
-	colorA_t diffCol21 = col2 - col1;
-	float diffPos21 = pos2 - pos1;
-	float diffPos = pos - pos1;
+	Rgba diff_col_21 = col_2 - col_1;
+	float diff_pos_21 = pos_2 - pos_1;
+	float diff_pos = pos - pos_1;
 
-	return col1 + ((diffPos / diffPos21) * diffCol21);
+	return col_1 + ((diff_pos / diff_pos_21) * diff_col_21);
 }
 
-float interpolation_linear(float pos, float val1, float pos1, float val2, float pos2)
+float interpolationLinear__(float pos, float val_1, float pos_1, float val_2, float pos_2)
 {
-	if(pos == pos1 || pos1 == pos2) return val1;
-	else if(pos == pos2) return val2;
+	if(pos == pos_1 || pos_1 == pos_2) return val_1;
+	else if(pos == pos_2) return val_2;
 
-	float diffVal21 = val2 - val1;
-	float diffPos21 = pos2 - pos1;
-	float diffPos = pos - pos1;
+	float diff_val_21 = val_2 - val_1;
+	float diff_pos_21 = pos_2 - pos_1;
+	float diff_pos = pos - pos_1;
 
-	return val1 + ((diffPos / diffPos21) * diffVal21);
+	return val_1 + ((diff_pos / diff_pos_21) * diff_val_21);
 }
 
-colorA_t color_ramp_t::get_color_interpolated(float pos) const
+Rgba ColorRamp::getColorInterpolated(float pos) const
 {
-	colorA_t result;
-	if(pos < 0.f) result = ramp.front().color;
-	else if(pos > 1.f) result = ramp.back().color;
+	Rgba result;
+	if(pos < 0.f) result = ramp_.front().color();
+	else if(pos > 1.f) result = ramp_.back().color();
 	else
 	{
-		auto item_current = std::lower_bound(ramp.begin(), ramp.end(), pos);
+		auto item_current = std::lower_bound(ramp_.begin(), ramp_.end(), pos);
 		auto item_previous = std::prev(item_current);
 
-		if(ramp_mode == C_RAMP_RGB)
+		if(mode_ == Rgb)
 		{
-			if(ramp_interpolation == C_RAMP_CONSTANT) result = item_current->color;
-			else result = interpolation_linear(pos, item_current->color, item_current->position, item_previous->color, item_previous->position);
+			if(interpolation_ == Constant) result = item_current->color();
+			else result = interpolationLinear__(pos, item_current->color(), item_current->position(), item_previous->color(), item_previous->position());
 		}
-		else if(ramp_mode == C_RAMP_HSV)
+		else if(mode_ == Hsv)
 		{
-			float pos1 = item_current->position;
-			float pos2 = item_previous->position;
-			float h1 = 0.f, s1 = 0.f, v1 = 0.f, a1 = 0.f;
-			float h2 = 0.f, s2 = 0.f, v2 = 0.f, a2 = 0.f;
+			float pos_1 = item_current->position();
+			float pos_2 = item_previous->position();
+			float h_1 = 0.f, s_1 = 0.f, v_1 = 0.f, a_1 = 0.f;
+			float h_2 = 0.f, s_2 = 0.f, v_2 = 0.f, a_2 = 0.f;
 			float h = 0.f, s = 0.f, v = 0.f, a = 0.f;
 
-			item_current->color.rgb_to_hsv(h1, s1, v1);
-			a1 = item_current->color.A;
+			item_current->color().rgbToHsv(h_1, s_1, v_1);
+			a_1 = item_current->color().a_;
 
-			item_previous->color.rgb_to_hsv(h2, s2, v2);
-			a2 = item_previous->color.A;
+			item_previous->color().rgbToHsv(h_2, s_2, v_2);
+			a_2 = item_previous->color().a_;
 
-			s = interpolation_linear(pos, s1, pos1, s2, pos2);
-			v = interpolation_linear(pos, v1, pos1, v2, pos2);
-			a = interpolation_linear(pos, a1, pos1, a2, pos2);
+			s = interpolationLinear__(pos, s_1, pos_1, s_2, pos_2);
+			v = interpolationLinear__(pos, v_1, pos_1, v_2, pos_2);
+			a = interpolationLinear__(pos, a_1, pos_1, a_2, pos_2);
 
-			if(ramp_hue_interpolation == C_RAMP_HUE_CLOCKWISE && h1 < h2) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_COUNTERCLOCKWISE && h1 > h2) h2 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 < h2 && (h2 - h1) > 3.f) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 > h2 && (h2 - h1) < -3.f) h2 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 < h2 && (h2 - h1) < 3.f) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 > h2 && (h2 - h1) > -3.f) h2 += 6.f;
+			if(hue_interpolation_ == Clockwise && h_1 < h_2) h_1 += 6.f;
+			else if(hue_interpolation_ == Counterclockwise && h_1 > h_2) h_2 += 6.f;
+			else if(hue_interpolation_ == Near && h_1 < h_2 && (h_2 - h_1) > 3.f) h_1 += 6.f;
+			else if(hue_interpolation_ == Near && h_1 > h_2 && (h_2 - h_1) < -3.f) h_2 += 6.f;
+			else if(hue_interpolation_ == Far && h_1 < h_2 && (h_2 - h_1) < 3.f) h_1 += 6.f;
+			else if(hue_interpolation_ == Far && h_1 > h_2 && (h_2 - h_1) > -3.f) h_2 += 6.f;
 
-			h = interpolation_linear(pos, h1, pos1, h2, pos2);
+			h = interpolationLinear__(pos, h_1, pos_1, h_2, pos_2);
 
 			if(h < 0.f) h += 6.f;
 			else if(h > 6.f) h -= 6.f;
-			result.hsv_to_rgb(h, s, v);
-			result.A = a;
+			result.hsvToRgb(h, s, v);
+			result.a_ = a;
 		}
-		else if(ramp_mode == C_RAMP_HSL)
+		else if(mode_ == Hsl)
 		{
-			float pos1 = item_current->position;
-			float pos2 = item_previous->position;
-			float h1 = 0.f, s1 = 0.f, l1 = 0.f, a1 = 0.f;
-			float h2 = 0.f, s2 = 0.f, l2 = 0.f, a2 = 0.f;
+			float pos_1 = item_current->position();
+			float pos_2 = item_previous->position();
+			float h_1 = 0.f, s_1 = 0.f, l_1 = 0.f, a_1 = 0.f;
+			float h_2 = 0.f, s_2 = 0.f, l_2 = 0.f, a_2 = 0.f;
 			float h = 0.f, s = 0.f, l = 0.f, a = 0.f;
 
-			item_current->color.rgb_to_hsl(h1, s1, l1);
-			a1 = item_current->color.A;
+			item_current->color().rgbToHsl(h_1, s_1, l_1);
+			a_1 = item_current->color().a_;
 
-			item_previous->color.rgb_to_hsl(h2, s2, l2);
-			a2 = item_previous->color.A;
+			item_previous->color().rgbToHsl(h_2, s_2, l_2);
+			a_2 = item_previous->color().a_;
 
-			s = interpolation_linear(pos, s1, pos1, s2, pos2);
-			l = interpolation_linear(pos, l1, pos1, l2, pos2);
-			a = interpolation_linear(pos, a1, pos1, a2, pos2);
+			s = interpolationLinear__(pos, s_1, pos_1, s_2, pos_2);
+			l = interpolationLinear__(pos, l_1, pos_1, l_2, pos_2);
+			a = interpolationLinear__(pos, a_1, pos_1, a_2, pos_2);
 
-			if(ramp_hue_interpolation == C_RAMP_HUE_CLOCKWISE && h1 < h2) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_COUNTERCLOCKWISE && h1 > h2) h2 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 < h2 && (h2 - h1) > 3.f) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_NEAR && h1 > h2 && (h2 - h1) < -3.f) h2 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 < h2 && (h2 - h1) < 3.f) h1 += 6.f;
-			else if(ramp_hue_interpolation == C_RAMP_HUE_FAR && h1 > h2 && (h2 - h1) > -3.f) h2 += 6.f;
+			if(hue_interpolation_ == Clockwise && h_1 < h_2) h_1 += 6.f;
+			else if(hue_interpolation_ == Counterclockwise && h_1 > h_2) h_2 += 6.f;
+			else if(hue_interpolation_ == Near && h_1 < h_2 && (h_2 - h_1) > 3.f) h_1 += 6.f;
+			else if(hue_interpolation_ == Near && h_1 > h_2 && (h_2 - h_1) < -3.f) h_2 += 6.f;
+			else if(hue_interpolation_ == Far && h_1 < h_2 && (h_2 - h_1) < 3.f) h_1 += 6.f;
+			else if(hue_interpolation_ == Far && h_1 > h_2 && (h_2 - h_1) > -3.f) h_2 += 6.f;
 
-			h = interpolation_linear(pos, h1, pos1, h2, pos2);
+			h = interpolationLinear__(pos, h_1, pos_1, h_2, pos_2);
 
 			if(h < 0.f) h += 6.f;
 			else if(h > 6.f) h -= 6.f;
-			result.hsv_to_rgb(h, s, l);
-			result.A = a;
+			result.hsvToRgb(h, s, l);
+			result.a_ = a;
 		}
 	}
 	return result;
 }
 
 
-__END_YAFRAY
+END_YAFRAY

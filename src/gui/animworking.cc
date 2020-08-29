@@ -78,90 +78,90 @@
 #include <resources/qtanim/00050.h>
 
 AnimWorking::AnimWorking(QWidget *parent)
-	: QWidget(parent), m_timerId(-1)
+	: QWidget(parent), m_timer_id_(-1)
 {
-	mSprites.resize(topFrame);
-	mSprites[0].loadFromData(sprite00001, sprite00001_size);
-	mSprites[1].loadFromData(sprite00002, sprite00002_size);
-	mSprites[2].loadFromData(sprite00003, sprite00003_size);
-	mSprites[3].loadFromData(sprite00004, sprite00004_size);
-	mSprites[4].loadFromData(sprite00005, sprite00005_size);
-	mSprites[5].loadFromData(sprite00006, sprite00006_size);
-	mSprites[6].loadFromData(sprite00007, sprite00007_size);
-	mSprites[7].loadFromData(sprite00008, sprite00008_size);
-	mSprites[8].loadFromData(sprite00009, sprite00009_size);
-	mSprites[9].loadFromData(sprite00010, sprite00010_size);
+	m_sprites_.resize(TOP_FRAME);
+	m_sprites_[0].loadFromData(sprite_00001__, sprite_00001_size__);
+	m_sprites_[1].loadFromData(sprite_00002__, sprite_00002_size__);
+	m_sprites_[2].loadFromData(sprite_00003__, sprite_00003_size__);
+	m_sprites_[3].loadFromData(sprite_00004__, sprite_00004_size__);
+	m_sprites_[4].loadFromData(sprite_00005__, sprite_00005_size__);
+	m_sprites_[5].loadFromData(sprite_00006__, sprite_00006_size__);
+	m_sprites_[6].loadFromData(sprite_00007__, sprite_00007_size__);
+	m_sprites_[7].loadFromData(sprite_00008__, sprite_00008_size__);
+	m_sprites_[8].loadFromData(sprite_00009__, sprite_00009_size__);
+	m_sprites_[9].loadFromData(sprite_00010__, sprite_00010_size__);
 
-	mSprites[10].loadFromData(sprite00011, sprite00011_size);
-	mSprites[11].loadFromData(sprite00012, sprite00012_size);
-	mSprites[12].loadFromData(sprite00013, sprite00013_size);
-	mSprites[13].loadFromData(sprite00014, sprite00014_size);
-	mSprites[14].loadFromData(sprite00015, sprite00015_size);
-	mSprites[15].loadFromData(sprite00016, sprite00016_size);
-	mSprites[16].loadFromData(sprite00017, sprite00017_size);
-	mSprites[17].loadFromData(sprite00018, sprite00018_size);
-	mSprites[18].loadFromData(sprite00019, sprite00019_size);
-	mSprites[19].loadFromData(sprite00020, sprite00020_size);
+	m_sprites_[10].loadFromData(sprite_00011__, sprite_00011_size__);
+	m_sprites_[11].loadFromData(sprite_00012__, sprite_00012_size__);
+	m_sprites_[12].loadFromData(sprite_00013__, sprite_00013_size__);
+	m_sprites_[13].loadFromData(sprite_00014__, sprite_00014_size__);
+	m_sprites_[14].loadFromData(sprite_00015__, sprite_00015_size__);
+	m_sprites_[15].loadFromData(sprite_00016__, sprite_00016_size__);
+	m_sprites_[16].loadFromData(sprite_00017__, sprite_00017_size__);
+	m_sprites_[17].loadFromData(sprite_00018__, sprite_00018_size__);
+	m_sprites_[18].loadFromData(sprite_00019__, sprite_00019_size__);
+	m_sprites_[19].loadFromData(sprite_00020__, sprite_00020_size__);
 
-	mSprites[20].loadFromData(sprite00021, sprite00021_size);
-	mSprites[21].loadFromData(sprite00022, sprite00022_size);
-	mSprites[22].loadFromData(sprite00023, sprite00023_size);
-	mSprites[23].loadFromData(sprite00024, sprite00024_size);
-	mSprites[24].loadFromData(sprite00025, sprite00025_size);
-	mSprites[25].loadFromData(sprite00026, sprite00026_size);
-	mSprites[26].loadFromData(sprite00027, sprite00027_size);
-	mSprites[27].loadFromData(sprite00028, sprite00028_size);
-	mSprites[28].loadFromData(sprite00029, sprite00029_size);
-	mSprites[29].loadFromData(sprite00030, sprite00030_size);
+	m_sprites_[20].loadFromData(sprite_00021__, sprite_00021_size__);
+	m_sprites_[21].loadFromData(sprite_00022__, sprite_00022_size__);
+	m_sprites_[22].loadFromData(sprite_00023__, sprite_00023_size__);
+	m_sprites_[23].loadFromData(sprite_00024__, sprite_00024_size__);
+	m_sprites_[24].loadFromData(sprite_00025__, sprite_00025_size__);
+	m_sprites_[25].loadFromData(sprite_00026__, sprite_00026_size__);
+	m_sprites_[26].loadFromData(sprite_00027__, sprite_00027_size__);
+	m_sprites_[27].loadFromData(sprite_00028__, sprite_00028_size__);
+	m_sprites_[28].loadFromData(sprite_00029__, sprite_00029_size__);
+	m_sprites_[29].loadFromData(sprite_00030__, sprite_00030_size__);
 
-	mSprites[30].loadFromData(sprite00031, sprite00031_size);
-	mSprites[31].loadFromData(sprite00032, sprite00032_size);
-	mSprites[32].loadFromData(sprite00033, sprite00033_size);
-	mSprites[33].loadFromData(sprite00034, sprite00034_size);
-	mSprites[34].loadFromData(sprite00035, sprite00035_size);
-	mSprites[35].loadFromData(sprite00036, sprite00036_size);
-	mSprites[36].loadFromData(sprite00037, sprite00037_size);
-	mSprites[37].loadFromData(sprite00038, sprite00038_size);
-	mSprites[38].loadFromData(sprite00039, sprite00039_size);
-	mSprites[39].loadFromData(sprite00040, sprite00040_size);
+	m_sprites_[30].loadFromData(sprite_00031__, sprite_00031_size__);
+	m_sprites_[31].loadFromData(sprite_00032__, sprite_00032_size__);
+	m_sprites_[32].loadFromData(sprite_00033__, sprite_00033_size__);
+	m_sprites_[33].loadFromData(sprite_00034__, sprite_00034_size__);
+	m_sprites_[34].loadFromData(sprite_00035__, sprite_00035_size__);
+	m_sprites_[35].loadFromData(sprite_00036__, sprite_00036_size__);
+	m_sprites_[36].loadFromData(sprite_00037__, sprite_00037_size__);
+	m_sprites_[37].loadFromData(sprite_00038__, sprite_00038_size__);
+	m_sprites_[38].loadFromData(sprite_00039__, sprite_00039_size__);
+	m_sprites_[39].loadFromData(sprite_00040__, sprite_00040_size__);
 
-	mSprites[40].loadFromData(sprite00041, sprite00041_size);
-	mSprites[41].loadFromData(sprite00042, sprite00042_size);
-	mSprites[42].loadFromData(sprite00043, sprite00043_size);
-	mSprites[43].loadFromData(sprite00044, sprite00044_size);
-	mSprites[44].loadFromData(sprite00045, sprite00045_size);
-	mSprites[45].loadFromData(sprite00046, sprite00046_size);
-	mSprites[46].loadFromData(sprite00047, sprite00047_size);
-	mSprites[47].loadFromData(sprite00048, sprite00048_size);
-	mSprites[48].loadFromData(sprite00049, sprite00049_size);
-	mSprites[49].loadFromData(sprite00050, sprite00050_size);
-	mActFrame = 0;
+	m_sprites_[40].loadFromData(sprite_00041__, sprite_00041_size__);
+	m_sprites_[41].loadFromData(sprite_00042__, sprite_00042_size__);
+	m_sprites_[42].loadFromData(sprite_00043__, sprite_00043_size__);
+	m_sprites_[43].loadFromData(sprite_00044__, sprite_00044_size__);
+	m_sprites_[44].loadFromData(sprite_00045__, sprite_00045_size__);
+	m_sprites_[45].loadFromData(sprite_00046__, sprite_00046_size__);
+	m_sprites_[46].loadFromData(sprite_00047__, sprite_00047_size__);
+	m_sprites_[47].loadFromData(sprite_00048__, sprite_00048_size__);
+	m_sprites_[48].loadFromData(sprite_00049__, sprite_00049_size__);
+	m_sprites_[49].loadFromData(sprite_00050__, sprite_00050_size__);
+	m_act_frame_ = 0;
 }
 
 AnimWorking::~AnimWorking()
 {
-	mSprites.clear();
+	m_sprites_.clear();
 }
 
 void AnimWorking::paintEvent(QPaintEvent *e)
 {
-	if(m_timerId < 0)
-		m_timerId = startTimer(40);
+	if(m_timer_id_ < 0)
+		m_timer_id_ = startTimer(40);
 
 	QPainter p(this);
-	p.drawPixmap(0, 0, mSprites[mActFrame]);
+	p.drawPixmap(0, 0, m_sprites_[m_act_frame_]);
 }
 
 void AnimWorking::timerEvent(QTimerEvent *e)
 {
-	if(mActFrame < topFrame - 1) mActFrame++;
-	else mActFrame = 0;
+	if(m_act_frame_ < TOP_FRAME - 1) m_act_frame_++;
+	else m_act_frame_ = 0;
 	update();
 
 	if(!isVisible())
 	{
-		killTimer(m_timerId);
-		m_timerId = -1;
+		killTimer(m_timer_id_);
+		m_timer_id_ = -1;
 	}
 
 }

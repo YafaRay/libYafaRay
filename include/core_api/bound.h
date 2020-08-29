@@ -21,13 +21,13 @@
  *
  */
 
-#ifndef Y_BOUND_H
-#define Y_BOUND_H
+#ifndef YAFARAY_BOUND_H
+#define YAFARAY_BOUND_H
 
 #include <yafray_constants.h>
 #include "ray.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 /** Bounding box
  *
@@ -36,11 +36,11 @@ __BEGIN_YAFRAY
  *
  */
 
-class bound_t;
-YAFRAYCORE_EXPORT float bound_distance(const bound_t &l, const bound_t &r);
-float b_intersect(const bound_t &l, const bound_t &r);
+class Bound;
+YAFRAYCORE_EXPORT float boundDistance__(const Bound &l, const Bound &r);
+float boundIntersect__(const Bound &l, const Bound &r);
 
-class YAFRAYCORE_EXPORT bound_t
+class YAFRAYCORE_EXPORT Bound
 {
 		//friend YAFRAYCORE_EXPORT float bound_distance(const bound_t &l,const bound_t &r);
 		//friend float b_intersect(const bound_t &l,const bound_t &r);
@@ -50,12 +50,12 @@ class YAFRAYCORE_EXPORT bound_t
 		/*! Main constructor.
 		 * The box is defined by two points, this constructor just takes them.
 		 *
-		 * @param _a is the low corner (minx,miny,minz)
-		 * @param _g is the up corner (maxx,maxy,maxz)
+		 * @param a is the low corner (minx,miny,minz)
+		 * @param g is the up corner (maxx,maxy,maxz)
 		 */
-		bound_t(const point3d_t &_a, const point3d_t &_g) { a = _a; g = _g; /* null=false; */ };
+		Bound(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; /* null=false; */ };
 		//! Default constructor
-		bound_t() {};
+		Bound() {};
 
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
@@ -64,137 +64,137 @@ class YAFRAYCORE_EXPORT bound_t
 		 * @param r is one child bound
 		 * @param l is another child bound
 		 */
-		bound_t(const bound_t &r, const bound_t &l);
+		Bound(const Bound &r, const Bound &l);
 		//! Sets the bound like the constructor
-		void set(const point3d_t &_a, const point3d_t &_g) { a = _a; g = _g; };
-		void get(point3d_t &_a, point3d_t &_g) const { _a = a; _g = g; };
+		void set(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; };
+		void get(Point3 &a, Point3 &g) const { a = a_; g = g_; };
 
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist) const;
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist) const;
-		bool cross(const ray_t &ray, float &enter, float &leave, const float dist) const;
+		bool cross(const Ray &ray, float &enter, float &leave, const float dist) const;
 
 		//! Returns the volume of the bound
 		float vol() const;
 		//! Returns the lenght along X axis
-		float longX() const {return g.x - a.x;};
+		float longX() const {return g_.x_ - a_.x_;};
 		//! Returns the lenght along Y axis
-		float longY() const {return g.y - a.y;};
+		float longY() const {return g_.y_ - a_.y_;};
 		//! Returns the lenght along Y axis
-		float longZ() const {return g.z - a.z;};
+		float longZ() const {return g_.z_ - a_.z_;};
 		//! Cuts the bound to have the given max X
-		void setMaxX(float X) {g.x = X;};
+		void setMaxX(float x) { g_.x_ = x;};
 		//! Cuts the bound to have the given min X
-		void setMinX(float X) {a.x = X;};
+		void setMinX(float x) { a_.x_ = x;};
 
 		//! Cuts the bound to have the given max Y
-		void setMaxY(float Y) {g.y = Y;};
+		void setMaxY(float y) { g_.y_ = y;};
 		//! Cuts the bound to have the given min Y
-		void setMinY(float Y) {a.y = Y;};
+		void setMinY(float y) { a_.y_ = y;};
 
 		//! Cuts the bound to have the given max Z
-		void setMaxZ(float Z) {g.z = Z;};
+		void setMaxZ(float z) { g_.z_ = z;};
 		//! Cuts the bound to have the given min Z
-		void setMinZ(float Z) {a.z = Z;};
+		void setMinZ(float z) { a_.z_ = z;};
 		//! Adjust bound size to include point p
-		void include(const point3d_t &p);
+		void include(const Point3 &p);
 		//! Returns true if the point is inside the bound
-		bool includes(const point3d_t &pn) const
+		bool includes(const Point3 &pn) const
 		{
-			return ((pn.x >= a.x) && (pn.x <= g.x) &&
-			        (pn.y >= a.y) && (pn.y <= g.y) &&
-			        (pn.z >= a.z) && (pn.z <= g.z));
+			return ((pn.x_ >= a_.x_) && (pn.x_ <= g_.x_) &&
+					(pn.y_ >= a_.y_) && (pn.y_ <= g_.y_) &&
+					(pn.z_ >= a_.z_) && (pn.z_ <= g_.z_));
 		};
-		float centerX() const {return (g.x + a.x) * 0.5;};
-		float centerY() const {return (g.y + a.y) * 0.5;};
-		float centerZ() const {return (g.z + a.z) * 0.5;};
-		point3d_t center() const {return (g + a) * 0.5;};
+		float centerX() const {return (g_.x_ + a_.x_) * 0.5;};
+		float centerY() const {return (g_.y_ + a_.y_) * 0.5;};
+		float centerZ() const {return (g_.z_ + a_.z_) * 0.5;};
+		Point3 center() const {return (g_ + a_) * 0.5;};
 		int largestAxis()
 		{
-			vector3d_t d = g - a;
-			return (d.x > d.y) ? ((d.x > d.z) ? 0 : 2) : ((d.y > d.z) ? 1 : 2);
+			Vec3 d = g_ - a_;
+			return (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
 		}
 		void grow(float d)
 		{
-			a.x -= d;
-			a.y -= d;
-			a.z -= d;
-			g.x += d;
-			g.y += d;
-			g.z += d;
+			a_.x_ -= d;
+			a_.y_ -= d;
+			a_.z_ -= d;
+			g_.x_ += d;
+			g_.y_ += d;
+			g_.z_ += d;
 		};
 
 		//	protected: // Lynx; need these to be public.
 		//! Two points define the box
-		point3d_t a, g;
+		Point3 a_, g_;
 };
 
-inline void bound_t::include(const point3d_t &p)
+inline void Bound::include(const Point3 &p)
 {
-	a.x = std::min(a.x, p.x);
-	a.y = std::min(a.y, p.y);
-	a.z = std::min(a.z, p.z);
-	g.x = std::max(g.x, p.x);
-	g.y = std::max(g.y, p.y);
-	g.z = std::max(g.z, p.z);
+	a_.x_ = std::min(a_.x_, p.x_);
+	a_.y_ = std::min(a_.y_, p.y_);
+	a_.z_ = std::min(a_.z_, p.z_);
+	g_.x_ = std::max(g_.x_, p.x_);
+	g_.y_ = std::max(g_.y_, p.y_);
+	g_.z_ = std::max(g_.z_, p.z_);
 }
 
-inline bool bound_t::cross(const ray_t &ray, float &enter, float &leave, const float dist) const
+inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float dist) const
 {
 	// Smits method
-	const point3d_t &a0 = a, &a1 = g;
-	const point3d_t &p = ray.from - a0;
+	const Point3 &a_0 = a_, &a_1 = g_;
+	const Point3 &p = ray.from_ - a_0;
 
 	float lmin = -1e38, lmax = 1e38, ltmin, ltmax; //infinity check initial values
 
-	if(ray.dir.x != 0)
+	if(ray.dir_.x_ != 0)
 	{
-		float invrx = 1. / ray.dir.x;
+		float invrx = 1. / ray.dir_.x_;
 		if(invrx > 0)
 		{
-			lmin = -p.x * invrx;
-			lmax = ((a1.x - a0.x) - p.x) * invrx;
+			lmin = -p.x_ * invrx;
+			lmax = ((a_1.x_ - a_0.x_) - p.x_) * invrx;
 		}
 		else
 		{
-			lmin = ((a1.x - a0.x) - p.x) * invrx;
-			lmax = -p.x * invrx;
+			lmin = ((a_1.x_ - a_0.x_) - p.x_) * invrx;
+			lmax = -p.x_ * invrx;
 		}
 
 		if((lmax < 0) || (lmin > dist)) return false;
 	}
-	if(ray.dir.y != 0)
+	if(ray.dir_.y_ != 0)
 	{
-		float invry = 1. / ray.dir.y;
+		float invry = 1. / ray.dir_.y_;
 		if(invry > 0)
 		{
-			ltmin = -p.y * invry;
-			ltmax = ((a1.y - a0.y) - p.y) * invry;
+			ltmin = -p.y_ * invry;
+			ltmax = ((a_1.y_ - a_0.y_) - p.y_) * invry;
 		}
 		else
 		{
-			ltmin = ((a1.y - a0.y) - p.y) * invry;
-			ltmax = -p.y * invry;
+			ltmin = ((a_1.y_ - a_0.y_) - p.y_) * invry;
+			ltmax = -p.y_ * invry;
 		}
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);
 
 		if((lmax < 0) || (lmin > dist)) return false;
 	}
-	if(ray.dir.z != 0)
+	if(ray.dir_.z_ != 0)
 	{
-		float invrz = 1. / ray.dir.z;
+		float invrz = 1. / ray.dir_.z_;
 		if(invrz > 0)
 		{
-			ltmin = -p.z * invrz;
-			ltmax = ((a1.z - a0.z) - p.z) * invrz;
+			ltmin = -p.z_ * invrz;
+			ltmax = ((a_1.z_ - a_0.z_) - p.z_) * invrz;
 		}
 		else
 		{
-			ltmin = ((a1.z - a0.z) - p.z) * invrz;
-			ltmax = -p.z * invrz;
+			ltmin = ((a_1.z_ - a_0.z_) - p.z_) * invrz;
+			ltmax = -p.z_ * invrz;
 		}
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);
@@ -212,23 +212,23 @@ inline bool bound_t::cross(const ray_t &ray, float &enter, float &leave, const f
 }
 
 
-class YAFRAYCORE_EXPORT exBound_t: public bound_t
+class YAFRAYCORE_EXPORT ExBound: public Bound
 {
 	public:
-		exBound_t(const bound_t &b)
+		ExBound(const Bound &b)
 		{
 			for(int i = 0; i < 3; ++i)
 			{
-				center[i]   = ((double)a[i] + (double)g[i]) * 0.5;
-				halfSize[i] = ((double)g[i] - (double)a[i]) * 0.5;
+				center_[i]   = ((double)a_[i] + (double)g_[i]) * 0.5;
+				half_size_[i] = ((double)g_[i] - (double)a_[i]) * 0.5;
 			}
 		}
 
-		double center[3];
-		double halfSize[3];
+		double center_[3];
+		double half_size_[3];
 };
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_BOUND_H
+#endif // YAFARAY_BOUND_H

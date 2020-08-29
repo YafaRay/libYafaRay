@@ -26,70 +26,70 @@
 #include <iostream>
 #include <cstdlib>
 
-QtOutput::QtOutput(RenderWidget *render): renderBuffer(render)
+QtOutput::QtOutput(RenderWidget *render): render_buffer_(render)
 {
 }
 
 void QtOutput::setRenderSize(const QSize &s)
 {
-	renderBuffer->setup(s);
+	render_buffer_->setup(s);
 }
 
 /*====================================
 / colorOutput_t implementations
 =====================================*/
 
-bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, int idx, const yafaray::colorA_t &color, bool alpha)
+bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha)
 {
-	int r = std::max(0, std::min(255, (int)(color.R * 255.f)));
-	int g = std::max(0, std::min(255, (int)(color.G * 255.f)));
-	int b = std::max(0, std::min(255, (int)(color.B * 255.f)));
+	int r = std::max(0, std::min(255, (int)(color.r_ * 255.f)));
+	int g = std::max(0, std::min(255, (int)(color.g_ * 255.f)));
+	int b = std::max(0, std::min(255, (int)(color.b_ * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if(alpha)
 	{
-		int a = std::max(0, std::min(255, (int)(color.A * 255.f)));
+		int a = std::max(0, std::min(255, (int)(color.a_ * 255.f)));
 		aval = qRgb(a, a, a);
 	}
 
-	renderBuffer->setPixel(x, y, rgb, aval, alpha);
+	render_buffer_->setPixel(x, y, rgb, aval, alpha);
 
 	return true;
 }
 
-bool QtOutput::putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha)
+bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &col_ext_passes, bool alpha)
 {
-	int r = std::max(0, std::min(255, (int)(colExtPasses.at(0).R * 255.f)));
-	int g = std::max(0, std::min(255, (int)(colExtPasses.at(0).G * 255.f)));
-	int b = std::max(0, std::min(255, (int)(colExtPasses.at(0).B * 255.f)));
+	int r = std::max(0, std::min(255, (int)(col_ext_passes.at(0).r_ * 255.f)));
+	int g = std::max(0, std::min(255, (int)(col_ext_passes.at(0).g_ * 255.f)));
+	int b = std::max(0, std::min(255, (int)(col_ext_passes.at(0).b_ * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if(alpha)
 	{
-		int a = std::max(0, std::min(255, (int)(colExtPasses.at(0).A * 255.f)));
+		int a = std::max(0, std::min(255, (int)(col_ext_passes.at(0).a_ * 255.f)));
 		aval = qRgb(a, a, a);
 	}
 
-	renderBuffer->setPixel(x, y, rgb, aval, alpha);
+	render_buffer_->setPixel(x, y, rgb, aval, alpha);
 
 	return true;
 }
 
-void QtOutput::flush(int numView, const yafaray::renderPasses_t *renderPasses)
+void QtOutput::flush(int num_view, const yafaray4::RenderPasses *render_passes)
 {
-	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(), true));
+	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(), true));
 }
 
-void QtOutput::flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses)
+void QtOutput::flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const yafaray4::RenderPasses *render_passes)
 {
-	QCoreApplication::postEvent(renderBuffer, new GuiUpdateEvent(QRect(x0, y0, x1 - x0, y1 - y0)));
+	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(x_0, y_0, x_1 - x_0, y_1 - y_0)));
 }
 
-void QtOutput::highliteArea(int numView, int x0, int y0, int x1, int y1)
+void QtOutput::highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1)
 {
-	QCoreApplication::postEvent(renderBuffer, new GuiAreaHighliteEvent(QRect(x0, y0, x1 - x0, y1 - y0)));
+	QCoreApplication::postEvent(render_buffer_, new GuiAreaHighliteEvent(QRect(x_0, y_0, x_1 - x_0, y_1 - y_0)));
 }

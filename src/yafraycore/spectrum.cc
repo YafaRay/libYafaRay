@@ -1,9 +1,9 @@
 #include <yafraycore/spectrum.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 // CIE color matching function table, 1931, 2 degree
-static float CIE_XYZcolmat[471][4] =
+static float cie_xy_zcolmat__[471][4] =
 {
 	{360, 0.000129900000, 0.000003917000, 0.000606100000}, {361, 0.000145847000, 0.000004393581, 0.000680879200},
 	{362, 0.000163802100, 0.000004929604, 0.000765145600}, {363, 0.000184003700, 0.000005532136, 0.000860012400},
@@ -243,7 +243,7 @@ static float CIE_XYZcolmat[471][4] =
 	{830, 0.000001251141, 0.000000451810, 0.000000000000}
 };
 
-void xyz_to_rgb(float x, float y, float z, color_t &col)
+void xyzToRgb__(float x, float y, float z, Rgb &col)
 {
 	// xyz->RGB using CIE RGB colsys. (Illuminant E w.point)
 	col.set(2.28783848734076f * x - 0.833367677835217f * y - 0.454470795871421f * z,
@@ -251,88 +251,88 @@ void xyz_to_rgb(float x, float y, float z, color_t &col)
 	        0.00572040983140966f * x - 0.0159068485104036f * y + 1.0101864083734f * z);
 	// correct if outside gamut
 	float wt = col.minimum();
-	if(wt < 0.f) col -= color_t(wt);
+	if(wt < 0.f) col -= Rgb(wt);
 }
 
 // spectrum color using CIE tables
-void wl2rgb_fromCIE(float wl, color_t &col)
+void wl2RgbFromCie__(float wl, Rgb &col)
 {
 	float fr = wl - 360.f;
-	int p1 = int(fr);
-	if(p1 < 0) { col.black(); return; }
-	int p2 = p1 + 1;
-	if(p2 > 470) { col.black(); return; }
+	int p_1 = int(fr);
+	if(p_1 < 0) { col.black(); return; }
+	int p_2 = p_1 + 1;
+	if(p_2 > 470) { col.black(); return; }
 	fr -= floor(fr);
-	float fr2 = 1.f - fr;
-	float x = fr2 * CIE_XYZcolmat[p1][1] + fr * CIE_XYZcolmat[p2][1];
-	float y = fr2 * CIE_XYZcolmat[p1][2] + fr * CIE_XYZcolmat[p2][2];
-	float z = fr2 * CIE_XYZcolmat[p1][3] + fr * CIE_XYZcolmat[p2][3];
-	xyz_to_rgb(x, y, z, col);
+	float fr_2 = 1.f - fr;
+	float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
+	float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
+	float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
+	xyzToRgb__(x, y, z, col);
 }
 
-color_t wl2XYZ(float wl)
+Rgb wl2Xyz__(float wl)
 {
 	float fr = wl - 360.f;
-	int p1 = int(fr);
-	if(p1 < 0) { return color_t(0.f); }
-	int p2 = p1 + 1;
-	if(p2 > 470) { return color_t(0.f); }
+	int p_1 = int(fr);
+	if(p_1 < 0) { return Rgb(0.f); }
+	int p_2 = p_1 + 1;
+	if(p_2 > 470) { return Rgb(0.f); }
 	fr -= floor(fr);
-	float fr2 = 1.f - fr;
-	float x = fr2 * CIE_XYZcolmat[p1][1] + fr * CIE_XYZcolmat[p2][1];
-	float y = fr2 * CIE_XYZcolmat[p1][2] + fr * CIE_XYZcolmat[p2][2];
-	float z = fr2 * CIE_XYZcolmat[p1][3] + fr * CIE_XYZcolmat[p2][3];
-	return color_t(x, y, z);
+	float fr_2 = 1.f - fr;
+	float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
+	float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
+	float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
+	return Rgb(x, y, z);
 }
 
 // from various 'spectral composite model..' papers by Sun et al
 // approximation of CIE matching function by gaussians (only used for analysis in paper, not actual model)
 // slow but might be useful sometime
-void approxSpectrum(float wl, color_t &col)
+void approxSpectrum__(float wl, Rgb &col)
 {
-	float t1 = wl - 445.f, t2 = wl - 595.f, t3 = wl - 560.f, t4 = wl - 451.f;
-	float x = 0.38f * exp(-t1 * t1 * 1.3691796159e-3f) + 1.06f * exp(-t2 * t2 * 4.3321698785e-4f);
-	float y = exp(-t3 * t3 * 2.7725887222e-4f), z = 1.8f * exp(-t4 * t4 * 9.1655825529e-4f);
-	xyz_to_rgb(x, y, z, col);
+	float t_1 = wl - 445.f, t_2 = wl - 595.f, t_3 = wl - 560.f, t_4 = wl - 451.f;
+	float x = 0.38f * exp(-t_1 * t_1 * 1.3691796159e-3f) + 1.06f * exp(-t_2 * t_2 * 4.3321698785e-4f);
+	float y = exp(-t_3 * t_3 * 2.7725887222e-4f), z = 1.8f * exp(-t_4 * t_4 * 9.1655825529e-4f);
+	xyzToRgb__(x, y, z, col);
 }
 
 // just a simple rainbow gradient, but perfect 1/3 sum,
 // could be useful for some things as a fast rough spectrum color approximation
 // p in range 0 to 1
-void fakeSpectrum(float p, color_t &col)
+void fakeSpectrum__(float p, Rgb &col)
 {
 	float r = 4.f * (p - 0.75f), g = 4.f * (p - 0.5f), b = 4.f * (p - 0.25f);
 	col.set(1.f - r * r, 1.f - g * g, 1.f - b * b);
-	col.clampRGB0();
+	col.clampRgb0();
 }
 
 // returns Cauchy coefficients for the reduced form equation n = A + B/lambda^2
 // used to calculate dispersion curve, disp_pw is the refractive index difference Nf-nC
 // may not be quite correct or accurate
-void CauchyCoefficients(float IOR, float disp_pw, float &CauchyA, float &CauchyB)
+void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauchy_b)
 {
-	CauchyA = CauchyB = 0;
+	cauchy_a = cauchy_b = 0;
 	if(disp_pw > 0)
 	{
 		// Fraunhofer line wavelengths, Hydrogen F, Helium d, Hydrogen C
-		const float lF2 = 486.13 * 486.13, ld2 = 587.56 * 587.56, lC2 = 656.27 * 656.27;
-		float Vd = (IOR - 1.0) / disp_pw;	// Abbe number
-		CauchyB = (lC2 - lF2) * Vd;
-		if(CauchyB != 0.0) CauchyB = (lF2 * lC2 * (IOR - 1.0)) / CauchyB;
-		CauchyA = IOR - CauchyB / ld2;
+		const float l_f_2 = 486.13 * 486.13, ld_2 = 587.56 * 587.56, l_c_2 = 656.27 * 656.27;
+		float vd = (ior - 1.0) / disp_pw;	// Abbe number
+		cauchy_b = (l_c_2 - l_f_2) * vd;
+		if(cauchy_b != 0.0) cauchy_b = (l_f_2 * l_c_2 * (ior - 1.0)) / cauchy_b;
+		cauchy_a = ior - cauchy_b / ld_2;
 	}
 }
 
 // returns IOR and color at specified wavelength (not called with actual wavelength, but number in 0-1 range)
 // for wl2rgb_fromCIE() & approxSpectrumRGB() range is 380nm to 780nm
 // but could shorten it to 400-700 maybe, 720-780 is quite dark anyway
-float getIORcolor(float w, float CauchyA, float CauchyB, color_t &col)
+float getIoRcolor__(float w, float cauchy_a, float cauchy_b, Rgb &col)
 {
 	//float wl = 400.0*w + 380.0;
 	float wl = 300.0 * w + 400.0;
-	wl2rgb_fromCIE(wl, col);
+	wl2RgbFromCie__(wl, col);
 	col *= 2.214032659670777114f;	// scale for CIE sys. equal energy, range 400-700
-	return CauchyA + CauchyB / (wl * wl);
+	return cauchy_a + cauchy_b / (wl * wl);
 }
 
-__END_YAFRAY
+END_YAFRAY

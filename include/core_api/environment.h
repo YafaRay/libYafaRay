@@ -1,136 +1,136 @@
 #pragma once
 
-#ifndef Y_ENVIRON_H
-#define Y_ENVIRON_H
+#ifndef YAFARAY_ENVIRONMENT_H
+#define YAFARAY_ENVIRONMENT_H
 
 #include <yafray_constants.h>
 #include "renderpasses.h"
 #include "dynamic_library.h"
 #include <list>
 
-__BEGIN_YAFRAY
-class light_t;
-class material_t;
-class volumeHandler_t;
+BEGIN_YAFRAY
+class Light;
+class Material;
+class VolumeHandler;
 class VolumeRegion;
-class texture_t;
-class camera_t;
-class background_t;
-class integrator_t;
-class shaderNode_t;
-class integrator_t;
-class object3d_t;
-class imageFilm_t;
-class scene_t;
-class colorOutput_t;
-class progressBar_t;
-class imageHandler_t;
-class paraMap_t;
+class Texture;
+class Camera;
+class Background;
+class Integrator;
+class ShaderNode;
+class Integrator;
+class Object3D;
+class ImageFilm;
+class Scene;
+class ColorOutput;
+class ProgressBar;
+class ImageHandler;
+class ParamMap;
 
-class YAFRAYCORE_EXPORT renderEnvironment_t
+class YAFRAYCORE_EXPORT RenderEnvironment final
 {
 	public:
+		RenderEnvironment();
+		~RenderEnvironment();
+
 		void loadPlugins(const std::string &path);
 		bool getPluginPath(std::string &path);
 
-		typedef light_t 		*light_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef material_t 		*material_factory_t(paraMap_t &, std::list<paraMap_t> &, renderEnvironment_t &);
-		typedef texture_t 		*texture_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef object3d_t 		*object_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef camera_t 		*camera_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef background_t 	*background_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef integrator_t 	*integrator_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef shaderNode_t 	*shader_factory_t(const paraMap_t &, renderEnvironment_t &);
-		typedef volumeHandler_t *volume_factory_t(const paraMap_t &, renderEnvironment_t &);
-		typedef VolumeRegion	*volumeregion_factory_t(paraMap_t &, renderEnvironment_t &);
-		typedef imageHandler_t	*imagehandler_factory_t(paraMap_t &, renderEnvironment_t &);
+		typedef Light 		*LightFactory_t(ParamMap &, RenderEnvironment &);
+		typedef Material 		*MaterialFactory_t(ParamMap &, std::list<ParamMap> &, RenderEnvironment &);
+		typedef Texture 		*TextureFactory_t(ParamMap &, RenderEnvironment &);
+		typedef Object3D 		*ObjectFactory_t(ParamMap &, RenderEnvironment &);
+		typedef Camera 		*CameraFactory_t(ParamMap &, RenderEnvironment &);
+		typedef Background 	*BackgroundFactory_t(ParamMap &, RenderEnvironment &);
+		typedef Integrator 	*IntegratorFactory_t(ParamMap &, RenderEnvironment &);
+		typedef ShaderNode 	*ShaderFactory_t(const ParamMap &, RenderEnvironment &);
+		typedef VolumeHandler *VolumeFactory_t(const ParamMap &, RenderEnvironment &);
+		typedef VolumeRegion	*VolumeregionFactory_t(ParamMap &, RenderEnvironment &);
+		typedef ImageHandler	*ImagehandlerFactory_t(ParamMap &, RenderEnvironment &);
 
-		virtual material_t *getMaterial(const std::string &name) const;
-		virtual texture_t *getTexture(const std::string &name) const;
-		virtual shaderNode_t *getShaderNode(const std::string &name) const;
-		camera_t *getCamera(const std::string &name) const;
-		shader_factory_t *getShaderNodeFactory(const std::string &name) const;
-		background_t 	*getBackground(const std::string &name) const;
-		integrator_t 	*getIntegrator(const std::string &name) const;
-		scene_t 		*getScene() { return curren_scene; };
+		Material *getMaterial(const std::string &name) const;
+		Texture *getTexture(const std::string &name) const;
+		ShaderNode *getShaderNode(const std::string &name) const;
+		Camera *getCamera(const std::string &name) const;
+		ShaderFactory_t *getShaderNodeFactory(const std::string &name) const;
+		Background 	*getBackground(const std::string &name) const;
+		Integrator 	*getIntegrator(const std::string &name) const;
+		Scene 		*getScene() const { return current_scene_; }
 
-		light_t 		*createLight(const std::string &name, paraMap_t &params);
-		texture_t 		*createTexture(const std::string &name, paraMap_t &params);
-		material_t 	*createMaterial(const std::string &name, paraMap_t &params, std::list<paraMap_t> &eparams);
-		object3d_t 	*createObject(const std::string &name, paraMap_t &params);
-		camera_t 		*createCamera(const std::string &name, paraMap_t &params);
-		background_t 	*createBackground(const std::string &name, paraMap_t &params);
-		integrator_t 	*createIntegrator(const std::string &name, paraMap_t &params);
-		shaderNode_t 	*createShaderNode(const std::string &name, paraMap_t &params);
-		volumeHandler_t *createVolumeH(const std::string &name, const paraMap_t &params);
-		VolumeRegion	*createVolumeRegion(const std::string &name, paraMap_t &params);
-		imageFilm_t	*createImageFilm(const paraMap_t &params, colorOutput_t &output);
-		imageHandler_t *createImageHandler(const std::string &name, paraMap_t &params, bool addToTable = true);
-		void 			setScene(scene_t *scene) { curren_scene = scene; };
-		bool			setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb = nullptr);
-		void			setupRenderPasses(const paraMap_t &params);
-		void			setupLoggingAndBadge(const paraMap_t &params);
-		const			renderPasses_t *getRenderPasses() const { return &renderPasses; }
-		const 			std::map<std::string, camera_t *> *getCameraTable() const { return &camera_table; }
-		void			setOutput2(colorOutput_t *out2) { output2 = out2; }
-		colorOutput_t	*getOutput2() { return output2; }
+		Light 		*createLight(const std::string &name, ParamMap &params);
+		Texture 		*createTexture(const std::string &name, ParamMap &params);
+		Material 	*createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
+		Object3D 	*createObject(const std::string &name, ParamMap &params);
+		Camera 		*createCamera(const std::string &name, ParamMap &params);
+		Background 	*createBackground(const std::string &name, ParamMap &params);
+		Integrator 	*createIntegrator(const std::string &name, ParamMap &params);
+		ShaderNode 	*createShaderNode(const std::string &name, ParamMap &params);
+		VolumeHandler *createVolumeH(const std::string &name, const ParamMap &params);
+		VolumeRegion	*createVolumeRegion(const std::string &name, ParamMap &params);
+		ImageFilm	*createImageFilm(const ParamMap &params, ColorOutput &output);
+		ImageHandler *createImageHandler(const std::string &name, ParamMap &params, bool add_to_table = true);
+
+		void 			setScene(Scene *scene) { current_scene_ = scene; };
+		bool			setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb = nullptr);
+		void			setupRenderPasses(const ParamMap &params);
+		void			setupLoggingAndBadge(const ParamMap &params);
+		const			RenderPasses *getRenderPasses() const { return &render_passes_; }
+		const 			std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
+		void			setOutput2(ColorOutput *out_2) { output_2_ = out_2; }
+		ColorOutput	*getOutput2() const { return output_2_; }
 
 		void clearAll();
 
-		virtual void registerFactory(const std::string &name, light_factory_t *f);
-		virtual void registerFactory(const std::string &name, material_factory_t *f);
-		virtual void registerFactory(const std::string &name, texture_factory_t *f);
-		virtual void registerFactory(const std::string &name, object_factory_t *f);
-		virtual void registerFactory(const std::string &name, camera_factory_t *f);
-		virtual void registerFactory(const std::string &name, background_factory_t *f);
-		virtual void registerFactory(const std::string &name, integrator_factory_t *f);
-		virtual void registerFactory(const std::string &name, shader_factory_t *f);
-		virtual void registerFactory(const std::string &name, volume_factory_t *f);
-		virtual void registerFactory(const std::string &name, volumeregion_factory_t *f);
+		void registerFactory(const std::string &name, LightFactory_t *f);
+		void registerFactory(const std::string &name, MaterialFactory_t *f);
+		void registerFactory(const std::string &name, TextureFactory_t *f);
+		void registerFactory(const std::string &name, ObjectFactory_t *f);
+		void registerFactory(const std::string &name, CameraFactory_t *f);
+		void registerFactory(const std::string &name, BackgroundFactory_t *f);
+		void registerFactory(const std::string &name, IntegratorFactory_t *f);
+		void registerFactory(const std::string &name, ShaderFactory_t *f);
+		void registerFactory(const std::string &name, VolumeFactory_t *f);
+		void registerFactory(const std::string &name, VolumeregionFactory_t *f);
+		void registerImageHandler(const std::string &name, const std::string &valid_extensions, const std::string &full_name, ImagehandlerFactory_t *f);
+		std::vector<std::string> listImageHandlers();
+		std::vector<std::string> listImageHandlersFullName();
 
-		virtual void registerImageHandler(const std::string &name, const std::string &validExtensions, const std::string &fullName, imagehandler_factory_t *f);
-		virtual std::vector<std::string> listImageHandlers();
-		virtual std::vector<std::string> listImageHandlersFullName();
-		virtual std::string getImageFormatFromFullName(const std::string &fullname);
-		virtual std::string getImageFormatFromExtension(const std::string &extension);
-		virtual std::string getImageFullNameFromFormat(const std::string &format);
+		std::string getImageFormatFromFullName(const std::string &fullname);
+		std::string getImageFormatFromExtension(const std::string &extension);
+		std::string getImageFullNameFromFormat(const std::string &format);
 
-		renderEnvironment_t();
-		virtual ~renderEnvironment_t();
+	private:
+		std::list< DynamicLoadedLibrary > 	plugin_handlers_;
+		std::map<std::string, LightFactory_t *> 	light_factory_;
+		std::map<std::string, MaterialFactory_t *> 	material_factory_;
+		std::map<std::string, TextureFactory_t *> 	texture_factory_;
+		std::map<std::string, ObjectFactory_t *> 	object_factory_;
+		std::map<std::string, CameraFactory_t *> 	camera_factory_;
+		std::map<std::string, BackgroundFactory_t *> background_factory_;
+		std::map<std::string, IntegratorFactory_t *> integrator_factory_;
+		std::map<std::string, ShaderFactory_t *> 	shader_factory_;
+		std::map<std::string, VolumeFactory_t *> 	volume_factory_;
+		std::map<std::string, VolumeregionFactory_t *> 	volumeregion_factory_;
+		std::map<std::string, ImagehandlerFactory_t *> 	imagehandler_factory_;
 
-	protected:
-		std::list< dynamicLoadedLibrary_t > 	pluginHandlers;
-		std::map<std::string, light_factory_t *> 	light_factory;
-		std::map<std::string, material_factory_t *> 	material_factory;
-		std::map<std::string, texture_factory_t *> 	texture_factory;
-		std::map<std::string, object_factory_t *> 	object_factory;
-		std::map<std::string, camera_factory_t *> 	camera_factory;
-		std::map<std::string, background_factory_t *> background_factory;
-		std::map<std::string, integrator_factory_t *> integrator_factory;
-		std::map<std::string, shader_factory_t *> 	shader_factory;
-		std::map<std::string, volume_factory_t *> 	volume_factory;
-		std::map<std::string, volumeregion_factory_t *> 	volumeregion_factory;
-		std::map<std::string, imagehandler_factory_t *> 	imagehandler_factory;
+		std::map<std::string, Light *> 	lights_;
+		std::map<std::string, Material *> 	materials_;
+		std::map<std::string, Texture *> 	textures_;
+		std::map<std::string, Object3D *> 	objects_;
+		std::map<std::string, Camera *> 	cameras_;
+		std::map<std::string, Background *> backgrounds_;
+		std::map<std::string, Integrator *> integrators_;
+		std::map<std::string, ShaderNode *> shaders_;
+		std::map<std::string, VolumeHandler *> volumes_;
+		std::map<std::string, VolumeRegion *> volumeregions_;
+		std::map<std::string, ImageHandler *> imagehandlers_;
+		std::map<std::string, std::string> imagehandlers_fullnames_;
+		std::map<std::string, std::string> imagehandlers_extensions_;
 
-		std::map<std::string, light_t *> 	light_table;
-		std::map<std::string, material_t *> 	material_table;
-		std::map<std::string, texture_t *> 	texture_table;
-		std::map<std::string, object3d_t *> 	object_table;
-		std::map<std::string, camera_t *> 	camera_table;
-		std::map<std::string, background_t *> background_table;
-		std::map<std::string, integrator_t *> integrator_table;
-		std::map<std::string, shaderNode_t *> shader_table;
-		std::map<std::string, volumeHandler_t *> volume_table;
-		std::map<std::string, VolumeRegion *> volumeregion_table;
-
-		std::map<std::string, imageHandler_t *> imagehandler_table;
-		std::map<std::string, std::string> imagehandler_fullnames;
-		std::map<std::string, std::string> imagehandler_extensions;
-
-		scene_t *curren_scene;
-		renderPasses_t renderPasses;
-		colorOutput_t *output2; //secondary color output to export to file at the same time it's exported to Blender
+		Scene *current_scene_;
+		RenderPasses render_passes_;
+		ColorOutput *output_2_; //secondary color output to export to file at the same time it's exported to Blender
 };
 
-__END_YAFRAY
-#endif // Y_ENVIRON_H
+END_YAFRAY
+#endif // YAFARAY_ENVIRONMENT_H

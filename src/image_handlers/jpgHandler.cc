@@ -34,86 +34,86 @@ extern "C"
 #include <jpeglib.h>
 }
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-#define inv8  0.00392156862745098039f // 1 / 255
+#define INV_8  0.00392156862745098039f // 1 / 255
 
 // error handlers for libJPEG,
 
-METHODDEF(void) jpgErrorMessage(j_common_ptr info)
+METHODDEF(void) jpgErrorMessage__(j_common_ptr info)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*info->err->format_message)(info, buffer);
-	Y_ERROR << "JPEG Library Error: " << buffer << yendl;
+	Y_ERROR << "JPEG Library Error: " << buffer << YENDL;
 }
 
-struct jpgErrorManager
+struct JpgErrorManager
 {
-	struct jpeg_error_mgr pub;
-	jmp_buf setjmp_buffer;
+	struct ::jpeg_error_mgr pub_;
+	jmp_buf setjmp_buffer_;
 };
 
 // JPEG error manager pointer
-typedef struct jpgErrorManager *error_ptr;
+typedef struct JpgErrorManager *ErrorPtr_t;
 
-void jpgExitOnError(j_common_ptr info)
+void jpgExitOnError__(j_common_ptr info)
 {
-	error_ptr myerr = (error_ptr)info->err;
+	ErrorPtr_t myerr = (ErrorPtr_t)info->err;
 	(*info->err->output_message)(info);
-	longjmp(myerr->setjmp_buffer, 1);
+	longjmp(myerr->setjmp_buffer_, 1);
 }
 
 // The actual class
 
-class jpgHandler_t: public imageHandler_t
+class JpgHandler: public ImageHandler
 {
 	public:
-		jpgHandler_t();
-		~jpgHandler_t();
+		JpgHandler();
+		~JpgHandler();
 		bool loadFromFile(const std::string &name);
-		bool saveToFile(const std::string &name, int imgIndex = 0);
-		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		bool saveToFile(const std::string &name, int img_index = 0);
+		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
 };
 
-jpgHandler_t::jpgHandler_t()
+JpgHandler::JpgHandler()
 {
-	m_hasAlpha = false;
-	m_MultiLayer = false;
+	has_alpha_ = false;
+	multi_layer_ = false;
 
-	handlerName = "JPEGHandler";
+	handler_name_ = "JPEGHandler";
 }
 
-jpgHandler_t::~jpgHandler_t()
+JpgHandler::~JpgHandler()
 {
 	clearImgBuffers();
 }
 
-bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
+bool JpgHandler::saveToFile(const std::string &name, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
-	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	std::string name_without_tmp = name;
+	name_without_tmp.erase(name_without_tmp.length() - 4);
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	else Y_INFO << handler_name_ << ": Saving RGB" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
-	struct jpeg_compress_struct info;
-	struct jpgErrorManager jerr;
+	struct ::jpeg_compress_struct info;
+	struct JpgErrorManager jerr;
 	int x, y, ix;
-	yByte *scanline = nullptr;
+	YByte_t *scanline = nullptr;
 
-	FILE *fp = file_t::open(name, "wb");
+	FILE *fp = File::open(name, "wb");
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file for writing " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file for writing " << name << YENDL;
 		return false;
 	}
 
-	info.err = jpeg_std_error(&jerr.pub);
-	info.err->output_message = jpgErrorMessage;
-	jerr.pub.error_exit = jpgExitOnError;
+	info.err = jpeg_std_error(&jerr.pub_);
+	info.err->output_message = jpgErrorMessage__;
+	jerr.pub_.error_exit = jpgExitOnError__;
 
 	jpeg_create_compress(&info);
 	jpeg_stdio_dest(&info, fp);
@@ -130,23 +130,23 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 	jpeg_start_compress(&info, TRUE);
 
-	scanline = new yByte[ w * 3 ];
+	scanline = new YByte_t[w * 3 ];
 
 	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-	if(m_Denoise)
+	if(denoise_)
 	{
-		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(y = 0; y < h; y++)
 		{
 			for(x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				colorA_t col = denoised_buffer.getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix]   = (yByte)(col.getR() * 255);
-				scanline[ix + 1] = (yByte)(col.getG() * 255);
-				scanline[ix + 2] = (yByte)(col.getB() * 255);
+				Rgba col = denoised_buffer.getColor(x, y);
+				col.clampRgba01();
+				scanline[ix]   = (YByte_t)(col.getR() * 255);
+				scanline[ix + 1] = (YByte_t)(col.getG() * 255);
+				scanline[ix + 2] = (YByte_t)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -160,11 +160,11 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for(x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix] = (yByte)(col.getR() * 255);
-				scanline[ix + 1] = (yByte)(col.getG() * 255);
-				scanline[ix + 2] = (yByte)(col.getB() * 255);
+				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
+				col.clampRgba01();
+				scanline[ix] = (YByte_t)(col.getR() * 255);
+				scanline[ix + 1] = (YByte_t)(col.getG() * 255);
+				scanline[ix + 2] = (YByte_t)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -176,25 +176,25 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 	jpeg_finish_compress(&info);
 	jpeg_destroy_compress(&info);
 
-	file_t::close(fp);
+	File::close(fp);
 
-	if(m_hasAlpha)
+	if(has_alpha_)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
-		if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << yendl;
-		else Y_INFO << handlerName << ": Saving Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << yendl;
+		if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << YENDL;
+		else Y_INFO << handler_name_ << ": Saving Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << YENDL;
 
-		fp = file_t::open(alphaname, "wb");
+		fp = File::open(alphaname, "wb");
 
 		if(!fp)
 		{
-			Y_ERROR << handlerName << ": Cannot open file for writing " << alphaname << yendl;
+			Y_ERROR << handler_name_ << ": Cannot open file for writing " << alphaname << YENDL;
 			return false;
 		}
 
-		info.err = jpeg_std_error(&jerr.pub);
-		info.err->output_message = jpgErrorMessage;
-		jerr.pub.error_exit = jpgExitOnError;
+		info.err = jpeg_std_error(&jerr.pub_);
+		info.err->output_message = jpgErrorMessage__;
+		jerr.pub_.error_exit = jpgExitOnError__;
 
 		jpeg_create_compress(&info);
 		jpeg_stdio_dest(&info, fp);
@@ -211,15 +211,15 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 
 		jpeg_start_compress(&info, TRUE);
 
-		scanline = new yByte[ w ];
+		scanline = new YByte_t[ w ];
 
 		for(y = 0; y < h; y++)
 		{
 			for(x = 0; x < w; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, imgBuffer.at(imgIndex)->getColor(x, y).getA()));
+				float col = std::max(0.f, std::min(1.f, img_buffer_.at(img_index)->getColor(x, y).getA()));
 
-				scanline[x] = (yByte)(col * 255);
+				scanline[x] = (YByte_t)(col * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -230,38 +230,38 @@ bool jpgHandler_t::saveToFile(const std::string &name, int imgIndex)
 		jpeg_finish_compress(&info);
 		jpeg_destroy_compress(&info);
 
-		file_t::close(fp);
+		File::close(fp);
 	}
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-bool jpgHandler_t::loadFromFile(const std::string &name)
+bool JpgHandler::loadFromFile(const std::string &name)
 {
 	jpeg_decompress_struct info;
-	jpgErrorManager jerr;
+	JpgErrorManager jerr;
 
-	FILE *fp = file_t::open(name, "rb");
+	FILE *fp = File::open(name, "rb");
 
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+	Y_INFO << handler_name_ << ": Loading image \"" << name << "\"..." << YENDL;
 
 	if(!fp)
 	{
-		Y_ERROR << handlerName << ": Cannot open file " << name << yendl;
+		Y_ERROR << handler_name_ << ": Cannot open file " << name << YENDL;
 		return false;
 	}
 
-	info.err = jpeg_std_error(&jerr.pub);
-	info.err->output_message = jpgErrorMessage;
-	jerr.pub.error_exit = jpgExitOnError;
+	info.err = jpeg_std_error(&jerr.pub_);
+	info.err->output_message = jpgErrorMessage__;
+	jerr.pub_.error_exit = jpgExitOnError__;
 
-	if(setjmp(jerr.setjmp_buffer))
+	if(setjmp(jerr.setjmp_buffer_))
 	{
 		jpeg_destroy_decompress(&info);
 
-		file_t::close(fp);
+		File::close(fp);
 
 		return false;
 	}
@@ -272,35 +272,35 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 
 	jpeg_start_decompress(&info);
 
-	bool isGray = ((info.out_color_space == JCS_GRAYSCALE) & (info.output_components == 1));
-	bool isRGB  = ((info.out_color_space == JCS_RGB) & (info.output_components == 3));
-	bool isCMYK = ((info.out_color_space == JCS_CMYK) & (info.output_components == 4));// TODO: findout if blender's non-standard jpeg + alpha comply with this or not, the code for conversion is below
+	bool is_gray = ((info.out_color_space == JCS_GRAYSCALE) & (info.output_components == 1));
+	bool is_rgb  = ((info.out_color_space == JCS_RGB) & (info.output_components == 3));
+	bool is_cmyk = ((info.out_color_space == JCS_CMYK) & (info.output_components == 4));// TODO: findout if blender's non-standard jpeg + alpha comply with this or not, the code for conversion is below
 
-	if((!isGray) && (!isRGB) && (!isCMYK))
+	if((!is_gray) && (!is_rgb) && (!is_cmyk))
 	{
-		Y_ERROR << handlerName << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << yendl;
+		Y_ERROR << handler_name_ << ": Unsupported color space: " << info.out_color_space << "| Color components: " << info.output_components << YENDL;
 
 		jpeg_finish_decompress(&info);
 		jpeg_destroy_decompress(&info);
 
-		file_t::close(fp);
+		File::close(fp);
 
 		return false;
 	}
 
-	m_hasAlpha = false;
-	m_width = info.output_width;
-	m_height = info.output_height;
+	has_alpha_ = false;
+	width_ = info.output_width;
+	height_ = info.output_height;
 
 	clearImgBuffers();
 
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
+	int n_channels = 3;
+	if(grayscale_) n_channels = 1;
+	else if(has_alpha_) n_channels = 4;
 
-	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
 
-	yByte *scanline = new yByte[m_width * info.output_components];
+	YByte_t *scanline = new YByte_t[width_ * info.output_components];
 
 	int y = 0;
 	int ix = 0;
@@ -309,46 +309,46 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	{
 		jpeg_read_scanlines(&info, &scanline, 1);
 
-		for(int x = 0; x < m_width; x++)
+		for(int x = 0; x < width_; x++)
 		{
-			colorA_t color;
+			Rgba color;
 
-			if(isGray)
+			if(is_gray)
 			{
-				float colscan = scanline[x] * inv8;
+				float colscan = scanline[x] * INV_8;
 				color.set(colscan, colscan, colscan, 1.f);
 			}
-			else if(isRGB)
+			else if(is_rgb)
 			{
 				ix = x * 3;
-				color.set(scanline[ix] * inv8,
-				          scanline[ix + 1] * inv8,
-				          scanline[ix + 2] * inv8,
+				color.set(scanline[ix] * INV_8,
+						  scanline[ix + 1] * INV_8,
+						  scanline[ix + 2] * INV_8,
 				          1.f);
 			}
-			else if(isCMYK)
+			else if(is_cmyk)
 			{
 				ix = x * 4;
-				float K = scanline[ix + 3] * inv8;
-				float iK = 1.f - K;
+				float k = scanline[ix + 3] * INV_8;
+				float i_k = 1.f - k;
 
-				color.set(1.f - std::max((scanline[ix]   * inv8 * iK) + K, 1.f),
-				          1.f - std::max((scanline[ix + 1] * inv8 * iK) + K, 1.f),
-				          1.f - std::max((scanline[ix + 2] * inv8 * iK) + K, 1.f),
+				color.set(1.f - std::max((scanline[ix] * INV_8 * i_k) + k, 1.f),
+				          1.f - std::max((scanline[ix + 1] * INV_8 * i_k) + k, 1.f),
+				          1.f - std::max((scanline[ix + 2] * INV_8 * i_k) + k, 1.f),
 				          1.f);
 			}
 			else // this is probabbly (surely) never executed, i need to research further; this assumes blender non-standard jpeg + alpha
 			{
 				ix = x * 4;
-				float A = scanline[ix + 3] * inv8;
-				float iA = 1.f - A;
-				color.set(std::max(0.f, std::min((scanline[ix]   * inv8) - iA, 1.f)),
-				          std::max(0.f, std::min((scanline[ix + 1] * inv8) - iA, 1.f)),
-				          std::max(0.f, std::min((scanline[ix + 2] * inv8) - iA, 1.f)),
-				          A);
+				float a = scanline[ix + 3] * INV_8;
+				float i_a = 1.f - a;
+				color.set(std::max(0.f, std::min((scanline[ix] * INV_8) - i_a, 1.f)),
+						  std::max(0.f, std::min((scanline[ix + 1] * INV_8) - i_a, 1.f)),
+						  std::max(0.f, std::min((scanline[ix + 2] * INV_8) - i_a, 1.f)),
+						  a);
 			}
 
-			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
+			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
 		}
 		y++;
 	}
@@ -358,42 +358,42 @@ bool jpgHandler_t::loadFromFile(const std::string &name)
 	jpeg_finish_decompress(&info);
 	jpeg_destroy_decompress(&info);
 
-	file_t::close(fp);
+	File::close(fp);
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
 
-imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
+ImageHandler *JpgHandler::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int width = 0;
 	int height = 0;
-	bool withAlpha = false;
-	bool forOutput = true;
+	bool with_alpha = false;
+	bool for_output = true;
 	bool img_grayscale = false;
-	bool denoiseEnabled = false;
-	int denoiseHLum = 3;
-	int denoiseHCol = 3;
-	float denoiseMix = 0.8f;
+	bool denoise_enabled = false;
+	int denoise_h_lum = 3;
+	int denoise_h_col = 3;
+	float denoise_mix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
-	params.getParam("alpha_channel", withAlpha);
-	params.getParam("for_output", forOutput);
-	params.getParam("denoiseEnabled", denoiseEnabled);
-	params.getParam("denoiseHLum", denoiseHLum);
-	params.getParam("denoiseHCol", denoiseHCol);
-	params.getParam("denoiseMix", denoiseMix);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("for_output", for_output);
+	params.getParam("denoiseEnabled", denoise_enabled);
+	params.getParam("denoiseHLum", denoise_h_lum);
+	params.getParam("denoiseHCol", denoise_h_col);
+	params.getParam("denoiseMix", denoise_mix);
 	params.getParam("img_grayscale", img_grayscale);
 
-	imageHandler_t *ih = new jpgHandler_t();
+	ImageHandler *ih = new JpgHandler();
 
-	if(forOutput)
+	if(for_output)
 	{
-		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
+		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;
@@ -402,11 +402,11 @@ imageHandler_t *jpgHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerImageHandler("jpg", "jpg jpeg", "JPEG [Joint Photographic Experts Group]", jpgHandler_t::factory);
+		render.registerImageHandler("jpg", "jpg jpeg", "JPEG [Joint Photographic Experts Group]", JpgHandler::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

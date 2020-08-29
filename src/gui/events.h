@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef EVENTS_H
-#define EVENTS_H
+#ifndef YAFARAY_EVENTS_H
+#define YAFARAY_EVENTS_H
 
 #include <QEvent>
 #include <QRect>
@@ -39,43 +39,43 @@ enum CustomEvents
 class GuiUpdateEvent : public QEvent
 {
 	public:
-		GuiUpdateEvent(const QRect &rect, bool fullUpdate = false);
-		inline QRect rect() { return m_rect; }
-		inline bool fullUpdate() { return m_full; }
+		GuiUpdateEvent(const QRect &rect, bool full_update = false);
+		inline QRect rect() { return m_rect_; }
+		inline bool fullUpdate() { return m_full_; }
 	private:
-		QRect m_rect;
-		bool m_full;
+		QRect m_rect_;
+		bool m_full_;
 };
 
 class GuiAreaHighliteEvent : public QEvent
 {
 	public:
 		GuiAreaHighliteEvent(const QRect &rect);
-		inline QRect rect() { return m_rect; }
+		inline QRect rect() { return m_rect_; }
 	private:
-		QRect m_rect;
+		QRect m_rect_;
 };
 
 class ProgressUpdateEvent : public QEvent
 {
 	public:
 		ProgressUpdateEvent(int progress, int min = -1, int max = -1);
-		inline int progress() { return m_progress; }
-		inline int min() { return m_min; }
-		inline int max() { return m_max; }
+		inline int progress() { return m_progress_; }
+		inline int min() { return m_min_; }
+		inline int max() { return m_max_; }
 	private:
-		int m_progress;
-		int m_min;
-		int m_max;
+		int m_progress_;
+		int m_min_;
+		int m_max_;
 };
 
 class ProgressUpdateTagEvent : public QEvent
 {
 	public:
 		ProgressUpdateTagEvent(const char *tag);
-		inline QString &tag() { return m_tag; }
+		inline QString &tag() { return m_tag_; }
 	private:
-		QString m_tag;
+		QString m_tag_;
 };
 
 #endif

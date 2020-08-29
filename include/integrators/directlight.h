@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_DIRECTLIGHT_H
-#define Y_DIRECTLIGHT_H
+#ifndef YAFARAY_DIRECTLIGHT_H
+#define YAFARAY_DIRECTLIGHT_H
 
 #include <yafray_constants.h>
 
@@ -16,17 +16,19 @@
 #include <sstream>
 #include <iomanip>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYPLUGIN_EXPORT directLighting_t: public mcIntegrator_t
+class YAFRAYPLUGIN_EXPORT DirectLightIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		directLighting_t(bool transpShad = false, int shadowDepth = 4, int rayDepth = 6);
-		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
-		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		DirectLightIntegrator(bool transp_shad = false, int shadow_depth = 4, int ray_depth = 6);
+		virtual bool preprocess() override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif // DIRECTLIGHT

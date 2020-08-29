@@ -51,376 +51,376 @@
 #include <sstream>
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 #define ENV_TAG << "Environment: "
 #define Y_INFO_ENV Y_INFO ENV_TAG
 #define Y_VERBOSE_ENV Y_VERBOSE ENV_TAG
 #define Y_ERROR_ENV Y_ERROR ENV_TAG
 #define Y_WARN_ENV Y_WARNING ENV_TAG
 
-#define WarnExist Y_WARN_ENV << "Sorry, " << pname << " \"" << name << "\" already exists!" << yendl
+#define WARN_EXIST Y_WARN_ENV << "Sorry, " << pname << " \"" << name << "\" already exists!" << YENDL
 
-#define ErrNoType Y_ERROR_ENV << pname << " type not specified for \"" << name << "\" node!" << yendl
-#define ErrUnkType(t) Y_ERROR_ENV << "Don't know how to create " << pname << " of type '" << t << "'!" << yendl
-#define ErrOnCreate(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!" << yendl
+#define ERR_NO_TYPE Y_ERROR_ENV << pname << " type not specified for \"" << name << "\" node!" << YENDL
+#define ERR_UNK_TYPE(t) Y_ERROR_ENV << "Don't know how to create " << pname << " of type '" << t << "'!" << YENDL
+#define ERR_ON_CREATE(t) Y_ERROR_ENV << "No " << pname << " was constructed by plugin '" << t << "'!" << YENDL
 
-#define InfoSuccess(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
-#define InfoSuccessDisabled(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
+#define INFO_SUCCESS(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
+#define INFO_SUCCESS_DISABLED(name, t) Y_INFO_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
 
-#define SuccessReg(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'" << yendl
+#define SUCCESS_REG(t, name) Y_INFO_ENV << "Registered " << t << " type '" << name << "'" << YENDL
 
-#define InfoVerboseSuccess(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << yendl
-#define InfoVerboseSuccessDisabled(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << yendl
+#define INFO_VERBOSE_SUCCESS(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
+#define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_ENV << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
 
-#define SuccessVerboseReg(t, name) Y_VERBOSE_ENV << "Registered " << t << " type '" << name << "'" << yendl
+#define SUCCESS_VERBOSE_REG(t, name) Y_VERBOSE_ENV << "Registered " << t << " type '" << name << "'" << YENDL
 
-renderEnvironment_t::renderEnvironment_t()
+RenderEnvironment::RenderEnvironment()
 {
 	std::string compiler = YAFARAY_BUILD_COMPILER;
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 
-	Y_INFO << PACKAGE << " Core (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << yendl;
-	object_factory["sphere"] = sphere_factory;
-	output2 = nullptr;
-	session.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
+	Y_INFO << PACKAGE << " (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << YENDL;
+	object_factory_["sphere"] = sphereFactory__;
+	output_2_ = nullptr;
+	session__.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 
 #ifndef HAVE_OPENCV
-	Y_WARNING << PACKAGE << " built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << yendl;
+	Y_WARNING << PACKAGE << " built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << YENDL;
 #endif
 }
 
 template <class T>
-void freeMap(std::map< std::string, T * > &map)
+void freeMap__(std::map< std::string, T * > &map)
 {
 	for(auto i = map.begin(); i != map.end(); ++i) delete i->second;
 }
 
-renderEnvironment_t::~renderEnvironment_t()
+RenderEnvironment::~RenderEnvironment()
 {
-	freeMap(light_table);
-	freeMap(texture_table);
-	freeMap(material_table);
-	freeMap(object_table);
-	freeMap(camera_table);
-	freeMap(background_table);
-	freeMap(integrator_table);
-	freeMap(volume_table);
-	freeMap(volumeregion_table);
+	freeMap__(lights_);
+	freeMap__(textures_);
+	freeMap__(materials_);
+	freeMap__(objects_);
+	freeMap__(cameras_);
+	freeMap__(backgrounds_);
+	freeMap__(integrators_);
+	freeMap__(volumes_);
+	freeMap__(volumeregions_);
 }
 
-void renderEnvironment_t::clearAll()
+void RenderEnvironment::clearAll()
 {
-	freeMap(light_table);
-	freeMap(texture_table);
-	freeMap(material_table);
-	freeMap(object_table);
-	freeMap(camera_table);
-	freeMap(background_table);
-	freeMap(integrator_table);
-	freeMap(volume_table);
-	freeMap(volumeregion_table);
-	freeMap(imagehandler_table);
+	freeMap__(lights_);
+	freeMap__(textures_);
+	freeMap__(materials_);
+	freeMap__(objects_);
+	freeMap__(cameras_);
+	freeMap__(backgrounds_);
+	freeMap__(integrators_);
+	freeMap__(volumes_);
+	freeMap__(volumeregions_);
+	freeMap__(imagehandlers_);
 
-	light_table.clear();
-	texture_table.clear();
-	material_table.clear();
-	object_table.clear();
-	camera_table.clear();
-	background_table.clear();
-	integrator_table.clear();
-	volume_table.clear();
-	volumeregion_table.clear();
-	imagehandler_table.clear();
+	lights_.clear();
+	textures_.clear();
+	materials_.clear();
+	objects_.clear();
+	cameras_.clear();
+	backgrounds_.clear();
+	integrators_.clear();
+	volumes_.clear();
+	volumeregions_.clear();
+	imagehandlers_.clear();
 }
 
-void renderEnvironment_t::loadPlugins(const std::string &path)
+void RenderEnvironment::loadPlugins(const std::string &path)
 {
-	typedef void (reg_t)(renderEnvironment_t &);
-	Y_INFO_ENV << "Loading plugins ..." << yendl;
-	std::vector<std::string> plugins = file_t::listFiles(path);
+	typedef void (Reg_t)(RenderEnvironment &);
+	Y_INFO_ENV << "Loading plugins ..." << YENDL;
+	std::vector<std::string> plugins = File::listFiles(path);
 
 	for(auto i = plugins.begin(); i != plugins.end(); ++i)
 	{
-		dynamicLoadedLibrary_t plug((path + "//" + *i).c_str());
+		DynamicLoadedLibrary plug((path + "//" + *i).c_str());
 		if(!plug.isOpen()) continue;
-		reg_t *registerPlugin;
-		registerPlugin = (reg_t *)plug.getSymbol("registerPlugin");
-		if(registerPlugin == nullptr) continue;
-		registerPlugin(*this);
-		pluginHandlers.push_back(plug);
+		Reg_t *register_plugin;
+		register_plugin = (Reg_t *)plug.getSymbol("registerPlugin__");
+		if(register_plugin == nullptr) continue;
+		register_plugin(*this);
+		plugin_handlers_.push_back(plug);
 	}
 }
 
-bool renderEnvironment_t::getPluginPath(std::string &path)
+bool RenderEnvironment::getPluginPath(std::string &path)
 {
 	// Steps to find the plugins path.
 
 	// First check if the plugins path has been manually set and if it exists:
 	if(!path.empty())
 	{
-		if(file_t::exists(path, false))
+		if(File::exists(path, false))
 		{
-			Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+			Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << YENDL;
 			return true;
 		}
 		else
 		{
-			Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+			Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << YENDL;
 		}
 	}
 
 	// If the previous check does not work, check if the plugins path is in a subfolder of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
-	path = session.getPathYafaRayXml() + "/yafaray-plugins/";
-	if(file_t::exists(path, false))
+	path = session__.getPathYafaRayXml() + "/yafaray-plugins/";
+	if(File::exists(path, false))
 	{
-		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << YENDL;
 		return true;
 	}
 	else
 	{
-		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << YENDL;
 	}
 
 	// If the previous check does not work, check if the plugins path is in a "lib" subfolder of the parent of the currently executed file. This only works if the executable is executed with the full path, as this will not search for the executable in the search paths.
-	path = session.getPathYafaRayXml() + "/../lib/yafaray-plugins/";
-	if(file_t::exists(path, false))
+	path = session__.getPathYafaRayXml() + "/../lib/yafaray-plugins/";
+	if(File::exists(path, false))
 	{
-		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << YENDL;
 		return true;
 	}
 	else
 	{
-		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << YENDL;
 	}
 
 	// If the previous checks do not work, check if the plugins path is in the plugins search directory defined in CMake during the building process
 	path = std::string(YAFARAY_BUILD_SEARCH_PLUGIN_DIR);
-	if(file_t::exists(path, false))
+	if(File::exists(path, false))
 	{
-		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path found: '" << path << "'" << YENDL;
 		return true;
 	}
 	else
 	{
-		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << yendl;
+		Y_VERBOSE_ENV << "Plugins path NOT found in '" << path << "'" << YENDL;
 	}
 
 	return false;
 }
 
 
-material_t *renderEnvironment_t::getMaterial(const std::string &name) const
+Material *RenderEnvironment::getMaterial(const std::string &name) const
 {
-	auto i = material_table.find(name);
-	if(i != material_table.end()) return i->second;
+	auto i = materials_.find(name);
+	if(i != materials_.end()) return i->second;
 	else return nullptr;
 }
 
-texture_t *renderEnvironment_t::getTexture(const std::string &name) const
+Texture *RenderEnvironment::getTexture(const std::string &name) const
 {
-	auto i = texture_table.find(name);
-	if(i != texture_table.end()) return i->second;
+	auto i = textures_.find(name);
+	if(i != textures_.end()) return i->second;
 	else return nullptr;
 }
 
-camera_t *renderEnvironment_t::getCamera(const std::string &name) const
+Camera *RenderEnvironment::getCamera(const std::string &name) const
 {
-	auto i = camera_table.find(name);
-	if(i != camera_table.end()) return i->second;
+	auto i = cameras_.find(name);
+	if(i != cameras_.end()) return i->second;
 	else return nullptr;
 }
 
-background_t *renderEnvironment_t::getBackground(const std::string &name) const
+Background *RenderEnvironment::getBackground(const std::string &name) const
 {
-	auto i = background_table.find(name);
-	if(i != background_table.end()) return i->second;
+	auto i = backgrounds_.find(name);
+	if(i != backgrounds_.end()) return i->second;
 	else return nullptr;
 }
 
-integrator_t *renderEnvironment_t::getIntegrator(const std::string &name) const
+Integrator *RenderEnvironment::getIntegrator(const std::string &name) const
 {
-	auto i = integrator_table.find(name);
-	if(i != integrator_table.end()) return i->second;
+	auto i = integrators_.find(name);
+	if(i != integrators_.end()) return i->second;
 	else return nullptr;
 }
 
-shaderNode_t *renderEnvironment_t::getShaderNode(const std::string &name) const
+ShaderNode *RenderEnvironment::getShaderNode(const std::string &name) const
 {
-	auto i = shader_table.find(name);
-	if(i != shader_table.end()) return i->second;
+	auto i = shaders_.find(name);
+	if(i != shaders_.end()) return i->second;
 	else return nullptr;
 }
 
-light_t *renderEnvironment_t::createLight(const std::string &name, paraMap_t &params)
+Light *RenderEnvironment::createLight(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Light";
-	if(light_table.find(name) != light_table.end())
+	if(lights_.find(name) != lights_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	light_t *light;
-	auto i = light_factory.find(type);
-	if(i != light_factory.end()) light = i->second(params, *this);
+	Light *light;
+	auto i = light_factory_.find(type);
+	if(i != light_factory_.end()) light = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(light)
 	{
-		light_table[name] = light;
+		lights_[name] = light;
 
-		if(light->lightEnabled()) InfoVerboseSuccess(name, type);
-		else InfoVerboseSuccessDisabled(name, type);
+		if(light->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
+		else INFO_VERBOSE_SUCCESS_DISABLED(name, type);
 
 		return light;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-texture_t *renderEnvironment_t::createTexture(const std::string &name, paraMap_t &params)
+Texture *RenderEnvironment::createTexture(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Texture";
-	if(texture_table.find(name) != texture_table.end())
+	if(textures_.find(name) != textures_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	texture_t *texture;
-	auto i = texture_factory.find(type);
-	if(i != texture_factory.end()) texture = i->second(params, *this);
+	Texture *texture;
+	auto i = texture_factory_.find(type);
+	if(i != texture_factory_.end()) texture = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(texture)
 	{
-		texture_table[name] = texture;
-		InfoVerboseSuccess(name, type);
+		textures_[name] = texture;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return texture;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-shaderNode_t *renderEnvironment_t::createShaderNode(const std::string &name, paraMap_t &params)
+ShaderNode *RenderEnvironment::createShaderNode(const std::string &name, ParamMap &params)
 {
 	std::string pname = "ShaderNode";
-	if(shader_table.find(name) != shader_table.end())
+	if(shaders_.find(name) != shaders_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	shaderNode_t *shader;
-	auto i = shader_factory.find(type);
-	if(i != shader_factory.end()) shader = i->second(params, *this);
+	ShaderNode *shader;
+	auto i = shader_factory_.find(type);
+	if(i != shader_factory_.end()) shader = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(shader)
 	{
-		shader_table[name] = shader;
-		InfoVerboseSuccess(name, type);
+		shaders_[name] = shader;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return shader;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-material_t *renderEnvironment_t::createMaterial(const std::string &name, paraMap_t &params, std::list<paraMap_t> &eparams)
+Material *RenderEnvironment::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams)
 {
 	std::string pname = "Material";
-	if(material_table.find(name) != material_table.end())
+	if(materials_.find(name) != materials_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
 	params["name"] = name;
-	material_t *material;
-	auto i = material_factory.find(type);
-	if(i != material_factory.end()) material = i->second(params, eparams, *this);
+	Material *material;
+	auto i = material_factory_.find(type);
+	if(i != material_factory_.end()) material = i->second(params, eparams, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(material)
 	{
-		material_table[name] = material;
-		InfoVerboseSuccess(name, type);
+		materials_[name] = material;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return material;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-background_t *renderEnvironment_t::createBackground(const std::string &name, paraMap_t &params)
+Background *RenderEnvironment::createBackground(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Background";
-	if(background_table.find(name) != background_table.end())
+	if(backgrounds_.find(name) != backgrounds_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	background_t *background;
-	auto i = background_factory.find(type);
-	if(i != background_factory.end()) background = i->second(params, *this);
+	Background *background;
+	auto i = background_factory_.find(type);
+	if(i != background_factory_.end()) background = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(background)
 	{
-		background_table[name] = background;
-		InfoVerboseSuccess(name, type);
+		backgrounds_[name] = background;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return background;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-imageHandler_t *renderEnvironment_t::createImageHandler(const std::string &name, paraMap_t &params, bool addToTable)
+ImageHandler *RenderEnvironment::createImageHandler(const std::string &name, ParamMap &params, bool add_to_table)
 {
 	std::string pname = "ImageHandler";
 	std::stringstream newname;
-	int sufixCount = 0;
+	int sufix_count = 0;
 
 	newname << name;
 
-	if(addToTable)
+	if(add_to_table)
 	{
 		while(true)
 		{
-			if(imagehandler_table.find(newname.str()) != imagehandler_table.end())
+			if(imagehandlers_.find(newname.str()) != imagehandlers_.end())
 			{
 				newname.seekg(0, std::ios::beg);
 				newname << name << ".";
 				newname.width(3);
 				newname.fill('0');
 				newname.flags(std::ios::right);
-				newname << sufixCount;
-				sufixCount++;
+				newname << sufix_count;
+				sufix_count++;
 			}
 			else break;
 		}
@@ -430,235 +430,235 @@ imageHandler_t *renderEnvironment_t::createImageHandler(const std::string &name,
 
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
 
-	imageHandler_t *ih = nullptr;
-	auto i = imagehandler_factory.find(type);
+	ImageHandler *ih = nullptr;
+	auto i = imagehandler_factory_.find(type);
 
-	if(i != imagehandler_factory.end())
+	if(i != imagehandler_factory_.end())
 	{
 		ih = i->second(params, *this);
 	}
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 
 	if(ih)
 	{
-		if(addToTable) imagehandler_table[newname.str()] = ih;
+		if(add_to_table) imagehandlers_[newname.str()] = ih;
 
-		InfoVerboseSuccess(newname.str(), type);
+		INFO_VERBOSE_SUCCESS(newname.str(), type);
 
 		return ih;
 	}
 
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 
 	return nullptr;
 }
 
-object3d_t *renderEnvironment_t::createObject(const std::string &name, paraMap_t &params)
+Object3D *RenderEnvironment::createObject(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Object";
-	if(object_table.find(name) != object_table.end())
+	if(objects_.find(name) != objects_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	object3d_t *object;
-	auto i = object_factory.find(type);
-	if(i != object_factory.end()) object = i->second(params, *this);
+	Object3D *object;
+	auto i = object_factory_.find(type);
+	if(i != object_factory_.end()) object = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(object)
 	{
-		object_table[name] = object;
-		InfoVerboseSuccess(name, type);
+		objects_[name] = object;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return object;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-camera_t *renderEnvironment_t::createCamera(const std::string &name, paraMap_t &params)
+Camera *RenderEnvironment::createCamera(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Camera";
-	if(camera_table.find(name) != camera_table.end())
+	if(cameras_.find(name) != cameras_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	camera_t *camera;
-	auto i = camera_factory.find(type);
-	if(i != camera_factory.end()) camera = i->second(params, *this);
+	Camera *camera;
+	auto i = camera_factory_.find(type);
+	if(i != camera_factory_.end()) camera = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(camera)
 	{
-		camera_table[name] = camera;
-		InfoVerboseSuccess(name, type);
-		int viewNumber = renderPasses.view_names.size();
-		camera->set_camera_name(name);
-		renderPasses.view_names.push_back(camera->get_view_name());
+		cameras_[name] = camera;
+		INFO_VERBOSE_SUCCESS(name, type);
+		int view_number = render_passes_.view_names_.size();
+		camera->setCameraName(name);
+		render_passes_.view_names_.push_back(camera->getViewName());
 
-		Y_INFO << "Environment: View number=" << viewNumber << ", view name: '" << renderPasses.view_names[viewNumber] << "', camera name: '" << camera->get_camera_name() << "'" << yendl;
+		Y_INFO << "Environment: View number=" << view_number << ", view name: '" << render_passes_.view_names_[view_number] << "', camera name: '" << camera->getCameraName() << "'" << YENDL;
 
 		return camera;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-integrator_t *renderEnvironment_t::createIntegrator(const std::string &name, paraMap_t &params)
+Integrator *RenderEnvironment::createIntegrator(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Integrator";
-	if(integrator_table.find(name) != integrator_table.end())
+	if(integrators_.find(name) != integrators_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	integrator_t *integrator;
-	auto i = integrator_factory.find(type);
-	if(i != integrator_factory.end()) integrator = i->second(params, *this);
+	Integrator *integrator;
+	auto i = integrator_factory_.find(type);
+	if(i != integrator_factory_.end()) integrator = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(integrator)
 	{
-		integrator_table[name] = integrator;
-		InfoVerboseSuccess(name, type);
-		if(type == "bidirectional") Y_WARNING << "The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk." << yendl;
+		integrators_[name] = integrator;
+		INFO_VERBOSE_SUCCESS(name, type);
+		if(type == "bidirectional") Y_WARNING << "The Bidirectional integrator is UNSTABLE at the moment and needs to be improved. It might give unexpected and perhaps even incorrect render results. Use at your own risk." << YENDL;
 		return integrator;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-void renderEnvironment_t::setupRenderPasses(const paraMap_t &params)
+void RenderEnvironment::setupRenderPasses(const ParamMap &params)
 {
-	std::string externalPass, internalPass;
+	std::string external_pass, internal_pass;
 	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
 	bool pass_mask_invert = false;
 	bool pass_mask_only = false;
 
-	color_t toonEdgeColor(0.f);
-	int objectEdgeThickness = 2;
-	float objectEdgeThreshold = 0.3f;
-	float objectEdgeSmoothness = 0.75f;
-	float toonPreSmooth = 3.f;
-	float toonQuantization = 0.1f;
-	float toonPostSmooth = 3.f;
-	int facesEdgeThickness = 1;
-	float facesEdgeThreshold = 0.01f;
-	float facesEdgeSmoothness = 0.5f;
+	Rgb toon_edge_color(0.f);
+	int object_edge_thickness = 2;
+	float object_edge_threshold = 0.3f;
+	float object_edge_smoothness = 0.75f;
+	float toon_pre_smooth = 3.f;
+	float toon_quantization = 0.1f;
+	float toon_post_smooth = 3.f;
+	int faces_edge_thickness = 1;
+	float faces_edge_threshold = 0.01f;
+	float faces_edge_smoothness = 0.5f;
 
 	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
 	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
 	params.getParam("pass_mask_invert", pass_mask_invert);
 	params.getParam("pass_mask_only", pass_mask_only);
 
-	params.getParam("toonEdgeColor", toonEdgeColor);
-	params.getParam("objectEdgeThickness", objectEdgeThickness);
-	params.getParam("objectEdgeThreshold", objectEdgeThreshold);
-	params.getParam("objectEdgeSmoothness", objectEdgeSmoothness);
-	params.getParam("toonPreSmooth", toonPreSmooth);
-	params.getParam("toonQuantization", toonQuantization);
-	params.getParam("toonPostSmooth", toonPostSmooth);
-	params.getParam("facesEdgeThickness", facesEdgeThickness);
-	params.getParam("facesEdgeThreshold", facesEdgeThreshold);
-	params.getParam("facesEdgeSmoothness", facesEdgeSmoothness);
+	params.getParam("toonEdgeColor", toon_edge_color);
+	params.getParam("objectEdgeThickness", object_edge_thickness);
+	params.getParam("objectEdgeThreshold", object_edge_threshold);
+	params.getParam("objectEdgeSmoothness", object_edge_smoothness);
+	params.getParam("toonPreSmooth", toon_pre_smooth);
+	params.getParam("toonQuantization", toon_quantization);
+	params.getParam("toonPostSmooth", toon_post_smooth);
+	params.getParam("facesEdgeThickness", faces_edge_thickness);
+	params.getParam("facesEdgeThreshold", faces_edge_threshold);
+	params.getParam("facesEdgeSmoothness", faces_edge_smoothness);
 
 	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(auto it = renderPasses.extPassMapIntString.begin(); it != renderPasses.extPassMapIntString.end(); ++it)
+	for(auto it = render_passes_.ext_pass_map_int_string_.begin(); it != render_passes_.ext_pass_map_int_string_.end(); ++it)
 	{
-		internalPass = "";
-		externalPass = it->second;
-		params.getParam("pass_" + externalPass, internalPass);
-		if(internalPass != "disabled" && internalPass != "") renderPasses.extPass_add(externalPass, internalPass);
+		internal_pass = "";
+		external_pass = it->second;
+		params.getParam("pass_" + external_pass, internal_pass);
+		if(internal_pass != "disabled" && internal_pass != "") render_passes_.extPassAdd(external_pass, internal_pass);
 	}
 
 	//Generate any necessary auxiliar render passes
-	renderPasses.auxPasses_generate();
+	render_passes_.auxPassesGenerate();
 
-	renderPasses.set_pass_mask_obj_index((float) pass_mask_obj_index);
-	renderPasses.set_pass_mask_mat_index((float) pass_mask_mat_index);
-	renderPasses.set_pass_mask_invert(pass_mask_invert);
-	renderPasses.set_pass_mask_only(pass_mask_only);
+	render_passes_.setPassMaskObjIndex((float) pass_mask_obj_index);
+	render_passes_.setPassMaskMatIndex((float) pass_mask_mat_index);
+	render_passes_.setPassMaskInvert(pass_mask_invert);
+	render_passes_.setPassMaskOnly(pass_mask_only);
 
-	renderPasses.objectEdgeThickness = objectEdgeThickness;
-	renderPasses.objectEdgeThreshold = objectEdgeThreshold;
-	renderPasses.objectEdgeSmoothness = objectEdgeSmoothness;
-	renderPasses.toonPreSmooth = toonPreSmooth;
-	renderPasses.toonQuantization = toonQuantization;
-	renderPasses.toonPostSmooth = toonPostSmooth;
-	renderPasses.facesEdgeThickness = facesEdgeThickness;
-	renderPasses.facesEdgeThreshold = facesEdgeThreshold;
-	renderPasses.facesEdgeSmoothness = facesEdgeSmoothness;
+	render_passes_.object_edge_thickness_ = object_edge_thickness;
+	render_passes_.object_edge_threshold_ = object_edge_threshold;
+	render_passes_.object_edge_smoothness_ = object_edge_smoothness;
+	render_passes_.toon_pre_smooth_ = toon_pre_smooth;
+	render_passes_.toon_quantization_ = toon_quantization;
+	render_passes_.toon_post_smooth_ = toon_post_smooth;
+	render_passes_.faces_edge_thickness_ = faces_edge_thickness;
+	render_passes_.faces_edge_threshold_ = faces_edge_threshold;
+	render_passes_.faces_edge_smoothness_ = faces_edge_smoothness;
 
-	renderPasses.toonEdgeColor[0] = toonEdgeColor.R;
-	renderPasses.toonEdgeColor[1] = toonEdgeColor.G;
-	renderPasses.toonEdgeColor[2] = toonEdgeColor.B;
+	render_passes_.toon_edge_color_[0] = toon_edge_color.r_;
+	render_passes_.toon_edge_color_[1] = toon_edge_color.g_;
+	render_passes_.toon_edge_color_[2] = toon_edge_color.b_;
 }
 
-imageFilm_t *renderEnvironment_t::createImageFilm(const paraMap_t &params, colorOutput_t &output)
+ImageFilm *RenderEnvironment::createImageFilm(const ParamMap &params, ColorOutput &output)
 {
 	std::string name;
 	std::string tiles_order;
 	int width = 320, height = 240, xstart = 0, ystart = 0;
 	std::string color_space_string = "Raw_Manual_Gamma";
-	colorSpaces_t color_space = RAW_MANUAL_GAMMA;
-	std::string color_space_string2 = "Raw_Manual_Gamma";
-	colorSpaces_t color_space2 = RAW_MANUAL_GAMMA;
-	float filt_sz = 1.5, gamma = 1.f, gamma2 = 1.f;
-	bool showSampledPixels = false;
-	int tileSize = 32;
+	ColorSpace color_space = RawManualGamma;
+	std::string color_space_string_2 = "Raw_Manual_Gamma";
+	ColorSpace color_space_2 = RawManualGamma;
+	float filt_sz = 1.5, gamma = 1.f, gamma_2 = 1.f;
+	bool show_sampled_pixels = false;
+	int tile_size = 32;
 	bool premult = false;
-	bool premult2 = false;
+	bool premult_2 = false;
 	std::string images_autosave_interval_type_string = "none";
-	int images_autosave_interval_type = AUTOSAVE_NONE;
+	AutoSaveIntervalType images_autosave_interval_type = AutoSaveIntervalType::None;
 	int images_autosave_interval_passes = 1;
 	double images_autosave_interval_seconds = 300.0;
 	std::string film_save_load_string = "none";
-	int film_save_load = FILM_FILE_NONE;
+	FilmFileSaveLoad film_save_load = FilmFileSaveLoad::None;
 	std::string film_autosave_interval_type_string = "none";
-	int film_autosave_interval_type = AUTOSAVE_NONE;
+	AutoSaveIntervalType film_autosave_interval_type = AutoSaveIntervalType::None;
 	int film_autosave_interval_passes = 1;
 	double film_autosave_interval_seconds = 300.0;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
-	params.getParam("color_space2", color_space_string2);
-	params.getParam("gamma2", gamma2);
+	params.getParam("color_space2", color_space_string_2);
+	params.getParam("gamma2", gamma_2);
 	params.getParam("AA_pixelwidth", filt_sz);
 	params.getParam("width", width); // width of rendered image
 	params.getParam("height", height); // height of rendered image
 	params.getParam("xstart", xstart); // x-offset (for cropped rendering)
 	params.getParam("ystart", ystart); // y-offset (for cropped rendering)
 	params.getParam("filter_type", name); // AA filter type
-	params.getParam("show_sam_pix", showSampledPixels); // Show pixels marked to be resampled on adaptative sampling
-	params.getParam("tile_size", tileSize); // Size of the render buckets or tiles
+	params.getParam("show_sam_pix", show_sampled_pixels); // Show pixels marked to be resampled on adaptative sampling
+	params.getParam("tile_size", tile_size); // Size of the render buckets or tiles
 	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
-	params.getParam("premult2", premult2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
+	params.getParam("premult2", premult_2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
 	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
 	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
 	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
@@ -667,64 +667,64 @@ imageFilm_t *renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
 	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
 
-	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_interval_passes << ", " << images_autosave_interval_seconds << yendl;
+	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_interval_passes << ", " << images_autosave_interval_seconds << YENDL;
 
-	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_interval_passes << ", " << film_autosave_interval_seconds << yendl;
+	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_interval_passes << ", " << film_autosave_interval_seconds << YENDL;
 
-	if(color_space_string == "sRGB") color_space = SRGB;
-	else if(color_space_string == "XYZ") color_space = XYZ_D65;
-	else if(color_space_string == "LinearRGB") color_space = LINEAR_RGB;
-	else if(color_space_string == "Raw_Manual_Gamma") color_space = RAW_MANUAL_GAMMA;
-	else color_space = SRGB;
+	if(color_space_string == "sRGB") color_space = Srgb;
+	else if(color_space_string == "XYZ") color_space = XyzD65;
+	else if(color_space_string == "LinearRGB") color_space = LinearRgb;
+	else if(color_space_string == "Raw_Manual_Gamma") color_space = RawManualGamma;
+	else color_space = Srgb;
 
-	if(color_space_string2 == "sRGB") color_space2 = SRGB;
-	else if(color_space_string2 == "XYZ") color_space2 = XYZ_D65;
-	else if(color_space_string2 == "LinearRGB") color_space2 = LINEAR_RGB;
-	else if(color_space_string2 == "Raw_Manual_Gamma") color_space2 = RAW_MANUAL_GAMMA;
-	else color_space2 = SRGB;
+	if(color_space_string_2 == "sRGB") color_space_2 = Srgb;
+	else if(color_space_string_2 == "XYZ") color_space_2 = XyzD65;
+	else if(color_space_string_2 == "LinearRGB") color_space_2 = LinearRgb;
+	else if(color_space_string_2 == "Raw_Manual_Gamma") color_space_2 = RawManualGamma;
+	else color_space_2 = Srgb;
 
-	if(images_autosave_interval_type_string == "pass-interval") images_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
-	else if(images_autosave_interval_type_string == "time-interval") images_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
-	else images_autosave_interval_type = AUTOSAVE_NONE;
+	if(images_autosave_interval_type_string == "pass-interval") images_autosave_interval_type = AutoSaveIntervalType::Pass;
+	else if(images_autosave_interval_type_string == "time-interval") images_autosave_interval_type = AutoSaveIntervalType::Time;
+	else images_autosave_interval_type = AutoSaveIntervalType::None;
 
-	if(film_save_load_string == "load-save") film_save_load = FILM_FILE_LOAD_SAVE;
-	else if(film_save_load_string == "save") film_save_load = FILM_FILE_SAVE;
-	else film_save_load = FILM_FILE_NONE;
+	if(film_save_load_string == "load-save") film_save_load = FilmFileSaveLoad::LoadAndSave;
+	else if(film_save_load_string == "save") film_save_load = FilmFileSaveLoad::Save;
+	else film_save_load = FilmFileSaveLoad::None;
 
-	if(film_autosave_interval_type_string == "pass-interval") film_autosave_interval_type = AUTOSAVE_PASS_INTERVAL;
-	else if(film_autosave_interval_type_string == "time-interval") film_autosave_interval_type = AUTOSAVE_TIME_INTERVAL;
-	else film_autosave_interval_type = AUTOSAVE_NONE;
+	if(film_autosave_interval_type_string == "pass-interval") film_autosave_interval_type = AutoSaveIntervalType::Pass;
+	else if(film_autosave_interval_type_string == "time-interval") film_autosave_interval_type = AutoSaveIntervalType::Time;
+	else film_autosave_interval_type = AutoSaveIntervalType::None;
 
-	output.initTilesPasses(camera_table.size(), renderPasses.extPassesSize());
+	output.initTilesPasses(cameras_.size(), render_passes_.extPassesSize());
 
-	imageFilm_t::filterType type = imageFilm_t::BOX;
-	if(name == "mitchell") type = imageFilm_t::MITCHELL;
-	else if(name == "gauss") type = imageFilm_t::GAUSS;
-	else if(name == "lanczos") type = imageFilm_t::LANCZOS;
-	else if(name != "box") Y_WARN_ENV << "No AA filter defined defaulting to Box!" << yendl;
+	ImageFilm::FilterType type = ImageFilm::FilterType::Box;
+	if(name == "mitchell") type = ImageFilm::FilterType::Mitchell;
+	else if(name == "gauss") type = ImageFilm::FilterType::Gauss;
+	else if(name == "lanczos") type = ImageFilm::FilterType::Lanczos;
+	else if(name != "box") Y_WARN_ENV << "No AA filter defined defaulting to Box!" << YENDL;
 
-	imageSpliter_t::tilesOrderType tilesOrder = imageSpliter_t::CENTRE_RANDOM;
-	if(tiles_order == "linear") tilesOrder = imageSpliter_t::LINEAR;
-	else if(tiles_order == "random") tilesOrder = imageSpliter_t::RANDOM;
-	else if(tiles_order != "centre") Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << yendl; // this is info imho not a warning
+	ImageSplitter::TilesOrderType tilesOrder = ImageSplitter::CentreRandom;
+	if(tiles_order == "linear") tilesOrder = ImageSplitter::Linear;
+	else if(tiles_order == "random") tilesOrder = ImageSplitter::Random;
+	else if(tiles_order != "centre") Y_VERBOSE_ENV << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
 
-	imageFilm_t *film = new imageFilm_t(width, height, xstart, ystart, output, filt_sz, type, this, showSampledPixels, tileSize, tilesOrder, premult);
+	ImageFilm *film = new ImageFilm(width, height, xstart, ystart, output, filt_sz, type, this, show_sampled_pixels, tile_size, tilesOrder, premult);
 
-	if(color_space == RAW_MANUAL_GAMMA)
+	if(color_space == RawManualGamma)
 	{
 		if(gamma > 0 && std::fabs(1.f - gamma) > 0.001) film->setColorSpace(color_space, gamma);
-		else film->setColorSpace(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+		else film->setColorSpace(LinearRgb, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
 	}
 	else film->setColorSpace(color_space, gamma);
 
-	if(color_space2 == RAW_MANUAL_GAMMA)
+	if(color_space_2 == RawManualGamma)
 	{
-		if(gamma2 > 0 && std::fabs(1.f - gamma2) > 0.001) film->setColorSpace2(color_space2, gamma2);
-		else film->setColorSpace2(LINEAR_RGB, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
+		if(gamma_2 > 0 && std::fabs(1.f - gamma_2) > 0.001) film->setColorSpace2(color_space_2, gamma_2);
+		else film->setColorSpace2(LinearRgb, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
 	}
-	else film->setColorSpace2(color_space2, gamma2);
+	else film->setColorSpace2(color_space_2, gamma_2);
 
-	film->setPremult2(premult2);
+	film->setPremult2(premult_2);
 
 	film->setImagesAutoSaveIntervalType(images_autosave_interval_type);
 	film->setImagesAutoSaveIntervalSeconds(images_autosave_interval_seconds);
@@ -735,118 +735,118 @@ imageFilm_t *renderEnvironment_t::createImageFilm(const paraMap_t &params, color
 	film->setFilmAutoSaveIntervalSeconds(film_autosave_interval_seconds);
 	film->setFilmAutoSaveIntervalPasses(film_autosave_interval_passes);
 
-	if(images_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_passes << " passes" << yendl;
+	if(images_autosave_interval_type == AutoSaveIntervalType::Pass) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_passes << " passes" << YENDL;
 
-	if(images_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << yendl;
+	if(images_autosave_interval_type == AutoSaveIntervalType::Time) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << YENDL;
 
-	if(film_save_load != FILM_FILE_NONE) Y_INFO_ENV << "Enabling imageFilm file saving feature" << yendl;
-	if(film_save_load == FILM_FILE_LOAD_SAVE) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << yendl;
+	if(film_save_load != FilmFileSaveLoad::Save) Y_INFO_ENV << "Enabling imageFilm file saving feature" << YENDL;
+	if(film_save_load == FilmFileSaveLoad::LoadAndSave) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << YENDL;
 
-	if(film_autosave_interval_type == AUTOSAVE_PASS_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << yendl;
+	if(film_autosave_interval_type == AutoSaveIntervalType::Pass) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << YENDL;
 
-	if(film_autosave_interval_type == AUTOSAVE_TIME_INTERVAL) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_interval_seconds << " seconds" << yendl;
+	if(film_autosave_interval_type == AutoSaveIntervalType::Time) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_interval_seconds << " seconds" << YENDL;
 
 	return film;
 }
 
-volumeHandler_t *renderEnvironment_t::createVolumeH(const std::string &name, const paraMap_t &params)
+VolumeHandler *RenderEnvironment::createVolumeH(const std::string &name, const ParamMap &params)
 {
 	std::string pname = "VolumeHandler";
-	if(volume_table.find(name) != volume_table.end())
+	if(volumes_.find(name) != volumes_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
-	volumeHandler_t *volume;
-	auto i = volume_factory.find(type);
-	if(i != volume_factory.end()) volume = i->second(params, *this);
+	VolumeHandler *volume;
+	auto i = volume_factory_.find(type);
+	if(i != volume_factory_.end()) volume = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(volume)
 	{
-		volume_table[name] = volume;
-		InfoVerboseSuccess(name, type);
+		volumes_[name] = volume;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return volume;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-VolumeRegion *renderEnvironment_t::createVolumeRegion(const std::string &name, paraMap_t &params)
+VolumeRegion *RenderEnvironment::createVolumeRegion(const std::string &name, ParamMap &params)
 {
 	std::string pname = "VolumeRegion";
-	if(volumeregion_table.find(name) != volumeregion_table.end())
+	if(volumeregions_.find(name) != volumeregions_.end())
 	{
-		WarnExist; return nullptr;
+		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ErrNoType; return nullptr;
+		ERR_NO_TYPE; return nullptr;
 	}
 	VolumeRegion *volumeregion;
-	auto i = volumeregion_factory.find(type);
-	if(i != volumeregion_factory.end()) volumeregion = i->second(params, *this);
+	auto i = volumeregion_factory_.find(type);
+	if(i != volumeregion_factory_.end()) volumeregion = i->second(params, *this);
 	else
 	{
-		ErrUnkType(type); return nullptr;
+		ERR_UNK_TYPE(type); return nullptr;
 	}
 	if(volumeregion)
 	{
-		volumeregion_table[name] = volumeregion;
-		InfoVerboseSuccess(name, type);
+		volumeregions_[name] = volumeregion;
+		INFO_VERBOSE_SUCCESS(name, type);
 		return volumeregion;
 	}
-	ErrOnCreate(type);
+	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
+void RenderEnvironment::setupLoggingAndBadge(const ParamMap &params)
 {
-	bool logging_saveLog = false;
-	bool logging_saveHTML = false;
-	bool logging_drawRenderSettings = true;
-	bool logging_drawAANoiseSettings = true;
-	std::string logging_paramsBadgePosition;
+	bool logging_save_log = false;
+	bool logging_save_html = false;
+	bool logging_draw_render_settings = true;
+	bool logging_draw_aa_noise_settings = true;
+	std::string logging_params_badge_position;
 	std::string logging_title;
 	std::string logging_author;
 	std::string logging_contact;
 	std::string logging_comments;
-	std::string logging_customIcon;
-	std::string logging_fontPath;
-	float logging_fontSizeFactor = 1.f;
+	std::string logging_custom_icon;
+	std::string logging_font_path;
+	float logging_font_size_factor = 1.f;
 
-	params.getParam("logging_paramsBadgePosition", logging_paramsBadgePosition);
-	params.getParam("logging_saveLog", logging_saveLog);
-	params.getParam("logging_saveHTML", logging_saveHTML);
-	params.getParam("logging_drawRenderSettings", logging_drawRenderSettings);
-	params.getParam("logging_drawAANoiseSettings", logging_drawAANoiseSettings);
+	params.getParam("logging_paramsBadgePosition", logging_params_badge_position);
+	params.getParam("logging_saveLog", logging_save_log);
+	params.getParam("logging_saveHTML", logging_save_html);
+	params.getParam("logging_drawRenderSettings", logging_draw_render_settings);
+	params.getParam("logging_drawAANoiseSettings", logging_draw_aa_noise_settings);
 	params.getParam("logging_author", logging_author);
 	params.getParam("logging_title", logging_title);
 	params.getParam("logging_contact", logging_contact);
 	params.getParam("logging_comments", logging_comments);
-	params.getParam("logging_customIcon", logging_customIcon);
-	params.getParam("logging_fontPath", logging_fontPath);
-	params.getParam("logging_fontSizeFactor", logging_fontSizeFactor);
+	params.getParam("logging_customIcon", logging_custom_icon);
+	params.getParam("logging_fontPath", logging_font_path);
+	params.getParam("logging_fontSizeFactor", logging_font_size_factor);
 
-	yafLog.setSaveLog(logging_saveLog);
-	yafLog.setSaveHTML(logging_saveHTML);
-	yafLog.setDrawRenderSettings(logging_drawRenderSettings);
-	yafLog.setDrawAANoiseSettings(logging_drawAANoiseSettings);
-	yafLog.setParamsBadgePosition(logging_paramsBadgePosition);
-	yafLog.setLoggingTitle(logging_title);
-	yafLog.setLoggingAuthor(logging_author);
-	yafLog.setLoggingContact(logging_contact);
-	yafLog.setLoggingComments(logging_comments);
-	yafLog.setLoggingCustomIcon(logging_customIcon);
-	yafLog.setLoggingFontPath(logging_fontPath);
-	yafLog.setLoggingFontSizeFactor(logging_fontSizeFactor);
+	logger__.setSaveLog(logging_save_log);
+	logger__.setSaveHtml(logging_save_html);
+	logger__.setDrawRenderSettings(logging_draw_render_settings);
+	logger__.setDrawAaNoiseSettings(logging_draw_aa_noise_settings);
+	logger__.setParamsBadgePosition(logging_params_badge_position);
+	logger__.setLoggingTitle(logging_title);
+	logger__.setLoggingAuthor(logging_author);
+	logger__.setLoggingContact(logging_contact);
+	logger__.setLoggingComments(logging_comments);
+	logger__.setLoggingCustomIcon(logging_custom_icon);
+	logger__.setLoggingFontPath(logging_font_path);
+	logger__.setLoggingFontSizeFactor(logging_font_size_factor);
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -854,23 +854,23 @@ void renderEnvironment_t::setupLoggingAndBadge(const paraMap_t &params)
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, colorOutput_t &output, progressBar_t *pb)
+bool RenderEnvironment::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb)
 {
 	std::string name;
-	int AA_passes = 1, AA_samples = 1, AA_inc_samples = 1, nthreads = -1, nthreads_photons = -1;
-	double AA_threshold = 0.05;
-	float AA_resampled_floor = 0.f;
-	float AA_sample_multiplier_factor = 1.f;
-	float AA_light_sample_multiplier_factor = 1.f;
-	float AA_indirect_sample_multiplier_factor = 1.f;
-	bool AA_detect_color_noise = false;
-	std::string AA_dark_detection_type_string = "none";
-	int AA_dark_detection_type = DARK_DETECTION_NONE;
-	float AA_dark_threshold_factor = 0.f;
-	int AA_variance_edge_size = 10;
-	int AA_variance_pixels = 0;
-	float AA_clamp_samples = 0.f;
-	float AA_clamp_indirect = 0.f;
+	int aa_passes = 1, aa_samples = 1, aa_inc_samples = 1, nthreads = -1, nthreads_photons = -1;
+	double aa_threshold = 0.05;
+	float aa_resampled_floor = 0.f;
+	float aa_sample_multiplier_factor = 1.f;
+	float aa_light_sample_multiplier_factor = 1.f;
+	float aa_indirect_sample_multiplier_factor = 1.f;
+	bool aa_detect_color_noise = false;
+	std::string aa_dark_detection_type_string = "none";
+	DarkDetectionType aa_dark_detection_type = DarkDetectionType::None;
+	float aa_dark_threshold_factor = 0.f;
+	int aa_variance_edge_size = 10;
+	int aa_variance_pixels = 0;
+	float aa_clamp_samples = 0.f;
+	float aa_clamp_indirect = 0.f;
 
 	bool adv_auto_shadow_bias_enabled = true;
 	float adv_shadow_bias_value = YAF_SHADOW_BIAS;
@@ -883,61 +883,61 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	if(! params.getParam("camera_name", name))
 	{
-		Y_ERROR_ENV << "Specify a Camera!!" << yendl;
+		Y_ERROR_ENV << "Specify a Camera!!" << YENDL;
 		return false;
 	}
 
 	if(!params.getParam("integrator_name", name))
 	{
-		Y_ERROR_ENV << "Specify an Integrator!!" << yendl;
+		Y_ERROR_ENV << "Specify an Integrator!!" << YENDL;
 		return false;
 	}
 
-	integrator_t *inte = this->getIntegrator(name);
+	Integrator *inte = this->getIntegrator(name);
 
 	if(!inte)
 	{
-		Y_ERROR_ENV << "Specify an _existing_ Integrator!!" << yendl;
+		Y_ERROR_ENV << "Specify an _existing_ Integrator!!" << YENDL;
 		return false;
 	}
 
-	if(inte->integratorType() != integrator_t::SURFACE)
+	if(inte->integratorType() != Integrator::Surface)
 	{
-		Y_ERROR_ENV << "Integrator is no surface integrator!" << yendl;
+		Y_ERROR_ENV << "Integrator is no surface integrator!" << YENDL;
 		return false;
 	}
 
 	if(! params.getParam("volintegrator_name", name))
 	{
-		Y_ERROR_ENV << "Specify a Volume Integrator!" << yendl;
+		Y_ERROR_ENV << "Specify a Volume Integrator!" << YENDL;
 		return false;
 	}
 
-	integrator_t *volInte = this->getIntegrator(name);
+	Integrator *vol_inte = this->getIntegrator(name);
 
-	background_t *backg = nullptr;
+	Background *backg = nullptr;
 	if(params.getParam("background_name", name))
 	{
 		backg = this->getBackground(name);
-		if(!backg) Y_ERROR_ENV << "please specify an _existing_ Background!!" << yendl;
+		if(!backg) Y_ERROR_ENV << "please specify an _existing_ Background!!" << YENDL;
 	}
 
-	params.getParam("AA_passes", AA_passes);
-	params.getParam("AA_minsamples", AA_samples);
-	AA_inc_samples = AA_samples;
-	params.getParam("AA_inc_samples", AA_inc_samples);
-	params.getParam("AA_threshold", AA_threshold);
-	params.getParam("AA_resampled_floor", AA_resampled_floor);
-	params.getParam("AA_sample_multiplier_factor", AA_sample_multiplier_factor);
-	params.getParam("AA_light_sample_multiplier_factor", AA_light_sample_multiplier_factor);
-	params.getParam("AA_indirect_sample_multiplier_factor", AA_indirect_sample_multiplier_factor);
-	params.getParam("AA_detect_color_noise", AA_detect_color_noise);
-	params.getParam("AA_dark_detection_type", AA_dark_detection_type_string);
-	params.getParam("AA_dark_threshold_factor", AA_dark_threshold_factor);
-	params.getParam("AA_variance_edge_size", AA_variance_edge_size);
-	params.getParam("AA_variance_pixels", AA_variance_pixels);
-	params.getParam("AA_clamp_samples", AA_clamp_samples);
-	params.getParam("AA_clamp_indirect", AA_clamp_indirect);
+	params.getParam("AA_passes", aa_passes);
+	params.getParam("AA_minsamples", aa_samples);
+	aa_inc_samples = aa_samples;
+	params.getParam("AA_inc_samples", aa_inc_samples);
+	params.getParam("AA_threshold", aa_threshold);
+	params.getParam("AA_resampled_floor", aa_resampled_floor);
+	params.getParam("AA_sample_multiplier_factor", aa_sample_multiplier_factor);
+	params.getParam("AA_light_sample_multiplier_factor", aa_light_sample_multiplier_factor);
+	params.getParam("AA_indirect_sample_multiplier_factor", aa_indirect_sample_multiplier_factor);
+	params.getParam("AA_detect_color_noise", aa_detect_color_noise);
+	params.getParam("AA_dark_detection_type", aa_dark_detection_type_string);
+	params.getParam("AA_dark_threshold_factor", aa_dark_threshold_factor);
+	params.getParam("AA_variance_edge_size", aa_variance_edge_size);
+	params.getParam("AA_variance_pixels", aa_variance_pixels);
+	params.getParam("AA_clamp_samples", aa_clamp_samples);
+	params.getParam("AA_clamp_indirect", aa_clamp_indirect);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("background_resampling", background_resampling);
 
@@ -950,7 +950,7 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
 	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
-	imageFilm_t *film = createImageFilm(params, output);
+	ImageFilm *film = createImageFilm(params, output);
 
 	if(pb)
 	{
@@ -960,28 +960,28 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 
 	params.getParam("filter_type", name); // AA filter type
 
-	std::stringstream aaSettings;
-	aaSettings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << film->getTileSize();
-	yafLog.appendAANoiseSettings(aaSettings.str());
+	std::stringstream aa_settings;
+	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << film->getTileSize();
+	logger__.appendAaNoiseSettings(aa_settings.str());
 
-	if(AA_dark_detection_type_string == "linear") AA_dark_detection_type = DARK_DETECTION_LINEAR;
-	else if(AA_dark_detection_type_string == "curve") AA_dark_detection_type = DARK_DETECTION_CURVE;
-	else AA_dark_detection_type = DARK_DETECTION_NONE;
+	if(aa_dark_detection_type_string == "linear") aa_dark_detection_type = DarkDetectionType::Linear;
+	else if(aa_dark_detection_type_string == "curve") aa_dark_detection_type = DarkDetectionType::Curve;
+	else aa_dark_detection_type = DarkDetectionType::None;
 
 	//setup scene and render.
 	scene.setImageFilm(film);
-	scene.setSurfIntegrator((surfaceIntegrator_t *)inte);
-	scene.setVolIntegrator((volumeIntegrator_t *)volInte);
-	scene.setAntialiasing(AA_samples, AA_passes, AA_inc_samples, AA_threshold, AA_resampled_floor, AA_sample_multiplier_factor, AA_light_sample_multiplier_factor, AA_indirect_sample_multiplier_factor, AA_detect_color_noise, AA_dark_detection_type, AA_dark_threshold_factor, AA_variance_edge_size, AA_variance_pixels, AA_clamp_samples, AA_clamp_indirect);
+	scene.setSurfIntegrator((SurfaceIntegrator *)inte);
+	scene.setVolIntegrator((VolumeIntegrator *)vol_inte);
+	scene.setAntialiasing(aa_samples, aa_passes, aa_inc_samples, aa_threshold, aa_resampled_floor, aa_sample_multiplier_factor, aa_light_sample_multiplier_factor, aa_indirect_sample_multiplier_factor, aa_detect_color_noise, aa_dark_detection_type, aa_dark_threshold_factor, aa_variance_edge_size, aa_variance_pixels, aa_clamp_samples, aa_clamp_indirect);
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
 	if(backg) scene.setBackground(backg);
-	scene.shadowBiasAuto = adv_auto_shadow_bias_enabled;
-	scene.shadowBias = adv_shadow_bias_value;
-	scene.rayMinDistAuto = adv_auto_min_raydist_enabled;
-	scene.rayMinDist = adv_min_raydist_value;
+	scene.shadow_bias_auto_ = adv_auto_shadow_bias_enabled;
+	scene.shadow_bias_ = adv_shadow_bias_value;
+	scene.ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
+	scene.ray_min_dist_ = adv_min_raydist_value;
 
-	Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << yendl;
+	Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << YENDL;
 	film->setBaseSamplingOffset(adv_base_sampling_offset);
 	film->setComputerNode(adv_computer_node);
 
@@ -990,158 +990,158 @@ bool renderEnvironment_t::setupScene(scene_t &scene, const paraMap_t &params, co
 	return true;
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, light_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, LightFactory_t *f)
 {
-	light_factory[name] = f;
-	SuccessVerboseReg("Light", name);
+	light_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Light", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, material_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, MaterialFactory_t *f)
 {
-	material_factory[name] = f;
-	SuccessVerboseReg("Material", name);
+	material_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Material", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, texture_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, TextureFactory_t *f)
 {
-	texture_factory[name] = f;
-	SuccessVerboseReg("Texture", name);
+	texture_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Texture", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, shader_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, ShaderFactory_t *f)
 {
-	shader_factory[name] = f;
-	SuccessVerboseReg("ShaderNode", name);
+	shader_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("ShaderNode", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, object_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, ObjectFactory_t *f)
 {
-	object_factory[name] = f;
-	SuccessVerboseReg("Object", name);
+	object_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Object", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, camera_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, CameraFactory_t *f)
 {
-	camera_factory[name] = f;
-	SuccessVerboseReg("Camera", name);
+	camera_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Camera", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, background_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, BackgroundFactory_t *f)
 {
-	background_factory[name] = f;
-	SuccessVerboseReg("Background", name);
+	background_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Background", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, integrator_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, IntegratorFactory_t *f)
 {
-	integrator_factory[name] = f;
-	SuccessVerboseReg("Integrator", name);
+	integrator_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("Integrator", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, volume_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, VolumeFactory_t *f)
 {
-	volume_factory[name] = f;
-	SuccessVerboseReg("VolumetricHandler", name);
+	volume_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("VolumetricHandler", name);
 }
 
-void renderEnvironment_t::registerFactory(const std::string &name, volumeregion_factory_t *f)
+void RenderEnvironment::registerFactory(const std::string &name, VolumeregionFactory_t *f)
 {
-	volumeregion_factory[name] = f;
-	SuccessVerboseReg("VolumeRegion", name);
+	volumeregion_factory_[name] = f;
+	SUCCESS_VERBOSE_REG("VolumeRegion", name);
 }
 
-void renderEnvironment_t::registerImageHandler(const std::string &name, const std::string &validExtensions, const std::string &fullName, imagehandler_factory_t *f)
+void RenderEnvironment::registerImageHandler(const std::string &name, const std::string &valid_extensions, const std::string &full_name, ImagehandlerFactory_t *f)
 {
-	imagehandler_factory[name] = f;
-	imagehandler_fullnames[name] = fullName;
-	imagehandler_extensions[name] = validExtensions;
-	SuccessVerboseReg("ImageHandler", name);
+	imagehandler_factory_[name] = f;
+	imagehandlers_fullnames_[name] = full_name;
+	imagehandlers_extensions_[name] = valid_extensions;
+	SUCCESS_VERBOSE_REG("ImageHandler", name);
 }
 
-std::vector<std::string> renderEnvironment_t::listImageHandlers()
+std::vector<std::string> RenderEnvironment::listImageHandlers()
 {
 	std::vector<std::string> ret;
-	if(imagehandler_fullnames.size() > 0)
+	if(imagehandlers_fullnames_.size() > 0)
 	{
-		for(auto i = imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i = imagehandlers_fullnames_.begin(); i != imagehandlers_fullnames_.end(); ++i)
 		{
 			ret.push_back(i->first);
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << YENDL;
 
 	return ret;
 }
 
-std::vector<std::string> renderEnvironment_t::listImageHandlersFullName()
+std::vector<std::string> RenderEnvironment::listImageHandlersFullName()
 {
 	std::vector<std::string> ret;
-	if(imagehandler_fullnames.size() > 0)
+	if(imagehandlers_fullnames_.size() > 0)
 	{
-		for(auto i = imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i = imagehandlers_fullnames_.begin(); i != imagehandlers_fullnames_.end(); ++i)
 		{
 			ret.push_back(i->second);
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << YENDL;
 
 	return ret;
 }
 
-std::string renderEnvironment_t::getImageFormatFromFullName(const std::string &fullname)
+std::string RenderEnvironment::getImageFormatFromFullName(const std::string &fullname)
 {
 	std::string ret;
-	if(imagehandler_fullnames.size() > 0)
+	if(imagehandlers_fullnames_.size() > 0)
 	{
-		for(auto i = imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i = imagehandlers_fullnames_.begin(); i != imagehandlers_fullnames_.end(); ++i)
 		{
 			if(i->second == fullname) ret = i->first;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << YENDL;
 
 	return ret;
 }
 
-std::string renderEnvironment_t::getImageFormatFromExtension(const std::string &ext)
+std::string RenderEnvironment::getImageFormatFromExtension(const std::string &ext)
 {
 	std::string ret = "";
 
 	if(ext == "" || ext == " ") return ret;
 
-	if(imagehandler_extensions.size() > 0)
+	if(imagehandlers_extensions_.size() > 0)
 	{
-		for(auto i = imagehandler_extensions.begin(); i != imagehandler_extensions.end(); ++i)
+		for(auto i = imagehandlers_extensions_.begin(); i != imagehandlers_extensions_.end(); ++i)
 		{
 			if(i->second.find(ext) != std::string::npos) ret = i->first;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << YENDL;
 
 	return ret;
 }
 
-std::string renderEnvironment_t::getImageFullNameFromFormat(const std::string &format)
+std::string RenderEnvironment::getImageFullNameFromFormat(const std::string &format)
 {
 	std::string ret;
-	if(imagehandler_fullnames.size() > 0)
+	if(imagehandlers_fullnames_.size() > 0)
 	{
-		for(auto i = imagehandler_fullnames.begin(); i != imagehandler_fullnames.end(); ++i)
+		for(auto i = imagehandlers_fullnames_.begin(); i != imagehandlers_fullnames_.end(); ++i)
 		{
 			if(i->first == format) ret = i->second;
 		}
 	}
-	else Y_ERROR_ENV << "There is no image handlers registrered" << yendl;
+	else Y_ERROR_ENV << "There is no image handlers registrered" << YENDL;
 
 	return ret;
 }
 
-renderEnvironment_t::shader_factory_t *renderEnvironment_t::getShaderNodeFactory(const std::string &name) const
+RenderEnvironment::ShaderFactory_t *RenderEnvironment::getShaderNodeFactory(const std::string &name) const
 {
-	auto i = shader_factory.find(name);
-	if(i != shader_factory.end()) return i->second;
+	auto i = shader_factory_.find(name);
+	if(i != shader_factory_.end()) return i->second;
 	Y_ERROR_ENV << "There is no factory for '" << name << "'\n";
 	return nullptr;
 }
 
-__END_YAFRAY
+END_YAFRAY

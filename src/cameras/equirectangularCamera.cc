@@ -24,53 +24,53 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-equirectangularCam_t::equirectangularCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-        int _resx, int _resy, float asp,
-        float const near_clip_distance, float const far_clip_distance) :
-	camera_t(pos, look, up, _resx, _resy, asp, near_clip_distance, far_clip_distance)
+EquirectangularCamera::EquirectangularCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+											 int resx, int resy, float asp,
+											 float const near_clip_distance, float const far_clip_distance) :
+		Camera(pos, look, up, resx, resy, asp, near_clip_distance, far_clip_distance)
 {
 	// Initialize camera specific plane coordinates
-	setAxis(camX, camY, camZ);
+	setAxis(cam_x_, cam_y_, cam_z_);
 }
 
-void equirectangularCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
+void EquirectangularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 {
-	camX = vx;
-	camY = vy;
-	camZ = vz;
+	cam_x_ = vx;
+	cam_y_ = vy;
+	cam_z_ = vz;
 
-	vright = camX;
-	vup = camY;
-	vto = camZ;
+	vright_ = cam_x_;
+	vup_ = cam_y_;
+	vto_ = cam_z_;
 }
 
-ray_t equirectangularCam_t::shootRay(float px, float py, float lu, float lv, float &wt) const
+Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
-	ray_t ray;
+	Ray ray;
 
 	wt = 1;	// for now always 1, or 0 when circular and outside angle
-	ray.from = position;
-	float u = 2.f * px / (float)resx - 1.f;
-	float v = 2.f * py / (float)resy - 1.f;
+	ray.from_ = position_;
+	float u = 2.f * px / (float)resx_ - 1.f;
+	float v = 2.f * py / (float)resy_ - 1.f;
 	const float phi = M_PI * u;
 	const float theta = M_PI_2 * v;
-	ray.dir = fCos(theta) * (fCos(phi) * vto + fSin(phi) * vright) + fSin(theta) * vup;
+	ray.dir_ = fCos__(theta) * (fCos__(phi) * vto_ + fSin__(phi) * vright_) + fSin__(theta) * vup_;
 
-	ray.tmin = ray_plane_intersection(ray, near_plane);
-	ray.tmax = ray_plane_intersection(ray, far_plane);
+	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
+	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
 
 	return ray;
 }
 
-camera_t *equirectangularCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Camera *EquirectangularCamera::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
 	double aspect = 1.0;
-	float nearClip = 0.0f, farClip = -1.0e38f;
-	std::string viewName = "";
+	float near_clip = 0.0f, far_clip = -1.0e38f;
+	std::string view_name = "";
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -78,32 +78,32 @@ camera_t *equirectangularCam_t::factory(paraMap_t &params, renderEnvironment_t &
 	params.getParam("resx", resx);
 	params.getParam("resy", resy);
 	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", nearClip);
-	params.getParam("farClip", farClip);
-	params.getParam("view_name", viewName);
+	params.getParam("nearClip", near_clip);
+	params.getParam("farClip", far_clip);
+	params.getParam("view_name", view_name);
 
-	equirectangularCam_t *cam = new equirectangularCam_t(from, to, up, resx, resy, aspect, nearClip, farClip);
+	EquirectangularCamera *cam = new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip);
 
-	cam->view_name = viewName;
+	cam->view_name_ = view_name;
 
 	return cam;
 }
 
-point3d_t equirectangularCam_t::screenproject(const point3d_t &p) const
+Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 {
 	//FIXME
-	point3d_t s;
-	vector3d_t dir = vector3d_t(p) - vector3d_t(position);
+	Point3 s;
+	Vec3 dir = Vec3(p) - Vec3(position_);
 	dir.normalize();
 
 	// project p to pixel plane:
-	float dx = camX * dir;
-	float dy = camY * dir;
-	float dz = camZ * dir;
+	float dx = cam_x_ * dir;
+	float dy = cam_y_ * dir;
+	float dz = cam_z_ * dir;
 
-	s.x = -dx / (4.0 * M_PI * dz);
-	s.y = -dy / (4.0 * M_PI * dz);
-	s.z = 0;
+	s.x_ = -dx / (4.0 * M_PI * dz);
+	s.y_ = -dy / (4.0 * M_PI * dz);
+	s.z_ = 0;
 
 	return s;
 }
@@ -111,11 +111,11 @@ point3d_t equirectangularCam_t::screenproject(const point3d_t &p) const
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("equirectangular",	equirectangularCam_t::factory);
+		render.registerFactory("equirectangular", EquirectangularCamera::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

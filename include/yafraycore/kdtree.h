@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __Y_KDTREE_H
-#define __Y_KDTREE_H
+#ifndef YAFARAY_KDTREE_H
+#define YAFARAY_KDTREE_H
 
 #include <yafray_constants.h>
 #include "meshtypes.h"
@@ -11,15 +11,15 @@
 #include <core_api/bound.h>
 #include <cstdint>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-extern int Kd_inodes, Kd_leaves, _emptyKd_leaves, Kd_prims;
+extern int kd_inodes__, kd_leaves__, empty_kd_leaves__, kd_prims__;
 
-struct renderState_t;
-class intersectData_t;
-class triangle_t;
-class ray_t;
-class color_t;
+struct RenderState;
+class IntersectData;
+class Triangle;
+class Ray;
+class Rgb;
 
 #define PRIM_DAT_SIZE 32
 
@@ -28,148 +28,148 @@ class color_t;
     double precision float and/or 64 bit system: 12bytes
     else 8 bytes */
 
-class kdTreeNode
+class KdTreeNode
 {
 	public:
-		void createLeaf(uint32_t *primIdx, int np, const triangle_t **prims, MemoryArena &arena)
+		void createLeaf(uint32_t *prim_idx, int np, const Triangle **prims, MemoryArena &arena)
 		{
-			primitives = 0;
-			flags = np << 2;
-			flags |= 3;
+			primitives_ = 0;
+			flags_ = np << 2;
+			flags_ |= 3;
 			if(np > 1)
 			{
-				primitives = (triangle_t **)arena.Alloc(np * sizeof(triangle_t *));
-				for(int i = 0; i < np; i++) primitives[i] = (triangle_t *)prims[primIdx[i]];
-				Kd_prims += np; //stat
+				primitives_ = (Triangle **) arena.alloc(np * sizeof(Triangle *));
+				for(int i = 0; i < np; i++) primitives_[i] = (Triangle *)prims[prim_idx[i]];
+				kd_prims__ += np; //stat
 			}
 			else if(np == 1)
 			{
-				onePrimitive = (triangle_t *)prims[primIdx[0]];
-				Kd_prims++; //stat
+				one_primitive_ = (Triangle *)prims[prim_idx[0]];
+				kd_prims__++; //stat
 			}
-			else _emptyKd_leaves++; //stat
-			Kd_leaves++; //stat
+			else empty_kd_leaves__++; //stat
+			kd_leaves__++; //stat
 		}
 		void createInterior(int axis, float d)
-		{	division = d; flags = (flags & ~3) | axis; Kd_inodes++; }
-		float 	SplitPos() const { return division; }
-		int 	SplitAxis() const { return flags & 3; }
-		int 	nPrimitives() const { return flags >> 2; }
-		bool 	IsLeaf() const { return (flags & 3) == 3; }
-		uint32_t	getRightChild() const { return (flags >> 2); }
-		void 	setRightChild(uint32_t i) { flags = (flags & 3) | (i << 2); }
+		{ division_ = d; flags_ = (flags_ & ~3) | axis; kd_inodes__++; }
+		float 	splitPos() const { return division_; }
+		int 	splitAxis() const { return flags_ & 3; }
+		int 	nPrimitives() const { return flags_ >> 2; }
+		bool 	isLeaf() const { return (flags_ & 3) == 3; }
+		uint32_t	getRightChild() const { return (flags_ >> 2); }
+		void 	setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
 
 		union
 		{
-			float 			division;		//!< interior: division plane position
-			triangle_t 	**primitives;		//!< leaf: list of primitives
-			triangle_t		*onePrimitive;	//!< leaf: direct inxex of one primitive
+			float 			division_;		//!< interior: division plane position
+			Triangle 	**primitives_;		//!< leaf: list of primitives
+			Triangle		*one_primitive_;	//!< leaf: direct inxex of one primitive
 		};
-		uint32_t	flags;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
+		uint32_t	flags_;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
 /*! Serves to store the lower and upper bound edges of the primitives
 	for the cost funtion */
 
-class boundEdge
+class BoundEdge
 {
 	public:
-		boundEdge() {};
-		boundEdge(float position, int primitive, int bound_end):
-			pos(position), primNum(primitive), end(bound_end) {};
-		bool operator<(const boundEdge &e) const
+		BoundEdge() {};
+		BoundEdge(float position, int primitive, int bound_end):
+				pos_(position), prim_num_(primitive), end_(bound_end) {};
+		bool operator<(const BoundEdge &e) const
 		{
-			if(pos == e.pos)
-				return (int)end > (int)e.end;
-			else return pos < e.pos;
+			if(pos_ == e.pos_)
+				return (int)end_ > (int)e.end_;
+			else return pos_ < e.pos_;
 		}
-		float pos;
-		int primNum;
-		int end;
+		float pos_;
+		int prim_num_;
+		int end_;
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
 struct KdStack
 {
-	const kdTreeNode *node; //!< pointer to far child
-	float t; 		//!< the entry/exit signed distance
-	point3d_t pb; 		//!< the point coordinates of entry/exit point
-	int	 prev; 		//!< the pointer to the previous stack item
+	const KdTreeNode *node_; //!< pointer to far child
+	float t_; 		//!< the entry/exit signed distance
+	Point3 pb_; 		//!< the point coordinates of entry/exit point
+	int	 prev_; 		//!< the pointer to the previous stack item
 };
 
 struct KdToDo
 {
-	const kdTreeNode *node;
-	float tmin, tmax;
+	const KdTreeNode *node_;
+	float tmin_, tmax_;
 };
 
-class splitCost_t
+class SplitCost
 {
 	public:
-		splitCost_t(): bestAxis(-1), bestOffset(-1) {};
-		int bestAxis;
-		int bestOffset;
-		float bestCost;
-		float oldCost;
-		float t;
-		int nBelow, nAbove, nEdge;
+		SplitCost(): best_axis_(-1), best_offset_(-1) {};
+		int best_axis_;
+		int best_offset_;
+		float best_cost_;
+		float old_cost_;
+		float t_;
+		int n_below_, n_above_, n_edge_;
 };
 
-class bin_t
+class TreeBin
 {
 	public:
-		bin_t(): n(0), c_left(0), c_right(0), c_bleft(0), c_both(0) {};
-		bool empty() { return n == 0; };
-		void reset() {n = 0, c_left = 0, c_right = 0, c_both = 0, c_bleft = 0;};
-		int 	n;
-		int 	c_left, c_right;
-		int 	c_bleft, c_both;
-		float 	t;
+		TreeBin(): n_(0), c_left_(0), c_right_(0), c_bleft_(0), c_both_(0) {};
+		bool empty() { return n_ == 0; };
+		void reset() { n_ = 0, c_left_ = 0, c_right_ = 0, c_both_ = 0, c_bleft_ = 0;};
+		int 	n_;
+		int 	c_left_, c_right_;
+		int 	c_bleft_, c_both_;
+		float 	t_;
 };
 
 // ============================================================
 /*! This class holds a complete kd-tree with building and
 	traversal funtions
 */
-class YAFRAYCORE_EXPORT triKdTree_t
+class YAFRAYCORE_EXPORT TriKdTree
 {
 	public:
-		triKdTree_t(const triangle_t **v, int np, int depth = -1, int leafSize = 2,
-		            float cost_ratio = 0.35, float emptyBonus = 0.33);
-		bool Intersect(const ray_t &ray, float dist, triangle_t **tr, float &Z, intersectData_t &data) const;
+		TriKdTree(const Triangle **v, int np, int depth = -1, int leaf_size = 2,
+				  float cost_ratio = 0.35, float empty_bonus = 0.33);
+		bool intersect(const Ray &ray, float dist, Triangle **tr, float &z, IntersectData &data) const;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		bool IntersectS(const ray_t &ray, float dist, triangle_t **tr, float shadow_bias) const;
-		bool IntersectTS(renderState_t &state, const ray_t &ray, int maxDepth, float dist, triangle_t **tr, color_t &filt, float shadow_bias) const;
+		bool intersectS(const Ray &ray, float dist, Triangle **tr, float shadow_bias) const;
+		bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, Triangle **tr, Rgb &filt, float shadow_bias) const;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, triangle_t **tr, float &Z) const;
-		bound_t getBound() { return treeBound; }
-		~triKdTree_t();
+		Bound getBound() { return tree_bound_; }
+		~TriKdTree();
 	private:
-		void pigeonMinCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx, splitCost_t &split);
-		void minimalCost(uint32_t nPrims, bound_t &nodeBound, uint32_t *primIdx,
-		                 const bound_t *allBounds, boundEdge *edges[3], splitCost_t &split);
-		int buildTree(uint32_t nPrims, bound_t &nodeBound, uint32_t *primNums,
-		              uint32_t *leftPrims, uint32_t *rightPrims, boundEdge *edges[3],
-		              uint32_t rightMemSize, int depth, int badRefines);
+		void pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
+		void minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
+						 const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split);
+		int buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_nums,
+					  uint32_t *left_prims, uint32_t *right_prims, BoundEdge *edges[3],
+					  uint32_t right_mem_size, int depth, int bad_refines);
 
-		float 		costRatio; 	//!< node traversal cost divided by primitive intersection cost
-		float 		eBonus; 	//!< empty bonus
-		uint32_t 	nextFreeNode, allocatedNodesCount, totalPrims;
-		int 		maxDepth;
-		unsigned int maxLeafSize;
-		bound_t 	treeBound; 	//!< overall space the tree encloses
-		MemoryArena primsArena;
-		kdTreeNode 	*nodes;
+		float 		cost_ratio_; 	//!< node traversal cost divided by primitive intersection cost
+		float 		e_bonus_; 	//!< empty bonus
+		uint32_t 	next_free_node_, allocated_nodes_count_, total_prims_;
+		int 		max_depth_;
+		unsigned int max_leaf_size_;
+		Bound 	tree_bound_; 	//!< overall space the tree encloses
+		MemoryArena prims_arena_;
+		KdTreeNode 	*nodes_;
 
 		// those are temporary actually, to keep argument counts bearable
-		const triangle_t **prims;
-		bound_t *allBounds;
-		int *clip; // indicate clip plane(s) for current level
-		char *cdata; // clipping data...
+		const Triangle **prims_;
+		Bound *all_bounds_;
+		int *clip_; // indicate clip plane(s) for current level
+		char *cdata_; // clipping data...
 
 		// some statistics:
-		int depthLimitReached, NumBadSplits;
+		int depth_limit_reached_, num_bad_splits_;
 };
 
 
-__END_YAFRAY
-#endif	//__Y_KDTREE_H
+END_YAFRAY
+#endif    //YAFARAY_KDTREE_H

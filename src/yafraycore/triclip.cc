@@ -7,10 +7,10 @@ Sutherland-Hodgman triangle clipping
 #include <core_api/logging.h>
 #include <string.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 template <class T>
-void _swap(T **a, T **b)
+void swap__(T **a, T **b)
 {
 	T *x;
 	x = *a;
@@ -22,17 +22,17 @@ class DVector
 {
 	public:
 		DVector() {}
-		DVector &operator = (const DVector &v) { x = v.x, y = v.y, z = v.z; return *this; }
-		double   operator[](int i) const { return (&x)[i]; }
-		double  &operator[](int i) { return (&x)[i]; }
+		DVector &operator = (const DVector &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
+		double   operator[](int i) const { return (&x_)[i]; }
+		double  &operator[](int i) { return (&x_)[i]; }
 		~DVector() {}
-		double x, y, z;
+		double x_, y_, z_;
 };
 
-struct clipDump
+struct ClipDump
 {
-	int nverts;
-	DVector poly[10];
+	int nverts_;
+	DVector poly_[10];
 };
 
 #define Y_VCPY(a,b)       ( (a)[0] =(b)[0], (a)[1] =(b)[1], (a)[2] =(b)[2] )
@@ -45,10 +45,10 @@ struct clipDump
 			3: resulting polygon degenerated to less than 3 edges (never happened either)
 */
 
-int triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], bound_t &box, void *n_dat)
+int triBoxClip__(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
 {
-	DVector dump1[11], dump2[11]; double t;
-	DVector *poly = dump1, *cpoly = dump2;
+	DVector dump_1[11], dump_2[11]; double t;
+	DVector *poly = dump_1, *cpoly = dump_2;
 
 	for(int q = 0; q < 3; q++)
 	{
@@ -57,128 +57,128 @@ int triBoxClip(const double b_min[3], const double b_max[3], const double triver
 	}
 
 	int n = 3, nc;
-	bool p1_inside;
+	bool p_1_inside;
 
 	//for each axis
 	for(int axis = 0; axis < 3; axis++)
 	{
-		DVector *p1, *p2;
-		int nextAxis = (axis + 1) % 3, prevAxis = (axis + 2) % 3;
+		DVector *p_1, *p_2;
+		int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
 
 		// === clip lower ===
 		nc = 0;
-		p1_inside = (poly[0][axis] >= b_min[axis]) ? true : false;
+		p_1_inside = (poly[0][axis] >= b_min[axis]) ? true : false;
 		for(int i = 0; i < n; i++) // for each poly edge
 		{
-			p1 = &poly[i], p2 = &poly[i + 1];
-			if(p1_inside)   // p1 inside
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)   // p1 inside
 			{
-				if((*p2)[axis] >= b_min[axis]) //both "inside"
+				if((*p_2)[axis] >= b_min[axis]) //both "inside"
 				{
 					// copy p2 to new poly
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
 				else
 				{
 					// clip line, add intersection to new poly
-					t = (b_min[axis] - (*p1)[axis]) / ((*p2)[axis] - (*p1)[axis]);
+					t = (b_min[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
 					cpoly[nc][axis] = b_min[axis];
-					cpoly[nc][nextAxis] = (*p1)[nextAxis] + t * ((*p2)[nextAxis] - (*p1)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p1)[prevAxis] + t * ((*p2)[prevAxis] - (*p1)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
 					nc++;
-					p1_inside = false;
+					p_1_inside = false;
 				}
 			}
 			else //p1 < b_min -> outside
 			{
-				if((*p2)[axis] > b_min[axis]) //p2 inside, add s and p2
+				if((*p_2)[axis] > b_min[axis]) //p2 inside, add s and p2
 				{
-					t = (b_min[axis] - (*p2)[axis]) / ((*p1)[axis] - (*p2)[axis]);
+					t = (b_min[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
 					cpoly[nc][axis] = b_min[axis];
-					cpoly[nc][nextAxis] = (*p2)[nextAxis] + t * ((*p1)[nextAxis] - (*p2)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p2)[prevAxis] + t * ((*p1)[prevAxis] - (*p2)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
 					nc++;
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else if((*p2)[axis] == b_min[axis]) //p2 and s are identical, only add p2
+				else if((*p_2)[axis] == b_min[axis]) //p2 and s are identical, only add p2
 				{
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else p1_inside = false;
+				else p_1_inside = false;
 			}
 			//else: both outse, do nothing.
 		} //for all edges
 
 		if(nc > 9)
 		{
-			Y_VERBOSE << "TriangleClip: after min n is now " << nc << ", that's bad!" << yendl;
+			Y_VERBOSE << "TriangleClip: after min n is now " << nc << ", that's bad!" << YENDL;
 			return 2;
 		}
 
 		cpoly[nc] = cpoly[0];
 		n = nc;
-		_swap(&cpoly, &poly);
+		swap__(&cpoly, &poly);
 
 
 		// === clip upper ===
 		nc = 0;
-		p1_inside = (poly[0][axis] <= b_max[axis]) ? true : false;
+		p_1_inside = (poly[0][axis] <= b_max[axis]) ? true : false;
 		for(int i = 0; i < n; i++) // for each poly edge
 		{
-			p1 = &poly[i], p2 = &poly[i + 1];
-			if(p1_inside)
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)
 			{
-				if((*p2)[axis] <= b_max[axis]) //both "inside"
+				if((*p_2)[axis] <= b_max[axis]) //both "inside"
 				{
 					// copy p2 to new poly
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
 				else
 				{
 					// clip line, add intersection to new poly
-					t = (b_max[axis] - (*p1)[axis]) / ((*p2)[axis] - (*p1)[axis]);
+					t = (b_max[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
 					cpoly[nc][axis] = b_max[axis];
-					cpoly[nc][nextAxis] = (*p1)[nextAxis] + t * ((*p2)[nextAxis] - (*p1)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p1)[prevAxis] + t * ((*p2)[prevAxis] - (*p1)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
 					nc++;
-					p1_inside = false;
+					p_1_inside = false;
 				}
 			}
 			else //p1 > b_max -> outside
 			{
-				if((*p2)[axis] < b_max[axis]) //p2 inside, add s and p2
+				if((*p_2)[axis] < b_max[axis]) //p2 inside, add s and p2
 				{
-					t = (b_max[axis] - (*p2)[axis]) / ((*p1)[axis] - (*p2)[axis]);
+					t = (b_max[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
 					cpoly[nc][axis] = b_max[axis];
-					cpoly[nc][nextAxis] = (*p2)[nextAxis] + t * ((*p1)[nextAxis] - (*p2)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p2)[prevAxis] + t * ((*p1)[prevAxis] - (*p2)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
 					nc++;
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else if((*p2)[axis] == b_max[axis]) //p2 and s are identical, only add p2
+				else if((*p_2)[axis] == b_max[axis]) //p2 and s are identical, only add p2
 				{
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else p1_inside = false;
+				else p_1_inside = false;
 			}
 			//else: both outse, do nothing.
 		} //for all edges
 
 		if(nc > 9)
 		{
-			Y_VERBOSE << "TriangleClip: After max n is now " << nc << ", that's bad!" << yendl;
+			Y_VERBOSE << "TriangleClip: After max n is now " << nc << ", that's bad!" << YENDL;
 			return 2;
 		}
 
@@ -186,21 +186,21 @@ int triBoxClip(const double b_min[3], const double b_max[3], const double triver
 
 		cpoly[nc] = cpoly[0];
 		n = nc;
-		_swap(&cpoly, &poly);
+		swap__(&cpoly, &poly);
 	} //for all axis
 
 	if(n < 2)
 	{
 		static bool foobar = false;
 		if(foobar) return 3;
-		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << yendl;
-		Y_VERBOSE << "TriangleClip: b_min:\t" << b_min[0] << ",\t" << b_min[1] << ",\t" << b_min[2] << yendl;
-		Y_VERBOSE << "TriangleClip: b_max:\t" << b_max[0] << ",\t" << b_max[1] << ",\t" << b_max[2] << yendl;
-		Y_VERBOSE << "TriangleClip: delta:\t" << b_max[0] - b_min[0] << ",\t" << b_max[1] - b_min[1] << ",\t" << b_max[2] - b_min[2] << yendl;
+		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << YENDL;
+		Y_VERBOSE << "TriangleClip: b_min:\t" << b_min[0] << ",\t" << b_min[1] << ",\t" << b_min[2] << YENDL;
+		Y_VERBOSE << "TriangleClip: b_max:\t" << b_max[0] << ",\t" << b_max[1] << ",\t" << b_max[2] << YENDL;
+		Y_VERBOSE << "TriangleClip: delta:\t" << b_max[0] - b_min[0] << ",\t" << b_max[1] - b_min[1] << ",\t" << b_max[2] - b_min[2] << YENDL;
 
 		for(int j = 0; j < 3; j++)
 		{
-			Y_VERBOSE << "TriangleClip: point" << j << ": " << triverts[j][0] << ",\t" << triverts[j][1] << ",\t" << triverts[j][2] << yendl;
+			Y_VERBOSE << "TriangleClip: point" << j << ": " << triverts[j][0] << ",\t" << triverts[j][1] << ",\t" << triverts[j][2] << YENDL;
 		}
 		foobar = true;
 		return 3;
@@ -220,77 +220,77 @@ int triBoxClip(const double b_min[3], const double b_max[3], const double triver
 		g[2] = std::max(g[2], poly[i][2]);
 	}
 
-	box.a[0] = a[0], box.g[0] = g[0];
-	box.a[1] = a[1], box.g[1] = g[1];
-	box.a[2] = a[2], box.g[2] = g[2];
+	box.a_[0] = a[0], box.g_[0] = g[0];
+	box.a_[1] = a[1], box.g_[1] = g[1];
+	box.a_[2] = a[2], box.g_[2] = g[2];
 
-	clipDump *output = (clipDump *)n_dat;
-	output->nverts = n;
-	memcpy(output->poly, poly, (n + 1)*sizeof(DVector));
+	ClipDump *output = (ClipDump *)n_dat;
+	output->nverts_ = n;
+	memcpy(output->poly_, poly, (n + 1) * sizeof(DVector));
 
 	return 0;
 }
 
-int triPlaneClip(double pos, int axis, bool lower, bound_t &box, void *o_dat, void *n_dat)
+int triPlaneClip__(double pos, int axis, bool lower, Bound &box, void *o_dat, void *n_dat)
 {
-	clipDump *input = (clipDump *)o_dat;
-	clipDump *output = (clipDump *)n_dat;
+	ClipDump *input = (ClipDump *)o_dat;
+	ClipDump *output = (ClipDump *)n_dat;
 	double t;
-	DVector *poly = input->poly, *cpoly = output->poly;
-	int n = input->nverts, nc;
+	DVector *poly = input->poly_, *cpoly = output->poly_;
+	int n = input->nverts_, nc;
 
-	bool p1_inside;
-	DVector *p1, *p2;
-	int nextAxis = (axis + 1) % 3, prevAxis = (axis + 2) % 3;
+	bool p_1_inside;
+	DVector *p_1, *p_2;
+	int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
 
 	if(lower)
 	{
 		// === clip lower ===
 		nc = 0;
-		p1_inside = (poly[0][axis] >= pos) ? true : false;
+		p_1_inside = (poly[0][axis] >= pos) ? true : false;
 		for(int i = 0; i < n; i++) // for each poly edge
 		{
-			p1 = &poly[i], p2 = &poly[i + 1];
-			if(p1_inside)   // p1 inside
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)   // p1 inside
 			{
-				if((*p2)[axis] >= pos) //both "inside"
+				if((*p_2)[axis] >= pos) //both "inside"
 				{
 					// copy p2 to new poly
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
 				else
 				{
 					// clip line, add intersection to new poly
-					t = (pos - (*p1)[axis]) / ((*p2)[axis] - (*p1)[axis]);
+					t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
 					cpoly[nc][axis] = pos;
-					cpoly[nc][nextAxis] = (*p1)[nextAxis] + t * ((*p2)[nextAxis] - (*p1)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p1)[prevAxis] + t * ((*p2)[prevAxis] - (*p1)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
 					nc++;
-					p1_inside = false;
+					p_1_inside = false;
 				}
 			}
 			else //p1 < b_min -> outside
 			{
-				if((*p2)[axis] > pos) //p2 inside, add s and p2
+				if((*p_2)[axis] > pos) //p2 inside, add s and p2
 				{
-					t = (pos - (*p2)[axis]) / ((*p1)[axis] - (*p2)[axis]);
+					t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
 					cpoly[nc][axis] = pos;
-					cpoly[nc][nextAxis] = (*p2)[nextAxis] + t * ((*p1)[nextAxis] - (*p2)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p2)[prevAxis] + t * ((*p1)[prevAxis] - (*p2)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
 					nc++;
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else if((*p2)[axis] == pos) //p2 and s are identical, only add p2
+				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
 				{
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else p1_inside = false;
+				else p_1_inside = false;
 			}
 			//else: both outse, do nothing.
 		} //for all edges
@@ -299,62 +299,62 @@ int triPlaneClip(double pos, int axis, bool lower, bound_t &box, void *o_dat, vo
 
 		if(nc > 9)
 		{
-			Y_VERBOSE << "TriangleClip: After min n is now " << nc << ", that's bad!" << yendl;
+			Y_VERBOSE << "TriangleClip: After min n is now " << nc << ", that's bad!" << YENDL;
 			return 2;
 		}
 
 		cpoly[nc] = cpoly[0];
 		n = nc;
-		_swap(&cpoly, &poly);
+		swap__(&cpoly, &poly);
 	}
 	else
 	{
 		// === clip upper ===
 		nc = 0;
-		p1_inside = (poly[0][axis] <= pos) ? true : false;
+		p_1_inside = (poly[0][axis] <= pos) ? true : false;
 		for(int i = 0; i < n; i++) // for each poly edge
 		{
-			p1 = &poly[i], p2 = &poly[i + 1];
-			if(p1_inside)
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)
 			{
-				if((*p2)[axis] <= pos) //both "inside"
+				if((*p_2)[axis] <= pos) //both "inside"
 				{
 					// copy p2 to new poly
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
 				else
 				{
 					// clip line, add intersection to new poly
-					t = (pos - (*p1)[axis]) / ((*p2)[axis] - (*p1)[axis]);
+					t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
 					cpoly[nc][axis] = pos;
-					cpoly[nc][nextAxis] = (*p1)[nextAxis] + t * ((*p2)[nextAxis] - (*p1)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p1)[prevAxis] + t * ((*p2)[prevAxis] - (*p1)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
 					nc++;
-					p1_inside = false;
+					p_1_inside = false;
 				}
 			}
 			else //p1 > pos -> outside
 			{
-				if((*p2)[axis] < pos) //p2 inside, add s and p2
+				if((*p_2)[axis] < pos) //p2 inside, add s and p2
 				{
-					t = (pos - (*p2)[axis]) / ((*p1)[axis] - (*p2)[axis]);
+					t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
 					cpoly[nc][axis] = pos;
-					cpoly[nc][nextAxis] = (*p2)[nextAxis] + t * ((*p1)[nextAxis] - (*p2)[nextAxis]);
-					cpoly[nc][prevAxis] = (*p2)[prevAxis] + t * ((*p1)[prevAxis] - (*p2)[prevAxis]);
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
 					nc++;
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else if((*p2)[axis] == pos) //p2 and s are identical, only add p2
+				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
 				{
-					cpoly[nc] = *p2;
+					cpoly[nc] = *p_2;
 					nc++;
-					p1_inside = true;
+					p_1_inside = true;
 				}
-				else p1_inside = false;
+				else p_1_inside = false;
 			}
 			//else: both outse, do nothing.
 		} //for all edges
@@ -363,20 +363,20 @@ int triPlaneClip(double pos, int axis, bool lower, bound_t &box, void *o_dat, vo
 
 		if(nc > 9)
 		{
-			Y_VERBOSE << "TriangleClip: after max n is now " << nc << ", that's bad!" << yendl;
+			Y_VERBOSE << "TriangleClip: after max n is now " << nc << ", that's bad!" << YENDL;
 			return 2;
 		}
 
 		cpoly[nc] = cpoly[0];
 		n = nc;
-		_swap(&cpoly, &poly);
+		swap__(&cpoly, &poly);
 	} //for all axis
 
 	if(n < 2)
 	{
 		static bool foobar = false;
 		if(foobar) return 3;
-		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << yendl;
+		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << YENDL;
 		foobar = true;
 		return 3;
 	}
@@ -395,14 +395,14 @@ int triPlaneClip(double pos, int axis, bool lower, bound_t &box, void *o_dat, vo
 		g[2] = std::max(g[2], poly[i][2]);
 	}
 
-	box.a[0] = a[0], box.g[0] = g[0];
-	box.a[1] = a[1], box.g[1] = g[1];
-	box.a[2] = a[2], box.g[2] = g[2];
+	box.a_[0] = a[0], box.g_[0] = g[0];
+	box.a_[1] = a[1], box.g_[1] = g[1];
+	box.a_[2] = a[2], box.g_[2] = g[2];
 
-	output->nverts = n;
+	output->nverts_ = n;
 
 	return 0;
 }
 
-__END_YAFRAY
+END_YAFRAY
 

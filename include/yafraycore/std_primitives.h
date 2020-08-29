@@ -1,38 +1,38 @@
 #pragma once
 
 
-#ifndef Y_STD_PRIMITIVE_H
-#define Y_STD_PRIMITIVE_H
+#ifndef YAFARAY_STD_PRIMITIVES_H
+#define YAFARAY_STD_PRIMITIVES_H
 
 #include <yafray_constants.h>
 #include <core_api/primitive.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class renderEnvironment_t;
-class paraMap_t;
-class object3d_t;
+class RenderEnvironment;
+class ParamMap;
+class Object3D;
 
-class YAFRAYCORE_EXPORT sphere_t: public primitive_t
+class YAFRAYCORE_EXPORT Sphere: public Primitive
 {
 	public:
-		sphere_t(point3d_t centr, float rad, const material_t *m): center(centr), radius(rad), material(m) {}
-		virtual bound_t getBound() const;
-		virtual bool intersectsBound(exBound_t &b) const { return true; };
+		Sphere(Point3 centr, float rad, const Material *m): center_(centr), radius_(rad), material_(m) {}
+		virtual Bound getBound() const;
+		virtual bool intersectsBound(ExBound &b) const { return true; };
 		//virtual bool clippingSupport() const { return false; }
 		//virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const {return false;}
-		virtual bool intersect(const ray_t &ray, float *t, intersectData_t &data) const;
-		virtual void getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const;
-		virtual const material_t *getMaterial() const { return material; }
-		virtual const triangleObject_t *getMesh() const { return nullptr; }
+		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const;
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const;
+		virtual const Material *getMaterial() const { return material_; }
+		virtual const TriangleObject *getMesh() const { return nullptr; }
 	protected:
-		point3d_t center;
-		float radius;
-		const material_t *material;
+		Point3 center_;
+		float radius_;
+		const Material *material_ = nullptr;
 };
 
-object3d_t *sphere_factory(paraMap_t &params, renderEnvironment_t &env);
+Object3D *sphereFactory__(ParamMap &params, RenderEnvironment &env);
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif //Y_STD_PRIMITIVE_H
+#endif //YAFARAY_STD_PRIMITIVES_H

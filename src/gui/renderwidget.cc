@@ -32,29 +32,29 @@
 /	RenderWidget implementation
 /=====================================*/
 
-RenderWidget::RenderWidget(QScrollArea *parent, bool use_zbuffer): QLabel((QWidget *)parent), use_zbuf(use_zbuffer)
+RenderWidget::RenderWidget(QScrollArea *parent, bool use_zbuffer): QLabel((QWidget *)parent), use_zbuf_(use_zbuffer)
 {
-	borderStart = QPoint(0, 0);
-	rendering = true;
-	scaleFactor = 1.0;
-	panning = false;
-	panPos = QPoint(0, 0);
-	owner = parent;
-	hBar = owner->horizontalScrollBar();
-	vBar = owner->verticalScrollBar();
-	barPos = QPoint(0, 0);
+	border_start_ = QPoint(0, 0);
+	rendering_ = true;
+	scale_factor_ = 1.0;
+	panning_ = false;
+	pan_pos_ = QPoint(0, 0);
+	owner_ = parent;
+	h_bar_ = owner_->horizontalScrollBar();
+	v_bar_ = owner_->verticalScrollBar();
+	bar_pos_ = QPoint(0, 0);
 	setScaledContents(true);
 }
 
 RenderWidget::~RenderWidget()
 {
-	colorBuffer = QImage();
-	alphaChannel = QImage();
+	color_buffer_ = QImage();
+	alpha_channel_ = QImage();
 }
 
 void RenderWidget::setup(const QSize &s)
 {
-	imageSize = s;
+	image_size_ = s;
 
 	initBuffers();
 
@@ -65,99 +65,99 @@ void RenderWidget::setup(const QSize &s)
 
 void RenderWidget::initBuffers()
 {
-	colorBuffer = QImage(imageSize, QImage::Format_RGB32);
-	colorBuffer.fill(0);
+	color_buffer_ = QImage(image_size_, QImage::Format_RGB32);
+	color_buffer_.fill(0);
 
-	alphaChannel = QImage(imageSize, QImage::Format_RGB32);
-	alphaChannel.fill(0);
+	alpha_channel_ = QImage(image_size_, QImage::Format_RGB32);
+	alpha_channel_.fill(0);
 
-	resize(imageSize);
+	resize(image_size_);
 
-	activeBuffer = &colorBuffer;
+	active_buffer_ = &color_buffer_;
 
-	pix = QPixmap::fromImage(*activeBuffer);
-	setPixmap(pix);
+	pix_ = QPixmap::fromImage(*active_buffer_);
+	setPixmap(pix_);
 }
 
 void RenderWidget::startRendering()
 {
-	rendering = true;
-	scaleFactor = 1.0;
+	rendering_ = true;
+	scale_factor_ = 1.0;
 	initBuffers();
 }
 
 void RenderWidget::finishRendering()
 {
-	rendering = false;
-	pix = QPixmap::fromImage(*activeBuffer);
-	setPixmap(pix);
+	rendering_ = false;
+	pix_ = QPixmap::fromImage(*active_buffer_);
+	setPixmap(pix_);
 	update();
 }
 
-void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha)
+void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, bool with_alpha)
 {
-	int ix = x + borderStart.x();
-	int iy = y + borderStart.y();
+	int ix = x + border_start_.x();
+	int iy = y + border_start_.y();
 
-	colorBuffer.setPixel(ix, iy, color);
-	if(withAlpha) alphaChannel.setPixel(ix, iy, alpha);
+	color_buffer_.setPixel(ix, iy, color);
+	if(with_alpha) alpha_channel_.setPixel(ix, iy, alpha);
 }
 
 void RenderWidget::paintColorBuffer()
 {
-	bufferMutex.lock();
-	pix = QPixmap::fromImage(colorBuffer);
-	setPixmap(pix);
-	activeBuffer = &colorBuffer;
-	bufferMutex.unlock();
-	if(!rendering) zoom(1.f, QPoint(0, 0));
+	buffer_mutex_.lock();
+	pix_ = QPixmap::fromImage(color_buffer_);
+	setPixmap(pix_);
+	active_buffer_ = &color_buffer_;
+	buffer_mutex_.unlock();
+	if(!rendering_) zoom(1.f, QPoint(0, 0));
 }
 
 void RenderWidget::paintAlpha()
 {
-	bufferMutex.lock();
-	pix = QPixmap::fromImage(alphaChannel);
-	setPixmap(pix);
-	activeBuffer = &alphaChannel;
-	bufferMutex.unlock();
-	if(!rendering) zoom(1.f, QPoint(0, 0));
+	buffer_mutex_.lock();
+	pix_ = QPixmap::fromImage(alpha_channel_);
+	setPixmap(pix_);
+	active_buffer_ = &alpha_channel_;
+	buffer_mutex_.unlock();
+	if(!rendering_) zoom(1.f, QPoint(0, 0));
 }
 
-void RenderWidget::zoom(float f, QPoint mPos)
+void RenderWidget::zoom(float f, QPoint m_pos)
 {
-	scaleFactor *= f;
+	scale_factor_ *= f;
 
-	QSize newSize = scaleFactor * activeBuffer->size();
-	resize(newSize);
-	pix = QPixmap::fromImage(activeBuffer->scaled(newSize));
-	update(owner->viewport()->geometry());
+	QSize new_size = scale_factor_ * active_buffer_->size();
+	resize(new_size);
+	pix_ = QPixmap::fromImage(active_buffer_->scaled(new_size));
+	update(owner_->viewport()->geometry());
 
-	QPoint m = (mPos * f) - mPos;
+	QPoint m = (m_pos * f) - m_pos;
 
-	int dh = hBar->value() + (m.x());
-	int dv = vBar->value() + (m.y());
+	int dh = h_bar_->value() + (m.x());
+	int dv = v_bar_->value() + (m.y());
 
-	hBar->setValue(dh);
-	vBar->setValue(dv);
+	h_bar_->setValue(dh);
+	v_bar_->setValue(dv);
 }
 
-void RenderWidget::zoomIn(QPoint mPos)
+void RenderWidget::zoomIn(QPoint m_pos)
 {
-	if(scaleFactor > 5.0) return;
+	if(scale_factor_ > 5.0) return;
 
-	zoom(1.25, mPos);
+	zoom(1.25, m_pos);
 }
 
-void RenderWidget::zoomOut(QPoint mPos)
+void RenderWidget::zoomOut(QPoint m_pos)
 {
-	if(scaleFactor < 0.2) return;
+	if(scale_factor_ < 0.2) return;
 
-	zoom(0.8, mPos);
+	zoom(0.8, m_pos);
 }
 
 bool RenderWidget::event(QEvent *e)
 {
-	if(e->type() == (QEvent::Type)GuiUpdate && rendering)
+	if(e->type() == (QEvent::Type)GuiUpdate && rendering_)
 	{
 		GuiUpdateEvent *ge = (GuiUpdateEvent *)e;
 
@@ -165,33 +165,33 @@ bool RenderWidget::event(QEvent *e)
 
 		if(ge->fullUpdate())
 		{
-			bufferMutex.lock();
-			QPainter p(&pix);
-			p.drawImage(QPoint(0, 0), *activeBuffer);
-			bufferMutex.unlock();
+			buffer_mutex_.lock();
+			QPainter p(&pix_);
+			p.drawImage(QPoint(0, 0), *active_buffer_);
+			buffer_mutex_.unlock();
 			update();
 		}
 		else
 		{
-			bufferMutex.lock();
-			QPainter p(&pix);
-			p.drawImage(ge->rect(), *activeBuffer, ge->rect());
-			bufferMutex.unlock();
+			buffer_mutex_.lock();
+			QPainter p(&pix_);
+			p.drawImage(ge->rect(), *active_buffer_, ge->rect());
+			buffer_mutex_.unlock();
 			update(ge->rect());
 
 		}
 
 		return true;
 	}
-	else if(e->type() == (QEvent::Type)GuiAreaHighlite && rendering)
+	else if(e->type() == (QEvent::Type)GuiAreaHighlite && rendering_)
 	{
 		GuiAreaHighliteEvent *ge = (GuiAreaHighliteEvent *)e;
-		bufferMutex.lock();
-		QPainter p(&pix);
+		buffer_mutex_.lock();
+		QPainter p(&pix_);
 
 		ge->accept();
 
-		int lineL = std::min(4, std::min(ge->rect().height() - 1, ge->rect().width() - 1));
+		int line_l = std::min(4, std::min(ge->rect().height() - 1, ge->rect().width() - 1));
 		QPoint tr(ge->rect().topRight());
 		QPoint tl(ge->rect().topLeft());
 		QPoint br(ge->rect().bottomRight());
@@ -200,22 +200,22 @@ bool RenderWidget::event(QEvent *e)
 		p.setPen(QColor(160, 0, 0));
 
 		//top-left corner
-		p.drawLine(tl, QPoint(tl.x() + lineL, tl.y()));
-		p.drawLine(tl, QPoint(tl.x(), tl.y() + lineL));
+		p.drawLine(tl, QPoint(tl.x() + line_l, tl.y()));
+		p.drawLine(tl, QPoint(tl.x(), tl.y() + line_l));
 
 		//top-right corner
-		p.drawLine(tr, QPoint(tr.x() - lineL, tr.y()));
-		p.drawLine(tr, QPoint(tr.x(), tr.y() + lineL));
+		p.drawLine(tr, QPoint(tr.x() - line_l, tr.y()));
+		p.drawLine(tr, QPoint(tr.x(), tr.y() + line_l));
 
 		//bottom-left corner
-		p.drawLine(bl, QPoint(bl.x() + lineL, bl.y()));
-		p.drawLine(bl, QPoint(bl.x(), bl.y() - lineL));
+		p.drawLine(bl, QPoint(bl.x() + line_l, bl.y()));
+		p.drawLine(bl, QPoint(bl.x(), bl.y() - line_l));
 
 		//bottom-right corner
-		p.drawLine(br, QPoint(br.x() - lineL, br.y()));
-		p.drawLine(br, QPoint(br.x(), br.y() - lineL));
+		p.drawLine(br, QPoint(br.x() - line_l, br.y()));
+		p.drawLine(br, QPoint(br.x(), br.y() - line_l));
 
-		bufferMutex.unlock();
+		buffer_mutex_.unlock();
 		update(ge->rect());
 
 		return true;
@@ -229,14 +229,14 @@ void RenderWidget::paintEvent(QPaintEvent *e)
 	QRect r = e->rect();
 	QPainter painter(this);
 	painter.setClipRegion(e->region());
-	painter.drawPixmap(r, pix, r);
+	painter.drawPixmap(r, pix_, r);
 }
 
 void RenderWidget::wheelEvent(QWheelEvent *e)
 {
 	e->accept();
 
-	if(!rendering && !panning && (e->modifiers() & Qt::ControlModifier))
+	if(!rendering_ && !panning_ && (e->modifiers() & Qt::ControlModifier))
 	{
 		if(e->delta() > 0) zoomIn(e->pos());
 		else zoomOut(e->pos());
@@ -248,9 +248,9 @@ void RenderWidget::mousePressEvent(QMouseEvent *e)
 	if(e->button() == Qt::MidButton)
 	{
 		setCursor(Qt::SizeAllCursor);
-		panning = true;
-		panPos = e->globalPos();
-		barPos = QPoint(hBar->value(), vBar->value());
+		panning_ = true;
+		pan_pos_ = e->globalPos();
+		bar_pos_ = QPoint(h_bar_->value(), v_bar_->value());
 		e->accept();
 	}
 	else
@@ -264,7 +264,7 @@ void RenderWidget::mouseReleaseEvent(QMouseEvent *e)
 	if(e->button() == Qt::MidButton)
 	{
 		setCursor(Qt::ArrowCursor);
-		panning = false;
+		panning_ = false;
 		e->accept();
 	}
 	else
@@ -275,11 +275,11 @@ void RenderWidget::mouseReleaseEvent(QMouseEvent *e)
 
 void RenderWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	if(panning)
+	if(panning_)
 	{
-		QPoint dpos = barPos + (panPos - e->globalPos());
-		hBar->setValue(dpos.x());
-		vBar->setValue(dpos.y());
+		QPoint dpos = bar_pos_ + (pan_pos_ - e->globalPos());
+		h_bar_->setValue(dpos.x());
+		v_bar_->setValue(dpos.y());
 		e->accept();
 	}
 	else

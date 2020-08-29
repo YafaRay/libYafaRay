@@ -19,26 +19,26 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef QTPROGRESS_H
-#define QTPROGRESS_H
+#ifndef YAFARAY_QTPROGRESS_H
+#define YAFARAY_QTPROGRESS_H
 
 #include <yafraycore/monitor.h>
 
 class MainWindow;
 
-class QtProgress : public yafaray::ConsoleProgressBar_t
+class QtProgress : public yafaray4::ConsoleProgressBar
 {
 	public:
 		QtProgress(MainWindow *window, int cwidth = 80);
 		virtual ~QtProgress();
-		virtual void init(int totalSteps);
+		virtual void init(int total_steps);
 		virtual void update(int steps = 1);
 		virtual void setTag(const char *tag);
 		virtual void done();
 	private:
-		MainWindow *m_win;
-		int m_currentStep;
-		int m_totalSteps;
+		MainWindow *win_;
+		int current_step_;
+		int total_steps_;
 };
 
 #endif

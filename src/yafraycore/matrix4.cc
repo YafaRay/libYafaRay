@@ -23,9 +23,9 @@
 #include <core_api/matrix4.h>
 #include <core_api/logging.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-matrix4x4_t::matrix4x4_t(const float init): invalid_(0)
+Matrix4::Matrix4(const float init): invalid_(0)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; ++j)
@@ -37,21 +37,21 @@ matrix4x4_t::matrix4x4_t(const float init): invalid_(0)
 		}
 }
 
-matrix4x4_t::matrix4x4_t(const matrix4x4_t &source): invalid_(source.invalid_)
+Matrix4::Matrix4(const Matrix4 &source): invalid_(source.invalid_)
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
 			matrix_[i][j] = source[i][j];
 }
 
-matrix4x4_t::matrix4x4_t(const float source[4][4])
+Matrix4::Matrix4(const float source[4][4])
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
 			matrix_[i][j] = source[i][j];
 }
 
-matrix4x4_t::matrix4x4_t(const double source[4][4])
+Matrix4::Matrix4(const double source[4][4])
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; j++)
@@ -67,9 +67,9 @@ for(int j=0; j<4; ++j) m[i][j] -= m[b][j]*f
 #define DIV(m,i,f)\
 for(int j=0; j<4; ++j) m[i][j] /= f
 
-matrix4x4_t &matrix4x4_t::inverse()
+Matrix4 &Matrix4::inverse()
 {
-	matrix4x4_t iden(1);
+	Matrix4 iden(1);
 	for(int i = 0; i < 4; ++i)
 	{
 		float max = 0;
@@ -84,8 +84,8 @@ matrix4x4_t &matrix4x4_t::inverse()
 		}
 		if(max == 0)
 		{
-			Y_ERROR << "Serious error inverting matrix" << yendl;
-			Y_ERROR << i << yendl;
+			Y_ERROR << "Serious error inverting matrix" << YENDL;
+			Y_ERROR << i << YENDL;
 			invalid_ = 1;
 		}
 		SWAP(matrix_, i, ci); SWAP(iden, i, ci);
@@ -106,7 +106,7 @@ matrix4x4_t &matrix4x4_t::inverse()
 	return *this;
 }
 
-matrix4x4_t &matrix4x4_t::transpose()
+Matrix4 &Matrix4::transpose()
 {
 	for(int i = 0; i < 3; ++i)
 		for(int j = i + 1; j < 4; ++j)
@@ -114,9 +114,9 @@ matrix4x4_t &matrix4x4_t::transpose()
 	return *this;
 }
 
-void matrix4x4_t::translate(float dx, float dy, float dz)
+void Matrix4::translate(float dx, float dy, float dz)
 {
-	matrix4x4_t aux(1);
+	Matrix4 aux(1);
 
 	aux[0][3] = dx;
 	aux[1][3] = dy;
@@ -125,56 +125,56 @@ void matrix4x4_t::translate(float dx, float dy, float dz)
 	(*this) = aux * (*this);
 }
 
-void matrix4x4_t::rotateZ(float degrees)
+void Matrix4::rotateZ(float degrees)
 {
 	float temp = degrees;
 	temp = fmod(temp, (float)360.0);
 	if(temp < 0) temp = ((float)360.0) - temp;
 	temp = temp * (M_PI / ((float)180));
 
-	matrix4x4_t aux(1);
-	aux[0][0] = fCos(temp);
-	aux[0][1] = -fSin(temp);
-	aux[1][0] = fSin(temp);
-	aux[1][1] = fCos(temp);
+	Matrix4 aux(1);
+	aux[0][0] = fCos__(temp);
+	aux[0][1] = -fSin__(temp);
+	aux[1][0] = fSin__(temp);
+	aux[1][1] = fCos__(temp);
 
 	(*this) = aux * (*this);
 }
 
-void matrix4x4_t::rotateX(float degrees)
+void Matrix4::rotateX(float degrees)
 {
 	float temp = degrees;
 	temp = fmod(temp, (float)360.0);
 	if(temp < 0) temp = ((float)360.0) - temp;
 	temp = temp * (M_PI / ((float)180));
 
-	matrix4x4_t aux(1);
-	aux[1][1] = fCos(temp);
-	aux[1][2] = -fSin(temp);
-	aux[2][1] = fSin(temp);
-	aux[2][2] = fCos(temp);
+	Matrix4 aux(1);
+	aux[1][1] = fCos__(temp);
+	aux[1][2] = -fSin__(temp);
+	aux[2][1] = fSin__(temp);
+	aux[2][2] = fCos__(temp);
 
 	(*this) = aux * (*this);
 }
 
-void matrix4x4_t::rotateY(float degrees)
+void Matrix4::rotateY(float degrees)
 {
 	float temp = degrees;
 	temp = fmod(temp, (float)360.0);
 	if(temp < 0) temp = ((float)360.0) - temp;
 	temp = temp * (M_PI / ((float)180));
 
-	matrix4x4_t aux(1);
-	aux[0][0] = fCos(temp);
-	aux[0][2] = fSin(temp);
-	aux[2][0] = -fSin(temp);
-	aux[2][2] = fCos(temp);
+	Matrix4 aux(1);
+	aux[0][0] = fCos__(temp);
+	aux[0][2] = fSin__(temp);
+	aux[2][0] = -fSin__(temp);
+	aux[2][2] = fCos__(temp);
 
 	(*this) = aux * (*this);
 }
 
 
-void matrix4x4_t::scale(float sx, float sy, float sz)
+void Matrix4::scale(float sx, float sy, float sz)
 {
 	matrix_[0][0] *= sx; matrix_[1][0] *= sx; matrix_[2][0] *= sx;
 	matrix_[0][1] *= sy; matrix_[1][1] *= sy; matrix_[2][1] *= sy;
@@ -182,7 +182,7 @@ void matrix4x4_t::scale(float sx, float sy, float sz)
 }
 
 
-void matrix4x4_t::identity()
+void Matrix4::identity()
 {
 	for(int i = 0; i < 4; i++)
 		for(int j = 0; j < 4; ++j)
@@ -194,7 +194,7 @@ void matrix4x4_t::identity()
 		}
 }
 
-std::ostream &operator << (std::ostream &out, matrix4x4_t &m)
+std::ostream &operator << (std::ostream &out, Matrix4 &m)
 {
 	out << "/ " << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << " \\\n";
 	out << "| " << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << " |\n";
@@ -203,4 +203,4 @@ std::ostream &operator << (std::ostream &out, matrix4x4_t &m)
 	return out;
 }
 
-__END_YAFRAY
+END_YAFRAY

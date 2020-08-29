@@ -20,68 +20,48 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef Y_COLOR_RAMP_H
-#define Y_COLOR_RAMP_H
+#ifndef YAFARAY_COLOR_RAMP_H
+#define YAFARAY_COLOR_RAMP_H
 
 #include <yafray_constants.h>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-enum color_ramp_mode_t
-{
-	C_RAMP_RGB,
-	C_RAMP_HSV,
-	C_RAMP_HSL	//Not yet supported, using HSV instead
-};
-
-enum color_ramp_interpolation_t
-{
-	C_RAMP_CONSTANT,
-	C_RAMP_LINEAR,
-	C_RAMP_BSPLINE,	//Not yet supported
-	C_RAMP_CARDINAL,	//Not yet supported
-	C_RAMP_EASE	//Not yet supported
-};
-
-enum color_ramp_hue_interpolation_t
-{
-	C_RAMP_HUE_NEAR,
-	C_RAMP_HUE_FAR,
-	C_RAMP_HUE_CLOCKWISE,
-	C_RAMP_HUE_COUNTERCLOCKWISE
-};
-
-class YAFRAYCORE_EXPORT color_ramp_item_t
-{
-		friend class color_ramp_t;
-
-	public:
-		color_ramp_item_t(float pos) : position(pos) {}
-		color_ramp_item_t(const colorA_t &col, float pos) : color(col), position(pos) {}
-		bool operator < (const color_ramp_item_t &item) const {	return (position < item.position); }
-		bool operator > (const color_ramp_item_t &item) const {	return (position > item.position); }
-
-	protected:
-		colorA_t color = colorA_t(0.f, 0.f, 0.f, 1.f);
-		float position = 0.f;
-};
-
-class YAFRAYCORE_EXPORT color_ramp_t
+class YAFRAYCORE_EXPORT ColorRampItem final
 {
 	public:
-		color_ramp_t(int mode, int interpolation, int hue_interpolation);
-		color_ramp_t(std::string modeStr, std::string interpolationStr, std::string hue_interpolationStr);
-		void add_item(const colorA_t &color, float position);
-		colorA_t get_color_interpolated(float pos) const;
+		ColorRampItem(float pos) : position_(pos) { }
+		ColorRampItem(const Rgba &col, float pos) : color_(col), position_(pos) {}
+		bool operator < (const ColorRampItem &item) const { return (position_ < item.position_); }
+		bool operator > (const ColorRampItem &item) const { return (position_ > item.position_); }
+		const Rgba color() const { return color_; }
+		const float position() const { return position_; }
 
-	protected:
-		int ramp_mode = C_RAMP_RGB;
-		int ramp_interpolation = C_RAMP_LINEAR;
-		int ramp_hue_interpolation = C_RAMP_HUE_NEAR;
-		std::vector<color_ramp_item_t> ramp;
+	private:
+		Rgba color_ = Rgba(0.f, 0.f, 0.f, 1.f);
+		float position_ = 0.f;
 };
 
-__END_YAFRAY
+class YAFRAYCORE_EXPORT ColorRamp final
+{
+	public:
+		enum Mode { Rgb, Hsv, Hsl }; //Hsl not yet supported, using Hsv instead
+		enum Interpolation { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
+		enum HueInterpolation {	Near, Far, Clockwise, Counterclockwise };
 
-#endif // Y_COLOR_RAMP_H
+		ColorRamp(Mode mode, Interpolation interpolation, HueInterpolation hue_interpolation);
+		ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str);
+		void addItem(const Rgba &color, float position);
+		Rgba getColorInterpolated(float pos) const;
+
+	private:
+		Mode mode_ = Rgb;
+		Interpolation interpolation_ = Linear;
+		HueInterpolation hue_interpolation_ = Near;
+		std::vector<ColorRampItem> ramp_;
+};
+
+END_YAFRAY
+
+#endif // YAFARAY_COLOR_RAMP_H

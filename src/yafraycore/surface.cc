@@ -2,134 +2,134 @@
 #include <core_api/ray.h>
 #include <utilities/interpolation.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-spDifferentials_t::spDifferentials_t(const surfacePoint_t &spoint, const diffRay_t &ray): sp(spoint)
+SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const DiffRay &ray): sp_(spoint)
 {
-	if(ray.hasDifferentials)
+	if(ray.has_differentials_)
 	{
 		// Estimate screen-space change in \pt and $(u,v)$
 		// Compute auxiliary intersection points with plane
-		float d = -(sp.N * vector3d_t(sp.P));
-		vector3d_t rxv(ray.xfrom);
-		float tx = -((sp.N * rxv) + d) / (sp.N * ray.xdir);
-		point3d_t px = ray.xfrom + tx * ray.xdir;
-		vector3d_t ryv(ray.yfrom);
-		float ty = -((sp.N * ryv) + d) / (sp.N * ray.ydir);
-		point3d_t py = ray.yfrom + ty * ray.ydir;
-		dPdx = px - sp.P;
-		dPdy = py - sp.P;
+		float d = -(sp_.n_ * Vec3(sp_.p_));
+		Vec3 rxv(ray.xfrom_);
+		float tx = -((sp_.n_ * rxv) + d) / (sp_.n_ * ray.xdir_);
+		Point3 px = ray.xfrom_ + tx * ray.xdir_;
+		Vec3 ryv(ray.yfrom_);
+		float ty = -((sp_.n_ * ryv) + d) / (sp_.n_ * ray.ydir_);
+		Point3 py = ray.yfrom_ + ty * ray.ydir_;
+		dp_dx_ = px - sp_.p_;
+		dp_dy_ = py - sp_.p_;
 	}
 	else
 	{
 		//dudx = dvdx = 0.;
 		//dudy = dvdy = 0.;
-		dPdx = dPdy = vector3d_t(0, 0, 0);
+		dp_dx_ = dp_dy_ = Vec3(0, 0, 0);
 	}
 }
 
-void spDifferentials_t::reflectedRay(const diffRay_t &in, diffRay_t &out) const
+void SpDifferentials::reflectedRay(const DiffRay &in, DiffRay &out) const
 {
-	if(!in.hasDifferentials)
+	if(!in.has_differentials_)
 	{
-		out.hasDifferentials = false;
+		out.has_differentials_ = false;
 		return;
 	}
 	// Compute ray differential _rd_ for specular reflection
-	out.hasDifferentials = true;
-	out.xfrom = sp.P + dPdx;
-	out.yfrom = sp.P + dPdy;
+	out.has_differentials_ = true;
+	out.xfrom_ = sp_.p_ + dp_dx_;
+	out.yfrom_ = sp_.p_ + dp_dy_;
 	// Compute differential reflected directions
 	//	Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//	Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
 	//				  bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-	vector3d_t dwodx = in.dir - in.xdir, dwody = in.dir - in.ydir;
-	float dDNdx = (dwodx * sp.N); // + (out.dir * dndx);
-	float dDNdy = (dwody * sp.N); // + (out.dir * dndy);
-	out.xdir = out.dir - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ dDNdx * sp.N);
-	out.ydir = out.dir - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ dDNdy * sp.N);
+	Vec3 dwodx = in.dir_ - in.xdir_, dwody = in.dir_ - in.ydir_;
+	float d_d_ndx = (dwodx * sp_.n_); // + (out.dir * dndx);
+	float d_d_ndy = (dwody * sp_.n_); // + (out.dir * dndy);
+	out.xdir_ = out.dir_ - dwodx + 2 * (/* (out.dir * sp.N) * dndx + */ d_d_ndx * sp_.n_);
+	out.ydir_ = out.dir_ - dwody + 2 * (/* (out.dir * sp.N) * dndy + */ d_d_ndy * sp_.n_);
 }
 
-void spDifferentials_t::refractedRay(const diffRay_t &in, diffRay_t &out, float IOR) const
+void SpDifferentials::refractedRay(const DiffRay &in, DiffRay &out, float ior) const
 {
-	if(!in.hasDifferentials)
+	if(!in.has_differentials_)
 	{
-		out.hasDifferentials = false;
+		out.has_differentials_ = false;
 		return;
 	}
 	//RayDifferential rd(p, wi);
-	out.hasDifferentials = true;
-	out.xfrom = sp.P + dPdx;
-	out.yfrom = sp.P + dPdy;
+	out.has_differentials_ = true;
+	out.xfrom_ = sp_.p_ + dp_dx_;
+	out.yfrom_ = sp_.p_ + dp_dy_;
 	//if (Dot(wo, n) < 0) eta = 1.f / eta;
 
 	//Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
 	//Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
 
-	vector3d_t dwodx = in.dir - in.xdir, dwody = in.dir - in.ydir;
-	float dDNdx = (dwodx * sp.N); // + Dot(wo, dndx);
-	float dDNdy = (dwody * sp.N); // + Dot(wo, dndy);
+	Vec3 dwodx = in.dir_ - in.xdir_, dwody = in.dir_ - in.ydir_;
+	float d_d_ndx = (dwodx * sp_.n_); // + Dot(wo, dndx);
+	float d_d_ndy = (dwody * sp_.n_); // + Dot(wo, dndy);
 
 	//	float mu = IOR * (in.dir * sp.N) - (out.dir * sp.N);
-	float dmudx = (IOR - (IOR * IOR * (in.dir * sp.N)) / (out.dir * sp.N)) * dDNdx;
-	float dmudy = (IOR - (IOR * IOR * (in.dir * sp.N)) / (out.dir * sp.N)) * dDNdy;
+	float dmudx = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndx;
+	float dmudy = (ior - (ior * ior * (in.dir_ * sp_.n_)) / (out.dir_ * sp_.n_)) * d_d_ndy;
 
-	out.xdir = out.dir + IOR * dwodx - (/* mu * dndx + */ dmudx * sp.N);
-	out.ydir = out.dir + IOR * dwody - (/* mu * dndy + */ dmudy * sp.N);
+	out.xdir_ = out.dir_ + ior * dwodx - (/* mu * dndx + */ dmudx * sp_.n_);
+	out.ydir_ = out.dir_ + ior * dwody - (/* mu * dndy + */ dmudy * sp_.n_);
 }
 
-float spDifferentials_t::projectedPixelArea()
+float SpDifferentials::projectedPixelArea()
 {
-	return (dPdx ^ dPdy).length();
+	return (dp_dx_ ^ dp_dy_).length();
 }
 
-void spDifferentials_t::dU_dV_from_dP_dPdU_dPdV(float &dU, float &dV, const point3d_t &dP, const vector3d_t &dPdU, const vector3d_t &dPdV) const
+void SpDifferentials::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp, const Vec3 &dp_du, const Vec3 &dp_dv) const
 {
-	float detXY = (dPdU.x * dPdV.y) - (dPdV.x * dPdU.y);
-	float detXZ = (dPdU.x * dPdV.z) - (dPdV.x * dPdU.z);
-	float detYZ = (dPdU.y * dPdV.z) - (dPdV.y * dPdU.z);
+	float det_xy = (dp_du.x_ * dp_dv.y_) - (dp_dv.x_ * dp_du.y_);
+	float det_xz = (dp_du.x_ * dp_dv.z_) - (dp_dv.x_ * dp_du.z_);
+	float det_yz = (dp_du.y_ * dp_dv.z_) - (dp_dv.y_ * dp_du.z_);
 
-	if(fabsf(detXY) > 0.f && fabsf(detXY) > fabsf(detXZ) && fabsf(detXY) > fabsf(detYZ))
+	if(fabsf(det_xy) > 0.f && fabsf(det_xy) > fabsf(det_xz) && fabsf(det_xy) > fabsf(det_yz))
 	{
-		dU = ((dP.x * dPdV.y) - (dPdV.x * dP.y)) / detXY;
-		dV = ((dPdU.x * dP.y) - (dP.x * dPdU.y)) / detXY;
+		du = ((dp.x_ * dp_dv.y_) - (dp_dv.x_ * dp.y_)) / det_xy;
+		dv = ((dp_du.x_ * dp.y_) - (dp.x_ * dp_du.y_)) / det_xy;
 	}
 
-	else if(fabsf(detXZ) > 0.f && fabsf(detXZ) > fabsf(detXY) && fabsf(detXZ) > fabsf(detYZ))
+	else if(fabsf(det_xz) > 0.f && fabsf(det_xz) > fabsf(det_xy) && fabsf(det_xz) > fabsf(det_yz))
 	{
-		dU = ((dP.x * dPdV.z) - (dPdV.x * dP.z)) / detXZ;
-		dV = ((dPdU.x * dP.z) - (dP.x * dPdU.z)) / detXZ;
+		du = ((dp.x_ * dp_dv.z_) - (dp_dv.x_ * dp.z_)) / det_xz;
+		dv = ((dp_du.x_ * dp.z_) - (dp.x_ * dp_du.z_)) / det_xz;
 	}
 
-	else if(fabsf(detYZ) > 0.f && fabsf(detYZ) > fabsf(detXY) && fabsf(detYZ) > fabsf(detXZ))
+	else if(fabsf(det_yz) > 0.f && fabsf(det_yz) > fabsf(det_xy) && fabsf(det_yz) > fabsf(det_xz))
 	{
-		dU = ((dP.y * dPdV.z) - (dPdV.y * dP.z)) / detYZ;
-		dV = ((dPdU.y * dP.z) - (dP.y * dPdU.z)) / detYZ;
+		du = ((dp.y_ * dp_dv.z_) - (dp_dv.y_ * dp.z_)) / det_yz;
+		dv = ((dp_du.y_ * dp.z_) - (dp.y_ * dp_du.z_)) / det_yz;
 	}
 }
 
-void spDifferentials_t::getUVdifferentials(float &dUdx, float &dVdx, float &dUdy, float &dVdy) const
+void SpDifferentials::getUVdifferentials(float &du_dx, float &dv_dx, float &du_dy, float &dv_dy) const
 {
-	dU_dV_from_dP_dPdU_dPdV(dUdx, dVdx, dPdx, sp.dPdU_abs, sp.dPdV_abs);
-	dU_dV_from_dP_dPdU_dPdV(dUdy, dVdy, dPdy, sp.dPdU_abs, sp.dPdV_abs);
+	dUdvFromDpdPdUdPdV(du_dx, dv_dx, dp_dx_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
+	dUdvFromDpdPdUdPdV(du_dy, dv_dy, dp_dy_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
 }
 
 
-surfacePoint_t blend_surface_points(surfacePoint_t const &sp_0, surfacePoint_t const &sp_1, float const alpha)
+SurfacePoint blendSurfacePoints__(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float const alpha)
 {
-	surfacePoint_t sp_result(sp_0);
+	SurfacePoint sp_result(sp_0);
 
-	sp_result.N = lerp(sp_0.N, sp_1.N, alpha);
+	sp_result.n_ = lerp__(sp_0.n_, sp_1.n_, alpha);
 
-	sp_result.NU = lerp(sp_0.NU, sp_1.NU, alpha);
-	sp_result.NV = lerp(sp_0.NV, sp_1.NV, alpha);
-	sp_result.dPdU = lerp(sp_0.dPdU, sp_1.dPdU, alpha);
-	sp_result.dPdV = lerp(sp_0.dPdV, sp_1.dPdV, alpha);
-	sp_result.dSdU = lerp(sp_0.dSdU, sp_1.dSdU, alpha);
-	sp_result.dSdV = lerp(sp_0.dSdV, sp_1.dSdV, alpha);
+	sp_result.nu_ = lerp__(sp_0.nu_, sp_1.nu_, alpha);
+	sp_result.nv_ = lerp__(sp_0.nv_, sp_1.nv_, alpha);
+	sp_result.dp_du_ = lerp__(sp_0.dp_du_, sp_1.dp_du_, alpha);
+	sp_result.dp_dv_ = lerp__(sp_0.dp_dv_, sp_1.dp_dv_, alpha);
+	sp_result.ds_du_ = lerp__(sp_0.ds_du_, sp_1.ds_du_, alpha);
+	sp_result.ds_dv_ = lerp__(sp_0.ds_dv_, sp_1.ds_dv_, alpha);
 
 	return sp_result;
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -10,114 +10,114 @@
 #include <core_api/params.h>
 #include <utilities/mcqmc.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
+struct RenderState;
+struct PSample;
 
 class SkyVolume : public VolumeRegion
 {
 	public:
 
-		SkyVolume(color_t sa, color_t ss, color_t le, point3d_t pmin, point3d_t pmax)
+		SkyVolume(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax)
 		{
-			bBox = bound_t(pmin, pmax);
-			s_a = color_t(0.f);
-			s_ray = sa;
-			s_ray.B /= 3.f;
-			s_mie = ss;
-			s_s = color_t(0.f);
-			l_e = le;
-			g = 0.f;
-			Y_VERBOSE << "SkyVolume: Vol. [" << s_ray << ", " << s_mie << ", " << l_e << "]" << yendl;
+			b_box_ = Bound(pmin, pmax);
+			s_a_ = Rgb(0.f);
+			s_ray_ = sa;
+			s_ray_.b_ /= 3.f;
+			s_mie_ = ss;
+			s_s_ = Rgb(0.f);
+			l_e_ = le;
+			g_ = 0.f;
+			Y_VERBOSE << "SkyVolume: Vol. [" << s_ray_ << ", " << s_mie_ << ", " << l_e_ << "]" << YENDL;
 		}
 
-		virtual float p(const vector3d_t &w_l, const vector3d_t &w_s);
+		virtual float p(const Vec3 &w_l, const Vec3 &w_s);
 
-		float phaseRayleigh(const vector3d_t &w_l, const vector3d_t &w_s);
-		float phaseMie(const vector3d_t &w_l, const vector3d_t &w_s);
+		float phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s);
+		float phaseMie(const Vec3 &w_l, const Vec3 &w_s);
 
-		virtual color_t sigma_a(const point3d_t &p, const vector3d_t &v);
-		virtual color_t sigma_s(const point3d_t &p, const vector3d_t &v);
-		virtual color_t emission(const point3d_t &p, const vector3d_t &v);
-		virtual color_t tau(const ray_t &ray, float step, float offset);
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v);
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v);
+		virtual Rgb emission(const Point3 &p, const Vec3 &v);
+		virtual Rgb tau(const Ray &ray, float step, float offset);
 
-		static VolumeRegion *factory(paraMap_t &params, renderEnvironment_t &render);
+		static VolumeRegion *factory(ParamMap &params, RenderEnvironment &render);
 
 	protected:
-		color_t s_ray;
-		color_t s_mie;
+		Rgb s_ray_;
+		Rgb s_mie_;
 
 
 };
 
-color_t SkyVolume::sigma_a(const point3d_t &p, const vector3d_t &v)
+Rgb SkyVolume::sigmaA(const Point3 &p, const Vec3 &v)
 {
-	return color_t(0.f);
+	return Rgb(0.f);
 }
 
-color_t SkyVolume::sigma_s(const point3d_t &p, const vector3d_t &v)
+Rgb SkyVolume::sigmaS(const Point3 &p, const Vec3 &v)
 {
 	//if (bBox.includes(p)) {
-	return s_ray + s_mie;
+	return s_ray_ + s_mie_;
 	//}
 	//else
-	//	return color_t(0.f);
+	//	return Rgb(0.f);
 }
 
-color_t SkyVolume::tau(const ray_t &ray, float step, float offset)
+Rgb SkyVolume::tau(const Ray &ray, float step, float offset)
 {
-	float t0 = -1, t1 = -1;
+	float t_0 = -1, t_1 = -1;
 
 	// ray doesn't hit the BB
-	if(!intersect(ray, t0, t1))
+	if(!intersect(ray, t_0, t_1))
 	{
-		return color_t(0.f);
+		return Rgb(0.f);
 	}
 
-	if(ray.tmax < t0 && !(ray.tmax < 0)) return color_t(0.f);
+	if(ray.tmax_ < t_0 && !(ray.tmax_ < 0)) return Rgb(0.f);
 
-	if(ray.tmax < t1 && !(ray.tmax < 0)) t1 = ray.tmax;
+	if(ray.tmax_ < t_1 && !(ray.tmax_ < 0)) t_1 = ray.tmax_;
 
 	// t0 < 0 means, ray.from is in the volume
-	if(t0 < 0.f) t0 = 0.f;
+	if(t_0 < 0.f) t_0 = 0.f;
 
 	// distance travelled in the volume
-	float dist = t1 - t0;
+	float dist = t_1 - t_0;
 
-	return (s_ray + s_mie) * dist;
+	return (s_ray_ + s_mie_) * dist;
 }
 
-color_t SkyVolume::emission(const point3d_t &p, const vector3d_t &v)
+Rgb SkyVolume::emission(const Point3 &p, const Vec3 &v)
 {
-	if(bBox.includes(p))
+	if(b_box_.includes(p))
 	{
-		return l_e;
+		return l_e_;
 	}
 	else
-		return color_t(0.f);
+		return Rgb(0.f);
 }
 
-float SkyVolume::p(const vector3d_t &w_l, const vector3d_t &w_s)
+float SkyVolume::p(const Vec3 &w_l, const Vec3 &w_s)
 {
 	return phaseRayleigh(w_l, w_s) + phaseMie(w_l, w_s);
 }
 
-float SkyVolume::phaseRayleigh(const vector3d_t &w_l, const vector3d_t &w_s)
+float SkyVolume::phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s)
 {
 	float costheta = (w_l * w_s);
-	return 3.f / (16.f * M_PI) * (1.f + costheta * costheta) * s_ray.energy();
+	return 3.f / (16.f * M_PI) * (1.f + costheta * costheta) * s_ray_.energy();
 }
 
-float SkyVolume::phaseMie(const vector3d_t &w_l, const vector3d_t &w_s)
+float SkyVolume::phaseMie(const Vec3 &w_l, const Vec3 &w_s)
 {
-	float k = 1.55f * g - .55f * g * g * g;
+	float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 	float kcostheta = k * (w_l * w_s);
-	return 1.f / (4.f * M_PI) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta)) * s_mie.energy();
+	return 1.f / (4.f * M_PI) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta)) * s_mie_.energy();
 }
 
 
-VolumeRegion *SkyVolume::factory(paraMap_t &params, renderEnvironment_t &render)
+VolumeRegion *SkyVolume::factory(ParamMap &params, RenderEnvironment &render)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -136,17 +136,17 @@ VolumeRegion *SkyVolume::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	SkyVolume *vol = new SkyVolume(color_t(sa), color_t(ss), color_t(le),
-	                               point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]));
+	SkyVolume *vol = new SkyVolume(Rgb(sa), Rgb(ss), Rgb(le),
+								   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
 	return vol;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("SkyVolume", SkyVolume::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

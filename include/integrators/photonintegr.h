@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_PHOTONINTEGR_H
-#define Y_PHOTONINTEGR_H
+#ifndef YAFARAY_PHOTONINTEGR_H
+#define YAFARAY_PHOTONINTEGR_H
 
 #include <yafray_constants.h>
 
@@ -25,51 +25,51 @@
 #include <sstream>
 #include <iomanip>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct preGatherData_t
+struct PreGatherData
 {
-	preGatherData_t(photonMap_t *dm): diffuseMap(dm), fetched(0) {}
-	photonMap_t *diffuseMap;
+	PreGatherData(PhotonMap *dm): diffuse_map_(dm), fetched_(0) {}
+	PhotonMap *diffuse_map_;
 
-	std::vector<radData_t> rad_points;
-	std::vector<photon_t> radianceVec;
-	progressBar_t *pbar;
-	volatile int fetched;
-	std::mutex mutx;
+	std::vector<RadData> rad_points_;
+	std::vector<Photon> radiance_vec_;
+	ProgressBar *pbar_;
+	volatile int fetched_;
+	std::mutex mutx_;
 };
 
-class YAFRAYPLUGIN_EXPORT photonIntegrator_t: public mcIntegrator_t
+class YAFRAYPLUGIN_EXPORT PhotonIntegrator: public MonteCarloIntegrator
 {
 	public:
-		photonIntegrator_t(unsigned int dPhotons, unsigned int cPhotons, bool transpShad = false, int shadowDepth = 4, float dsRad = 0.1f, float cRad = 0.01f);
-		~photonIntegrator_t();
+		PhotonIntegrator(unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
+		~PhotonIntegrator();
 		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth = 0) const;
-		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
-		virtual void preGatherWorker(preGatherData_t *gdata, float dsRad, int nSearch);
-		virtual void causticWorker(photonMap_t *causticMap, int threadID, const scene_t *scene, unsigned int nCausPhotons, const pdf1D_t *lightPowerD, int numCLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, int causDepth, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces);
-		virtual void diffuseWorker(photonMap_t *diffuseMap, int threadID, const scene_t *scene, unsigned int nDiffusePhotons, const pdf1D_t *lightPowerD, int numDLights, const std::string &integratorName, const std::vector<light_t *> &tmplights, progressBar_t *pb, int pbStep, unsigned int &totalPhotonsShot, int maxBounces, bool finalGather, preGatherData_t &pgdat);
-		virtual void photonMapKdTreeWorker(photonMap_t *photonMap);
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const;
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		virtual void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
+		virtual void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, const Pdf1D *light_power_d, int num_c_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces);
+		virtual void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
+		virtual void photonMapKdTreeWorker(PhotonMap *photon_map);
 
 	protected:
-		color_t finalGathering(renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, colorPasses_t &colorPasses) const;
+		Rgb finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
 
-		void enableCaustics(const bool caustics) { usePhotonCaustics = caustics; }
-		void enableDiffuse(const bool diffuse) { usePhotonDiffuse = diffuse; }
+		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
+		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 
-		bool usePhotonDiffuse; //!< enable/disable diffuse photon processing
-		bool finalGather, showMap;
-		bool prepass;
-		unsigned int nDiffusePhotons;
-		int nDiffuseSearch;
-		int gatherBounces;
-		float dsRadius; //!< diffuse search radius
-		float lookupRad; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
-		float gatherDist; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
-		friend class prepassWorker_t;
+		bool use_photon_diffuse_; //!< enable/disable diffuse photon processing
+		bool final_gather_, show_map_;
+		bool prepass_;
+		unsigned int n_diffuse_photons_;
+		int n_diffuse_search_;
+		int gather_bounces_;
+		float ds_radius_; //!< diffuse search radius
+		float lookup_rad_; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
+		float gather_dist_; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
+		friend class PrepassWorkerT;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_PHOTONINTEGR_H
+#endif // YAFARAY_PHOTONINTEGR_H

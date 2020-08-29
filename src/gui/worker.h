@@ -18,20 +18,20 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef WORKER_H
-#define WORKER_H
+#ifndef YAFARAY_WORKER_H
+#define YAFARAY_WORKER_H
 
 #include <QThread>
 #include <QString>
 
 class QtOutput;
 class MainWindow;
-namespace yafaray
+namespace yafaray4
 {
-class yafrayInterface_t;
-class render_t;
-class paraMap_t;
-class scene_t;
+class Interface;
+class Render;
+class ParamMap;
+class Scene;
 }
 
 
@@ -39,13 +39,13 @@ class Worker : public QThread
 {
 		Q_OBJECT
 	public:
-		Worker(yafaray::yafrayInterface_t *env, MainWindow *w, QtOutput *output);
+		Worker(yafaray4::Interface *env, MainWindow *w, QtOutput *output);
 		void run();
 	private:
-		yafaray::yafrayInterface_t *m_env;
-		QtOutput *m_output;
-		MainWindow *m_win;
-		bool m_valid;
+		yafaray4::Interface *env_;
+		QtOutput *output_;
+		MainWindow *win_;
+		bool valid_;
 };
 
 #endif

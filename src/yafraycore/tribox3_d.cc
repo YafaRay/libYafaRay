@@ -17,7 +17,7 @@
 
 #include <yafray_constants.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
 #define X 0
@@ -43,7 +43,7 @@ __BEGIN_YAFRAY
   if(x2<min) min=x2;\
   if(x2>max) max=x2;
 
-int planeBoxOverlap(double normal[3], double vert[3], double maxbox[3])	// -NJMP-
+int planeBoxOverlap__(double *normal, double *vert, double *maxbox)	// -NJMP-
 {
 	int q;
 	double vmin[3], vmax[3], v;
@@ -69,52 +69,52 @@ int planeBoxOverlap(double normal[3], double vert[3], double maxbox[3])	// -NJMP
 
 
 /*======================== X-tests ========================*/
-#define AXISTEST_X01(a, b, fa, fb)			   \
-	p0 = a*v0[Y] - b*v0[Z];			       	   \
-	p2 = a*v2[Y] - b*v2[Z];			       	   \
-        if(p0<p2) {min=p0; max=p2;} else {min=p2; max=p0;} \
+#define AXISTEST_X_01(a, b, fa, fb)			   \
+	p_0 = a*v0[Y] - b*v0[Z];			       	   \
+	p_2 = a*v2[Y] - b*v2[Z];			       	   \
+        if(p_0<p_2) {min=p_0; max=p_2;} else {min=p_2; max=p_0;} \
 	rad = fa * boxhalfsize[Y] + fb * boxhalfsize[Z];   \
 	if(min>rad || max<-rad) return 0;
 
-#define AXISTEST_X2(a, b, fa, fb)			   \
-	p0 = a*v0[Y] - b*v0[Z];			           \
-	p1 = a*v1[Y] - b*v1[Z];			       	   \
-        if(p0<p1) {min=p0; max=p1;} else {min=p1; max=p0;} \
+#define AXISTEST_X_2(a, b, fa, fb)			   \
+	p_0 = a*v0[Y] - b*v0[Z];			           \
+	p_1 = a*v1[Y] - b*v1[Z];			       	   \
+        if(p_0<p_1) {min=p_0; max=p_1;} else {min=p_1; max=p_0;} \
 	rad = fa * boxhalfsize[Y] + fb * boxhalfsize[Z];   \
 	if(min>rad || max<-rad) return 0;
 
 /*======================== Y-tests ========================*/
-#define AXISTEST_Y02(a, b, fa, fb)			   \
-	p0 = -a*v0[X] + b*v0[Z];		      	   \
-	p2 = -a*v2[X] + b*v2[Z];	       	       	   \
-        if(p0<p2) {min=p0; max=p2;} else {min=p2; max=p0;} \
+#define AXISTEST_Y_02(a, b, fa, fb)			   \
+	p_0 = -a*v0[X] + b*v0[Z];		      	   \
+	p_2 = -a*v2[X] + b*v2[Z];	       	       	   \
+        if(p_0<p_2) {min=p_0; max=p_2;} else {min=p_2; max=p_0;} \
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Z];   \
 	if(min>rad || max<-rad) return 0;
 
-#define AXISTEST_Y1(a, b, fa, fb)			   \
-	p0 = -a*v0[X] + b*v0[Z];		      	   \
-	p1 = -a*v1[X] + b*v1[Z];	     	       	   \
-        if(p0<p1) {min=p0; max=p1;} else {min=p1; max=p0;} \
+#define AXISTEST_Y_1(a, b, fa, fb)			   \
+	p_0 = -a*v0[X] + b*v0[Z];		      	   \
+	p_1 = -a*v1[X] + b*v1[Z];	     	       	   \
+        if(p_0<p_1) {min=p_0; max=p_1;} else {min=p_1; max=p_0;} \
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Z];   \
 	if(min>rad || max<-rad) return 0;
 
 /*======================== Z-tests ========================*/
 
-#define AXISTEST_Z12(a, b, fa, fb)			   \
-	p1 = a*v1[X] - b*v1[Y];			           \
-	p2 = a*v2[X] - b*v2[Y];			       	   \
-        if(p2<p1) {min=p2; max=p1;} else {min=p1; max=p2;} \
+#define AXISTEST_Z_12(a, b, fa, fb)			   \
+	p_1 = a*v1[X] - b*v1[Y];			           \
+	p_2 = a*v2[X] - b*v2[Y];			       	   \
+        if(p_2<p_1) {min=p_2; max=p_1;} else {min=p_1; max=p_2;} \
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Y];   \
 	if(min>rad || max<-rad) return 0;
 
-#define AXISTEST_Z0(a, b, fa, fb)			   \
-	p0 = a*v0[X] - b*v0[Y];				   \
-	p1 = a*v1[X] - b*v1[Y];			           \
-        if(p0<p1) {min=p0; max=p1;} else {min=p1; max=p0;} \
+#define AXISTEST_Z_0(a, b, fa, fb)			   \
+	p_0 = a*v0[X] - b*v0[Y];				   \
+	p_1 = a*v1[X] - b*v1[Y];			           \
+        if(p_0<p_1) {min=p_0; max=p_1;} else {min=p_1; max=p_0;} \
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Y];   \
 	if(min>rad || max<-rad) return 0;
 
-YAFRAYCORE_EXPORT int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], double triverts[3][3])
+YAFRAYCORE_EXPORT int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts)
 {
 
 	/*    use separating axis theorem to test overlap between triangle and box */
@@ -126,7 +126,7 @@ YAFRAYCORE_EXPORT int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], 
 	/*       this gives 3x3=9 more tests */
 	double v0[3], v1[3], v2[3];
 	//   double axis[3];
-	double min, max, p0, p1, p2, rad, fex, fey, fez;		// -NJMP- "d" local variable removed
+	double min, max, p_0, p_1, p_2, rad, fex, fey, fez;		// -NJMP- "d" local variable removed
 	double normal[3], e0[3], e1[3], e2[3];
 
 	/* This is the fastest branch on Sun */
@@ -145,23 +145,23 @@ YAFRAYCORE_EXPORT int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], 
 	fex = std::fabs(e0[X]);
 	fey = std::fabs(e0[Y]);
 	fez = std::fabs(e0[Z]);
-	AXISTEST_X01(e0[Z], e0[Y], fez, fey);
-	AXISTEST_Y02(e0[Z], e0[X], fez, fex);
-	AXISTEST_Z12(e0[Y], e0[X], fey, fex);
+	AXISTEST_X_01(e0[Z], e0[Y], fez, fey);
+	AXISTEST_Y_02(e0[Z], e0[X], fez, fex);
+	AXISTEST_Z_12(e0[Y], e0[X], fey, fex);
 
 	fex = std::fabs(e1[X]);
 	fey = std::fabs(e1[Y]);
 	fez = std::fabs(e1[Z]);
-	AXISTEST_X01(e1[Z], e1[Y], fez, fey);
-	AXISTEST_Y02(e1[Z], e1[X], fez, fex);
-	AXISTEST_Z0(e1[Y], e1[X], fey, fex);
+	AXISTEST_X_01(e1[Z], e1[Y], fez, fey);
+	AXISTEST_Y_02(e1[Z], e1[X], fez, fex);
+	AXISTEST_Z_0(e1[Y], e1[X], fey, fex);
 
 	fex = std::fabs(e2[X]);
 	fey = std::fabs(e2[Y]);
 	fez = std::fabs(e2[Z]);
-	AXISTEST_X2(e2[Z], e2[Y], fez, fey);
-	AXISTEST_Y1(e2[Z], e2[X], fez, fex);
-	AXISTEST_Z12(e2[Y], e2[X], fey, fex);
+	AXISTEST_X_2(e2[Z], e2[Y], fez, fey);
+	AXISTEST_Y_1(e2[Z], e2[X], fez, fex);
+	AXISTEST_Z_12(e2[Y], e2[X], fey, fex);
 
 	/* Bullet 1: */
 	/*  first test overlap in the {x,y,z}-directions */
@@ -186,9 +186,9 @@ YAFRAYCORE_EXPORT int triBoxOverlap(double boxcenter[3], double boxhalfsize[3], 
 	/*  compute plane equation of triangle: normal*x+d=0 */
 	CROSS(normal, e0, e1);
 	// -NJMP- (line removed here)
-	if(!planeBoxOverlap(normal, v0, boxhalfsize)) return 0;	// -NJMP-
+	if(!planeBoxOverlap__(normal, v0, boxhalfsize)) return 0;	// -NJMP-
 
 	return 1;   /* box and triangle overlaps */
 }
 
-__END_YAFRAY
+END_YAFRAY

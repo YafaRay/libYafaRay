@@ -24,61 +24,61 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-float material_t::highestMaterialIndex = 1.f;	//Initially this class shared variable will be 1.f
-unsigned int material_t::materialIndexAuto = 0;	//Initially this class shared variable will be 0
-float material_t::mHighestSamplingFactor = 1.f;	//Initially this class shared variable will be 1.f
+float Material::material_index_highest_ = 1.f;	//Initially this class shared variable will be 1.f
+unsigned int Material::material_index_auto_ = 0;	//Initially this class shared variable will be 0
+float Material::highest_sampling_factor_ = 1.f;	//Initially this class shared variable will be 1.f
 
 
-bool material_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
+bool Material::scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
 {
-	float W = 0.f;
-	color_t scol = sample(state, sp, wi, wo, s, W);
-	if(s.pdf > 1.0e-6f)
+	float w = 0.f;
+	Rgb scol = sample(state, sp, wi, wo, s, w);
+	if(s.pdf_ > 1.0e-6f)
 	{
-		color_t cnew = s.lcol * s.alpha * scol * W;
+		Rgb cnew = s.lcol_ * s.alpha_ * scol * w;
 		float new_max = cnew.maximum();
-		float old_max = s.lcol.maximum();
+		float old_max = s.lcol_.maximum();
 		float prob = std::min(1.f, new_max / old_max);
-		if(s.s3 <= prob && prob > 1e-4f)
+		if(s.s_3_ <= prob && prob > 1e-4f)
 		{
-			s.color = cnew / prob;
+			s.color_ = cnew / prob;
 			return true;
 		}
 	}
 	return false;
 }
 
-color_t material_t::getReflectivity(const renderState_t &state, const surfacePoint_t &sp, BSDF_t flags) const
+Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, Bsdf_t flags) const
 {
-	if(!(flags & (BSDF_TRANSMIT | BSDF_REFLECT) & bsdfFlags)) return color_t(0.f);
-	float s1, s2, s3, s4, W = 0.f;
-	color_t total(0.f), col;
-	vector3d_t wi, wo;
+	if(!(flags & (BsdfTransmit | BsdfReflect) & bsdf_flags_)) return Rgb(0.f);
+	float s_1, s_2, s_3, s_4, w = 0.f;
+	Rgb total(0.f), col;
+	Vec3 wi, wo;
 	for(int i = 0; i < 16; ++i)
 	{
-		s1 = 0.03125 + 0.0625 * (float)i; // (1.f/32.f) + (1.f/16.f)*(float)i;
-		s2 = RI_vdC(i);
-		s3 = scrHalton(2, i);
-		s4 = scrHalton(3, i);
-		wo = SampleCosHemisphere(sp.N, sp.NU, sp.NV, s1, s2);
-		sample_t s(s3, s4, flags);
-		col = sample(state, sp, wo, wi, s, W);
-		total += col * W;
+		s_1 = 0.03125 + 0.0625 * (float)i; // (1.f/32.f) + (1.f/16.f)*(float)i;
+		s_2 = riVdC__(i);
+		s_3 = scrHalton__(2, i);
+		s_4 = scrHalton__(3, i);
+		wo = sampleCosHemisphere__(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
+		Sample s(s_3, s_4, flags);
+		col = sample(state, sp, wo, wi, s, w);
+		total += col * w;
 	}
 	return total * 0.0625; //total / 16.f
 }
 
 
-void material_t::applyBump(surfacePoint_t &sp, float dfdNU, float dfdNV) const
+void Material::applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const
 {
-	sp.NU += dfdNU * sp.N;
-	sp.NV += dfdNV * sp.N;
-	sp.N = (sp.NU ^ sp.NV).normalize();
-	sp.NU.normalize();
-	sp.NV = (sp.N ^ sp.NU).normalize();
+	sp.nu_ += df_dnu * sp.n_;
+	sp.nv_ += df_dnv * sp.n_;
+	sp.n_ = (sp.nu_ ^ sp.nv_).normalize();
+	sp.nu_.normalize();
+	sp.nv_ = (sp.n_ ^ sp.nu_).normalize();
 }
 
-__END_YAFRAY
+END_YAFRAY

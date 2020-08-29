@@ -15,6 +15,6 @@ set(YAF_QT_CC animworking.cc events.cc mywindow.cc qtoutput.cc qtprogress.cc ren
 set(YAF_QT_H_MOC animworking.h mywindow.h renderwidget.h worker.h)
 set(YAF_QT_UI windowbase.ui)
 
-add_library(yafarayqt SHARED ${YAF_QT_CC} ${YAF_QT_MOC_CC} ${YAF_QT_UI_H} ${YAF_QT_UI_CC})
-target_link_libraries(yafarayqt Qt5::Core Qt5::Widgets yafaray_v3_core)
-install (TARGETS yafarayqt ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
+add_library(yafaray4_qt SHARED ${YAF_QT_CC} ${YAF_QT_MOC_CC} ${YAF_QT_UI_H} ${YAF_QT_UI_CC})
+target_link_libraries(yafaray4_qt Qt5::Core Qt5::Widgets yafaray4_core)
+install (TARGETS yafaray4_qt ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})

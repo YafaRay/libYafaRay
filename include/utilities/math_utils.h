@@ -1,70 +1,70 @@
 #pragma once
 
-#ifndef Y_MATHUTIL_H
-#define Y_MATHUTIL_H
+#ifndef YAFARAY_MATH_UTILS_H
+#define YAFARAY_MATH_UTILS_H
 
 #include <cmath>
 
 //#if ( defined(__i386__) || defined(_M_IX86) || defined(_X86_) )
 //#define FAST_INT 1
-#define _doublemagicroundeps	      (.5-1.4e-11)
+#define DOUBLEMAGICROUNDEPS	      (.5-1.4e-11)
 //almost .5f = .5f - 1e^(number of exp bit)
-#define _doublemagic			double (6755399441055744.0)
+#define DOUBLEMAGIC			double (6755399441055744.0)
 //2^52 * 1.5,  uses limited precision to floor
 //#endif
 
 
-inline int Round2Int(double val)
+inline int round2Int__(double val)
 {
 #ifdef FAST_INT
-	val		= val + _doublemagic;
+	val		= val + DOUBLEMAGIC;
 	return ((long *)&val)[0];
 #else
 	//	#warning "using slow rounding"
-	return int (val + _doublemagicroundeps);
+	return int (val + DOUBLEMAGICROUNDEPS);
 #endif
 }
 
-inline int Float2Int(double val)
+inline int float2Int__(double val)
 {
 #ifdef FAST_INT
-	return (val < 0) ?  Round2Int(val + _doublemagicroundeps) :
-	       Round2Int(val - _doublemagicroundeps);
+	return (val < 0) ?  round2Int__(val + DOUBLEMAGICROUNDEPS) :
+		   (val - DOUBLEMAGICROUNDEPS);
 #else
 	//	#warning "using slow rounding"
 	return (int)val;
 #endif
 }
 
-inline int Floor2Int(double val)
+inline int floor2Int__(double val)
 {
 #ifdef FAST_INT
-	return Round2Int(val - _doublemagicroundeps);
+	return round2Int__(val - DOUBLEMAGICROUNDEPS);
 #else
 	//	#warning "using slow rounding"
 	return (int)std::floor(val);
 #endif
 }
 
-inline int Ceil2Int(double val)
+inline int ceil2Int__(double val)
 {
 #ifdef FAST_INT
-	return Round2Int(val + _doublemagicroundeps);
+	return round2Int__(val + DOUBLEMAGICROUNDEPS);
 #else
 	//	#warning "using slow rounding"
 	return (int)std::ceil(val);
 #endif
 }
 
-inline double RoundFloatPrecision(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
+inline double roundFloatPrecision__(double val, double precision) //To round, for example 3.2384764 to 3.24 use precision 0.01
 {
 	if(precision <= 0.0) return 0.0;
 	else return std::round(val / precision) * precision;
 }
 
-inline bool isValidFloat(float value)	//To check a float is not a NaN for example, even while using --fast-math compile flag
+inline bool isValidFloat__(float value)	//To check a float is not a NaN for example, even while using --fast-math compile flag
 {
 	return (value >= std::numeric_limits<float>::lowest() && value <= std::numeric_limits<float>::max());
 }
 
-#endif // Y_MATHUTIL_H
+#endif // YAFARAY_MATH_UTILS_H

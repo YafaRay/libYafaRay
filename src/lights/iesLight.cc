@@ -25,231 +25,216 @@
 #include <utilities/iesUtils.h>
 #include <core_api/params.h>
 
+BEGIN_YAFRAY
 
-__BEGIN_YAFRAY
-
-class iesLight_t : public light_t
+class IesLight final : public Light
 {
 	public:
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
 
-		iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled = true, bool bCastShadows = true);
+	private:
+		IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
+		virtual Rgb totalEnergy() const override{ return color_ * tot_energy_;};
+		virtual int nSamples() const override { return samples_; };
+		virtual bool diracLight() const override { return !soft_shadow_; }
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		virtual bool canIntersect() const override;
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		bool isIesOk() { return ies_ok_; };
+		void getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const;
 
-		virtual color_t totalEnergy() const { return color * totEnergy;};
-		virtual int nSamples() const { return samples; };
-		virtual bool diracLight() const { return !softShadow; }
-
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
-
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool canIntersect() const;
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
-
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
-
-		bool isIESOk() { return IESOk; };
-
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
-
-
-	protected:
-
-		void getAngles(float &u, float &v, const vector3d_t &dir, const float &costheta) const;
-
-		point3d_t position;
-		vector3d_t dir; //!< orientation of the spot cone
-		vector3d_t ndir; //!< negative orientation (-dir)
-		vector3d_t du, dv; //!< form a coordinate system with dir, to sample directions
-		float cosEnd; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
-		color_t color; //<! color, premulitplied by light intensity
-
-		int samples;
-		bool softShadow;
-
-		float totEnergy;
-
-		IESData_t *iesData;
-
-		bool IESOk;
+		Point3 position_;
+		Vec3 dir_; //!< orientation of the spot cone
+		Vec3 ndir_; //!< negative orientation (-dir)
+		Vec3 du_, dv_; //!< form a coordinate system with dir, to sample directions
+		float cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
+		Rgb color_; //<! color, premulitplied by light intensity
+		int samples_;
+		bool soft_shadow_;
+		float tot_energy_;
+		IesData *ies_data_ = nullptr;
+		bool ies_ok_;
 };
 
-iesLight_t::iesLight_t(const point3d_t &from, const point3d_t &to, const color_t &col, float power, const std::string iesFile, int smpls, bool sSha, float ang, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_SINGULAR), position(from), samples(smpls), softShadow(sSha)
+IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
+		Light(LightSingular), position_(from), samples_(smpls), soft_shadow_(s_sha)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	iesData = new IESData_t();
+	light_enabled_ = b_light_enabled;
+	cast_shadows_ = b_cast_shadows;
+	ies_data_ = new IesData();
 
-	if((IESOk = iesData->parseIESFile(iesFile)))
+	if((ies_ok_ = ies_data_->parseIesFile(ies_file)))
 	{
-		ndir = (from - to);
-		ndir.normalize();
-		dir = -ndir;
+		ndir_ = (from - to);
+		ndir_.normalize();
+		dir_ = -ndir_;
 
-		createCS(dir, du, dv);
-		cosEnd = fCos(iesData->getMaxVAngle());
+		createCs__(dir_, du_, dv_);
+		cos_end_ = fCos__(ies_data_->getMaxVAngle());
 
-		color = col * power;
-		totEnergy = M_2PI * (1.f - 0.5f * cosEnd);
+		color_ = col * power;
+		tot_energy_ = M_2PI * (1.f - 0.5f * cos_end_);
 	}
 }
 
-void iesLight_t::getAngles(float &u, float &v, const vector3d_t &dir, const float &costheta) const
+void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const
 {
-	u = (dir.z >= 1.f) ? 0.f : radToDeg(fAcos(dir.z));
+	u = (dir.z_ >= 1.f) ? 0.f : RAD_TO_DEG(fAcos__(dir.z_));
 
-	if(dir.y < 0)
+	if(dir.y_ < 0)
 	{
 		u = 360.f - u;
 	}
 
-	v = (costheta >= 1.f) ? 0.f : radToDeg(fAcos(costheta));
+	v = (costheta >= 1.f) ? 0.f : RAD_TO_DEG(fAcos__(costheta));
 }
 
-bool iesLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
+bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t ldir(position - sp.P);
-	float distSqrt = ldir.lengthSqr();
-	float dist = fSqrt(distSqrt);
-	float iDistSqrt = 1.f / distSqrt;
+	Vec3 ldir(position_ - sp.p_);
+	float dist_sqrt = ldir.lengthSqr();
+	float dist = fSqrt__(dist_sqrt);
+	float i_dist_sqrt = 1.f / dist_sqrt;
 
 	if(dist == 0.0) return false;
 
 	ldir *= 1.f / dist; //normalize
 
-	float cosa = ndir * ldir;
-	if(cosa < cosEnd) return false;
+	float cosa = ndir_ * ldir;
+	if(cosa < cos_end_) return false;
 
 	float u, v;
 
 	getAngles(u, v, ldir, cosa);
 
-	col = color * iesData->getRadiance(u, v) * iDistSqrt;
+	col = color_ * ies_data_->getRadiance(u, v) * i_dist_sqrt;
 
-	wi.tmax = dist;
-	wi.dir = ldir;
+	wi.tmax_ = dist;
+	wi.dir_ = ldir;
 
 	return true;
 }
 
-bool iesLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t ldir(position - sp.P);
-	float distSqrt = ldir.lengthSqr();
-	float dist = fSqrt(distSqrt);
-	float iDistSqrt = 1.f / distSqrt;
+	Vec3 ldir(position_ - sp.p_);
+	float dist_sqrt = ldir.lengthSqr();
+	float dist = fSqrt__(dist_sqrt);
+	float i_dist_sqrt = 1.f / dist_sqrt;
 
 	if(dist == 0.0) return false;
 
 	ldir *= 1.f / dist; //normalize
 
-	float cosa = ndir * ldir;
-	if(cosa < cosEnd) return false;
+	float cosa = ndir_ * ldir;
+	if(cosa < cos_end_) return false;
 
-	wi.tmax = dist;
-	wi.dir = sampleCone(ldir, du, dv, cosa, s.s1, s.s2);
+	wi.tmax_ = dist;
+	wi.dir_ = sampleCone__(ldir, du_, dv_, cosa, s.s_1_, s.s_2_);
 
 	float u, v;
-	getAngles(u, v, wi.dir, cosa);
+	getAngles(u, v, wi.dir_, cosa);
 
-	float rad = iesData->getRadiance(u, v);
+	float rad = ies_data_->getRadiance(u, v);
 
 	if(rad == 0.f) return false;
 
-	s.col = color * iDistSqrt;
-	s.pdf = 1.f / rad;
+	s.col_ = color_ * i_dist_sqrt;
+	s.pdf_ = 1.f / rad;
 
 	return true;
 }
 
-bool iesLight_t::canIntersect() const
+bool IesLight::canIntersect() const
 {
 	return false;
 }
 
-bool iesLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool IesLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
 	return false;
 }
 
-color_t iesLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	ray.from = position;
-	ray.dir = sampleCone(dir, du, dv, cosEnd, s1, s2);
+	ray.from_ = position_;
+	ray.dir_ = sampleCone__(dir_, du_, dv_, cos_end_, s_1, s_2);
 
 	ipdf = 0.f;
 
-	float cosa = ray.dir * dir;
+	float cosa = ray.dir_ * dir_;
 
-	if(cosa < cosEnd) return color_t(0.f);
+	if(cosa < cos_end_) return Rgb(0.f);
 
 	float u, v;
-	getAngles(u, v, ray.dir, cosa);
+	getAngles(u, v, ray.dir_, cosa);
 
-	float rad = iesData->getRadiance(u, v);
+	float rad = ies_data_->getRadiance(u, v);
 
 	ipdf = rad;
 
-	return color;
+	return color_;
 }
 
-color_t iesLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb IesLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.sp->P = position;
-	s.flags = flags;
+	s.sp_->p_ = position_;
+	s.flags_ = flags_;
 
-	wo = sampleCone(dir, du, dv, cosEnd, s.s3, s.s4);
+	wo = sampleCone__(dir_, du_, dv_, cos_end_, s.s_3_, s.s_4_);
 
 	float u, v;
-	getAngles(u, v, wo, wo * dir);
+	getAngles(u, v, wo, wo * dir_);
 
-	float rad = iesData->getRadiance(u, v);
+	float rad = ies_data_->getRadiance(u, v);
 
-	s.dirPdf = (rad > 0.f) ? (totEnergy / rad) : 0.f;
-	s.areaPdf = 1.f;
+	s.dir_pdf_ = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
+	s.area_pdf_ = 1.f;
 
-	return color * rad * totEnergy;
+	return color_ * rad * tot_energy_;
 }
 
-void iesLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
+void IesLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
 	cos_wo = 1.f;
-	areaPdf = 1.f;
-	dirPdf = 0.f;
+	area_pdf = 1.f;
+	dir_pdf = 0.f;
 
-	float cosa = dir * wo;
+	float cosa = dir_ * wo;
 
-	if(cosa < cosEnd) return;
+	if(cosa < cos_end_) return;
 
 	float u, v;
 	getAngles(u, v, wo, cosa);
 
-	float rad = iesData->getRadiance(u, v);
+	float rad = ies_data_->getRadiance(u, v);
 
-	dirPdf = (rad > 0.f) ? (totEnergy / rad) : 0.f;
+	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 
-light_t *iesLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *IesLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0.0);
-	point3d_t to(0.f, 0.f, -1.f);
-	color_t color(1.0);
+	Point3 from(0.0);
+	Point3 to(0.f, 0.f, -1.f);
+	Rgb color(1.0);
 	float power = 1.0;
 	std::string file;
 	int sam = 16; //wild goose... sorry guess :D
-	bool sSha = false;
+	bool s_sha = false;
 	float ang = 180.f; //full hemi
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
-	bool pOnly = false;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool p_only = false;
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -257,25 +242,25 @@ light_t *iesLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("power", power);
 	params.getParam("file", file);
 	params.getParam("samples", sam);
-	params.getParam("soft_shadows", sSha);
+	params.getParam("soft_shadows", s_sha);
 	params.getParam("cone_angle", ang);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
 
-	iesLight_t *light = new iesLight_t(from, to, color, power, file, sam, sSha, ang, lightEnabled, castShadows);
+	IesLight *light = new IesLight(from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows);
 
-	if(!light->isIESOk())
+	if(!light->isIesOk())
 	{
 		delete light;
 		return nullptr;
 	}
 
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
@@ -283,10 +268,10 @@ light_t *iesLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("ieslight", iesLight_t::factory);
+		render.registerFactory("ieslight", IesLight::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

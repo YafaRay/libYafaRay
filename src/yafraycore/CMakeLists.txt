@@ -11,14 +11,14 @@ set(YF_CORE_SOURCES bound.cc dynamic_library.cc file.cc environment.cc console.c
 
 add_definitions(-DBUILDING_YAFRAYCORE)
 
-add_library(yafaray_v3_core SHARED ${YF_CORE_SOURCES})
+add_library(yafaray4_core SHARED ${YF_CORE_SOURCES})
 
 set (DLLOAD_LIB ${CMAKE_DL_LIBS})
 
 if(APPLE) # set rpath - Jens
-	add_custom_command(TARGET yafaray_v3_core POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray_v3_core.dylib)
+	add_custom_command(TARGET yafaray4_core POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray4_core.dylib)
 endif(APPLE)
 
-target_link_libraries(yafaray_v3_core ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(yafaray4_core ${DLLOAD_LIB} ${OPENEXR_LIBRARIES} ${LIBXML2_LIBRARIES} ${FREETYPE_LIBRARIES} ${OpenCV_LIBRARIES})
 
-install (TARGETS yafaray_v3_core ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})
+install (TARGETS yafaray4_core ${YAF_TARGET_TYPE} DESTINATION ${YAF_LIB_DIR})

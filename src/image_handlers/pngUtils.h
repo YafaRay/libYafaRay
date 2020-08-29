@@ -20,56 +20,56 @@
  *
  */
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-#define inv8  0.00392156862745098039 // 1 / 255
-#define inv16 0.00001525902189669642 // 1 / 65535
+#define INV_8  0.00392156862745098039 // 1 / 255
+#define INV_16 0.00001525902189669642 // 1 / 65535
 
-class pngDataReader_t
+class PngDataReader
 {
 	public:
 
-		pngDataReader_t(const yByte *d, size_t s): size(s), cursor(0)
+		PngDataReader(const YByte_t *d, size_t s): size_(s), cursor_(0)
 		{
-			data = new yByte[size];
-			for(size_t i = 0; i < size; i++)
+			data_ = new YByte_t[size_];
+			for(size_t i = 0; i < size_; i++)
 			{
-				data[i] = d[i];
+				data_[i] = d[i];
 			}
 		}
 
-		~pngDataReader_t()
+		~PngDataReader()
 		{
-			delete [] data;
-			data = nullptr;
+			delete [] data_;
+			data_ = nullptr;
 		}
 
-		size_t read(yByte *buf, size_t s)
+		size_t read(YByte_t *buf, size_t s)
 		{
-			if(cursor > size) return 0;
+			if(cursor_ > size_) return 0;
 			size_t i;
 
-			for(i = 0; i < s && cursor < size; cursor++, i++)
+			for(i = 0; i < s && cursor_ < size_; cursor_++, i++)
 			{
-				buf[i] = data[cursor];
+				buf[i] = data_[cursor_];
 			}
 
 			return i;
 		}
 
 	private:
-		yByte *data;
-		size_t size;
-		size_t cursor;
+		YByte_t *data_;
+		size_t size_;
+		size_t cursor_;
 };
 
-void readFromMem(png_structp pngPtr, png_bytep buffer, png_size_t bytesToRead)
+void readFromMem__(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read)
 {
-	pngDataReader_t *img = (pngDataReader_t *) png_get_io_ptr(pngPtr);
+	PngDataReader *img = (PngDataReader *) png_get_io_ptr(png_ptr);
 
-	if(img == nullptr) png_error(pngPtr, "The image data pointer is null!!");
+	if(img == nullptr) png_error(png_ptr, "The image data pointer is null!!");
 
-	if(img->read((yByte *)buffer, (size_t)bytesToRead) < bytesToRead) png_warning(pngPtr, "EOF Found while reading image data");
+	if(img->read((YByte_t *)buffer, (size_t)bytes_to_read) < bytes_to_read) png_warning(png_ptr, "EOF Found while reading image data");
 }
 
-__END_YAFRAY
+END_YAFRAY

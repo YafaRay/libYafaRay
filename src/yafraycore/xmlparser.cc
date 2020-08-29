@@ -33,144 +33,144 @@
 #include <cstring>
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #if HAVE_XML
 
-void xmlParser_t::setLastElementName(const char *element_name)
+void XmlParser::setLastElementName(const char *element_name)
 {
-	if(element_name) current->last_element = std::string(element_name);
-	else current->last_element.clear();
+	if(element_name) current_->last_element_ = std::string(element_name);
+	else current_->last_element_.clear();
 }
 
-void xmlParser_t::setLastElementNameAttrs(const char **element_attrs)
+void XmlParser::setLastElementNameAttrs(const char **element_attrs)
 {
-	current->last_element_attrs.clear();
+	current_->last_element_attrs_.clear();
 	if(element_attrs)
 	{
 		for(int n = 0; element_attrs[n]; ++n)
 		{
-			if(n > 0) current->last_element_attrs += " ";
-			current->last_element_attrs += (std::string(element_attrs[n]));
+			if(n > 0) current_->last_element_attrs_ += " ";
+			current_->last_element_attrs_ += (std::string(element_attrs[n]));
 		}
 	}
 }
 
-void startDocument(void *user_data)
+void startDocument__(void *user_data)
 {
 	//Empty
 }
 
-void endDocument(void *user_data)
+void endDocument__(void *user_data)
 {
 	//Empty
 }
 
-void startElement(void *user_data, const xmlChar *name, const xmlChar **attrs)
+void startElement__(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
-	xmlParser_t &parser = *((xmlParser_t *)user_data);
+	XmlParser &parser = *((XmlParser *)user_data);
 	parser.startElement((const char *)name, (const char **)attrs);
 }
 
-void endElement(void *user_data, const xmlChar *name)
+void endElement__(void *user_data, const xmlChar *name)
 {
-	xmlParser_t &parser = *((xmlParser_t *)user_data);
+	XmlParser &parser = *((XmlParser *)user_data);
 	parser.endElement((const char *)name);
 }
 
-static void my_warning(void *user_data, const char *msg, ...)
+static void myWarning__(void *user_data, const char *msg, ...)
 {
-	xmlParser_t &parser = *((xmlParser_t *)user_data);
+	XmlParser &parser = *((XmlParser *)user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
 	char message_buffer[message_size];
 	vsnprintf(message_buffer, message_size, msg, args);
 	Y_WARNING << "XMLParser warning: " << message_buffer;
-	Y_WARNING << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-	Y_WARNING << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	Y_WARNING << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << YENDL;
+	Y_WARNING << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << YENDL;
 	va_end(args);
 }
 
-static void my_error(void *user_data, const char *msg, ...)
+static void myError__(void *user_data, const char *msg, ...)
 {
-	xmlParser_t &parser = *((xmlParser_t *)user_data);
+	XmlParser &parser = *((XmlParser *)user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
 	char message_buffer[message_size];
 	vsnprintf(message_buffer, message_size, msg, args);
 	Y_ERROR << "XMLParser error: " << message_buffer;
-	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << YENDL;
+	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << YENDL;
 	va_end(args);
 }
 
-static void my_fatalError(void *user_data, const char *msg, ...)
+static void myFatalError__(void *user_data, const char *msg, ...)
 {
-	xmlParser_t &parser = *((xmlParser_t *)user_data);
+	XmlParser &parser = *((XmlParser *)user_data);
 	va_list args;
 	va_start(args, msg);
 	const size_t message_size = 1000;
 	char message_buffer[message_size];
 	vsnprintf(message_buffer, message_size, msg, args);
 	Y_ERROR << "XMLParser fatal error: " << message_buffer;
-	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << yendl;
-	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << yendl;
+	Y_ERROR << " in section '" << parser.getLastSection() << ", level " << parser.currLevel() << YENDL;
+	Y_ERROR << " an element previous to the error: '" << parser.getLastElementName() << "', attrs: { " << parser.getLastElementNameAttrs() << " }" << YENDL;
 	va_end(args);
 }
 
-static xmlSAXHandler my_handler =
+static xmlSAXHandler my_handler__ =
 {
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr,
+		startDocument__, //  startDocumentSAXFunc startDocument;
+	endDocument__, //  endDocumentSAXFunc endDocument;
+	startElement__, //  startElementSAXFunc startElement;
+	endElement__, //  endElementSAXFunc endElement;
 	nullptr,
+		nullptr, //  charactersSAXFunc characters;
 	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	nullptr,
-	startDocument, //  startDocumentSAXFunc startDocument;
-	endDocument, //  endDocumentSAXFunc endDocument;
-	startElement, //  startElementSAXFunc startElement;
-	endElement, //  endElementSAXFunc endElement;
-	nullptr,
-	nullptr, //  charactersSAXFunc characters;
-	nullptr,
-	nullptr,
-	nullptr,
-	my_warning,
-	my_error,
-	my_fatalError
+		nullptr,
+		nullptr,
+		myWarning__,
+		myError__,
+		myFatalError__
 };
 #endif // HAVE_XML
 
-bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *env, paraMap_t &render, std::string color_space_string, float input_gamma)
+bool parseXmlFile__(const char *filename, Scene *scene, RenderEnvironment *env, ParamMap &render, std::string color_space_string, float input_gamma)
 {
 #if HAVE_XML
 
-	colorSpaces_t input_color_space = RAW_MANUAL_GAMMA;
+	ColorSpace input_color_space = RawManualGamma;
 
-	if(color_space_string == "sRGB") input_color_space = SRGB;
-	else if(color_space_string == "XYZ") input_color_space = XYZ_D65;
-	else if(color_space_string == "LinearRGB") input_color_space = LINEAR_RGB;
+	if(color_space_string == "sRGB") input_color_space = Srgb;
+	else if(color_space_string == "XYZ") input_color_space = XyzD65;
+	else if(color_space_string == "LinearRGB") input_color_space = LinearRgb;
 	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
-	else input_color_space = SRGB;
+	else input_color_space = Srgb;
 
-	xmlParser_t parser(env, scene, render, input_color_space, input_gamma);
+	XmlParser parser(env, scene, render, input_color_space, input_gamma);
 
-	if(xmlSAXUserParseFile(&my_handler, &parser, filename) < 0)
+	if(xmlSAXUserParseFile(&my_handler__, &parser, filename) < 0)
 	{
-		Y_ERROR << "XMLParser: Parsing the file " << filename << yendl;
+		Y_ERROR << "XMLParser: Parsing the file " << filename << YENDL;
 		return false;
 	}
 	return true;
 #else
-	Y_WARNING << "XMLParser: yafray was compiled without XML support, cannot parse file." << yendl;
+	Y_WARNING << "XMLParser: yafray was compiled without XML support, cannot parse file." << YENDL;
 	return false;
 #endif
 }
@@ -180,38 +180,38 @@ bool parse_xml_file(const char *filename, scene_t *scene, renderEnvironment_t *e
 / parser functions
 =============================================================*/
 
-xmlParser_t::xmlParser_t(renderEnvironment_t *renv, scene_t *sc, paraMap_t &r, colorSpaces_t input_color_space, float input_gamma):
-	env(renv), scene(sc), render(r), current(0), level(0), inputGamma(input_gamma), inputColorSpace(input_color_space)
+XmlParser::XmlParser(RenderEnvironment *renv, Scene *sc, ParamMap &r, ColorSpace input_color_space, float input_gamma):
+		env_(renv), scene_(sc), render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
 {
-	cparams = &params;
-	pushState(startEl_document, endEl_document);
+	cparams_ = &params_;
+	pushState(startElDocument__, endElDocument__);
 }
 
-void xmlParser_t::pushState(startElement_cb start, endElement_cb end, void *userdata)
+void XmlParser::pushState(StartElementCb_t start, EndElementCb_t end, void *userdata)
 {
-	parserState_t state;
-	state.start = start;
-	state.end = end;
-	state.userdata = userdata;
-	state.level = level;
-	state_stack.push_back(state);
-	current = &state_stack.back();
+	ParserStateT state;
+	state.start_ = start;
+	state.end_ = end;
+	state.userdata_ = userdata;
+	state.level_ = level_;
+	state_stack_.push_back(state);
+	current_ = &state_stack_.back();
 }
 
-void xmlParser_t::popState()
+void XmlParser::popState()
 {
-	state_stack.pop_back();
-	if(!state_stack.empty()) current = &state_stack.back();
-	else current = nullptr;
+	state_stack_.pop_back();
+	if(!state_stack_.empty()) current_ = &state_stack_.back();
+	else current_ = nullptr;
 }
 
 /*=============================================================
 / utility functions...
 =============================================================*/
 
-inline bool str2bool(const char *s) { return strcmp(s, "true") ? false : true; }
+inline bool str2Bool__(const char *s) { return strcmp(s, "true") ? false : true; }
 
-static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
+static bool parsePoint__(const char **attrs, Point3 &p, Point3 &op)
 {
 	for(; attrs && attrs[0]; attrs += 2)
 	{
@@ -219,101 +219,101 @@ static bool parsePoint(const char **attrs, point3d_t &p, point3d_t &op)
 		{
 			if(attrs[0][1] == 0 || attrs[0][2] != 0)
 			{
-				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (1)" << yendl;
+				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (1)" << YENDL;
 				continue; //it is not a single character
 			}
 			switch(attrs[0][1])
 			{
-				case 'x' : op.x = atof(attrs[1]); break;
-				case 'y' : op.y = atof(attrs[1]); break;
-				case 'z' : op.z = atof(attrs[1]); break;
-				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (2)" << yendl;
+				case 'x' : op.x_ = atof(attrs[1]); break;
+				case 'y' : op.y_ = atof(attrs[1]); break;
+				case 'z' : op.z_ = atof(attrs[1]); break;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (2)" << YENDL;
 			}
 			continue;
 		}
 		else if(attrs[0][1] != 0)
 		{
-			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << yendl;
+			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << YENDL;
 			continue; //it is not a single character
 		}
 		switch(attrs[0][0])
 		{
-			case 'x' : p.x = atof(attrs[1]); break;
-			case 'y' : p.y = atof(attrs[1]); break;
-			case 'z' : p.z = atof(attrs[1]); break;
-			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << yendl;
+			case 'x' : p.x_ = atof(attrs[1]); break;
+			case 'y' : p.y_ = atof(attrs[1]); break;
+			case 'z' : p.z_ = atof(attrs[1]); break;
+			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << YENDL;
 		}
 	}
 
 	return true;
 }
 
-static bool parseNormal(const char **attrs, normal_t &n)
+static bool parseNormal__(const char **attrs, Normal &n)
 {
-	int compoRead = 0;
+	int compo_read = 0;
 	for(; attrs && attrs[0]; attrs += 2)
 	{
 		if(attrs[0][1] != 0)
 		{
-			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal" << yendl;
+			Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal" << YENDL;
 			continue; //it is not a single character
 		}
 		switch(attrs[0][0])
 		{
-			case 'x' : n.x = atof(attrs[1]); compoRead++; break;
-			case 'y' : n.y = atof(attrs[1]); compoRead++; break;
-			case 'z' : n.z = atof(attrs[1]); compoRead++; break;
-			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal." << yendl;
+			case 'x' : n.x_ = atof(attrs[1]); compo_read++; break;
+			case 'y' : n.y_ = atof(attrs[1]); compo_read++; break;
+			case 'z' : n.z_ = atof(attrs[1]); compo_read++; break;
+			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal." << YENDL;
 		}
 	}
 
-	return (compoRead == 3);
+	return (compo_read == 3);
 }
 
-void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
+void parseParam__(const char **attrs, Parameter &param, XmlParser &parser)
 {
 	if(!attrs[0]) return;
 	if(!attrs[2]) // only one attribute => bool, integer or float value
 	{
 		std::string name(attrs[0]);
-		if(name == "ival") { int i = atoi(attrs[1]); param = parameter_t(i); return; }
-		else if(name == "fval") { double f = atof(attrs[1]); param = parameter_t(f); return; }
-		else if(name == "bval") { bool b = str2bool(attrs[1]); param = parameter_t(b); return; }
-		else if(name == "sval") { param = parameter_t(std::string(attrs[1])); return; }
+		if(name == "ival") { int i = atoi(attrs[1]); param = Parameter(i); return; }
+		else if(name == "fval") { double f = atof(attrs[1]); param = Parameter(f); return; }
+		else if(name == "bval") { bool b = str2Bool__(attrs[1]); param = Parameter(b); return; }
+		else if(name == "sval") { param = Parameter(std::string(attrs[1])); return; }
 	}
-	colorA_t c(0.f); point3d_t p(0, 0, 0); matrix4x4_t m;
-	parameter_t::Type type = parameter_t::None;
+	Rgba c(0.f); Point3 p(0, 0, 0); Matrix4 m;
+	Parameter::Type type = Parameter::None;
 	for(int n = 0; attrs[n]; ++n)
 	{
 		if(attrs[n][1] == '\0')
 		{
 			switch(attrs[n][0])
 			{
-				case 'x': p.x = atof(attrs[n + 1]); type = parameter_t::Point; break;
-				case 'y': p.y = atof(attrs[n + 1]); type = parameter_t::Point; break;
-				case 'z': p.z = atof(attrs[n + 1]); type = parameter_t::Point; break;
+				case 'x': p.x_ = atof(attrs[n + 1]); type = Parameter::Point; break;
+				case 'y': p.y_ = atof(attrs[n + 1]); type = Parameter::Point; break;
+				case 'z': p.z_ = atof(attrs[n + 1]); type = Parameter::Point; break;
 
-				case 'r': c.R = (float)atof(attrs[n + 1]); type = parameter_t::Color; break;
-				case 'g': c.G = (float)atof(attrs[n + 1]); type = parameter_t::Color; break;
-				case 'b': c.B = (float)atof(attrs[n + 1]); type = parameter_t::Color; break;
-				case 'a': c.A = (float)atof(attrs[n + 1]); type = parameter_t::Color; break;
+				case 'r': c.r_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'g': c.g_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'b': c.b_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'a': c.a_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
 			}
 		}
 		else if(attrs[n][3] == '\0' && attrs[n][0] == 'm' && attrs[n][1] >= '0' && attrs[n][1] <= '3' && attrs[n][2] >= '0' && attrs[n][2] <= '3') //"mij" where i and j are between 0 and 3 (inclusive)
 		{
-			type = parameter_t::Matrix;
+			type = Parameter::Matrix;
 			const int i = attrs[n][1] - '0';
 			const int j = attrs[n][2] - '0';
 			m[i][j] = atof(attrs[n + 1]);
 		}
 	}
 
-	if(type == parameter_t::Point) param = parameter_t(p);
-	else if(type == parameter_t::Matrix) param = parameter_t(m);
-	else if(type == parameter_t::Color)
+	if(type == Parameter::Point) param = Parameter(p);
+	else if(type == Parameter::Matrix) param = Parameter(m);
+	else if(type == Parameter::Color)
 	{
-		c.linearRGB_from_ColorSpace(parser.getInputColorSpace(), parser.getInputGamma());
-		param = parameter_t(c);
+		c.linearRgbFromColorSpace(parser.getInputColorSpace(), parser.getInputGamma());
+		param = Parameter(c);
 	}
 }
 
@@ -321,19 +321,19 @@ void parseParam(const char **attrs, parameter_t &param, xmlParser_t &parser)
 / start- and endElement callbacks for the different states
 =============================================================*/
 
-void endEl_dummy(xmlParser_t &parser, const char *element)
+void endElDummy__(XmlParser &parser, const char *element)
 {	parser.popState();	}
 
-void startEl_dummy(xmlParser_t &parser, const char *element, const char **attrs)
-{	parser.pushState(startEl_dummy, endEl_dummy);	}
+void startElDummy__(XmlParser &parser, const char *element, const char **attrs)
+{ parser.pushState(startElDummy__, endElDummy__);	}
 
-void startEl_document(xmlParser_t &parser, const char *element, const char **attrs)
+void startElDocument__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Document");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: skipping <" << element << ">" << yendl;   /* parser.error("Expected scene definition"); */
+	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: skipping <" << element << ">" << YENDL;   /* parser.error("Expected scene definition"); */
 	else
 	{
 		for(; attrs && attrs[0]; attrs += 2)
@@ -341,41 +341,41 @@ void startEl_document(xmlParser_t &parser, const char *element, const char **att
 			if(!strcmp(attrs[0], "type"))
 			{
 				std::string val(attrs[1]);
-				if(val == "triangle")  parser.scene->setMode(0);
-				else if(val == "universal") parser.scene->setMode(1);
+				if(val == "triangle")  parser.scene_->setMode(0);
+				else if(val == "universal") parser.scene_->setMode(1);
 			}
 		}
-		parser.pushState(startEl_scene, endEl_scene);
+		parser.pushState(startElScene__, endElScene__);
 	}
 }
 
-void endEl_document(xmlParser_t &parser, const char *element)
+void endElDocument__(XmlParser &parser, const char *element)
 {
-	Y_VERBOSE << "XMLParser: Finished document" << yendl;
+	Y_VERBOSE << "XMLParser: Finished document" << YENDL;
 }
 
-struct mesh_dat_t
+struct MeshDat
 {
-	mesh_dat_t(): has_orco(false), has_uv(false), smooth(false), smooth_angle(0), ID(0), mat(0) {};
-	bool has_orco, has_uv;
-	bool smooth;
-	float smooth_angle;
-	objID_t ID;
-	const material_t *mat;
+	MeshDat(): has_orco_(false), has_uv_(false), smooth_(false), smooth_angle_(0), id_(0), mat_(0) {};
+	bool has_orco_, has_uv_;
+	bool smooth_;
+	float smooth_angle_;
+	ObjId_t id_;
+	const Material *mat_;
 };
 
-struct curve_dat_t
+struct CurveDat
 {
-	curve_dat_t(): ID(0), mat(nullptr), strandStart(0), strandEnd(0), strandShape(0) {};
-	objID_t ID;
-	const material_t *mat;
-	float strandStart, strandEnd, strandShape;
+	CurveDat(): id_(0), mat_(nullptr), strand_start_(0), strand_end_(0), strand_shape_(0) {};
+	ObjId_t id_;
+	const Material *mat_;
+	float strand_start_, strand_end_, strand_shape_;
 };
 
 // scene-state, i.e. expect only primary elements
 // such as light, material, texture, object, integrator, render...
 
-void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
+void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Scene");
 	parser.setLastElementName(element);
@@ -387,80 +387,80 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 	{
 		if(!attrs[0])
 		{
-			Y_ERROR << "XMLParser: No attributes for scene element given!" << yendl;
+			Y_ERROR << "XMLParser: No attributes for scene element given!" << YENDL;
 			return;
 		}
 		else if(!strcmp(attrs[0], "name")) name = new std::string(attrs[1]);
 		else
 		{
-			Y_ERROR << "XMLParser: Attribute for scene element does not match 'name'!" << yendl;
+			Y_ERROR << "XMLParser: Attribute for scene element does not match 'name'!" << YENDL;
 			return;
 		}
-		parser.pushState(startEl_parammap, endEl_parammap, name);
+		parser.pushState(startElParammap__, endElParammap__, name);
 	}
 	else if(el == "mesh")
 	{
-		mesh_dat_t *md = new mesh_dat_t();
+		MeshDat *md = new MeshDat();
 		int vertices = 0, triangles = 0, type = 0, id = -1, obj_pass_index = 0;
 		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
-			if(name == "has_orco") md->has_orco = str2bool(attrs[n + 1]);
-			else if(name == "has_uv") md->has_uv = str2bool(attrs[n + 1]);
+			if(name == "has_orco") md->has_orco_ = str2Bool__(attrs[n + 1]);
+			else if(name == "has_uv") md->has_uv_ = str2Bool__(attrs[n + 1]);
 			else if(name == "vertices") vertices = atoi(attrs[n + 1]);
 			else if(name == "faces") triangles = atoi(attrs[n + 1]);
 			else if(name == "type")	type = atoi(attrs[n + 1]);
 			else if(name == "id") id = atoi(attrs[n + 1]);
 			else if(name == "obj_pass_index") obj_pass_index = atoi(attrs[n + 1]);
 		}
-		parser.pushState(startEl_mesh, endEl_mesh, md);
-		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
+		parser.pushState(startElMesh__, endElMesh__, md);
+		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
 
 		// Get a new object ID if we did not get one
-		if(id == -1) md->ID = parser.scene->getNextFreeID();
-		else md->ID = id;
+		if(id == -1) md->id_ = parser.scene_->getNextFreeId();
+		else md->id_ = id;
 
-		if(!parser.scene->startTriMesh(md->ID, vertices, triangles, md->has_orco, md->has_uv, type, obj_pass_index))
+		if(!parser.scene_->startTriMesh(md->id_, vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
 		{
-			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << yendl;
+			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << YENDL;
 		}
 	}
 	else if(el == "smooth")
 	{
-		unsigned int ID = 0;
+		unsigned int id = 0;
 		float angle = 181;
 		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string name(attrs[n]);
-			if(name == "ID") ID = atoi(attrs[n + 1]);
+			if(name == "ID") id = atoi(attrs[n + 1]);
 			else if(name == "angle") angle = atof(attrs[n + 1]);
 		}
 		//not optimal to take ID blind...
-		parser.scene->startGeometry();
-		bool success = parser.scene->smoothMesh(ID, angle);
-		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh ID = " << ID << ", angle = " << angle << yendl;
-		parser.scene->endGeometry();
-		parser.pushState(startEl_dummy, endEl_dummy);
+		parser.scene_->startGeometry();
+		bool success = parser.scene_->smoothMesh(id, angle);
+		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh ID = " << id << ", angle = " << angle << YENDL;
+		parser.scene_->endGeometry();
+		parser.pushState(startElDummy__, endElDummy__);
 	}
 	else if(el == "render")
 	{
-		parser.cparams = &parser.render;
-		parser.pushState(startEl_parammap, endEl_render);
+		parser.cparams_ = &parser.render_;
+		parser.pushState(startElParammap__, endElRender__);
 	}
 	else if(el == "instance")
 	{
-		objID_t *base_object_id = new objID_t();
+		ObjId_t *base_object_id = new ObjId_t();
 		*base_object_id = -1;
 		for(int n = 0; attrs[n]; n++)
 		{
 			std::string name(attrs[n]);
 			if(name == "base_object_id") *base_object_id = atoi(attrs[n + 1]);
 		}
-		parser.pushState(startEl_instance, endEl_instance, base_object_id);
+		parser.pushState(startElInstance__, endElInstance__, base_object_id);
 	}
 	else if(el == "curve")
 	{
-		curve_dat_t *cvd = new curve_dat_t();
+		CurveDat *cvd = new CurveDat();
 		int vertex = 0, idc = -1;
 		// attribute's loop
 		for(int n = 0; attrs[n]; ++n)
@@ -469,76 +469,76 @@ void startEl_scene(xmlParser_t &parser, const char *element, const char **attrs)
 			if(name == "vertices") vertex = atoi(attrs[n + 1]);
 			else if(name == "id") idc = atoi(attrs[n + 1]);
 		}
-		parser.pushState(startEl_curve, endEl_curve, cvd);
-		if(!parser.scene->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << yendl;
+		parser.pushState(startElCurve__, endElCurve__, cvd);
+		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
 
 		// Get a new object ID if we did not get one
-		if(idc == -1) cvd->ID = parser.scene->getNextFreeID();
-		else cvd->ID = idc;
+		if(idc == -1) cvd->id_ = parser.scene_->getNextFreeId();
+		else cvd->id_ = idc;
 
-		if(!parser.scene->startCurveMesh(cvd->ID, vertex))
+		if(!parser.scene_->startCurveMesh(cvd->id_, vertex))
 		{
-			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << yendl;
+			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << YENDL;
 		}
 	}
-	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << yendl;
+	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << YENDL;
 }
 
-void endEl_scene(xmlParser_t &parser, const char *element)
+void endElScene__(XmlParser &parser, const char *element)
 {
-	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: : expected </scene> tag!" << yendl;
+	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: : expected </scene> tag!" << YENDL;
 	else
 	{
 		parser.popState();
 	}
 }
-void startEl_curve(xmlParser_t &parser, const char *element, const char **attrs)
+void startElCurve__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Curve");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element);
-	curve_dat_t *dat = (curve_dat_t *)parser.stateData();
+	CurveDat *dat = (CurveDat *)parser.stateData();
 
 	if(el == "p")
 	{
-		point3d_t p, op;
-		if(!parsePoint(attrs, p, op)) return;
-		parser.scene->addVertex(p);
+		Point3 p, op;
+		if(!parsePoint__(attrs, p, op)) return;
+		parser.scene_->addVertex(p);
 	}
 	else if(el == "strand_start")
 	{
-		dat->strandStart = atof(attrs[1]);
+		dat->strand_start_ = atof(attrs[1]);
 	}
 	else if(el == "strand_end")
 	{
-		dat->strandEnd = atof(attrs[1]);
+		dat->strand_end_ = atof(attrs[1]);
 	}
 	else if(el == "strand_shape")
 	{
-		dat->strandShape = atof(attrs[1]);
+		dat->strand_shape_ = atof(attrs[1]);
 
 	}
 	else if(el == "set_material")
 	{
 		std::string mat_name(attrs[1]);
-		dat->mat = parser.env->getMaterial(mat_name);
-		if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
+		dat->mat_ = parser.env_->getMaterial(mat_name);
+		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
 	}
 }
-void endEl_curve(xmlParser_t &parser, const char *element)
+void endElCurve__(XmlParser &parser, const char *element)
 {
 	if(std::string(element) == "curve")
 	{
-		curve_dat_t *cd = (curve_dat_t *)parser.stateData();
-		if(!parser.scene->endCurveMesh(cd->mat, cd->strandStart, cd->strandEnd, cd->strandShape))
+		CurveDat *cd = (CurveDat *)parser.stateData();
+		if(!parser.scene_->endCurveMesh(cd->mat_, cd->strand_start_, cd->strand_end_, cd->strand_shape_))
 		{
-			Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << yendl;
+			Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << YENDL;
 		}
-		if(!parser.scene->endGeometry())
+		if(!parser.scene_->endGeometry())
 		{
-			Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
+			Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
 		}
 		delete cd;
 		parser.popState();
@@ -547,26 +547,26 @@ void endEl_curve(xmlParser_t &parser, const char *element)
 
 // mesh-state, i.e. expect only points (vertices), faces and material settings
 // since we're supposed to be inside a mesh block, exit state on "mesh" element
-void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
+void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Mesh");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element);
-	mesh_dat_t *dat = (mesh_dat_t *)parser.stateData();
+	MeshDat *dat = (MeshDat *)parser.stateData();
 	if(el == "p")
 	{
-		point3d_t p, op;
-		if(!parsePoint(attrs, p, op)) return;
-		if(dat->has_orco)	parser.scene->addVertex(p, op);
-		else 				parser.scene->addVertex(p);
+		Point3 p, op;
+		if(!parsePoint__(attrs, p, op)) return;
+		if(dat->has_orco_)	parser.scene_->addVertex(p, op);
+		else 				parser.scene_->addVertex(p);
 	}
 	else if(el == "n")
 	{
-		normal_t n(0.0, 0.0, 0.0);
-		if(!parseNormal(attrs, n)) return;
-		parser.scene->addNormal(n);
+		Normal n(0.0, 0.0, 0.0);
+		if(!parseNormal__(attrs, n)) return;
+		parser.scene_->addNormal(n);
 	}
 	else if(el == "f")
 	{
@@ -578,7 +578,7 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 					case 'a' : a = atoi(attrs[1]); break;
 					case 'b' : b = atoi(attrs[1]); break;
 					case 'c' : c = atoi(attrs[1]); break;
-					default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << yendl;
+					default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << YENDL;
 				}
 			else
 			{
@@ -587,8 +587,8 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 				else if(!strcmp(attrs[0], "uv_c")) uv_c = atoi(attrs[1]);
 			}
 		}
-		if(dat->has_uv) parser.scene->addTriangle(a, b, c, uv_a, uv_b, uv_c, dat->mat);
-		else 			parser.scene->addTriangle(a, b, c, dat->mat);
+		if(dat->has_uv_) parser.scene_->addTriangle(a, b, c, uv_a, uv_b, uv_c, dat->mat_);
+		else 			parser.scene_->addTriangle(a, b, c, dat->mat_);
 	}
 	else if(el == "uv")
 	{
@@ -598,53 +598,53 @@ void startEl_mesh(xmlParser_t &parser, const char *element, const char **attrs)
 			switch(attrs[0][0])
 			{
 				case 'u': u = atof(attrs[1]);
-					if(!(isValidFloat(u)))
+					if(!(isValidFloat__(u)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << yendl;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
 						u = 0.f;
 					}
 					break;
 				case 'v': v = atof(attrs[1]);
-					if(!(isValidFloat(v)))
+					if(!(isValidFloat__(v)))
 					{
-						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << yendl;
+						Y_WARNING << std::scientific << std::setprecision(6) << "XMLParser: invalid value in \"" << el << "\" xml entry: " << attrs[0] << "=" << attrs[1] << ". Replacing with 0.0." << YENDL;
 						v = 0.f;
 					}
 					break;
 
-				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in uv" << yendl;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in uv" << YENDL;
 			}
 		}
-		parser.scene->addUV(u, v);
+		parser.scene_->addUv(u, v);
 	}
 	else if(el == "set_material")
 	{
 		std::string mat_name(attrs[1]);
-		dat->mat = parser.env->getMaterial(mat_name);
-		if(!dat->mat) Y_WARNING << "XMLParser: Unknown material!" << yendl;
+		dat->mat_ = parser.env_->getMaterial(mat_name);
+		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
 	}
 }
 
-void endEl_mesh(xmlParser_t &parser, const char *element)
+void endElMesh__(XmlParser &parser, const char *element)
 {
 	if(std::string(element) == "mesh")
 	{
-		mesh_dat_t *md = (mesh_dat_t *)parser.stateData();
-		if(!parser.scene->endTriMesh()) Y_ERROR << "XMLParser: Invalid scene state on endTriMesh()!" << yendl;
-		if(!parser.scene->endGeometry()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << yendl;
+		MeshDat *md = (MeshDat *)parser.stateData();
+		if(!parser.scene_->endTriMesh()) Y_ERROR << "XMLParser: Invalid scene state on endTriMesh()!" << YENDL;
+		if(!parser.scene_->endGeometry()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
 		delete md;
 		parser.popState();
 	}
 }
 
-void startEl_instance(xmlParser_t &parser, const char *element, const char **attrs)
+void startElInstance__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Instance");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element);
-	objID_t boi = *(objID_t *)parser.stateData();
+	ObjId_t boi = *(ObjId_t *)parser.stateData();
 	if(el == "transform")
 	{
 		float m[4][4];
@@ -657,12 +657,12 @@ void startEl_instance(xmlParser_t &parser, const char *element, const char **att
 				m[i][j] = atof(attrs[n + 1]);
 			}
 		}
-		matrix4x4_t *m4 = new matrix4x4_t(m);
-		parser.scene->addInstance(boi, *m4);
+		Matrix4 *m_4 = new Matrix4(m);
+		parser.scene_->addInstance(boi, *m_4);
 	}
 }
 
-void endEl_instance(xmlParser_t &parser, const char *element)
+void endElInstance__(XmlParser &parser, const char *element)
 {
 	if(std::string(element) == "instance")
 	{
@@ -673,7 +673,7 @@ void endEl_instance(xmlParser_t &parser, const char *element)
 // again, exit when end-element is on of the elements that caused to enter state
 // depending on exit element, create appropriate scene element
 
-void startEl_parammap(xmlParser_t &parser, const char *element, const char **attrs)
+void startElParammap__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Params map");
 	parser.setLastElementName(element);
@@ -681,88 +681,88 @@ void startEl_parammap(xmlParser_t &parser, const char *element, const char **att
 	// support for lists of paramMaps
 	if(std::string(element) == "list_element")
 	{
-		parser.eparams.push_back(paraMap_t());
-		parser.cparams = &parser.eparams.back();
-		parser.pushState(startEl_paramlist, endEl_paramlist);
+		parser.eparams_.push_back(ParamMap());
+		parser.cparams_ = &parser.eparams_.back();
+		parser.pushState(startElParamlist__, endElParamlist__);
 		return;
 	}
-	parameter_t p;
-	parseParam(attrs, p, parser);
+	Parameter p;
+	parseParam__(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 
-void endEl_parammap(xmlParser_t &p, const char *element)
+void endElParammap__(XmlParser &p, const char *element)
 {
 	bool exit_state = (p.currLevel() == p.stateLevel());
 	if(exit_state)
 	{
 		std::string el(element);
 		std::string *name = (std::string *)p.stateData();
-		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << yendl;
+		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
 		else
 		{
 			if(el == "material")
-			{ p.env->createMaterial(*name, p.params, p.eparams); }
+			{ p.env_->createMaterial(*name, p.params_, p.eparams_); }
 			else if(el == "integrator")
-			{ p.env->createIntegrator(*name, p.params); }
+			{ p.env_->createIntegrator(*name, p.params_); }
 			else if(el == "light")
 			{
-				light_t *light = p.env->createLight(*name, p.params);
-				if(light) p.scene->addLight(light);
+				Light *light = p.env_->createLight(*name, p.params_);
+				if(light) p.scene_->addLight(light);
 			}
 			else if(el == "texture")
-			{ p.env->createTexture(*name, p.params); }
+			{ p.env_->createTexture(*name, p.params_); }
 			else if(el == "camera")
-			{ p.env->createCamera(*name, p.params); }
+			{ p.env_->createCamera(*name, p.params_); }
 			else if(el == "background")
-			{ p.env->createBackground(*name, p.params); }
+			{ p.env_->createBackground(*name, p.params_); }
 			else if(el == "object")
 			{
-				objID_t id;
-				object3d_t *obj = p.env->createObject(*name, p.params);
-				if(obj) p.scene->addObject(obj, id);
+				ObjId_t id;
+				Object3D *obj = p.env_->createObject(*name, p.params_);
+				if(obj) p.scene_->addObject(obj, id);
 			}
 			else if(el == "volumeregion")
 			{
-				VolumeRegion *vr = p.env->createVolumeRegion(*name, p.params);
-				if(vr) p.scene->addVolumeRegion(vr);
+				VolumeRegion *vr = p.env_->createVolumeRegion(*name, p.params_);
+				if(vr) p.scene_->addVolumeRegion(vr);
 			}
 			else if(el == "render_passes")
 			{
-				p.env->setupRenderPasses(p.params);
+				p.env_->setupRenderPasses(p.params_);
 			}
 			else if(el == "logging_badge")
 			{
-				p.env->setupLoggingAndBadge(p.params);
+				p.env_->setupLoggingAndBadge(p.params_);
 			}
-			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << yendl;
+			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
 
 		if(name) delete name;
-		p.popState(); p.params.clear(); p.eparams.clear();
+		p.popState(); p.params_.clear(); p.eparams_.clear();
 	}
 }
 
-void startEl_paramlist(xmlParser_t &parser, const char *element, const char **attrs)
+void startElParamlist__(XmlParser &parser, const char *element, const char **attrs)
 {
 	parser.setLastSection("Params list");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
-	parameter_t p;
-	parseParam(attrs, p, parser);
+	Parameter p;
+	parseParam__(attrs, p, parser);
 	parser.setParam(std::string(element), p);
 }
 
-void endEl_paramlist(xmlParser_t &parser, const char *element)
+void endElParamlist__(XmlParser &parser, const char *element)
 {
 	if(std::string(element) == "list_element")
 	{
 		parser.popState();
-		parser.cparams = &parser.params;
+		parser.cparams_ = &parser.params_;
 	}
 }
 
-void endEl_render(xmlParser_t &parser, const char *element)
+void endElRender__(XmlParser &parser, const char *element)
 {
 	parser.setLastSection("render");
 	parser.setLastElementName(element);
@@ -770,11 +770,11 @@ void endEl_render(xmlParser_t &parser, const char *element)
 
 	if(!strcmp(element, "render"))
 	{
-		parser.cparams = &parser.params;
+		parser.cparams_ = &parser.params_;
 		parser.popState();
 	}
 }
 
 #endif // HAVE_XML
 
-__END_YAFRAY
+END_YAFRAY

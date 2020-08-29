@@ -20,8 +20,8 @@
  */
 
 
-#ifndef MYWINDOW_H
-#define MYWINDOW_H
+#ifndef YAFARAY_MYWINDOW_H
+#define YAFARAY_MYWINDOW_H
 
 #include <QMainWindow>
 #include <QTime>
@@ -29,14 +29,11 @@
 
 #include <gui/yafqtapi.h>
 
-namespace Ui
-{
-class WindowBase;
-}
+class Ui_WindowBase;
 
-namespace yafaray
+namespace yafaray4
 {
-class yafrayInterface_t;
+class Interface;
 }
 
 class AnimWorking;
@@ -49,7 +46,7 @@ class MainWindow : public QMainWindow
 {
 		Q_OBJECT
 	public:
-		MainWindow(yafaray::yafrayInterface_t *env, int resx, int resy, int bStartX, int bStartY, Settings settings);
+		MainWindow(yafaray4::Interface *env, int resx, int resy, int b_start_x, int b_start_y, Settings settings);
 		~MainWindow();
 
 		virtual bool event(QEvent *e);
@@ -79,27 +76,27 @@ class MainWindow : public QMainWindow
 		void zoomOut();
 
 	private:
-		Ui::WindowBase *m_ui;
-		RenderWidget *m_render;
-		QtOutput *m_output;
-		Worker *m_worker;
-		yafaray::yafrayInterface_t *interf;
-		QString m_outputPath;
-		QString m_lastPath;
-		int res_x, res_y, b_x, b_y;
-		std::string fileName;
-		bool autoClose;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
-		bool autoSave;	// if true, rendering gets saved to fileName after finish but GUI stays opened
-		bool autoSaveAlpha;	// if true, the automatically saved image contains no alpha channel
-		bool saveWithAlpha;
-		bool saveWithDepth;
-		bool useDrawParams;
-		QTime timeMeasure;		// time measure for the render
-		AnimWorking *anim;
-		bool renderSaved;
-		bool renderCancelled;
-		bool use_zbuf;
-		bool askUnsaved;
+		Ui_WindowBase *ui_;
+		RenderWidget *render_;
+		QtOutput *output_;
+		Worker *worker_;
+		yafaray4::Interface *interface_;
+		QString output_path_;
+		QString last_path_;
+		int res_x_, res_y_, b_x_, b_y_;
+		std::string file_name_;
+		bool auto_close_;	// if true, rendering gets saved to fileName after finish and GUI gets closed (for animation)
+		bool auto_save_;	// if true, rendering gets saved to fileName after finish but GUI stays opened
+		bool auto_save_alpha_;	// if true, the automatically saved image contains no alpha channel
+		bool save_with_alpha_;
+		bool save_with_depth_;
+		bool use_draw_params_;
+		QTime time_measure_;		// time measure for the render
+		AnimWorking *anim_;
+		bool render_saved_;
+		bool render_cancelled_;
+		bool use_zbuf_;
+		bool ask_unsaved_;
 };
 
 #endif

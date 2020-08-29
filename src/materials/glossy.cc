@@ -27,456 +27,456 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class glossyMat_t: public nodeMaterial_t
+class GlossyMaterial final : public NodeMaterial
 {
 	public:
-		glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diffuse, visibility_t eVisibility = NORMAL_VISIBLE);
-		virtual void initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const;
-		virtual color_t eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval = false) const;
-		virtual color_t sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const;
-		virtual float pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const;
-		static material_t *factory(paraMap_t &, std::list< paraMap_t > &, renderEnvironment_t &);
+		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
 
-		struct MDat_t
+	private:
+		GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = NormalVisible);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const override;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const override;
+
+		struct MDatT
 		{
-			float mDiffuse, mGlossy, pDiffuse;
-			void *stack;
+			float m_diffuse_, m_glossy_, p_diffuse_;
+			void *stack_;
 		};
 
 		void initOrenNayar(double sigma);
 
-		virtual color_t getDiffuseColor(const renderState_t &state) const
+		virtual Rgb getDiffuseColor(const RenderState &state) const override
 		{
-			MDat_t *dat = (MDat_t *)state.userdata;
-			nodeStack_t stack(dat->stack);
+			MDatT *dat = (MDatT *)state.userdata_;
+			NodeStack stack(dat->stack_);
 
-			if(as_diffuse || with_diffuse) return (mDiffuseReflShader ? mDiffuseReflShader->getScalar(stack) : 1.f) * (diffuseS ? diffuseS->getColor(stack) : diff_color);
-			else return color_t(0.f);
+			if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(stack) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
+			else return Rgb(0.f);
 		}
-		virtual color_t getGlossyColor(const renderState_t &state) const
+		virtual Rgb getGlossyColor(const RenderState &state) const override
 		{
-			MDat_t *dat = (MDat_t *)state.userdata;
-			nodeStack_t stack(dat->stack);
+			MDatT *dat = (MDatT *)state.userdata_;
+			NodeStack stack(dat->stack_);
 
-			return (glossyRefS ? glossyRefS->getScalar(stack) : reflectivity) * (glossyS ? glossyS->getColor(stack) : gloss_color);
+			return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		}
 
-	private:
-		float OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const;
+		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
-	protected:
-		shaderNode_t *diffuseS = nullptr;
-		shaderNode_t *glossyS = nullptr;
-		shaderNode_t *glossyRefS = nullptr;
-		shaderNode_t *bumpS = nullptr;
-		shaderNode_t *exponentS = nullptr;
-		shaderNode_t *mWireFrameShader = nullptr;     //!< Shader node for wireframe shading (float)
-		shaderNode_t *mSigmaOrenShader = nullptr;     //!< Shader node for sigma in Oren Nayar material
-		shaderNode_t *mDiffuseReflShader = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		color_t gloss_color, diff_color;
-		float exponent, exp_u, exp_v;
-		float reflectivity;
-		float mDiffuse;
-		bool as_diffuse, with_diffuse = false, anisotropic = false;
-		bool orenNayar;
-		float orenA, orenB;
+		ShaderNode *diffuse_shader_ = nullptr;
+		ShaderNode *glossy_shader_ = nullptr;
+		ShaderNode *glossy_reflection_shader_ = nullptr;
+		ShaderNode *bump_shader_ = nullptr;
+		ShaderNode *exponent_shader_ = nullptr;
+		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
+		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
+		ShaderNode *diffuse_reflection_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
+		Rgb gloss_color_, diff_color_;
+		float exponent_, exp_u_, exp_v_;
+		float reflectivity_;
+		float diffuse_;
+		bool as_diffuse_, with_diffuse_ = false, anisotropic_ = false;
+		bool oren_nayar_;
+		float oren_a_, oren_b_;
 };
 
-glossyMat_t::glossyMat_t(const color_t &col, const color_t &dcol, float reflect, float diff, float expo, bool as_diff, visibility_t eVisibility):
-	gloss_color(col), diff_color(dcol), exponent(expo), reflectivity(reflect), mDiffuse(diff), as_diffuse(as_diff)
+GlossyMaterial::GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diff, Visibility e_visibility):
+		gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
-	mVisibility = eVisibility;
-	bsdfFlags = BSDF_NONE;
+	visibility_ = e_visibility;
+	bsdf_flags_ = BsdfNone;
 
 	if(diff > 0)
 	{
-		bsdfFlags = BSDF_DIFFUSE | BSDF_REFLECT;
-		with_diffuse = true;
+		bsdf_flags_ = BsdfDiffuse | BsdfReflect;
+		with_diffuse_ = true;
 	}
 
-	orenNayar = false;
+	oren_nayar_ = false;
 
-	bsdfFlags |= as_diffuse ? (BSDF_DIFFUSE | BSDF_REFLECT) : (BSDF_GLOSSY | BSDF_REFLECT);
+	bsdf_flags_ |= as_diffuse_ ? (BsdfDiffuse | BsdfReflect) : (BsdfGlossy | BsdfReflect);
 
-	mVisibility = eVisibility;
+	visibility_ = e_visibility;
 }
 
-void glossyMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
+void GlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
 {
-	MDat_t *dat = (MDat_t *)state.userdata;
-	dat->stack = (char *)state.userdata + sizeof(MDat_t);
-	nodeStack_t stack(dat->stack);
-	if(bumpS) evalBump(stack, state, sp, bumpS);
+	MDatT *dat = (MDatT *)state.userdata_;
+	dat->stack_ = (char *)state.userdata_ + sizeof(MDatT);
+	NodeStack stack(dat->stack_);
+	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
 
-	auto end = allViewindep.end();
-	for(auto iter = allViewindep.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
-	bsdfTypes = bsdfFlags;
-	dat->mDiffuse = mDiffuse;
-	dat->mGlossy = glossyRefS ? glossyRefS->getScalar(stack) : reflectivity;
-	dat->pDiffuse = std::min(0.6f, 1.f - (dat->mGlossy / (dat->mGlossy + (1.f - dat->mGlossy) * dat->mDiffuse)));
+	auto end = all_viewindep_.end();
+	for(auto iter = all_viewindep_.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
+	bsdf_types = bsdf_flags_;
+	dat->m_diffuse_ = diffuse_;
+	dat->m_glossy_ = glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_;
+	dat->p_diffuse_ = std::min(0.6f, 1.f - (dat->m_glossy_ / (dat->m_glossy_ + (1.f - dat->m_glossy_) * dat->m_diffuse_)));
 }
 
-void glossyMat_t::initOrenNayar(double sigma)
+void GlossyMaterial::initOrenNayar(double sigma)
 {
-	double sigma2 = sigma * sigma;
-	orenA = 1.0 - 0.5 * (sigma2 / (sigma2 + 0.33));
-	orenB = 0.45 * sigma2 / (sigma2 + 0.09);
-	orenNayar = true;
+	double sigma_2 = sigma * sigma;
+	oren_a_ = 1.0 - 0.5 * (sigma_2 / (sigma_2 + 0.33));
+	oren_b_ = 0.45 * sigma_2 / (sigma_2 + 0.09);
+	oren_nayar_ = true;
 }
 
-float glossyMat_t::OrenNayar(const vector3d_t &wi, const vector3d_t &wo, const vector3d_t &N, bool useTextureSigma, double textureSigma) const
+float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const
 {
-	float cos_ti = std::max(-1.f, std::min(1.f, N * wi));
-	float cos_to = std::max(-1.f, std::min(1.f, N * wo));
+	float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
+	float cos_to = std::max(-1.f, std::min(1.f, n * wo));
 	float maxcos_f = 0.f;
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		vector3d_t v1 = (wi - N * cos_ti).normalize();
-		vector3d_t v2 = (wo - N * cos_to).normalize();
-		maxcos_f = std::max(0.f, v1 * v2);
+		Vec3 v_1 = (wi - n * cos_ti).normalize();
+		Vec3 v_2 = (wo - n * cos_to).normalize();
+		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
 	float sin_alpha, tan_beta;
 
 	if(cos_to >= cos_ti)
 	{
-		sin_alpha = fSqrt(1.f - cos_ti * cos_ti);
-		tan_beta = fSqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = fSqrt__(1.f - cos_ti * cos_ti);
+		tan_beta = fSqrt__(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
-		sin_alpha = fSqrt(1.f - cos_to * cos_to);
-		tan_beta = fSqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = fSqrt__(1.f - cos_to * cos_to);
+		tan_beta = fSqrt__(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
-	if(useTextureSigma)
+	if(use_texture_sigma)
 	{
-		double sigma_squared = textureSigma * textureSigma;
-		double mOrenNayar_TextureA = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
-		double mOrenNayar_TextureB = 0.45 * sigma_squared / (sigma_squared + 0.09);
-		return std::min(1.f, std::max(0.f, (float)(mOrenNayar_TextureA + mOrenNayar_TextureB * maxcos_f * sin_alpha * tan_beta)));
+		double sigma_squared = texture_sigma * texture_sigma;
+		double m_oren_nayar_texture_a = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
+		double m_oren_nayar_texture_b = 0.45 * sigma_squared / (sigma_squared + 0.09);
+		return std::min(1.f, std::max(0.f, (float)(m_oren_nayar_texture_a + m_oren_nayar_texture_b * maxcos_f * sin_alpha * tan_beta)));
 	}
 	else
 	{
-		return std::min(1.f, std::max(0.f, (float)(orenA + orenB * maxcos_f * sin_alpha * tan_beta)));
+		return std::min(1.f, std::max(0.f, (float)(oren_a_ + oren_b_ * maxcos_f * sin_alpha * tan_beta)));
 	}
 }
 
-color_t glossyMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs, bool force_eval) const
+Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval) const
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
-		if(!(bsdfs & BSDF_DIFFUSE) || ((sp.Ng * wi) * (sp.Ng * wo)) < 0.f) return color_t(0.f);
+		if(!(bsdfs & BsdfDiffuse) || ((sp.ng_ * wi) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
 	}
 
-	MDat_t *dat = (MDat_t *)state.userdata;
-	color_t col(0.f);
-	bool diffuse_flag = bsdfs & BSDF_DIFFUSE;
+	MDatT *dat = (MDatT *)state.userdata_;
+	Rgb col(0.f);
+	bool diffuse_flag = bsdfs & BsdfDiffuse;
 
-	nodeStack_t stack(dat->stack);
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	NodeStack stack(dat->stack_);
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
 
-	float wiN = std::fabs(wi * N);
-	float woN = std::fabs(wo * N);
+	float wi_n = std::fabs(wi * n);
+	float wo_n = std::fabs(wo * n);
 
 
-	if((as_diffuse && diffuse_flag) || (!as_diffuse && (bsdfs & BSDF_GLOSSY)))
+	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && (bsdfs & BsdfGlossy)))
 	{
-		vector3d_t H = (wo + wi).normalize(); // half-angle
-		float cos_wi_H = std::max(0.f, wi * H);
+		Vec3 h = (wo + wi).normalize(); // half-angle
+		float cos_wi_h = std::max(0.f, wi * h);
 		float glossy;
 
-		if(anisotropic)
+		if(anisotropic_)
 		{
-			vector3d_t Hs(H * sp.NU, H * sp.NV, H * N);
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+			Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
+			glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			glossy = Blinn_D(H * N, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+			glossy = blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
 
 		}
 
-		col = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
+		col = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
 
-	if(with_diffuse && diffuse_flag)
+	if(with_diffuse_ && diffuse_flag)
 	{
-		color_t addCol = dat->mDiffuse * (1.f - dat->mGlossy) * (diffuseS ? diffuseS->getColor(stack) : diff_color);
+		Rgb add_col = dat->m_diffuse_ * (1.f - dat->m_glossy_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
 
-		if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
 
-		if(orenNayar)
+		if(oren_nayar_)
 		{
-			double textureSigma = (mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
-			bool useTextureSigma = (mSigmaOrenShader ? true : false);
+			double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+			bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 
-			addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
 
-		col += addCol;
+		col += add_col;
 
 		//diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
 
 
-color_t glossyMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	MDat_t *dat = (MDat_t *)state.userdata;
-	float cos_Ng_wo = sp.Ng * wo;
-	float cos_Ng_wi;
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
-	vector3d_t Hs;
-	s.pdf = 0.f;
-	float wiN = 0.f;
-	float woN = std::fabs(wo * N);
-	float cos_wo_H = 0.f;
+	MDatT *dat = (MDatT *)state.userdata_;
+	float cos_ng_wo = sp.ng_ * wo;
+	float cos_ng_wi;
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
+	Vec3 Hs;
+	s.pdf_ = 0.f;
+	float wi_n = 0.f;
+	float wo_n = std::fabs(wo * n);
+	float cos_wo_h = 0.f;
 
-	color_t scolor(0.f);
+	Rgb scolor(0.f);
 
-	float s1 = s.s1;
-	float cur_pDiffuse = dat->pDiffuse;
-	bool use_glossy = as_diffuse ? (s.flags & BSDF_DIFFUSE) : (s.flags & BSDF_GLOSSY);
-	bool use_diffuse = with_diffuse && (s.flags & BSDF_DIFFUSE);
-	nodeStack_t stack(dat->stack);
+	float s_1 = s.s_1_;
+	float cur_p_diffuse = dat->p_diffuse_;
+	bool use_glossy = as_diffuse_ ? (s.flags_ & BsdfDiffuse) : (s.flags_ & BsdfGlossy);
+	bool use_diffuse = with_diffuse_ && (s.flags_ & BsdfDiffuse);
+	NodeStack stack(dat->stack_);
 	float glossy = 0.f;
 
 	if(use_diffuse)
 	{
-		float s_pDiffuse = use_glossy ? cur_pDiffuse : 1.f;
-		if(s1 < s_pDiffuse)
+		float s_p_diffuse = use_glossy ? cur_p_diffuse : 1.f;
+		if(s_1 < s_p_diffuse)
 		{
-			s1 /= s_pDiffuse;
-			wi = SampleCosHemisphere(N, sp.NU, sp.NV, s1, s.s2);
+			s_1 /= s_p_diffuse;
+			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s_1, s.s_2_);
 
-			cos_Ng_wi = sp.Ng * wi;
+			cos_ng_wi = sp.ng_ * wi;
 
-			if(cos_Ng_wi * cos_Ng_wo < 0.f)
+			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{
-				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-				applyWireFrame(scolor, wireFrameAmount, sp);
+				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
 
-			wiN = std::fabs(wi * N);
+			wi_n = std::fabs(wi * n);
 
-			s.pdf = wiN;
+			s.pdf_ = wi_n;
 
 			if(use_glossy)
 			{
-				vector3d_t H = (wi + wo).normalize();
-				cos_wo_H = wo * H;
-				float cos_wi_H = std::fabs(wi * H);
-				float cos_N_H = N * H;
-				if(anisotropic)
+				Vec3 h = (wi + wo).normalize();
+				cos_wo_h = wo * h;
+				float cos_wi_h = std::fabs(wi * h);
+				float cos_n_h = n * h;
+				if(anisotropic_)
 				{
-					vector3d_t Hs(H * sp.NU, H * sp.NV, cos_N_H);
-					s.pdf = s.pdf * cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * (1.f - cur_pDiffuse);
-					glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+					s.pdf_ = s.pdf_ * cur_p_diffuse + asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
+					glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
 				}
 				else
 				{
-					s.pdf = s.pdf * cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent)) * (1.f - cur_pDiffuse);
-					glossy = Blinn_D(cos_N_H, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wi_H, dat->mGlossy) / ASDivisor(cos_wi_H, woN, wiN);
+					s.pdf_ = s.pdf_ * cur_p_diffuse + blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * (1.f - cur_p_diffuse);
+					glossy = blinnD__(cos_n_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
 				}
 			}
-			s.sampledFlags = BSDF_DIFFUSE | BSDF_REFLECT;
+			s.sampled_flags_ = BsdfDiffuse | BsdfReflect;
 
-			if(!(s.flags & BSDF_REFLECT))
+			if(!(s.flags_ & BsdfReflect))
 			{
-				scolor = color_t(0.f);
-				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-				applyWireFrame(scolor, wireFrameAmount, sp);
+				scolor = Rgb(0.f);
+				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
 
-			scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
+			scolor = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 
 			if(use_diffuse)
 			{
-				color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+				Rgb add_col = diffuseReflect__(wi_n, wo_n, dat->m_glossy_, dat->m_diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_));
 
-				if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+				if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
 
-				if(orenNayar)
+				if(oren_nayar_)
 				{
-					double textureSigma = (mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
-					bool useTextureSigma = (mSigmaOrenShader ? true : false);
+					double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+					bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 
-					addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+					add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 				}
-				scolor += addCol;
+				scolor += add_col;
 			}
-			W = wiN / (s.pdf * 0.99f + 0.01f);
+			w = wi_n / (s.pdf_ * 0.99f + 0.01f);
 
-			float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-			applyWireFrame(scolor, wireFrameAmount, sp);
+			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+			applyWireFrame(scolor, wire_frame_amount, sp);
 			return scolor;
 		}
-		s1 -= cur_pDiffuse;
-		s1 /= (1.f - cur_pDiffuse);
+		s_1 -= cur_p_diffuse;
+		s_1 /= (1.f - cur_p_diffuse);
 	}
 
 	if(use_glossy)
 	{
-		if(anisotropic)
+		if(anisotropic_)
 		{
-			AS_Aniso_Sample(Hs, s1, s.s2, exp_u, exp_v);
-			vector3d_t H = Hs.x * sp.NU + Hs.y * sp.NV + Hs.z * N;
-			cos_wo_H = wo * H;
-			if(cos_wo_H < 0.f)
+			asAnisoSample__(Hs, s_1, s.s_2_, exp_u_, exp_v_);
+			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
+			cos_wo_h = wo * h;
+			if(cos_wo_h < 0.f)
 			{
-				H.reflect(N);
-				cos_wo_H = wo * H;
+				h.reflect(n);
+				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = reflect_dir(H, wo);
-			cos_Ng_wi = sp.Ng * wi;
+			wi = reflectDir__(h, wo);
+			cos_ng_wi = sp.ng_ * wi;
 
-			if(cos_Ng_wo * cos_Ng_wi < 0.f)
+			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
-				scolor = color_t(0.f);
-				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-				applyWireFrame(scolor, wireFrameAmount, sp);
+				scolor = Rgb(0.f);
+				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
 
-			wiN = std::fabs(wi * N);
+			wi_n = std::fabs(wi * n);
 
-			s.pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
-			glossy = AS_Aniso_D(Hs, exp_u, exp_v) * SchlickFresnel(cos_wo_H, dat->mGlossy) / ASDivisor(cos_wo_H, woN, wiN);
+			s.pdf_ = asAnisoPdf__(Hs, cos_wo_h, exp_u_, exp_v_);
+			glossy = asAnisoD__(Hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
 		}
 		else
 		{
-			Blinn_Sample(Hs, s1, s.s2, (exponentS ? exponentS->getScalar(stack) : exponent));
-			vector3d_t H = Hs.x * sp.NU + Hs.y * sp.NV + Hs.z * N;
-			cos_wo_H = wo * H;
-			if(cos_wo_H < 0.f)
+			blinnSample__(Hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
+			cos_wo_h = wo * h;
+			if(cos_wo_h < 0.f)
 			{
-				H.reflect(N);
-				cos_wo_H = wo * H;
+				h.reflect(n);
+				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = reflect_dir(H, wo);
-			cos_Ng_wi = sp.Ng * wi;
+			wi = reflectDir__(h, wo);
+			cos_ng_wi = sp.ng_ * wi;
 
-			if(cos_Ng_wo * cos_Ng_wi < 0.f)
+			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
-				scolor = color_t(0.f);
-				float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-				applyWireFrame(scolor, wireFrameAmount, sp);
+				scolor = Rgb(0.f);
+				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
 
-			wiN = std::fabs(wi * N);
-			float cosHN = H * N;
+			wi_n = std::fabs(wi * n);
+			float cos_hn = h * n;
 
-			s.pdf = Blinn_Pdf(cosHN, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent));
-			glossy = Blinn_D(cosHN, (exponentS ? exponentS->getScalar(stack) : exponent)) * SchlickFresnel(cos_wo_H, dat->mGlossy)  / ASDivisor(cos_wo_H, woN, wiN);
+			s.pdf_ = blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
 		}
 
-		scolor = glossy * (glossyS ? glossyS->getColor(stack) : gloss_color);
-		s.sampledFlags = as_diffuse ? BSDF_DIFFUSE | BSDF_REFLECT : BSDF_GLOSSY | BSDF_REFLECT;
+		scolor = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
+		s.sampled_flags_ = as_diffuse_ ? BsdfDiffuse | BsdfReflect : BsdfGlossy | BsdfReflect;
 	}
 
 	if(use_diffuse)
 	{
-		color_t addCol = diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color));
+		Rgb add_col = diffuseReflect__(wi_n, wo_n, dat->m_glossy_, dat->m_diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_));
 
-		if(mDiffuseReflShader) addCol *= mDiffuseReflShader->getScalar(stack);
+		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
 
-		if(orenNayar)
+		if(oren_nayar_)
 		{
-			double textureSigma = (mSigmaOrenShader ? mSigmaOrenShader->getScalar(stack) : 0.f);
-			bool useTextureSigma = (mSigmaOrenShader ? true : false);
+			double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+			bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 
-			addCol *= OrenNayar(wi, wo, N, useTextureSigma, textureSigma);
+			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
-		s.pdf = wiN * cur_pDiffuse + s.pdf * (1.f - cur_pDiffuse);
-		scolor += addCol;
+		s.pdf_ = wi_n * cur_p_diffuse + s.pdf_ * (1.f - cur_p_diffuse);
+		scolor += add_col;
 	}
 
-	W = wiN / (s.pdf * 0.99f + 0.01f);
+	w = wi_n / (s.pdf_ * 0.99f + 0.01f);
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(scolor, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(scolor, wire_frame_amount, sp);
 	return scolor;
 }
 
-float glossyMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t flags) const
+float GlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t flags) const
 {
-	MDat_t *dat = (MDat_t *)state.userdata;
-	nodeStack_t stack(dat->stack);
+	MDatT *dat = (MDatT *)state.userdata_;
+	NodeStack stack(dat->stack_);
 
-	if((sp.Ng * wo) * (sp.Ng * wi) < 0.f) return 0.f;
-	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
+	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
 	float pdf = 0.f;
-	float cos_wo_H = 0.f;
-	float cos_N_H = 0.f;
+	float cos_wo_h = 0.f;
+	float cos_n_h = 0.f;
 
-	float cur_pDiffuse = dat->pDiffuse;
-	bool use_glossy = as_diffuse ? (flags & BSDF_DIFFUSE) : (flags & BSDF_GLOSSY);
-	bool use_diffuse = with_diffuse && (flags & BSDF_DIFFUSE);
+	float cur_p_diffuse = dat->p_diffuse_;
+	bool use_glossy = as_diffuse_ ? (flags & BsdfDiffuse) : (flags & BsdfGlossy);
+	bool use_diffuse = with_diffuse_ && (flags & BsdfDiffuse);
 
 	if(use_diffuse)
 	{
-		pdf = std::fabs(wi * N);
+		pdf = std::fabs(wi * n);
 		if(use_glossy)
 		{
-			vector3d_t H = (wi + wo).normalize();
-			cos_wo_H = wo * H;
-			cos_N_H = N * H;
-			if(anisotropic)
+			Vec3 h = (wi + wo).normalize();
+			cos_wo_h = wo * h;
+			cos_n_h = n * h;
+			if(anisotropic_)
 			{
-				vector3d_t Hs(H * sp.NU, H * sp.NV, cos_N_H);
-				pdf = pdf * cur_pDiffuse + AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v) * (1.f - cur_pDiffuse);
+				Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+				pdf = pdf * cur_p_diffuse + asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 			}
-			else pdf = pdf * cur_pDiffuse + Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent)) * (1.f - cur_pDiffuse);
+			else pdf = pdf * cur_p_diffuse + blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * (1.f - cur_p_diffuse);
 		}
 		return pdf;
 	}
 
 	if(use_glossy)
 	{
-		vector3d_t H = (wi + wo).normalize();
-		cos_wo_H = wo * H;
-		cos_N_H = N * H;
-		if(anisotropic)
+		Vec3 h = (wi + wo).normalize();
+		cos_wo_h = wo * h;
+		cos_n_h = n * h;
+		if(anisotropic_)
 		{
-			vector3d_t Hs(H * sp.NU, H * sp.NV, cos_N_H);
-			pdf = AS_Aniso_Pdf(Hs, cos_wo_H, exp_u, exp_v);
+			Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+			pdf = asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_);
 		}
-		else pdf = Blinn_Pdf(cos_N_H, cos_wo_H, (exponentS ? exponentS->getScalar(stack) : exponent));
+		else pdf = blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
 	}
 	return pdf;
 }
 
-material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &paramList, renderEnvironment_t &render)
+Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
 {
-	color_t col(1.f), dcol(1.f);
+	Rgb col(1.f), dcol(1.f);
 	float refl = 1.f;
 	float diff = 0.f;
 	float exponent = 50.f; //wild guess, do sth better
 	bool as_diff = true;
 	bool aniso = false;
-	std::string sVisibility = "normal";
-	visibility_t visibility = NORMAL_VISIBLE;
+	std::string s_visibility = "normal";
+	Visibility visibility = NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
 	float samplingfactor = 1.f;
-	float WireFrameAmount = 0.f;           //!< Wireframe shading amount
-	float WireFrameThickness = 0.01f;      //!< Wireframe thickness
-	float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
+	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
+	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
+	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
 	std::string name;
 	params.getParam("color", col);
@@ -488,32 +488,32 @@ material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 	params.getParam("anisotropic", aniso);
 
 	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", sVisibility);
+	params.getParam("visibility", s_visibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("additionaldepth",   additionaldepth);
 	params.getParam("samplingfactor",   samplingfactor);
 
-	params.getParam("wireframe_amount",  WireFrameAmount);
-	params.getParam("wireframe_thickness",  WireFrameThickness);
-	params.getParam("wireframe_exponent",  WireFrameExponent);
-	params.getParam("wireframe_color",  WireFrameColor);
+	params.getParam("wireframe_amount", wire_frame_amount);
+	params.getParam("wireframe_thickness", wire_frame_thickness);
+	params.getParam("wireframe_exponent", wire_frame_exponent);
+	params.getParam("wireframe_color", wire_frame_color);
 
-	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
-	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
-	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
-	else if(sVisibility == "invisible") visibility = INVISIBLE;
-	else visibility = NORMAL_VISIBLE;
+	if(s_visibility == "normal") visibility = NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Invisible;
+	else visibility = NormalVisible;
 
-	glossyMat_t *mat = new glossyMat_t(col, dcol, refl, diff, exponent, as_diff, visibility);
+	GlossyMaterial *mat = new GlossyMaterial(col, dcol, refl, diff, exponent, as_diff, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
-	mat->mReceiveShadows = receive_shadows;
-	mat->additionalDepth = additionaldepth;
+	mat->receive_shadows_ = receive_shadows;
+	mat->additional_depth_ = additionaldepth;
 
-	mat->mWireFrameAmount = WireFrameAmount;
-	mat->mWireFrameThickness = WireFrameThickness;
-	mat->mWireFrameExponent = WireFrameExponent;
-	mat->mWireFrameColor = WireFrameColor;
+	mat->wireframe_amount_ = wire_frame_amount;
+	mat->wireframe_thickness_ = wire_frame_thickness;
+	mat->wireframe_exponent_ = wire_frame_exponent;
+	mat->wireframe_color_ = wire_frame_color;
 
 	mat->setSamplingFactor(samplingfactor);
 
@@ -522,9 +522,9 @@ material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		float e_u = 50.0, e_v = 50.0;
 		params.getParam("exp_u", e_u);
 		params.getParam("exp_v", e_v);
-		mat->anisotropic = true;
-		mat->exp_u = e_u;
-		mat->exp_v = e_v;
+		mat->anisotropic_ = true;
+		mat->exp_u_ = e_u;
+		mat->exp_v_ = e_v;
 	}
 
 	if(params.getParam("diffuse_brdf", name))
@@ -537,64 +537,64 @@ material_t *glossyMat_t::factory(paraMap_t &params, std::list< paraMap_t > &para
 		}
 	}
 
-	std::vector<shaderNode_t *> roots;
-	std::map<std::string, shaderNode_t *> nodeList;
+	std::vector<ShaderNode *> roots;
+	std::map<std::string, ShaderNode *> node_list;
 
 	// Prepare our node list
-	nodeList["diffuse_shader"] = nullptr;
-	nodeList["glossy_shader"] = nullptr;
-	nodeList["glossy_reflect_shader"] = nullptr;
-	nodeList["bump_shader"] = nullptr;
-	nodeList["sigma_oren_shader"]   = nullptr;
-	nodeList["exponent_shader"] = nullptr;
-	nodeList["wireframe_shader"]    = nullptr;
-	nodeList["diffuse_refl_shader"] = nullptr;
+	node_list["diffuse_shader"] = nullptr;
+	node_list["glossy_shader"] = nullptr;
+	node_list["glossy_reflect_shader"] = nullptr;
+	node_list["bump_shader"] = nullptr;
+	node_list["sigma_oren_shader"]   = nullptr;
+	node_list["exponent_shader"] = nullptr;
+	node_list["wireframe_shader"]    = nullptr;
+	node_list["diffuse_refl_shader"] = nullptr;
 
-	if(mat->loadNodes(paramList, render))
+	if(mat->loadNodes(param_list, render))
 	{
-		mat->parseNodes(params, roots, nodeList);
+		mat->parseNodes(params, roots, node_list);
 	}
-	else Y_ERROR << "Glossy: loadNodes() failed!" << yendl;
+	else Y_ERROR << "Glossy: loadNodes() failed!" << YENDL;
 
-	mat->diffuseS = nodeList["diffuse_shader"];
-	mat->glossyS = nodeList["glossy_shader"];
-	mat->glossyRefS = nodeList["glossy_reflect_shader"];
-	mat->bumpS = nodeList["bump_shader"];
-	mat->mSigmaOrenShader = nodeList["sigma_oren_shader"];
-	mat->exponentS = nodeList["exponent_shader"];
-	mat->mWireFrameShader    = nodeList["wireframe_shader"];
-	mat->mDiffuseReflShader  = nodeList["diffuse_refl_shader"];
+	mat->diffuse_shader_ = node_list["diffuse_shader"];
+	mat->glossy_shader_ = node_list["glossy_shader"];
+	mat->glossy_reflection_shader_ = node_list["glossy_reflect_shader"];
+	mat->bump_shader_ = node_list["bump_shader"];
+	mat->sigma_oren_shader_ = node_list["sigma_oren_shader"];
+	mat->exponent_shader_ = node_list["exponent_shader"];
+	mat->wireframe_shader_    = node_list["wireframe_shader"];
+	mat->diffuse_reflection_shader_  = node_list["diffuse_refl_shader"];
 
 	// solve nodes order
 	if(!roots.empty())
 	{
-		std::vector<shaderNode_t *> colorNodes;
+		std::vector<ShaderNode *> color_nodes;
 
 		mat->solveNodesOrder(roots);
 
-		if(mat->diffuseS) mat->getNodeList(mat->diffuseS, colorNodes);
-		if(mat->glossyS) mat->getNodeList(mat->glossyS, colorNodes);
-		if(mat->glossyRefS) mat->getNodeList(mat->glossyRefS, colorNodes);
-		if(mat->mSigmaOrenShader)    mat->getNodeList(mat->mSigmaOrenShader, colorNodes);
-		if(mat->exponentS) mat->getNodeList(mat->exponentS, colorNodes);
-		if(mat->mWireFrameShader)    mat->getNodeList(mat->mWireFrameShader, colorNodes);
-		if(mat->mDiffuseReflShader)  mat->getNodeList(mat->mDiffuseReflShader, colorNodes);
-		mat->filterNodes(colorNodes, mat->allViewdep, VIEW_DEP);
-		mat->filterNodes(colorNodes, mat->allViewindep, VIEW_INDEP);
-		if(mat->bumpS) mat->getNodeList(mat->bumpS, mat->bumpNodes);
+		if(mat->diffuse_shader_) mat->getNodeList(mat->diffuse_shader_, color_nodes);
+		if(mat->glossy_shader_) mat->getNodeList(mat->glossy_shader_, color_nodes);
+		if(mat->glossy_reflection_shader_) mat->getNodeList(mat->glossy_reflection_shader_, color_nodes);
+		if(mat->sigma_oren_shader_)    mat->getNodeList(mat->sigma_oren_shader_, color_nodes);
+		if(mat->exponent_shader_) mat->getNodeList(mat->exponent_shader_, color_nodes);
+		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, color_nodes);
+		if(mat->diffuse_reflection_shader_)  mat->getNodeList(mat->diffuse_reflection_shader_, color_nodes);
+		mat->filterNodes(color_nodes, mat->all_viewdep_, ViewDep);
+		mat->filterNodes(color_nodes, mat->all_viewindep_, ViewIndep);
+		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 	}
 
-	mat->reqMem = mat->reqNodeMem + sizeof(MDat_t);
+	mat->req_mem_ = mat->req_node_mem_ + sizeof(MDatT);
 
 	return mat;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("glossy", glossyMat_t::factory);
+		render.registerFactory("glossy", GlossyMaterial::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -1,30 +1,30 @@
 #pragma once
 
-#ifndef Y_ARCHITECTCAMERA_H
-#define Y_ARCHITECTCAMERA_H
+#ifndef YAFARAY_ARCHITECTCAMERA_H
+#define YAFARAY_ARCHITECTCAMERA_H
 
 #include <yafray_constants.h>
 #include <cameras/perspectiveCamera.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class paraMap_t;
-class renderEnvironment_t;
+class ParamMap;
+class RenderEnvironment;
 
-class architectCam_t: public perspectiveCam_t
+class ArchitectCamera final : public PerspectiveCamera
 {
 	public:
-		architectCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-		               int _resx, int _resy, float aspect = 1,
-		               float df = 1, float ap = 0, float dofd = 0, bokehType bt = BK_DISK1, bkhBiasType bbt = BB_NONE, float bro = 0,
-		               float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
-		virtual ~architectCam_t();
-		virtual void setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz);
-		virtual point3d_t screenproject(const point3d_t &p) const;
+		static Camera *factory(ParamMap &params, RenderEnvironment &render);
 
-		static camera_t *factory(paraMap_t &params, renderEnvironment_t &render);
+	private:
+		ArchitectCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+						int resx, int resy, float aspect = 1,
+						float df = 1, float ap = 0, float dofd = 0, BokehType bt = BkDisk1, BkhBiasType bbt = BbNone, float bro = 0,
+						float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
+		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz) override;
+		virtual Point3 screenproject(const Point3 &p) const override;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_ARCHITECTCAMERA_H
+#endif // YAFARAY_ARCHITECTCAMERA_H

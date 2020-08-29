@@ -21,119 +21,121 @@
  *
  */
 
-#ifndef Y_BUFFER_H
-#define Y_BUFFER_H
+#ifndef YAFARAY_BUFFER_H
+#define YAFARAY_BUFFER_H
 
 #include <yafray_constants.h>
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 template<typename T1, unsigned char T2>
-class /*YAFRAYCORE_EXPORT*/ gBuf_t // no need to export this...not instantiated in yafraycore even
+class /*YAFRAYCORE_EXPORT*/ GBuf final // no need to export this...not instantiated in yafraycore even
 {
 	public :
-		gBuf_t(int x, int y)
+		GBuf(int x, int y)
 		{
-			data = new T1 [x * y * T2];
-			mx = x;
-			my = y;
+			data_ = new T1 [x * y * T2];
+			mx_ = x;
+			my_ = y;
 		}
 
-		gBuf_t() { data = nullptr; }
-		~gBuf_t() { if(data) delete[] data; }
+		GBuf() { data_ = nullptr; }
+		~GBuf() { if(data_) delete[] data_; }
 
 		void set(int x, int y)
 		{
-			if(data) delete[] data;
-			data = new T1 [x * y * T2];
-			mx = x;
-			my = y;
+			if(data_) delete[] data_;
+			data_ = new T1 [x * y * T2];
+			mx_ = x;
+			my_ = y;
 		}
 
-		T1 *operator()(int x, int y) { return &data[(y * mx + x) * T2]; }
+		T1 *operator()(int x, int y) { return &data_[(y * mx_ + x) * T2]; }
 
-		gBuf_t &operator = (const gBuf_t &source)
+		GBuf &operator = (const GBuf &source)
 		{
-			if((mx != source.mx) || (my != source.my)) std::cerr << "Error, trying to assign buffers of a different size\n";
-			if((data == nullptr) || (source.data == nullptr)) std::cerr << "Assigning unallocated buffers\n";
-			int total = mx * my * T2;
+			if((mx_ != source.mx_) || (my_ != source.my_)) std::cerr << "Error, trying to assign buffers of a different size\n";
+			if((data_ == nullptr) || (source.data_ == nullptr)) std::cerr << "Assigning unallocated buffers\n";
+			int total = mx_ * my_ * T2;
 			for(int i = 0; i < total; ++i)
-				data[i] = source.data[i];
+				data_[i] = source.data_[i];
 			return *this;
 		}
 
-		int resx() const { return mx; };
-		int resy() const { return my; };
-	protected :
-		T1 *data;
-		int mx, my;
+		int resx() const { return mx_; };
+		int resy() const { return my_; };
+
+	private:
+		T1 *data_ = nullptr;
+		int mx_, my_;
 };
 
-typedef gBuf_t<unsigned char, 4> cBuffer_t;
-typedef gBuf_t<float, 4> fcBuffer_t;	//float RGBA buffer
+typedef GBuf<unsigned char, 4> CBuffer_t;
+typedef GBuf<float, 4> FcBuffer_t;	//float RGBA buffer
 
 template<class T>
-class Buffer_t
+class Buffer final
 {
 	public :
-		Buffer_t(int x, int y);
-		Buffer_t() {data = nullptr;};
-		~Buffer_t();
+		Buffer(int x, int y);
+		Buffer() { data_ = nullptr;};
+		~Buffer();
 
 		void set(int x, int y);
-		T &operator()(int x, int y) {return data[y * mx + x];};
-		T *buffer(int x, int y) {return &data[y * mx + x];};
-		const T &operator()(int x, int y) const {return data[y * mx + x];};
-		Buffer_t<T> &operator = (const Buffer_t<T> &source);
-		int resx() const {return mx;};
-		int resy() const {return my;};
-	protected :
-		T *data;
-		int mx, my;
+		T &operator()(int x, int y) {return data_[y * mx_ + x];};
+		T *buffer(int x, int y) {return &data_[y * mx_ + x];};
+		const T &operator()(int x, int y) const {return data_[y * mx_ + x];};
+		Buffer<T> &operator = (const Buffer<T> &source);
+		int resx() const {return mx_;};
+		int resy() const {return my_;};
+
+	private:
+		T *data_ = nullptr;
+		int mx_, my_;
 };
 
 template<class T>
-Buffer_t<T>::Buffer_t(int x, int y)
+Buffer<T>::Buffer(int x, int y)
 {
-	data = new T [x * y];
-	mx = x;
-	my = y;
+	data_ = new T [x * y];
+	mx_ = x;
+	my_ = y;
 }
 
 template<class T>
-Buffer_t<T>::~Buffer_t()
+Buffer<T>::~Buffer()
 {
-	if(data != nullptr)
-		delete [] data;
+	if(data_ != nullptr)
+		delete [] data_;
 }
 
 template<class T>
-void Buffer_t<T>::set(int x, int y)
+void Buffer<T>::set(int x, int y)
 {
-	if(data != nullptr)
-		delete [] data;
-	data = new T [x * y];
-	mx = x;
-	my = y;
+	if(data_ != nullptr)
+		delete [] data_;
+	data_ = new T [x * y];
+	mx_ = x;
+	my_ = y;
 }
 
 template<class T>
-Buffer_t<T> &Buffer_t<T>::operator = (const Buffer_t<T> &source)
+Buffer<T> &Buffer<T>::operator = (const Buffer<T> &source)
 {
-	if((mx != source.mx) || (my != source.my))
+	if((mx_ != source.mx_) || (my_ != source.my_))
 	{
 		std::cout << "Error, trying to assign  buffers of a diferent size\n";
 	}
-	if((data == nullptr) || (source.data == nullptr))
+	if((data_ == nullptr) || (source.data_ == nullptr))
 	{
 		std::cout << "Assigning unallocated buffers\n";
 	}
-	int total = mx * my;
-	for(int i = 0; i < total; ++i) data[i] = source.data[i];
+	int total = mx_ * my_;
+	for(int i = 0; i < total; ++i) data_[i] = source.data_[i];
 
 	return *this;
 
 }
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

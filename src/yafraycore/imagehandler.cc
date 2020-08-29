@@ -27,220 +27,220 @@
 #endif
 
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
-imageBuffer_t::imageBuffer_t(int width, int height, int num_channels, int optimization): m_width(width), m_height(height), m_num_channels(num_channels), m_optimization(optimization)
+ImageBuffer::ImageBuffer(int width, int height, int num_channels, const TextureOptimization &optimization): width_(width), height_(height), num_channels_(num_channels), optimization_(optimization)
 {
 	switch(optimization)
 	{
-		case TEX_OPTIMIZATION_NONE:
-			if(m_num_channels == 4) rgba128_FloatImg = new rgba2DImage_nw_t(width, height);
-			else if(m_num_channels == 3) rgb96_FloatImg = new rgb2DImage_nw_t(width, height);
-			else if(m_num_channels == 1) gray32_FloatImg = new gray2DImage_nw_t(width, height);
+		case TextureOptimization::None:
+			if(num_channels_ == 4) rgba_128_float_img_ = new Rgba2DImage_t(width, height);
+			else if(num_channels_ == 3) rgb_96_float_img_ = new Rgb2DImage_t(width, height);
+			else if(num_channels_ == 1) gray_32_float_img_ = new Gray2DImage_t(width, height);
 			break;
 
-		case TEX_OPTIMIZATION_OPTIMIZED:
-			if(m_num_channels == 4) rgba40_OptimizedImg = new rgbaOptimizedImage_nw_t(width, height);
-			else if(m_num_channels == 3) rgb32_OptimizedImg = new rgbOptimizedImage_nw_t(width, height);
-			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
+		case TextureOptimization::Optimized:
+			if(num_channels_ == 4) rgba_40_optimized_img_ = new RgbaOptimizedImage_t(width, height);
+			else if(num_channels_ == 3) rgb_32_optimized_img_ = new RgbOptimizedImage_t(width, height);
+			else if(num_channels_ == 1) gray_8_optimized_img_ = new GrayOptimizedImage_t(width, height);
 			break;
 
-		case TEX_OPTIMIZATION_COMPRESSED:
-			if(m_num_channels == 4) rgba24_CompressedImg = new rgbaCompressedImage_nw_t(width, height);
-			else if(m_num_channels == 3) rgb16_CompressedImg = new rgbCompressedImage_nw_t(width, height);
-			else if(m_num_channels == 1) gray8_OptimizedImg = new grayOptimizedImage_nw_t(width, height);
+		case TextureOptimization::Compressed:
+			if(num_channels_ == 4) rgba_24_compressed_img_ = new RgbaCompressedImage_t(width, height);
+			else if(num_channels_ == 3) rgb_16_compressed_img_ = new RgbCompressedImage_t(width, height);
+			else if(num_channels_ == 1) gray_8_optimized_img_ = new GrayOptimizedImage_t(width, height);
 			break;
 
 		default: break;
 	}
 }
 
-imageBuffer_t imageBuffer_t::getDenoisedLDRBuffer(float h_col, float h_lum, float mix) const
+ImageBuffer ImageBuffer::getDenoisedLdrBuffer(float h_col, float h_lum, float mix) const
 {
-	imageBuffer_t denoised_buffer = imageBuffer_t(m_width, m_height, m_num_channels, m_optimization);
+	ImageBuffer denoised_buffer = ImageBuffer(width_, height_, num_channels_, optimization_);
 
 #ifdef HAVE_OPENCV
-	cv::Mat A(m_height, m_width, CV_8UC3);
-	cv::Mat B(m_height, m_width, CV_8UC3);
-	cv::Mat_<cv::Vec3b> _A = A;
-	cv::Mat_<cv::Vec3b> _B = B;
+	cv::Mat a(height_, width_, CV_8UC3);
+	cv::Mat b(height_, width_, CV_8UC3);
+	cv::Mat_<cv::Vec3b> a_vec = a;
+	cv::Mat_<cv::Vec3b> b_vec = b;
 
-	for(int y = 0; y < m_height; ++y)
+	for(int y = 0; y < height_; ++y)
 	{
-		for(int x = 0; x < m_width; ++x)
+		for(int x = 0; x < width_; ++x)
 		{
-			colorA_t color = getColor(x, y);
-			color.clampRGBA01();
+			Rgb color = getColor(x, y);
+			color.clampRgb01();
 
-			_A(y, x)[0] = (yByte)(color.getR() * 255);
-			_A(y, x)[1] = (yByte)(color.getG() * 255);
-			_A(y, x)[2] = (yByte)(color.getB() * 255);
+			a_vec(y, x)[0] = (YByte_t)(color.getR() * 255);
+			a_vec(y, x)[1] = (YByte_t)(color.getG() * 255);
+			a_vec(y, x)[2] = (YByte_t)(color.getB() * 255);
 		}
 	}
 
-	cv::fastNlMeansDenoisingColored(A, B, h_lum, h_col, 7, 21);
+	cv::fastNlMeansDenoisingColored(a, b, h_lum, h_col, 7, 21);
 
-	for(int y = 0; y < m_height; ++y)
+	for(int y = 0; y < height_; ++y)
 	{
-		for(int x = 0; x < m_width; ++x)
+		for(int x = 0; x < width_; ++x)
 		{
-			colorA_t col;
-			col.R = (mix * (float)_B(y, x)[0] + (1.f - mix) * (float)_A(y, x)[0]) / 255.0;
-			col.G = (mix * (float)_B(y, x)[1] + (1.f - mix) * (float)_A(y, x)[1]) / 255.0;
-			col.B = (mix * (float)_B(y, x)[2] + (1.f - mix) * (float)_A(y, x)[2]) / 255.0;
-			col.A = getColor(x, y).A;
+			Rgba col;
+			col.r_ = (mix * (float)b_vec(y, x)[0] + (1.f - mix) * (float)a_vec(y, x)[0]) / 255.0;
+			col.g_ = (mix * (float)b_vec(y, x)[1] + (1.f - mix) * (float)a_vec(y, x)[1]) / 255.0;
+			col.b_ = (mix * (float)b_vec(y, x)[2] + (1.f - mix) * (float)a_vec(y, x)[2]) / 255.0;
+			col.a_ = getColor(x, y).a_;
 			denoised_buffer.setColor(x, y, col);
 		}
 	}
 #else //HAVE_OPENCV
 	//FIXME: Useless duplication work when OpenCV is not built in... avoid calling this function in the first place if OpenCV support not built.
 	//This is kept here for interface compatibility when OpenCV not built in.
-	for(int y = 0; y < m_height; ++y)
+	for(int y = 0; y < height_; ++y)
 	{
-		for(int x = 0; x < m_width; ++x)
+		for(int x = 0; x < width_; ++x)
 		{
 			denoised_buffer.setColor(x, y, getColor(x, y));
 		}
 	}
-	Y_WARNING << "ImageHandler: built without OpenCV support, image cannot be de-noised." << yendl;
+	Y_WARNING << "ImageHandler: built without OpenCV support, image cannot be de-noised." << YENDL;
 #endif //HAVE_OPENCV
 	return denoised_buffer;
 }
 
-imageBuffer_t::~imageBuffer_t()
+ImageBuffer::~ImageBuffer()
 {
-	if(rgba40_OptimizedImg) { delete rgba40_OptimizedImg; rgba40_OptimizedImg = nullptr; }
-	if(rgba24_CompressedImg) { delete rgba24_CompressedImg; rgba24_CompressedImg = nullptr; }
-	if(rgba128_FloatImg) { delete rgba128_FloatImg; rgba128_FloatImg = nullptr; }
-	if(rgb32_OptimizedImg) { delete rgb32_OptimizedImg; rgb32_OptimizedImg = nullptr; }
-	if(rgb16_CompressedImg) { delete rgb16_CompressedImg; rgb16_CompressedImg = nullptr; }
-	if(rgb96_FloatImg) { delete rgb96_FloatImg; rgb96_FloatImg = nullptr; }
-	if(gray32_FloatImg) { delete gray32_FloatImg; gray32_FloatImg = nullptr; }
-	if(gray8_OptimizedImg) { delete gray8_OptimizedImg; gray8_OptimizedImg = nullptr; }
+	if(rgba_40_optimized_img_) { delete rgba_40_optimized_img_; rgba_40_optimized_img_ = nullptr; }
+	if(rgba_24_compressed_img_) { delete rgba_24_compressed_img_; rgba_24_compressed_img_ = nullptr; }
+	if(rgba_128_float_img_) { delete rgba_128_float_img_; rgba_128_float_img_ = nullptr; }
+	if(rgb_32_optimized_img_) { delete rgb_32_optimized_img_; rgb_32_optimized_img_ = nullptr; }
+	if(rgb_16_compressed_img_) { delete rgb_16_compressed_img_; rgb_16_compressed_img_ = nullptr; }
+	if(rgb_96_float_img_) { delete rgb_96_float_img_; rgb_96_float_img_ = nullptr; }
+	if(gray_32_float_img_) { delete gray_32_float_img_; gray_32_float_img_ = nullptr; }
+	if(gray_8_optimized_img_) { delete gray_8_optimized_img_; gray_8_optimized_img_ = nullptr; }
 }
 
 
-std::string imageHandler_t::getDenoiseParams() const
+std::string ImageHandler::getDenoiseParams() const
 {
 #ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
-	if(!m_Denoise) return "";
-	std::stringstream paramString;
-	paramString << "| Image file denoise enabled [mix=" << m_DenoiseMix << ", h(Luminance)=" << m_DenoiseHLum << ", h(Chrominance)=" <<  m_DenoiseHCol << "]" << yendl;
-	return paramString.str();
+	if(!denoise_) return "";
+	std::stringstream param_string;
+	param_string << "| Image file denoise enabled [mix=" << denoise_mix_ << ", h(Luminance)=" << denoise_hlum_ << ", h(Chrominance)=" << denoise_hcol_ << "]" << YENDL;
+	return param_string.str();
 #else
 	return "";
 #endif
 }
 
 
-void imageHandler_t::generateMipMaps()
+void ImageHandler::generateMipMaps()
 {
-	if(imgBuffer.empty()) return;
+	if(img_buffer_.empty()) return;
 
 #ifdef HAVE_OPENCV
-	int imgIndex = 0;
+	int img_index = 0;
 	//bool blur_seamless = true;
-	int w = m_width, h = m_height;
+	int w = width_, h = height_;
 
-	Y_VERBOSE << "ImageHandler: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << yendl;
+	Y_VERBOSE << "ImageHandler: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << YENDL;
 
-	cv::Mat A(h, w, CV_32FC4);
-	cv::Mat_<cv::Vec4f> _A = A;
+	cv::Mat a(h, w, CV_32FC4);
+	cv::Mat_<cv::Vec4f> a_vec = a;
 
 	for(int j = 0; j < h; ++j)
 	{
 		for(int i = 0; i < w; ++i)
 		{
-			colorA_t color = imgBuffer.at(imgIndex)->getColor(i, j);
+			Rgba color = img_buffer_.at(img_index)->getColor(i, j);
 
-			_A(j, i)[0] = color.getR();
-			_A(j, i)[1] = color.getG();
-			_A(j, i)[2] = color.getB();
-			_A(j, i)[3] = color.getA();
+			a_vec(j, i)[0] = color.getR();
+			a_vec(j, i)[1] = color.getG();
+			a_vec(j, i)[2] = color.getB();
+			a_vec(j, i)[3] = color.getA();
 		}
 	}
 
 	//Mipmap generation using the temporary full float buffer to reduce information loss
 	while(w > 1 || h > 1)
 	{
-		int w2 = (w + 1) / 2;
-		int h2 = (h + 1) / 2;
-		++imgIndex;
-		imgBuffer.push_back(new imageBuffer_t(w2, h2, imgBuffer.at(imgIndex - 1)->getNumChannels(), getTextureOptimization()));
+		int w_2 = (w + 1) / 2;
+		int h_2 = (h + 1) / 2;
+		++img_index;
+		img_buffer_.push_back(new ImageBuffer(w_2, h_2, img_buffer_.at(img_index - 1)->getNumChannels(), getTextureOptimization()));
 
-		cv::Mat B(h2, w2, CV_32FC4);
-		cv::Mat_<cv::Vec4f> _B = B;
-		cv::resize(A, B, cv::Size(w2, h2), 0, 0, cv::INTER_AREA);
+		cv::Mat b(h_2, w_2, CV_32FC4);
+		cv::Mat_<cv::Vec4f> b_vec = b;
+		cv::resize(a, b, cv::Size(w_2, h_2), 0, 0, cv::INTER_AREA);
 		//A = B;
 
-		for(int j = 0; j < h2; ++j)
+		for(int j = 0; j < h_2; ++j)
 		{
-			for(int i = 0; i < w2; ++i)
+			for(int i = 0; i < w_2; ++i)
 			{
-				colorA_t tmpCol(0.f);
-				tmpCol.R = _B(j, i)[0];
-				tmpCol.G = _B(j, i)[1];
-				tmpCol.B = _B(j, i)[2];
-				tmpCol.A = _B(j, i)[3];
+				Rgba tmp_col(0.f);
+				tmp_col.r_ = b_vec(j, i)[0];
+				tmp_col.g_ = b_vec(j, i)[1];
+				tmp_col.b_ = b_vec(j, i)[2];
+				tmp_col.a_ = b_vec(j, i)[3];
 
-				imgBuffer.at(imgIndex)->setColor(i, j, tmpCol);
+				img_buffer_.at(img_index)->setColor(i, j, tmp_col);
 			}
 		}
 
-		w = w2;
-		h = h2;
-		Y_DEBUG << "ImageHandler: generated mipmap " << imgIndex << " [" << w2 << " x " << h2 << "]" << yendl;
+		w = w_2;
+		h = h_2;
+		Y_DEBUG << "ImageHandler: generated mipmap " << img_index << " [" << w_2 << " x " << h_2 << "]" << YENDL;
 	}
 
-	Y_VERBOSE << "ImageHandler: mipmap generation done: " << imgIndex << " mipmaps generated." << yendl;
+	Y_VERBOSE << "ImageHandler: mipmap generation done: " << img_index << " mipmaps generated." << YENDL;
 #else
-	Y_WARNING << "ImageHandler: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << yendl;
+	Y_WARNING << "ImageHandler: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << YENDL;
 #endif
 }
 
 
-void imageHandler_t::putPixel(int x, int y, const colorA_t &rgba, int imgIndex)
+void ImageHandler::putPixel(int x, int y, const Rgba &rgba, int img_index)
 {
-	imgBuffer.at(imgIndex)->setColor(x, y, rgba);
+	img_buffer_.at(img_index)->setColor(x, y, rgba);
 }
 
-colorA_t imageHandler_t::getPixel(int x, int y, int imgIndex)
+Rgba ImageHandler::getPixel(int x, int y, int img_index)
 {
-	return imgBuffer.at(imgIndex)->getColor(x, y);
+	return img_buffer_.at(img_index)->getColor(x, y);
 }
 
 
-void imageHandler_t::initForOutput(int width, int height, const renderPasses_t *renderPasses, bool denoiseEnabled, int denoiseHLum, int denoiseHCol, float denoiseMix, bool withAlpha, bool multi_layer, bool grayscale)
+void ImageHandler::initForOutput(int width, int height, const RenderPasses *render_passes, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha, bool multi_layer, bool grayscale)
 {
-	m_hasAlpha = withAlpha;
-	m_MultiLayer = multi_layer;
-	m_Denoise = denoiseEnabled;
-	m_DenoiseHLum = denoiseHLum;
-	m_DenoiseHCol = denoiseHCol;
-	m_DenoiseMix = denoiseMix;
-	m_grayscale = grayscale;
+	has_alpha_ = with_alpha;
+	multi_layer_ = multi_layer;
+	denoise_ = denoise_enabled;
+	denoise_hlum_ = denoise_h_lum;
+	denoise_hcol_ = denoise_h_col;
+	denoise_mix_ = denoise_mix;
+	grayscale_ = grayscale;
 
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
+	int n_channels = 3;
+	if(grayscale_) n_channels = 1;
+	else if(has_alpha_) n_channels = 4;
 
-	for(int idx = 0; idx < renderPasses->extPassesSize(); ++idx)
+	for(int idx = 0; idx < render_passes->extPassesSize(); ++idx)
 	{
-		imgBuffer.push_back(new imageBuffer_t(width, height, nChannels, TEX_OPTIMIZATION_NONE));
+		img_buffer_.push_back(new ImageBuffer(width, height, n_channels, TextureOptimization::None));
 	}
 }
 
-void imageHandler_t::clearImgBuffers()
+void ImageHandler::clearImgBuffers()
 {
-	if(!imgBuffer.empty())
+	if(!img_buffer_.empty())
 	{
-		for(size_t idx = 0; idx < imgBuffer.size(); ++idx)
+		for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
 		{
-			delete imgBuffer.at(idx);
-			imgBuffer.at(idx) = nullptr;
+			delete img_buffer_.at(idx);
+			img_buffer_.at(idx) = nullptr;
 		}
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

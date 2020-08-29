@@ -26,7 +26,7 @@
 #include <core_api/scene.h>
 #include <utilities/sample_utils.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 /*! sphere lights are *drumroll* lights with a sphere shape.
 	They only emit light on the outside! On the inside it is somewhat pointless,
@@ -36,180 +36,180 @@ __BEGIN_YAFRAY
 	from the sphere surface (thanks to PBRT for the hint)
 */
 
-class sphereLight_t : public light_t
+class SphereLight : public Light
 {
 	public:
-		sphereLight_t(const point3d_t &c, float rad, const color_t &col, float inte, int nsam, bool bLightEnabled = true, bool bCastShadows = true);
-		~sphereLight_t();
-		virtual void init(scene_t &scene);
-		virtual color_t totalEnergy() const;
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
+		SphereLight(const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
+		~SphereLight();
+		virtual void init(Scene &scene);
+		virtual Rgb totalEnergy() const;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const;
 		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const { return false; }
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const { return false; }
 		virtual bool canIntersect() const { return false; }
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		virtual float illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const;
-		virtual void emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const;
-		virtual int nSamples() const { return samples; }
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const;
+		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const;
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const;
+		virtual int nSamples() const { return samples_; }
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
 	protected:
-		point3d_t center;
-		float radius, square_radius, square_radius_epsilon;
-		color_t color; //!< includes intensity amplification! so...
-		int samples;
-		unsigned int objID;
-		float area, invArea;
+		Point3 center_;
+		float radius_, square_radius_, square_radius_epsilon_;
+		Rgb color_; //!< includes intensity amplification! so...
+		int samples_;
+		unsigned int obj_id_;
+		float area_, inv_area_;
 };
 
-sphereLight_t::sphereLight_t(const point3d_t &c, float rad, const color_t &col, float inte, int nsam, bool bLightEnabled, bool bCastShadows):
-	center(c), radius(rad), samples(nsam)
+SphereLight::SphereLight(const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled, bool b_cast_shadows):
+		center_(c), radius_(rad), samples_(nsam)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	color = col * inte;
-	square_radius = radius * radius;
-	square_radius_epsilon = square_radius * 1.000003815; // ~0.2% larger radius squared
-	area = square_radius * 4.0 * M_PI;
-	invArea = 1.f / area;
+	light_enabled_ = b_light_enabled;
+	cast_shadows_ = b_cast_shadows;
+	color_ = col * inte;
+	square_radius_ = radius_ * radius_;
+	square_radius_epsilon_ = square_radius_ * 1.000003815; // ~0.2% larger radius squared
+	area_ = square_radius_ * 4.0 * M_PI;
+	inv_area_ = 1.f / area_;
 }
 
-sphereLight_t::~sphereLight_t() { }
+SphereLight::~SphereLight() { }
 
-void sphereLight_t::init(scene_t &scene)
+void SphereLight::init(Scene &scene)
 {
-	if(objID)
+	if(obj_id_)
 	{
-		object3d_t *obj = scene.getObject(objID);
+		Object3D *obj = scene.getObject(obj_id_);
 		if(obj) obj->setLight(this);
-		else Y_ERROR << "SphereLight: Invalid object ID given!" << yendl;
+		else Y_ERROR << "SphereLight: Invalid object ID given!" << YENDL;
 	}
 }
 
-color_t sphereLight_t::totalEnergy() const { return color * area /* * M_PI */; }
+Rgb SphereLight::totalEnergy() const { return color_ * area_ /* * M_PI */; }
 
-inline bool sphereIntersect(const ray_t &ray, const point3d_t &c, float R2, float &d1, float &d2)
+inline bool sphereIntersect__(const Ray &ray, const Point3 &c, float r_2, float &d_1, float &d_2)
 {
-	vector3d_t vf = ray.from - c;
-	float ea = ray.dir * ray.dir;
-	float eb = 2.0 * vf * ray.dir;
-	float ec = vf * vf - R2;
+	Vec3 vf = ray.from_ - c;
+	float ea = ray.dir_ * ray.dir_;
+	float eb = 2.0 * vf * ray.dir_;
+	float ec = vf * vf - r_2;
 	float osc = eb * eb - 4.0 * ea * ec;
-	if(osc < 0) { d1 = fSqrt(ec / ea); return false; } // assume tangential hit/miss condition => Pythagoras
-	osc = fSqrt(osc);
-	d1 = (-eb - osc) / (2.0 * ea);
-	d2 = (-eb + osc) / (2.0 * ea);
+	if(osc < 0) { d_1 = fSqrt__(ec / ea); return false; } // assume tangential hit/miss condition => Pythagoras
+	osc = fSqrt__(osc);
+	d_1 = (-eb - osc) / (2.0 * ea);
+	d_2 = (-eb + osc) / (2.0 * ea);
 	return true;
 }
 
-bool sphereLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t cdir = center - sp.P;
+	Vec3 cdir = center_ - sp.p_;
 	float dist_sqr = cdir.lengthSqr();
-	if(dist_sqr <= square_radius) return false; //only emit light on the outside!
+	if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 
-	float dist = fSqrt(dist_sqr);
+	float dist = fSqrt__(dist_sqr);
 	float idist_sqr = 1.f / (dist_sqr);
-	float cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
+	float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
-	vector3d_t du, dv;
-	createCS(cdir, du, dv);
+	Vec3 du, dv;
+	createCs__(cdir, du, dv);
 
-	wi.dir = sampleCone(cdir, du, dv, cosAlpha, s.s1, s.s2);
-	float d1, d2;
-	if(!sphereIntersect(wi, center, square_radius_epsilon, d1, d2))
+	wi.dir_ = sampleCone__(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
+	float d_1, d_2;
+	if(!sphereIntersect__(wi, center_, square_radius_epsilon_, d_1, d_2))
 	{
 		return false;
 	}
-	wi.tmax = d1;
+	wi.tmax_ = d_1;
 
-	s.pdf = 1.f / (2.f * (1.f - cosAlpha));
-	s.col = color;
-	s.flags = flags;
-	if(s.sp)
+	s.pdf_ = 1.f / (2.f * (1.f - cos_alpha));
+	s.col_ = color_;
+	s.flags_ = flags_;
+	if(s.sp_)
 	{
-		s.sp->P = wi.from + d1 * wi.dir;
-		s.sp->N = s.sp->Ng = (s.sp->P - center).normalize();
+		s.sp_->p_ = wi.from_ + d_1 * wi.dir_;
+		s.sp_->n_ = s.sp_->ng_ = (s.sp_->p_ - center_).normalize();
 	}
 	return true;
 }
 
-bool sphereLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	float d1, d2;
-	if(sphereIntersect(ray, center, square_radius, d1, d2))
+	float d_1, d_2;
+	if(sphereIntersect__(ray, center_, square_radius_, d_1, d_2))
 	{
-		vector3d_t cdir = center - ray.from;
+		Vec3 cdir = center_ - ray.from_;
 		float dist_sqr = cdir.lengthSqr();
-		if(dist_sqr <= square_radius) return false; //only emit light on the outside!
+		if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 		float idist_sqr = 1.f / (dist_sqr);
-		float cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
-		ipdf = 2.f * (1.f - cosAlpha);
-		col = color;
+		float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
+		ipdf = 2.f * (1.f - cos_alpha);
+		col = color_;
 		return true;
 	}
 	return false;
 }
 
-float sphereLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
+float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	vector3d_t cdir = center - sp.P;
+	Vec3 cdir = center_ - sp.p_;
 	float dist_sqr = cdir.lengthSqr();
-	if(dist_sqr <= square_radius) return 0.f; //only emit light on the outside!
+	if(dist_sqr <= square_radius_) return 0.f; //only emit light on the outside!
 	float idist_sqr = 1.f / (dist_sqr);
-	float cosAlpha = fSqrt(1.f - square_radius * idist_sqr);
-	return 1.f / (2.f * (1.f - cosAlpha));
+	float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
+	return 1.f / (2.f * (1.f - cos_alpha));
 }
 
-void sphereLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
+void SphereLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	areaPdf = invArea * M_PI;
-	cos_wo = wo * sp.N;
+	area_pdf = inv_area_ * M_PI;
+	cos_wo = wo * sp.n_;
 	//! unfinished! use real normal, sp.N might be approximation by mesh...
-	dirPdf = cos_wo > 0 ? cos_wo : 0.f;
+	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-color_t sphereLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	vector3d_t sdir = SampleSphere(s3, s4);
-	ray.from = center + radius * sdir;
-	vector3d_t du, dv;
-	createCS(sdir, du, dv);
-	ray.dir = SampleCosHemisphere(sdir, du, dv, s1, s2);
-	ipdf = area;
-	return color;
+	Vec3 sdir = sampleSphere__(s_3, s_4);
+	ray.from_ = center_ + radius_ * sdir;
+	Vec3 du, dv;
+	createCs__(sdir, du, dv);
+	ray.dir_ = sampleCosHemisphere__(sdir, du, dv, s_1, s_2);
+	ipdf = area_;
+	return color_;
 }
 
-color_t sphereLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	vector3d_t sdir = SampleSphere(s.s3, s.s4);
-	s.sp->P = center + radius * sdir;
-	s.sp->N = s.sp->Ng = sdir;
-	vector3d_t du, dv;
-	createCS(sdir, du, dv);
-	wo = SampleCosHemisphere(sdir, du, dv, s.s1, s.s2);
-	s.dirPdf = std::fabs(sdir * wo);
-	s.areaPdf = invArea * M_PI;
-	s.flags = flags;
-	return color;
+	Vec3 sdir = sampleSphere__(s.s_3_, s.s_4_);
+	s.sp_->p_ = center_ + radius_ * sdir;
+	s.sp_->n_ = s.sp_->ng_ = sdir;
+	Vec3 du, dv;
+	createCs__(sdir, du, dv);
+	wo = sampleCosHemisphere__(sdir, du, dv, s.s_1_, s.s_2_);
+	s.dir_pdf_ = std::fabs(sdir * wo);
+	s.area_pdf_ = inv_area_ * M_PI;
+	s.flags_ = flags_;
+	return color_;
 }
 
-light_t *sphereLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *SphereLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0.0);
-	color_t color(1.0);
+	Point3 from(0.0);
+	Rgb color(1.0);
 	float power = 1.0;
 	float radius = 1.f;
 	int samples = 4;
 	int object = 0;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
-	bool pOnly = false;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool p_only = false;
 
 	params.getParam("from", from);
 	params.getParam("color", color);
@@ -217,28 +217,28 @@ light_t *sphereLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("radius", radius);
 	params.getParam("samples", samples);
 	params.getParam("object", object);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
 
-	sphereLight_t *light = new sphereLight_t(from, radius, color, power, samples, lightEnabled, castShadows);
+	SphereLight *light = new SphereLight(from, radius, color, power, samples, light_enabled, cast_shadows);
 
-	light->objID = (unsigned int)object;
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->obj_id_ = (unsigned int)object;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("spherelight", sphereLight_t::factory);
+		render.registerFactory("spherelight", SphereLight::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

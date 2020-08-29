@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef Y_THREADUTILS_H
-#define Y_THREADUTILS_H
+#ifndef YAFARAY_THREADUTILS_H
+#define YAFARAY_THREADUTILS_H
 
 #if defined(_WIN32) && defined(__MINGW32__) && defined(HAVE_MINGW_STD_THREADS) //If compiling for Windows with MinGW, the standard C++11 thread management is very slow, causing a performance drop. I'll be using the alternative (much faster) implementation from https://github.com/meganz/mingw-std-threads
 #undef _GLIBCXX_HAS_GTHREADS

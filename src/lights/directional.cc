@@ -26,157 +26,159 @@
 #include <core_api/bound.h>
 #include <utilities/sample_utils.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class directionalLight_t : public light_t
+class DirectionalLight final : public Light
 {
 	public:
-		directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, float inte, bool inf, float rad, bool bLightEnabled = true, bool bCastShadows = true);
-		virtual void init(scene_t &scene);
-		virtual color_t totalEnergy() const { return color * radius * radius * M_PI; }
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
-		virtual color_t emitSample(vector3d_t &wo, lSample_t &s) const;
-		virtual bool diracLight() const { return true; }
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const;
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		point3d_t position;
-		color_t color;
-		vector3d_t direction, du, dv;
-		float intensity;
-		float radius;
-		float areaPdf;
-		float worldRadius;
-		bool infinite;
-		int majorAxis; //!< the largest component of direction
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		DirectionalLight(const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);
+		virtual void init(Scene &scene) override;
+		virtual Rgb totalEnergy() const override { return color_ * radius_ * radius_ * M_PI; }
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		virtual bool diracLight() const override { return true; }
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
+
+		Point3 position_;
+		Rgb color_;
+		Vec3 direction_, du_, dv_;
+		float intensity_;
+		float radius_;
+		float area_pdf_;
+		float world_radius_;
+		bool infinite_;
+		int major_axis_; //!< the largest component of direction
 };
 
-directionalLight_t::directionalLight_t(const point3d_t &pos, vector3d_t dir, const color_t &col, float inte, bool inf, float rad, bool bLightEnabled, bool bCastShadows):
-	light_t(LIGHT_DIRACDIR), position(pos), direction(dir), radius(rad), infinite(inf)
+DirectionalLight::DirectionalLight(const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
+		Light(LightDiracdir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	color = col * inte;
-	intensity = color.energy();
-	direction.normalize();
-	createCS(direction, du, dv);
-	vector3d_t &d = direction;
-	majorAxis = (d.x > d.y) ? ((d.x > d.z) ? 0 : 2) : ((d.y > d.z) ? 1 : 2);
+	light_enabled_ = b_light_enabled;
+	cast_shadows_ = b_cast_shadows;
+	color_ = col * inte;
+	intensity_ = color_.energy();
+	direction_.normalize();
+	createCs__(direction_, du_, dv_);
+	Vec3 &d = direction_;
+	major_axis_ = (d.x_ > d.y_) ? ((d.x_ > d.z_) ? 0 : 2) : ((d.y_ > d.z_) ? 1 : 2);
 }
 
-void directionalLight_t::init(scene_t &scene)
+void DirectionalLight::init(Scene &scene)
 {
 	// calculate necessary parameters for photon mapping if the light
 	//  is set to illuminate the whole scene:
-	bound_t w = scene.getSceneBound();
-	worldRadius = 0.5 * (w.g - w.a).length();
-	if(infinite)
+	Bound w = scene.getSceneBound();
+	world_radius_ = 0.5 * (w.g_ - w.a_).length();
+	if(infinite_)
 	{
-		position = 0.5 * (w.a + w.g);
-		radius = worldRadius;
+		position_ = 0.5 * (w.a_ + w.g_);
+		radius_ = world_radius_;
 	}
-	areaPdf = 1.f / (radius * radius); // Pi cancels out with our weird conventions :p
-	Y_VERBOSE << "DirectionalLight: pos " << position << " world radius: " << worldRadius << yendl;
+	area_pdf_ = 1.f / (radius_ * radius_); // Pi cancels out with our weird conventions :p
+	Y_VERBOSE << "DirectionalLight: pos " << position_ << " world radius: " << world_radius_ << YENDL;
 }
 
 
-bool directionalLight_t::illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const
+bool DirectionalLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
 	// check if the point is outside of the illuminated cylinder (non-infinite lights)
-	if(!infinite)
+	if(!infinite_)
 	{
-		vector3d_t vec = position - sp.P;
-		float dist = (direction ^ vec).length();
-		if(dist > radius) return false;
-		wi.tmax = (vec * direction);
-		if(wi.tmax <= 0.0) return false;
+		Vec3 vec = position_ - sp.p_;
+		float dist = (direction_ ^ vec).length();
+		if(dist > radius_) return false;
+		wi.tmax_ = (vec * direction_);
+		if(wi.tmax_ <= 0.0) return false;
 	}
 	else
 	{
-		wi.tmax = -1.0;
+		wi.tmax_ = -1.0;
 	}
-	wi.dir = direction;
+	wi.dir_ = direction_;
 
-	col = color;
+	col = color_;
 	return true;
 }
 
-bool directionalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool DirectionalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	s.pdf = 1.0;
-	return illuminate(sp, s.col, wi);
+	s.pdf_ = 1.0;
+	return illuminate(sp, s.col_, wi);
 }
 
-color_t directionalLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb DirectionalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	//todo
-	ray.dir = -direction;
+	ray.dir_ = -direction_;
 	float u, v;
-	ShirleyDisk(s1, s2, u, v);
-	ray.from = position + radius * (u * du + v * dv);
-	if(infinite) ray.from += direction * worldRadius;
-	ipdf = M_PI * radius * radius; //4.0f * M_PI;
-	return color;
+	shirleyDisk__(s_1, s_2, u, v);
+	ray.from_ = position_ + radius_ * (u * du_ + v * dv_);
+	if(infinite_) ray.from_ += direction_ * world_radius_;
+	ipdf = M_PI * radius_ * radius_; //4.0f * M_PI;
+	return color_;
 }
 
-color_t directionalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	//todo
-	wo = -direction;
-	s.sp->N = wo;
-	s.flags = flags;
+	wo = -direction_;
+	s.sp_->n_ = wo;
+	s.flags_ = flags_;
 	float u, v;
-	ShirleyDisk(s.s1, s.s2, u, v);
-	s.sp->P = position + radius * (u * du + v * dv);
-	if(infinite) s.sp->P += direction * worldRadius;
-	s.areaPdf = areaPdf;
-	s.dirPdf = 1.f;
-	return color;
+	shirleyDisk__(s.s_1_, s.s_2_, u, v);
+	s.sp_->p_ = position_ + radius_ * (u * du_ + v * dv_);
+	if(infinite_) s.sp_->p_ += direction_ * world_radius_;
+	s.area_pdf_ = area_pdf_;
+	s.dir_pdf_ = 1.f;
+	return color_;
 }
 
-light_t *directionalLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *DirectionalLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0.0);
-	point3d_t dir(0.0, 0.0, 1.0);
-	color_t color(1.0);
+	Point3 from(0.0);
+	Point3 dir(0.0, 0.0, 1.0);
+	Rgb color(1.0);
 	float power = 1.0;
 	float rad = 1.0;
 	bool inf = true;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
-	bool pOnly = false;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool p_only = false;
 
 	params.getParam("direction", dir);
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("infinite", inf);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
 
 	if(!inf)
 	{
 		if(!params.getParam("from", from))
 		{
-			if(params.getParam("position", from)) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << yendl;
+			if(params.getParam("position", from)) Y_VERBOSE << "DirectionalLight: Deprecated parameter 'position', use 'from' instead" << YENDL;
 		}
 		params.getParam("radius", rad);
 	}
 
-	directionalLight_t *light = new directionalLight_t(from, vector3d_t(dir.x, dir.y, dir.z), color, power, inf, rad, lightEnabled, castShadows);
+	DirectionalLight *light = new DirectionalLight(from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows);
 
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
@@ -184,12 +186,12 @@ light_t *directionalLight_t::factory(paraMap_t &params, renderEnvironment_t &ren
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("directional", directionalLight_t::factory);
+		render.registerFactory("directional", DirectionalLight::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY
 

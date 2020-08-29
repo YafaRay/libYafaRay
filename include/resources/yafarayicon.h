@@ -18,8 +18,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-int yafarayicon_size = 1653;
-unsigned char yafarayicon[] =
+int yafarayicon_size__ = 1653;
+unsigned char yafarayicon__[] =
 {
 	137, 80, 78, 71, 13, 10, 26, 10,  0,  0,  0, 13, 73, 72, 68, 82,  0,  0,  0, 48,  0,
 	0,  0, 48,  8,  6,  0,  0,  0, 87,  2, 249, 135,  0,  0,  0,  4, 115, 66, 73, 84,  8,  8,  8,  8, 124,  8, 100, 136,  0,  0,  0,  9,

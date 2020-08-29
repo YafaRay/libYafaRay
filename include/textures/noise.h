@@ -1,33 +1,33 @@
 #pragma once
 
-#ifndef __NOISE_H
-#define __NOISE_H
+#ifndef YAFARAY_NOISE_H
+#define YAFARAY_NOISE_H
 
 #include <core_api/vector3d.h>
 #include <core_api/color.h>
 
 #include <yafray_constants.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYPLUGIN_EXPORT noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT NoiseGenerator
 {
 	public:
-		noiseGenerator_t() {}
-		virtual ~noiseGenerator_t() {}
-		virtual float operator()(const point3d_t &pt) const = 0;
+		NoiseGenerator() {}
+		virtual ~NoiseGenerator() {}
+		virtual float operator()(const Point3 &pt) const = 0;
 		// offset only added by blendernoise
-		virtual point3d_t offset(const point3d_t &pt) const { return pt; }
+		virtual Point3 offset(const Point3 &pt) const { return pt; }
 };
 
 //---------------------------------------------------------------------------
 // Improved Perlin noise, based on Java reference code by Ken Perlin himself.
-class YAFRAYPLUGIN_EXPORT newPerlin_t : public noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT NewPerlinNoiseGenerator : public NoiseGenerator
 {
 	public:
-		newPerlin_t() {}
-		virtual ~newPerlin_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		NewPerlinNoiseGenerator() {}
+		virtual ~NewPerlinNoiseGenerator() {}
+		virtual float operator()(const Point3 &pt) const;
 	private:
 		float fade(float t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
 		float grad(int hash, float x, float y, float z) const
@@ -41,29 +41,29 @@ class YAFRAYPLUGIN_EXPORT newPerlin_t : public noiseGenerator_t
 
 //---------------------------------------------------------------------------
 // Standard Perlin noise.
-class YAFRAYPLUGIN_EXPORT stdPerlin_t : public noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT StdPerlinNoiseGenerator : public NoiseGenerator
 {
 	public:
-		stdPerlin_t() {}
-		virtual ~stdPerlin_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		StdPerlinNoiseGenerator() {}
+		virtual ~StdPerlinNoiseGenerator() {}
+		virtual float operator()(const Point3 &pt) const;
 };
 
 // Blender noise, similar to Perlin's
-class YAFRAYPLUGIN_EXPORT blenderNoise_t : public noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT BlenderNoiseGenerator : public NoiseGenerator
 {
 	public:
-		blenderNoise_t() {}
-		virtual ~blenderNoise_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		BlenderNoiseGenerator() {}
+		virtual ~BlenderNoiseGenerator() {}
+		virtual float operator()(const Point3 &pt) const;
 		// offset texture point coordinates by one
-		virtual point3d_t offset(const point3d_t &pt) const { return pt + point3d_t(1.0, 1.0, 1.0); }
+		virtual Point3 offset(const Point3 &pt) const { return pt + Point3(1.0, 1.0, 1.0); }
 };
 
 //---------------------------------------
 // Voronoi, a.k.a. Worley/cellular basis
 
-typedef float (*distMetricFunc)(float x, float y, float z, float e);
+typedef float (*DistMetricFunc_t)(float x, float y, float z, float e);
 // distance metrics as functors
 /*struct distanceMetric_t
 {
@@ -128,127 +128,127 @@ struct dist_Minkovsky : public distanceMetric_t
 	}
 };
 */
-class YAFRAYPLUGIN_EXPORT voronoi_t : public noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT VoronoiNoiseGenerator : public NoiseGenerator
 {
 	public:
-		enum voronoiType {V_F1, V_F2, V_F3, V_F4, V_F2F1, V_CRACKLE};
-		enum dMetricType {DIST_REAL, DIST_SQUARED, DIST_MANHATTAN, DIST_CHEBYCHEV,
-		                  DIST_MINKOVSKY_HALF, DIST_MINKOVSKY_FOUR, DIST_MINKOVSKY
+		enum VoronoiType {Vf1, Vf2, Vf3, Vf4, Vf2F1, VCrackle};
+		enum DMetricType {DistReal, DistSquared, DistManhattan, DistChebychev,
+		                  DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky
 		                 };
-		voronoi_t(voronoiType vt = V_F1, dMetricType dm = DIST_REAL, float mex = 2.5);
-		virtual ~voronoi_t()
+		VoronoiNoiseGenerator(VoronoiType vt = Vf1, DMetricType dm = DistReal, float mex = 2.5);
+		virtual ~VoronoiNoiseGenerator()
 		{
 			//if (distfunc) { delete distfunc;  distfunc=nullptr; }
 		}
-		virtual float operator()(const point3d_t &pt) const;
+		virtual float operator()(const Point3 &pt) const;
 		float getDistance(int x, float da[4]) const { return da[x & 3]; }
-		point3d_t getPoint(int x, point3d_t pa[4]) const { return pa[x & 3]; }
-		void setMinkovskyExponent(float me) { mk_exp = me; }
-		void getFeatures(const point3d_t &pt, float da[4], point3d_t pa[4]) const;
-		void setDistM(dMetricType dm);
+		Point3 getPoint(int x, Point3 pa[4]) const { return pa[x & 3]; }
+		void setMinkovskyExponent(float me) { mk_exp_ = me; }
+		void getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const;
+		void setDistM(DMetricType dm);
 	protected:
-		voronoiType vType;
-		dMetricType dmType;
-		float mk_exp, w1, w2, w3, w4;
+		VoronoiType v_type_;
+		DMetricType dm_type_;
+		float mk_exp_, w_1_, w_2_, w_3_, w_4_;
 		//	distanceMetric_t* distfunc; //test...replace functors
-		distMetricFunc distfunc2;
+		DistMetricFunc_t distfunc_2_;
 		//	mutable float da[4];			// distance array
 		//	mutable point3d_t pa[4];	// feature point array
 };
 
 // cell noise
-class YAFRAYPLUGIN_EXPORT cellNoise_t : public noiseGenerator_t
+class YAFRAYPLUGIN_EXPORT CellNoiseGenerator : public NoiseGenerator
 {
 	public:
-		cellNoise_t() {}
-		virtual ~cellNoise_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		CellNoiseGenerator() {}
+		virtual ~CellNoiseGenerator() {}
+		virtual float operator()(const Point3 &pt) const;
 };
 
 //------------------
 // Musgrave types
 
-class YAFRAYPLUGIN_EXPORT musgrave_t
+class YAFRAYPLUGIN_EXPORT Musgrave
 {
 	public:
-		musgrave_t() {}
-		virtual ~musgrave_t() {}
-		virtual float operator()(const point3d_t &pt) const = 0;
+		Musgrave() {}
+		virtual ~Musgrave() {}
+		virtual float operator()(const Point3 &pt) const = 0;
 };
 
-class YAFRAYPLUGIN_EXPORT fBm_t : public musgrave_t
+class YAFRAYPLUGIN_EXPORT FBmMusgrave : public Musgrave
 {
 	public:
-		fBm_t(float _H, float _lacu, float _octs, const noiseGenerator_t *_nGen)
-			: H(_H), lacunarity(_lacu), octaves(_octs), nGen(_nGen) {}
-		virtual ~fBm_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		FBmMusgrave(float h, float lacu, float octs, const NoiseGenerator *n_gen)
+			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
+		virtual ~FBmMusgrave() {}
+		virtual float operator()(const Point3 &pt) const;
 	protected:
-		float H, lacunarity, octaves;
-		const noiseGenerator_t *nGen;
+		float h_, lacunarity_, octaves_;
+		const NoiseGenerator *n_gen_;
 };
 
-class YAFRAYPLUGIN_EXPORT mFractal_t : public musgrave_t
+class YAFRAYPLUGIN_EXPORT MFractalMusgrave : public Musgrave
 {
 	public:
-		mFractal_t(float _H, float _lacu, float _octs, const noiseGenerator_t *_nGen)
-			: H(_H), lacunarity(_lacu), octaves(_octs), nGen(_nGen) {}
-		virtual ~mFractal_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		MFractalMusgrave(float h, float lacu, float octs, const NoiseGenerator *n_gen)
+			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
+		virtual ~MFractalMusgrave() {}
+		virtual float operator()(const Point3 &pt) const;
 	protected:
-		float H, lacunarity, octaves;
-		const noiseGenerator_t *nGen;
+		float h_, lacunarity_, octaves_;
+		const NoiseGenerator *n_gen_;
 };
 
-class YAFRAYPLUGIN_EXPORT heteroTerrain_t : public musgrave_t
+class YAFRAYPLUGIN_EXPORT HeteroTerrainMusgrave : public Musgrave
 {
 	public:
-		heteroTerrain_t(float _H, float _lacu, float _octs, float _offs, const noiseGenerator_t *_nGen)
-			: H(_H), lacunarity(_lacu), octaves(_octs), offset(_offs), nGen(_nGen) {}
-		virtual ~heteroTerrain_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		HeteroTerrainMusgrave(float h, float lacu, float octs, float offs, const NoiseGenerator *n_gen)
+			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), n_gen_(n_gen) {}
+		virtual ~HeteroTerrainMusgrave() {}
+		virtual float operator()(const Point3 &pt) const;
 	protected:
-		float H, lacunarity, octaves, offset;
-		const noiseGenerator_t *nGen;
+		float h_, lacunarity_, octaves_, offset_;
+		const NoiseGenerator *n_gen_;
 };
 
-class YAFRAYPLUGIN_EXPORT hybridMFractal_t : public musgrave_t
+class YAFRAYPLUGIN_EXPORT HybridMFractalMusgrave : public Musgrave
 {
 	public:
-		hybridMFractal_t(float _H, float _lacu, float _octs, float _offs, float _gain, const noiseGenerator_t *_nGen)
-			: H(_H), lacunarity(_lacu), octaves(_octs), offset(_offs), gain(_gain), nGen(_nGen) {}
-		virtual ~hybridMFractal_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		HybridMFractalMusgrave(float h, float lacu, float octs, float offs, float gain, const NoiseGenerator *n_gen)
+			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
+		virtual ~HybridMFractalMusgrave() {}
+		virtual float operator()(const Point3 &pt) const;
 	protected:
-		float H, lacunarity, octaves, offset, gain;
-		const noiseGenerator_t *nGen;
+		float h_, lacunarity_, octaves_, offset_, gain_;
+		const NoiseGenerator *n_gen_;
 };
 
-class YAFRAYPLUGIN_EXPORT ridgedMFractal_t : public musgrave_t
+class YAFRAYPLUGIN_EXPORT RidgedMFractalMusgrave : public Musgrave
 {
 	public:
-		ridgedMFractal_t(float _H, float _lacu, float _octs, float _offs, float _gain, const noiseGenerator_t *_nGen)
-			: H(_H), lacunarity(_lacu), octaves(_octs), offset(_offs), gain(_gain), nGen(_nGen) {}
-		virtual ~ridgedMFractal_t() {}
-		virtual float operator()(const point3d_t &pt) const;
+		RidgedMFractalMusgrave(float h, float lacu, float octs, float offs, float gain, const NoiseGenerator *n_gen)
+			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
+		virtual ~RidgedMFractalMusgrave() {}
+		virtual float operator()(const Point3 &pt) const;
 	protected:
-		float H, lacunarity, octaves, offset, gain;
-		const noiseGenerator_t *nGen;
+		float h_, lacunarity_, octaves_, offset_, gain_;
+		const NoiseGenerator *n_gen_;
 };
 
 
 // basic turbulence, half amplitude, double frequency defaults
 // returns value in range (0,1)
-float YAFRAYPLUGIN_EXPORT turbulence(const noiseGenerator_t *ngen, const point3d_t &pt, int oct, float size, bool hard);
+float YAFRAYPLUGIN_EXPORT turbulence__(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard);
 // noise cell color (used with voronoi)
-colorA_t YAFRAYPLUGIN_EXPORT cellNoiseColor(const point3d_t &pt);
+Rgba YAFRAYPLUGIN_EXPORT cellNoiseColor__(const Point3 &pt);
 
-static inline float getSignedNoise(const noiseGenerator_t *nGen, const point3d_t &pt)
+static inline float getSignedNoise__(const NoiseGenerator *n_gen, const Point3 &pt)
 {
-	return (float)2.0 * (*nGen)(pt) - (float)1.0;
+	return (float)2.0 * (*n_gen)(pt) - (float)1.0;
 }
 
 
-__END_YAFRAY
+END_YAFRAY
 //---------------------------------------------------------------------------
-#endif  //__NOISE_H
+#endif  //YAFARAY_NOISE_H

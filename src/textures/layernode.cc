@@ -2,126 +2,126 @@
 #include <textures/layernode.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-layerNode_t::layerNode_t(unsigned tflag, float col_fac, float val_fac, float def_val, colorA_t def_col, mix_modes mmod):
-	input(0), upperLayer(0), texflag(tflag), colfac(col_fac), valfac(val_fac), default_val(def_val),
-	default_col(def_col), mode(mmod), do_color(false), do_scalar(false), color_input(false)
+LayerNode::LayerNode(unsigned tflag, float col_fac, float val_fac, float def_val, Rgba def_col, MixModes mmod):
+		input_(0), upper_layer_(0), texflag_(tflag), colfac_(col_fac), valfac_(val_fac), default_val_(def_val),
+		default_col_(def_col), mode_(mmod), do_color_(false), do_scalar_(false), color_input_(false)
 {}
 
-void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	colorA_t rcol, texcolor;
-	float rval, Tin = 0.f, Ta = 1.f, stencilTin = 1.f;
+	Rgba rcol, texcolor;
+	float rval, tin = 0.f, ta = 1.f, stencil_tin = 1.f;
 	// == get result of upper layer (or base values) ==
-	rcol = (upperLayer) ? upperLayer->getColor(stack) : upper_col;
-	rval = (upperLayer) ? upperLayer->getScalar(stack) : upper_val;
-	stencilTin = rcol.A;
+	rcol = (upper_layer_) ? upper_layer_->getColor(stack) : upper_col_;
+	rval = (upper_layer_) ? upper_layer_->getScalar(stack) : upper_val_;
+	stencil_tin = rcol.a_;
 
 	// == get texture input color ==
-	bool TEX_RGB = color_input;
+	bool tex_rgb = color_input_;
 
-	if(color_input)
+	if(color_input_)
 	{
-		texcolor = input->getColor(stack);
-		Ta = texcolor.A;
+		texcolor = input_->getColor(stack);
+		ta = texcolor.a_;
 	}
-	else Tin = input->getScalar(stack);
+	else tin = input_->getScalar(stack);
 
-	if(texflag & TXF_RGBTOINT)
+	if(texflag_ & TXF_RGBTOINT)
 	{
-		Tin = texcolor.col2bri();
-		TEX_RGB = false;
+		tin = texcolor.col2Bri();
+		tex_rgb = false;
 	}
 
-	if(texflag & TXF_NEGATIVE)
+	if(texflag_ & TXF_NEGATIVE)
 	{
-		if(TEX_RGB) texcolor = colorA_t(1.f) - texcolor;
-		Tin = 1.f - Tin;
+		if(tex_rgb) texcolor = Rgba(1.f) - texcolor;
+		tin = 1.f - tin;
 	}
 
 	float fact;
 
-	if(texflag & TXF_STENCIL)
+	if(texflag_ & TXF_STENCIL)
 	{
-		if(TEX_RGB) // only scalar input affects stencil...?
+		if(tex_rgb) // only scalar input affects stencil...?
 		{
-			fact = Ta;
-			Ta *= stencilTin;
-			stencilTin *= fact;
+			fact = ta;
+			ta *= stencil_tin;
+			stencil_tin *= fact;
 		}
 		else
 		{
-			fact = Tin;
-			Tin *= stencilTin;
-			stencilTin *= fact;
+			fact = tin;
+			tin *= stencil_tin;
+			stencil_tin *= fact;
 		}
 	}
 
 	// color type modulation
-	if(do_color)
+	if(do_color_)
 	{
-		if(!TEX_RGB)	texcolor = default_col;
-		else			Tin = Ta;
+		if(!tex_rgb) texcolor = default_col_;
+		else tin = ta;
 
-		float Tin_truncated_range;
+		float tin_truncated_range;
 
-		if(Tin > 1.f) Tin_truncated_range = 1.f;
-		else if(Tin < 0.f) Tin_truncated_range = 0.f;
-		else Tin_truncated_range = Tin;
+		if(tin > 1.f) tin_truncated_range = 1.f;
+		else if(tin < 0.f) tin_truncated_range = 0.f;
+		else tin_truncated_range = tin;
 
-		rcol = texture_rgb_blend(texcolor, rcol, Tin_truncated_range, stencilTin * colfac, mode);
-		rcol.clampRGB0();
+		rcol = textureRgbBlend__(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
+		rcol.clampRgb0();
 	}
 
 	// intensity type modulation
-	if(do_scalar)
+	if(do_scalar_)
 	{
-		if(TEX_RGB)
+		if(tex_rgb)
 		{
-			if(use_alpha)
+			if(use_alpha_)
 			{
-				Tin = Ta;
-				if(texflag & TXF_NEGATIVE) Tin = 1.f - Tin;
+				tin = ta;
+				if(texflag_ & TXF_NEGATIVE) tin = 1.f - tin;
 			}
 			else
 			{
-				Tin = texcolor.col2bri();
+				tin = texcolor.col2Bri();
 			}
 		}
 
-		rval = texture_value_blend(default_val, rval, Tin, stencilTin * valfac, mode);
+		rval = textureValueBlend__(default_val_, rval, tin, stencil_tin * valfac_, mode_);
 		if(rval < 0.f) rval = 0.f;
 	}
-	rcol.A = stencilTin;
-	stack[this->ID] = nodeResult_t(rcol, rval);
+	rcol.a_ = stencil_tin;
+	stack[this->id_] = NodeResult(rcol, rval);
 }
 
-void layerNode_t::eval(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi) const
+void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
 	eval(stack, state, sp);
 }
 
-void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state, const surfacePoint_t &sp) const
+void LayerNode::evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	colorA_t texcolor;
+	Rgba texcolor;
 	float rdu = 0.f, rdv = 0.f, tdu, tdv;
-	float stencilTin = 1.f;
+	float stencil_tin = 1.f;
 
 	// == get result of upper layer (or base values) ==
-	if(upperLayer)
+	if(upper_layer_)
 	{
-		colorA_t ucol = upperLayer->getColor(stack);
-		rdu = ucol.R, rdv = ucol.G;
-		stencilTin = ucol.A;
+		Rgba ucol = upper_layer_->getColor(stack);
+		rdu = ucol.r_, rdv = ucol.g_;
+		stencil_tin = ucol.a_;
 	}
 
 	// == get texture input derivative ==
-	texcolor = input->getColor(stack);
-	tdu = texcolor.R;
-	tdv = texcolor.G;
+	texcolor = input_->getColor(stack);
+	tdu = texcolor.r_;
+	tdv = texcolor.g_;
 
-	if(texflag & TXF_NEGATIVE)
+	if(texflag_ & TXF_NEGATIVE)
 	{
 		tdu = -tdu;
 		tdv = -tdv;
@@ -131,71 +131,71 @@ void layerNode_t::evalDerivative(nodeStack_t &stack, const renderState_t &state,
 	rdu += tdu;
 	rdv += tdv;
 
-	stack[this->ID] = nodeResult_t(colorA_t(rdu, rdv, 0.f, stencilTin), 0.f);
+	stack[this->id_] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
-bool layerNode_t::isViewDependant() const
+bool LayerNode::isViewDependant() const
 {
-	bool viewDep = false;
-	if(input) viewDep = viewDep || input->isViewDependant();
-	if(upperLayer) viewDep = viewDep || upperLayer->isViewDependant();
-	return viewDep;
+	bool view_dep = false;
+	if(input_) view_dep = view_dep || input_->isViewDependant();
+	if(upper_layer_) view_dep = view_dep || upper_layer_->isViewDependant();
+	return view_dep;
 }
 
-bool layerNode_t::configInputs(const paraMap_t &params, const nodeFinder_t &find)
+bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
 {
 	std::string name;
 	if(params.getParam("input", name))
 	{
-		input = find(name);
-		if(!input)
+		input_ = find(name);
+		if(!input_)
 		{
-			Y_WARNING << "LayerNode: Couldn't get input " << name << yendl;
+			Y_WARNING << "LayerNode: Couldn't get input " << name << YENDL;
 			return false;
 		}
 	}
 	else
 	{
-		Y_WARNING << "LayerNode: input not set" << yendl;
+		Y_WARNING << "LayerNode: input not set" << YENDL;
 		return false;
 	}
 
 	if(params.getParam("upper_layer", name))
 	{
-		upperLayer = find(name);
-		if(!upperLayer)
+		upper_layer_ = find(name);
+		if(!upper_layer_)
 		{
-			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << yendl;
+			Y_VERBOSE << "LayerNode: Couldn't get upper_layer " << name << YENDL;
 			return false;
 		}
 	}
 	else
 	{
-		if(!params.getParam("upper_color", upper_col))
+		if(!params.getParam("upper_color", upper_col_))
 		{
-			upper_col = color_t(0.f);
+			upper_col_ = Rgb(0.f);
 		}
-		if(!params.getParam("upper_value", upper_val))
+		if(!params.getParam("upper_value", upper_val_))
 		{
-			upper_val = 0.f;
+			upper_val_ = 0.f;
 		}
 	}
 	return true;
 }
 
-bool layerNode_t::getDependencies(std::vector<const shaderNode_t *> &dep) const
+bool LayerNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 {
 	// input actually needs to exist, but well...
-	if(input) dep.push_back(input);
-	if(upperLayer) dep.push_back(upperLayer);
+	if(input_) dep.push_back(input_);
+	if(upper_layer_) dep.push_back(upper_layer_);
 	return !dep.empty();
 }
 
-shaderNode_t *layerNode_t::factory(const paraMap_t &params, renderEnvironment_t &render)
+ShaderNode *LayerNode::factory(const ParamMap &params, RenderEnvironment &render)
 {
-	color_t def_col(1.f);
+	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;
-	bool stencil = false, noRGB = false, negative = false;
+	bool stencil = false, no_rgb = false, negative = false;
 	double def_val = 1.0, colfac = 1.0, valfac = 1.0;
 	int mode = 0;
 
@@ -208,23 +208,23 @@ shaderNode_t *layerNode_t::factory(const paraMap_t &params, renderEnvironment_t 
 	params.getParam("do_scalar", do_scalar);
 	params.getParam("color_input", color_input);
 	params.getParam("use_alpha", use_alpha);
-	params.getParam("noRGB", noRGB);
+	params.getParam("noRGB", no_rgb);
 	params.getParam("stencil", stencil);
 	params.getParam("negative", negative);
 
 	unsigned int flags = 0;
-	if(noRGB) flags |= TXF_RGBTOINT;
+	if(no_rgb) flags |= TXF_RGBTOINT;
 	if(stencil) flags |= TXF_STENCIL;
 	if(negative) flags |= TXF_NEGATIVE;
 	if(use_alpha) flags |= TXF_ALPHAMIX;
 
-	layerNode_t *node = new layerNode_t(flags, colfac, valfac, def_val, def_col, (mix_modes)mode);
-	node->do_color = do_color;
-	node->do_scalar = do_scalar;
-	node->color_input = color_input;
-	node->use_alpha = use_alpha;
+	LayerNode *node = new LayerNode(flags, colfac, valfac, def_val, def_col, (MixModes)mode);
+	node->do_color_ = do_color;
+	node->do_scalar_ = do_scalar;
+	node->color_input_ = color_input;
+	node->use_alpha_ = use_alpha;
 
 	return node;
 }
 
-__END_YAFRAY
+END_YAFRAY

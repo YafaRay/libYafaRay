@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_PKDTREE_H
-#define Y_PKDTREE_H
+#ifndef YAFARAY_PKDTREE_H
+#define YAFARAY_PKDTREE_H
 
 #include <yafray_constants.h>
 #include <core_api/logging.h>
@@ -11,9 +11,9 @@
 #include <utilities/y_alloc.h>
 //#include <algorithm>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class point3d_t;
+class Point3;
 
 namespace kdtree
 {
@@ -22,302 +22,302 @@ namespace kdtree
 #define NON_REC_LOOKUP 1
 
 template <class T>
-struct kdNode
+struct KdNode
 {
 	void createLeaf(const T *d)
 	{
-		flags = 3;
-		data = d;
+		flags_ = 3;
+		data_ = d;
 	}
 	void createInterior(int axis, float d)
 	{
-		division = d;
-		flags = (flags & ~3) | axis;
+		division_ = d;
+		flags_ = (flags_ & ~3) | axis;
 	}
-	float 	SplitPos() const { return division; }
-	int 	SplitAxis() const { return flags & 3; }
-	int 	nPrimitives() const { return flags >> 2; }
-	bool 	IsLeaf() const { return (flags & 3) == 3; }
-	uint32_t	getRightChild() const { return (flags >> 2); }
-	void 	setRightChild(uint32_t i) { flags = (flags & 3) | (i << 2); }
+	float 	splitPos() const { return division_; }
+	int 	splitAxis() const { return flags_ & 3; }
+	int 	nPrimitives() const { return flags_ >> 2; }
+	bool 	isLeaf() const { return (flags_ & 3) == 3; }
+	uint32_t	getRightChild() const { return (flags_ >> 2); }
+	void 	setRightChild(uint32_t i) { flags_ = (flags_ & 3) | (i << 2); }
 	union
 	{
-		float division;
-		const T *data;
+		float division_;
+		const T *data_;
 	};
-	uint32_t	flags;
+	uint32_t	flags_;
 };
 
 template<class NodeData> struct CompareNode
 {
-	CompareNode(int a) { axis = a; }
-	int axis;
-	bool operator()(const NodeData *d1,	const NodeData *d2) const
+	CompareNode(int a) { axis_ = a; }
+	int axis_;
+	bool operator()(const NodeData *d_1, const NodeData *d_2) const
 	{
-		return d1->pos[axis] == d2->pos[axis] ? (d1 < d2) : d1->pos[axis] < d2->pos[axis];
+		return d_1->pos_[axis_] == d_2->pos_[axis_] ? (d_1 < d_2) : d_1->pos_[axis_] < d_2->pos_[axis_];
 	}
 };
 
 template <class T>
-class pointKdTree
+class PointKdTree
 {
 	public:
-		pointKdTree() {};
-		pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads = 1);
-		~pointKdTree() { if(nodes) y_free(nodes); }
-		template<class LookupProc> void lookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared) const;
-		double lookupStat() const { return double(Y_PROCS) / double(Y_LOOKUPS); } //!< ratio of photons tested per lookup call
+		PointKdTree() {};
+		PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
+		~PointKdTree() { if(nodes_) yFree__(nodes_); }
+		template<class LookupProc> void lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const;
+		double lookupStat() const { return double(y_procs_) / double(y_lookups_); } //!< ratio of photons tested per lookup call
 	protected:
-		template<class LookupProc> void recursiveLookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared, int nodeNum) const;
+		template<class LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
 		struct KdStack
 		{
-			const kdNode<T> *node; //!< pointer to far child
-			float s; 		//!< the split val of parent node
-			int axis; 		//!< the split axis of parent node
+			const KdNode<T> *node_; //!< pointer to far child
+			float s_; 		//!< the split val of parent node
+			int axis_; 		//!< the split axis of parent node
 		};
-		void buildTree(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims);
-		void buildTreeWorker(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims, int level, uint32_t &localNextFreeNode, kdNode<T> *localNodes);
-		kdNode<T> *nodes;
-		uint32_t nElements, nextFreeNode;
-		bound_t treeBound;
-		mutable unsigned int Y_LOOKUPS, Y_PROCS;
-		int maxLevelThreads = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
-		std::mutex mutx;
+		void buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims);
+		void buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes);
+		KdNode<T> *nodes_;
+		uint32_t n_elements_, next_free_node_;
+		Bound tree_bound_;
+		mutable unsigned int y_lookups_, y_procs_;
+		int max_level_threads_ = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
+		std::mutex mutx_;
 };
 
 template<class T>
-pointKdTree<T>::pointKdTree(const std::vector<T> &dat, const std::string &mapName, int numThreads)
+PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads)
 {
-	Y_LOOKUPS = 0; Y_PROCS = 0;
-	nextFreeNode = 0;
-	nElements = dat.size();
+	y_lookups_ = 0; y_procs_ = 0;
+	next_free_node_ = 0;
+	n_elements_ = dat.size();
 
-	if(nElements == 0)
+	if(n_elements_ == 0)
 	{
-		Y_ERROR << "pointKdTree: " << mapName << " empty vector!" << yendl;
+		Y_ERROR << "pointKdTree: " << map_name << " empty vector!" << YENDL;
 		return;
 	}
 
-	nodes = (kdNode<T> *)y_memalign(64, 4 * nElements * sizeof(kdNode<T>)); //actually we could allocate one less...2n-1
+	nodes_ = (KdNode<T> *) yMemalign__(64, 4 * n_elements_ * sizeof(KdNode<T>)); //actually we could allocate one less...2n-1
 
-	const T **elements = new const T*[nElements];
+	const T **elements = new const T*[n_elements_];
 
-	for(uint32_t i = 0; i < nElements; ++i) elements[i] = &dat[i];
+	for(uint32_t i = 0; i < n_elements_; ++i) elements[i] = &dat[i];
 
-	treeBound.set(dat[0].pos, dat[0].pos);
+	tree_bound_.set(dat[0].pos_, dat[0].pos_);
 
-	for(uint32_t i = 1; i < nElements; ++i) treeBound.include(dat[i].pos);
+	for(uint32_t i = 1; i < n_elements_; ++i) tree_bound_.include(dat[i].pos_);
 
-	maxLevelThreads = (int) std::ceil(std::log2((float) numThreads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
-	int realThreads = (int) pow(2.f, maxLevelThreads); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
+	max_level_threads_ = (int) std::ceil(std::log2((float) num_threads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
+	int real_threads = (int) pow(2.f, max_level_threads_); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
 
-	Y_INFO << "pointKdTree: Starting " << mapName << " recusive tree build for " << nElements << " elements [using " << realThreads << " threads]" << yendl;
+	Y_INFO << "pointKdTree: Starting " << map_name << " recusive tree build for " << n_elements_ << " elements [using " << real_threads << " threads]" << YENDL;
 
-	buildTree(0, nElements, treeBound, elements);
+	buildTree(0, n_elements_, tree_bound_, elements);
 
-	Y_VERBOSE << "pointKdTree: " << mapName << " tree built." << yendl;
+	Y_VERBOSE << "pointKdTree: " << map_name << " tree built." << YENDL;
 
 	delete[] elements;
 }
 
 template<class T>
-void pointKdTree<T>::buildTree(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims)
+void PointKdTree<T>::buildTree(uint32_t start, uint32_t end, Bound &node_bound, const T **prims)
 {
-	buildTreeWorker(start, end, nodeBound, prims, 0, nextFreeNode, nodes);
+	buildTreeWorker(start, end, node_bound, prims, 0, next_free_node_, nodes_);
 }
 
 template<class T>
-void pointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, bound_t &nodeBound, const T **prims, int level, uint32_t &localNextFreeNode, kdNode<T> *localNodes)
+void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes)
 {
 	++level;
 	if(end - start == 1)
 	{
-		localNodes[localNextFreeNode].createLeaf(prims[start]);
-		localNextFreeNode++;
+		local_nodes[local_next_free_node].createLeaf(prims[start]);
+		local_next_free_node++;
 		--level;
 		return;
 	}
-	int splitAxis = nodeBound.largestAxis();
-	int splitEl = (start + end) / 2;
-	std::nth_element(&prims[start], &prims[splitEl],
-	                 &prims[end], CompareNode<T>(splitAxis));
-	uint32_t curNode = localNextFreeNode;
-	float splitPos = prims[splitEl]->pos[splitAxis];
-	localNodes[curNode].createInterior(splitAxis, splitPos);
-	++localNextFreeNode;
-	bound_t boundL = nodeBound, boundR = nodeBound;
-	switch(splitAxis)
+	int split_axis = node_bound.largestAxis();
+	int split_el = (start + end) / 2;
+	std::nth_element(&prims[start], &prims[split_el],
+	                 &prims[end], CompareNode<T>(split_axis));
+	uint32_t cur_node = local_next_free_node;
+	float split_pos = prims[split_el]->pos_[split_axis];
+	local_nodes[cur_node].createInterior(split_axis, split_pos);
+	++local_next_free_node;
+	Bound bound_l = node_bound, bound_r = node_bound;
+	switch(split_axis)
 	{
-		case 0: boundL.setMaxX(splitPos); boundR.setMinX(splitPos); break;
-		case 1: boundL.setMaxY(splitPos); boundR.setMinY(splitPos); break;
-		case 2: boundL.setMaxZ(splitPos); boundR.setMinZ(splitPos); break;
+		case 0: bound_l.setMaxX(split_pos); bound_r.setMinX(split_pos); break;
+		case 1: bound_l.setMaxY(split_pos); bound_r.setMinY(split_pos); break;
+		case 2: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
 	}
 
-	if(level <= maxLevelThreads)   //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
+	if(level <= max_level_threads_)   //launch threads for the first "x" levels to try to match (at least) the scene threads parameter
 	{
 		//<< recurse below child >>
-		uint32_t nextFreeNode1 = 0;
-		kdNode<T> *nodes1 = (kdNode<T> *)y_memalign(64, 4 * (splitEl - start) * sizeof(kdNode<T>));
-		std::thread *belowWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, start, splitEl, std::ref(boundL), prims, level, std::ref(nextFreeNode1), nodes1);
+		uint32_t next_free_node_1 = 0;
+		KdNode<T> *nodes_1 = (KdNode<T> *) yMemalign__(64, 4 * (split_el - start) * sizeof(KdNode<T>));
+		std::thread *below_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, start, split_el, std::ref(bound_l), prims, level, std::ref(next_free_node_1), nodes_1);
 
 		//<< recurse above child >>
-		uint32_t nextFreeNode2 = 0;
-		kdNode<T> *nodes2 = (kdNode<T> *)y_memalign(64, 4 * (end - splitEl) * sizeof(kdNode<T>));
-		std::thread *aboveWorker = new std::thread(&pointKdTree<T>::buildTreeWorker, this, splitEl, end, std::ref(boundR), prims, level, std::ref(nextFreeNode2), nodes2);
+		uint32_t next_free_node_2 = 0;
+		KdNode<T> *nodes_2 = (KdNode<T> *) yMemalign__(64, 4 * (end - split_el) * sizeof(KdNode<T>));
+		std::thread *above_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, split_el, end, std::ref(bound_r), prims, level, std::ref(next_free_node_2), nodes_2);
 
-		belowWorker->join();
-		aboveWorker->join();
-		delete belowWorker;
-		delete aboveWorker;
+		below_worker->join();
+		above_worker->join();
+		delete below_worker;
+		delete above_worker;
 
-		if(nodes1)
+		if(nodes_1)
 		{
-			for(uint32_t i = 0; i < nextFreeNode1; ++i)
+			for(uint32_t i = 0; i < next_free_node_1; ++i)
 			{
-				localNodes[i + localNextFreeNode] = nodes1[i];
-				if(!localNodes[i + localNextFreeNode].IsLeaf())
+				local_nodes[i + local_next_free_node] = nodes_1[i];
+				if(!local_nodes[i + local_next_free_node].isLeaf())
 				{
-					uint32_t right_child = localNodes[i + localNextFreeNode].getRightChild();
-					localNodes[i + localNextFreeNode].setRightChild(right_child + localNextFreeNode);
+					uint32_t right_child = local_nodes[i + local_next_free_node].getRightChild();
+					local_nodes[i + local_next_free_node].setRightChild(right_child + local_next_free_node);
 				}
 			}
-			y_free(nodes1);
+			yFree__(nodes_1);
 		}
 
-		if(nodes2)
+		if(nodes_2)
 		{
-			for(uint32_t i = 0; i < nextFreeNode2; ++i)
+			for(uint32_t i = 0; i < next_free_node_2; ++i)
 			{
-				localNodes[i + localNextFreeNode + nextFreeNode1] = nodes2[i];
-				if(!localNodes[i + localNextFreeNode + nextFreeNode1].IsLeaf())
+				local_nodes[i + local_next_free_node + next_free_node_1] = nodes_2[i];
+				if(!local_nodes[i + local_next_free_node + next_free_node_1].isLeaf())
 				{
-					uint32_t right_child = localNodes[i + localNextFreeNode + nextFreeNode1].getRightChild();
-					localNodes[i + localNextFreeNode + nextFreeNode1].setRightChild(right_child + localNextFreeNode + nextFreeNode1);
+					uint32_t right_child = local_nodes[i + local_next_free_node + next_free_node_1].getRightChild();
+					local_nodes[i + local_next_free_node + next_free_node_1].setRightChild(right_child + local_next_free_node + next_free_node_1);
 				}
 			}
-			y_free(nodes2);
+			yFree__(nodes_2);
 		}
 
-		localNodes[curNode].setRightChild(localNextFreeNode + nextFreeNode1);
-		localNextFreeNode = localNextFreeNode + nextFreeNode1 + nextFreeNode2;
+		local_nodes[cur_node].setRightChild(local_next_free_node + next_free_node_1);
+		local_next_free_node = local_next_free_node + next_free_node_1 + next_free_node_2;
 	}
 	else  //for the rest of the levels in the tree, don't launch more threads, do normal "sequential" operation
 	{
 		//<< recurse below child >>
-		buildTreeWorker(start, splitEl, boundL, prims, level, localNextFreeNode, localNodes);
+		buildTreeWorker(start, split_el, bound_l, prims, level, local_next_free_node, local_nodes);
 		//<< recurse above child >>
-		localNodes[curNode].setRightChild(localNextFreeNode);
-		buildTreeWorker(splitEl, end, boundR, prims, level, localNextFreeNode, localNodes);
+		local_nodes[cur_node].setRightChild(local_next_free_node);
+		buildTreeWorker(split_el, end, bound_r, prims, level, local_next_free_node, local_nodes);
 	}
 	--level;
 }
 
 
 template<class T> template<class LookupProc>
-void pointKdTree<T>::lookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared) const
+void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const
 {
 #if NON_REC_LOOKUP > 0
-	++Y_LOOKUPS;
+	++y_lookups_;
 	KdStack stack[KD_MAX_STACK];
-	const kdNode<T> *farChild, *currNode = nodes;
+	const KdNode<T> *far_child, *curr_node = nodes_;
 
-	int stackPtr = 1;
-	stack[stackPtr].node = nullptr; // "nowhere", termination flag
+	int stack_ptr = 1;
+	stack[stack_ptr].node_ = nullptr; // "nowhere", termination flag
 
 	while(true)
 	{
-		while(!currNode->IsLeaf())
+		while(!curr_node->isLeaf())
 		{
-			int axis = currNode->SplitAxis();
-			float splitVal = currNode->SplitPos();
+			int axis = curr_node->splitAxis();
+			float split_val = curr_node->splitPos();
 
-			if(p[axis] <= splitVal)   //need traverse left first
+			if(p[axis] <= split_val)   //need traverse left first
 			{
-				farChild = &nodes[currNode->getRightChild()];
-				currNode++;
+				far_child = &nodes_[curr_node->getRightChild()];
+				curr_node++;
 			}
 			else //need traverse right child first
 			{
-				farChild = currNode + 1;
-				currNode = &nodes[currNode->getRightChild()];
+				far_child = curr_node + 1;
+				curr_node = &nodes_[curr_node->getRightChild()];
 			}
-			++stackPtr;
-			stack[stackPtr].node = farChild;
-			stack[stackPtr].axis = axis;
-			stack[stackPtr].s = splitVal;
+			++stack_ptr;
+			stack[stack_ptr].node_ = far_child;
+			stack[stack_ptr].axis_ = axis;
+			stack[stack_ptr].s_ = split_val;
 		}
 
 		// Hand leaf-data kd-tree to processing function
-		vector3d_t v = currNode->data->pos - p;
-		float dist2 = v.lengthSqr();
+		Vec3 v = curr_node->data_->pos_ - p;
+		float dist_2 = v.lengthSqr();
 
-		if(dist2 < maxDistSquared)
+		if(dist_2 < max_dist_squared)
 		{
-			++Y_PROCS;
-			proc(currNode->data, dist2, maxDistSquared);
+			++y_procs_;
+			proc(curr_node->data_, dist_2, max_dist_squared);
 		}
 
-		if(!stack[stackPtr].node) return; // stack empty, done.
+		if(!stack[stack_ptr].node_) return; // stack empty, done.
 		//radius probably lowered so we may pop additional elements:
-		int axis = stack[stackPtr].axis;
-		dist2 = p[axis] - stack[stackPtr].s;
-		dist2 *= dist2;
+		int axis = stack[stack_ptr].axis_;
+		dist_2 = p[axis] - stack[stack_ptr].s_;
+		dist_2 *= dist_2;
 
-		while(dist2 > maxDistSquared)
+		while(dist_2 > max_dist_squared)
 		{
-			--stackPtr;
-			if(!stack[stackPtr].node) return;// stack empty, done.
-			axis = stack[stackPtr].axis;
-			dist2 = p[axis] - stack[stackPtr].s;
-			dist2 *= dist2;
+			--stack_ptr;
+			if(!stack[stack_ptr].node_) return;// stack empty, done.
+			axis = stack[stack_ptr].axis_;
+			dist_2 = p[axis] - stack[stack_ptr].s_;
+			dist_2 *= dist_2;
 		}
-		currNode = stack[stackPtr].node;
-		--stackPtr;
+		curr_node = stack[stack_ptr].node_;
+		--stack_ptr;
 	}
 #else
 	recursiveLookup(p, proc, maxDistSquared, 0);
 	++Y_LOOKUPS;
 	if(Y_LOOKUPS == 159999)
 	{
-		Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS) / double(Y_LOOKUPS) << yendl;
+		Y_VERBOSE << "pointKd-Tree:average photons tested per lookup:" << double(Y_PROCS) / double(Y_LOOKUPS) << YENDL;
 	}
 #endif
 }
 
 template<class T> template<class LookupProc>
-void pointKdTree<T>::recursiveLookup(const point3d_t &p, const LookupProc &proc, float &maxDistSquared, int nodeNum) const
+void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const
 {
-	const kdNode<T> *currNode = &nodes[nodeNum];
-	if(currNode->IsLeaf())
+	const KdNode<T> *curr_node = &nodes_[node_num];
+	if(curr_node->isLeaf())
 	{
-		vector3d_t v = currNode->data->pos - p;
-		float dist2 = v.lengthSqr();
-		if(dist2 < maxDistSquared)
+		Vec3 v = curr_node->data_->pos_ - p;
+		float dist_2 = v.lengthSqr();
+		if(dist_2 < max_dist_squared)
 		{
-			proc(currNode->data, dist2, maxDistSquared);
-			++Y_PROCS;
+			proc(curr_node->data_, dist_2, max_dist_squared);
+			++y_procs_;
 		}
 		return;
 	}
-	int axis = currNode->SplitAxis();
-	float dist2 = p[axis] - currNode->SplitPos();
-	dist2 *= dist2;
-	if(p[axis] <= currNode->SplitPos())
+	int axis = curr_node->splitAxis();
+	float dist_2 = p[axis] - curr_node->splitPos();
+	dist_2 *= dist_2;
+	if(p[axis] <= curr_node->splitPos())
 	{
-		recursiveLookup(p, proc, maxDistSquared, nodeNum + 1);
-		if(dist2 < maxDistSquared)
-			recursiveLookup(p, proc, maxDistSquared, currNode->getRightChild());
+		recursiveLookup(p, proc, max_dist_squared, node_num + 1);
+		if(dist_2 < max_dist_squared)
+			recursiveLookup(p, proc, max_dist_squared, curr_node->getRightChild());
 	}
 	else
 	{
-		recursiveLookup(p, proc, maxDistSquared, currNode->getRightChild());
-		if(dist2 < maxDistSquared)
-			recursiveLookup(p, proc, maxDistSquared, nodeNum + 1);
+		recursiveLookup(p, proc, max_dist_squared, curr_node->getRightChild());
+		if(dist_2 < max_dist_squared)
+			recursiveLookup(p, proc, max_dist_squared, node_num + 1);
 	}
 }
 
 } // namespace::kdtree
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_PKDTREE_H
+#endif // YAFARAY_PKDTREE_H

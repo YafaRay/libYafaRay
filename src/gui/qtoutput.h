@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_QTOUTPUT_H
-#define Y_QTOUTPUT_H
+#ifndef YAFARAY_QTOUTPUT_H
+#define YAFARAY_QTOUTPUT_H
 
 #include <core_api/output.h>
 #include "renderwidget.h"
@@ -28,7 +28,7 @@
 
 class QWidget;
 
-class QtOutput: public yafaray::colorOutput_t
+class QtOutput: public yafaray4::ColorOutput
 {
 	public:
 		QtOutput(RenderWidget *render);
@@ -36,15 +36,15 @@ class QtOutput: public yafaray::colorOutput_t
 
 		void setRenderSize(const QSize &s);
 
-		// inherited from yafaray::colorOutput_t
-		virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, int idx, const yafaray::colorA_t &color, bool alpha = true);
-		virtual bool putPixel(int numView, int x, int y, const yafaray::renderPasses_t *renderPasses, const std::vector<yafaray::colorA_t> &colExtPasses, bool alpha = true);
-		virtual void flush(int numView, const yafaray::renderPasses_t *renderPasses);
-		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray::renderPasses_t *renderPasses);
-		virtual void highliteArea(int numView, int x0, int y0, int x1, int y1);
+		// inherited from yafaray4::colorOutput_t
+		virtual bool putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha = true);
+		virtual bool putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &col_ext_passes, bool alpha = true);
+		virtual void flush(int num_view, const yafaray4::RenderPasses *render_passes);
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const yafaray4::RenderPasses *render_passes);
+		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1);
 
 	private:
-		RenderWidget *renderBuffer;
+		RenderWidget *render_buffer_;
 };
 
 #endif

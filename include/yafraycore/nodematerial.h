@@ -1,46 +1,46 @@
 #pragma once
 
-#ifndef Y_SHADERMAT_H
-#define Y_SHADERMAT_H
+#ifndef YAFARAY_NODEMATERIAL_H
+#define YAFARAY_NODEMATERIAL_H
 
 #include <yafray_constants.h>
 #include <core_api/material.h>
 #include <core_api/shader.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class renderEnvironment_t;
+class RenderEnvironment;
 
-enum nodeType_e { VIEW_DEP = 1, VIEW_INDEP = 1 << 1 };
+enum NodeTypeE { ViewDep = 1, ViewIndep = 1 << 1 };
 
-class YAFRAYCORE_EXPORT nodeMaterial_t: public material_t
+class YAFRAYCORE_EXPORT NodeMaterial: public Material
 {
 	public:
-		nodeMaterial_t(): reqNodeMem(0) {}
+		NodeMaterial(): req_node_mem_(0) {}
 	protected:
 		/*! load nodes from parameter map list */
-		bool loadNodes(const std::list<paraMap_t> &paramsList, renderEnvironment_t &render);
+		bool loadNodes(const std::list<ParamMap> &params_list, RenderEnvironment &render);
 		/** parse node shaders to fill nodeList */
-		void parseNodes(const paraMap_t &params, std::vector<shaderNode_t *> &roots, std::map<std::string, shaderNode_t *> &nodeList);
+		void parseNodes(const ParamMap &params, std::vector<ShaderNode *> &roots, std::map<std::string, ShaderNode *> &node_list);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
-		void solveNodesOrder(const std::vector<shaderNode_t *> &roots);
-		void getNodeList(const shaderNode_t *root, std::vector<shaderNode_t *> &nodes);
-		void evalNodes(const renderState_t &state, const surfacePoint_t &sp, const std::vector<shaderNode_t *> &nodes, nodeStack_t &stack) const
+		void solveNodesOrder(const std::vector<ShaderNode *> &roots);
+		void getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes);
+		void evalNodes(const RenderState &state, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const
 		{
 			auto end = nodes.end();
 			for(auto iter = nodes.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
 		}
-		void evalBump(nodeStack_t &stack, const renderState_t &state, surfacePoint_t &sp, const shaderNode_t *bumpS) const;
+		void evalBump(NodeStack &stack, const RenderState &state, SurfacePoint &sp, const ShaderNode *bump_s) const;
 		/*! filter out nodes with specific properties */
-		void filterNodes(const std::vector<shaderNode_t *> &input, std::vector<shaderNode_t *> &output, int flags);
-		virtual ~nodeMaterial_t();
+		void filterNodes(const std::vector<ShaderNode *> &input, std::vector<ShaderNode *> &output, int flags);
+		virtual ~NodeMaterial();
 
-		std::vector<shaderNode_t *> allNodes, allSorted, allViewdep, allViewindep, bumpNodes;
-		std::map<std::string, shaderNode_t *> mShadersTable;
-		size_t reqNodeMem;
+		std::vector<ShaderNode *> all_nodes_, all_sorted_, all_viewdep_, all_viewindep_, bump_nodes_;
+		std::map<std::string, ShaderNode *> m_shaders_table_;
+		size_t req_node_mem_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_SHADERMAT_H
+#endif // YAFARAY_NODEMATERIAL_H

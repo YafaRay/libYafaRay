@@ -37,55 +37,55 @@ namespace libtiff
 #include <tiffio.h>
 }
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-#define inv8  0.00392156862745098039 // 1 / 255
-#define inv16 0.00001525902189669642 // 1 / 65535
+#define INV_8  0.00392156862745098039 // 1 / 255
+#define INV_16 0.00001525902189669642 // 1 / 65535
 
-class tifHandler_t: public imageHandler_t
+class TifHandler: public ImageHandler
 {
 	public:
-		tifHandler_t();
-		~tifHandler_t();
+		TifHandler();
+		~TifHandler();
 		bool loadFromFile(const std::string &name);
-		bool saveToFile(const std::string &name, int imgIndex = 0);
-		static imageHandler_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		bool saveToFile(const std::string &name, int img_index = 0);
+		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
 };
 
-tifHandler_t::tifHandler_t()
+TifHandler::TifHandler()
 {
-	m_hasAlpha = false;
-	m_MultiLayer = false;
+	has_alpha_ = false;
+	multi_layer_ = false;
 
-	handlerName = "TIFFHandler";
+	handler_name_ = "TIFFHandler";
 }
 
-tifHandler_t::~tifHandler_t()
+TifHandler::~TifHandler()
 {
 	clearImgBuffers();
 }
 
-bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
+bool TifHandler::saveToFile(const std::string &name, int img_index)
 {
-	int h = getHeight(imgIndex);
-	int w = getWidth(imgIndex);
+	int h = getHeight(img_index);
+	int w = getWidth(img_index);
 
-	std::string nameWithoutTmp = name;
-	nameWithoutTmp.erase(nameWithoutTmp.length() - 4);
-	if(session.renderInProgress()) Y_INFO << handlerName << ": Autosaving partial render (" << RoundFloatPrecision(session.currentPassPercent(), 0.01) << "% of pass " << session.currentPass() << " of " << session.totalPasses() << ") RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
-	else Y_INFO << handlerName << ": Saving RGB" << (m_hasAlpha ? "A" : "") << " file as \"" << nameWithoutTmp << "\"...  " << getDenoiseParams() << yendl;
+	std::string name_without_tmp = name;
+	name_without_tmp.erase(name_without_tmp.length() - 4);
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	else Y_INFO << handler_name_ << ": Saving RGB" << (has_alpha_ ? "A" : "") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
 #if defined(_WIN32)
-	std::wstring wname = utf8_to_wutf16le(name);
+	std::wstring wname = utf8ToWutf16Le__(name);
 	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *out = libtiff::TIFFOpen(name.c_str(), "w");
 #endif
 
 	int channels;
-	size_t bytesPerScanline;
+	size_t bytes_per_scanline;
 
-	if(m_hasAlpha) channels = 4;
+	if(has_alpha_) channels = 4;
 	else channels = 3;
 
 	libtiff::TIFFSetField(out, TIFFTAG_IMAGEWIDTH, w);
@@ -96,33 +96,33 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 	libtiff::TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	libtiff::TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 
-	bytesPerScanline = channels * w;
+	bytes_per_scanline = channels * w;
 
-	yByte *scanline = (yByte *)libtiff::_TIFFmalloc(bytesPerScanline);
+	YByte_t *scanline = (YByte_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
 
-	libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytesPerScanline));
+	libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytes_per_scanline));
 
 	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
-	if(m_Denoise)
+	if(denoise_)
 	{
-		imageBuffer_t denoised_buffer = imgBuffer.at(imgIndex)->getDenoisedLDRBuffer(m_DenoiseHCol, m_DenoiseHLum, m_DenoiseMix);
+		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
 			{
 				int ix = x * channels;
-				colorA_t col = denoised_buffer.getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix] = (yByte)(col.getR() * 255.f);
-				scanline[ix + 1] = (yByte)(col.getG() * 255.f);
-				scanline[ix + 2] = (yByte)(col.getB() * 255.f);
-				if(m_hasAlpha) scanline[ix + 3] = (yByte)(col.getA() * 255.f);
+				Rgba col = denoised_buffer.getColor(x, y);
+				col.clampRgba01();
+				scanline[ix] = (YByte_t)(col.getR() * 255.f);
+				scanline[ix + 1] = (YByte_t)(col.getG() * 255.f);
+				scanline[ix + 2] = (YByte_t)(col.getB() * 255.f);
+				if(has_alpha_) scanline[ix + 3] = (YByte_t)(col.getA() * 255.f);
 			}
 
 			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 			{
-				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				Y_ERROR << handler_name_ << ": An error occurred while writing TIFF file" << YENDL;
 				libtiff::TIFFClose(out);
 				libtiff::_TIFFfree(scanline);
 
@@ -138,17 +138,17 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 			for(int x = 0; x < w; x++)
 			{
 				int ix = x * channels;
-				colorA_t col = imgBuffer.at(imgIndex)->getColor(x, y);
-				col.clampRGBA01();
-				scanline[ix] = (yByte)(col.getR() * 255.f);
-				scanline[ix + 1] = (yByte)(col.getG() * 255.f);
-				scanline[ix + 2] = (yByte)(col.getB() * 255.f);
-				if(m_hasAlpha) scanline[ix + 3] = (yByte)(col.getA() * 255.f);
+				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
+				col.clampRgba01();
+				scanline[ix] = (YByte_t)(col.getR() * 255.f);
+				scanline[ix + 1] = (YByte_t)(col.getG() * 255.f);
+				scanline[ix + 2] = (YByte_t)(col.getB() * 255.f);
+				if(has_alpha_) scanline[ix + 3] = (YByte_t)(col.getA() * 255.f);
 			}
 
 			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 			{
-				Y_ERROR << handlerName << ": An error occurred while writing TIFF file" << yendl;
+				Y_ERROR << handler_name_ << ": An error occurred while writing TIFF file" << YENDL;
 				libtiff::TIFFClose(out);
 				libtiff::_TIFFfree(scanline);
 
@@ -160,101 +160,101 @@ bool tifHandler_t::saveToFile(const std::string &name, int imgIndex)
 	libtiff::TIFFClose(out);
 	libtiff::_TIFFfree(scanline);
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-bool tifHandler_t::loadFromFile(const std::string &name)
+bool TifHandler::loadFromFile(const std::string &name)
 {
 	libtiff::uint32 w, h;
 
 #if defined(_WIN32)
-	std::wstring wname = utf8_to_wutf16le(name);
+	std::wstring wname = utf8ToWutf16Le__(name);
 	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *tif = libtiff::TIFFOpen(name.c_str(), "r");
 #endif
-	Y_INFO << handlerName << ": Loading image \"" << name << "\"..." << yendl;
+	Y_INFO << handler_name_ << ": Loading image \"" << name << "\"..." << YENDL;
 
 
 
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 
-	libtiff::uint32 *tiffData = (libtiff::uint32 *)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
+	libtiff::uint32 *tiff_data = (libtiff::uint32 *)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
 
-	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiffData, 0))
+	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiff_data, 0))
 	{
-		Y_ERROR << handlerName << ": Error reading TIFF file" << yendl;
+		Y_ERROR << handler_name_ << ": Error reading TIFF file" << YENDL;
 		return false;
 	}
 
-	m_hasAlpha = true;
-	m_width = (int)w;
-	m_height = (int)h;
+	has_alpha_ = true;
+	width_ = (int)w;
+	height_ = (int)h;
 
 	clearImgBuffers();
 
-	int nChannels = 3;
-	if(m_grayscale) nChannels = 1;
-	else if(m_hasAlpha) nChannels = 4;
-	imgBuffer.push_back(new imageBuffer_t(m_width, m_height, nChannels, getTextureOptimization()));
+	int n_channels = 3;
+	if(grayscale_) n_channels = 1;
+	else if(has_alpha_) n_channels = 4;
+	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
 
 	int i = 0;
 
-	for(int y = m_height - 1; y >= 0; y--)
+	for(int y = height_ - 1; y >= 0; y--)
 	{
-		for(int x = 0; x < m_width; x++)
+		for(int x = 0; x < width_; x++)
 		{
-			colorA_t color;
-			color.set((float)TIFFGetR(tiffData[i]) * inv8,
-			          (float)TIFFGetG(tiffData[i]) * inv8,
-			          (float)TIFFGetB(tiffData[i]) * inv8,
-			          (float)TIFFGetA(tiffData[i]) * inv8);
+			Rgba color;
+			color.set((float)TIFFGetR(tiff_data[i]) * INV_8,
+					  (float)TIFFGetG(tiff_data[i]) * INV_8,
+					  (float)TIFFGetB(tiff_data[i]) * INV_8,
+					  (float)TIFFGetA(tiff_data[i]) * INV_8);
 			i++;
 
-			imgBuffer.at(0)->setColor(x, y, color, m_colorSpace, m_gamma);
+			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
 		}
 	}
 
-	libtiff::_TIFFfree(tiffData);
+	libtiff::_TIFFfree(tiff_data);
 
 	libtiff::TIFFClose(tif);
 
-	Y_VERBOSE << handlerName << ": Done." << yendl;
+	Y_VERBOSE << handler_name_ << ": Done." << YENDL;
 
 	return true;
 }
 
-imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &render)
+ImageHandler *TifHandler::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int width = 0;
 	int height = 0;
-	bool withAlpha = false;
-	bool forOutput = true;
+	bool with_alpha = false;
+	bool for_output = true;
 	bool img_grayscale = false;
-	bool denoiseEnabled = false;
-	int denoiseHLum = 3;
-	int denoiseHCol = 3;
-	float denoiseMix = 0.8f;
+	bool denoise_enabled = false;
+	int denoise_h_lum = 3;
+	int denoise_h_col = 3;
+	float denoise_mix = 0.8f;
 
 	params.getParam("width", width);
 	params.getParam("height", height);
-	params.getParam("alpha_channel", withAlpha);
-	params.getParam("for_output", forOutput);
-	params.getParam("denoiseEnabled", denoiseEnabled);
-	params.getParam("denoiseHLum", denoiseHLum);
-	params.getParam("denoiseHCol", denoiseHCol);
-	params.getParam("denoiseMix", denoiseMix);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("for_output", for_output);
+	params.getParam("denoiseEnabled", denoise_enabled);
+	params.getParam("denoiseHLum", denoise_h_lum);
+	params.getParam("denoiseHCol", denoise_h_col);
+	params.getParam("denoiseMix", denoise_mix);
 	params.getParam("img_grayscale", img_grayscale);
 
-	imageHandler_t *ih = new tifHandler_t();
+	ImageHandler *ih = new TifHandler();
 
-	if(forOutput)
+	if(for_output)
 	{
-		if(yafLog.getUseParamsBadge()) height += yafLog.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoiseEnabled, denoiseHLum, denoiseHCol, denoiseMix, withAlpha, false, img_grayscale);
+		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
+		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;
@@ -263,11 +263,11 @@ imageHandler_t *tifHandler_t::factory(paraMap_t &params, renderEnvironment_t &re
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerImageHandler("tif", "tif tiff", "TIFF [Tag Image File Format]", tifHandler_t::factory);
+		render.registerImageHandler("tif", "tif tiff", "TIFF [Tag Image File Format]", TifHandler::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

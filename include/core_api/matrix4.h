@@ -27,21 +27,20 @@
 #include "vector3d.h"
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT matrix4x4_t
+class YAFRAYCORE_EXPORT Matrix4
 {
 	public:
-		matrix4x4_t() {};
-		matrix4x4_t(const float init);
-		matrix4x4_t(const matrix4x4_t &source);
-		matrix4x4_t(const float source[4][4]);
-		matrix4x4_t(const double source[4][4]);
-		~matrix4x4_t() {};
+		Matrix4() = default;
+		Matrix4(const float init);
+		Matrix4(const Matrix4 &source);
+		Matrix4(const float source[4][4]);
+		Matrix4(const double source[4][4]);
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */
-		matrix4x4_t &inverse();
-		matrix4x4_t &transpose();
+		Matrix4 &inverse();
+		Matrix4 &transpose();
 		void identity();
 		void translate(float dx, float dy, float dz);
 		void rotateX(float degrees);
@@ -66,9 +65,9 @@ class YAFRAYCORE_EXPORT matrix4x4_t
 		int invalid_;
 };
 
-inline matrix4x4_t  operator * (const matrix4x4_t &a, const matrix4x4_t &b)
+inline Matrix4 operator * (const Matrix4 &a, const Matrix4 &b)
 {
-	matrix4x4_t aux;
+	Matrix4 aux;
 
 	for(int i = 0; i < 4; i++)
 		for(int k = 0; k < 4; k++)
@@ -80,30 +79,30 @@ inline matrix4x4_t  operator * (const matrix4x4_t &a, const matrix4x4_t &b)
 	return aux;
 }
 
-inline vector3d_t  operator * (const matrix4x4_t &a, const vector3d_t &b)
+inline Vec3 operator * (const Matrix4 &a, const Vec3 &b)
 {
-	return vector3d_t(a[0][0] * b.x + a[0][1] * b.y + a[0][2] * b.z,
-	                  a[1][0] * b.x + a[1][1] * b.y + a[1][2] * b.z,
-	                  a[2][0] * b.x + a[2][1] * b.y + a[2][2] * b.z);
+	return Vec3(a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_,
+	                  a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_,
+	                  a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_);
 }
 
-inline point3d_t  operator * (const matrix4x4_t &a, const point3d_t &b)
+inline Point3 operator * (const Matrix4 &a, const Point3 &b)
 {
-	return  point3d_t(a[0][0] * b.x + a[0][1] * b.y + a[0][2] * b.z + a[0][3],
-	                  a[1][0] * b.x + a[1][1] * b.y + a[1][2] * b.z + a[1][3],
-	                  a[2][0] * b.x + a[2][1] * b.y + a[2][2] * b.z + a[2][3]);
+	return Point3(a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_ + a[0][3],
+	                  a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_ + a[1][3],
+	                  a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_ + a[2][3]);
 }
 
-inline normal_t  operator * (const matrix4x4_t &a, const normal_t &b)
+inline Normal operator * (const Matrix4 &a, const Normal &b)
 {
-	return normal_t(a[0][0] * b.x + a[0][1] * b.y + a[0][2] * b.z,
-	                a[1][0] * b.x + a[1][1] * b.y + a[1][2] * b.z,
-	                a[2][0] * b.x + a[2][1] * b.y + a[2][2] * b.z);
+	return Normal(a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_,
+	                a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_,
+	                a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_);
 }
 
 //matrix4x4_t rayToZ(const point3d_t &from,const vector3d_t & ray);
-YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, matrix4x4_t &m);
+YAFRAYCORE_EXPORT std::ostream &operator << (std::ostream &out, Matrix4 &m);
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

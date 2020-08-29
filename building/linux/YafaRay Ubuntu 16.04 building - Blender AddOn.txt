@@ -1,7 +1,7 @@
 # UBUNTU 16.04 YafaRay Blender Add-On building procedure (only valid for YafaRay v3.1.2 or higher)
-# NOTE: This procedure generates a "yafaray_v3" folder that can be installed in the Blender Add-Ons folder
+# NOTE: This procedure generates a "yafaray4" folder that can be installed in the Blender Add-Ons folder
 #       However, this only works for the Blender included in the distro (currently 2.76). When using this
-#       yafaray_v3 folder with the Blender downloaded from www.blender.org there might be conflicts with the 
+#       yafaray4 folder with the Blender downloaded from www.blender.org there might be conflicts with the
 #       Blender EXR, PNG and JPEG libraries.
 
 # INSTALLING DEVEL TOOLS
@@ -30,7 +30,7 @@ set(YAF_USER_CONFIG ON)
 ####################################################################
 
 set(DEBUG_BUILD OFF)
-set(USER_INSTALL_PREFIX "$HOME/yafa-dev/build/yafaray_v3/")
+set(USER_INSTALL_PREFIX "$HOME/yafa-dev/build/yafaray4/")
 set(BLENDER_ADDON ON)
 set(YAF_PY_VERSION 3.5)
 set(BLENDER_EXPORTER_PATH "$HOME/yafa-dev/src/Blender-Exporter")
@@ -46,8 +46,8 @@ make install -j9
 
 # TEST IN BLENDER
 mkdir -p $HOME/.config/blender/2.76/scripts/addons
-cp -R $HOME/yafa-dev/build/yafaray_v3 $HOME/.config/blender/2.76/scripts/addons/yafaray_v3
-blender $HOME/yafa-dev/build/yafaray_v3/tests/test01/test01.blend
+cp -R $HOME/yafa-dev/build/yafaray4 $HOME/.config/blender/2.76/scripts/addons/yafaray4
+blender $HOME/yafa-dev/build/yafaray4/tests/test01/test01.blend
 
 # In Blender, go to File->User Preferences->AddOns-->YafaRay v3 and enable it. Then, click save settings and close the User Preferences window.
 

@@ -1,37 +1,37 @@
 #pragma once
 
-#ifndef Y_PHOTONMAP_H
-#define Y_PHOTONMAP_H
+#ifndef YAFARAY_PHOTON_H
+#define YAFARAY_PHOTON_H
 
 #include <yafray_constants.h>
 
 #include "pkdtree.h"
 #include <core_api/color.h>
 
-__BEGIN_YAFRAY
-#define c255Ratio 81.16902097686662123083
-#define c256Ratio 40.74366543152520595687
+BEGIN_YAFRAY
+#define C_255_RATIO 81.16902097686662123083
+#define C_256_RATIO 40.74366543152520595687
 
 
-#define cInv255Ratio 0.01231997119054820878
-#define cInv256Ratio 0.02454369260617025968
+#define C_INV_255_RATIO 0.01231997119054820878
+#define C_INV_256_RATIO 0.02454369260617025968
 
 
-class dirConverter_t
+class DirConverter
 {
 	public:
-		dirConverter_t();
+		DirConverter();
 
-		vector3d_t convert(unsigned char theta, unsigned char phi)
+		Vec3 convert(unsigned char theta, unsigned char phi)
 		{
-			return vector3d_t(sintheta[theta] * cosphi[phi],
-			                  sintheta[theta] * sinphi[phi],
-			                  costheta[theta]);
+			return Vec3(sintheta_[theta] * cosphi_[phi],
+						sintheta_[theta] * sinphi_[phi],
+						costheta_[theta]);
 		}
-		std::pair<unsigned char, unsigned char> convert(const vector3d_t &dir)
+		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir)
 		{
-			int t = (int)(fAcos(dir.z) * c255Ratio);
-			int p = (int)(atan2(dir.y, dir.x) * c256Ratio);
+			int t = (int)(fAcos__(dir.z_) * C_255_RATIO);
+			int p = (int)(atan2(dir.y_, dir.x_) * C_256_RATIO);
 			if(t > 254) t = 254;
 			else if(t < 0) t = 0;
 			if(p > 255) p = 255;
@@ -40,27 +40,27 @@ class dirConverter_t
 		}
 
 	protected:
-		float cosphi[256];
-		float sinphi[256];
-		float costheta[255];
-		float sintheta[255];
+		float cosphi_[256];
+		float sinphi_[256];
+		float costheta_[255];
+		float sintheta_[255];
 };
 
-extern YAFRAYCORE_EXPORT dirConverter_t dirconverter;
+extern YAFRAYCORE_EXPORT DirConverter dirconverter__;
 
-class photon_t
+class Photon
 {
 	public:
-		photon_t() {/*theta=255;*/};
-		photon_t(const vector3d_t &d, const point3d_t &p, const color_t &col)
+		Photon() {/*theta=255;*/};
+		Photon(const Vec3 &d, const Point3 &p, const Rgb &col)
 		{
-#ifdef _SMALL_PHOTONS
+#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
 			direction(d);
 #else
-			dir = d;
+			dir_ = d;
 #endif
-			pos = p;
-			c = col;
+			pos_ = p;
+			c_ = col;
 		};
 		//		photon_t(const runningPhoton_t &p)
 		//		{
@@ -70,136 +70,136 @@ class photon_t
 		//			dir.normalize();
 		//			direction(dir);
 		//		};
-		const point3d_t &position() const {return pos;};
-		const color_t color() const {return c;};
-		void color(const color_t &col) {c = col;};
-		vector3d_t direction() const
+		const Point3 &position() const {return pos_;};
+		const Rgb color() const {return c_;};
+		void color(const Rgb &col) { c_ = col;};
+		Vec3 direction() const
 		{
-#ifdef _SMALL_PHOTONS
-			if(theta == 255) return vector3d_t(0, 0, 0);
-			else return dirconverter.convert(theta, phi);
-#else //_SMALL_PHOTONS
-			return (vector3d_t)dir;
-#endif //_SMALL_PHOTONS
+#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
+			if(theta_ == 255) return Vec3(0, 0, 0);
+			else return dirconverter__.convert(theta_, phi_);
+#else //SMALL_PHOTONS
+			return (Vec3)dir_;
+#endif //SMALL_PHOTONS
 		};
-		void direction(const vector3d_t &d)
+		void direction(const Vec3 &d)
 		{
-#ifdef _SMALL_PHOTONS
-			if(dir.null()) theta = 255;
+#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
+			if(d.null()) theta_ = 255;
 			else
 			{
-				std::pair<unsigned char, unsigned char> cd = dirconverter.convert(d);
-				theta = cd.first;
-				phi = cd.second;
+				std::pair<unsigned char, unsigned char> cd = dirconverter__.convert(d);
+				theta_ = cd.first;
+				phi_ = cd.second;
 			}
-#else //_SMALL_PHOTONS
-			dir = d;
-#endif //_SMALL_PHOTONS
+#else //SMALL_PHOTONS
+			dir_ = d;
+#endif //SMALL_PHOTONS
 		}
 
-		point3d_t pos;
+		Point3 pos_;
 
-#ifdef _SMALL_PHOTONS
-		rgbe_t c;
-		unsigned char theta, phi;
+#ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
+		Rgbe c_;
+		unsigned char theta_, phi_;
 
-#else //_SMALL_PHOTONS
-		color_t c;
-		normal_t dir;
-#endif //_SMALL_PHOTONS
+#else //SMALL_PHOTONS
+		Rgb c_;
+		Normal dir_;
+#endif //SMALL_PHOTONS
 };
 
-struct radData_t
+struct RadData
 {
-	radData_t(point3d_t &p, vector3d_t n): pos(p), normal(n), use(true) {}
-	point3d_t pos;
-	vector3d_t normal;
-	color_t refl;
-	color_t transm;
-	mutable bool use;
+	RadData(Point3 &p, Vec3 n): pos_(p), normal_(n), use_(true) {}
+	Point3 pos_;
+	Vec3 normal_;
+	Rgb refl_;
+	Rgb transm_;
+	mutable bool use_;
 };
 
-struct foundPhoton_t
+struct FoundPhoton
 {
-	foundPhoton_t() {};
-	foundPhoton_t(const photon_t *p, float d): photon(p), distSquare(d) {}
-	bool operator<(const foundPhoton_t &p2) const { return distSquare < p2.distSquare; }
-	const photon_t *photon;
-	float distSquare;
+	FoundPhoton() {};
+	FoundPhoton(const Photon *p, float d): photon_(p), dist_square_(d) {}
+	bool operator<(const FoundPhoton &p_2) const { return dist_square_ < p_2.dist_square_; }
+	const Photon *photon_;
+	float dist_square_;
 	//temp!!
-	float dis;
+	float dis_;
 };
 
-class YAFRAYCORE_EXPORT photonMap_t
+class YAFRAYCORE_EXPORT PhotonMap
 {
 	public:
-		photonMap_t(): paths(0), updated(false), searchRadius(1.), tree(nullptr) { }
-		photonMap_t(const std::string &mapname, int threads): paths(0), updated(false), searchRadius(1.), tree(nullptr), name(mapname), threadsPKDtree(threads) { }
-		~photonMap_t() { if(tree) delete tree; }
-		void setNumPaths(int n) { paths = n; }
-		void setName(const std::string &mapname) { name = mapname; }
-		void setNumThreadsPKDtree(int threads) { threadsPKDtree = threads; }
-		int nPaths() const { return paths; }
-		int nPhotons() const { return photons.size(); }
-		void pushPhoton(photon_t &p) { photons.push_back(p); updated = false; }
-		void swapVector(std::vector<photon_t> &vec) { photons.swap(vec); updated = false; }
-		void appendVector(std::vector<photon_t> &vec, unsigned int curr) { photons.insert(std::end(photons), std::begin(vec), std::end(vec)); updated = false; paths += curr;}
-		void reserveMemory(size_t numPhotons) { photons.reserve(numPhotons); }
+		PhotonMap(): paths_(0), updated_(false), search_radius_(1.), tree_(nullptr) { }
+		PhotonMap(const std::string &mapname, int threads): paths_(0), updated_(false), search_radius_(1.), tree_(nullptr), name_(mapname), threads_pkd_tree_(threads) { }
+		~PhotonMap() { if(tree_) delete tree_; }
+		void setNumPaths(int n) { paths_ = n; }
+		void setName(const std::string &mapname) { name_ = mapname; }
+		void setNumThreadsPkDtree(int threads) { threads_pkd_tree_ = threads; }
+		int nPaths() const { return paths_; }
+		int nPhotons() const { return photons_.size(); }
+		void pushPhoton(Photon &p) { photons_.push_back(p); updated_ = false; }
+		void swapVector(std::vector<Photon> &vec) { photons_.swap(vec); updated_ = false; }
+		void appendVector(std::vector<Photon> &vec, unsigned int curr) { photons_.insert(std::end(photons_), std::begin(vec), std::end(vec)); updated_ = false; paths_ += curr;}
+		void reserveMemory(size_t num_photons) { photons_.reserve(num_photons); }
 		void updateTree();
-		void clear() { photons.clear(); delete tree; tree = nullptr; updated = false; }
-		bool ready() const { return updated; }
+		void clear() { photons_.clear(); delete tree_; tree_ = nullptr; updated_ = false; }
+		bool ready() const { return updated_; }
 		//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
-		int gather(const point3d_t &P, foundPhoton_t *found, unsigned int K, float &sqRadius) const;
-		const photon_t *findNearest(const point3d_t &P, const vector3d_t &n, float dist) const;
+		int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const;
+		const Photon *findNearest(const Point3 &p, const Vec3 &n, float dist) const;
 		bool load(const std::string &filename);
 		bool save(const std::string &filename) const;
-		std::mutex mutx;
+		std::mutex mutx_;
 
 	protected:
-		std::vector<photon_t> photons;
-		int paths; //!< amount of photon paths that have been traced for generating the map
-		bool updated;
-		float searchRadius;
-		kdtree::pointKdTree<photon_t> *tree;
-		std::string name;
-		int threadsPKDtree = 1;
+		std::vector<Photon> photons_;
+		int paths_; //!< amount of photon paths that have been traced for generating the map
+		bool updated_;
+		float search_radius_;
+		kdtree::PointKdTree<Photon> *tree_ = nullptr;
+		std::string name_;
+		int threads_pkd_tree_ = 1;
 };
 
 // photon "processes" for lookup
 
-struct photonGather_t
+struct PhotonGather
 {
-	photonGather_t(uint32_t mp, const point3d_t &p);
-	void operator()(const photon_t *photon, float dist2, float &maxDistSquared) const;
-	const point3d_t &p;
-	foundPhoton_t *photons;
-	uint32_t nLookup;
-	mutable uint32_t foundPhotons;
+	PhotonGather(uint32_t mp, const Point3 &p);
+	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const;
+	const Point3 &p_;
+	FoundPhoton *photons_;
+	uint32_t n_lookup_;
+	mutable uint32_t found_photons_;
 };
 
-struct nearestPhoton_t
+struct NearestPhoton
 {
-	nearestPhoton_t(const point3d_t &pos, const vector3d_t &norm): p(pos), n(norm), nearest(nullptr) {}
-	void operator()(const photon_t *photon, float dist2, float &maxDistSquared) const
+	NearestPhoton(const Point3 &pos, const Vec3 &norm): p_(pos), n_(norm), nearest_(nullptr) {}
+	void operator()(const Photon *photon, float dist_2, float &max_dist_squared) const
 	{
-		if(photon->direction() * n > 0.f) { nearest = photon; maxDistSquared = dist2; }
+		if(photon->direction() * n_ > 0.f) { nearest_ = photon; max_dist_squared = dist_2; }
 	}
-	const point3d_t p; //wth do i need this for actually??
-	const vector3d_t n;
-	mutable const photon_t *nearest;
+	const Point3 p_; //wth do i need this for actually??
+	const Vec3 n_;
+	mutable const Photon *nearest_;
 };
 
 /*! "eliminates" photons within lookup radius (sets use=false) */
-struct eliminatePhoton_t
+struct EliminatePhoton
 {
-	eliminatePhoton_t(const vector3d_t &norm): n(norm) {}
-	void operator()(const radData_t *rpoint, float dist2, float &maxDistSquared) const
+	EliminatePhoton(const Vec3 &norm): n_(norm) {}
+	void operator()(const RadData *rpoint, float dist_2, float &max_dist_squared) const
 	{
-		if(rpoint->normal * n > 0.f) { rpoint->use = false; }
+		if(rpoint->normal_ * n_ > 0.f) { rpoint->use_ = false; }
 	}
-	const vector3d_t n;
+	const Vec3 n_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_PHOTONMAP_H
+#endif // YAFARAY_PHOTON_H

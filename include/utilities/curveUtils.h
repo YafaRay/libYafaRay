@@ -19,160 +19,152 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef CURVEUTILS_H_
-#define CURVEUTILS_H_
+#ifndef YAFARAY_CURVEUTILS_H
+#define YAFARAY_CURVEUTILS_H
 
 #include <yafray_constants.h>
 
-__BEGIN_YAFRAY
-
-//////////////////////////////////////////////////////////////////////////////
-// Curve Abstract declaration
-//////////////////////////////////////////////////////////////////////////////
-
-class Curve
-{
-	public:
-		virtual float getSample(float x) const = 0;
-		float operator()(float x) const {return getSample(x);};
-};
+BEGIN_YAFRAY
 
 //////////////////////////////////////////////////////////////////////////////
 // irregularCurve declaration & definition
 //////////////////////////////////////////////////////////////////////////////
 
-class  IrregularCurve: public Curve
+class IrregularCurve final
 {
-	private:
-		float *c1;
-		float *c2;
-		int size;
-		int index;
-
 	public:
 		IrregularCurve(const float *datay, const float *datax, int n);
 		IrregularCurve(const float *datay, int n);
-		virtual ~IrregularCurve();
+		~IrregularCurve();
 		float getSample(float wl) const;
+		float operator()(float x) const {return getSample(x);};
 		void addSample(float data);
+
+	private:
+		float *c_1_ = nullptr;
+		float *c_2_ = nullptr;
+		int size_;
+		int index_;
 };
-IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): c1(nullptr), c2(nullptr), size(n), index(0)
+
+IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): c_1_(nullptr), c_2_(nullptr), size_(n), index_(0)
 {
-	c1 = new float[n];
-	c2 = new float[n];
+	c_1_ = new float[n];
+	c_2_ = new float[n];
 	for(int i = 0; i < n; i++)
 	{
-		c1[i] = datax[i];
-		c2[i] = datay[i];
+		c_1_[i] = datax[i];
+		c_2_[i] = datay[i];
 	}
 }
 
-IrregularCurve::IrregularCurve(const float *datay, int n): c1(nullptr), c2(nullptr), size(n), index(0)
+IrregularCurve::IrregularCurve(const float *datay, int n): c_1_(nullptr), c_2_(nullptr), size_(n), index_(0)
 {
-	c1 = new float[n];
-	c2 = new float[n];
-	for(int i = 0; i < n; i++) c2[i] = datay[i];
+	c_1_ = new float[n];
+	c_2_ = new float[n];
+	for(int i = 0; i < n; i++) c_2_[i] = datay[i];
 }
 
 IrregularCurve::~IrregularCurve()
 {
-	if(c1) { delete [] c1; c1 = nullptr; }
-	if(c2) { delete [] c2; c2 = nullptr; }
+	if(c_1_) { delete [] c_1_; c_1_ = nullptr; }
+	if(c_2_) { delete [] c_2_; c_2_ = nullptr; }
 }
 
 float IrregularCurve::getSample(float x) const
 {
-	if(x < c1[0] || x > c1[size - 1]) return 0.0;
+	if(x < c_1_[0] || x > c_1_[size_ - 1]) return 0.0;
 	int zero = 0;
 
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < size_; i++)
 	{
-		if(c1[i] == x) return c2[i];
-		else if(c1[i] <= x && c1[i + 1] > x)
+		if(c_1_[i] == x) return c_2_[i];
+		else if(c_1_[i] <= x && c_1_[i + 1] > x)
 		{
 			zero = i;
 			break;
 		}
 	}
 
-	float y = x - c1[zero];
-	y *= (c2[zero + 1] - c2[zero]) / (c1[zero + 1] - c1[zero]);
-	y += c2[zero];
+	float y = x - c_1_[zero];
+	y *= (c_2_[zero + 1] - c_2_[zero]) / (c_1_[zero + 1] - c_1_[zero]);
+	y += c_2_[zero];
 	return y;
 }
 
 void IrregularCurve::addSample(float data)
 {
-	if(index < size) c1[index++] = data;
+	if(index_ < size_) c_1_[index_++] = data;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // regularCurve declaration & definition
 //////////////////////////////////////////////////////////////////////////////
 
-class RegularCurve: public Curve
+class RegularCurve final
 {
-	private:
-		float *c;
-		float m;
-		float M;
-		float step;
-		int size;
-		int index;
-
 	public:
-		RegularCurve(const float *data, float BeginR, float EndR, int n);
-		RegularCurve(float BeginR, float EndR, int n);
-		virtual ~RegularCurve();
+		RegularCurve(const float *data, float begin_r, float end_r, int n);
+		RegularCurve(float begin_r, float end_r, int n);
+		~RegularCurve();
 		float getSample(float x) const;
+		float operator()(float x) const {return getSample(x);};
 		void addSample(float data);
+
+	private:
+		float *c_ = nullptr;
+		float end_r_;
+		float begin_r_;
+		float step_;
+		int size_;
+		int index_;
 };
 
-RegularCurve::RegularCurve(const float *data, float BeginR, float EndR, int n):
-	c(nullptr), m(BeginR), M(EndR), step(0.0), size(n), index(0)
+RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n):
+		c_(nullptr), end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
 {
-	c = new float[n];
-	for(int i = 0; i < n; i++) c[i] = data[i];
-	step = n / (M - m);
+	c_ = new float[n];
+	for(int i = 0; i < n; i++) c_[i] = data[i];
+	step_ = n / (begin_r_ - end_r_);
 }
 
-RegularCurve::RegularCurve(float BeginR, float EndR, int n) : c(nullptr), m(BeginR), M(EndR), step(0.0), size(n), index(0)
+RegularCurve::RegularCurve(float begin_r, float end_r, int n) : c_(nullptr), end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
 {
-	c = new float[n];
-	step = n / (M - m);
+	c_ = new float[n];
+	step_ = n / (begin_r_ - end_r_);
 }
 
 RegularCurve::~RegularCurve()
 {
-	if(c) { delete [] c; c = nullptr; }
+	if(c_) { delete [] c_; c_ = nullptr; }
 }
 
 float RegularCurve::getSample(float x) const
 {
-	if(x < m || x > M) return 0.0;
-	float med, x0, x1, y;
-	int y0, y1;
+	if(x < end_r_ || x > begin_r_) return 0.0;
+	float med, x_0, x_1, y;
+	int y_0, y_1;
 
-	med = (x - m) * step;
-	y0 = static_cast<int>(floor(med));
-	y1 = static_cast<int>(ceil(med));
+	med = (x - end_r_) * step_;
+	y_0 = static_cast<int>(floor(med));
+	y_1 = static_cast<int>(ceil(med));
 
-	if(y0 == y1) return c[y0];
+	if(y_0 == y_1) return c_[y_0];
 
-	x0 = (y0 / step) + m;
-	x1 = (y1 / step) + m;
+	x_0 = (y_0 / step_) + end_r_;
+	x_1 = (y_1 / step_) + end_r_;
 
-	y = x - x0;
-	y *= (c[y1] - c[y0]) / (x1 - x0);
-	y += c[y0];
+	y = x - x_0;
+	y *= (c_[y_1] - c_[y_0]) / (x_1 - x_0);
+	y += c_[y_0];
 
 	return y;
 }
 
 void RegularCurve::addSample(float data)
 {
-	if(index < size) c[index++] = data;
+	if(index_ < size_) c_[index_++] = data;
 }
 
-__END_YAFRAY
+END_YAFRAY
 #endif

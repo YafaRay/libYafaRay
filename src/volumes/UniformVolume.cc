@@ -8,87 +8,87 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-struct renderState_t;
-struct pSample_t;
+struct RenderState;
+struct PSample;
 
 class UniformVolume : public VolumeRegion
 {
 	public:
 
-		UniformVolume(color_t sa, color_t ss, color_t le, float gg, point3d_t pmin, point3d_t pmax, int attgridScale) :
-			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgridScale)
+		UniformVolume(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
+			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale)
 		{
-			Y_VERBOSE << "UniformVolume: Vol.[" << s_a << ", " << s_s << ", " << l_e << ", " << pmin << ", " << pmax << ", " << attgridScale << "]" << yendl;
+			Y_VERBOSE << "UniformVolume: Vol.[" << s_a_ << ", " << s_s_ << ", " << l_e_ << ", " << pmin << ", " << pmax << ", " << attgrid_scale << "]" << YENDL;
 		}
 
-		virtual color_t sigma_a(const point3d_t &p, const vector3d_t &v);
-		virtual color_t sigma_s(const point3d_t &p, const vector3d_t &v);
-		virtual color_t emission(const point3d_t &p, const vector3d_t &v);
-		virtual color_t tau(const ray_t &ray, float step, float offset);
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v);
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v);
+		virtual Rgb emission(const Point3 &p, const Vec3 &v);
+		virtual Rgb tau(const Ray &ray, float step, float offset);
 
-		static VolumeRegion *factory(paraMap_t &params, renderEnvironment_t &render);
+		static VolumeRegion *factory(ParamMap &params, RenderEnvironment &render);
 };
 
-color_t UniformVolume::sigma_a(const point3d_t &p, const vector3d_t &v)
+Rgb UniformVolume::sigmaA(const Point3 &p, const Vec3 &v)
 {
-	if(!haveS_a) return color_t(0.f);
-	if(bBox.includes(p))
+	if(!have_s_a_) return Rgb(0.f);
+	if(b_box_.includes(p))
 	{
-		return s_a;
+		return s_a_;
 	}
 	else
-		return color_t(0.f);
+		return Rgb(0.f);
 
 }
 
-color_t UniformVolume::sigma_s(const point3d_t &p, const vector3d_t &v)
+Rgb UniformVolume::sigmaS(const Point3 &p, const Vec3 &v)
 {
-	if(!haveS_s) return color_t(0.f);
-	if(bBox.includes(p))
+	if(!have_s_s_) return Rgb(0.f);
+	if(b_box_.includes(p))
 	{
-		return s_s;
+		return s_s_;
 	}
 	else
-		return color_t(0.f);
+		return Rgb(0.f);
 }
 
-color_t UniformVolume::tau(const ray_t &ray, float step, float offset)
+Rgb UniformVolume::tau(const Ray &ray, float step, float offset)
 {
-	float t0 = -1, t1 = -1;
+	float t_0 = -1, t_1 = -1;
 
 	// ray doesn't hit the BB
-	if(!intersect(ray, t0, t1))
+	if(!intersect(ray, t_0, t_1))
 	{
-		return color_t(0.f);
+		return Rgb(0.f);
 	}
 
-	if(ray.tmax < t0 && !(ray.tmax < 0)) return color_t(0.f);
+	if(ray.tmax_ < t_0 && !(ray.tmax_ < 0)) return Rgb(0.f);
 
-	if(ray.tmax < t1 && !(ray.tmax < 0)) t1 = ray.tmax;
+	if(ray.tmax_ < t_1 && !(ray.tmax_ < 0)) t_1 = ray.tmax_;
 
 	// t0 < 0 means, ray.from is in the volume
-	if(t0 < 0.f) t0 = 0.f;
+	if(t_0 < 0.f) t_0 = 0.f;
 
 	// distance travelled in the volume
-	float dist = t1 - t0;
+	float dist = t_1 - t_0;
 
-	return dist * (s_s + s_a);
+	return dist * (s_s_ + s_a_);
 }
 
-color_t UniformVolume::emission(const point3d_t &p, const vector3d_t &v)
+Rgb UniformVolume::emission(const Point3 &p, const Vec3 &v)
 {
-	if(!haveL_e) return color_t(0.f);
-	if(bBox.includes(p))
+	if(!have_l_e_) return Rgb(0.f);
+	if(b_box_.includes(p))
 	{
-		return l_e;
+		return l_e_;
 	}
 	else
-		return color_t(0.f);
+		return Rgb(0.f);
 }
 
-VolumeRegion *UniformVolume::factory(paraMap_t &params, renderEnvironment_t &render)
+VolumeRegion *UniformVolume::factory(ParamMap &params, RenderEnvironment &render)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -96,7 +96,7 @@ VolumeRegion *UniformVolume::factory(paraMap_t &params, renderEnvironment_t &ren
 	float g = .0f;
 	float min[] = {0, 0, 0};
 	float max[] = {0, 0, 0};
-	int attSc = 5;
+	int att_sc = 5;
 
 	params.getParam("sigma_s", ss);
 	params.getParam("sigma_a", sa);
@@ -108,19 +108,19 @@ VolumeRegion *UniformVolume::factory(paraMap_t &params, renderEnvironment_t &ren
 	params.getParam("maxX", max[0]);
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
-	params.getParam("attgridScale", attSc);
+	params.getParam("attgridScale", att_sc);
 
-	UniformVolume *vol = new UniformVolume(color_t(sa), color_t(ss), color_t(le), g,
-	                                       point3d_t(min[0], min[1], min[2]), point3d_t(max[0], max[1], max[2]), attSc);
+	UniformVolume *vol = new UniformVolume(Rgb(sa), Rgb(ss), Rgb(le), g,
+										   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc);
 	return vol;
 }
 
 extern "C"
 {
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("UniformVolume", UniformVolume::factory);
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

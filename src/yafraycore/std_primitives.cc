@@ -23,58 +23,58 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-bound_t sphere_t::getBound() const
+Bound Sphere::getBound() const
 {
-	vector3d_t r(radius * 1.0001);
-	return bound_t(center - r, center + r);
+	Vec3 r(radius_ * 1.0001);
+	return Bound(center_ - r, center_ + r);
 }
 
-bool sphere_t::intersect(const ray_t &ray, float *t, intersectData_t &data) const
+bool Sphere::intersect(const Ray &ray, float *t, IntersectData &data) const
 {
-	vector3d_t vf = ray.from - center;
-	float ea = ray.dir * ray.dir;
-	float eb = 2.0 * (vf * ray.dir);
-	float ec = vf * vf - radius * radius;
+	Vec3 vf = ray.from_ - center_;
+	float ea = ray.dir_ * ray.dir_;
+	float eb = 2.0 * (vf * ray.dir_);
+	float ec = vf * vf - radius_ * radius_;
 	float osc = eb * eb - 4.0 * ea * ec;
 	if(osc < 0) return false;
-	osc = fSqrt(osc);
-	float sol1 = (-eb - osc) / (2.0 * ea);
-	float sol2 = (-eb + osc) / (2.0 * ea);
-	float sol = sol1;
-	if(sol < ray.tmin)
+	osc = fSqrt__(osc);
+	float sol_1 = (-eb - osc) / (2.0 * ea);
+	float sol_2 = (-eb + osc) / (2.0 * ea);
+	float sol = sol_1;
+	if(sol < ray.tmin_)
 	{
-		sol = sol2;
-		if(sol < ray.tmin) return false;
+		sol = sol_2;
+		if(sol < ray.tmin_) return false;
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
 	*t = sol;
 	return true;
 }
 
-void sphere_t::getSurface(surfacePoint_t &sp, const point3d_t &hit, intersectData_t &data) const
+void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
 {
-	vector3d_t normal = hit - center;
-	sp.orcoP = normal;
+	Vec3 normal = hit - center_;
+	sp.orco_p_ = normal;
 	normal.normalize();
-	sp.material = material;
-	sp.N = normal;
-	sp.Ng = normal;
+	sp.material_ = material_;
+	sp.n_ = normal;
+	sp.ng_ = normal;
 	//sp.origin = (void*)this;
-	sp.hasOrco = true;
-	sp.P = hit;
-	createCS(sp.N, sp.NU, sp.NV);
-	sp.U = atan2(normal.y, normal.x) * M_1_PI + 1;
-	sp.V = 1.f - fAcos(normal.z) * M_1_PI;
-	sp.light = nullptr;
+	sp.has_orco_ = true;
+	sp.p_ = hit;
+	createCs__(sp.n_, sp.nu_, sp.nv_);
+	sp.u_ = atan2(normal.y_, normal.x_) * M_1_PI + 1;
+	sp.v_ = 1.f - fAcos__(normal.z_) * M_1_PI;
+	sp.light_ = nullptr;
 }
 
-object3d_t *sphere_factory(paraMap_t &params, renderEnvironment_t &env)
+Object3D *sphereFactory__(ParamMap &params, RenderEnvironment &env)
 {
-	point3d_t center(0.f, 0.f, 0.f);
+	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);
-	const material_t *mat;
+	const Material *mat;
 	std::string matname;
 	params.getParam("center", center);
 	params.getParam("radius", radius);
@@ -82,8 +82,8 @@ object3d_t *sphere_factory(paraMap_t &params, renderEnvironment_t &env)
 	if(matname.empty()) return nullptr;
 	mat = env.getMaterial(matname);
 	if(!mat) return nullptr;
-	sphere_t *sphere = new sphere_t(center, radius, mat);
-	return new primObject_t(sphere);
+	Sphere *sphere = new Sphere(center, radius, mat);
+	return new PrimObject(sphere);
 }
 
-__END_YAFRAY
+END_YAFRAY

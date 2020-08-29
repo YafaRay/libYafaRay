@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_SCENE_H
-#define Y_SCENE_H
+#ifndef YAFARAY_SCENE_H
+#define YAFARAY_SCENE_H
 
 #include <yafray_constants.h>
 #include <utilities/threadUtils.h>
@@ -19,87 +19,88 @@
 #define INVISIBLEM	0x0100
 #define BASEMESH	0x0200
 
-__BEGIN_YAFRAY
-class scene_t;
-class camera_t;
-class material_t;
-class object3d_t;
-class triangleObject_t;
-class meshObject_t;
-class surfacePoint_t;
-class ray_t;
-class diffRay_t;
-class primitive_t;
-class triKdTree_t;
-template<class T> class kdTree_t;
-class triangle_t;
-class background_t;
-class light_t;
-class surfaceIntegrator_t;
-class volumeIntegrator_t;
-class imageFilm_t;
-class random_t;
-class renderEnvironment_t;
+BEGIN_YAFRAY
+class Scene;
+class Camera;
+class Material;
+class Object3D;
+class TriangleObject;
+class MeshObject;
+class SurfacePoint;
+class Ray;
+class DiffRay;
+class Primitive;
+class TriKdTree;
+template<class T> class KdTree;
+class Triangle;
+class Background;
+class Light;
+class SurfaceIntegrator;
+class VolumeIntegrator;
+class ImageFilm;
+class Random;
+class RenderEnvironment;
 class VolumeRegion;
-class renderPasses_t;
-class matrix4x4_t;
-class color_t;
-enum intPassTypes_t : int;
+class RenderPasses;
+class Matrix4;
+class Rgb;
+enum IntPassTypes : int;
+enum class DarkDetectionType : int;
 
-typedef unsigned int objID_t;
+typedef unsigned int ObjId_t;
 
 /*!
 	\var renderState_t::wavelength
 		the range is defined going from 400nm (0.0) to 700nm (1.0)
 		although the widest range humans can perceive is ofteb given 380-780nm.
 */
-struct YAFRAYCORE_EXPORT renderState_t
+struct YAFRAYCORE_EXPORT RenderState
 {
-	renderState_t(): raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
-		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(nullptr) {};
-	renderState_t(random_t *rand): raylevel(0), currentPass(0), pixelSample(0), rayDivision(1), rayOffset(0), dc1(0), dc2(0),
-		traveled(0.0), chromatic(true), includeLights(false), userdata(nullptr), lightdata(nullptr), prng(rand) {};
-	~renderState_t() {};
+	RenderState(): raylevel_(0), current_pass_(0), pixel_sample_(0), ray_division_(1), ray_offset_(0), dc_1_(0), dc_2_(0),
+				   traveled_(0.0), chromatic_(true), include_lights_(false), userdata_(nullptr), lightdata_(nullptr), prng_(nullptr) {};
+	RenderState(Random *rand): raylevel_(0), current_pass_(0), pixel_sample_(0), ray_division_(1), ray_offset_(0), dc_1_(0), dc_2_(0),
+							   traveled_(0.0), chromatic_(true), include_lights_(false), userdata_(nullptr), lightdata_(nullptr), prng_(rand) {};
+	~RenderState() {};
 
-	int raylevel;
-	float depth;
-	float contribution; //?
-	const void *skipelement;
-	int currentPass;
-	int pixelSample; //!< number of samples inside this pixels so far
-	int rayDivision; //!< keep track of trajectory splitting
-	int rayOffset; //!< keep track of trajectory splitting
-	float dc1, dc2; //!< used to decorrelate samples from trajectory splitting
-	float traveled;
-	int pixelNumber;
-	int threadID; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
-	unsigned int samplingOffs; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
+	int raylevel_;
+	float depth_;
+	float contribution_; //?
+	const void *skipelement_;
+	int current_pass_;
+	int pixel_sample_; //!< number of samples inside this pixels so far
+	int ray_division_; //!< keep track of trajectory splitting
+	int ray_offset_; //!< keep track of trajectory splitting
+	float dc_1_, dc_2_; //!< used to decorrelate samples from trajectory splitting
+	float traveled_;
+	int pixel_number_;
+	int thread_id_; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
+	unsigned int sampling_offs_; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
 	//point3d_t screenpos; //!< the image coordinates of the pixel being computed currently
-	const camera_t *cam;
-	bool chromatic; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
-	bool includeLights; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
-	float wavelength; //!< the (normalized) wavelength being used when chromatic is false.
-	float time; //!< the current (normalized) frame time
-	mutable void *userdata; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
-	void *lightdata; //!< reserved; non-dirac lights may do some surface-point dependant initializations in the future to reduce redundancy...
-	random_t *const prng; //!< a pseudorandom number generator
+	const Camera *cam_;
+	bool chromatic_; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
+	bool include_lights_; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
+	float wavelength_; //!< the (normalized) wavelength being used when chromatic is false.
+	float time_; //!< the current (normalized) frame time
+	mutable void *userdata_; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
+	void *lightdata_; //!< reserved; non-dirac lights may do some surface-point dependant initializations in the future to reduce redundancy...
+	Random *const prng_; //!< a pseudorandom number generator
 
 	//! set some initial values that are always the same before integrating a primary ray
 	void setDefaults()
 	{
-		raylevel = 0;
-		chromatic = true;
-		rayDivision = 1;
-		rayOffset = 0;
-		dc1 = dc2 = 0.f;
-		traveled = 0;
+		raylevel_ = 0;
+		chromatic_ = true;
+		ray_division_ = 1;
+		ray_offset_ = 0;
+		dc_1_ = dc_2_ = 0.f;
+		traveled_ = 0;
 	}
 
 	//	protected:
-	explicit renderState_t(const renderState_t &r): prng(r.prng) {} //forbiden
+	explicit RenderState(const RenderState &r): prng_(r.prng_) {} //forbiden
 };
 
-__END_YAFRAY
+END_YAFRAY
 
 #include "bound.h"
 #include <vector>
@@ -110,7 +111,7 @@ __END_YAFRAY
 #define Y_SIG_PAUSE 1<<1
 #define Y_SIG_STOP  1<<2
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 /*! describes an instance of a scene, including all data and functionality to
 	create and render a whole scene on the lowest "layer".
@@ -121,137 +122,137 @@ __BEGIN_YAFRAY
 	for general geometric primitives there will most likely be a separate class
 	to keep this one as optimized as possible;
 */
-struct objData_t
+struct ObjData
 {
-	triangleObject_t *obj;
-	meshObject_t *mobj;
-	int type;
-	size_t lastVertId;
+	TriangleObject *obj_;
+	MeshObject *mobj_;
+	int type_;
+	size_t last_vert_id_;
 };
 
-struct sceneGeometryState_t
+struct SceneGeometryState
 {
-	std::list<unsigned int> stack;
-	unsigned int changes;
-	objID_t nextFreeID;
-	objData_t *curObj;
-	triangle_t *curTri;
-	bool orco;
-	float smooth_angle;
+	std::list<unsigned int> stack_;
+	unsigned int changes_;
+	ObjId_t next_free_id_;
+	ObjData *cur_obj_;
+	Triangle *cur_tri_;
+	bool orco_;
+	float smooth_angle_;
 };
 
-class YAFRAYCORE_EXPORT scene_t
+class YAFRAYCORE_EXPORT Scene
 {
 	public:
-		scene_t(const renderEnvironment_t *render_environment);
-		~scene_t();
-		explicit scene_t(const scene_t &s);
+		Scene(const RenderEnvironment *render_environment);
+		~Scene();
+		explicit Scene(const Scene &s);
 		bool render();
 		void abort();
 		bool startGeometry();
 		bool endGeometry();
-		bool startTriMesh(objID_t id, int vertices, int triangles, bool hasOrco, bool hasUV = false, int type = 0, int object_pass_index = 0);
+		bool startTriMesh(ObjId_t id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int object_pass_index = 0);
 		bool endTriMesh();
-		bool startCurveMesh(objID_t id, int vertices, int object_pass_index = 0);
-		bool endCurveMesh(const material_t *mat, float strandStart, float strandEnd, float strandShape);
-		int  addVertex(const point3d_t &p);
-		int  addVertex(const point3d_t &p, const point3d_t &orco);
-		void addNormal(const normal_t &n);
-		bool addTriangle(int a, int b, int c, const material_t *mat);
-		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const material_t *mat);
-		int  addUV(float u, float v);
+		bool startCurveMesh(ObjId_t id, int vertices, int object_pass_index = 0);
+		bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
+		int  addVertex(const Point3 &p);
+		int  addVertex(const Point3 &p, const Point3 &orco);
+		void addNormal(const Normal &n);
+		bool addTriangle(int a, int b, int c, const Material *mat);
+		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
+		int  addUv(float u, float v);
 		bool startVmap(int id, int type, int dimensions);
 		bool endVmap();
 		bool addVmapValues(float *val);
-		bool smoothMesh(objID_t id, float angle);
+		bool smoothMesh(ObjId_t id, float angle);
 		bool update();
 
-		bool addLight(light_t *l);
-		bool addMaterial(material_t *m, const char *name);
-		objID_t getNextFreeID();
-		bool addObject(object3d_t *obj, objID_t &id);
-		bool addInstance(objID_t baseObjectId, const matrix4x4_t &objToWorld);
-		void addVolumeRegion(VolumeRegion *vr) { volumes.push_back(vr); }
-		void setCamera(camera_t *cam);
-		void setImageFilm(imageFilm_t *film);
-		void setBackground(background_t *bg);
-		void setSurfIntegrator(surfaceIntegrator_t *s);
-		surfaceIntegrator_t *getSurfIntegrator() const { return surfIntegrator; }
-		void setVolIntegrator(volumeIntegrator_t *v);
-		void setAntialiasing(int numSamples, int numPasses, int incSamples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, int dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect);
+		bool addLight(Light *l);
+		bool addMaterial(Material *m, const char *name);
+		ObjId_t getNextFreeId();
+		bool addObject(Object3D *obj, ObjId_t &id);
+		bool addInstance(ObjId_t base_object_id, const Matrix4 &obj_to_world);
+		void addVolumeRegion(VolumeRegion *vr) { volumes_.push_back(vr); }
+		void setCamera(Camera *cam);
+		void setImageFilm(ImageFilm *film);
+		void setBackground(Background *bg);
+		void setSurfIntegrator(SurfaceIntegrator *s);
+		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
+		void setVolIntegrator(VolumeIntegrator *v);
+		void setAntialiasing(int num_samples, int num_passes, int inc_samples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect);
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setMode(int m) { mode = m; }
-		background_t *getBackground() const;
-		triangleObject_t *getMesh(objID_t id) const;
-		object3d_t *getObject(objID_t id) const;
-		std::vector<VolumeRegion *> getVolumes() const { return volumes; }
-		const camera_t *getCamera() const { return camera; }
-		imageFilm_t *getImageFilm() const { return imageFilm; }
-		bound_t getSceneBound() const;
-		int getNumThreads() const { return nthreads; }
-		int getNumThreadsPhotons() const { return nthreads_photons; }
+		void setMode(int m) { mode_ = m; }
+		Background *getBackground() const;
+		TriangleObject *getMesh(ObjId_t id) const;
+		Object3D *getObject(ObjId_t id) const;
+		std::vector<VolumeRegion *> getVolumes() const { return volumes_; }
+		const Camera *getCamera() const { return camera_; }
+		ImageFilm *getImageFilm() const { return image_film_; }
+		Bound getSceneBound() const;
+		int getNumThreads() const { return nthreads_; }
+		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		int getSignals() const;
 		//! only for backward compatibility!
-		void getAAParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, int &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
-		bool intersect(const ray_t &ray, surfacePoint_t &sp) const;
-		bool intersect(const diffRay_t &ray, surfacePoint_t &sp) const;
-		bool isShadowed(renderState_t &state, const ray_t &ray, float &obj_index, float &mat_index) const;
-		bool isShadowed(renderState_t &state, const ray_t &ray, int maxDepth, color_t &filt, float &obj_index, float &mat_index) const;
-		const renderPasses_t *getRenderPasses() const;
-		bool pass_enabled(intPassTypes_t intPassType) const;
+		void getAaParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, DarkDetectionType &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
+		bool intersect(const Ray &ray, SurfacePoint &sp) const;
+		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
+		bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const;
+		bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const;
+		const RenderPasses *getRenderPasses() const;
+		bool passEnabled(IntPassTypes int_pass_type) const;
 
-		enum sceneState { READY, GEOMETRY, OBJECT, VMAP };
-		enum changeFlags { C_NONE = 0, C_GEOM = 1, C_LIGHT = 1 << 1, C_OTHER = 1 << 2,
-		                   C_ALL = C_GEOM | C_LIGHT | C_OTHER
+		enum SceneState { Ready, Geometry, Object, Vmap };
+		enum ChangeFlags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2,
+		                   CAll = CGeom | CLight | COther
 		                 };
 
-		std::vector<light_t *> lights;
-		volumeIntegrator_t *volIntegrator;
+		std::vector<Light *> lights_;
+		VolumeIntegrator *vol_integrator_;
 
-		float shadowBias;  //shadow bias to apply to shadows to avoid self-shadow artifacts
-		bool shadowBiasAuto;  //enable automatic shadow bias calculation
+		float shadow_bias_;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+		bool shadow_bias_auto_;  //enable automatic shadow bias calculation
 
-		float rayMinDist;  //ray minimum distance
-		bool rayMinDistAuto;  //enable automatic ray minimum distance calculation
+		float ray_min_dist_;  //ray minimum distance
+		bool ray_min_dist_auto_;  //enable automatic ray minimum distance calculation
 
 	protected:
 
-		sceneGeometryState_t state;
-		std::map<objID_t, object3d_t *> objects;
-		std::map<objID_t, objData_t> meshes;
-		std::map< std::string, material_t * > materials;
-		std::vector<VolumeRegion *> volumes;
-		camera_t *camera;
-		imageFilm_t *imageFilm;
-		triKdTree_t *tree; //!< kdTree for triangle-only mode
-		kdTree_t<primitive_t> *vtree; //!< kdTree for universal mode
-		background_t *background;
-		surfaceIntegrator_t *surfIntegrator;
-		bound_t sceneBound; //!< bounding box of all (finite) scene geometry
+		SceneGeometryState state_;
+		std::map<ObjId_t, Object3D *> objects_;
+		std::map<ObjId_t, ObjData> meshes_;
+		std::map< std::string, Material * > materials_;
+		std::vector<VolumeRegion *> volumes_;
+		Camera *camera_;
+		ImageFilm *image_film_;
+		TriKdTree *tree_; //!< kdTree for triangle-only mode
+		KdTree<Primitive> *vtree_; //!< kdTree for universal mode
+		Background *background_;
+		SurfaceIntegrator *surf_integrator_;
+		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 
-		int AA_samples, AA_passes;
-		int AA_inc_samples; //!< sample count for additional passes
-		float AA_threshold;
-		float AA_resampled_floor; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
-		float AA_sample_multiplier_factor;
-		float AA_light_sample_multiplier_factor;
-		float AA_indirect_sample_multiplier_factor;
-		bool AA_detect_color_noise;
-		int AA_dark_detection_type;
-		float AA_dark_threshold_factor;
-		int AA_variance_edge_size;
-		int AA_variance_pixels;
-		float AA_clamp_samples;
-		float AA_clamp_indirect;
-		int nthreads;
-		int nthreads_photons;
-		int mode; //!< sets the scene mode (triangle-only, virtual primitives)
-		int signals;
-		const renderEnvironment_t *env;	//!< reference to the environment to which this scene belongs to
-		mutable std::mutex sig_mutex;
+		int aa_samples_, aa_passes_;
+		int aa_inc_samples_; //!< sample count for additional passes
+		float aa_threshold_;
+		float aa_resampled_floor_; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
+		float aa_sample_multiplier_factor_;
+		float aa_light_sample_multiplier_factor_;
+		float aa_indirect_sample_multiplier_factor_;
+		bool aa_detect_color_noise_;
+		DarkDetectionType aa_dark_detection_type_;
+		float aa_dark_threshold_factor_;
+		int aa_variance_edge_size_;
+		int aa_variance_pixels_;
+		float aa_clamp_samples_;
+		float aa_clamp_indirect_;
+		int nthreads_;
+		int nthreads_photons_;
+		int mode_; //!< sets the scene mode (triangle-only, virtual primitives)
+		int signals_;
+		const RenderEnvironment *env_;	//!< reference to the environment to which this scene belongs to
+		mutable std::mutex sig_mutex_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_SCENE_H
+#endif // YAFARAY_SCENE_H

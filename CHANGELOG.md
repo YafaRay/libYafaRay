@@ -264,7 +264,7 @@ node/763 that caused either crashes or incorrect render results.
 
 * Image output denoise: denoise parameters added to the XMLinterface, they didn't work in the XML interface in v3.0.2
 
-* Fixed colorA_t class initialization inconsistencies. We need to keep an eye on this, could cause changes in the Alpha in some scenes (hopefully not)
+* Fixed Rgba class initialization inconsistencies. We need to keep an eye on this, could cause changes in the Alpha in some scenes (hopefully not)
 
 
 

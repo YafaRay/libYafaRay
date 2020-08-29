@@ -1,38 +1,38 @@
 #pragma once
 
-#ifndef Y_RAY_H
-#define Y_RAY_H
+#ifndef YAFARAY_RAY_H
+#define YAFARAY_RAY_H
 
 #include <yafray_constants.h>
 #include "vector3d.h"
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class ray_t
+class Ray
 {
 	public:
-		ray_t(): tmin(0), tmax(-1.0), time(0.0) {}
-		ray_t(const point3d_t &f, const vector3d_t &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
-			from(f), dir(d), tmin(start), tmax(end), time(ftime) { }
+		Ray(): tmin_(0), tmax_(-1.0), time_(0.0) {}
+		Ray(const Point3 &f, const Vec3 &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
+				from_(f), dir_(d), tmin_(start), tmax_(end), time_(ftime) { }
 
-		point3d_t from;
-		vector3d_t dir;
-		mutable float tmin, tmax;
-		float time; //!< relative frame time (values between [0;1]) at which ray was generated
+		Point3 from_;
+		Vec3 dir_;
+		mutable float tmin_, tmax_;
+		float time_; //!< relative frame time (values between [0;1]) at which ray was generated
 };
 
-class diffRay_t: public ray_t
+class DiffRay: public Ray
 {
 	public:
-		diffRay_t(): ray_t(), hasDifferentials(false) {}
-		diffRay_t(const ray_t &r): ray_t(r), hasDifferentials(false) {}
-		diffRay_t(const point3d_t &f, const vector3d_t &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
-			ray_t(f, d, start, end, ftime), hasDifferentials(false) {}
-		bool hasDifferentials;
-		point3d_t xfrom, yfrom;
-		vector3d_t xdir, ydir;
+		DiffRay(): Ray(), has_differentials_(false) {}
+		DiffRay(const Ray &r): Ray(r), has_differentials_(false) {}
+		DiffRay(const Point3 &f, const Vec3 &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
+				Ray(f, d, start, end, ftime), has_differentials_(false) {}
+		bool has_differentials_;
+		Point3 xfrom_, yfrom_;
+		Vec3 xdir_, ydir_;
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif //Y_RAY_H
+#endif //YAFARAY_RAY_H

@@ -19,17 +19,15 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_COLOR_CONSOLE_H
-#define Y_COLOR_CONSOLE_H
+#ifndef YAFARAY_COLOR_CONSOLE_H
+#define YAFARAY_COLOR_CONSOLE_H
 
 #include <yafray_constants.h>
 #include <iostream>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-typedef unsigned int yColor;
-
-enum
+enum ConsoleColor : unsigned int
 {
 #if !defined(_WIN32)
 	Black,
@@ -54,39 +52,39 @@ enum
 #endif
 };
 
-struct YAFRAYCORE_EXPORT setColor
+struct YAFRAYCORE_EXPORT SetColor final
 {
-	setColor() : fgCol(Default), bgCol(Default), intense(false) {}
-	setColor(yColor fgColor, yColor bgColor, bool intensecolor = false)
+	SetColor() : fg_col_(Default), bg_col_(Default), intense_(false) {}
+	SetColor(ConsoleColor fg_color, ConsoleColor bg_color, bool intensecolor = false)
 	{
 #ifdef _WIN32
-		fgCol = fgColor;
-		bgCol = (bgColor != Default) ? bgColor << 4 : Default;
+		fg_col_ = fg_color;
+		bg_col_ = (bg_color != Default) ? (ConsoleColor)((unsigned int)bg_color << 4) : Default;
 #else
-		fgCol = (fgColor != Default) ? fgColor + 30 : Default;
-		bgCol = (bgColor != Default) ? bgColor + 40 : Default;
+		fg_col_ = (fg_color != Default) ? (ConsoleColor) ((unsigned int) fg_color + 30) : Default;
+		bg_col_ = (bg_color != Default) ? (ConsoleColor) ((unsigned int) bg_color + 40) : Default;
 #endif
-		intense = intensecolor;
+		intense_ = intensecolor;
 	}
-	setColor(yColor fgColor, bool intensecolor = false)
+	SetColor(unsigned int fg_color, bool intensecolor = false)
 	{
 #ifdef _WIN32
-		fgCol = fgColor;
+		fg_col_ = (ConsoleColor)((unsigned int)fg_color);
 #else
-		fgCol = (fgColor != Default) ? fgColor + 30 : Default;
+		fg_col_ = (fg_color != Default) ? (ConsoleColor) ((unsigned int) fg_color + 30) : Default;
 #endif
-		bgCol = Default;
-		intense = intensecolor;
+		bg_col_ = Default;
+		intense_ = intensecolor;
 	}
 
-	yColor fgCol;
-	yColor bgCol;
-	bool intense;
+	ConsoleColor fg_col_;
+	ConsoleColor bg_col_;
+	bool intense_;
 };
 
 
-YAFRAYCORE_EXPORT std::ostream &operator<<(std::ostream &o, const setColor &c);
+YAFRAYCORE_EXPORT std::ostream &operator<<(std::ostream &o, const SetColor &c);
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

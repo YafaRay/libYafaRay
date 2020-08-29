@@ -1,30 +1,30 @@
 #pragma once
 
-#ifndef Y_MEMORYIO_H
-#define Y_MEMORYIO_H
+#ifndef YAFARAY_MEMORYIO_H
+#define YAFARAY_MEMORYIO_H
 
 #include <yafray_constants.h>
 #include <core_api/output.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class renderPasses_t;
+class RenderPasses;
 
-class YAFRAYCORE_EXPORT memoryIO_t : public colorOutput_t
+class YAFRAYCORE_EXPORT MemoryInputOutput : public ColorOutput
 {
 	public:
-		memoryIO_t(int resx, int resy, float *iMem);
-		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, int idx, const colorA_t &color, bool alpha = true);
-		virtual bool putPixel(int numView, int x, int y, const renderPasses_t *renderPasses, const std::vector<colorA_t> &colExtPasses, bool alpha = true);
-		void flush(int numView, const renderPasses_t *renderPasses);
-		virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const renderPasses_t *renderPasses) {}; // no tiled file format used...yet
-		virtual ~memoryIO_t();
+		MemoryInputOutput(int resx, int resy, float *i_mem);
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true);
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true);
+		void flush(int num_view, const RenderPasses *render_passes);
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) {}; // no tiled file format used...yet
+		virtual ~MemoryInputOutput();
 	protected:
-		int sizex, sizey;
-		float *imageMem;
+		int sizex_, sizey_;
+		float *image_mem_;
 };
 
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_MEMORYIO_H
+#endif // YAFARAY_MEMORYIO_H

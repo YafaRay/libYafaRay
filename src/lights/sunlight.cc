@@ -24,129 +24,129 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class sunLight_t : public light_t
+class SunLight : public Light
 {
 	public:
-		sunLight_t(vector3d_t dir, const color_t &col, float inte, float angle, int nSamples, bool bLightEnabled = true, bool bCastShadows = true);
-		virtual void init(scene_t &scene);
-		virtual color_t totalEnergy() const { return color * ePdf; }
-		virtual color_t emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const;
+		SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);
+		virtual void init(Scene &scene);
+		virtual Rgb totalEnergy() const { return color_ * e_pdf_; }
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const;
 		virtual bool diracLight() const { return false; }
-		virtual bool illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const;
-		virtual bool illuminate(const surfacePoint_t &sp, color_t &col, ray_t &wi) const { return false; }
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const;
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const { return false; }
 		virtual bool canIntersect() const { return true; }
-		virtual bool intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const;
-		virtual int nSamples() const { return samples; }
-		static light_t *factory(paraMap_t &params, renderEnvironment_t &render);
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const;
+		virtual int nSamples() const { return samples_; }
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
 	protected:
-		point3d_t worldCenter;
-		color_t color, colPdf;
-		vector3d_t direction, du, dv;
-		float pdf, invpdf;
-		double cosAngle;
-		int samples;
-		float worldRadius;
-		float ePdf;
+		Point3 world_center_;
+		Rgb color_, col_pdf_;
+		Vec3 direction_, du_, dv_;
+		float pdf_, invpdf_;
+		double cos_angle_;
+		int samples_;
+		float world_radius_;
+		float e_pdf_;
 };
 
-sunLight_t::sunLight_t(vector3d_t dir, const color_t &col, float inte, float angle, int nSamples, bool bLightEnabled, bool bCastShadows):
-	direction(dir), samples(nSamples)
+SunLight::SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled, bool b_cast_shadows):
+		direction_(dir), samples_(n_samples)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	color = col * inte;
-	direction.normalize();
-	createCS(dir, du, dv);
+	light_enabled_ = b_light_enabled;
+	cast_shadows_ = b_cast_shadows;
+	color_ = col * inte;
+	direction_.normalize();
+	createCs__(dir, du_, dv_);
 	if(angle > 80.f) angle = 80.f;
-	cosAngle = fCos(degToRad(angle));
-	invpdf = (M_2PI * (1.f - cosAngle));
-	pdf = 1.0 / invpdf;
-	colPdf = color * pdf;
+	cos_angle_ = fCos__(DEG_TO_RAD(angle));
+	invpdf_ = (M_2PI * (1.f - cos_angle_));
+	pdf_ = 1.0 / invpdf_;
+	col_pdf_ = color_ * pdf_;
 }
 
-void sunLight_t::init(scene_t &scene)
+void SunLight::init(Scene &scene)
 {
 	// calculate necessary parameters for photon mapping
-	bound_t w = scene.getSceneBound();
-	worldRadius = 0.5 * (w.g - w.a).length();
-	worldCenter = 0.5 * (w.a + w.g);
-	ePdf = (M_PI * worldRadius * worldRadius);
+	Bound w = scene.getSceneBound();
+	world_radius_ = 0.5 * (w.g_ - w.a_).length();
+	world_center_ = 0.5 * (w.a_ + w.g_);
+	e_pdf_ = (M_PI * world_radius_ * world_radius_);
 }
 
-bool sunLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
 	//sample direction uniformly inside cone:
-	wi.dir = sampleCone(direction, du, dv, cosAngle, s.s1, s.s2);
-	wi.tmax = -1.f;
+	wi.dir_ = sampleCone__(direction_, du_, dv_, cos_angle_, s.s_1_, s.s_2_);
+	wi.tmax_ = -1.f;
 
-	s.col = colPdf;
+	s.col_ = col_pdf_;
 	// ipdf: inverse of uniform cone pdf; calculated in constructor.
-	s.pdf = pdf;
+	s.pdf_ = pdf_;
 
 	return true;
 }
 
-bool sunLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool SunLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	float cosine = ray.dir * direction;
-	if(cosine < cosAngle) return false;
-	col = colPdf;
+	float cosine = ray.dir_ * direction_;
+	if(cosine < cos_angle_) return false;
+	col = col_pdf_;
 	t = -1;
-	ipdf = invpdf;
+	ipdf = invpdf_;
 	return true;
 }
 
-color_t sunLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	float u, v;
-	ShirleyDisk(s3, s4, u, v);
+	shirleyDisk__(s_3, s_4, u, v);
 
-	vector3d_t ldir = sampleCone(direction, du, dv, cosAngle, s3, s4);
-	vector3d_t du2, dv2;
+	Vec3 ldir = sampleCone__(direction_, du_, dv_, cos_angle_, s_3, s_4);
+	Vec3 du_2, dv_2;
 
-	minRot(direction, du, ldir, du2, dv2);
+	minRot__(direction_, du_, ldir, du_2, dv_2);
 
-	ipdf = invpdf;
-	ray.from = worldCenter + worldRadius * (u * du2 + v * dv2 + ldir);
-	ray.tmax = -1;
-	ray.dir = -ldir;
-	return colPdf * ePdf;
+	ipdf = invpdf_;
+	ray.from_ = world_center_ + world_radius_ * (u * du_2 + v * dv_2 + ldir);
+	ray.tmax_ = -1;
+	ray.dir_ = -ldir;
+	return col_pdf_ * e_pdf_;
 }
 
 
-light_t *sunLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *SunLight::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t dir(0.0, 0.0, 1.0);
-	color_t color(1.0);
+	Point3 dir(0.0, 0.0, 1.0);
+	Rgb color(1.0);
 	float power = 1.0;
 	float angle = 0.27; //angular (half-)size of the real sun;
 	int samples = 4;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool shootD = true;
-	bool shootC = true;
-	bool pOnly = false;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool p_only = false;
 
 	params.getParam("direction", dir);
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("angle", angle);
 	params.getParam("samples", samples);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
 
-	sunLight_t *light = new sunLight_t(vector3d_t(dir.x, dir.y, dir.z), color, power, angle, samples, lightEnabled, castShadows);
+	SunLight *light = new SunLight(Vec3(dir.x_, dir.y_, dir.z_), color, power, angle, samples, light_enabled, cast_shadows);
 
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
@@ -154,11 +154,11 @@ light_t *sunLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("sunlight", sunLight_t::factory);
+		render.registerFactory("sunlight", SunLight::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

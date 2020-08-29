@@ -24,111 +24,111 @@
 #include <core_api/color.h>
 #include <utilities/stringUtils.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #pragma pack(push, 1)
 
-struct rgbeHeader_t
+struct RgbeHeaderT
 {
-	rgbeHeader_t()
+	RgbeHeaderT()
 	{
-		programType = "RADIANCE";
-		exposure = 1.0f;
-		yFirst = true;
+		program_type_ = "RADIANCE";
+		exposure_ = 1.0f;
+		y_first_ = true;
 	}
 
-	float exposure; // in an image corresponds to <exposure> watts/steradian/m^2. Defaults to 1.0
-	std::string programType; // A string that usually contains "RADIANCE"
-	int min[2], max[2], step[2]; // Image boundaries and iteration stepping
-	bool yFirst; // Indicates if the image scanlines are saved starting by y axis (Default: true)
+	float exposure_; // in an image corresponds to <exposure> watts/steradian/m^2. Defaults to 1.0
+	std::string program_type_; // A string that usually contains "RADIANCE"
+	int min_[2], max_[2], step_[2]; // Image boundaries and iteration stepping
+	bool y_first_; // Indicates if the image scanlines are saved starting by y axis (Default: true)
 };
 
-struct rgbePixel_t
+struct RgbePixel
 {
-	rgbePixel_t &operator = (const color_t &c)
+	RgbePixel &operator = (const Rgb &c)
 	{
 		int e;
 		float v = c.maximum();
 
 		if(v < 1e-32)
 		{
-			R = G = B = E = 0;
+			r_ = g_ = b_ = e_ = 0;
 		}
 		else
 		{
 			v = frexp(v, &e) * 255.9999 / v;
-			R = (yByte)(c.getR() * v);
-			G = (yByte)(c.getG() * v);
-			B = (yByte)(c.getB() * v);
-			E = (yByte)(e + 128);
+			r_ = (YByte_t)(c.getR() * v);
+			g_ = (YByte_t)(c.getG() * v);
+			b_ = (YByte_t)(c.getB() * v);
+			e_ = (YByte_t)(e + 128);
 		}
 
 		return *this;
 	}
 
-	rgbePixel_t &operator = (const rgbePixel_t &c)
+	RgbePixel &operator = (const RgbePixel &c)
 	{
-		R = c.R;
-		G = c.G;
-		B = c.B;
-		E = c.E;
+		r_ = c.r_;
+		g_ = c.g_;
+		b_ = c.b_;
+		e_ = c.e_;
 
 		return *this;
 	}
 
-	yByte &operator [](int i)
+	YByte_t &operator [](int i)
 	{
-		return (&R)[i];
+		return (&r_)[i];
 	}
 
-	colorA_t getRGBA() const
+	Rgba getRgba() const
 	{
 		float f;
 
-		if(E)
+		if(e_)
 		{
 			/*nonzero pixel*/
-			f = fLdexp(1.0, E - (int)(128 + 8));
-			return colorA_t(f * R, f * G, f * B, 1.0f);
+			f = fLdexp__(1.0, e_ - (int) (128 + 8));
+			return Rgba(f * r_, f * g_, f * b_, 1.0f);
 		}
 
-		return colorA_t(0.f, 0.f, 0.f, 1.0f);
+		return Rgba(0.f, 0.f, 0.f, 1.0f);
 	}
 
-	bool isORLEDesc()
+	bool isOrleDesc()
 	{
-		return ((R == 1) && (G == 1) && (B == 1));
+		return ((r_ == 1) && (g_ == 1) && (b_ == 1));
 	}
 
-	bool isARLEDesc()
+	bool isArleDesc()
 	{
-		return ((R == 2) && (G == 2) && ((int)(B << 8 | E) < 0x8000));
+		return ((r_ == 2) && (g_ == 2) && ((int)(b_ << 8 | e_) < 0x8000));
 	}
 
-	int getORLECount(int rshift)
+	int getOrleCount(int rshift)
 	{
-		return ((int)E << rshift);
+		return ((int)e_ << rshift);
 	}
 
-	int getARLECount()
+	int getArleCount()
 	{
-		return ((int)(B << 8 | E));
+		return ((int)(b_ << 8 | e_));
 	}
 
 	void setScanlineStart(int w)
 	{
-		R = 2;
-		G = 2;
-		B = w >> 8;
-		E = w & 0xFF;
+		r_ = 2;
+		g_ = 2;
+		b_ = w >> 8;
+		e_ = w & 0xFF;
 	}
 
-	yByte R;
-	yByte G;
-	yByte B;
-	yByte E;
+	YByte_t r_;
+	YByte_t g_;
+	YByte_t b_;
+	YByte_t e_;
 };
 
 #pragma pack(pop)
 
-__END_YAFRAY
+END_YAFRAY

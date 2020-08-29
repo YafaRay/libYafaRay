@@ -19,8 +19,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_RENDERWIDGET_H
-#define Y_RENDERWIDGET_H
+#ifndef YAFARAY_RENDERWIDGET_H
+#define YAFARAY_RENDERWIDGET_H
 
 #include <QWidget>
 #include <QImage>
@@ -42,22 +42,22 @@ class RenderWidget: public QLabel
 	private:
 		void initBuffers();
 	public:
-		void setRenderBorderStart(const QPoint &start) { borderStart = start; }
+		void setRenderBorderStart(const QPoint &start) { border_start_ = start; }
 
 		void startRendering();
-		bool isRendering() { return rendering; }
+		bool isRendering() { return rendering_; }
 		void finishRendering();
 
-		void setPixel(int x, int y, QRgb color, QRgb alpha, bool withAlpha);
+		void setPixel(int x, int y, QRgb color, QRgb alpha, bool with_alpha);
 
 		void paintColorBuffer();
 		void paintAlpha();
 
 	private:
-		void zoom(float f, QPoint mPos);
+		void zoom(float f, QPoint m_pos);
 	public:
-		void zoomIn(QPoint mPos);
-		void zoomOut(QPoint mPos);
+		void zoomIn(QPoint m_pos);
+		void zoomOut(QPoint m_pos);
 
 		bool event(QEvent *e);
 	protected:
@@ -68,26 +68,26 @@ class RenderWidget: public QLabel
 		virtual void mouseMoveEvent(QMouseEvent *e);
 
 	private:
-		bool use_zbuf;
-		bool rendering;
-		bool panning;
+		bool use_zbuf_;
+		bool rendering_;
+		bool panning_;
 
-		QPoint borderStart;
-		QSize imageSize;
-		float scaleFactor;
+		QPoint border_start_;
+		QSize image_size_;
+		float scale_factor_;
 
-		QPoint panPos;
-		QPoint barPos;
-		QScrollArea *owner;
-		QScrollBar *hBar;
-		QScrollBar *vBar;
+		QPoint pan_pos_;
+		QPoint bar_pos_;
+		QScrollArea *owner_;
+		QScrollBar *h_bar_;
+		QScrollBar *v_bar_;
 
-		QPixmap pix;
-		QMutex bufferMutex;
+		QPixmap pix_;
+		QMutex buffer_mutex_;
 
-		QImage colorBuffer;
-		QImage alphaChannel;
-		QImage *activeBuffer;
+		QImage color_buffer_;
+		QImage alpha_channel_;
+		QImage *active_buffer_;
 };
 
 #endif

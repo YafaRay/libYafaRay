@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef Y_TIMER_H
-#define Y_TIMER_H
+#ifndef YAFARAY_TIMER_H
+#define YAFARAY_TIMER_H
 
 #include <yafray_constants.h>
 #include <time.h>
@@ -13,9 +13,9 @@ extern "C" struct timeval;
 #include <sys/time.h>
 #endif
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class YAFRAYCORE_EXPORT timer_t
+class YAFRAYCORE_EXPORT Timer
 {
 	public:
 		bool addEvent(const std::string &name);
@@ -30,21 +30,21 @@ class YAFRAYCORE_EXPORT timer_t
 	protected:
 		bool includes(const std::string &label) const;
 
-		struct tdata_t
+		struct Tdata
 		{
-			tdata_t(): started(false), stopped(false) {};
-			clock_t start, finish;
+			Tdata(): started_(false), stopped_(false) {};
+			clock_t start_, finish_;
 #ifndef WIN32
-			timeval tvs, tvf;
+			timeval tvs_, tvf_;
 #endif
-			bool started, stopped;
+			bool started_, stopped_;
 		};
-		std::map<std::string, tdata_t> events;
+		std::map<std::string, Tdata> events_;
 };
 
 // global timer object, defined in timer.cc
-extern YAFRAYCORE_EXPORT timer_t gTimer;
+extern YAFRAYCORE_EXPORT Timer g_timer__;
 
-__END_YAFRAY
+END_YAFRAY
 
 #endif

@@ -24,68 +24,68 @@
 #include <core_api/environment.h>
 #include <core_api/params.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-orthoCam_t::orthoCam_t(const point3d_t &pos, const point3d_t &look, const point3d_t &up,
-                       int _resx, int _resy, float aspect, float _scale, float const near_clip_distance, float const far_clip_distance)
-	: camera_t(pos, look, up, _resx, _resy, aspect, near_clip_distance, far_clip_distance), scale(_scale)
+OrthographicCamera::OrthographicCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
+									   int resx, int resy, float aspect, float scale, float const near_clip_distance, float const far_clip_distance)
+	: Camera(pos, look, up, resx, resy, aspect, near_clip_distance, far_clip_distance), scale_(scale)
 {
 	// Initialize camera specific plane coordinates
-	setAxis(camX, camY, camZ);
+	setAxis(cam_x_, cam_y_, cam_z_);
 }
 
-void orthoCam_t::setAxis(const vector3d_t &vx, const vector3d_t &vy, const vector3d_t &vz)
+void OrthographicCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 {
-	camX = vx;
-	camY = vy;
-	camZ = vz;
+	cam_x_ = vx;
+	cam_y_ = vy;
+	cam_z_ = vz;
 
-	vright = camX;
-	vup = aspect_ratio * camY;
-	vto = camZ;
-	pos = position - 0.5 * scale * (vup + vright);
-	vup     *= scale / (float)resy;
-	vright  *= scale / (float)resx;
+	vright_ = cam_x_;
+	vup_ = aspect_ratio_ * cam_y_;
+	vto_ = cam_z_;
+	pos_ = position_ - 0.5 * scale_ * (vup_ + vright_);
+	vup_     *= scale_ / (float)resy_;
+	vright_  *= scale_ / (float)resx_;
 }
 
 
-ray_t orthoCam_t::shootRay(float px, float py, float lu, float lv, float &wt) const
+Ray OrthographicCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
-	ray_t ray;
+	Ray ray;
 	wt = 1;	// for now always 1, except 0 for probe when outside sphere
-	ray.from = pos + vright * px + vup * py;
-	ray.dir = vto;
+	ray.from_ = pos_ + vright_ * px + vup_ * py;
+	ray.dir_ = vto_;
 
-	ray.tmin = ray_plane_intersection(ray, near_plane);
-	ray.tmax = ray_plane_intersection(ray, far_plane);
+	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
+	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
 
 	return ray;
 }
 
-point3d_t orthoCam_t::screenproject(const point3d_t &p) const
+Point3 OrthographicCamera::screenproject(const Point3 &p) const
 {
-	point3d_t s;
-	vector3d_t dir = p - pos;
+	Point3 s;
+	Vec3 dir = p - pos_;
 	// Project p to pixel plane
 
-	float dz = camZ * dir;
+	float dz = cam_z_ * dir;
 
-	vector3d_t proj = dir - dz * camZ;
+	Vec3 proj = dir - dz * cam_z_;
 
-	s.x = 2 * (proj * camX / scale) - 1.0f;
-	s.y = - 2 * proj * camY / (aspect_ratio * scale) + 1.0f;
-	s.z = 0;
+	s.x_ = 2 * (proj * cam_x_ / scale_) - 1.0f;
+	s.y_ = - 2 * proj * cam_y_ / (aspect_ratio_ * scale_) + 1.0f;
+	s.z_ = 0;
 
 	return s;
 }
 
-camera_t *orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Camera *OrthographicCamera::factory(ParamMap &params, RenderEnvironment &render)
 {
-	point3d_t from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
+	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
 	double aspect = 1.0, scale = 1.0;
-	float nearClip = 0.0f, farClip = -1.0f;
-	std::string viewName = "";
+	float near_clip = 0.0f, far_clip = -1.0f;
+	std::string view_name = "";
 
 	params.getParam("from", from);
 	params.getParam("to", to);
@@ -94,13 +94,13 @@ camera_t *orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 	params.getParam("resy", resy);
 	params.getParam("scale", scale);
 	params.getParam("aspect_ratio", aspect);
-	params.getParam("nearClip", nearClip);
-	params.getParam("farClip", farClip);
-	params.getParam("view_name", viewName);
+	params.getParam("nearClip", near_clip);
+	params.getParam("farClip", far_clip);
+	params.getParam("view_name", view_name);
 
-	orthoCam_t *cam = new orthoCam_t(from, to, up, resx, resy, aspect, scale, nearClip, farClip);
+	OrthographicCamera *cam = new OrthographicCamera(from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
 
-	cam->view_name = viewName;
+	cam->view_name_ = view_name;
 
 	return cam;
 }
@@ -108,11 +108,11 @@ camera_t *orthoCam_t::factory(paraMap_t &params, renderEnvironment_t &render)
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("orthographic",	orthoCam_t::factory);
+		render.registerFactory("orthographic", OrthographicCamera::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

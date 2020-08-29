@@ -32,56 +32,57 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/scr_halton.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-enum SurfaceProperties {N = 1, dPdU = 2, dPdV = 3, NU = 4, NV = 5, dSdU = 6, dSdV = 7};
-
-class YAFRAYPLUGIN_EXPORT DebugIntegrator : public tiledIntegrator_t
+class YAFRAYPLUGIN_EXPORT DebugIntegrator final : public TiledIntegrator
 {
 	public:
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
 		DebugIntegrator(SurfaceProperties dt);
-		virtual bool preprocess();
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const;
-		static integrator_t *factory(paraMap_t &params, renderEnvironment_t &render);
-	protected:
-		std::vector<light_t *> lights;
-		SurfaceProperties debugType;
-		bool showPN;
+		virtual bool preprocess() override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+
+		std::vector<Light *> lights_;
+		SurfaceProperties debug_type_;
+		bool show_pn_;
 };
 
 DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
 {
-	type = SURFACE;
-	debugType = dt;
-	integratorName = "DebugIntegrator";
-	integratorShortName = "DBG";
-	yafLog.appendRenderSettings("Debug integrator: '");
+	type_ = Surface;
+	debug_type_ = dt;
+	integrator_name_ = "DebugIntegrator";
+	integrator_short_name_ = "DBG";
+	logger__.appendRenderSettings("Debug integrator: '");
 	switch(dt)
 	{
 		case N:
-			yafLog.appendRenderSettings("N");
+			logger__.appendRenderSettings("N");
 			break;
-		case dPdU:
-			yafLog.appendRenderSettings("dPdU");
+		case DPdU:
+			logger__.appendRenderSettings("dPdU");
 			break;
-		case dPdV:
-			yafLog.appendRenderSettings("dPdV");
+		case DPdV:
+			logger__.appendRenderSettings("dPdV");
 			break;
-		case NU:
-			yafLog.appendRenderSettings("NU");
+		case Nu:
+			logger__.appendRenderSettings("NU");
 			break;
-		case NV:
-			yafLog.appendRenderSettings("NV");
+		case Nv:
+			logger__.appendRenderSettings("NV");
 			break;
-		case dSdU:
-			yafLog.appendRenderSettings("dSdU");
+		case DSdU:
+			logger__.appendRenderSettings("dSdU");
 			break;
-		case dSdV:
-			yafLog.appendRenderSettings("dSdV");
+		case DSdV:
+			logger__.appendRenderSettings("dSdV");
 			break;
 	}
 
-	yafLog.appendRenderSettings("' | ");
+	logger__.appendRenderSettings("' | ");
 }
 
 bool DebugIntegrator::preprocess()
@@ -89,48 +90,48 @@ bool DebugIntegrator::preprocess()
 	return true;
 }
 
-colorA_t DebugIntegrator::integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colorPasses, int additionalDepth /*=0*/) const
+Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
 {
-	color_t col(0.0);
-	surfacePoint_t sp;
-	void *o_udat = state.userdata;
-	bool oldIncludeLights = state.includeLights;
+	Rgb col(0.0);
+	SurfacePoint sp;
+	void *o_udat = state.userdata_;
+	bool old_include_lights = state.include_lights_;
 	//shoot ray into scene
-	if(scene->intersect(ray, sp))
+	if(scene_->intersect(ray, sp))
 	{
-		if(showPN)
+		if(show_pn_)
 		{
 			// Normals perturbed by materials
 			unsigned char userdata[USER_DATA_SIZE + 7];
 			userdata[0] = 0;
-			state.userdata = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+			state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 
-			BSDF_t bsdfs;
-			const material_t *material = sp.material;
-			material->initBSDF(state, sp, bsdfs);
+			Bsdf_t bsdfs;
+			const Material *material = sp.material_;
+			material->initBsdf(state, sp, bsdfs);
 		}
-		if(debugType == N)
-			col = color_t((sp.N.x + 1.f) * .5f, (sp.N.y + 1.f) * .5f, (sp.N.z + 1.f) * .5f);
-		else if(debugType == dPdU)
-			col = color_t((sp.dPdU.x + 1.f) * .5f, (sp.dPdU.y + 1.f) * .5f, (sp.dPdU.z + 1.f) * .5f);
-		else if(debugType == dPdV)
-			col = color_t((sp.dPdV.x + 1.f) * .5f, (sp.dPdV.y + 1.f) * .5f, (sp.dPdV.z + 1.f) * .5f);
-		else if(debugType == NU)
-			col = color_t((sp.NU.x + 1.f) * .5f, (sp.NU.y + 1.f) * .5f, (sp.NU.z + 1.f) * .5f);
-		else if(debugType == NV)
-			col = color_t((sp.NV.x + 1.f) * .5f, (sp.NV.y + 1.f) * .5f, (sp.NV.z + 1.f) * .5f);
-		else if(debugType == dSdU)
-			col = color_t((sp.dSdU.x + 1.f) * .5f, (sp.dSdU.y + 1.f) * .5f, (sp.dSdU.z + 1.f) * .5f);
-		else if(debugType == dSdV)
-			col = color_t((sp.dSdV.x + 1.f) * .5f, (sp.dSdV.y + 1.f) * .5f, (sp.dSdV.z + 1.f) * .5f);
+		if(debug_type_ == N)
+			col = Rgb((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f);
+		else if(debug_type_ == DPdU)
+			col = Rgb((sp.dp_du_.x_ + 1.f) * .5f, (sp.dp_du_.y_ + 1.f) * .5f, (sp.dp_du_.z_ + 1.f) * .5f);
+		else if(debug_type_ == DPdV)
+			col = Rgb((sp.dp_dv_.x_ + 1.f) * .5f, (sp.dp_dv_.y_ + 1.f) * .5f, (sp.dp_dv_.z_ + 1.f) * .5f);
+		else if(debug_type_ == Nu)
+			col = Rgb((sp.nu_.x_ + 1.f) * .5f, (sp.nu_.y_ + 1.f) * .5f, (sp.nu_.z_ + 1.f) * .5f);
+		else if(debug_type_ == Nv)
+			col = Rgb((sp.nv_.x_ + 1.f) * .5f, (sp.nv_.y_ + 1.f) * .5f, (sp.nv_.z_ + 1.f) * .5f);
+		else if(debug_type_ == DSdU)
+			col = Rgb((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f);
+		else if(debug_type_ == DSdV)
+			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
 
 	}
-	state.userdata = o_udat;
-	state.includeLights = oldIncludeLights;
-	return colorA_t(col, 1.f);
+	state.userdata_ = o_udat;
+	state.include_lights_ = old_include_lights;
+	return Rgba(col, 1.f);
 }
 
-integrator_t *DebugIntegrator::factory(paraMap_t &params, renderEnvironment_t &render)
+Integrator *DebugIntegrator::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int dt = 1;
 	bool pn = false;
@@ -138,7 +139,7 @@ integrator_t *DebugIntegrator::factory(paraMap_t &params, renderEnvironment_t &r
 	params.getParam("showPN", pn);
 	std::cout << "debugType " << dt << std::endl;
 	DebugIntegrator *inte = new DebugIntegrator((SurfaceProperties)dt);
-	inte->showPN = pn;
+	inte->show_pn_ = pn;
 
 	return inte;
 }
@@ -146,11 +147,11 @@ integrator_t *DebugIntegrator::factory(paraMap_t &params, renderEnvironment_t &r
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
 		render.registerFactory("DebugIntegrator", DebugIntegrator::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

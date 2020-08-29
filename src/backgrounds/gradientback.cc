@@ -26,69 +26,64 @@
 #include <core_api/scene.h>
 #include <core_api/light.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-class gradientBackground_t: public background_t
+class GradientBackground final : public Background
 {
 	public:
-		gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic);
-		virtual color_t operator()(const ray_t &ray, renderState_t &state, bool from_postprocessed = false) const;
-		virtual color_t eval(const ray_t &ray, bool from_postprocessed = false) const;
-		virtual ~gradientBackground_t();
-		static background_t *factory(paraMap_t &, renderEnvironment_t &);
-		bool hasIBL() { return withIBL; }
-		bool shootsCaustic() { return shootCaustic; }
-	protected:
-		color_t gzenith,  ghoriz, szenith, shoriz;
-		bool withIBL;
-		bool shootCaustic;
-		bool shootDiffuse;
+		static Background *factory(ParamMap &, RenderEnvironment &);
+
+	private:
+		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
+		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
+		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
+		bool hasIbl() const override { return with_ibl_; }
+		bool shootsCaustic() const override { return shoot_caustic_; }
+
+		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
+		bool with_ibl_;
+		bool shoot_caustic_;
 };
 
-gradientBackground_t::gradientBackground_t(color_t gzcol, color_t ghcol, color_t szcol, color_t shcol, bool ibl, bool with_caustic):
-	gzenith(gzcol), ghoriz(ghcol), szenith(szcol), shoriz(shcol), withIBL(ibl), shootCaustic(with_caustic)
+GradientBackground::GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic):
+		gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol), with_ibl_(ibl), shoot_caustic_(with_caustic)
 {
 	// Empty
 }
 
-gradientBackground_t::~gradientBackground_t()
-{
-	// Empty
-}
-
-color_t gradientBackground_t::operator()(const ray_t &ray, renderState_t &state, bool from_postprocessed) const
+Rgb GradientBackground::operator()(const Ray &ray, RenderState &state, bool from_postprocessed) const
 {
 	return eval(ray);
 }
 
-color_t gradientBackground_t::eval(const ray_t &ray, bool from_postprocessed) const
+Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 {
-	color_t color;
+	Rgb color;
 
-	float blend = ray.dir.z;
+	float blend = ray.dir_.z_;
 
 	if(blend >= 0.f)
 	{
-		color = blend * szenith + (1.f - blend) * shoriz;
+		color = blend * szenith_ + (1.f - blend) * shoriz_;
 	}
 	else
 	{
 		blend = -blend;
-		color = blend * gzenith + (1.f - blend) * ghoriz;
+		color = blend * gzenith_ + (1.f - blend) * ghoriz_;
 	}
 
-	if(color.minimum() < 1e-6f) color = color_t(1e-5f);
+	if(color.minimum() < 1e-6f) color = Rgb(1e-5f);
 
 	return color;
 }
 
-background_t *gradientBackground_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Background *GradientBackground::factory(ParamMap &params, RenderEnvironment &render)
 {
-	color_t gzenith,  ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
+	Rgb gzenith,  ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
 	bool bgl = false;
-	int bglSam = 16;
-	bool castShadows = true;
+	int bgl_sam = 16;
+	bool cast_shadows = true;
 	bool caus = true;
 	bool diff = true;
 
@@ -99,40 +94,40 @@ background_t *gradientBackground_t::factory(paraMap_t &params, renderEnvironment
 	params.getParam("horizon_ground_color", ghoriz);
 	params.getParam("zenith_ground_color", gzenith);
 	params.getParam("ibl", bgl);
-	params.getParam("ibl_samples", bglSam);
+	params.getParam("ibl_samples", bgl_sam);
 	params.getParam("power", p);
-	params.getParam("cast_shadows", castShadows);
+	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	background_t *gradBG = new gradientBackground_t(gzenith * p,  ghoriz * p, szenith * p, shoriz * p, bgl, true);
+	Background *grad_bg = new GradientBackground(gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true);
 
 	if(bgl)
 	{
-		paraMap_t bgp;
+		ParamMap bgp;
 		bgp["type"] = std::string("bglight");
-		bgp["samples"] = bglSam;
+		bgp["samples"] = bgl_sam;
 		bgp["with_caustic"] = caus;
 		bgp["with_diffuse"] = diff;
-		bgp["cast_shadows"] = castShadows;
+		bgp["cast_shadows"] = cast_shadows;
 
-		light_t *bglight = render.createLight("GradientBackground_bgLight", bgp);
+		Light *bglight = render.createLight("GradientBackground_bgLight", bgp);
 
-		bglight->setBackground(gradBG);
+		bglight->setBackground(grad_bg);
 
 		if(bglight) render.getScene()->addLight(bglight);
 	}
 
-	return gradBG;
+	return grad_bg;
 }
 
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("gradientback", gradientBackground_t::factory);
+		render.registerFactory("gradientback", GradientBackground::factory);
 	}
 
 }
-__END_YAFRAY
+END_YAFRAY

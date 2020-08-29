@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <vector>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 
 // k_o Spectrum table from pg 127, MI.
-static const float k_oWavelengths[64] =
+static const float k_o_wavelengths__[64] =
 {
 	300, 305, 310, 315, 320,
 	325, 330, 335, 340, 345,
@@ -34,7 +34,7 @@ static const float k_oWavelengths[64] =
 
 
 
-static const float k_oAmplitudes[64] =
+static const float k_o_amplitudes__[64] =
 {
 	10.0,  4.8,  2.7,   1.35,  .8,
 	.380,  .160,  .075,  .04,  .019,
@@ -59,24 +59,24 @@ static const float k_oAmplitudes[64] =
 
 
 // k_g Spectrum table from pg 130, MI.
-static const float k_gWavelengths[4] =
+static const float k_g_wavelengths__[4] =
 {
 	759,  760,  770,  771
 };
 
-static const float k_gAmplitudes[4] =
+static const float k_g_amplitudes__[4] =
 {
 	0,  3.0,  0.210,  0
 };
 
 // k_wa Spectrum table from pg 130, MI.
-static const float k_waWavelengths[13] =
+static const float k_wa_wavelengths__[13] =
 {
 	689,  690,  700,  710,  720,  730,  740,
 	750,  760,  770,  780,  790,  800
 };
 
-static const float k_waAmplitudes[13] =
+static const float k_wa_amplitudes__[13] =
 {
 	0,
 	0.160e-1,
@@ -95,7 +95,7 @@ static const float k_waAmplitudes[13] =
 
 
 // 380-750 by 10nm
-static const float solAmplitudes[38] =
+static const float sol_amplitudes__[38] =
 {
 	165.5, 162.3, 211.2, 258.8, 258.2,
 	242.3, 267.6, 296.6, 305.4, 300.6,
@@ -108,78 +108,78 @@ static const float solAmplitudes[38] =
 };
 
 
-struct  irregularSpectrum_t
+struct IrregularSpectrum
 {
-	irregularSpectrum_t(const float *amps, const float *wl, int n)
+	IrregularSpectrum(const float *amps, const float *wl, int n)
 	{
-		for(int i = 0; i < n; ++i) { wavelen.push_back(wl[i]); amplitude.push_back(amps[i]); }
+		for(int i = 0; i < n; ++i) { wavelen_.push_back(wl[i]); amplitude_.push_back(amps[i]); }
 	}
 	float sample(float wl);
-	std::vector<float> wavelen;
-	std::vector<float> amplitude;
+	std::vector<float> wavelen_;
+	std::vector<float> amplitude_;
 };
 
-float irregularSpectrum_t::sample(float wl)
+float IrregularSpectrum::sample(float wl)
 {
-	auto i = lower_bound(wavelen.begin(), wavelen.end(), wl);
-	if(i == wavelen.begin() || i == wavelen.end()) return 0.f;
-	int index = (i - wavelen.begin()) - 1;
-	float delta = (wl - wavelen[index]) / (wavelen[index + 1] - wavelen[index]);
-	return (1.f - delta) * amplitude[index] + delta * amplitude[index + 1];
+	auto i = lower_bound(wavelen_.begin(), wavelen_.end(), wl);
+	if(i == wavelen_.begin() || i == wavelen_.end()) return 0.f;
+	int index = (i - wavelen_.begin()) - 1;
+	float delta = (wl - wavelen_[index]) / (wavelen_[index + 1] - wavelen_[index]);
+	return (1.f - delta) * amplitude_[index] + delta * amplitude_[index + 1];
 }
 
-color_t ComputeAttenuatedSunlight(float theta, int turbidity)
+Rgb computeAttenuatedSunlight__(float theta, int turbidity)
 {
-	irregularSpectrum_t k_oCurve(k_oAmplitudes, k_oWavelengths, 64);
-	irregularSpectrum_t k_gCurve(k_gAmplitudes, k_gWavelengths, 4);
-	irregularSpectrum_t k_waCurve(k_waAmplitudes, k_waWavelengths, 13);
+	IrregularSpectrum k_o_curve(k_o_amplitudes__, k_o_wavelengths__, 64);
+	IrregularSpectrum k_g_curve(k_g_amplitudes__, k_g_wavelengths__, 4);
+	IrregularSpectrum k_wa_curve(k_wa_amplitudes__, k_wa_wavelengths__, 13);
 	//RiRegularSpectralCurve   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
 	// Need a factor of 100 (done below)
 	float data[38];  // (750 - 380) / 10  + 1
 
 	float beta = 0.04608365822050 * turbidity - 0.04586025928522;
-	float tauR, tauA, tauO, tauG, tauWA;
-	const float alpha = 1.3, lOzone = .35, w = 2.0;
+	float tau_r, tau_a, tau_o, tau_g, tau_wa;
+	const float alpha = 1.3, l_ozone = .35, w = 2.0;
 
-	color_t sun_xyz(0.f);
+	Rgb sun_xyz(0.f);
 	float m = 1.0 / (cos(theta) + 0.000940 * pow(1.6386f - theta, -1.253f)); // Relative Optical Mass
 
 	int i;
 	float lambda;
 	for(i = 0, lambda = 380; i < 38; i++, lambda += 10)
 	{
-		float uL = lambda * 0.001f;
+		float u_l = lambda * 0.001f;
 		// Rayleigh Scattering
 		// Results agree with the graph (pg 115, MI) */
-		tauR = fExp(-m * 0.008735 * pow(uL, -4.08f));
+		tau_r = fExp__(-m * 0.008735 * pow(u_l, -4.08f));
 		// Aerosal (water + dust) attenuation
 		// beta - amount of aerosols present
 		// alpha - ratio of small to large particle sizes. (0:4,usually 1.3)
 		// Results agree with the graph (pg 121, MI)
-		tauA = fExp(-m * beta * pow(uL, -alpha));  // lambda should be in um
+		tau_a = fExp__(-m * beta * pow(u_l, -alpha));  // lambda should be in um
 		// Attenuation due to ozone absorption
 		// lOzone - amount of ozone in cm(NTP)
 		// Results agree with the graph (pg 128, MI)
-		tauO = fExp(-m * k_oCurve.sample(lambda) * lOzone);
+		tau_o = fExp__(-m * k_o_curve.sample(lambda) * l_ozone);
 		// Attenuation due to mixed gases absorption
 		// Results agree with the graph (pg 131, MI)
-		tauG = fExp(-1.41 * k_gCurve.sample(lambda) * m / pow(1 + 118.93 * k_gCurve.sample(lambda) * m, 0.45));
+		tau_g = fExp__(-1.41 * k_g_curve.sample(lambda) * m / pow(1 + 118.93 * k_g_curve.sample(lambda) * m, 0.45));
 		// Attenuation due to water vapor absorbtion
 		// w - precipitable water vapor in centimeters (standard = 2)
 		// Results agree with the graph (pg 132, MI)
-		tauWA = fExp(-0.2385 * k_waCurve.sample(lambda) * w * m /
-		             fPow(1 + 20.07 * k_waCurve.sample(lambda) * w * m, 0.45));
+		tau_wa = fExp__(-0.2385 * k_wa_curve.sample(lambda) * w * m /
+						fPow__(1 + 20.07 * k_wa_curve.sample(lambda) * w * m, 0.45));
 
-		data[i] = 100 * solAmplitudes[i] * tauR * tauA * tauO * tauG * tauWA; // 100 comes from solCurve being
+		data[i] = 100 * sol_amplitudes__[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
 		// in wrong units.
-		sun_xyz += wl2XYZ(lambda) * data[i];
+		sun_xyz += wl2Xyz__(lambda) * data[i];
 	}
 	sun_xyz *= 0.02631578947368421053f;
-	color_t sun_col;
-	sun_col.set((3.240479 * sun_xyz.R - 1.537150 * sun_xyz.G - 0.498535 * sun_xyz.B),
-	            (-0.969256 * sun_xyz.R + 1.875992 * sun_xyz.G + 0.041556 * sun_xyz.B),
-	            (0.055648 * sun_xyz.R - 0.204043 * sun_xyz.G + 1.057311 * sun_xyz.B));
+	Rgb sun_col;
+	sun_col.set((3.240479 * sun_xyz.r_ - 1.537150 * sun_xyz.g_ - 0.498535 * sun_xyz.b_),
+	            (-0.969256 * sun_xyz.r_ + 1.875992 * sun_xyz.g_ + 0.041556 * sun_xyz.b_),
+	            (0.055648 * sun_xyz.r_ - 0.204043 * sun_xyz.g_ + 1.057311 * sun_xyz.b_));
 	return sun_col;
 }
 
-__END_YAFRAY
+END_YAFRAY

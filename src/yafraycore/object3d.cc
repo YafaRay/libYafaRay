@@ -2,50 +2,50 @@
 #include <yafraycore/triangle.h>
 #include <cstdlib>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-float object3d_t::highestObjectIndex = 1.f;	//Initially this class shared variable will be 1.f
-unsigned int object3d_t::objectIndexAuto = 0;	//Initially this class shared variable will be 0
+float Object3D::highest_object_index_ = 1.f;	//Initially this class shared variable will be 1.f
+unsigned int Object3D::object_index_auto_ = 0;	//Initially this class shared variable will be 0
 
 
-triangleObject_t::triangleObject_t(int ntris, bool hasUV, bool hasOrco):
-	has_orco(hasOrco), has_uv(hasUV), is_smooth(false), normals_exported(false)
+TriangleObject::TriangleObject(int ntris, bool has_uv, bool has_orco):
+		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), normals_exported_(false)
 {
-	triangles.reserve(ntris);
-	if(hasUV)
+	triangles_.reserve(ntris);
+	if(has_uv)
 	{
-		uv_offsets.reserve(ntris);
+		uv_offsets_.reserve(ntris);
 	}
 
-	if(hasOrco)
+	if(has_orco)
 	{
-		points.reserve(2 * 3 * ntris);
+		points_.reserve(2 * 3 * ntris);
 	}
 	else
 	{
-		points.reserve(3 * ntris);
+		points_.reserve(3 * ntris);
 	}
 }
 
-int triangleObject_t::getPrimitives(const triangle_t **prims)
+int TriangleObject::getPrimitives(const Triangle **prims)
 {
-	for(unsigned int i = 0; i < triangles.size(); ++i)
+	for(unsigned int i = 0; i < triangles_.size(); ++i)
 	{
-		prims[i] = &(triangles[i]);
+		prims[i] = &(triangles_[i]);
 	}
-	return triangles.size();
+	return triangles_.size();
 }
 
-triangle_t *triangleObject_t::addTriangle(const triangle_t &t)
+Triangle *TriangleObject::addTriangle(const Triangle &t)
 {
-	triangles.push_back(t);
-	triangles.back().selfIndex = triangles.size() - 1;
-	return &(triangles.back());
+	triangles_.push_back(t);
+	triangles_.back().self_index_ = triangles_.size() - 1;
+	return &(triangles_.back());
 }
 
-void triangleObject_t::finish()
+void TriangleObject::finish()
 {
-	for(auto i = triangles.begin(); i != triangles.end(); ++i)
+	for(auto i = triangles_.begin(); i != triangles_.end(); ++i)
 	{
 		i->recNormal();
 	}
@@ -53,35 +53,35 @@ void triangleObject_t::finish()
 
 // triangleObjectInstance_t Methods
 
-triangleObjectInstance_t::triangleObjectInstance_t(triangleObject_t *base, matrix4x4_t obj2World)
+TriangleObjectInstance::TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world)
 {
-	objToWorld = obj2World;
-	mBase = base;
-	has_orco = mBase->has_orco;
-	has_uv = mBase->has_uv;
-	is_smooth = mBase->is_smooth;
-	normals_exported = mBase->normals_exported;
-	visible = true;
-	is_base_mesh = false;
+	obj_to_world_ = obj_2_world;
+	m_base_ = base;
+	has_orco_ = m_base_->has_orco_;
+	has_uv_ = m_base_->has_uv_;
+	is_smooth_ = m_base_->is_smooth_;
+	normals_exported_ = m_base_->normals_exported_;
+	visible_ = true;
+	is_base_mesh_ = false;
 
-	triangles.reserve(mBase->triangles.size());
+	triangles_.reserve(m_base_->triangles_.size());
 
-	for(size_t i = 0; i < mBase->triangles.size(); i++)
+	for(size_t i = 0; i < m_base_->triangles_.size(); i++)
 	{
-		triangles.push_back(triangleInstance_t(&mBase->triangles[i], this));
+		triangles_.push_back(TriangleInstance(&m_base_->triangles_[i], this));
 	}
 }
 
-int triangleObjectInstance_t::getPrimitives(const triangle_t **prims)
+int TriangleObjectInstance::getPrimitives(const Triangle **prims)
 {
-	for(size_t i = 0; i < triangles.size(); i++)
+	for(size_t i = 0; i < triangles_.size(); i++)
 	{
-		prims[i] = &triangles[i];
+		prims[i] = &triangles_[i];
 	}
-	return triangles.size();
+	return triangles_.size();
 }
 
-void triangleObjectInstance_t::finish()
+void TriangleObjectInstance::finish()
 {
 	// Empty
 }
@@ -90,48 +90,48 @@ void triangleObjectInstance_t::finish()
 	meshObject_t methods
 =====================================*/
 
-meshObject_t::meshObject_t(int ntris, bool hasUV, bool hasOrco):
-	has_orco(hasOrco), has_uv(hasUV), has_vcol(false), is_smooth(false), light(nullptr)
+MeshObject::MeshObject(int ntris, bool has_uv, bool has_orco):
+		has_orco_(has_orco), has_uv_(has_uv), has_vcol_(false), is_smooth_(false), light_(nullptr)
 {
 	//triangles.reserve(ntris);
-	if(hasUV)
+	if(has_uv)
 	{
-		uv_offsets.reserve(ntris);
+		uv_offsets_.reserve(ntris);
 	}
 }
 
-int meshObject_t::getPrimitives(const primitive_t **prims) const
+int MeshObject::getPrimitives(const Primitive **prims) const
 {
 	int n = 0;
-	for(unsigned int i = 0; i < triangles.size(); ++i, ++n)
+	for(unsigned int i = 0; i < triangles_.size(); ++i, ++n)
 	{
-		prims[n] = &(triangles[i]);
+		prims[n] = &(triangles_[i]);
 	}
-	for(unsigned int i = 0; i < s_triangles.size(); ++i, ++n)
+	for(unsigned int i = 0; i < s_triangles_.size(); ++i, ++n)
 	{
-		prims[n] = &(s_triangles[i]);
+		prims[n] = &(s_triangles_[i]);
 	}
 	return n;
 }
 
-primitive_t *meshObject_t::addTriangle(const vTriangle_t &t)
+Primitive *MeshObject::addTriangle(const VTriangle &t)
 {
-	triangles.push_back(t);
-	return &(triangles.back());
+	triangles_.push_back(t);
+	return &(triangles_.back());
 }
 
-primitive_t *meshObject_t::addBsTriangle(const bsTriangle_t &t)
+Primitive *MeshObject::addBsTriangle(const BsTriangle &t)
 {
-	s_triangles.push_back(t);
-	return &(triangles.back());
+	s_triangles_.push_back(t);
+	return &(triangles_.back());
 }
 
-void meshObject_t::finish()
+void MeshObject::finish()
 {
-	for(auto i = triangles.begin(); i != triangles.end(); ++i)
+	for(auto i = triangles_.begin(); i != triangles_.end(); ++i)
 	{
 		i->recNormal();
 	}
 }
 
-__END_YAFRAY
+END_YAFRAY

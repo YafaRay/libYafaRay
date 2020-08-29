@@ -23,507 +23,507 @@
 #include <core_api/params.h>
 #include <core_api/scene.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
 
-#define sumColors(c1, c2) ((c1) + (c2))
-#define addColors(c1, c2, v1, v2) sumColors(c1*v1, c2*v2)
+#define SUM_COLORS(c1, c2) ((c1) + (c2))
+#define ADD_COLORS(c1, c2, v1, v2) SUM_COLORS(c1*v1, c2*v2)
 
-#define addPdf(p1, p2) (p1*ival + p2*val)
+#define ADD_PDF(p1, p2) (p1*ival + p2*val)
 
-blendMat_t::blendMat_t(const material_t *m1, const material_t *m2, float bval, visibility_t eVisibility):
-	mat1(m1), mat2(m2)
+BlendMaterial::BlendMaterial(const Material *m_1, const Material *m_2, float bval, Visibility visibility):
+		mat_1_(m_1), mat_2_(m_2)
 {
-	mVisibility = eVisibility;
-	bsdfFlags = mat1->getFlags() | mat2->getFlags();
-	mmem1 = mat1->getReqMem();
-	recalcBlend = false;
-	blendVal = bval;
-	blendedIOR = (mat1->getMatIOR() + mat2->getMatIOR()) * 0.5f;
-	mVisibility = eVisibility;
-	additionalDepth = std::max(mat1->getAdditionalDepth(), mat2->getAdditionalDepth());
+	visibility_ = visibility;
+	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
+	mmem_1_ = mat_1_->getReqMem();
+	recalc_blend_ = false;
+	blend_val_ = bval;
+	blended_ior_ = (mat_1_->getMatIor() + mat_2_->getMatIor()) * 0.5f;
+	visibility_ = visibility;
+	additional_depth_ = std::max(mat_1_->getAdditionalDepth(), mat_2_->getAdditionalDepth());
 }
 
-blendMat_t::~blendMat_t()
+BlendMaterial::~BlendMaterial()
 {
-	mat1Flags = BSDF_NONE;
-	mat2Flags = BSDF_NONE;
+	mat_1_flags_ = BsdfNone;
+	mat_2_flags_ = BsdfNone;
 }
 
-inline void blendMat_t::getBlendVal(const renderState_t &state, const surfacePoint_t &sp, float &val, float &ival) const
+inline void BlendMaterial::getBlendVal(const RenderState &state, const SurfacePoint &sp, float &val, float &ival) const
 {
 
-	if(recalcBlend)
+	if(recalc_blend_)
 	{
-		void *old_dat = state.userdata;
+		void *old_dat = state.userdata_;
 
-		nodeStack_t stack(state.userdata);
-		evalNodes(state, sp, allSorted, stack);
-		val = blendS->getScalar(stack);
-		state.userdata = old_dat;
+		NodeStack stack(state.userdata_);
+		evalNodes(state, sp, all_sorted_, stack);
+		val = blend_s_->getScalar(stack);
+		state.userdata_ = old_dat;
 	}
 	else
 	{
-		val = blendVal;
+		val = blend_val_;
 	}
 
 	ival = std::min(1.f, std::max(0.f, 1.f - val));
 }
 
-void blendMat_t::initBSDF(const renderState_t &state, surfacePoint_t &sp, BSDF_t &bsdfTypes) const
+void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
 {
-	void *old_udat = state.userdata;
+	void *old_udat = state.userdata_;
 
-	bsdfTypes = BSDF_NONE;
+	bsdf_types = BsdfNone;
 
 
 	float alpha, inv_alpha;
 	getBlendVal(state, sp, alpha, inv_alpha);
 
 
-	surfacePoint_t sp_0 = sp;
+	SurfacePoint sp_0 = sp;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	mat1->initBSDF(state, sp_0, mat1Flags);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	mat_1_->initBsdf(state, sp_0, mat_1_flags_);
 
-	surfacePoint_t sp_1 = sp;
+	SurfacePoint sp_1 = sp;
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	mat2->initBSDF(state, sp_1, mat2Flags);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	mat_2_->initBsdf(state, sp_1, mat_2_flags_);
 
-	sp = blend_surface_points(sp_0, sp_1, inv_alpha);
+	sp = blendSurfacePoints__(sp_0, sp_1, inv_alpha);
 
-	bsdfTypes = mat1Flags | mat2Flags;
+	bsdf_types = mat_1_flags_ | mat_2_flags_;
 
 	//todo: bump mapping blending
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 }
 
-color_t blendMat_t::eval(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, BSDF_t bsdfs, bool force_eval) const
+Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t bsdfs, bool force_eval) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	color_t col1(1.f), col2(1.f);
-	void *old_udat = state.userdata;
+	Rgb col_1(1.f), col_2(1.f);
+	void *old_udat = state.userdata_;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	col1 = mat1->eval(state, sp, wo, wl, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	col_1 = mat_1_->eval(state, sp, wo, wl, bsdfs);
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	col2 = mat2->eval(state, sp, wo, wl, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	col_2 = mat_2_->eval(state, sp, wo, wl, bsdfs);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	col1 = addColors(col1, col2, ival, val);
+	col_1 = ADD_COLORS(col_1, col_2, ival, val);
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col1, wireFrameAmount, sp);
-	return col1;
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col_1, wire_frame_amount, sp);
+	return col_1;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t &wi, sample_t &s, float &W) const
+Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	bool mat1Sampled = false;
-	bool mat2Sampled = false;
+	bool mat_1_sampled = false;
+	bool mat_2_sampled = false;
 
-	color_t col1(0.f), col2(0.f);
-	sample_t s1 = s, s2 = s;
-	vector3d_t wi1(0.f), wi2(0.f);
-	float W1 = 0.f, W2 = 0.f;
-	void *old_udat = state.userdata;
+	Rgb col1(0.f), col2(0.f);
+	Sample s1 = s, s2 = s;
+	Vec3 wi_1(0.f), wi_2(0.f);
+	float w_1 = 0.f, w_2 = 0.f;
+	void *old_udat = state.userdata_;
 
-	s2.pdf = s1.pdf = s.pdf = 0.f;
+	s2.pdf_ = s1.pdf_ = s.pdf_ = 0.f;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	if(s.flags & mat1Flags)
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	if(s.flags_ & mat_1_flags_)
 	{
-		col1 = mat1->sample(state, sp, wo, wi1, s1, W1);
-		mat1Sampled = true;
+		col1 = mat_1_->sample(state, sp, wo, wi_1, s1, w_1);
+		mat_1_sampled = true;
 	}
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	if(s.flags & mat2Flags)
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	if(s.flags_ & mat_2_flags_)
 	{
-		col2 = mat2->sample(state, sp, wo, wi2, s2, W2);
-		mat2Sampled = true;
+		col2 = mat_2_->sample(state, sp, wo, wi_2, s2, w_2);
+		mat_2_sampled = true;
 	}
 
-	if(mat1Sampled && mat2Sampled)
+	if(mat_1_sampled && mat_2_sampled)
 	{
-		wi = (wi2 + wi1).normalize();
+		wi = (wi_2 + wi_1).normalize();
 
-		s.pdf = addPdf(s1.pdf, s2.pdf);
-		s.sampledFlags = s1.sampledFlags | s2.sampledFlags;
-		s.reverse = s1.reverse | s2.reverse;
-		if(s.reverse)
+		s.pdf_ = ADD_PDF(s1.pdf_, s2.pdf_);
+		s.sampled_flags_ = s1.sampled_flags_ | s2.sampled_flags_;
+		s.reverse_ = s1.reverse_ | s2.reverse_;
+		if(s.reverse_)
 		{
-			s.pdf_back = addPdf(s1.pdf_back, s2.pdf_back);
-			s.col_back = addColors((s1.col_back * W1), (s2.col_back * W2), ival, val);
+			s.pdf_back_ = ADD_PDF(s1.pdf_back_, s2.pdf_back_);
+			s.col_back_ = ADD_COLORS((s1.col_back_ * w_1), (s2.col_back_ * w_2), ival, val);
 		}
-		col1 = addColors((col1 * W1), (col2 * W2), ival, val);
-		W = 1.f;//addPdf(W1, W2);
+		col1 = ADD_COLORS((col1 * w_1), (col2 * w_2), ival, val);
+		w = 1.f;//addPdf(W1, W2);
 	}
-	else if(mat1Sampled && !mat2Sampled)
+	else if(mat_1_sampled && !mat_2_sampled)
 	{
-		wi = wi1;
+		wi = wi_1;
 
-		s.pdf = s1.pdf;
-		s.sampledFlags = s1.sampledFlags;
-		s.reverse = s1.reverse;
-		if(s.reverse)
+		s.pdf_ = s1.pdf_;
+		s.sampled_flags_ = s1.sampled_flags_;
+		s.reverse_ = s1.reverse_;
+		if(s.reverse_)
 		{
-			s.pdf_back = s1.pdf_back;
-			s.col_back = s1.col_back;
+			s.pdf_back_ = s1.pdf_back_;
+			s.col_back_ = s1.col_back_;
 		}
 		//col1 = col1;
-		W = W1;
+		w = w_1;
 	}
-	else if(!mat1Sampled && mat2Sampled)
+	else if(!mat_1_sampled && mat_2_sampled)
 	{
-		wi = wi2;
+		wi = wi_2;
 
-		s.pdf = s2.pdf;
-		s.sampledFlags = s2.sampledFlags;
-		s.reverse = s2.reverse;
-		if(s.reverse)
+		s.pdf_ = s2.pdf_;
+		s.sampled_flags_ = s2.sampled_flags_;
+		s.reverse_ = s2.reverse_;
+		if(s.reverse_)
 		{
-			s.pdf_back = s2.pdf_back;
-			s.col_back = s2.col_back;
+			s.pdf_back_ = s2.pdf_back_;
+			s.col_back_ = s2.col_back_;
 		}
 		col1 = col2;
-		W = W2;
+		w = w_2;
 	}
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col1, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col1, wire_frame_amount, sp);
 	return col1;
 }
 
-color_t blendMat_t::sample(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, vector3d_t *const dir, color_t &tcol, sample_t &s, float *const W) const
+Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	void *old_udat = state.userdata;
+	void *old_udat = state.userdata_;
 
-	color_t col;
+	Rgb col;
 
-	if(val <= 0.f) col = mat1->sample(state, sp, wo, dir, tcol, s, W);
-	else if(val >= 1.f) col = mat2->sample(state, sp, wo, dir, tcol, s, W);
-	else col = mat1->sample(state, sp, wo, dir, tcol, s, W) * ival + mat2->sample(state, sp, wo, dir, tcol, s, W) * val;
+	if(val <= 0.f) col = mat_1_->sample(state, sp, wo, dir, tcol, s, w);
+	else if(val >= 1.f) col = mat_2_->sample(state, sp, wo, dir, tcol, s, w);
+	else col = mat_1_->sample(state, sp, wo, dir, tcol, s, w) * ival + mat_2_->sample(state, sp, wo, dir, tcol, s, w) * val;
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
 
 
-float blendMat_t::pdf(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wi, BSDF_t bsdfs) const
+float BlendMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	float pdf1 = 0.f, pdf2 = 0.f;
-	void *old_udat = state.userdata;
+	float pdf_1 = 0.f, pdf_2 = 0.f;
+	void *old_udat = state.userdata_;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	pdf1 = mat1->pdf(state, sp, wo, wi, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	pdf_1 = mat_1_->pdf(state, sp, wo, wi, bsdfs);
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	pdf2 = mat2->pdf(state, sp, wo, wi, bsdfs);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	pdf_2 = mat_2_->pdf(state, sp, wo, wi, bsdfs);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	pdf1 = addPdf(pdf1, pdf2);
-	return pdf1;
+	pdf_1 = ADD_PDF(pdf_1, pdf_2);
+	return pdf_1;
 }
 
-void blendMat_t::getSpecular(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo,
-                             bool &reflect, bool &refract, vector3d_t *const dir, color_t *const col) const
+void BlendMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+								bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	void *old_udat = state.userdata;
+	void *old_udat = state.userdata_;
 
 	reflect = false;
 	refract = false;
 
-	bool m1_reflect = false, m1_refract = false;
+	bool m_1_reflect = false, m_1_refract = false;
 
-	vector3d_t m1_dir[2];
-	color_t m1_col[2];
+	Vec3 m_1_dir[2];
+	Rgb m_1_col[2];
 
-	m1_col[0] = color_t(0.f);
-	m1_col[1] = color_t(0.f);
-	m1_dir[0] = vector3d_t(0.f);
-	m1_dir[1] = vector3d_t(0.f);
+	m_1_col[0] = Rgb(0.f);
+	m_1_col[1] = Rgb(0.f);
+	m_1_dir[0] = Vec3(0.f);
+	m_1_dir[1] = Vec3(0.f);
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	mat1->getSpecular(state, sp, wo, m1_reflect, m1_refract, m1_dir, m1_col);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	mat_1_->getSpecular(state, sp, wo, m_1_reflect, m_1_refract, m_1_dir, m_1_col);
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	mat2->getSpecular(state, sp, wo, reflect, refract, dir, col);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	mat_2_->getSpecular(state, sp, wo, reflect, refract, dir, col);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	if(reflect && m1_reflect)
+	if(reflect && m_1_reflect)
 	{
-		col[0] = addColors(m1_col[0], col[0], ival, val);
-		dir[0] = (dir[0] + m1_dir[0]).normalize();
+		col[0] = ADD_COLORS(m_1_col[0], col[0], ival, val);
+		dir[0] = (dir[0] + m_1_dir[0]).normalize();
 	}
-	else if(m1_reflect)
+	else if(m_1_reflect)
 	{
-		col[0] = m1_col[0] * ival;
-		dir[0] = m1_dir[0];
+		col[0] = m_1_col[0] * ival;
+		dir[0] = m_1_dir[0];
 	}
 	else
 	{
 		col[0] = col[0] * val;
 	}
 
-	if(refract && m1_refract)
+	if(refract && m_1_refract)
 	{
-		col[1] = addColors(m1_col[1], col[1], ival, val);
-		dir[1] = (dir[1] + m1_dir[1]).normalize();
+		col[1] = ADD_COLORS(m_1_col[1], col[1], ival, val);
+		dir[1] = (dir[1] + m_1_dir[1]).normalize();
 	}
-	else if(m1_refract)
+	else if(m_1_refract)
 	{
-		col[1] = m1_col[1] * ival;
-		dir[1] = m1_dir[1];
+		col[1] = m_1_col[1] * ival;
+		dir[1] = m_1_dir[1];
 	}
 	else
 	{
 		col[1] = col[1] * val;
 	}
 
-	refract = refract || m1_refract;
-	reflect = reflect || m1_reflect;
+	refract = refract || m_1_refract;
+	reflect = reflect || m_1_reflect;
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col, wire_frame_amount, sp);
 }
 
-float blendMat_t::getMatIOR() const
+float BlendMaterial::getMatIor() const
 {
-	return blendedIOR;
+	return blended_ior_;
 }
 
-bool blendMat_t::isTransparent() const
+bool BlendMaterial::isTransparent() const
 {
-	return mat1->isTransparent() || mat2->isTransparent();
+	return mat_1_->isTransparent() || mat_2_->isTransparent();
 }
 
-color_t blendMat_t::getTransparency(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb BlendMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	color_t col1(1.f), col2(1.f);
+	Rgb col_1(1.f), col_2(1.f);
 
-	void *old_udat = state.userdata;
+	void *old_udat = state.userdata_;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	col1 = mat1->getTransparency(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	col_1 = mat_1_->getTransparency(state, sp, wo);
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	col2 = mat2->getTransparency(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	col_2 = mat_2_->getTransparency(state, sp, wo);
 
-	col1 = addColors(col1, col2, ival, val);
+	col_1 = ADD_COLORS(col_1, col_2, ival, val);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col1, wireFrameAmount, sp);
-	return col1;
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col_1, wire_frame_amount, sp);
+	return col_1;
 }
 
-float blendMat_t::getAlpha(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+float BlendMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	if(isTransparent())
 	{
 		float val, ival;
 		getBlendVal(state, sp, val, ival);
 
-		float al1 = 1.f, al2 = 1.f;
+		float al_1 = 1.f, al_2 = 1.f;
 
-		void *old_udat = state.userdata;
+		void *old_udat = state.userdata_;
 
-		state.userdata = PTR_ADD(state.userdata, reqMem);
-		al1 = mat1->getAlpha(state, sp, wo);
+		state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+		al_1 = mat_1_->getAlpha(state, sp, wo);
 
-		state.userdata = PTR_ADD(state.userdata, mmem1);
-		al2 = mat2->getAlpha(state, sp, wo);
+		state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+		al_2 = mat_2_->getAlpha(state, sp, wo);
 
-		al1 = std::min(al1, al2);
+		al_1 = std::min(al_1, al_2);
 
-		state.userdata = old_udat;
+		state.userdata_ = old_udat;
 
-		float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-		applyWireFrame(al1, wireFrameAmount, sp);
-		return al1;
+		float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+		applyWireFrame(al_1, wire_frame_amount, sp);
+		return al_1;
 	}
 
 	float result = 1.0;
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(result, wireFrameAmount, sp);
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
 
-color_t blendMat_t::emit(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wo) const
+Rgb BlendMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	nodeStack_t stack(state.userdata);
+	NodeStack stack(state.userdata_);
 
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	color_t col1(0.0), col2(0.0);
-	void *old_udat = state.userdata;
+	Rgb col_1(0.0), col_2(0.0);
+	void *old_udat = state.userdata_;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	col1 = mat1->emit(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	col_1 = mat_1_->emit(state, sp, wo);
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	col2 = mat2->emit(state, sp, wo);
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	col_2 = mat_2_->emit(state, sp, wo);
 
-	col1 = addColors(col1, col2, ival, val);
+	col_1 = ADD_COLORS(col_1, col_2, ival, val);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 
-	float wireFrameAmount = (mWireFrameShader ? mWireFrameShader->getScalar(stack) * mWireFrameAmount : mWireFrameAmount);
-	applyWireFrame(col1, wireFrameAmount, sp);
-	return col1;
+	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	applyWireFrame(col_1, wire_frame_amount, sp);
+	return col_1;
 }
 
-bool blendMat_t::scatterPhoton(const renderState_t &state, const surfacePoint_t &sp, const vector3d_t &wi, vector3d_t &wo, pSample_t &s) const
+bool BlendMaterial::scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
 
-	void *old_udat = state.userdata;
+	void *old_udat = state.userdata_;
 	bool ret = false;
 
-	color_t col1(0.f), col2(0.f);
-	float pdf1 = 0.f, pdf2 = 0.f;
+	Rgb col_1(0.f), col_2(0.f);
+	float pdf_1 = 0.f, pdf_2 = 0.f;
 
-	state.userdata = PTR_ADD(state.userdata, reqMem);
-	ret = ret || mat1->scatterPhoton(state, sp, wi, wo, s);
-	col1 = s.color;
-	pdf1 = s.pdf;
+	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	ret = ret || mat_1_->scatterPhoton(state, sp, wi, wo, s);
+	col_1 = s.color_;
+	pdf_1 = s.pdf_;
 
-	state.userdata = PTR_ADD(state.userdata, mmem1);
-	ret = ret || mat2->scatterPhoton(state, sp, wi, wo, s);
-	col2 = s.color;
-	pdf2 = s.pdf;
+	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	ret = ret || mat_2_->scatterPhoton(state, sp, wi, wo, s);
+	col_2 = s.color_;
+	pdf_2 = s.pdf_;
 
-	s.color = addColors(col1, col2, ival, val);
-	s.pdf = addPdf(pdf1, pdf2);
+	s.color_ = ADD_COLORS(col_1, col_2, ival, val);
+	s.pdf_ = ADD_PDF(pdf_1, pdf_2);
 
-	state.userdata = old_udat;
+	state.userdata_ = old_udat;
 	return ret;
 }
 
-const volumeHandler_t *blendMat_t::getVolumeHandler(bool inside) const
+const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 {
-	const volumeHandler_t *vol1 = mat1->getVolumeHandler(inside);
-	const volumeHandler_t *vol2 = mat2->getVolumeHandler(inside);
+	const VolumeHandler *vol_1 = mat_1_->getVolumeHandler(inside);
+	const VolumeHandler *vol_2 = mat_2_->getVolumeHandler(inside);
 
-	if(vol1 && vol2)
+	if(vol_1 && vol_2)
 	{
-		if(blendVal <= 0.5f) return vol1;
-		else return vol2;
+		if(blend_val_ <= 0.5f) return vol_1;
+		else return vol_2;
 	}
-	else if(vol1) return vol1;
-	else return vol2;
+	else if(vol_1) return vol_1;
+	else return vol_2;
 }
 
-material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams, renderEnvironment_t &env)
+Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &env)
 {
 	std::string name;
-	const material_t *m1 = nullptr, *m2 = nullptr;
+	const Material *m_1 = nullptr, *m_2 = nullptr;
 	double blend_val = 0.5;
-	std::string sVisibility = "normal";
-	visibility_t visibility = NORMAL_VISIBLE;
+	std::string s_visibility = "normal";
+	Visibility visibility = NormalVisible;
 	int mat_pass_index = 0;
 	float samplingfactor = 1.f;
 	bool receive_shadows = true;
-	float WireFrameAmount = 0.f;           //!< Wireframe shading amount
-	float WireFrameThickness = 0.01f;      //!< Wireframe thickness
-	float WireFrameExponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
-	color_t WireFrameColor = color_t(1.f); //!< Wireframe shading color
+	float wire_frame_amount = 0.f;           //!< Wireframe shading amount
+	float wire_frame_thickness = 0.01f;      //!< Wireframe thickness
+	float wire_frame_exponent = 0.f;         //!< Wireframe exponent (0.f = solid, 1.f=linearly gradual, etc)
+	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
 	if(! params.getParam("material1", name)) return nullptr;
-	m1 = env.getMaterial(name);
+	m_1 = env.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m2 = env.getMaterial(name);
+	m_2 = env.getMaterial(name);
 	params.getParam("blend_value", blend_val);
 
 	params.getParam("receive_shadows", receive_shadows);
-	params.getParam("visibility", sVisibility);
+	params.getParam("visibility", s_visibility);
 	params.getParam("mat_pass_index",   mat_pass_index);
 	params.getParam("samplingfactor",   samplingfactor);
 
-	params.getParam("wireframe_amount",  WireFrameAmount);
-	params.getParam("wireframe_thickness",  WireFrameThickness);
-	params.getParam("wireframe_exponent",  WireFrameExponent);
-	params.getParam("wireframe_color",  WireFrameColor);
+	params.getParam("wireframe_amount", wire_frame_amount);
+	params.getParam("wireframe_thickness", wire_frame_thickness);
+	params.getParam("wireframe_exponent", wire_frame_exponent);
+	params.getParam("wireframe_color", wire_frame_color);
 
-	if(sVisibility == "normal") visibility = NORMAL_VISIBLE;
-	else if(sVisibility == "no_shadows") visibility = VISIBLE_NO_SHADOWS;
-	else if(sVisibility == "shadow_only") visibility = INVISIBLE_SHADOWS_ONLY;
-	else if(sVisibility == "invisible") visibility = INVISIBLE;
-	else visibility = NORMAL_VISIBLE;
+	if(s_visibility == "normal") visibility = NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Invisible;
+	else visibility = NormalVisible;
 
-	if(m1 == nullptr || m2 == nullptr) return nullptr;
+	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 
-	blendMat_t *mat = new blendMat_t(m1, m2, blend_val, visibility);
+	BlendMaterial *mat = new BlendMaterial(m_1, m_2, blend_val, visibility);
 
 	mat->setMaterialIndex(mat_pass_index);
-	mat->mReceiveShadows = receive_shadows;
+	mat->receive_shadows_ = receive_shadows;
 
-	mat->mWireFrameAmount = WireFrameAmount;
-	mat->mWireFrameThickness = WireFrameThickness;
-	mat->mWireFrameExponent = WireFrameExponent;
-	mat->mWireFrameColor = WireFrameColor;
+	mat->wireframe_amount_ = wire_frame_amount;
+	mat->wireframe_thickness_ = wire_frame_thickness;
+	mat->wireframe_exponent_ = wire_frame_exponent;
+	mat->wireframe_color_ = wire_frame_color;
 
 	mat->setSamplingFactor(samplingfactor);
 
-	std::vector<shaderNode_t *> roots;
+	std::vector<ShaderNode *> roots;
 	if(mat->loadNodes(eparams, env))
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->mShadersTable.find(name);
-			if(i != mat->mShadersTable.end())
+			auto i = mat->m_shaders_table_.find(name);
+			if(i != mat->m_shaders_table_.end())
 			{
-				mat->blendS = i->second;
-				mat->recalcBlend = true;
-				roots.push_back(mat->blendS);
+				mat->blend_s_ = i->second;
+				mat->recalc_blend_ = true;
+				roots.push_back(mat->blend_s_);
 			}
 			else
 			{
-				Y_ERROR << "Blend: Blend shader node '" << name << "' does not exist!" << yendl;
+				Y_ERROR << "Blend: Blend shader node '" << name << "' does not exist!" << YENDL;
 				delete mat;
 				return nullptr;
 			}
@@ -531,23 +531,23 @@ material_t *blendMat_t::factory(paraMap_t &params, std::list<paraMap_t> &eparams
 	}
 	else
 	{
-		Y_ERROR << "Blend: loadNodes() failed!" << yendl;
+		Y_ERROR << "Blend: loadNodes() failed!" << YENDL;
 		delete mat;
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);
-	mat->reqMem = sizeof(bool) + mat->reqNodeMem;
+	mat->req_mem_ = sizeof(bool) + mat->req_node_mem_;
 	return mat;
 }
 
 extern "C"
 {
 
-	YAFRAYPLUGIN_EXPORT void registerPlugin(renderEnvironment_t &render)
+	YAFRAYPLUGIN_EXPORT void registerPlugin__(RenderEnvironment &render)
 	{
-		render.registerFactory("blend_mat", blendMat_t::factory);
+		render.registerFactory("blend_mat", BlendMaterial::factory);
 	}
 
 }
 
-__END_YAFRAY
+END_YAFRAY

@@ -20,53 +20,53 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef Y_INTEGRATOR_H
-#define Y_INTEGRATOR_H
+#ifndef YAFARAY_INTEGRATOR_H
+#define YAFARAY_INTEGRATOR_H
 
 #include <yafray_constants.h>
 #include <string>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
 /*!	Integrate the incoming light scattered by the surfaces
 	hit by a given ray
 */
 
-class scene_t;
-class progressBar_t;
-class imageFilm_t;
-struct renderArea_t;
-class colorA_t;
-struct renderState_t;
-class ray_t;
-class diffRay_t;
-class colorPasses_t;
+class Scene;
+class ProgressBar;
+class ImageFilm;
+struct RenderArea;
+class Rgba;
+struct RenderState;
+class Ray;
+class DiffRay;
+class ColorPasses;
 
 
-class YAFRAYCORE_EXPORT integrator_t
+class YAFRAYCORE_EXPORT Integrator
 {
 	public:
-		integrator_t() { scene = nullptr; intpb = nullptr; }
+		Integrator() { scene_ = nullptr; intpb_ = nullptr; }
 		//! this MUST be called before any other member function!
-		void setScene(scene_t *s) { scene = s; }
+		void setScene(Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		virtual bool render(int numView, imageFilm_t *imageFilm) { return false; }
-		virtual void setProgressBar(progressBar_t *pb) { intpb = pb; }
-		virtual std::string getShortName() const { return integratorShortName; }
-		virtual std::string getName() const { return integratorName; }
-		virtual ~integrator_t() {}
-		enum TYPE { SURFACE, VOLUME };
-		TYPE integratorType() { return type; }
+		virtual bool render(int num_view, ImageFilm *image_film) { return false; }
+		virtual void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
+		virtual std::string getShortName() const { return integrator_short_name_; }
+		virtual std::string getName() const { return integrator_name_; }
+		virtual ~Integrator() {}
+		enum Type { Surface, Volume };
+		Type integratorType() { return type_; }
 
 	protected:
-		TYPE type;
-		scene_t *scene;
-		progressBar_t *intpb;
-		std::string integratorName;
-		std::string integratorShortName;
+		Type type_;
+		Scene *scene_;
+		ProgressBar *intpb_;
+		std::string integrator_name_;
+		std::string integrator_short_name_;
 };
 
-class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
+class YAFRAYCORE_EXPORT SurfaceIntegrator: public Integrator
 {
 	public:
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
@@ -75,22 +75,22 @@ class YAFRAYCORE_EXPORT surfaceIntegrator_t: public integrator_t
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
-		virtual colorA_t integrate(renderState_t &state, diffRay_t &ray, colorPasses_t &colPasses, int additionalDepth = 0) const = 0;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
 	protected:
-		surfaceIntegrator_t() {} //don't use...
+		SurfaceIntegrator() {} //don't use...
 };
 
-class YAFRAYCORE_EXPORT volumeIntegrator_t: public integrator_t
+class YAFRAYCORE_EXPORT VolumeIntegrator: public Integrator
 {
 	public:
-		volumeIntegrator_t() {}
-		virtual colorA_t transmittance(renderState_t &state, ray_t &ray) const = 0;
-		virtual colorA_t integrate(renderState_t &state, ray_t &ray, colorPasses_t &colPasses, int additionalDepth = 0) const = 0;
+		VolumeIntegrator() {}
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const = 0;
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
 		virtual bool preprocess() { return true; }
 
 	protected:
 };
 
-__END_YAFRAY
+END_YAFRAY
 
-#endif // Y_INTEGRATOR_H
+#endif // YAFARAY_INTEGRATOR_H

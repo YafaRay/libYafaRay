@@ -29,122 +29,122 @@
 #include <utilities/mcqmc.h>
 #include <yafraycore/kdtree.h>
 
-__BEGIN_YAFRAY
+BEGIN_YAFRAY
 
-bgPortalLight_t::bgPortalLight_t(unsigned int msh, int sampl, float pow, bool bLightEnabled, bool bCastShadows):
-	objID(msh), samples(sampl), power(pow), tree(nullptr)
+BackgroundPortalLight::BackgroundPortalLight(unsigned int msh, int sampl, float pow, bool light_enabled, bool cast_shadows):
+		object_id_(msh), samples_(sampl), power_(pow), tree_(nullptr)
 {
-	lLightEnabled = bLightEnabled;
-	lCastShadows = bCastShadows;
-	mesh = nullptr;
-	aPdf = 0.f;
-	areaDist = nullptr;
-	tris = nullptr;
+	light_enabled_ = light_enabled;
+	cast_shadows_ = cast_shadows;
+	mesh_ = nullptr;
+	a_pdf_ = 0.f;
+	area_dist_ = nullptr;
+	tris_ = nullptr;
 }
 
-bgPortalLight_t::~bgPortalLight_t()
+BackgroundPortalLight::~BackgroundPortalLight()
 {
-	if(areaDist) delete areaDist;
-	areaDist = nullptr;
-	if(tris) delete[] tris;
-	tris = nullptr;
-	if(tree)
+	if(area_dist_) delete area_dist_;
+	area_dist_ = nullptr;
+	if(tris_) delete[] tris_;
+	tris_ = nullptr;
+	if(tree_)
 	{
-		delete tree;
-		tree = nullptr;
+		delete tree_;
+		tree_ = nullptr;
 	}
 }
 
-void bgPortalLight_t::initIS()
+void BackgroundPortalLight::initIs()
 {
-	nTris = mesh->numPrimitives();
-	tris = new const triangle_t *[nTris];
-	mesh->getPrimitives(tris);
-	float *areas = new float[nTris];
-	double totalArea = 0.0;
-	for(int i = 0; i < nTris; ++i)
+	n_tris_ = mesh_->numPrimitives();
+	tris_ = new const Triangle *[n_tris_];
+	mesh_->getPrimitives(tris_);
+	float *areas = new float[n_tris_];
+	double total_area = 0.0;
+	for(int i = 0; i < n_tris_; ++i)
 	{
-		areas[i] = tris[i]->surfaceArea();
-		totalArea += areas[i];
+		areas[i] = tris_[i]->surfaceArea();
+		total_area += areas[i];
 	}
-	areaDist = new pdf1D_t(areas, nTris);
-	area = (float)totalArea;
-	invArea = (float)(1.0 / totalArea);
+	area_dist_ = new Pdf1D(areas, n_tris_);
+	area_ = (float)total_area;
+	inv_area_ = (float)(1.0 / total_area);
 	//delete[] tris;
 	delete[] areas;
-	if(tree) delete tree;
-	tree = new triKdTree_t(tris, nTris, -1, 1, 0.8, 0.33);
+	if(tree_) delete tree_;
+	tree_ = new TriKdTree(tris_, n_tris_, -1, 1, 0.8, 0.33);
 }
 
-void bgPortalLight_t::init(scene_t &scene)
+void BackgroundPortalLight::init(Scene &scene)
 {
-	bg = scene.getBackground();
-	bound_t w = scene.getSceneBound();
-	float worldRadius = 0.5 * (w.g - w.a).length();
-	aPdf = worldRadius * worldRadius;
+	bg_ = scene.getBackground();
+	Bound w = scene.getSceneBound();
+	float world_radius = 0.5 * (w.g_ - w.a_).length();
+	a_pdf_ = world_radius * world_radius;
 
-	worldCenter = 0.5 * (w.a + w.g);
-	mesh = scene.getMesh(objID);
-	if(mesh)
+	world_center_ = 0.5 * (w.a_ + w.g_);
+	mesh_ = scene.getMesh(object_id_);
+	if(mesh_)
 	{
-		mesh->setVisibility(false);
+		mesh_->setVisibility(false);
 
-		initIS();
-		Y_VERBOSE << "bgPortalLight: Triangles:" << nTris << ", Area:" << area << yendl;
-		mesh->setLight(this);
+		initIs();
+		Y_VERBOSE << "bgPortalLight: Triangles:" << n_tris_ << ", Area:" << area_ << YENDL;
+		mesh_->setLight(this);
 	}
 }
 
-void bgPortalLight_t::sampleSurface(point3d_t &p, vector3d_t &n, float s1, float s2) const
+void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 {
-	float primPdf;
-	int primNum = areaDist->DSample(s1, &primPdf);
-	if(primNum >= areaDist->count)
+	float prim_pdf;
+	int prim_num = area_dist_->dSample(s_1, &prim_pdf);
+	if(prim_num >= area_dist_->count_)
 	{
-		Y_WARNING << "bgPortalLight: Sampling error!" << yendl;
+		Y_WARNING << "bgPortalLight: Sampling error!" << YENDL;
 		return;
 	}
-	float ss1, delta = areaDist->cdf[primNum + 1];
-	if(primNum > 0)
+	float ss_1, delta = area_dist_->cdf_[prim_num + 1];
+	if(prim_num > 0)
 	{
-		delta -= areaDist->cdf[primNum];
-		ss1 = (s1 - areaDist->cdf[primNum]) / delta;
+		delta -= area_dist_->cdf_[prim_num];
+		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
 	}
-	else ss1 = s1 / delta;
-	tris[primNum]->sample(ss1, s2, p, n);
+	else ss_1 = s_1 / delta;
+	tris_[prim_num]->sample(ss_1, s_2, p, n);
 }
 
-color_t bgPortalLight_t::totalEnergy() const
+Rgb BackgroundPortalLight::totalEnergy() const
 {
-	ray_t wo;
-	wo.from = worldCenter;
-	color_t energy, col;
+	Ray wo;
+	wo.from_ = world_center_;
+	Rgb energy, col;
 	for(int i = 0; i < 1000; ++i) //exaggerated?
 	{
-		wo.dir = SampleSphere(((float)i + 0.5f) / 1000.f, RI_vdC(i));
-		col = bg->eval(wo, true);
-		for(int j = 0; j < nTris; j++)
+		wo.dir_ = sampleSphere__(((float) i + 0.5f) / 1000.f, riVdC__(i));
+		col = bg_->eval(wo, true);
+		for(int j = 0; j < n_tris_; j++)
 		{
-			float cos_n = -wo.dir * tris[j]->getNormal(); //not 100% sure about sign yet...
-			if(cos_n > 0) energy += col * cos_n * tris[j]->surfaceArea();
+			float cos_n = -wo.dir_ * tris_[j]->getNormal(); //not 100% sure about sign yet...
+			if(cos_n > 0) energy += col * cos_n * tris_[j]->surfaceArea();
 		}
 	}
 
 	return energy * M_1_PI * 0.001f;
 }
 
-bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t &wi) const
+bool BackgroundPortalLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 {
 	if(photonOnly()) return false;
 
-	vector3d_t n;
-	point3d_t p;
-	sampleSurface(p, n, s.s1, s.s2);
+	Vec3 n;
+	Point3 p;
+	sampleSurface(p, n, s.s_1_, s.s_2_);
 
-	vector3d_t ldir = p - sp.P;
+	Vec3 ldir = p - sp.p_;
 	//normalize vec and compute inverse square distance
 	float dist_sqr = ldir.lengthSqr();
-	float dist = fSqrt(dist_sqr);
+	float dist = fSqrt__(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f / dist;
 	float cos_angle = -(ldir * n);
@@ -152,114 +152,114 @@ bool bgPortalLight_t::illumSample(const surfacePoint_t &sp, lSample_t &s, ray_t 
 	if(cos_angle <= 0) return false;
 
 	// fill direction
-	wi.tmax = dist;
-	wi.dir = ldir;
+	wi.tmax_ = dist;
+	wi.dir_ = ldir;
 
-	s.col = bg->eval(wi, true) * power;
+	s.col_ = bg_->eval(wi, true) * power_;
 	// pdf = distance^2 / area * cos(norm, ldir);
-	s.pdf = dist_sqr * M_PI / (area * cos_angle);
-	s.flags = flags;
-	if(s.sp)
+	s.pdf_ = dist_sqr * M_PI / (area_ * cos_angle);
+	s.flags_ = flags_;
+	if(s.sp_)
 	{
-		s.sp->P = p;
-		s.sp->N = s.sp->Ng = n;
+		s.sp_->p_ = p;
+		s.sp_->n_ = s.sp_->ng_ = n;
 	}
 	return true;
 }
 
-color_t bgPortalLight_t::emitPhoton(float s1, float s2, float s3, float s4, ray_t &ray, float &ipdf) const
+Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	vector3d_t normal, du, dv;
-	ipdf = area;
-	sampleSurface(ray.from, normal, s3, s4);
-	createCS(normal, du, dv);
+	Vec3 normal, du, dv;
+	ipdf = area_;
+	sampleSurface(ray.from_, normal, s_3, s_4);
+	createCs__(normal, du, dv);
 
-	ray.dir = SampleCosHemisphere(normal, du, dv, s1, s2);
-	ray_t r2(ray.from, -ray.dir);
-	return bg->eval(r2, true);
+	ray.dir_ = sampleCosHemisphere__(normal, du, dv, s_1, s_2);
+	Ray r_2(ray.from_, -ray.dir_);
+	return bg_->eval(r_2, true);
 }
 
-color_t bgPortalLight_t::emitSample(vector3d_t &wo, lSample_t &s) const
+Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	s.areaPdf = invArea * M_PI;
-	sampleSurface(s.sp->P, s.sp->Ng, s.s3, s.s4);
-	s.sp->N = s.sp->Ng;
-	vector3d_t du, dv;
-	createCS(s.sp->Ng, du, dv);
+	s.area_pdf_ = inv_area_ * M_PI;
+	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
+	s.sp_->n_ = s.sp_->ng_;
+	Vec3 du, dv;
+	createCs__(s.sp_->ng_, du, dv);
 
-	wo = SampleCosHemisphere(s.sp->Ng, du, dv, s.s1, s.s2);
-	s.dirPdf = std::fabs(s.sp->Ng * wo);
+	wo = sampleCosHemisphere__(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
+	s.dir_pdf_ = std::fabs(s.sp_->ng_ * wo);
 
-	s.flags = flags;
-	ray_t r2(s.sp->P, -wo);
-	return bg->eval(r2, true);
+	s.flags_ = flags_;
+	Ray r_2(s.sp_->p_, -wo);
+	return bg_->eval(r_2, true);
 }
 
-bool bgPortalLight_t::intersect(const ray_t &ray, float &t, color_t &col, float &ipdf) const
+bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	if(!tree) return false;
+	if(!tree_) return false;
 	float dis;
-	intersectData_t bary;
-	triangle_t *hitt = nullptr;
-	if(ray.tmax < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax;
+	IntersectData bary;
+	Triangle *hitt = nullptr;
+	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
+	else dis = ray.tmax_;
 	// intersect with tree:
-	if(! tree->Intersect(ray, dis, &hitt, t, bary)) { return false; }
+	if(!tree_->intersect(ray, dis, &hitt, t, bary)) { return false; }
 
-	vector3d_t n = hitt->getNormal();
-	float cos_angle = ray.dir * (-n);
+	Vec3 n = hitt->getNormal();
+	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0) return false;
 	float idist_sqr = 1.f / (t * t);
-	ipdf = idist_sqr * area * cos_angle * (1.f / M_PI);
-	col = bg->eval(ray, true) * power;
+	ipdf = idist_sqr * area_ * cos_angle * (1.f / M_PI);
+	col = bg_->eval(ray, true) * power_;
 
-	col.clampProportionalRGB(lClampIntersect); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
+	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 
 	return true;
 }
 
-float bgPortalLight_t::illumPdf(const surfacePoint_t &sp, const surfacePoint_t &sp_light) const
+float BackgroundPortalLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	vector3d_t wo = sp.P - sp_light.P;
-	float r2 = wo.normLenSqr();
-	float cos_n = wo * sp_light.Ng;
-	return cos_n > 0 ? (r2 * M_PI / (area * cos_n)) : 0.f;
+	Vec3 wo = sp.p_ - sp_light.p_;
+	float r_2 = wo.normLenSqr();
+	float cos_n = wo * sp_light.ng_;
+	return cos_n > 0 ? (r_2 * M_PI / (area_ * cos_n)) : 0.f;
 }
 
-void bgPortalLight_t::emitPdf(const surfacePoint_t &sp, const vector3d_t &wo, float &areaPdf, float &dirPdf, float &cos_wo) const
+void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const
 {
-	areaPdf = invArea * M_PI;
-	cos_wo = wo * sp.N;
-	dirPdf = cos_wo > 0.f ? cos_wo  : 0.f;
+	area_pdf = inv_area_ * M_PI;
+	cos_wo = wo * sp.n_;
+	dir_pdf = cos_wo > 0.f ? cos_wo : 0.f;
 }
 
 
-light_t *bgPortalLight_t::factory(paraMap_t &params, renderEnvironment_t &render)
+Light *BackgroundPortalLight::factory(ParamMap &params, RenderEnvironment &render)
 {
 	int samples = 4;
 	int object = 0;
 	float pow = 1.0f;
-	bool shootD = true;
-	bool shootC = true;
-	bool lightEnabled = true;
-	bool castShadows = true;
-	bool pOnly = false;
+	bool shoot_d = true;
+	bool shoot_c = true;
+	bool light_enabled = true;
+	bool cast_shadows = true;
+	bool p_only = false;
 
 	params.getParam("object", object);
 	params.getParam("samples", samples);
 	params.getParam("power", pow);
-	params.getParam("with_caustic", shootC);
-	params.getParam("with_diffuse", shootD);
-	params.getParam("photon_only", pOnly);
-	params.getParam("light_enabled", lightEnabled);
-	params.getParam("cast_shadows", castShadows);
+	params.getParam("with_caustic", shoot_c);
+	params.getParam("with_diffuse", shoot_d);
+	params.getParam("photon_only", p_only);
+	params.getParam("light_enabled", light_enabled);
+	params.getParam("cast_shadows", cast_shadows);
 
-	bgPortalLight_t *light = new bgPortalLight_t(object, samples, pow, lightEnabled, castShadows);
+	BackgroundPortalLight *light = new BackgroundPortalLight(object, samples, pow, light_enabled, cast_shadows);
 
-	light->lShootCaustic = shootC;
-	light->lShootDiffuse = shootD;
-	light->lPhotonOnly = pOnly;
+	light->shoot_caustic_ = shoot_c;
+	light->shoot_diffuse_ = shoot_d;
+	light->photon_only_ = p_only;
 
 	return light;
 }
-__END_YAFRAY
+END_YAFRAY

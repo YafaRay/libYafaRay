@@ -1,6 +1,6 @@
 # Debian Testing version - YafaRay Standalone building procedure (only valid for YafaRay v3.1.2 or higher)
-# NOTE: This procedure generates a "yafaray_v3" folder that can be used by 3rd party software, or by
-# executing yafaray_v3/bin/yafaray-xml to render a YafaRay XML scene file
+# NOTE: This procedure generates a "yafaray4" folder that can be used by 3rd party software, or by
+# executing yafaray4/bin/yafaray-xml to render a YafaRay XML scene file
 
 # INSTALLING DEVEL TOOLS
 sudo apt-get install -y git cmake cmake-curses-gui autoconf gcc g++ cpp swig
@@ -24,7 +24,7 @@ set(YAF_USER_CONFIG ON)
 ####################################################################
 
 set(DEBUG_BUILD OFF)
-set(USER_INSTALL_PREFIX "$HOME/yafa-dev/build/yafaray_v3/")
+set(USER_INSTALL_PREFIX "$HOME/yafa-dev/build/yafaray4/")
 set(BLENDER_ADDON OFF)
 set(YAF_PY_VERSION 3.5)
 ####################################################################
@@ -39,5 +39,5 @@ make -j9
 make install -j9
 
 # TESTING YAFARAY
-cd $HOME/yafa-dev/build/yafaray_v3/share/yafaray/tests/test01/
-$HOME/yafa-dev/build/yafaray_v3/bin/yafaray-xml -f png test01.xml test01_render
+cd $HOME/yafa-dev/build/yafaray4/share/yafaray/tests/test01/
+$HOME/yafa-dev/build/yafaray4/bin/yafaray-xml -f png test01.xml test01_render
