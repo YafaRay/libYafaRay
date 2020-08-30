@@ -2,7 +2,7 @@
  *
  *      environment.cc: Yafray environment for plugin loading and
  *      object instatiation
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2005  Alejandro Conty Estévez, Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

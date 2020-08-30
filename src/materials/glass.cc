@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			glass.cc: a dielectric material with dispersion, two trivial mats
- *      This is part of the yafray package
+ *      glass.cc: a dielectric material with dispersion, two trivial mats
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

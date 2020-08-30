@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
- * 		iesUtils.h: utilities for parsing IES data files
- *      This is part of the yafaray package
+ *      iesUtils.h: utilities for parsing IES data files
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2009  Bert Buchholz and Rodrigo Placencia
  *
  *      This library is free software; you can redistribute it and/or

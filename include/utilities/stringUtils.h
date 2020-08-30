@@ -1,10 +1,10 @@
 #pragma once
 /****************************************************************************
  *
- *      stringUtils.h: Some std::string manipulation utilities
- *      This is part of the yafray package
+ *      stringUtils.h: Some string manipulation utilities
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez (DarkTide)
- *		Creation date: 2010-05-06
+ *      Creation date: 2010-05-06
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

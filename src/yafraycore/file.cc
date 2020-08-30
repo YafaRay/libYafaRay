@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  *      file.cc: File handling classes with unicode paths
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2020  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

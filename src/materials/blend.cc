@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			blendmat.cc: a material that blends two material
- *      This is part of the yafray package
+ *      blendmat.cc: a material that blends two material
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2008  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

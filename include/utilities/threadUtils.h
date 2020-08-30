@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 		threadUtils.h: Thread Utilities api
- *      This is part of the yafray package
+ *      threadUtils.h: Thread Utilities api
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2016  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

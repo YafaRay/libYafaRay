@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 			camera.h: Camera implementation api
- *      This is part of the yafray package
+ *      camera.h: Camera implementation api
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or

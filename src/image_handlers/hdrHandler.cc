@@ -1,9 +1,9 @@
 /****************************************************************************
  *
  *      hdrHandler.cc: Radiance hdr format handler
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 George Laskowsky Ziguilinsky (Glaskows)
- *						   Rodrigo Placencia Vazquez (DarkTide)
+ *      			   Rodrigo Placencia Vazquez (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

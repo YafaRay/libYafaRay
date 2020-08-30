@@ -1,11 +1,11 @@
 #pragma once
 /****************************************************************************
  *      logging.h: YafaRay Logging control
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez for original Console_Verbosity file
- *		Copyright (C) 2016 David Bluecame for all changes to convert original
- * 		console output classes/objects into full Logging classes/objects
- * 		and the Log and HTML file saving.
+ *      Copyright (C) 2016 David Bluecame for all changes to convert original
+ *      console output classes/objects into full Logging classes/objects
+ *      and the Log and HTML file saving.
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

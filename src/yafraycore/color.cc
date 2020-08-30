@@ -1,7 +1,7 @@
 /****************************************************************************
  *
- * 			color.cc: Color type and operators implementation
- *      This is part of the yafray package
+ *      color.cc: Color type and operators implementation
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or

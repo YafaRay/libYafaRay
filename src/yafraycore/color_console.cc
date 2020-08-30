@@ -1,6 +1,6 @@
 /****************************************************************************
  *      color_console.cc: A console coloring utility
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or

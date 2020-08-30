@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *      sysinfo.h: runtime system information
- *      This is part of the yafray package
- *		Copyright (C) 2020 David Bluecame
+ *      This is part of the libYafaRay package
+ *      Copyright (C) 2020 David Bluecame
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

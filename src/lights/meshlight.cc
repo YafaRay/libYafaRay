@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			meshlight.cc: a light source using a triangle mesh as shape
- *      This is part of the yafray package
+ *      meshlight.cc: a light source using a triangle mesh as shape
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

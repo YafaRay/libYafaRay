@@ -1,7 +1,7 @@
 /****************************************************************************
  *      yafarayicon.h: Yafaray icon for window title bar
- *      This is part of the yafray package
- *		Copyright (C) 2009 Rodrigo Placencia Vazquez
+ *      This is part of the libYafaRay package
+ *      Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

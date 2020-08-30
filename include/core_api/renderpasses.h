@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 		renderpasses.h: Render Passes functionality
- *      This is part of the yafray package
+ *      renderpasses.h: Render Passes functionality
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2015  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

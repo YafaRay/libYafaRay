@@ -1,9 +1,9 @@
 #pragma once
 /****************************************************************************
  *
- * 			color_ramp.h: Color Ramps api
- *      This is part of the yafray package
- *		Copyright (C) 2016  David Bluecame
+ *      color_ramp.h: Color Ramps api
+ *      This is part of the libYafaRay package
+ *      Copyright (C) 2016  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			maskmat.cc: a material that combines 2 materials with a mask
- *      This is part of the yafray package
+ *      maskmat.cc: a material that combines 2 materials with a mask
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

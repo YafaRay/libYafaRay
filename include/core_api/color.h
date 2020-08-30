@@ -1,10 +1,10 @@
 #pragma once
 /****************************************************************************
  *
- * 			color.h: Color type and operators api
- *      This is part of the yafray package
+ *      color.h: Color type and operators api
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
- *		Copyright (C) 2015  David Bluecame for Color Space modifications
+ *      Copyright (C) 2015  David Bluecame for Color Space modifications
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

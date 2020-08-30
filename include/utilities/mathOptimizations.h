@@ -2,17 +2,17 @@
 /****************************************************************************
  *
  *      mathOptimizations.h: Math aproximations to speed up things
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2009 Rodrigo Placencia Vazquez (DarkTide)
- *		Creation date: 2009-03-26
+ *      Creation date: 2009-03-26
  *
- *		fPow() based on the polynomials approach form Jose Fonséca's blog entry:
- *		Fast SSE2 pow: tables or polynomials?
- *		http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
+ *      fPow() based on the polynomials approach form Jose Fonséca's blog entry:
+ *      Fast SSE2 pow: tables or polynomials?
+ *      http://jrfonseca.blogspot.com/2008/09/fast-sse2-pow-tables-or-polynomials.html
  *
- *		fSin() and fCos() based on Fast and Accurate sine/cosine
- *		thread on DevMaster.net forum, posted by Nick
- *		http://www.devmaster.net/forums/showthread.php?t=5784
+ *      fSin() and fCos() based on Fast and Accurate sine/cosine
+ *      thread on DevMaster.net forum, posted by Nick
+ *      http://www.devmaster.net/forums/showthread.php?t=5784
  *
  ****************************************************************************
  *

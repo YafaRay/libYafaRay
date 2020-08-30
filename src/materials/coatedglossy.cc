@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			coatedglossy.cc: a glossy material with specular coating
- *      This is part of the yafray package
+ *      coatedglossy.cc: a glossy material with specular coating
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

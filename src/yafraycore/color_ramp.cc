@@ -1,7 +1,7 @@
 /****************************************************************************
  *
- * 			color()ramp.cc: Color ramp type and operators implementation
- *      This is part of the yafray package
+ *      color()ramp.cc: Color ramp type and operators implementation
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2016  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  *      imagefilm.cc: image data handling class
- *      This is part of the yafray package
- *		See AUTHORS for more information
+ *      This is part of the libYafaRay package
+ *      See AUTHORS for more information
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

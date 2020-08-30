@@ -1,11 +1,11 @@
 #pragma once
 /****************************************************************************
  *      image_buffers.h: An image buffer handler
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *      Copyright (C) 2015-2017 David Bluecame for rgba8888, rgba7773, rgb888,
  *      rgb565, rgb101010 and rgba1010108 buffers for texture RAM optimization
- *		(pixel_t class wa originally written by someone else, don't know exactly who)
+ *      (pixel_t class wa originally written by someone else, don't know exactly who)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

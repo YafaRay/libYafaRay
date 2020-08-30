@@ -1,9 +1,9 @@
 #pragma once
 /****************************************************************************
- * 		interpolation.h: Some interpolation algorithms
- *      This is part of the yafaray package
+ *      interpolation.h: Some interpolation algorithms
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2009  Bert Buchholz
- *		Split into a header and some speedups by Rodrigo Placencia
+ *      Split into a header and some speedups by Rodrigo Placencia
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

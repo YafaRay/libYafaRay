@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 			bound.h: Bound and tree api for general raytracing acceleration
- *      This is part of the yafray package
+ *      bound.h: Bound and tree api for general raytracing acceleration
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or

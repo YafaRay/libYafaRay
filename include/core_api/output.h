@@ -1,10 +1,10 @@
 #pragma once
 /****************************************************************************
  *
- * 		output.h: Output base class
- *      This is part of the yafray package
+ *      output.h: Output base class
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
- *		Modifyed by Rodrigo Placencia Vazquez (2009)
+ *      Modifyed by Rodrigo Placencia Vazquez (2009)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

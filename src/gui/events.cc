@@ -1,8 +1,8 @@
 /****************************************************************************
  *      events.cc: custom events to enable thread communication to the UI
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2009 Gustavo Pichorim Boiko
- *		Copyright (C) 2009 Rodrigo Placencia Vazquez
+ *      Copyright (C) 2009 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

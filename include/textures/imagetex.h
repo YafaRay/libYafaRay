@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- *		imagetex.h: Image specific functions
- *      This is part of the yafray package
+ *      imagetex.h: Image specific functions
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

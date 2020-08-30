@@ -1,6 +1,6 @@
 /****************************************************************************
- *		bglight.cc: a light source using the background
- *      This is part of the yafaray package
+ *      bglight.cc: a light source using the background
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006 Mathias Wein (Lynx)
  *      Copyright (C) 2009 Rodrigo Placencia (DarkTide)
  *

@@ -1,7 +1,7 @@
 /****************************************************************************
  *
- * 			vector3d.cc: Vector 3d and point manipulation implementation
- *      This is part of the yafray package
+ *      vector3d.cc: Vector 3d and point manipulation implementation
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002 Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or

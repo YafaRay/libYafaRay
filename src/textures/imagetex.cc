@@ -1,8 +1,8 @@
 /****************************************************************************
- * 		imagetex.cc: a texture class for images
- *      This is part of the yafray package
+ *      imagetex.cc: a texture class for images
+ *      This is part of the libYafaRay package
  *      Based on the original by: Mathias Wein; Copyright (C) 2006 Mathias Wein
- *		Copyright (C) 2010 Rodrigo Placencia Vazquez (DarkTide)
+ *      Copyright (C) 2010 Rodrigo Placencia Vazquez (DarkTide)
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public

@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
- *		integrator.h: the interface definition for light integrators
- *      This is part of the yafray package
+ *      integrator.h: the interface definition for light integrators
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein (Lynx)
  *      Copyright (C) 2010  Rodrigo Placencia (DarkTide)
  *

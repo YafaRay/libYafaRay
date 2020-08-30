@@ -1,6 +1,6 @@
 /****************************************************************************
  *              sppm.cc: A stochastic progressive photon map integrator
- *              This is part of the yafaray package
+ *              This is part of the libYafaRay package
  *              Copyright (C) 2011  Rodrigo Placencia (DarkTide)
  *
  *              This library is free software; you can redistribute it and/or

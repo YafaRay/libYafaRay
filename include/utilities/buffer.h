@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 			buffer.h: Buffers (color and float) api
- *      This is part of the yafray package
+ *      buffer.h: Buffers (color and float) api
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or

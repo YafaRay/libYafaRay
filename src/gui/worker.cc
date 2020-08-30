@@ -1,6 +1,6 @@
 /****************************************************************************
  *      worker.cc: a thread for running the rendering process
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2008-2009 Gustavo Pichorim Boiko
  *
  *      This library is free software; you can redistribute it and/or

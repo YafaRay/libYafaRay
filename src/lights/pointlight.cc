@@ -1,6 +1,6 @@
 /****************************************************************************
- * 			pointlight.cc: a simple point light source
- *      This is part of the yafray package
+ *      pointlight.cc: a simple point light source
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

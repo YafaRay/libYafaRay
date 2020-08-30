@@ -1,6 +1,6 @@
 /****************************************************************************
- * 		glossy_mat.cc: a glossy material based on Ashikhmin&Shirley's Paper
- *      This is part of the yafray package
+ *      glossy_mat.cc: a glossy material based on Ashikhmin&Shirley's Paper
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2006  Mathias Wein
  *
  *      This library is free software; you can redistribute it and/or

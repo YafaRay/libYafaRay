@@ -1,18 +1,30 @@
-/********************************************************************************
+/****************************************************************************
+ *      This is part of the libYafaRay package
  *
- * darksky.cc: SkyLight, "Real" Sunlight and Sky Background
+ *      darksky.cc: SkyLight, "Real" Sunlight and Sky Background
+ *      Created on: 20/03/2009
  *
- *		Created on: 20/03/2009
+ *      Based on the original implementation by Alejandro Conty (jandro), Mathias Wein (Lynx), anyone else???
+ *      Actual implementation by Rodrigo Placencia (Darktide)
  *
- *  	Based on the original implementation by Alejandro Conty (jandro), Mathias Wein (Lynx), anyone else???
- *  	Actual implementation by Rodrigo Placencia (Darktide)
+ *      Based on 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
+ *      http://www.cs.utah.edu/vissim/papers/sunsky/
+ *      based on the actual code by Brian Smits
  *
- * 		Based on 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
- * 		http://www.cs.utah.edu/vissim/papers/sunsky/
- * 		based on the actual code by Brian Smits
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2.1 of the License, or (at your option) any later version.
  *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library; if not, write to the Free Software
+ *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-
 #include <yafray_constants.h>
 #include <core_api/logging.h>
 #include <core_api/environment.h>

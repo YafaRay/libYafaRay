@@ -1,6 +1,6 @@
 /****************************************************************************
  *      renderpasses.cc: Render Passes operations
- *      This is part of the yafaray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2015  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

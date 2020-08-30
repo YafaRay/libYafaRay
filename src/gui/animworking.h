@@ -1,6 +1,6 @@
 /****************************************************************************
  *      animworking.h: a widget to show something is being processed
- *      This is part of the yafray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2009 Gustavo Pichorim Boiko
  *
  *      This library is free software; you can redistribute it and/or

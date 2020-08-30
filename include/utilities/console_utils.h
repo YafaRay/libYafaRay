@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
- * 		console_utils.h: General command line parsing and other utilities (soon)
- *      This is part of the YafaRay package
+ *      console_utils.h: General command line parsing and other utilities (soon)
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010  Rodrigo Placencia
  *
  *      This library is free software; you can redistribute it and/or

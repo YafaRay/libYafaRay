@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 		imagehandler.h: image load and save abstract class
- *      This is part of the yafray package
+ *      imagehandler.h: image load and save abstract class
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or

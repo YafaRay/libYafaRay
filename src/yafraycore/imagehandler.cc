@@ -1,6 +1,6 @@
 /****************************************************************************
  *      imagehandler.cc: common code for all imagehandlers
- *      This is part of the yafaray package
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2016  David Bluecame
  *
  *      This library is free software; you can redistribute it and/or

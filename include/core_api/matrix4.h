@@ -1,8 +1,8 @@
 #pragma once
 /****************************************************************************
  *
- * 			matrix4.h: Transformation matrix api
- *      This is part of the yafray package
+ *      matrix4.h: Transformation matrix api
+ *      This is part of the libYafaRay package
  *      Copyright (C) 2002  Alejandro Conty Estévez
  *
  *      This library is free software; you can redistribute it and/or
