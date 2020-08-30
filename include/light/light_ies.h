@@ -1,0 +1,69 @@
+#pragma once
+/****************************************************************************
+ *      light_ies.h: IES Light
+ *      This is part of the libYafaRay package
+ *      Copyright (C) 2009  Bert Buchholz and Rodrigo Placencia
+ *
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2.1 of the License, or (at your option) any later version.
+ *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library; if not, write to the Free Software
+ *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
+
+#ifndef YAFARAY_LIGHT_IES_H
+#define YAFARAY_LIGHT_IES_H
+
+#include "light/light.h"
+#include "common/vector.h"
+
+BEGIN_YAFARAY
+
+class ParamMap;
+class RenderEnvironment;
+class IesData;
+
+class IesLight final : public Light
+{
+	public:
+		static Light *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);
+		virtual Rgb totalEnergy() const override{ return color_ * tot_energy_;};
+		virtual int nSamples() const override { return samples_; };
+		virtual bool diracLight() const override { return !soft_shadow_; }
+		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
+		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
+		virtual bool canIntersect() const override;
+		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
+		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
+		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
+		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
+		bool isIesOk() { return ies_ok_; };
+		void getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const;
+
+		Point3 position_;
+		Vec3 dir_; //!< orientation of the spot cone
+		Vec3 ndir_; //!< negative orientation (-dir)
+		Vec3 du_, dv_; //!< form a coordinate system with dir, to sample directions
+		float cos_end_; //<! cosStart is actually larger than cosEnd, because cos goes from +1 to -1
+		Rgb color_; //<! color, premulitplied by light intensity
+		int samples_;
+		bool soft_shadow_;
+		float tot_energy_;
+		IesData *ies_data_ = nullptr;
+		bool ies_ok_;
+};
+
+END_YAFARAY
+
+#endif // YAFARAY_LIGHT_IES_H

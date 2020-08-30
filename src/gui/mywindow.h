@@ -27,7 +27,7 @@
 #include <QTime>
 #include <string>
 
-#include <gui/yafqtapi.h>
+#include "gui/interface_qt.h"
 
 class Ui_WindowBase;
 

@@ -35,4 +35,4 @@ endif()
 set(YAFARAY_BUILD_OS "${CMAKE_SYSTEM_NAME}")
 
 
-configure_file(CMakeConfig/templates/yafray_config.h.cmake ${CMAKE_BINARY_DIR}/yafray_config.h)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeConfig/templates/yafaray_config.h.cmake ${CMAKE_BINARY_DIR}/yafaray_config.h)

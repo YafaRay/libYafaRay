@@ -20,9 +20,9 @@
  */
 
 // YafaRay Headers
-#include <core_api/logging.h>
-#include <core_api/color_console.h>
-#include <gui/yafqtapi.h>
+#include "common/logging.h"
+#include "common/color_console.h"
+#include "gui/interface_qt.h"
 #include "mywindow.h"
 #include "worker.h"
 #include "qtoutput.h"
@@ -30,30 +30,30 @@
 #include "ui_windowbase.h"
 #include "events.h"
 #include "animworking.h"
-#include <interface/yafrayinterface.h>
-#include <core_api/params.h>
-#include <yafraycore/imageOutput.h>
+#include "interface/interface.h"
+#include "common/param.h"
+#include "output/output_image.h"
 
 // Embeded Resources:
 
 // Images
-#include <resources/yafarayicon.h>
-#include <resources/toolbar_z_buffer_icon.h>
-#include <resources/toolbar_alpha_icon.h>
-#include <resources/toolbar_cancel_icon.h>
-#include <resources/toolbar_save_as_icon.h>
-#include <resources/toolbar_render_icon.h>
-#include <resources/toolbar_show_alpha_icon.h>
-#include <resources/toolbar_colorbuffer_icon.h>
-#include <resources/toolbar_drawparams_icon.h>
-#include <resources/toolbar_savedepth_icon.h>
-#include <resources/toolbar_zoomin_icon.h>
-#include <resources/toolbar_zoomout_icon.h>
-#include <resources/toolbar_quit_icon.h>
+#include "resource/yafarayicon.h"
+#include "resource/toolbar_z_buffer_icon.h"
+#include "resource/toolbar_alpha_icon.h"
+#include "resource/toolbar_cancel_icon.h"
+#include "resource/toolbar_save_as_icon.h"
+#include "resource/toolbar_render_icon.h"
+#include "resource/toolbar_show_alpha_icon.h"
+#include "resource/toolbar_colorbuffer_icon.h"
+#include "resource/toolbar_drawparams_icon.h"
+#include "resource/toolbar_savedepth_icon.h"
+#include "resource/toolbar_zoomin_icon.h"
+#include "resource/toolbar_zoomout_icon.h"
+#include "resource/toolbar_quit_icon.h"
 
 // GUI Font
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
-#include <resources/guifont.h>
+#include "resource/guifont.h"
 #endif
 
 // End of resources inclusion
@@ -519,7 +519,7 @@ void MainWindow::slotSaveAs()
 bool MainWindow::saveDlg()
 {
 	QString formats;
-	std::vector<std::string> format_list = interface_->listImageHandlers();
+/* FIXME	std::vector<std::string> format_list = interface_->listImageHandlers();
 	std::vector<std::string> format_desc = interface_->listImageHandlersFullName();
 
 	std::sort(format_list.begin(), format_list.end());
@@ -529,7 +529,7 @@ bool MainWindow::saveDlg()
 	{
 		formats += QString::fromStdString(format_desc[i]) + " (*." + QString::fromStdString(format_list[i]) + ")";
 		if(i < format_list.size() - 1) formats += ";;";
-	}
+	} */
 
 	if(last_path_.isNull())
 		last_path_ = QDir::currentPath();

@@ -117,7 +117,7 @@ if (WITH_YAF_PY_BINDINGS)
 		endif(APPLE)
 	endif(WITH_QT)
 
-	SWIG_LINK_LIBRARIES(yafaray4_interface yafaray4_core yafaray4_plugin ${PYTHON_LIBRARIES})
+	SWIG_LINK_LIBRARIES(yafaray4_interface libyafaray4 ${PYTHON_LIBRARIES})
 
 	if(WITH_QT)
 		SWIG_LINK_LIBRARIES(yafaray4_qt_interface yafaray4_qt ${PYTHON_LIBRARIES})
@@ -167,7 +167,7 @@ if (WITH_YAF_RUBY_BINDINGS)
 		SET(RUBY_LIBRARY "") #In MacOS, to avoid Ruby "Incompatible version" errors, do *NOT* link to any real ruby library, so it uses the undefined dynamic lookup to find the correct symbols.
 	endif(APPLE)
 
-	SWIG_LINK_LIBRARIES(yafaray4_interface_ruby yafaray4_core yafaray4_plugin ${RUBY_LIBRARY})
+	SWIG_LINK_LIBRARIES(yafaray4_interface_ruby libyafaray4 ${RUBY_LIBRARY})
 	install(TARGETS ${SWIG_MODULE_yafaray4_interface_ruby_REAL_NAME} DESTINATION ${YAF_BINDINGS_RUBY_DIR})
 
 	if(WITH_QT)

@@ -22,7 +22,7 @@
 #ifndef YAFARAY_QTOUTPUT_H
 #define YAFARAY_QTOUTPUT_H
 
-#include <core_api/output.h>
+#include "output/output.h"
 #include "renderwidget.h"
 #include <QImage>
 

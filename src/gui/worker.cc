@@ -23,7 +23,7 @@
 #include "qtprogress.h"
 #include "mywindow.h"
 
-#include <interface/yafrayinterface.h>
+#include "interface/interface.h"
 
 Worker::Worker(yafaray4::Interface *env, MainWindow *win, QtOutput *output)
 	: QThread(), env_(env), output_(output), win_(win)

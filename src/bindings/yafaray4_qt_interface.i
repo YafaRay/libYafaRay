@@ -33,8 +33,8 @@
 %include "std_string.i"
 
 %{
-#include <yafray_constants.h>
-#include <gui/yafqtapi.h>
+#include "constants.h"
+#include "gui/interface_qt.h"
 %}
 
 struct Settings {

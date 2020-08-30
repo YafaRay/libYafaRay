@@ -1,9 +1,9 @@
 include_directories(${YAF_INCLUDE_DIRS})
 
-add_definitions(-DBUILDING_YAFRAYPLUGIN)
+add_definitions(-DBUILDING_YAFARAYPLUGIN)
 
-add_library(yafaray4_plugin SHARED yafrayinterface.cc xmlinterface.cc)
-target_link_libraries(yafaray4_plugin yafaray4_core)
+add_library(yafaray4_plugin SHARED interface.cc interface_xml_export.cc)
+target_link_libraries(yafaray4_plugin libyafaray4)
 
 if(APPLE) # set rpath - Jens
 	add_custom_command(TARGET yafaray4_plugin POST_BUILD COMMAND install_name_tool -add_rpath @loader_path/ libyafaray4_plugin.dylib)

@@ -118,7 +118,7 @@ set(EMBED_FONT_QT OFF)
 
 ##set(YAF_BINDINGS_RUBY_DIR ${YAF_LIB_DIR})
 
-# The Core include files instalation dir                                                
+# include files instalation dir                                                
 # Default: include/yafaray
 #                                                                              
 # Note: include files will not be installed when building as Blender AddOn
@@ -126,7 +126,7 @@ set(EMBED_FONT_QT OFF)
 
 ##set(YAF_INCL_DIR "include/yafaray")
 
-# The Core documentation instalation dir                                                
+# documentation instalation dir                                                
 # Default: share/doc/yafaray
 #                                                                              
 # Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter docs will be used instead
@@ -134,7 +134,7 @@ set(EMBED_FONT_QT OFF)
 
 ##set(YAF_DOC_DIR "share/doc/yafaray")
 
-# The Core tests instalation dir                                                
+# tests instalation dir                                                
 # Default: share/yafaray/tests
 #                                                                              
 # Note: this is *ignored* if YafaRay is built as a Blender Add-On. In that case, the Blender-Exporter tests will be used instead
@@ -232,22 +232,6 @@ set(EMBED_FONT_QT OFF)
 # Default: 3.5                                                                 
 
 ##set(YAF_PY_VERSION 3.5)
-
-
-############################## Blender Add-On ##################################
-# Options for building YafaRay as a self-contained add-on for Blender          
-# Default: OFF                                                                 
-
-##set(BLENDER_ADDON ON)
-
-# Set the path to the Blender-Exporter Python code to use when building the add-on.
-# WARNING: this is REQUIRED now when building the Blender Add-On. If the path is not set, the Add-On will not be built
-
-##set(BLENDER_EXPORTER_PATH "")
-
-# If the path to Blender-Exporter is not set, set the Git branch to download and use when building the add-on.
-
-##set(BLENDER_EXPORTER_BRANCH "master")
 
 
 ############################## Code Speed Up ###################################

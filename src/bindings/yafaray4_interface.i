@@ -37,10 +37,10 @@
 
 %{
 #include <sstream>
-#include <yafraycore/monitor.h>
-#include <core_api/output.h>
-#include <interface/yafrayinterface.h>
-#include <core_api/renderpasses.h>
+#include "common/monitor.h"
+#include "output/output.h"
+#include "interface/interface.h"
+#include "common/renderpasses.h"
 
 struct YafTilePixel
 {
@@ -582,22 +582,15 @@ private:
 	}
 }
 
-%exception yafaray4::Interface::loadPlugins
-{
-	Py_BEGIN_ALLOW_THREADS
-	$action
-	Py_END_ALLOW_THREADS
-}
-
 #endif // End of python specific code
 
 %{
-#include <yafray_constants.h>
-#include <interface/yafrayinterface.h>
-#include <interface/xmlinterface.h>
-#include <yafraycore/imageOutput.h>
-#include <yafraycore/memoryIO.h>
-#include <core_api/matrix4.h>
+#include "constants.h"
+#include "interface/interface.h"
+#include "interface/interface_xml_export.h"
+#include "output/output_image.h"
+#include "output/output_memory.h"
+#include "common/matrix4.h"
 using namespace yafaray4;
 %}
 
@@ -727,7 +720,6 @@ namespace yafaray4
 		Interface();
 		virtual ~Interface();
 		// directly related to scene_t:
-		virtual void loadPlugins(const char *path); //!< load plugins from path, if nullptr load from default path, if available.
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
 		/*! start a triangle mesh
@@ -784,11 +776,6 @@ namespace yafaray4
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }
 		virtual bool getRenderedImage(int num_view, ColorOutput &output); //!< put the rendered image to output
-		virtual std::vector<std::string> listImageHandlers();
-		virtual std::vector<std::string> listImageHandlersFullName();
-		virtual std::string getImageFormatFromFullName(const std::string &fullname);
-		virtual std::string getImageFullNameFromFormat(const std::string &format);
-
 		void setConsoleVerbosityLevel(const std::string &str_v_level);
 		void setLogVerbosityLevel(const std::string &str_v_level);
 
@@ -814,7 +801,6 @@ namespace yafaray4
 		public:
 		XmlInterface();
 		// directly related to scene_t:
-		virtual void loadPlugins(const char *path);
 		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		virtual bool startGeometry();

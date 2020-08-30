@@ -22,7 +22,6 @@ option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installat
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
 option(WITH_MINGW_STD_THREADS "Use MinGW-Std-Threads 3rd party library. Useful with old MinGW versions that do not include C++11 threads libraries or where they are slower than they should. Set it to OFF with newer versions of MinGW or a conflict might happen causing crashes." OFF)
-option(BLENDER_ADDON "Build YafaRay as a self-contained blender add-on" OFF)
 
 ###### Packages and Definitions #########
 
@@ -303,11 +302,9 @@ else(NOT WIN32)
 		endif(USER_DEBUG_OPTIMIZATION_FLAGS)
 
 	endif(MINGW)
-	if(BLENDER_ADDON)
-		set(YAF_TARGET_TYPE RUNTIME)
-	else(BLENDER_ADDON)
-		set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RUNTIME)
-	endif(BLENDER_ADDON)
+
+	set(YAF_TARGET_TYPE ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RUNTIME)
+
 endif(NOT WIN32)
 
 if(USER_RELEASE_EXTRA_FLAGS)
