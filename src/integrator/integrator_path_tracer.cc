@@ -89,7 +89,7 @@ bool PathIntegrator::preprocess()
 		set << "\nCaustics: Path + Photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 	}
 
-	if(caustic_type_ == CausticType::Both || caustic_type_ == CausticType::Both) trace_caustics_ = true;
+	if(caustic_type_ == CausticType::Both || caustic_type_ == CausticType::Path) trace_caustics_ = true;
 
 	if(caustic_type_ == CausticType::Both || caustic_type_ == CausticType::Photon)
 	{
