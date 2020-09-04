@@ -20,18 +20,7 @@
 #ifndef YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
 #define YAFARAY_INTEGRATOR_DIRECT_LIGHT_H
 
-#include "constants.h"
-
-#include "common/timer.h"
-
 #include "integrator/integrator_montecarlo.h"
-#include "common/environment.h"
-#include "material/material.h"
-#include "background/background.h"
-#include "light/light.h"
-
-#include <sstream>
-#include <iomanip>
 
 BEGIN_YAFARAY
 

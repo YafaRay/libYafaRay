@@ -38,7 +38,7 @@ class RenderEnvironment;
 enum class TextureOptimization : int { None	= 1, Optimized = 2, Compressed = 3 };
 enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 
-class MipMapParams
+class MipMapParams final
 {
 	public:
 		MipMapParams();
@@ -94,8 +94,8 @@ class ImageHandler
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
 		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
 		virtual bool isHdr() const { return false; }
-		virtual bool isMultiLayer() const { return multi_layer_; }
-		virtual bool denoiseEnabled() const { return denoise_; }
+		bool isMultiLayer() const { return multi_layer_; }
+		bool denoiseEnabled() const { return denoise_; }
 		TextureOptimization getTextureOptimization() const { return texture_optimization_; }
 		void setTextureOptimization(const TextureOptimization &texture_optimization) { texture_optimization_ = texture_optimization; }
 		void setGrayScaleSetting(bool grayscale) { grayscale_ = grayscale; }

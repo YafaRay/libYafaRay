@@ -20,31 +20,13 @@
 #ifndef YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
 #define YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
 
-#include "constants.h"
-
-#include "common/timer.h"
-#include "common/photon.h"
-#include "common/spectrum.h"
-#include "common/scr_halton.h"
-#include "common/monitor.h"
-
 #include "integrator/integrator_montecarlo.h"
-#include "common/environment.h"
-#include "material/material.h"
-#include "background/background.h"
-#include "light/light.h"
-#include "common/imagefilm.h"
-#include "camera/camera.h"
-
-#include "utility/util_mcqmc.h"
-#include "utility/util_sample.h"
-
-#include <sstream>
-#include <iomanip>
+#include "common/photon.h"
+#include <vector>
 
 BEGIN_YAFARAY
 
-struct PreGatherData
+struct PreGatherData final
 {
 	PreGatherData(PhotonMap *dm): diffuse_map_(dm), fetched_(0) {}
 	PhotonMap *diffuse_map_;
@@ -56,22 +38,20 @@ struct PreGatherData
 	std::mutex mutx_;
 };
 
-class PhotonIntegrator: public MonteCarloIntegrator
+class PhotonIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		PhotonIntegrator(unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
-		~PhotonIntegrator();
-		virtual bool preprocess();
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const;
 		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
-		virtual void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
-		virtual void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, const Pdf1D *light_power_d, int num_c_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces);
-		virtual void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
-		virtual void photonMapKdTreeWorker(PhotonMap *photon_map);
 
-	protected:
+	private:
+		PhotonIntegrator(unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
+		~PhotonIntegrator() override;
+		virtual bool preprocess() override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
+		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
+		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
+		void photonMapKdTreeWorker(PhotonMap *photon_map);
 		Rgb finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
-
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 
@@ -84,7 +64,6 @@ class PhotonIntegrator: public MonteCarloIntegrator
 		float ds_radius_; //!< diffuse search radius
 		float lookup_rad_; //!< square radius to lookup radiance photons, as infinity is no such good idea ;)
 		float gather_dist_; //!< minimum distance to terminate path tracing (unless gatherBounces is reached)
-		friend class PrepassWorkerT;
 };
 
 END_YAFARAY

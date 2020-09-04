@@ -23,19 +23,18 @@
 #include "constants.h"
 #include "integrator.h"
 #include "utility/util_thread.h"
+#include "common/imagesplitter.h"
 #include <vector>
 
 BEGIN_YAFARAY
 
-struct RenderArea;
 class SurfacePoint;
 class ImageFilm;
-typedef unsigned int Bsdf_t;
 class PhotonMap;
 class Pdf1D;
 enum class DarkDetectionType : int;
 
-class ThreadControl
+class ThreadControl final
 {
 	public:
 		ThreadControl() : finished_threads_(0) {}
@@ -45,14 +44,11 @@ class ThreadControl
 		volatile int finished_threads_; //!< number of finished threads, lock countCV when increasing/reading!
 };
 
-class TiledIntegrator: public SurfaceIntegrator
+class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
 		/*! Rendering prepasses to precalc suff in case needed */
-		virtual void preRender(); //!< Called before the render starts and after the minDepth and maxDepth are calculated
-		virtual void prePass(int samples, int offset, bool adaptive); //!< Called before the proper rendering of all the tiles starts
-		virtual void preTile(RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id); //!< Called brfore each tile is rendered
-
+		virtual void prePass(int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
 		virtual bool render(int num_view, ImageFilm *image_film);

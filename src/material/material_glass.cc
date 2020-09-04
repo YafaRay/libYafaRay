@@ -35,20 +35,20 @@ GlassMaterial::GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double dis
 {
 	visibility_ = e_visibility;
 	ior_ = ior;
-	bsdf_flags_ = BsdfAllSpecular;
-	if(fake_s) bsdf_flags_ |= BsdfFilter;
-	tm_flags_ = fake_s ? BsdfFilter | BsdfTransmit : BsdfSpecular | BsdfTransmit;
+	bsdf_flags_ = BsdfFlags::AllSpecular;
+	if(fake_s) bsdf_flags_ |= BsdfFlags::Filter;
+	tm_flags_ = fake_s ? BsdfFlags::Filter | BsdfFlags::Transmit : BsdfFlags::Specular | BsdfFlags::Transmit;
 	if(disp_pow > 0.0)
 	{
 		disperse_ = true;
 		cauchyCoefficients__(ior, disp_pow, cauchy_a_, cauchy_b_);
-		bsdf_flags_ |= BsdfDispersive;
+		bsdf_flags_ |= BsdfFlags::Dispersive;
 	}
 
 	visibility_ = e_visibility;
 }
 
-void GlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void GlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	NodeStack stack(state.userdata_);
 	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
@@ -64,7 +64,7 @@ void GlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t 
 Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	NodeStack stack(state.userdata_);
-	if(!(s.flags_ & BsdfSpecular) && !((s.flags_ & bsdf_flags_ & BsdfDispersive) && state.chromatic_))
+	if(!Material::hasFlag(s.flags_, BsdfFlags::Specular) && !(Material::hasFlag(s.flags_, bsdf_flags_ & BsdfFlags::Dispersive) && state.chromatic_))
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
@@ -100,23 +100,23 @@ Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 			float kr, kt;
 			fresnel__(wo, n, cur_ior, kr, kt);
 			float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
-			if(!(s.flags_ & BsdfSpecular) || s.s_1_ < p_kt)
+			if(!Material::hasFlag(s.flags_, BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
 				wi = refdir;
-				s.pdf_ = (MATCHES(s.flags_, BsdfSpecular | BsdfReflect)) ? p_kt : 1.f;
-				s.sampled_flags_ = BsdfDispersive | BsdfTransmit;
+				s.pdf_ = (MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) ? p_kt : 1.f;
+				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
 				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_); // * (Kt/std::fabs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
-			else if(MATCHES(s.flags_, BsdfSpecular | BsdfReflect))
+			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))
 			{
 				wi = wo;
 				wi.reflect(n);
 				s.pdf_ = p_kr;
-				s.sampled_flags_ = BsdfSpecular | BsdfReflect;
+				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
 				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_); // * (Kr/std::fabs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
@@ -124,11 +124,11 @@ Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 				return scolor;
 			}
 		}
-		else if(MATCHES(s.flags_, BsdfSpecular | BsdfReflect)) //total inner reflection
+		else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
 		{
 			wi = wo;
 			wi.reflect(n);
-			s.sampled_flags_ = BsdfSpecular | BsdfReflect;
+			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
 			Rgb scolor = 1.f; //Rgb(1.f/std::fabs(sp.N*wi));
 			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
@@ -175,12 +175,12 @@ Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
-			else if(MATCHES(s.flags_, BsdfSpecular | BsdfReflect)) //total inner reflection
+			else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) //total inner reflection
 			{
 				wi = wo;
 				wi.reflect(n);
 				s.pdf_ = p_kr;
-				s.sampled_flags_ = BsdfSpecular | BsdfReflect;
+				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
@@ -193,11 +193,11 @@ Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 				return scolor;
 			}
 		}
-		else if(MATCHES(s.flags_, BsdfSpecular | BsdfReflect))//total inner reflection
+		else if(MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect))//total inner reflection
 		{
 			wi = wo;
 			wi.reflect(n);
-			s.sampled_flags_ = BsdfSpecular | BsdfReflect;
+			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			//Rgb tir_col(1.f/std::fabs(sp.N*wi));
 			if(s.reverse_)
 			{
@@ -218,7 +218,7 @@ Rgb GlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 Rgb GlassMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	NodeStack stack(state.userdata_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	fresnel__(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
 	Rgb result = kt * (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);
@@ -254,7 +254,7 @@ void GlassMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp
 	{
 		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
 	}
-	//	vector3d_t N = FACE_FORWARD(sp.Ng, sp.N, wo);
+	//	vector3d_t N = SurfacePoint::normalFaceForward(sp.Ng, sp.N, wo);
 	Vec3 refdir;
 
 	float cur_ior = ior_;
@@ -322,7 +322,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 	std::string name;
 	bool fake_shad = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
@@ -350,11 +350,11 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	GlassMaterial *mat = new GlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
 
@@ -386,7 +386,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 			}
 			mat->absorb_ = true;
 			mat->beer_sigma_a_ = sigma;
-			mat->bsdf_flags_ |= BsdfVolumetric;
+			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			// creat volume handler (backwards compatibility)
 			if(params.getParam("name", name))
 			{
@@ -395,7 +395,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
 				mat->vol_i_ = render.createVolumeH(name, map);
-				mat->bsdf_flags_ |= BsdfVolumetric;
+				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
 	}
@@ -466,7 +466,7 @@ Rgb GlassMaterial::getMirrorColor(const RenderState &state) const {
 Rgb MirrorMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	wi = reflectDir__(sp.n_, wo);
-	s.sampled_flags_ = BsdfSpecular | BsdfReflect;
+	s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 	w = 1.f;
 	return ref_col_ * (1.f / std::fabs(sp.n_ * wi));
 }
@@ -476,7 +476,7 @@ void MirrorMaterial::getSpecular(const RenderState &state, const SurfacePoint &s
 {
 	col[0] = ref_col_;
 	col[1] = Rgb(1.0);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	dir[0] = reflectDir__(n, wo);
 	refl = true;
 	refr = false;

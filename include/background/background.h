@@ -43,9 +43,13 @@ class Background
 			\return the light source that reproduces background lighting, or nullptr if background
 					shall only be sampled from BSDFs
 		*/
-		virtual bool hasIbl() const { return false; }
-		virtual bool shootsCaustic() const { return false; }
+		bool hasIbl() const { return with_ibl_; }
+		bool shootsCaustic() const { return shoot_caustic_; }
 		virtual ~Background() = default;
+
+	protected:
+		bool with_ibl_ = false;
+		bool shoot_caustic_ = false;
 };
 
 END_YAFARAY

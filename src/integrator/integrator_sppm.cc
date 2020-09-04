@@ -25,6 +25,18 @@
 #include "volume/volume.h"
 #include "common/param.h"
 #include "common/scene.h"
+#include "common/monitor.h"
+#include "common/timer.h"
+#include "common/imagefilm.h"
+#include "common/renderpasses.h"
+#include "camera/camera.h"
+#include "common/scr_halton.h"
+#include "utility/util_sample.h"
+#include "light/light.h"
+#include "material/material.h"
+#include "common/spectrum.h"
+#include "background/background.h"
+
 
 BEGIN_YAFARAY
 
@@ -53,11 +65,6 @@ SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_
 	hal_2_.setStart(0);
 	hal_3_.setStart(0);
 	hal_4_.setStart(0);
-}
-
-SppmIntegrator::~SppmIntegrator()
-{
-
 }
 
 bool SppmIntegrator::preprocess()
@@ -268,9 +275,9 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 
 				//for sppm progressive
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
-				HitPoint_t &hp = hit_points_[index];
+				HitPoint &hp = hit_points_[index];
 
-				GatherInfo_t g_info = traceGatherRay(rstate, c_ray, hp, color_passes);
+				GatherInfo g_info = traceGatherRay(rstate, c_ray, hp, color_passes);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 
 				// progressive refinement
@@ -459,7 +466,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		bool caustic_photon = false;
 		bool direct_photon = true;
 		const Material *material = nullptr;
-		Bsdf_t bsdfs;
+		BsdfFlags bsdfs;
 
 		while(scene->intersect(ray, sp))   //scatter photons.
 		{
@@ -477,7 +484,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			if(material)
 			{
-				if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
 					if(vol->transmittance(state, ray, vcol)) transm = vcol;
 				}
@@ -488,7 +495,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			material->initBsdf(state, sp, bsdfs);
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-			if(!direct_photon && !caustic_photon && (bsdfs & (BsdfDiffuse)))
+			if(!direct_photon && !caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -500,7 +507,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 				nd_photon_stored++;
 			}
 			// add caustic photon
-			if(!direct_photon && caustic_photon && (bsdfs & (BsdfDiffuse | BsdfGlossy)))
+			if(!direct_photon && caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -520,18 +527,18 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			s_6 = ourRandom__();
 			s_7 = ourRandom__();
 
-			PSample sample(s_5, s_6, s_7, BsdfAll, pcol, transm);
+			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
 			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 			pcol = sample.color_;
 
-			caustic_photon = ((sample.sampled_flags_ & (BsdfGlossy | BsdfSpecular | BsdfDispersive)) && direct_photon) ||
-							 ((sample.sampled_flags_ & (BsdfGlossy | BsdfSpecular | BsdfFilter | BsdfDispersive)) && caustic_photon);
-			direct_photon = (sample.sampled_flags_ & BsdfFilter) && direct_photon;
+			caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+							 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+			direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
 
-			if(state.chromatic_ && (sample.sampled_flags_ & BsdfDispersive))
+			if(state.chromatic_ && Material::hasFlag(sample.sampled_flags_, BsdfFlags::Dispersive))
 			{
 				state.chromatic_ = false;
 				Rgb wl_col;
@@ -710,7 +717,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 			bool caustic_photon = false;
 			bool direct_photon = true;
 			const Material *material = nullptr;
-			Bsdf_t bsdfs;
+			BsdfFlags bsdfs;
 
 			while(scene_->intersect(ray, sp))   //scatter photons.
 			{
@@ -723,7 +730,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 				if(material)
 				{
-					if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ray, vcol)) transm = vcol;
 					}
@@ -734,7 +741,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 				material->initBsdf(state, sp, bsdfs);
 
 				//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-				if(!direct_photon && !caustic_photon && (bsdfs & (BsdfDiffuse)))
+				if(!direct_photon && !caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 				{
 					Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -747,7 +754,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 					nd_photon_stored++;
 				}
 				// add caustic photon
-				if(!direct_photon && caustic_photon && (bsdfs & (BsdfDiffuse | BsdfGlossy)))
+				if(!direct_photon && caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
 				{
 					Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -768,18 +775,18 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 				s_6 = ourRandom__();
 				s_7 = ourRandom__();
 
-				PSample sample(s_5, s_6, s_7, BsdfAll, pcol, transm);
+				PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
 				bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
 				if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 				pcol = sample.color_;
 
-				caustic_photon = ((sample.sampled_flags_ & (BsdfGlossy | BsdfSpecular | BsdfDispersive)) && direct_photon) ||
-								 ((sample.sampled_flags_ & (BsdfGlossy | BsdfSpecular | BsdfFilter | BsdfDispersive)) && caustic_photon);
-				direct_photon = (sample.sampled_flags_ & BsdfFilter) && direct_photon;
+				caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+								 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+				direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
 
-				if(state.chromatic_ && (sample.sampled_flags_ & BsdfDispersive))
+				if(state.chromatic_ && Material::hasFlag(sample.sampled_flags_, BsdfFlags::Dispersive))
 				{
 					state.chromatic_ = false;
 					Rgb wl_col;
@@ -864,13 +871,13 @@ Rgba SppmIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 }
 
 
-GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4::DiffRay &ray, yafaray4::HitPoint_t &hp, ColorPasses &color_passes)
+GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, ColorPasses &color_passes)
 {
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
 	Rgb col(0.0);
-	GatherInfo_t g_info;
+	GatherInfo g_info;
 
 	float alpha;
 	SurfacePoint sp;
@@ -891,7 +898,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 			state.include_lights_ = true;
 		}
 
-		Bsdf_t bsdfs;
+		BsdfFlags bsdfs;
 		int additional_depth = 0;
 
 		Vec3 wo = -ray.dir_;
@@ -906,7 +913,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 
 		ColorPasses tmp_color_passes = color_passes;
 
-		if(bsdfs & BsdfDiffuse)
+		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
 			g_info.constant_randiance_ += estimateAllDirectLight(state, sp, wo, color_passes);
 		}
@@ -971,7 +978,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 
 					g_info.photon_count_++;
 					Vec3 pdir = gathered[i].photon_->direction();
-					Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfDiffuse); // seems could speed up using rho, (something pbrt made)
+					Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
 					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?
 					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 
@@ -985,7 +992,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 			}
 
 			// gather caustics photons
-			if(bsdfs & BsdfDiffuse && session__.caustic_map_->ready())
+			if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse) && session__.caustic_map_->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
@@ -997,7 +1004,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 					{
 						Vec3 pdir = gathered[i].photon_->direction();
 						g_info.photon_count_++;
-						surf_col = material->eval(state, sp, wo, pdir, BsdfAll); // seems could speed up using rho, (something pbrt made)
+						surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
 						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::fabs(sp.N*pdir); //< wrong!?
 						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 
@@ -1019,7 +1026,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 			Halton hal_2(2);
 			Halton hal_3(3);
 			// dispersive effects with recursive raytracing:
-			if((bsdfs & BsdfDispersive) && state.chromatic_)
+			if(Material::hasFlag(bsdfs, BsdfFlags::Dispersive) && state.chromatic_)
 			{
 				state.include_lights_ = false; //debatable...
 				int dsam = 8;
@@ -1036,7 +1043,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 				const VolumeHandler *vol;
 				DiffRay ref_ray;
 				float w = 0.f;
-				GatherInfo_t cing, t_cing; //Dispersive is different handled, not same as GLOSSY, at the BSDF_VOLUMETRIC part
+				GatherInfo cing, t_cing; //Dispersive is different handled, not same as GLOSSY, at the BSDF_VOLUMETRIC part
 
 				for(int ns = 0; ns < dsam; ++ns)
 				{
@@ -1046,10 +1053,10 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 					if(old_division > 1) state.wavelength_ = addMod1__(state.wavelength_, old_dc_1);
 					state.ray_offset_ = branch;
 					++branch;
-					Sample s(0.5f, 0.5f, BsdfReflect | BsdfTransmit | BsdfDispersive);
+					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
 					Rgb mcol = material->sample(state, sp, wo, wi, s, w);
 
-					if(s.pdf_ > 1.0e-6f && (s.sampled_flags_ & BsdfDispersive))
+					if(s.pdf_ > 1.0e-6f && Material::hasFlag(s.sampled_flags_, BsdfFlags::Dispersive))
 					{
 						state.chromatic_ = false;
 						Rgb wl_col;
@@ -1065,7 +1072,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 					}
 					cing += t_cing;
 				}
-				if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+				if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
 					vol->transmittance(state, ref_ray, vcol);
 					cing.photon_flux_ *= vcol;
@@ -1089,7 +1096,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 
 			// glossy reflection with recursive raytracing:  Pure GLOSSY material doesn't hold photons?
 
-			if(bsdfs & BsdfGlossy)
+			if(Material::hasFlag(bsdfs, BsdfFlags::Glossy))
 			{
 				state.include_lights_ = false;
 				int gsam = 8;
@@ -1106,7 +1113,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 				const VolumeHandler *vol;
 				DiffRay ref_ray;
 
-				GatherInfo_t ging, t_ging;
+				GatherInfo ging, t_ging;
 
 				hal_2.setStart(offs);
 				hal_3.setStart(offs);
@@ -1126,22 +1133,22 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 
 					float W = 0.f;
 
-					Sample s(s_1, s_2, BsdfAllGlossy);
+					Sample s(s_1, s_2, BsdfFlags::AllGlossy);
 					Rgb mcol = material->sample(state, sp, wo, wi, s, W);
 
-					if((material->getFlags() & BsdfReflect) && !(material->getFlags() & BsdfTransmit))
+					if(Material::hasFlag(material->getFlags(), BsdfFlags::Reflect) && !Material::hasFlag(material->getFlags(), BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 
-						Sample s(s_1, s_2, BsdfGlossy | BsdfReflect);
+						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
 						Rgb mcol = material->sample(state, sp, wo, wi, s, w);
 						Rgba integ = 0.f;
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
-						if(s.sampled_flags_ & BsdfReflect) sp_diff.reflectedRay(ray, ref_ray);
-						else if(s.sampled_flags_ & BsdfTransmit) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
+						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
+						else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 						integ = (Rgb)integrate(state, ref_ray, tmp_color_passes, additional_depth);
 
-						if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+						if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
 							if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
 						}
@@ -1152,9 +1159,9 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
 					}
-					else if((material->getFlags() & BsdfReflect) && (material->getFlags() & BsdfTransmit))
+					else if(Material::hasFlag(material->getFlags(), BsdfFlags::Reflect) && Material::hasFlag(material->getFlags(), BsdfFlags::Transmit))
 					{
-						Sample s(s_1, s_2, BsdfGlossy | BsdfAllGlossy);
+						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
 						float w[2];
 						Vec3 dir[2];
@@ -1162,12 +1169,12 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 						mcol[0] = material->sample(state, sp, wo, dir, mcol[1], s, w);
 						Rgba integ = 0.f;
 
-						if(s.sampled_flags_ & BsdfReflect && !(s.sampled_flags_ & BsdfDispersive))
+						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect) && !Material::hasFlag(s.sampled_flags_, BsdfFlags::Dispersive))
 						{
 							ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
 							sp_diff.reflectedRay(ray, ref_ray);
 							integ = integrate(state, ref_ray, tmp_color_passes, additional_depth);
-							if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
 							}
@@ -1181,12 +1188,12 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 							ging += t_ging;
 						}
 
-						if(s.sampled_flags_ & BsdfTransmit)
+						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit))
 						{
 							ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
 							sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 							integ = integrate(state, ref_ray, tmp_color_passes, additional_depth);
-							if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
 							}
@@ -1201,13 +1208,13 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 						}
 					}
 
-					else if(s.sampled_flags_ & BsdfGlossy)
+					else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Glossy))
 					{
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
 						if(diff_rays_enabled_)
 						{
-							if(s.sampled_flags_ & BsdfReflect) sp_diff.reflectedRay(ray, ref_ray);
-							else if(s.sampled_flags_ & BsdfTransmit) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
+							if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
+							else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 						}
 
 						t_ging = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
@@ -1217,7 +1224,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 						ging += t_ging;
 					}
 
-					if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ref_ray, vcol))
 						{
@@ -1246,7 +1253,7 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 			}
 
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(bsdfs & (BsdfSpecular | BsdfFilter))
+			if(Material::hasFlag(bsdfs, BsdfFlags::Specular | BsdfFlags::Filter))
 			{
 				state.include_lights_ = true;
 				bool reflect = false, refract = false;
@@ -1259,8 +1266,8 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 				{
 					DiffRay ref_ray(sp.p_, dir[0], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray); // compute the ray differentaitl
-					GatherInfo_t refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
-					if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					GatherInfo refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ref_ray, vcol))
 						{
@@ -1276,8 +1283,8 @@ GatherInfo_t SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafara
 				{
 					DiffRay ref_ray(sp.p_, dir[1], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-					GatherInfo_t refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
-					if((bsdfs & BsdfVolumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					GatherInfo refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ref_ray, vcol))
 						{
@@ -1356,7 +1363,7 @@ void SppmIntegrator::initializePpm()
 	initial_radius = std::min(initial_radius, 1.f); //Fix the overflow bug
 	for(unsigned int i = 0; i < resolution; i++)
 	{
-		HitPoint_t hp;
+		HitPoint hp;
 		hp.acc_photon_flux_  = Rgba(0.f);
 		hp.acc_photon_count_ = 0;
 		hp.radius_2_ = (initial_radius * initial_factor_) * (initial_radius * initial_factor_);

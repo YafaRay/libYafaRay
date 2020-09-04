@@ -783,7 +783,7 @@ bool TriKdTree::intersect(const Ray &ray, float dist, Triangle **tr, float &z, I
 				{
 					const Material *mat = mp->getMaterial();
 
-					if(mat->getVisibility() == NormalVisible || mat->getVisibility() == VisibleNoShadows)
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
 					{
 						z = t_hit;
 						*tr = mp;
@@ -807,7 +807,7 @@ bool TriKdTree::intersect(const Ray &ray, float dist, Triangle **tr, float &z, I
 					{
 						const Material *mat = mp->getMaterial();
 
-						if(mat->getVisibility() == NormalVisible || mat->getVisibility() == VisibleNoShadows)
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
 						{
 							z = t_hit;
 							*tr = mp;
@@ -937,7 +937,7 @@ bool TriKdTree::intersectS(const Ray &ray, float dist, Triangle **tr, float shad
 				{
 					const Material *mat = mp->getMaterial();
 
-					if(mat->getVisibility() == NormalVisible || mat->getVisibility() == InvisibleShadowsOnly) // '>=' ?
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
 						*tr = mp;
 						return true;
@@ -957,7 +957,7 @@ bool TriKdTree::intersectS(const Ray &ray, float dist, Triangle **tr, float shad
 					{
 						const Material *mat = mp->getMaterial();
 
-						if(mat->getVisibility() == NormalVisible || mat->getVisibility() == InvisibleShadowsOnly)
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
 							return true;
@@ -1100,7 +1100,7 @@ bool TriKdTree::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 				{
 					const Material *mat = mp->getMaterial();
 
-					if(mat->getVisibility() == NormalVisible || mat->getVisibility() == InvisibleShadowsOnly) // '>=' ?
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
 						*tr = mp;
 
@@ -1131,7 +1131,7 @@ bool TriKdTree::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 					{
 						const Material *mat = mp->getMaterial();
 
-						if(mat->getVisibility() == NormalVisible || mat->getVisibility() == InvisibleShadowsOnly)
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
 

@@ -34,16 +34,14 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		enum Projection { Spherical = 0, Angular };
 		static Background *factory(ParamMap &, RenderEnvironment &);
 
 	private:
+		enum Projection { Spherical = 0, Angular };
 		TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const override;
 		virtual ~TextureBackground() override;
-		virtual bool hasIbl() const override { return with_ibl_; }
-		virtual bool shootsCaustic() const override { return shoot_caustic_; }
 
 		const Texture *tex_;
 		Projection project_;
@@ -52,8 +50,6 @@ class TextureBackground final : public Background
 		float sin_r_, cos_r_;
 		bool with_ibl_;
 		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
-		bool shoot_caustic_;
-		bool shoot_diffuse_;
 };
 
 END_YAFARAY

@@ -27,7 +27,7 @@
 BEGIN_YAFARAY
 
 PointLight::PointLight(const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled, bool b_cast_shadows):
-		Light(LightSingular), position_(pos)
+		Light(Light::Flags::Singular), position_(pos)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;

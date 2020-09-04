@@ -58,6 +58,8 @@ class IntersectData
 class SurfacePoint
 {
 	public:
+		static Vec3 normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector);
+		static SurfacePoint blendSurfacePoints(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float alpha);
 		float getDistToNearestEdge() const;
 
 		//int object; //!< the object owner of the point.
@@ -118,8 +120,10 @@ inline float SurfacePoint::getDistToNearestEdge() const
 	else return std::numeric_limits<float>::infinity();
 }
 
-
-SurfacePoint blendSurfacePoints__(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float const alpha);
+inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)
+{
+	return (normal_geometry * incoming_vector) < 0 ? -normal : normal;
+}
 
 /*! computes and stores the additional data for surface intersections for
 	differential rays */

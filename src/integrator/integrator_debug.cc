@@ -90,7 +90,7 @@ Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &c
 			userdata[0] = 0;
 			state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 
-			Bsdf_t bsdfs;
+			BsdfFlags bsdfs;
 			const Material *material = sp.material_;
 			material->initBsdf(state, sp, bsdfs);
 		}

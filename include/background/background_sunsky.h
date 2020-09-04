@@ -46,8 +46,6 @@ class SunSkyBackground final : public Background
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 		virtual ~SunSkyBackground() override;
-		virtual bool hasIbl() const override { return with_ibl_; }
-		virtual bool shootsCaustic() const override { return shoot_caustic_; }
 		Rgb getSkyCol(const Ray &ray) const;
 
 		Vec3 sun_dir_;
@@ -59,9 +57,6 @@ class SunSkyBackground final : public Background
 		double angleBetween(double thetav, double phiv) const;
 		double perezFunction(const double *lam, double theta, double gamma, double lvz) const;
 		float power_;
-		bool with_ibl_;
-		bool shoot_caustic_;
-		bool shoot_diffuse_;
 };
 
 END_YAFARAY

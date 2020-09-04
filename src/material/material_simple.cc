@@ -37,7 +37,7 @@ BEGIN_YAFARAY
 
 LightMaterial::LightMaterial(Rgb light_c, bool ds): light_col_(light_c), double_sided_(ds)
 {
-	bsdf_flags_ = BsdfEmit;
+	bsdf_flags_ = BsdfFlags::Emit;
 }
 
 Rgb LightMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
@@ -56,7 +56,7 @@ Rgb LightMaterial::emit(const RenderState &state, const SurfacePoint &sp, const 
 	return (angle > 0) ? light_col_ : Rgb(0.f);
 }
 
-float LightMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
+float LightMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	return 0.f;
 }

@@ -24,14 +24,16 @@
 
 BEGIN_YAFARAY
 
-class EmissionIntegrator : public VolumeIntegrator
+class EmissionIntegrator final : public VolumeIntegrator
 {
 	public:
-		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const;
-		// emission part
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const;
 		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		// optical thickness, absorption, attenuation, extinction
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		// emission part
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
 };
 
 END_YAFARAY

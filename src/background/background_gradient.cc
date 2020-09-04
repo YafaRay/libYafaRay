@@ -27,9 +27,10 @@
 BEGIN_YAFARAY
 
 GradientBackground::GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic):
-		gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol), with_ibl_(ibl), shoot_caustic_(with_caustic)
+		gzenith_(gzcol), ghoriz_(ghcol), szenith_(szcol), shoriz_(shcol)
 {
-	// Empty
+	with_ibl_ = ibl;
+	shoot_caustic_ = with_caustic;
 }
 
 Rgb GradientBackground::operator()(const Ray &ray, RenderState &state, bool from_postprocessed) const

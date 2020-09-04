@@ -30,9 +30,20 @@ class VolumeRegion;
 class Light;
 class Rgb;
 
-class SingleScatterIntegrator : public VolumeIntegrator
+class SingleScatterIntegrator final : public VolumeIntegrator
 {
+	public:
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
 	private:
+		SingleScatterIntegrator(float s_size, bool adapt, bool opt);
+		virtual bool preprocess() override;
+		// optical thickness, absorption, attenuation, extinction
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		// emission and in-scattering
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		Rgb getInScatter(RenderState &state, Ray &step_ray, float current_step) const;
+
 		bool adaptive_;
 		bool optimize_;
 		float adaptive_step_size_;
@@ -40,16 +51,6 @@ class SingleScatterIntegrator : public VolumeIntegrator
 		std::vector<Light *> lights_;
 		unsigned int vr_size_;
 		float i_vr_size_;
-
-	public:
-		SingleScatterIntegrator(float s_size, bool adapt, bool opt);
-		virtual bool preprocess();
-		Rgb getInScatter(RenderState &state, Ray &step_ray, float current_step) const;
-		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const;
-		// emission and in-scattering
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const;
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
 		float step_size_;
 };
 

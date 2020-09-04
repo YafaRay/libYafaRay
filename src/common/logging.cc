@@ -453,6 +453,5 @@ void Logger::statsIncrementBucket(std::string stat_name, double stat_value, doub
 	statsAdd(stat_name, increment_amount, index);
 }
 
-
 END_YAFARAY
 

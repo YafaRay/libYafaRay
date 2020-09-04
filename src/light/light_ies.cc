@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled, bool b_cast_shadows):
-		Light(LightSingular), position_(from), samples_(smpls), soft_shadow_(s_sha)
+		Light(Light::Flags::Singular), position_(from), samples_(smpls), soft_shadow_(s_sha)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;

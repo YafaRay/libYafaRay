@@ -28,7 +28,19 @@ class Background;
 
 class SkyIntegrator : public VolumeIntegrator
 {
+	public:
+		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
 	private:
+		SkyIntegrator(float s_size, float a, float ss, float t);
+		virtual bool preprocess() override;
+		// optical thickness, absorption, attenuation, extinction
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		// emission and in-scattering
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		Rgba skyTau(const Ray &ray) const;
+		Rgba skyTau(const Ray &ray, float beta, float alpha) const;
+
 		float step_size_;
 		float alpha_; // steepness of the exponential density
 		float sigma_t_; // beta in the paper, more or less the thickness coefficient
@@ -38,18 +50,6 @@ class SkyIntegrator : public VolumeIntegrator
 		float alpha_r_; // rayleigh, molecules
 		float alpha_m_; // mie, haze
 		float scale_;
-
-	public:
-		SkyIntegrator(float s_size, float a, float ss, float t);
-		virtual bool preprocess();
-		Rgba skyTau(const Ray &ray) const;
-		Rgba skyTau(const Ray &ray, float beta, float alpha) const;
-
-		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const;
-		// emission and in-scattering
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const;
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
 };
 
 END_YAFARAY

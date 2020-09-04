@@ -34,8 +34,10 @@ class PerspectiveCamera : public Camera
 	public:
 		static Camera *factory(ParamMap &params, RenderEnvironment &render);
 
+	protected:
 		enum BokehType {BkDisk1, BkDisk2, BkTri = 3, BkSqr, BkPenta, BkHexa, BkRing};
 		enum BkhBiasType {BbNone, BbCenter, BbEdge};
+
 		PerspectiveCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
 						  int resx, int resy, float aspect = 1,
 						  float df = 1, float ap = 0, float dofd = 0, BokehType bt = BkDisk1, BkhBiasType bbt = BbNone, float bro = 0,
@@ -50,7 +52,6 @@ class PerspectiveCamera : public Camera
 		void sampleTsd(float r_1, float r_2, float &u, float &v) const;
 		void getLensUv(float r_1, float r_2, float &u, float &v) const;
 
-	protected:
 		BokehType bkhtype_;
 		BkhBiasType bkhbias_;
 		Vec3 dof_up_, dof_rt_;

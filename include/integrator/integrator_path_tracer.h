@@ -20,40 +20,25 @@
 #ifndef YAFARAY_INTEGRATOR_PATH_TRACER_H
 #define YAFARAY_INTEGRATOR_PATH_TRACER_H
 
-#include "constants.h"
-
-#include "common/timer.h"
-#include "common/photon.h"
-#include "common/spectrum.h"
-#include "common/scr_halton.h"
-
 #include "integrator/integrator_montecarlo.h"
-#include "common/environment.h"
-#include "material/material.h"
-#include "background/background.h"
-#include "light/light.h"
-#include "volume/volume.h"
-
-#include "utility/util_mcqmc.h"
-
-#include <sstream>
-#include <iomanip>
 
 BEGIN_YAFARAY
 
-class PathIntegrator: public MonteCarloIntegrator
+class PathIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		PathIntegrator(bool transp_shad = false, int shadow_depth = 4);
-		virtual bool preprocess();
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const;
 		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
-		enum { None, Path, Photon, Both };
-	protected:
+
+	private:
+		PathIntegrator(bool transp_shad = false, int shadow_depth = 4);
+		virtual bool preprocess() override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
+		enum class CausticType { None, Path, Photon, Both };
+
 		bool trace_caustics_; //!< use path tracing for caustics (determined by causticType)
 		bool no_recursive_;
 		float inv_n_paths_;
-		int caustic_type_;
+		CausticType caustic_type_;
 		int russian_roulette_min_bounces_;  //!< minimum number of bounces where russian roulette is not applied. Afterwards russian roulette will be used until the maximum selected bounces. If min_bounces >= max_bounces, then no russian roulette takes place
 };
 

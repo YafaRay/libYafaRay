@@ -22,14 +22,19 @@
 #ifndef YAFARAY_INTEGRATOR_UTILS_H
 #define YAFARAY_INTEGRATOR_UTILS_H
 
-#include "utility/util_mcqmc.h"
-#include "common/scr_halton.h"
-#include "common/monitor.h"
+#include "constants.h"
 #include <string>
 
 BEGIN_YAFARAY
 
 class PhotonMap;
+class Rgb;
+class RenderState;
+class Light;
+class Scene;
+class Vec3;
+class ProgressBar;
+class SurfacePoint;
 
 //from common.cc
 Rgb estimateDirectPh__(RenderState &state, const SurfacePoint &sp, const std::vector<Light *> &lights, Scene *scene, const Vec3 &wo, bool tr_shad, int s_depth);

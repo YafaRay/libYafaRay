@@ -43,6 +43,7 @@
 BEGIN_YAFARAY
 
 class PhotonMap;
+enum class BsdfFlags : unsigned int;
 
 class LogEntry
 {
@@ -58,6 +59,11 @@ class LogEntry
 		std::string event_description_;
 };
 
+inline std::ostream &operator<<(std::ostream &os, const BsdfFlags &f)
+{
+	os << std::hex << (unsigned int) f;
+	return os;
+}
 
 class Logger
 {
@@ -136,29 +142,11 @@ class Logger
 		void statsIncrementBucket(std::string stat_name, int stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
 		void statsIncrementBucket(std::string stat_name, float stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
 		void statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0);
+		template <typename T>
+		Logger &operator << (const T &obj);
+		Logger &operator << (std::ostream & (obj)(std::ostream &));
 
 		std::mutex mutx_;  //To try to avoid garbled output when there are several threads trying to output data to the log
-
-		template <typename T>
-		Logger &operator << (const T &obj)
-		{
-			std::ostringstream tmp_stream;
-			tmp_stream << obj;
-
-			if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
-			if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
-			return *this;
-		}
-
-		Logger &operator << (std::ostream & (obj)(std::ostream &))
-		{
-			std::ostringstream tmp_stream;
-			tmp_stream << obj;
-
-			if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
-			if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
-			return *this;
-		}
 
 	protected:
 		int verbosity_level_ = VlInfo;
@@ -187,6 +175,26 @@ class Logger
 		std::time_t previous_log_event_date_time_ = 0;
 		std::unordered_map <std::string, double> diagnostics_stats_;
 };
+
+template<typename T>
+inline Logger &Logger::operator<<(const T &obj) {
+	std::ostringstream tmp_stream;
+	tmp_stream << obj;
+
+	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
+	return *this;
+}
+
+inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
+	std::ostringstream tmp_stream;
+	tmp_stream << obj;
+
+	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
+	return *this;
+}
+
 
 extern Logger logger__;
 

@@ -52,7 +52,6 @@ void TiledIntegrator::renderWorker(int m_num_view, TiledIntegrator *integrator, 
 	while(image_film->nextArea(m_num_view, a))
 	{
 		if(scene->getSignals() & Y_SIG_ABORT) break;
-		integrator->preTile(a, samples, offset, adaptive, thread_id);
 		integrator->renderTile(m_num_view, a, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
@@ -63,21 +62,6 @@ void TiledIntegrator::renderWorker(int m_num_view, TiledIntegrator *integrator, 
 	std::unique_lock<std::mutex> lk(control->m_);
 	++(control->finished_threads_);
 	control->c_.notify_one();
-}
-
-void TiledIntegrator::preRender()
-{
-	// Empty
-}
-
-void TiledIntegrator::prePass(int samples, int offset, bool adaptive)
-{
-	// Empty
-}
-
-void TiledIntegrator::preTile(RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id)
-{
-	// Empty
 }
 
 void TiledIntegrator::precalcDepths()
@@ -187,8 +171,6 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 
 	if(scene_->passEnabled(PassIntZDepthNorm) || scene_->passEnabled(PassIntMist)) precalcDepths();
 
-	preRender();
-
 	correlative_sample_number_.clear();
 	correlative_sample_number_.resize(scene_->getNumThreads());
 	std::fill(correlative_sample_number_.begin(), correlative_sample_number_.end(), 0);
@@ -261,6 +243,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool adaptive, int aa_pass_number)
 {
 	Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + image_film_->getBaseSamplingOffset() << "  AA_pass_number=" << aa_pass_number << YENDL;
+
 	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive);
 
 	int nthreads = scene_->getNumThreads();
@@ -297,7 +280,6 @@ bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool ada
 		while(image_film_->nextArea(num_view, a))
 		{
 			if(scene_->getSignals() & Y_SIG_ABORT) break;
-			preTile(a, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, 0);
 			renderTile(num_view, a, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, 0);
 			image_film_->finishArea(num_view, a);
 		}

@@ -28,7 +28,7 @@ BEGIN_YAFARAY
 class ParamMap;
 class RenderEnvironment;
 
-class OrthographicCamera: public Camera
+class OrthographicCamera final: public Camera
 {
 	public:
 		OrthographicCamera(const Point3 &pos, const Point3 &look, const Point3 &up,

@@ -34,8 +34,11 @@ BEGIN_YAFARAY
 // and a thread on gamedev.net on skycolor algorithms
 
 
-SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): power_(pwr), with_ibl_(ibl), shoot_caustic_(with_caustic)
+SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic): power_(pwr)
 {
+	with_ibl_ = ibl;
+	shoot_caustic_ = with_caustic;
+
 	sun_dir_.set(dir.x_, dir.y_, dir.z_);
 	sun_dir_.normalize();
 	theta_s_ = fAcos__(sun_dir_.z_);

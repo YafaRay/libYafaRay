@@ -22,6 +22,7 @@
 
 #include "constants.h"
 #include "common/color.h"
+#include <sstream>
 
 BEGIN_YAFARAY
 
@@ -33,29 +34,17 @@ class Ray;
 class Scene;
 class Vec3;
 class Point3;
-
-enum LightFlags : unsigned int { LightNone = 0, LightDiracdir = 1, LightSingular = 1 << 1 }; // "LightDiracdir" *must* be same as "BsdfSpecular" (material.h)!
-
-struct LSample
-{
-	LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
-	float s_1_, s_2_; //<! 2d sample value for choosing a surface point on the light.
-	float s_3_, s_4_; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
-	float pdf_; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
-	float dir_pdf_; //<! probability density for generating this sample direction (emitSample)
-	float area_pdf_; //<! probability density for generating this sample point on light surface (emitSample)
-	Rgb col_; //<! color of the generated sample
-	LightFlags flags_; //<! flags of the sampled light source
-	SurfacePoint *sp_; //!< surface point on the light source, may only be complete enough to call other light methods with it!
-};
+class LSample;
 
 class Light
 {
 	public:
 		static Light *factory(ParamMap &params, RenderEnvironment &render);
-		Light(): flags_(LightNone), light_enabled_(true), cast_shadows_(true), shoot_caustic_(true), shoot_diffuse_(true), photon_only_(false) {}
-		Light(LightFlags flags): flags_(flags) {}
-		virtual ~Light() {}
+		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 }; // "LightDiracdir" *must* be same as "BsdfFlags::Specular" (material.h)!		Light(): flags_(LightNone), light_enabled_(true), cast_shadows_(true), shoot_caustic_(true), shoot_diffuse_(true), photon_only_(false) {}
+		static constexpr bool hasFlag(const Light::Flags &f_1, const Light::Flags &f_2);
+		Light() = default;
+		Light(Flags flags): flags_(flags) {}
+		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(Scene &scene) {}
 		//! total energy emmitted during whole frame
@@ -98,10 +87,10 @@ class Light
 		bool photonOnly() const { return photon_only_; }
 		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
 		void setClampIntersect(float clamp) { clamp_intersect_ = clamp; }
-		LightFlags getFlags() const { return flags_; }
+		Light::Flags getFlags() const { return flags_; }
 
 	protected:
-		LightFlags flags_;
+		Light::Flags flags_;
 		Background *background_ = nullptr;
 		bool light_enabled_; //!< enable/disable light
 		bool cast_shadows_; //!< enable/disable if the light should cast direct shadows
@@ -111,6 +100,45 @@ class Light
 		float clamp_intersect_ = 0.f;	//!<trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 
 };
+
+struct LSample
+{
+	LSample(SurfacePoint *s_p = nullptr): sp_(s_p) {}
+	float s_1_, s_2_; //<! 2d sample value for choosing a surface point on the light.
+	float s_3_, s_4_; //<! 2d sample value for choosing an outgoing direction on the light (emitSample)
+	float pdf_; //<! "standard" directional pdf from illuminated surface point for MC integration of direct lighting (illumSample)
+	float dir_pdf_; //<! probability density for generating this sample direction (emitSample)
+	float area_pdf_; //<! probability density for generating this sample point on light surface (emitSample)
+	Rgb col_; //<! color of the generated sample
+	Light::Flags flags_; //<! flags of the sampled light source
+	SurfacePoint *sp_; //!< surface point on the light source, may only be complete enough to call other light methods with it!
+};
+
+inline constexpr Light::Flags operator&(const Light::Flags &f_1, const Light::Flags &f_2)
+{
+	return static_cast<Light::Flags>(static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
+}
+
+inline constexpr Light::Flags operator|(const Light::Flags &f_1, const Light::Flags &f_2)
+{
+	return static_cast<Light::Flags>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
+}
+
+inline std::ostringstream &operator<<(std::ostringstream& os, const Light::Flags &f)
+{
+	os << std::hex << static_cast<unsigned int>(f);
+	return os;
+}
+
+inline Light::Flags operator|=(Light::Flags &f_1, const Light::Flags &f_2)
+{
+	return f_1 = (f_1 | f_2);
+}
+
+inline constexpr bool Light::hasFlag(const Light::Flags &f_1, const Light::Flags &f_2)
+{
+	return ((f_1 & f_2) != Light::Flags::None);
+}
 
 END_YAFARAY
 

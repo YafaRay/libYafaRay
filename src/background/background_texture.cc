@@ -31,8 +31,11 @@
 BEGIN_YAFARAY
 
 TextureBackground::TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
-		tex_(texture), project_(proj), power_(bpower), with_ibl_(ibl), ibl_blur_mipmap_level_(pow(ibl_blur, 2.f)), shoot_caustic_(with_caustic)
+		tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(pow(ibl_blur, 2.f))
 {
+	with_ibl_ = ibl;
+	shoot_caustic_ = with_caustic;
+
 	rotation_ = 2.0f * rot / 360.f;
 	sin_r_ = fSin__(M_PI * rotation_);
 	cos_r_ = fCos__(M_PI * rotation_);

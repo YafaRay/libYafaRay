@@ -30,8 +30,8 @@ ShinyDiffuseMaterial::ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &
 	visibility_ = visibility;
 	emit_color_ = emit_strength * diffuse_color;
 	emit_strength_ = emit_strength;
-	bsdf_flags_ = BsdfNone;
-	if(emit_strength_ > 0.f) bsdf_flags_ |= BsdfEmit;
+	bsdf_flags_ = BsdfFlags::None;
+	if(emit_strength_ > 0.f) bsdf_flags_ |= BsdfFlags::Emit;
 	visibility_ = visibility;
 }
 
@@ -54,8 +54,8 @@ void ShinyDiffuseMaterial::config()
 		is_mirror_ = true;
 		if(mirror_shader_) { if(mirror_shader_->isViewDependant())vd_nodes_[0] = true; else vi_nodes_[0] = true; }
 		else if(!m_has_fresnel_effect_) acc = 1.f - mirror_strength_;
-		bsdf_flags_ |= BsdfSpecular | BsdfReflect;
-		c_flags_[n_bsdf_] = BsdfSpecular | BsdfReflect;
+		bsdf_flags_ |= BsdfFlags::Specular | BsdfFlags::Reflect;
+		c_flags_[n_bsdf_] = BsdfFlags::Specular | BsdfFlags::Reflect;
 		c_index_[n_bsdf_] = 0;
 		++n_bsdf_;
 	}
@@ -64,8 +64,8 @@ void ShinyDiffuseMaterial::config()
 		m_is_transparent_ = true;
 		if(transparency_shader_) { if(transparency_shader_->isViewDependant())vd_nodes_[1] = true; else vi_nodes_[1] = true; }
 		else acc *= 1.f - transparency_strength_;
-		bsdf_flags_ |= BsdfTransmit | BsdfFilter;
-		c_flags_[n_bsdf_] = BsdfTransmit | BsdfFilter;
+		bsdf_flags_ |= BsdfFlags::Transmit | BsdfFlags::Filter;
+		c_flags_[n_bsdf_] = BsdfFlags::Transmit | BsdfFlags::Filter;
 		c_index_[n_bsdf_] = 1;
 		++n_bsdf_;
 	}
@@ -74,8 +74,8 @@ void ShinyDiffuseMaterial::config()
 		m_is_translucent_ = true;
 		if(translucency_shader_) { if(translucency_shader_->isViewDependant())vd_nodes_[2] = true; else vi_nodes_[2] = true; }
 		else acc *= 1.f - transparency_strength_;
-		bsdf_flags_ |= BsdfDiffuse | BsdfTransmit;
-		c_flags_[n_bsdf_] = BsdfDiffuse | BsdfTransmit;
+		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Transmit;
+		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Transmit;
 		c_index_[n_bsdf_] = 2;
 		++n_bsdf_;
 	}
@@ -83,8 +83,8 @@ void ShinyDiffuseMaterial::config()
 	{
 		is_diffuse_ = true;
 		if(diffuse_shader_) { if(diffuse_shader_->isViewDependant())vd_nodes_[3] = true; else vi_nodes_[3] = true; }
-		bsdf_flags_ |= BsdfDiffuse | BsdfReflect;
-		c_flags_[n_bsdf_] = BsdfDiffuse | BsdfReflect;
+		bsdf_flags_ |= BsdfFlags::Diffuse | BsdfFlags::Reflect;
+		c_flags_[n_bsdf_] = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		c_index_[n_bsdf_] = 3;
 		++n_bsdf_;
 	}
@@ -160,7 +160,7 @@ static inline void accumulate__(const float *component, float *accum, float kr)
 	accum[3] = component[3] * acc;
 }
 
-void ShinyDiffuseMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void ShinyDiffuseMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	SdDat *dat = (SdDat *)state.userdata_;
 	memset(dat, 0, 8 * sizeof(float));
@@ -241,13 +241,13 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 }
 
 
-Rgb ShinyDiffuseMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t bsdfs, bool force_eval) const
+Rgb ShinyDiffuseMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	float cos_ng_wo = sp.ng_ * wo;
 	float cos_ng_wl = sp.ng_ * wl;
 	// face forward:
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
-	if(!(bsdfs & bsdf_flags_ & BsdfDiffuse)) return Rgb(0.f);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	if(!Material::hasFlag(bsdfs, bsdf_flags_ & BsdfFlags::Diffuse)) return Rgb(0.f);
 
 	SdDat *dat = (SdDat *)state.userdata_;
 	NodeStack stack(dat->node_stack_);
@@ -309,7 +309,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 {
 	float accum_c[4];
 	float cos_ng_wo = sp.ng_ * wo, cos_ng_wi, cos_n;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
 	SdDat *dat = (SdDat *)state.userdata_;
 	NodeStack stack(dat->node_stack_);
@@ -328,7 +328,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 	accumulate__(dat->component_, accum_c, kr);
 
 	float sum = 0.f, val[4], width[4];
-	Bsdf_t choice[4];
+	BsdfFlags choice[4];
 	int n_match = 0, pick = -1;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
@@ -341,7 +341,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 			++n_match;
 		}
 	}
-	if(!n_match || sum < 0.00001) { s.sampled_flags_ = BsdfNone; s.pdf_ = 0.f; return Rgb(1.f); }
+	if(!n_match || sum < 0.00001) { s.sampled_flags_ = BsdfFlags::None; s.pdf_ = 0.f; return Rgb(1.f); }
 	float inv_sum = 1.f / sum;
 	for(int i = 0; i < n_match; ++i)
 	{
@@ -357,7 +357,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 	Rgb scolor(0.f);
 	switch(choice[pick])
 	{
-		case(BsdfSpecular | BsdfReflect):  // specular reflect
+		case(BsdfFlags::SpecularReflect):
 			wi = reflectDir__(n, wo);
 			s.pdf_ = width[pick];
 			scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (accum_c[0]);
@@ -368,19 +368,19 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 			}
 			scolor *= 1.f / std::max(std::fabs(sp.n_ * wi), 1.0e-6f);
 			break;
-		case(BsdfTransmit | BsdfFilter):  // "specular" transmit
+		case(BsdfFlags::SpecularTransmit):
 			wi = -wo;
 			scolor = accum_c[1] * (transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
 			cos_n = std::fabs(wi * n);
 			if(cos_n < 1e-6) s.pdf_ = 0.f;
 			else s.pdf_ = width[pick];
 			break;
-		case(BsdfDiffuse | BsdfTransmit):  // translucency (diffuse transmitt)
+		case(BsdfFlags::Translucency):
 			wi = sampleCosHemisphere__(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0) scolor = accum_c[2] * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 			s.pdf_ = std::fabs(wi * n) * width[pick]; break;
-		case(BsdfDiffuse | BsdfReflect):  // diffuse reflect
+		case(BsdfFlags::DiffuseReflect):
 		default:
 			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
@@ -407,9 +407,9 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 	return scolor;
 }
 
-float ShinyDiffuseMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
+float ShinyDiffuseMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	if(!(bsdfs & BsdfDiffuse)) return 0.f;
+	if(!Material::hasFlag(bsdfs, BsdfFlags::Diffuse)) return 0.f;
 
 	SdDat *dat = (SdDat *)state.userdata_;
 	NodeStack stack(dat->node_stack_);
@@ -417,7 +417,7 @@ float ShinyDiffuseMaterial::pdf(const RenderState &state, const SurfacePoint &sp
 	float pdf = 0.f;
 	float accum_c[4];
 	float cos_ng_wo = sp.ng_ * wo, cos_ng_wi;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr;
 
 	float cur_ior_squared;
@@ -435,21 +435,23 @@ float ShinyDiffuseMaterial::pdf(const RenderState &state, const SurfacePoint &sp
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
 	{
-		if((bsdfs & c_flags_[i]))
+		if(Material::hasFlag(bsdfs, c_flags_[i]))
 		{
 			width = accum_c[c_index_[i]];
 			sum += width;
 
 			switch(c_flags_[i])
 			{
-				case(BsdfDiffuse | BsdfTransmit):  // translucency (diffuse transmitt)
+				case(BsdfFlags::Diffuse | BsdfFlags::Transmit):  // translucency (diffuse transmitt)
 					cos_ng_wi = sp.ng_ * wi;
 					if(cos_ng_wo * cos_ng_wi < 0) pdf += std::fabs(wi * n) * width;
 					break;
 
-				case(BsdfDiffuse | BsdfReflect):  // lambertian
+				case(BsdfFlags::Diffuse | BsdfFlags::Reflect):  // lambertian
 					cos_ng_wi = sp.ng_ * wi;
 					pdf += std::fabs(wi * n) * width;
+					break;
+				default:
 					break;
 			}
 			++n_match;
@@ -536,7 +538,7 @@ Rgb ShinyDiffuseMaterial::getTransparency(const RenderState &state, const Surfac
 	for(auto iter = all_sorted_.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
 	float accum = 1.f;
 	float kr;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
 	float cur_ior_squared;
 	if(ior_s_)
@@ -573,7 +575,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderState &state, const SurfacePoin
 
 	if(m_is_transparent_)
 	{
-		Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+		Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 		float kr;
 
 		float cur_ior_squared;
@@ -608,7 +610,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	float emit_strength = 0.f;
 	bool has_fresnel_effect = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	bool receive_shadows = true;
 	bool flat_material = false;
 	float ior = 1.33f;
@@ -648,11 +650,11 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	// !!remember to put diffuse multiplier in material itself!
 	ShinyDiffuseMaterial *mat = new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);

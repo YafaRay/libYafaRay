@@ -42,18 +42,18 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, cons
 		gloss_color_(col), diff_color_(dcol), mirror_color_(mir_col), mirror_strength_(mirror_strength), ior_(ior), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
 	visibility_ = e_visibility;
-	c_flags_[C_SPECULAR] = (BsdfSpecular | BsdfReflect);
-	c_flags_[C_GLOSSY] = as_diffuse_ ? (BsdfDiffuse | BsdfReflect) : (BsdfGlossy | BsdfReflect);
+	c_flags_[C_SPECULAR] = (BsdfFlags::Specular | BsdfFlags::Reflect);
+	c_flags_[C_GLOSSY] = as_diffuse_ ? (BsdfFlags::Diffuse | BsdfFlags::Reflect) : (BsdfFlags::Glossy | BsdfFlags::Reflect);
 
 	if(diff > 0)
 	{
-		c_flags_[C_DIFFUSE] = BsdfDiffuse | BsdfReflect;
+		c_flags_[C_DIFFUSE] = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		with_diffuse_ = true;
 		n_bsdf_ = 3;
 	}
 	else
 	{
-		c_flags_[C_DIFFUSE] = BsdfNone;
+		c_flags_[C_DIFFUSE] = BsdfFlags::None;
 		n_bsdf_ = 2;
 	}
 
@@ -64,7 +64,7 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, cons
 	visibility_ = e_visibility;
 }
 
-void CoatedGlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void CoatedGlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	MDatT *dat = (MDatT *)state.userdata_;
 	dat->stack_ = (char *)state.userdata_ + sizeof(MDatT);
@@ -127,11 +127,11 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 }
 
-Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval) const
+Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	MDatT *dat = (MDatT *)state.userdata_;
 	Rgb col(0.f);
-	bool diffuse_flag = bsdfs & BsdfDiffuse;
+	bool diffuse_flag = Material::hasFlag(bsdfs, BsdfFlags::Diffuse);
 
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
@@ -139,14 +139,14 @@ Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp,
 	}
 
 	NodeStack stack(dat->stack_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	float wi_n = std::fabs(wi * n);
 	float wo_n = std::fabs(wo * n);
 
 	fresnel__(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
-	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && (bsdfs & BsdfGlossy)))
+	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && Material::hasFlag(bsdfs, BsdfFlags::Glossy)))
 	{
 		Vec3 h = (wo + wi).normalize(); // half-angle
 		float cos_wi_h = wi * h;
@@ -191,7 +191,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 
 	float cos_ng_wo = sp.ng_ * wo;
 	float cos_ng_wi;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	Vec3 hs(0.f);
 	s.pdf_ = 0.f;
 	float kr, kt;
@@ -368,13 +368,13 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 	return scolor;
 }
 
-float CoatedGlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t flags) const
+float CoatedGlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
 	MDatT *dat = (MDatT *)state.userdata_;
 	NodeStack stack(dat->stack_);
 	bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float pdf = 0.f;
 	float kr, kt;
 
@@ -474,7 +474,7 @@ Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > 
 	bool aniso = false;
 	std::string name;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
@@ -506,11 +506,11 @@ Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > 
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	if(ior == 1.f) ior = 1.0000001f;
 

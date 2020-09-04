@@ -32,11 +32,11 @@ class RenderEnvironment;
 class MaskMaterial: public NodeMaterial
 {
 	public:
-		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = NormalVisible);
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval = false) const;
+		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Material::Visibility::NormalVisible);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const;
 		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
 		virtual bool isTransparent() const;
 		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,

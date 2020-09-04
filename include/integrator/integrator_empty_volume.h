@@ -26,12 +26,14 @@ BEGIN_YAFARAY
 
 // for removing all participating media effects
 
-class EmptyVolumeIntegrator : public VolumeIntegrator
+class EmptyVolumeIntegrator final : public VolumeIntegrator
 {
 	public:
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const;
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const;
 		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+
+	private:
+		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
 
 };
 

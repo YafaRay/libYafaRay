@@ -25,6 +25,10 @@
 #include "common/param.h"
 #include "common/scene.h"
 #include "common/imagesplitter.h"
+#include "common/timer.h"
+#include "material/material.h"
+#include "common/renderpasses.h"
+#include "background/background.h"
 
 BEGIN_YAFARAY
 
@@ -111,7 +115,7 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 	{
 		unsigned char userdata[USER_DATA_SIZE];
 		const Material *material = sp.material_;
-		Bsdf_t bsdfs;
+		BsdfFlags bsdfs;
 
 		state.userdata_ = (void *) userdata;
 		Vec3 wo = -ray.dir_;
@@ -122,12 +126,12 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 
-		if(bsdfs & BsdfEmit)
+		if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
 		{
 			col += color_passes.probeSet(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
 		}
 
-		if(bsdfs & BsdfDiffuse)
+		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(state, sp, wo, color_passes);
 

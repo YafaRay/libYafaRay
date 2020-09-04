@@ -57,7 +57,7 @@ inline float sinSample__(float s)
 }
 
 BackgroundLight::BackgroundLight(int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
-		Light(LightNone), samples_(sampl), abs_inter_(invert_intersect)
+		Light(Light::Flags::None), samples_(sampl), abs_inter_(invert_intersect)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;

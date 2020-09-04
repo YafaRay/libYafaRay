@@ -29,7 +29,7 @@
 BEGIN_YAFARAY
 
 DirectionalLight::DirectionalLight(const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled, bool b_cast_shadows):
-		Light(LightDiracdir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
+		Light(Light::Flags::DiracDir), position_(pos), direction_(dir), radius_(rad), infinite_(inf)
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;

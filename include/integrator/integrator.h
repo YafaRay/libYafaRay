@@ -50,22 +50,22 @@ class Integrator
 	public:
 		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
 
-		Integrator() { scene_ = nullptr; intpb_ = nullptr; }
+		Integrator() = default;
+		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
+		virtual bool render(int num_view, ImageFilm *image_film) { return false; }
 		void setScene(Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		virtual bool render(int num_view, ImageFilm *image_film) { return false; }
-		virtual void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
-		virtual std::string getShortName() const { return integrator_short_name_; }
-		virtual std::string getName() const { return integrator_name_; }
-		virtual ~Integrator() {}
+		void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
+		std::string getShortName() const { return integrator_short_name_; }
+		std::string getName() const { return integrator_name_; }
 		enum Type { Surface, Volume };
 		Type integratorType() { return type_; }
 
 	protected:
 		Type type_;
-		Scene *scene_;
-		ProgressBar *intpb_;
+		Scene *scene_ = nullptr;
+		ProgressBar *intpb_ = nullptr;
 		std::string integrator_name_;
 		std::string integrator_short_name_;
 };

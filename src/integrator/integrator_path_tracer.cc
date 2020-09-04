@@ -25,6 +25,13 @@
 #include "common/scene.h"
 #include "common/imagesplitter.h"
 #include "utility/util_sample.h"
+#include "common/timer.h"
+#include "material/material.h"
+#include "common/renderpasses.h"
+#include "background/background.h"
+#include "volume/volume.h"
+#include "utility/util_mcqmc.h"
+#include "common/scr_halton.h"
 
 BEGIN_YAFARAY
 
@@ -33,7 +40,7 @@ PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 	type_ = Surface;
 	tr_shad_ = transp_shad;
 	s_depth_ = shadow_depth;
-	caustic_type_ = Path;
+	caustic_type_ = CausticType::Path;
 	r_depth_ = 6;
 	max_bounces_ = 5;
 	russian_roulette_min_bounces_ = 0;
@@ -64,27 +71,27 @@ bool PathIntegrator::preprocess()
 	bool success = true;
 	trace_caustics_ = false;
 
-	if(caustic_type_ == Photon || caustic_type_ == Both)
+	if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 	{
 		success = createCausticMap();
 	}
 
-	if(caustic_type_ == Path)
+	if(caustic_type_ == CausticType::Path)
 	{
 		set << "\nCaustics: Path" << " ";
 	}
-	else if(caustic_type_ == Photon)
+	else if(caustic_type_ == CausticType::Photon)
 	{
 		set << "\nCaustics: Photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 	}
-	else if(caustic_type_ == Both)
+	else if(caustic_type_ == CausticType::Both)
 	{
 		set << "\nCaustics: Path + Photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 	}
 
-	if(caustic_type_ == Both || caustic_type_ == Path) trace_caustics_ = true;
+	if(caustic_type_ == CausticType::Both || caustic_type_ == CausticType::Both) trace_caustics_ = true;
 
-	if(caustic_type_ == Both || caustic_type_ == Photon)
+	if(caustic_type_ == CausticType::Both || caustic_type_ == CausticType::Photon)
 	{
 		if(photon_map_processing_ == PhotonsLoad)
 		{
@@ -136,7 +143,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 		unsigned char userdata[USER_DATA_SIZE + 7];
 		userdata[0] = 0;
 		state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
-		Bsdf_t bsdfs;
+		BsdfFlags bsdfs;
 
 		const Material *material = sp.material_;
 		material->initBsdf(state, sp, bsdfs);
@@ -149,13 +156,13 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 		// contribution of light emitting surfaces
-		if(bsdfs & BsdfEmit) col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
+		if(Material::hasFlag(bsdfs, BsdfFlags::Emit)) col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
 
-		if(bsdfs & BsdfDiffuse)
+		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
 			col += estimateAllDirectLight(state, sp, wo, color_passes);
 
-			if(caustic_type_ == Photon || caustic_type_ == Both)
+			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
 				if(aa_clamp_indirect_ > 0)
 				{
@@ -173,12 +180,12 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 		// have more efficient ways to compute samples...)
 
 		bool was_chromatic = state.chromatic_;
-		Bsdf_t path_flags = no_recursive_ ? BsdfAll : (BsdfDiffuse);
+		BsdfFlags path_flags = no_recursive_ ? BsdfFlags::All : (BsdfFlags::Diffuse);
 
-		if(bsdfs & path_flags)
+		if(Material::hasFlag(bsdfs, path_flags))
 		{
 			Rgb path_col(0.0), wl_col;
-			path_flags |= (BsdfDiffuse | BsdfReflect | BsdfTransmit);
+			path_flags |= (BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit);
 			int n_samples = std::max(1, n_paths_ / state.ray_division_);
 			for(int i = 0; i < n_samples; ++i)
 			{
@@ -219,11 +226,11 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 
 				state.userdata_ = n_udat;
 				const Material *p_mat = hit->material_;
-				Bsdf_t mat_bsd_fs;
+				BsdfFlags mat_bsd_fs;
 				p_mat->initBsdf(state, *hit, mat_bsd_fs);
-				if(s.sampled_flags_ != BsdfNone) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
+				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
 				lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmp_color_passes);
-				if(mat_bsd_fs & BsdfEmit) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
+				if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit)) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
 
 				path_col += lcol * throughput;
 
@@ -241,7 +248,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 						s_2 = addMod1__(s_2, state.dc_2_);
 					}
 
-					s.flags_ = BsdfAll;
+					s.flags_ = BsdfFlags::All;
 
 					scol = p_mat->sample(state, *hit, pwo, p_ray.dir_, s, w);
 					scol *= w;
@@ -249,7 +256,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 					if(scol.isBlack()) break;
 
 					throughput *= scol;
-					caustic = trace_caustics_ && (s.sampled_flags_ & (BsdfSpecular | BsdfGlossy | BsdfFilter));
+					caustic = trace_caustics_ && Material::hasFlag(s.sampled_flags_, (BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter));
 					state.include_lights_ = caustic;
 
 					p_ray.tmin_ = scene_->ray_min_dist_;
@@ -270,10 +277,10 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 					p_mat->initBsdf(state, *hit, mat_bsd_fs);
 					pwo = -p_ray.dir_;
 
-					if(mat_bsd_fs & BsdfDiffuse) lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmp_color_passes);
+					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmp_color_passes);
 					else lcol = Rgb(0.f);
 
-					if((mat_bsd_fs & BsdfVolumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
+					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
 					{
 						if(vol->transmittance(state, p_ray, vcol)) throughput *= vcol;
 					}
@@ -287,7 +294,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 						throughput *= 1.f / probability;
 					}
 
-					if((mat_bsd_fs & BsdfEmit) && caustic) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
+					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit) && caustic) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
 
 					path_col += lcol * throughput;
 				}
@@ -382,9 +389,9 @@ Integrator *PathIntegrator::factory(ParamMap &params, RenderEnvironment &render)
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;
-		if(c_method == "photon") { inte->caustic_type_ = Photon; use_photons = true; }
-		else if(c_method == "both") { inte->caustic_type_ = Both; use_photons = true; }
-		else if(c_method == "none") inte->caustic_type_ = None;
+		if(c_method == "photon") { inte->caustic_type_ = CausticType::Photon; use_photons = true; }
+		else if(c_method == "both") { inte->caustic_type_ = CausticType::Both; use_photons = true; }
+		else if(c_method == "none") inte->caustic_type_ = CausticType::None;
 		if(use_photons)
 		{
 			double c_rad = 0.25;

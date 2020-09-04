@@ -33,22 +33,22 @@ GlossyMaterial::GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, f
 		gloss_color_(col), diff_color_(dcol), exponent_(expo), reflectivity_(reflect), diffuse_(diff), as_diffuse_(as_diff)
 {
 	visibility_ = e_visibility;
-	bsdf_flags_ = BsdfNone;
+	bsdf_flags_ = BsdfFlags::None;
 
 	if(diff > 0)
 	{
-		bsdf_flags_ = BsdfDiffuse | BsdfReflect;
+		bsdf_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 		with_diffuse_ = true;
 	}
 
 	oren_nayar_ = false;
 
-	bsdf_flags_ |= as_diffuse_ ? (BsdfDiffuse | BsdfReflect) : (BsdfGlossy | BsdfReflect);
+	bsdf_flags_ |= as_diffuse_ ? (BsdfFlags::Diffuse | BsdfFlags::Reflect) : (BsdfFlags::Glossy | BsdfFlags::Reflect);
 
 	visibility_ = e_visibility;
 }
 
-void GlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void GlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	MDatT *dat = (MDatT *)state.userdata_;
 	dat->stack_ = (char *)state.userdata_ + sizeof(MDatT);
@@ -110,25 +110,25 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 	}
 }
 
-Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval) const
+Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
-		if(!(bsdfs & BsdfDiffuse) || ((sp.ng_ * wi) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
+		if(!Material::hasFlag(bsdfs, BsdfFlags::Diffuse) || ((sp.ng_ * wi) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
 	}
 
 	MDatT *dat = (MDatT *)state.userdata_;
 	Rgb col(0.f);
-	bool diffuse_flag = bsdfs & BsdfDiffuse;
+	bool diffuse_flag = Material::hasFlag(bsdfs, BsdfFlags::Diffuse);
 
 	NodeStack stack(dat->stack_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
 	float wi_n = std::fabs(wi * n);
 	float wo_n = std::fabs(wo * n);
 
 
-	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && (bsdfs & BsdfGlossy)))
+	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && Material::hasFlag(bsdfs, BsdfFlags::Glossy)))
 	{
 		Vec3 h = (wo + wi).normalize(); // half-angle
 		float cos_wi_h = std::max(0.f, wi * h);
@@ -178,7 +178,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 	MDatT *dat = (MDatT *)state.userdata_;
 	float cos_ng_wo = sp.ng_ * wo;
 	float cos_ng_wi;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	Vec3 Hs;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
@@ -189,8 +189,8 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 
 	float s_1 = s.s_1_;
 	float cur_p_diffuse = dat->p_diffuse_;
-	bool use_glossy = as_diffuse_ ? (s.flags_ & BsdfDiffuse) : (s.flags_ & BsdfGlossy);
-	bool use_diffuse = with_diffuse_ && (s.flags_ & BsdfDiffuse);
+	bool use_glossy = as_diffuse_ ? Material::hasFlag(s.flags_, BsdfFlags::Diffuse) : Material::hasFlag(s.flags_, BsdfFlags::Glossy);
+	bool use_diffuse = with_diffuse_ && Material::hasFlag(s.flags_, BsdfFlags::Diffuse);
 	NodeStack stack(dat->stack_);
 	float glossy = 0.f;
 
@@ -233,9 +233,9 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 					glossy = blinnD__(cos_n_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
 				}
 			}
-			s.sampled_flags_ = BsdfDiffuse | BsdfReflect;
+			s.sampled_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
 
-			if(!(s.flags_ & BsdfReflect))
+			if(!Material::hasFlag(s.flags_, BsdfFlags::Reflect))
 			{
 				scolor = Rgb(0.f);
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
@@ -329,7 +329,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 		}
 
 		scolor = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
-		s.sampled_flags_ = as_diffuse_ ? BsdfDiffuse | BsdfReflect : BsdfGlossy | BsdfReflect;
+		s.sampled_flags_ = as_diffuse_ ? BsdfFlags::Diffuse | BsdfFlags::Reflect : BsdfFlags::Glossy | BsdfFlags::Reflect;
 	}
 
 	if(use_diffuse)
@@ -356,20 +356,20 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 	return scolor;
 }
 
-float GlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t flags) const
+float GlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
 	MDatT *dat = (MDatT *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float pdf = 0.f;
 	float cos_wo_h = 0.f;
 	float cos_n_h = 0.f;
 
 	float cur_p_diffuse = dat->p_diffuse_;
-	bool use_glossy = as_diffuse_ ? (flags & BsdfDiffuse) : (flags & BsdfGlossy);
-	bool use_diffuse = with_diffuse_ && (flags & BsdfDiffuse);
+	bool use_glossy = as_diffuse_ ? Material::hasFlag(flags, BsdfFlags::Diffuse) : Material::hasFlag(flags, BsdfFlags::Glossy);
+	bool use_diffuse = with_diffuse_ && Material::hasFlag(flags, BsdfFlags::Diffuse);
 
 	if(use_diffuse)
 	{
@@ -413,7 +413,7 @@ Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param
 	bool as_diff = true;
 	bool aniso = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
@@ -443,11 +443,11 @@ Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	GlossyMaterial *mat = new GlossyMaterial(col, dcol, refl, diff, exponent, as_diff, visibility);
 

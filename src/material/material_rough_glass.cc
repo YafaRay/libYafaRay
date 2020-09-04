@@ -35,19 +35,19 @@ RoughGlassMaterial::RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, 
 		filter_color_(filt_c), specular_reflection_color_(srcol), ior_(ior), a_2_(alpha * alpha), a_(alpha), fake_shadow_(fake_s), dispersion_power_(disp_pow)
 {
 	visibility_ = e_visibility;
-	bsdf_flags_ = BsdfAllGlossy;
-	if(fake_s) bsdf_flags_ |= BsdfFilter;
+	bsdf_flags_ = BsdfFlags::AllGlossy;
+	if(fake_s) bsdf_flags_ |= BsdfFlags::Filter;
 	if(disp_pow > 0.0)
 	{
 		disperse_ = true;
 		cauchyCoefficients__(ior, disp_pow, cauchy_a_, cauchy_b_);
-		bsdf_flags_ |= BsdfDispersive;
+		bsdf_flags_ |= BsdfFlags::Dispersive;
 	}
 
 	visibility_ = e_visibility;
 }
 
-void RoughGlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void RoughGlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	NodeStack stack(state.userdata_);
 	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
@@ -61,7 +61,7 @@ void RoughGlassMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bs
 Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	NodeStack stack(state.userdata_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	bool outside = sp.ng_ * wo > 0.f;
 
 	s.pdf_ = 1.f;
@@ -112,7 +112,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 
 	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, wo_n, kr, kt))
 	{
-		if(s.s_1_ < kt && (s.flags_ & BsdfTransmit))
+		if(s.s_1_ < kt && Material::hasFlag(s.flags_, BsdfFlags::Transmit))
 		{
 			wi_n = wi * n;
 			wi_h = wi * h;
@@ -131,12 +131,12 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
-			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfDispersive : BsdfGlossy) | BsdfTransmit;
+			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
 			w = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
-		else if(s.flags_ & BsdfReflect)
+		else if(Material::hasFlag(s.flags_, BsdfFlags::Reflect))
 		{
 			reflectMicrofacet__(wo, wi, h, wo_h);
 
@@ -149,7 +149,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
-			s.sampled_flags_ = BsdfGlossy | BsdfReflect;
+			s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 
 			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
@@ -160,7 +160,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 	{
 		wi = wo;
 		wi.reflect(h);
-		s.sampled_flags_ = BsdfGlossy | BsdfReflect;
+		s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 		ret = 1.f;
 		w = 1.f;
 	}
@@ -174,7 +174,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
 	NodeStack stack(state.userdata_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	bool outside = sp.ng_ * wo > 0.f;
 
 	s.pdf_ = 1.f;
@@ -223,11 +223,11 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 	float kr, kt;
 
 	Rgb ret(0.f);
-	s.sampled_flags_ = 0;
+	s.sampled_flags_ = BsdfFlags::None;
 
 	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, wo_n, kr, kt))
 	{
-		if(s.flags_ & BsdfTransmit)
+		if(Material::hasFlag(s.flags_, BsdfFlags::Transmit))
 		{
 			wi_n = wi * n;
 			wi_h = wi * h;
@@ -246,14 +246,14 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
-			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfDispersive : BsdfGlossy) | BsdfTransmit;
+			s.sampled_flags_ = ((disperse_ && state.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
 			w[0] = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
 		}
-		if(s.flags_ & BsdfReflect)
+		if(Material::hasFlag(s.flags_, BsdfFlags::Reflect))
 		{
 			reflectMicrofacet__(wo, wi, h, wo_h);
 
@@ -266,7 +266,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
-			s.sampled_flags_ |= BsdfGlossy | BsdfReflect;
+			s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
 
 			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
@@ -278,7 +278,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 	{
 		wi = wo;
 		wi.reflect(h);
-		s.sampled_flags_ |= BsdfGlossy | BsdfReflect;
+		s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
 		dir[0] = wi;
 		ret = 1.f;
 		w[0] = 1.f;
@@ -293,7 +293,7 @@ Rgb RoughGlassMaterial::sample(const RenderState &state, const SurfacePoint &sp,
 Rgb RoughGlassMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	NodeStack stack(state.userdata_);
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	fresnel__(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
 	Rgb result = kt * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_);
@@ -329,7 +329,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	std::string name;
 	bool fake_shad = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
@@ -358,11 +358,11 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
@@ -396,7 +396,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 			}
 			mat->absorb_ = true;
 			mat->beer_sigma_a_ = sigma;
-			mat->bsdf_flags_ |= BsdfVolumetric;
+			mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			// creat volume handler (backwards compatibility)
 			if(params.getParam("name", name))
 			{
@@ -405,7 +405,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
 				mat->vol_i_ = render.createVolumeH(name, map);
-				mat->bsdf_flags_ |= BsdfVolumetric;
+				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
 	}

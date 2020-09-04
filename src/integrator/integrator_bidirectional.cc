@@ -31,6 +31,7 @@
 #include "background/background.h"
 #include "integrator/integrator_utils.h"
 #include "utility/util_sample.h"
+#include "utility/util_mcqmc.h"
 
 BEGIN_YAFARAY
 
@@ -54,7 +55,7 @@ class PathVertex
 {
 	public:
 		SurfacePoint sp_;  //!< surface point at which the path vertex lies
-		Bsdf_t flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
+		BsdfFlags flags_;       //!< flags of the sampled BSDF component (not all components of the sp!)
 		Rgb alpha_;      //!< cumulative subpath weight; note that y_i/z_i stores alpha_i+1 !
 		Rgb f_s_;        //!< f(x_i-1, x_i, x_i+1), i.e. throughput from last to next path vertex
 		Vec3 wi_, wo_;  //!< sampled direction for next vertex (if available)
@@ -289,7 +290,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		ve.cos_wo_ = 1.f;
 		//ve.pdf_wo = 1.f;
 		ve.pdf_wi_ = 1.f;
-		ve.flags_ = BsdfDiffuse; //place holder! not applicable for e.g. orthogonal camera!
+		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 
 		// create eyePath
 		n_eye = createPath(state, ray, path_data.eye_path_, MAX_PATH_LENGTH);
@@ -317,12 +318,12 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		vl.alpha_ = pcol / ls.area_pdf_; // as above, this should not contain the "light BSDF"...missing lightNumPdf!
 		vl.g_ = 0.f; //unused actually...
 		vl.qi_wo_ = vl.qi_wi_ = 1.f; // definitely no russian roulette here...
-		vl.cos_wo_ = (ls.flags_ & LightSingular) ? 1.0 : std::fabs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
+		vl.cos_wo_ = Light::hasFlag(ls.flags_, Light::Flags::Singular) ? 1.0 : std::fabs(vl.sp_.n_ * lray.dir_); //singularities have no surface, hence no normal
 		vl.cos_wi_ = 1.f;
 		vl.pdf_wo_ = ls.dir_pdf_;
 		vl.pdf_wi_ = ls.area_pdf_; //store area PDF here, so we don't need extra members just for camera/eye vertices
-		vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
-		path_data.singular_l_ = (ls.flags_ & LightSingular);
+		//FIXME: this does not make any sense: vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
+		path_data.singular_l_ = Light::hasFlag(ls.flags_, Light::Flags::Singular);
 
 		// create lightPath
 		n_light = createPath(state, lray, path_data.light_path_, MAX_PATH_LENGTH);
@@ -414,7 +415,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 
 			if(color_passes.enabled(PassIntAo))
 			{
-				Bsdf_t bsdfs;
+				BsdfFlags bsdfs;
 
 				sp.material_->initBsdf(state, sp, bsdfs);
 
@@ -460,7 +461,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 	static int dbg = 0;
 	Random &prng = *state.prng_;
 	Ray ray(start);
-	Bsdf_t m_bsdf;
+	BsdfFlags m_bsdf;
 	// the 0th vertex has already been generated, which is ray.pos obviously
 	int n_vert = 1;
 	while(n_vert < max_len)
@@ -480,7 +481,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 		//if(dbg<10) Y_DEBUG << integratorName << ": " << nVert << "  mat: " << (void*) mat << " alpha:" << v.alpha << " p_f_s:" << v_prev.f_s << " qi:"<< v_prev.qi << YENDL;
 		mat->initBsdf(state, v.sp_, m_bsdf);
 		// create tentative sample for next path segment
-		Sample s(prng(), prng(), BsdfAll, true);
+		Sample s(prng(), prng(), BsdfFlags::All, true);
 		float w = 0.f;
 		v.f_s_ = mat->sample(state, v.sp_, v.wi_, ray.dir_, s, w);
 		if(v.f_s_.isBlack()) break;
@@ -494,7 +495,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 		}
 		else v.qi_wo_ = 1.f;
 
-		if(s.sampled_flags_ & BsdfSpecular) // specular surfaces need special treatment...
+		if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Specular)) // specular surfaces need special treatment...
 		{
 			// other materials don't return pdf_back and col_back yet
 			//v.pdf_wi = s.pdf;
@@ -503,7 +504,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 		}
 		else
 		{
-			v.pdf_wi_ = mat->pdf(state, v.sp_, ray.dir_, v.wi_, BsdfAll); // all BSDFs? think so...
+			v.pdf_wi_ = mat->pdf(state, v.sp_, ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
 			v.qi_wi_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wi_ / v.pdf_wi_);
 		}
 		if(v.qi_wi_ < 0) Y_DEBUG << integrator_name_ << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n"
@@ -527,7 +528,7 @@ inline void copyLightSubpath__(PathData &pd, int s, int t)
 		const PathVertex &v = pd.light_path_[i];
 		pd.path_[i].pdf_f_ = v.pdf_wo_ / v.cos_wo_;
 		pd.path_[i].pdf_b_ = v.pdf_wi_ / v.cos_wi_;
-		pd.path_[i].specular_ = v.flags_ & BsdfSpecular;
+		pd.path_[i].specular_ = Material::hasFlag(v.flags_, BsdfFlags::Specular);
 		pd.path_[i].g_ = v.g_;
 	}
 	pd.path_[s - 1].g_ = pd.light_path_[s - 1].g_;
@@ -540,7 +541,7 @@ inline void copyEyeSubpath__(PathData &pd, int s, int t)
 		const PathVertex &v = pd.eye_path_[j];
 		pd.path_[i].pdf_f_ = v.pdf_wi_ / v.cos_wi_;
 		pd.path_[i].pdf_b_ = v.pdf_wo_ / v.cos_wo_;
-		pd.path_[i].specular_ = v.flags_ & BsdfSpecular;
+		pd.path_[i].specular_ = Material::hasFlag(v.flags_, BsdfFlags::Specular);
 		pd.path_[i].g_ = pd.eye_path_[j + 1].g_;
 	}
 }
@@ -565,21 +566,21 @@ inline bool BidirectionalIntegrator::connectPaths(RenderState &state, int s, int
 	float cos_z = std::fabs(z.sp_.n_ * vec);
 
 	state.userdata_ = y.userdata_;
-	x_l.pdf_f_ = y.sp_.material_->pdf(state, y.sp_, y.wi_, vec, BsdfAll); // light vert to eye vert
-	x_l.pdf_b_ = y.sp_.material_->pdf(state, y.sp_, vec, y.wi_, BsdfAll); // light vert to prev. light vert
+	x_l.pdf_f_ = y.sp_.material_->pdf(state, y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
+	x_l.pdf_b_ = y.sp_.material_->pdf(state, y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
-	pd.f_y_ = y.sp_.material_->eval(state, y.sp_, y.wi_, vec, BsdfAll);
+	pd.f_y_ = y.sp_.material_->eval(state, y.sp_, y.wi_, vec, BsdfFlags::All);
 	pd.f_y_ += y.sp_.material_->emit(state, y.sp_, vec);
 
 	state.userdata_ = z.userdata_;
-	x_e.pdf_b_ = z.sp_.material_->pdf(state, z.sp_, z.wi_, -vec, BsdfAll); // eye vert to light vert
-	x_e.pdf_f_ = z.sp_.material_->pdf(state, z.sp_, -vec, z.wi_, BsdfAll); // eye vert to prev eye vert
+	x_e.pdf_b_ = z.sp_.material_->pdf(state, z.sp_, z.wi_, -vec, BsdfFlags::All); // eye vert to light vert
+	x_e.pdf_f_ = z.sp_.material_->pdf(state, z.sp_, -vec, z.wi_, BsdfFlags::All); // eye vert to prev eye vert
 	if(x_e.pdf_b_ < 1e-6f) return false;
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
-	pd.f_z_ = z.sp_.material_->eval(state, z.sp_, z.wi_, -vec, BsdfAll);
+	pd.f_z_ = z.sp_.material_->eval(state, z.sp_, z.wi_, -vec, BsdfFlags::All);
 	pd.f_z_ += z.sp_.material_->emit(state, z.sp_, -vec);
 
 	pd.w_l_e_ = vec;
@@ -633,7 +634,7 @@ inline bool BidirectionalIntegrator::connectLPath(RenderState &state, int t, Pat
 
 	//== use illumSample, no matter what...s1/s2 is only set when required ==
 	LSample ls;
-	if(light->getFlags() == LightNone) //only lights with non-specular components need sample values
+	if(light->getFlags() == Light::Flags::None) //only lights with non-specular components need sample values
 	{
 		ls.s_1_ = (*state.prng_)();
 		ls.s_2_ = (*state.prng_)();
@@ -646,7 +647,7 @@ inline bool BidirectionalIntegrator::connectLPath(RenderState &state, int t, Pat
 	ls.sp_->p_ = Point3(0.f, 0.f, 0.f);
 	Vec3 wo = l_ray.dir_;
 	light->emitSample(wo, ls);
-	ls.flags_ = (LightFlags) 0xFFFFFFFF;
+	ls.flags_ = (Light::Flags) 0xFFFFFFFF;
 
 	lcol = ls.col_ / (ls.pdf_ * light_num_pdf); //shouldn't really do that division, better use proper c_st in evalLPath...
 	// get probabilities for generating light sample without a given surface point
@@ -654,8 +655,8 @@ inline bool BidirectionalIntegrator::connectLPath(RenderState &state, int t, Pat
 	light->emitPdf(sp_light, vec, pd.path_[0].pdf_a_0_, pd.path_[0].pdf_f_, cos_wo);
 	pd.path_[0].pdf_a_0_ *= light_num_pdf;
 	pd.path_[0].pdf_f_ /= cos_wo;
-	pd.path_[0].specular_ = ls.flags_ & LightDiracdir;
-	pd.singular_l_ = ls.flags_ & LightSingular;
+	pd.path_[0].specular_ = Light::hasFlag(ls.flags_, Light::Flags::DiracDir);
+	pd.singular_l_ = Light::hasFlag(ls.flags_, Light::Flags::Singular);
 	pd.pdf_illum_ = ls.pdf_ * light_num_pdf;
 	pd.pdf_emit_ = pd.path_[0].pdf_a_0_ * (sp_light.p_ - z.sp_.p_).lengthSqr() / cos_wo;
 
@@ -668,13 +669,13 @@ inline bool BidirectionalIntegrator::connectLPath(RenderState &state, int t, Pat
 	pd.w_l_e_ = vec;
 	pd.d_yz_ = l_ray.tmax_;
 	state.userdata_ = z.userdata_;
-	x_e.pdf_b_ = z.sp_.material_->pdf(state, z.sp_, z.wi_, l_ray.dir_, BsdfAll); //eye to light
+	x_e.pdf_b_ = z.sp_.material_->pdf(state, z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All); //eye to light
 	if(x_e.pdf_b_ < 1e-6f) return false;
-	x_e.pdf_f_ = z.sp_.material_->pdf(state, z.sp_, l_ray.dir_, z.wi_, BsdfAll); // eye to prev eye
+	x_e.pdf_f_ = z.sp_.material_->pdf(state, z.sp_, l_ray.dir_, z.wi_, BsdfFlags::All); // eye to prev eye
 	x_e.pdf_b_ /= cos_z;
 	x_e.pdf_f_ /= z.cos_wi_;
 	x_e.specular_ = false;
-	pd.f_z_ = z.sp_.material_->eval(state, z.sp_, z.wi_, l_ray.dir_, BsdfAll);
+	pd.f_z_ = z.sp_.material_->eval(state, z.sp_, z.wi_, l_ray.dir_, BsdfFlags::All);
 	pd.f_z_ += z.sp_.material_->emit(state, z.sp_, l_ray.dir_);
 	pd.light_ = light;
 
@@ -717,12 +718,12 @@ inline bool BidirectionalIntegrator::connectPathE(RenderState &state, int s, Pat
 	x_e.specular_ = false; // cannot query yet...
 
 	state.userdata_ = y.userdata_;
-	x_l.pdf_f_ = y.sp_.material_->pdf(state, y.sp_, y.wi_, vec, BsdfAll); // light vert to eye vert
+	x_l.pdf_f_ = y.sp_.material_->pdf(state, y.sp_, y.wi_, vec, BsdfFlags::All); // light vert to eye vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
-	x_l.pdf_b_ = y.sp_.material_->pdf(state, y.sp_, vec, y.wi_, BsdfAll); // light vert to prev. light vert
+	x_l.pdf_b_ = y.sp_.material_->pdf(state, y.sp_, vec, y.wi_, BsdfFlags::All); // light vert to prev. light vert
 	x_l.pdf_f_ /= cos_y;
 	x_l.pdf_b_ /= y.cos_wi_;
-	pd.f_y_ = y.sp_.material_->eval(state, y.sp_, y.wi_, vec, BsdfAll);
+	pd.f_y_ = y.sp_.material_->eval(state, y.sp_, y.wi_, vec, BsdfFlags::All);
 	pd.f_y_ += y.sp_.material_->emit(state, y.sp_, vec);
 	x_l.specular_ = false;
 
@@ -1012,15 +1013,15 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionPass(RenderState &state, cons
 
 		float w = 0.f;
 
-		Sample s(s_1, s_2, BsdfGlossy | BsdfDiffuse | BsdfReflect);
+		Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Diffuse | BsdfFlags::Reflect);
 		surf_col = material->sample(state, sp, wo, light_ray.dir_, s, w);
 
-		if(material->getFlags() & BsdfEmit)
+		if(Material::hasFlag(material->getFlags(), BsdfFlags::Emit))
 		{
 			col += material->emit(state, sp, wo) * s.pdf_;
 		}
 
-		shadowed = (tr_shad_) ? scene_->isShadowed(state, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index) : scene_->isShadowed(state, light_ray, mask_obj_index, mask_mat_index);
+		shadowed = tr_shad_ ? scene_->isShadowed(state, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index) : scene_->isShadowed(state, light_ray, mask_obj_index, mask_mat_index);
 
 		if(!shadowed)
 		{
@@ -1069,11 +1070,11 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionPassClay(RenderState &state, 
 
 		float w = 0.f;
 
-		Sample s(s_1, s_2, BsdfAll);
+		Sample s(s_1, s_2, BsdfFlags::All);
 		surf_col = material->sampleClay(state, sp, wo, light_ray.dir_, s, w);
 		s.pdf_ = 1.f;
 
-		if(material->getFlags() & BsdfEmit)
+		if(Material::hasFlag(material->getFlags(), BsdfFlags::Emit))
 		{
 			col += material->emit(state, sp, wo) * s.pdf_;
 		}

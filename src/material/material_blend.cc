@@ -50,8 +50,8 @@ BlendMaterial::BlendMaterial(const Material *m_1, const Material *m_2, float bva
 
 BlendMaterial::~BlendMaterial()
 {
-	mat_1_flags_ = BsdfNone;
-	mat_2_flags_ = BsdfNone;
+	mat_1_flags_ = BsdfFlags::None;
+	mat_2_flags_ = BsdfFlags::None;
 }
 
 inline void BlendMaterial::getBlendVal(const RenderState &state, const SurfacePoint &sp, float &val, float &ival) const
@@ -74,11 +74,11 @@ inline void BlendMaterial::getBlendVal(const RenderState &state, const SurfacePo
 	ival = std::min(1.f, std::max(0.f, 1.f - val));
 }
 
-void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const
+void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	void *old_udat = state.userdata_;
 
-	bsdf_types = BsdfNone;
+	bsdf_types = BsdfFlags::None;
 
 
 	float alpha, inv_alpha;
@@ -95,7 +95,7 @@ void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t 
 	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
 	mat_2_->initBsdf(state, sp_1, mat_2_flags_);
 
-	sp = blendSurfacePoints__(sp_0, sp_1, inv_alpha);
+	sp = SurfacePoint::blendSurfacePoints(sp_0, sp_1, inv_alpha);
 
 	bsdf_types = mat_1_flags_ | mat_2_flags_;
 
@@ -103,7 +103,7 @@ void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t 
 	state.userdata_ = old_udat;
 }
 
-Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t bsdfs, bool force_eval) const
+Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	NodeStack stack(state.userdata_);
 
@@ -147,14 +147,14 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 	s2.pdf_ = s1.pdf_ = s.pdf_ = 0.f;
 
 	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	if(s.flags_ & mat_1_flags_)
+	if(Material::hasFlag(s.flags_, mat_1_flags_))
 	{
 		col1 = mat_1_->sample(state, sp, wo, wi_1, s1, w_1);
 		mat_1_sampled = true;
 	}
 
 	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-	if(s.flags_ & mat_2_flags_)
+	if(Material::hasFlag(s.flags_, mat_2_flags_))
 	{
 		col2 = mat_2_->sample(state, sp, wo, wi_2, s2, w_2);
 		mat_2_sampled = true;
@@ -236,7 +236,7 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 }
 
 
-float BlendMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const
+float BlendMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	float val, ival;
 	getBlendVal(state, sp, val, ival);
@@ -467,7 +467,7 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	const Material *m_1 = nullptr, *m_2 = nullptr;
 	double blend_val = 0.5;
 	std::string s_visibility = "normal";
-	Visibility visibility = NormalVisible;
+	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	float samplingfactor = 1.f;
 	bool receive_shadows = true;
@@ -492,11 +492,11 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Invisible;
-	else visibility = NormalVisible;
+	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
+	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
+	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
+	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
+	else visibility = Material::Visibility::NormalVisible;
 
 	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 

@@ -45,8 +45,6 @@ class DarkSkyBackground final : public Background
 						  float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
-		bool hasIbl() const override { return with_ibl_; }
-		bool shootsCaustic() const override { return shoot_caustic_; }
 		Rgb getAttenuatedSunColor();
 		Rgb getSkyCol(const Ray &ray) const;
 		double perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz) const;
@@ -65,8 +63,6 @@ class DarkSkyBackground final : public Background
 		ColorConv color_conv_;
 		float alt_;
 		bool night_sky_;
-		bool with_ibl_;
-		bool shoot_caustic_;
 };
 
 END_YAFARAY

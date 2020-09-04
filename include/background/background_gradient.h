@@ -39,12 +39,8 @@ class GradientBackground final : public Background
 		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
-		bool hasIbl() const override { return with_ibl_; }
-		bool shootsCaustic() const override { return shoot_caustic_; }
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;
-		bool with_ibl_;
-		bool shoot_caustic_;
 };
 
 END_YAFARAY

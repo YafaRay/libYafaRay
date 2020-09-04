@@ -43,11 +43,11 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
 
 	private:
-		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = NormalVisible);
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs, bool force_eval = false) const;
+		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Material::Visibility::NormalVisible);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const;
 		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
 		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
 								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const;
 		virtual Rgb getDiffuseColor(const RenderState &state) const;
@@ -81,8 +81,8 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		float reflectivity_;
 		float glossy_, diffuse_;
 		bool as_diffuse_, with_diffuse_ = false, anisotropic_ = false;
-		Bsdf_t spec_flags_, glossy_flags_;
-		Bsdf_t c_flags_[3];
+		BsdfFlags spec_flags_, glossy_flags_;
+		BsdfFlags c_flags_[3];
 		int n_bsdf_;
 		bool oren_nayar_;
 		float oren_a_, oren_b_;

@@ -573,7 +573,7 @@ In the xml file, you can add this to the "light" sections:
 'normal' (default): Normal - Normal visibility - visible casting shadows.
 'no_shadows': No shadows - visible but not casting shadows.
 'shadow_only': Shadows only - invisible but casting shadows.
-'invisible': Invisible: totally invisible material.
+'invisible': Material::Visibility::Invisible: totally invisible material.
 
 This new parameter is at the bottom of the material panel, in the new advanced settings. In XML it would be something like, in the material section, for example:
 

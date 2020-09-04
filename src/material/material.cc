@@ -50,7 +50,7 @@ Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Rend
 	else return nullptr;
 }
 
-Material::Material() : bsdf_flags_(BsdfNone), visibility_(NormalVisible), receive_shadows_(true), req_mem_(0), vol_i_(nullptr), vol_o_(nullptr), additional_depth_(0)
+Material::Material() : bsdf_flags_(BsdfFlags::None), visibility_(Material::Visibility::NormalVisible), receive_shadows_(true), req_mem_(0), vol_i_(nullptr), vol_o_(nullptr), additional_depth_(0)
 {
 	material_index_auto_++;
 	srand(material_index_auto_);
@@ -67,7 +67,7 @@ Material::Material() : bsdf_flags_(BsdfNone), visibility_(NormalVisible), receiv
 }
 
 Rgb Material::sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
-	Vec3 n = FACE_FORWARD(sp.ng_, sp.n_, wo);
+	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::fabs(wi * n);
 	w = (std::fabs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);

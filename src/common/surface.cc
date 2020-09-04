@@ -22,6 +22,22 @@
 
 BEGIN_YAFARAY
 
+SurfacePoint SurfacePoint::blendSurfacePoints(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float alpha)
+{
+	SurfacePoint sp_result(sp_0);
+
+	sp_result.n_ = lerp__(sp_0.n_, sp_1.n_, alpha);
+
+	sp_result.nu_ = lerp__(sp_0.nu_, sp_1.nu_, alpha);
+	sp_result.nv_ = lerp__(sp_0.nv_, sp_1.nv_, alpha);
+	sp_result.dp_du_ = lerp__(sp_0.dp_du_, sp_1.dp_du_, alpha);
+	sp_result.dp_dv_ = lerp__(sp_0.dp_dv_, sp_1.dp_dv_, alpha);
+	sp_result.ds_du_ = lerp__(sp_0.ds_du_, sp_1.ds_du_, alpha);
+	sp_result.ds_dv_ = lerp__(sp_0.ds_dv_, sp_1.ds_dv_, alpha);
+
+	return sp_result;
+}
+
 SpDifferentials::SpDifferentials(const SurfacePoint &spoint, const DiffRay &ray): sp_(spoint)
 {
 	if(ray.has_differentials_)
@@ -131,23 +147,6 @@ void SpDifferentials::getUVdifferentials(float &du_dx, float &dv_dx, float &du_d
 {
 	dUdvFromDpdPdUdPdV(du_dx, dv_dx, dp_dx_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
 	dUdvFromDpdPdUdPdV(du_dy, dv_dy, dp_dy_, sp_.dp_du_abs_, sp_.dp_dv_abs_);
-}
-
-
-SurfacePoint blendSurfacePoints__(SurfacePoint const &sp_0, SurfacePoint const &sp_1, float const alpha)
-{
-	SurfacePoint sp_result(sp_0);
-
-	sp_result.n_ = lerp__(sp_0.n_, sp_1.n_, alpha);
-
-	sp_result.nu_ = lerp__(sp_0.nu_, sp_1.nu_, alpha);
-	sp_result.nv_ = lerp__(sp_0.nv_, sp_1.nv_, alpha);
-	sp_result.dp_du_ = lerp__(sp_0.dp_du_, sp_1.dp_du_, alpha);
-	sp_result.dp_dv_ = lerp__(sp_0.dp_dv_, sp_1.dp_dv_, alpha);
-	sp_result.ds_du_ = lerp__(sp_0.ds_du_, sp_1.ds_du_, alpha);
-	sp_result.ds_dv_ = lerp__(sp_0.ds_dv_, sp_1.ds_dv_, alpha);
-
-	return sp_result;
 }
 
 END_YAFARAY

@@ -87,7 +87,7 @@ bool AreaLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	s.col_ = color_;
 	// pdf = distance^2 / area * cos(norm, ldir);
 	s.pdf_ = dist_sqr * M_PI / (area_ * cos_angle);
-	s.flags_ = LightNone; // no delta functions...
+	s.flags_ = Light::Flags::None; // no delta functions...
 	if(s.sp_)
 	{
 		s.sp_->p_ = p;
@@ -111,7 +111,7 @@ Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 	wo = sampleCosHemisphere__(normal_, du_, dv_, s.s_1_, s.s_2_);
 	s.sp_->n_ = s.sp_->ng_ = normal_;
 	s.dir_pdf_ = std::fabs(normal_ * wo);
-	s.flags_ = LightNone; // no delta functions...
+	s.flags_ = Light::Flags::None; // no delta functions...
 	return color_; // still not 100% sure this is correct without cosine...
 }
 

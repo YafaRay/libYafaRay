@@ -53,9 +53,9 @@ bool Material::scatterPhoton(const RenderState &state, const SurfacePoint &sp, c
 	return false;
 }
 
-Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, Bsdf_t flags) const
+Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, BsdfFlags flags) const
 {
-	if(!(flags & (BsdfTransmit | BsdfReflect) & bsdf_flags_)) return Rgb(0.f);
+	if(!Material::hasFlag(flags, (BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
 	float s_1, s_2, s_3, s_4, w = 0.f;
 	Rgb total(0.f), col;
 	Vec3 wi, wo;

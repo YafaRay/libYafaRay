@@ -41,9 +41,12 @@ BEGIN_YAFARAY
 
 DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev,
 									 float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic):
-		power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night), with_ibl_(ibl), shoot_caustic_(with_caustic)
+		power_(pwr * sky_bright), sky_brightness_(sky_bright), color_conv_(clamp, genc, cs, exp), alt_(altitude), night_sky_(night)
 {
 	std::string act;
+
+	with_ibl_ = ibl;
+	shoot_caustic_ = with_caustic;
 
 	sun_dir_ = Vec3(dir);
 	sun_dir_.z_ += alt_;

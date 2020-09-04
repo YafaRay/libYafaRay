@@ -29,81 +29,42 @@ BEGIN_YAFARAY
 class ParamMap;
 class RenderEnvironment;
 class Vec3;
-
-#define FACE_FORWARD(Ng,N,I) ((((Ng)*(I))<0) ? (-N) : (N))
-/*
-class BSDF_t
-{
-	public:
-	BSDF_t(){};
-	virtual ~BSDF_t(){};
-	BSDF_t(const surfacePoint_t &sp, void* userdata);
-	virtual Rgb sample(const vector3d_t &wo, vector3d_t &wi, float s1, float s2, void* userdata) = 0;
-	virtual Rgb eval(const surfacePoint_t &sp, const vector3d_t &wo, const vector3d_t &wl, void* userdata) = 0;
-};
-*/
-
 class SurfacePoint;
 struct RenderState;
 class VolumeHandler;
+struct Sample;
+struct PSample;
 
-enum BsdfFlags
+enum class BsdfFlags : unsigned int
 {
-	BsdfNone		= 0x0000,
-	BsdfSpecular	= 0x0001,
-	BsdfGlossy		= 0x0002,
-	BsdfDiffuse	= 0x0004,
-	BsdfDispersive	= 0x0008,
-	BsdfReflect	= 0x0010,
-	BsdfTransmit	= 0x0020,
-	BsdfFilter		= 0x0040,
-	BsdfEmit		= 0x0080,
-	BsdfVolumetric = 0x0100,
-	BsdfAllSpecular = BsdfSpecular | BsdfReflect | BsdfTransmit,
-	BsdfAllGlossy = BsdfGlossy | BsdfReflect | BsdfTransmit,
-	BsdfAll = BsdfSpecular | BsdfGlossy | BsdfDiffuse | BsdfDispersive | BsdfReflect | BsdfTransmit | BsdfFilter
+	None		= 0,
+	Specular	= 1 << 0,
+	Glossy		= 1 << 1,
+	Diffuse		= 1 << 2,
+	Dispersive	= 1 << 3,
+	Reflect		= 1 << 4,
+	Transmit	= 1 << 5,
+	Filter		= 1 << 6,
+	Emit		= 1 << 7,
+	Volumetric	= 1 << 8,
+	DiffuseReflect = Diffuse | Reflect,
+	SpecularReflect = Specular | Reflect,
+	SpecularTransmit = Transmit | Filter,
+	Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
+	AllSpecular = Specular | Reflect | Transmit,
+	AllGlossy = Glossy | Reflect | Transmit,
+	All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
 };
-
-typedef unsigned int Bsdf_t;
-
-struct Sample
-{
-	Sample(float s_1, float s_2, Bsdf_t sflags = BsdfAll, bool revrs = false):
-			s_1_(s_1), s_2_(s_2), pdf_(0.f), flags_(sflags), sampled_flags_(BsdfNone), reverse_(revrs) {}
-	float s_1_, s_2_;
-	float pdf_;
-	Bsdf_t flags_, sampled_flags_;
-	bool reverse_; //!< if true, the sample method shall return the probability/color for swapped incoming/outgoing dir
-	float pdf_back_;
-	Rgb col_back_;
-};
-
-struct PSample final : public Sample // << whats with the public?? structs inherit publicly by default *DarkTide
-{
-	PSample(float s_1, float s_2, float s_3, Bsdf_t sflags, const Rgb &l_col, const Rgb &transm = Rgb(1.f)):
-			Sample(s_1, s_2, sflags), s_3_(s_3), lcol_(l_col), alpha_(transm) {}
-	float s_3_;
-	const Rgb lcol_; //!< the photon color from last scattering
-	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
-	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
-};
-
-enum Visibility
-{
-	NormalVisible			= 0,
-	VisibleNoShadows		= 1,
-	InvisibleShadowsOnly	= 2,
-	Invisible				= 3
-};
-
 
 class Material
 {
 	public:
+		enum class Visibility : int { NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible };
 		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &render);
-
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }
+
+		static constexpr bool hasFlag(const BsdfFlags &f_1, const BsdfFlags &f_2);
 
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
@@ -111,11 +72,11 @@ class Material
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, Bsdf_t &bsdf_types) const = 0;
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, Bsdf_t types, bool force_eval = false) const = 0;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
@@ -127,7 +88,7 @@ class Material
 		virtual Rgb sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, Bsdf_t bsdfs) const {return 0.f;}
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
 
 
 		/*! indicate whether light can (partially) pass the material without getting refracted,
@@ -149,7 +110,7 @@ class Material
 		{ reflect = false; refract = false; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
-		virtual Rgb getReflectivity(const RenderState &state, const SurfacePoint &sp, Bsdf_t flags) const;
+		virtual Rgb getReflectivity(const RenderState &state, const SurfacePoint &sp, BsdfFlags flags) const;
 
 		/*!	allow light emitting materials, for realizing correctly visible area lights.
 			default implementation returns black obviously.	*/
@@ -166,7 +127,7 @@ class Material
 			most materials unless there's a less expensive way or smarter scattering approach */
 		virtual bool scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const;
 
-		Bsdf_t getFlags() const { return bsdf_flags_; }
+		BsdfFlags getFlags() const { return bsdf_flags_; }
 		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
 			returns the required amount of "userdata" memory for all the functions that require a render state */
 		size_t getReqMem() const { return req_mem_; }
@@ -233,7 +194,7 @@ class Material
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
 		void applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const;
 
-		Bsdf_t bsdf_flags_;
+		BsdfFlags bsdf_flags_;
 
 		Visibility visibility_; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
@@ -262,6 +223,48 @@ class Material
 
 		static float highest_sampling_factor_;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
 };
+
+struct Sample
+{
+	Sample(float s_1, float s_2, BsdfFlags sflags = BsdfFlags::All, bool revrs = false):
+			s_1_(s_1), s_2_(s_2), pdf_(0.f), flags_(sflags), sampled_flags_(BsdfFlags::None), reverse_(revrs) {}
+	float s_1_, s_2_;
+	float pdf_;
+	BsdfFlags flags_, sampled_flags_;
+	bool reverse_; //!< if true, the sample method shall return the probability/color for swapped incoming/outgoing dir
+	float pdf_back_;
+	Rgb col_back_;
+};
+
+struct PSample final : public Sample // << whats with the public?? structs inherit publicly by default *DarkTide
+{
+	PSample(float s_1, float s_2, float s_3, BsdfFlags sflags, const Rgb &l_col, const Rgb &transm = Rgb(1.f)):
+			Sample(s_1, s_2, sflags), s_3_(s_3), lcol_(l_col), alpha_(transm) {}
+	float s_3_;
+	const Rgb lcol_; //!< the photon color from last scattering
+	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
+	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
+};
+
+inline constexpr BsdfFlags operator&(const BsdfFlags &f_1, const BsdfFlags &f_2)
+{
+	return static_cast<BsdfFlags>(static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
+}
+
+inline constexpr BsdfFlags operator|(const BsdfFlags &f_1, const BsdfFlags &f_2)
+{
+	return static_cast<BsdfFlags>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
+}
+
+inline BsdfFlags operator|=(BsdfFlags &f_1, const BsdfFlags &f_2)
+{
+	return f_1 = (f_1 | f_2);
+}
+
+inline constexpr bool Material::hasFlag(const BsdfFlags &f_1, const BsdfFlags &f_2)
+{
+	return ((f_1 & f_2) != BsdfFlags::None);
+}
 
 END_YAFARAY
 

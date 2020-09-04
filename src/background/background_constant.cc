@@ -29,9 +29,10 @@
 
 BEGIN_YAFARAY
 
-ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : color_(col), with_ibl_(ibl), shoot_caustic_(with_caustic)
+ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : color_(col)
 {
-	// Empty
+	with_ibl_ = ibl;
+	shoot_caustic_ = with_caustic;
 }
 ConstantBackground::~ConstantBackground()
 {

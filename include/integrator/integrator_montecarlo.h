@@ -32,6 +32,7 @@ class Background;
 class Photon;
 class Vec3;
 class Light;
+enum class BsdfFlags : unsigned int;
 
 enum PhotonMapProcessing
 {
@@ -44,26 +45,25 @@ enum PhotonMapProcessing
 class MonteCarloIntegrator: public TiledIntegrator
 {
 	public:
-		MonteCarloIntegrator() {};
+		MonteCarloIntegrator() = default;
 
 	protected:
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
-		virtual Rgb estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
+		Rgb estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
 		/*! Like previous but for only one random light source for a given surface point */
-		virtual Rgb estimateOneDirectLight(RenderState &state, const SurfacePoint &sp, Vec3 wo, int n, ColorPasses &color_passes) const;
+		Rgb estimateOneDirectLight(RenderState &state, const SurfacePoint &sp, Vec3 wo, int n, ColorPasses &color_passes) const;
 		/*! Does the actual light estimation on a specific light for the given surface point */
-		virtual Rgb doLightEstimation(RenderState &state, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorPasses &color_passes) const;
+		Rgb doLightEstimation(RenderState &state, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorPasses &color_passes) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		virtual void recursiveRaytrace(RenderState &state, DiffRay &ray, Bsdf_t bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, ColorPasses &color_passes, int additional_depth) const;
+		void recursiveRaytrace(RenderState &state, DiffRay &ray, BsdfFlags bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, ColorPasses &color_passes, int additional_depth) const;
 		/*! Creates and prepares the caustic photon map */
-		virtual bool createCausticMap();
+		bool createCausticMap();
 		/*! Estimates caustic photons for a given surface point */
-		virtual Rgb estimateCausticPhotons(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb estimateCausticPhotons(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		/*! Samples ambient occlusion for a given surface point */
-		virtual Rgb sampleAmbientOcclusion(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual Rgb sampleAmbientOcclusionPass(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual Rgb sampleAmbientOcclusionPassClay(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::string &integrator_name, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
+		Rgb sampleAmbientOcclusion(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionPass(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionPassClay(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 
 		int r_depth_; //! Ray depth
 		bool tr_shad_; //! Use transparent shadows
@@ -89,6 +89,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		std::vector<Light *> lights_; //! An array containing all the scene lights
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
+		void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::string &integrator_name, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
 };
 
 END_YAFARAY
