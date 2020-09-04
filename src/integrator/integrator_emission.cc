@@ -17,16 +17,12 @@
  */
 
 #include "integrator/integrator_emission.h"
-#include "common/logging.h"
-#include "common/session.h"
 #include "volume/volume.h"
 #include "common/environment.h"
 #include "common/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
-#include "integrator/integrator_utils.h"
-#include "common/photon.h"
 #include "utility/util_mcqmc.h"
 #include "common/scr_halton.h"
 #include <vector>

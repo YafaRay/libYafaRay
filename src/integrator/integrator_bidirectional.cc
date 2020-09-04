@@ -29,7 +29,6 @@
 #include "light/light.h"
 #include "material/material.h"
 #include "background/background.h"
-#include "integrator/integrator_utils.h"
 #include "utility/util_sample.h"
 #include "utility/util_mcqmc.h"
 

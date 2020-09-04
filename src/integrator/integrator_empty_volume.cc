@@ -21,10 +21,7 @@
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
-#include "integrator/integrator_utils.h"
 #include "common/photon.h"
-#include "utility/util_mcqmc.h"
-#include "common/scr_halton.h"
 #include <vector>
 
 BEGIN_YAFARAY

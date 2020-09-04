@@ -27,10 +27,8 @@
 #include "common/param.h"
 #include "common/scene.h"
 #include "common/imagesplitter.h"
-#include "integrator/integrator_utils.h"
 #include "common/photon.h"
 #include "utility/util_mcqmc.h"
-#include "common/scr_halton.h"
 
 BEGIN_YAFARAY
 

@@ -30,6 +30,7 @@
 #include "integrator/integrator_emission.h"
 #include "common/environment.h"
 #include "common/param.h"
+#include "common/imagesplitter.h"
 
 BEGIN_YAFARAY
 

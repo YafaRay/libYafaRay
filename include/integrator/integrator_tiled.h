@@ -20,10 +20,8 @@
 #ifndef YAFARAY_INTEGRATOR_TILED_H
 #define YAFARAY_INTEGRATOR_TILED_H
 
-#include "constants.h"
 #include "integrator.h"
 #include "utility/util_thread.h"
-#include "common/imagesplitter.h"
 #include <vector>
 
 BEGIN_YAFARAY
@@ -51,7 +49,7 @@ class TiledIntegrator : public SurfaceIntegrator
 		virtual void prePass(int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		virtual bool render(int num_view, ImageFilm *image_film);
+		virtual bool render(int num_view, ImageFilm *image_film) override;
 		/*! render a pass; only required by the default implementation of render() */
 		virtual bool renderPass(int num_view, int samples, int offset, bool adaptive, int aa_pass_number);
 		/*! render a tile; only required by default implementation of render() */

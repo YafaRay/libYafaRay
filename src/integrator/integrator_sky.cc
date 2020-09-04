@@ -23,8 +23,6 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "integrator/integrator_utils.h"
-#include "common/photon.h"
 #include "utility/util_mcqmc.h"
 #include "common/scr_halton.h"
 #include <vector>
