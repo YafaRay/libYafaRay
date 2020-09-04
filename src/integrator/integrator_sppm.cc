@@ -846,8 +846,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	tmplights.clear();
 
-	if(!intpb_) delete pb;
-
 	g_timer__.stop("prepass");
 
 	if(b_hashgrid_)
@@ -861,6 +859,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		intpb_->init(previous_progress_total_steps);
 	}
 
+	if(!intpb_) delete pb;
 	return;
 }
 

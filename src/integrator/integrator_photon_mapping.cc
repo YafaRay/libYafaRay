@@ -884,8 +884,6 @@ bool PhotonIntegrator::preprocess()
 		Y_VERBOSE << integrator_name_ << ": Diffuse photon map: done." << YENDL;
 	}
 
-	if(!intpb_) delete pb;
-
 	if(use_photon_diffuse_ && final_gather_) //create radiance map:
 	{
 		// == remove too close radiance points ==//
@@ -971,6 +969,7 @@ bool PhotonIntegrator::preprocess()
 
 	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
 
+	if(!intpb_) delete pb;
 	return true;
 }
 

@@ -730,15 +730,13 @@ bool MonteCarloIntegrator::createCausticMap()
 			Y_INFO << integrator_name_ << ": Saving caustic photon map to: " << filename << YENDL;
 			if(session__.caustic_map_->save(filename)) Y_VERBOSE << integrator_name_ << ": Caustic map saved." << YENDL;
 		}
-
-		if(!intpb_) delete pb;
-
 	}
 	else
 	{
 		Y_VERBOSE << integrator_name_ << ": No caustic source lights found, skiping caustic map building..." << YENDL;
 	}
 
+	if(!intpb_) delete pb;
 	return true;
 }
 
