@@ -435,10 +435,13 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		state.wavelength_ = scrHalton__(5, haltoncurr);
 
 		// Tried LD, get bad and strange results for some stategy.
-		s_1 = hal_1_.getNext();
-		s_2 = hal_2_.getNext();
-		s_3 = hal_3_.getNext();
-		s_4 = hal_4_.getNext();
+		{
+			std::lock_guard<std::mutex> lock_halton(mutex_);
+			s_1 = hal_1_.getNext();
+			s_2 = hal_2_.getNext();
+			s_3 = hal_3_.getNext();
+			s_4 = hal_4_.getNext();
+		}
 
 		s_l = float(haltoncurr) * inv_diff_photons; // Does sL also need more random for each pass?
 		int light_num = light_power_d->dSample(s_l, &light_num_pdf);

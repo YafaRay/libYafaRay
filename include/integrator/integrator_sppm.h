@@ -92,6 +92,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		Halton hal_1_, hal_2_, hal_3_, hal_4_, hal_7_, hal_8_, hal_9_, hal_10_; // halton sequence to do
 		std::vector<HitPoint>hit_points_; // per-pixel refine data
 		unsigned int n_refined_; // Debug info: Refined pixel per pass
+		std::mutex mutex_;
 };
 
 END_YAFARAY
