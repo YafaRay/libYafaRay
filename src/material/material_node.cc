@@ -45,14 +45,14 @@ const ShaderNode *ShaderNodeFinder::operator()(const std::string &name) const
 
 void recursiveSolver__(ShaderNode *node, std::vector<ShaderNode *> &sorted)
 {
-	if(node->id_ != 0) return;
-	node->id_ = 1;
+	if(node->getId() != 0) return;
+	node->setId(1);
 	std::vector<const ShaderNode *> deps;
 	if(node->getDependencies(deps))
 	{
 		for(auto i = deps.begin(); i != deps.end(); ++i)
 			// someone tell me a smarter way than casting away a const...
-			if((*i)->id_ == 0) recursiveSolver__((ShaderNode *) *i, sorted);
+			if((*i)->getId() == 0) recursiveSolver__((ShaderNode *) *i, sorted);
 	}
 	sorted.push_back(node);
 }
@@ -86,7 +86,7 @@ void NodeMaterial::evalNodes(const RenderState &state, const SurfacePoint &sp, c
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 {
 	//set all IDs = 0 to indicate "not tested yet"
-	for(unsigned int i = 0; i < all_nodes_.size(); ++i) all_nodes_[i]->id_ = 0;
+	for(unsigned int i = 0; i < all_nodes_.size(); ++i) all_nodes_[i]->setId(0);
 	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver__(roots[i], all_sorted_);
 	if(all_nodes_.size() != all_sorted_.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << YENDL;
 	//give the nodes an index to be used as the "stack"-index.
@@ -94,7 +94,7 @@ void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 	for(unsigned int i = 0; i < all_sorted_.size(); ++i)
 	{
 		ShaderNode *n = all_sorted_[i];
-		n->id_ = i;
+		n->setId(i);
 		// sort nodes in view depandant and view independant
 		// not sure if this is a good idea...should not include bump-only nodes
 		//if(n->isViewDependant()) allViewdep.push_back(n);

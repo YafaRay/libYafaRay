@@ -38,8 +38,6 @@ class Triangle;
 class Ray;
 class Rgb;
 
-#define PRIM_DAT_SIZE 32
-
 // ============================================================
 /*! kd-tree nodes, kept as small as possible
     double precision float and/or 64 bit system: 12bytes

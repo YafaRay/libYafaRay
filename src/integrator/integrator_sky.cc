@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 
 float mieScatter__(float theta)
 {
-	theta *= 360 / M_2PI;
+	theta *= 360 / mult_pi_by_2__;
 	if(theta < 1.f)
 		return 4.192;
 	if(theta < 4.f)

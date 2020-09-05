@@ -61,7 +61,7 @@ class BackgroundLight final : public Light
 		int samples_;
 		Point3 world_center_;
 		float world_radius_;
-		float a_pdf_, ia_pdf_;
+		float a_pdf_;
 		float world_pi_factor_;
 		bool abs_inter_;
 };

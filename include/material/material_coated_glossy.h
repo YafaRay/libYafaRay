@@ -22,13 +22,7 @@
 #ifndef YAFARAY_MATERIAL_COATED_GLOSSY_H
 #define YAFARAY_MATERIAL_COATED_GLOSSY_H
 
-#include "constants.h"
 #include "material/material_node.h"
-#include "common/environment.h"
-#include "utility/util_sample.h"
-#include "material/material_utils_microfacet.h"
-#include "common/color_ramp.h"
-#include "common/param.h"
 
 BEGIN_YAFARAY
 
@@ -44,17 +38,17 @@ class CoatedGlossyMaterial final : public NodeMaterial
 
 	private:
 		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Material::Visibility::NormalVisible);
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const;
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const;
-		virtual Rgb getDiffuseColor(const RenderState &state) const;
-		virtual Rgb getGlossyColor(const RenderState &state) const;
-		virtual Rgb getMirrorColor(const RenderState &state) const;
+								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const override;
+		virtual Rgb getDiffuseColor(const RenderState &state) const override;
+		virtual Rgb getGlossyColor(const RenderState &state) const override;
+		virtual Rgb getMirrorColor(const RenderState &state) const override;
 
-		struct MDatT
+		struct MDat
 		{
 			float m_diffuse_, m_glossy_, p_diffuse_;
 			void *stack_;
@@ -79,9 +73,9 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		float ior_;
 		float exponent_, exp_u_, exp_v_;
 		float reflectivity_;
-		float glossy_, diffuse_;
+		float diffuse_;
 		bool as_diffuse_, with_diffuse_ = false, anisotropic_ = false;
-		BsdfFlags spec_flags_, glossy_flags_;
+		BsdfFlags spec_flags_;
 		BsdfFlags c_flags_[3];
 		int n_bsdf_;
 		bool oren_nayar_;

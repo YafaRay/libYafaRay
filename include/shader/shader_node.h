@@ -33,7 +33,7 @@ class ShaderNode;
 
 struct NodeResult
 {
-	NodeResult() {}
+	NodeResult() = default;
 	NodeResult(Rgba color, float fval): col_(color), f_(fval) {}
 	Rgba col_;
 	float f_;
@@ -60,10 +60,8 @@ class NodeFinder
 {
 	public:
 		virtual const ShaderNode *operator()(const std::string &name) const = 0;
-		virtual ~NodeFinder() {};
+		virtual ~NodeFinder() = default;
 };
-
-enum MixModes { MnMix = 0, MnAdd, MnMult, MnSub, MnScreen, MnDiv, MnDiff, MnDark, MnLight, MnOverlay };
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.
 	Note that a "shader" only associates a color or scalar with a surface point,
@@ -74,7 +72,9 @@ class ShaderNode
 {
 	public:
 		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
-		virtual ~ShaderNode() {}
+		virtual ~ShaderNode() = default;
+		unsigned int getId() const { return id_; }
+		void setId(unsigned int id) { id_ = id; }
 		/*! evaluate the shader for given surface point; result has to be put on stack (using stack[ID]).
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
@@ -107,121 +107,15 @@ class ShaderNode
 		void getDerivative(const NodeStack &stack, float &du, float &dv) const
 		{ du = stack(this->id_).col_.r_; dv = stack(this->id_).col_.g_; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
+
+	protected:
+		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
+		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode);
+		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
+
+	private:
 		unsigned int id_;
 };
-
-///////////////////////////
-
-inline Rgb textureRgbBlend__(const Rgb &tex, const Rgb &out, float fact, float facg, MixModes blendtype)
-{
-
-	switch(blendtype)
-	{
-		case MnMult:
-			fact *= facg;
-			return (Rgb(1.f - facg) + fact * tex) * out;
-
-		case MnScreen:
-		{
-			Rgb white(1.0);
-			fact *= facg;
-			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
-		}
-
-		case MnSub:
-			fact = -fact;
-		case MnAdd:
-			fact *= facg;
-			return fact * tex + out;
-
-		case MnDiv:
-		{
-			fact *= facg;
-			Rgb itex(tex);
-			itex.invertRgb();
-			return (1.f - fact) * out + fact * out * itex;
-		}
-
-		case MnDiff:
-		{
-			fact *= facg;
-			Rgb tmo(tex - out);
-			tmo.absRgb();
-			return (1.f - fact) * out + fact * tmo;
-		}
-
-		case MnDark:
-		{
-			fact *= facg;
-			Rgb col(fact * tex);
-			col.darkenRgb(out);
-			return col;
-		}
-
-		case MnLight:
-		{
-			fact *= facg;
-			Rgb col(fact * tex);
-			col.lightenRgb(out);
-			return col;
-		}
-
-		default:
-		case MnMix:
-			fact *= facg;
-			return fact * tex + (1.f - fact) * out;
-	}
-
-}
-
-inline float textureValueBlend__(float tex, float out, float fact, float facg, MixModes blendtype, bool flip = false)
-{
-	fact *= facg;
-	float facm = 1.f - fact;
-	if(flip) std::swap(fact, facm);
-
-	switch(blendtype)
-	{
-		case MnMult:
-			facm = 1.f - facg;
-			return (facm + fact * tex) * out;
-
-		case MnScreen:
-			facm = 1.f - facg;
-			return 1.f - (facm + fact * (1.f - tex)) * (1.f - out);
-
-		case MnSub:
-			fact = -fact;
-		case MnAdd:
-			return fact * tex + out;
-
-		case MnDiv:
-			if(tex == 0.f) return 0.f;
-			return facm * out + fact * out / tex;
-
-		case MnDiff:
-			return facm * out + fact * std::fabs(tex - out);
-
-		case MnDark:
-		{
-			float col = fact * tex;
-			if(col < out) return col;
-			return out;
-		}
-
-		case MnLight:
-		{
-			float col = fact * tex;
-			if(col > out) return col;
-			return out;
-		}
-
-		default:
-		case MnMix:
-			return fact * tex + facm * out;
-	}
-}
-
 
 END_YAFARAY
 

@@ -20,37 +20,35 @@
 #ifndef YAFARAY_MATERIAL_MASK_H
 #define YAFARAY_MATERIAL_MASK_H
 
-#include "constants.h"
 #include "material/material_node.h"
-#include "common/color_ramp.h"
 
 BEGIN_YAFARAY
 
 class Texture;
 class RenderEnvironment;
 
-class MaskMaterial: public NodeMaterial
+class MaskMaterial final : public NodeMaterial
 {
 	public:
-		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Material::Visibility::NormalVisible);
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const;
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
-		virtual bool isTransparent() const;
-		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const;
-		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
 
-	protected:
+	private:
+		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Material::Visibility::NormalVisible);
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual bool isTransparent() const override;
+		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const override;
+		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
+
 		const Material *mat_1_;
 		const Material *mat_2_;
 		ShaderNode *mask_;
 		float threshold_;
-		//const texture_t *mask;
 };
 
 END_YAFARAY

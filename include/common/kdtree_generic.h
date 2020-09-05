@@ -33,8 +33,6 @@ extern int kd_inodes__, kd_leaves__, empty_kd_leaves__, kd_prims__, clip__, bad_
 
 struct RenderState;
 
-#define PRIM_DAT_SIZE 32
-
 // ============================================================
 /*! kd-tree nodes, kept as small as possible
     double precision float and/or 64 bit system: 12bytes

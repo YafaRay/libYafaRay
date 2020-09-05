@@ -22,6 +22,7 @@
 #include "camera/camera.h"
 #include "common/param.h"
 #include "common/surface.h"
+#include "utility/util_string.h"
 #include <iomanip>
 
 BEGIN_YAFARAY
@@ -212,7 +213,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const S
 		texpt = doMapping(texpt, ng);
 	}
 
-	stack[this->id_] = NodeResult(tex_->getColor(texpt, mip_map_params), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params) : 0.f);
+	stack[this->getId()] = NodeResult(tex_->getColor(texpt, mip_map_params), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params) : 0.f);
 
 	if(mip_map_params)
 	{
@@ -339,7 +340,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderState &stat
 		}
 	}
 
-	stack[this->id_] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
+	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
 ShaderNode *TextureMapperNode::factory(const ParamMap &params, RenderEnvironment &render)
@@ -414,12 +415,12 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, RenderEnvironment
 
 void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
 {
-	stack[this->id_] = NodeResult(color_, value_);
+	stack[this->getId()] = NodeResult(color_, value_);
 }
 
 void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
-	stack[this->id_] = NodeResult(color_, value_);
+	stack[this->getId()] = NodeResult(color_, value_);
 }
 
 ShaderNode *ValueNode::factory(const ParamMap &params, RenderEnvironment &render)
@@ -471,7 +472,7 @@ void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoin
 
 	Rgba color = f_1 * cin_1 + f_2 * cin_2;
 	float   scalar = f_1 * fin_1 + f_2 * fin_2;
-	stack[this->id_] = NodeResult(color, scalar);
+	stack[this->getId()] = NodeResult(color, scalar);
 }
 
 void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
@@ -538,6 +539,31 @@ bool MixNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 	return !dep.empty();
 }
 
+void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
+{
+	f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
+	if(input_1_)
+	{
+		cin_1 = input_1_->getColor(stack);
+		fin_1 = input_1_->getScalar(stack);
+	}
+	else
+	{
+		cin_1 = col_1_;
+		fin_1 = val_1_;
+	}
+	if(input_2_)
+	{
+		cin_2 = input_2_->getColor(stack);
+		fin_2 = input_2_->getScalar(stack);
+	}
+	else
+	{
+		cin_2 = col_2_;
+		fin_2 = val_2_;
+	}
+}
+
 class AddNode: public MixNode
 {
 	public:
@@ -549,7 +575,7 @@ class AddNode: public MixNode
 
 			cin_1 += f_2 * cin_2;
 			fin_1 += f_2 * fin_2;
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -565,7 +591,7 @@ class MultNode: public MixNode
 
 			cin_1 *= Rgba(f_1) + f_2 * cin_2;
 			fin_2 *= f_1 + f_2 * fin_2;
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -580,7 +606,7 @@ class SubNode: public MixNode
 
 			cin_1 -= f_2 * cin_2;
 			fin_1 -= f_2 * fin_2;
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -596,7 +622,7 @@ class ScreenNode: public MixNode
 
 			Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
 			float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
-			stack[this->id_] = NodeResult(color, scalar);
+			stack[this->getId()] = NodeResult(color, scalar);
 		}
 };
 
@@ -615,7 +641,7 @@ class DiffNode: public MixNode
 			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::fabs(cin_1.b_ - cin_2.b_);
 			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::fabs(cin_1.a_ - cin_2.a_);
 			fin_1   = f_1 * fin_1 + f_2 * std::fabs(fin_1 - fin_2);
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -635,7 +661,7 @@ class DarkNode: public MixNode
 			if(cin_2.a_ < cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 < fin_1) fin_1 = fin_2;
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -655,7 +681,7 @@ class LightNode: public MixNode
 			if(cin_2.a_ > cin_1.a_) cin_1.a_ = cin_2.a_;
 			fin_2 *= f_2;
 			if(fin_2 > fin_1) fin_1 = fin_2;
-			stack[this->id_] = NodeResult(cin_1, fin_1);
+			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };
 
@@ -675,31 +701,29 @@ class OverlayNode: public MixNode
 			color.b_ = (cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.0f * f_2 * cin_2.b_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.b_)) * (1.0 - cin_1.b_);
 			color.a_ = (cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.0f * f_2 * cin_2.a_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.a_)) * (1.0 - cin_1.a_);
 			float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
-			stack[this->id_] = NodeResult(color, scalar);
+			stack[this->getId()] = NodeResult(color, scalar);
 		}
 };
 
 
 ShaderNode *MixNode::factory(const ParamMap &params, RenderEnvironment &render)
 {
-	float val = 0.5f;
-	int mode = 0;
-	params.getParam("cfactor", val);
-	params.getParam("mode", mode);
+	float cfactor = 0.5f;
+	std::string blend_mode;
+	params.getParam("cfactor", cfactor);
+	params.getParam("blend_mode", blend_mode);
 
-	switch(mode)
-	{
-		case MnMix: 		return new MixNode(val);
-		case MnAdd: 		return new AddNode();
-		case MnMult: 		return new MultNode();
-		case MnSub: 		return new SubNode();
-		case MnScreen:		return new ScreenNode();
-		case MnDiff:		return new DiffNode();
-		case MnDark:		return new DarkNode();
-		case MnLight:		return new LightNode();
-		case MnOverlay:	return new OverlayNode();
-	}
-	return new MixNode(val);
+	if(blend_mode == "add") return new AddNode();
+	else if(blend_mode == "multiply") return new MultNode();
+	else if(blend_mode == "subtract") return new SubNode();
+	else if(blend_mode == "screen") return new ScreenNode();
+	//else if(blend_mode == "divide") return new DivNode(); //FIXME Why isn't there a DivNode?
+	else if(blend_mode == "difference") return new DiffNode();
+	else if(blend_mode == "darken") return new DarkNode();
+	else if(blend_mode == "lighten") return new LightNode();
+	else if(blend_mode == "overlay") return new OverlayNode();
+	//else if(blend_mode == "mix")
+	else return new MixNode(cfactor);
 }
 
 END_YAFARAY

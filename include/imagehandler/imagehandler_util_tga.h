@@ -96,24 +96,24 @@ struct TgaHeader
 	}
 	// General image info
 
-	YByte_t id_length_;
-	YByte_t color_map_type_; // 0 or 1 (off or on)
-	YByte_t image_type_; // one of tgaImageDataTypes
+	uint8_t id_length_;
+	uint8_t color_map_type_; // 0 or 1 (off or on)
+	uint8_t image_type_; // one of tgaImageDataTypes
 
 	// ColorMap desc
 
-	YWord_t cm_first_entry_index_; // Used to offset the start of the ColorMap, ie. start at entry 127 out of 256 entries
-	YWord_t cm_number_of_entries_;
-	YByte_t cm_entry_bit_depth_; // 15, 16, 24 or 32
+	uint16_t cm_first_entry_index_; // Used to offset the start of the ColorMap, ie. start at entry 127 out of 256 entries
+	uint16_t cm_number_of_entries_;
+	uint8_t cm_entry_bit_depth_; // 15, 16, 24 or 32
 
 	// Image descriptor
 
-	YWord_t x_origin_; // used for Truevision TARGA display devices (anybody still has one?)
-	YWord_t y_origin_; // used for Truevision TARGA display devices
-	YWord_t width_; // 0-65535
-	YWord_t height_; // 0-65535
-	YByte_t bit_depth_; // 8, 15, 16, 24 or 32
-	YByte_t desc_; // order of data from most significant bit:
+	uint16_t x_origin_; // used for Truevision TARGA display devices (anybody still has one?)
+	uint16_t y_origin_; // used for Truevision TARGA display devices
+	uint16_t width_; // 0-65535
+	uint16_t height_; // 0-65535
+	uint8_t bit_depth_; // 8, 15, 16, 24 or 32
+	uint8_t desc_; // order of data from most significant bit:
 	// |--|--|----| <- 8 bits total
 	//  RR BL AlBD
 	// RR = 00 <- Reserved
@@ -140,30 +140,30 @@ struct TgaFooter
 
 struct TgaPixelRgb
 {
-	YByte_t b_;
-	YByte_t g_;
-	YByte_t r_;
+	uint8_t b_;
+	uint8_t g_;
+	uint8_t r_;
 	TgaPixelRgb &operator = (const Rgb &c)
 	{
-		r_ = (YByte_t)(c.getR() * 255.f);
-		g_ = (YByte_t)(c.getG() * 255.f);
-		b_ = (YByte_t)(c.getB() * 255.f);
+		r_ = (uint8_t)(c.getR() * 255.f);
+		g_ = (uint8_t)(c.getG() * 255.f);
+		b_ = (uint8_t)(c.getB() * 255.f);
 		return *this;
 	}
 };
 
 struct TgaPixelRgba
 {
-	YByte_t b_;
-	YByte_t g_;
-	YByte_t r_;
-	YByte_t a_;
+	uint8_t b_;
+	uint8_t g_;
+	uint8_t r_;
+	uint8_t a_;
 	TgaPixelRgba &operator = (const Rgba &c)
 	{
-		r_ = (YByte_t)(c.getR() * 255.f);
-		g_ = (YByte_t)(c.getG() * 255.f);
-		b_ = (YByte_t)(c.getB() * 255.f);
-		a_ = (YByte_t)(c.getA() * 255.f);
+		r_ = (uint8_t)(c.getR() * 255.f);
+		g_ = (uint8_t)(c.getG() * 255.f);
+		b_ = (uint8_t)(c.getB() * 255.f);
+		a_ = (uint8_t)(c.getA() * 255.f);
 		return *this;
 	}
 };

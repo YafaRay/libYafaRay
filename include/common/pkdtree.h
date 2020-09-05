@@ -35,7 +35,6 @@ class Point3;
 namespace kdtree
 {
 
-#define KD_MAX_STACK 64
 #define NON_REC_LOOKUP 1
 
 template <class T>
@@ -99,6 +98,7 @@ class PointKdTree
 		Bound tree_bound_;
 		mutable unsigned int y_lookups_, y_procs_;
 		int max_level_threads_ = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
+		static constexpr unsigned int kd_max_stack_ = 64;
 		std::mutex mutx_;
 };
 
@@ -235,7 +235,7 @@ void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_
 {
 #if NON_REC_LOOKUP > 0
 	++y_lookups_;
-	KdStack stack[KD_MAX_STACK];
+	KdStack stack[kd_max_stack_];
 	const KdNode<T> *far_child, *curr_node = nodes_;
 
 	int stack_ptr = 1;

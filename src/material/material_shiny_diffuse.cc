@@ -20,6 +20,8 @@
 #include "common/param.h"
 #include "utility/util_sample.h"
 #include "material/material_utils_microfacet.h"
+#include "shader/shader_node.h"
+#include "common/surface.h"
 
 BEGIN_YAFARAY
 
@@ -768,6 +770,46 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	//===!!!=== end of test
 
 	return mat;
+}
+
+Rgb ShinyDiffuseMaterial::getDiffuseColor(const RenderState &state) const {
+	SdDat *dat = (SdDat *)state.userdata_;
+	NodeStack stack(dat->node_stack_);
+
+	if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(stack) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+	else return Rgb(0.f);
+}
+
+Rgb ShinyDiffuseMaterial::getGlossyColor(const RenderState &state) const {
+	SdDat *dat = (SdDat *)state.userdata_;
+	NodeStack stack(dat->node_stack_);
+
+	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
+	else return Rgb(0.f);
+}
+
+Rgb ShinyDiffuseMaterial::getTransColor(const RenderState &state) const {
+	SdDat *dat = (SdDat *)state.userdata_;
+	NodeStack stack(dat->node_stack_);
+
+	if(m_is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(stack) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+	else return Rgb(0.f);
+}
+
+Rgb ShinyDiffuseMaterial::getMirrorColor(const RenderState &state) const {
+	SdDat *dat = (SdDat *)state.userdata_;
+	NodeStack stack(dat->node_stack_);
+
+	if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
+	else return Rgb(0.f);
+}
+
+Rgb ShinyDiffuseMaterial::getSubSurfaceColor(const RenderState &state) const {
+	SdDat *dat = (SdDat *)state.userdata_;
+	NodeStack stack(dat->node_stack_);
+
+	if(m_is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(stack) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
+	else return Rgb(0.f);
 }
 
 END_YAFARAY

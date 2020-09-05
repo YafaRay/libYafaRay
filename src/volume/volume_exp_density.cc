@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 
-float ExpDensityVolumeRegion::density(Point3 p)
+float ExpDensityVolumeRegion::density(Point3 p) const
 {
 	float height = p.z_ - b_box_.a_.z_;
 	return a_ * fExp__(-b_ * height);

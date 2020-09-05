@@ -34,10 +34,6 @@ ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : c
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
 }
-ConstantBackground::~ConstantBackground()
-{
-	// Empty
-}
 
 Rgb ConstantBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
 {

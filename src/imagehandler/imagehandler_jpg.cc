@@ -89,7 +89,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 	struct ::jpeg_compress_struct info;
 	struct JpgErrorManager jerr;
 	int x, y, ix;
-	YByte_t *scanline = nullptr;
+	uint8_t *scanline = nullptr;
 
 	FILE *fp = File::open(name, "wb");
 
@@ -118,7 +118,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 
 	jpeg_start_compress(&info, TRUE);
 
-	scanline = new YByte_t[w * 3 ];
+	scanline = new uint8_t[w * 3 ];
 
 	//The denoise functionality will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
@@ -132,9 +132,9 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 				ix = x * 3;
 				Rgba col = denoised_buffer.getColor(x, y);
 				col.clampRgba01();
-				scanline[ix]   = (YByte_t)(col.getR() * 255);
-				scanline[ix + 1] = (YByte_t)(col.getG() * 255);
-				scanline[ix + 2] = (YByte_t)(col.getB() * 255);
+				scanline[ix]   = (uint8_t)(col.getR() * 255);
+				scanline[ix + 1] = (uint8_t)(col.getG() * 255);
+				scanline[ix + 2] = (uint8_t)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -150,9 +150,9 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 				ix = x * 3;
 				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
 				col.clampRgba01();
-				scanline[ix] = (YByte_t)(col.getR() * 255);
-				scanline[ix + 1] = (YByte_t)(col.getG() * 255);
-				scanline[ix + 2] = (YByte_t)(col.getB() * 255);
+				scanline[ix] = (uint8_t)(col.getR() * 255);
+				scanline[ix + 1] = (uint8_t)(col.getG() * 255);
+				scanline[ix + 2] = (uint8_t)(col.getB() * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -199,7 +199,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 
 		jpeg_start_compress(&info, TRUE);
 
-		scanline = new YByte_t[ w ];
+		scanline = new uint8_t[ w ];
 
 		for(y = 0; y < h; y++)
 		{
@@ -207,7 +207,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 			{
 				float col = std::max(0.f, std::min(1.f, img_buffer_.at(img_index)->getColor(x, y).getA()));
 
-				scanline[x] = (YByte_t)(col * 255);
+				scanline[x] = (uint8_t)(col * 255);
 			}
 
 			jpeg_write_scanlines(&info, &scanline, 1);
@@ -288,7 +288,7 @@ bool JpgHandler::loadFromFile(const std::string &name)
 
 	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
 
-	YByte_t *scanline = new YByte_t[width_ * info.output_components];
+	uint8_t *scanline = new uint8_t[width_ * info.output_components];
 
 	int y = 0;
 	int ix = 0;

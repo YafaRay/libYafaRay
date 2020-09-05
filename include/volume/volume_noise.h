@@ -30,10 +30,12 @@ class ParamMap;
 class RenderEnvironment;
 class Texture;
 
-class NoiseVolumeRegion : public DensityVolumeRegion
+class NoiseVolumeRegion final : public DensityVolumeRegion
 {
 	public:
+		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
 
+	private:
 		NoiseVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, float cov, float sharp, float dens,
 						  Point3 pmin, Point3 pmax, int attgrid_scale, Texture *noise) :
 				DensityVolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale)
@@ -43,12 +45,7 @@ class NoiseVolumeRegion : public DensityVolumeRegion
 			sharpness_ = sharp * sharp;
 			density_ = dens;
 		}
-
-		virtual float density(Point3 p);
-
-		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
-
-	protected:
+		virtual float density(Point3 p) const override;
 
 		Texture *tex_dist_noise_;
 		float cover_;

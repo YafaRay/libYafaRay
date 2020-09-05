@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 
-Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v)
+Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
 {
 	if(!have_s_a_) return Rgb(0.f);
 	if(b_box_.includes(p))
@@ -42,7 +42,7 @@ Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v)
 
 }
 
-Rgb UniformVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v)
+Rgb UniformVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
 {
 	if(!have_s_s_) return Rgb(0.f);
 	if(b_box_.includes(p))
@@ -53,7 +53,7 @@ Rgb UniformVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v)
 		return Rgb(0.f);
 }
 
-Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset)
+Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset) const
 {
 	float t_0 = -1, t_1 = -1;
 
@@ -63,9 +63,9 @@ Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset)
 		return Rgb(0.f);
 	}
 
-	if(ray.tmax_ < t_0 && !(ray.tmax_ < 0)) return Rgb(0.f);
+	if(ray.tmax_ < t_0 && ray.tmax_ >= 0) return Rgb(0.f);
 
-	if(ray.tmax_ < t_1 && !(ray.tmax_ < 0)) t_1 = ray.tmax_;
+	if(ray.tmax_ < t_1 && ray.tmax_ >= 0) t_1 = ray.tmax_;
 
 	// t0 < 0 means, ray.from is in the volume
 	if(t_0 < 0.f) t_0 = 0.f;
@@ -76,7 +76,7 @@ Rgb UniformVolumeRegion::tau(const Ray &ray, float step, float offset)
 	return dist * (s_s_ + s_a_);
 }
 
-Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v)
+Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 {
 	if(!have_l_e_) return Rgb(0.f);
 	if(b_box_.includes(p))

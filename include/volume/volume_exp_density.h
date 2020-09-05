@@ -36,7 +36,7 @@ class ExpDensityVolumeRegion final : public DensityVolumeRegion
 
 	private:
 		ExpDensityVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale, float aa, float bb);
-		virtual float density(Point3 p) override;
+		virtual float density(Point3 p) const override;
 
 		float a_, b_;
 };

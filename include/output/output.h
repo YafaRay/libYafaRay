@@ -38,7 +38,7 @@ class Rgba;
 class ColorOutput
 {
 	public:
-		virtual ~ColorOutput() {};
+		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) = 0;
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) = 0;

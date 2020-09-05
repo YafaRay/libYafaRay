@@ -66,7 +66,7 @@ VolumeRegion::VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3
 	att_grid_z_ = 8 * attgrid_scale;
 }
 
-Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset)
+Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
 {
 	float t_0 = -1, t_1 = -1;
 
@@ -76,9 +76,9 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset)
 		return Rgb(0.f);
 	}
 
-	if(ray.tmax_ < t_0 && !(ray.tmax_ < 0)) return Rgb(0.f);
+	if(ray.tmax_ < t_0 && ray.tmax_ >= 0) return Rgb(0.f);
 
-	if(ray.tmax_ < t_1 && !(ray.tmax_ < 0)) t_1 = ray.tmax_;
+	if(ray.tmax_ < t_1 && ray.tmax_ >= 0) t_1 = ray.tmax_;
 
 	if(t_0 < 0.f) t_0 = 0.f;
 
@@ -90,14 +90,14 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset)
 
 	Rgb tau_prev(0.f);
 
-	bool adaptive = false;
+	bool adaptive = false; //FIXME: unused, always false??
 
 	while(pos < t_1)
 	{
 		Rgb tau_tmp = sigmaT(ray.from_ + (ray.dir_ * pos), ray.dir_);
 
 
-		if(adaptive)
+		if(adaptive) //FIXME: unused, always false??
 		{
 
 			float epsilon = 0.01f;
@@ -129,20 +129,18 @@ inline float max__(float a, float b) { return (a < b) ? b : a; }
 
 inline double cosInter__(double y_1, double y_2, double mu)
 {
-	double mu_2;
-
-	mu_2 = (1.0f - fCos__(mu * M_PI)) / 2.0f;
+	const double mu_2 = (1.0f - fCos__(mu * M_PI)) / 2.0f;
 	return y_1 * (1.0f - mu_2) + y_2 * mu_2;
 }
 
-float VolumeRegion::attenuation(const Point3 p, Light *l)
+float VolumeRegion::attenuation(const Point3 p, Light *l) const
 {
 	if(attenuation_grid_map_.find(l) == attenuation_grid_map_.end())
 	{
 		Y_WARNING << "VolumeRegion: Attenuation Map is missing" << YENDL;
 	}
 
-	float *attenuation_grid = attenuation_grid_map_[l];
+	const float *attenuation_grid = attenuation_grid_map_.at(l);
 
 	float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * att_grid_x_ - 0.5f;
 	float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * att_grid_y_ - 0.5f;

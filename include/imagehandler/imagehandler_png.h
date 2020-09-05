@@ -38,10 +38,10 @@ class PngHandler final : public ImageHandler
 		PngHandler();
 		virtual ~PngHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool loadFromMemory(const YByte_t *data, size_t size) override;
+		virtual bool loadFromMemory(const uint8_t *data, size_t size) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 		void readFromStructs(const PngStructs &png_structs);
-		bool fillReadStructs(YByte_t *sig, const PngStructs &png_structs);
+		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
 		bool fillWriteStructs(FILE *fp, unsigned int rgbype, const PngStructs &png_structs, int img_index);
 };
 

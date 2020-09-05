@@ -196,7 +196,7 @@ Vec3 randomVectorCone__(const Vec3 &d,
 						const Vec3 &u, const Vec3 &v,
 						float cosang, float z_1, float z_2)
 {
-	float t_1 = M_2PI * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
+	float t_1 = mult_pi_by_2__ * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
 	return (u * fCos__(t_1) + v * fSin__(t_1)) * fSqrt__(1.0 - t_2 * t_2) + d * t_2;
 }
 
@@ -211,7 +211,7 @@ Vec3 discreteVectorCone__(const Vec3 &dir, float cangle, int sample, int square)
 {
 	float r_1 = (float)(sample / square) / (float)square;
 	float r_2 = (float)(sample % square) / (float)square;
-	float tt = M_2PI * r_1;
+	float tt = mult_pi_by_2__ * r_1;
 	float ss = fAcos__(1.0 - (1.0 - cangle) * r_2);
 	Vec3	vx(fCos__(ss), fSin__(ss) * fCos__(tt), fSin__(ss) * fSin__(tt));
 	Vec3	i(1, 0, 0), c;

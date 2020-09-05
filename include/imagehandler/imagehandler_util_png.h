@@ -33,9 +33,9 @@ class PngDataReader
 {
 	public:
 
-		PngDataReader(const YByte_t *d, size_t s): size_(s), cursor_(0)
+		PngDataReader(const uint8_t *d, size_t s): size_(s), cursor_(0)
 		{
-			data_ = new YByte_t[size_];
+			data_ = new uint8_t[size_];
 			for(size_t i = 0; i < size_; i++)
 			{
 				data_[i] = d[i];
@@ -48,7 +48,7 @@ class PngDataReader
 			data_ = nullptr;
 		}
 
-		size_t read(YByte_t *buf, size_t s)
+		size_t read(uint8_t *buf, size_t s)
 		{
 			if(cursor_ > size_) return 0;
 			size_t i;
@@ -62,7 +62,7 @@ class PngDataReader
 		}
 
 	private:
-		YByte_t *data_;
+		uint8_t *data_;
 		size_t size_;
 		size_t cursor_;
 };
@@ -73,7 +73,7 @@ void readFromMem__(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_re
 
 	if(img == nullptr) png_error(png_ptr, "The image data pointer is null!!");
 
-	if(img->read((YByte_t *)buffer, (size_t)bytes_to_read) < bytes_to_read) png_warning(png_ptr, "EOF Found while reading image data");
+	if(img->read((uint8_t *)buffer, (size_t)bytes_to_read) < bytes_to_read) png_warning(png_ptr, "EOF Found while reading image data");
 }
 
 END_YAFARAY

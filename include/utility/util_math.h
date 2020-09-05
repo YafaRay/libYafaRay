@@ -24,9 +24,9 @@
 
 //#if ( defined(__i386__) || defined(_M_IX86) || defined(_X86_) )
 //#define FAST_INT 1
-#define DOUBLEMAGICROUNDEPS	      (.5-1.4e-11)
+static constexpr double doublemagicroundeps__ = (.5 - 1.4e-11);
 //almost .5f = .5f - 1e^(number of exp bit)
-#define DOUBLEMAGIC			double (6755399441055744.0)
+static constexpr double doublemagic__ = double (6755399441055744.0);
 //2^52 * 1.5,  uses limited precision to floor
 //#endif
 
@@ -34,19 +34,19 @@
 inline int round2Int__(double val)
 {
 #ifdef FAST_INT
-	val		= val + DOUBLEMAGIC;
+	val		= val + doublemagic__;
 	return ((long *)&val)[0];
 #else
 	//	#warning "using slow rounding"
-	return int (val + DOUBLEMAGICROUNDEPS);
+	return int (val + doublemagicroundeps__);
 #endif
 }
 
 inline int float2Int__(double val)
 {
 #ifdef FAST_INT
-	return (val < 0) ?  round2Int__(val + DOUBLEMAGICROUNDEPS) :
-		   (val - DOUBLEMAGICROUNDEPS);
+	return (val < 0) ?  round2Int__(val + doublemagicroundeps__) :
+		   (val - doublemagicroundeps__);
 #else
 	//	#warning "using slow rounding"
 	return (int)val;
@@ -56,7 +56,7 @@ inline int float2Int__(double val)
 inline int floor2Int__(double val)
 {
 #ifdef FAST_INT
-	return round2Int__(val - DOUBLEMAGICROUNDEPS);
+	return round2Int__(val - doublemagicroundeps__);
 #else
 	//	#warning "using slow rounding"
 	return (int)std::floor(val);
@@ -66,7 +66,7 @@ inline int floor2Int__(double val)
 inline int ceil2Int__(double val)
 {
 #ifdef FAST_INT
-	return round2Int__(val + DOUBLEMAGICROUNDEPS);
+	return round2Int__(val + doublemagicroundeps__);
 #else
 	//	#warning "using slow rounding"
 	return (int)std::ceil(val);

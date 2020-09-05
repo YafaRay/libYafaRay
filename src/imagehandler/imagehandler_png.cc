@@ -99,7 +99,7 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 
 	for(int i = 0; i < h; i++)
 	{
-		row_pointers[i] = new YByte_t[w * channels ];
+		row_pointers[i] = new uint8_t[w * channels ];
 	}
 
 	//The denoise functionality will only work if YafaRay is built with OpenCV support
@@ -116,10 +116,10 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 
 				int i = x * channels;
 
-				row_pointers[y][i]   = (YByte_t)(color.getR() * 255.f);
-				row_pointers[y][i + 1] = (YByte_t)(color.getG() * 255.f);
-				row_pointers[y][i + 2] = (YByte_t)(color.getB() * 255.f);
-				if(has_alpha_) row_pointers[y][i + 3] = (YByte_t)(color.getA() * 255.f);
+				row_pointers[y][i]   = (uint8_t)(color.getR() * 255.f);
+				row_pointers[y][i + 1] = (uint8_t)(color.getG() * 255.f);
+				row_pointers[y][i + 2] = (uint8_t)(color.getB() * 255.f);
+				if(has_alpha_) row_pointers[y][i + 3] = (uint8_t)(color.getA() * 255.f);
 			}
 		}
 	}
@@ -135,10 +135,10 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 
 				int i = x * channels;
 
-				row_pointers[y][i] = (YByte_t)(color.getR() * 255.f);
-				row_pointers[y][i + 1] = (YByte_t)(color.getG() * 255.f);
-				row_pointers[y][i + 2] = (YByte_t)(color.getB() * 255.f);
-				if(has_alpha_) row_pointers[y][i + 3] = (YByte_t)(color.getA() * 255.f);
+				row_pointers[y][i] = (uint8_t)(color.getR() * 255.f);
+				row_pointers[y][i + 1] = (uint8_t)(color.getG() * 255.f);
+				row_pointers[y][i + 2] = (uint8_t)(color.getB() * 255.f);
+				if(has_alpha_) row_pointers[y][i + 3] = (uint8_t)(color.getA() * 255.f);
 			}
 		}
 	}
@@ -180,7 +180,7 @@ bool PngHandler::loadFromFile(const std::string &name)
 		return false;
 	}
 
-	YByte_t signature[8];
+	uint8_t signature[8];
 
 	if(fread(signature, 1, 8, fp) != 8)
 	{
@@ -206,7 +206,7 @@ bool PngHandler::loadFromFile(const std::string &name)
 
 	return true;
 }
-bool PngHandler::loadFromMemory(const YByte_t *data, size_t size)
+bool PngHandler::loadFromMemory(const uint8_t *data, size_t size)
 {
 	png_structp png_ptr = nullptr;
 	png_infop info_ptr = nullptr;
@@ -214,7 +214,7 @@ bool PngHandler::loadFromMemory(const YByte_t *data, size_t size)
 
 	PngDataReader *reader = new PngDataReader(data, size);
 
-	YByte_t signature[8];
+	uint8_t signature[8];
 
 	if(reader->read(signature, 8) < 8)
 	{
@@ -239,7 +239,7 @@ bool PngHandler::loadFromMemory(const YByte_t *data, size_t size)
 	return true;
 }
 
-bool PngHandler::fillReadStructs(YByte_t *sig, const PngStructs &png_structs)
+bool PngHandler::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 {
 	if(png_sig_cmp(sig, 0, 8))
 	{
@@ -369,7 +369,7 @@ void PngHandler::readFromStructs(const PngStructs &png_structs)
 
 	for(int i = 0; i < height_; i++)
 	{
-		row_pointers[i] = new YByte_t[width_ * num_chan * bit_mult ];
+		row_pointers[i] = new uint8_t[width_ * num_chan * bit_mult ];
 	}
 
 	png_read_image(png_structs.png_ptr_, row_pointers);
@@ -418,23 +418,23 @@ void PngHandler::readFromStructs(const PngStructs &png_structs)
 				switch(num_chan)
 				{
 					case 4:
-						color.set((YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
-								  (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
-								  (YWord_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
-								  (YWord_t)((row_pointers[y][i + 6] << 8) | row_pointers[y][i + 7]) * divisor);
+						color.set((uint16_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
+								  (uint16_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
+								  (uint16_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
+								  (uint16_t)((row_pointers[y][i + 6] << 8) | row_pointers[y][i + 7]) * divisor);
 						break;
 					case 3:
-						color.set((YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
-								  (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
-								  (YWord_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
+						color.set((uint16_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor,
+								  (uint16_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor,
+								  (uint16_t)((row_pointers[y][i + 4] << 8) | row_pointers[y][i + 5]) * divisor,
 						          1.f);
 						break;
 					case 2:
-						c = (YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
-						color.set(c, c, c, (YWord_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor);
+						c = (uint16_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
+						color.set(c, c, c, (uint16_t)((row_pointers[y][i + 2] << 8) | row_pointers[y][i + 3]) * divisor);
 						break;
 					case 1:
-						c = (YWord_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
+						c = (uint16_t)((row_pointers[y][i] << 8) | row_pointers[y][i + 1]) * divisor;
 						color.set(c, c, c, 1.f);
 						break;
 				}

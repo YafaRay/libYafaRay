@@ -32,14 +32,14 @@ class RenderEnvironment;
 class UniformVolumeRegion : public VolumeRegion
 {
 	public:
-		UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
-
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v);
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v);
-		virtual Rgb emission(const Point3 &p, const Vec3 &v);
-		virtual Rgb tau(const Ray &ray, float step, float offset);
-
 		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
+
+	private:
+		UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const;
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const;
+		virtual Rgb emission(const Point3 &p, const Vec3 &v) const;
+		virtual Rgb tau(const Ray &ray, float step, float offset) const;
 };
 
 END_YAFARAY

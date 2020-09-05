@@ -369,7 +369,7 @@ void Interface::abort()
 bool Interface::getRenderedImage(int num_view, ColorOutput &output)
 {
 	if(!film_) return false;
-	film_->flush(num_view, IF_ALL, &output);
+	film_->flush(num_view, ImageFilm::Flags::All, &output);
 	return true;
 }
 

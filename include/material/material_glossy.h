@@ -22,14 +22,7 @@
 #ifndef YAFARAY_MATERIAL_GLOSSY_H
 #define YAFARAY_MATERIAL_GLOSSY_H
 
-#include "constants.h"
 #include "material/material_node.h"
-#include "common/environment.h"
-#include "utility/util_sample.h"
-#include "material/material_utils_microfacet.h"
-#include "common/color_ramp.h"
-#include "common/param.h"
-#include "common/scene.h"
 
 BEGIN_YAFARAY
 
@@ -45,7 +38,7 @@ class GlossyMaterial final : public NodeMaterial
 		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 
-		struct MDatT
+		struct MDat
 		{
 			float m_diffuse_, m_glossy_, p_diffuse_;
 			void *stack_;

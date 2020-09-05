@@ -127,7 +127,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 	SurfacePoint sp;
 	RenderState state;
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 	state.cam_ = scene->getCamera();
 
@@ -444,7 +444,7 @@ bool PhotonIntegrator::preprocess()
 
 	SurfacePoint sp;
 	RenderState state;
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 	state.cam_ = scene_->getCamera();
 	int pb_step;
@@ -980,7 +980,7 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 {
 	Rgb path_col(0.0);
 	void *first_udat = state.userdata_;
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	void *n_udat = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
@@ -1139,7 +1139,7 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 
 	if(scene_->intersect(ray, sp))
 	{
-		unsigned char userdata[USER_DATA_SIZE + 7];
+		unsigned char userdata[user_data_size__ + 7];
 		state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 
 		if(state.raylevel_ == 0)

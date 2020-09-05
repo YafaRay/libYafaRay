@@ -311,8 +311,8 @@ bool HdrHandler::readOrle(FILE *fp, int y, int scan_width)
 bool HdrHandler::readArle(FILE *fp, int y, int scan_width)
 {
 	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
-	YByte_t count = 0; // run description
-	YByte_t col = 0; // color component
+	uint8_t count = 0; // run description
+	uint8_t col = 0; // color component
 
 	if(scanline == nullptr)
 	{
@@ -464,7 +464,7 @@ bool HdrHandler::writeScanline(std::ofstream &file, RgbePixel *scanline, int img
 	int w = getWidth(img_index);
 
 	int cur, beg_run, run_count, old_run_count, nonrun_count;
-	YByte_t run_desc;
+	uint8_t run_desc;
 
 	// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
 	for(int chan = 0; chan < 4; chan++)

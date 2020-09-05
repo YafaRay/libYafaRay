@@ -37,7 +37,7 @@ ArchitectCamera::ArchitectCamera(const Point3 &pos, const Point3 &look, const Po
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = DEG_TO_RAD(bro), wi = (M_2PI) / (float)ns;
+		float w = degToRad__(bro), wi = (mult_pi_by_2__) / (float)ns;
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)

@@ -119,8 +119,8 @@ inline void spheremap__(const Point3 &p, float &u, float &v)
 
 	if(sqrt_r_phi > 0.f)
 	{
-		if(p.y_ < 0.f) phi_ratio = (M_2PI - fAcos__(p.x_ / fSqrt__(sqrt_r_phi))) * M_1_2PI;
-		else phi_ratio = fAcos__(p.x_ / fSqrt__(sqrt_r_phi)) * M_1_2PI;
+		if(p.y_ < 0.f) phi_ratio = (mult_pi_by_2__ - fAcos__(p.x_ / fSqrt__(sqrt_r_phi))) * div_1_by_2pi__;
+		else phi_ratio = fAcos__(p.x_ / fSqrt__(sqrt_r_phi)) * div_1_by_2pi__;
 		u = 1.f - phi_ratio;
 	}
 
@@ -131,7 +131,7 @@ inline void spheremap__(const Point3 &p, float &u, float &v)
 inline void invSpheremap__(float u, float v, Vec3 &p)
 {
 	float theta = v * M_PI;
-	float phi = -(u * M_2PI);
+	float phi = -(u * mult_pi_by_2__);
 	float costheta = fCos__(theta), sintheta = fSin__(theta);
 	float cosphi = fCos__(phi), sinphi = fSin__(phi);
 	p.x_ = sintheta * cosphi;

@@ -56,7 +56,7 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 
 	act = (night_sky_) ? "ON" : "OFF";
 	Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << YENDL;
-	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << RAD_TO_DEG(theta_s_) << ")" << YENDL;
+	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << radToDeg__(theta_s_) << ")" << YENDL;
 	act = (clamp) ? "active." : "inactive.";
 	Y_VERBOSE << "DarkSky: RGB Clamping " << act << YENDL;
 	Y_VERBOSE << "DarkSky: Altitude " << alt_ << YENDL;
@@ -141,7 +141,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 	IrregularCurve kwa(kwa_amplitudes__, kwa_wavelengths__, 13);
 	RegularCurve sun_radiance_curve(sun_radiance__, 380, 750, 38);
 
-	m = 1.0 / (cos_theta_s_ + 0.15 * fPow__(93.885f - RAD_TO_DEG(theta_s_), -1.253f));
+	m = 1.0 / (cos_theta_s_ + 0.15 * fPow__(93.885f - radToDeg__(theta_s_), -1.253f));
 	mw = m * w;
 	lm = -m * l;
 
@@ -292,7 +292,7 @@ Background *DarkSkyBackground::factory(ParamMap &params, RenderEnvironment &rend
 	DarkSkyBackground *dark_sky = new DarkSkyBackground(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
 														altitude, night, exp, gamma_enc, color_s, bgl, caus);
 
-	if(add_sun && RAD_TO_DEG(fAcos__(dir.z_)) < 100.0)
+	if(add_sun && radToDeg__(fAcos__(dir.z_)) < 100.0)
 	{
 		Vec3 d(dir);
 		d.normalize();

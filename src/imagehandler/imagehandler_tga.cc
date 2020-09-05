@@ -156,8 +156,8 @@ template <class ColorType> void TgaHandler::readRleImage(FILE *fp, ColorProcesso
 
 	while(!feof(fp) && y != max_y_)
 	{
-		YByte_t pack_desc = 0;
-		fread(&pack_desc, sizeof(YByte_t), 1, fp);
+		uint8_t pack_desc = 0;
+		fread(&pack_desc, sizeof(uint8_t), 1, fp);
 
 		bool rle_pack = (pack_desc & RLE_PACK_MASK);
 		int rle_rep = (int)(pack_desc & RLE_REP_MASK) + 1;
@@ -205,25 +205,25 @@ template <class ColorType> void TgaHandler::readDirectImage(FILE *fp, ColorProce
 
 Rgba TgaHandler::processGray8(void *data)
 {
-	return Rgba(*(YByte_t *)data * INV_255);
+	return Rgba(*(uint8_t *)data * INV_255);
 }
 
 Rgba TgaHandler::processGray16(void *data)
 {
-	YWord_t color = *(YWord_t *)data;
+	uint16_t color = *(uint16_t *)data;
 	return Rgba(Rgb((color & GRAY_MASK_8_BIT) * INV_255),
 				((color & ALPHA_GRAY_MASK_8_BIT) >> 8) * INV_255);
 }
 
 Rgba TgaHandler::processColor8(void *data)
 {
-	YByte_t color = *(YByte_t *)data;
+	uint8_t color = *(uint8_t *)data;
 	return (*color_map_)(color, 0);
 }
 
 Rgba TgaHandler::processColor15(void *data)
 {
-	YWord_t color = *(YWord_t *)data;
+	uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & RED_MASK) >> 11) * INV_31,
 				((color & GREEN_MASK) >> 6) * INV_31,
 				((color & BLUE_MASK) >> 1) * INV_31,
@@ -232,7 +232,7 @@ Rgba TgaHandler::processColor15(void *data)
 
 Rgba TgaHandler::processColor16(void *data)
 {
-	YWord_t color = *(YWord_t *)data;
+	uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & RED_MASK) >> 11) * INV_31,
 				((color & GREEN_MASK) >> 6) * INV_31,
 				((color & BLUE_MASK) >> 1) * INV_31,
@@ -257,7 +257,7 @@ Rgba TgaHandler::processColor32(void *data)
 				color->a_ * INV_255);
 }
 
-bool TgaHandler::precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, YByte_t &alpha_bit_depth)
+bool TgaHandler::precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth)
 {
 	switch(header.image_type_)
 	{
@@ -372,7 +372,7 @@ bool TgaHandler::loadFromFile(const std::string &name)
 
 	// Prereading checks
 
-	YByte_t alpha_bit_depth = (YByte_t)(header.desc_ & ALPHA_BIT_DEPTH_MASK);
+	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & ALPHA_BIT_DEPTH_MASK);
 
 	width_ = header.width_;
 	height_ = header.height_;
@@ -411,11 +411,11 @@ bool TgaHandler::loadFromFile(const std::string &name)
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:
-				readColorMap<YWord_t>(fp, header, &TgaHandler::processColor15);
+				readColorMap<uint16_t>(fp, header, &TgaHandler::processColor15);
 				break;
 
 			case 16:
-				readColorMap<YWord_t>(fp, header, &TgaHandler::processColor16);
+				readColorMap<uint16_t>(fp, header, &TgaHandler::processColor16);
 				break;
 
 			case 24:
@@ -461,17 +461,17 @@ bool TgaHandler::loadFromFile(const std::string &name)
 		switch(header.bit_depth_)
 		{
 			case 8: // Indexed color using ColorMap LUT or grayscale map
-				if(is_gray)readRleImage<YByte_t>(fp, &TgaHandler::processGray8);
-				else readRleImage<YByte_t>(fp, &TgaHandler::processColor8);
+				if(is_gray)readRleImage<uint8_t>(fp, &TgaHandler::processGray8);
+				else readRleImage<uint8_t>(fp, &TgaHandler::processColor8);
 				break;
 
 			case 15:
-				readRleImage<YWord_t>(fp, &TgaHandler::processColor15);
+				readRleImage<uint16_t>(fp, &TgaHandler::processColor15);
 				break;
 
 			case 16:
-				if(is_gray) readRleImage<YWord_t>(fp, &TgaHandler::processGray16);
-				else readRleImage<YWord_t>(fp, &TgaHandler::processColor16);
+				if(is_gray) readRleImage<uint16_t>(fp, &TgaHandler::processGray16);
+				else readRleImage<uint16_t>(fp, &TgaHandler::processColor16);
 				break;
 
 			case 24:
@@ -488,17 +488,17 @@ bool TgaHandler::loadFromFile(const std::string &name)
 		switch(header.bit_depth_)
 		{
 			case 8: // Indexed color using ColorMap LUT or grayscale map
-				if(is_gray) readDirectImage<YByte_t>(fp, &TgaHandler::processGray8);
-				else readDirectImage<YByte_t>(fp, &TgaHandler::processColor8);
+				if(is_gray) readDirectImage<uint8_t>(fp, &TgaHandler::processGray8);
+				else readDirectImage<uint8_t>(fp, &TgaHandler::processColor8);
 				break;
 
 			case 15:
-				readDirectImage<YWord_t>(fp, &TgaHandler::processColor15);
+				readDirectImage<uint16_t>(fp, &TgaHandler::processColor15);
 				break;
 
 			case 16:
-				if(is_gray) readDirectImage<YWord_t>(fp, &TgaHandler::processGray16);
-				else readDirectImage<YWord_t>(fp, &TgaHandler::processColor16);
+				if(is_gray) readDirectImage<uint16_t>(fp, &TgaHandler::processGray16);
+				else readDirectImage<uint16_t>(fp, &TgaHandler::processColor16);
 				break;
 
 			case 24:

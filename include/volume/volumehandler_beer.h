@@ -31,6 +31,8 @@ class BeerVolumeHandler : public VolumeHandler
 {
 	public:
 		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &env);
+
+	protected:
 		BeerVolumeHandler(const Rgb &sigma): sigma_a_(sigma) {};
 		BeerVolumeHandler(const Rgb &acol, double dist);
 

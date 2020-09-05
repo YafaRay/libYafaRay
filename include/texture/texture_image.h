@@ -30,24 +30,24 @@
 
 BEGIN_YAFARAY
 
-class ImageTexture : public Texture
+class ImageTexture final : public Texture
 {
 	public:
 		enum class TexClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
-		ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space = RawManualGamma);
-		virtual ~ImageTexture();
-		virtual bool discrete() const { return true; }
-		virtual bool isThreeD() const { return false; }
-		virtual bool isNormalmap() const { return normalmap_; }
-		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const;
-		virtual Rgba getColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const;
-		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const;
-		virtual Rgba getRawColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const;
-		virtual void resolution(int &x, int &y, int &z) const;
 		static Texture *factory(ParamMap &params, RenderEnvironment &render);
-		virtual void generateMipMaps() { if(image_->getHighestImgIndex() == 0) image_->generateMipMaps(); }
 
-	protected:
+	private:
+		ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space = RawManualGamma);
+		virtual ~ImageTexture() override;
+		virtual bool discrete() const override { return true; }
+		virtual bool isThreeD() const override { return false; }
+		virtual bool isNormalmap() const override { return normalmap_; }
+		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual Rgba getColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual Rgba getRawColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const override;
+		virtual void resolution(int &x, int &y, int &z) const override;
+		virtual void generateMipMaps() override { if(image_->getHighestImgIndex() == 0) image_->generateMipMaps(); }
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
 		Rgba noInterpolation(const Point3 &p, int mipmaplevel = 0) const;
@@ -61,7 +61,7 @@ class ImageTexture : public Texture
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;
 
 		const int ewa_weight_lut_size_ = 128;
-		bool use_alpha_, calc_alpha_, normalmap_;
+		bool calc_alpha_, normalmap_;
 		bool grayscale_ = false;	//!< Converts the information loaded from the texture RGB to grayscale to reduce memory usage for bump or mask textures, for example. Alpha is ignored in this case.
 		bool cropx_, cropy_, checker_odd_, checker_even_, rot_90_;
 		float cropminx_, cropmaxx_, cropminy_, cropmaxy_;

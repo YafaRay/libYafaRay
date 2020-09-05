@@ -34,23 +34,19 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 
-inline float min__(float a, float b) { return (a > b) ? b : a; }
-inline float max__(float a, float b) { return (a < b) ? b : a; }
-
-
-float GridVolumeRegion::density(Point3 p)
+float GridVolumeRegion::density(Point3 p) const
 {
 	float x = (p.x_ - b_box_.a_.x_) / b_box_.longX() * size_x_ - .5f;
 	float y = (p.y_ - b_box_.a_.y_) / b_box_.longY() * size_y_ - .5f;
 	float z = (p.z_ - b_box_.a_.z_) / b_box_.longZ() * size_z_ - .5f;
 
-	int x_0 = max__(0, floor(x));
-	int y_0 = max__(0, floor(y));
-	int z_0 = max__(0, floor(z));
+	int x_0 = std::max(0, static_cast<int>(floor(x)));
+	int y_0 = std::max(0, static_cast<int>(floor(y)));
+	int z_0 = std::max(0, static_cast<int>(floor(z)));
 
-	int x_1 = min__(size_x_ - 1, ceil(x));
-	int y_1 = min__(size_y_ - 1, ceil(y));
-	int z_1 = min__(size_z_ - 1, ceil(z));
+	int x_1 = std::min(size_x_ - 1, static_cast<int>(ceil(x)));
+	int y_1 = std::min(size_y_ - 1, static_cast<int>(ceil(y)));
+	int z_1 = std::min(size_z_ - 1, static_cast<int>(ceil(z)));
 
 	float xd = x - x_0;
 	float yd = y - y_0;

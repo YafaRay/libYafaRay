@@ -39,8 +39,8 @@ namespace libtiff
 
 BEGIN_YAFARAY
 
-#define INV_8  0.00392156862745098039 // 1 / 255
-#define INV_16 0.00001525902189669642 // 1 / 65535
+static constexpr double inv_8__ = 0.00392156862745098039; // 1 / 255
+static constexpr double inv_16__ = 0.00001525902189669642; // 1 / 65535
 
 TifHandler::TifHandler()
 {
@@ -88,7 +88,7 @@ bool TifHandler::saveToFile(const std::string &name, int img_index)
 
 	bytes_per_scanline = channels * w;
 
-	YByte_t *scanline = (YByte_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
+	uint8_t *scanline = (uint8_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
 
 	libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytes_per_scanline));
 
@@ -104,10 +104,10 @@ bool TifHandler::saveToFile(const std::string &name, int img_index)
 				int ix = x * channels;
 				Rgba col = denoised_buffer.getColor(x, y);
 				col.clampRgba01();
-				scanline[ix] = (YByte_t)(col.getR() * 255.f);
-				scanline[ix + 1] = (YByte_t)(col.getG() * 255.f);
-				scanline[ix + 2] = (YByte_t)(col.getB() * 255.f);
-				if(has_alpha_) scanline[ix + 3] = (YByte_t)(col.getA() * 255.f);
+				scanline[ix] = (uint8_t)(col.getR() * 255.f);
+				scanline[ix + 1] = (uint8_t)(col.getG() * 255.f);
+				scanline[ix + 2] = (uint8_t)(col.getB() * 255.f);
+				if(has_alpha_) scanline[ix + 3] = (uint8_t)(col.getA() * 255.f);
 			}
 
 			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
@@ -130,10 +130,10 @@ bool TifHandler::saveToFile(const std::string &name, int img_index)
 				int ix = x * channels;
 				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
 				col.clampRgba01();
-				scanline[ix] = (YByte_t)(col.getR() * 255.f);
-				scanline[ix + 1] = (YByte_t)(col.getG() * 255.f);
-				scanline[ix + 2] = (YByte_t)(col.getB() * 255.f);
-				if(has_alpha_) scanline[ix + 3] = (YByte_t)(col.getA() * 255.f);
+				scanline[ix] = (uint8_t)(col.getR() * 255.f);
+				scanline[ix + 1] = (uint8_t)(col.getG() * 255.f);
+				scanline[ix + 2] = (uint8_t)(col.getB() * 255.f);
+				if(has_alpha_) scanline[ix + 3] = (uint8_t)(col.getA() * 255.f);
 			}
 
 			if(TIFFWriteScanline(out, scanline, y, 0) < 0)
@@ -198,10 +198,10 @@ bool TifHandler::loadFromFile(const std::string &name)
 		for(int x = 0; x < width_; x++)
 		{
 			Rgba color;
-			color.set((float)TIFFGetR(tiff_data[i]) * INV_8,
-					  (float)TIFFGetG(tiff_data[i]) * INV_8,
-					  (float)TIFFGetB(tiff_data[i]) * INV_8,
-					  (float)TIFFGetA(tiff_data[i]) * INV_8);
+			color.set((float)TIFFGetR(tiff_data[i]) * inv_8__,
+					  (float)TIFFGetG(tiff_data[i]) * inv_8__,
+					  (float)TIFFGetB(tiff_data[i]) * inv_8__,
+					  (float)TIFFGetA(tiff_data[i]) * inv_8__);
 			i++;
 
 			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);

@@ -22,8 +22,6 @@
 #include "material/material.h"
 #include "common/scene.h"
 #include "common/logging.h"
-#include <stdexcept>
-//#include <math.h"
 #include <limits>
 #include <set>
 #include <cstring>
@@ -31,45 +29,15 @@
 
 BEGIN_YAFARAY
 
-#define LOWER_B 0
-#define UPPER_B 2
-#define BOTH_B  1
+static constexpr int lower_b__ = 0;
+static constexpr int upper_b__ = 2;
+static constexpr int both_b__ = 1;
 
 #define TRI_CLIP 1 //tempoarily disabled
-#define TRI_CLIP_THRESH 32
-#define CLIP_DATA_SIZE (3*12*sizeof(double))
-#define KD_BINS 1024
-
-#define KD_MAX_STACK 64
-
-#if (defined(_M_IX86) || defined(i386) || defined(_X86_))
-#define Y_FAST_INT 1
-#else
-#define Y_FAST_INT 0
-#endif
-
-#define DOUBLEMAGICROUNDEPS	      (0.5 - 1.4e-11)
-
-inline int yRound2Int__(double val)
-{
-#if Y_FAST_INT > 0
-	union { double f; int i[2]; } u;
-	u.f	= val + 6755399441055744.0; //2^52 * 1.5,  uses limited precision to floor
-	return u.i[0];
-#else
-	return int(val);
-#endif
-}
-
-inline int yFloat2Int__(double val)
-{
-#if Y_FAST_INT > 0
-	return (val < 0) ?  Y_Round2Int(val + _doublemagicroundeps) :
-	       Y_Round2Int(val - _doublemagicroundeps);
-#else
-	return (int)val;
-#endif
-}
+static constexpr int tri_clip_thresh__ = 32;
+static constexpr int clip_data_size__ = 3 * 12 * sizeof(double);
+static constexpr int kd_bins__ = 1024;
+static constexpr int kd_max_stack__ = 64;
 
 int kd_inodes__ = 0, kd_leaves__ = 0, empty_kd_leaves__ = 0, kd_prims__ = 0, clip__ = 0, bad_clip__ = 0, null_clip__ = 0, early_out__ = 0;
 
@@ -95,10 +63,10 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 		max_leaf_size_ = (unsigned int) mls;
 	}
 	else max_leaf_size_ = (unsigned int) leaf_size;
-	if(max_depth_ > KD_MAX_STACK) max_depth_ = KD_MAX_STACK; //to prevent our stack to overflow
+	if(max_depth_ > kd_max_stack__) max_depth_ = kd_max_stack__; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
-	all_bounds_ = new Bound[total_prims_ + TRI_CLIP_THRESH + 1];
+	all_bounds_ = new Bound[total_prims_ + tri_clip_thresh__ + 1];
 	Y_VERBOSE << "Kd-Tree: Getting triangle bounds..." << YENDL;
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
@@ -118,11 +86,11 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 	// get working memory for tree construction
 	BoundEdge *edges[3];
 	uint32_t r_mem_size = 3 * total_prims_; // (maxDepth+1)*totalPrims;
-	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * TRI_CLIP_THRESH, total_prims_)];
+	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * tri_clip_thresh__, total_prims_)];
 	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
 	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514/*2*totalPrims*/];
 	clip_ = new int[max_depth_ + 2];
-	cdata_ = (char *) yMemalign__(64, (max_depth_ + 2) * TRI_CLIP_THRESH * CLIP_DATA_SIZE);
+	cdata_ = (char *) yMemalign__(64, (max_depth_ + 2) * tri_clip_thresh__ * clip_data_size__);
 
 	// prepare data
 	for(uint32_t i = 0; i < total_prims_; i++) left_prims[i] = i; //primNums[i] = i;
@@ -172,7 +140,7 @@ TriKdTree::~TriKdTree()
 
 void TriKdTree::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split)
 {
-	TreeBin bin[KD_BINS + 1 ];
+	TreeBin bin[kd_bins__ + 1 ];
 	float d[3];
 	d[0] = node_bound.longX();
 	d[1] = node_bound.longY();
@@ -185,7 +153,7 @@ void TriKdTree::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 
 	for(int axis = 0; axis < 3; axis++)
 	{
-		float s = KD_BINS / d[axis];
+		float s = kd_bins__ / d[axis];
 		float min = node_bound.a_[axis];
 		// pigeonhole sort:
 		for(unsigned int i = 0; i < n_prims; ++i)
@@ -197,10 +165,10 @@ void TriKdTree::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 			b_right = (int)((t_up - min) * s);
 
 			if(b_left < 0) b_left = 0;
-			else if(b_left > KD_BINS) b_left = KD_BINS;
+			else if(b_left > kd_bins__) b_left = kd_bins__;
 
 			if(b_right < 0) b_right = 0;
-			else if(b_right > KD_BINS) b_right = KD_BINS;
+			else if(b_right > kd_bins__) b_right = kd_bins__;
 
 			if(t_low == t_up)
 			{
@@ -252,7 +220,7 @@ void TriKdTree::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 
 		unsigned int n_below = 0, n_above = n_prims;
 		// cumulate prims and evaluate cost
-		for(int i = 0; i < KD_BINS + 1; ++i)
+		for(int i = 0; i < kd_bins__ + 1; ++i)
 		{
 			if(!bin[i].empty())
 			{
@@ -295,22 +263,22 @@ void TriKdTree::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 		{
 			int c_1 = 0, c_2 = 0, c_3 = 0, c_4 = 0, c_5 = 0;
 			std::cout << "SCREWED!!\n";
-			for(int i = 0; i < KD_BINS + 1; i++) { c_1 += bin[i].n_; std::cout << bin[i].n_ << " ";}
+			for(int i = 0; i < kd_bins__ + 1; i++) { c_1 += bin[i].n_; std::cout << bin[i].n_ << " ";}
 			std::cout << "\nn total: " << c_1 << "\n";
-			for(int i = 0; i < KD_BINS + 1; i++) { c_2 += bin[i].c_left_; std::cout << bin[i].c_left_ << " ";}
+			for(int i = 0; i < kd_bins__ + 1; i++) { c_2 += bin[i].c_left_; std::cout << bin[i].c_left_ << " ";}
 			std::cout << "\nc_left total: " << c_2 << "\n";
-			for(int i = 0; i < KD_BINS + 1; i++) { c_3 += bin[i].c_bleft_; std::cout << bin[i].c_bleft_ << " ";}
+			for(int i = 0; i < kd_bins__ + 1; i++) { c_3 += bin[i].c_bleft_; std::cout << bin[i].c_bleft_ << " ";}
 			std::cout << "\nc_bleft total: " << c_3 << "\n";
-			for(int i = 0; i < KD_BINS + 1; i++) { c_4 += bin[i].c_both_; std::cout << bin[i].c_both_ << " ";}
+			for(int i = 0; i < kd_bins__ + 1; i++) { c_4 += bin[i].c_both_; std::cout << bin[i].c_both_ << " ";}
 			std::cout << "\nc_both total: " << c_4 << "\n";
-			for(int i = 0; i < KD_BINS + 1; i++) { c_5 += bin[i].c_right_; std::cout << bin[i].c_right_ << " ";}
+			for(int i = 0; i < kd_bins__ + 1; i++) { c_5 += bin[i].c_right_; std::cout << bin[i].c_right_ << " ";}
 			std::cout << "\nc_right total: " << c_5 << "\n";
 			std::cout << "\nnPrims: " << n_prims << " nBelow: " << n_below << " nAbove: " << n_above << "\n";
 			std::cout << "total left: " << c_2 + c_3 + c_4 << "\ntotal right: " << c_4 + c_5 << "\n";
 			std::cout << "n/2: " << c_1 / 2 << "\n";
 			throw std::logic_error("cost function mismatch");
 		}
-		for(int i = 0; i < KD_BINS + 1; i++) bin[i].reset();
+		for(int i = 0; i < kd_bins__ + 1; i++) bin[i].reset();
 	} // for all axis
 }
 
@@ -343,13 +311,13 @@ void TriKdTree::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 				const Bound &bbox = all_bounds[i];
 				if(bbox.a_[axis] == bbox.g_[axis])
 				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, BOTH_B);
+					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, both_b__);
 					++n_edge;
 				}
 				else
 				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, LOWER_B);
-					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], i /* pn */, UPPER_B);
+					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, lower_b__);
+					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], i /* pn */, upper_b__);
 					n_edge += 2;
 				}
 			}
@@ -359,13 +327,13 @@ void TriKdTree::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 				const Bound &bbox = all_bounds[pn];
 				if(bbox.a_[axis] == bbox.g_[axis])
 				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, BOTH_B);
+					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, both_b__);
 					++n_edge;
 				}
 				else
 				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, LOWER_B);
-					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], pn, UPPER_B);
+					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, lower_b__);
+					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], pn, upper_b__);
 					n_edge += 2;
 				}
 			}
@@ -417,7 +385,7 @@ void TriKdTree::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 
 		for(int i = 0; i < n_edge; ++i)
 		{
-			if(edges[axis][i].end_ == UPPER_B) --n_above;
+			if(edges[axis][i].end_ == upper_b__) --n_above;
 			float edget = edges[axis][i].pos_;
 			if(edget > node_bound.a_[axis] &&
 			   edget < node_bound.g_[axis])
@@ -447,10 +415,10 @@ void TriKdTree::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 					split.n_above_ = n_above;
 				}
 			}
-			if(edges[axis][i].end_ != UPPER_B)
+			if(edges[axis][i].end_ != upper_b__)
 			{
 				++n_below;
-				if(edges[axis][i].end_ == BOTH_B) --n_above;
+				if(edges[axis][i].end_ == both_b__) --n_above;
 			}
 		}
 		if(n_below != n_prims || n_above != 0) std::cout << "you screwed your new idea!\n";
@@ -481,9 +449,9 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	}
 
 #if TRI_CLIP > 0
-	if(n_prims <= TRI_CLIP_THRESH)
+	if(n_prims <= tri_clip_thresh__)
 	{
-		int o_prims[TRI_CLIP_THRESH], n_overl = 0;
+		int o_prims[tri_clip_thresh__], n_overl = 0;
 		double b_half_size[3];
 		double b_ext[2][3];
 		for(int i = 0; i < 3; ++i)
@@ -493,15 +461,15 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 			b_ext[0][i] = node_bound.a_[i] - 0.021 * b_half_size[i] - 0.00001 * temp;
 			b_ext[1][i] = node_bound.g_[i] + 0.021 * b_half_size[i] + 0.00001 * temp;
 		}
-		char *c_old = cdata_ + (TRI_CLIP_THRESH * CLIP_DATA_SIZE * depth);
-		char *c_new = cdata_ + (TRI_CLIP_THRESH * CLIP_DATA_SIZE * (depth + 1));
+		char *c_old = cdata_ + (tri_clip_thresh__ * clip_data_size__ * depth);
+		char *c_new = cdata_ + (tri_clip_thresh__ * clip_data_size__ * (depth + 1));
 		for(unsigned int i = 0; i < n_prims; ++i)
 		{
 			const Triangle *ct = prims_[ prim_nums[i] ];
 			uint32_t old_idx = 0;
 			if(clip_[depth] >= 0) old_idx = prim_nums[i + n_prims];
 			if(ct->clipToBound(b_ext, clip_[depth], all_bounds_[total_prims_ + n_overl],
-			                   c_old + old_idx * CLIP_DATA_SIZE, c_new + n_overl * CLIP_DATA_SIZE))
+			                   c_old + old_idx * clip_data_size__, c_new + n_overl * clip_data_size__))
 			{
 				++clip__;
 				o_prims[n_overl] = prim_nums[i]; n_overl++;
@@ -528,7 +496,7 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	e_bonus_ *= 1.1 - (float)depth / (float)max_depth_;
 	if(n_prims > 128) pigeonMinCost(n_prims, node_bound, prim_nums, split);
 #if TRI_CLIP > 0
-	else if(n_prims > TRI_CLIP_THRESH) minimalCost(n_prims, node_bound, prim_nums, all_bounds_, edges, split);
+	else if(n_prims > tri_clip_thresh__) minimalCost(n_prims, node_bound, prim_nums, all_bounds_, edges, split);
 	else minimalCost(n_prims, node_bound, prim_nums, all_bounds_ + total_prims_, edges, split);
 #else
 	else minimalCost(nPrims, nodeBound, primNums, allBounds, edges, split);
@@ -548,7 +516,7 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	//todo: check working memory for child recursive calls
 	uint32_t remaining_mem, *more_prims = nullptr, *n_right_prims;
 	uint32_t *old_right_prims = right_prims;
-	if(n_prims > right_mem_size || 2 * TRI_CLIP_THRESH > right_mem_size) // *possibly* not enough, get some more
+	if(n_prims > right_mem_size || 2 * tri_clip_thresh__ > right_mem_size) // *possibly* not enough, get some more
 	{
 		remaining_mem = n_prims * 3;
 		more_prims = new uint32_t[remaining_mem];
@@ -579,15 +547,15 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 		split_pos = split.t_;
 		//if (n0!= split.nBelow || n1 != split.nAbove) Y_WARNING << "Kd-Tree: oops! out of split bounds." << YENDL;
 	}
-	else if(n_prims <= TRI_CLIP_THRESH)
+	else if(n_prims <= tri_clip_thresh__)
 	{
-		int cindizes[TRI_CLIP_THRESH];
-		uint32_t old_prims[TRI_CLIP_THRESH];
+		int cindizes[tri_clip_thresh__];
+		uint32_t old_prims[tri_clip_thresh__];
 		memcpy(old_prims, prim_nums, n_prims * sizeof(int));
 
 		for(int i = 0; i < split.best_offset_; ++i)
 		{
-			if(edges[split.best_axis_][i].end_ != UPPER_B)
+			if(edges[split.best_axis_][i].end_ != upper_b__)
 			{
 				cindizes[n_0] = edges[split.best_axis_][i].prim_num_;
 				left_prims[n_0] = old_prims[cindizes[n_0]];
@@ -597,7 +565,7 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 
 		for(int i = 0; i < n_0; ++i) left_prims[n_0 + i] = cindizes[i];
 
-		if(edges[split.best_axis_][split.best_offset_].end_ == BOTH_B)
+		if(edges[split.best_axis_][split.best_offset_].end_ == both_b__)
 		{
 			cindizes[n_1] = edges[split.best_axis_][split.best_offset_].prim_num_;
 			n_right_prims[n_1] = old_prims[cindizes[n_1]];
@@ -606,7 +574,7 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 
 		for(int i = split.best_offset_ + 1; i < split.n_edge_; ++i)
 		{
-			if(edges[split.best_axis_][i].end_ != LOWER_B)
+			if(edges[split.best_axis_][i].end_ != lower_b__)
 			{
 				cindizes[n_1] = edges[split.best_axis_][i].prim_num_;
 				n_right_prims[n_1] = old_prims[cindizes[n_1]];
@@ -621,12 +589,12 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	else //we did "normal" cost function
 	{
 		for(int i = 0; i < split.best_offset_; ++i)
-			if(edges[split.best_axis_][i].end_ != UPPER_B)
+			if(edges[split.best_axis_][i].end_ != upper_b__)
 				left_prims[n_0++] = edges[split.best_axis_][i].prim_num_;
-		if(edges[split.best_axis_][split.best_offset_].end_ == BOTH_B)
+		if(edges[split.best_axis_][split.best_offset_].end_ == both_b__)
 			n_right_prims[n_1++] = edges[split.best_axis_][split.best_offset_].prim_num_;
 		for(int i = split.best_offset_ + 1; i < split.n_edge_; ++i)
-			if(edges[split.best_axis_][i].end_ != LOWER_B)
+			if(edges[split.best_axis_][i].end_ != lower_b__)
 				n_right_prims[n_1++] = edges[split.best_axis_][i].prim_num_;
 		split_pos = edges[split.best_axis_][split.best_offset_].pos_;
 	}
@@ -646,7 +614,7 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	}
 
 #if TRI_CLIP > 0
-	if(n_prims <= TRI_CLIP_THRESH)
+	if(n_prims <= tri_clip_thresh__)
 	{
 		remaining_mem -= n_1;
 		//<< recurse below child >>
@@ -693,7 +661,7 @@ bool TriKdTree::intersect(const Ray &ray, float dist, Triangle **tr, float &z, I
 	Vec3 inv_dir(1.0 / ray.dir_.x_, 1.0 / ray.dir_.y_, 1.0 / ray.dir_.z_); //was 1.f!
 	bool hit = false;
 
-	KdStack stack[KD_MAX_STACK];
+	KdStack stack[kd_max_stack__];
 	const KdTreeNode *far_child, *curr_node;
 	curr_node = nodes_;
 
@@ -848,7 +816,7 @@ bool TriKdTree::intersectS(const Ray &ray, float dist, Triangle **tr, float shad
 	IntersectData bary;
 	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 
-	KdStack stack[KD_MAX_STACK];
+	KdStack stack[kd_max_stack__];
 	const KdTreeNode *far_child, *curr_node;
 	curr_node = nodes_;
 
@@ -1011,7 +979,7 @@ bool TriKdTree::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 	std::set<const Triangle *> filtered;
 #endif
 
-	KdStack stack[KD_MAX_STACK];
+	KdStack stack[kd_max_stack__];
 	const KdTreeNode *far_child, *curr_node;
 	curr_node = nodes_;
 

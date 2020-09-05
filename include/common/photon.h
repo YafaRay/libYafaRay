@@ -26,13 +26,6 @@
 #include "common/color.h"
 
 BEGIN_YAFARAY
-#define C_255_RATIO 81.16902097686662123083
-#define C_256_RATIO 40.74366543152520595687
-
-
-#define C_INV_255_RATIO 0.01231997119054820878
-#define C_INV_256_RATIO 0.02454369260617025968
-
 
 class DirConverter
 {
@@ -41,22 +34,17 @@ class DirConverter
 
 		Vec3 convert(unsigned char theta, unsigned char phi)
 		{
-			return Vec3(sintheta_[theta] * cosphi_[phi],
-						sintheta_[theta] * sinphi_[phi],
-						costheta_[theta]);
+			return {sintheta_[theta] * cosphi_[phi],
+					sintheta_[theta] * sinphi_[phi],
+					costheta_[theta]};
 		}
-		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir)
-		{
-			int t = (int)(fAcos__(dir.z_) * C_255_RATIO);
-			int p = (int)(atan2(dir.y_, dir.x_) * C_256_RATIO);
-			if(t > 254) t = 254;
-			else if(t < 0) t = 0;
-			if(p > 255) p = 255;
-			else if(p < 0) p += 256;
-			return std::pair<unsigned char, unsigned char>(t, p);
-		}
+		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir);
 
 	protected:
+		static constexpr double c_255_ratio_ = 81.16902097686662123083;
+		static constexpr double c_256_ratio_ = 40.74366543152520595687;
+		static constexpr double c_inv_255_ratio_ = 0.01231997119054820878;
+		static constexpr double c_inv_256_ratio_ = 0.02454369260617025968;
 		float cosphi_[256];
 		float sinphi_[256];
 		float costheta_[255];

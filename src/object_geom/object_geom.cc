@@ -120,7 +120,7 @@ TriangleObjectInstance::TriangleObjectInstance(TriangleObject *base, Matrix4 obj
 	}
 }
 
-int TriangleObjectInstance::getPrimitives(const Triangle **prims)
+int TriangleObjectInstance::getPrimitives(const Triangle **prims) const
 {
 	for(size_t i = 0; i < triangles_.size(); i++)
 	{
@@ -139,7 +139,7 @@ void TriangleObjectInstance::finish()
 =====================================*/
 
 MeshObject::MeshObject(int ntris, bool has_uv, bool has_orco):
-		has_orco_(has_orco), has_uv_(has_uv), has_vcol_(false), is_smooth_(false), light_(nullptr)
+		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), light_(nullptr)
 {
 	//triangles.reserve(ntris);
 	if(has_uv)

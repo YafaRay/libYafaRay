@@ -34,13 +34,13 @@ class Ray;
 class Scene;
 class Vec3;
 class Point3;
-class LSample;
+struct LSample;
 
 class Light
 {
 	public:
 		static Light *factory(ParamMap &params, RenderEnvironment &render);
-		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 }; // "LightDiracdir" *must* be same as "BsdfFlags::Specular" (material.h)!		Light(): flags_(LightNone), light_enabled_(true), cast_shadows_(true), shoot_caustic_(true), shoot_diffuse_(true), photon_only_(false) {}
+		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		static constexpr bool hasFlag(const Light::Flags &f_1, const Light::Flags &f_2);
 		Light() = default;
 		Light(Flags flags): flags_(flags) {}

@@ -26,6 +26,7 @@
 #include "material/material_utils_microfacet.h"
 #include "common/color_ramp.h"
 #include "common/param.h"
+#include "common/surface.h"
 
 BEGIN_YAFARAY
 
@@ -66,8 +67,8 @@ CoatedGlossyMaterial::CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, cons
 
 void CoatedGlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
-	dat->stack_ = (char *)state.userdata_ + sizeof(MDatT);
+	MDat *dat = (MDat *)state.userdata_;
+	dat->stack_ = (char *)state.userdata_ + sizeof(MDat);
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
 
@@ -129,7 +130,7 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	Rgb col(0.f);
 	bool diffuse_flag = Material::hasFlag(bsdfs, BsdfFlags::Diffuse);
 
@@ -154,11 +155,11 @@ Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp,
 		if(anisotropic_)
 		{
 			Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
-			glossy = kt * asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+			glossy = kt * asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			glossy = kt * blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+			glossy = kt * blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
 		col = (float)glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
@@ -186,7 +187,7 @@ Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp,
 
 Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	float cos_ng_wo = sp.ng_ * wo;
@@ -326,13 +327,13 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 			if(anisotropic_)
 			{
 				s.pdf_ += asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * width[rc_index[C_GLOSSY]];
-				glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
+				glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 			}
 			else
 			{
 				float cos_hn = h * n;
 				s.pdf_ += blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
-				glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
+				glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 			}
 			scolor = (float)glossy * kt * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		}
@@ -370,7 +371,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 
 float CoatedGlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 	bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
@@ -418,7 +419,7 @@ float CoatedGlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp
 void CoatedGlossyMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
 									   bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	bool outside = sp.ng_ * wo >= 0;
@@ -600,12 +601,12 @@ Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > 
 		mat->filterNodes(color_nodes, mat->all_viewindep_, ViewIndep);
 		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 	}
-	mat->req_mem_ = mat->req_node_mem_ + sizeof(MDatT);
+	mat->req_mem_ = mat->req_node_mem_ + sizeof(MDat);
 	return mat;
 }
 
 Rgb CoatedGlossyMaterial::getDiffuseColor(const RenderState &state) const {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(stack) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
@@ -613,14 +614,14 @@ Rgb CoatedGlossyMaterial::getDiffuseColor(const RenderState &state) const {
 }
 
 Rgb CoatedGlossyMaterial::getGlossyColor(const RenderState &state) const {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 }
 
 Rgb CoatedGlossyMaterial::getMirrorColor(const RenderState &state) const {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);

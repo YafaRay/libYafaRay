@@ -20,11 +20,7 @@
 #ifndef YAFARAY_MATERIAL_SHINY_DIFFUSE_H
 #define YAFARAY_MATERIAL_SHINY_DIFFUSE_H
 
-#include "constants.h"
 #include "material/material_node.h"
-#include "shader/shader_node.h"
-#include "common/environment.h"
-#include "common/scene.h"
 
 BEGIN_YAFARAY
 
@@ -41,62 +37,28 @@ BEGIN_YAFARAY
     The remaining (l"') light is either reflected diffuse or absorbed.
 */
 
-class ShinyDiffuseMaterial: public NodeMaterial
+class ShinyDiffuseMaterial final : public NodeMaterial
 {
 	public:
-		ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Material::Visibility::NormalVisible);
-		virtual ~ShinyDiffuseMaterial();
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const;
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const;
-		virtual bool isTransparent() const { return m_is_transparent_; }
-		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const; // { return emitCol; }
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const;
-		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual Rgb getDiffuseColor(const RenderState &state) const
-		{
-			SdDat *dat = (SdDat *)state.userdata_;
-			NodeStack stack(dat->node_stack_);
-
-			if(is_diffuse_) return (diffuse_refl_shader_ ? diffuse_refl_shader_->getScalar(stack) : diffuse_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
-			else return Rgb(0.f);
-		}
-		virtual Rgb getGlossyColor(const RenderState &state) const
-		{
-			SdDat *dat = (SdDat *)state.userdata_;
-			NodeStack stack(dat->node_stack_);
-
-			if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
-			else return Rgb(0.f);
-		}
-		virtual Rgb getTransColor(const RenderState &state) const
-		{
-			SdDat *dat = (SdDat *)state.userdata_;
-			NodeStack stack(dat->node_stack_);
-
-			if(m_is_transparent_) return (transparency_shader_ ? transparency_shader_->getScalar(stack) : transparency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
-			else return Rgb(0.f);
-		}
-		virtual Rgb getMirrorColor(const RenderState &state) const
-		{
-			SdDat *dat = (SdDat *)state.userdata_;
-			NodeStack stack(dat->node_stack_);
-
-			if(is_mirror_) return (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_) * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_);
-			else return Rgb(0.f);
-		}
-		virtual Rgb getSubSurfaceColor(const RenderState &state) const
-		{
-			SdDat *dat = (SdDat *)state.userdata_;
-			NodeStack stack(dat->node_stack_);
-
-			if(m_is_translucent_) return (translucency_shader_ ? translucency_shader_->getScalar(stack) : translucency_strength_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
-			else return Rgb(0.f);
-		}
-
 		static Material *factory(ParamMap &params, std::list<ParamMap> &params_list, RenderEnvironment &render);
+
+	private:
+		ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Material::Visibility::NormalVisible);
+		virtual ~ShinyDiffuseMaterial() override;
+		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
+		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual bool isTransparent() const override { return m_is_transparent_; }
+		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
+		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const override;
+		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual Rgb getDiffuseColor(const RenderState &state) const override;
+		virtual Rgb getGlossyColor(const RenderState &state) const override;
+		virtual Rgb getTransColor(const RenderState &state) const override;
+		virtual Rgb getMirrorColor(const RenderState &state) const override;
+		virtual Rgb getSubSurfaceColor(const RenderState &state) const override;
 
 		struct SdDat
 		{
@@ -104,7 +66,6 @@ class ShinyDiffuseMaterial: public NodeMaterial
 			void *node_stack_;
 		};
 
-	protected:
 		void config();
 		int getComponents(const bool *use_node, NodeStack &stack, float *component) const;
 		void getFresnel(const Vec3 &wo, const Vec3 &n, float &kr, float &current_ior_squared) const;

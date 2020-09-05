@@ -41,8 +41,7 @@
 
 BEGIN_YAFARAY
 
-#define ALL_BSDF_INTERSECT (BSDF_GLOSSY | BSDF_DIFFUSE | BSDF_DISPERSIVE | BSDF_REFLECT | BSDF_TRANSMIT);
-#define LOFFS_DELTA 4567 //just some number to have different sequences per light...and it's a prime even...
+static constexpr int loffs_delta__ = 4567; //just some number to have different sequences per light...and it's a prime even...
 
 Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const
 {
@@ -80,7 +79,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderState &state, Light *light, co
 	Rgb col(0.f);
 	Rgba col_shadow(0.f), col_shadow_obj_mask(0.f), col_shadow_mat_mask(0.f), col_diff_dir(0.f), col_diff_no_shadow(0.f), col_glossy_dir(0.f);
 	bool shadowed;
-	unsigned int l_offs = loffs * LOFFS_DELTA;
+	unsigned int l_offs = loffs * loffs_delta__;
 	const Material *material = sp.material_;
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
@@ -362,7 +361,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 	RenderState state;
 	state.cam_ = scene->getCamera();
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 
 	local_caustic_photons.clear();
@@ -594,7 +593,7 @@ bool MonteCarloIntegrator::createCausticMap()
 
 			RenderState state;
 			state.cam_ = scene_->getCamera();
-			unsigned char userdata[USER_DATA_SIZE + 7];
+			unsigned char userdata[user_data_size__ + 7];
 			state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 
 			while(!done)

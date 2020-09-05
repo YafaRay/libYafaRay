@@ -29,8 +29,6 @@
 
 BEGIN_YAFARAY
 
-typedef unsigned char YByte_t;
-typedef unsigned short YWord_t;
 class RenderPasses;
 class ParamMap;
 class RenderEnvironment;
@@ -41,7 +39,6 @@ enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 class MipMapParams final
 {
 	public:
-		MipMapParams();
 		MipMapParams(float force_image_level): force_image_level_(force_image_level) {}
 		MipMapParams(float dsdx, float dtdx, float dsdy, float dtdy): ds_dx_(dsdx), dt_dx_(dtdx), ds_dy_(dsdy), dt_dy_(dtdy) {}
 
@@ -90,7 +87,7 @@ class ImageHandler
 
 		virtual ~ImageHandler() = default;
 		virtual bool loadFromFile(const std::string &name) = 0;
-		virtual bool loadFromMemory(const YByte_t *data, size_t size) {return false; }
+		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
 		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
 		virtual bool isHdr() const { return false; }

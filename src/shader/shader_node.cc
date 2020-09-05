@@ -36,4 +36,113 @@ ShaderNode *ShaderNode::factory(const ParamMap &params, RenderEnvironment &rende
 	else return nullptr;
 }
 
+Rgb ShaderNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode)
+{
+	switch(blend_mode)
+	{
+		case BlendMode::Mult:
+			fact *= facg;
+			return (Rgb(1.f - facg) + fact * tex) * out;
+
+		case BlendMode::Screen:
+		{
+			Rgb white(1.0);
+			fact *= facg;
+			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
+		}
+
+		case BlendMode::Sub:
+			fact = -fact;
+		case BlendMode::Add:
+			fact *= facg;
+			return fact * tex + out;
+
+		case BlendMode::Div:
+		{
+			fact *= facg;
+			Rgb itex(tex);
+			itex.invertRgb();
+			return (1.f - fact) * out + fact * out * itex;
+		}
+
+		case BlendMode::Diff:
+		{
+			fact *= facg;
+			Rgb tmo(tex - out);
+			tmo.absRgb();
+			return (1.f - fact) * out + fact * tmo;
+		}
+
+		case BlendMode::Dark:
+		{
+			fact *= facg;
+			Rgb col(fact * tex);
+			col.darkenRgb(out);
+			return col;
+		}
+
+		case BlendMode::Light:
+		{
+			fact *= facg;
+			Rgb col(fact * tex);
+			col.lightenRgb(out);
+			return col;
+		}
+
+		//case BlendMode::Mix:
+		default:
+			fact *= facg;
+			return fact * tex + (1.f - fact) * out;
+	}
+
+}
+
+float ShaderNode::textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip)
+{
+	fact *= facg;
+	float facm = 1.f - fact;
+	if(flip) std::swap(fact, facm);
+
+	switch(blend_mode)
+	{
+		case BlendMode::Mult:
+			facm = 1.f - facg;
+			return (facm + fact * tex) * out;
+
+		case BlendMode::Screen:
+			facm = 1.f - facg;
+			return 1.f - (facm + fact * (1.f - tex)) * (1.f - out);
+
+		case BlendMode::Sub:
+			fact = -fact;
+		case BlendMode::Add:
+			return fact * tex + out;
+
+		case BlendMode::Div:
+			if(tex == 0.f) return 0.f;
+			return facm * out + fact * out / tex;
+
+		case BlendMode::Diff:
+			return facm * out + fact * std::fabs(tex - out);
+
+		case BlendMode::Dark:
+		{
+			float col = fact * tex;
+			if(col < out) return col;
+			return out;
+		}
+
+		case BlendMode::Light:
+		{
+			float col = fact * tex;
+			if(col > out) return col;
+			return out;
+		}
+
+		//case BlendMode::Mix:
+		default:
+			return fact * tex + facm * out;
+	}
+}
+
 END_YAFARAY

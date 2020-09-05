@@ -20,20 +20,10 @@
 #ifndef YAFARAY_MATERIAL_UTILS_MICROFACET_H
 #define YAFARAY_MATERIAL_UTILS_MICROFACET_H
 
-#include "common/surface.h"
-#include "common/vector.h"
-#include "common/color_ramp.h"
-
 BEGIN_YAFARAY
 
-#define NOTANGENT 0
-#define TANGENT_U 1
-#define TANGENT_V 2
-#define RAW_VMAP 3
-
-#define DIFFUSE_RATIO 0.387507688 //1.21739130434782608696 // (28 / 23)
-#define PDF_DIVISOR(cos) ( 8.f * M_PI * (cos * 0.99f + 0.04f) )
-#define AS_DIVISOR(cos1, cosI, cosO) ( 8.f * M_PI * ((cos1 * std::max(cosI, cosO)) * 0.99f + 0.04f) )
+inline constexpr float pdfDivisor__(float cos) { return 8.f * M_PI * (cos * 0.99f + 0.04f); }
+inline float asDivisor__(float cos_1, float cos_i, float cos_o) { return 8.f * M_PI * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f); }
 
 inline void sampleQuadrantAniso__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
@@ -59,7 +49,7 @@ inline float asAnisoD__(Vec3 h, float e_u, float e_v)
 
 inline float asAnisoPdf__(Vec3 h, float cos_w_h, float e_u, float e_v)
 {
-	return asAnisoD__(h, e_u, e_v) / PDF_DIVISOR(cos_w_h);
+	return asAnisoD__(h, e_u, e_v) / pdfDivisor__(cos_w_h);
 }
 
 inline void asAnisoSample__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
@@ -93,7 +83,7 @@ inline float blinnD__(float cos_h, float e)
 
 inline float blinnPdf__(float costheta, float cos_w_h, float e)
 {
-	return blinnD__(costheta, e) / PDF_DIVISOR(cos_w_h);
+	return blinnD__(costheta, e) / pdfDivisor__(cos_w_h);
 }
 
 inline void blinnSample__(Vec3 &h, float s_1, float s_2, float exponent)
@@ -101,7 +91,7 @@ inline void blinnSample__(Vec3 &h, float s_1, float s_2, float exponent)
 	// Compute sampled half-angle vector H for Blinn distribution
 	float cos_theta = fPow__(1.f - s_2, 1.f / (exponent + 1.f));
 	float sin_theta = fSqrt__(1.f - cos_theta * cos_theta);
-	float phi = s_1 * M_2PI;
+	float phi = s_1 * mult_pi_by_2__;
 	h = Vec3(sin_theta * fCos__(phi), sin_theta * fSin__(phi), cos_theta);
 }
 
@@ -115,7 +105,7 @@ inline void ggxSample__(Vec3 &h, float alpha_2, float s_1, float s_2)
 	float tan_theta_2 = alpha_2 * (s_1 / (1.00001f - s_1));
 	float cos_theta = 1.f / fSqrt__(1.f + tan_theta_2);
 	float sin_theta  = fSqrt__(1.00001f - (cos_theta * cos_theta));
-	float phi = M_2PI * s_2;
+	float phi = mult_pi_by_2__ * s_2;
 
 	h = Vec3(sin_theta * fCos__(phi), sin_theta * fSin__(phi), cos_theta);
 }
@@ -194,14 +184,14 @@ inline float schlickFresnel__(float costheta, float r)
 
 inline Rgb diffuseReflect__(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base)
 {
-	float temp = 0.f;
+	constexpr double diffuse_ratio = 0.387507688; //This comment was in the original macro define, but not sure what it means: 1.21739130434782608696 // (28 / 23)
 	float f_wi = (1.f - (0.5f * wi_n));
-	temp = f_wi * f_wi;
+	float temp = f_wi * f_wi;
 	f_wi = temp * temp * f_wi;
 	float f_wo = (1.f - (0.5f * wo_n));
 	temp = f_wo * f_wo;
 	f_wo = temp * temp * f_wo;
-	return DIFFUSE_RATIO * diffuse * (1.f - glossy) * (1.f - f_wi) * (1.f - f_wo) * diff_base;
+	return diffuse_ratio * diffuse * (1.f - glossy) * (1.f - f_wi) * (1.f - f_wo) * diff_base;
 }
 
 inline Rgb diffuseReflectFresnel__(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base, float kt)

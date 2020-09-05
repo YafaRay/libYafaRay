@@ -26,6 +26,7 @@
 #include "common/spectrum.h"
 #include "common/color_ramp.h"
 #include "common/param.h"
+#include "common/surface.h"
 #include <iostream>
 
 BEGIN_YAFARAY

@@ -30,8 +30,8 @@ BEGIN_YAFARAY
 class NoiseGenerator
 {
 	public:
-		NoiseGenerator() {}
-		virtual ~NoiseGenerator() {}
+		NoiseGenerator() = default;
+		virtual ~NoiseGenerator() = default;
 		virtual float operator()(const Point3 &pt) const = 0;
 		// offset only added by blendernoise
 		virtual Point3 offset(const Point3 &pt) const { return pt; }
@@ -39,13 +39,13 @@ class NoiseGenerator
 
 //---------------------------------------------------------------------------
 // Improved Perlin noise, based on Java reference code by Ken Perlin himself.
-class NewPerlinNoiseGenerator : public NoiseGenerator
+class NewPerlinNoiseGenerator final : public NoiseGenerator
 {
 	public:
-		NewPerlinNoiseGenerator() {}
-		virtual ~NewPerlinNoiseGenerator() {}
-		virtual float operator()(const Point3 &pt) const;
+		NewPerlinNoiseGenerator() = default;
+
 	private:
+		virtual float operator()(const Point3 &pt) const override;
 		float fade(float t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
 		float grad(int hash, float x, float y, float z) const
 		{
@@ -58,23 +58,24 @@ class NewPerlinNoiseGenerator : public NoiseGenerator
 
 //---------------------------------------------------------------------------
 // Standard Perlin noise.
-class StdPerlinNoiseGenerator : public NoiseGenerator
+class StdPerlinNoiseGenerator final : public NoiseGenerator
 {
 	public:
-		StdPerlinNoiseGenerator() {}
-		virtual ~StdPerlinNoiseGenerator() {}
-		virtual float operator()(const Point3 &pt) const;
+		StdPerlinNoiseGenerator() = default;
+
+	private:
+		virtual float operator()(const Point3 &pt) const override;
 };
 
 // Blender noise, similar to Perlin's
-class BlenderNoiseGenerator : public NoiseGenerator
+class BlenderNoiseGenerator final : public NoiseGenerator
 {
 	public:
-		BlenderNoiseGenerator() {}
-		virtual ~BlenderNoiseGenerator() {}
-		virtual float operator()(const Point3 &pt) const;
+		BlenderNoiseGenerator() = default;
+	private:
+		virtual float operator()(const Point3 &pt) const override;
 		// offset texture point coordinates by one
-		virtual Point3 offset(const Point3 &pt) const { return pt + Point3(1.0, 1.0, 1.0); }
+		virtual Point3 offset(const Point3 &pt) const override { return pt + Point3(1.0, 1.0, 1.0); }
 };
 
 //---------------------------------------
@@ -145,7 +146,7 @@ struct dist_Minkovsky : public distanceMetric_t
 	}
 };
 */
-class VoronoiNoiseGenerator : public NoiseGenerator
+class VoronoiNoiseGenerator final : public NoiseGenerator
 {
 	public:
 		enum VoronoiType {Vf1, Vf2, Vf3, Vf4, Vf2F1, VCrackle};
@@ -153,17 +154,16 @@ class VoronoiNoiseGenerator : public NoiseGenerator
 		                  DistMinkovskyHalf, DistMinkovskyFour, DistMinkovsky
 		                 };
 		VoronoiNoiseGenerator(VoronoiType vt = Vf1, DMetricType dm = DistReal, float mex = 2.5);
-		virtual ~VoronoiNoiseGenerator()
-		{
-			//if (distfunc) { delete distfunc;  distfunc=nullptr; }
-		}
-		virtual float operator()(const Point3 &pt) const;
-		float getDistance(int x, float da[4]) const { return da[x & 3]; }
-		Point3 getPoint(int x, Point3 pa[4]) const { return pa[x & 3]; }
+		//virtual ~VoronoiNoiseGenerator() override { if (distfunc) { delete distfunc;  distfunc=nullptr; }
+		void setDistM(DMetricType dm);
 		void setMinkovskyExponent(float me) { mk_exp_ = me; }
 		void getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const;
-		void setDistM(DMetricType dm);
-	protected:
+		float getDistance(int x, float da[4]) const { return da[x & 3]; }
+		Point3 getPoint(int x, Point3 pa[4]) const { return pa[x & 3]; }
+
+	private:
+		virtual float operator()(const Point3 &pt) const override;
+
 		VoronoiType v_type_;
 		DMetricType dm_type_;
 		float mk_exp_, w_1_, w_2_, w_3_, w_4_;
@@ -174,12 +174,13 @@ class VoronoiNoiseGenerator : public NoiseGenerator
 };
 
 // cell noise
-class CellNoiseGenerator : public NoiseGenerator
+class CellNoiseGenerator final : public NoiseGenerator
 {
 	public:
-		CellNoiseGenerator() {}
-		virtual ~CellNoiseGenerator() {}
-		virtual float operator()(const Point3 &pt) const;
+		CellNoiseGenerator() = default;
+
+	private:
+		virtual float operator()(const Point3 &pt) const override;
 };
 
 //------------------
@@ -188,67 +189,72 @@ class CellNoiseGenerator : public NoiseGenerator
 class Musgrave
 {
 	public:
-		Musgrave() {}
-		virtual ~Musgrave() {}
+		Musgrave() = default;
+		virtual ~Musgrave() = default;
 		virtual float operator()(const Point3 &pt) const = 0;
 };
 
-class FBmMusgrave : public Musgrave
+class FBmMusgrave final : public Musgrave
 {
 	public:
 		FBmMusgrave(float h, float lacu, float octs, const NoiseGenerator *n_gen)
 			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
-		virtual ~FBmMusgrave() {}
-		virtual float operator()(const Point3 &pt) const;
-	protected:
+
+	private:
+		virtual float operator()(const Point3 &pt) const override;
+
 		float h_, lacunarity_, octaves_;
 		const NoiseGenerator *n_gen_;
 };
 
-class MFractalMusgrave : public Musgrave
+class MFractalMusgrave final : public Musgrave
 {
 	public:
 		MFractalMusgrave(float h, float lacu, float octs, const NoiseGenerator *n_gen)
 			: h_(h), lacunarity_(lacu), octaves_(octs), n_gen_(n_gen) {}
-		virtual ~MFractalMusgrave() {}
-		virtual float operator()(const Point3 &pt) const;
-	protected:
+
+	private:
+		virtual float operator()(const Point3 &pt) const override;
+
 		float h_, lacunarity_, octaves_;
 		const NoiseGenerator *n_gen_;
 };
 
-class HeteroTerrainMusgrave : public Musgrave
+class HeteroTerrainMusgrave final : public Musgrave
 {
 	public:
 		HeteroTerrainMusgrave(float h, float lacu, float octs, float offs, const NoiseGenerator *n_gen)
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), n_gen_(n_gen) {}
-		virtual ~HeteroTerrainMusgrave() {}
+
+	private:
 		virtual float operator()(const Point3 &pt) const;
-	protected:
+
 		float h_, lacunarity_, octaves_, offset_;
 		const NoiseGenerator *n_gen_;
 };
 
-class HybridMFractalMusgrave : public Musgrave
+class HybridMFractalMusgrave final : public Musgrave
 {
 	public:
 		HybridMFractalMusgrave(float h, float lacu, float octs, float offs, float gain, const NoiseGenerator *n_gen)
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
-		virtual ~HybridMFractalMusgrave() {}
+
+	private:
 		virtual float operator()(const Point3 &pt) const;
-	protected:
+
 		float h_, lacunarity_, octaves_, offset_, gain_;
 		const NoiseGenerator *n_gen_;
 };
 
-class RidgedMFractalMusgrave : public Musgrave
+class RidgedMFractalMusgrave final : public Musgrave
 {
 	public:
 		RidgedMFractalMusgrave(float h, float lacu, float octs, float offs, float gain, const NoiseGenerator *n_gen)
 			: h_(h), lacunarity_(lacu), octaves_(octs), offset_(offs), gain_(gain), n_gen_(n_gen) {}
-		virtual ~RidgedMFractalMusgrave() {}
+
+	private:
 		virtual float operator()(const Point3 &pt) const;
-	protected:
+
 		float h_, lacunarity_, octaves_, offset_, gain_;
 		const NoiseGenerator *n_gen_;
 };

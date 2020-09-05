@@ -44,7 +44,7 @@ class TriangleObjectInstance;
 /*!	meshObject_t holds various polygonal primitives
 */
 
-class MeshObject: public ObjectGeometric
+class MeshObject final : public ObjectGeometric
 {
 		friend class VTriangle;
 		friend class BsTriangle;
@@ -71,7 +71,6 @@ class MeshObject: public ObjectGeometric
 		std::vector<Uv> uv_values_;
 		bool has_orco_;
 		bool has_uv_;
-		bool has_vcol_;
 		bool is_smooth_;
 		const Light *light_;
 };
@@ -87,6 +86,7 @@ class TriangleObject: public ObjectGeometric
 		friend class TriangleInstance;
 		friend class Scene;
 		friend class TriangleObjectInstance;
+
 	public:
 		TriangleObject() : has_orco_(false), has_uv_(false), is_smooth_(false), normals_exported_(false) { /* Empty */ }
 		TriangleObject(int ntris, bool has_uv = false, bool has_orco = false);
@@ -97,7 +97,7 @@ class TriangleObject: public ObjectGeometric
 		Triangle *addTriangle(const Triangle &t);
 		virtual void finish();
 		virtual Vec3 getVertexNormal(int index) const { return Vec3(normals_[index]); }
-		inline virtual Point3 getVertex(int index) const { return points_[index]; }
+		virtual Point3 getVertex(int index) const { return points_[index]; }
 
 	private:
 		std::vector<Triangle> triangles_;
@@ -105,6 +105,7 @@ class TriangleObject: public ObjectGeometric
 		std::vector<Normal> normals_;
 		std::vector<int> uv_offsets_;
 		std::vector<Uv> uv_values_;
+
 	protected:
 		bool has_orco_;
 		bool has_uv_;
@@ -112,30 +113,32 @@ class TriangleObject: public ObjectGeometric
 		bool normals_exported_;
 };
 
-class TriangleObjectInstance: public TriangleObject
+class TriangleObjectInstance final: public TriangleObject
 {
 		friend class TriangleInstance;
 		friend class Scene;
+
 	public:
 		TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world);
+
+	private:
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const { return triangles_.size(); }
-		virtual int getPrimitives(const Triangle **prims);
+		virtual int numPrimitives() const override { return triangles_.size(); }
+		virtual int getPrimitives(const Triangle **prims) const override;
 
-		virtual void finish();
+		virtual void finish() override;
 
-		virtual Vec3 getVertexNormal(int index) const
+		virtual Vec3 getVertexNormal(int index) const override
 		{
 			return Vec3(obj_to_world_ * m_base_->normals_[index]);
 		}
 
-		virtual Point3 getVertex(int index) const
+		virtual Point3 getVertex(int index) const override
 		{
 			return obj_to_world_ * m_base_->points_[index];
 		}
 
-	private:
 		std::vector<TriangleInstance> triangles_;
 		Matrix4 obj_to_world_;
 		TriangleObject *m_base_;

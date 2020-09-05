@@ -327,7 +327,7 @@ bool IesData::parseIesFile(const std::string &file)
 
 	Y_VERBOSE << "IES Parser: Max vertical angle (degrees): " << max_v_angle_ << YENDL;
 
-	max_v_angle_ = DEG_TO_RAD(max_v_angle_);
+	max_v_angle_ = degToRad__(max_v_angle_);
 
 	Y_VERBOSE << "IES Parser: Max vertical angle (radians): " << max_v_angle_ << YENDL;
 

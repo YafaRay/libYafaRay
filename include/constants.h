@@ -23,8 +23,6 @@
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
 
-#define PACKAGE "libYafaRay"
-
 #if (__GNUC__ > 3)
 #define GCC_HASCLASSVISIBILITY
 #endif

@@ -30,13 +30,13 @@ BEGIN_YAFARAY
 //! r_photon2: Square distance of photon path; ir_gather2: inverse of square gather radius
 inline float kernel__(float r_photon_2, float ir_gather_2)
 {
-	float s = (1.f - r_photon_2 * ir_gather_2);
+	const float s = (1.f - r_photon_2 * ir_gather_2);
 	return 3.f * ir_gather_2 * M_1_PI * s * s;
 }
 
 inline float ckernel__(float r_photon_2, float r_gather_2, float ir_gather_2)
 {
-	float r_p = fSqrt__(r_photon_2), ir_g = 1.f / fSqrt__(r_gather_2);
+	const float r_p = fSqrt__(r_photon_2), ir_g = 1.f / fSqrt__(r_gather_2);
 	return 3.f * (1.f - r_p * ir_g) * ir_gather_2 * M_1_PI;
 }
 
@@ -48,7 +48,7 @@ Vec3 inline sampleCosHemisphere__(const Vec3 &n, const Vec3 &ru, const Vec3 &rv,
 	else
 	{
 		float z_1 = s_1;
-		float z_2 = s_2 * M_2PI;
+		float z_2 = s_2 * mult_pi_by_2__;
 		return (ru * fCos__(z_2) + rv * fSin__(z_2)) * fSqrt__(1.0 - z_1) + n * fSqrt__(z_1);
 	}
 }
@@ -63,7 +63,7 @@ Vec3 inline sampleSphere__(float s_1, float s_2)
 	if(r > 0.0f)
 	{
 		r = fSqrt__(r);
-		float a = M_2PI * s_2;
+		float a = mult_pi_by_2__ * s_2;
 		dir.x_ = fCos__(a) * r;
 		dir.y_ = fSin__(a) * r;
 	}
@@ -79,9 +79,9 @@ Vec3 inline sampleSphere__(float s_1, float s_2)
 
 Vec3 inline sampleCone__(const Vec3 &d, const Vec3 &u, const Vec3 &v, float max_cos_ang, float s_1, float s_2)
 {
-	float cos_ang = 1.f - (1.f - max_cos_ang) * s_2;
-	float sin_ang = fSqrt__(1.f - cos_ang * cos_ang);
-	float t_1 = M_2PI * s_1;
+	const float cos_ang = 1.f - (1.f - max_cos_ang) * s_2;
+	const float sin_ang = fSqrt__(1.f - cos_ang * cos_ang);
+	const float t_1 = mult_pi_by_2__ * s_1;
 	return (u * fCos__(t_1) + v * fSin__(t_1)) * sin_ang + d * cos_ang;
 }
 
@@ -127,7 +127,7 @@ class Pdf1D
 		float sample(float u, float *pdf) const
 		{
 			// Find surrounding cdf segments
-			float *ptr = std::lower_bound(cdf_, cdf_ + count_ + 1, u);
+			const float *ptr = std::lower_bound(cdf_, cdf_ + count_ + 1, u);
 			int index = (int)(ptr - cdf_ - 1);
 			if(index < 0) //Hopefully this should no longer be necessary from now on, as a minimum value slightly over 0.f has been set to the scrHalton function to avoid ptr and cdf to coincide (which caused index = -1)
 			{
@@ -135,7 +135,7 @@ class Pdf1D
 				index = 0;
 			}
 			// Return offset along current cdf segment
-			float delta = (u - cdf_[index]) / (cdf_[index + 1] - cdf_[index]);
+			const float delta = (u - cdf_[index]) / (cdf_[index + 1] - cdf_[index]);
 			if(pdf) *pdf = func_[index] * inv_integral_;
 			return index + delta;
 		}
@@ -148,7 +148,7 @@ class Pdf1D
 				*pdf = func_[0] * inv_integral_;
 				return 0;
 			}
-			float *ptr = std::lower_bound(cdf_, cdf_ + count_ + 1, u);
+			const float *ptr = std::lower_bound(cdf_, cdf_ + count_ + 1, u);
 			int index = (int)(ptr - cdf_ - 1);
 			if(index < 0)
 			{

@@ -42,8 +42,8 @@ BEGIN_YAFARAY
     */
 
 
-#define MAX_PATH_LENGTH 32
-#define MIN_PATH_LENGTH 3
+static constexpr int max_path_length__ =  32;
+static constexpr int min_path_length__ = 3;
 
 #define BIDIR_DEBUG 0
 #define BIDIR_DO_LIGHTIMAGE 1
@@ -159,11 +159,11 @@ bool BidirectionalIntegrator::preprocess()
 	for(int t = 0; t < scene_->getNumThreads(); ++t)
 	{
 		PathData &path_data = thread_data_[t];
-		path_data.eye_path_.resize(MAX_PATH_LENGTH);
-		path_data.light_path_.resize(MAX_PATH_LENGTH);
-		path_data.path_.resize(MAX_PATH_LENGTH * 2 + 1);
-		for(int i = 0; i < MAX_PATH_LENGTH; ++i) path_data.light_path_[i].userdata_ = malloc(USER_DATA_SIZE);
-		for(int i = 0; i < MAX_PATH_LENGTH; ++i) path_data.eye_path_[i].userdata_ = malloc(USER_DATA_SIZE);
+		path_data.eye_path_.resize(max_path_length__);
+		path_data.light_path_.resize(max_path_length__);
+		path_data.path_.resize(max_path_length__ * 2 + 1);
+		for(int i = 0; i < max_path_length__; ++i) path_data.light_path_[i].userdata_ = malloc(user_data_size__);
+		for(int i = 0; i < max_path_length__; ++i) path_data.eye_path_[i].userdata_ = malloc(user_data_size__);
 		path_data.n_paths_ = 0;
 	}
 	// initialize userdata (todo!)
@@ -246,8 +246,8 @@ void BidirectionalIntegrator::cleanup()
 	{
 		PathData &path_data = thread_data_[i];
 		n_paths += path_data.n_paths_;
-		for(int i = 0; i < MAX_PATH_LENGTH; ++i) free(path_data.light_path_[i].userdata_);
-		for(int i = 0; i < MAX_PATH_LENGTH; ++i) free(path_data.eye_path_[i].userdata_);
+		for(int i = 0; i < max_path_length__; ++i) free(path_data.light_path_[i].userdata_);
+		for(int i = 0; i < max_path_length__; ++i) free(path_data.eye_path_[i].userdata_);
 	}
 	light_image_->setNumDensitySamples(n_paths); //dirty hack...
 }
@@ -292,7 +292,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 
 		// create eyePath
-		n_eye = createPath(state, ray, path_data.eye_path_, MAX_PATH_LENGTH);
+		n_eye = createPath(state, ray, path_data.eye_path_, max_path_length__);
 
 		// sample light (todo!)
 		Ray lray;
@@ -325,7 +325,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		path_data.singular_l_ = Light::hasFlag(ls.flags_, Light::Flags::Singular);
 
 		// create lightPath
-		n_light = createPath(state, lray, path_data.light_path_, MAX_PATH_LENGTH);
+		n_light = createPath(state, lray, path_data.light_path_, max_path_length__);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = lights_[light_num]->illumPdf(path_data.light_path_[1].sp_, vl.sp_) * light_num_pdf;
@@ -487,7 +487,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 		v.pdf_wo_ = s.pdf_;
 		v.cos_wo_ = w * s.pdf_;
 		// use russian roulette on tentative sample to decide on path termination, unless path is too short
-		if(n_vert > MIN_PATH_LENGTH)
+		if(n_vert > min_path_length__)
 		{
 			v.qi_wo_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wo_ / v.pdf_wo_);
 			if(prng() > v.qi_wo_) break; // terminate path with russian roulette
@@ -593,24 +593,24 @@ inline bool BidirectionalIntegrator::connectPaths(RenderState &state, int s, int
 	copyEyeSubpath__(pd, s, t);
 
 	// calculate qi's...
-	if(s > MIN_PATH_LENGTH) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
-	if(s + 1 > MIN_PATH_LENGTH) x_e.pdf_f_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *y.cos_wi */ / x_e.pdf_f_);
+	if(s > min_path_length__) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
+	if(s + 1 > min_path_length__) x_e.pdf_f_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *y.cos_wi */ / x_e.pdf_f_);
 	// backward:
-	if(t + 1 > MIN_PATH_LENGTH) x_l.pdf_b_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *y.cos_wi */ / x_l.pdf_b_);
-	if(t > MIN_PATH_LENGTH) x_e.pdf_b_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *cos_z */ / x_e.pdf_b_);
+	if(t + 1 > min_path_length__) x_l.pdf_b_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *y.cos_wi */ / x_l.pdf_b_);
+	if(t > min_path_length__) x_e.pdf_b_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *cos_z */ / x_e.pdf_b_);
 
 	// multiply probabilities with qi's
 	int k = s + t - 1;
 	// forward:
-	for(int i = MIN_PATH_LENGTH, s_1 = s - 1; i < s_1; ++i)
+	for(int i = min_path_length__, s_1 = s - 1; i < s_1; ++i)
 		pd.path_[i].pdf_f_ *= pd.light_path_[i].qi_wo_;
-	for(int i = std::max(MIN_PATH_LENGTH, s + 1), st = s + t; i < st; ++i)
+	for(int i = std::max(min_path_length__, s + 1), st = s + t; i < st; ++i)
 		pd.path_[i].pdf_f_ *= pd.eye_path_[k - i].qi_wi_;
 
 	//backward:
-	for(int i = MIN_PATH_LENGTH, t_1 = t - 1; i < t_1; ++i)
+	for(int i = min_path_length__, t_1 = t - 1; i < t_1; ++i)
 		pd.path_[k - i].pdf_b_ *= pd.eye_path_[i].qi_wo_;
-	for(int i = std::max(MIN_PATH_LENGTH, t + 1), st = s + t; i < st; ++i)
+	for(int i = std::max(min_path_length__, t + 1), st = s + t; i < st; ++i)
 		pd.path_[k - i].pdf_b_ *= pd.light_path_[k - i].qi_wi_;
 	return true;
 }
@@ -685,16 +685,16 @@ inline bool BidirectionalIntegrator::connectLPath(RenderState &state, int t, Pat
 	// calculate qi's...
 	// backward:
 	//if(t+1>MIN_PATH_LENGTH) x_l.pdf_b *= std::min( 0.98f, pd.f_y.col2bri()*y.cos_wi / x_l.pdf_b ); //unused/meaningless(?)
-	if(t > MIN_PATH_LENGTH) x_e.pdf_b_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *cos_z */ / x_e.pdf_b_);
+	if(t > min_path_length__) x_e.pdf_b_ *= std::min(0.98f, pd.f_z_.col2Bri()/* *cos_z */ / x_e.pdf_b_);
 
 	// multiply probabilities with qi's
 	int k = t;
 	// forward:
-	for(int i = std::max(MIN_PATH_LENGTH, 2), st = t + 1; i < st; ++i)
+	for(int i = std::max(min_path_length__, 2), st = t + 1; i < st; ++i)
 		pd.path_[i].pdf_f_ *= pd.eye_path_[st - i - 1].qi_wi_;
 
 	//backward:
-	for(int i = MIN_PATH_LENGTH, t_1 = t - 1; i < t_1; ++i)
+	for(int i = min_path_length__, t_1 = t - 1; i < t_1; ++i)
 		pd.path_[k - i].pdf_b_ *= pd.eye_path_[i].qi_wo_;
 	return true;
 }
@@ -734,17 +734,17 @@ inline bool BidirectionalIntegrator::connectPathE(RenderState &state, int s, Pat
 	copyLightSubpath__(pd, s, 1);
 
 	// calculate qi's...
-	if(s > MIN_PATH_LENGTH) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
+	if(s > min_path_length__) x_l.pdf_f_ *= std::min(0.98f, pd.f_y_.col2Bri()/* *cos_y */ / x_l.pdf_f_);
 	//if(s+1>MIN_PATH_LENGTH) x_e.pdf_f *= std::min( 0.98f, pd.f_z.col2bri()*y.cos_wi / x_e.pdf_f );
 
 	// multiply probabilities with qi's
 	int k = s;
 	// forward:
-	for(int i = MIN_PATH_LENGTH, s_1 = s - 1; i < s_1; ++i)
+	for(int i = min_path_length__, s_1 = s - 1; i < s_1; ++i)
 		pd.path_[i].pdf_f_ *= pd.light_path_[i].qi_wo_;
 
 	//backward:
-	for(int i = std::max(MIN_PATH_LENGTH, 2), st = s + 1; i < st; ++i) //FIXME: why st=s+1 and not just s?
+	for(int i = std::max(min_path_length__, 2), st = s + 1; i < st; ++i) //FIXME: why st=s+1 and not just s?
 		pd.path_[k - i].pdf_b_ *= pd.light_path_[k - i].qi_wi_;
 	return true;
 }
@@ -758,7 +758,7 @@ inline bool BidirectionalIntegrator::connectPathE(RenderState &state, int s, Pat
 float BidirectionalIntegrator::pathWeight(RenderState &state, int s, int t, PathData &pd) const
 {
 	const std::vector<PathEvalVertex> &path = pd.path_;
-	float pr[2 * MAX_PATH_LENGTH + 1], p[2 * MAX_PATH_LENGTH + 1];
+	float pr[2 * max_path_length__ + 1], p[2 * max_path_length__ + 1];
 	p[s] = 1.f;
 	// "forward" weights (towards eye), ratio pr_i here is p_i+1 / p_i
 	int k = s + t - 1;
@@ -827,7 +827,7 @@ float BidirectionalIntegrator::pathWeight0T(RenderState &state, int t, PathData 
 
 	// == standard weighting procedure now == //
 
-	float pr, p[2 * MAX_PATH_LENGTH + 1];
+	float pr, p[2 * max_path_length__ + 1];
 
 	p[0] = 1;
 	p[1] = path[0].pdf_a_0_ / (path[1].pdf_b_ * path[1].g_);

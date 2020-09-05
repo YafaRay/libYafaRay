@@ -84,7 +84,7 @@ Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &c
 		if(show_pn_)
 		{
 			// Normals perturbed by materials
-			unsigned char userdata[USER_DATA_SIZE + 7];
+			unsigned char userdata[user_data_size__ + 7];
 			userdata[0] = 0;
 			state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 

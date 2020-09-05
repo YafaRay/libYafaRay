@@ -41,11 +41,6 @@ TextureBackground::TextureBackground(const Texture *texture, Projection proj, fl
 	cos_r_ = fCos__(M_PI * rotation_);
 }
 
-TextureBackground::~TextureBackground()
-{
-	// Empty
-}
-
 Rgb TextureBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
 {
 	return eval(ray, use_ibl_blur);

@@ -30,12 +30,12 @@ class RenderEnvironment;
 class ShaderNode;
 class NodeStack;
 
-enum NodeTypeE { ViewDep = 1, ViewIndep = 1 << 1 };
-
 class NodeMaterial: public Material
 {
 	public:
+		enum NodeType { ViewDep = 1, ViewIndep = 1 << 1 };
 		NodeMaterial(): req_node_mem_(0) {}
+
 	protected:
 		/*! load nodes from parameter map list */
 		bool loadNodes(const std::list<ParamMap> &params_list, RenderEnvironment &render);

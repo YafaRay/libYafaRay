@@ -73,9 +73,9 @@ ImageBuffer ImageBuffer::getDenoisedLdrBuffer(float h_col, float h_lum, float mi
 			Rgb color = getColor(x, y);
 			color.clampRgb01();
 
-			a_vec(y, x)[0] = (YByte_t)(color.getR() * 255);
-			a_vec(y, x)[1] = (YByte_t)(color.getG() * 255);
-			a_vec(y, x)[2] = (YByte_t)(color.getB() * 255);
+			a_vec(y, x)[0] = (uint8_t)(color.getR() * 255);
+			a_vec(y, x)[1] = (uint8_t)(color.getG() * 255);
+			a_vec(y, x)[2] = (uint8_t)(color.getB() * 255);
 		}
 	}
 

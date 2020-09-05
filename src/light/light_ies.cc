@@ -44,20 +44,20 @@ IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float p
 		cos_end_ = fCos__(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
-		tot_energy_ = M_2PI * (1.f - 0.5f * cos_end_);
+		tot_energy_ = mult_pi_by_2__ * (1.f - 0.5f * cos_end_);
 	}
 }
 
 void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const
 {
-	u = (dir.z_ >= 1.f) ? 0.f : RAD_TO_DEG(fAcos__(dir.z_));
+	u = (dir.z_ >= 1.f) ? 0.f : radToDeg__(fAcos__(dir.z_));
 
 	if(dir.y_ < 0)
 	{
 		u = 360.f - u;
 	}
 
-	v = (costheta >= 1.f) ? 0.f : RAD_TO_DEG(fAcos__(costheta));
+	v = (costheta >= 1.f) ? 0.f : radToDeg__(fAcos__(costheta));
 }
 
 bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const

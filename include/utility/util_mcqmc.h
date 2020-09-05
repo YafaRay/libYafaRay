@@ -60,7 +60,7 @@ class Halton
 
 		inline float getNext()
 		{
-			double r = 0.9999999999 - value_;
+			const double r = 0.9999999999 - value_;
 			if(inv_base_ < r)
 			{
 				value_ += inv_base_;

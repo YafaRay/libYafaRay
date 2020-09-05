@@ -40,8 +40,6 @@ SphereLight::SphereLight(const Point3 &c, float rad, const Rgb &col, float inte,
 	inv_area_ = 1.f / area_;
 }
 
-SphereLight::~SphereLight() { }
-
 void SphereLight::init(Scene &scene)
 {
 	if(obj_id_)

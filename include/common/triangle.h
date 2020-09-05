@@ -29,8 +29,11 @@
 
 BEGIN_YAFARAY
 
-#define Y_MIN_3(a,b,c) ( ((a)>(b)) ? ( ((b)>(c))?(c):(b)):( ((a)>(c))?(c):(a)) )
-#define Y_MAX_3(a,b,c) ( ((a)<(b)) ? ( ((b)>(c))?(b):(c)):( ((a)>(c))?(a):(c)) )
+template <class T>
+constexpr T min3__(const T &a, const T &b, const T &c) { return std::min(a, std::min(b, c)); }
+
+template <class T>
+constexpr T max3__(const T &a, const T &b, const T &c) { return std::max(a, std::max(b, c)); }
 
 // triBoxOverlap() is in src/yafraycore/tribox3_d.cc!
 int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts);
@@ -265,12 +268,12 @@ inline Bound Triangle::getBound() const
 	Point3 const &c = mesh_->getVertex(pc_);
 
 	Point3 l, h;
-	l.x_ = Y_MIN_3(a.x_, b.x_, c.x_);
-	l.y_ = Y_MIN_3(a.y_, b.y_, c.y_);
-	l.z_ = Y_MIN_3(a.z_, b.z_, c.z_);
-	h.x_ = Y_MAX_3(a.x_, b.x_, c.x_);
-	h.y_ = Y_MAX_3(a.y_, b.y_, c.y_);
-	h.z_ = Y_MAX_3(a.z_, b.z_, c.z_);
+	l.x_ = min3__(a.x_, b.x_, c.x_);
+	l.y_ = min3__(a.y_, b.y_, c.y_);
+	l.z_ = min3__(a.z_, b.z_, c.z_);
+	h.x_ = max3__(a.x_, b.x_, c.x_);
+	h.y_ = max3__(a.y_, b.y_, c.y_);
+	h.z_ = max3__(a.z_, b.z_, c.z_);
 	return Bound(l, h);
 }
 
@@ -346,12 +349,12 @@ inline Bound TriangleInstance::getBound() const
 	Point3 const &c = mesh_->getVertex(m_base_->pc_);
 
 	Point3 l, h;
-	l.x_ = Y_MIN_3(a.x_, b.x_, c.x_);
-	l.y_ = Y_MIN_3(a.y_, b.y_, c.y_);
-	l.z_ = Y_MIN_3(a.z_, b.z_, c.z_);
-	h.x_ = Y_MAX_3(a.x_, b.x_, c.x_);
-	h.y_ = Y_MAX_3(a.y_, b.y_, c.y_);
-	h.z_ = Y_MAX_3(a.z_, b.z_, c.z_);
+	l.x_ = min3__(a.x_, b.x_, c.x_);
+	l.y_ = min3__(a.y_, b.y_, c.y_);
+	l.z_ = min3__(a.z_, b.z_, c.z_);
+	h.x_ = max3__(a.x_, b.x_, c.x_);
+	h.y_ = max3__(a.y_, b.y_, c.y_);
+	h.z_ = max3__(a.z_, b.z_, c.z_);
 	return Bound(l, h);
 }
 

@@ -36,6 +36,7 @@ class Point3;
 class Primitive
 {
 	public:
+		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound() const = 0;
 		/*! a possibly more precise check to find out if the primitve really
@@ -57,7 +58,6 @@ class Primitive
 		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const = 0;
 		/* return the material */
 		virtual const Material *getMaterial() const = 0;
-		virtual ~Primitive() {};
 };
 
 END_YAFARAY

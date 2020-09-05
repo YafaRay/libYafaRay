@@ -35,12 +35,13 @@ class RenderEnvironment;
 class GridVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax);
-		~GridVolumeRegion();
-		virtual float density(Point3 p);
 		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
 
 	private:
+		GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax);
+		~GridVolumeRegion() override;
+		virtual float density(Point3 p) const override;
+
 		float ***grid_ = nullptr;
 		int size_x_, size_y_, size_z_;
 };

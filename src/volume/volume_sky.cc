@@ -31,12 +31,12 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 
-Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v)
+Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
 {
 	return Rgb(0.f);
 }
 
-Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v)
+Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
 {
 	//if (bBox.includes(p)) {
 	return s_ray_ + s_mie_;
@@ -45,7 +45,7 @@ Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v)
 	//	return Rgb(0.f);
 }
 
-Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset)
+Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset) const
 {
 	float t_0 = -1, t_1 = -1;
 
@@ -55,9 +55,9 @@ Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset)
 		return Rgb(0.f);
 	}
 
-	if(ray.tmax_ < t_0 && !(ray.tmax_ < 0)) return Rgb(0.f);
+	if(ray.tmax_ < t_0 && ray.tmax_ >= 0) return Rgb(0.f);
 
-	if(ray.tmax_ < t_1 && !(ray.tmax_ < 0)) t_1 = ray.tmax_;
+	if(ray.tmax_ < t_1 && ray.tmax_ >= 0) t_1 = ray.tmax_;
 
 	// t0 < 0 means, ray.from is in the volume
 	if(t_0 < 0.f) t_0 = 0.f;
@@ -68,7 +68,7 @@ Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset)
 	return (s_ray_ + s_mie_) * dist;
 }
 
-Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v)
+Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 {
 	if(b_box_.includes(p))
 	{
@@ -78,18 +78,18 @@ Rgb SkyVolumeRegion::emission(const Point3 &p, const Vec3 &v)
 		return Rgb(0.f);
 }
 
-float SkyVolumeRegion::p(const Vec3 &w_l, const Vec3 &w_s)
+float SkyVolumeRegion::p(const Vec3 &w_l, const Vec3 &w_s) const
 {
 	return phaseRayleigh(w_l, w_s) + phaseMie(w_l, w_s);
 }
 
-float SkyVolumeRegion::phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s)
+float SkyVolumeRegion::phaseRayleigh(const Vec3 &w_l, const Vec3 &w_s) const
 {
 	float costheta = (w_l * w_s);
 	return 3.f / (16.f * M_PI) * (1.f + costheta * costheta) * s_ray_.energy();
 }
 
-float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s)
+float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 {
 	float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 	float kcostheta = k * (w_l * w_s);

@@ -65,7 +65,7 @@ Scene::~Scene()
 	if(vtree_) delete vtree_;
 	for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 	{
-		if(i->second.type_ == TRIM)
+		if(i->second.type_ == trim__)
 			delete i->second.obj_;
 		else
 			delete i->second.mobj_;
@@ -284,19 +284,19 @@ bool Scene::startTriMesh(ObjId_t id, int vertices, int triangles, bool has_orco,
 {
 	if(state_.stack_.front() != Geometry) return false;
 	int ptype = type & 0xFF;
-	if(ptype != TRIM && type != VTRIM && type != MTRIM) return false;
+	if(ptype != trim__ && type != vtrim__ && type != mtrim__) return false;
 
 	ObjData &n_obj = meshes_[id];
 	switch(ptype)
 	{
-		case TRIM: n_obj.obj_ = new TriangleObject(triangles, has_uv, has_orco);
-			n_obj.obj_->setVisibility(!(type & INVISIBLEM));
-			n_obj.obj_->useAsBaseObject((type & BASEMESH));
+		case trim__: n_obj.obj_ = new TriangleObject(triangles, has_uv, has_orco);
+			n_obj.obj_->setVisibility(!(type & invisiblem__));
+			n_obj.obj_->useAsBaseObject((type & basemesh__));
 			n_obj.obj_->setObjectIndex(obj_pass_index);
 			break;
-		case VTRIM:
-		case MTRIM: n_obj.mobj_ = new MeshObject(triangles, has_uv, has_orco);
-			n_obj.mobj_->setVisibility(!(type & INVISIBLEM));
+		case vtrim__:
+		case mtrim__: n_obj.mobj_ = new MeshObject(triangles, has_uv, has_orco);
+			n_obj.mobj_->setVisibility(!(type & invisiblem__));
 			n_obj.obj_->setObjectIndex(obj_pass_index);
 			break;
 		default: return false;
@@ -314,7 +314,7 @@ bool Scene::endTriMesh()
 {
 	if(state_.stack_.front() != Object) return false;
 
-	if(state_.cur_obj_->type_ == TRIM)
+	if(state_.cur_obj_->type_ == trim__)
 	{
 		if(state_.cur_obj_->obj_->has_uv_)
 		{
@@ -449,7 +449,7 @@ bool Scene::smoothMesh(ObjId_t id, float angle)
 	}
 	else if(angle > 0.1) // angle dependant smoothing
 	{
-		float thresh = fCos__(DEG_TO_RAD(angle));
+		float thresh = fCos__(degToRad__(angle));
 		std::vector<Vec3> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex
@@ -547,7 +547,7 @@ int Scene::addVertex(const Point3 &p)
 {
 	if(state_.stack_.front() != Object) return -1;
 	state_.cur_obj_->obj_->points_.push_back(p);
-	if(state_.cur_obj_->type_ == MTRIM)
+	if(state_.cur_obj_->type_ == mtrim__)
 	{
 		std::vector<Point3> &points = state_.cur_obj_->mobj_->points_;
 		int n = points.size();
@@ -570,19 +570,19 @@ int Scene::addVertex(const Point3 &p, const Point3 &orco)
 
 	switch(state_.cur_obj_->type_)
 	{
-		case TRIM:
+		case trim__:
 			state_.cur_obj_->obj_->points_.push_back(p);
 			state_.cur_obj_->obj_->points_.push_back(orco);
 			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->obj_->points_.size() - 1) / 2;
 			break;
 
-		case VTRIM:
+		case vtrim__:
 			state_.cur_obj_->mobj_->points_.push_back(p);
 			state_.cur_obj_->mobj_->points_.push_back(orco);
 			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->mobj_->points_.size() - 1) / 2;
 			break;
 
-		case MTRIM:
+		case mtrim__:
 			return addVertex(p);
 	}
 
@@ -609,13 +609,13 @@ void Scene::addNormal(const Normal &n)
 bool Scene::addTriangle(int a, int b, int c, const Material *mat)
 {
 	if(state_.stack_.front() != Object) return false;
-	if(state_.cur_obj_->type_ == MTRIM)
+	if(state_.cur_obj_->type_ == mtrim__)
 	{
 		BsTriangle tri(3 * a, 3 * b, 3 * c, state_.cur_obj_->mobj_);
 		tri.setMaterial(mat);
 		state_.cur_obj_->mobj_->addBsTriangle(tri);
 	}
-	else if(state_.cur_obj_->type_ == VTRIM)
+	else if(state_.cur_obj_->type_ == vtrim__)
 	{
 		if(state_.orco_) a *= 2, b *= 2, c *= 2;
 		VTriangle tri(a, b, c, state_.cur_obj_->mobj_);
@@ -653,7 +653,7 @@ bool Scene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const
 {
 	if(!addTriangle(a, b, c, mat)) return false;
 
-	if(state_.cur_obj_->type_ == TRIM)
+	if(state_.cur_obj_->type_ == trim__)
 	{
 		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_a);
 		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_b);
@@ -672,7 +672,7 @@ bool Scene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const
 int Scene::addUv(float u, float v)
 {
 	if(state_.stack_.front() != Object) return false;
-	if(state_.cur_obj_->type_ == TRIM)
+	if(state_.cur_obj_->type_ == trim__)
 	{
 		state_.cur_obj_->obj_->uv_values_.push_back(Uv(u, v));
 		return (int)state_.cur_obj_->obj_->uv_values_.size() - 1;
@@ -742,7 +742,7 @@ ObjectGeometric *Scene::getObject(ObjId_t id) const
 	auto i = meshes_.find(id);
 	if(i != meshes_.end())
 	{
-		if(i->second.type_ == TRIM) return i->second.obj_;
+		if(i->second.type_ == trim__) return i->second.obj_;
 		else return i->second.mobj_;
 	}
 	else
@@ -800,7 +800,7 @@ bool Scene::update()
 				if(!dat.obj_->isVisible()) continue;
 				if(dat.obj_->isBaseObject()) continue;
 
-				if(dat.type_ == TRIM) nprims += dat.obj_->numPrimitives();
+				if(dat.type_ == trim__) nprims += dat.obj_->numPrimitives();
 			}
 			if(nprims > 0)
 			{
@@ -813,7 +813,7 @@ bool Scene::update()
 					if(!dat.obj_->isVisible()) continue;
 					if(dat.obj_->isBaseObject()) continue;
 
-					if(dat.type_ == TRIM) insert += dat.obj_->getPrimitives(insert);
+					if(dat.type_ == trim__) insert += dat.obj_->getPrimitives(insert);
 				}
 				tree_ = new TriKdTree(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
 				delete [] tris;
@@ -834,7 +834,7 @@ bool Scene::update()
 			for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 			{
 				ObjData &dat = (*i).second;
-				if(dat.type_ != TRIM) nprims += dat.mobj_->numPrimitives();
+				if(dat.type_ != trim__) nprims += dat.mobj_->numPrimitives();
 			}
 			// include all non-mesh objects; eventually make a common map...
 			for(auto i = objects_.begin(); i != objects_.end(); ++i)
@@ -848,7 +848,7 @@ bool Scene::update()
 				for(auto i = meshes_.begin(); i != meshes_.end(); ++i)
 				{
 					ObjData &dat = (*i).second;
-					if(dat.type_ != TRIM) insert += dat.mobj_->getPrimitives(insert);
+					if(dat.type_ != trim__) insert += dat.mobj_->getPrimitives(insert);
 				}
 				for(auto i = objects_.begin(); i != objects_.end(); ++i)
 				{
@@ -1002,7 +1002,7 @@ bool Scene::isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &f
 	else  dis = sray.tmax_ - 2 * sray.tmin_;
 	filt = Rgb(1.0);
 	void *odat = state.userdata_;
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(((size_t)&userdata[7]) & (~7));  // pad userdata to 8 bytes
 	bool isect = false;
 	if(mode_ == 0)

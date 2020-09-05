@@ -37,15 +37,14 @@ class Sphere final : public Primitive
 {
 	public:
 		Sphere(Point3 centr, float rad, const Material *m): center_(centr), radius_(rad), material_(m) {}
-		virtual Bound getBound() const;
+
+	private:
+		virtual Bound getBound() const override;
 		virtual bool intersectsBound(ExBound &b) const override { return true; };
-		//virtual bool clippingSupport() const { return false; }
-		//virtual bool clipToBound(double bound[2][3], int axis, bound_t &clipped, void *d_old, void *d_new) const {return false;}
 		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const override;
 		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const override;
 		virtual const Material *getMaterial() const override { return material_; }
-		const TriangleObject *getMesh() const { return nullptr; }
-	protected:
+
 		Point3 center_;
 		float radius_;
 		const Material *material_ = nullptr;

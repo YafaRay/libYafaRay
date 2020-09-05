@@ -700,7 +700,6 @@ Texture *ImageTexture::factory(ParamMap &params, RenderEnvironment &render)
 	tex->yrepeat_ = yrep;
 	tex->rot_90_ = rot_90;
 	tex->setCrop(minx, miny, maxx, maxy);
-	tex->use_alpha_ = use_alpha;
 	tex->calc_alpha_ = calc_alpha;
 	tex->normalmap_ = normalmap;
 	tex->tex_clip_mode_ = string2Cliptype__(clipmode);

@@ -25,11 +25,11 @@
 #include "material/material_glass.h"
 #include "material/material_glossy.h"
 #include "material/material_coated_glossy.h"
-#include "material/material_mask.h"
 #include "material/material_simple.h"
-//#include "material/material_beer.h"
+#include "common/surface.h"
 #include "common/environment.h"
 #include "common/param.h"
+#include "utility/util_sample.h"
 
 BEGIN_YAFARAY
 

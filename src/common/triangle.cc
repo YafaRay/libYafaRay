@@ -416,12 +416,12 @@ Bound VTriangle::getBound() const
 {
 	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
 	Point3 l, h;
-	l.x_ = Y_MIN_3(a.x_, b.x_, c.x_);
-	l.y_ = Y_MIN_3(a.y_, b.y_, c.y_);
-	l.z_ = Y_MIN_3(a.z_, b.z_, c.z_);
-	h.x_ = Y_MAX_3(a.x_, b.x_, c.x_);
-	h.y_ = Y_MAX_3(a.y_, b.y_, c.y_);
-	h.z_ = Y_MAX_3(a.z_, b.z_, c.z_);
+	l.x_ = min3__(a.x_, b.x_, c.x_);
+	l.y_ = min3__(a.y_, b.y_, c.y_);
+	l.z_ = min3__(a.z_, b.z_, c.z_);
+	h.x_ = max3__(a.x_, b.x_, c.x_);
+	h.y_ = max3__(a.y_, b.y_, c.y_);
+	h.z_ = max3__(a.z_, b.z_, c.z_);
 	return Bound(l, h);
 }
 
@@ -617,31 +617,31 @@ Bound BsTriangle::getBound() const
 {
 	const Point3 *an = &mesh_->points_[pa_], *bn = &mesh_->points_[pb_], *cn = &mesh_->points_[pc_];
 	Point3 amin, bmin, cmin, amax, bmax, cmax;
-	amin.x_ = Y_MIN_3(an[0].x_, an[1].x_, an[2].x_);
-	amin.y_ = Y_MIN_3(an[0].y_, an[1].y_, an[2].y_);
-	amin.z_ = Y_MIN_3(an[0].z_, an[1].z_, an[2].z_);
-	bmin.x_ = Y_MIN_3(bn[0].x_, bn[1].x_, bn[2].x_);
-	bmin.y_ = Y_MIN_3(bn[0].y_, bn[1].y_, bn[2].y_);
-	bmin.z_ = Y_MIN_3(bn[0].z_, bn[1].z_, bn[2].z_);
-	cmin.x_ = Y_MIN_3(cn[0].x_, cn[1].x_, cn[2].x_);
-	cmin.y_ = Y_MIN_3(cn[0].y_, cn[1].y_, cn[2].y_);
-	cmin.z_ = Y_MIN_3(cn[0].z_, cn[1].z_, cn[2].z_);
-	amax.x_ = Y_MAX_3(an[0].x_, an[1].x_, an[2].x_);
-	amax.y_ = Y_MAX_3(an[0].y_, an[1].y_, an[2].y_);
-	amax.z_ = Y_MAX_3(an[0].z_, an[1].z_, an[2].z_);
-	bmax.x_ = Y_MAX_3(bn[0].x_, bn[1].x_, bn[2].x_);
-	bmax.y_ = Y_MAX_3(bn[0].y_, bn[1].y_, bn[2].y_);
-	bmax.z_ = Y_MAX_3(bn[0].z_, bn[1].z_, bn[2].z_);
-	cmax.x_ = Y_MAX_3(cn[0].x_, cn[1].x_, cn[2].x_);
-	cmax.y_ = Y_MAX_3(cn[0].y_, cn[1].y_, cn[2].y_);
-	cmax.z_ = Y_MAX_3(cn[0].z_, cn[1].z_, cn[2].z_);
+	amin.x_ = min3__(an[0].x_, an[1].x_, an[2].x_);
+	amin.y_ = min3__(an[0].y_, an[1].y_, an[2].y_);
+	amin.z_ = min3__(an[0].z_, an[1].z_, an[2].z_);
+	bmin.x_ = min3__(bn[0].x_, bn[1].x_, bn[2].x_);
+	bmin.y_ = min3__(bn[0].y_, bn[1].y_, bn[2].y_);
+	bmin.z_ = min3__(bn[0].z_, bn[1].z_, bn[2].z_);
+	cmin.x_ = min3__(cn[0].x_, cn[1].x_, cn[2].x_);
+	cmin.y_ = min3__(cn[0].y_, cn[1].y_, cn[2].y_);
+	cmin.z_ = min3__(cn[0].z_, cn[1].z_, cn[2].z_);
+	amax.x_ = max3__(an[0].x_, an[1].x_, an[2].x_);
+	amax.y_ = max3__(an[0].y_, an[1].y_, an[2].y_);
+	amax.z_ = max3__(an[0].z_, an[1].z_, an[2].z_);
+	bmax.x_ = max3__(bn[0].x_, bn[1].x_, bn[2].x_);
+	bmax.y_ = max3__(bn[0].y_, bn[1].y_, bn[2].y_);
+	bmax.z_ = max3__(bn[0].z_, bn[1].z_, bn[2].z_);
+	cmax.x_ = max3__(cn[0].x_, cn[1].x_, cn[2].x_);
+	cmax.y_ = max3__(cn[0].y_, cn[1].y_, cn[2].y_);
+	cmax.z_ = max3__(cn[0].z_, cn[1].z_, cn[2].z_);
 	Point3 l, h;
-	l.x_ = Y_MIN_3(amin.x_, bmin.x_, cmin.x_);
-	l.y_ = Y_MIN_3(amin.y_, bmin.y_, cmin.y_);
-	l.z_ = Y_MIN_3(amin.z_, bmin.z_, cmin.z_);
-	h.x_ = Y_MAX_3(amax.x_, bmax.x_, cmax.x_);
-	h.y_ = Y_MAX_3(amax.y_, bmax.y_, cmax.y_);
-	h.z_ = Y_MAX_3(amax.z_, bmax.z_, cmax.z_);
+	l.x_ = min3__(amin.x_, bmin.x_, cmin.x_);
+	l.y_ = min3__(amin.y_, bmin.y_, cmin.y_);
+	l.z_ = min3__(amin.z_, bmin.z_, cmin.z_);
+	h.x_ = max3__(amax.x_, bmax.x_, cmax.x_);
+	h.y_ = max3__(amax.y_, bmax.y_, cmax.y_);
+	h.z_ = max3__(amax.z_, bmax.z_, cmax.z_);
 	return Bound(l, h);
 }
 

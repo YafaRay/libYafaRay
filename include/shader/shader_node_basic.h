@@ -98,32 +98,6 @@ class MixNode : public ShaderNode
 		const ShaderNode *factor_ = nullptr;
 };
 
-inline void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1, float &fin_2, float &f_2) const
-{
-	f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
-	if(input_1_)
-	{
-		cin_1 = input_1_->getColor(stack);
-		fin_1 = input_1_->getScalar(stack);
-	}
-	else
-	{
-		cin_1 = col_1_;
-		fin_1 = val_1_;
-	}
-	if(input_2_)
-	{
-		cin_2 = input_2_->getColor(stack);
-		fin_2 = input_2_->getScalar(stack);
-	}
-	else
-	{
-		cin_2 = col_2_;
-		fin_2 = val_2_;
-	}
-}
-
-
 END_YAFARAY
 
 #endif // YAFARAY_SHADER_NODE_BASIC_H

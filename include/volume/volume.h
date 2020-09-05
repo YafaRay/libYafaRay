@@ -40,47 +40,47 @@ class VolumeHandler
 		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &render);
 		virtual bool transmittance(const RenderState &state, const Ray &ray, Rgb &col) const = 0;
 		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
-		virtual ~VolumeHandler() {}
+		virtual ~VolumeHandler() = default;
 };
 
 class VolumeRegion
 {
 	public:
 		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
-		VolumeRegion() {}
+		VolumeRegion() = default;
 		VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
 
 		virtual ~VolumeRegion() {}
 
-		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) = 0;
-		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) = 0;
-		virtual Rgb emission(const Point3 &p, const Vec3 &v) = 0;
-		virtual Rgb sigmaT(const Point3 &p, const Vec3 &v)
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const = 0;
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const = 0;
+		virtual Rgb emission(const Point3 &p, const Vec3 &v) const = 0;
+		Rgb sigmaT(const Point3 &p, const Vec3 &v) const
 		{
 			return sigmaA(p, v) + sigmaS(p, v);
 		}
 
-		float attenuation(const Point3 p, Light *l);
+		float attenuation(const Point3 p, Light *l) const;
 
 		// w_l: dir *from* the light, w_s: direction, into which should be scattered
-		virtual float p(const Vec3 &w_l, const Vec3 &w_s)
+		virtual float p(const Vec3 &w_l, const Vec3 &w_s) const
 		{
 			float k = 1.55f * g_ - .55f * g_ * g_ * g_;
 			float kcostheta = k * (w_l * w_s);
 			return 1.f / (4.f * M_PI) * (1.f - k * k) / ((1.f - kcostheta) * (1.f - kcostheta));
 		}
 
-		virtual Rgb tau(const Ray &ray, float step, float offset) = 0;
+		virtual Rgb tau(const Ray &ray, float step, float offset) const = 0;
 
-		bool intersect(const Ray &ray, float &t_0, float &t_1)
+		bool intersect(const Ray &ray, float &t_0, float &t_1) const
 		{
 			return b_box_.cross(ray, t_0, t_1, 10000.f);
 		}
 
-		Bound getBb() { return b_box_; }
+		Bound getBb() const { return b_box_; }
 
-		std::map<Light *, float *> attenuation_grid_map_;
 		int att_grid_x_, att_grid_y_, att_grid_z_; // FIXME: un-hardcode
+		std::map<Light *, float *> attenuation_grid_map_; // FIXME: un-hardcode
 
 	protected:
 		Bound b_box_;
@@ -92,18 +92,16 @@ class VolumeRegion
 
 class DensityVolumeRegion : public VolumeRegion
 {
-	public:
-		DensityVolumeRegion() {}
+	protected:
+		DensityVolumeRegion() = default;
 		DensityVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :
 			VolumeRegion(sa, ss, le, gg, pmin, pmax, attgrid_scale) {}
 
-		virtual ~DensityVolumeRegion() {}
+		virtual float density(Point3 p) const = 0;
 
-		virtual float density(Point3 p) = 0;
+		virtual Rgb tau(const Ray &ray, float step_size, float offset) const override;
 
-		virtual Rgb tau(const Ray &ray, float step_size, float offset);
-
-		Rgb sigmaA(const Point3 &p, const Vec3 &v)
+		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_s_a_) return Rgb(0.f);
 			if(b_box_.includes(p))
@@ -115,7 +113,7 @@ class DensityVolumeRegion : public VolumeRegion
 
 		}
 
-		Rgb sigmaS(const Point3 &p, const Vec3 &v)
+		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_s_s_) return Rgb(0.f);
 			if(b_box_.includes(p))
@@ -126,7 +124,7 @@ class DensityVolumeRegion : public VolumeRegion
 				return Rgb(0.f);
 		}
 
-		Rgb emission(const Point3 &p, const Vec3 &v)
+		virtual Rgb emission(const Point3 &p, const Vec3 &v) const override
 		{
 			if(!have_l_e_) return Rgb(0.f);
 			if(b_box_.includes(p))

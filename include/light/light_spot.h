@@ -41,7 +41,7 @@ class SpotLight final : public Light
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;
-		virtual bool diracLight() const { return !soft_shadows_; }
+		virtual bool diracLight() const override { return !soft_shadows_; }
 		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
 		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override;
 		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, float &dir_pdf, float &cos_wo) const override;

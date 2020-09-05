@@ -45,7 +45,6 @@ class SphereLight final : public Light
 
 	private:
 		SphereLight(const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
-		~SphereLight() override;
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;

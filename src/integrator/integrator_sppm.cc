@@ -40,7 +40,7 @@
 
 BEGIN_YAFARAY
 
-const int n_max_gather__ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
+static constexpr int n_max_gather__ = 1000; //used to gather all the photon in the radius. seems could get a better way to do that
 
 SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth)
 {
@@ -405,7 +405,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 	SurfacePoint sp;
 	RenderState state(&prng);
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 	state.cam_ = scene->getCamera();
 
@@ -643,7 +643,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	SurfacePoint sp;
 	Random prng(rand() + offset * (4517) + 123);
 	RenderState state(&prng);
-	unsigned char userdata[USER_DATA_SIZE + 7];
+	unsigned char userdata[user_data_size__ + 7];
 	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 	state.cam_ = scene_->getCamera();
 
@@ -892,7 +892,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 	if(scene_->intersect(ray, sp))
 	{
-		unsigned char userdata[USER_DATA_SIZE + 7];
+		unsigned char userdata[user_data_size__ + 7];
 		state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
 		if(state.raylevel_ == 0)
 		{

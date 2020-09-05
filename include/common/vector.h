@@ -29,11 +29,6 @@
 
 BEGIN_YAFARAY
 
-// useful trick found in trimesh2 lib by Szymon Rusinkiewicz
-// makes code for vector dot- cross-products much more readable
-#define VDOT *
-#define VCROSS ^
-
 #ifndef M_PI    //in most cases pi is defined as M_PI in cmath ohterwise we define it
 #define M_PI 3.1415926535897932384626433832795
 #endif
@@ -382,7 +377,7 @@ inline Vec3 randomSpherical__()
 	Vec3 v(0.0, 0.0, ourRandom__());
 	if((r = 1.0 - v.z_ * v.z_) > 0.0)
 	{
-		float a = M_2PI * ourRandom__();
+		float a = mult_pi_by_2__ * ourRandom__();
 		r = fSqrt__(r);
 		v.x_ = r * fCos__(a); v.y_ = r * fSin__(a);
 	}

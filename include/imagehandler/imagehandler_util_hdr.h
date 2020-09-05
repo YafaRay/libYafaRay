@@ -61,10 +61,10 @@ struct RgbePixel
 		else
 		{
 			v = frexp(v, &e) * 255.9999 / v;
-			r_ = (YByte_t)(c.getR() * v);
-			g_ = (YByte_t)(c.getG() * v);
-			b_ = (YByte_t)(c.getB() * v);
-			e_ = (YByte_t)(e + 128);
+			r_ = (uint8_t)(c.getR() * v);
+			g_ = (uint8_t)(c.getG() * v);
+			b_ = (uint8_t)(c.getB() * v);
+			e_ = (uint8_t)(e + 128);
 		}
 
 		return *this;
@@ -80,7 +80,7 @@ struct RgbePixel
 		return *this;
 	}
 
-	YByte_t &operator [](int i)
+	uint8_t &operator [](int i)
 	{
 		return (&r_)[i];
 	}
@@ -127,10 +127,10 @@ struct RgbePixel
 		e_ = w & 0xFF;
 	}
 
-	YByte_t r_;
-	YByte_t g_;
-	YByte_t b_;
-	YByte_t e_;
+	uint8_t r_;
+	uint8_t g_;
+	uint8_t b_;
+	uint8_t e_;
 };
 
 #pragma pack(pop)

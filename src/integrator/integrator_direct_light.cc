@@ -113,7 +113,7 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 
 	if(scene_->intersect(ray, sp)) // If it hits
 	{
-		unsigned char userdata[USER_DATA_SIZE];
+		unsigned char userdata[user_data_size__];
 		const Material *material = sp.material_;
 		BsdfFlags bsdfs;
 

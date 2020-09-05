@@ -41,7 +41,6 @@ class TextureBackground final : public Background
 		TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic);
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const override;
-		virtual ~TextureBackground() override;
 
 		const Texture *tex_;
 		Projection project_;

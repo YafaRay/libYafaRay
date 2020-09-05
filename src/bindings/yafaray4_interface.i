@@ -624,7 +624,7 @@ namespace yafaray4
 		public:
 		virtual ~ImageHandler() = default;
 		virtual bool loadFromFile(const std::string &name) = 0;
-		virtual bool loadFromMemory(const YByte_t *data, size_t size) {return false; }
+		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
 		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
 		virtual bool isHdr() const { return false; }
@@ -649,6 +649,7 @@ namespace yafaray4
 	class ImageOutput : public ColorOutput
 	{
 		public:
+		ImageOutput() = default;
 		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
 
 		private:

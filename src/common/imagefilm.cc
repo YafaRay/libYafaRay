@@ -288,8 +288,8 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 
 		if((images_auto_save_interval_type_ == AutoSaveIntervalType::Pass) && (images_auto_save_pass_counter_ >= images_auto_save_interval_passes_))
 		{
-			if(output_ && output_->isImageOutput()) this->flush(num_view, IF_ALL, output_);
-			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, IF_ALL, out_2);
+			if(output_ && output_->isImageOutput()) this->flush(num_view, All, output_);
+			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, All, out_2);
 			images_auto_save_pass_counter_ = 0;
 		}
 
@@ -606,8 +606,8 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 		if((images_auto_save_interval_type_ == AutoSaveIntervalType::Time) && (images_auto_save_timer_ > images_auto_save_interval_seconds_))
 		{
 			Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_timer_ << YENDL;
-			if(output_ && output_->isImageOutput()) this->flush(num_view, IF_ALL, output_);
-			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, IF_ALL, out_2);
+			if(output_ && output_->isImageOutput()) this->flush(num_view, All, output_);
+			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, All, out_2);
 			resetImagesAutoSaveTimer();
 		}
 
@@ -757,11 +757,11 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 				}
 				else
 				{
-					if(flags & IF_IMAGE) col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
+					if(flags & Image) col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 					else col_ext_passes[idx] = Rgba(0.f);
 				}
 
-				if(estimate_density_ && (flags & IF_DENSITYIMAGE) && idx == 0 && density_factor > 0.f) col_ext_passes[idx] += Rgba((*density_image_)(i, j) * density_factor, 0.f);
+				if(estimate_density_ && (flags & Densityimage) && idx == 0 && density_factor > 0.f) col_ext_passes[idx] += Rgba((*density_image_)(i, j) * density_factor, 0.f);
 
 				col_ext_passes[idx].clampRgb0();
 

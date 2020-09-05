@@ -30,20 +30,19 @@
 
 BEGIN_YAFARAY
 
-#define MAX_VSAMPLES 360
-#define MAX_USAMPLES 720
-#define MIN_SAMPLES 16
+static constexpr int max_vsamples__ = 360;
+static constexpr int max_usamples__ = 720;
+static constexpr int min_samples__ = 16;
 
-#define SMPL_OFF 0.4999f
+static constexpr float smpl_off__ = 0.4999f;
+static constexpr float sigma__ = 0.000001f;
 
-#define SIGMA 0.000001f
-
-#define ADD_OFF(v) (v + SMPL_OFF)
-#define CLAMP_SAMPLE(s, m) std::max(0, std::min((int)(s), m - 1))
+static constexpr float addOff__(float v) { return (v + smpl_off__); }
+int clampSample__(int s, int m) { return std::max(0, std::min(s, m - 1)); }
 
 #define MULT_PDF(p0, p1) (p0 * p1)
-#define CALC_PDF(p0, p1, s) std::max( SIGMA, MULT_PDF(p0, p1) * (float)M_1_2PI * clampZero__(sinSample__(s)) )
-#define CALC_INV_PDF(p0, p1, s) std::max( SIGMA, (float)M_2PI * sinSample__(s) * clampZero__(MULT_PDF(p0, p1)) )
+#define CALC_PDF(p0, p1, s) std::max( sigma__, MULT_PDF(p0, p1) * (float)div_1_by_2pi__ * clampZero__(sinSample__(s)) )
+#define CALC_INV_PDF(p0, p1, s) std::max( sigma__, (float)mult_pi_by_2__ * sinSample__(s) * clampZero__(MULT_PDF(p0, p1)) )
 
 inline float clampZero__(float val)
 {
@@ -77,27 +76,24 @@ BackgroundLight::~BackgroundLight()
 
 void BackgroundLight::init(Scene &scene)
 {
-	float *fu = new float[MAX_USAMPLES];
-	float *fv = new float[MAX_VSAMPLES];
-	float inu = 0, inv = 0;
-	float fx = 0.f, fy = 0.f;
-	float sintheta = 0.f;
-	int nu = 0, nv = MAX_VSAMPLES;
+	float *fu = new float[max_usamples__];
+	float *fv = new float[max_vsamples__];
+	int nv = max_vsamples__;
 
 	Ray ray;
 	ray.from_ = Point3(0.f);
-	inv = 1.f / (float)nv;
+	const float inv = 1.f / (float)nv;
 	u_dist_ = new Pdf1D *[nv];
 	for(int y = 0; y < nv; y++)
 	{
-		fy = ((float)y + 0.5f) * inv;
-		sintheta = sinSample__(fy);
-		nu = MIN_SAMPLES + (int)(sintheta * (MAX_USAMPLES - MIN_SAMPLES));
-		inu = 1.f / (float)nu;
+		const float fy = ((float)y + 0.5f) * inv;
+		const float sintheta = sinSample__(fy);
+		const int nu = min_samples__ + (int)(sintheta * (max_usamples__ - min_samples__));
+		const float inu = 1.f / (float)nu;
 
 		for(int x = 0; x < nu; x++)
 		{
-			fx = ((float)x + 0.5f) * inu;
+			const float fx = ((float)x + 0.5f) * inu;
 			invSpheremap__(fx, fy, ray.dir_);
 			fu[x] = background_->eval(ray, true).energy() * sintheta;
 		}
@@ -115,8 +111,7 @@ void BackgroundLight::init(Scene &scene)
 	world_center_ = 0.5 * (w.a_ + w.g_);
 	world_radius_ = 0.5 * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius_ * world_radius_;
-	ia_pdf_ = 1.f / a_pdf_;
-	world_pi_factor_ = (M_2PI * a_pdf_);
+	world_pi_factor_ = (mult_pi_by_2__ * a_pdf_);
 }
 
 inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, float &v, bool inv) const
@@ -124,7 +119,7 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 	int iv;
 	float pdf_1 = 0.f, pdf_2 = 0.f;
 	v = v_dist_->sample(s_2, &pdf_2);
-	iv = CLAMP_SAMPLE(ADD_OFF(v), v_dist_->count_);
+	iv = clampSample__(addOff__(v), v_dist_->count_);
 	u = u_dist_[iv]->sample(s_1, &pdf_1);
 	u *= u_dist_[iv]->inv_count_;
 	v *= v_dist_->inv_count_;
@@ -134,11 +129,10 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 
 inline float BackgroundLight::calcFromDir(const Vec3 &dir, float &u, float &v, bool inv) const
 {
-	int iv, iu;
 	float pdf_1 = 0.f, pdf_2 = 0.f;
 	spheremap__(dir, u, v); // Returns u,v pair in [0,1] range
-	iv = CLAMP_SAMPLE(ADD_OFF(v * v_dist_->count_), v_dist_->count_);
-	iu = CLAMP_SAMPLE(ADD_OFF(u * u_dist_[iv]->count_), u_dist_[iv]->count_);
+	const int iv = clampSample__(addOff__(v * v_dist_->count_), v_dist_->count_);
+	const int iu = clampSample__(addOff__(u * u_dist_[iv]->count_), u_dist_[iv]->count_);
 	pdf_1 = u_dist_[iv]->func_[iu] * u_dist_[iv]->inv_integral_;
 	pdf_2 = v_dist_->func_[iv] * v_dist_->inv_integral_;
 	if(inv)return CALC_INV_PDF(pdf_1, pdf_2, v);
@@ -172,10 +166,10 @@ bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) c
 
 bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	float u = 0.f, v = 0.f;
 	Ray tr = ray;
 	Vec3 abs_dir = tr.dir_;
 	if(abs_inter_) abs_dir = -abs_dir;
+	float u = 0.f, v = 0.f;
 	ipdf = calcFromDir(abs_dir, u, v, true);
 	invSpheremap__(u, v, tr.dir_);
 	col = background_->eval(tr, true);
@@ -185,43 +179,38 @@ bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf)
 
 Rgb BackgroundLight::totalEnergy() const
 {
-	Rgb energy = background_->eval(Ray(Point3(0, 0, 0), Vec3(0.5, 0.5, 0.5)), true) * world_pi_factor_;
+	const Rgb energy = background_->eval(Ray(Point3(0, 0, 0), Vec3(0.5, 0.5, 0.5)), true) * world_pi_factor_;
 	return energy;
 }
 
 Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	Rgb pcol;
-	Vec3 u_vec, v_vec;
-	Vec3 offs;
-	float u, v;
-
 	sampleDir(s_3, s_4, ray.dir_, ipdf, true);
-	pcol = background_->eval(ray, true);
+	const Rgb pcol = background_->eval(ray, true);
 	ray.dir_ = -ray.dir_;
 
+	Vec3 u_vec, v_vec;
 	createCs__(ray.dir_, u_vec, v_vec);
+	float u, v;
 	shirleyDisk__(s_1, s_2, u, v);
-	offs = u * u_vec + v * v_vec;
+	const Vec3 offs = u * u_vec + v * v_vec;
 	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
 	return pcol * a_pdf_;
 }
 
 Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	Rgb pcol;
-	Vec3 u_vec, v_vec;
-	Vec3 offs;
-	float u, v;
 	sampleDir(s.s_1_, s.s_2_, wo, s.dir_pdf_, true);
 
-	pcol = background_->eval(Ray(Point3(0, 0, 0), wo), true);
+	const Rgb pcol = background_->eval(Ray(Point3(0, 0, 0), wo), true);
 	wo = -wo;
 
+	Vec3 u_vec, v_vec;
 	createCs__(wo, u_vec, v_vec);
+	float u, v;
 	shirleyDisk__(s.s_1_, s.s_2_, u, v);
 
-	offs = u * u_vec + v * v_vec;
+	const Vec3 offs = u * u_vec + v * v_vec;
 
 	s.sp_->p_ = world_center_ + world_radius_ * offs - world_radius_ * wo;
 	s.sp_->n_ = s.sp_->ng_ = wo;
@@ -233,7 +222,7 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 
 float BackgroundLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const
 {
-	Vec3 dir = (sp_light.p_ - sp.p_).normalize();
+	const Vec3 dir = (sp_light.p_ - sp.p_).normalize();
 	return dirPdf(dir);
 }
 

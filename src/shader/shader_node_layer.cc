@@ -18,11 +18,13 @@
 
 #include "shader/shader_node_layer.h"
 #include "common/param.h"
+#include "common/logging.h"
+#include "utility/util_string.h"
 
 BEGIN_YAFARAY
 
-LayerNode::LayerNode(unsigned tflag, float col_fac, float val_fac, float def_val, Rgba def_col, MixModes mmod):
-		input_(0), upper_layer_(0), texflag_(tflag), colfac_(col_fac), valfac_(val_fac), default_val_(def_val),
+LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod):
+		input_(nullptr), upper_layer_(nullptr), flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
 		default_col_(def_col), mode_(mmod), do_color_(false), do_scalar_(false), color_input_(false)
 {}
 
@@ -45,13 +47,13 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 	}
 	else tin = input_->getScalar(stack);
 
-	if(texflag_ & TXF_RGBTOINT)
+	if(hasFlag(Flags::RgbToInt))
 	{
 		tin = texcolor.col2Bri();
 		tex_rgb = false;
 	}
 
-	if(texflag_ & TXF_NEGATIVE)
+	if(hasFlag(Flags::Negative))
 	{
 		if(tex_rgb) texcolor = Rgba(1.f) - texcolor;
 		tin = 1.f - tin;
@@ -59,7 +61,7 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 
 	float fact;
 
-	if(texflag_ & TXF_STENCIL)
+	if(hasFlag(Flags::Stencil))
 	{
 		if(tex_rgb) // only scalar input affects stencil...?
 		{
@@ -87,7 +89,7 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 		else if(tin < 0.f) tin_truncated_range = 0.f;
 		else tin_truncated_range = tin;
 
-		rcol = textureRgbBlend__(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
+		rcol = ShaderNode::textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
 		rcol.clampRgb0();
 	}
 
@@ -99,7 +101,7 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 			if(use_alpha_)
 			{
 				tin = ta;
-				if(texflag_ & TXF_NEGATIVE) tin = 1.f - tin;
+				if(hasFlag(Flags::Negative)) tin = 1.f - tin;
 			}
 			else
 			{
@@ -107,11 +109,11 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 			}
 		}
 
-		rval = textureValueBlend__(default_val_, rval, tin, stencil_tin * valfac_, mode_);
+		rval = ShaderNode::textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, mode_);
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
-	stack[this->id_] = NodeResult(rcol, rval);
+	stack[this->getId()] = NodeResult(rcol, rval);
 }
 
 void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
@@ -138,7 +140,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderState &state, const
 	tdu = texcolor.r_;
 	tdv = texcolor.g_;
 
-	if(texflag_ & TXF_NEGATIVE)
+	if(hasFlag(Flags::Negative))
 	{
 		tdu = -tdu;
 		tdv = -tdv;
@@ -148,7 +150,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderState &state, const
 	rdu += tdu;
 	rdv += tdv;
 
-	stack[this->id_] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
+	stack[this->getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
 bool LayerNode::isViewDependant() const
@@ -214,9 +216,8 @@ ShaderNode *LayerNode::factory(const ParamMap &params, RenderEnvironment &render
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;
 	bool stencil = false, no_rgb = false, negative = false;
 	double def_val = 1.0, colfac = 1.0, valfac = 1.0;
-	int mode = 0;
+	std::string blend_mode_str;
 
-	params.getParam("mode", mode);
 	params.getParam("def_col", def_col);
 	params.getParam("colfac", colfac);
 	params.getParam("def_val", def_val);
@@ -228,14 +229,26 @@ ShaderNode *LayerNode::factory(const ParamMap &params, RenderEnvironment &render
 	params.getParam("noRGB", no_rgb);
 	params.getParam("stencil", stencil);
 	params.getParam("negative", negative);
+	params.getParam("blend_mode", blend_mode_str);
 
-	unsigned int flags = 0;
-	if(no_rgb) flags |= TXF_RGBTOINT;
-	if(stencil) flags |= TXF_STENCIL;
-	if(negative) flags |= TXF_NEGATIVE;
-	if(use_alpha) flags |= TXF_ALPHAMIX;
+	Flags flags = Flags::None;
+	if(no_rgb) flags |= Flags::RgbToInt;
+	if(stencil) flags |= Flags::Stencil;
+	if(negative) flags |= Flags::Negative;
+	if(use_alpha) flags |= Flags::AlphaMix;
 
-	LayerNode *node = new LayerNode(flags, colfac, valfac, def_val, def_col, (MixModes)mode);
+	BlendMode blend_mode = BlendMode::Mix;
+	if(blend_mode_str == "add") blend_mode = BlendMode::Add;
+	else if(blend_mode_str == "multiply") blend_mode = BlendMode::Mult;
+	else if(blend_mode_str == "subtract") blend_mode = BlendMode::Sub;
+	else if(blend_mode_str == "screen") blend_mode = BlendMode::Screen;
+	else if(blend_mode_str == "divide") blend_mode = BlendMode::Div;
+	else if(blend_mode_str == "difference") blend_mode = BlendMode::Diff;
+	else if(blend_mode_str == "darken") blend_mode = BlendMode::Dark;
+	else if(blend_mode_str == "lighten") blend_mode = BlendMode::Light;
+	//else if(blend_mode_str == "overlay") blend_mode = BlendMode::Overlay;
+
+	LayerNode *node = new LayerNode(flags, colfac, valfac, def_val, def_col, blend_mode);
 	node->do_color_ = do_color;
 	node->do_scalar_ = do_scalar;
 	node->color_input_ = color_input;

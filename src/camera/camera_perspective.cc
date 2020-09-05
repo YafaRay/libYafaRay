@@ -41,7 +41,7 @@ PerspectiveCamera::PerspectiveCamera(const Point3 &pos, const Point3 &look, cons
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = DEG_TO_RAD(bro), wi = (M_2PI) / (float)ns;
+		float w = degToRad__(bro), wi = (mult_pi_by_2__) / (float)ns;
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)
@@ -51,10 +51,6 @@ PerspectiveCamera::PerspectiveCamera(const Point3 &pos, const Point3 &look, cons
 			w += wi;
 		}
 	}
-}
-
-PerspectiveCamera::~PerspectiveCamera()
-{
 }
 
 void PerspectiveCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
@@ -115,7 +111,7 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 		case BkDisk2:
 		case BkRing:
 		{
-			float w = (float)M_2PI * r_2;
+			float w = (float)mult_pi_by_2__ * r_2;
 			if(bkhtype_ == BkRing) r_1 = fSqrt__((float) 0.707106781 + (float) 0.292893218);
 			else biasDist(r_1);
 			u = r_1 * fCos__(w);

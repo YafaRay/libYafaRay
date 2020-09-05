@@ -60,7 +60,7 @@ class TgaHandler final : public ImageHandler
 		Rgba processColor24(void *data);
 		Rgba processColor32(void *data);
 
-		bool precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, YByte_t &alpha_bit_depth);
+		bool precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth);
 
 		Rgba2DImage_t *color_map_;
 		size_t tot_pixels_;

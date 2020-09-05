@@ -23,18 +23,18 @@
 #include "constants.h"
 #include "utility/util_thread.h"
 
-#define USER_DATA_SIZE 1024
+constexpr unsigned int user_data_size__ = 1024;
 
 // Object flags
 
 // Lower order byte indicates type
-#define TRIM		0x0000
-#define VTRIM		0x0001
-#define MTRIM		0x0002
+constexpr unsigned int trim__ = 0x0000;
+constexpr unsigned int vtrim__ = 0x0001;
+constexpr unsigned int mtrim__ = 0x0002;
 
 // Higher order byte indicates options
-#define INVISIBLEM	0x0100
-#define BASEMESH	0x0200
+constexpr unsigned int invisiblem__ = 0x0100;
+constexpr unsigned int basemesh__ = 0x0200;
 
 BEGIN_YAFARAY
 class Scene;

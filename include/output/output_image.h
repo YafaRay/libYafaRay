@@ -24,9 +24,8 @@
 #ifndef YAFARAY_OUTPUT_IMAGE_H
 #define YAFARAY_OUTPUT_IMAGE_H
 
-#include "constants.h"
-#include "imagehandler/imagehandler.h"
 #include "output/output.h"
+#include "imagehandler/imagehandler.h"
 
 BEGIN_YAFARAY
 
@@ -35,15 +34,16 @@ class RenderPasses;
 class ImageOutput final : public ColorOutput
 {
 	public:
+		ImageOutput() = default;
 		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
 
 	private:
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true);
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true);
-		virtual void flush(int num_view, const RenderPasses *render_passes);
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) {} // not used by images... yet
-		virtual bool isImageOutput() { return true; }
-		virtual std::string getDenoiseParams() const
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) override;
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
+		virtual void flush(int num_view, const RenderPasses *render_passes) override;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {} // not used by images... yet
+		virtual bool isImageOutput() override { return true; }
+		virtual std::string getDenoiseParams() const override
 		{
 			if(image_) return image_->getDenoiseParams();
 			else return "";

@@ -43,11 +43,6 @@ class ColorPasses;
 class RenderEnvironment;
 class ColorOutput;
 
-// Image types define
-#define IF_IMAGE 1
-#define IF_DENSITYIMAGE 2
-#define IF_ALL (IF_IMAGE | IF_DENSITYIMAGE)
-
 enum class DarkDetectionType : int { None, Linear, Curve };
 enum class AutoSaveIntervalType : int { None, Time, Pass };
 enum class FilmFileSaveLoad : int { None, Save, LoadAndSave };
@@ -56,6 +51,7 @@ class ImageFilm final
 {
 	public:
 		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };
+		enum Flags : unsigned int { Image = 1 << 0, Densityimage = 1 << 1, All = Image | Densityimage };
 
 		/*! imageFilm_t Constructor */
 		ImageFilm(int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size = 1.0, FilterType filt = FilterType::Box,
@@ -76,7 +72,7 @@ class ImageFilm final
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
 		void finishArea(int num_view, RenderArea &a);
 		/*! Output all pixels to the color output */
-		void flush(int num_view, int flags = IF_ALL, ColorOutput *out = nullptr);
+		void flush(int num_view, int flags = All, ColorOutput *out = nullptr);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */

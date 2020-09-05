@@ -26,6 +26,7 @@
 #include "common/color_ramp.h"
 #include "common/param.h"
 #include "common/scene.h"
+#include "common/surface.h"
 
 BEGIN_YAFARAY
 
@@ -50,8 +51,8 @@ GlossyMaterial::GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, f
 
 void GlossyMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
-	dat->stack_ = (char *)state.userdata_ + sizeof(MDatT);
+	MDat *dat = (MDat *)state.userdata_;
+	dat->stack_ = (char *)state.userdata_ + sizeof(MDat);
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, state, sp, bump_shader_);
 
@@ -117,7 +118,7 @@ Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const
 		if(!Material::hasFlag(bsdfs, BsdfFlags::Diffuse) || ((sp.ng_ * wi) * (sp.ng_ * wo)) < 0.f) return Rgb(0.f);
 	}
 
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	Rgb col(0.f);
 	bool diffuse_flag = Material::hasFlag(bsdfs, BsdfFlags::Diffuse);
 
@@ -137,11 +138,11 @@ Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const
 		if(anisotropic_)
 		{
 			Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
-			glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+			glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			glossy = blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+			glossy = blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 
 		}
 
@@ -175,7 +176,7 @@ Rgb GlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp, const
 
 Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	float cos_ng_wo = sp.ng_ * wo;
 	float cos_ng_wi;
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
@@ -225,12 +226,12 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 				{
 					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
 					s.pdf_ = s.pdf_ * cur_p_diffuse + asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
-					glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+					glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 				}
 				else
 				{
 					s.pdf_ = s.pdf_ * cur_p_diffuse + blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * (1.f - cur_p_diffuse);
-					glossy = blinnD__(cos_n_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / AS_DIVISOR(cos_wi_h, wo_n, wi_n);
+					glossy = blinnD__(cos_n_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 				}
 			}
 			s.sampled_flags_ = BsdfFlags::Diffuse | BsdfFlags::Reflect;
@@ -297,7 +298,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 			wi_n = std::fabs(wi * n);
 
 			s.pdf_ = asAnisoPdf__(Hs, cos_wo_h, exp_u_, exp_v_);
-			glossy = asAnisoD__(Hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
+			glossy = asAnisoD__(Hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 		}
 		else
 		{
@@ -325,7 +326,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 			float cos_hn = h * n;
 
 			s.pdf_ = blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
-			glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / AS_DIVISOR(cos_wo_h, wo_n, wi_n);
+			glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 		}
 
 		scolor = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
@@ -358,7 +359,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 
 float GlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
@@ -529,13 +530,13 @@ Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param
 		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 	}
 
-	mat->req_mem_ = mat->req_node_mem_ + sizeof(MDatT);
+	mat->req_mem_ = mat->req_node_mem_ + sizeof(MDat);
 
 	return mat;
 }
 
 Rgb GlossyMaterial::getDiffuseColor(const RenderState &state) const {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	if(as_diffuse_ || with_diffuse_) return (diffuse_reflection_shader_ ? diffuse_reflection_shader_->getScalar(stack) : 1.f) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
@@ -543,7 +544,7 @@ Rgb GlossyMaterial::getDiffuseColor(const RenderState &state) const {
 }
 
 Rgb GlossyMaterial::getGlossyColor(const RenderState &state) const {
-	MDatT *dat = (MDatT *)state.userdata_;
+	MDat *dat = (MDat *)state.userdata_;
 	NodeStack stack(dat->stack_);
 
 	return (glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_) * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);

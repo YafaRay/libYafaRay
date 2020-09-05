@@ -38,74 +38,18 @@
 #include <cmath>
 #include <algorithm>
 
-// Reference defines, this should be defined by the standard cmath header
-// Unfortunately this fails in MinGW GCC v4.9.2, so I have to enable the "manual" definitions copied from math.h
-// Redefine only if they are not already defined by the standard headers
-
-#ifndef M_E
-# define M_E		2.7182818284590452354	/* e */
-#endif
-#ifndef M_LOG2E
-# define M_LOG2E	1.4426950408889634074	/* log_2 e */
-#endif
-#ifndef M_LOG2E
-# define M_LOG10E	0.43429448190325182765	/* log_10 e */
-#endif
-#ifndef M_LN2
-# define M_LN2		0.69314718055994530942	/* log_e 2 */
-#endif
-#ifndef M_LN10
-# define M_LN10		2.30258509299404568402	/* log_e 10 */
-#endif
-#ifndef M_PI
-# define M_PI		3.14159265358979323846	/* pi */
-#endif
-#ifndef M_PI_2
-# define M_PI_2		1.57079632679489661923	/* pi/2 */
-#endif
-#ifndef M_PI_4
-# define M_PI_4		0.78539816339744830962	/* pi/4 */
-#endif
-#ifndef M_1_PI
-# define M_1_PI		0.31830988618379067154	/* 1/pi */
-#endif
-#ifndef M_2_PI
-# define M_2_PI		0.63661977236758134308	/* 2/pi */
-#endif
-#ifndef M_2_SQRTPI
-# define M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
-#endif
-#ifndef M_SQRT2
-# define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
-#endif
-#ifndef M_SQRT1_2
-# define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
-#endif
-
-
 BEGIN_YAFARAY
 
-#define M_2PI		6.28318530717958647692 // PI * 2
-#define M_PI2		9.86960440108935861882 // PI ^ 2
-#define M_1_2PI		0.15915494309189533577 // 1 / (2 * PI)
-#define M_4_PI		1.27323954473516268615 // 4 / PI
-#define M_4_PI2		0.40528473456935108578 // 4 / PI ^ 2
+static constexpr double mult_pi_by_2__ = 6.28318530717958647692; // PI * 2
+static constexpr double squared_pi__ = 9.86960440108935861882; // PI ^ 2
+static constexpr double div_1_by_2pi__ = 0.15915494309189533577; // 1 / (2 * PI)
+static constexpr double div_4_by_pi__ = 1.27323954473516268615; // 4 / PI
+static constexpr double div_4_by_squared_pi__ = 0.40528473456935108578; // 4 / PI ^ 2
 
-#define DEG_TO_RAD(deg) (deg * 0.01745329251994329576922)  // deg * PI / 180
-#define RAD_TO_DEG(rad) (rad * 57.29577951308232087684636) // rad * 180 / PI
+inline constexpr double degToRad__(double deg) { return (deg * 0.01745329251994329576922); }  // deg * PI / 180
+inline constexpr double radToDeg__(double rad) { return (rad * 57.29577951308232087684636); } // rad * 180 / PI
 
 //FIXME: All the overloaded double definitions have been added to fix the "white dots" problems and they seem to work fine. However several of them should be refined in the future to include constants with the correct precision for the doubles calculations.
-
-#define POLYEXP(x) (float)(x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f)
-#define POLYLOG(x) (float)(x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f)
-
-#define F_HI 129.00000f
-#define F_LOW -126.99999f
-
-#define LOG_EXP 0x7F800000
-#define LOG_MANT 0x7FFFFF
-
-#define CONST_P 0.225f
 
 union BitTwiddler
 {
@@ -113,31 +57,40 @@ union BitTwiddler
 	float f_;
 };
 
+inline constexpr float polyexp__(float x) { return (x * (x * (x * (x * (x * 1.8775767e-3f + 8.9893397e-3f) + 5.5826318e-2f) + 2.4015361e-1f) + 6.9315308e-1f) + 9.9999994e-1f); }
+
 inline float fExp2__(float x)
 {
 	BitTwiddler ipart, fpart;
 	BitTwiddler expipart;
 
-	x = std::min(x, F_HI);
-	x = std::max(x, F_LOW);
+	static constexpr float f_hi = 129.00000f;
+	static constexpr float f_lo = -126.99999f;
+
+	x = std::min(x, f_hi);
+	x = std::max(x, f_lo);
 
 	ipart.i_ = (int)(x - 0.5f);
 	fpart.f_ = (x - (float)(ipart.i_));
 	expipart.i_ = ((ipart.i_ + 127) << 23);
 
-	return (expipart.f_ * POLYEXP(fpart.f_));
+	return (expipart.f_ * polyexp__(fpart.f_));
 }
+
+inline constexpr float polylog__(float x) { return (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f); }
 
 inline float fLog2__(float x)
 {
 	BitTwiddler one, i, m, e;
+	static constexpr int log_exp = 0x7F800000;
+	static constexpr int log_mant = 0x7FFFFF;
 
 	one.f_ = 1.0f;
 	i.f_ = x;
-	e.f_ = (float)(((i.i_ & LOG_EXP) >> 23) - 127);
-	m.i_ = ((i.i_ & LOG_MANT) | one.i_);
+	e.f_ = (float)(((i.i_ & log_exp) >> 23) - 127);
+	m.i_ = ((i.i_ & log_mant) | one.i_);
 
-	return (POLYLOG(m.f_) * (m.f_ - one.f_) + e.f_);
+	return (polylog__(m.f_) * (m.f_ - one.f_) + e.f_);
 }
 
 #ifdef FAST_MATH
@@ -222,18 +175,19 @@ inline float fLdexp__(float x, int a)
 inline float fSin__(float x)
 {
 #ifdef FAST_TRIG
-	if(x > M_2PI || x < -M_2PI) x -= ((int)(x * (float)M_1_2PI)) * (float)M_2PI; //float modulo x % M_2PI
+	if(x > mult_pi_by_2__ || x < -mult_pi_by_2__) x -= ((int)(x * (float)div_1_by_2pi__)) * (float)mult_pi_by_2__; //float modulo x % mult_pi_by_2__
 	if(x < -M_PI)
 	{
-		x += (float)M_2PI;
+		x += (float)mult_pi_by_2__;
 	}
 	else if(x > M_PI)
 	{
-		x -= (float)M_2PI;
+		x -= (float)mult_pi_by_2__;
 	}
 
-	x = ((float)M_4_PI * x) - ((float)M_4_PI2 * x * std::fabs(x));
-	float result = CONST_P * (x * std::fabs(x) - x) + x;
+	x = ((float)div_4_by_pi__ * x) - ((float)div_4_by_squared_pi__ * x * std::fabs(x));
+	static constexpr float const_p = 0.225f;
+	const float result = const_p * (x * std::fabs(x) - x) + x;
 	//Make sure that the function is in the valid range [-1.0,+1.0]
 	if(result <= -1.0) return -1.0f;
 	else if(result >= 1.0) return 1.0f;

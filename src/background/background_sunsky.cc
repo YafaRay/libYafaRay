@@ -242,7 +242,7 @@ Background *SunSkyBackground::factory(ParamMap &params, RenderEnvironment &rende
 	{
 		Rgb suncol = computeAttenuatedSunlight__(fAcos__(std::fabs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
-		double cos_angle = cos(DEG_TO_RAD(angle));
+		double cos_angle = cos(degToRad__(angle));
 		float invpdf = (2.f * M_PI * (1.f - cos_angle));
 		suncol *= invpdf * power;
 
