@@ -80,7 +80,7 @@ class ImageBuffer final
 };
 
 
-class ImageHandler
+class LIBYAFARAY_EXPORT ImageHandler
 {
 	public:
 		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);

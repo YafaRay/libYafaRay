@@ -43,7 +43,7 @@ class ProgressBar;
 class ImageHandler;
 class ParamMap;
 
-class RenderEnvironment final
+class LIBYAFARAY_EXPORT RenderEnvironment final
 {
 	public:
 		RenderEnvironment();

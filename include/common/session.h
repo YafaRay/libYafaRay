@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 
 class PhotonMap;
 
-class Session
+class LIBYAFARAY_EXPORT Session
 {
 	public:
 		Session();
@@ -83,7 +83,7 @@ class Session
 		std::string path_image_output_;
 };
 
-extern Session session__;
+extern LIBYAFARAY_EXPORT Session session__;
 
 END_YAFARAY
 

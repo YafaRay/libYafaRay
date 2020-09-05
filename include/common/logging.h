@@ -65,7 +65,7 @@ inline std::ostream &operator<<(std::ostream &os, const BsdfFlags &f)
 	return os;
 }
 
-class Logger
+class LIBYAFARAY_EXPORT Logger
 {
 	public:
 		enum { VlMute = 0, VlError, VlWarning, VlParams, VlInfo, VlVerbose, VlDebug, };
@@ -196,7 +196,7 @@ inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
 }
 
 
-extern Logger logger__;
+extern LIBYAFARAY_EXPORT Logger logger__;
 
 #define Y_DEBUG logger__.out(yafaray4::Logger::VlDebug)
 #define Y_VERBOSE logger__.out(yafaray4::Logger::VlVerbose)

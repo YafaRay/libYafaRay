@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-class Matrix4
+class LIBYAFARAY_EXPORT Matrix4
 {
 	public:
 		Matrix4() = default;

@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-class XmlInterface: public Interface
+class LIBYAFARAY_EXPORT XmlInterface: public Interface
 {
 	public:
 		XmlInterface();

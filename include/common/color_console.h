@@ -83,7 +83,7 @@ struct SetColor final
 };
 
 
-std::ostream &operator<<(std::ostream &o, const SetColor &c);
+std::ostream LIBYAFARAY_EXPORT &operator<<(std::ostream &o, const SetColor &c);
 
 END_YAFARAY
 

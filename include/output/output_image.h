@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 
 class RenderPasses;
 
-class ImageOutput final : public ColorOutput
+class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
 {
 	public:
 		ImageOutput() = default;

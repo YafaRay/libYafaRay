@@ -47,7 +47,7 @@ enum class DarkDetectionType : int { None, Linear, Curve };
 enum class AutoSaveIntervalType : int { None, Time, Pass };
 enum class FilmFileSaveLoad : int { None, Save, LoadAndSave };
 
-class ImageFilm final
+class LIBYAFARAY_EXPORT ImageFilm final
 {
 	public:
 		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };

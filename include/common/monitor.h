@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 //! Progress bar abstract class with pure virtual members
-class ProgressBar
+class LIBYAFARAY_EXPORT ProgressBar
 {
 	public:
 		virtual ~ProgressBar() {}
@@ -47,7 +47,7 @@ class ProgressBar
 
 /*! the default console progress bar (implemented in console.cc)
 */
-class ConsoleProgressBar : public ProgressBar
+class LIBYAFARAY_EXPORT ConsoleProgressBar : public ProgressBar
 {
 	public:
 		ConsoleProgressBar(int cwidth = 80);

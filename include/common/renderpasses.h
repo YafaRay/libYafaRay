@@ -207,7 +207,7 @@ class AuxPass  //Render pass to be used internally only, without exporting to im
 };
 
 
-class RenderPasses
+class LIBYAFARAY_EXPORT RenderPasses
 {
 		friend class ColorPasses;
 

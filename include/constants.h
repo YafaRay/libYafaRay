@@ -23,29 +23,20 @@
 #define BEGIN_YAFARAY namespace yafaray4 {
 #define END_YAFARAY }
 
-#if (__GNUC__ > 3)
-#define GCC_HASCLASSVISIBILITY
-#endif
-
 // define symbol export and import attributes
 #ifdef _WIN32
 #define YF_EXPORT __declspec(dllexport)
 #define YF_IMPORT __declspec(dllimport)
-#else
-#ifdef GCC_HASCLASSVISIBILITY
+#else // _WIN32
 #define YF_EXPORT __attribute__ ((visibility("default")))
-#define YF_IMPORT __attribute__ ((visibility("default")))
-#else
-#define YF_EXPORT
 #define YF_IMPORT
-#endif
-#endif
+#endif // _WIN32
 
 // automatic macros that switch between import and export, depending on compiler environment
 #ifdef BUILDING_LIBYAFARAY
 #define LIBYAFARAY_EXPORT YF_EXPORT
-#else
+#else // BUILDING_LIBYAFARAY
 #define LIBYAFARAY_EXPORT YF_IMPORT
-#endif
+#endif // BUILDING_LIBYAFARAY
 
 #endif // YAFARAY_CONSTANTS_H

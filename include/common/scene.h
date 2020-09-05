@@ -158,7 +158,7 @@ struct SceneGeometryState
 	float smooth_angle_;
 };
 
-class Scene
+class LIBYAFARAY_EXPORT Scene
 {
 	public:
 		Scene(const RenderEnvironment *render_environment);

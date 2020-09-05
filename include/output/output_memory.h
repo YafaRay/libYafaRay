@@ -27,7 +27,7 @@ BEGIN_YAFARAY
 
 class RenderPasses;
 
-class MemoryInputOutput final : public ColorOutput
+class LIBYAFARAY_EXPORT MemoryInputOutput final : public ColorOutput
 {
 	public:
 		MemoryInputOutput(int resx, int resy, float *i_mem);
