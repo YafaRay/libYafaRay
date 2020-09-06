@@ -137,10 +137,10 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 
 			if(use_photon_caustics_)
 			{
-				if(aa_clamp_indirect_ > 0)
+				if(aa_noise_params_.clamp_indirect_ > 0)
 				{
 					Rgb tmp_col = estimateCausticPhotons(state, sp, wo);
-					tmp_col.clampProportionalRgb(aa_clamp_indirect_);
+					tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += color_passes.probeAdd(PassIntIndirect, tmp_col, state.raylevel_ == 0);
 				}
 				else col += color_passes.probeAdd(PassIntIndirect, estimateCausticPhotons(state, sp, wo), state.raylevel_ == 0);

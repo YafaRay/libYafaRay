@@ -28,6 +28,7 @@
 #include "common/param.h"
 #include "output/output.h"
 #include "common/file.h"
+#include "common/imagefilm.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -468,15 +469,11 @@ ImageFilm *RenderEnvironment::createImageFilm(const ParamMap &params, ColorOutpu
 	bool premult = false;
 	bool premult_2 = false;
 	std::string images_autosave_interval_type_string = "none";
-	AutoSaveIntervalType images_autosave_interval_type = AutoSaveIntervalType::None;
-	int images_autosave_interval_passes = 1;
-	double images_autosave_interval_seconds = 300.0;
+	ImageFilm::AutoSaveParams images_autosave_params;
 	std::string film_save_load_string = "none";
-	FilmFileSaveLoad film_save_load = FilmFileSaveLoad::None;
+	ImageFilm::FilmSaveLoad film_save_load = ImageFilm::FilmSaveLoad::None;
 	std::string film_autosave_interval_type_string = "none";
-	AutoSaveIntervalType film_autosave_interval_type = AutoSaveIntervalType::None;
-	int film_autosave_interval_passes = 1;
-	double film_autosave_interval_seconds = 300.0;
+	ImageFilm::AutoSaveParams film_autosave_params;
 
 	params.getParam("color_space", color_space_string);
 	params.getParam("gamma", gamma);
@@ -494,16 +491,16 @@ ImageFilm *RenderEnvironment::createImageFilm(const ParamMap &params, ColorOutpu
 	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
 	params.getParam("premult2", premult_2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
 	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
-	params.getParam("images_autosave_interval_passes", images_autosave_interval_passes);
-	params.getParam("images_autosave_interval_seconds", images_autosave_interval_seconds);
+	params.getParam("images_autosave_interval_passes", images_autosave_params.interval_passes_);
+	params.getParam("images_autosave_interval_seconds", images_autosave_params.interval_seconds_);
 	params.getParam("film_save_load", film_save_load_string);
 	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
-	params.getParam("film_autosave_interval_passes", film_autosave_interval_passes);
-	params.getParam("film_autosave_interval_seconds", film_autosave_interval_seconds);
+	params.getParam("film_autosave_interval_passes", film_autosave_params.interval_passes_);
+	params.getParam("film_autosave_interval_seconds", film_autosave_params.interval_seconds_);
 
-	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_interval_passes << ", " << images_autosave_interval_seconds << YENDL;
+	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_params.interval_passes_ << ", " << images_autosave_params.interval_seconds_ << YENDL;
 
-	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_interval_passes << ", " << film_autosave_interval_seconds << YENDL;
+	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_params.interval_passes_ << ", " << film_autosave_params.interval_seconds_ << YENDL;
 
 	if(color_space_string == "sRGB") color_space = Srgb;
 	else if(color_space_string == "XYZ") color_space = XyzD65;
@@ -517,17 +514,17 @@ ImageFilm *RenderEnvironment::createImageFilm(const ParamMap &params, ColorOutpu
 	else if(color_space_string_2 == "Raw_Manual_Gamma") color_space_2 = RawManualGamma;
 	else color_space_2 = Srgb;
 
-	if(images_autosave_interval_type_string == "pass-interval") images_autosave_interval_type = AutoSaveIntervalType::Pass;
-	else if(images_autosave_interval_type_string == "time-interval") images_autosave_interval_type = AutoSaveIntervalType::Time;
-	else images_autosave_interval_type = AutoSaveIntervalType::None;
+	if(images_autosave_interval_type_string == "pass-interval") images_autosave_params.interval_type_ = ImageFilm::ImageFilm::AutoSaveParams::IntervalType::Pass;
+	else if(images_autosave_interval_type_string == "time-interval") images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
+	else images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
 
-	if(film_save_load_string == "load-save") film_save_load = FilmFileSaveLoad::LoadAndSave;
-	else if(film_save_load_string == "save") film_save_load = FilmFileSaveLoad::Save;
-	else film_save_load = FilmFileSaveLoad::None;
+	if(film_save_load_string == "load-save") film_save_load = ImageFilm::FilmSaveLoad::LoadAndSave;
+	else if(film_save_load_string == "save") film_save_load = ImageFilm::FilmSaveLoad::Save;
+	else film_save_load = ImageFilm::FilmSaveLoad::None;
 
-	if(film_autosave_interval_type_string == "pass-interval") film_autosave_interval_type = AutoSaveIntervalType::Pass;
-	else if(film_autosave_interval_type_string == "time-interval") film_autosave_interval_type = AutoSaveIntervalType::Time;
-	else film_autosave_interval_type = AutoSaveIntervalType::None;
+	if(film_autosave_interval_type_string == "pass-interval") film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Pass;
+	else if(film_autosave_interval_type_string == "time-interval") film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
+	else film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
 
 	output.initTilesPasses(cameras_.size(), render_passes_.extPassesSize());
 
@@ -560,25 +557,20 @@ ImageFilm *RenderEnvironment::createImageFilm(const ParamMap &params, ColorOutpu
 
 	film->setPremult2(premult_2);
 
-	film->setImagesAutoSaveIntervalType(images_autosave_interval_type);
-	film->setImagesAutoSaveIntervalSeconds(images_autosave_interval_seconds);
-	film->setImagesAutoSaveIntervalPasses(images_autosave_interval_passes);
+	film->setImagesAutoSaveParams(images_autosave_params);
+	film->setFilmAutoSaveParams(film_autosave_params);
+	film->setFilmSaveLoad(film_save_load);
 
-	film->setFilmFileSaveLoad(film_save_load);
-	film->setFilmAutoSaveIntervalType(film_autosave_interval_type);
-	film->setFilmAutoSaveIntervalSeconds(film_autosave_interval_seconds);
-	film->setFilmAutoSaveIntervalPasses(film_autosave_interval_passes);
+	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_params.interval_passes_ << " passes" << YENDL;
 
-	if(images_autosave_interval_type == AutoSaveIntervalType::Pass) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_passes << " passes" << YENDL;
+	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_params.interval_seconds_ << " seconds" << YENDL;
 
-	if(images_autosave_interval_type == AutoSaveIntervalType::Time) Y_INFO_ENV << "AutoSave partially rendered image every " << images_autosave_interval_seconds << " seconds" << YENDL;
+	if(film_save_load != ImageFilm::FilmSaveLoad::Save) Y_INFO_ENV << "Enabling imageFilm file saving feature" << YENDL;
+	if(film_save_load == ImageFilm::FilmSaveLoad::LoadAndSave) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << YENDL;
 
-	if(film_save_load != FilmFileSaveLoad::Save) Y_INFO_ENV << "Enabling imageFilm file saving feature" << YENDL;
-	if(film_save_load == FilmFileSaveLoad::LoadAndSave) Y_INFO_ENV << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << YENDL;
+	if(film_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_params.interval_passes_ << " passes" << YENDL;
 
-	if(film_autosave_interval_type == AutoSaveIntervalType::Pass) Y_INFO_ENV << "AutoSave internal imageFilm every " << film_autosave_interval_passes << " passes" << YENDL;
-
-	if(film_autosave_interval_type == AutoSaveIntervalType::Time) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_interval_seconds << " seconds" << YENDL;
+	if(film_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO_ENV << "AutoSave internal imageFilm image every " << film_autosave_params.interval_seconds_ << " seconds" << YENDL;
 
 	return film;
 }
@@ -679,21 +671,9 @@ void RenderEnvironment::setupLoggingAndBadge(const ParamMap &params)
 bool RenderEnvironment::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb)
 {
 	std::string name;
-	int aa_passes = 1, aa_samples = 1, aa_inc_samples = 1, nthreads = -1, nthreads_photons = -1;
-	double aa_threshold = 0.05;
-	float aa_resampled_floor = 0.f;
-	float aa_sample_multiplier_factor = 1.f;
-	float aa_light_sample_multiplier_factor = 1.f;
-	float aa_indirect_sample_multiplier_factor = 1.f;
-	bool aa_detect_color_noise = false;
 	std::string aa_dark_detection_type_string = "none";
-	DarkDetectionType aa_dark_detection_type = DarkDetectionType::None;
-	float aa_dark_threshold_factor = 0.f;
-	int aa_variance_edge_size = 10;
-	int aa_variance_pixels = 0;
-	float aa_clamp_samples = 0.f;
-	float aa_clamp_indirect = 0.f;
-
+	AaNoiseParams aa_noise_params;
+	int nthreads = -1, nthreads_photons = -1;
 	bool adv_auto_shadow_bias_enabled = true;
 	float adv_shadow_bias_value = YAF_SHADOW_BIAS;
 	bool adv_auto_min_raydist_enabled = true;
@@ -744,22 +724,22 @@ bool RenderEnvironment::setupScene(Scene &scene, const ParamMap &params, ColorOu
 		if(!backg) Y_ERROR_ENV << "please specify an _existing_ Background!!" << YENDL;
 	}
 
-	params.getParam("AA_passes", aa_passes);
-	params.getParam("AA_minsamples", aa_samples);
-	aa_inc_samples = aa_samples;
-	params.getParam("AA_inc_samples", aa_inc_samples);
-	params.getParam("AA_threshold", aa_threshold);
-	params.getParam("AA_resampled_floor", aa_resampled_floor);
-	params.getParam("AA_sample_multiplier_factor", aa_sample_multiplier_factor);
-	params.getParam("AA_light_sample_multiplier_factor", aa_light_sample_multiplier_factor);
-	params.getParam("AA_indirect_sample_multiplier_factor", aa_indirect_sample_multiplier_factor);
-	params.getParam("AA_detect_color_noise", aa_detect_color_noise);
+	params.getParam("AA_passes", aa_noise_params.passes_);
+	params.getParam("AA_minsamples", aa_noise_params.samples_);
+	aa_noise_params.inc_samples_ = aa_noise_params.samples_;
+	params.getParam("AA_inc_samples", aa_noise_params.inc_samples_);
+	params.getParam("AA_threshold", aa_noise_params.threshold_);
+	params.getParam("AA_resampled_floor", aa_noise_params.resampled_floor_);
+	params.getParam("AA_sample_multiplier_factor", aa_noise_params.sample_multiplier_factor_);
+	params.getParam("AA_light_sample_multiplier_factor", aa_noise_params.light_sample_multiplier_factor_);
+	params.getParam("AA_indirect_sample_multiplier_factor", aa_noise_params.indirect_sample_multiplier_factor_);
+	params.getParam("AA_detect_color_noise", aa_noise_params.detect_color_noise_);
 	params.getParam("AA_dark_detection_type", aa_dark_detection_type_string);
-	params.getParam("AA_dark_threshold_factor", aa_dark_threshold_factor);
-	params.getParam("AA_variance_edge_size", aa_variance_edge_size);
-	params.getParam("AA_variance_pixels", aa_variance_pixels);
-	params.getParam("AA_clamp_samples", aa_clamp_samples);
-	params.getParam("AA_clamp_indirect", aa_clamp_indirect);
+	params.getParam("AA_dark_threshold_factor", aa_noise_params.dark_threshold_factor_);
+	params.getParam("AA_variance_edge_size", aa_noise_params.variance_edge_size_);
+	params.getParam("AA_variance_pixels", aa_noise_params.variance_pixels_);
+	params.getParam("AA_clamp_samples", aa_noise_params.clamp_samples_);
+	params.getParam("AA_clamp_indirect", aa_noise_params.clamp_indirect_);
 	params.getParam("threads", nthreads); // number of threads, -1 = auto detection
 	params.getParam("background_resampling", background_resampling);
 
@@ -786,15 +766,15 @@ bool RenderEnvironment::setupScene(Scene &scene, const ParamMap &params, ColorOu
 	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << film->getTileSize();
 	logger__.appendAaNoiseSettings(aa_settings.str());
 
-	if(aa_dark_detection_type_string == "linear") aa_dark_detection_type = DarkDetectionType::Linear;
-	else if(aa_dark_detection_type_string == "curve") aa_dark_detection_type = DarkDetectionType::Curve;
-	else aa_dark_detection_type = DarkDetectionType::None;
+	if(aa_dark_detection_type_string == "linear") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Linear;
+	else if(aa_dark_detection_type_string == "curve") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Curve;
+	else aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::None;
 
 	//setup scene and render.
 	scene.setImageFilm(film);
 	scene.setSurfIntegrator((SurfaceIntegrator *)inte);
 	scene.setVolIntegrator((VolumeIntegrator *)vol_inte);
-	scene.setAntialiasing(aa_samples, aa_passes, aa_inc_samples, aa_threshold, aa_resampled_floor, aa_sample_multiplier_factor, aa_light_sample_multiplier_factor, aa_indirect_sample_multiplier_factor, aa_detect_color_noise, aa_dark_detection_type, aa_dark_threshold_factor, aa_variance_edge_size, aa_variance_pixels, aa_clamp_samples, aa_clamp_indirect);
+	scene.setAntialiasing(aa_noise_params);
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
 	if(backg) scene.setBackground(backg);

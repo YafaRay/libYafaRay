@@ -35,23 +35,12 @@
 
 BEGIN_YAFARAY
 
-Scene::Scene(const RenderEnvironment *render_environment): vol_integrator_(nullptr), camera_(nullptr), image_film_(nullptr), tree_(nullptr), vtree_(nullptr), background_(nullptr), surf_integrator_(nullptr), aa_samples_(1), aa_passes_(1), aa_threshold_(0.05), nthreads_(1), nthreads_photons_(1), mode_(1), signals_(0), env_(render_environment)
+Scene::Scene(const RenderEnvironment *render_environment): vol_integrator_(nullptr), camera_(nullptr), image_film_(nullptr), tree_(nullptr), vtree_(nullptr), background_(nullptr), surf_integrator_(nullptr), nthreads_(1), nthreads_photons_(1), mode_(1), signals_(0), env_(render_environment)
 {
 	state_.changes_ = CAll;
 	state_.stack_.push_front(Ready);
 	state_.next_free_id_ = std::numeric_limits<int>::max();
 	state_.cur_obj_ = nullptr;
-
-	aa_resampled_floor_ = 0.f;
-	aa_sample_multiplier_factor_ = 1.f;
-	aa_light_sample_multiplier_factor_ = 1.f;
-	aa_indirect_sample_multiplier_factor_ = 1.f;
-	aa_detect_color_noise_ = false;
-	aa_dark_threshold_factor_ = 0.f;
-	aa_variance_edge_size_ = 10;
-	aa_variance_pixels_ = 0;
-	aa_clamp_samples_ = 0.f;
-	aa_clamp_indirect_ = 0.f;
 }
 
 Scene::Scene(const Scene &s)
@@ -86,25 +75,6 @@ int Scene::getSignals() const
 	sig = signals_;
 	sig_mutex_.unlock();
 	return sig;
-}
-
-void Scene::getAaParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, DarkDetectionType &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const
-{
-	samples = aa_samples_;
-	passes = aa_passes_;
-	inc_samples = aa_inc_samples_;
-	threshold = aa_threshold_;
-	resampled_floor = aa_resampled_floor_;
-	sample_multiplier_factor = aa_sample_multiplier_factor_;
-	light_sample_multiplier_factor = aa_light_sample_multiplier_factor_;
-	indirect_sample_multiplier_factor = aa_indirect_sample_multiplier_factor_;
-	detect_color_noise = aa_detect_color_noise_;
-	dark_detection_type = aa_dark_detection_type_;
-	dark_threshold_factor = aa_dark_threshold_factor_;
-	variance_edge_size = aa_variance_edge_size_;
-	variance_pixels = aa_variance_pixels_;
-	clamp_samples = aa_clamp_samples_;
-	clamp_indirect = aa_clamp_indirect_;
 }
 
 bool Scene::startGeometry()
@@ -756,25 +726,6 @@ ObjectGeometric *Scene::getObject(ObjId_t id) const
 Bound Scene::getSceneBound() const
 {
 	return scene_bound_;
-}
-
-void Scene::setAntialiasing(int num_samples, int num_passes, int inc_samples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect)
-{
-	aa_samples_ = std::max(1, num_samples);
-	aa_passes_ = num_passes;
-	aa_inc_samples_ = (inc_samples > 0) ? inc_samples : aa_samples_;
-	aa_threshold_ = (float)threshold;
-	aa_resampled_floor_ = resampled_floor;
-	aa_sample_multiplier_factor_ = sample_multiplier_factor;
-	aa_light_sample_multiplier_factor_ = light_sample_multiplier_factor;
-	aa_indirect_sample_multiplier_factor_ = indirect_sample_multiplier_factor;
-	aa_detect_color_noise_ = detect_color_noise;
-	aa_dark_detection_type_ = dark_detection_type;
-	aa_dark_threshold_factor_ = dark_threshold_factor;
-	aa_variance_edge_size_ = variance_edge_size;
-	aa_variance_pixels_ = variance_pixels;
-	aa_clamp_samples_ = clamp_samples;
-	aa_clamp_indirect_ = clamp_indirect;
 }
 
 /*! update scene state to prepare for rendering.

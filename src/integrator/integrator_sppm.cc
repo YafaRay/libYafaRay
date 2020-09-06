@@ -76,11 +76,11 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 {
 	std::stringstream pass_string;
 	image_film_ = image_film;
-	scene_->getAaParameters(aa_samples_, aa_passes_, aa_inc_samples_, aa_threshold_, aa_resampled_floor_, aa_sample_multiplier_factor_, aa_light_sample_multiplier_factor_, aa_indirect_sample_multiplier_factor_, aa_detect_color_noise_, aa_dark_detection_type_, aa_dark_threshold_factor_, aa_variance_edge_size_, aa_variance_pixels_, aa_clamp_samples_, aa_clamp_indirect_);
+	aa_noise_params_ = scene_->getAaParameters();
 
 	std::stringstream aa_settings;
-	aa_settings << " passes=" << pass_num_ << " samples=" << aa_samples_ << " inc_samples=" << aa_inc_samples_;
-	aa_settings << " clamp=" << aa_clamp_samples_ << " ind.clamp=" << aa_clamp_indirect_;
+	aa_settings << " passes=" << pass_num_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
+	aa_settings << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
 
 	logger__.appendAaNoiseSettings(aa_settings.str());
 
@@ -91,8 +91,8 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	aa_light_sample_multiplier_ = 1.f;
 	aa_indirect_sample_multiplier_ = 1.f;
 
-	Y_VERBOSE << integrator_name_ << ": AA_clamp_samples: " << aa_clamp_samples_ << YENDL;
-	Y_VERBOSE << integrator_name_ << ": AA_clamp_indirect: " << aa_clamp_indirect_ << YENDL;
+	Y_VERBOSE << integrator_name_ << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
+	Y_VERBOSE << integrator_name_ << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
 
 	std::stringstream set;
 
@@ -122,7 +122,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	g_timer__.addEvent("filmAutoSaveTimer");
 
 	image_film_->init(pass_num_);
-	image_film_->setAaNoiseParams(aa_detect_color_noise_, aa_dark_detection_type_, aa_dark_threshold_factor_, aa_variance_edge_size_, aa_variance_pixels_, aa_clamp_samples_);
+	image_film_->setAaNoiseParams(aa_noise_params_);
 
 	if(session__.renderResumed())
 	{
@@ -211,11 +211,11 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 	bool sample_lns = camera->sampleLense();
 	int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
 
-	int aa_max_possible_samples = aa_samples_;
+	int aa_max_possible_samples = aa_noise_params_.samples_;
 
-	for(int i = 1; i < aa_passes_; ++i)
+	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
-		aa_max_possible_samples += ceilf(aa_inc_samples_ * pow(aa_sample_multiplier_factor_, i));
+		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * pow(aa_noise_params_.sample_multiplier_factor_, i));
 	}
 
 	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);

@@ -22,6 +22,7 @@
 
 #include "integrator.h"
 #include "utility/util_thread.h"
+#include "common/aa_noise_params.h"
 #include <vector>
 
 BEGIN_YAFARAY
@@ -61,23 +62,11 @@ class TiledIntegrator : public SurfaceIntegrator
 		virtual void generateCommonRenderPasses(ColorPasses &color_passes, RenderState &state, const SurfacePoint &sp, const DiffRay &ray) const; //!< Generates render passes common to all integrators
 
 	protected:
-		int aa_samples_, aa_passes_, aa_inc_samples_;
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
-		float aa_threshold_;
-		float aa_resampled_floor_; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
-		float aa_sample_multiplier_factor_;
-		float aa_light_sample_multiplier_factor_;
-		float aa_indirect_sample_multiplier_factor_;
-		bool aa_detect_color_noise_;
-		DarkDetectionType aa_dark_detection_type_;
-		float aa_dark_threshold_factor_;
-		int aa_variance_edge_size_;
-		int aa_variance_pixels_;
-		float aa_clamp_samples_;
-		float aa_clamp_indirect_;
-		float aa_sample_multiplier_;
-		float aa_light_sample_multiplier_;
-		float aa_indirect_sample_multiplier_;
+		AaNoiseParams aa_noise_params_;
+		float aa_sample_multiplier_ = 1.f;
+		float aa_light_sample_multiplier_ = 1.f;
+		float aa_indirect_sample_multiplier_ = 1.f;
 		ImageFilm *image_film_;
 		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
 		float min_depth_; //!< Distance between camera and the closest object on the scene

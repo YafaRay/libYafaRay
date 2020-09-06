@@ -179,11 +179,11 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 	pbar_ = new ConsoleProgressBar(80);
 	session__.setStatusCurrentPassPercent(pbar_->getPercent());
 
-	aa_detect_color_noise_ = false;
-	aa_dark_threshold_factor_ = 0.f;
-	aa_variance_edge_size_ = 10;
-	aa_variance_pixels_ = 0;
-	aa_clamp_samples_ = 0.f;
+	aa_noise_params_.detect_color_noise_ = false;
+	aa_noise_params_.dark_threshold_factor_ = 0.f;
+	aa_noise_params_.variance_edge_size_ = 10;
+	aa_noise_params_.variance_pixels_ = 0;
+	aa_noise_params_.clamp_samples_ = 0.f;
 }
 
 ImageFilm::~ImageFilm ()
@@ -251,8 +251,8 @@ void ImageFilm::init(int num_passes)
 	n_pass_ = 1;
 	n_passes_ = num_passes;
 
-	images_auto_save_pass_counter_ = 0;
-	film_auto_save_pass_counter_ = 0;
+	images_auto_save_params_.pass_counter_ = 0;
+	film_auto_save_params_.pass_counter_ = 0;
 	resetImagesAutoSaveTimer();
 	resetFilmAutoSaveTimer();
 	g_timer__.addEvent("imagesAutoSaveTimer");
@@ -262,8 +262,8 @@ void ImageFilm::init(int num_passes)
 
 	if(!output_->isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
-		if(film_file_save_load_ == FilmFileSaveLoad::LoadAndSave) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-		if(film_file_save_load_ == FilmFileSaveLoad::LoadAndSave || film_file_save_load_ == FilmFileSaveLoad::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
+		if(film_file_save_load_ == FilmSaveLoad::LoadAndSave) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+		if(film_file_save_load_ == FilmSaveLoad::LoadAndSave || film_file_save_load_ == FilmSaveLoad::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 	}
 }
 
@@ -273,32 +273,32 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 	next_area_ = 0;
 	splitter_mutex_.unlock();
 	n_pass_++;
-	images_auto_save_pass_counter_++;
-	film_auto_save_pass_counter_++;
+	images_auto_save_params_.pass_counter_++;
+	film_auto_save_params_.pass_counter_++;
 
 	if(skip_next_pass) return 0;
 
 	std::stringstream pass_string;
 
-	Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_pass_counter_ << " filmAutoSavePassCounter=" << film_auto_save_pass_counter_ << YENDL;
+	Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_params_.pass_counter_ << " filmAutoSavePassCounter=" << film_auto_save_params_.pass_counter_ << YENDL;
 
 	if(session__.renderInProgress() && !output_->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
 		ColorOutput *out_2 = env_->getOutput2();
 
-		if((images_auto_save_interval_type_ == AutoSaveIntervalType::Pass) && (images_auto_save_pass_counter_ >= images_auto_save_interval_passes_))
+		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
 			if(output_ && output_->isImageOutput()) this->flush(num_view, All, output_);
 			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, All, out_2);
-			images_auto_save_pass_counter_ = 0;
+			images_auto_save_params_.pass_counter_ = 0;
 		}
 
-		if((film_file_save_load_ == FilmFileSaveLoad::LoadAndSave || film_file_save_load_ == FilmFileSaveLoad::Save) && (film_auto_save_interval_type_ == AutoSaveIntervalType::Pass) && (film_auto_save_pass_counter_ >= film_auto_save_interval_passes_))
+		if((film_file_save_load_ == FilmSaveLoad::LoadAndSave || film_file_save_load_ == FilmSaveLoad::Save) && (film_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (film_auto_save_params_.pass_counter_ >= film_auto_save_params_.interval_passes_))
 		{
 			if((output_ && output_->isImageOutput()) || (out_2 && out_2->isImageOutput()))
 			{
 				imageFilmSave();
-				film_auto_save_pass_counter_ = 0;
+				film_auto_save_params_.pass_counter_ = 0;
 			}
 		}
 	}
@@ -310,13 +310,13 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 	if(flags_) flags_->clear();
 	else flags_ = new TiledBitArray2D<3>(w_, h_, true);
 	std::vector<Rgba> col_ext_passes(image_passes_.size(), Rgba(0.f));
-	int variance_half_edge = aa_variance_edge_size_ / 2;
+	int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
 
-	float aa_thresh_scaled = aa_thesh_;
+	float aa_thresh_scaled = aa_noise_params_.threshold_;
 
 	int n_resample = 0;
 
-	if(adaptive_aa && aa_thesh_ > 0.f)
+	if(adaptive_aa && aa_noise_params_.threshold_ > 0.f)
 	{
 		for(int y = 0; y < h_ - 1; ++y)
 		{
@@ -344,33 +344,33 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 				Rgba pix_col = (*image_passes_.at(0))(x, y).normalized();
 				float pix_col_bri = pix_col.abscol2Bri();
 
-				if(aa_dark_detection_type_ == DarkDetectionType::Linear && aa_dark_threshold_factor_ > 0.f)
+				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
 				{
-					if(aa_dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_thesh_ * ((1.f - aa_dark_threshold_factor_) + (pix_col_bri * aa_dark_threshold_factor_));
+					if(aa_noise_params_.dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_noise_params_.threshold_ * ((1.f - aa_noise_params_.dark_threshold_factor_) + (pix_col_bri * aa_noise_params_.dark_threshold_factor_));
 				}
-				else if(aa_dark_detection_type_ == DarkDetectionType::Curve)
+				else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
 				{
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y).normalized(), aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_->setBit(x, y); flags_->setBit(x + 1, y);
 				}
-				if(pix_col.colorDifference((*image_passes_.at(0))(x, y + 1).normalized(), aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference((*image_passes_.at(0))(x, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_->setBit(x, y); flags_->setBit(x, y + 1);
 				}
-				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y + 1).normalized(), aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_->setBit(x, y); flags_->setBit(x + 1, y + 1);
 				}
-				if(x > 0 && pix_col.colorDifference((*image_passes_.at(0))(x - 1, y + 1).normalized(), aa_detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference((*image_passes_.at(0))(x - 1, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_->setBit(x, y); flags_->setBit(x - 1, y + 1);
 				}
 
-				if(aa_variance_pixels_ > 0)
+				if(aa_noise_params_.variance_pixels_ > 0)
 				{
 					int variance_x = 0, variance_y = 0;//, pixelcount = 0;
 
@@ -385,7 +385,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 						Rgba cx_0 = (*image_passes_.at(0))(xi, y).normalized();
 						Rgba cx_1 = (*image_passes_.at(0))(xi + 1, y).normalized();
 
-						if(cx_0.colorDifference(cx_1, aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
+						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
 
 					for(int yd = -variance_half_edge; yd < variance_half_edge - 1 ; ++yd)
@@ -397,10 +397,10 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 						Rgba cy_0 = (*image_passes_.at(0))(x, yi).normalized();
 						Rgba cy_1 = (*image_passes_.at(0))(x, yi + 1).normalized();
 
-						if(cy_0.colorDifference(cy_1, aa_detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
+						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
 
-					if(variance_x + variance_y >= aa_variance_pixels_)
+					if(variance_x + variance_y >= aa_noise_params_.variance_pixels_)
 					{
 						for(int xd = -variance_half_edge; xd < variance_half_edge; ++xd)
 						{
@@ -592,28 +592,28 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 	if(session__.renderInProgress() && !output_->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
 		g_timer__.stop("imagesAutoSaveTimer");
-		images_auto_save_timer_ += g_timer__.getTime("imagesAutoSaveTimer");
-		if(images_auto_save_timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		images_auto_save_params_.timer_ += g_timer__.getTime("imagesAutoSaveTimer");
+		if(images_auto_save_params_.timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
 		g_timer__.start("imagesAutoSaveTimer");
 
 		g_timer__.stop("filmAutoSaveTimer");
-		film_auto_save_timer_ += g_timer__.getTime("filmAutoSaveTimer");
-		if(film_auto_save_timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
+		film_auto_save_params_.timer_ += g_timer__.getTime("filmAutoSaveTimer");
+		if(film_auto_save_params_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
 		g_timer__.start("filmAutoSaveTimer");
 
 		ColorOutput *out_2 = env_->getOutput2();
 
-		if((images_auto_save_interval_type_ == AutoSaveIntervalType::Time) && (images_auto_save_timer_ > images_auto_save_interval_seconds_))
+		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
-			Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_timer_ << YENDL;
+			Y_DEBUG << "imagesAutoSaveTimer=" << images_auto_save_params_.timer_ << YENDL;
 			if(output_ && output_->isImageOutput()) this->flush(num_view, All, output_);
 			else if(out_2 && out_2->isImageOutput()) this->flush(num_view, All, out_2);
 			resetImagesAutoSaveTimer();
 		}
 
-		if((film_file_save_load_ == FilmFileSaveLoad::LoadAndSave || film_file_save_load_ == FilmFileSaveLoad::Save) && (film_auto_save_interval_type_ == AutoSaveIntervalType::Time) && (film_auto_save_timer_ > film_auto_save_interval_seconds_))
+		if((film_file_save_load_ == FilmSaveLoad::LoadAndSave || film_file_save_load_ == FilmSaveLoad::Save) && (film_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (film_auto_save_params_.timer_ > film_auto_save_params_.interval_seconds_))
 		{
-			Y_DEBUG << "filmAutoSaveTimer=" << film_auto_save_timer_ << YENDL;
+			Y_DEBUG << "filmAutoSaveTimer=" << film_auto_save_params_.timer_ << YENDL;
 			if((output_ && output_->isImageOutput()) || (out_2 && out_2->isImageOutput()))
 			{
 				imageFilmSave();
@@ -897,7 +897,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 	if(session__.renderFinished())
 	{
-		if(!output_->isPreview() && (film_file_save_load_ == FilmFileSaveLoad::LoadAndSave || film_file_save_load_ == FilmFileSaveLoad::Save))
+		if(!output_->isPreview() && (film_file_save_load_ == FilmSaveLoad::LoadAndSave || film_file_save_load_ == FilmSaveLoad::Save))
 		{
 			if((output_ && output_->isImageOutput()) || (out_2 && out_2->isImageOutput()))
 			{
@@ -916,7 +916,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 bool ImageFilm::doMoreSamples(int x, int y) const
 {
-	return (aa_thesh_ > 0.f) ? flags_->getBit(x - cx_0_, y - cy_0_) : true;
+	return (aa_noise_params_.threshold_ > 0.f) ? flags_->getBit(x - cx_0_, y - cy_0_) : true;
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
@@ -972,7 +972,7 @@ void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, flo
 			{
 				Rgba col = color_passes(render_passes->intPassTypeFromExtPassIndex(idx));
 
-				col.clampProportionalRgb(aa_clamp_samples_);
+				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 
 				Pixel &pixel = (*image_passes_[idx])(i - cx_0_, j - cy_0_);
 
@@ -992,7 +992,7 @@ void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, flo
 			{
 				Rgba col = color_passes(render_passes->intPassTypeFromAuxPassIndex(idx));
 
-				col.clampProportionalRgb(aa_clamp_samples_);
+				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 
 				Pixel &pixel = (*aux_image_passes_[idx])(i - cx_0_, j - cy_0_);
 
@@ -1100,16 +1100,6 @@ void ImageFilm::setProgressBar(ProgressBar *pb)
 {
 	if(pbar_) delete pbar_;
 	pbar_ = pb;
-}
-
-void ImageFilm::setAaNoiseParams(bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples)
-{
-	aa_detect_color_noise_ = detect_color_noise;
-	aa_dark_detection_type_ = dark_detection_type;
-	aa_dark_threshold_factor_ = dark_threshold_factor;
-	aa_variance_edge_size_ = variance_edge_size;
-	aa_variance_pixels_ = variance_pixels;
-	aa_clamp_samples_ = clamp_samples;
 }
 
 #if HAVE_FREETYPE

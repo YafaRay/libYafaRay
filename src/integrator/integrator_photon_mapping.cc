@@ -1184,10 +1184,10 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 				{
 					col += estimateAllDirectLight(state, sp, wo, color_passes);;
 
-					if(aa_clamp_indirect_ > 0.f)
+					if(aa_noise_params_.clamp_indirect_ > 0.f)
 					{
 						Rgb tmp_col = finalGathering(state, sp, wo, color_passes);
-						tmp_col.clampProportionalRgb(aa_clamp_indirect_);
+						tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 						col += color_passes.probeSet(PassIntDiffuseIndirect, tmp_col, state.raylevel_ == 0);
 					}
 					else col += color_passes.probeSet(PassIntDiffuseIndirect, finalGathering(state, sp, wo, color_passes), state.raylevel_ == 0);
@@ -1244,10 +1244,10 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 		// add caustics
 		if(use_photon_caustics_ && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
-			if(aa_clamp_indirect_ > 0.f)
+			if(aa_noise_params_.clamp_indirect_ > 0.f)
 			{
 				Rgb tmp_col = estimateCausticPhotons(state, sp, wo);
-				tmp_col.clampProportionalRgb(aa_clamp_indirect_);
+				tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += color_passes.probeSet(PassIntIndirect, tmp_col, state.raylevel_ == 0);
 			}
 			else col += color_passes.probeSet(PassIntIndirect, estimateCausticPhotons(state, sp, wo), state.raylevel_ == 0);

@@ -22,6 +22,7 @@
 
 #include "constants.h"
 #include "utility/util_thread.h"
+#include "common/aa_noise_params.h"
 
 constexpr unsigned int user_data_size__ = 1024;
 
@@ -147,6 +148,8 @@ struct ObjData
 	size_t last_vert_id_;
 };
 
+
+
 struct SceneGeometryState
 {
 	std::list<unsigned int> stack_;
@@ -196,7 +199,7 @@ class LIBYAFARAY_EXPORT Scene
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
 		void setVolIntegrator(VolumeIntegrator *v);
-		void setAntialiasing(int num_samples, int num_passes, int inc_samples, double threshold, float resampled_floor, float sample_multiplier_factor, float light_sample_multiplier_factor, float indirect_sample_multiplier_factor, bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples, float clamp_indirect);
+		void setAntialiasing(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		void setMode(int m) { mode_ = m; }
@@ -211,7 +214,7 @@ class LIBYAFARAY_EXPORT Scene
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		int getSignals() const;
 		//! only for backward compatibility!
-		void getAaParameters(int &samples, int &passes, int &inc_samples, float &threshold, float &resampled_floor, float &sample_multiplier_factor, float &light_sample_multiplier_factor, float &indirect_sample_multiplier_factor, bool &detect_color_noise, DarkDetectionType &dark_detection_type, float &dark_threshold_factor, int &variance_edge_size, int &variance_pixels, float &clamp_samples, float &clamp_indirect) const;
+		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		bool intersect(const Ray &ray, SurfacePoint &sp) const;
 		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
 		bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const;
@@ -247,21 +250,7 @@ class LIBYAFARAY_EXPORT Scene
 		Background *background_;
 		SurfaceIntegrator *surf_integrator_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
-
-		int aa_samples_, aa_passes_;
-		int aa_inc_samples_; //!< sample count for additional passes
-		float aa_threshold_;
-		float aa_resampled_floor_; //!< minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the AA_threshold value for the next pass
-		float aa_sample_multiplier_factor_;
-		float aa_light_sample_multiplier_factor_;
-		float aa_indirect_sample_multiplier_factor_;
-		bool aa_detect_color_noise_;
-		DarkDetectionType aa_dark_detection_type_;
-		float aa_dark_threshold_factor_;
-		int aa_variance_edge_size_;
-		int aa_variance_pixels_;
-		float aa_clamp_samples_;
-		float aa_clamp_indirect_;
+		AaNoiseParams aa_noise_params_;
 		int nthreads_;
 		int nthreads_photons_;
 		int mode_; //!< sets the scene mode (triangle-only, virtual primitives)

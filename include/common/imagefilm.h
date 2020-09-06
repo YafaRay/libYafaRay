@@ -29,6 +29,7 @@
 #include "utility/util_image_buffers.h"
 #include "utility/util_tiled_array.h"
 #include "utility/util_thread.h"
+#include "common/aa_noise_params.h"
 
 BEGIN_YAFARAY
 
@@ -43,15 +44,21 @@ class ColorPasses;
 class RenderEnvironment;
 class ColorOutput;
 
-enum class DarkDetectionType : int { None, Linear, Curve };
-enum class AutoSaveIntervalType : int { None, Time, Pass };
-enum class FilmFileSaveLoad : int { None, Save, LoadAndSave };
-
 class LIBYAFARAY_EXPORT ImageFilm final
 {
 	public:
 		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };
 		enum Flags : unsigned int { Image = 1 << 0, Densityimage = 1 << 1, All = Image | Densityimage };
+		enum class FilmSaveLoad : int { None, Save, LoadAndSave };
+		struct AutoSaveParams
+		{
+			enum class IntervalType : int { None, Time, Pass };
+			IntervalType interval_type_ = IntervalType::None;
+			double interval_seconds_ = 300.0;
+			int interval_passes_ = 1;
+			double timer_ = 0.0; //Internal timer for AutoSave
+			int pass_counter_ = 0; //Internal counter for AutoSave
+		};
 
 		/*! imageFilm_t Constructor */
 		ImageFilm(int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size = 1.0, FilterType filt = FilterType::Box,
@@ -98,12 +105,12 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		/*! Sets the film premultiply option for optional secondary file output */
 		void setPremult2(bool premult);
 		/*! Sets the adaptative AA sampling threshold */
-		void setAaThreshold(float thresh) { aa_thesh_ = thresh; }
+		void setAaThreshold(float thresh) { aa_noise_params_.threshold_ = thresh; }
 		/*! Sets a custom progress bar in the image film */
 		void setProgressBar(ProgressBar *pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
 		int getTotalPixels() const { return w_ * h_; };
-		void setAaNoiseParams(bool detect_color_noise, const DarkDetectionType &dark_detection_type, float dark_threshold_factor, int variance_edge_size, int variance_pixels, float clamp_samples);
+		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		/*! Methods for rendering the parameters badge; Note that FreeType lib is needed to render text */
 		void drawRenderSettings(std::stringstream &ss);
 		float darkThresholdCurveInterpolate(float pixel_brightness);
@@ -128,17 +135,12 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		void imageFilmLoadAllInFolder();
 		bool imageFilmSave();
 		void imageFilmFileBackup() const;
+		void setFilmSaveLoad(const FilmSaveLoad &film_file_save_load) { film_file_save_load_ = film_file_save_load; }
 
-		void setImagesAutoSaveIntervalType(const AutoSaveIntervalType &interval_type) { images_auto_save_interval_type_ = interval_type; }
-		void setImagesAutoSaveIntervalSeconds(double interval_seconds) { images_auto_save_interval_seconds_ = interval_seconds; }
-		void setImagesAutoSaveIntervalPasses(int interval_passes) { images_auto_save_interval_passes_ = interval_passes; }
-		void resetImagesAutoSaveTimer() { images_auto_save_timer_ = 0.0; }
-
-		void setFilmFileSaveLoad(const FilmFileSaveLoad &film_file_save_load) { film_file_save_load_ = film_file_save_load; }
-		void setFilmAutoSaveIntervalType(const AutoSaveIntervalType &interval_type) { film_auto_save_interval_type_ = interval_type; }
-		void setFilmAutoSaveIntervalSeconds(double interval_seconds) { film_auto_save_interval_seconds_ = interval_seconds; }
-		void setFilmAutoSaveIntervalPasses(int interval_passes) { film_auto_save_interval_passes_ = interval_passes; }
-		void resetFilmAutoSaveTimer() { film_auto_save_timer_ = 0.0; }
+		void setImagesAutoSaveParams(const AutoSaveParams &auto_save_params) { images_auto_save_params_ = auto_save_params; }
+		void setFilmAutoSaveParams(const AutoSaveParams &auto_save_params) { film_auto_save_params_ = auto_save_params; }
+		void resetImagesAutoSaveTimer() { images_auto_save_params_.timer_ = 0.0; }
+		void resetFilmAutoSaveTimer() { film_auto_save_params_.timer_ = 0.0; }
 
 		void generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
 		void generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
@@ -161,13 +163,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		float gamma_ = 1.f;
 		ColorSpace color_space_2_ = RawManualGamma;	//For optional secondary file output
 		float gamma_2_ = 1.f;				//For optional secondary file output
-		float aa_thesh_;
-		bool aa_detect_color_noise_;
-		DarkDetectionType aa_dark_detection_type_;
-		float aa_dark_threshold_factor_;
-		int aa_variance_edge_size_;
-		int aa_variance_pixels_;
-		float aa_clamp_samples_;
+		AaNoiseParams aa_noise_params_;
 		float filterw_, table_scale_;
 		float *filter_table_ = nullptr;
 		ColorOutput *output_ = nullptr;
@@ -194,20 +190,9 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		unsigned int sampling_offset_ = 0;	//To ensure sampling after loading the image film continues and does not repeat already done samples
 		unsigned int computer_node_ = 0;	//Computer node in multi-computer render environments/render farms
 
-		//Options for AutoSaving output images
-		AutoSaveIntervalType images_auto_save_interval_type_ = AutoSaveIntervalType::None;
-		double images_auto_save_interval_seconds_ = 300.0;
-		int images_auto_save_interval_passes_ = 1;
-		double images_auto_save_timer_ = 0.0; //Internal timer for images AutoSave
-		int images_auto_save_pass_counter_ = 0;	//Internal counter for images AutoSave
-
-		//Options for Saving/AutoSaving/Loading the internal imageFilm image buffers
-		FilmFileSaveLoad film_file_save_load_ = FilmFileSaveLoad::None;
-		AutoSaveIntervalType film_auto_save_interval_type_ = AutoSaveIntervalType::None;
-		double film_auto_save_interval_seconds_ = 300.0;
-		double film_auto_save_timer_ = 0.0; //Internal timer for Film AutoSave
-		int film_auto_save_pass_counter_ = 0;	//Internal counter for Film AutoSave
-		int film_auto_save_interval_passes_ = 1;
+		AutoSaveParams images_auto_save_params_;
+		AutoSaveParams film_auto_save_params_;
+		FilmSaveLoad film_file_save_load_ = FilmSaveLoad::None;
 };
 
 END_YAFARAY
