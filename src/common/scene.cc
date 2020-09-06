@@ -953,8 +953,8 @@ bool Scene::isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &f
 	else  dis = sray.tmax_ - 2 * sray.tmin_;
 	filt = Rgb(1.0);
 	void *odat = state.userdata_;
-	unsigned char userdata[user_data_size__ + 7];
-	state.userdata_ = (void *)(((size_t)&userdata[7]) & (~7));  // pad userdata to 8 bytes
+	alignas (16) unsigned char userdata[user_data_size__];
+	state.userdata_ = static_cast<void *>(userdata);
 	bool isect = false;
 	if(mode_ == 0)
 	{

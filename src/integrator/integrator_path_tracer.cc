@@ -140,9 +140,8 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 			state.include_lights_ = true;
 			//...
 		}
-		unsigned char userdata[user_data_size__ + 7];
-		userdata[0] = 0;
-		state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+		alignas (16) unsigned char userdata[user_data_size__];
+		state.userdata_ = static_cast<void *>(userdata);
 		BsdfFlags bsdfs;
 
 		const Material *material = sp.material_;
@@ -190,8 +189,8 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 			for(int i = 0; i < n_samples; ++i)
 			{
 				void *first_udat = state.userdata_;
-				unsigned char userdata[user_data_size__ + 7];
-				void *n_udat = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+				alignas (16) unsigned char n_userdata[user_data_size__];
+				void *n_udat = static_cast<void *>(n_userdata);
 				unsigned int offs = n_paths_ * state.pixel_sample_ + state.sampling_offs_ + i; // some redunancy here...
 				Rgb throughput(1.0);
 				Rgb lcol, scol;

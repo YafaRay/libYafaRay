@@ -361,8 +361,8 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 	RenderState state;
 	state.cam_ = scene->getCamera();
-	unsigned char userdata[user_data_size__ + 7];
-	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+	alignas (16) unsigned char userdata[user_data_size__];
+	state.userdata_ = static_cast<void *>(userdata);
 
 	local_caustic_photons.clear();
 	local_caustic_photons.reserve(n_caus_photons_thread);
@@ -593,8 +593,8 @@ bool MonteCarloIntegrator::createCausticMap()
 
 			RenderState state;
 			state.cam_ = scene_->getCamera();
-			unsigned char userdata[user_data_size__ + 7];
-			state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+			alignas (16) unsigned char userdata[user_data_size__];
+			state.userdata_ = static_cast<void *>(userdata);
 
 			while(!done)
 			{

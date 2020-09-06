@@ -405,8 +405,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 	SurfacePoint sp;
 	RenderState state(&prng);
-	unsigned char userdata[user_data_size__ + 7];
-	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+	alignas (16) unsigned char userdata[user_data_size__];
+	state.userdata_ = static_cast<void *>(userdata);
 	state.cam_ = scene->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
@@ -643,8 +643,8 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	SurfacePoint sp;
 	Random prng(rand() + offset * (4517) + 123);
 	RenderState state(&prng);
-	unsigned char userdata[user_data_size__ + 7];
-	state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+	alignas (16) unsigned char userdata[user_data_size__];
+	state.userdata_ = static_cast<void *>(userdata);
 	state.cam_ = scene_->getCamera();
 
 	ProgressBar *pb;
@@ -892,8 +892,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 	if(scene_->intersect(ray, sp))
 	{
-		unsigned char userdata[user_data_size__ + 7];
-		state.userdata_ = (void *)(&userdata[7] - (((size_t)&userdata[7]) & 7));   // pad userdata to 8 bytes
+		alignas (16) unsigned char userdata[user_data_size__];
+		state.userdata_ = static_cast<void *>(userdata);
 		if(state.raylevel_ == 0)
 		{
 			state.chromatic_ = true;

@@ -113,11 +113,12 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 
 	if(scene_->intersect(ray, sp)) // If it hits
 	{
-		unsigned char userdata[user_data_size__];
+		alignas (16) unsigned char userdata[user_data_size__];
+		state.userdata_ = static_cast<void *>(userdata);
+
 		const Material *material = sp.material_;
 		BsdfFlags bsdfs;
 
-		state.userdata_ = (void *) userdata;
 		Vec3 wo = -ray.dir_;
 		if(state.raylevel_ == 0) state.include_lights_ = true;
 
