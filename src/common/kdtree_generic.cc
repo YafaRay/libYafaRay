@@ -61,7 +61,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	total_prims_ = np;
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = (RkdTreeNode<T> *) std::aligned_alloc(64, 256 * sizeof(RkdTreeNode<T>));
+	nodes_ = (RkdTreeNode<T> *) alignedAlloc__(64, 256 * sizeof(RkdTreeNode<T>));
 	if(max_depth_ <= 0) max_depth_ = int(7.0f + 1.66f * log(float(total_prims_)));
 	double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -100,7 +100,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	//	uint32_t *primNums = new uint32_t[totalPrims]; //isn't this like...totaly unnecessary? use leftPrims?
 	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514/*2*totalPrims*/];
 	clip_ = new int[max_depth_ + 2];
-	cdata_ = (char *) std::aligned_alloc(64, (max_depth_ + 2) * tri_clip_thresh__ * clip_data_size__);
+	cdata_ = (char *) alignedAlloc__(64, (max_depth_ + 2) * tri_clip_thresh__ * clip_data_size__);
 
 	// prepare data
 	for(uint32_t i = 0; i < total_prims_; i++) left_prims[i] = i; //primNums[i] = i;
@@ -119,7 +119,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	delete[] all_bounds_;
 	for(int i = 0; i < 3; ++i) delete[] edges[i];
 	delete[] clip_;
-	std::free(cdata_);
+	alignedFree__(cdata_);
 	//print some stats:
 	c_end = clock() - c_start;
 	std::cout << "\n=== kd-tree stats (" << float(c_end) / (float)CLOCKS_PER_SEC << "s) ===\n";
@@ -140,7 +140,7 @@ template<class T>
 KdTree<T>::~KdTree()
 {
 	//	std::cout << "kd-tree destructor: freeing nodes...";
-	std::free(nodes_);
+	alignedFree__(nodes_);
 	//	std::cout << "done!\n";
 	//y_free(prims); //überflüssig?
 }
@@ -454,9 +454,9 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		RkdTreeNode<T> 	*n = (RkdTreeNode<T> *) std::aligned_alloc(64, new_count * sizeof(RkdTreeNode<T>));
+		RkdTreeNode<T> 	*n = (RkdTreeNode<T> *) alignedAlloc__(64, new_count * sizeof(RkdTreeNode<T>));
 		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(RkdTreeNode<T>));
-		std::free(nodes_);
+		alignedFree__(nodes_);
 		nodes_ = n;
 		allocated_nodes_count_ = new_count;
 	}

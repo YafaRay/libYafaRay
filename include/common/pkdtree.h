@@ -24,10 +24,9 @@
 #include "common/logging.h"
 #include "utility/util_thread.h"
 #include "common/bound.h"
+#include "utility/aligned_alloc.h"
 #include <vector>
 #include <cstdlib>
-//#include "utility/util_aligned_alloc.h"
-//#include <algorithm>
 
 BEGIN_YAFARAY
 
@@ -81,7 +80,7 @@ class PointKdTree
 	public:
 		PointKdTree() {};
 		PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
-		~PointKdTree() { if(nodes_) std::free(nodes_); }
+		~PointKdTree() { if(nodes_) alignedFree__(nodes_); }
 		template<class LookupProc> void lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const;
 		double lookupStat() const { return double(y_procs_) / double(y_lookups_); } //!< ratio of photons tested per lookup call
 	protected:
@@ -116,7 +115,7 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 		return;
 	}
 
-	nodes_ = (KdNode<T> *) std::aligned_alloc(64, 4 * n_elements_ * sizeof(KdNode<T>)); //actually we could allocate one less...2n-1
+	nodes_ = (KdNode<T> *) alignedAlloc__(64, 4 * n_elements_ * sizeof(KdNode<T>)); //actually we could allocate one less...2n-1
 
 	const T **elements = new const T*[n_elements_];
 
@@ -175,12 +174,12 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 	{
 		//<< recurse below child >>
 		uint32_t next_free_node_1 = 0;
-		KdNode<T> *nodes_1 = (KdNode<T> *) std::aligned_alloc(64, 4 * (split_el - start) * sizeof(KdNode<T>));
+		KdNode<T> *nodes_1 = (KdNode<T> *) alignedAlloc__(64, 4 * (split_el - start) * sizeof(KdNode<T>));
 		std::thread *below_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, start, split_el, std::ref(bound_l), prims, level, std::ref(next_free_node_1), nodes_1);
 
 		//<< recurse above child >>
 		uint32_t next_free_node_2 = 0;
-		KdNode<T> *nodes_2 = (KdNode<T> *) std::aligned_alloc(64, 4 * (end - split_el) * sizeof(KdNode<T>));
+		KdNode<T> *nodes_2 = (KdNode<T> *) alignedAlloc__(64, 4 * (end - split_el) * sizeof(KdNode<T>));
 		std::thread *above_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, split_el, end, std::ref(bound_r), prims, level, std::ref(next_free_node_2), nodes_2);
 
 		below_worker->join();
@@ -199,7 +198,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 					local_nodes[i + local_next_free_node].setRightChild(right_child + local_next_free_node);
 				}
 			}
-			std::free(nodes_1);
+			alignedFree__(nodes_1);
 		}
 
 		if(nodes_2)
@@ -213,7 +212,7 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 					local_nodes[i + local_next_free_node + next_free_node_1].setRightChild(right_child + local_next_free_node + next_free_node_1);
 				}
 			}
-			std::free(nodes_2);
+			alignedFree__(nodes_2);
 		}
 
 		local_nodes[cur_node].setRightChild(local_next_free_node + next_free_node_1);

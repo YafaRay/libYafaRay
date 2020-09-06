@@ -21,6 +21,7 @@
 #define YAFARAY_UTIL_MEMORY_ARENA_H
 
 #include "constants.h"
+#include "utility/aligned_alloc.h"
 #include <vector>
 #include <algorithm>
 #include <cstdint>
@@ -35,15 +36,15 @@ class MemoryArena
 		{
 			block_size_ = block_size;
 			cur_block_pos_ = 0;
-			current_block_ = (char *) std::aligned_alloc(64, block_size_);
+			current_block_ = (char *) alignedAlloc__(64, block_size_);
 		}
 		~MemoryArena()
 		{
-			std::free(current_block_);
+			alignedFree__(current_block_);
 			for(uint32_t i = 0; i < used_blocks_.size(); ++i)
-				std::free(used_blocks_[i]);
+				alignedFree__(used_blocks_[i]);
 			for(uint32_t i = 0; i < available_blocks_.size(); ++i)
-				std::free(available_blocks_[i]);
+				alignedFree__(available_blocks_[i]);
 		}
 		void *alloc(uint32_t sz)
 		{
@@ -59,7 +60,7 @@ class MemoryArena
 					available_blocks_.pop_back();
 				}
 				else
-					current_block_ = (char *) std::aligned_alloc(64, (std::max(sz, block_size_)));
+					current_block_ = (char *) alignedAlloc__(64, (std::max(sz, block_size_)));
 				cur_block_pos_ = 0;
 			}
 			void *ret = current_block_ + cur_block_pos_;
