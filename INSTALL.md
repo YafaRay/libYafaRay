@@ -3,6 +3,9 @@ libYafaRay uses CMake for the building process in Linux, Windows and MacOSX syst
 See directory "building" for example procedures to build libYafaRay
 
 Dependencies:
+  * Required
+    * C++17 compliant compiler
+
   * Optional, depending on options selected in CMake:
     * meganz/mingw-std-threads
     * \>=zlib-1.2.8
@@ -12,8 +15,7 @@ Dependencies:
     * \>=libpng-1.2.56
     * \>=jpeg-6b
     * \>=tiff-4.0.3
-    * \>=ilmbase-2.2.0
-    * \>=openexr-2.2.0
+    * \>=openexr-2.4.0
     * \>=python-3.5
     * \>=ruby-2.2
     * \>=qt-5

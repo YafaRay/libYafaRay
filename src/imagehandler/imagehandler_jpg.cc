@@ -20,6 +20,8 @@
  *
  */
 
+#ifdef HAVE_JPEG
+
 #include "imagehandler/imagehandler_jpg.h"
 #include "common/logging.h"
 #include "common/session.h"
@@ -388,3 +390,5 @@ ImageHandler *JpgHandler::factory(ParamMap &params, RenderEnvironment &render)
 }
 
 END_YAFARAY
+
+#endif // HAVE_JPEG

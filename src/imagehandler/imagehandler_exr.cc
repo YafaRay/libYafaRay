@@ -20,6 +20,8 @@
  *
  */
 
+#ifdef HAVE_OPENEXR
+
 #include "imagehandler/imagehandler_exr.h"
 #include "common/logging.h"
 #include "common/session.h"
@@ -425,3 +427,5 @@ ImageHandler *ExrHandler::factory(ParamMap &params, RenderEnvironment &render)
 }
 
 END_YAFARAY
+
+#endif // HAVE_OPENEXR

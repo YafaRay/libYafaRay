@@ -20,6 +20,8 @@
  *
  */
 
+#ifdef HAVE_TIFF
+
 #include "imagehandler/imagehandler_tif.h"
 #include "common/logging.h"
 #include "common/session.h"
@@ -251,3 +253,5 @@ ImageHandler *TifHandler::factory(ParamMap &params, RenderEnvironment &render)
 }
 
 END_YAFARAY
+
+#endif // HAVE_TIFF

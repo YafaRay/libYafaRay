@@ -20,6 +20,8 @@
  *
  */
 
+#ifdef HAVE_PNG
+
 #include "imagehandler/imagehandler_png.h"
 #include "common/logging.h"
 #include "common/session.h"
@@ -493,3 +495,5 @@ ImageHandler *PngHandler::factory(ParamMap &params, RenderEnvironment &render)
 }
 
 END_YAFARAY
+
+#endif // HAVE_PNG

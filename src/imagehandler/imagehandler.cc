@@ -41,12 +41,20 @@ ImageHandler *ImageHandler::factory(ParamMap &params, RenderEnvironment &render)
 	else if(type == "pic") type = "hdr";
 
 
-	if(type == "exr") return ExrHandler::factory(params, render);
+	if(type == "tga") return TgaHandler::factory(params, render);
 	else if(type == "hdr") return HdrHandler::factory(params, render);
+#ifdef HAVE_OPENEXR
+	else if(type == "exr") return ExrHandler::factory(params, render);
+#endif // HAVE_OPENEXR
+#ifdef HAVE_JPEG
 	else if(type == "jpg") return JpgHandler::factory(params, render);
+#endif // HAVE_JPEG
+#ifdef HAVE_PNG
 	else if(type == "png") return PngHandler::factory(params, render);
-	else if(type == "tga") return TgaHandler::factory(params, render);
+#endif // HAVE_PNG
+#ifdef HAVE_TIFF
 	else if(type == "tif") return TifHandler::factory(params, render);
+#endif // HAVE_TIFF
 	else return nullptr;
 }
 

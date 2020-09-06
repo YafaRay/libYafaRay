@@ -85,7 +85,7 @@ RenderEnvironment::RenderEnvironment()
 	session__.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 
 #ifndef HAVE_OPENCV
-	Y_WARNING << PACKAGE << " built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << YENDL;
+	Y_WARNING << "libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << YENDL;
 #endif
 }
 
