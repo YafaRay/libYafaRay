@@ -32,40 +32,39 @@ class LIBYAFARAY_EXPORT XmlInterface: public Interface
 	public:
 		XmlInterface();
 		// directly related to scene_t:
-		virtual bool setLoggingAndBadgeSettings();
-		virtual bool setupRenderPasses(); //!< setup render passes information
-		virtual bool startGeometry();
-		virtual bool endGeometry();
-		virtual unsigned int getNextFreeId();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0);
-		virtual bool endTriMesh();
-		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world);
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
-		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
-		virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c, const Material *mat);
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
-		virtual int  addUv(float u, float v);
-		virtual bool smoothMesh(unsigned int id, double angle);
+		virtual bool setLoggingAndBadgeSettings() override;
+		virtual bool setupRenderPasses() override; //!< setup render passes information
+		virtual bool startGeometry() override;
+		virtual bool endGeometry() override;
+		virtual unsigned int getNextFreeId() override;
+		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
+		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
+		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0) override;
+		virtual bool endTriMesh() override;
+		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world) override;
+		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) override;
+		virtual int  addVertex(double x, double y, double z) override; //!< add vertex to mesh; returns index to be used for addTriangle
+		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+		virtual void addNormal(double nx, double ny, double nz) override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual bool addTriangle(int a, int b, int c, const Material *mat) override;
+		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) override;
+		virtual int  addUv(float u, float v) override;
+		virtual bool smoothMesh(unsigned int id, double angle) override;
 
 		// functions directly related to renderEnvironment_t
-		virtual Light 		*createLight(const char *name);
-		virtual Texture 		*createTexture(const char *name);
-		virtual Material 	*createMaterial(const char *name);
-		virtual Camera 		*createCamera(const char *name);
-		virtual Background 	*createBackground(const char *name);
-		virtual Integrator 	*createIntegrator(const char *name);
-		virtual VolumeRegion 	*createVolumeRegion(const char *name);
-		virtual unsigned int 	createObject(const char *name);
-		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
-		virtual bool startScene(int type = 0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
+		virtual Light 		*createLight(const char *name) override;
+		virtual Texture 		*createTexture(const char *name) override;
+		virtual Material 	*createMaterial(const char *name) override;
+		virtual Camera 		*createCamera(const char *name) override;
+		virtual Background 	*createBackground(const char *name) override;
+		virtual Integrator 	*createIntegrator(const char *name) override;
+		virtual VolumeRegion 	*createVolumeRegion(const char *name) override;
+		virtual unsigned int 	createObject(const char *name) override;
+		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
+		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr) override; //!< render the scene...
+		virtual bool startScene(int type = 0) override; //!< start a new scene; Must be called before any of the scene_t related callbacks!
 
-		virtual void setOutfile(const char *fname);
-
+		void setOutfile(const char *fname);
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:
