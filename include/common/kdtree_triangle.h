@@ -23,7 +23,7 @@
 #include "constants.h"
 #include "object_geom/object_geom_mesh.h"
 #include "triangle.h"
-#include "utility/util_aligned_alloc.h"
+#include "utility/util_memory_arena.h"
 #include "common/vector.h"
 #include "common/bound.h"
 #include <cstdint>

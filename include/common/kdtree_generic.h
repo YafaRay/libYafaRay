@@ -21,7 +21,7 @@
 #define YAFARAY_KDTREE_GENERIC_H
 
 #include "constants.h"
-#include "utility/util_aligned_alloc.h"
+#include "utility/util_memory_arena.h"
 #include "common/bound.h"
 #include "object_geom/object_geom.h"
 #include "common/kdtree_triangle.h"

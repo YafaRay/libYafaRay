@@ -53,7 +53,7 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 	total_prims_ = np;
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = (KdTreeNode *) yMemalign__(64, 256 * sizeof(KdTreeNode));
+	nodes_ = (KdTreeNode *) std::aligned_alloc(64, 256 * sizeof(KdTreeNode));
 	if(max_depth_ <= 0) max_depth_ = int(7.0f + 1.66f * log(float(total_prims_)));
 	double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -90,7 +90,7 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
 	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514/*2*totalPrims*/];
 	clip_ = new int[max_depth_ + 2];
-	cdata_ = (char *) yMemalign__(64, (max_depth_ + 2) * tri_clip_thresh__ * clip_data_size__);
+	cdata_ = (char *) std::aligned_alloc(64, (max_depth_ + 2) * tri_clip_thresh__ * clip_data_size__);
 
 	// prepare data
 	for(uint32_t i = 0; i < total_prims_; i++) left_prims[i] = i; //primNums[i] = i;
@@ -109,7 +109,7 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 	delete[] all_bounds_;
 	for(int i = 0; i < 3; ++i) delete[] edges[i];
 	delete[] clip_;
-	yFree__(cdata_);
+	std::free(cdata_);
 	//print some stats:
 	c_end = clock() - c_start;
 	Y_VERBOSE << "Kd-Tree: Stats (" << float(c_end) / (float)CLOCKS_PER_SEC << "s)" << YENDL;
@@ -127,7 +127,7 @@ TriKdTree::TriKdTree(const Triangle **v, int np, int depth, int leaf_size,
 TriKdTree::~TriKdTree()
 {
 	Y_INFO << "Kd-Tree: Freeing nodes..." << YENDL;
-	yFree__(nodes_);
+	std::free(nodes_);
 	Y_VERBOSE << "Kd-Tree: Done" << YENDL;
 }
 
@@ -441,9 +441,9 @@ int TriKdTree::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		KdTreeNode 	*n = (KdTreeNode *) yMemalign__(64, new_count * sizeof(KdTreeNode));
+		KdTreeNode 	*n = (KdTreeNode *) std::aligned_alloc(64, new_count * sizeof(KdTreeNode));
 		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(KdTreeNode));
-		yFree__(nodes_);
+		std::free(nodes_);
 		nodes_ = n;
 		allocated_nodes_count_ = new_count;
 	}

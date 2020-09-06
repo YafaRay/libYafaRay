@@ -22,7 +22,7 @@
 
 #include "constants.h"
 #include <cstring>
-#include "util_aligned_alloc.h"
+#include "util_memory_arena.h"
 
 BEGIN_YAFARAY
 
@@ -40,7 +40,7 @@ template<class T, int logBlockSize> class TiledArray2D
 			block_mask_ = block_size_ - 1;
 			x_blocks_ = roundUp(x) >> logBlockSize;
 			int n_alloc = roundUp(x) * roundUp(y);
-			data_ = (T *) yMemalign__(64, n_alloc * sizeof(T));
+			data_ = (T *) std::aligned_alloc(64, n_alloc * sizeof(T));
 			if(init)
 			{
 				for(int i = 0; i < n_alloc; ++i) new(&data_[i]) T();
@@ -51,8 +51,8 @@ template<class T, int logBlockSize> class TiledArray2D
 			x_blocks_ = roundUp(x) >> logBlockSize;
 			int n_alloc = roundUp(x) * roundUp(y);
 			T *old = data_;
-			if(old) yFree__(old);
-			data_ = (T *) yMemalign__(64, n_alloc * sizeof(T));
+			if(old) std::free(old);
+			data_ = (T *) std::aligned_alloc(64, n_alloc * sizeof(T));
 			if(init)
 			{
 				for(int i = 0; i < n_alloc; ++i) new(&data_[i]) T();
@@ -74,7 +74,7 @@ template<class T, int logBlockSize> class TiledArray2D
 		{
 			for(int i = 0; i < nx_ * ny_; ++i)
 				data_[i].~t_();
-			if(data_) yFree__(data_);
+			if(data_) std::free(data_);
 		}
 		T &operator()(int x, int y)
 		{
@@ -111,10 +111,10 @@ template<int logBlockSize> class TiledBitArray2D
 			block_mask_ = block_size_ - 1;
 			x_blocks_ = roundUp(x) >> logBlockSize;
 			n_alloc_ = roundUp(x) * roundUp(y);
-			data_ = (unsigned int *) yMemalign__(64, n_alloc_ * sizeof(unsigned int));
+			data_ = (unsigned int *) std::aligned_alloc(64, n_alloc_ * sizeof(unsigned int));
 			if(init) std::memset(data_, 0, n_alloc_);
 		}
-		~TiledBitArray2D() { if(data_) yFree__(data_); }
+		~TiledBitArray2D() { if(data_) std::free(data_); }
 		int roundUp(int x) const { return (x + block_size_ - 1) & ~(block_size_ - 1); }
 		void clear() { std::memset(data_, 0, n_alloc_); }
 		void setBit(int x, int y)

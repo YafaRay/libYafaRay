@@ -1,16 +1,3 @@
-# Some coding conventions:
-* headers in include/core_api shall not include headers from other
-  YafRay include dirs.
-* headers in include/core_api shall not use HAVE_* options
-  (like '#if HAVE_EXR')
-* plugins using headers other than core_api ones need to have all
-  libs added to their build environment for all HAVE_* options they
-  pull in (directly or indirectly!)
-* interface functions shall not have arguments or return types which
-  depend on configurable typedefines.
-* use doxygen comments to document non-obvious types, classes, interfaces
-  and functions and their usage.
-
 # Formatting
 * use tabs, not spaces
 * recommended tab width is 4
@@ -35,11 +22,12 @@
 astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-blocks --align-pointer=name --align-reference=name --pad-oper --pad-comma --unpad-paren --keep-one-line-statements --keep-one-line-blocks --indent-switches --close-templates --indent-col1-comments --suffix=none *.cc *.h
 
 # Coding conventions
-* Codebase is based on the C++11 standard functionality and standard libraries. Do not use C++17, etc. Maybe in the future when C++17, etc, is more widespread among compilers and distros it will be used.
+* Codebase is based on the C++17 standard functionality and requires compatible compilers.
 * Avoid using Macros as much as possible. For constants, use preferably constexpr. If possible encapsulate them within the class, as static if needed.
 * Avoid using typedefs as much as possible. If special plain old data are needed like unsigned char 8 bit, use standard ones like uint8_t, for example and not "yByte" or the like
 * Use verbose class, function and variable names. For example avoid short names like "with_a" and use a verbose "with_alpha"
 * Do NOT use comments to explain obscure code. Instead write self-explanatory code that is easily understood and verbose enough! Reduce comments to the minimum possible!
+* Use Doxygen comments to document non-obvious types, classes, interfaces and functions and their usage.
 * NEVER use underscore prefix (for example "_var") because underscore prefixes are reserved for the language keywords!
 * Try to reduce states as much as possible, if a static class function can do the job in a "pure functional mode", better.
 * Avoid "free" (global) functions as much as possible, embed them in classes, as static functions if possible to provide them with context and better meaning.
