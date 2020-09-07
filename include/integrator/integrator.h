@@ -57,6 +57,12 @@ class Integrator
 		void setScene(Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
+		/*! gets called before the scene rendering (i.e. before first call to integrate)
+			\return false when preprocessing could not be done properly, true otherwise */
+		virtual bool preprocess() { return true; };
+		/*! allow the integrator to do some cleanup when an image is done
+		(possibly also important for multiframe rendering in the future)	*/
+		virtual void cleanup() {}
 		std::string getShortName() const { return integrator_short_name_; }
 		std::string getName() const { return integrator_name_; }
 		enum Type { Surface, Volume };
@@ -73,26 +79,18 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		/*! gets called before the scene rendering (i.e. before first call to integrate)
-			\return false when preprocessing could not be done properly, true otherwise */
-		virtual bool preprocess() { return true; };
-		/*! allow the integrator to do some cleanup when an image is done
-		(possibly also important for multiframe rendering in the future)	*/
-		virtual void cleanup() {}
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
 	protected:
-		SurfaceIntegrator() {} //don't use...
+		SurfaceIntegrator() = default;
 };
 
 class VolumeIntegrator: public Integrator
 {
 	public:
-		VolumeIntegrator() {}
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const = 0;
 		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
-		virtual bool preprocess() { return true; }
-
 	protected:
+		VolumeIntegrator() = default;
 };
 
 END_YAFARAY
