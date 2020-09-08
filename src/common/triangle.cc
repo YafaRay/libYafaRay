@@ -575,7 +575,7 @@ void VTriangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
 void VTriangle::recNormal()
 {
 	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	normal_ = ((b - a) ^ (c - a)).normalize();
+	normal_ = (Normal3) ((b - a) ^ (c - a)).normalize();
 }
 
 //==========================================

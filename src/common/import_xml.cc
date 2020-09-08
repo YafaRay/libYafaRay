@@ -248,7 +248,7 @@ static bool parsePoint__(const char **attrs, Point3 &p, Point3 &op)
 	return true;
 }
 
-static bool parseNormal__(const char **attrs, Normal &n)
+static bool parseNormal__(const char **attrs, Normal3 &n)
 {
 	int compo_read = 0;
 	for(; attrs && attrs[0]; attrs += 2)
@@ -564,7 +564,7 @@ void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
 	}
 	else if(el == "n")
 	{
-		Normal n(0.0, 0.0, 0.0);
+		Normal3 n(0.0, 0.0, 0.0);
 		if(!parseNormal__(attrs, n)) return;
 		parser.scene_->addNormal(n);
 	}

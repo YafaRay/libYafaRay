@@ -66,7 +66,7 @@ class MeshObject final : public ObjectGeometric
 		std::vector<VTriangle> triangles_;
 		std::vector<BsTriangle> s_triangles_;
 		std::vector<Point3> points_;
-		std::vector<Normal> normals_;
+		std::vector<Normal3> normals_;
 		std::vector<int> uv_offsets_;
 		std::vector<Uv> uv_values_;
 		bool has_orco_;
@@ -102,7 +102,7 @@ class TriangleObject: public ObjectGeometric
 	private:
 		std::vector<Triangle> triangles_;
 		std::vector<Point3> points_;
-		std::vector<Normal> normals_;
+		std::vector<Normal3> normals_;
 		std::vector<int> uv_offsets_;
 		std::vector<Uv> uv_values_;
 

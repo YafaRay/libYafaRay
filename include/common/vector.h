@@ -33,7 +33,7 @@ BEGIN_YAFARAY
 #define M_PI 3.1415926535897932384626433832795
 #endif
 
-class Normal;
+class Normal3;
 class Point3;
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -47,7 +47,7 @@ class Vec3
 		Vec3(float v): x_(v), y_(v), z_(v) {  }
 		Vec3(float ix, float iy, float iz = 0): x_(ix), y_(iy), z_(iz) { }
 		Vec3(const Vec3 &s): x_(s.x_), y_(s.y_), z_(s.z_) { }
-		explicit Vec3(const Normal &n);
+		explicit Vec3(const Normal3 &n);
 		explicit Vec3(const Point3 &p);
 
 		void set(float ix, float iy, float iz = 0) { x_ = ix; y_ = iy; z_ = iz; }
@@ -87,47 +87,34 @@ class Vec3
 		Vec3 &operator /=(float s) { x_ /= s; y_ /= s; z_ /= s;  return *this;}
 		Vec3 &operator *=(float s) { x_ *= s; y_ *= s; z_ *= s;  return *this;}
 		float operator[](int i) const { return (&x_)[i]; } //Lynx
+		float &operator[](int i) { return (&x_)[i]; } //Lynx
 		void abs() { x_ = std::fabs(x_); y_ = std::fabs(y_); z_ = std::fabs(z_); }
 		float x_, y_, z_;
 };
 
-class Normal final
+class Normal3 final : public Vec3
 {
 	public:
-		Normal() = default;
-		Normal(float nx, float ny, float nz): x_(nx), y_(ny), z_(nz) {}
-		explicit Normal(const Vec3 &v): x_(v.x_), y_(v.y_), z_(v.z_) { }
-		Normal &normalize();
-		Normal &operator = (const Vec3 &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
-		Normal &operator +=(const Vec3 &s) { x_ += s.x_; y_ += s.y_; z_ += s.z_;  return *this; }
-		float x_, y_, z_;
+		Normal3() = default;
+		Normal3(float nx, float ny, float nz) : Vec3(nx, ny, nz) {}
+		explicit Normal3(const Vec3 &v) : Vec3(v.x_, v.y_, v.z_) { }
 };
 
-class Point3 final
+class Point3 final : public Vec3
 {
 	public:
 		Point3() = default;
-		Point3(float ix, float iy, float iz = 0): x_(ix), y_(iy), z_(iz) { }
-		Point3(const Point3 &s): x_(s.x_), y_(s.y_), z_(s.z_) { }
-		Point3(const Vec3 &v): x_(v.x_), y_(v.y_), z_(v.z_) { }
-		void set(float ix, float iy, float iz = 0) { x_ = ix; y_ = iy; z_ = iz; }
-		float length() const;
-
-		Point3 &operator= (const Point3 &s) { x_ = s.x_; y_ = s.y_; z_ = s.z_;  return *this; }
-		Point3 &operator *=(float s) { x_ *= s; y_ *= s; z_ *= s;  return *this;}
-		Point3 &operator +=(float s) { x_ += s; y_ += s; z_ += s;  return *this;}
-		Point3 &operator +=(const Point3 &s) { x_ += s.x_; y_ += s.y_; z_ += s.z_;  return *this;}
-		Point3 &operator -=(const Point3 &s) { x_ -= s.x_; y_ -= s.y_; z_ -= s.z_;  return *this;}
-		float operator[](int i) const { return (&x_)[i]; } //Lynx
-		float &operator[](int i) { return (&x_)[i]; } //Lynx
-		float x_, y_, z_;
+		Point3(float ix, float iy, float iz = 0) : Vec3(ix, iy, iz) { }
+		Point3(const Point3 &s) : Vec3(s.x_, s.y_, s.z_) { }
+		Point3(const Vec3 &v): Vec3(v) { }
 };
+
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
 
-inline Vec3::Vec3(const Normal &n): x_(n.x_), y_(n.y_), z_(n.z_) { }
+inline Vec3::Vec3(const Normal3 &n): x_(n.x_), y_(n.y_), z_(n.z_) { }
 inline Vec3::Vec3(const Point3 &p): x_(p.x_), y_(p.y_), z_(p.z_) { }
 
 #define FAST_ANGLE(a,b)  ( (a).x*(b).y - (a).y*(b).x )
@@ -217,9 +204,9 @@ inline Point3  operator + (const Point3 &a, const Vec3 &b)
 	return Point3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
 }
 
-inline Normal operator + (const Normal &a, const Vec3 &b)
+inline Normal3 operator + (const Normal3 &a, const Vec3 &b)
 {
-	return Normal(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
+	return Normal3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
 }
 
 
@@ -262,19 +249,6 @@ inline float Vec3::sinFromVectors(const Vec3 &v)
 	//Fix to avoid black "nan" areas when this argument goes slightly over +1.0. Why that happens in the first place, maybe floating point rounding errors?
 	if(asin_argument > 1.f) asin_argument = 1.f;
 	return asin(asin_argument);
-}
-
-inline Normal &Normal::normalize()
-{
-	float len = x_ * x_ + y_ * y_ + z_ * z_;
-	if(len != 0)
-	{
-		len = 1.0 / fSqrt__(len);
-		x_ *= len;
-		y_ *= len;
-		z_ *= len;
-	}
-	return *this;
 }
 
 /** Vector reflection.
@@ -386,7 +360,7 @@ inline Vec3 randomSpherical__()
 }
 
 Vec3 randomVectorCone__(const Vec3 &d, const Vec3 &u, const Vec3 &v,
-										   float cosang, float z_1, float z_2);
+						float cosang, float z_1, float z_2);
 Vec3 randomVectorCone__(const Vec3 &dir, float cosangle, float r_1, float r_2);
 Vec3 discreteVectorCone__(const Vec3 &dir, float cangle, int sample, int square);
 

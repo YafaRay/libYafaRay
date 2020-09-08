@@ -62,7 +62,7 @@ class Photon
 #ifdef SMALL_PHOTONS //FIXME: SMALL_PHOTONS not working at the moment because Rgbe members do not include r_, g_ and b_ as needed in the rest of the code
 			direction(d);
 #else
-			dir_ = d;
+			dir_ = (Normal3) d;
 #endif
 			pos_ = p;
 			c_ = col;
@@ -98,7 +98,7 @@ class Photon
 				phi_ = cd.second;
 			}
 #else //SMALL_PHOTONS
-			dir_ = d;
+			dir_ = (Normal3) d;
 #endif //SMALL_PHOTONS
 		}
 
@@ -110,7 +110,7 @@ class Photon
 
 #else //SMALL_PHOTONS
 		Rgb c_;
-		Normal dir_;
+		Normal3 dir_;
 #endif //SMALL_PHOTONS
 };
 

@@ -378,14 +378,14 @@ bool Scene::smoothMesh(ObjId_t id, float angle)
 	// cannot smooth other mesh types yet...
 	if(odat->type_ > 0) return false;
 	unsigned int idx = 0;
-	std::vector<Normal> &normals = odat->obj_->normals_;
+	std::vector<Normal3> &normals = odat->obj_->normals_;
 	std::vector<Triangle> &triangles = odat->obj_->triangles_;
 	size_t points = odat->obj_->points_.size();
 	std::vector<Triangle>::iterator tri;
 	std::vector<Point3> const &vertices = odat->obj_->points_;
 
 	normals.reserve(points);
-	normals.resize(points, Normal(0, 0, 0));
+	normals.resize(points, Normal3(0, 0, 0));
 
 	if(angle >= 180)
 	{
@@ -489,7 +489,7 @@ bool Scene::smoothMesh(ObjId_t id, float angle)
 						n_idx = normals.size();
 						vnormals.push_back(vnorm);
 						vn_index.push_back(n_idx);
-						normals.push_back(Normal(vnorm));
+						normals.push_back(Normal3(vnorm));
 					}
 				}
 				// set vertex normal to idx
@@ -559,7 +559,7 @@ int Scene::addVertex(const Point3 &p, const Point3 &orco)
 	return state_.cur_obj_->last_vert_id_;
 }
 
-void Scene::addNormal(const Normal &n)
+void Scene::addNormal(const Normal3 &n)
 {
 	if(mode_ != 0)
 	{

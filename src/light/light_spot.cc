@@ -226,7 +226,7 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 
 	if(t < 0.f) return false;
 
-	Vec3 p(ray.from_ + Point3(t * ray.dir_));
+	Point3 p(ray.from_ + Point3(t * ray.dir_));
 
 	if(dir_ * Vec3(p - position_) == 0)
 	{

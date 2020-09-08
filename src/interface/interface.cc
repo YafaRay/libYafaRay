@@ -199,7 +199,7 @@ int  Interface::addVertex(double x, double y, double z, double ox, double oy, do
 
 void Interface::addNormal(double x, double y, double z)
 {
-	scene_->addNormal(Normal(x, y, z));
+	scene_->addNormal(Normal3(x, y, z));
 }
 
 bool Interface::addTriangle(int a, int b, int c, const Material *mat) { return scene_->addTriangle(a, b, c, mat); }
