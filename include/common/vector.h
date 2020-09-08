@@ -53,32 +53,11 @@ class Vec3
 		void set(float ix, float iy, float iz = 0) { x_ = ix; y_ = iy; z_ = iz; }
 		Vec3 &normalize();
 		Vec3 &reflect(const Vec3 &n);
-		// normalizes and returns length
-		float normLen()
-		{
-			float vl = x_ * x_ + y_ * y_ + z_ * z_;
-			if(vl != 0.0)
-			{
-				vl = fSqrt__(vl);
-				const float d = 1.0 / vl;
-				x_ *= d; y_ *= d; z_ *= d;
-			}
-			return vl;
-		}
-		// normalizes and returns length squared
-		float normLenSqr()
-		{
-			float vl = x_ * x_ + y_ * y_ + z_ * z_;
-			if(vl != 0.0)
-			{
-				const float d = 1.0 / fSqrt__(vl);
-				x_ *= d; y_ *= d; z_ *= d;
-			}
-			return vl;
-		}
-		float length() const;
+		float normLen(); // normalizes and returns length
+		float normLenSqr(); // normalizes and returns length squared
 		float lengthSqr() const { return x_ * x_ + y_ * y_ + z_ * z_; }
-		bool null() const { return ((x_ == 0) && (y_ == 0) && (z_ == 0)); }
+		float length() const { return fSqrt__(lengthSqr()); }
+		bool null() const { return ((x_ == 0.f) && (y_ == 0.f) && (z_ == 0.f)); }
 		float sinFromVectors(const Vec3 &v);
 
 		Vec3 &operator = (const Vec3 &s) { x_ = s.x_; y_ = s.y_; z_ = s.z_;  return *this;}
@@ -88,7 +67,7 @@ class Vec3
 		Vec3 &operator *=(float s) { x_ *= s; y_ *= s; z_ *= s;  return *this;}
 		float operator[](int i) const { return (&x_)[i]; } //Lynx
 		float &operator[](int i) { return (&x_)[i]; } //Lynx
-		void abs() { x_ = std::fabs(x_); y_ = std::fabs(y_); z_ = std::fabs(z_); }
+
 		float x_, y_, z_;
 };
 
@@ -113,13 +92,8 @@ class Point3 final : public Vec3
 #pragma GCC diagnostic pop
 #endif
 
-
 inline Vec3::Vec3(const Normal3 &n): x_(n.x_), y_(n.y_), z_(n.z_) { }
 inline Vec3::Vec3(const Point3 &p): x_(p.x_), y_(p.y_), z_(p.z_) { }
-
-#define FAST_ANGLE(a,b)  ( (a).x*(b).y - (a).y*(b).x )
-#define FAST_SANGLE(a,b) ( (((a).x*(b).y - (a).y*(b).x) >= 0) ? 0 : 1 )
-#define SIN(a,b) fSqrt(1-((a)*(b))*((a)*(b)))
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v);
 std::ostream &operator << (std::ostream &out, const Point3 &p);
@@ -223,11 +197,6 @@ inline Point3 mult__(const Point3 &a, const Vec3 &b)
 	return Point3(a.x_ * b.x_, a.y_ * b.y_, a.z_ * b.z_);
 }
 
-inline float Vec3::length() const
-{
-	return fSqrt__(x_ * x_ + y_ * y_ + z_ * z_);
-}
-
 inline Vec3 &Vec3::normalize()
 {
 	float len = x_ * x_ + y_ * y_ + z_ * z_;
@@ -264,6 +233,27 @@ inline Vec3 &Vec3::reflect(const Vec3 &n)
 	y_ = vn * n.y_ - y_;
 	z_ = vn * n.z_ - z_;
 	return *this;
+}
+
+inline float Vec3::normLen() {
+	float vl = lengthSqr();
+	if(vl != 0.f)
+	{
+		vl = fSqrt__(vl);
+		const float d = 1.f / vl;
+		x_ *= d; y_ *= d; z_ *= d;
+	}
+	return vl;
+}
+
+inline float Vec3::normLenSqr() {
+	const float vl = lengthSqr();
+	if(vl != 0.f)
+	{
+		const float d = 1.f / fSqrt__(vl);
+		x_ *= d; y_ *= d; z_ *= d;
+	}
+	return vl;
 }
 
 inline Vec3 reflectDir__(const Vec3 &n, const Vec3 &v)

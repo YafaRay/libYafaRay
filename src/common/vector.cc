@@ -55,28 +55,6 @@ bool  operator != (const Vec3 &a, const Vec3 &b)
 	return false;
 }
 
-/* vector3d_t refract(const vector3d_t &n,const vector3d_t &v,float IOR)
-{
-	vector3d_t N=n,I,T;
-	float eta=IOR;
-	I=-v;
-	if((v*n)<0)
-	{
-		N=-n;
-		eta=IOR;
-	}
-	else
-	{
-		N=n;
-		eta=1.0/IOR;
-	}
-	float IdotN = v*N;
-	float k = 1 - eta*eta*(1 - IdotN*IdotN);
-	T= (k < 0) ? vector3d_t(0,0,0) : (eta*I + (eta*IdotN - sqrt(k))*N);
-	T.normalize();
-	return T;
-} */
-
 /*! refract a ray given the IOR. All directions (n, wi and wo) point away from the intersection point.
 	\return true when refraction was possible, false when total inner reflrection occurs (wo is not computed then)
 	\param ior Index of refraction, or precisely the ratio of eta_t/eta_i, where eta_i is by definition the
