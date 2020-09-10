@@ -162,6 +162,14 @@ template<class T> class KdTree
 
 		// some statistics:
 		KdStats kd_stats_;
+
+		static constexpr int tri_clip_thresh_ = 32;
+		static constexpr int clip_data_size_ = 3 * 12 * sizeof(double);
+		static constexpr int kd_bins_ = 1024;
+		static constexpr int kd_max_stack_ = 64;
+		static constexpr int lower_b_ = 0;
+		static constexpr int upper_b_ = 2;
+		static constexpr int both_b_ = 1;
 };
 
 
