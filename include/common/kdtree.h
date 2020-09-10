@@ -38,7 +38,7 @@ class IntersectData;
     double precision float and/or 64 bit system: 12bytes
     else 8 bytes */
 
-template<class T> class RkdTreeNode
+template<class T> class KdTreeNode
 {
 	public:
 		void createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena)
@@ -79,9 +79,9 @@ template<class T> class RkdTreeNode
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
-template<class T> struct RKdStack
+template<class T> struct KdStack
 {
-	const RkdTreeNode<T> *node_; //!< pointer to far child
+	const KdTreeNode<T> *node_; //!< pointer to far child
 	float t_; 		//!< the entry/exit signed distance
 	Point3 pb_; 		//!< the point coordinates of entry/exit point
 	int	 prev_; 		//!< the pointer to the previous stack item
@@ -163,7 +163,7 @@ template<class T> class KdTree
 		unsigned int max_leaf_size_;
 		Bound 	tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
-		RkdTreeNode<T> 	*nodes_;
+		KdTreeNode<T> 	*nodes_;
 
 		// those are temporary actually, to keep argument counts bearable
 		const T **prims_;

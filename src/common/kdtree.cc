@@ -62,7 +62,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	total_prims_ = np;
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = (RkdTreeNode<T> *) alignedAlloc__(64, 256 * sizeof(RkdTreeNode<T>));
+	nodes_ = (KdTreeNode<T> *) alignedAlloc__(64, 256 * sizeof(KdTreeNode<T>));
 	if(max_depth_ <= 0) max_depth_ = int(7.0f + 1.66f * log(float(total_prims_)));
 	double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -460,8 +460,8 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		RkdTreeNode<T> 	*n = (RkdTreeNode<T> *) alignedAlloc__(64, new_count * sizeof(RkdTreeNode<T>));
-		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(RkdTreeNode<T>));
+		KdTreeNode<T> 	*n = (KdTreeNode<T> *) alignedAlloc__(64, new_count * sizeof(KdTreeNode<T>));
+		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(KdTreeNode<T>));
 		alignedFree__(nodes_);
 		nodes_ = n;
 		allocated_nodes_count_ = new_count;
@@ -708,8 +708,8 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 	//	int rayId = curMailboxId++;
 	bool hit = false;
 
-	RKdStack<T> stack[kd_max_stack__];
-	const RkdTreeNode<T> *far_child, *curr_node;
+	KdStack<T> stack[kd_max_stack__];
+	const KdTreeNode<T> *far_child, *curr_node;
 	curr_node = nodes_;
 
 	int en_pt = 0;
@@ -860,8 +860,8 @@ bool KdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias
 	IntersectData bary;
 	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 
-	RKdStack<T> stack[kd_max_stack__];
-	const RkdTreeNode<T> *far_child, *curr_node;
+	KdStack<T> stack[kd_max_stack__];
+	const KdTreeNode<T> *far_child, *curr_node;
 	curr_node = nodes_;
 
 	int en_pt = 0;
@@ -1022,8 +1022,8 @@ bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 #else
 	std::set<const T *> filtered;
 #endif
-	RKdStack<T> stack[kd_max_stack__];
-	const RkdTreeNode<T> *far_child, *curr_node;
+	KdStack<T> stack[kd_max_stack__];
+	const KdTreeNode<T> *far_child, *curr_node;
 	curr_node = nodes_;
 
 	int en_pt = 0;
