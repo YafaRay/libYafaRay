@@ -71,34 +71,6 @@ template<class T> class KdTreeNode
 		uint32_t	flags_;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
-template<class T>
-void KdTreeNode<T>::createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena, KdStats &kd_stats) {
-	primitives_ = nullptr;
-	flags_ = np << 2;
-	flags_ |= 3;
-	if(np > 1)
-	{
-		primitives_ = (T **) arena.alloc(np * sizeof(T *));
-		for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
-		kd_stats.kd_prims_ += np; //stat
-	}
-	else if(np == 1)
-	{
-		one_primitive_ = (T *)prims[prim_idx[0]];
-		kd_stats.kd_prims_++; //stat
-	}
-	else kd_stats.empty_kd_leaves_++; //stat
-	kd_stats.kd_leaves_++; //stat
-}
-
-template<class T>
-void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
-{
-	division_ = d;
-	flags_ = (flags_ & ~3) | axis;
-	kd_stats.kd_inodes_++;
-}
-
 /*! Stack elements for the custom stack of the recursive traversal */
 template<class T> struct KdStack
 {
@@ -191,6 +163,36 @@ template<class T> class KdTree
 		// some statistics:
 		KdStats kd_stats_;
 };
+
+
+template<class T>
+inline void KdTreeNode<T>::createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena, KdStats &kd_stats) {
+	primitives_ = nullptr;
+	flags_ = np << 2;
+	flags_ |= 3;
+	if(np > 1)
+	{
+		primitives_ = (T **) arena.alloc(np * sizeof(T *));
+		for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
+		kd_stats.kd_prims_ += np; //stat
+	}
+	else if(np == 1)
+	{
+		one_primitive_ = (T *)prims[prim_idx[0]];
+		kd_stats.kd_prims_++; //stat
+	}
+	else kd_stats.empty_kd_leaves_++; //stat
+	kd_stats.kd_leaves_++; //stat
+}
+
+template<class T>
+inline void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
+{
+	division_ = d;
+	flags_ = (flags_ & ~3) | axis;
+	kd_stats.kd_inodes_++;
+}
+
 
 END_YAFARAY
 #endif    //YAFARAY_KDTREE_H
