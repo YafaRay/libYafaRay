@@ -27,7 +27,8 @@
 #include "common/param.h"
 #include "common/scene.h"
 #include "utility/util_sample.h"
-#include "common/kdtree_triangle.h"
+#include "common/kdtree.h"
+#include "common/triangle.h"
 
 BEGIN_YAFARAY
 
@@ -69,7 +70,7 @@ void MeshLight::initIs()
 	inv_area_ = (float)(1.0 / total_area);
 	delete[] areas;
 	if(tree_) delete tree_;
-	tree_ = new TriKdTree(tris_, n_tris_, -1, 1, 0.8, 0.33);
+	tree_ = new KdTree<Triangle>(tris_, n_tris_, -1, 1, 0.8, 0.33);
 }
 
 void MeshLight::init(Scene &scene)

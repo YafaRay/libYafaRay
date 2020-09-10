@@ -17,49 +17,44 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_KDTREE_TRIANGLE_H
-#define YAFARAY_KDTREE_TRIANGLE_H
+#ifndef YAFARAY_KDTREE_H
+#define YAFARAY_KDTREE_H
 
 #include "constants.h"
-#include "object_geom/object_geom_mesh.h"
-#include "triangle.h"
 #include "utility/util_memory_arena.h"
-#include "common/vector.h"
 #include "common/bound.h"
-#include <cstdint>
+#include "object_geom/object_geom.h"
+#include <algorithm>
 
 BEGIN_YAFARAY
 
-extern int kd_inodes__, kd_leaves__, empty_kd_leaves__, kd_prims__;
+extern int kd_inodes__, kd_leaves__, empty_kd_leaves__, kd_prims__, clip__, bad_clip__, null_clip__, early_out__;
 
 struct RenderState;
 class IntersectData;
-class Triangle;
-class Ray;
-class Rgb;
 
 // ============================================================
 /*! kd-tree nodes, kept as small as possible
     double precision float and/or 64 bit system: 12bytes
     else 8 bytes */
 
-class KdTreeNode
+template<class T> class RkdTreeNode
 {
 	public:
-		void createLeaf(uint32_t *prim_idx, int np, const Triangle **prims, MemoryArena &arena)
+		void createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena)
 		{
-			primitives_ = 0;
+			primitives_ = nullptr;
 			flags_ = np << 2;
 			flags_ |= 3;
 			if(np > 1)
 			{
-				primitives_ = (Triangle **) arena.alloc(np * sizeof(Triangle *));
-				for(int i = 0; i < np; i++) primitives_[i] = (Triangle *)prims[prim_idx[i]];
+				primitives_ = (T **) arena.alloc(np * sizeof(T *));
+				for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
 				kd_prims__ += np; //stat
 			}
 			else if(np == 1)
 			{
-				one_primitive_ = (Triangle *)prims[prim_idx[0]];
+				one_primitive_ = (T *)prims[prim_idx[0]];
 				kd_prims__++; //stat
 			}
 			else empty_kd_leaves__++; //stat
@@ -77,10 +72,19 @@ class KdTreeNode
 		union
 		{
 			float 			division_;		//!< interior: division plane position
-			Triangle 	**primitives_;		//!< leaf: list of primitives
-			Triangle		*one_primitive_;	//!< leaf: direct inxex of one primitive
+			T 	**primitives_;		//!< leaf: list of primitives
+			T		*one_primitive_;	//!< leaf: direct inxex of one primitive
 		};
 		uint32_t	flags_;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
+};
+
+/*! Stack elements for the custom stack of the recursive traversal */
+template<class T> struct RKdStack
+{
+	const RkdTreeNode<T> *node_; //!< pointer to far child
+	float t_; 		//!< the entry/exit signed distance
+	Point3 pb_; 		//!< the point coordinates of entry/exit point
+	int	 prev_; 		//!< the pointer to the previous stack item
 };
 
 /*! Serves to store the lower and upper bound edges of the primitives
@@ -101,21 +105,6 @@ class BoundEdge
 		float pos_;
 		int prim_num_;
 		int end_;
-};
-
-/*! Stack elements for the custom stack of the recursive traversal */
-struct KdStack
-{
-	const KdTreeNode *node_; //!< pointer to far child
-	float t_; 		//!< the entry/exit signed distance
-	Point3 pb_; 		//!< the point coordinates of entry/exit point
-	int	 prev_; 		//!< the pointer to the previous stack item
-};
-
-struct KdToDo
-{
-	const KdTreeNode *node_;
-	float tmin_, tmax_;
 };
 
 class SplitCost
@@ -142,22 +131,23 @@ class TreeBin
 		float 	t_;
 };
 
+
 // ============================================================
 /*! This class holds a complete kd-tree with building and
 	traversal funtions
 */
-class TriKdTree
+template<class T> class KdTree
 {
 	public:
-		TriKdTree(const Triangle **v, int np, int depth = -1, int leaf_size = 2,
-				  float cost_ratio = 0.35, float empty_bonus = 0.33);
-		bool intersect(const Ray &ray, float dist, Triangle **tr, float &z, IntersectData &data) const;
+		KdTree(const T **v, int np, int depth = -1, int leaf_size = 2,
+			   float cost_ratio = 0.35, float empty_bonus = 0.33);
+		bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		bool intersectS(const Ray &ray, float dist, Triangle **tr, float shadow_bias) const;
-		bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, Triangle **tr, Rgb &filt, float shadow_bias) const;
-		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, triangle_t **tr, float &Z) const;
+		bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const;
+		bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const;
+		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
 		Bound getBound() { return tree_bound_; }
-		~TriKdTree();
+		~KdTree();
 	private:
 		void pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
 		void minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
@@ -173,10 +163,10 @@ class TriKdTree
 		unsigned int max_leaf_size_;
 		Bound 	tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
-		KdTreeNode 	*nodes_;
+		RkdTreeNode<T> 	*nodes_;
 
 		// those are temporary actually, to keep argument counts bearable
-		const Triangle **prims_;
+		const T **prims_;
 		Bound *all_bounds_;
 		int *clip_; // indicate clip plane(s) for current level
 		char *cdata_; // clipping data...
@@ -185,6 +175,5 @@ class TriKdTree
 		int depth_limit_reached_, num_bad_splits_;
 };
 
-
 END_YAFARAY
-#endif    //YAFARAY_KDTREE_TRIANGLE_H
+#endif    //YAFARAY_KDTREE_H

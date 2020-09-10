@@ -27,7 +27,8 @@
 #include "common/scene.h"
 #include "utility/util_sample.h"
 #include "utility/util_mcqmc.h"
-#include "common/kdtree_triangle.h"
+#include "common/kdtree.h"
+#include "common/triangle.h"
 
 BEGIN_YAFARAY
 
@@ -73,7 +74,7 @@ void BackgroundPortalLight::initIs()
 	//delete[] tris;
 	delete[] areas;
 	if(tree_) delete tree_;
-	tree_ = new TriKdTree(tris_, n_tris_, -1, 1, 0.8, 0.33);
+	tree_ = new KdTree<Triangle>(tris_, n_tris_, -1, 1, 0.8, 0.33);
 }
 
 void BackgroundPortalLight::init(Scene &scene)

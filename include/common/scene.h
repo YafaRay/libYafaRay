@@ -48,7 +48,7 @@ class SurfacePoint;
 class Ray;
 class DiffRay;
 class Primitive;
-class TriKdTree;
+class Triangle;
 template<class T> class KdTree;
 class Triangle;
 class Background;
@@ -245,7 +245,7 @@ class LIBYAFARAY_EXPORT Scene
 		std::vector<VolumeRegion *> volumes_;
 		Camera *camera_;
 		ImageFilm *image_film_;
-		TriKdTree *tree_; //!< kdTree for triangle-only mode
+		KdTree<Triangle> *tree_; //!< kdTree for triangle-only mode
 		KdTree<Primitive> *vtree_; //!< kdTree for universal mode
 		Background *background_;
 		SurfaceIntegrator *surf_integrator_;

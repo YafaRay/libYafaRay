@@ -32,8 +32,8 @@ class Triangle;
 class Pdf1D;
 class ParamMap;
 class RenderEnvironment;
-class TriKdTree;
 class Background;
+template<class T> class KdTree;
 
 class BackgroundPortalLight final : public Light
 {
@@ -67,7 +67,7 @@ class BackgroundPortalLight final : public Light
 		float area_, inv_area_;
 		float power_;
 		TriangleObject *mesh_ = nullptr;
-		TriKdTree *tree_ = nullptr;
+		KdTree<Triangle> *tree_ = nullptr;
 		Background *bg_ = nullptr;
 		Point3 world_center_;
 		float a_pdf_;

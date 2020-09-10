@@ -28,7 +28,7 @@
 #include "common/imagefilm.h"
 #include "common/sysinfo.h"
 #include "common/triangle.h"
-#include "common/kdtree_generic.h"
+#include "common/kdtree.h"
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -766,7 +766,7 @@ bool Scene::update()
 
 					if(dat.type_ == trim__) insert += dat.obj_->getPrimitives(insert);
 				}
-				tree_ = new TriKdTree(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
+				tree_ = new KdTree<Triangle>(tris, nprims, -1, 1, 0.8, 0.33 /* -1, 1.2, 0.40 */);
 				delete [] tris;
 				scene_bound_ = tree_->getBound();
 				Y_VERBOSE << "Scene: New scene bound is:" <<
