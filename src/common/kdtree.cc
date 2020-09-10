@@ -21,15 +21,10 @@
 #include "common/kdtree.h"
 #include "material/material.h"
 #include "common/scene.h"
-#include "common/surface.h"
-#include "object_geom/primitive.h"
-#include "common/triangle.h"
 #include "common/logging.h"
+#include "common/triangle.h"
 #include <limits>
 #include <set>
-#if (defined (__GNUC__) && !defined (__clang__))
-#include <ext/mt_allocator.h>
-#endif
 #include <cstring>
 #include <time.h>
 
@@ -182,8 +177,12 @@ void KdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 			b_right = (int)((t_up - min) * s);
 			//			b_left = Y_Round2Int( ((t_low - min)*s) );
 			//			b_right = Y_Round2Int( ((t_up - min)*s) );
-			if(b_left < 0) b_left = 0; else if(b_left > kd_bins__) b_left = kd_bins__;
-			if(b_right < 0) b_right = 0; else if(b_right > kd_bins__) b_right = kd_bins__;
+
+			if(b_left < 0) b_left = 0;
+			else if(b_left > kd_bins__) b_left = kd_bins__;
+
+			if(b_right < 0) b_right = 0;
+			else if(b_right > kd_bins__) b_right = kd_bins__;
 
 			if(t_low == t_up)
 			{
@@ -243,8 +242,7 @@ void KdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 				n_above -= bin[i].c_right_;
 				// cost:
 				float edget = bin[i].t_;
-				if(edget > node_bound.a_[axis] &&
-				   edget < node_bound.g_[axis])
+				if(edget > node_bound.a_[axis] && edget < node_bound.g_[axis])
 				{
 					// Compute cost for split at _i_th edge
 					float l_1 = edget - node_bound.a_[axis];
@@ -254,10 +252,13 @@ void KdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 					float raw_costs = (below_sa * n_below + above_sa * n_above);
 					//float eb = (nAbove == 0 || nBelow == 0) ? eBonus*rawCosts : 0.f;
 					float eb;
+
 					if(n_above == 0) eb = (0.1f + l_2 / d[axis]) * e_bonus_ * raw_costs;
 					else if(n_below == 0) eb = (0.1f + l_1 / d[axis]) * e_bonus_ * raw_costs;
 					else eb = 0.0f;
+
 					float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
+
 					// Update best split if this is lowest cost so far
 					if(cost < split.best_cost_)
 					{
@@ -413,9 +414,11 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 				float raw_costs = (below_sa * n_below + above_sa * n_above);
 				//float eb = (nAbove == 0 || nBelow == 0) ? eBonus*rawCosts : 0.f;
 				float eb;
+
 				if(n_above == 0) eb = (0.1f + l_2 / d[axis]) * e_bonus_ * raw_costs;
 				else if(n_below == 0) eb = (0.1f + l_1 / d[axis]) * e_bonus_ * raw_costs;
 				else eb = 0.0f;
+
 				float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
 				// Update best split if this is lowest cost so far
 				if(cost < split.best_cost_)
@@ -594,6 +597,7 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 		memcpy(old_prims, prim_nums, n_prims * sizeof(int));
 
 		for(int i = 0; i < split.best_offset_; ++i)
+		{
 			if(edges[split.best_axis_][i].end_ != upper_b__)
 			{
 				cindizes[n_0] = edges[split.best_axis_][i].prim_num_;
@@ -601,6 +605,7 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 				left_prims[n_0] = old_prims[cindizes[n_0]];
 				++n_0;
 			}
+		}
 		//		std::cout << "append n0\n";
 		for(int i = 0; i < n_0; ++i) { left_prims[n_0 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
 		if(edges[split.best_axis_][split.best_offset_].end_ == both_b__)
@@ -610,7 +615,9 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 			n_right_prims[n_1] = old_prims[cindizes[n_1]];
 			++n_1;
 		}
+
 		for(int i = split.best_offset_ + 1; i < split.n_edge_; ++i)
+		{
 			if(edges[split.best_axis_][i].end_ != lower_b__)
 			{
 				cindizes[n_1] = edges[split.best_axis_][i].prim_num_;
@@ -618,6 +625,7 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 				n_right_prims[n_1] = old_prims[cindizes[n_1]];
 				++n_1;
 			}
+		}
 		//		std::cout << "\nappend n1\n";
 		for(int i = 0; i < n_1; ++i) { n_right_prims[n_1 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
 		split_pos = edges[split.best_axis_][split.best_offset_].pos_;
@@ -638,7 +646,6 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	//	std::cout << "split axis: " << split.bestAxis << ", pos: " << splitPos << "\n";
 	//advance right prims pointer
 	remaining_mem -= n_1;
-
 
 	uint32_t cur_node = next_free_node_;
 	nodes_[cur_node].createInterior(split.best_axis_, split_pos);
@@ -694,8 +701,7 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 	float a, b, t; // entry/exit/splitting plane signed distance
 	float t_hit;
 
-	if(!tree_bound_.cross(ray, a, b, dist))
-	{ return false; }
+	if(!tree_bound_.cross(ray, a, b, dist)) { return false; }
 
 	IntersectData current_data, temp_data;
 	Vec3 inv_dir(1.0 / ray.dir_.x_, 1.0 / ray.dir_.y_, 1.0 / ray.dir_.z_); //was 1.f!
@@ -779,7 +785,9 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 			stack[ex_pt].pb_[prev_axis] = ray.from_[prev_axis] + t * ray.dir_[prev_axis];
 		}
 
+		// Check for intersections inside leaf node
 		uint32_t n_primitives = curr_node->nPrimitives();
+
 		if(n_primitives == 1)
 		{
 			T *mp = curr_node->one_primitive_;
@@ -787,10 +795,15 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 			{
 				if(t_hit < z && t_hit >= ray.tmin_)
 				{
-					z = t_hit;
-					*tr = mp;
-					current_data = temp_data;
-					hit = true;
+					const Material *mat = mp->getMaterial();
+
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
+					{
+						z = t_hit;
+						*tr = mp;
+						current_data = temp_data;
+						hit = true;
+					}
 				}
 			}
 		}
@@ -804,10 +817,15 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 				{
 					if(t_hit < z && t_hit >= ray.tmin_)
 					{
-						z = t_hit;
-						*tr = mp;
-						current_data = temp_data;
-						hit = true;
+						const Material *mat = mp->getMaterial();
+
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
+						{
+							z = t_hit;
+							*tr = mp;
+							current_data = temp_data;
+							hit = true;
+						}
 					}
 				}
 			}
@@ -926,10 +944,15 @@ bool KdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias
 			T *mp = curr_node->one_primitive_;
 			if(mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit > ray.tmin_)
+				if(t_hit < dist && t_hit >= 0.f)  // '>=' ?
 				{
-					*tr = mp;
-					return true;
+					const Material *mat = mp->getMaterial();
+
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
+					{
+						*tr = mp;
+						return true;
+					}
 				}
 			}
 		}
@@ -941,10 +964,15 @@ bool KdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias
 				T *mp = prims[i];
 				if(mp->intersect(ray, &t_hit, bary))
 				{
-					if(t_hit < dist && t_hit > ray.tmin_)
+					if(t_hit < dist && t_hit >= 0.f)
 					{
-						*tr = mp;
-						return true;
+						const Material *mat = mp->getMaterial();
+
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
+						{
+							*tr = mp;
+							return true;
+						}
 					}
 				}
 			}
@@ -973,10 +1001,23 @@ bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 		return false;
 
 	IntersectData bary;
-	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 
+	//To avoid division by zero
+	float inv_dir_x, inv_dir_y, inv_dir_z;
+
+	if(ray.dir_.x_ == 0.f) inv_dir_x = std::numeric_limits<float>::max();
+	else inv_dir_x = 1.f / ray.dir_.x_;
+
+	if(ray.dir_.y_ == 0.f) inv_dir_y = std::numeric_limits<float>::max();
+	else inv_dir_y = 1.f / ray.dir_.y_;
+
+	if(ray.dir_.z_ == 0.f) inv_dir_z = std::numeric_limits<float>::max();
+	else inv_dir_z = 1.f / ray.dir_.z_;
+
+	Vec3 inv_dir(inv_dir_x, inv_dir_y, inv_dir_z);
 	int depth = 0;
-#if (defined (__GNUC__)  && !defined (__clang__))
+
+#if ( HAVE_PTHREAD && defined (__GNUC__) && !defined (__clang__) )
 	std::set<const T *, std::less<const T *>, __gnu_cxx::__mt_alloc<const T *>> filtered;
 #else
 	std::set<const T *> filtered;
@@ -1065,18 +1106,25 @@ bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 			T *mp = curr_node->one_primitive_;
 			if(mp->intersect(ray, &t_hit, bary))
 			{
-				if(t_hit < dist && t_hit >= ray.tmin_)
+				if(t_hit < dist && t_hit >= ray.tmin_)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
-					if(!mat->isTransparent()) return true;
-					if(filtered.insert(mp).second)
+
+					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
-						if(depth >= max_depth) return true;
-						Point3 h = ray.from_ + t_hit * ray.dir_;
-						SurfacePoint sp;
-						mp->getSurface(sp, h, bary);
-						filt *= mat->getTransparency(state, sp, ray.dir_);
-						++depth;
+						*tr = mp;
+
+						if(!mat->isTransparent()) return true;
+
+						if(filtered.insert(mp).second)
+						{
+							if(depth >= max_depth) return true;
+							Point3 h = ray.from_ + t_hit * ray.dir_;
+							SurfacePoint sp;
+							mp->getSurface(sp, h, bary);
+							filt *= mat->getTransparency(state, sp, ray.dir_);
+							++depth;
+						}
 					}
 				}
 			}
@@ -1092,15 +1140,22 @@ bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 					if(t_hit < dist && t_hit >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
-						if(!mat->isTransparent()) return true;
-						if(filtered.insert(mp).second)
+
+						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
 						{
-							if(depth >= max_depth) return true;
-							Point3 h = ray.from_ + t_hit * ray.dir_;
-							SurfacePoint sp;
-							mp->getSurface(sp, h, bary);
-							filt *= mat->getTransparency(state, sp, ray.dir_);
-							++depth;
+							*tr = mp;
+
+							if(!mat->isTransparent()) return true;
+
+							if(filtered.insert(mp).second)
+							{
+								if(depth >= max_depth) return true;
+								Point3 h = ray.from_ + t_hit * ray.dir_;
+								SurfacePoint sp;
+								mp->getSurface(sp, h, bary);
+								filt *= mat->getTransparency(state, sp, ray.dir_);
+								++depth;
+							}
 						}
 					}
 				}
@@ -1121,4 +1176,3 @@ template class KdTree<Triangle>;
 template class KdTree<Primitive>;
 
 END_YAFARAY
-
