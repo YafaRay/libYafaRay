@@ -28,8 +28,6 @@
 
 BEGIN_YAFARAY
 
-extern int kd_inodes__, kd_leaves__, empty_kd_leaves__, kd_prims__, clip__, bad_clip__, null_clip__, early_out__;
-
 struct RenderState;
 class IntersectData;
 
@@ -38,30 +36,25 @@ class IntersectData;
     double precision float and/or 64 bit system: 12bytes
     else 8 bytes */
 
+struct KdStats
+{
+	int kd_inodes_ = 0;
+	int kd_leaves_ = 0;
+	int empty_kd_leaves_ = 0;
+	int kd_prims_ = 0;
+	int clip_ = 0;
+	int bad_clip_ = 0;
+	int null_clip_ = 0;
+	int early_out_ = 0;
+	int depth_limit_reached_ = 0;
+	int num_bad_splits_ = 0;
+};
+
 template<class T> class KdTreeNode
 {
 	public:
-		void createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena)
-		{
-			primitives_ = nullptr;
-			flags_ = np << 2;
-			flags_ |= 3;
-			if(np > 1)
-			{
-				primitives_ = (T **) arena.alloc(np * sizeof(T *));
-				for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
-				kd_prims__ += np; //stat
-			}
-			else if(np == 1)
-			{
-				one_primitive_ = (T *)prims[prim_idx[0]];
-				kd_prims__++; //stat
-			}
-			else empty_kd_leaves__++; //stat
-			kd_leaves__++; //stat
-		}
-		void createInterior(int axis, float d)
-		{ division_ = d; flags_ = (flags_ & ~3) | axis; kd_inodes__++; }
+		void createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena, KdStats &kd_stats);
+		void createInterior(int axis, float d, KdStats &kd_stats);
 		float 	splitPos() const { return division_; }
 		int 	splitAxis() const { return flags_ & 3; }
 		int 	nPrimitives() const { return flags_ >> 2; }
@@ -78,6 +71,34 @@ template<class T> class KdTreeNode
 		uint32_t	flags_;		//!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
+template<class T>
+void KdTreeNode<T>::createLeaf(uint32_t *prim_idx, int np, const T **prims, MemoryArena &arena, KdStats &kd_stats) {
+	primitives_ = nullptr;
+	flags_ = np << 2;
+	flags_ |= 3;
+	if(np > 1)
+	{
+		primitives_ = (T **) arena.alloc(np * sizeof(T *));
+		for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
+		kd_stats.kd_prims_ += np; //stat
+	}
+	else if(np == 1)
+	{
+		one_primitive_ = (T *)prims[prim_idx[0]];
+		kd_stats.kd_prims_++; //stat
+	}
+	else kd_stats.empty_kd_leaves_++; //stat
+	kd_stats.kd_leaves_++; //stat
+}
+
+template<class T>
+void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
+{
+	division_ = d;
+	flags_ = (flags_ & ~3) | axis;
+	kd_stats.kd_inodes_++;
+}
+
 /*! Stack elements for the custom stack of the recursive traversal */
 template<class T> struct KdStack
 {
@@ -93,9 +114,9 @@ template<class T> struct KdStack
 class BoundEdge
 {
 	public:
-		BoundEdge() {};
+		BoundEdge() = default;
 		BoundEdge(float position, int primitive, int bound_end):
-				pos_(position), prim_num_(primitive), end_(bound_end) {};
+				pos_(position), prim_num_(primitive), end_(bound_end) { };
 		bool operator<(const BoundEdge &e) const
 		{
 			if(pos_ == e.pos_)
@@ -107,30 +128,26 @@ class BoundEdge
 		int end_;
 };
 
-class SplitCost
+struct SplitCost
 {
-	public:
-		SplitCost(): best_axis_(-1), best_offset_(-1) {};
-		int best_axis_;
-		int best_offset_;
-		float best_cost_;
-		float old_cost_;
-		float t_;
-		int n_below_, n_above_, n_edge_;
+	int best_axis_ = -1;
+	int best_offset_ = -1;
+	float best_cost_;
+	float old_cost_;
+	float t_;
+	int n_below_, n_above_, n_edge_;
 };
 
 class TreeBin
 {
 	public:
-		TreeBin(): n_(0), c_left_(0), c_right_(0), c_bleft_(0), c_both_(0) {};
 		bool empty() { return n_ == 0; };
 		void reset() { n_ = 0, c_left_ = 0, c_right_ = 0, c_both_ = 0, c_bleft_ = 0;};
-		int 	n_;
-		int 	c_left_, c_right_;
-		int 	c_bleft_, c_both_;
+		int 	n_ = 0;
+		int 	c_left_ = 0, c_right_ = 0;
+		int 	c_bleft_ = 0, c_both_ = 0;
 		float 	t_;
 };
-
 
 // ============================================================
 /*! This class holds a complete kd-tree with building and
@@ -172,7 +189,7 @@ template<class T> class KdTree
 		char *cdata_; // clipping data...
 
 		// some statistics:
-		int depth_limit_reached_, num_bad_splits_;
+		KdStats kd_stats_;
 };
 
 END_YAFARAY

@@ -40,8 +40,6 @@ static constexpr int clip_data_size__ = 3 * 12 * sizeof(double);
 static constexpr int kd_bins__ = 1024;
 static constexpr int kd_max_stack__ = 64;
 
-int kd_inodes__ = 0, kd_leaves__ = 0, empty_kd_leaves__ = 0, kd_prims__ = 0, clip__ = 0, bad_clip__ = 0, null_clip__ = 0, early_out__ = 0;
-
 //still in old file...
 //int Kd_inodes=0, Kd_leaves=0, _emptyKd_leaves=0, Kd_prims=0, _clip=0, _bad_clip=0, _null_clip=0, _early_out=0;
 
@@ -57,8 +55,6 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	Y_INFO << "Kd-Tree: Starting build (" << np << " prims, cr:" << cost_ratio_ << " eb:" << e_bonus_ << ")" << YENDL;
 	clock_t c_start, c_end;
 	c_start = clock();
-	kd_inodes__ = 0, kd_leaves__ = 0, empty_kd_leaves__ = 0, kd_prims__ = 0, depth_limit_reached_ = 0, num_bad_splits_ = 0,
-	clip__ = 0, bad_clip__ = 0, null_clip__ = 0, early_out__ = 0;
 	total_prims_ = np;
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
@@ -127,12 +123,12 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	Y_VERBOSE << "Kd-Tree: used/allocated nodes: " << next_free_node_ << "/" << allocated_nodes_count_
 			  << " (" << 100.f * float(next_free_node_) / allocated_nodes_count_ << "%)" << YENDL;
 	Y_VERBOSE << "Kd-Tree: Primitives in tree: " << total_prims_ << YENDL;
-	Y_VERBOSE << "Kd-Tree: Interior nodes: " << kd_inodes__ << " / " << "leaf nodes: " << kd_leaves__
-			  << " (empty: " << empty_kd_leaves__ << " = " << 100.f * float(empty_kd_leaves__) / kd_leaves__ << "%)" << YENDL;
-	Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_prims__ << " (" << float(kd_prims__) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
-	Y_VERBOSE << "Kd-Tree: => " << float(kd_prims__) / (kd_leaves__ - empty_kd_leaves__) << " prims per non-empty leaf" << YENDL;
-	Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << depth_limit_reached_ << "/" << num_bad_splits_ << YENDL;
-	Y_VERBOSE << "Kd-Tree: clipped triangles: " << clip__ << " (" << bad_clip__ << " bad clips, " << null_clip__ << " null clips)" << YENDL;
+	Y_VERBOSE << "Kd-Tree: Interior nodes: " << kd_stats_.kd_inodes_ << " / " << "leaf nodes: " << kd_stats_.kd_leaves_
+			  << " (empty: " << kd_stats_.empty_kd_leaves_ << " = " << 100.f * float(kd_stats_.empty_kd_leaves_) / kd_stats_.kd_leaves_ << "%)" << YENDL;
+	Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_stats_.kd_prims_ << " (" << float(kd_stats_.kd_prims_) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
+	Y_VERBOSE << "Kd-Tree: => " << float(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
+	Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << kd_stats_.depth_limit_reached_ << "/" << kd_stats_.num_bad_splits_ << YENDL;
+	Y_VERBOSE << "Kd-Tree: clipped triangles: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
 }
 
 template<class T>
@@ -376,7 +372,7 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 					split.best_axis_ = axis;
 					split.best_offset_ = 0;
 					split.n_edge_ = n_edge;
-					++early_out__;
+					++kd_stats_.early_out_;
 				}
 				continue;
 			}
@@ -393,7 +389,7 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 					split.best_axis_ = axis;
 					split.best_offset_ = n_edge - 1;
 					split.n_edge_ = n_edge;
-					++early_out__;
+					++kd_stats_.early_out_;
 				}
 				continue;
 			}
@@ -497,10 +493,10 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 				if(ct->clipToBound(b_ext, clip_[depth], all_bounds_[total_prims_ + n_overl],
 				                   c_old + old_idx * clip_data_size__, c_new + n_overl * clip_data_size__))
 				{
-					++clip__;
+					++kd_stats_.clip_;
 					o_prims[n_overl] = prim_nums[i]; n_overl++;
 				}
-				else ++null_clip__;
+				else ++kd_stats_.null_clip_;
 			}
 			else
 			{
@@ -518,9 +514,9 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	if(n_prims <= max_leaf_size_ || depth >= max_depth_)
 	{
 		//		std::cout << "leaf\n";
-		nodes_[next_free_node_].createLeaf(prim_nums, n_prims, prims_, prims_arena_);
+		nodes_[next_free_node_].createLeaf(prim_nums, n_prims, prims_, prims_arena_, kd_stats_);
 		next_free_node_++;
-		if(depth >= max_depth_) depth_limit_reached_++;   //stat
+		if(depth >= max_depth_) kd_stats_.depth_limit_reached_++;   //stat
 		return 0;
 	}
 
@@ -541,9 +537,9 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	if((split.best_cost_ > 1.6f * split.old_cost_ && n_prims < 16) ||
 	   split.best_axis_ == -1 || bad_refines == 2)
 	{
-		nodes_[next_free_node_].createLeaf(prim_nums, n_prims, prims_, prims_arena_);
+		nodes_[next_free_node_].createLeaf(prim_nums, n_prims, prims_, prims_arena_, kd_stats_);
 		next_free_node_++;
-		if(bad_refines == 2) ++num_bad_splits_;  //stat
+		if(bad_refines == 2) ++kd_stats_.num_bad_splits_;  //stat
 		return 0;
 	}
 
@@ -648,7 +644,7 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	remaining_mem -= n_1;
 
 	uint32_t cur_node = next_free_node_;
-	nodes_[cur_node].createInterior(split.best_axis_, split_pos);
+	nodes_[cur_node].createInterior(split.best_axis_, split_pos, kd_stats_);
 	++next_free_node_;
 	Bound bound_l = node_bound, bound_r = node_bound;
 	switch(split.best_axis_)
