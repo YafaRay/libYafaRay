@@ -22,7 +22,7 @@
 astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-blocks --align-pointer=name --align-reference=name --pad-oper --pad-comma --unpad-paren --keep-one-line-statements --keep-one-line-blocks --indent-switches --close-templates --indent-col1-comments --suffix=none *.cc *.h
 
 # Coding conventions
-* Codebase is based on the C++17 standard functionality and requires compatible compilers.
+* Codebase is based on the C++11 standard functionality and requires compatible compilers.
 * Avoid using Macros as much as possible. For constants, use preferably constexpr. If possible encapsulate them within the class, as static if needed.
 * Avoid using typedefs as much as possible. If special plain old data are needed like unsigned char 8 bit, use standard ones like uint8_t, for example and not "yByte" or the like
 * Use verbose class, function and variable names. For example avoid short names like "with_a" and use a verbose "with_alpha"

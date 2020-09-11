@@ -43,7 +43,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	total_prims_ = np;
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = (KdTreeNode<T> *) alignedAlloc__(64, 256 * sizeof(KdTreeNode<T>));
+	nodes_ = (KdTreeNode<T> *) malloc(256 * sizeof(KdTreeNode<T>));
 	if(max_depth_ <= 0) max_depth_ = int(7.0f + 1.66f * log(float(total_prims_)));
 	double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -82,7 +82,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	//	uint32_t *primNums = new uint32_t[totalPrims]; //isn't this like...totaly unnecessary? use leftPrims?
 	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514/*2*totalPrims*/];
 	clip_ = new int[max_depth_ + 2];
-	cdata_ = (char *) alignedAlloc__(64, (max_depth_ + 2) * tri_clip_thresh_ * clip_data_size_);
+	cdata_ = (char *) malloc((max_depth_ + 2) * tri_clip_thresh_ * clip_data_size_);
 
 	// prepare data
 	for(uint32_t i = 0; i < total_prims_; i++) left_prims[i] = i; //primNums[i] = i;
@@ -101,7 +101,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 	delete[] all_bounds_;
 	for(int i = 0; i < 3; ++i) delete[] edges[i];
 	delete[] clip_;
-	alignedFree__(cdata_);
+	free(cdata_);
 	//print some stats:
 	c_end = clock() - c_start;
 	Y_VERBOSE << "Kd-Tree: Stats (" << float(c_end) / (float)CLOCKS_PER_SEC << "s)" << YENDL;
@@ -120,7 +120,7 @@ template<class T>
 KdTree<T>::~KdTree()
 {
 	Y_INFO << "Kd-Tree: Freeing nodes..." << YENDL;
-	alignedFree__(nodes_);
+	free(nodes_);
 	Y_VERBOSE << "Kd-Tree: Done" << YENDL;
 }
 
@@ -441,9 +441,9 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		KdTreeNode<T> 	*n = (KdTreeNode<T> *) alignedAlloc__(64, new_count * sizeof(KdTreeNode<T>));
+		KdTreeNode<T> 	*n = (KdTreeNode<T> *) malloc(new_count * sizeof(KdTreeNode<T>));
 		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(KdTreeNode<T>));
-		alignedFree__(nodes_);
+		free(nodes_);
 		nodes_ = n;
 		allocated_nodes_count_ = new_count;
 	}
