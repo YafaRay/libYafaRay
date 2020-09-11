@@ -81,7 +81,6 @@ class PointKdTree
 		PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
 		template<class LookupProc> void lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const;
-		double lookupStat() const { return double(y_procs_) / double(y_lookups_); } //!< ratio of photons tested per lookup call
 	protected:
 		template<class LookupProc> void recursiveLookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared, int node_num) const;
 		struct KdStack
@@ -95,7 +94,6 @@ class PointKdTree
 		KdNode<T> *nodes_;
 		uint32_t n_elements_, next_free_node_;
 		Bound tree_bound_;
-		mutable unsigned int y_lookups_, y_procs_;
 		int max_level_threads_ = 0;  //max level where we will launch threads. We will try to launch at least as many threads as scene threads parameter
 		static constexpr unsigned int kd_max_stack_ = 64;
 		std::mutex mutx_;
@@ -104,7 +102,6 @@ class PointKdTree
 template<class T>
 PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_name, int num_threads)
 {
-	y_lookups_ = 0; y_procs_ = 0;
 	next_free_node_ = 0;
 	n_elements_ = dat.size();
 
@@ -233,7 +230,6 @@ template<class T> template<class LookupProc>
 void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_dist_squared) const
 {
 #if NON_REC_LOOKUP > 0
-	++y_lookups_;
 	KdStack stack[kd_max_stack_];
 	const KdNode<T> *far_child, *curr_node = nodes_;
 
@@ -269,7 +265,6 @@ void PointKdTree<T>::lookup(const Point3 &p, const LookupProc &proc, float &max_
 
 		if(dist_2 < max_dist_squared)
 		{
-			++y_procs_;
 			proc(curr_node->data_, dist_2, max_dist_squared);
 		}
 
@@ -311,7 +306,6 @@ void PointKdTree<T>::recursiveLookup(const Point3 &p, const LookupProc &proc, fl
 		if(dist_2 < max_dist_squared)
 		{
 			proc(curr_node->data_, dist_2, max_dist_squared);
-			++y_procs_;
 		}
 		return;
 	}
