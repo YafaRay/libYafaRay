@@ -170,18 +170,16 @@ void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound &node_b
 	{
 		//<< recurse below child >>
 		uint32_t next_free_node_1 = 0;
-		KdNode<T> *nodes_1 = (KdNode<T> *) malloc(4 * (split_el - start) * sizeof(KdNode<T>));
-		std::thread *below_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, start, split_el, std::ref(bound_l), prims, level, std::ref(next_free_node_1), nodes_1);
+		auto *nodes_1 = (KdNode<T> *) malloc(4 * (split_el - start) * sizeof(KdNode<T>));
+		auto below_worker = std::thread( &PointKdTree<T>::buildTreeWorker, this, start, split_el, std::ref(bound_l), prims, level, std::ref(next_free_node_1), nodes_1 );
 
 		//<< recurse above child >>
 		uint32_t next_free_node_2 = 0;
-		KdNode<T> *nodes_2 = (KdNode<T> *) malloc(4 * (end - split_el) * sizeof(KdNode<T>));
-		std::thread *above_worker = new std::thread(&PointKdTree<T>::buildTreeWorker, this, split_el, end, std::ref(bound_r), prims, level, std::ref(next_free_node_2), nodes_2);
+		auto *nodes_2 = (KdNode<T> *) malloc(4 * (end - split_el) * sizeof(KdNode<T>));
+		auto above_worker = std::thread( &PointKdTree<T>::buildTreeWorker, this, split_el, end, std::ref(bound_r), prims, level, std::ref(next_free_node_2), nodes_2 );
 
-		below_worker->join();
-		above_worker->join();
-		delete below_worker;
-		delete above_worker;
+		below_worker.join();
+		above_worker.join();
 
 		if(nodes_1)
 		{
