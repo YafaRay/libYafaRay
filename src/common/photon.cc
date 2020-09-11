@@ -21,34 +21,6 @@
 
 BEGIN_YAFARAY
 
-DirConverter dirconverter__;
-
-DirConverter::DirConverter()
-{
-	for(int i = 0; i < 255; ++i)
-	{
-		float angle = (float)i * c_inv_255_ratio_;
-		costheta_[i] = fCos__(angle);
-		sintheta_[i] = fSin__(angle);
-	}
-	for(int i = 0; i < 256; ++i)
-	{
-		float angle = (float)i * c_inv_256_ratio_;
-		cosphi_[i] = fCos__(angle);
-		sinphi_[i] = fSin__(angle);
-	}
-}
-
-std::pair<unsigned char, unsigned char> DirConverter::convert(const Vec3 &dir) {
-	int t = (int)(fAcos__(dir.z_) * c_255_ratio_);
-	int p = (int)(atan2(dir.y_, dir.x_) * c_256_ratio_);
-	if(t > 254) t = 254;
-	else if(t < 0) t = 0;
-	if(p > 255) p = 255;
-	else if(p < 0) p += 256;
-	return std::pair<unsigned char, unsigned char>(t, p);
-}
-
 PhotonGather::PhotonGather(uint32_t mp, const Point3 &p): p_(p)
 {
 	photons_ = 0;
@@ -169,5 +141,35 @@ const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist)
 	tree_->lookup(p, proc, dist);
 	return proc.nearest_;
 }
+
+#ifdef SMALL_PHOTONS
+DirConverter dirconverter__;
+
+DirConverter::DirConverter()
+{
+	for(int i = 0; i < 255; ++i)
+	{
+		float angle = (float)i * c_inv_255_ratio_;
+		costheta_[i] = fCos__(angle);
+		sintheta_[i] = fSin__(angle);
+	}
+	for(int i = 0; i < 256; ++i)
+	{
+		float angle = (float)i * c_inv_256_ratio_;
+		cosphi_[i] = fCos__(angle);
+		sinphi_[i] = fSin__(angle);
+	}
+}
+
+std::pair<unsigned char, unsigned char> DirConverter::convert(const Vec3 &dir) {
+	int t = (int)(fAcos__(dir.z_) * c_255_ratio_);
+	int p = (int)(atan2(dir.y_, dir.x_) * c_256_ratio_);
+	if(t > 254) t = 254;
+	else if(t < 0) t = 0;
+	if(p > 255) p = 255;
+	else if(p < 0) p += 256;
+	return std::pair<unsigned char, unsigned char>(t, p);
+}
+#endif // SMALL_PHOTONS
 
 END_YAFARAY

@@ -27,32 +27,6 @@
 
 BEGIN_YAFARAY
 
-class DirConverter
-{
-	public:
-		DirConverter();
-
-		Vec3 convert(unsigned char theta, unsigned char phi)
-		{
-			return {sintheta_[theta] * cosphi_[phi],
-					sintheta_[theta] * sinphi_[phi],
-					costheta_[theta]};
-		}
-		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir);
-
-	protected:
-		static constexpr double c_255_ratio_ = 81.16902097686662123083;
-		static constexpr double c_256_ratio_ = 40.74366543152520595687;
-		static constexpr double c_inv_255_ratio_ = 0.01231997119054820878;
-		static constexpr double c_inv_256_ratio_ = 0.02454369260617025968;
-		float cosphi_[256];
-		float sinphi_[256];
-		float costheta_[255];
-		float sintheta_[255];
-};
-
-extern DirConverter dirconverter__;
-
 class Photon
 {
 	public:
@@ -204,6 +178,34 @@ struct EliminatePhoton
 	}
 	const Vec3 n_;
 };
+
+#ifdef SMALL_PHOTONS
+class DirConverter
+{
+	public:
+		DirConverter();
+
+		Vec3 convert(unsigned char theta, unsigned char phi)
+		{
+			return {sintheta_[theta] * cosphi_[phi],
+					sintheta_[theta] * sinphi_[phi],
+					costheta_[theta]};
+		}
+		std::pair<unsigned char, unsigned char> convert(const Vec3 &dir);
+
+	protected:
+		static constexpr double c_255_ratio_ = 81.16902097686662123083;
+		static constexpr double c_256_ratio_ = 40.74366543152520595687;
+		static constexpr double c_inv_255_ratio_ = 0.01231997119054820878;
+		static constexpr double c_inv_256_ratio_ = 0.02454369260617025968;
+		float cosphi_[256];
+		float sinphi_[256];
+		float costheta_[255];
+		float sintheta_[255];
+};
+
+extern DirConverter dirconverter__;
+#endif // SMALL_PHOTONS
 
 END_YAFARAY
 
