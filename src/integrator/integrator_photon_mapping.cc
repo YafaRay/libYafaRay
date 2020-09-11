@@ -649,14 +649,14 @@ bool PhotonIntegrator::preprocess()
 		Y_INFO << integrator_name_ << ": Diffuse photon mapping disabled, skipping..." << YENDL;
 	}
 
-	std::thread *diffuse_map_build_kd_tree_thread = nullptr;
+	std::thread diffuse_map_build_kd_tree_thread;
 
 	if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << integrator_name_ << ": Building diffuse photons kd-tree:" << YENDL;
 		pb->setTag("Building diffuse photons kd-tree...");
 
-		diffuse_map_build_kd_tree_thread = new std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.diffuse_map_);
+		diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.diffuse_map_);
 	}
 	else
 
@@ -855,14 +855,14 @@ bool PhotonIntegrator::preprocess()
 
 	tmplights.clear();
 
-	std::thread *caustic_map_build_kd_tree_thread = nullptr;
+	std::thread caustic_map_build_kd_tree_thread;
 
 	if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << integrator_name_ << ": Building caustic photons kd-tree:" << YENDL;
 		pb->setTag("Building caustic photons kd-tree...");
 
-		caustic_map_build_kd_tree_thread = new std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.caustic_map_);
+		caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.caustic_map_);
 	}
 	else
 	{
@@ -875,12 +875,9 @@ bool PhotonIntegrator::preprocess()
 		}
 	}
 
-	if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2 && diffuse_map_build_kd_tree_thread)
+	if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
-		diffuse_map_build_kd_tree_thread->join();
-		delete diffuse_map_build_kd_tree_thread;
-		diffuse_map_build_kd_tree_thread = nullptr;
-
+		diffuse_map_build_kd_tree_thread.join();
 		Y_VERBOSE << integrator_name_ << ": Diffuse photon map: done." << YENDL;
 	}
 
@@ -924,12 +921,9 @@ bool PhotonIntegrator::preprocess()
 		r_tree = nullptr;
 	}
 
-	if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2 && caustic_map_build_kd_tree_thread)
+	if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
-		caustic_map_build_kd_tree_thread->join();
-		delete caustic_map_build_kd_tree_thread;
-		caustic_map_build_kd_tree_thread = nullptr;
-
+		caustic_map_build_kd_tree_thread.join();
 		Y_VERBOSE << integrator_name_ << ": Caustic photon map: done." << YENDL;
 	}
 
