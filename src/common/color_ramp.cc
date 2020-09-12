@@ -28,8 +28,6 @@
 
 BEGIN_YAFARAY
 
-ColorRamp::ColorRamp(Mode mode, Interpolation interpolation, HueInterpolation hue_interpolation): mode_(mode), interpolation_(interpolation), hue_interpolation_(hue_interpolation) {}
-
 ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str)
 {
 	Y_DEBUG << "modeStr='" << mode_str << "' interpolationStr='" << interpolation_str << "' hue_interpolationStr='" << hue_interpolation_str << "'" << YENDL;

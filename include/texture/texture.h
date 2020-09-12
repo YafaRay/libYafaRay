@@ -35,6 +35,7 @@ class Texture
 {
 	public :
 		static Texture *factory(ParamMap &params, Scene &scene);
+		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
 		virtual bool discrete() const { return false; }
@@ -61,9 +62,8 @@ class Texture
 		Rgba applyIntensityContrastAdjustments(const Rgba &tex_col) const;
 		float applyIntensityContrastAdjustments(float tex_float) const;
 		Rgba applyColorAdjustments(const Rgba &tex_col) const;
-		void colorRampCreate(std::string mode_str, std::string interpolation_str, std::string hue_interpolation_str) { color_ramp_ = new ColorRamp(mode_str, interpolation_str, hue_interpolation_str); }
-		void colorRampAddItem(Rgba color, float position) { color_ramp_->addItem(color, position); }
-		virtual ~Texture() { if(color_ramp_) { delete color_ramp_; color_ramp_ = nullptr; } }
+		void colorRampCreate(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str) { color_ramp_ = std::unique_ptr<ColorRamp>(new ColorRamp(mode_str, interpolation_str, hue_interpolation_str)); }
+		void colorRampAddItem(const Rgba &color, float position) { if(color_ramp_) color_ramp_->addItem(color, position); }
 		InterpolationType getInterpolationType() const { return interpolation_type_; }
 
 	protected:
@@ -76,7 +76,7 @@ class Texture
 		float adj_mult_factor_green_ = 1.f;
 		float adj_mult_factor_blue_ = 1.f;
 		bool adjustments_set_ = false;
-		ColorRamp *color_ramp_ = nullptr;
+		std::unique_ptr<ColorRamp> color_ramp_;
 		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 };
 

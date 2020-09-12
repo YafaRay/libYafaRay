@@ -50,7 +50,6 @@ class ColorRamp final
 		enum Interpolation { Constant, Linear, Bspline, Cardinal, Ease }; //Bspline, Cardinal and Ease Not yet supported
 		enum HueInterpolation {	Near, Far, Clockwise, Counterclockwise };
 
-		ColorRamp(Mode mode, Interpolation interpolation, HueInterpolation hue_interpolation);
 		ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str);
 		void addItem(const Rgba &color, float position);
 		Rgba getColorInterpolated(float pos) const;
