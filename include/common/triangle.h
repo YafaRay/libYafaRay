@@ -162,7 +162,7 @@ class VTriangle: public Primitive
 	protected:
 		int pa_, pb_, pc_; //!< indices in point array, referenced in mesh.
 		int na_, nb_, nc_; //!< indices in normal array, if mesh is smoothed.
-		Normal3 normal_; //!< the geometric normal
+		Vec3 normal_; //!< the geometric normal
 		const Material *material_;
 		const MeshObject *mesh_;
 };

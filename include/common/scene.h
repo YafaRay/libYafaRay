@@ -177,7 +177,7 @@ class LIBYAFARAY_EXPORT Scene
 		bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
 		int  addVertex(const Point3 &p);
 		int  addVertex(const Point3 &p, const Point3 &orco);
-		void addNormal(const Normal3 &n);
+		void addNormal(const Vec3 &n);
 		bool addTriangle(int a, int b, int c, const Material *mat);
 		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
 		int  addUv(float u, float v);

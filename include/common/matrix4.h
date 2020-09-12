@@ -93,13 +93,6 @@ inline Point3 operator * (const Matrix4 &a, const Point3 &b)
 	                  a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_ + a[2][3]);
 }
 
-inline Normal3 operator * (const Matrix4 &a, const Normal3 &b)
-{
-	return Normal3(a[0][0] * b.x_ + a[0][1] * b.y_ + a[0][2] * b.z_,
-	                a[1][0] * b.x_ + a[1][1] * b.y_ + a[1][2] * b.z_,
-	                a[2][0] * b.x_ + a[2][1] * b.y_ + a[2][2] * b.z_);
-}
-
 //matrix4x4_t rayToZ(const point3d_t &from,const vector3d_t & ray);
 std::ostream &operator << (std::ostream &out, Matrix4 &m);
 

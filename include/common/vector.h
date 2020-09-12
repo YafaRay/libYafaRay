@@ -33,7 +33,6 @@ BEGIN_YAFARAY
 #define M_PI 3.1415926535897932384626433832795
 #endif
 
-class Normal3;
 class Point3;
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -47,7 +46,6 @@ class Vec3
 		Vec3(float v): x_(v), y_(v), z_(v) {  }
 		Vec3(float ix, float iy, float iz = 0): x_(ix), y_(iy), z_(iz) { }
 		Vec3(const Vec3 &s): x_(s.x_), y_(s.y_), z_(s.z_) { }
-		explicit Vec3(const Normal3 &n);
 		explicit Vec3(const Point3 &p);
 
 		void set(float ix, float iy, float iz = 0) { x_ = ix; y_ = iy; z_ = iz; }
@@ -71,14 +69,6 @@ class Vec3
 		float x_, y_, z_;
 };
 
-class Normal3 final : public Vec3
-{
-	public:
-		Normal3() = default;
-		Normal3(float nx, float ny, float nz) : Vec3(nx, ny, nz) {}
-		explicit Normal3(const Vec3 &v) : Vec3(v.x_, v.y_, v.z_) { }
-};
-
 class Point3 final : public Vec3
 {
 	public:
@@ -92,7 +82,6 @@ class Point3 final : public Vec3
 #pragma GCC diagnostic pop
 #endif
 
-inline Vec3::Vec3(const Normal3 &n): x_(n.x_), y_(n.y_), z_(n.z_) { }
 inline Vec3::Vec3(const Point3 &p): x_(p.x_), y_(p.y_), z_(p.z_) { }
 
 std::ostream &operator << (std::ostream &out, const Vec3 &v);
@@ -177,12 +166,6 @@ inline Point3  operator + (const Point3 &a, const Vec3 &b)
 {
 	return Point3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
 }
-
-inline Normal3 operator + (const Normal3 &a, const Vec3 &b)
-{
-	return Normal3(a.x_ + b.x_, a.y_ + b.y_, a.z_ + b.z_);
-}
-
 
 inline bool  operator == (const Point3 &a, const Point3 &b)
 {
