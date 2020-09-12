@@ -25,10 +25,10 @@
 #include "imagehandler/imagehandler_tif.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
+#include "common/scene.h"
 
 #if defined(_WIN32)
 #include "utility/util_string.h"
@@ -219,7 +219,7 @@ bool TifHandler::loadFromFile(const std::string &name)
 	return true;
 }
 
-ImageHandler *TifHandler::factory(ParamMap &params, RenderEnvironment &render)
+ImageHandler *TifHandler::factory(ParamMap &params, Scene &scene)
 {
 	int width = 0;
 	int height = 0;
@@ -246,7 +246,7 @@ ImageHandler *TifHandler::factory(ParamMap &params, RenderEnvironment &render)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
+		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;

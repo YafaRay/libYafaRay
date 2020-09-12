@@ -20,7 +20,6 @@
 
 #include "light/light_directional.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "common/bound.h"
@@ -115,7 +114,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light *DirectionalLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *DirectionalLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 dir(0.0, 0.0, 1.0);

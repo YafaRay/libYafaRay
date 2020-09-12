@@ -20,7 +20,6 @@
 #include "material/material_rough_glass.h"
 #include "shader/shader_node.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "material/material_utils_microfacet.h"
 #include "utility/util_mcqmc.h"
 #include "common/spectrum.h"
@@ -320,7 +319,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
+Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -405,7 +404,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = render.createVolumeH(name, map);
+				mat->vol_i_ = scene.createVolumeH(name, map);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -422,7 +421,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	node_list["wireframe_shader"] = nullptr;
 	node_list["roughness_shader"] = nullptr;
 
-	if(mat->loadNodes(param_list, render))
+	if(mat->loadNodes(param_list, scene))
 	{
 		mat->parseNodes(params, roots, node_list);
 	}

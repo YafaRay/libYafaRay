@@ -20,7 +20,6 @@
 
 #include "material/material_glossy.h"
 #include "shader/shader_node.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "material/material_utils_microfacet.h"
 #include "common/color_ramp.h"
@@ -405,7 +404,7 @@ float GlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp, cons
 	return pdf;
 }
 
-Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
+Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f);
 	float refl = 1.f;
@@ -496,7 +495,7 @@ Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param
 	node_list["wireframe_shader"]    = nullptr;
 	node_list["diffuse_refl_shader"] = nullptr;
 
-	if(mat->loadNodes(param_list, render))
+	if(mat->loadNodes(param_list, scene))
 	{
 		mat->parseNodes(params, roots, node_list);
 	}

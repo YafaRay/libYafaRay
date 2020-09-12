@@ -25,10 +25,10 @@
 #include "imagehandler/imagehandler_jpg.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
+#include "common/scene.h"
 
 extern "C"
 {
@@ -356,7 +356,7 @@ bool JpgHandler::loadFromFile(const std::string &name)
 }
 
 
-ImageHandler *JpgHandler::factory(ParamMap &params, RenderEnvironment &render)
+ImageHandler *JpgHandler::factory(ParamMap &params, Scene &scene)
 {
 	int width = 0;
 	int height = 0;
@@ -383,7 +383,7 @@ ImageHandler *JpgHandler::factory(ParamMap &params, RenderEnvironment &render)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
+		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;

@@ -20,7 +20,6 @@
 
 #include "light/light_sphere.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "object_geom/object_geom.h"
 #include "common/param.h"
 #include "common/scene.h"
@@ -42,9 +41,9 @@ SphereLight::SphereLight(const Point3 &c, float rad, const Rgb &col, float inte,
 
 void SphereLight::init(Scene &scene)
 {
-	if(obj_id_)
+	if(!object_name_.empty())
 	{
-		ObjectGeometric *obj = scene.getObject(obj_id_);
+		ObjectGeometric *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
 		else Y_ERROR << "SphereLight: Invalid object ID given!" << YENDL;
 	}
@@ -160,14 +159,14 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light *SphereLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *SphereLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);
 	float power = 1.0;
 	float radius = 1.f;
 	int samples = 4;
-	int object = 0;
+	std::string object_name;
 	bool light_enabled = true;
 	bool cast_shadows = true;
 	bool shoot_d = true;
@@ -179,7 +178,7 @@ Light *SphereLight::factory(ParamMap &params, RenderEnvironment &render)
 	params.getParam("power", power);
 	params.getParam("radius", radius);
 	params.getParam("samples", samples);
-	params.getParam("object", object);
+	params.getParam("object_name", object_name);
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("with_caustic", shoot_c);
@@ -188,7 +187,7 @@ Light *SphereLight::factory(ParamMap &params, RenderEnvironment &render)
 
 	SphereLight *light = new SphereLight(from, radius, color, power, samples, light_enabled, cast_shadows);
 
-	light->obj_id_ = (unsigned int)object;
+	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;
 	light->photon_only_ = p_only;

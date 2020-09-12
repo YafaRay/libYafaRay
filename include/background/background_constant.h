@@ -27,13 +27,13 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 
 class ConstantBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &params, RenderEnvironment &render);
+		static Background *factory(ParamMap &params, Scene &scene);
 
 	private:
 		ConstantBackground(Rgb col, bool ibl, bool with_caustic);

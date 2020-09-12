@@ -24,7 +24,6 @@
 #include "yafaray_config.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "output/output.h"
 #include "imagehandler/imagehandler.h"
 #include "common/scene.h"
@@ -122,15 +121,15 @@ float lanczos2__(float dx, float dy)
 }
 
 ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size, FilterType filt,
-					  RenderEnvironment *e, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type, bool pm_a):
+					  Scene *scene, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type, bool pm_a):
 		w_(width), h_(height), cx_0_(xstart), cy_0_(ystart), filterw_(filter_size * 0.5), output_(&out),
-		env_(e), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), premult_alpha_(pm_a)
+		scene_(scene), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), premult_alpha_(pm_a)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
 	filter_table_ = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 
 	//Creation of the image buffers for the render passes
 	for(int idx = 0; idx < render_passes->extPassesSize(); ++idx)
@@ -235,9 +234,8 @@ void ImageFilm::init(int num_passes)
 	if(split_)
 	{
 		next_area_ = 0;
-		Scene *scene = env_->getScene();
 		int n_threads = 1;
-		if(scene) n_threads = scene->getNumThreads();
+		if(scene_) n_threads = scene_->getNumThreads();
 		splitter_ = new ImageSplitter(w_, h_, cx_0_, cy_0_, tile_size_, tiles_order_, n_threads);
 		area_cnt_ = splitter_->size();
 	}
@@ -284,7 +282,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 
 	if(session__.renderInProgress() && !output_->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
-		ColorOutput *out_2 = env_->getOutput2();
+		ColorOutput *out_2 = scene_->getOutput2();
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
@@ -303,7 +301,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		}
 	}
 
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 
 	Rgba2DImageWeighed_t *sampling_factor_image_pass = getImagePassFromIntPassType(PassIntDebugSamplingFactor);
 
@@ -531,7 +529,7 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 {
 	out_mutex_.lock();
 
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
 
@@ -601,7 +599,7 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 		if(film_auto_save_params_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
 		g_timer__.start("filmAutoSaveTimer");
 
-		ColorOutput *out_2 = env_->getOutput2();
+		ColorOutput *out_2 = scene_->getOutput2();
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
@@ -634,7 +632,7 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 
 void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 {
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 
 	if(session__.renderFinished())
 	{
@@ -643,7 +641,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 	}
 
 	ColorOutput *out_1 = out ? out : output_;
-	ColorOutput *out_2 = env_->getOutput2();
+	ColorOutput *out_2 = scene_->getOutput2();
 
 	if(out_1->isPreview()) out_2 = nullptr;	//disable secondary file output when rendering a Preview (material preview, etc)
 
@@ -924,7 +922,7 @@ bool ImageFilm::doMoreSamples(int x, int y) const
 	contributions from outside area a! (yes, really!) */
 void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples)
 {
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 
 	int dx_0, dx_1, dy_0, dy_1, x_0, x_1, y_0, y_1;
 
@@ -1267,7 +1265,7 @@ void ImageFilm::drawRenderSettings(std::stringstream &ss)
 		else image_handler_type = icon_extension;
 
 		ih_params["type"] = image_handler_type;
-		logo = env_->createImageHandler("logoLoader", ih_params);
+		logo = scene_->createImageHandler("logoLoader", ih_params);
 
 		if(logo && logo->loadFromFile(logger__.getLoggingCustomIcon())) logo_loaded = true;
 		else Y_WARNING << "imageFilm: custom params badge icon '" << logger__.getLoggingCustomIcon() << "' could not be loaded. Using default YafaRay icon." << YENDL;
@@ -1276,7 +1274,7 @@ void ImageFilm::drawRenderSettings(std::stringstream &ss)
 	if(!logo_loaded)
 	{
 		ih_params["type"] = std::string("png");
-		logo = env_->createImageHandler("logoLoader", ih_params);
+		logo = scene_->createImageHandler("logoLoader", ih_params);
 		if(logo && logo->loadFromMemory(yaf_logo_tiny__, yaf_logo_tiny_size__)) logo_loaded = true;
 		else Y_WARNING << "imageFilm: default YafaRay params badge icon could not be loaded. No icon will be shown." << YENDL;
 	}
@@ -1400,7 +1398,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	int image_passes_size;
 	file.read<int>(image_passes_size);
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 	if(image_passes_size != render_passes->extPassesSize())
 	{
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << render_passes->extPassesSize() << ", in reused/loaded film=" << image_passes_size << YENDL;
@@ -1499,7 +1497,7 @@ void ImageFilm::imageFilmLoadAllInFolder()
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		ImageFilm *loaded_film = new ImageFilm(w_, h_, cx_0_, cy_0_, *output_, 1.0, FilterType::Box, env_);
+		ImageFilm *loaded_film = new ImageFilm(w_, h_, cx_0_, cy_0_, *output_, 1.0, FilterType::Box, scene_);
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			Y_WARNING << "ImageFilm: Could not load film file '" << film_file << "'" << YENDL;
@@ -1706,7 +1704,7 @@ void edgeImageDetection__(std::vector<cv::Mat> &image_mat, float edge_threshold,
 
 void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 	const int faces_edge_thickness = render_passes->faces_edge_thickness_;
 	const float faces_edge_threshold = render_passes->faces_edge_threshold_;
 	const float faces_edge_smoothness = render_passes->faces_edge_smoothness_;
@@ -1752,7 +1750,7 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 
 void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
-	const RenderPasses *render_passes = env_->getRenderPasses();
+	const RenderPasses *render_passes = scene_->getRenderPasses();
 	const float toon_pre_smooth = render_passes->toon_pre_smooth_;
 	const float toon_quantization = render_passes->toon_quantization_;
 	const float toon_post_smooth = render_passes->toon_post_smooth_;
@@ -1867,12 +1865,12 @@ Rgba2DImageWeighed_t *ImageFilm::getImagePassFromIntPassType(int int_pass_type)
 {
 	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
 	{
-		if(env_->getScene()->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return image_passes_[idx];
+		if(scene_->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return image_passes_[idx];
 	}
 
 	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
 	{
-		if(env_->getScene()->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return aux_image_passes_[idx];
+		if(scene_->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return aux_image_passes_[idx];
 	}
 
 	return nullptr;
@@ -1882,7 +1880,7 @@ int ImageFilm::getImagePassIndexFromIntPassType(int int_pass_type)
 {
 	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
 	{
-		if(env_->getScene()->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return (int) idx;
+		if(scene_->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return (int) idx;
 	}
 
 	return -1;
@@ -1892,7 +1890,7 @@ int ImageFilm::getAuxImagePassIndexFromIntPassType(int int_pass_type)
 {
 	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
 	{
-		if(env_->getScene()->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return (int) idx;
+		if(scene_->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return (int) idx;
 	}
 
 	return -1;

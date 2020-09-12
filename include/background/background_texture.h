@@ -27,14 +27,14 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 class Texture;
 
 class TextureBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, RenderEnvironment &);
+		static Background *factory(ParamMap &, Scene &);
 
 	private:
 		enum Projection { Spherical = 0, Angular };

@@ -42,7 +42,7 @@ class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
 		virtual void flush(int num_view, const RenderPasses *render_passes) override;
 		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {} // not used by images... yet
-		virtual bool isImageOutput() override { return true; }
+		virtual bool isImageOutput() const override { return true; }
 		virtual std::string getDenoiseParams() const override
 		{
 			if(image_) return image_->getDenoiseParams();

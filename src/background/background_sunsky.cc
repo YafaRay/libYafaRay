@@ -21,7 +21,6 @@
 #include "background/background_sunsky.h"
 #include "background/background_util_sunspectrum.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "light/light.h"
@@ -181,7 +180,7 @@ Rgb SunSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return power_ * getSkyCol(ray);
 }
 
-Background *SunSkyBackground::factory(ParamMap &params, RenderEnvironment &render)
+Background *SunSkyBackground::factory(ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere
@@ -231,11 +230,8 @@ Background *SunSkyBackground::factory(ParamMap &params, RenderEnvironment &rende
 		bgp["with_caustic"] = caus;
 		bgp["with_diffuse"] = diff;
 
-		Light *bglight = render.createLight("sunsky_bgLight", bgp);
-
+		Light *bglight = scene.createLight("sunsky_bgLight", bgp);
 		bglight->setBackground(new_sunsky);
-
-		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	if(add_sun)
@@ -258,9 +254,7 @@ Background *SunSkyBackground::factory(ParamMap &params, RenderEnvironment &rende
 		p["with_caustic"] = caus;
 		p["with_diffuse"] = diff;
 
-		Light *light = render.createLight("sunsky_SUN", p);
-
-		if(light) render.getScene()->addLight(light);
+		scene.createLight("sunsky_SUN", p);
 	}
 
 	return new_sunsky;

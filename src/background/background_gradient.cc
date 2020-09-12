@@ -19,7 +19,6 @@
  */
 
 #include "background/background_gradient.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "light/light.h"
@@ -59,7 +58,7 @@ Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return color;
 }
 
-Background *GradientBackground::factory(ParamMap &params, RenderEnvironment &render)
+Background *GradientBackground::factory(ParamMap &params, Scene &scene)
 {
 	Rgb gzenith,  ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
@@ -93,11 +92,8 @@ Background *GradientBackground::factory(ParamMap &params, RenderEnvironment &ren
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		Light *bglight = render.createLight("GradientBackground_bgLight", bgp);
-
+		Light *bglight = scene.createLight("GradientBackground_bgLight", bgp);
 		bglight->setBackground(grad_bg);
-
-		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	return grad_bg;

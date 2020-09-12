@@ -19,7 +19,6 @@
  */
 
 #include "light/light_sun.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "common/param.h"
 #include "common/scene.h"
@@ -93,7 +92,7 @@ Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 }
 
 
-Light *SunLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *SunLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 dir(0.0, 0.0, 1.0);
 	Rgb color(1.0);

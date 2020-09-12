@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "utility/util_thread.h"
 #include "common/aa_noise_params.h"
+#include "common/renderpasses.h"
 
 constexpr unsigned int user_data_size__ = 1024;
 
@@ -38,27 +39,32 @@ constexpr unsigned int invisiblem__ = 0x0100;
 constexpr unsigned int basemesh__ = 0x0200;
 
 BEGIN_YAFARAY
-class Scene;
-class Camera;
+
+class Light;
 class Material;
+class VolumeHandler;
+class VolumeRegion;
+class Texture;
+class Camera;
+class Background;
+class ShaderNode;
 class ObjectGeometric;
-class TriangleObject;
-class MeshObject;
-class SurfacePoint;
-class Ray;
-class DiffRay;
+class ImageFilm;
+class Scene;
+class ColorOutput;
+class ProgressBar;
+class ImageHandler;
+class ParamMap;
+template<class T> class KdTree;
 class Primitive;
 class Triangle;
-template<class T> class KdTree;
-class Triangle;
-class Background;
-class Light;
+class TriangleObject;
+class MeshObject;
+class Integrator;
 class SurfaceIntegrator;
 class VolumeIntegrator;
-class ImageFilm;
+class SurfacePoint;
 class Random;
-class RenderEnvironment;
-class VolumeRegion;
 class RenderPasses;
 class Matrix4;
 class Rgb;
@@ -164,16 +170,16 @@ struct SceneGeometryState
 class LIBYAFARAY_EXPORT Scene
 {
 	public:
-		Scene(const RenderEnvironment *render_environment);
+		Scene();
 		~Scene();
-		explicit Scene(const Scene &s);
+		Scene(const Scene &s) = delete;
 		bool render();
 		void abort();
 		bool startGeometry();
 		bool endGeometry();
-		bool startTriMesh(ObjId_t id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int object_pass_index = 0);
+		bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
 		bool endTriMesh();
-		bool startCurveMesh(ObjId_t id, int vertices, int object_pass_index = 0);
+		bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0);
 		bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
 		int  addVertex(const Point3 &p);
 		int  addVertex(const Point3 &p, const Point3 &orco);
@@ -181,18 +187,11 @@ class LIBYAFARAY_EXPORT Scene
 		bool addTriangle(int a, int b, int c, const Material *mat);
 		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
 		int  addUv(float u, float v);
-		bool startVmap(int id, int type, int dimensions);
-		bool endVmap();
-		bool addVmapValues(float *val);
-		bool smoothMesh(ObjId_t id, float angle);
+		bool smoothMesh(const std::string &name, float angle);
 		bool update();
 
-		bool addLight(Light *l);
-		bool addMaterial(Material *m, const char *name);
 		ObjId_t getNextFreeId();
-		bool addObject(ObjectGeometric *obj, ObjId_t &id);
-		bool addInstance(ObjId_t base_object_id, const Matrix4 &obj_to_world);
-		void addVolumeRegion(VolumeRegion *vr) { volumes_.push_back(vr); }
+		bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world);
 		void setCamera(Camera *cam);
 		void setImageFilm(ImageFilm *film);
 		void setBackground(Background *bg);
@@ -204,9 +203,8 @@ class LIBYAFARAY_EXPORT Scene
 		void setNumThreadsPhotons(int threads_photons);
 		void setMode(int m) { mode_ = m; }
 		Background *getBackground() const;
-		TriangleObject *getMesh(ObjId_t id) const;
-		ObjectGeometric *getObject(ObjId_t id) const;
-		std::vector<VolumeRegion *> getVolumes() const { return volumes_; }
+		TriangleObject *getMesh(const std::string &name) const;
+		ObjectGeometric *getObject(const std::string &name) const;
 		const Camera *getCamera() const { return camera_; }
 		ImageFilm *getImageFilm() const { return image_film_; }
 		Bound getSceneBound() const;
@@ -219,7 +217,7 @@ class LIBYAFARAY_EXPORT Scene
 		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
 		bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const;
-		const RenderPasses *getRenderPasses() const;
+		const RenderPasses *getRenderPasses() const { return &render_passes_; }
 		bool passEnabled(IntPassTypes int_pass_type) const;
 
 		enum SceneState { Ready, Geometry, Object, Vmap };
@@ -227,7 +225,6 @@ class LIBYAFARAY_EXPORT Scene
 		                   CAll = CGeom | CLight | COther
 		                 };
 
-		std::vector<Light *> lights_;
 		VolumeIntegrator *vol_integrator_;
 
 		float shadow_bias_;  //shadow bias to apply to shadows to avoid self-shadow artifacts
@@ -236,26 +233,73 @@ class LIBYAFARAY_EXPORT Scene
 		float ray_min_dist_;  //ray minimum distance
 		bool ray_min_dist_auto_;  //enable automatic ray minimum distance calculation
 
+		Material *getMaterial(const std::string &name) const;
+		Texture *getTexture(const std::string &name) const;
+		ShaderNode *getShaderNode(const std::string &name) const;
+		Camera *getCamera(const std::string &name) const;
+		Background 	*getBackground(const std::string &name) const;
+		Integrator 	*getIntegrator(const std::string &name) const;
+		const std::map<std::string, VolumeRegion *> &getVolumeRegions() const { return volume_regions_; }
+		const std::map<std::string, Light *> &getLights() const { return lights_; }
+		const std::vector<Light *> getLightsVisible() const;;
+		const std::vector<Light *> getLightsEmittingCausticPhotons() const;;
+		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;;
+
+		Light 		*createLight(const std::string &name, ParamMap &params);
+		Texture 		*createTexture(const std::string &name, ParamMap &params);
+		Material 	*createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
+		ObjectGeometric 	*createObject(const std::string &name, ParamMap &params);
+		Camera 		*createCamera(const std::string &name, ParamMap &params);
+		Background 	*createBackground(const std::string &name, ParamMap &params);
+		Integrator 	*createIntegrator(const std::string &name, ParamMap &params);
+		ShaderNode 	*createShaderNode(const std::string &name, ParamMap &params);
+		VolumeHandler *createVolumeH(const std::string &name, const ParamMap &params);
+		VolumeRegion	*createVolumeRegion(const std::string &name, ParamMap &params);
+		ImageFilm	*createImageFilm(const ParamMap &params, ColorOutput &output);
+		ImageHandler *createImageHandler(const std::string &name, ParamMap &params);
+
+		bool			setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb = nullptr);
+		void			setupRenderPasses(const ParamMap &params);
+		void			setupLoggingAndBadge(const ParamMap &params);
+		const 			std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
+		void			setOutput2(ColorOutput *out_2) { output_2_ = out_2; }
+		ColorOutput	*getOutput2() const { return output_2_; }
+
+		void clearAll();
+
 	protected:
+		template <class T> static void freeMap(std::map< std::string, T * > &map);
 
 		SceneGeometryState state_;
-		std::map<ObjId_t, ObjectGeometric *> objects_;
-		std::map<ObjId_t, ObjData> meshes_;
-		std::map< std::string, Material * > materials_;
-		std::vector<VolumeRegion *> volumes_;
-		Camera *camera_;
-		ImageFilm *image_film_;
-		KdTree<Triangle> *tree_; //!< kdTree for triangle-only mode
-		KdTree<Primitive> *vtree_; //!< kdTree for universal mode
-		Background *background_;
-		SurfaceIntegrator *surf_integrator_;
+		Camera *camera_ = nullptr;
+		ImageFilm *image_film_ = nullptr;
+		KdTree<Triangle> *tree_ = nullptr; //!< kdTree for triangle-only mode
+		KdTree<Primitive> *vtree_ = nullptr; //!< kdTree for universal mode
+		Background *background_ = nullptr;
+		SurfaceIntegrator *surf_integrator_ = nullptr;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 		AaNoiseParams aa_noise_params_;
-		int nthreads_;
-		int nthreads_photons_;
-		int mode_; //!< sets the scene mode (triangle-only, virtual primitives)
-		int signals_;
-		const RenderEnvironment *env_;	//!< reference to the environment to which this scene belongs to
+		int nthreads_ = 1;
+		int nthreads_photons_ = 1;
+		int mode_ = 0; //!< sets the scene mode (0=triangle-only, 1=virtual primitives)
+		int signals_ = 0;
+
+		std::map<std::string, Light *> 	lights_;
+		std::map<std::string, Material *> 	materials_;
+		std::map<std::string, Texture *> 	textures_;
+		std::map<std::string, ObjectGeometric *> 	objects_;
+		std::map<std::string, ObjData> 	meshes_;
+		std::map<std::string, Camera *> 	cameras_;
+		std::map<std::string, Background *> backgrounds_;
+		std::map<std::string, Integrator *> integrators_;
+		std::map<std::string, ShaderNode *> shaders_;
+		std::map<std::string, VolumeHandler *> volume_handlers_;
+		std::map<std::string, VolumeRegion *> volume_regions_;
+		std::map<std::string, ImageHandler *> imagehandlers_;
+
+		RenderPasses render_passes_;
+		ColorOutput *output_2_ = nullptr; //secondary color output to export to file at the same time it's exported to Blender
+
 		mutable std::mutex sig_mutex_;
 };
 

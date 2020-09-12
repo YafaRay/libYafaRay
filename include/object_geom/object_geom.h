@@ -32,12 +32,12 @@ class SurfacePoint;
 class Point3;
 class Vec3;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class ObjectGeometric
 {
 	public:
-		static ObjectGeometric *factory(ParamMap &params, RenderEnvironment &render);
+		static ObjectGeometric *factory(ParamMap &params, Scene &scene);
 		ObjectGeometric();
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */

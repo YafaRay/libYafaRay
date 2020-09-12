@@ -17,8 +17,6 @@
  */
 
 #include "integrator/integrator_empty_volume.h"
-#include "common/environment.h"
-#include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
 #include "common/photon.h"
@@ -34,7 +32,7 @@ Rgba EmptyVolumeIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses 
 	return Rgba(0.f);
 }
 
-Integrator *EmptyVolumeIntegrator::factory(ParamMap &params, RenderEnvironment &render) {
+Integrator *EmptyVolumeIntegrator::factory(ParamMap &params, Scene &scene) {
 	return new EmptyVolumeIntegrator();
 }
 

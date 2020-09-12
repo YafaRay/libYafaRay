@@ -30,12 +30,12 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class GridVolumeRegion final : public DensityVolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
+		static VolumeRegion *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax);

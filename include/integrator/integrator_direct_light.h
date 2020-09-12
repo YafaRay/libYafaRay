@@ -27,10 +27,12 @@ BEGIN_YAFARAY
 class DirectLightIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		DirectLightIntegrator(bool transp_shad = false, int shadow_depth = 4, int ray_depth = 6);
+		virtual std::string getShortName() const override { return "DL"; }
+		virtual std::string getName() const override { return "DirectLight"; }
 		virtual bool preprocess() override;
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
 };

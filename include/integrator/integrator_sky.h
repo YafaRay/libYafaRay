@@ -29,10 +29,12 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		SkyIntegrator(float s_size, float a, float ss, float t);
+		virtual std::string getShortName() const override { return "Sky"; }
+		virtual std::string getName() const override { return "Sky"; }
 		virtual bool preprocess() override;
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;

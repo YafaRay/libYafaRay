@@ -39,10 +39,10 @@ class Worker : public QThread
 {
 		Q_OBJECT
 	public:
-		Worker(yafaray4::Interface *env, MainWindow *w, QtOutput *output);
+		Worker(yafaray4::Interface *interface, MainWindow *w, QtOutput *output);
 		void run();
 	private:
-		yafaray4::Interface *env_;
+		yafaray4::Interface *interface_;
 		QtOutput *output_;
 		MainWindow *win_;
 		bool valid_;

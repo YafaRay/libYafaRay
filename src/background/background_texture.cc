@@ -20,7 +20,6 @@
 
 #include "background/background_texture.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "common/scene.h"
@@ -86,7 +85,7 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-Background *TextureBackground::factory(ParamMap &params, RenderEnvironment &render)
+Background *TextureBackground::factory(ParamMap &params, Scene &scene)
 {
 	Texture *tex = nullptr;
 	std::string texname;
@@ -106,7 +105,7 @@ Background *TextureBackground::factory(ParamMap &params, RenderEnvironment &rend
 		Y_ERROR << "TextureBackground: No texture given for texture background!" << YENDL;
 		return nullptr;
 	}
-	tex = render.getTexture(texname);
+	tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		Y_ERROR << "TextureBackground: Texture '" << texname << "' for textureback not existant!" << YENDL;
@@ -145,7 +144,7 @@ Background *TextureBackground::factory(ParamMap &params, RenderEnvironment &rend
 			Y_VERBOSE << "TextureBackground: background SmartIBL blurring done using mipmaps." << YENDL;
 		}
 
-		Light *bglight = render.createLight("textureBackground_bgLight", bgp);
+		Light *bglight = scene.createLight("textureBackground_bgLight", bgp);
 
 		bglight->setBackground(tex_bg);
 
@@ -155,8 +154,6 @@ Background *TextureBackground::factory(ParamMap &params, RenderEnvironment &rend
 
 			bglight->setClampIntersect(ibl_clamp_sampling);
 		}
-
-		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	return tex_bg;

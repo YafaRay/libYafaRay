@@ -24,10 +24,10 @@
 #include "imagehandler/imagehandler_hdr.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
+#include "common/scene.h"
 
 #include <fstream>
 #include <iostream>
@@ -532,7 +532,7 @@ bool HdrHandler::writeScanline(std::ofstream &file, RgbePixel *scanline, int img
 	return true;
 }
 
-ImageHandler *HdrHandler::factory(ParamMap &params, RenderEnvironment &render)
+ImageHandler *HdrHandler::factory(ParamMap &params, Scene &scene)
 {
 	int width = 0;
 	int height = 0;
@@ -562,7 +562,7 @@ ImageHandler *HdrHandler::factory(ParamMap &params, RenderEnvironment &render)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
+		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;

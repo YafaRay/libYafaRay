@@ -20,19 +20,18 @@
 #include "shader/shader_node.h"
 #include "shader/shader_node_basic.h"
 #include "shader/shader_node_layer.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-ShaderNode *ShaderNode::factory(const ParamMap &params, RenderEnvironment &render)
+ShaderNode *ShaderNode::factory(const ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "texture_mapper") return TextureMapperNode::factory(params, render);
-	else if(type == "value") return ValueNode::factory(params, render);
-	else if(type == "mix") return MixNode::factory(params, render);
-	else if(type == "layer") return LayerNode::factory(params, render);
+	if(type == "texture_mapper") return TextureMapperNode::factory(params, scene);
+	else if(type == "value") return ValueNode::factory(params, scene);
+	else if(type == "mix") return MixNode::factory(params, scene);
+	else if(type == "layer") return LayerNode::factory(params, scene);
 	else return nullptr;
 }
 

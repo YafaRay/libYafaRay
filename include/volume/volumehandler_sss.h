@@ -25,12 +25,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class SssVolumeHandler final : public BeerVolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &env);
+		static VolumeHandler *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist);

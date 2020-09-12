@@ -343,7 +343,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderState &stat
 	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-ShaderNode *TextureMapperNode::factory(const ParamMap &params, RenderEnvironment &render)
+ShaderNode *TextureMapperNode::factory(const ParamMap &params, Scene &scene)
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
@@ -359,7 +359,7 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, RenderEnvironment
 		Y_ERROR << "TextureMapper: No texture given for texture mapper!" << YENDL;
 		return nullptr;
 	}
-	tex = render.getTexture(texname);
+	tex = scene.getTexture(texname);
 	if(!tex)
 	{
 		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << YENDL;
@@ -423,7 +423,7 @@ void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-ShaderNode *ValueNode::factory(const ParamMap &params, RenderEnvironment &render)
+ShaderNode *ValueNode::factory(const ParamMap &params, Scene &scene)
 {
 	Rgb col(1.f);
 	float alpha = 1.f;
@@ -706,7 +706,7 @@ class OverlayNode: public MixNode
 };
 
 
-ShaderNode *MixNode::factory(const ParamMap &params, RenderEnvironment &render)
+ShaderNode *MixNode::factory(const ParamMap &params, Scene &scene)
 {
 	float cfactor = 0.5f;
 	std::string blend_mode;

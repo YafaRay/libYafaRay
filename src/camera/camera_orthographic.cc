@@ -21,7 +21,6 @@
  */
 
 #include "camera/camera_orthographic.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -79,7 +78,7 @@ Point3 OrthographicCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-Camera *OrthographicCamera::factory(ParamMap &params, RenderEnvironment &render)
+Camera *OrthographicCamera::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

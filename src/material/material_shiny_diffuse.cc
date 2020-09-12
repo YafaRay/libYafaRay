@@ -600,7 +600,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderState &state, const SurfacePoin
 	return 1.f;
 }
 
-Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, RenderEnvironment &render)
+Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color = 1.f;
@@ -710,7 +710,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	node_list["wireframe_shader"]    = nullptr;
 
 	// load shader nodes:
-	if(mat->loadNodes(params_list, render))
+	if(mat->loadNodes(params_list, scene))
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
@@ -763,7 +763,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	        map["absorption_col"] = Rgb(0.5f, 0.2f, 0.2f);
 	        map["absorption_dist"] = 0.5f;
 	        map["scatter_col"] = Rgb(0.9f);
-	        mat->volI = render.createVolumeH(*name, map);
+	        mat->volI = scene.createVolumeH(*name, map);
 	        mat->bsdfFlags |= BSDF_VOLUMETRIC;
 	    }
 	}*/

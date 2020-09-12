@@ -137,9 +137,6 @@ class PathData
 BidirectionalIntegrator::BidirectionalIntegrator(bool transp_shad, int shadow_depth): tr_shad_(transp_shad), s_depth_(shadow_depth),
 																					  light_power_d_(nullptr), light_image_(nullptr)
 {
-	type_ = Surface;
-	integrator_name_ = "BidirectionalPathTracer";
-	integrator_short_name_ = "BdPT";
 	logger__.appendRenderSettings("");
 }
 
@@ -152,9 +149,6 @@ BidirectionalIntegrator::~BidirectionalIntegrator()
 
 bool BidirectionalIntegrator::preprocess()
 {
-	background_ = scene_->getBackground();
-	lights_ = scene_->lights_;
-
 	thread_data_.resize(scene_->getNumThreads());
 	for(int t = 0; t < scene_->getNumThreads(); ++t)
 	{
@@ -167,6 +161,7 @@ bool BidirectionalIntegrator::preprocess()
 		path_data.n_paths_ = 0;
 	}
 	// initialize userdata (todo!)
+	lights_ = scene_->getLightsVisible();
 	int num_lights = lights_.size();
 	f_num_lights_ = 1.f / (float) num_lights;
 	float *energies = new float[num_lights];
@@ -175,12 +170,11 @@ bool BidirectionalIntegrator::preprocess()
 
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 
-	for(int i = 0; i < num_lights; ++i) Y_DEBUG << integrator_name_ << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
-	Y_DEBUG << integrator_name_ << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
+	for(int i = 0; i < num_lights; ++i) Y_DEBUG << getName() << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
+	Y_DEBUG << getName() << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
 
 	delete[] energies;
 
-	cam_ = scene_->getCamera();
 	//nPaths = 0;
 	light_image_ = scene_->getImageFilm();// new imageFilm_t(cam->resX(), cam->resY(), 0, 0, *lightOut, 1.5f);
 	light_image_->setDensityEstimation(true);
@@ -281,7 +275,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		// temporary!
 		float cu, cv;
 		float cam_pdf = 0.0;
-		cam_->project(ray, 0, 0, cu, cv, cam_pdf);
+		scene_->getCamera()->project(ray, 0, 0, cu, cv, cam_pdf);
 		if(cam_pdf == 0.f) cam_pdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway.
 		ve.pdf_wo_ = cam_pdf;
 		ve.f_s_ = Rgb(cam_pdf);
@@ -309,7 +303,7 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 		// test!
 		ls.area_pdf_ *= light_num_pdf;
 
-		if(dbg < 10) Y_DEBUG << integrator_name_ << ": " << "lightNumPdf=" << light_num_pdf << YENDL;
+		if(dbg < 10) Y_DEBUG << getName() << ": " << "lightNumPdf=" << light_num_pdf << YENDL;
 		++dbg;
 
 		// setup vl
@@ -431,9 +425,9 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 	{
 		if(transp_background_) alpha = 0.f;
 
-		if(background_ && !transp_refracted_background_)
+		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
+			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
 		}
 	}
 
@@ -506,7 +500,7 @@ int BidirectionalIntegrator::createPath(RenderState &state, Ray &start, std::vec
 			v.pdf_wi_ = mat->pdf(state, v.sp_, ray.dir_, v.wi_, BsdfFlags::All); // all BSDFs? think so...
 			v.qi_wi_ = std::min(0.98f, v.f_s_.col2Bri() * v.cos_wi_ / v.pdf_wi_);
 		}
-		if(v.qi_wi_ < 0) Y_DEBUG << integrator_name_ << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n"
+		if(v.qi_wi_ < 0) Y_DEBUG << getName() << ": " << "v[" << n_vert << "].qi_wi=" << v.qi_wi_ << " (" << v.f_s_.col2Bri() << " " << v.cos_wi_ << " " << v.pdf_wi_ << ")\n"
 								 << "\t" << v.pdf_wo_ << "  flags:" << s.sampled_flags_ << YENDL;
 
 		v.flags_ = s.sampled_flags_;
@@ -712,7 +706,7 @@ inline bool BidirectionalIntegrator::connectPathE(RenderState &state, int s, Pat
 	float cos_y = std::fabs(y.sp_.n_ * vec);
 
 	Ray wo(z.sp_.p_, -vec);
-	if(! cam_->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
+	if(! scene_->getCamera()->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 
 	x_e.specular_ = false; // cannot query yet...
 
@@ -1092,7 +1086,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionPassClay(RenderState &state, 
 }
 
 
-Integrator *BidirectionalIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *BidirectionalIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	bool do_ao = false;
 	int ao_samples = 32;

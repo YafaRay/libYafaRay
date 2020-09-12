@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 class CoatedGlossyMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
+		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
 		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Material::Visibility::NormalVisible);

@@ -18,7 +18,6 @@
 
 #include "interface/interface_xml_export.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "common/matrix4.h"
 #include "common/param.h"
@@ -33,7 +32,7 @@ XmlInterface::XmlInterface(): last_mat_(nullptr), next_obj_(0), xml_gamma_(1.f),
 void XmlInterface::clearAll()
 {
 	Y_VERBOSE << "XMLInterface: cleaning up..." << YENDL;
-	env_->clearAll();
+	scene_->clearAll();
 	materials_.clear();
 	if(xml_file_.is_open())
 	{
@@ -45,24 +44,6 @@ void XmlInterface::clearAll()
 	cparams_ = params_;
 	nmat_ = 0;
 	next_obj_ = 0;
-}
-
-bool XmlInterface::startScene(int type)
-{
-	xml_file_.open(xml_name_.c_str());
-	if(!xml_file_.is_open())
-	{
-		Y_ERROR << "XMLInterface: Couldn't open " << xml_name_ << YENDL;
-		return false;
-	}
-	else Y_INFO << "XMLInterface: Writing scene to: " << xml_name_ << YENDL;
-	xml_file_ << std::boolalpha;
-	xml_file_ << "<?xml version=\"1.0\"?>" << YENDL;
-	xml_file_ << "<scene type=\"";
-	if(type == 0) xml_file_ << "triangle";
-	else 		xml_file_ << "universal";
-	xml_file_ << "\">" << YENDL;
-	return true;
 }
 
 bool XmlInterface::setLoggingAndBadgeSettings()
@@ -98,28 +79,18 @@ unsigned int XmlInterface::getNextFreeId()
 }
 
 
-bool XmlInterface::startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
+bool XmlInterface::startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
 	last_mat_ = nullptr;
 	n_uvs_ = 0;
-	xml_file_ << "\n<mesh id=\"" << id << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
+	xml_file_ << "\n<mesh name=\"" << name << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
 			  << "\" has_orco=\"" << has_orco << "\" has_uv=\"" << has_uv << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
-bool XmlInterface::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
+bool XmlInterface::startCurveMesh(const char *name, int vertices, int obj_pass_index)
 {
-	xml_file_ << "\n<curve id=\"" << id << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
-	return true;
-}
-
-bool XmlInterface::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
-{
-	*id = ++next_obj_;
-	last_mat_ = nullptr;
-	n_uvs_ = 0;
-	xml_file_ << "\n<mesh vertices=\"" << vertices << "\" faces=\"" << triangles
-			  << "\" has_orco=\"" << has_orco << "\" has_uv=\"" << has_uv << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
+	xml_file_ << "\n<curve name=\"" << name << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
 	return true;
 }
 
@@ -192,9 +163,9 @@ int XmlInterface::addUv(float u, float v)
 	return n_uvs_++;
 }
 
-bool XmlInterface::smoothMesh(unsigned int id, double angle)
+bool XmlInterface::smoothMesh(const char *name, double angle)
 {
-	xml_file_ << "<smooth ID=\"" << id << "\" angle=\"" << angle << "\"/>\n";
+	xml_file_ << "<smooth name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 
@@ -258,9 +229,9 @@ inline void writeParam__(const std::string &name, const Parameter &param, std::o
 	}
 }
 
-bool XmlInterface::addInstance(unsigned int base_object_id, Matrix4 obj_to_world)
+bool XmlInterface::addInstance(const char *base_object_name, Matrix4 obj_to_world)
 {
-	xml_file_ << "\n<instance base_object_id=\"" << base_object_id << "\" >\n\t";
+	xml_file_ << "\n<instance base_object_name=\"" << base_object_name << "\" >\n\t";
 	writeMatrix__("transform", obj_to_world, xml_file_);
 	xml_file_ << "\n</instance>\n";
 	return true;

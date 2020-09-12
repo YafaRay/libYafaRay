@@ -28,25 +28,24 @@
 #include "light/light_directional.h"
 #include "light/light_ies.h"
 #include "light/light_meshlight.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-Light *Light::factory(ParamMap &params, RenderEnvironment &render)
+Light *Light::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "arealight") return AreaLight::factory(params, render);
-	else if(type == "bgPortalLight") return BackgroundPortalLight::factory(params, render);
-	else if(type == "meshlight") return MeshLight::factory(params, render);
-	else if(type == "bglight") return BackgroundLight::factory(params, render);
-	else if(type == "directional") return DirectionalLight::factory(params, render);
-	else if(type == "ieslight") return IesLight::factory(params, render);
-	else if(type == "pointlight") return PointLight::factory(params, render);
-	else if(type == "spherelight") return SphereLight::factory(params, render);
-	else if(type == "spotlight") return SpotLight::factory(params, render);
-	else if(type == "sunlight") return SunLight::factory(params, render);
+	if(type == "arealight") return AreaLight::factory(params, scene);
+	else if(type == "bgPortalLight") return BackgroundPortalLight::factory(params, scene);
+	else if(type == "meshlight") return MeshLight::factory(params, scene);
+	else if(type == "bglight") return BackgroundLight::factory(params, scene);
+	else if(type == "directional") return DirectionalLight::factory(params, scene);
+	else if(type == "ieslight") return IesLight::factory(params, scene);
+	else if(type == "pointlight") return PointLight::factory(params, scene);
+	else if(type == "spherelight") return SphereLight::factory(params, scene);
+	else if(type == "spotlight") return SpotLight::factory(params, scene);
+	else if(type == "sunlight") return SunLight::factory(params, scene);
 	else return nullptr;
 }
 

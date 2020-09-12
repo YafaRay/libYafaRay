@@ -25,7 +25,6 @@
 #include "imagehandler/imagehandler_exr.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
@@ -384,7 +383,7 @@ bool ExrHandler::loadFromFile(const std::string &name)
 	return true;
 }
 
-ImageHandler *ExrHandler::factory(ParamMap &params, RenderEnvironment &render)
+ImageHandler *ExrHandler::factory(ParamMap &params, Scene &scene)
 {
 	int pixtype = HALF;
 	int compression = ZIP_COMPRESSION;
@@ -420,7 +419,7 @@ ImageHandler *ExrHandler::factory(ParamMap &params, RenderEnvironment &render)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, render.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, multi_layer, img_grayscale);
+		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, multi_layer, img_grayscale);
 	}
 
 	return ih;

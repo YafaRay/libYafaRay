@@ -19,7 +19,6 @@
 #include "volume/volumehandler_sss.h"
 #include "common/scene.h"
 #include "material/material.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_sample.h"
 
@@ -39,7 +38,7 @@ bool SssVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_
 	return true;
 }
 
-VolumeHandler *SssVolumeHandler::factory(const ParamMap &params, RenderEnvironment &env)
+VolumeHandler *SssVolumeHandler::factory(const ParamMap &params, Scene &scene)
 {
 	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;

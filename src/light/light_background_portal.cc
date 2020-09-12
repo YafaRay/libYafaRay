@@ -22,7 +22,6 @@
 
 #include "light/light_background_portal.h"
 #include "background/background.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "utility/util_sample.h"
@@ -32,8 +31,8 @@
 
 BEGIN_YAFARAY
 
-BackgroundPortalLight::BackgroundPortalLight(unsigned int msh, int sampl, float pow, bool light_enabled, bool cast_shadows):
-		object_id_(msh), samples_(sampl), power_(pow), tree_(nullptr)
+BackgroundPortalLight::BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
+		object_name_(object_name), samples_(sampl), power_(pow), tree_(nullptr)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -85,7 +84,7 @@ void BackgroundPortalLight::init(Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5 * (w.a_ + w.g_);
-	mesh_ = scene.getMesh(object_id_);
+	mesh_ = scene.getMesh(object_name_);
 	if(mesh_)
 	{
 		mesh_->setVisibility(false);
@@ -235,10 +234,10 @@ void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, floa
 }
 
 
-Light *BackgroundPortalLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *BackgroundPortalLight::factory(ParamMap &params, Scene &scene)
 {
 	int samples = 4;
-	int object = 0;
+	std::string object_name;
 	float pow = 1.0f;
 	bool shoot_d = true;
 	bool shoot_c = true;
@@ -246,7 +245,7 @@ Light *BackgroundPortalLight::factory(ParamMap &params, RenderEnvironment &rende
 	bool cast_shadows = true;
 	bool p_only = false;
 
-	params.getParam("object", object);
+	params.getParam("object_name", object_name);
 	params.getParam("samples", samples);
 	params.getParam("power", pow);
 	params.getParam("with_caustic", shoot_c);
@@ -255,7 +254,7 @@ Light *BackgroundPortalLight::factory(ParamMap &params, RenderEnvironment &rende
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 
-	BackgroundPortalLight *light = new BackgroundPortalLight(object, samples, pow, light_enabled, cast_shadows);
+	BackgroundPortalLight *light = new BackgroundPortalLight(object_name, samples, pow, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

@@ -24,7 +24,6 @@
 
 #include "light/light.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "common/param.h"
 
@@ -33,7 +32,7 @@ BEGIN_YAFARAY
 class SpotLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);

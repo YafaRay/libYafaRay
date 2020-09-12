@@ -25,7 +25,6 @@
 #define YAFARAY_TEXTURE_IMAGE_H
 
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "utility/util_interpolation.h"
 
 BEGIN_YAFARAY
@@ -34,7 +33,7 @@ class ImageTexture final : public Texture
 {
 	public:
 		enum class TexClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
-		static Texture *factory(ParamMap &params, RenderEnvironment &render);
+		static Texture *factory(ParamMap &params, Scene &scene);
 
 	private:
 		ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space = RawManualGamma);

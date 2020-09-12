@@ -71,7 +71,7 @@ class NodeFinder
 class ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
+		static ShaderNode *factory(const ParamMap &params, Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) { id_ = id; }

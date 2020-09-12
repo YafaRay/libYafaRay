@@ -25,12 +25,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class BeerVolumeHandler : public VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, RenderEnvironment &env);
+		static VolumeHandler *factory(const ParamMap &params, Scene &scene);
 
 	protected:
 		BeerVolumeHandler(const Rgb &sigma): sigma_a_(sigma) {};

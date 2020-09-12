@@ -37,11 +37,13 @@ class PathVertex;
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		BidirectionalIntegrator(bool transp_shad = false, int shadow_depth = 4);
 		virtual ~BidirectionalIntegrator() override;
+		virtual std::string getShortName() const override { return "BdPT"; }
+		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess() override;
 		virtual void cleanup() override;
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
@@ -58,18 +60,16 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		float pathWeight(RenderState &state, int s, int t, PathData &pd) const;
 		float pathWeight0T(RenderState &state, int t, PathData &pd) const;
 
-		Background *background_ = nullptr;
-		const Camera *cam_ = nullptr;
 		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
 		bool use_bg_;        //!< configuration; include background for GI
 		bool ibl_;           //!< configuration; use background light, if available
 		bool include_bg_;    //!< determined on precrocess;
 		int s_depth_, bounces_;
-		std::vector<Light *> lights_;
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;
 		//mutable int nPaths;
 		//mutable pathData_t pathData;
 		mutable std::vector<PathData> thread_data_;
+		std::vector<Light *> lights_; //! An array containing all the scene lights
 		Pdf1D *light_power_d_ = nullptr;
 		float f_num_lights_;
 		std::map <const Light *, float> inv_light_power_d_;

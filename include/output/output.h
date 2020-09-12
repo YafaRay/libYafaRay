@@ -45,8 +45,8 @@ class ColorOutput
 		virtual void flush(int num_view, const RenderPasses *render_passes) = 0;
 		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) = 0;
 		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) {};
-		virtual bool isImageOutput() { return false; }
-		virtual bool isPreview() { return false; }
+		virtual bool isImageOutput() const { return false; }
+		virtual bool isPreview() const { return false; }
 		virtual std::string getDenoiseParams() const { return ""; }
 };
 

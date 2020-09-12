@@ -26,12 +26,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class EquirectangularCamera final : public Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, RenderEnvironment &render);
+		static Camera *factory(ParamMap &params, Scene &scene);
 
 	private:
 		EquirectangularCamera(const Point3 &pos, const Point3 &look, const Point3 &up,

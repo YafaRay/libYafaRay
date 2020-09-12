@@ -41,15 +41,16 @@ struct PreGatherData final
 class PhotonIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		PhotonIntegrator(unsigned int d_photons, unsigned int c_photons, bool transp_shad = false, int shadow_depth = 4, float ds_rad = 0.1f, float c_rad = 0.01f);
-		~PhotonIntegrator() override;
+		virtual std::string getShortName() const override { return "PM"; }
+		virtual std::string getName() const override { return "PhotonMap"; }
 		virtual bool preprocess() override;
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
 		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
-		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
+		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
 		void photonMapKdTreeWorker(PhotonMap *photon_map);
 		Rgb finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }

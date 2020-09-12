@@ -19,7 +19,6 @@
  */
 
 #include "integrator/integrator_debug.h"
-#include "common/environment.h"
 #include "material/material.h"
 #include "common/surface.h"
 #include "background/background.h"
@@ -34,10 +33,7 @@ BEGIN_YAFARAY
 
 DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
 {
-	type_ = Surface;
 	debug_type_ = dt;
-	integrator_name_ = "DebugIntegrator";
-	integrator_short_name_ = "DBG";
 	logger__.appendRenderSettings("Debug integrator: '");
 	switch(dt)
 	{
@@ -112,7 +108,7 @@ Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &c
 	return Rgba(col, 1.f);
 }
 
-Integrator *DebugIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *DebugIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	int dt = 1;
 	bool pn = false;

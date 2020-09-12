@@ -27,12 +27,12 @@ BEGIN_YAFARAY
 struct RenderState;
 struct PSample;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class UniformVolumeRegion : public VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, RenderEnvironment &render);
+		static VolumeRegion *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);

@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 
 // sunsky, from 'A Practical Analytic Model For DayLight" by Preetham, Shirley & Smits.
@@ -39,7 +39,7 @@ class ParamMap;
 class SunSkyBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, RenderEnvironment &);
+		static Background *factory(ParamMap &, Scene &);
 
 	private:
 		SunSkyBackground(const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);

@@ -20,7 +20,6 @@
 #include "common/surface.h"
 #include "common/logging.h"
 #include "volume/volume.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "material/material.h"
 #include "background/background.h"
@@ -44,22 +43,16 @@ SingleScatterIntegrator::SingleScatterIntegrator(float s_size, bool adapt, bool 
 bool SingleScatterIntegrator::preprocess() {
 	Y_INFO << "SingleScatter: Preprocessing..." << YENDL;
 
-	lights_.clear();
-
-	for(unsigned int i = 0; i < scene_->lights_.size(); ++i)
-	{
-		lights_.push_back(scene_->lights_[i]);
-	}
-
-	list_vr_ = scene_->getVolumes();
-	vr_size_ = list_vr_.size();
+	lights_ = scene_->getLightsVisible();
+	const auto &volumes = scene_->getVolumeRegions();
+	vr_size_ = volumes.size();
 	i_vr_size_ = 1.f / (float)vr_size_;
 
 	if(optimize_)
 	{
-		for(unsigned int i = 0; i < vr_size_; i++)
+		for(const auto &v : volumes)
 		{
-			VolumeRegion *vr = list_vr_.at(i);
+			const auto &vr = v.second;
 			Bound bb = vr->getBb();
 
 			int x_size = vr->att_grid_x_;
@@ -108,10 +101,9 @@ bool SingleScatterIntegrator::preprocess() {
 								Rgb lightstep_tau(0.f);
 								if(ill)
 								{
-									for(unsigned int j = 0; j < vr_size_; j++)
+									for(const auto &v_2 : volumes)
 									{
-										VolumeRegion *vr_2 = list_vr_.at(j);
-										lightstep_tau += vr_2->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2.second->tau(light_ray, step_size_, 0.0f);
 									}
 								}
 
@@ -135,10 +127,9 @@ bool SingleScatterIntegrator::preprocess() {
 
 									// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 									Rgb lightstep_tau(0.f);
-									for(unsigned int j = 0; j < vr_size_; j++)
+									for(const auto &v_2 : volumes)
 									{
-										VolumeRegion *vr_2 = list_vr_.at(j);
-										lightstep_tau += vr_2->tau(light_ray, step_size_, 0.0f);
+										lightstep_tau += v_2.second->tau(light_ray, step_size_, 0.0f);
 									}
 									light_tr += fExp__(-lightstep_tau.energy());
 								}
@@ -163,6 +154,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 
 	Ray light_ray;
 	light_ray.from_ = sp.p_;
+	const auto &volumes = scene_->getVolumeRegions();
 
 	for(auto l = lights_.begin(); l != lights_.end(); ++l)
 	{
@@ -183,24 +175,22 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 					if(optimize_)
 					{
 						// replaced by
-						for(unsigned int i = 0; i < vr_size_; i++)
+						for(const auto &v : volumes)
 						{
-							VolumeRegion *vr = list_vr_.at(i);
 							float t_0_tmp = -1, t_1_tmp = -1;
-							if(vr->intersect(light_ray, t_0_tmp, t_1_tmp)) light_tr += vr->attenuation(sp.p_, (*l));
+							if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp)) light_tr += v.second->attenuation(sp.p_, (*l));
 						}
 					}
 					else
 					{
 						// replaced by
 						Rgb lightstep_tau(0.f);
-						for(unsigned int i = 0; i < vr_size_; i++)
+						for(const auto &v : volumes)
 						{
-							VolumeRegion *vr = list_vr_.at(i);
 							float t_0_tmp = -1, t_1_tmp = -1;
-							if(list_vr_.at(i)->intersect(light_ray, t_0_tmp, t_1_tmp))
+							if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
 							{
-								lightstep_tau += vr->tau(light_ray, current_step, 0.f);
+								lightstep_tau += v.second->tau(light_ray, current_step, 0.f);
 							}
 						}
 						// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -238,13 +228,12 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 						if(optimize_)
 						{
 							// replaced by
-							for(unsigned int i = 0; i < vr_size_; i++)
+							for(const auto &v : volumes)
 							{
-								VolumeRegion *vr = list_vr_.at(i);
 								float t_0_tmp = -1, t_1_tmp = -1;
-								if(vr->intersect(light_ray, t_0_tmp, t_1_tmp))
+								if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
 								{
-									light_tr += vr->attenuation(sp.p_, (*l));
+									light_tr += v.second->attenuation(sp.p_, (*l));
 									break;
 								}
 							}
@@ -253,13 +242,12 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 						{
 							// replaced by
 							Rgb lightstep_tau(0.f);
-							for(unsigned int i = 0; i < vr_size_; i++)
+							for(const auto &v : volumes)
 							{
-								VolumeRegion *vr = list_vr_.at(i);
 								float t_0_tmp = -1, t_1_tmp = -1;
-								if(list_vr_.at(i)->intersect(light_ray, t_0_tmp, t_1_tmp))
+								if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
 								{
-									lightstep_tau += vr->tau(light_ray, current_step * 4.f, 0.0f);
+									lightstep_tau += v.second->tau(light_ray, current_step * 4.f, 0.0f);
 								}
 							}
 							// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
@@ -283,17 +271,16 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 Rgba SingleScatterIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	Rgba tr(1.f);
 	//return Tr;
-
 	if(vr_size_ == 0) return tr;
 
-	for(unsigned int i = 0; i < vr_size_; i++)
+	const auto &volumes = scene_->getVolumeRegions();
+	for(const auto &v : volumes)
 	{
-		VolumeRegion *vr = list_vr_.at(i);
 		float t_0 = -1, t_1 = -1;
-		if(vr->intersect(ray, t_0, t_1))
+		if(v.second->intersect(ray, t_0, t_1))
 		{
 			float random = (*state.prng_)();
-			Rgb optical_thickness = vr->tau(ray, step_size_, random);
+			Rgb optical_thickness = v.second->tau(ray, step_size_, random);
 			tr *= Rgba(fExp__(-optical_thickness.energy()));
 		}
 	}
@@ -306,25 +293,20 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasse
 
 	Rgba result(0.f);
 	//return result;
-
 	if(vr_size_ == 0) return result;
 
 	bool hit = (ray.tmax_ > 0.f);
+	const auto &volumes = scene_->getVolumeRegions();
 
 	// find min t0 and max t1
-	for(unsigned int i = 0; i < vr_size_; i++)
+	for(const auto &v : volumes)
 	{
 		float t_0_tmp = 0.f, t_1_tmp = 0.f;
-		VolumeRegion *vr = list_vr_.at(i);
-
-		if(!vr->intersect(ray, t_0_tmp, t_1_tmp)) continue;
-
+		if(!v.second->intersect(ray, t_0_tmp, t_1_tmp)) continue;
 		if(hit && ray.tmax_ < t_0_tmp) continue;
 
 		if(t_0_tmp < 0.f) t_0_tmp = 0.f;
-
 		if(hit && ray.tmax_ < t_1_tmp) t_1_tmp = ray.tmax_;
-
 		if(t_1_tmp > t_1) t_1 = t_1_tmp;
 		if(t_0_tmp < t_0) t_0 = t_0_tmp;
 	}
@@ -355,10 +337,9 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasse
 			Point3 p = ray.from_ + (step_size_ * i + pos) * ray.dir_;
 
 			float density = 0;
-			for(unsigned int j = 0; j < vr_size_; j++)
+			for(const auto &v : volumes)
 			{
-				VolumeRegion *vr = list_vr_.at(j);
-				density += vr->sigmaT(p, Vec3()).energy();
+				density += v.second->sigmaT(p, Vec3()).energy();
 			}
 
 			density_samples.at(i) = density;
@@ -408,13 +389,12 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasse
 		}
 		else
 		{
-			for(unsigned int j = 0; j < vr_size_; j++)
+			for(const auto &v : volumes)
 			{
-				VolumeRegion *vr = list_vr_.at(j);
 				float t_0_tmp = -1, t_1_tmp = -1;
-				if(vr->intersect(step_ray, t_0_tmp, t_1_tmp))
+				if(v.second->intersect(step_ray, t_0_tmp, t_1_tmp))
 				{
-					step_tau += vr->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
+					step_tau += v.second->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
 				}
 			}
 		}
@@ -432,13 +412,12 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasse
 		}
 
 		float sigma_s = 0.0f;
-		for(unsigned int i = 0; i < vr_size_; i++)
+		for(const auto &v : volumes)
 		{
-			VolumeRegion *vr = list_vr_.at(i);
 			float t_0_tmp = -1, t_1_tmp = -1;
-			if(list_vr_.at(i)->intersect(step_ray, t_0_tmp, t_1_tmp))
+			if(v.second->intersect(step_ray, t_0_tmp, t_1_tmp))
 			{
-				sigma_s += vr->sigmaS(step_ray.from_, step_ray.dir_).energy();
+				sigma_s += v.second->sigmaS(step_ray.from_, step_ray.dir_).energy();
 			}
 		}
 
@@ -482,7 +461,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasse
 	return result;
 }
 
-Integrator *SingleScatterIntegrator::factory(ParamMap &params, RenderEnvironment &render) {
+Integrator *SingleScatterIntegrator::factory(ParamMap &params, Scene &scene) {
 	bool adapt = false;
 	bool opt = false;
 	float s_size = 1.f;

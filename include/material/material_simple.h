@@ -35,7 +35,7 @@ BEGIN_YAFARAY
 class LightMaterial final : public Material
 {
 	public:
-		static Material *factory(ParamMap &params, std::list< ParamMap > &eparans, RenderEnvironment &env);
+		static Material *factory(ParamMap &params, std::list< ParamMap > &eparans, Scene &scene);
 
 	private:
 		LightMaterial(Rgb light_c, bool ds = false);

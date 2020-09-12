@@ -21,7 +21,6 @@
 #include "material/material_blend.h"
 #include "shader/shader_node.h"
 #include "utility/util_sample.h"
-#include "common/environment.h"
 #include "common/surface.h"
 #include "common/param.h"
 #include "common/scene.h"
@@ -461,7 +460,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &env)
+Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
 	std::string name;
 	const Material *m_1 = nullptr, *m_2 = nullptr;
@@ -477,9 +476,9 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	Rgb wire_frame_color = Rgb(1.f); //!< Wireframe shading color
 
 	if(! params.getParam("material1", name)) return nullptr;
-	m_1 = env.getMaterial(name);
+	m_1 = scene.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m_2 = env.getMaterial(name);
+	m_2 = scene.getMaterial(name);
 	params.getParam("blend_value", blend_val);
 
 	params.getParam("receive_shadows", receive_shadows);
@@ -513,7 +512,7 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	mat->setSamplingFactor(samplingfactor);
 
 	std::vector<ShaderNode *> roots;
-	if(mat->loadNodes(eparams, env))
+	if(mat->loadNodes(eparams, scene))
 	{
 		if(params.getParam("mask", name))
 		{

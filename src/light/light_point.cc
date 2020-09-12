@@ -20,7 +20,6 @@
 
 #include "light/light_point.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "common/param.h"
 
@@ -101,7 +100,7 @@ void PointLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf
 	cos_wo = 1.f;
 }
 
-Light *PointLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *PointLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);

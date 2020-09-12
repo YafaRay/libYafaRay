@@ -31,24 +31,24 @@
 
 BEGIN_YAFARAY
 
-VolumeRegion *VolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *VolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(params, render);
-	else if(type == "GridVolume") return GridVolumeRegion::factory(params, render);
-	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(params, render);
-	else if(type == "SkyVolume") return SkyVolumeRegion::factory(params, render);
-	else if(type == "UniformVolume") return UniformVolumeRegion::factory(params, render);
+	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(params, scene);
+	else if(type == "GridVolume") return GridVolumeRegion::factory(params, scene);
+	else if(type == "NoiseVolume") return NoiseVolumeRegion::factory(params, scene);
+	else if(type == "SkyVolume") return SkyVolumeRegion::factory(params, scene);
+	else if(type == "UniformVolume") return UniformVolumeRegion::factory(params, scene);
 	else return nullptr;
 }
 
-VolumeHandler *VolumeHandler::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeHandler *VolumeHandler::factory(const ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "beer") return BeerVolumeHandler::factory(params, render);
-	else if(type == "sss") return SssVolumeHandler::factory(params, render);
+	if(type == "beer") return BeerVolumeHandler::factory(params, scene);
+	else if(type == "sss") return SssVolumeHandler::factory(params, scene);
 	else return nullptr;
 }
 

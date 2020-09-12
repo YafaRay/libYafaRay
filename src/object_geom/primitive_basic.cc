@@ -20,10 +20,10 @@
 
 #include "object_geom/primitive_basic.h"
 #include "object_geom/object_geom.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/bound.h"
 #include "common/surface.h"
+#include "common/scene.h"
 
 BEGIN_YAFARAY
 
@@ -72,7 +72,7 @@ void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data
 	sp.light_ = nullptr;
 }
 
-ObjectGeometric *sphereFactory__(ParamMap &params, RenderEnvironment &env)
+ObjectGeometric *sphereFactory__(ParamMap &params, Scene &scene)
 {
 	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);
@@ -82,7 +82,7 @@ ObjectGeometric *sphereFactory__(ParamMap &params, RenderEnvironment &env)
 	params.getParam("radius", radius);
 	params.getParam("material", matname);
 	if(matname.empty()) return nullptr;
-	mat = env.getMaterial(matname);
+	mat = scene.getMaterial(matname);
 	if(!mat) return nullptr;
 	Sphere *sphere = new Sphere(center, radius, mat);
 	return new PrimitiveObject(sphere);

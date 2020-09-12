@@ -29,11 +29,11 @@
 BEGIN_YAFARAY
 
 class Scene;
-class RenderEnvironment;
+class Scene;
 class XmlParser;
 enum ColorSpace : int;
 
-bool LIBYAFARAY_EXPORT parseXmlFile__(const char *filename, Scene *scene, RenderEnvironment *env, ParamMap &render, std::string color_space_string, float input_gamma);
+bool LIBYAFARAY_EXPORT parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, std::string color_space_string, float input_gamma);
 
 typedef void (*StartElementCb_t)(XmlParser &p, const char *element, const char **attrs);
 typedef void (*EndElementCb_t)(XmlParser &p, const char *element);
@@ -53,7 +53,7 @@ struct ParserStateT
 class XmlParser
 {
 	public:
-		XmlParser(RenderEnvironment *renv, Scene *sc, ParamMap &r, ColorSpace input_color_space, float input_gamma);
+		XmlParser(Scene *scene, ParamMap &r, ColorSpace input_color_space, float input_gamma);
 		void pushState(StartElementCb_t start, EndElementCb_t end, void *userdata = nullptr);
 		void popState();
 		void startElement(const char *element, const char **attrs) { ++level_; if(current_) current_->start_(*this, element, attrs); }
@@ -71,7 +71,6 @@ class XmlParser
 		std::string getLastElementName() const { return current_->last_element_; }
 		std::string getLastElementNameAttrs() const { return current_->last_element_attrs_; }
 
-		RenderEnvironment *env_;
 		Scene *scene_;
 		ParamMap params_, &render_;
 		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.

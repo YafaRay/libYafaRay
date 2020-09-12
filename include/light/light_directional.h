@@ -28,12 +28,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class DirectionalLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		DirectionalLight(const Point3 &pos, Vec3 dir, const Rgb &col, float inte, bool inf, float rad, bool b_light_enabled = true, bool b_cast_shadows = true);

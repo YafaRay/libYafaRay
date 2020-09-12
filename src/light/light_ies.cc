@@ -20,7 +20,6 @@
 
 #include "light/light_ies.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "utility/util_ies.h"
 #include "common/param.h"
@@ -187,7 +186,7 @@ void IesLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, 
 	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 
-Light *IesLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *IesLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);

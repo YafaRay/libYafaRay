@@ -27,9 +27,11 @@ BEGIN_YAFARAY
 class EmissionIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
+		virtual std::string getShortName() const override { return "Em"; }
+		virtual std::string getName() const override { return "Emission"; }
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
 		// emission part

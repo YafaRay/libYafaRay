@@ -21,7 +21,6 @@
 #include "material/material_mask.h"
 #include "shader/shader_node.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 
@@ -130,7 +129,7 @@ float MaskMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, c
 	return alpha;
 }
 
-Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, RenderEnvironment &env)
+Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, Scene &scene)
 {
 	std::string name;
 	const Material *m_1 = nullptr, *m_2 = nullptr;
@@ -141,11 +140,11 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 
 	params.getParam("threshold", thresh);
 	if(! params.getParam("material1", name)) return nullptr;
-	m_1 = env.getMaterial(name);
+	m_1 = scene.getMaterial(name);
 	if(! params.getParam("material2", name)) return nullptr;
-	m_2 = env.getMaterial(name);
+	m_2 = scene.getMaterial(name);
 	//if(! params.getParam("mask", name) ) return nullptr;
-	//mask = env.getTexture(*name);
+	//mask = scene.getTexture(*name);
 
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
@@ -163,7 +162,7 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<ShaderNode *> roots;
-	if(mat->loadNodes(eparams, env))
+	if(mat->loadNodes(eparams, scene))
 	{
 		if(params.getParam("mask", name))
 		{

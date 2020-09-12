@@ -31,15 +31,15 @@ class Triangle;
 template<class T> class KdTree;
 class Pdf1D;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class MeshLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
-		MeshLight(unsigned int msh, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
+		MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
 		virtual ~MeshLight() override;
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
@@ -56,7 +56,7 @@ class MeshLight final : public Light
 		void initIs();
 		void sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const;
 
-		unsigned int obj_id_;
+		std::string object_name_;
 		bool double_sided_;
 		Rgb color_;
 		Pdf1D *area_dist_;

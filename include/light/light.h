@@ -27,7 +27,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 class SurfacePoint;
 class Background;
 class Ray;
@@ -39,7 +39,7 @@ struct LSample;
 class Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
 		static constexpr bool hasFlag(const Light::Flags &f_1, const Light::Flags &f_2);
 		Light() = default;

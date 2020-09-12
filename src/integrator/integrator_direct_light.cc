@@ -34,7 +34,6 @@ BEGIN_YAFARAY
 
 DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth, int ray_depth)
 {
-	type_ = Surface;
 	caus_radius_ = 0.25;
 	caus_depth_ = 10;
 	n_caus_photons_ = 100000;
@@ -43,8 +42,6 @@ DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth,
 	use_photon_caustics_ = false;
 	s_depth_ = shadow_depth;
 	r_depth_ = ray_depth;
-	integrator_name_ = "DirectLight";
-	integrator_short_name_ = "DL";
 }
 
 bool DirectLightIntegrator::preprocess()
@@ -67,8 +64,7 @@ bool DirectLightIntegrator::preprocess()
 		set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
 	}
 
-	background_ = scene_->getBackground();
-	lights_ = scene_->lights_;
+	lights_ = scene_->getLightsVisible();
 
 	if(use_photon_caustics_)
 	{
@@ -87,7 +83,7 @@ bool DirectLightIntegrator::preprocess()
 	}
 
 	g_timer__.stop("prepass");
-	Y_INFO << integrator_name_ << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
@@ -176,9 +172,9 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 	}
 	else // Nothing hit, return background if any
 	{
-		if(background_ && !transp_refracted_background_)
+		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
+			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
 		}
 	}
 
@@ -198,7 +194,7 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPas
 	return Rgba(col, alpha);
 }
 
-Integrator *DirectLightIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *DirectLightIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	bool transp_shad = false;
 	bool caustics = false;

@@ -34,7 +34,7 @@ enum class InterpolationType : int;
 class Texture
 {
 	public :
-		static Texture *factory(ParamMap &params, RenderEnvironment &render);
+		static Texture *factory(ParamMap &params, Scene &scene);
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
 		virtual bool discrete() const { return false; }

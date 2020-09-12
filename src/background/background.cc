@@ -23,20 +23,19 @@
 #include "background/background_texture.h"
 #include "background/background_constant.h"
 #include "background/background_sunsky.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-Background *Background::factory(ParamMap &params, RenderEnvironment &render)
+Background *Background::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "darksky") return DarkSkyBackground::factory(params, render);
-	else if(type == "gradientback") return GradientBackground::factory(params, render);
-	else if(type == "sunsky") return SunSkyBackground::factory(params, render);
-	else if(type == "textureback") return TextureBackground::factory(params, render);
-	else if(type == "constant") return ConstantBackground::factory(params, render);
+	if(type == "darksky") return DarkSkyBackground::factory(params, scene);
+	else if(type == "gradientback") return GradientBackground::factory(params, scene);
+	else if(type == "sunsky") return SunSkyBackground::factory(params, scene);
+	else if(type == "textureback") return TextureBackground::factory(params, scene);
+	else if(type == "constant") return ConstantBackground::factory(params, scene);
 	else return nullptr;
 }
 

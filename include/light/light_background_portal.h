@@ -31,17 +31,17 @@ class TriangleObject;
 class Triangle;
 class Pdf1D;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 class Background;
 template<class T> class KdTree;
 
 class BackgroundPortalLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
-		BackgroundPortalLight(unsigned int msh, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
+		BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
 		virtual ~BackgroundPortalLight() override;
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
@@ -59,7 +59,7 @@ class BackgroundPortalLight final : public Light
 		void initIs();
 		void sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const;
 
-		unsigned int object_id_;
+		std::string object_name_;
 		Pdf1D *area_dist_ = nullptr;
 		const Triangle **tris_ = nullptr;
 		int samples_;

@@ -22,7 +22,6 @@
 #include "common/color.h"
 #include "common/bound.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -87,7 +86,7 @@ Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb(0.f);
 }
 
-VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

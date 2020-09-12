@@ -22,7 +22,6 @@
 #include "common/bound.h"
 #include "common/surface.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_mcqmc.h"
 
@@ -97,7 +96,7 @@ float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 }
 
 
-VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

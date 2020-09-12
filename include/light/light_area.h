@@ -25,13 +25,13 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 
 class AreaLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
@@ -54,7 +54,7 @@ class AreaLight final : public Light
 		Vec3 du_, dv_; //!< directions for hemisampler (emitting photons)
 		Rgb color_; //!< includes intensity amplification! so...
 		int samples_;
-		unsigned int object_id_;
+		std::string object_name_;
 		float intensity_; //!< ...this is actually redundant.
 		float area_, inv_area_;
 };

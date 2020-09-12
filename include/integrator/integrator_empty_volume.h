@@ -29,9 +29,11 @@ BEGIN_YAFARAY
 class EmptyVolumeIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
+		virtual std::string getShortName() const override { return "EV"; }
+		virtual std::string getName() const override { return "EmptyVolume"; }
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
 		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
 

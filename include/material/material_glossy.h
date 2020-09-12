@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class GlossyMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
+		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
 		GlossyMaterial(const Rgb &col, const Rgb &dcol, float reflect, float diff, float expo, bool as_diffuse, Visibility e_visibility = Material::Visibility::NormalVisible);

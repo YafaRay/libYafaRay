@@ -36,7 +36,7 @@ typedef Rgba (TgaHandler::*ColorProcessor_t)(void *data);
 class TgaHandler final : public ImageHandler
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
+		static ImageHandler *factory(ParamMap &params, Scene &scene);
 
 	private:
 		TgaHandler();

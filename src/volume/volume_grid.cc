@@ -22,7 +22,6 @@
 #include "common/bound.h"
 #include "common/surface.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_mcqmc.h"
 
@@ -65,7 +64,7 @@ float GridVolumeRegion::density(Point3 p) const
 	return dens;
 }
 
-VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

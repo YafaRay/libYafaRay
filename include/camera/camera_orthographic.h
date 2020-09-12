@@ -26,7 +26,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class OrthographicCamera final: public Camera
 {
@@ -38,7 +38,7 @@ class OrthographicCamera final: public Camera
 		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const;
 		virtual Point3 screenproject(const Point3 &p) const;
 
-		static Camera *factory(ParamMap &params, RenderEnvironment &render);
+		static Camera *factory(ParamMap &params, Scene &scene);
 	protected:
 		float scale_;
 		Point3 pos_;

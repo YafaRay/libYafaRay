@@ -216,7 +216,7 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
     }
 
-	virtual ~YafPyOutput()
+	virtual ~YafPyOutput() override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
@@ -237,7 +237,7 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
-	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha = true)
+	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha = true) override
 	{
 		if(idx < (int) tiles_passes.at(numView).size())
 		{
@@ -251,7 +251,7 @@ public:
 		return true;
 	}
 
-	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &colExtPasses, bool alpha = true)
+	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &colExtPasses, bool alpha = true) override
 	{
 		for(size_t idx = 0; idx < tiles_passes.at(numView).size(); ++idx)
 		{
@@ -265,9 +265,9 @@ public:
 		return true;
 	}
 
-	virtual bool isPreview() { return preview; }
+	virtual bool isPreview() const override { return preview; }
 
-	virtual void flush(int numView_unused, const yafaray4::RenderPasses *render_passes)
+	virtual void flush(int numView_unused, const yafaray4::RenderPasses *render_passes) override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
@@ -308,7 +308,7 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
-	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray4::RenderPasses *render_passes)
+	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray4::RenderPasses *render_passes) override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		std::string view_name = render_passes->view_names_.at(numView);
@@ -352,7 +352,7 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
-	virtual void highlightArea(int numView, int x0, int y0, int x1, int y1)
+	virtual void highlightArea(int numView, int x0, int y0, int x1, int y1) override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		std::string view_name = "";
@@ -607,7 +607,7 @@ namespace yafaray4
 	class ColorOutput
 	{
 		public:
-		virtual ~ColorOutput() {};
+		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) = 0;
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) = 0;
@@ -622,14 +622,15 @@ namespace yafaray4
 	class ImageHandler
 	{
 		public:
+		static ImageHandler *factory(ParamMap &params, Scene &scene);
 		virtual ~ImageHandler() = default;
 		virtual bool loadFromFile(const std::string &name) = 0;
 		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
 		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
 		virtual bool isHdr() const { return false; }
-		virtual bool isMultiLayer() const { return multi_layer_; }
-		virtual bool denoiseEnabled() const { return denoise_; }
+		bool isMultiLayer() const { return multi_layer_; }
+		bool denoiseEnabled() const { return denoise_; }
 		TextureOptimization getTextureOptimization() const { return texture_optimization_; }
 		void setTextureOptimization(const TextureOptimization &texture_optimization) { texture_optimization_ = texture_optimization; }
 		void setGrayScaleSetting(bool grayscale) { grayscale_ = grayscale; }
@@ -651,31 +652,11 @@ namespace yafaray4
 		public:
 		ImageOutput() = default;
 		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
-
 		private:
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true);
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true);
-		virtual void flush(int num_view, const RenderPasses *render_passes);
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) {} // not used by images... yet
-		virtual bool isImageOutput() { return true; }
-		virtual std::string getDenoiseParams() const
-		{
-			if(image_) return image_->getDenoiseParams();
-			else return "";
-		}
-		void saveImageFile(std::string filename, int idx);
-		void saveImageFileMultiChannel(std::string filename, const RenderPasses *render_passes);
-	};
-
-	class MemoryInputOutput : public ColorOutput
-	{
-		public:
-		MemoryInputOutput(int resx, int resy, float *i_mem);
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true);
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true);
-		void flush(int num_view, const RenderPasses *render_passes);
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) {}; // no tiled file format used...yet
-		virtual ~MemoryInputOutput();
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) override;
+		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
+		virtual void flush(int num_view, const RenderPasses *render_passes) override;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {} // not used by images... yet
 	};
 
 	// Utility classes
@@ -683,12 +664,11 @@ namespace yafaray4
 	class Matrix4
 	{
 		public:
-		Matrix4() {};
+		Matrix4() = default;
 		Matrix4(const float init);
 		Matrix4(const Matrix4 &source);
 		Matrix4(const float source[4][4]);
 		Matrix4(const double source[4][4]);
-		~Matrix4() {};
 		/*! attention, this function can cause the matrix to become invalid!
 			unless you are sure the matrix is invertible, check invalid() afterwards! */
 		Matrix4 &inverse();
@@ -700,17 +680,10 @@ namespace yafaray4
 		void rotateZ(float degrees);
 		void scale(float sx, float sy, float sz);
 		int invalid() const { return invalid_; }
-//		const float *operator [](int i) const { return matrix_[i]; }
-//		float *operator [](int i) { return matrix_[i]; }
-		void setVal(int row, int col, float val)
-		{
-			matrix_[row][col] = val;
-		}
-
-		float getVal(int row, int col)
-		{
-			return matrix_[row][col];
-		}
+		//const float *operator [](int i) const { return matrix_[i]; }
+		//float *operator [](int i) { return matrix_[i]; }
+		void setVal(int row, int col, float val) { matrix_[row][col] = val; };
+		float getVal(int row, int col) { return matrix_[row][col]; }
 	};
 
 	// Interfaces
@@ -728,9 +701,8 @@ namespace yafaray4
 			\param id returns the ID of the created mesh
 		*/
 		virtual unsigned int getNextFreeId();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
+		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
+		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
@@ -739,8 +711,8 @@ namespace yafaray4
 		virtual bool addTriangle(int a, int b, int c, const Material *mat); //!< add a triangle given vertex indices and material pointer
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUv(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
-		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world);
+		virtual bool smoothMesh(const char *name, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+		virtual bool addInstance(const char *base_object_name, Matrix4 obj_to_world);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char *name, double x, double y, double z);
@@ -758,7 +730,7 @@ namespace yafaray4
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
-		// functions directly related to renderEnvironment_t
+		// functions directly related to Scene_t
 		virtual Light 		*createLight(const char *name);
 		virtual Texture 		*createTexture(const char *name);
 		virtual Material 	*createMaterial(const char *name);
@@ -770,13 +742,13 @@ namespace yafaray4
 		virtual unsigned int 	createObject(const char *name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
-		virtual bool startScene(int type = 0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }
 		virtual bool getRenderedImage(int num_view, ColorOutput &output); //!< put the rendered image to output
+
 		void setConsoleVerbosityLevel(const std::string &str_v_level);
 		void setLogVerbosityLevel(const std::string &str_v_level);
 
@@ -786,12 +758,12 @@ namespace yafaray4
 		std::string getVersion() const; //!< Get version to check against the exporters
 
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
-		void printDebug(const std::string &msg);
-		void printVerbose(const std::string &msg);
-		void printInfo(const std::string &msg);
-		void printParams(const std::string &msg);
-		void printWarning(const std::string &msg);
-		void printError(const std::string &msg);
+		void printDebug(const std::string &msg) const;
+		void printVerbose(const std::string &msg) const;
+		void printInfo(const std::string &msg) const;
+		void printParams(const std::string &msg) const;
+		void printWarning(const std::string &msg) const;
+		void printError(const std::string &msg) const;
 
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
 		void setOutput2(ColorOutput *out_2);
@@ -802,40 +774,36 @@ namespace yafaray4
 		public:
 		XmlInterface();
 		// directly related to scene_t:
-		virtual bool setLoggingAndBadgeSettings();
-		virtual bool setupRenderPasses(); //!< setup render passes information
-		virtual bool startGeometry();
-		virtual bool endGeometry();
-		virtual unsigned int getNextFreeId();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0);
-		virtual bool endTriMesh();
-		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world);
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
-		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
-		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
-		virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c, const Material *mat);
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
-		virtual int  addUv(float u, float v);
-		virtual bool smoothMesh(unsigned int id, double angle);
+		virtual bool setLoggingAndBadgeSettings() override;
+		virtual bool setupRenderPasses() override; //!< setup render passes information
+		virtual bool startGeometry() override;
+		virtual bool endGeometry() override;
+		virtual unsigned int getNextFreeId() override;
+		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
+		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0) override;
+		virtual bool endTriMesh() override;
+		virtual bool addInstance(const char *base_object_name, Matrix4 obj_to_world) override;
+		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) override;
+		virtual int  addVertex(double x, double y, double z) override; //!< add vertex to mesh; returns index to be used for addTriangle
+		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
+		virtual void addNormal(double nx, double ny, double nz) override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
+		virtual bool addTriangle(int a, int b, int c, const Material *mat) override;
+		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) override;
+		virtual int  addUv(float u, float v) override;
+		virtual bool smoothMesh(const char *name, double angle) override;
 
-		// functions directly related to renderEnvironment_t
-		virtual Light 		*createLight(const char *name);
-		virtual Texture 		*createTexture(const char *name);
-		virtual Material 	*createMaterial(const char *name);
-		virtual Camera 		*createCamera(const char *name);
-		virtual Background 	*createBackground(const char *name);
-		virtual Integrator 	*createIntegrator(const char *name);
-		virtual VolumeRegion 	*createVolumeRegion(const char *name);
-		virtual unsigned int 	createObject(const char *name);
-		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
-		virtual bool startScene(int type = 0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
-
-		virtual void setOutfile(const char *fname);
-
+		// functions directly related to Scene_t
+		virtual Light 		*createLight(const char *name) override;
+		virtual Texture 		*createTexture(const char *name) override;
+		virtual Material 	*createMaterial(const char *name) override;
+		virtual Camera 		*createCamera(const char *name) override;
+		virtual Background 	*createBackground(const char *name) override;
+		virtual Integrator 	*createIntegrator(const char *name) override;
+		virtual VolumeRegion 	*createVolumeRegion(const char *name) override;
+		virtual unsigned int 	createObject(const char *name) override;
+		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
+		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr) override; //!< render the scene...
+		void setOutfile(const char *fname);
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 	};
 

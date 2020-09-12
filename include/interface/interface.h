@@ -37,7 +37,7 @@ class Background;
 class Integrator;
 class VolumeRegion;
 class Scene;
-class RenderEnvironment;
+class Scene;
 class ColorOutput;
 class ParamMap;
 class ImageFilm;
@@ -58,9 +58,8 @@ class LIBYAFARAY_EXPORT Interface
 			\param id returns the ID of the created mesh
 		*/
 		virtual unsigned int getNextFreeId();
-		virtual bool startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startCurveMesh(unsigned int id, int vertices, int obj_pass_index = 0);
-		virtual bool startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
+		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
+		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
 		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
@@ -69,8 +68,8 @@ class LIBYAFARAY_EXPORT Interface
 		virtual bool addTriangle(int a, int b, int c, const Material *mat); //!< add a triangle given vertex indices and material pointer
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUv(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
-		virtual bool smoothMesh(unsigned int id, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual bool addInstance(unsigned int base_object_id, Matrix4 obj_to_world);
+		virtual bool smoothMesh(const char *name, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
+		virtual bool addInstance(const char *base_object_name, Matrix4 obj_to_world);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char *name, double x, double y, double z);
@@ -88,7 +87,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
-		// functions directly related to renderEnvironment_t
+		// functions directly related to Scene_t
 		virtual Light 		*createLight(const char *name);
 		virtual Texture 		*createTexture(const char *name);
 		virtual Material 	*createMaterial(const char *name);
@@ -100,7 +99,6 @@ class LIBYAFARAY_EXPORT Interface
 		virtual unsigned int 	createObject(const char *name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
-		virtual bool startScene(int type = 0); //!< start a new scene; Must be called before any of the scene_t related callbacks!
 		virtual bool setLoggingAndBadgeSettings();
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
@@ -117,12 +115,12 @@ class LIBYAFARAY_EXPORT Interface
 		std::string getVersion() const; //!< Get version to check against the exporters
 
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
-		void printDebug(const std::string &msg);
-		void printVerbose(const std::string &msg);
-		void printInfo(const std::string &msg);
-		void printParams(const std::string &msg);
-		void printWarning(const std::string &msg);
-		void printError(const std::string &msg);
+		void printDebug(const std::string &msg) const;
+		void printVerbose(const std::string &msg) const;
+		void printInfo(const std::string &msg) const;
+		void printParams(const std::string &msg) const;
+		void printWarning(const std::string &msg) const;
+		void printError(const std::string &msg) const;
 
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
 		void setOutput2(ColorOutput *out_2);
@@ -131,15 +129,11 @@ class LIBYAFARAY_EXPORT Interface
 		ParamMap *params_;
 		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
-		RenderEnvironment *env_;
 		Scene *scene_;
 		ImageFilm *film_;
 		float input_gamma_;
 		ColorSpace input_color_space_;
 };
-
-typedef Interface *InterfaceConstructor_t();
-
 
 END_YAFARAY
 

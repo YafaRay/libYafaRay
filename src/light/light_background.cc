@@ -21,7 +21,6 @@
 
 #include "light/light_background.h"
 #include "background/background.h"
-#include "common/environment.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "common/scene.h"
@@ -236,7 +235,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 	area_pdf = 1.f;
 }
 
-Light *BackgroundLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *BackgroundLight::factory(ParamMap &params, Scene &scene)
 {
 	int samples = 16;
 	bool shoot_d = true;

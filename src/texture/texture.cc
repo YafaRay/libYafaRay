@@ -20,24 +20,23 @@
 #include "texture/texture.h"
 #include "texture/texture_basic.h"
 #include "texture/texture_image.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-Texture *Texture::factory(ParamMap &params, RenderEnvironment &render)
+Texture *Texture::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "blend") return BlendTexture::factory(params, render);
-	else if(type == "clouds") return CloudsTexture::factory(params, render);
-	else if(type == "marble") return MarbleTexture::factory(params, render);
-	else if(type == "wood") return WoodTexture::factory(params, render);
-	else if(type == "voronoi") return VoronoiTexture::factory(params, render);
-	else if(type == "musgrave") return MusgraveTexture::factory(params, render);
-	else if(type == "distorted_noise") return DistortedNoiseTexture::factory(params, render);
-	else if(type == "rgb_cube") return RgbCubeTexture::factory(params, render);
-	else if(type == "image") return ImageTexture::factory(params, render);
+	if(type == "blend") return BlendTexture::factory(params, scene);
+	else if(type == "clouds") return CloudsTexture::factory(params, scene);
+	else if(type == "marble") return MarbleTexture::factory(params, scene);
+	else if(type == "wood") return WoodTexture::factory(params, scene);
+	else if(type == "voronoi") return VoronoiTexture::factory(params, scene);
+	else if(type == "musgrave") return MusgraveTexture::factory(params, scene);
+	else if(type == "distorted_noise") return DistortedNoiseTexture::factory(params, scene);
+	else if(type == "rgb_cube") return RgbCubeTexture::factory(params, scene);
+	else if(type == "image") return ImageTexture::factory(params, scene);
 	else return nullptr;
 }
 

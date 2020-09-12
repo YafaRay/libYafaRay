@@ -21,7 +21,6 @@
  */
 
 #include "camera/camera_equirectangular.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -64,7 +63,7 @@ Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, floa
 	return ray;
 }
 
-Camera *EquirectangularCamera::factory(ParamMap &params, RenderEnvironment &render)
+Camera *EquirectangularCamera::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

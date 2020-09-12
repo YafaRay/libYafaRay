@@ -19,7 +19,6 @@
 #include "volume/volumehandler_beer.h"
 #include "common/scene.h"
 #include "material/material.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_sample.h"
 
@@ -52,7 +51,7 @@ bool BeerVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s
 	return false;
 }
 
-VolumeHandler *BeerVolumeHandler::factory(const ParamMap &params, RenderEnvironment &env)
+VolumeHandler *BeerVolumeHandler::factory(const ParamMap &params, Scene &scene)
 {
 	Rgb a_col(0.5f);
 	double dist = 1.f;

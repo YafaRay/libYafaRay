@@ -33,7 +33,7 @@ BEGIN_YAFARAY
 */
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 class Scene;
 class ProgressBar;
 class ImageFilm;
@@ -48,7 +48,7 @@ class ColorPasses;
 class Integrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 		Integrator() = default;
 		virtual ~Integrator() = default;
@@ -63,17 +63,14 @@ class Integrator
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
 		virtual void cleanup() {}
-		std::string getShortName() const { return integrator_short_name_; }
-		std::string getName() const { return integrator_name_; }
+		virtual std::string getShortName() const = 0;
+		virtual std::string getName() const = 0;
 		enum Type { Surface, Volume };
-		Type integratorType() { return type_; }
+		virtual Type integratorType() const = 0;
 
 	protected:
-		Type type_;
 		Scene *scene_ = nullptr;
 		ProgressBar *intpb_ = nullptr;
-		std::string integrator_name_;
-		std::string integrator_short_name_;
 };
 
 class SurfaceIntegrator: public Integrator
@@ -82,6 +79,7 @@ class SurfaceIntegrator: public Integrator
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
 	protected:
 		SurfaceIntegrator() = default;
+		virtual Type integratorType() const override { return Surface; }
 };
 
 class VolumeIntegrator: public Integrator
@@ -91,6 +89,7 @@ class VolumeIntegrator: public Integrator
 		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
 	protected:
 		VolumeIntegrator() = default;
+		virtual Type integratorType() const override { return Volume; }
 };
 
 END_YAFARAY

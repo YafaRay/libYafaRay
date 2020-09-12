@@ -25,7 +25,7 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 class ObjectGeometric;
 class Bound;
@@ -50,7 +50,7 @@ class Sphere final : public Primitive
 		const Material *material_ = nullptr;
 };
 
-ObjectGeometric *sphereFactory__(ParamMap &params, RenderEnvironment &env);
+ObjectGeometric *sphereFactory__(ParamMap &params, Scene &scene);
 
 END_YAFARAY
 

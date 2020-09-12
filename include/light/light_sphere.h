@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 /*! sphere lights are *drumroll* lights with a sphere shape.
 	They only emit light on the outside! On the inside it is somewhat pointless,
@@ -41,7 +41,7 @@ class RenderEnvironment;
 class SphereLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		SphereLight(const Point3 &c, float rad, const Rgb &col, float inte, int nsam, bool b_light_enabled = true, bool b_cast_shadows = true);
@@ -62,7 +62,7 @@ class SphereLight final : public Light
 		float radius_, square_radius_, square_radius_epsilon_;
 		Rgb color_; //!< includes intensity amplification! so...
 		int samples_;
-		unsigned int obj_id_;
+		std::string object_name_;
 		float area_, inv_area_;
 };
 

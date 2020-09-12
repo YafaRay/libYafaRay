@@ -20,7 +20,6 @@
 #include "object_geom/primitive_basic.h"
 #include "common/triangle.h"
 #include "common/param.h"
-#include "common/environment.h"
 #include <cstdlib>
 
 BEGIN_YAFARAY
@@ -28,11 +27,11 @@ BEGIN_YAFARAY
 float ObjectGeometric::highest_object_index_ = 1.f;	//Initially this class shared variable will be 1.f
 unsigned int ObjectGeometric::object_index_auto_ = 0;	//Initially this class shared variable will be 0
 
-ObjectGeometric *ObjectGeometric::factory(ParamMap &params, RenderEnvironment &render)
+ObjectGeometric *ObjectGeometric::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "sphere") return sphereFactory__(params, render);
+	if(type == "sphere") return sphereFactory__(params, scene);
 	else return nullptr;
 }
 

@@ -23,7 +23,6 @@
 #include "volume/volume.h"
 #include "common/bound.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -37,7 +36,7 @@ float ExpDensityVolumeRegion::density(Point3 p) const
 	return a_ * fExp__(-b_ * height);
 }
 
-VolumeRegion *ExpDensityVolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *ExpDensityVolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

@@ -61,10 +61,12 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);
+		virtual std::string getShortName() const override { return "SPPM"; }
+		virtual std::string getName() const override { return "SPPM"; }
 		virtual bool render(int num_view, ImageFilm *image_film) override;
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(int num_view, RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0) override;
@@ -77,7 +79,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(RenderState &state, DiffRay &ray, HitPoint &hp, ColorPasses &color_passes);
-		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng);
+		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons
 		PhotonMap diffuse_map_, caustic_map_; // photonmap

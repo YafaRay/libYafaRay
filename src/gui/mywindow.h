@@ -46,7 +46,7 @@ class MainWindow : public QMainWindow
 {
 		Q_OBJECT
 	public:
-		MainWindow(yafaray4::Interface *env, int resx, int resy, int b_start_x, int b_start_y, Settings settings);
+		MainWindow(yafaray4::Interface *interface, int resx, int resy, int b_start_x, int b_start_y, Settings settings);
 		~MainWindow();
 
 		virtual bool event(QEvent *e);

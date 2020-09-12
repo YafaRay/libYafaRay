@@ -17,7 +17,6 @@
  */
 
 #include "material/material_node.h"
-#include "common/environment.h"
 #include "common/logging.h"
 #include "common/param.h"
 #include "shader/shader_node.h"
@@ -138,7 +137,7 @@ void NodeMaterial::evalBump(NodeStack &stack, const RenderState &state, SurfaceP
 	applyBump(sp, du, dv);
 }
 
-bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, RenderEnvironment &render)
+bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scene)
 {
 	bool error = false;
 	std::string type;
@@ -174,7 +173,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, RenderEnvir
 			break;
 		}
 
-		ShaderNode *shader = ShaderNode::factory(i, render);
+		ShaderNode *shader = ShaderNode::factory(i, scene);
 		if(shader)
 		{
 			m_shaders_table_[name] = shader;

@@ -20,7 +20,6 @@
 #include "yafaray_config.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "common/matrix4.h"
 #include "common/imagefilm.h"
@@ -83,7 +82,9 @@ Interface::Interface(): scene_(nullptr), film_(nullptr), input_gamma_(1.f), inpu
 	sigaction(SIGINT, &signal_handler, nullptr);
 #endif
 
-	env_ = new RenderEnvironment();
+	scene_ = new Scene();
+	global_scene__ = scene_;	//for the CTRL+C handler
+	//scene_->setMode(type); //FIXME!
 	params_ = new ParamMap;
 	eparams_ = new std::list<ParamMap>;
 	cparams_ = params_;
@@ -93,8 +94,6 @@ Interface::~Interface()
 {
 	Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
 	if(scene_) delete scene_;
-	Y_VERBOSE << "Interface: Deleting environment..." << YENDL;
-	if(env_) delete env_;
 	Y_INFO << "Interface: Done." << YENDL;
 	if(film_) delete film_;
 	delete params_;
@@ -104,10 +103,8 @@ Interface::~Interface()
 
 void Interface::clearAll()
 {
-	Y_VERBOSE << "Interface: Cleaning environment..." << YENDL;
-	env_->clearAll();
-	Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
-	if(scene_) delete scene_;
+	Y_VERBOSE << "Interface: Cleaning scene..." << YENDL;
+	scene_->clearAll();
 	Y_VERBOSE << "Interface: Clearing film and parameter maps scene..." << YENDL;
 	scene_ = nullptr;//new scene_t();
 	if(film_) delete film_;
@@ -118,25 +115,15 @@ void Interface::clearAll()
 	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
-bool Interface::startScene(int type)
-{
-	if(scene_) delete scene_;
-	scene_ = new Scene(env_);
-	global_scene__ = scene_;	//for the CTRL+C handler
-	scene_->setMode(type);
-	env_->setScene(scene_);
-	return true;
-}
-
 bool Interface::setLoggingAndBadgeSettings()
 {
-	env_->setupLoggingAndBadge(*params_);
+	scene_->setupLoggingAndBadge(*params_);
 	return true;
 }
 
 bool Interface::setupRenderPasses()
 {
-	env_->setupRenderPasses(*params_);
+	scene_->setupRenderPasses(*params_);
 	return true;
 }
 
@@ -157,34 +144,16 @@ unsigned int Interface::getNextFreeId()
 	return id;
 }
 
-bool Interface::startTriMesh(unsigned int id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
+bool Interface::startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
-	bool success = scene_->startTriMesh(id, vertices, triangles, has_orco, has_uv, type, obj_pass_index);
+	bool success = scene_->startTriMesh(name, vertices, triangles, has_orco, has_uv, type, obj_pass_index);
 	return success;
 }
 
-bool Interface::startCurveMesh(unsigned int id, int vertices, int obj_pass_index)
+bool Interface::startCurveMesh(const char *name, int vertices, int obj_pass_index)
 {
-	bool success = scene_->startCurveMesh(id, vertices, obj_pass_index);
+	bool success = scene_->startCurveMesh(name, vertices, obj_pass_index);
 	return success;
-}
-
-
-bool Interface::startTriMeshPtr(unsigned int *id, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
-{
-	Y_WARNING << "Interface: This method is going to be removed, please use getNextFreeID() and startTriMesh() for trimesh generation" << YENDL;
-	ObjId_t obj_id;
-	obj_id = scene_->getNextFreeId();
-	if(obj_id > 0)
-	{
-		bool success = scene_->startTriMesh(obj_id, vertices, triangles, has_orco, has_uv, type, obj_pass_index);
-		*id = obj_id;
-		return success;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool Interface::endTriMesh() { return scene_->endTriMesh(); }
@@ -211,11 +180,11 @@ bool Interface::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, c
 
 int Interface::addUv(float u, float v) { return scene_->addUv(u, v); }
 
-bool Interface::smoothMesh(unsigned int id, double angle) { return scene_->smoothMesh(id, angle); }
+bool Interface::smoothMesh(const char *name, double angle) { return scene_->smoothMesh(name, angle); }
 
-bool Interface::addInstance(unsigned int base_object_id, Matrix4 obj_to_world)
+bool Interface::addInstance(const char *base_object_name, Matrix4 obj_to_world)
 {
-	return scene_->addInstance(base_object_id, obj_to_world);
+	return scene_->addInstance(base_object_name, obj_to_world);
 }
 // paraMap_t related functions:
 void Interface::paramsSetPoint(const char *name, double x, double y, double z)
@@ -326,36 +295,24 @@ void Interface::paramsEndList()
 
 Light *Interface::createLight(const char *name)
 {
-	Light *light = env_->createLight(name, *params_);
-	if(light) scene_->addLight(light);
-	return light;
+	return scene_->createLight(name, *params_);
 }
 
-Texture 		*Interface::createTexture(const char *name) { return env_->createTexture(name, *params_); }
-Material 	*Interface::createMaterial(const char *name) { return env_->createMaterial(name, *params_, *eparams_); }
+Texture 		*Interface::createTexture(const char *name) { return scene_->createTexture(name, *params_); }
+Material 	*Interface::createMaterial(const char *name) { return scene_->createMaterial(name, *params_, *eparams_); }
 Camera 		*Interface::createCamera(const char *name)
 {
-	Camera *camera = env_->createCamera(name, *params_);
+	Camera *camera = scene_->createCamera(name, *params_);
 	return camera;
 }
-Background 	*Interface::createBackground(const char *name) { return env_->createBackground(name, *params_); }
-Integrator 	*Interface::createIntegrator(const char *name) { return env_->createIntegrator(name, *params_); }
-ImageHandler *Interface::createImageHandler(const char *name, bool add_to_table) { return env_->createImageHandler(name, *params_); }
-
-VolumeRegion 	*Interface::createVolumeRegion(const char *name)
-{
-	VolumeRegion *vr = env_->createVolumeRegion(name, *params_);
-	if(!vr) return nullptr;
-	scene_->addVolumeRegion(vr);
-	return nullptr;
-}
+Background 	*Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
+Integrator 	*Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
+ImageHandler *Interface::createImageHandler(const char *name, bool add_to_table) { return scene_->createImageHandler(name, *params_); }
+VolumeRegion 	*Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
 
 unsigned int Interface::createObject(const char *name)
 {
-	ObjectGeometric *object = env_->createObject(name, *params_);
-	if(!object) return 0;
-	ObjId_t id;
-	if(scene_->addObject(object, id)) return id;
+	scene_->createObject(name, *params_);
 	return 0;
 }
 
@@ -378,39 +335,39 @@ std::string Interface::getVersion() const
 	return YAFARAY_BUILD_VERSION;
 }
 
-void Interface::printDebug(const std::string &msg)
+void Interface::printDebug(const std::string &msg) const
 {
 	Y_DEBUG << msg << YENDL;
 }
 
-void Interface::printVerbose(const std::string &msg)
+void Interface::printVerbose(const std::string &msg) const
 {
 	Y_VERBOSE << msg << YENDL;
 }
 
-void Interface::printInfo(const std::string &msg)
+void Interface::printInfo(const std::string &msg) const
 {
 	Y_INFO << msg << YENDL;
 }
 
-void Interface::printParams(const std::string &msg)
+void Interface::printParams(const std::string &msg) const
 {
 	Y_PARAMS << msg << YENDL;
 }
 
-void Interface::printWarning(const std::string &msg)
+void Interface::printWarning(const std::string &msg) const
 {
 	Y_WARNING << msg << YENDL;
 }
 
-void Interface::printError(const std::string &msg)
+void Interface::printError(const std::string &msg) const
 {
 	Y_ERROR << msg << YENDL;
 }
 
 void Interface::render(ColorOutput &output, ProgressBar *pb)
 {
-	if(! env_->setupScene(*scene_, *params_, output, pb)) return;
+	if(! scene_->setupScene(*scene_, *params_, output, pb)) return;
 	session__.setStatusRenderStarted();
 	scene_->render();
 	film_ = scene_->getImageFilm();
@@ -425,15 +382,13 @@ void Interface::setParamsBadgePosition(const std::string &badge_position)
 bool Interface::getDrawParams()
 {
 	bool dp = false;
-
 	dp = logger__.getUseParamsBadge();
-
 	return dp;
 }
 
 void Interface::setOutput2(ColorOutput *out_2)
 {
-	if(env_) env_->setOutput2(out_2);
+	if(scene_) scene_->setOutput2(out_2);
 }
 
 void Interface::setConsoleVerbosityLevel(const std::string &str_v_level)

@@ -28,7 +28,7 @@ class LayerNode final : public ShaderNode
 {
 	public:
 		enum class Flags : unsigned int { None = 0, RgbToInt = 1 << 0, Stencil = 1 << 1, Negative = 1 << 2, AlphaMix = 1 << 3 };
-		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
+		static ShaderNode *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod);

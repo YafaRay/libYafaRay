@@ -210,7 +210,7 @@ bool LayerNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 	return !dep.empty();
 }
 
-ShaderNode *LayerNode::factory(const ParamMap &params, RenderEnvironment &render)
+ShaderNode *LayerNode::factory(const ParamMap &params, Scene &scene)
 {
 	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;

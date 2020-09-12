@@ -112,8 +112,8 @@ int createRenderWidget__(yafaray4::Interface *interf, int xsize, int ysize, int 
 }
 
 
-MainWindow::MainWindow(yafaray4::Interface *env, int resx, int resy, int b_start_x, int b_start_y, Settings settings)
-	: QMainWindow(), interface_(env), res_x_(resx), res_y_(resy), b_x_(b_start_x), b_y_(b_start_y), use_zbuf_(false)
+MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b_start_x, int b_start_y, Settings settings)
+	: QMainWindow(), interface_(interface), res_x_(resx), res_y_(resy), b_x_(b_start_x), b_y_(b_start_y), use_zbuf_(false)
 {
 	QCoreApplication::setOrganizationName("YafaRay Team");
 	QCoreApplication::setOrganizationDomain("yafaray.org");

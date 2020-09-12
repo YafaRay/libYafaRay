@@ -83,13 +83,12 @@ class MonteCarloIntegrator: public TiledIntegrator
 
 		PhotonMapProcessing photon_map_processing_ = PhotonsGenerateOnly;
 
-		Background *background_; //! Background shader
 		int n_paths_; //! Number of samples for mc raytracing
 		int max_bounces_; //! Max. path depth for mc raytracing
 		std::vector<Light *> lights_; //! An array containing all the scene lights
 		bool transp_background_; //! Render background as transparent
 		bool transp_refracted_background_; //! Render refractions of background as transparent
-		void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::string &integrator_name, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
+		void causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot);
 };
 
 END_YAFARAY

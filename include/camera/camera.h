@@ -30,7 +30,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class Vec3;
 class Point3;
@@ -42,7 +42,7 @@ class Point3;
 class Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, RenderEnvironment &render);
+		static Camera *factory(ParamMap &params, Scene &scene);
 
 		Camera() = default;
 		Camera(const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);

@@ -28,12 +28,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class PointLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		PointLight(const Point3 &pos, const Rgb &col, float inte, bool b_light_enabled = true, bool b_cast_shadows = true);

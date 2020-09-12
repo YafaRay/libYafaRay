@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 
 class RenderPasses;
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 enum class TextureOptimization : int { None	= 1, Optimized = 2, Compressed = 3 };
 enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
@@ -83,8 +83,7 @@ class ImageBuffer final
 class LIBYAFARAY_EXPORT ImageHandler
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
-
+		static ImageHandler *factory(ParamMap &params, Scene &scene);
 		virtual ~ImageHandler() = default;
 		virtual bool loadFromFile(const std::string &name) = 0;
 		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }

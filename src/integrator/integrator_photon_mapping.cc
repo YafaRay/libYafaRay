@@ -96,7 +96,6 @@ PhotonIntegrator::PhotonIntegrator(unsigned int d_photons, unsigned int c_photon
 {
 	use_photon_caustics_ = true;
 	use_photon_diffuse_ = true;
-	type_ = Surface;
 	tr_shad_ = transp_shad;
 	final_gather_ = true;
 	n_diffuse_photons_ = d_photons;
@@ -106,16 +105,9 @@ PhotonIntegrator::PhotonIntegrator(unsigned int d_photons, unsigned int c_photon
 	caus_radius_ = c_rad;
 	r_depth_ = 6;
 	max_bounces_ = 5;
-	integrator_name_ = "PhotonMap";
-	integrator_short_name_ = "PM";
 }
 
-PhotonIntegrator::~PhotonIntegrator()
-{
-	// Empty
-}
-
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -158,7 +150,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		if(light_num >= num_d_lights)
 		{
 			diffuse_map->mutx_.lock();
-			Y_ERROR << integrator_name << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
+			Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
 			diffuse_map->mutx_.unlock();
 			return;
 		}
@@ -186,7 +178,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
 				diffuse_map->mutx_.lock();
-				Y_WARNING << integrator_name << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
+				Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
 				diffuse_map->mutx_.unlock();
 				continue;
 			}
@@ -289,7 +281,7 @@ bool PhotonIntegrator::preprocess()
 	g_timer__.addEvent("prepass");
 	g_timer__.start("prepass");
 
-	Y_INFO << integrator_name_ << ": Starting preprocess..." << YENDL;
+	Y_INFO << getName() << ": Starting preprocess..." << YENDL;
 
 	set << "Photon Mapping  ";
 
@@ -299,8 +291,7 @@ bool PhotonIntegrator::preprocess()
 	}
 	set << "RayDepth=" << r_depth_ << "  ";
 
-	background_ = scene_->getBackground();
-	lights_ = scene_->lights_;
+	lights_ = scene_->getLightsVisible();
 	std::vector<Light *> tmplights;
 
 	if(use_photon_caustics_)
@@ -328,8 +319,8 @@ bool PhotonIntegrator::preprocess()
 		{
 			pb->setTag("Loading caustic photon map from file...");
 			const std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
-			Y_INFO << integrator_name_ << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session__.caustic_map_->load(filename)) Y_VERBOSE << integrator_name_ << ": Caustic map loaded." << YENDL;
+			Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			if(session__.caustic_map_->load(filename)) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			else caustic_map_failed_load = true;
 		}
 
@@ -337,8 +328,8 @@ bool PhotonIntegrator::preprocess()
 		{
 			pb->setTag("Loading diffuse photon map from file...");
 			const std::string filename = session__.getPathImageOutput() + "_diffuse.photonmap";
-			Y_INFO << integrator_name_ << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session__.diffuse_map_->load(filename)) Y_VERBOSE << integrator_name_ << ": Diffuse map loaded." << YENDL;
+			Y_INFO << getName() << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			if(session__.diffuse_map_->load(filename)) Y_VERBOSE << getName() << ": Diffuse map loaded." << YENDL;
 			else diffuse_map_failed_load = true;
 		}
 
@@ -346,15 +337,15 @@ bool PhotonIntegrator::preprocess()
 		{
 			pb->setTag("Loading FG radiance photon map from file...");
 			const std::string filename = session__.getPathImageOutput() + "_fg_radiance.photonmap";
-			Y_INFO << integrator_name_ << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session__.radiance_map_->load(filename)) Y_VERBOSE << integrator_name_ << ": FG radiance map loaded." << YENDL;
+			Y_INFO << getName() << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			if(session__.radiance_map_->load(filename)) Y_VERBOSE << getName() << ": FG radiance map loaded." << YENDL;
 			else fg_radiance_map_failed_load = true;
 		}
 
 		if(caustic_map_failed_load || diffuse_map_failed_load || fg_radiance_map_failed_load)
 		{
 			photon_map_processing_ = PhotonsGenerateAndSave;
-			Y_WARNING << integrator_name_ << ": photon maps loading failed, changing to Generate and Save mode." << YENDL;
+			Y_WARNING << getName() << ": photon maps loading failed, changing to Generate and Save mode." << YENDL;
 		}
 	}
 
@@ -362,30 +353,30 @@ bool PhotonIntegrator::preprocess()
 	{
 		if(use_photon_caustics_)
 		{
-			Y_INFO << integrator_name_ << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			Y_INFO << getName() << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.caustic_map_->nPhotons() == 0)
 			{
-				Y_WARNING << integrator_name_ << ": Caustic photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
+				Y_WARNING << getName() << ": Caustic photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
 			}
 		}
 
 		if(use_photon_diffuse_)
 		{
-			Y_INFO << integrator_name_ << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			Y_INFO << getName() << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.diffuse_map_->nPhotons() == 0)
 			{
-				Y_WARNING << integrator_name_ << ": Diffuse photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
+				Y_WARNING << getName() << ": Diffuse photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
 			}
 		}
 
 		if(final_gather_)
 		{
-			Y_INFO << integrator_name_ << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+			Y_INFO << getName() << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.radiance_map_->nPhotons() == 0)
 			{
-				Y_WARNING << integrator_name_ << ": FG radiance photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
+				Y_WARNING << getName() << ": FG radiance photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
 			}
 		}
@@ -404,7 +395,7 @@ bool PhotonIntegrator::preprocess()
 	if(photon_map_processing_ == PhotonsLoad || photon_map_processing_ == PhotonsReuse)
 	{
 		g_timer__.stop("prepass");
-		Y_INFO << integrator_name_ << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << YENDL;
+		Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << YENDL;
 
 		set << " [" << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << "]";
 
@@ -462,7 +453,7 @@ bool PhotonIntegrator::preprocess()
 
 	if(num_d_lights == 0)
 	{
-		Y_WARNING << integrator_name_ << ": No lights found that can shoot diffuse photons, disabling Diffuse photon processing" << YENDL;
+		Y_WARNING << getName() << ": No lights found that can shoot diffuse photons, disabling Diffuse photon processing" << YENDL;
 		enableDiffuse(false);
 	}
 
@@ -475,13 +466,13 @@ bool PhotonIntegrator::preprocess()
 
 		light_power_d_ = new Pdf1D(energies, num_d_lights);
 
-		Y_VERBOSE << integrator_name_ << ": Light(s) photon color testing for diffuse map:" << YENDL;
+		Y_VERBOSE << getName() << ": Light(s) photon color testing for diffuse map:" << YENDL;
 		for(int i = 0; i < num_d_lights; ++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 			light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_VERBOSE << integrator_name_ << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
 
 		delete[] energies;
@@ -489,7 +480,7 @@ bool PhotonIntegrator::preprocess()
 		//shoot photons
 		curr = 0;
 
-		Y_INFO << integrator_name_ << ": Building diffuse photon map..." << YENDL;
+		Y_INFO << getName() << ": Building diffuse photon map..." << YENDL;
 
 		pb->init(128);
 		pb_step = std::max(1U, n_diffuse_photons_ / 128);
@@ -500,12 +491,12 @@ bool PhotonIntegrator::preprocess()
 
 		n_diffuse_photons_ = std::max((unsigned int) n_threads, (n_diffuse_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-		Y_PARAMS << integrator_name_ << ": Shooting " << n_diffuse_photons_ << " photons across " << n_threads << " threads (" << (n_diffuse_photons_ / n_threads) << " photons/thread)" << YENDL;
+		Y_PARAMS << getName() << ": Shooting " << n_diffuse_photons_ << " photons across " << n_threads << " threads (" << (n_diffuse_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		if(n_threads >= 2)
 		{
 			std::vector<std::thread> threads;
-			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session__.diffuse_map_, i, scene_, n_diffuse_photons_, light_power_d_, num_d_lights, std::ref(integrator_name_), tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session__.diffuse_map_, i, scene_, n_diffuse_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 			for(auto &t : threads) t.join();
 		}
 		else
@@ -528,7 +519,7 @@ bool PhotonIntegrator::preprocess()
 				int light_num = light_power_d_->dSample(s_l, &light_num_pdf);
 				if(light_num >= num_d_lights)
 				{
-					Y_ERROR << integrator_name_ << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now." << YENDL;
+					Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now." << YENDL;
 					delete light_power_d_;
 					return false;
 				}
@@ -555,7 +546,7 @@ bool PhotonIntegrator::preprocess()
 				{
 					if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 					{
-						Y_WARNING << integrator_name_ << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
+						Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
 						continue;
 					}
 
@@ -629,8 +620,8 @@ bool PhotonIntegrator::preprocess()
 
 		pb->done();
 		pb->setTag("Diffuse photon map built.");
-		Y_VERBOSE << integrator_name_ << ": Diffuse photon map built." << YENDL;
-		Y_INFO << integrator_name_ << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
+		Y_VERBOSE << getName() << ": Diffuse photon map built." << YENDL;
+		Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
 
 		delete light_power_d_;
 
@@ -638,22 +629,22 @@ bool PhotonIntegrator::preprocess()
 
 		if(session__.diffuse_map_->nPhotons() < 50)
 		{
-			Y_ERROR << integrator_name_ << ": Too few diffuse photons, stopping now." << YENDL;
+			Y_ERROR << getName() << ": Too few diffuse photons, stopping now." << YENDL;
 			return false;
 		}
 
-		Y_VERBOSE << integrator_name_ << ": Stored diffuse photons: " << session__.diffuse_map_->nPhotons() << YENDL;
+		Y_VERBOSE << getName() << ": Stored diffuse photons: " << session__.diffuse_map_->nPhotons() << YENDL;
 	}
 	else
 	{
-		Y_INFO << integrator_name_ << ": Diffuse photon mapping disabled, skipping..." << YENDL;
+		Y_INFO << getName() << ": Diffuse photon mapping disabled, skipping..." << YENDL;
 	}
 
 	std::thread diffuse_map_build_kd_tree_thread;
 
 	if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
-		Y_INFO << integrator_name_ << ": Building diffuse photons kd-tree:" << YENDL;
+		Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 		pb->setTag("Building diffuse photons kd-tree...");
 
 		diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.diffuse_map_);
@@ -662,10 +653,10 @@ bool PhotonIntegrator::preprocess()
 
 		if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0)
 		{
-			Y_INFO << integrator_name_ << ": Building diffuse photons kd-tree:" << YENDL;
+			Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 			pb->setTag("Building diffuse photons kd-tree...");
 			session__.diffuse_map_->updateTree();
-			Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 
 	for(int i = 0; i < (int)lights_.size(); ++i)
@@ -679,7 +670,7 @@ bool PhotonIntegrator::preprocess()
 
 	if(num_c_lights == 0)
 	{
-		Y_WARNING << integrator_name_ << ": No lights found that can shoot caustic photons, disabling Caustic photon processing" << YENDL;
+		Y_WARNING << getName() << ": No lights found that can shoot caustic photons, disabling Caustic photon processing" << YENDL;
 		enableCaustics(false);
 	}
 
@@ -694,18 +685,18 @@ bool PhotonIntegrator::preprocess()
 
 		light_power_d_ = new Pdf1D(energies, num_c_lights);
 
-		Y_VERBOSE << integrator_name_ << ": Light(s) photon color testing for caustics map:" << YENDL;
+		Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
 		for(int i = 0; i < num_c_lights; ++i)
 		{
 			pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 			light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_VERBOSE << integrator_name_ << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
 
 		delete[] energies;
 
-		Y_INFO << integrator_name_ << ": Building caustics photon map..." << YENDL;
+		Y_INFO << getName() << ": Building caustics photon map..." << YENDL;
 		pb->init(128);
 		pb_step = std::max(1U, n_caus_photons_ / 128);
 		pb->setTag("Building caustics photon map...");
@@ -715,13 +706,13 @@ bool PhotonIntegrator::preprocess()
 
 		n_caus_photons_ = std::max((unsigned int) n_threads, (n_caus_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-		Y_PARAMS << integrator_name_ << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
+		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 
 		if(n_threads >= 2)
 		{
 			std::vector<std::thread> threads;
-			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, n_caus_photons_, light_power_d_, num_c_lights, std::ref(integrator_name_), tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
+			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, n_caus_photons_, light_power_d_, num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
 			for(auto &t : threads) t.join();
 		}
 		else
@@ -746,7 +737,7 @@ bool PhotonIntegrator::preprocess()
 
 				if(light_num >= num_c_lights)
 				{
-					Y_ERROR << integrator_name_ << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now." << YENDL;
+					Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now." << YENDL;
 					delete light_power_d_;
 					return false;
 				}
@@ -771,7 +762,7 @@ bool PhotonIntegrator::preprocess()
 				{
 					if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 					{
-						Y_WARNING << integrator_name_ << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
+						Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
 						continue;
 					}
 
@@ -845,12 +836,12 @@ bool PhotonIntegrator::preprocess()
 		pb->setTag("Caustics photon map built.");
 		delete light_power_d_;
 
-		Y_INFO << integrator_name_ << ": Shot " << curr << " caustic photons from " << num_c_lights << " light(s)." << YENDL;
-		Y_VERBOSE << integrator_name_ << ": Stored caustic photons: " << session__.caustic_map_->nPhotons() << YENDL;
+		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_c_lights << " light(s)." << YENDL;
+		Y_VERBOSE << getName() << ": Stored caustic photons: " << session__.caustic_map_->nPhotons() << YENDL;
 	}
 	else
 	{
-		Y_INFO << integrator_name_ << ": Caustics photon mapping disabled, skipping..." << YENDL;
+		Y_INFO << getName() << ": Caustics photon mapping disabled, skipping..." << YENDL;
 	}
 
 	tmplights.clear();
@@ -859,7 +850,7 @@ bool PhotonIntegrator::preprocess()
 
 	if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
-		Y_INFO << integrator_name_ << ": Building caustic photons kd-tree:" << YENDL;
+		Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 		pb->setTag("Building caustic photons kd-tree...");
 
 		caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session__.caustic_map_);
@@ -868,17 +859,17 @@ bool PhotonIntegrator::preprocess()
 	{
 		if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0)
 		{
-			Y_INFO << integrator_name_ << ": Building caustic photons kd-tree:" << YENDL;
+			Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 			pb->setTag("Building caustic photons kd-tree...");
 			session__.caustic_map_->updateTree();
-			Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 	}
 
 	if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		diffuse_map_build_kd_tree_thread.join();
-		Y_VERBOSE << integrator_name_ << ": Diffuse photon map: done." << YENDL;
+		Y_VERBOSE << getName() << ": Diffuse photon map: done." << YENDL;
 	}
 
 	if(use_photon_diffuse_ && final_gather_) //create radiance map:
@@ -913,9 +904,9 @@ bool PhotonIntegrator::preprocess()
 		pgdat.pbar_->done();
 		pgdat.pbar_->setTag("Pregathering radiance data done...");
 		if(!intpb_) delete pgdat.pbar_;
-		Y_VERBOSE << integrator_name_ << ": Radiance tree built... Updating the tree..." << YENDL;
+		Y_VERBOSE << getName() << ": Radiance tree built... Updating the tree..." << YENDL;
 		session__.radiance_map_->updateTree();
-		Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+		Y_VERBOSE << getName() << ": Done." << YENDL;
 
 		delete r_tree;
 		r_tree = nullptr;
@@ -924,7 +915,7 @@ bool PhotonIntegrator::preprocess()
 	if(use_photon_caustics_ && session__.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		caustic_map_build_kd_tree_thread.join();
-		Y_VERBOSE << integrator_name_ << ": Caustic photon map: done." << YENDL;
+		Y_VERBOSE << getName() << ": Caustic photon map: done." << YENDL;
 	}
 
 	if(photon_map_processing_ == PhotonsGenerateAndSave)
@@ -933,29 +924,29 @@ bool PhotonIntegrator::preprocess()
 		{
 			pb->setTag("Saving diffuse photon map to file...");
 			const std::string filename = session__.getPathImageOutput() + "_diffuse.photonmap";
-			Y_INFO << integrator_name_ << ": Saving diffuse photon map to: " << filename << YENDL;
-			if(session__.diffuse_map_->save(filename)) Y_VERBOSE << integrator_name_ << ": Diffuse map saved." << YENDL;
+			Y_INFO << getName() << ": Saving diffuse photon map to: " << filename << YENDL;
+			if(session__.diffuse_map_->save(filename)) Y_VERBOSE << getName() << ": Diffuse map saved." << YENDL;
 		}
 
 		if(use_photon_caustics_)
 		{
 			pb->setTag("Saving caustic photon map to file...");
 			const std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
-			Y_INFO << integrator_name_ << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session__.caustic_map_->save(filename)) Y_VERBOSE << integrator_name_ << ": Caustic map saved." << YENDL;
+			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
+			if(session__.caustic_map_->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
 			pb->setTag("Saving FG radiance photon map to file...");
 			const std::string filename = session__.getPathImageOutput() + "_fg_radiance.photonmap";
-			Y_INFO << integrator_name_ << ": Saving FG radiance photon map to: " << filename << YENDL;
-			if(session__.radiance_map_->save(filename)) Y_VERBOSE << integrator_name_ << ": FG radiance map saved." << YENDL;
+			Y_INFO << getName() << ": Saving FG radiance photon map to: " << filename << YENDL;
+			if(session__.radiance_map_->save(filename)) Y_VERBOSE << getName() << ": FG radiance map saved." << YENDL;
 		}
 	}
 
 	g_timer__.stop("prepass");
-	Y_INFO << integrator_name_ << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
@@ -1085,9 +1076,10 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 
 			if(!did_hit) //hit background
 			{
-				if(caustic && background_ && background_->hasIbl() && background_->shootsCaustic())
+				const auto &background = scene_->getBackground();
+				if(caustic && background && background->hasIbl() && background->shootsCaustic())
 				{
-					path_col += throughput * (*background_)(pRay, state, true);
+					path_col += throughput * (*background)(pRay, state, true);
 				}
 				break;
 			}
@@ -1273,9 +1265,9 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 	}
 	else //nothing hit, return background
 	{
-		if(background_ && !transp_refracted_background_)
+		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
+			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
 		}
 	}
 
@@ -1295,7 +1287,7 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 	return Rgba(col, alpha);
 }
 
-Integrator *PhotonIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *PhotonIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	bool transp_shad = false;
 	bool final_gather = true;

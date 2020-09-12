@@ -23,7 +23,6 @@
 #include "object_geom/object_geom.h"
 #include "common/param.h"
 #include "common/scene.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include <iostream>
 
@@ -54,9 +53,9 @@ AreaLight::AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,
 
 void AreaLight::init(Scene &scene)
 {
-	if(object_id_)
+	if(!object_name_.empty())
 	{
-		ObjectGeometric *obj = scene.getObject(object_id_);
+		ObjectGeometric *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
 		else Y_WARNING << "AreaLight: Invalid object ID given!" << YENDL;
 	}
@@ -169,7 +168,7 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-Light *AreaLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *AreaLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 corner(0.0);
 	Point3 p_1(0.0);
@@ -177,7 +176,7 @@ Light *AreaLight::factory(ParamMap &params, RenderEnvironment &render)
 	Rgb color(1.0);
 	float power = 1.0;
 	int samples = 4;
-	int object = 0;
+	std::string object_name;
 	bool light_enabled = true;
 	bool cast_shadows = true;
 	bool shoot_d = true;
@@ -190,7 +189,7 @@ Light *AreaLight::factory(ParamMap &params, RenderEnvironment &render)
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("samples", samples);
-	params.getParam("object", object);
+	params.getParam("object_name", object_name);
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("with_caustic", shoot_c);
@@ -199,7 +198,7 @@ Light *AreaLight::factory(ParamMap &params, RenderEnvironment &render)
 
 	AreaLight *light = new AreaLight(corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows);
 
-	light->object_id_ = (unsigned int)object;
+	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;
 	light->photon_only_ = p_only;

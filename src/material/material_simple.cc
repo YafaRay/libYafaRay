@@ -20,7 +20,6 @@
 
 #include "material/material_simple.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "common/param.h"
 #include "material/material_mask.h"
@@ -60,7 +59,7 @@ float LightMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const
 {
 	return 0.f;
 }
-Material *LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, RenderEnvironment &env)
+Material *LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, Scene &scene)
 {
 	Rgb col(1.0);
 	double power = 1.0;

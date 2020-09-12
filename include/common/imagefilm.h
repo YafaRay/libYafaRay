@@ -41,7 +41,7 @@ BEGIN_YAFARAY
 class ProgressBar;
 class RenderPasses;
 class ColorPasses;
-class RenderEnvironment;
+class Scene;
 class ColorOutput;
 
 class LIBYAFARAY_EXPORT ImageFilm final
@@ -62,7 +62,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 
 		/*! imageFilm_t Constructor */
 		ImageFilm(int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size = 1.0, FilterType filt = FilterType::Box,
-				  RenderEnvironment *e = nullptr, bool show_sam_mask = false, int t_size = 32,
+				  Scene *e = nullptr, bool show_sam_mask = false, int t_size = 32,
 				  ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear, bool pm_a = false);
 		/*! imageFilm_t Destructor */
 		~ImageFilm();
@@ -175,7 +175,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		int num_density_samples_ = 0;
 		ImageSplitter *splitter_ = nullptr;
 		ProgressBar *pbar_ = nullptr;
-		RenderEnvironment *env_;
+		Scene *scene_;
 		int n_pass_;
 		bool show_mask_;
 		int tile_size_;

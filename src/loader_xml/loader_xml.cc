@@ -22,7 +22,6 @@
 #include "common/session.h"
 #include "common/file.h"
 #include "common/scene.h"
-#include "common/environment.h"
 #include "common/imagefilm.h"
 #include "common/import_xml.h"
 #include "utility/util_console.h"
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
 	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
 	else logger__.setConsoleLogColorsEnabled(true);
 
-	RenderEnvironment *env = new RenderEnvironment();
+	Scene *scene = new Scene();
 
 	// Plugin load
 	std::string ppath = parse.getOptionString("pp");
@@ -214,68 +213,65 @@ int main(int argc, char *argv[])
 		output_path += "/" + out_name;
 	}
 
-	Scene *scene = new Scene(env);
-
 	global_scene__ = scene;	//for the CTRL+C handler
 
-	env->setScene(scene);
-	ParamMap render;
+	ParamMap params;
 
-	bool success = parseXmlFile__(xml_file.c_str(), scene, env, render, input_color_space_string, input_gamma);
+	bool success = parseXmlFile__(xml_file.c_str(), scene, params, input_color_space_string, input_gamma);
 	if(!success) exit(1);
 
 	int width = 320, height = 240;
 	int bx = 0, by = 0;
-	render.getParam("width", width); // width of rendered image
-	render.getParam("height", height); // height of rendered image
-	render.getParam("xstart", bx); // border render x start
-	render.getParam("ystart", by); // border render y start
+	params.getParam("width", width); // width of rendered image
+	params.getParam("height", height); // height of rendered image
+	params.getParam("xstart", bx); // border render x start
+	params.getParam("ystart", by); // border render y start
 
 	//image output denoise options
 	bool denoise_enabled = false;
 	int denoise_h_col = 5, denoise_h_lum = 5;
 	float denoise_mix = 0.8;
-	render.getParam("denoiseEnabled", denoise_enabled);
-	render.getParam("denoiseHCol", denoise_h_col);
-	render.getParam("denoiseHLum", denoise_h_lum);
-	render.getParam("denoiseMix", denoise_mix);
+	params.getParam("denoiseEnabled", denoise_enabled);
+	params.getParam("denoiseHCol", denoise_h_col);
+	params.getParam("denoiseHLum", denoise_h_lum);
+	params.getParam("denoiseMix", denoise_mix);
 
-	if(threads >= -1) render["threads"] = threads;
+	if(threads >= -1) params["threads"] = threads;
 
 	std::string log_file_types = parse.getOptionString("l");
 	if(log_file_types == "none")
 	{
-		render["logging_saveLog"] = false;
-		render["logging_saveHTML"] = false;
+		params["logging_saveLog"] = false;
+		params["logging_saveHTML"] = false;
 	}
 	if(log_file_types == "txt")
 	{
-		render["logging_saveLog"] = true;
-		render["logging_saveHTML"] = false;
+		params["logging_saveLog"] = true;
+		params["logging_saveHTML"] = false;
 	}
 	if(log_file_types == "html")
 	{
-		render["logging_saveLog"] = false;
-		render["logging_saveHTML"] = true;
+		params["logging_saveLog"] = false;
+		params["logging_saveHTML"] = true;
 	}
 	if(log_file_types == "txt+html")
 	{
-		render["logging_saveLog"] = true;
-		render["logging_saveHTML"] = true;
+		params["logging_saveLog"] = true;
+		params["logging_saveHTML"] = true;
 	}
 
 	std::string params_badge_position = parse.getOptionString("pbp");
 	if(!params_badge_position.empty())
 	{
-		render["logging_paramsBadgePosition"] = params_badge_position;
+		params["logging_paramsBadgePosition"] = params_badge_position;
 		logger__.setParamsBadgePosition(params_badge_position);
 	}
 
-	if(zbuf) render["z_channel"] = true;
-	if(nozbuf) render["z_channel"] = false;
+	if(zbuf) params["z_channel"] = true;
+	if(nozbuf) params["z_channel"] = false;
 
 	bool use_zbuf = false;
-	render.getParam("z_channel", use_zbuf);
+	params.getParam("z_channel", use_zbuf);
 
 	// create output
 	ColorOutput *out = nullptr;
@@ -292,7 +288,7 @@ int main(int argc, char *argv[])
 	ih_params["denoiseHLum"] = denoise_h_lum;
 	ih_params["denoiseMix"] = denoise_mix;
 
-	ImageHandler *ih = env->createImageHandler("outFile", ih_params);
+	ImageHandler *ih = scene->createImageHandler("outFile", ih_params);
 
 	if(ih)
 	{
@@ -301,13 +297,13 @@ int main(int argc, char *argv[])
 	}
 	else return 1;
 
-	if(! env->setupScene(*scene, render, *out)) return 1;
+	if(! scene->setupScene(*scene, params, *out)) return 1;
 	ImageFilm *film = scene->getImageFilm();
 	session__.setInteractive(false);
 	session__.setStatusRenderStarted();
 	scene->render();
 
-	env->clearAll();
+	scene->clearAll();
 
 	delete film;
 	delete out;

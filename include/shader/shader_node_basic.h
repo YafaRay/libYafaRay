@@ -22,7 +22,6 @@
 
 #include "shader/shader_node.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/matrix4.h"
 
 BEGIN_YAFARAY
@@ -30,7 +29,7 @@ BEGIN_YAFARAY
 class TextureMapperNode final : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
+		static ShaderNode *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		enum Coords : int { Uv, Glob, Orco, Tran, Nor, Refl, Win, Stick, Stress, Tan };
@@ -63,7 +62,7 @@ class TextureMapperNode final : public ShaderNode
 class ValueNode final : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
+		static ShaderNode *factory(const ParamMap &params, Scene &scene);
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) {}
@@ -78,7 +77,7 @@ class ValueNode final : public ShaderNode
 class MixNode : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, RenderEnvironment &render);
+		static ShaderNode *factory(const ParamMap &params, Scene &scene);
 
 	protected:
 		MixNode();

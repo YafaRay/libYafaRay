@@ -27,10 +27,12 @@ BEGIN_YAFARAY
 class PathIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		PathIntegrator(bool transp_shad = false, int shadow_depth = 4);
+		virtual std::string getShortName() const override { return "PT"; }
+		virtual std::string getName() const override { return "PathTracer"; }
 		virtual bool preprocess() override;
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
 		enum class CausticType { None, Path, Photon, Both };

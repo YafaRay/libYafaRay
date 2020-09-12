@@ -18,7 +18,6 @@
 
 #include "integrator/integrator_emission.h"
 #include "volume/volume.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "material/material.h"
 #include "background/background.h"
@@ -31,17 +30,9 @@ BEGIN_YAFARAY
 
 Rgba yafaray4::EmissionIntegrator::transmittance(yafaray4::RenderState &state, yafaray4::Ray &ray) const {
 	Rgba result(1.f);
-
-	std::vector<VolumeRegion *> list_vr = scene_->getVolumes();
-
-
-	for(unsigned int i = 0; i < list_vr.size(); i++)
-	{
-		result *= list_vr.at(i)->tau(ray, 0, 0);
-	}
-
+	auto volumes = scene_->getVolumeRegions();
+	for(const auto &v : volumes) result *= v.second->tau(ray, 0, 0);
 	result = Rgba(fExp__(-result.getR()), fExp__(-result.getG()), fExp__(-result.getB()));
-
 	return result;
 }
 
@@ -50,46 +41,31 @@ Rgba EmissionIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &co
 	int n = 10; // samples + 1 on the ray inside the volume
 
 	Rgba result(0.f);
-
 	bool hit = ray.tmax_ > 0.f;
-
-	std::vector<VolumeRegion *> list_vr = scene_->getVolumes();
-
-	for(unsigned int i = 0; i < list_vr.size(); i++)
+	auto volumes = scene_->getVolumeRegions();
+	for(const auto &v : volumes)
 	{
-		VolumeRegion *vr = list_vr.at(i);
-
-		if(!vr->intersect(ray, t_0, t_1)) continue;
-
+		if(!v.second->intersect(ray, t_0, t_1)) continue;
 		if(hit && ray.tmax_ < t_0) continue;
-
-		if(hit && ray.tmax_ < t_1)
-		{
-			t_1 = ray.tmax_;
-		}
-
+		if(hit && ray.tmax_ < t_1) t_1 = ray.tmax_;
 		float step = (t_1 - t_0) / (float)n; // length between two sample points
 		--n;
 		float pos = t_0 + 0.5 * step;
-		Point3 p(ray.from_);
 		Rgb tr(1.f);
-
 		for(int i = 0; i < n; ++i)
 		{
 			Ray step_ray(ray.from_ + (ray.dir_ * pos), ray.dir_, 0, step, 0);
-			Rgb step_tau = vr->tau(step_ray, 0, 0);
+			Rgb step_tau = v.second->tau(step_ray, 0, 0);
 			tr *= Rgba(fExp__(-step_tau.getR()), fExp__(-step_tau.getG()), fExp__(-step_tau.getB()));
-			result += tr * vr->emission(step_ray.from_, step_ray.dir_);
+			result += tr * v.second->emission(step_ray.from_, step_ray.dir_);
 			pos += step;
 		}
-
 		result *= step;
 	}
-
 	return result;
 }
 
-Integrator *EmissionIntegrator::factory(ParamMap &params, RenderEnvironment &render) {
+Integrator *EmissionIntegrator::factory(ParamMap &params, Scene &scene) {
 	EmissionIntegrator *inte = new EmissionIntegrator();
 	return inte;
 }

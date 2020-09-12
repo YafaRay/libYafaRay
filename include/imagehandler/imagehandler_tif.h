@@ -30,7 +30,7 @@ BEGIN_YAFARAY
 class TifHandler final : public ImageHandler
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
+		static ImageHandler *factory(ParamMap &params, Scene &scene);
 
 	private:
 		TifHandler();

@@ -20,7 +20,6 @@
 
 #include "light/light_spot.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "common/param.h"
 
@@ -255,7 +254,7 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	return false;
 }
 
-Light *SpotLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *SpotLight::factory(ParamMap &params, Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);

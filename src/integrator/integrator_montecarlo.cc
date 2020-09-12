@@ -343,7 +343,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderState &state, Light *light, co
 	return col;
 }
 
-void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::string &integrator_name, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
+void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_caus_photons, Pdf1D *light_power_d, int num_lights, const std::vector<Light *> &caus_lights, int caus_depth, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot)
 {
 	bool done = false;
 	float s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -386,7 +386,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		if(light_num >= num_lights)
 		{
 			caustic_map->mutx_.lock();
-			Y_ERROR << integrator_name << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
+			Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
 			caustic_map->mutx_.unlock();
 			return;
 		}
@@ -413,7 +413,7 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
 				caustic_map->mutx_.lock();
-				Y_WARNING << integrator_name << ": NaN (photon color)" << YENDL;
+				Y_WARNING << getName() << ": NaN (photon color)" << YENDL;
 				caustic_map->mutx_.unlock();
 				break;
 			}
@@ -501,26 +501,26 @@ bool MonteCarloIntegrator::createCausticMap()
 	{
 		pb->setTag("Loading caustic photon map from file...");
 		const std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
-		Y_INFO << integrator_name_ << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+		Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 		if(session__.caustic_map_->load(filename))
 		{
-			Y_VERBOSE << integrator_name_ << ": Caustic map loaded." << YENDL;
+			Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			return true;
 		}
 		else
 		{
 			photon_map_processing_ = PhotonsGenerateAndSave;
-			Y_WARNING << integrator_name_ << ": photon map loading failed, changing to Generate and Save mode." << YENDL;
+			Y_WARNING << getName() << ": photon map loading failed, changing to Generate and Save mode." << YENDL;
 		}
 	}
 
 	if(photon_map_processing_ == PhotonsReuse)
 	{
-		Y_INFO << integrator_name_ << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
+		Y_INFO << getName() << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 		if(session__.caustic_map_->nPhotons() == 0)
 		{
 			photon_map_processing_ = PhotonsGenerateOnly;
-			Y_WARNING << integrator_name_ << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << YENDL;
+			Y_WARNING << getName() << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << YENDL;
 		}
 		else return true;
 	}
@@ -551,21 +551,21 @@ bool MonteCarloIntegrator::createCausticMap()
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
 		Pdf1D *light_power_d = new Pdf1D(energies, num_lights);
 
-		Y_VERBOSE << integrator_name_ << ": Light(s) photon color testing for caustics map:" << YENDL;
-		Rgb pcol(0.f);
+		Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
 
 		for(int i = 0; i < num_lights; ++i)
 		{
+			Rgb pcol(0.f);
 			pcol = caus_lights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 			light_num_pdf = light_power_d->func_[i] * light_power_d->inv_integral_;
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-			Y_VERBOSE << integrator_name_ << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
 
 		delete[] energies;
 
 		int pb_step;
-		Y_INFO << integrator_name_ << ": Building caustics photon map..." << YENDL;
+		Y_INFO << getName() << ": Building caustics photon map..." << YENDL;
 		pb->init(128);
 		pb_step = std::max(1U, n_caus_photons_ / 128);
 		pb->setTag("Building caustics photon map...");
@@ -576,12 +576,12 @@ bool MonteCarloIntegrator::createCausticMap()
 
 		n_caus_photons_ = std::max((unsigned int) n_threads, (n_caus_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-		Y_PARAMS << integrator_name_ << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
+		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		if(n_threads >= 2)
 		{
 			std::vector<std::thread> threads;
-			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, n_caus_photons_, light_power_d, num_lights, std::ref(integrator_name_), caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
+			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, n_caus_photons_, light_power_d, num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
 			for(auto &t : threads) t.join();
 		}
 		else
@@ -612,7 +612,7 @@ bool MonteCarloIntegrator::createCausticMap()
 
 				if(light_num >= num_lights)
 				{
-					Y_ERROR << integrator_name_ << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
+					Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << YENDL;
 					delete light_power_d;
 					return false;
 				}
@@ -638,7 +638,7 @@ bool MonteCarloIntegrator::createCausticMap()
 				{
 					if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 					{
-						Y_WARNING << integrator_name_ << ": NaN (photon color)" << YENDL;
+						Y_WARNING << getName() << ": NaN (photon color)" << YENDL;
 						break;
 					}
 					Rgb transm(1.f), vcol;
@@ -709,9 +709,9 @@ bool MonteCarloIntegrator::createCausticMap()
 
 		pb->done();
 		pb->setTag("Caustic photon map built.");
-		Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
-		Y_INFO << integrator_name_ << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
-		Y_VERBOSE << integrator_name_ << ": Stored caustic photons: " << session__.caustic_map_->nPhotons() << YENDL;
+		Y_VERBOSE << getName() << ": Done." << YENDL;
+		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
+		Y_VERBOSE << getName() << ": Stored caustic photons: " << session__.caustic_map_->nPhotons() << YENDL;
 
 		delete light_power_d;
 
@@ -719,20 +719,20 @@ bool MonteCarloIntegrator::createCausticMap()
 		{
 			pb->setTag("Building caustic photons kd-tree...");
 			session__.caustic_map_->updateTree();
-			Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 
 		if(photon_map_processing_ == PhotonsGenerateAndSave)
 		{
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
-			Y_INFO << integrator_name_ << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session__.caustic_map_->save(filename)) Y_VERBOSE << integrator_name_ << ": Caustic map saved." << YENDL;
+			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
+			if(session__.caustic_map_->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
 	}
 	else
 	{
-		Y_VERBOSE << integrator_name_ << ": No caustic source lights found, skiping caustic map building..." << YENDL;
+		Y_VERBOSE << getName() << ": No caustic source lights found, skiping caustic map building..." << YENDL;
 	}
 
 	if(!intpb_) delete pb;

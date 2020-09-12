@@ -24,12 +24,11 @@
 #include "imagehandler/imagehandler_png.h"
 #include "imagehandler/imagehandler_tga.h"
 #include "imagehandler/imagehandler_tif.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-ImageHandler *ImageHandler::factory(ParamMap &params, RenderEnvironment &render)
+ImageHandler *ImageHandler::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
@@ -41,19 +40,19 @@ ImageHandler *ImageHandler::factory(ParamMap &params, RenderEnvironment &render)
 	else if(type == "pic") type = "hdr";
 
 
-	if(type == "tga") return TgaHandler::factory(params, render);
-	else if(type == "hdr") return HdrHandler::factory(params, render);
+	if(type == "tga") return TgaHandler::factory(params, scene);
+	else if(type == "hdr") return HdrHandler::factory(params, scene);
 #ifdef HAVE_OPENEXR
-	else if(type == "exr") return ExrHandler::factory(params, render);
+	else if(type == "exr") return ExrHandler::factory(params, scene);
 #endif // HAVE_OPENEXR
 #ifdef HAVE_JPEG
-	else if(type == "jpg") return JpgHandler::factory(params, render);
+	else if(type == "jpg") return JpgHandler::factory(params, scene);
 #endif // HAVE_JPEG
 #ifdef HAVE_PNG
-	else if(type == "png") return PngHandler::factory(params, render);
+	else if(type == "png") return PngHandler::factory(params, scene);
 #endif // HAVE_PNG
 #ifdef HAVE_TIFF
-	else if(type == "tif") return TifHandler::factory(params, render);
+	else if(type == "tif") return TifHandler::factory(params, scene);
 #endif // HAVE_TIFF
 	else return nullptr;
 }

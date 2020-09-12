@@ -31,11 +31,13 @@ class Light;
 class DebugIntegrator final : public TiledIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, RenderEnvironment &render);
+		static Integrator *factory(ParamMap &params, Scene &scene);
 
 	private:
 		enum SurfaceProperties {N = 1, DPdU = 2, DPdV = 3, Nu = 4, Nv = 5, DSdU = 6, DSdV = 7};
 		DebugIntegrator(SurfaceProperties dt);
+		virtual std::string getShortName() const override { return "DBG"; }
+		virtual std::string getName() const override { return "DebugIntegrator"; }
 		virtual bool preprocess() override;
 		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
 

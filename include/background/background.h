@@ -25,7 +25,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 struct RenderState;
 class Light;
 class Rgb;
@@ -34,7 +34,7 @@ class Ray;
 class Background
 {
 	public:
-		static Background *factory(ParamMap &params, RenderEnvironment &render);
+		static Background *factory(ParamMap &params, Scene &scene);
 
 		//! get the background color for a given ray
 		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const = 0;

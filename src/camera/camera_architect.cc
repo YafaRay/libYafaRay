@@ -21,7 +21,6 @@
  */
 
 #include "camera/camera_architect.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -89,7 +88,7 @@ Point3 ArchitectCamera::screenproject(const Point3 &p) const
 	return s;
 }
 
-Camera *ArchitectCamera::factory(ParamMap &params, RenderEnvironment &render)
+Camera *ArchitectCamera::factory(ParamMap &params, Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);

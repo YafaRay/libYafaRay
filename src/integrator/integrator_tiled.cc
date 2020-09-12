@@ -125,7 +125,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 
 	int aa_resampled_floor_pixels = (int) floorf(aa_noise_params_.resampled_floor_ * (float) image_film_->getTotalPixels() / 100.f);
 
-	Y_PARAMS << integrator_name_ << ": Rendering " << aa_noise_params_.passes_ << " passes" << YENDL;
+	Y_PARAMS << getName() << ": Rendering " << aa_noise_params_.passes_ << " passes" << YENDL;
 	Y_PARAMS << "Min. " << aa_noise_params_.samples_ << " samples" << YENDL;
 	Y_PARAMS << aa_noise_params_.inc_samples_ << " per additional pass" << YENDL;
 	Y_PARAMS << "Resampled pixels floor: " << aa_noise_params_.resampled_floor_ << "% (" << aa_resampled_floor_pixels << " pixels)" << YENDL;
@@ -162,7 +162,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 		if(intpb_) intpb_->setTag(pass_string.str().c_str());
 	}
 
-	Y_INFO << integrator_name_ << ": " << pass_string.str() << YENDL;
+	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
 
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
@@ -197,19 +197,19 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 		aa_light_sample_multiplier_ *= aa_noise_params_.light_sample_multiplier_factor_;
 		aa_indirect_sample_multiplier_ *= aa_noise_params_.indirect_sample_multiplier_factor_;
 
-		Y_INFO << integrator_name_ << ": Sample multiplier = " << aa_sample_multiplier_ << ", Light Sample multiplier = " << aa_light_sample_multiplier_ << ", Indirect Sample multiplier = " << aa_indirect_sample_multiplier_ << YENDL;
+		Y_INFO << getName() << ": Sample multiplier = " << aa_sample_multiplier_ << ", Light Sample multiplier = " << aa_light_sample_multiplier_ << ", Indirect Sample multiplier = " << aa_indirect_sample_multiplier_ << YENDL;
 
 		image_film_->setAaNoiseParams(aa_noise_params_);
 
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
-			Y_INFO << integrator_name_ << ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped." << YENDL;
-			image_film_->nextPass(num_view, true, integrator_name_, /*skipNextPass=*/true);
+			Y_INFO << getName() << ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped." << YENDL;
+			image_film_->nextPass(num_view, true, getName(), /*skipNextPass=*/true);
 		}
 		else
 		{
 			image_film_->setAaThreshold(aa_noise_params_.threshold_);
-			resampled_pixels = image_film_->nextPass(num_view, true, integrator_name_);
+			resampled_pixels = image_film_->nextPass(num_view, true, getName());
 			aa_threshold_changed = false;
 		}
 
@@ -226,7 +226,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 			float aa_variation_ratio = std::min(8.f, ((float) aa_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal.
 			aa_noise_params_.threshold_ *= (1.f - 0.1f * aa_variation_ratio);
 
-			Y_VERBOSE << integrator_name_ << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << aa_resampled_floor_pixels << "): new AA Threshold (-" << aa_variation_ratio * 0.1f * 100.f << "%) for next pass = " << aa_noise_params_.threshold_ << YENDL;
+			Y_VERBOSE << getName() << ": Resampled pixels (" << resampled_pixels << ") below the floor (" << aa_resampled_floor_pixels << "): new AA Threshold (-" << aa_variation_ratio * 0.1f * 100.f << "%) for next pass = " << aa_noise_params_.threshold_ << YENDL;
 
 			if(aa_noise_params_.threshold_ > 0.f) aa_threshold_changed = true;
 		}
@@ -234,7 +234,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 	max_depth_ = 0.f;
 	g_timer__.stop("rendert");
 	session__.setStatusRenderFinished();
-	Y_INFO << integrator_name_ << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s" << YENDL;
+	Y_INFO << getName() << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s" << YENDL;
 
 	return true;
 }
@@ -414,10 +414,9 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 				if(color_passes.enabled(PassIntZDepthNorm) || color_passes.enabled(PassIntZDepthAbs) || color_passes.enabled(PassIntMist))
 				{
-					float depth_abs = 0.f, depth_norm = 0.f;
-
 					if(color_passes.enabled(PassIntZDepthNorm) || color_passes.enabled(PassIntMist))
 					{
+						float depth_norm = 0.f;
 						if(c_ray.tmax_ > 0.f)
 						{
 							depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
@@ -427,7 +426,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 					}
 					if(color_passes.enabled(PassIntZDepthAbs))
 					{
-						depth_abs = c_ray.tmax_;
+						float depth_abs = c_ray.tmax_;
 						if(depth_abs <= 0.f)
 						{
 							depth_abs = 99999997952.f;

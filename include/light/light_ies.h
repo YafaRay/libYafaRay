@@ -28,13 +28,13 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 class IesData;
 
 class IesLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, RenderEnvironment &render);
+		static Light *factory(ParamMap &params, Scene &scene);
 
 	private:
 		IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, const std::string ies_file, int smpls, bool s_sha, float ang, bool b_light_enabled = true, bool b_cast_shadows = true);

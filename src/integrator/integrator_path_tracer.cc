@@ -37,7 +37,6 @@ BEGIN_YAFARAY
 
 PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 {
-	type_ = Surface;
 	tr_shad_ = transp_shad;
 	s_depth_ = shadow_depth;
 	caustic_type_ = CausticType::Path;
@@ -47,8 +46,6 @@ PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 	n_paths_ = 64;
 	inv_n_paths_ = 1.f / 64.f;
 	no_recursive_ = false;
-	integrator_name_ = "PathTracer";
-	integrator_short_name_ = "PT";
 }
 
 bool PathIntegrator::preprocess()
@@ -57,8 +54,7 @@ bool PathIntegrator::preprocess()
 	g_timer__.addEvent("prepass");
 	g_timer__.start("prepass");
 
-	background_ = scene_->getBackground();
-	lights_ = scene_->lights_;
+	lights_ = scene_->getLightsVisible();
 
 	set << "Path Tracing  ";
 
@@ -105,7 +101,7 @@ bool PathIntegrator::preprocess()
 	}
 
 	g_timer__.stop("prepass");
-	Y_INFO << integrator_name_ << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
@@ -264,9 +260,10 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 
 					if(!scene_->intersect(p_ray, *hit_2)) //hit background
 					{
-						if((caustic && background_ && background_->hasIbl() && background_->shootsCaustic()))
+						const auto &background = scene_->getBackground();
+						if((caustic && background && background->hasIbl() && background->shootsCaustic()))
 						{
-							path_col += throughput * (*background_)(p_ray, state, true);
+							path_col += throughput * (*background)(p_ray, state, true);
 						}
 						break;
 					}
@@ -331,9 +328,9 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 	}
 	else //nothing hit, return background
 	{
-		if(background_ && !transp_refracted_background_)
+		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
+			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
 		}
 	}
 
@@ -352,7 +349,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 	return Rgba(col, alpha);
 }
 
-Integrator *PathIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *PathIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;

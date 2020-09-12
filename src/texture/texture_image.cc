@@ -23,6 +23,7 @@
 #include "common/session.h"
 #include "utility/util_string.h"
 #include "common/param.h"
+#include "common/scene.h"
 
 BEGIN_YAFARAY
 
@@ -542,7 +543,7 @@ ImageTexture::TexClipMode string2Cliptype__(const std::string &clipname)
 	return tex_clipmode;
 }
 
-Texture *ImageTexture::factory(ParamMap &params, RenderEnvironment &render)
+Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 {
 	std::string name;
 	std::string intpstr;
@@ -590,7 +591,7 @@ Texture *ImageTexture::factory(ParamMap &params, RenderEnvironment &render)
 	std::string ihname = "ih";
 	ihname.append(toLower__(name.substr(l_slash, l_dot - l_slash - 1)));
 
-	ih = render.createImageHandler(ihname, ihpm);
+	ih = scene.createImageHandler(ihname, ihpm);
 	if(!ih)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << YENDL;

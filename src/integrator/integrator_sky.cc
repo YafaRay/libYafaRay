@@ -17,7 +17,6 @@
  */
 
 #include "integrator/integrator_sky.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "material/material.h"
 #include "background/background.h"
@@ -234,7 +233,7 @@ Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &color_p
 	return s_0_r * i_r + s_0_m * i_m;
 }
 
-Integrator *SkyIntegrator::factory(ParamMap &params, RenderEnvironment &render) {
+Integrator *SkyIntegrator::factory(ParamMap &params, Scene &scene) {
 	float s_size = 1.f;
 	float a = .5f;
 	float ss = .1f;

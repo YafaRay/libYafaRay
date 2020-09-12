@@ -20,7 +20,6 @@
 
 #include "background/background_constant.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "light/light.h"
@@ -45,7 +44,7 @@ Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return color_;
 }
 
-Background *ConstantBackground::factory(ParamMap &params, RenderEnvironment &render)
+Background *ConstantBackground::factory(ParamMap &params, Scene &scene)
 {
 	Rgb col(0.f);
 	float power = 1.0;
@@ -74,11 +73,8 @@ Background *ConstantBackground::factory(ParamMap &params, RenderEnvironment &ren
 		bgp["with_diffuse"] = diff;
 		bgp["cast_shadows"] = cast_shadows;
 
-		Light *bglight = render.createLight("constantBackground_bgLight", bgp);
-
+		Light *bglight = scene.createLight("constantBackground_bgLight", bgp);
 		bglight->setBackground(const_bg);
-
-		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	return const_bg;

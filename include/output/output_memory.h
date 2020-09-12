@@ -31,13 +31,14 @@ class LIBYAFARAY_EXPORT MemoryInputOutput final : public ColorOutput
 {
 	public:
 		MemoryInputOutput(int resx, int resy, float *i_mem);
+
+	private:
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) override;
 		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
 		void flush(int num_view, const RenderPasses *render_passes) override;
 		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {}; // no tiled file format used...yet
 		virtual ~MemoryInputOutput() override;
 
-	private:
 		int sizex_, sizey_;
 		float *image_mem_;
 };

@@ -32,13 +32,13 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 
 class DarkSkyBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, RenderEnvironment &);
+		static Background *factory(ParamMap &, Scene &);
 
 	private:
 		DarkSkyBackground(const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev,

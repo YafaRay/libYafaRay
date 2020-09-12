@@ -34,7 +34,7 @@ BEGIN_YAFARAY
 class BlendMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &render);
+		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 
 	private:
 		BlendMaterial(const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Material::Visibility::NormalVisible);

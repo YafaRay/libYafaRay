@@ -21,7 +21,6 @@
  */
 
 #include "camera/camera_perspective.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -192,7 +191,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 bool PerspectiveCamera::sampleLense() const { return aperture_ != 0; }
 
-Camera *PerspectiveCamera::factory(ParamMap &params, RenderEnvironment &render)
+Camera *PerspectiveCamera::factory(ParamMap &params, Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);

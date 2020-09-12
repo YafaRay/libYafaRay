@@ -25,12 +25,12 @@
 BEGIN_YAFARAY
 
 class Texture;
-class RenderEnvironment;
+class Scene;
 
 class MaskMaterial final : public NodeMaterial
 {
 	public:
-		static Material *factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &);
+		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
 		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Material::Visibility::NormalVisible);

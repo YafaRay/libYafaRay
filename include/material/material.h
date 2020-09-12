@@ -27,7 +27,7 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 class Vec3;
 class SurfacePoint;
 struct RenderState;
@@ -60,7 +60,7 @@ class Material
 {
 	public:
 		enum class Visibility : int { NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible };
-		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &render);
+		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }
 

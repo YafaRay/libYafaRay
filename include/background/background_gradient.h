@@ -27,13 +27,13 @@
 
 BEGIN_YAFARAY
 
-class RenderEnvironment;
+class Scene;
 class ParamMap;
 
 class GradientBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, RenderEnvironment &);
+		static Background *factory(ParamMap &, Scene &);
 
 	private:
 		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);

@@ -20,7 +20,6 @@
 
 #include "common/import_xml.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/scene.h"
 #include "common/color.h"
 #include "common/matrix4.h"
@@ -149,7 +148,7 @@ static xmlSAXHandler my_handler__ =
 };
 #endif // HAVE_XML
 
-bool parseXmlFile__(const char *filename, Scene *scene, RenderEnvironment *env, ParamMap &render, std::string color_space_string, float input_gamma)
+bool parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, std::string color_space_string, float input_gamma)
 {
 #if HAVE_XML
 
@@ -161,7 +160,7 @@ bool parseXmlFile__(const char *filename, Scene *scene, RenderEnvironment *env, 
 	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
 	else input_color_space = Srgb;
 
-	XmlParser parser(env, scene, render, input_color_space, input_gamma);
+	XmlParser parser(scene, render, input_color_space, input_gamma);
 
 	if(xmlSAXUserParseFile(&my_handler__, &parser, filename) < 0)
 	{
@@ -180,8 +179,8 @@ bool parseXmlFile__(const char *filename, Scene *scene, RenderEnvironment *env, 
 / parser functions
 =============================================================*/
 
-XmlParser::XmlParser(RenderEnvironment *renv, Scene *sc, ParamMap &r, ColorSpace input_color_space, float input_gamma):
-		env_(renv), scene_(sc), render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
+XmlParser::XmlParser(Scene *scene, ParamMap &r, ColorSpace input_color_space, float input_gamma):
+		scene_(scene), render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
 {
 	cparams_ = &params_;
 	pushState(startElDocument__, endElDocument__);
@@ -420,7 +419,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 		if(id == -1) md->id_ = parser.scene_->getNextFreeId();
 		else md->id_ = id;
 
-		if(!parser.scene_->startTriMesh(md->id_, vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
+		if(!parser.scene_->startTriMesh(std::to_string(md->id_), vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << YENDL;
 		}
@@ -437,7 +436,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 		}
 		//not optimal to take ID blind...
 		parser.scene_->startGeometry();
-		bool success = parser.scene_->smoothMesh(id, angle);
+		bool success = parser.scene_->smoothMesh(std::to_string(id), angle);
 		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh ID = " << id << ", angle = " << angle << YENDL;
 		parser.scene_->endGeometry();
 		parser.pushState(startElDummy__, endElDummy__);
@@ -476,7 +475,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 		if(idc == -1) cvd->id_ = parser.scene_->getNextFreeId();
 		else cvd->id_ = idc;
 
-		if(!parser.scene_->startCurveMesh(cvd->id_, vertex))
+		if(!parser.scene_->startCurveMesh(std::to_string(cvd->id_), vertex))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << YENDL;
 		}
@@ -523,7 +522,7 @@ void startElCurve__(XmlParser &parser, const char *element, const char **attrs)
 	else if(el == "set_material")
 	{
 		std::string mat_name(attrs[1]);
-		dat->mat_ = parser.env_->getMaterial(mat_name);
+		dat->mat_ = parser.scene_->getMaterial(mat_name);
 		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
 	}
 }
@@ -620,7 +619,7 @@ void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
 	else if(el == "set_material")
 	{
 		std::string mat_name(attrs[1]);
-		dat->mat_ = parser.env_->getMaterial(mat_name);
+		dat->mat_ = parser.scene_->getMaterial(mat_name);
 		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
 	}
 }
@@ -658,7 +657,7 @@ void startElInstance__(XmlParser &parser, const char *element, const char **attr
 			}
 		}
 		Matrix4 *m_4 = new Matrix4(m);
-		parser.scene_->addInstance(boi, *m_4);
+		parser.scene_->addInstance(std::to_string(boi), *m_4);
 	}
 }
 
@@ -701,40 +700,16 @@ void endElParammap__(XmlParser &p, const char *element)
 		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
 		else
 		{
-			if(el == "material")
-			{ p.env_->createMaterial(*name, p.params_, p.eparams_); }
-			else if(el == "integrator")
-			{ p.env_->createIntegrator(*name, p.params_); }
-			else if(el == "light")
-			{
-				Light *light = p.env_->createLight(*name, p.params_);
-				if(light) p.scene_->addLight(light);
-			}
-			else if(el == "texture")
-			{ p.env_->createTexture(*name, p.params_); }
-			else if(el == "camera")
-			{ p.env_->createCamera(*name, p.params_); }
-			else if(el == "background")
-			{ p.env_->createBackground(*name, p.params_); }
-			else if(el == "object")
-			{
-				ObjId_t id;
-				ObjectGeometric *obj = p.env_->createObject(*name, p.params_);
-				if(obj) p.scene_->addObject(obj, id);
-			}
-			else if(el == "volumeregion")
-			{
-				VolumeRegion *vr = p.env_->createVolumeRegion(*name, p.params_);
-				if(vr) p.scene_->addVolumeRegion(vr);
-			}
-			else if(el == "render_passes")
-			{
-				p.env_->setupRenderPasses(p.params_);
-			}
-			else if(el == "logging_badge")
-			{
-				p.env_->setupLoggingAndBadge(p.params_);
-			}
+			if(el == "material") p.scene_->createMaterial(*name, p.params_, p.eparams_);
+			else if(el == "integrator") p.scene_->createIntegrator(*name, p.params_);
+			else if(el == "light") p.scene_->createLight(*name, p.params_);
+			else if(el == "texture") p.scene_->createTexture(*name, p.params_);
+			else if(el == "camera") p.scene_->createCamera(*name, p.params_);
+			else if(el == "background") p.scene_->createBackground(*name, p.params_);
+			else if(el == "object") p.scene_->createObject(*name, p.params_);
+			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
+			else if(el == "render_passes") p.scene_->setupRenderPasses(p.params_);
+			else if(el == "logging_badge") p.scene_->setupLoggingAndBadge(p.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
 

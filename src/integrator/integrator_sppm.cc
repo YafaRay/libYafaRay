@@ -44,9 +44,6 @@ static constexpr int n_max_gather__ = 1000; //used to gather all the photon in t
 
 SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth)
 {
-	type_ = Surface;
-	integrator_name_ = "SPPM";
-	integrator_short_name_ = "SPPM";
 	n_photons_ = d_photons;
 	pass_num_ = passnum;
 	totaln_photons_ = 0;
@@ -91,8 +88,8 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	aa_light_sample_multiplier_ = 1.f;
 	aa_indirect_sample_multiplier_ = 1.f;
 
-	Y_VERBOSE << integrator_name_ << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
-	Y_VERBOSE << integrator_name_ << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
+	Y_VERBOSE << getName() << ": AA_clamp_samples: " << aa_noise_params_.clamp_samples_ << YENDL;
+	Y_VERBOSE << getName() << ": AA_clamp_indirect: " << aa_noise_params_.clamp_indirect_ << YENDL;
 
 	std::stringstream set;
 
@@ -109,7 +106,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 
 
 	pass_string << "Rendering pass 1 of " << std::max(1, pass_num_) << "...";
-	Y_INFO << integrator_name_ << ": " << pass_string.str() << YENDL;
+	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
 	if(intpb_) intpb_->setTag(pass_string.str().c_str());
 
 	g_timer__.addEvent("rendert");
@@ -131,7 +128,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 		intpb_->setTag(pass_string.str().c_str());
 	}
 
-	Y_INFO << integrator_name_ << ": " << pass_string.str() << YENDL;
+	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
 
 	const Camera *camera = scene_->getCamera();
 
@@ -163,18 +160,18 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	{
 		if(scene_->getSignals() & Y_SIG_ABORT) break;
 		pass_info = i + 1;
-		image_film_->nextPass(num_view, false, integrator_name_);
+		image_film_->nextPass(num_view, false, getName());
 		n_refined_ = 0;
 		renderPass(num_view, 1, acum_aa_samples, false, i); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
-		Y_INFO << integrator_name_ << ": This pass refined " << n_refined_ << " of " << hp_num << " pixels." << YENDL;
+		Y_INFO << getName() << ": This pass refined " << n_refined_ << " of " << hp_num << " pixels." << YENDL;
 	}
 	max_depth_ = 0.f;
 	g_timer__.stop("rendert");
 	g_timer__.stop("imagesAutoSaveTimer");
 	g_timer__.stop("filmAutoSaveTimer");
 	session__.setStatusRenderFinished();
-	Y_INFO << integrator_name_ << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s." << YENDL;
+	Y_INFO << getName() << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s." << YENDL;
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
@@ -393,7 +390,7 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::string &integrator_name, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
+void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -448,7 +445,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		if(light_num >= num_d_lights)
 		{
 			diffuse_map->mutx_.lock();
-			Y_ERROR << integrator_name << ": lightPDF sample error! " << s_l << "/" << light_num << "\n";
+			Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << "\n";
 			diffuse_map->mutx_.unlock();
 			return;
 		}
@@ -476,7 +473,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
 			{
 				diffuse_map->mutx_.lock();
-				Y_WARNING << integrator_name << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
+				Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << "." << YENDL;
 				diffuse_map->mutx_.unlock();
 				continue;
 			}
@@ -581,7 +578,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	g_timer__.addEvent("prepass");
 	g_timer__.start("prepass");
 
-	Y_INFO << integrator_name_ << ": Starting Photon tracing pass..." << YENDL;
+	Y_INFO << getName() << ": Starting Photon tracing pass..." << YENDL;
 
 	if(b_hashgrid_) photon_grid_.clear();
 	else
@@ -597,8 +594,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		session__.caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 	}
 
-	background_ = scene_->getBackground();
-	lights_ = scene_->lights_;
+	lights_ = scene_->getLightsVisible();
 	std::vector<Light *> tmplights;
 
 	//background do not emit photons, or it is merged into normal light?
@@ -625,14 +621,14 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	light_power_d_ = new Pdf1D(energies, num_d_lights);
 
-	Y_VERBOSE << integrator_name_ << ": Light(s) photon color testing for photon map:" << YENDL;
+	Y_VERBOSE << getName() << ": Light(s) photon color testing for photon map:" << YENDL;
 
 	for(int i = 0; i < num_d_lights; ++i)
 	{
 		pcol = tmplights[i]->emitPhoton(.5, .5, .5, .5, ray, light_pdf);
 		light_num_pdf = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
-		Y_VERBOSE << integrator_name_ << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
+		Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 	}
 
 	delete[] energies;
@@ -659,8 +655,8 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	}
 	else pb = new ConsoleProgressBar(80);
 
-	if(b_hashgrid_) Y_INFO << integrator_name_ << ": Building photon hashgrid..." << YENDL;
-	else Y_INFO << integrator_name_ << ": Building photon map..." << YENDL;
+	if(b_hashgrid_) Y_INFO << getName() << ": Building photon hashgrid..." << YENDL;
+	else Y_INFO << getName() << ": Building photon map..." << YENDL;
 
 	pb->init(128);
 	pb_step = std::max(1U, n_photons_ / 128);
@@ -670,12 +666,12 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	n_photons_ = std::max((unsigned int) n_threads, (n_photons_ / n_threads) * n_threads); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
-	Y_PARAMS << integrator_name_ << ": Shooting " << n_photons_ << " photons across " << n_threads << " threads (" << (n_photons_ / n_threads) << " photons/thread)" << YENDL;
+	Y_PARAMS << getName() << ": Shooting " << n_photons_ << " photons across " << n_threads << " threads (" << (n_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 	if(n_threads >= 2)
 	{
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session__.diffuse_map_, session__.caustic_map_, i, scene_, n_photons_, light_power_d_, num_d_lights, std::ref(integrator_name_), tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session__.diffuse_map_, session__.caustic_map_, i, scene_, n_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 		for(auto &t : threads) t.join();
 	}
 	else
@@ -702,7 +698,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 			s_l = float(curr) * inv_diff_photons; // Does sL also need more random for each pass?
 			int light_num = light_power_d_->dSample(s_l, &light_num_pdf);
-			if(light_num >= num_d_lights) { Y_ERROR << integrator_name_ << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now.\n"; delete light_power_d_; return; }
+			if(light_num >= num_d_lights) { Y_ERROR << getName() << ": lightPDF sample error! " << s_l << "/" << light_num << "... stopping now.\n"; delete light_power_d_; return; }
 
 			pcol = tmplights[light_num]->emitPhoton(s_1, s_2, s_3, s_4, ray, light_pdf);
 			ray.tmin_ = scene_->ray_min_dist_;
@@ -725,7 +721,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 			while(scene_->intersect(ray, sp))   //scatter photons.
 			{
 				if(std::isnan(pcol.r_) || std::isnan(pcol.g_) || std::isnan(pcol.b_))
-				{ Y_WARNING << integrator_name_ << ": NaN  on photon color for light" << light_num + 1 << ".\n"; continue; }
+				{ Y_WARNING << getName() << ": NaN  on photon color for light" << light_num + 1 << ".\n"; continue; }
 
 				Rgb transm(1.f);
 				Rgb vcol(0.f);
@@ -812,37 +808,37 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	pb->done();
 	pb->setTag(previous_progress_tag + " - photon map built.");
-	Y_VERBOSE << integrator_name_ << ":Photon map built." << YENDL;
-	Y_INFO << integrator_name_ << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
+	Y_VERBOSE << getName() << ":Photon map built." << YENDL;
+	Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
 	delete light_power_d_;
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	Y_VERBOSE << integrator_name_ << ": Stored photons: " << session__.diffuse_map_->nPhotons() + session__.caustic_map_->nPhotons() << YENDL;
+	Y_VERBOSE << getName() << ": Stored photons: " << session__.diffuse_map_->nPhotons() + session__.caustic_map_->nPhotons() << YENDL;
 
 	if(b_hashgrid_)
 	{
-		Y_INFO << integrator_name_ << ": Building photons hashgrid:" << YENDL;
+		Y_INFO << getName() << ": Building photons hashgrid:" << YENDL;
 		photon_grid_.updateGrid();
-		Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+		Y_VERBOSE << getName() << ": Done." << YENDL;
 	}
 	else
 	{
 		if(session__.diffuse_map_->nPhotons() > 0)
 		{
-			Y_INFO << integrator_name_ << ": Building diffuse photons kd-tree:" << YENDL;
+			Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 			session__.diffuse_map_->updateTree();
-			Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 		if(session__.caustic_map_->nPhotons() > 0)
 		{
-			Y_INFO << integrator_name_ << ": Building caustic photons kd-tree:" << YENDL;
+			Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 			session__.caustic_map_->updateTree();
-			Y_VERBOSE << integrator_name_ << ": Done." << YENDL;
+			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 		if(session__.diffuse_map_->nPhotons() < 50)
 		{
-			Y_ERROR << integrator_name_ << ": Too few photons, stopping now." << YENDL;
+			Y_ERROR << getName() << ": Too few photons, stopping now." << YENDL;
 			return;
 		}
 	}
@@ -852,9 +848,9 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	g_timer__.stop("prepass");
 
 	if(b_hashgrid_)
-		Y_INFO << integrator_name_ << ": PhotonGrid building time: " << g_timer__.getTime("prepass") << YENDL;
+		Y_INFO << getName() << ": PhotonGrid building time: " << g_timer__.getTime("prepass") << YENDL;
 	else
-		Y_INFO << integrator_name_ << ": PhotonMap building time: " << g_timer__.getTime("prepass") << YENDL;
+		Y_INFO << getName() << ": PhotonMap building time: " << g_timer__.getTime("prepass") << YENDL;
 
 	if(intpb_)
 	{
@@ -1328,9 +1324,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 	else //nothing hit, return background
 	{
-		if(background_ && !transp_refracted_background_)
+		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			g_info.constant_randiance_ += color_passes.probeSet(PassIntEnv, (*background_)(ray, state), state.raylevel_ == 0);
+			g_info.constant_randiance_ += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
 		}
 	}
 
@@ -1379,7 +1375,7 @@ void SppmIntegrator::initializePpm()
 
 }
 
-Integrator *SppmIntegrator::factory(ParamMap &params, RenderEnvironment &render)
+Integrator *SppmIntegrator::factory(ParamMap &params, Scene &scene)
 {
 	bool transp_shad = false;
 	bool pm_ire = false;

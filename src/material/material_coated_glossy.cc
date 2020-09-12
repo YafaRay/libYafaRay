@@ -21,7 +21,6 @@
 #include "material/material_coated_glossy.h"
 #include "common/scene.h"
 #include "shader/shader_node.h"
-#include "common/environment.h"
 #include "utility/util_sample.h"
 #include "material/material_utils_microfacet.h"
 #include "common/color_ramp.h"
@@ -463,7 +462,7 @@ void CoatedGlossyMaterial::getSpecular(const RenderState &state, const SurfacePo
 	applyWireFrame(col, wire_frame_amount, sp);
 }
 
-Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
+Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	Rgb col(1.f), dcol(1.f), mir_col(1.f);
 	float refl = 1.f;
@@ -564,7 +563,7 @@ Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > 
 	node_list["diffuse_refl_shader"] = nullptr;
 	node_list["mirror_color_shader"] = nullptr;
 
-	if(mat->loadNodes(param_list, render))
+	if(mat->loadNodes(param_list, scene))
 	{
 		mat->parseNodes(params, roots, node_list);
 	}

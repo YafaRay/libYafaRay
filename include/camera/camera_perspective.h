@@ -27,12 +27,12 @@
 BEGIN_YAFARAY
 
 class ParamMap;
-class RenderEnvironment;
+class Scene;
 
 class PerspectiveCamera : public Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, RenderEnvironment &render);
+		static Camera *factory(ParamMap &params, Scene &scene);
 
 	protected:
 		enum BokehType {BkDisk1, BkDisk2, BkTri = 3, BkSqr, BkPenta, BkHexa, BkRing};

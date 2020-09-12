@@ -28,7 +28,6 @@
 
 #include "background/background_darksky.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "light/light.h"
@@ -223,7 +222,7 @@ Rgb DarkSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return ret;
 }
 
-Background *DarkSkyBackground::factory(ParamMap &params, RenderEnvironment &render)
+Background *DarkSkyBackground::factory(ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);
 	float turb = 4.0;
@@ -315,9 +314,7 @@ Background *DarkSkyBackground::factory(ParamMap &params, RenderEnvironment &rend
 
 		Y_VERBOSE << "DarkSky: Adding a \"Real Sun\"" << YENDL;
 
-		Light *light = render.createLight("DarkSky_RealSun", p);
-
-		if(light) render.getScene()->addLight(light);
+		scene.createLight("DarkSky_RealSun", p);
 	}
 
 	if(bgl)
@@ -331,11 +328,9 @@ Background *DarkSkyBackground::factory(ParamMap &params, RenderEnvironment &rend
 
 		Y_VERBOSE << "DarkSky: Adding background light" << YENDL;
 
-		Light *bglight = render.createLight("DarkSky_bgLight", bgp);
+		Light *bglight = scene.createLight("DarkSky_bgLight", bgp);
 
 		bglight->setBackground(dark_sky);
-
-		if(bglight) render.getScene()->addLight(bglight);
 	}
 
 	Y_VERBOSE << "DarkSky: End" << YENDL;

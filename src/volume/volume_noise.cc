@@ -22,8 +22,8 @@
 #include "common/bound.h"
 #include "common/surface.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/param.h"
+#include "common/scene.h"
 #include "utility/util_mcqmc.h"
 #include "utility/util_math_optimizations.h"
 
@@ -42,7 +42,7 @@ float NoiseVolumeRegion::density(Point3 p) const
 	return d;
 }
 
-VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, RenderEnvironment &render)
+VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -78,7 +78,7 @@ VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, RenderEnvironme
 		return nullptr;
 	}
 
-	Texture *noise = render.getTexture(tex_name);
+	Texture *noise = scene.getTexture(tex_name);
 
 	if(!noise)
 	{

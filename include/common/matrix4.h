@@ -50,15 +50,8 @@ class LIBYAFARAY_EXPORT Matrix4
 		int invalid() const { return invalid_; }
 		const float *operator [](int i) const { return matrix_[i]; }
 		float *operator [](int i) { return matrix_[i]; }
-		void setVal(int row, int col, float val)
-		{
-			matrix_[row][col] = val;
-		}
-
-		float getVal(int row, int col)
-		{
-			return matrix_[row][col];
-		}
+		void setVal(int row, int col, float val) { matrix_[row][col] = val; };
+		float getVal(int row, int col) { return matrix_[row][col]; }
 
 	private:
 		float matrix_[4][4];

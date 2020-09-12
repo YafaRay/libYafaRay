@@ -27,26 +27,25 @@
 #include "material/material_coated_glossy.h"
 #include "material/material_simple.h"
 #include "common/surface.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "utility/util_sample.h"
 
 BEGIN_YAFARAY
 
-Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, RenderEnvironment &render)
+Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "blend_mat") return BlendMaterial::factory(params, eparams, render);
-	else if(type == "coated_glossy") return CoatedGlossyMaterial::factory(params, eparams, render);
-	else if(type == "glass") return GlassMaterial::factory(params, eparams, render);
-	else if(type == "mirror") return MirrorMaterial::factory(params, eparams, render);
-	else if(type == "null") return NullMaterial::factory(params, eparams, render);
-	else if(type == "glossy") return GlossyMaterial::factory(params, eparams, render);
-	else if(type == "rough_glass") return RoughGlassMaterial::factory(params, eparams, render);
-	else if(type == "shinydiffusemat") return ShinyDiffuseMaterial::factory(params, eparams, render);
-	else if(type == "light_mat") return LightMaterial::factory(params, eparams, render);
-	else if(type == "mask_mat") return MaskMaterial::factory(params, eparams, render);
+	if(type == "blend_mat") return BlendMaterial::factory(params, eparams, scene);
+	else if(type == "coated_glossy") return CoatedGlossyMaterial::factory(params, eparams, scene);
+	else if(type == "glass") return GlassMaterial::factory(params, eparams, scene);
+	else if(type == "mirror") return MirrorMaterial::factory(params, eparams, scene);
+	else if(type == "null") return NullMaterial::factory(params, eparams, scene);
+	else if(type == "glossy") return GlossyMaterial::factory(params, eparams, scene);
+	else if(type == "rough_glass") return RoughGlassMaterial::factory(params, eparams, scene);
+	else if(type == "shinydiffusemat") return ShinyDiffuseMaterial::factory(params, eparams, scene);
+	else if(type == "light_mat") return LightMaterial::factory(params, eparams, scene);
+	else if(type == "mask_mat") return MaskMaterial::factory(params, eparams, scene);
 	else return nullptr;
 }
 

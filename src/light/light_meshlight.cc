@@ -23,7 +23,6 @@
 #include "light/light_meshlight.h"
 #include "background/background.h"
 #include "texture/texture.h"
-#include "common/environment.h"
 #include "common/param.h"
 #include "common/scene.h"
 #include "utility/util_sample.h"
@@ -32,8 +31,8 @@
 
 BEGIN_YAFARAY
 
-MeshLight::MeshLight(unsigned int msh, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
-		obj_id_(msh), double_sided_(dbl_s), color_(col), samples_(sampl), tree_(nullptr)
+MeshLight::MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
+		object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl), tree_(nullptr)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
@@ -75,7 +74,7 @@ void MeshLight::initIs()
 
 void MeshLight::init(Scene &scene)
 {
-	mesh_ = scene.getMesh(obj_id_);
+	mesh_ = scene.getMesh(object_name_);
 	if(mesh_)
 	{
 		initIs();
@@ -229,20 +228,20 @@ void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 }
 
 
-Light *MeshLight::factory(ParamMap &params, RenderEnvironment &render)
+Light *MeshLight::factory(ParamMap &params, Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);
 	double power = 1.0;
 	int samples = 4;
-	int object = 0;
+	std::string object_name;
 	bool light_enabled = true;
 	bool cast_shadows = true;
 	bool shoot_d = true;
 	bool shoot_c = true;
 	bool p_only = false;
 
-	params.getParam("object", object);
+	params.getParam("object_name", object_name);
 	params.getParam("color", color);
 	params.getParam("power", power);
 	params.getParam("samples", samples);
@@ -253,7 +252,7 @@ Light *MeshLight::factory(ParamMap &params, RenderEnvironment &render)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	MeshLight *light = new MeshLight(object, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows);
+	MeshLight *light = new MeshLight(object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows);
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

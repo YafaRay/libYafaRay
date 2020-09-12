@@ -26,20 +26,19 @@
 #include "camera/camera_equirectangular.h"
 #include "camera/camera_orthographic.h"
 #include "camera/camera_perspective.h"
-#include "common/environment.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-Camera *Camera::factory(ParamMap &params, RenderEnvironment &render)
+Camera *Camera::factory(ParamMap &params, Scene &scene)
 {
 	std::string type;
 	params.getParam("type", type);
-	if(type == "angular") return AngularCamera::factory(params, render);
-	else if(type == "perspective") return PerspectiveCamera::factory(params, render);
-	else if(type == "architect") return ArchitectCamera::factory(params, render);
-	else if(type == "orthographic") return OrthographicCamera::factory(params, render);
-	else if(type == "equirectangular") return EquirectangularCamera::factory(params, render);
+	if(type == "angular") return AngularCamera::factory(params, scene);
+	else if(type == "perspective") return PerspectiveCamera::factory(params, scene);
+	else if(type == "architect") return ArchitectCamera::factory(params, scene);
+	else if(type == "orthographic") return OrthographicCamera::factory(params, scene);
+	else if(type == "equirectangular") return EquirectangularCamera::factory(params, scene);
 	else return nullptr;
 }
 

@@ -22,7 +22,6 @@
 #include "shader/shader_node.h"
 #include "common/surface.h"
 #include "common/logging.h"
-#include "common/environment.h"
 #include "common/spectrum.h"
 #include "common/color_ramp.h"
 #include "common/param.h"
@@ -313,7 +312,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
+Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -394,7 +393,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = render.createVolumeH(name, map);
+				mat->vol_i_ = scene.createVolumeH(name, map);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}
@@ -410,7 +409,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 	node_list["IOR_shader"] = nullptr;
 	node_list["wireframe_shader"]    = nullptr;
 
-	if(mat->loadNodes(param_list, render))
+	if(mat->loadNodes(param_list, scene))
 	{
 		mat->parseNodes(params, roots, node_list);
 	}
@@ -482,7 +481,7 @@ void MirrorMaterial::getSpecular(const RenderState &state, const SurfacePoint &s
 	refr = false;
 }
 
-Material *MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, RenderEnvironment &render)
+Material *MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
@@ -499,7 +498,7 @@ Rgb NullMaterial::sample(const RenderState &state, const SurfacePoint &sp, const
 	return Rgb(0.f);
 }
 
-Material *NullMaterial::factory(ParamMap &, std::list< ParamMap > &, RenderEnvironment &)
+Material *NullMaterial::factory(ParamMap &, std::list< ParamMap > &, Scene &)
 {
 	return new NullMaterial();
 }

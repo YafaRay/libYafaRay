@@ -31,7 +31,7 @@ BEGIN_YAFARAY
 class JpgHandler final : public ImageHandler
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, RenderEnvironment &render);
+		static ImageHandler *factory(ParamMap &params, Scene &scene);
 
 	private:
 		JpgHandler();
