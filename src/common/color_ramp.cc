@@ -81,8 +81,8 @@ float interpolationLinear__(float pos, float val_1, float pos_1, float val_2, fl
 Rgba ColorRamp::getColorInterpolated(float pos) const
 {
 	Rgba result;
-	if(pos < 0.f) result = ramp_.front().color();
-	else if(pos > 1.f) result = ramp_.back().color();
+	if(pos < ramp_.front().position()) result = ramp_.front().color();
+	else if(pos > ramp_.back().position()) result = ramp_.back().color();
 	else
 	{
 		auto item_current = std::lower_bound(ramp_.begin(), ramp_.end(), pos);
