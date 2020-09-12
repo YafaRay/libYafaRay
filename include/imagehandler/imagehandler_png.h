@@ -42,7 +42,7 @@ class PngHandler final : public ImageHandler
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 		void readFromStructs(const PngStructs &png_structs);
 		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
-		bool fillWriteStructs(FILE *fp, unsigned int rgbype, const PngStructs &png_structs, int img_index);
+		bool fillWriteStructs(FILE *fp, unsigned int color_type, const PngStructs &png_structs, int img_index);
 };
 
 END_YAFARAY

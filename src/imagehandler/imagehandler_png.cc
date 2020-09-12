@@ -272,7 +272,7 @@ bool PngHandler::fillReadStructs(uint8_t *sig, const PngStructs &png_structs)
 	return true;
 }
 
-bool PngHandler::fillWriteStructs(FILE *fp, unsigned int rgbype, const PngStructs &png_structs, int img_index)
+bool PngHandler::fillWriteStructs(FILE *fp, unsigned int color_type, const PngStructs &png_structs, int img_index)
 {
 	int h = getHeight(img_index);
 	int w = getWidth(img_index);
@@ -300,7 +300,7 @@ bool PngHandler::fillWriteStructs(FILE *fp, unsigned int rgbype, const PngStruct
 	png_init_io(png_structs.png_ptr_, fp);
 
 	png_set_IHDR(png_structs.png_ptr_, png_structs.info_ptr_, (png_uint_32) w, (png_uint_32) h,
-				 8, rgbype, PNG_INTERLACE_NONE,
+				 8, color_type, PNG_INTERLACE_NONE,
 				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
 	png_write_info(png_structs.png_ptr_, png_structs.info_ptr_);
@@ -312,15 +312,15 @@ void PngHandler::readFromStructs(const PngStructs &png_structs)
 {
 	png_uint_32 w, h;
 
-	int bit_depth, rgbype;
+	int bit_depth, color_type;
 
 	png_read_info(png_structs.png_ptr_, png_structs.info_ptr_);
 
-	png_get_IHDR(png_structs.png_ptr_, png_structs.info_ptr_, &w, &h, &bit_depth, &rgbype, nullptr, nullptr, nullptr);
+	png_get_IHDR(png_structs.png_ptr_, png_structs.info_ptr_, &w, &h, &bit_depth, &color_type, nullptr, nullptr, nullptr);
 
 	int num_chan = png_get_channels(png_structs.png_ptr_, png_structs.info_ptr_);
 
-	switch(rgbype)
+	switch(color_type)
 	{
 		case PNG_COLOR_TYPE_RGB:
 			break;

@@ -471,7 +471,7 @@ Texture *VoronoiTexture::factory(ParamMap &params, Scene &scene)
 	params.getParam("color1", col_1);
 	params.getParam("color2", col_2);
 
-	params.getParam("Rgbype", cltype);
+	params.getParam("color_type", cltype);
 	if(cltype == "col1") ct = 1;
 	else if(cltype == "col2") ct = 2;
 	else if(cltype == "col3") ct = 3;
