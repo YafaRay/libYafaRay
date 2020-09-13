@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-class RenderPasses;
+class PassesSettings;
 class Rgba;
 
 /*! Base class for rendering output containers */
@@ -38,16 +38,20 @@ class Rgba;
 class ColorOutput
 {
 	public:
+		ColorOutput(const PassesSettings *passes_settings) : passes_settings_(passes_settings) { }
 		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) = 0;
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) = 0;
-		virtual void flush(int num_view, const RenderPasses *render_passes) = 0;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) = 0;
+		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) = 0;
+		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) = 0;
+		virtual void flush(int num_view) = 0;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) = 0;
 		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) {};
 		virtual bool isImageOutput() const { return false; }
 		virtual bool isPreview() const { return false; }
 		virtual std::string getDenoiseParams() const { return ""; }
+
+	protected:
+		const PassesSettings *passes_settings_ = nullptr;
 };
 
 END_YAFARAY

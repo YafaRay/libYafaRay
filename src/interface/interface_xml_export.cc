@@ -57,10 +57,10 @@ bool XmlInterface::setLoggingAndBadgeSettings()
 
 bool XmlInterface::setupRenderPasses()
 {
-	xml_file_ << "\n<render_passes name=\"render_passes\">\n";
+	xml_file_ << "\n<passes_settings name=\"passes_settings\">\n";
 	writeParamMap(*params_);
 	params_->clear();
-	xml_file_ << "</render_passes>\n";
+	xml_file_ << "</passes_settings>\n";
 	return true;
 }
 

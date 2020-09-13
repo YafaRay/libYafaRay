@@ -49,13 +49,13 @@ class MonteCarloIntegrator: public TiledIntegrator
 
 	protected:
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
-		Rgb estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
+		Rgb estimateAllDirectLight(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, IntPasses *int_passes = nullptr) const;
 		/*! Like previous but for only one random light source for a given surface point */
-		Rgb estimateOneDirectLight(RenderState &state, const SurfacePoint &sp, Vec3 wo, int n, ColorPasses &color_passes) const;
+		Rgb estimateOneDirectLight(RenderState &state, const SurfacePoint &sp, Vec3 wo, int n) const;
 		/*! Does the actual light estimation on a specific light for the given surface point */
-		Rgb doLightEstimation(RenderState &state, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorPasses &color_passes) const;
+		Rgb doLightEstimation(RenderState &state, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, IntPasses *int_passes = nullptr) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		void recursiveRaytrace(RenderState &state, DiffRay &ray, BsdfFlags bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, ColorPasses &color_passes, int additional_depth) const;
+		void recursiveRaytrace(RenderState &state, DiffRay &ray, BsdfFlags bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, int additional_depth, IntPasses *int_passes = nullptr) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap();
 		/*! Estimates caustic photons for a given surface point */

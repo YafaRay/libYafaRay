@@ -56,8 +56,8 @@ struct YafTileObject
 	int resx, resy;
 	int x0, x1, y0, y1;
 	int w, h;
+	int color_components; //RGBA (4), RGB (3) or Grayscale (1). Grayscale would use component "r" only for the grayscale value.
 	YafTilePixel *mem;
-	int tileType; //RGBA (4), RGB (3) or Grayscale (1). Grayscale would use component "r" only for the grayscale value.
 };
 
 
@@ -75,29 +75,12 @@ static PyObject *yaf_tile_subscript_int(YafTileObject *self, int keynum)
 	// Check boundaries and fill w and h
 	if (keynum >= yaf_tile_length(self) || keynum < 0)
 	{
-		if(self->tileType == yafaray4::PassExtTile1Grayscale)
+		PyObject* groupPix = PyTuple_New(self->color_components);
+		for(int i = 0; i < self->color_components; ++i)
 		{
-			PyObject* groupPix = PyTuple_New(1);
-			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
-			return groupPix;
+			PyTuple_SET_ITEM(groupPix, i, PyFloat_FromDouble((i == 3 ? 1.f : 0.f)));
 		}
-		else if(self->tileType == yafaray4::PassExtTile3Rgb)
-		{
-			PyObject* groupPix = PyTuple_New(3);
-			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
-			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
-			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
-			return groupPix;
-		}
-		else
-		{
-			PyObject* groupPix = PyTuple_New(4);
-			PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(0.f));
-			PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(0.f));
-			PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(0.f));
-			PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(1.f));
-			return groupPix;
-		}
+		return groupPix;
 	}
 
 	// Calc position of the tile in the image region
@@ -111,29 +94,21 @@ static PyObject *yaf_tile_subscript_int(YafTileObject *self, int keynum)
 	// Get pixel
 	YafTilePixel &pix = self->mem[ self->resx * vy + vx ];
 
-	if(self->tileType == yafaray4::PassExtTile1Grayscale)
+	PyObject* groupPix = PyTuple_New(self->color_components);
+	if(self->color_components >= 1)
 	{
-		PyObject* groupPix = PyTuple_New(1);
 		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
-		return groupPix;
 	}
-	else if(self->tileType == yafaray4::PassExtTile3Rgb)
+	if(self->color_components >= 3)
 	{
-		PyObject* groupPix = PyTuple_New(3);
-		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
 		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
 		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
-		return groupPix;
 	}
-	else
+	if(self->color_components == 4)
 	{
-		PyObject* groupPix = PyTuple_New(4);
-		PyTuple_SET_ITEM(groupPix, 0, PyFloat_FromDouble(pix.r));
-		PyTuple_SET_ITEM(groupPix, 1, PyFloat_FromDouble(pix.g));
-		PyTuple_SET_ITEM(groupPix, 2, PyFloat_FromDouble(pix.b));
 		PyTuple_SET_ITEM(groupPix, 3, PyFloat_FromDouble(pix.a));
-		return groupPix;
 	}
+	return groupPix;
 }
 
 static void yafTileDealloc__(YafTileObject *self)
@@ -181,7 +156,8 @@ class YafPyOutput : public yafaray4::ColorOutput
 
 public:
 
-	YafPyOutput(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallback, PyObject *flushCallback) :
+	YafPyOutput(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallback, PyObject *flushCallback, const yafaray4::PassesSettings *passes_settings) :
+	yafaray4::ColorOutput(passes_settings),
 	resx(x),
 	resy(y),
 	bsX(borderStartX),
@@ -237,29 +213,29 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
-	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha = true) override
+	virtual bool putPixel(int numView, int x, int y, int ext_pass, const yafaray4::Rgba &color, bool alpha = true) override
 	{
-		if(idx < (int) tiles_passes.at(numView).size())
+		if(ext_pass < (int) tiles_passes.at(numView).size())
 		{
-			YafTilePixel &pix= tiles_passes.at(numView)[idx]->mem[resx * y + x];
+			YafTilePixel &pix= tiles_passes.at(numView)[ext_pass]->mem[resx * y + x];
 			pix.r = color.r_;
 			pix.g = color.g_;
 			pix.b = color.b_;
-			pix.a = (alpha || idx > 0) ? color.a_ : 1.0f;
+			pix.a = (alpha || ext_pass > 0) ? color.a_ : 1.0f;
 		}
         
 		return true;
 	}
 
-	virtual bool putPixel(int numView, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &colExtPasses, bool alpha = true) override
+	virtual bool putPixel(int numView, int x, int y, const std::vector<yafaray4::Rgba> &colors, bool alpha = true) override
 	{
 		for(size_t idx = 0; idx < tiles_passes.at(numView).size(); ++idx)
 		{
 			YafTilePixel &pix= tiles_passes.at(numView)[idx]->mem[resx * y + x];
-			pix.r = colExtPasses[idx].r_;
-			pix.g = colExtPasses[idx].g_;
-			pix.b = colExtPasses[idx].b_;
-			pix.a = (alpha || idx > 0) ? colExtPasses[idx].a_ : 1.0f;
+			pix.r = colors[idx].r_;
+			pix.g = colors[idx].g_;
+			pix.b = colors[idx].b_;
+			pix.a = (alpha || idx > 0) ? colors[idx].a_ : 1.0f;
 		}
         
 		return true;
@@ -267,7 +243,7 @@ public:
 
 	virtual bool isPreview() const override { return preview; }
 
-	virtual void flush(int numView_unused, const yafaray4::RenderPasses *render_passes) override
+	virtual void flush(int numView_unused) override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
@@ -277,7 +253,7 @@ public:
 
 		for(size_t view = 0; view < tiles_passes.size(); ++view)
 		{
-			std::string view_name = render_passes->view_names_.at(view);
+			std::string view_name = passes_settings_->view_names_.at(view);
 
 			for(size_t idx = 0; idx < tiles_passes.at(view).size(); ++idx)
 			{
@@ -286,10 +262,10 @@ public:
 				tiles_passes.at(view)[idx]->y0 = 0;
 				tiles_passes.at(view)[idx]->y1 = resy;
 				
-				tiles_passes.at(view)[idx]->tileType = render_passes->tileType(idx);
+				tiles_passes.at(view)[idx]->color_components = passes_settings_->extPassesSettings()(idx).colorComponents();
 				
 				std::stringstream extPassName;
-				extPassName << render_passes->extPassTypeStringFromIndex(idx);
+				extPassName << passes_settings_->extPassesSettings()(idx).name();
 				PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tiles_passes.at(view)[idx]);				
 				PyTuple_SET_ITEM(groupTile, tiles_passes.at(view).size()*view + idx, (PyObject*) groupItem);
 
@@ -308,10 +284,10 @@ public:
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
 
-	virtual void flushArea(int numView, int x0, int y0, int x1, int y1, const yafaray4::RenderPasses *render_passes) override
+	virtual void flushArea(int numView, int x0, int y0, int x1, int y1) override
 	{
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
-		std::string view_name = render_passes->view_names_.at(numView);
+		std::string view_name = std::to_string(numView); //FIXME! passes_settings->view_names_.at(numView);
 		
 		// Do nothing if we are rendering preview renders
 		if(preview) return;
@@ -331,10 +307,10 @@ public:
 			tiles_passes.at(numView)[idx]->y0 = y0 - bsY;
 			tiles_passes.at(numView)[idx]->y1 = y1 - bsY;
 			
-			tiles_passes.at(numView)[idx]->tileType = render_passes->tileType(idx);
+			tiles_passes.at(numView)[idx]->color_components = passes_settings_->extPassesSettings()(idx).colorComponents();
 			
 			std::stringstream extPassName;
-			extPassName << render_passes->extPassTypeStringFromIndex(idx);
+			extPassName << passes_settings_->extPassesSettings()(idx).name();
 			PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tiles_passes.at(numView)[idx]);
 			PyTuple_SET_ITEM(groupTile, idx, (PyObject*) groupItem);
 
@@ -380,7 +356,7 @@ public:
 
 		PyObject* groupTile = PyTuple_New(1);
 
-		tiles_passes.at(numView)[0]->tileType = yafaray4::PassExtTile4Rgba;
+		tiles_passes.at(numView)[0]->color_components = 4;
 		
 		PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), "Combined", tiles_passes.at(numView)[0]);
 		PyTuple_SET_ITEM(groupTile, 0, (PyObject*) groupItem);
@@ -573,7 +549,7 @@ private:
 {
 	void render(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallBack, PyObject *flushCallBack, PyObject *progressCallback)
 	{
-		YafPyOutput output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack);
+		YafPyOutput output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack, self->getPassesSettings());
 		YafPyProgress *pbar_wrap = new YafPyProgress(progressCallback);
 
 		Py_BEGIN_ALLOW_THREADS;
@@ -607,15 +583,16 @@ namespace yafaray4
 	class ColorOutput
 	{
 		public:
+		ColorOutput(const yafaray4::PassesSettings *passes_settings) : passes_settings_(passes_settings) { }
 		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) = 0;
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) = 0;
-		virtual void flush(int num_view, const RenderPasses *render_passes) = 0;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) = 0;
+		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) = 0;
+		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) = 0;
+		virtual void flush(int num_view) = 0;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) = 0;
 		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) {};
-		virtual bool isImageOutput() { return false; }
-		virtual bool isPreview() { return false; }
+		virtual bool isImageOutput() const { return false; }
+		virtual bool isPreview() const { return false; }
 		virtual std::string getDenoiseParams() const { return ""; }
 	};
 
@@ -627,7 +604,7 @@ namespace yafaray4
 		virtual bool loadFromFile(const std::string &name) = 0;
 		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
-		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
+		virtual bool saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings) { return false; };
 		virtual bool isHdr() const { return false; }
 		bool isMultiLayer() const { return multi_layer_; }
 		bool denoiseEnabled() const { return denoise_; }
@@ -642,7 +619,7 @@ namespace yafaray4
 		void setColorSpace(ColorSpace color_space, float gamma) { color_space_ = color_space; gamma_ = gamma; }
 		void putPixel(int x, int y, const Rgba &rgba, int img_index = 0);
 		Rgba getPixel(int x, int y, int img_index = 0);
-		void initForOutput(int width, int height, const RenderPasses *render_passes, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha = false, bool multi_layer = false, bool grayscale = false);
+		void initForOutput(int width, int height, const PassesSettings *passes_settings, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha = false, bool multi_layer = false, bool grayscale = false);
 		void clearImgBuffers();
 	};
 	// Outputs
@@ -650,13 +627,13 @@ namespace yafaray4
 	class ImageOutput : public ColorOutput
 	{
 		public:
-		ImageOutput() = default;
-		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
+		ImageOutput(const PassesSettings *passes_settings) : ColorOutput(passes_settings) { }
+		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by, const PassesSettings *passes_settings);
 		private:
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) override;
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
-		virtual void flush(int num_view, const RenderPasses *render_passes) override;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {} // not used by images... yet
+		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) override;
+		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) override;
+		virtual void flush(int num_view) override;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
 	};
 
 	// Utility classes
@@ -767,6 +744,7 @@ namespace yafaray4
 
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
 		void setOutput2(ColorOutput *out_2);
+		const PassesSettings *getPassesSettings() const;
 	};
 
 	class XmlInterface: public Interface

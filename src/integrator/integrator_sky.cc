@@ -156,7 +156,7 @@ Rgba SkyIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	return Rgba(exp(-result.energy()));
 }
 
-Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth) const {
+Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
 	//return Rgba(0.f);
 	Rgba i_r(0.f);
 	Rgba i_m(0.f);

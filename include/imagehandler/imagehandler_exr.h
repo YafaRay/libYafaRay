@@ -38,7 +38,7 @@ class ExrHandler final : public ImageHandler
 		~ExrHandler();
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
-		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) override;
+		virtual bool saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings) override;
 		virtual bool isHdr() const override { return true; }
 };
 

@@ -30,6 +30,7 @@
 #include "utility/util_tiled_array.h"
 #include "utility/util_thread.h"
 #include "common/aa_noise_params.h"
+#include "renderpasses.h"
 
 BEGIN_YAFARAY
 
@@ -39,10 +40,10 @@ BEGIN_YAFARAY
 */
 
 class ProgressBar;
-class RenderPasses;
-class ColorPasses;
+class PassesSettings;
 class Scene;
 class ColorOutput;
+class ColorPasses;
 
 class LIBYAFARAY_EXPORT ImageFilm final
 {
@@ -88,7 +89,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
 		*/
-		void addSample(ColorPasses &color_passes, int x, int y, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f);
+		void addSample(int x, int y, float dx, float dy, const RenderArea *a = nullptr, int num_sample = 0, int aa_pass_number = 0, float inv_aa_max_possible_samples = 0.1f, IntPasses *int_passes = nullptr);
 		/*!	Add light density sample; dx and dy describe the position in the pixel (x,y).
 			IMPORTANT: when a is given, all samples within a are assumed to come from the same thread!
 			use a=0 for contributions outside the area associated with current thread!
@@ -145,13 +146,11 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		void generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
 		void generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
 
-		Rgba2DImageWeighed_t *getImagePassFromIntPassType(int int_pass_type);
-		int getImagePassIndexFromIntPassType(int int_pass_type);
-		int getAuxImagePassIndexFromIntPassType(int int_pass_type);
+		Rgba2DImageWeighed_t *getImagePassFromIntPassType(int pass_type);
+		int getImagePassIndexFromIntPassType(int pass_type);
 
 	private:
 		std::vector<Rgba2DImageWeighed_t *> image_passes_; //!< rgba color buffers for the render passes
-		std::vector<Rgba2DImageWeighed_t *> aux_image_passes_; //!< rgba color buffers for the auxiliary image passes
 		Rgb2DImage_t *density_image_; //!< storage for z-buffer channel
 		Rgba2DImage_t *dp_image_; //!< render parameters badge image
 		TiledBitArray2D<3> *flags_ = nullptr; //!< flags for adaptive AA sampling;

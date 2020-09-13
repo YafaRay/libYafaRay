@@ -29,285 +29,214 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 BEGIN_YAFARAY
 
-class Rgb;
 class Rgba;
 
-enum ExtPassTypes : int
+enum PassTypes : int
 {
-	PassExtDisabled				=	-1,
-	PassExtCombined				=	0,
-	PassExtZDepth,				//From here, specific ext.passes for Blender Exporter
-	PassExtVector,
-	PassExtNormal,
-	PassExtUv,
-	PassExtColor,
-	PassExtEmit,
-	PassExtMist,
-	PassExtDiffuse,
-	PassExtSpecular,
-	PassExtAo,
-	PassExtEnv,
-	PassExtIndirect,
-	PassExtShadow,
-	PassExtReflect,
-	PassExtRefract,
-	PassExtObjIndex,
-	PassExtMatIndex,
-	PassExtDiffuseDirect,
-	PassExtDiffuseIndirect,
-	PassExtDiffuseColor,
-	PassExtGlossyDirect,
-	PassExtGlossyIndirect,
-	PassExtGlossyColor,
-	PassExtTransDirect,
-	PassExtTransIndirect,
-	PassExtTransColor,
-	PassExtSubsurfaceDirect,
-	PassExtSubsurfaceIndirect,
-	PassExtSubsurfaceColor,
-	PassExt1,						//From here, generic ext.passes for other exporters and plugins
-	PassExt2,
-	PassExt3,
-	PassExt4,
-	PassExt5,
-	PassExt6,
-	PassExt7,
-	PassExt8,
-	PassExt9,
-	PassExt10,
-	PassExt11,
-	PassExt12,
-	PassExt13,
-	PassExt14,
-	PassExt15,
-	PassExt16,
-	PassExt17,
-	PassExt18,
-	PassExt19,
-	PassExt20,
-	PassExt21,
-	PassExt22,
-	PassExt23,
-	PassExt24,
-	PassExt25,
-	PassExt26,
-	PassExt27,
-	PassExt28,
-	PassExt29,
-	PassExt30,
-	PassExt31,
-	PassExt32,
-	PassExtTotalPasses			//IMPORTANT: KEEP THIS ALWAYS IN THE LAST POSITION
+	PassDisabled = -1,
+	PassCombined = 0,
+	PassZDepthNorm,
+	PassZDepthAbs,
+	PassNormalSmooth,
+	PassNormalGeom,
+	PassUv,
+	PassRadiance,
+	PassEmit,
+	PassDiffuse,
+	PassDiffuseNoShadow,
+	PassAo,
+	PassAoClay,
+	PassEnv,
+	PassMist,
+	PassIndirect,
+	PassIndirectAll,
+	PassShadow,
+	PassReflectPerfect,
+	PassRefractPerfect,
+	PassReflectAll,
+	PassRefractAll,
+	PassObjIndexAbs,
+	PassObjIndexNorm,
+	PassObjIndexAuto,
+	PassObjIndexAutoAbs,
+	PassMatIndexAbs,
+	PassMatIndexNorm,
+	PassMatIndexAuto,
+	PassMatIndexAutoAbs,
+	PassObjIndexMask,
+	PassObjIndexMaskShadow,
+	PassObjIndexMaskAll,
+	PassMatIndexMask,
+	PassMatIndexMaskShadow,
+	PassMatIndexMaskAll,
+	PassDiffuseIndirect,
+	PassDiffuseColor,
+	PassGlossy,
+	PassGlossyIndirect,
+	PassGlossyColor,
+	PassTrans,
+	PassTransIndirect,
+	PassTransColor,
+	PassSubsurface,
+	PassSubsurfaceIndirect,
+	PassSubsurfaceColor,
+	PassSurfaceIntegration,
+	PassVolumeIntegration,
+	PassVolumeTransmittance,
+	PassDebugNu,
+	PassDebugNv,
+	PassDebugDpdu,
+	PassDebugDpdv,
+	PassDebugDsdu,
+	PassDebugDsdv,
+	PassAaSamples,
+	PassDebugLightEstimationLightDirac,
+	PassDebugLightEstimationLightSampling,
+	PassDebugLightEstimationMatSampling,
+	PassDebugWireframe,
+	PassDebugFacesEdges,
+	PassDebugObjectsEdges,
+	PassToon,
+	PassDebugSamplingFactor,
+	PassDebugDpLengths,
+	PassDebugDpdx,
+	PassDebugDpdy,
+	PassDebugDpdxy,
+	PassDebugDudxDvdx,
+	PassDebugDudyDvdy,
+	PassDebugDudxyDvdxy,
 };
 
-enum ExternalPassTileTypes : int
-{
-	PassExtTile1Grayscale		=	 1,
-	PassExtTile3Rgb				=	 3,
-	PassExtTile4Rgba			=	 4
-};
-
-enum IntPassTypes : int
-{
-	PassIntDisabled				=	-1,
-	PassIntCombined				=	0,
-	PassIntZDepthNorm,
-	PassIntZDepthAbs,
-	PassIntNormalSmooth,
-	PassIntNormalGeom,
-	PassIntUv,
-	PassIntRadiance,
-	PassIntEmit,
-	PassIntDiffuse,
-	PassIntDiffuseNoShadow,
-	PassIntAo,
-	PassIntAoClay,
-	PassIntEnv,
-	PassIntMist,
-	PassIntIndirect,
-	PassIntIndirectAll,
-	PassIntShadow,
-	PassIntReflectPerfect,
-	PassIntRefractPerfect,
-	PassIntReflectAll,
-	PassIntRefractAll,
-	PassIntObjIndexAbs,
-	PassIntObjIndexNorm,
-	PassIntObjIndexAuto,
-	PassIntObjIndexAutoAbs,
-	PassIntMatIndexAbs,
-	PassIntMatIndexNorm,
-	PassIntMatIndexAuto,
-	PassIntMatIndexAutoAbs,
-	PassIntObjIndexMask,
-	PassIntObjIndexMaskShadow,
-	PassIntObjIndexMaskAll,
-	PassIntMatIndexMask,
-	PassIntMatIndexMaskShadow,
-	PassIntMatIndexMaskAll,
-	PassIntDiffuseIndirect,
-	PassIntDiffuseColor,
-	PassIntGlossy,
-	PassIntGlossyIndirect,
-	PassIntGlossyColor,
-	PassIntTrans,
-	PassIntTransIndirect,
-	PassIntTransColor,
-	PassIntSubsurface,
-	PassIntSubsurfaceIndirect,
-	PassIntSubsurfaceColor,
-	PassIntSurfaceIntegration,
-	PassIntVolumeIntegration,
-	PassIntVolumeTransmittance,
-	PassIntDebugNu,
-	PassIntDebugNv,
-	PassIntDebugDpdu,
-	PassIntDebugDpdv,
-	PassIntDebugDsdu,
-	PassIntDebugDsdv,
-	PassIntAaSamples,
-	PassIntDebugLightEstimationLightDirac,
-	PassIntDebugLightEstimationLightSampling,
-	PassIntDebugLightEstimationMatSampling,
-	PassIntDebugWireframe,
-	PassIntDebugFacesEdges,
-	PassIntDebugObjectsEdges,
-	PassIntToon,
-	PassIntDebugSamplingFactor,
-	PassIntDebugDpLengths,
-	PassIntDebugDpdx,
-	PassIntDebugDpdy,
-	PassIntDebugDpdxy,
-	PassIntDebugDudxDvdx,
-	PassIntDebugDudyDvdy,
-	PassIntDebugDudxyDvdxy,
-	PassIntTotalPasses			//IMPORTANT: KEEP THIS ALWAYS IN THE LAST POSITION
-};
-
-
-
-class ExtPass  //Render pass to be exported, for example, to Blender, and mapping to the internal YafaRay render passes generated in different points of the rendering process
+class IntPassesSettings
 {
 	public:
-		ExtPass(ExtPassTypes ext_pass_type, IntPassTypes int_pass_type);
-		ExtPassTypes ext_pass_type_;
-		ExternalPassTileTypes tile_type_;
-		IntPassTypes int_pass_type_;
+		IntPassesSettings();
+		bool enabled(const PassTypes &type) const;
+		void enable(const PassTypes &type);
+
+		const std::set<PassTypes> &listEnabled() const { return enabled_list_; }
+		const std::map<PassTypes, std::string> &listAvailable() const { return map_type_name_; }
+
+		std::string name(const PassTypes &type) const;
+		PassTypes type(const std::string &name) const;
+		Rgba defaultColor(const PassTypes &type) const;
+
+	protected:
+		std::set<PassTypes> enabled_list_; //!List with the enabled internal passes
+		std::vector<bool> enabled_bool_; //!Enabled internal passes in bool vector format for performance search
+		std::map<PassTypes, std::string> map_type_name_; //!Dictionary available internal passes type->name
+		std::map<std::string, PassTypes> map_name_type_; //!Reverse dictionary name->type
+};
+
+inline bool IntPassesSettings::enabled(const PassTypes &type) const
+{
+	if(type == PassCombined) return true;
+	else if(type == PassDisabled) return false;
+	else if(type >= (int) enabled_bool_.size()) return false;
+	else return enabled_bool_.at(type);
+}
+
+
+class IntPasses //Internal YafaRay color passes generated in different points of the rendering process
+{
+	public:
+		IntPasses(const IntPassesSettings &settings);
+		size_t size() const { return settings().listEnabled().size(); }
+		bool enabled(const PassTypes &type) const { return settings().enabled(type); }
+		const IntPassesSettings &settings() const { return settings_; }
+
+		std::set<PassTypes>::const_iterator begin() const { return settings().listEnabled().begin(); }
+		std::set<PassTypes>::const_iterator end() const { return settings().listEnabled().end(); }
+
+		void setDefaults();
+		Rgba &operator()(const PassTypes &type);
+		const Rgba &operator()(const PassTypes &type) const;
+		Rgba *find(const PassTypes &type);
+
+	protected:
+		std::vector <Rgba> passes_;
+		const IntPassesSettings &settings_;
 };
 
 
-class AuxPass  //Render pass to be used internally only, without exporting to images/Blender and mapping to the internal YafaRay render passes generated in different points of the rendering process
+class ExtPassDefinition  //Render pass to be exported, for example, to Blender, and mapping to the internal YafaRay render passes generated in different points of the rendering process
 {
 	public:
-		AuxPass(IntPassTypes int_pass_type);
-		IntPassTypes int_pass_type_;
+		ExtPassDefinition(const std::string &name, PassTypes internal_type, int color_components = 4, bool save = true): name_(name), color_components_(color_components), internal_type_(internal_type), save_(save) { }
+		std::string name() const { return name_; }
+		int colorComponents() const { return color_components_; }
+		PassTypes intPassType() const { return internal_type_; }
+		bool toSave() const { return save_; }
+
+	protected:
+		std::string name_ = "default";
+		int color_components_ = 4; //!< Valid values: 1=Grayscale, 3=RGB, 4=RGBA
+		PassTypes internal_type_ = PassCombined;
+		bool save_ = true; //!< Determine if this external pass should be saved or not (for example in auxiliary external passes that do not need to be saved to disk or exported to an external application)
 };
 
-
-class LIBYAFARAY_EXPORT RenderPasses
+class ExtPassesSettings
 {
-		friend class ColorPasses;
-
 	public:
-		RenderPasses();
-		int extPassesSize() const;
-		int auxPassesSize() const;
-		int intPassesSize() const;
-		void generatePassMaps();	//Generate text strings <-> pass type maps
-		bool passEnabled(IntPassTypes int_pass_type) const { return index_int_passes_[int_pass_type] != PassIntDisabled; }
-		void extPassAdd(const std::string &s_external_pass, const std::string &s_internal_pass);	//Adds a new External Pass associated to an internal pass. Strings are used as parameters and they must match the strings in the maps generated by generate_pass_maps()
-		void auxPassAdd(IntPassTypes int_pass_type);	//Adds a new Auxiliary Pass associated to an internal pass. Strings are used as parameters and they must match the strings in the maps generated by generate_pass_maps()
-		void intPassAdd(IntPassTypes int_pass_type);
+		size_t size() const { return passes_.size(); }
+		void extPassAdd(const std::string &ext_pass_name, PassTypes int_pass_type, int color_components = 4, bool save = true);
+		std::vector<ExtPassDefinition>::const_iterator begin() const { return passes_.begin(); }
+		std::vector<ExtPassDefinition>::const_iterator end() const { return passes_.end(); }
+		ExtPassDefinition &operator()(size_t index) { return passes_.at(index); }
+		const ExtPassDefinition &operator()(size_t index) const { return passes_.at(index); }
+
+	protected:
+		std::vector<ExtPassDefinition> passes_; //List of the external Render passes to be exported
+};
+
+struct PassMaskParams
+{
+	float obj_index_ = 0.f; //!Object Index used for masking in/out in the Mask Render Passes
+	float mat_index_ = 0.f; //!Material Index used for masking in/out in the Mask Render Passes
+	bool invert_ = false; //!False=mask in, True=mask out
+	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
+};
+
+struct PassEdgeToonParams //Options for Edge detection and Toon Render Pass
+{
+	int thickness_ = 2; //!Thickness of the edges used in the Object Edge and Toon Render Passes
+	float threshold_ = 0.3f; //!Threshold for the edge detection process used in the Object Edge and Toon Render Passes
+	float smoothness_ = 0.75f; //!Smoothness (blur) of the edges used in the Object Edge and Toon Render Passes
+	std::array<float, 3> toon_color_ = {0.f, 0.f, 0.f}; //!Color of the edges used in the Toon Render Pass.
+	//Using array<float, 3> to avoid including color.h header dependency
+	float toon_pre_smooth_ = 3.f; //!Toon effect: smoothness applied to the original image
+	float toon_quantization_ = 0.1f; //!Toon effect: color Quantization applied to the original image
+	float toon_post_smooth_ = 3.f; //!Toon effect: smoothness applied after Quantization
+	int face_thickness_ = 1; //!Thickness of the edges used in the Faces Edge Render Pass
+	float face_threshold_ = 0.01f; //!Threshold for the edge detection process used in the Faces Edge Render Pass
+	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Pass
+};
+
+class PassesSettings
+{
+	public:
+		PassesSettings();
+		void extPassAdd(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components = 4);
+		void auxPassAdd(const PassTypes &type);
 		void auxPassesGenerate();
+		const IntPassesSettings &intPassesSettings() const { return int_passes_settings_; }
+		const ExtPassesSettings &extPassesSettings() const { return ext_passes_settings_; }
+		const PassMaskParams &passMaskParams() const { return pass_mask_; }
+		void setPassMaskParams(const PassMaskParams &mask_params) { pass_mask_ = mask_params; }
+		const PassEdgeToonParams &passEdgeToonParams() const { return edge_toon_; }
+		void setPassEdgeToonParams(const PassEdgeToonParams &edge_params) { edge_toon_ = edge_params; }
 
-		ExtPassTypes extPassTypeFromIndex(int ext_pass_index) const;
-		IntPassTypes intPassTypeFromIndex(int int_pass_index) const;
-		std::string extPassTypeStringFromIndex(int ext_pass_index) const;
-		std::string extPassTypeStringFromType(ExtPassTypes ext_pass_type) const;
-		std::string intPassTypeStringFromType(IntPassTypes int_pass_type) const;
-		ExtPassTypes extPassTypeFromString(std::string ext_pass_type_string) const;
-		IntPassTypes intPassTypeFromString(std::string int_pass_type_string) const;
-		int extPassIndexFromType(ExtPassTypes ext_pass_type) const;
-		int intPassIndexFromType(IntPassTypes int_pass_type) const;
-		IntPassTypes intPassTypeFromExtPassIndex(int ext_pass_index) const;
-		IntPassTypes intPassTypeFromAuxPassIndex(int aux_pass_index) const;
-		ExternalPassTileTypes tileType(int ext_pass_index) const;
-
-		void setPassMaskObjIndex(float new_obj_index);	//Object Index used for masking in/out in the Mask Render Passes
-		void setPassMaskMatIndex(float new_mat_index);	//Material Index used for masking in/out in the Mask Render Passes
-		void setPassMaskInvert(bool mask_invert);	//False=mask in, True=mask out
-		void setPassMaskOnly(bool mask_only);
-
-		std::map<ExtPassTypes, std::string> ext_pass_map_int_string_; //Map int-string for external passes
-		std::map<std::string, ExtPassTypes> ext_pass_map_string_int_; //Reverse map string-int for external passes
-		std::map<IntPassTypes, std::string> int_pass_map_int_string_; //Map int-string for internal passes
-		std::map<std::string, IntPassTypes> int_pass_map_string_int_; //Reverse map string-int for internal passes
-		std::vector<std::string> view_names_;	//Render Views names
-
-		//Options for Edge detection and Toon Render Pass
-		std::vector<float> toon_edge_color_ = std::vector<float> (3, 0.f);	//Color of the edges used in the Toon Render Pass
-		int object_edge_thickness_ = 2;		//Thickness of the edges used in the Object Edge and Toon Render Passes
-		float object_edge_threshold_ = 0.3f;	//Threshold for the edge detection process used in the Object Edge and Toon Render Passes
-		float object_edge_smoothness_ = 0.75f;	//Smoothness (blur) of the edges used in the Object Edge and Toon Render Passes
-		float toon_pre_smooth_ = 3.f;      //Toon effect: smoothness applied to the original image
-		float toon_quantization_ = 0.1f;      //Toon effect: color Quantization applied to the original image
-		float toon_post_smooth_ = 3.f;      //Toon effect: smoothness applied after Quantization
-
-		int faces_edge_thickness_ = 1;		//Thickness of the edges used in the Faces Edge Render Pass
-		float faces_edge_threshold_ = 0.01f;	//Threshold for the edge detection process used in the Faces Edge Render Pass
-		float faces_edge_smoothness_ = 0.5f;	//Smoothness (blur) of the edges used in the Faces Edge Render Pass
+		std::vector<std::string> view_names_; //Render Views names
 
 	protected:
-		std::vector<ExtPass> ext_passes_;		//List of the external Render passes to be exported
-		std::vector<AuxPass> aux_passes_;		//List of the intermediate auxiliary Render passes used for other operations
-		std::vector<IntPassTypes> int_passes_;		//List of the internal passes to be generated by the YafaRay engine
-		std::vector<int> index_ext_passes_;	//List with all possible external passes and to which pass index are they mapped. -1 = pass disabled
-		std::vector<int> index_int_passes_;	//List with all possible internal passes and to which pass index are they mapped. -1 = pass disabled
-
-		float pass_mask_obj_index_;	//Object Index used for masking in/out in the Mask Render Passes
-		float pass_mask_mat_index_;	//Material Index used for masking in/out in the Mask Render Passes
-		bool pass_mask_invert_;	//False=mask in, True=mask out
-		bool pass_mask_only_;	//False=rendered image is masked, True=only the mask is shown without rendered image
-};
-
-
-class ColorPasses  //Internal YafaRay color passes generated in different points of the rendering process
-{
-	public:
-		ColorPasses(const RenderPasses *render_passes);
-		int size() const;
-		bool enabled(IntPassTypes int_pass_type) const;
-		IntPassTypes intPassTypeFromIndex(int int_pass_index) const;
-		Rgba &color(int int_pass_index);
-		Rgba &color(IntPassTypes int_pass_type);
-		Rgba &operator()(int int_pass_index);
-		Rgba &operator()(IntPassTypes int_pass_type);
-		void resetColors();
-		Rgba initColor(IntPassTypes int_pass_type);
-		void multiplyColors(float factor);
-		Rgba probeSet(const IntPassTypes &int_pass_type, const Rgba &rendered_color, const bool &condition = true);
-		Rgba probeSet(const IntPassTypes &int_pass_type, const ColorPasses &color_passes, const bool &condition = true);
-		Rgba probeAdd(const IntPassTypes &int_pass_type, const Rgba &rendered_color, const bool &condition = true);
-		Rgba probeAdd(const IntPassTypes &int_pass_type, const ColorPasses &color_passes, const bool &condition = true);
-		Rgba probeMult(const IntPassTypes &int_pass_type, const Rgba &rendered_color, const bool &condition = true);
-		Rgba probeMult(const IntPassTypes &int_pass_type, const ColorPasses &color_passes, const bool &condition = true);
-
-		ColorPasses &operator *= (float f);
-		ColorPasses &operator *= (const Rgb &a);
-		ColorPasses &operator *= (const Rgba &a);
-		ColorPasses &operator += (const ColorPasses &a);
-
-		float getPassMaskObjIndex() const;	//Object Index used for masking in/out in the Mask Render Passes
-		float getPassMaskMatIndex() const;	//Material Index used for masking in/out in the Mask Render Passes
-		bool getPassMaskInvert() const;	//False=mask in, True=mask out
-		bool getPassMaskOnly() const;
-
-	protected:
-		std::vector <Rgba> col_vector_;
-		const RenderPasses *pass_definitions_;
+		PassMaskParams pass_mask_;
+		PassEdgeToonParams edge_toon_;
+		ExtPassesSettings ext_passes_settings_;
+		IntPassesSettings int_passes_settings_;
 };
 
 END_YAFARAY

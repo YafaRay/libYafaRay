@@ -48,11 +48,11 @@ class PhotonIntegrator final : public MonteCarloIntegrator
 		virtual std::string getShortName() const override { return "PM"; }
 		virtual std::string getName() const override { return "PhotonMap"; }
 		virtual bool preprocess() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const override;
 		void preGatherWorker(PreGatherData *gdata, float ds_rad, int n_search);
 		void diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat);
 		void photonMapKdTreeWorker(PhotonMap *photon_map);
-		Rgb finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const;
+		Rgb finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 

@@ -288,7 +288,7 @@ Rgba SingleScatterIntegrator::transmittance(RenderState &state, Ray &ray) const 
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth) const {
+Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
 	float t_0 = 1e10f, t_1 = -1e10f;
 
 	Rgba result(0.f);

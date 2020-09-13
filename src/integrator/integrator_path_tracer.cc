@@ -112,8 +112,10 @@ bool PathIntegrator::preprocess()
 	return success;
 }
 
-Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
+Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
 {
+	const bool int_passes_used = state.raylevel_ == 0 && intPasses && intPasses->size() > 1;
+
 	static int calls = 0;
 	++calls;
 	Rgb col(0.0);
@@ -124,8 +126,6 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
-
-	ColorPasses tmp_color_passes = color_passes;
 
 	//shoot ray into scene
 	if(scene_->intersect(ray, sp))
@@ -151,21 +151,29 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 		// contribution of light emitting surfaces
-		if(Material::hasFlag(bsdfs, BsdfFlags::Emit)) col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
+		if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+		{
+			const Rgb col_tmp = material->emit(state, sp, wo);
+			col += col_tmp;
+			if(int_passes_used)
+			{
+				if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+			}
+		}
 
 		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(state, sp, wo, color_passes);
+			col += estimateAllDirectLight(state, sp, wo, intPasses);
 
 			if(caustic_type_ == CausticType::Photon || caustic_type_ == CausticType::Both)
 			{
-				if(aa_noise_params_.clamp_indirect_ > 0)
+				Rgb col_tmp = estimateCausticPhotons(state, sp, wo);
+				if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
+				col += col_tmp;
+				if(int_passes_used)
 				{
-					Rgb tmp_col = estimateCausticPhotons(state, sp, wo);
-					tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-					col += color_passes.probeSet(PassIntIndirect, tmp_col, state.raylevel_ == 0);
+					if(Rgba *color_pass = intPasses->find(PassIndirect)) *color_pass = col_tmp;
 				}
-				else col += color_passes.probeSet(PassIntIndirect, estimateCausticPhotons(state, sp, wo), state.raylevel_ == 0);
 			}
 		}
 
@@ -224,8 +232,16 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 				BsdfFlags mat_bsd_fs;
 				p_mat->initBsdf(state, *hit, mat_bsd_fs);
 				if(s.sampled_flags_ != BsdfFlags::None) pwo = -p_ray.dir_; //Fix for white dots in path tracing with shiny diffuse with transparent PNG texture and transparent shadows, especially in Win32, (precision?). Sometimes the first sampling does not take place and pRay.dir is not initialized, so before this change when that happened pwo = -pRay.dir was getting a random non-initialized value! This fix makes that, if the first sample fails for some reason, pwo is not modified and the rest of the sampling continues with the same pwo value. FIXME: Question: if the first sample fails, should we continue as now or should we exit the loop with the "continue" command?
-				lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmp_color_passes);
-				if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit)) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
+				lcol = estimateOneDirectLight(state, *hit, pwo, offs);
+				if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit))
+				{
+					const Rgb col_tmp = p_mat->emit(state, *hit, pwo);
+					lcol += col_tmp;
+					if(int_passes_used)
+					{
+						if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+					}
+				}
 
 				path_col += lcol * throughput;
 
@@ -273,7 +289,7 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 					p_mat->initBsdf(state, *hit, mat_bsd_fs);
 					pwo = -p_ray.dir_;
 
-					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(state, *hit, pwo, offs, tmp_color_passes);
+					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Diffuse)) lcol = estimateOneDirectLight(state, *hit, pwo, offs);
 					else lcol = Rgb(0.f);
 
 					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit->n_ * pwo < 0)))
@@ -290,7 +306,15 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 						throughput *= 1.f / probability;
 					}
 
-					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit) && caustic) lcol += color_passes.probeAdd(PassIntEmit, p_mat->emit(state, *hit, pwo), state.raylevel_ == 0);
+					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit) && caustic)
+					{
+						const Rgb col_tmp = p_mat->emit(state, *hit, pwo);
+						lcol += col_tmp;
+						if(int_passes_used)
+						{
+							if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+						}
+					}
 
 					path_col += lcol * throughput;
 				}
@@ -302,20 +326,20 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 		//reset chromatic state:
 		state.chromatic_ = was_chromatic;
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, color_passes, additional_depth);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, intPasses);
 
-		if(color_passes.size() > 1 && state.raylevel_ == 0)
+		if(int_passes_used)
 		{
-			generateCommonRenderPasses(color_passes, state, sp, ray);
+			generateCommonPassesSettings(state, sp, ray, intPasses);
 
-			if(color_passes.enabled(PassIntAo))
+			if(Rgba *color_pass = intPasses->find(PassAo))
 			{
-				color_passes(PassIntAo) = sampleAmbientOcclusionPass(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(color_passes.enabled(PassIntAoClay))
+			if(Rgba *color_pass = intPasses->find(PassAoClay))
 			{
-				color_passes(PassIntAoClay) = sampleAmbientOcclusionPassClay(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 
@@ -330,19 +354,27 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &co
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			col += col_tmp;
+			if(int_passes_used)
+			{
+				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+			}
 		}
 	}
 
 	state.userdata_ = o_udat;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray, color_passes);
+	const Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
+	const Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	color_passes.probeSet(PassIntVolumeTransmittance, col_vol_transmittance);
-	color_passes.probeSet(PassIntVolumeIntegration, col_vol_integration);
+	if(int_passes_used)
+	{
+		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
+		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
+	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;
 

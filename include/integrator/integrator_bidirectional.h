@@ -24,6 +24,7 @@
 #include "integrator/integrator_tiled.h"
 #include "common/color.h"
 #include <map>
+#include <common/renderpasses.h>
 
 BEGIN_YAFARAY
 
@@ -46,7 +47,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess() override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const override;
 		Rgb sampleAmbientOcclusionPass(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		Rgb sampleAmbientOcclusionPassClay(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
 		int createPath(RenderState &state, Ray &start, std::vector<PathVertex> &path, int max_len) const;

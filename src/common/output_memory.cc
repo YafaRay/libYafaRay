@@ -25,7 +25,7 @@
 BEGIN_YAFARAY
 
 
-MemoryInputOutput::MemoryInputOutput (int resx, int resy, float *i_mem)
+MemoryInputOutput::MemoryInputOutput (int resx, int resy, float *i_mem, const PassesSettings *passes_settings) : ColorOutput(passes_settings)
 {
 	sizex_ = resx;
 	sizey_ = resy;
@@ -35,7 +35,7 @@ MemoryInputOutput::MemoryInputOutput (int resx, int resy, float *i_mem)
 // Depth channel support?
 
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool MemoryInputOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha)
+bool MemoryInputOutput::putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha)
 {
 	image_mem_[(x + sizex_ * y) * 4 + 0] = color.r_;
 	image_mem_[(x + sizex_ * y) * 4 + 0] = color.g_;
@@ -46,17 +46,17 @@ bool MemoryInputOutput::putPixel(int num_view, int x, int y, const RenderPasses 
 }
 
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool MemoryInputOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha)
+bool MemoryInputOutput::putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha)
 {
-	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).r_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).g_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = col_ext_passes.at(0).b_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).r_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).g_;
+	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).b_;
 	if(!alpha) image_mem_[(x + sizex_ * y) * 4 + 3] = 1.f;
 
 	return true;
 }
 
-void MemoryInputOutput::flush(int num_view, const RenderPasses *render_passes) { }
+void MemoryInputOutput::flush(int num_view) { }
 
 MemoryInputOutput::~MemoryInputOutput() { }
 

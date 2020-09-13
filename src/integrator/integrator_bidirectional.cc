@@ -249,8 +249,10 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
+Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
 {
+	const bool int_passes_used = state.raylevel_ == 0 && intPasses && intPasses->size() > 1;
+
 	Rgb col(0.f);
 	SurfacePoint sp;
 	Ray testray = ray;
@@ -402,22 +404,20 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 			}
 		}
 
-		if(color_passes.size() > 1 && state.raylevel_ == 0)
+		if(int_passes_used)
 		{
-			generateCommonRenderPasses(color_passes, state, sp, ray);
+			generateCommonPassesSettings(state, sp, ray, intPasses);
 
-			if(color_passes.enabled(PassIntAo))
+			if(Rgba *color_pass = intPasses->find(PassAo))
 			{
 				BsdfFlags bsdfs;
-
 				sp.material_->initBsdf(state, sp, bsdfs);
-
-				color_passes(PassIntAo) = sampleAmbientOcclusionPass(state, sp, wo);
+				*color_pass += sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(color_passes.enabled(PassIntAoClay))
+			if(Rgba *color_pass = intPasses->find(PassAoClay))
 			{
-				color_passes(PassIntAoClay) = sampleAmbientOcclusionPassClay(state, sp, wo);
+				*color_pass += sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 	}
@@ -427,20 +427,27 @@ Rgba BidirectionalIntegrator::integrate(RenderState &state, DiffRay &ray, ColorP
 
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			col += col_tmp;
+			if(int_passes_used)
+			{
+				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass += col_tmp;
+			}
 		}
 	}
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray, color_passes);
+	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	color_passes.probeSet(PassIntVolumeTransmittance, col_vol_transmittance);
-	color_passes.probeSet(PassIntVolumeIntegration, col_vol_integration);
+	if(int_passes_used)
+	{
+		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass += col_vol_transmittance;
+		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass += col_vol_integration;
+	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;
-
 	return Rgba(col, alpha);
 }
 

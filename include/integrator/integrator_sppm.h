@@ -70,7 +70,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		virtual bool render(int num_view, ImageFilm *image_film) override;
 		/*! render a tile; only required by default implementation of render() */
 		virtual bool renderTile(int num_view, RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0) override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth = 0) const override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses = nullptr) const override;
 		virtual bool preprocess() override; //not used for now
 		// not used now
 		virtual void prePass(int samples, int offset, bool adaptive) override;
@@ -78,7 +78,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm();
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
-		GatherInfo traceGatherRay(RenderState &state, DiffRay &ray, HitPoint &hp, ColorPasses &color_passes);
+		GatherInfo traceGatherRay(RenderState &state, DiffRay &ray, HitPoint &hp, IntPasses *intPasses = nullptr);
 		void photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng);
 
 		HashGrid  photon_grid_; // the hashgrid for holding photons

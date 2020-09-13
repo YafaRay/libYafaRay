@@ -26,7 +26,7 @@
 #include <iostream>
 #include <cstdlib>
 
-QtOutput::QtOutput(RenderWidget *render): render_buffer_(render)
+QtOutput::QtOutput(RenderWidget *render, const yafaray4::PassesSettings *passes_settings): yafaray4::ColorOutput(passes_settings), render_buffer_(render)
 {
 }
 
@@ -39,7 +39,7 @@ void QtOutput::setRenderSize(const QSize &s)
 / colorOutput_t implementations
 =====================================*/
 
-bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha)
+bool QtOutput::putPixel(int num_view, int x, int y, int ext_pass, const yafaray4::Rgba &color, bool alpha)
 {
 	int r = std::max(0, std::min(255, (int)(color.r_ * 255.f)));
 	int g = std::max(0, std::min(255, (int)(color.g_ * 255.f)));
@@ -59,18 +59,18 @@ bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses
 	return true;
 }
 
-bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &col_ext_passes, bool alpha)
+bool QtOutput::putPixel(int num_view, int x, int y, const std::vector<yafaray4::Rgba> &colors, bool alpha)
 {
-	int r = std::max(0, std::min(255, (int)(col_ext_passes.at(0).r_ * 255.f)));
-	int g = std::max(0, std::min(255, (int)(col_ext_passes.at(0).g_ * 255.f)));
-	int b = std::max(0, std::min(255, (int)(col_ext_passes.at(0).b_ * 255.f)));
+	int r = std::max(0, std::min(255, (int)(colors.at(0).r_ * 255.f)));
+	int g = std::max(0, std::min(255, (int)(colors.at(0).g_ * 255.f)));
+	int b = std::max(0, std::min(255, (int)(colors.at(0).b_ * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
 	if(alpha)
 	{
-		int a = std::max(0, std::min(255, (int)(col_ext_passes.at(0).a_ * 255.f)));
+		int a = std::max(0, std::min(255, (int)(colors.at(0).a_ * 255.f)));
 		aval = qRgb(a, a, a);
 	}
 
@@ -79,12 +79,12 @@ bool QtOutput::putPixel(int num_view, int x, int y, const yafaray4::RenderPasses
 	return true;
 }
 
-void QtOutput::flush(int num_view, const yafaray4::RenderPasses *render_passes)
+void QtOutput::flush(int num_view)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(), true));
 }
 
-void QtOutput::flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const yafaray4::RenderPasses *render_passes)
+void QtOutput::flushArea(int num_view, int x_0, int y_0, int x_1, int y_1)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(x_0, y_0, x_1 - x_0, y_1 - y_0)));
 }

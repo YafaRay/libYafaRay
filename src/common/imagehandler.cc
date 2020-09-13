@@ -211,7 +211,7 @@ Rgba ImageHandler::getPixel(int x, int y, int img_index)
 }
 
 
-void ImageHandler::initForOutput(int width, int height, const RenderPasses *render_passes, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha, bool multi_layer, bool grayscale)
+void ImageHandler::initForOutput(int width, int height, const PassesSettings *passes_settings, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha, bool multi_layer, bool grayscale)
 {
 	has_alpha_ = with_alpha;
 	multi_layer_ = multi_layer;
@@ -225,7 +225,7 @@ void ImageHandler::initForOutput(int width, int height, const RenderPasses *rend
 	if(grayscale_) n_channels = 1;
 	else if(has_alpha_) n_channels = 4;
 
-	for(int idx = 0; idx < render_passes->extPassesSize(); ++idx)
+	for(size_t idx = 0; idx < passes_settings->extPassesSettings().size(); ++idx)
 	{
 		img_buffer_.push_back(new ImageBuffer(width, height, n_channels, TextureOptimization::None));
 	}

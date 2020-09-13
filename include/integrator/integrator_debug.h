@@ -22,6 +22,7 @@
 #ifndef YAFARAY_INTEGRATOR_DEBUG_H
 #define YAFARAY_INTEGRATOR_DEBUG_H
 
+#include <common/renderpasses.h>
 #include "integrator/integrator_tiled.h"
 
 BEGIN_YAFARAY
@@ -39,7 +40,7 @@ class DebugIntegrator final : public TiledIntegrator
 		virtual std::string getShortName() const override { return "DBG"; }
 		virtual std::string getName() const override { return "DebugIntegrator"; }
 		virtual bool preprocess() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const override;
 
 		std::vector<Light *> lights_;
 		SurfaceProperties debug_type_;

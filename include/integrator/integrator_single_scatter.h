@@ -43,7 +43,7 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
 		// emission and in-scattering
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const override;
 		Rgb getInScatter(RenderState &state, Ray &step_ray, float current_step) const;
 
 		bool adaptive_;

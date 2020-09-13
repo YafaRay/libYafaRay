@@ -35,7 +35,7 @@ class EmptyVolumeIntegrator final : public VolumeIntegrator
 		virtual std::string getShortName() const override { return "EV"; }
 		virtual std::string getName() const override { return "EmptyVolume"; }
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const override;
 
 };
 

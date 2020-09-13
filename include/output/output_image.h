@@ -29,19 +29,19 @@
 
 BEGIN_YAFARAY
 
-class RenderPasses;
+class PassesSettings;
 
 class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
 {
 	public:
-		ImageOutput() = default;
-		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
+		ImageOutput(const PassesSettings *passes_settings) : ColorOutput(passes_settings) { }
+		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by, const PassesSettings *passes_settings);
 
 	private:
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha = true) override;
-		virtual bool putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha = true) override;
-		virtual void flush(int num_view, const RenderPasses *render_passes) override;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const RenderPasses *render_passes) override {} // not used by images... yet
+		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) override;
+		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) override;
+		virtual void flush(int num_view) override;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
 		virtual bool isImageOutput() const override { return true; }
 		virtual std::string getDenoiseParams() const override
 		{
@@ -49,7 +49,7 @@ class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
 			else return "";
 		}
 		void saveImageFile(std::string filename, int idx);
-		void saveImageFileMultiChannel(std::string filename, const RenderPasses *render_passes);
+		void saveImageFileMultiChannel(std::string filename, const PassesSettings *passes_settings);
 
 		ImageHandler *image_ = nullptr;
 		std::string fname_;

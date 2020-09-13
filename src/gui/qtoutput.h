@@ -28,20 +28,20 @@
 
 class QWidget;
 
-class QtOutput: public yafaray4::ColorOutput
+class QtOutput final : public yafaray4::ColorOutput
 {
 	public:
-		QtOutput(RenderWidget *render);
-		~QtOutput() {}
+		QtOutput(RenderWidget *render, const yafaray4::PassesSettings *passes_settings);
+		~QtOutput() override {}
 
 		void setRenderSize(const QSize &s);
 
 		// inherited from yafaray4::colorOutput_t
-		virtual bool putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, int idx, const yafaray4::Rgba &color, bool alpha = true);
-		virtual bool putPixel(int num_view, int x, int y, const yafaray4::RenderPasses *render_passes, const std::vector<yafaray4::Rgba> &col_ext_passes, bool alpha = true);
-		virtual void flush(int num_view, const yafaray4::RenderPasses *render_passes);
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1, const yafaray4::RenderPasses *render_passes);
-		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1);
+		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const yafaray4::Rgba &color, bool alpha = true) override;
+		virtual bool putPixel(int num_view, int x, int y, const std::vector<yafaray4::Rgba> &colors, bool alpha = true) override;
+		virtual void flush(int num_view) override;
+		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override;
+		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) override;
 
 	private:
 		RenderWidget *render_buffer_;

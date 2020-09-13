@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-Rgba yafaray4::EmissionIntegrator::transmittance(yafaray4::RenderState &state, yafaray4::Ray &ray) const {
+Rgba EmissionIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	Rgba result(1.f);
 	auto volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes) result *= v.second->tau(ray, 0, 0);
@@ -36,7 +36,7 @@ Rgba yafaray4::EmissionIntegrator::transmittance(yafaray4::RenderState &state, y
 	return result;
 }
 
-Rgba EmissionIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth) const {
+Rgba EmissionIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
 	float t_0 = 0.f, t_1 = 0.f;
 	int n = 10; // samples + 1 on the ray inside the volume
 

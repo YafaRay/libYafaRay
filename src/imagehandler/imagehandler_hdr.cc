@@ -562,7 +562,7 @@ ImageHandler *HdrHandler::factory(ParamMap &params, Scene &scene)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
+		ih->initForOutput(width, height, scene.getPassesSettings(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, false, img_grayscale);
 	}
 
 	return ih;

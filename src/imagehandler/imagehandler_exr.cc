@@ -203,7 +203,7 @@ bool ExrHandler::saveToFile(const std::string &name, int img_index)
 	return true;
 }
 
-bool ExrHandler::saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes)
+bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSettings_t *passes_settings)
 {
 	int h_0 = img_buffer_.at(0)->getHeight();
 	int w_0 = img_buffer_.at(0)->getWidth();
@@ -241,8 +241,8 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const RenderPas
 
 	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
 	{
-		ext_pass_name = "RenderLayer." + render_passes->extPassTypeStringFromIndex(idx) + ".";
-		Y_VERBOSE << "    Writing EXR Layer: " << render_passes->extPassTypeStringFromIndex(idx) << YENDL;
+		ext_pass_name = "RenderLayer." + passes_settings->extPassTypeStringFromIndex(idx) + ".";
+		Y_VERBOSE << "    Writing EXR Layer: " << passes_settings->extPassTypeStringFromIndex(idx) << YENDL;
 
 		const std::string channel_r_string = ext_pass_name + "R";
 		const std::string channel_g_string = ext_pass_name + "G";
@@ -419,7 +419,7 @@ ImageHandler *ExrHandler::factory(ParamMap &params, Scene &scene)
 	if(for_output)
 	{
 		if(logger__.getUseParamsBadge()) height += logger__.getBadgeHeight();
-		ih->initForOutput(width, height, scene.getRenderPasses(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, multi_layer, img_grayscale);
+		ih->initForOutput(width, height, scene.getPassesSettings(), denoise_enabled, denoise_h_lum, denoise_h_col, denoise_mix, with_alpha, multi_layer, img_grayscale);
 	}
 
 	return ih;

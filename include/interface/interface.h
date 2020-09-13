@@ -44,6 +44,7 @@ class ImageFilm;
 class ImageHandler;
 class ProgressBar;
 class Matrix4;
+class PassesSettings;
 
 class LIBYAFARAY_EXPORT Interface
 {
@@ -124,6 +125,7 @@ class LIBYAFARAY_EXPORT Interface
 
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
 		void setOutput2(ColorOutput *out_2);
+		const PassesSettings *getPassesSettings() const;
 
 	protected:
 		ParamMap *params_;

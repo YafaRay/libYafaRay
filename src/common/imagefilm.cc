@@ -129,18 +129,12 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 	cy_1_ = ystart + height;
 	filter_table_ = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 
-	const RenderPasses *render_passes = scene_->getRenderPasses();
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
 
 	//Creation of the image buffers for the render passes
-	for(int idx = 0; idx < render_passes->extPassesSize(); ++idx)
+	for(size_t idx = 0; idx < passes_settings->extPassesSettings().size(); ++idx)
 	{
 		image_passes_.push_back(new Rgba2DImageWeighed_t(width, height));
-	}
-
-	//Creation of the image buffers for the auxiliary render passes
-	for(int idx = 0; idx < render_passes->auxPassesSize(); ++idx)
-	{
-		aux_image_passes_.push_back(new Rgba2DImageWeighed_t(width, height));
 	}
 
 	density_image_ = nullptr;
@@ -194,19 +188,6 @@ ImageFilm::~ImageFilm ()
 		delete(image_passes_[idx]);
 	}
 	image_passes_.clear();
-
-	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-	{
-		delete(aux_image_passes_[idx]);
-	}
-	aux_image_passes_.clear();
-
-	//Deletion of the auxiliary image buffers
-	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-	{
-		delete(aux_image_passes_[idx]);
-	}
-	aux_image_passes_.clear();
 
 	if(density_image_) delete density_image_;
 	delete[] filter_table_;
@@ -301,9 +282,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		}
 	}
 
-	const RenderPasses *render_passes = scene_->getRenderPasses();
-
-	Rgba2DImageWeighed_t *sampling_factor_image_pass = getImagePassFromIntPassType(PassIntDebugSamplingFactor);
+	Rgba2DImageWeighed_t *sampling_factor_image_pass = getImagePassFromIntPassType(PassDebugSamplingFactor);
 
 	if(flags_) flags_->clear();
 	else flags_ = new TiledBitArray2D<3>(w_, h_, true);
@@ -447,7 +426,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 							else
 								col_ext_passes[idx].set(pix_col_bri, 0.7f, mat_sample_factor > 1.f ? 0.7f : pix_col_bri);
 						}
-						output_->putPixel(num_view, x, y, render_passes, col_ext_passes, false);
+						output_->putPixel(num_view, x, y, col_ext_passes, false);
 					}
 				}
 			}
@@ -458,7 +437,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		n_resample = h_ * w_;
 	}
 
-	if(session__.isInteractive())	output_->flush(num_view, render_passes);
+	if(session__.isInteractive()) output_->flush(num_view);
 
 	if(session__.renderResumed()) pass_string << "Film loaded + ";
 
@@ -529,7 +508,8 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 {
 	out_mutex_.lock();
 
-	const RenderPasses *render_passes = scene_->getRenderPasses();
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
+	const ExtPassesSettings ext_passes_settings = passes_settings->extPassesSettings();
 
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
 
@@ -539,17 +519,17 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 	{
 		for(int i = a.x_ - cx_0_; i < end_x; ++i)
 		{
-			for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+			for(size_t idx = 0; idx < ext_passes_settings.size() && idx < image_passes_.size(); ++idx)
 			{
-				if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntAaSamples)
+				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).weight_;
 				}
-				else if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntObjIndexAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntObjIndexAutoAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntMatIndexAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntMatIndexAutoAbs
-				       )
+				else if(ext_passes_settings(idx).intPassType() == PassObjIndexAbs ||
+						ext_passes_settings(idx).intPassType() == PassObjIndexAutoAbs ||
+						ext_passes_settings(idx).intPassType() == PassMatIndexAbs ||
+						ext_passes_settings(idx).intPassType() == PassMatIndexAutoAbs
+						)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 					col_ext_passes[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
@@ -558,34 +538,26 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 				}
-
-				col_ext_passes[idx].clampRgb0();
-				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what do not?
-				if(premult_alpha_ && idx == 0) col_ext_passes[idx].alphaPremultiply();
-
-				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
-				if(col_ext_passes[idx].a_ < 0.f) col_ext_passes[idx].a_ = 0.f;
-				else if(col_ext_passes[idx].a_ > 1.f) col_ext_passes[idx].a_ = 1.f;
 			}
 
-			if(!output_->putPixel(num_view, i, j, render_passes, col_ext_passes)) abort_ = true;
+			if(!output_->putPixel(num_view, i, j, col_ext_passes)) abort_ = true;
 		}
 	}
 
 	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
 	{
-		if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntDebugFacesEdges)
+		if(ext_passes_settings(idx).intPassType() == PassDebugFacesEdges)
 		{
 			generateDebugFacesEdges(num_view, idx, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, output_);
 		}
 
-		if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntDebugObjectsEdges || render_passes->intPassTypeFromExtPassIndex(idx) == PassIntToon)
+		if(ext_passes_settings(idx).intPassType() == PassDebugObjectsEdges || ext_passes_settings(idx).intPassType() == PassToon)
 		{
 			generateToonAndDebugObjectEdges(num_view, idx, a.x_ - cx_0_, end_x, a.y_ - cy_0_, end_y, true, output_);
 		}
 	}
 
-	if(session__.isInteractive()) output_->flushArea(num_view, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_, render_passes);
+	if(session__.isInteractive()) output_->flushArea(num_view, a.x_, a.y_, end_x + cx_0_, end_y + cy_0_);
 
 	if(session__.renderInProgress() && !output_->isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
@@ -632,7 +604,7 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 
 void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 {
-	const RenderPasses *render_passes = scene_->getRenderPasses();
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
 
 	if(session__.renderFinished())
 	{
@@ -723,6 +695,8 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 	if(estimate_density_ && num_density_samples_ > 0) density_factor = (float)(w_ * h_) / (float) num_density_samples_;
 
+	passes_settings = scene_->getPassesSettings();
+	const ExtPassesSettings ext_passes_settings = passes_settings->extPassesSettings();
 	std::vector<Rgba> col_ext_passes(image_passes_.size(), Rgba(0.f));
 
 	std::vector<Rgba> col_ext_passes_2;	//For secondary file output (when enabled)
@@ -740,15 +714,15 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 		{
 			for(size_t idx = 0; idx < image_passes_.size(); ++idx)
 			{
-				if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntAaSamples)
+				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).weight_;
 				}
-				else if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntObjIndexAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntObjIndexAutoAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntMatIndexAbs ||
-						render_passes->intPassTypeFromExtPassIndex(idx) == PassIntMatIndexAutoAbs
-				       )
+				else if(ext_passes_settings(idx).intPassType() == PassObjIndexAbs ||
+						ext_passes_settings(idx).intPassType() == PassObjIndexAutoAbs ||
+						ext_passes_settings(idx).intPassType() == PassMatIndexAbs ||
+						ext_passes_settings(idx).intPassType() == PassMatIndexAutoAbs
+						)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 					col_ext_passes[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
@@ -760,54 +734,25 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 				}
 
 				if(estimate_density_ && (flags & Densityimage) && idx == 0 && density_factor > 0.f) col_ext_passes[idx] += Rgba((*density_image_)(i, j) * density_factor, 0.f);
-
-				col_ext_passes[idx].clampRgb0();
-
-				if(out_2) col_ext_passes_2[idx] = col_ext_passes[idx];
-
-				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what do not?
-
-				if(out_2) col_ext_passes_2[idx].colorSpaceFromLinearRgb(color_space_2_, gamma_2_);
-
-				if(premult_alpha_ && idx == 0)
-				{
-					col_ext_passes[idx].alphaPremultiply();
-				}
-
-				if(out_2 && premult_alpha_2_ && idx == 0)
-				{
-					col_ext_passes_2[idx].alphaPremultiply();
-				}
-
-				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
-				if(col_ext_passes[idx].a_ < 0.f) col_ext_passes[idx].a_ = 0.f;
-				else if(col_ext_passes[idx].a_ > 1.f) col_ext_passes[idx].a_ = 1.f;
-
-				if(out_2)
-				{
-					if(col_ext_passes_2[idx].a_ < 0.f) col_ext_passes_2[idx].a_ = 0.f;
-					else if(col_ext_passes_2[idx].a_ > 1.f) col_ext_passes_2[idx].a_ = 1.f;
-				}
 			}
 
-			if(out_1) out_1->putPixel(num_view, i, j + output_displace_rendered_image_badge_height, render_passes, col_ext_passes);
-			if(out_2) out_2->putPixel(num_view, i, j + out_2_displace_rendered_image_badge_height, render_passes, col_ext_passes_2);
+			if(out_1) out_1->putPixel(num_view, i, j + output_displace_rendered_image_badge_height, col_ext_passes);
+			if(out_2) out_2->putPixel(num_view, i, j + out_2_displace_rendered_image_badge_height, col_ext_passes_2);
 		}
 	}
 
 	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
 	{
-		if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntDebugFacesEdges)
+		if(ext_passes_settings(idx).intPassType() == PassDebugFacesEdges)
 		{
 			generateDebugFacesEdges(num_view, idx, 0, w_, 0, h_, false, out_1, output_displace_rendered_image_badge_height, out_2, out_2_displace_rendered_image_badge_height);
 		}
 
-		if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntDebugObjectsEdges || render_passes->intPassTypeFromExtPassIndex(idx) == PassIntToon)
+		if(ext_passes_settings(idx).intPassType() == PassDebugObjectsEdges || ext_passes_settings(idx).intPassType() == PassToon)
 		{
 			generateToonAndDebugObjectEdges(num_view, idx, 0, w_, 0, h_, false, out_1, output_displace_rendered_image_badge_height, out_2, out_2_displace_rendered_image_badge_height);
 		}
 	}
-
 
 	if(logger__.getUseParamsBadge() && dp_image_)
 	{
@@ -826,7 +771,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 						Rgba &dpcol = (*dp_image_)(i, j - badge_start_y);
 						col_ext_passes[idx] = Rgba(dpcol, 1.f);
 					}
-					out_1->putPixel(num_view, i, j, render_passes, col_ext_passes);
+					out_1->putPixel(num_view, i, j, col_ext_passes);
 				}
 			}
 		}
@@ -846,7 +791,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 						Rgba &dpcol = (*dp_image_)(i, j - badge_start_y);
 						col_ext_passes_2[idx] = Rgba(dpcol, 1.f);
 					}
-					out_2->putPixel(num_view, i, j, render_passes, col_ext_passes_2);
+					out_2->putPixel(num_view, i, j, col_ext_passes_2);
 				}
 			}
 		}
@@ -868,7 +813,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 			pbar_->setTag(pass_string.str().c_str());
 		}
 
-		out_1->flush(num_view, render_passes);
+		out_1->flush(num_view);
 
 		if(pbar_) pbar_->setTag(old_tag);
 	}
@@ -888,7 +833,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 			pbar_->setTag(pass_string.str().c_str());
 		}
 
-		out_2->flush(num_view, render_passes);
+		out_2->flush(num_view);
 
 		if(pbar_) pbar_->setTag(old_tag);
 	}
@@ -914,15 +859,16 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 bool ImageFilm::doMoreSamples(int x, int y) const
 {
-	return (aa_noise_params_.threshold_ > 0.f) ? flags_->getBit(x - cx_0_, y - cy_0_) : true;
+	return aa_noise_params_.threshold_ <= 0.f || flags_->getBit(x - cx_0_, y - cy_0_);
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
 	contribute to pixels outside the area a AND pixels that might get
 	contributions from outside area a! (yes, really!) */
-void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples)
+void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a, int num_sample, int aa_pass_number, float inv_aa_max_possible_samples, IntPasses *int_passes)
 {
-	const RenderPasses *render_passes = scene_->getRenderPasses();
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
+	const ExtPassesSettings ext_passes_settings = passes_settings->extPassesSettings();
 
 	int dx_0, dx_1, dy_0, dy_1, x_0, x_1, y_0, y_1;
 
@@ -968,7 +914,7 @@ void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, flo
 			// update pixel values with filtered sample contribution
 			for(size_t idx = 0; idx < image_passes_.size(); ++idx)
 			{
-				Rgba col = color_passes(render_passes->intPassTypeFromExtPassIndex(idx));
+				Rgba col = int_passes ? (*int_passes)(ext_passes_settings(idx).intPassType()) : 0.f;
 
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 
@@ -976,27 +922,7 @@ void ImageFilm::addSample(ColorPasses &color_passes, int x, int y, float dx, flo
 
 				if(premult_alpha_) col.alphaPremultiply();
 
-				if(render_passes->intPassTypeFromExtPassIndex(idx) == PassIntAaSamples)
-				{
-					pixel.weight_ += inv_aa_max_possible_samples / ((x_1 - x_0 + 1) * (y_1 - y_0 + 1));
-				}
-				else
-				{
-					pixel.col_ += (col * filter_wt);
-					pixel.weight_ += filter_wt;
-				}
-			}
-			for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-			{
-				Rgba col = color_passes(render_passes->intPassTypeFromAuxPassIndex(idx));
-
-				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-
-				Pixel &pixel = (*aux_image_passes_[idx])(i - cx_0_, j - cy_0_);
-
-				if(premult_alpha_) col.alphaPremultiply();
-
-				if(render_passes->intPassTypeFromAuxPassIndex(idx) == PassIntAaSamples)
+				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
 				{
 					pixel.weight_ += inv_aa_max_possible_samples / ((x_1 - x_0 + 1) * (y_1 - y_0 + 1));
 				}
@@ -1338,7 +1264,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	std::string header;
 	file.read(header);
-	if(header != "YAF_FILMv1")
+	if(header != "YAF_FILMv4_0_0")
 	{
 		Y_WARNING << "imageFilm file '" << filename << "' does not contain a valid YafaRay image file";
 		file.close();
@@ -1398,22 +1324,13 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 
 	int image_passes_size;
 	file.read<int>(image_passes_size);
-	const RenderPasses *render_passes = scene_->getRenderPasses();
-	if(image_passes_size != render_passes->extPassesSize())
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
+	if(image_passes_size != static_cast<int>(passes_settings->extPassesSettings().size()))
 	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << render_passes->extPassesSize() << ", in reused/loaded film=" << image_passes_size << YENDL;
+		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << passes_settings->extPassesSettings().size() << ", in reused/loaded film=" << image_passes_size << YENDL;
 		return false;
 	}
 	else image_passes_.resize(image_passes_size);
-
-	int aux_image_passes_size;
-	file.read<int>(aux_image_passes_size);
-	if(aux_image_passes_size != render_passes->auxPassesSize())
-	{
-		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of auxiliar render passes, expected=" << render_passes->auxPassesSize() << ", in reused/loaded film=" << aux_image_passes_size << YENDL;
-		return false;
-	}
-	else aux_image_passes_.resize(aux_image_passes_size);
 
 	for(auto &img : image_passes_)
 	{
@@ -1432,22 +1349,6 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		}
 	}
 
-	for(auto &img : aux_image_passes_)
-	{
-		img = new Rgba2DImageWeighed_t(w_, h_);
-		for(int y = 0; y < h_; ++y)
-		{
-			for(int x = 0; x < w_; ++x)
-			{
-				Pixel &p = (*img)(x, y);
-				file.read<float>(p.col_.r_);
-				file.read<float>(p.col_.g_);
-				file.read<float>(p.col_.b_);
-				file.read<float>(p.col_.a_);
-				file.read<float>(p.weight_);
-			}
-		}
-	}
 	file.close();
 	return true;
 }
@@ -1518,19 +1419,6 @@ void ImageFilm::imageFilmLoadAllInFolder()
 			}
 		}
 
-		for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-		{
-			Rgba2DImageWeighed_t *loaded_image_buffer = loaded_film->aux_image_passes_[idx];
-			for(int i = 0; i < w_; ++i)
-			{
-				for(int j = 0; j < h_; ++j)
-				{
-					(*aux_image_passes_[idx])(i, j).col_ += (*loaded_image_buffer)(i, j).col_;
-					(*aux_image_passes_[idx])(i, j).weight_ += (*loaded_image_buffer)(i, j).weight_;
-				}
-			}
-		}
-
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
 		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
 
@@ -1564,7 +1452,7 @@ bool ImageFilm::imageFilmSave()
 	const std::string film_path = getFilmPath();
 	File file(film_path);
 	file.open("wb");
-	file.append(std::string("YAF_FILMv1"));
+	file.append(std::string("YAF_FILMv4_0_0"));
 	file.append<unsigned int>(computer_node_);
 	file.append<unsigned int>(base_sampling_offset_);
 	file.append<unsigned int>(sampling_offset_);
@@ -1575,40 +1463,8 @@ bool ImageFilm::imageFilmSave()
 	file.append<int>(cy_0_);
 	file.append<int>(cy_1_);
 	file.append<int>((int) image_passes_.size());
-	file.append<int>((int) aux_image_passes_.size());
 
 	for(const auto &img : image_passes_)
-	{
-		const int img_w = img->getWidth();
-		if(img_w != w_)
-		{
-			Y_WARNING << "ImageFilm saving problems, film width " << w_ << " different from internal 2D image width " << img_w << YENDL;
-			result_ok = false;
-			break;
-		}
-		const int img_h = img->getHeight();
-		if(img_h != h_)
-		{
-			Y_WARNING << "ImageFilm saving problems, film height " << h_ << " different from internal 2D image height " << img_h << YENDL;
-			result_ok = false;
-			break;
-		}
-
-		for(int y = 0; y < h_; ++y)
-		{
-			for(int x = 0; x < w_; ++x)
-			{
-				const Pixel &p = (*img)(x, y);
-				file.append<float>(p.col_.r_);
-				file.append<float>(p.col_.g_);
-				file.append<float>(p.col_.b_);
-				file.append<float>(p.col_.a_);
-				file.append<float>(p.weight_);
-			}
-		}
-	}
-
-	for(const auto &img : aux_image_passes_)
 	{
 		const int img_w = img->getWidth();
 		if(img_w != w_)
@@ -1704,13 +1560,9 @@ void edgeImageDetection__(std::vector<cv::Mat> &image_mat, float edge_threshold,
 
 void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
-	const RenderPasses *render_passes = scene_->getRenderPasses();
-	const int faces_edge_thickness = render_passes->faces_edge_thickness_;
-	const float faces_edge_threshold = render_passes->faces_edge_threshold_;
-	const float faces_edge_smoothness = render_passes->faces_edge_smoothness_;
-
-	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassIntNormalGeom);
-	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassIntZDepthNorm);
+	const PassEdgeToonParams &edge_params = scene_->getPassesSettings()->passEdgeToonParams();
+	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassNormalGeom);
+	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
 
 	if(normal_image_pass && z_depth_image_pass)
 	{
@@ -1731,7 +1583,7 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 			}
 		}
 
-		edgeImageDetection__(image_mat, faces_edge_threshold, faces_edge_thickness, faces_edge_smoothness);
+		edgeImageDetection__(image_mat, edge_params.threshold_, edge_params.thickness_, edge_params.smoothness_);
 
 		for(int j = ystart; j < height; ++j)
 		{
@@ -1741,8 +1593,8 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				if(out_1) out_1->putPixel(num_view, i, j + out_1_displacement, render_passes, idx_pass, col_edge);
-				if(out_2) out_2->putPixel(num_view, i, j + out_2_displacement, render_passes, idx_pass, col_edge);
+				if(out_1) out_1->putPixel(num_view, i, j + out_1_displacement, idx_pass, col_edge);
+				if(out_2) out_2->putPixel(num_view, i, j + out_2_displacement, idx_pass, col_edge);
 			}
 		}
 	}
@@ -1750,17 +1602,17 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 
 void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
-	const RenderPasses *render_passes = scene_->getRenderPasses();
-	const float toon_pre_smooth = render_passes->toon_pre_smooth_;
-	const float toon_quantization = render_passes->toon_quantization_;
-	const float toon_post_smooth = render_passes->toon_post_smooth_;
-	const Rgb toon_edge_color = Rgb(render_passes->toon_edge_color_[0], render_passes->toon_edge_color_[1], render_passes->toon_edge_color_[2]);
-	const int object_edge_thickness = render_passes->object_edge_thickness_;
-	const float object_edge_threshold = render_passes->object_edge_threshold_;
-	const float object_edge_smoothness = render_passes->object_edge_smoothness_;
+	const PassEdgeToonParams &edge_params = scene_->getPassesSettings()->passEdgeToonParams();
+	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassNormalSmooth);
+	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
 
-	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassIntNormalSmooth);
-	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassIntZDepthNorm);
+	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
+	const float toon_quantization = edge_params.toon_quantization_;
+	const float toon_post_smooth = edge_params.toon_post_smooth_;
+	const Rgb toon_edge_color = Rgb(edge_params.toon_color_[0], edge_params.toon_color_[1], edge_params.toon_color_[2]);
+	const int object_edge_thickness = edge_params.face_thickness_;
+	const float object_edge_threshold = edge_params.face_threshold_;
+	const float object_edge_smoothness = edge_params.face_smoothness_;
 
 	if(normal_image_pass && z_depth_image_pass)
 	{
@@ -1815,7 +1667,7 @@ void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int 
 
 		edgeImageDetection__(image_mat, object_edge_threshold, object_edge_thickness, object_edge_smoothness);
 
-		int idx_toon = getImagePassIndexFromIntPassType(PassIntToon);
+		const int idx_toon = getImagePassIndexFromIntPassType(PassToon);
 
 		for(int j = ystart; j < height; ++j)
 		{
@@ -1826,8 +1678,8 @@ void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int 
 
 				if(drawborder && (i <= xstart + 1 || j <= ystart + 1 || i >= width - 1 - 1 || j >= height - 1 - 1)) col_edge = Rgba(0.5f, 0.f, 0.f, 1.f);
 
-				if(out_1) out_1->putPixel(num_view, i, j + out_1_displacement, render_passes, idx_pass, col_edge);
-				if(out_2) out_2->putPixel(num_view, i, j + out_2_displacement, render_passes, idx_pass, col_edge);
+				if(out_1) out_1->putPixel(num_view, i, j + out_1_displacement, idx_pass, col_edge);
+				if(out_2) out_2->putPixel(num_view, i, j + out_2_displacement, idx_pass, col_edge);
 
 				Rgb col_toon(image_mat_combined_vec(j, i)[2], image_mat_combined_vec(j, i)[1], image_mat_combined_vec(j, i)[0]);
 				col_toon.blend(toon_edge_color, edge_value);
@@ -1839,12 +1691,12 @@ void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int 
 					if(out_1)
 					{
 						col_toon.colorSpaceFromLinearRgb(color_space_, gamma_);
-						out_1->putPixel(num_view, i, j + out_1_displacement, render_passes, idx_toon, col_toon);
+						out_1->putPixel(num_view, i, j + out_1_displacement, idx_toon, col_toon);
 					}
 					if(out_2)
 					{
 						col_toon.colorSpaceFromLinearRgb(color_space_2_, gamma_2_);
-						out_2->putPixel(num_view, i, j + out_2_displacement, render_passes, idx_toon, col_toon);
+						out_2->putPixel(num_view, i, j + out_2_displacement, idx_toon, col_toon);
 					}
 				}
 			}
@@ -1861,40 +1713,21 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 #endif
 
 
-Rgba2DImageWeighed_t *ImageFilm::getImagePassFromIntPassType(int int_pass_type)
+Rgba2DImageWeighed_t *ImageFilm::getImagePassFromIntPassType(int pass_type)
 {
-	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
-	{
-		if(scene_->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return image_passes_[idx];
-	}
-
-	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-	{
-		if(scene_->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return aux_image_passes_[idx];
-	}
-
-	return nullptr;
+	const int idx = getImagePassIndexFromIntPassType(pass_type);
+	if(idx != -1) return image_passes_[idx];
+	else return nullptr;
 }
 
-int ImageFilm::getImagePassIndexFromIntPassType(int int_pass_type)
+int ImageFilm::getImagePassIndexFromIntPassType(int pass_type)
 {
-	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
+	const ExtPassesSettings ext_passes_settings = scene_->getPassesSettings()->extPassesSettings();
+	for(size_t idx = 0; idx < ext_passes_settings.size() && idx < image_passes_.size(); ++idx)
 	{
-		if(scene_->getRenderPasses()->intPassTypeFromExtPassIndex(idx) == int_pass_type) return (int) idx;
+		if(ext_passes_settings(idx).intPassType() == pass_type) return (int) idx;
 	}
-
 	return -1;
 }
-
-int ImageFilm::getAuxImagePassIndexFromIntPassType(int int_pass_type)
-{
-	for(size_t idx = 0; idx < aux_image_passes_.size(); ++idx)
-	{
-		if(scene_->getRenderPasses()->intPassTypeFromAuxPassIndex(idx) == int_pass_type) return (int) idx;
-	}
-
-	return -1;
-}
-
 
 END_YAFARAY

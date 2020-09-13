@@ -42,7 +42,7 @@ class Rgba;
 struct RenderState;
 class Ray;
 class DiffRay;
-class ColorPasses;
+class IntPasses;
 
 
 class Integrator
@@ -76,7 +76,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth = 0, IntPasses *intPasses = nullptr) const = 0;
 	protected:
 		SurfaceIntegrator() = default;
 		virtual Type integratorType() const override { return Surface; }
@@ -86,7 +86,7 @@ class VolumeIntegrator: public Integrator
 {
 	public:
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const = 0;
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &col_passes, int additional_depth = 0) const = 0;
+		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const = 0;
 	protected:
 		VolumeIntegrator() = default;
 		virtual Type integratorType() const override { return Volume; }

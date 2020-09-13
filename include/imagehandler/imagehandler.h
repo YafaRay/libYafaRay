@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-class RenderPasses;
+class PassesSettings;
 class ParamMap;
 class Scene;
 
@@ -88,7 +88,7 @@ class LIBYAFARAY_EXPORT ImageHandler
 		virtual bool loadFromFile(const std::string &name) = 0;
 		virtual bool loadFromMemory(const uint8_t *data, size_t size) {return false; }
 		virtual bool saveToFile(const std::string &name, int img_index = 0) = 0;
-		virtual bool saveToFileMultiChannel(const std::string &name, const RenderPasses *render_passes) { return false; };
+		virtual bool saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings) { return false; };
 		virtual bool isHdr() const { return false; }
 		bool isMultiLayer() const { return multi_layer_; }
 		bool denoiseEnabled() const { return denoise_; }
@@ -103,7 +103,7 @@ class LIBYAFARAY_EXPORT ImageHandler
 		void setColorSpace(ColorSpace color_space, float gamma) { color_space_ = color_space; gamma_ = gamma; }
 		void putPixel(int x, int y, const Rgba &rgba, int img_index = 0);
 		Rgba getPixel(int x, int y, int img_index = 0);
-		void initForOutput(int width, int height, const RenderPasses *render_passes, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha = false, bool multi_layer = false, bool grayscale = false);
+		void initForOutput(int width, int height, const PassesSettings *passes_settings, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha = false, bool multi_layer = false, bool grayscale = false);
 		void clearImgBuffers();
 
 	protected:

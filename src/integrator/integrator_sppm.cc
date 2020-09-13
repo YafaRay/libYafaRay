@@ -137,7 +137,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 
 	diff_rays_enabled_ = session__.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
-	if(scene_->passEnabled(PassIntZDepthNorm) || scene_->passEnabled(PassIntMist)) precalcDepths();
+	if(scene_->passEnabled(PassZDepthNorm) || scene_->passEnabled(PassMist)) precalcDepths();
 
 	int acum_aa_samples = 1;
 
@@ -217,9 +217,10 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 
 	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);
 
-	ColorPasses color_passes(scene_->getRenderPasses());
-
-	ColorPasses tmp_passes_zero(scene_->getRenderPasses());
+	const PassesSettings *passes_settings = scene_->getPassesSettings();
+	const PassMaskParams mask_params = passes_settings->passMaskParams();
+	IntPasses intPasses(passes_settings->intPassesSettings());
+	const bool int_passes_used = intPasses.size() > 1;
 
 	for(int i = a.y_; i < end_y; ++i)
 	{
@@ -233,8 +234,6 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
-				color_passes.resetColors();
-
 				rstate.setDefaults();
 				rstate.pixel_sample_ = pass_offs + sample;
 				rstate.time_ = addMod1__((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
@@ -252,7 +251,7 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 				c_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v, wt); // wt need to be considered
 				if(wt == 0.0)
 				{
-					image_film_->addSample(tmp_passes_zero, j, i, dx, dy, &a); //maybe not need
+					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &intPasses); //maybe not need
 					continue;
 				}
 				if(diff_rays_enabled_)
@@ -274,7 +273,7 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 				int index = ((i - y_start_film) * camera->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 
-				GatherInfo g_info = traceGatherRay(rstate, c_ray, hp, color_passes);
+				GatherInfo g_info = traceGatherRay(rstate, c_ray, hp);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 
 				// progressive refinement
@@ -292,98 +291,85 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 
 				//radiance estimate
 				//colorPasses.probe_mult(PASS_INT_DIFFUSE_INDIRECT, 1.f / (hp.radius2 * M_PI * totalnPhotons));
-				Rgba color = color_passes.probeSet(PassIntIndirect, hp.acc_photon_flux_ / (hp.radius_2_ * M_PI * totaln_photons_));
+				const Rgba col_indirect = hp.acc_photon_flux_ / (hp.radius_2_ * M_PI * totaln_photons_);
+				Rgba color = col_indirect;
 				color += g_info.constant_randiance_;
 				color.a_ = g_info.constant_randiance_.a_; //the alpha value is hold in the constantRadiance variable
-				if(color_passes.enabled(PassIntIndirect)) color_passes(PassIntIndirect).a_ = g_info.constant_randiance_.a_;
+				intPasses(PassCombined) = color;
 
-				color_passes.probeSet(PassIntCombined, color);
-
-
-				if(color_passes.enabled(PassIntZDepthNorm) || color_passes.enabled(PassIntZDepthAbs) || color_passes.enabled(PassIntMist))
+				if(int_passes_used)
 				{
-					float depth_abs = 0.f, depth_norm = 0.f;
-
-					if(color_passes.enabled(PassIntZDepthNorm) || color_passes.enabled(PassIntMist))
+					if(intPasses.enabled(PassIndirect))
 					{
-						if(c_ray.tmax_ > 0.f)
-						{
-							depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
-						}
-						color_passes.probeSet(PassIntZDepthNorm, Rgba(depth_norm));
-						color_passes.probeSet(PassIntMist, Rgba(1.f - depth_norm));
+						intPasses(PassIndirect) = col_indirect;
+						intPasses(PassIndirect).a_ = g_info.constant_randiance_.a_;
 					}
-					if(color_passes.enabled(PassIntZDepthAbs))
+
+					if(intPasses.enabled(PassZDepthNorm) || intPasses.enabled(PassZDepthAbs) || intPasses.enabled(PassMist))
 					{
-						depth_abs = c_ray.tmax_;
-						if(depth_abs <= 0.f)
+						float depth_abs = 0.f, depth_norm = 0.f;
+
+						if(intPasses.enabled(PassZDepthNorm) || intPasses.enabled(PassMist))
 						{
-							depth_abs = 99999997952.f;
+							if(c_ray.tmax_ > 0.f)
+							{
+								depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
+							}
+							intPasses(PassZDepthNorm) = Rgba(depth_norm);
+							intPasses(PassMist) = Rgba(1.f - depth_norm);
 						}
-						color_passes.probeSet(PassIntZDepthAbs, Rgba(depth_abs));
+						if(intPasses.enabled(PassZDepthAbs))
+						{
+							depth_abs = c_ray.tmax_;
+							if(depth_abs <= 0.f)
+							{
+								depth_abs = 99999997952.f;
+							}
+							intPasses(PassZDepthAbs) = Rgba(depth_abs);
+						}
+					}
+
+					for(const auto &it : intPasses)
+					{
+						intPasses(it) *= wt;
+
+						if(intPasses(it).a_ > 1.f) intPasses(it).a_ = 1.f;
+
+						switch(it)
+						{
+							//Processing of mask render passes:
+							case PassObjIndexMask:
+							case PassObjIndexMaskShadow:
+							case PassObjIndexMaskAll:
+							case PassMatIndexMask:
+							case PassMatIndexMaskShadow:
+							case PassMatIndexMaskAll:
+
+								intPasses(it).clampRgb01();
+
+								if(mask_params.invert_)
+								{
+									intPasses(it) = Rgba(1.f) - intPasses(it);
+								}
+
+								if(!mask_params.only_)
+								{
+									Rgba col_combined = intPasses(PassCombined);
+									col_combined.a_ = 1.f;
+									intPasses(it) *= col_combined;
+								}
+								break;
+
+							default: break;
+						}
 					}
 				}
-
-				for(int idx = 0; idx < color_passes.size(); ++idx)
+				else
 				{
-					if(color_passes(idx).a_ > 1.f) color_passes(idx).a_ = 1.f;
-
-					int int_pass_type = color_passes.intPassTypeFromIndex(idx);
-
-					switch(int_pass_type)
-					{
-						case PassIntZDepthNorm: break;
-						case PassIntZDepthAbs: break;
-						case PassIntMist: break;
-						case PassIntNormalSmooth: break;
-						case PassIntNormalGeom: break;
-						case PassIntAo: break;
-						case PassIntAoClay: break;
-						case PassIntUv: break;
-						case PassIntDebugNu: break;
-						case PassIntDebugNv: break;
-						case PassIntDebugDpdu: break;
-						case PassIntDebugDpdv: break;
-						case PassIntDebugDsdu: break;
-						case PassIntDebugDsdv: break;
-						case PassIntObjIndexAbs: break;
-						case PassIntObjIndexNorm: break;
-						case PassIntObjIndexAuto: break;
-						case PassIntObjIndexAutoAbs: break;
-						case PassIntMatIndexAbs: break;
-						case PassIntMatIndexNorm: break;
-						case PassIntMatIndexAuto: break;
-						case PassIntMatIndexAutoAbs: break;
-						case PassIntAaSamples: break;
-
-						//Processing of mask render passes:
-						case PassIntObjIndexMask:
-						case PassIntObjIndexMaskShadow:
-						case PassIntObjIndexMaskAll:
-						case PassIntMatIndexMask:
-						case PassIntMatIndexMaskShadow:
-						case PassIntMatIndexMaskAll:
-
-							color_passes(idx).clampRgb01();
-
-							if(color_passes.getPassMaskInvert())
-							{
-								color_passes(idx) = Rgba(1.f) - color_passes(idx);
-							}
-
-							if(!color_passes.getPassMaskOnly())
-							{
-								Rgba col_combined = color_passes(PassIntCombined);
-								col_combined.a_ = 1.f;
-								color_passes(idx) *= col_combined;
-							}
-							break;
-
-						default: color_passes(idx) *= wt; break;
-					}
+					intPasses(PassCombined) *= wt;
 				}
 
-				image_film_->addSample(color_passes, j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples);
+				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &intPasses);
 			}
 		}
 	}
@@ -863,17 +849,19 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-Rgba SppmIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
+Rgba SppmIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
 {
 	return Rgba(0.f);
 }
 
 
-GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, ColorPasses &color_passes)
+GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, IntPasses *intPasses)
 {
-	static int n_max = 0;
-	static int calls = 0;
-	++calls;
+	const bool int_passes_used = state.raylevel_ == 1 && intPasses && intPasses->size() > 1;
+
+	static int n_max__ = 0;
+	static int calls__ = 0;
+	++calls__;
 	Rgb col(0.0);
 	GatherInfo g_info;
 
@@ -905,15 +893,18 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		g_info.constant_randiance_ += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0); //add only once, but FG seems add twice?
+		const Rgb col_emit = material->emit(state, sp, wo);
+		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
+		if(int_passes_used)
+		{
+			if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_emit;
+		}
 		state.include_lights_ = false;
 		SpDifferentials sp_diff(sp, ray);
 
-		ColorPasses tmp_color_passes = color_passes;
-
 		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(state, sp, wo, color_passes);
+			g_info.constant_randiance_ += estimateAllDirectLight(state, sp, wo, intPasses);
 		}
 
 		// estimate radiance using photon map
@@ -955,11 +946,11 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 			if(n_gathered > 0)
 			{
-				if(n_gathered > n_max)
+				if(n_gathered > n_max__)
 				{
-					n_max = n_gathered;
-					Y_DEBUG << "maximum Photons: " << n_max << ", radius2: " << radius_2 << "\n";
-					if(n_max == 10) for(int j = 0; j < n_gathered; ++j) Y_DEBUG << "col:" << gathered[j].photon_->color() << "\n";
+					n_max__ = n_gathered;
+					Y_DEBUG << "maximum Photons: " << n_max__ << ", radius2: " << radius_2 << "\n";
+					if(n_max__ == 10) for(int j = 0; j < n_gathered; ++j) Y_DEBUG << "col:" << gathered[j].photon_->color() << "\n";
 				}
 				for(int i = 0; i < n_gathered; ++i)
 				{
@@ -1043,6 +1034,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				float w = 0.f;
 				GatherInfo cing, t_cing; //Dispersive is different handled, not same as GLOSSY, at the BSDF_VOLUMETRIC part
 
+				Rgb dcol_trans_accum;
 				for(int ns = 0; ns < dsam; ++ns)
 				{
 					state.wavelength_ = (ns + ss_1) * d_1;
@@ -1060,11 +1052,14 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						Rgb wl_col;
 						wl2Rgb__(state.wavelength_, wl_col);
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
-						t_cing = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+						t_cing = traceGatherRay(state, ref_ray, hp);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 
-						tmp_color_passes.probeAdd(PassIntTrans, t_cing.constant_randiance_, state.raylevel_ == 1);
+						if(int_passes_used)
+						{
+							if(intPasses->enabled(PassTrans)) dcol_trans_accum += t_cing.constant_randiance_;
+						}
 
 						state.chromatic_ = true;
 					}
@@ -1081,10 +1076,13 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(tmp_color_passes.size() > 1)
+				if(int_passes_used)
 				{
-					tmp_color_passes *= d_1;
-					color_passes += tmp_color_passes;
+					if(Rgba *color_pass = intPasses->find(PassTrans))
+					{
+						dcol_trans_accum *= d_1;
+						*color_pass += dcol_trans_accum;
+					}
 				}
 
 				state.ray_division_ = old_division;
@@ -1116,7 +1114,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				hal_2.setStart(offs);
 				hal_3.setStart(offs);
 
-				if(tmp_color_passes.size() > 1) tmp_color_passes.resetColors();
+				Rgb gcol_indirect_accum;
+				Rgb gcol_reflect_accum;
+				Rgb gcol_transmit_accum;
 
 				for(int ns = 0; ns < gsam; ++ns)
 				{
@@ -1144,7 +1144,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
 						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
 						else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-						integ = (Rgb)integrate(state, ref_ray, tmp_color_passes, additional_depth);
+						integ = (Rgb) integrate(state, ref_ray, additional_depth, nullptr);
 
 						if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
@@ -1152,7 +1152,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						}
 
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.raylevel == 1);
-						t_ging = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+						t_ging = traceGatherRay(state, ref_ray, hp);
 						t_ging.photon_flux_ *= mcol * w;
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
@@ -1171,18 +1171,21 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						{
 							ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
 							sp_diff.reflectedRay(ray, ref_ray);
-							integ = integrate(state, ref_ray, tmp_color_passes, additional_depth);
+							integ = integrate(state, ref_ray, additional_depth, nullptr);
 							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
 							}
 							Rgb col_reflect_factor = mcol[0] * w[0];
 
-							t_ging = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+							t_ging = traceGatherRay(state, ref_ray, hp);
 							t_ging.photon_flux_ *= col_reflect_factor;
 							t_ging.constant_randiance_ *= col_reflect_factor;
 
-							tmp_color_passes.probeAdd(PassIntTrans, (Rgb) t_ging.constant_randiance_, state.raylevel_ == 1);
+							if(int_passes_used)
+							{
+								if(intPasses->enabled(PassGlossyIndirect)) gcol_indirect_accum += (Rgb) t_ging.constant_randiance_;
+							}
 							ging += t_ging;
 						}
 
@@ -1190,7 +1193,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						{
 							ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
 							sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-							integ = integrate(state, ref_ray, tmp_color_passes, additional_depth);
+							integ = integrate(state, ref_ray, additional_depth, nullptr);
 							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
 								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
@@ -1198,10 +1201,13 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 							Rgb col_transmit_factor = mcol[1] * w[1];
 							alpha = integ.a_;
-							t_ging = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+							t_ging = traceGatherRay(state, ref_ray, hp);
 							t_ging.photon_flux_ *= col_transmit_factor;
 							t_ging.constant_randiance_ *= col_transmit_factor;
-							tmp_color_passes.probeAdd(PassIntGlossyIndirect, (Rgb) t_ging.constant_randiance_, state.raylevel_ == 1);
+							if(int_passes_used)
+							{
+								if(intPasses->enabled(PassGlossyIndirect)) gcol_transmit_accum += (Rgb) t_ging.constant_randiance_;
+							}
 							ging += t_ging;
 						}
 					}
@@ -1215,10 +1221,13 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 							else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 						}
 
-						t_ging = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+						t_ging = traceGatherRay(state, ref_ray, hp);
 						t_ging.photon_flux_ *= mcol * W;
 						t_ging.constant_randiance_ *= mcol * W;
-						tmp_color_passes.probeAdd(PassIntGlossyIndirect, t_ging.constant_randiance_, state.raylevel_ == 1);
+						if(int_passes_used)
+						{
+							if(intPasses->enabled(PassTrans)) gcol_reflect_accum += t_ging.constant_randiance_;
+						}
 						ging += t_ging;
 					}
 
@@ -1228,7 +1237,6 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 						{
 							ging.photon_flux_ *= vcol;
 							ging.constant_randiance_ *= vcol;
-							//tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, t_ging.constantRandiance, state.raylevel == 1);
 						}
 					}
 
@@ -1238,10 +1246,23 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				g_info.photon_flux_ += ging.photon_flux_ * d_1;
 				g_info.photon_count_ += ging.photon_count_ * d_1;
 
-				if(tmp_color_passes.size() > 1)
+				if(int_passes_used)
 				{
-					tmp_color_passes *= d_1;
-					color_passes += tmp_color_passes;
+					if(Rgba *color_pass = intPasses->find(PassGlossyIndirect))
+					{
+						gcol_indirect_accum *= d_1;
+						*color_pass += gcol_indirect_accum;
+					}
+					if(Rgba *color_pass = intPasses->find(PassTrans))
+					{
+						gcol_reflect_accum *= d_1;
+						*color_pass += gcol_reflect_accum;
+					}
+					if(Rgba *color_pass = intPasses->find(PassGlossyIndirect))
+					{
+						gcol_transmit_accum *= d_1;
+						*color_pass += gcol_transmit_accum;
+					}
 				}
 
 				state.ray_division_ = old_division;
@@ -1264,7 +1285,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				{
 					DiffRay ref_ray(sp.p_, dir[0], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+					GatherInfo refg = traceGatherRay(state, ref_ray, hp);
 					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ref_ray, vcol))
@@ -1273,7 +1294,12 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 							refg.photon_flux_ *= vcol;
 						}
 					}
-					g_info.constant_randiance_ += color_passes.probeAdd(PassIntReflectPerfect, refg.constant_randiance_ * Rgba(rcol[0]), state.raylevel_ == 1);
+					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(rcol[0]);
+					g_info.constant_randiance_ += col_radiance_reflect;
+					if(int_passes_used)
+					{
+						if(Rgba *color_pass = intPasses->find(PassReflectPerfect)) *color_pass += col_radiance_reflect;
+					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[0]);
 					g_info.photon_count_ += refg.photon_count_;
 				}
@@ -1281,7 +1307,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				{
 					DiffRay ref_ray(sp.p_, dir[1], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-					GatherInfo refg = traceGatherRay(state, ref_ray, hp, tmp_color_passes);
+					GatherInfo refg = traceGatherRay(state, ref_ray, hp);
 					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
 						if(vol->transmittance(state, ref_ray, vcol))
@@ -1290,7 +1316,12 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 							refg.photon_flux_ *= vcol;
 						}
 					}
-					g_info.constant_randiance_ += color_passes.probeAdd(PassIntRefractPerfect, refg.constant_randiance_ * Rgba(rcol[1]), state.raylevel_ == 1);
+					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(rcol[1]);
+					g_info.constant_randiance_ += col_radiance_refract;
+					if(int_passes_used)
+					{
+						if(Rgba *color_pass = intPasses->find(PassRefractPerfect)) *color_pass += col_radiance_refract;
+					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[1]);
 					g_info.photon_count_ += refg.photon_count_;
 					alpha = refg.constant_randiance_.a_;
@@ -1299,18 +1330,18 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 		}
 		--state.raylevel_;
 
-		if(color_passes.size() > 1 && state.raylevel_ == 0)
+		if(int_passes_used)
 		{
-			generateCommonRenderPasses(color_passes, state, sp, ray);
+			generateCommonPassesSettings(state, sp, ray, intPasses);
 
-			if(color_passes.enabled(PassIntAo))
+			if(Rgba *color_pass = intPasses->find(PassAo))
 			{
-				color_passes(PassIntAo) = sampleAmbientOcclusionPass(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(color_passes.enabled(PassIntAoClay))
+			if(Rgba *color_pass = intPasses->find(PassAoClay))
 			{
-				color_passes(PassIntAoClay) = sampleAmbientOcclusionPassClay(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 
@@ -1326,7 +1357,12 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			g_info.constant_randiance_ += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			g_info.constant_randiance_ += col_tmp;
+			if(int_passes_used)
+			{
+				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+			}
 		}
 	}
 
@@ -1334,17 +1370,18 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 	state.include_lights_ = old_include_lights;
 
 	Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgba col_vol_integration = scene_->vol_integrator_->integrate(state, ray, color_passes);
+	Rgba col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	color_passes.probeSet(PassIntVolumeTransmittance, col_vol_transmittance);
-	color_passes.probeSet(PassIntVolumeIntegration, col_vol_integration);
+	if(int_passes_used)
+	{
+		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
+		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
+	}
 
 	g_info.constant_randiance_ = (g_info.constant_randiance_ * col_vol_transmittance) + col_vol_integration;
-
 	g_info.constant_randiance_.a_ = alpha; // a small trick for just hold the alpha value.
-
 	return g_info;
 }
 

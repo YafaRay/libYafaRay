@@ -41,7 +41,6 @@
 
 #include <iostream>
 #include <limits>
-#include <sstream>
 
 BEGIN_YAFARAY
 
@@ -1322,11 +1321,11 @@ Camera *Scene::createCamera(const std::string &name, ParamMap &params)
 	{
 		cameras_[name] = camera;
 		INFO_VERBOSE_SUCCESS(name, type);
-		int view_number = render_passes_.view_names_.size();
+		int view_number = passes_settings_.view_names_.size();
 		camera->setCameraName(name);
-		render_passes_.view_names_.push_back(camera->getViewName());
+		passes_settings_.view_names_.push_back(camera->getViewName());
 
-		Y_INFO << "Environment: View number=" << view_number << ", view name: '" << render_passes_.view_names_[view_number] << "', camera name: '" << camera->getCameraName() << "'" << YENDL;
+		Y_INFO << "Environment: View number=" << view_number << ", view name: '" << passes_settings_.view_names_[view_number] << "', camera name: '" << camera->getCameraName() << "'" << YENDL;
 
 		return camera;
 	}
@@ -1391,36 +1390,30 @@ void Scene::setupRenderPasses(const ParamMap &params)
 	params.getParam("facesEdgeThreshold", faces_edge_threshold);
 	params.getParam("facesEdgeSmoothness", faces_edge_smoothness);
 
-	//Adding the render passes and associating them to the internal YafaRay pass defined in the Blender Exporter "pass_xxx" parameters.
-	for(auto it = render_passes_.ext_pass_map_int_string_.begin(); it != render_passes_.ext_pass_map_int_string_.end(); ++it)
-	{
-		internal_pass = "";
-		external_pass = it->second;
-		params.getParam("pass_" + external_pass, internal_pass);
-		if(internal_pass != "disabled" && internal_pass != "") render_passes_.extPassAdd(external_pass, internal_pass);
-	}
+	PassMaskParams mask_params;
+	mask_params.obj_index_ = (float) pass_mask_obj_index;
+	mask_params.mat_index_ = (float) pass_mask_mat_index;
+	mask_params.invert_ = pass_mask_invert;
+	mask_params.only_ = pass_mask_only;
+	passes_settings_.setPassMaskParams(mask_params);
+
+	PassEdgeToonParams edge_params;
+	edge_params.thickness_ = object_edge_thickness;
+	edge_params.threshold_ = object_edge_threshold;
+	edge_params.smoothness_ = object_edge_smoothness;
+	edge_params.toon_color_[0] = toon_edge_color.r_;
+	edge_params.toon_color_[1] = toon_edge_color.g_;
+	edge_params.toon_color_[2] = toon_edge_color.b_;
+	edge_params.toon_pre_smooth_ = toon_pre_smooth;
+	edge_params.toon_quantization_ = toon_quantization;
+	edge_params.toon_post_smooth_ = toon_post_smooth;
+	edge_params.face_thickness_ = faces_edge_thickness;
+	edge_params.face_threshold_ = faces_edge_threshold;
+	edge_params.face_smoothness_ = faces_edge_smoothness;
+	passes_settings_.setPassEdgeToonParams(edge_params);
 
 	//Generate any necessary auxiliar render passes
-	render_passes_.auxPassesGenerate();
-
-	render_passes_.setPassMaskObjIndex((float) pass_mask_obj_index);
-	render_passes_.setPassMaskMatIndex((float) pass_mask_mat_index);
-	render_passes_.setPassMaskInvert(pass_mask_invert);
-	render_passes_.setPassMaskOnly(pass_mask_only);
-
-	render_passes_.object_edge_thickness_ = object_edge_thickness;
-	render_passes_.object_edge_threshold_ = object_edge_threshold;
-	render_passes_.object_edge_smoothness_ = object_edge_smoothness;
-	render_passes_.toon_pre_smooth_ = toon_pre_smooth;
-	render_passes_.toon_quantization_ = toon_quantization;
-	render_passes_.toon_post_smooth_ = toon_post_smooth;
-	render_passes_.faces_edge_thickness_ = faces_edge_thickness;
-	render_passes_.faces_edge_threshold_ = faces_edge_threshold;
-	render_passes_.faces_edge_smoothness_ = faces_edge_smoothness;
-
-	render_passes_.toon_edge_color_[0] = toon_edge_color.r_;
-	render_passes_.toon_edge_color_[1] = toon_edge_color.g_;
-	render_passes_.toon_edge_color_[2] = toon_edge_color.b_;
+	passes_settings_.auxPassesGenerate();
 }
 
 ImageFilm *Scene::createImageFilm(const ParamMap &params, ColorOutput &output)
@@ -1495,7 +1488,7 @@ ImageFilm *Scene::createImageFilm(const ParamMap &params, ColorOutput &output)
 	else if(film_autosave_interval_type_string == "time-interval") film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
 	else film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
 
-	output.initTilesPasses(cameras_.size(), render_passes_.extPassesSize());
+	output.initTilesPasses(cameras_.size(), passes_settings_.extPassesSettings().size());
 
 	ImageFilm::FilterType type = ImageFilm::FilterType::Box;
 	if(name == "mitchell") type = ImageFilm::FilterType::Mitchell;
@@ -1791,7 +1784,7 @@ const std::vector<Light *> Scene::getLightsEmittingDiffusePhotons() const
 	return result;
 }
 
-bool Scene::passEnabled(IntPassTypes int_pass_type) const { return render_passes_.passEnabled(int_pass_type); }
+bool Scene::passEnabled(const PassTypes &pass_type) const { return getPassesSettings()->intPassesSettings().enabled(pass_type); }
 
 
 END_YAFARAY

@@ -65,10 +65,8 @@ class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
 class Random;
-class RenderPasses;
 class Matrix4;
 class Rgb;
-enum IntPassTypes : int;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
@@ -217,8 +215,7 @@ class LIBYAFARAY_EXPORT Scene
 		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
 		bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const;
 		bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const;
-		const RenderPasses *getRenderPasses() const { return &render_passes_; }
-		bool passEnabled(IntPassTypes int_pass_type) const;
+		bool passEnabled(const PassTypes &pass_type) const;
 
 		enum SceneState { Ready, Geometry, Object, Vmap };
 		enum ChangeFlags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2,
@@ -259,7 +256,9 @@ class LIBYAFARAY_EXPORT Scene
 		ImageHandler *createImageHandler(const std::string &name, ParamMap &params);
 
 		bool			setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb = nullptr);
-		void			setupRenderPasses(const ParamMap &params);
+		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components = 4);
+		void setupRenderPasses(const ParamMap &params); //!< This function sets the additional render passes parameters and generates the auxiliary passes. Must be called *after* defining all render passes with the createRenderPass function.
+		const PassesSettings *getPassesSettings() const { return &passes_settings_; }
 		void			setupLoggingAndBadge(const ParamMap &params);
 		const 			std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
 		void			setOutput2(ColorOutput *out_2) { output_2_ = out_2; }
@@ -297,7 +296,7 @@ class LIBYAFARAY_EXPORT Scene
 		std::map<std::string, VolumeRegion *> volume_regions_;
 		std::map<std::string, ImageHandler *> imagehandlers_;
 
-		RenderPasses render_passes_;
+		PassesSettings passes_settings_;
 		ColorOutput *output_2_ = nullptr; //secondary color output to export to file at the same time it's exported to Blender
 
 		mutable std::mutex sig_mutex_;

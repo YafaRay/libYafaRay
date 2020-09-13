@@ -382,7 +382,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 
 	std::string el(element), *name = 0;
 	if(el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_passes" || el == "logging_badge")
+	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "passes_settings" || el == "logging_badge")
 	{
 		if(!attrs[0])
 		{
@@ -708,7 +708,7 @@ void endElParammap__(XmlParser &p, const char *element)
 			else if(el == "background") p.scene_->createBackground(*name, p.params_);
 			else if(el == "object") p.scene_->createObject(*name, p.params_);
 			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
-			else if(el == "render_passes") p.scene_->setupRenderPasses(p.params_);
+			else if(el == "passes_settings") p.scene_->setupRenderPasses(p.params_);
 			else if(el == "logging_badge") p.scene_->setupLoggingAndBadge(p.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}

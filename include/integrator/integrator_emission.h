@@ -35,7 +35,7 @@ class EmissionIntegrator final : public VolumeIntegrator
 		// optical thickness, absorption, attenuation, extinction
 		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
 		// emission part
-		virtual Rgba integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const override;
+		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const override;
 };
 
 END_YAFARAY

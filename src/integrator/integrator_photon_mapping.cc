@@ -961,7 +961,7 @@ bool PhotonIntegrator::preprocess()
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo, ColorPasses &color_passes) const
+Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Rgb path_col(0.0);
 	void *first_udat = state.userdata_;
@@ -970,8 +970,6 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
 	float w = 0.f;
-
-	ColorPasses tmp_color_passes(scene_->getRenderPasses());
 
 	int n_sampl = (int) ceilf(std::max(1, n_paths_ / state.ray_division_) * aa_indirect_sample_multiplier_);
 	for(int i = 0; i < n_sampl; ++i)
@@ -1032,7 +1030,7 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(state, hit, pwo, offs, tmp_color_passes);
+					lcol = estimateOneDirectLight(state, hit, pwo, offs);
 				}
 				else if(caustic)
 				{
@@ -1108,8 +1106,10 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 	return path_col / (float)n_sampl;
 }
 
-Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &color_passes, int additional_depth /*=0*/) const
+Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
 {
+	const bool int_passes_used = state.raylevel_ == 0 && intPasses && intPasses->size() > 1;
+
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
@@ -1134,15 +1134,19 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 			state.include_lights_ = true;
 		}
 		BsdfFlags bsdfs;
-		int additionalDepth = 0;
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
 		material->initBsdf(state, sp, bsdfs);
 
-		if(additionalDepth < material->getAdditionalDepth()) additionalDepth = material->getAdditionalDepth();
+		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
+		const Rgb col_emit = material->emit(state, sp, wo);
+		col += col_emit;
+		if(int_passes_used)
+		{
+			if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_emit;
+		}
 
 		state.include_lights_ = false;
 
@@ -1156,27 +1160,37 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 			}
 			else
 			{
-				if(state.raylevel_ == 0 && color_passes.enabled(PassIntRadiance))
+				if(int_passes_used)
 				{
-					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-					const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-					if(nearest) color_passes(PassIntRadiance) = nearest->color();
+					if(Rgba *color_pass = intPasses->find(PassRadiance))
+					{
+						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						if(nearest) *color_pass = nearest->color();
+					}
 				}
 
 				// contribution of light emitting surfaces
-				if(Material::hasFlag(bsdfs, BsdfFlags::Emit)) col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
+				if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+				{
+					const Rgb col_tmp = material->emit(state, sp, wo);
+					col += col_tmp;
+					if(int_passes_used)
+					{
+						if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+					}
+				}
 
 				if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(state, sp, wo, color_passes);;
-
-					if(aa_noise_params_.clamp_indirect_ > 0.f)
+					col += estimateAllDirectLight(state, sp, wo, intPasses);
+					Rgb col_tmp = finalGathering(state, sp, wo);
+					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
+					col += col_tmp;
+					if(int_passes_used)
 					{
-						Rgb tmp_col = finalGathering(state, sp, wo, color_passes);
-						tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-						col += color_passes.probeSet(PassIntDiffuseIndirect, tmp_col, state.raylevel_ == 0);
+						if(Rgba *color_pass = intPasses->find(PassDiffuseIndirect)) *color_pass = col_tmp;
 					}
-					else col += color_passes.probeSet(PassIntDiffuseIndirect, finalGathering(state, sp, wo, color_passes), state.raylevel_ == 0);
 				}
 			}
 		}
@@ -1190,18 +1204,29 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 			}
 			else
 			{
-				if(use_photon_diffuse_ && state.raylevel_ == 0 && color_passes.enabled(PassIntRadiance))
+				if(use_photon_diffuse_ && int_passes_used)
 				{
-					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-					const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-					if(nearest) color_passes(PassIntRadiance) = nearest->color();
+					if(Rgba *color_pass = intPasses->find(PassRadiance))
+					{
+						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+						const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						if(nearest) *color_pass = nearest->color();
+					}
 				}
 
-				if(Material::hasFlag(bsdfs, BsdfFlags::Emit)) col += color_passes.probeAdd(PassIntEmit, material->emit(state, sp, wo), state.raylevel_ == 0);
+				if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+				{
+					const Rgb col_tmp = material->emit(state, sp, wo);
+					col += col_tmp;
+					if(int_passes_used)
+					{
+						if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+					}
+				}
 
 				if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(state, sp, wo, color_passes);
+					col += estimateAllDirectLight(state, sp, wo, intPasses);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1218,10 +1243,15 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 					float scale = 1.f / ((float)session__.diffuse_map_->nPaths() * radius * M_PI);
 					for(int i = 0; i < n_gathered; ++i)
 					{
-						Vec3 pdir = gathered[i].photon_->direction();
-						Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::Diffuse);
+						const Vec3 pdir = gathered[i].photon_->direction();
+						const Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::Diffuse);
 
-						col += color_passes.probeAdd(PassIntDiffuseIndirect, surf_col * scale * gathered[i].photon_->color(), state.raylevel_ == 0);
+						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
+						col += col_tmp;
+						if(int_passes_used)
+						{
+							if(Rgba *color_pass = intPasses->find(PassDiffuseIndirect)) *color_pass += col_tmp;
+						}
 					}
 				}
 			}
@@ -1230,29 +1260,29 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 		// add caustics
 		if(use_photon_caustics_ && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
-			if(aa_noise_params_.clamp_indirect_ > 0.f)
+			Rgb col_tmp = estimateCausticPhotons(state, sp, wo);
+			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
+			col += col_tmp;
+			if(int_passes_used)
 			{
-				Rgb tmp_col = estimateCausticPhotons(state, sp, wo);
-				tmp_col.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
-				col += color_passes.probeSet(PassIntIndirect, tmp_col, state.raylevel_ == 0);
+				if(Rgba *color_pass = intPasses->find(PassIndirect)) *color_pass = col_tmp;
 			}
-			else col += color_passes.probeSet(PassIntIndirect, estimateCausticPhotons(state, sp, wo), state.raylevel_ == 0);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, color_passes, additionalDepth);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, intPasses);
 
-		if(color_passes.size() > 1 && state.raylevel_ == 0)
+		if(int_passes_used)
 		{
-			generateCommonRenderPasses(color_passes, state, sp, ray);
+			generateCommonPassesSettings(state, sp, ray, intPasses);
 
-			if(color_passes.enabled(PassIntAo))
+			if(Rgba *color_pass = intPasses->find(PassAo))
 			{
-				color_passes(PassIntAo) = sampleAmbientOcclusionPass(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(color_passes.enabled(PassIntAoClay))
+			if(Rgba *color_pass = intPasses->find(PassAoClay))
 			{
-				color_passes(PassIntAoClay) = sampleAmbientOcclusionPassClay(state, sp, wo);
+				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
 		}
 
@@ -1267,7 +1297,12 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			col += color_passes.probeSet(PassIntEnv, (*scene_->getBackground())(ray, state), state.raylevel_ == 0);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			col += col_tmp;
+			if(int_passes_used)
+			{
+				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+			}
 		}
 	}
 
@@ -1275,12 +1310,15 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, ColorPasses &
 	state.include_lights_ = old_include_lights;
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray, color_passes);
+	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	color_passes.probeSet(PassIntVolumeTransmittance, col_vol_transmittance);
-	color_passes.probeSet(PassIntVolumeIntegration, col_vol_integration);
+	if(int_passes_used)
+	{
+		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass += col_vol_transmittance;
+		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass += col_vol_integration;
+	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;
 

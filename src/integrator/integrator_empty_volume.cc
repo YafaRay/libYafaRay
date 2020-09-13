@@ -28,7 +28,7 @@ Rgba EmptyVolumeIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	return Rgb(1.f);
 }
 
-Rgba EmptyVolumeIntegrator::integrate(RenderState &state, Ray &ray, ColorPasses &color_passes, int additional_depth) const {
+Rgba EmptyVolumeIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
 	return Rgba(0.f);
 }
 

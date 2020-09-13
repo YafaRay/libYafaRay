@@ -15,7 +15,7 @@ Note: if yafaray-xml cannot find the plugins directory, add the -pp option to ma
 
 <scene type="triangle">
 
-<render_passes name="render_passes">
+<passes_settings name="passes_settings">
 	<facesEdgeSmoothness fval="0.5"/>
 	<facesEdgeThickness ival="1"/>
 	<facesEdgeThreshold fval="0.01"/>
@@ -60,7 +60,7 @@ Note: if yafaray-xml cannot find the plugins directory, add the -pp option to ma
 	<toonPostSmooth fval="3"/>
 	<toonPreSmooth fval="3"/>
 	<toonQuantization fval="0.1"/>
-</render_passes>
+</passes_settings>
 
 <logging_badge name="logging_badge">
 	<logging_author sval=""/>

@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by) : image_(handle), fname_(name), b_x_(bx), b_y_(by)
+ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by, const PassesSettings *passes_settings) : ColorOutput(passes_settings), image_(handle), fname_(name), b_x_(bx), b_y_(by)
 {
 	Path path(name);
 	Path output_path(path.getDirectory(), path.getBaseName(), "");
@@ -36,29 +36,29 @@ ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, 
 	session__.setPathImageOutput(output_path.getFullPath());
 }
 
-bool ImageOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, int idx, const Rgba &color, bool alpha)
+bool ImageOutput::putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha)
 {
 	Rgba col(0.f);
-	col.set(color.r_, color.g_, color.b_, ((alpha || idx > 0) ? color.a_ : 1.f));
-	image_->putPixel(x + b_x_, y + b_y_, col, idx);
+	col.set(color.r_, color.g_, color.b_, ((alpha || ext_pass > 0) ? color.a_ : 1.f));
+	image_->putPixel(x + b_x_, y + b_y_, col, ext_pass);
 	return true;
 }
 
-bool ImageOutput::putPixel(int num_view, int x, int y, const RenderPasses *render_passes, const std::vector<Rgba> &col_ext_passes, bool alpha)
+bool ImageOutput::putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha)
 {
 	if(image_)
 	{
-		for(size_t idx = 0; idx < col_ext_passes.size(); ++idx)
+		for(size_t idx = 0; idx < colors.size(); ++idx)
 		{
 			Rgba col(0.f);
-			col.set(col_ext_passes[idx].r_, col_ext_passes[idx].g_, col_ext_passes[idx].b_, ((alpha || idx > 0) ? col_ext_passes[idx].a_ : 1.f));
+			col.set(colors[idx].r_, colors[idx].g_, colors[idx].b_, ((alpha || idx > 0) ? colors[idx].a_ : 1.f));
 			image_->putPixel(x + b_x_, y + b_y_, col, idx);
 		}
 	}
 	return true;
 }
 
-void ImageOutput::flush(int num_view, const RenderPasses *render_passes)
+void ImageOutput::flush(int num_view)
 {
 	std::string fname_pass, path, name, base_name, ext;
 
@@ -83,7 +83,7 @@ void ImageOutput::flush(int num_view, const RenderPasses *render_passes)
 		ext  = "";
 	}
 
-	std::string view_name = render_passes->view_names_.at(num_view);
+	const std::string view_name = passes_settings_->view_names_.at(num_view);
 
 	if(view_name != "") base_name += " (view " + view_name + ")";
 
@@ -97,28 +97,33 @@ void ImageOutput::flush(int num_view, const RenderPasses *render_passes)
 			}
 
 			fname_pass = path + base_name + " [" + "multilayer" + "]" + ext;
-			saveImageFileMultiChannel(fname_pass, render_passes);
+			saveImageFileMultiChannel(fname_pass, passes_settings_);
 
 			logger__.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
 		else
 		{
-			for(int idx = 0; idx < render_passes->extPassesSize(); ++idx)
+			const IntPassesSettings &int_passes_settings = passes_settings_->intPassesSettings();
+			const ExtPassesSettings &ext_passes_settings = passes_settings_->extPassesSettings();
+			for(size_t ext_pass = 0; ext_pass < ext_passes_settings.size(); ++ext_pass)
 			{
-				std::string pass_name = render_passes->intPassTypeStringFromType(render_passes->intPassTypeFromExtPassIndex(idx));
-
-				if(num_view == 0 && idx == 0)
+				if(ext_passes_settings(ext_pass).toSave())
 				{
-					saveImageFile(fname_, idx);  //default image filename, when not using views nor passes and for reloading into Blender
-					logger__.setImagePath(fname_); //to show the image in the HTML log output
-				}
+					const PassTypes int_pass_type = ext_passes_settings(ext_pass).intPassType();
+					const std::string int_pass_name = int_passes_settings.name(int_pass_type);
+					const std::string ext_pass_name = ext_passes_settings(ext_pass).name();
 
-				if(pass_name != "not found" && (render_passes->extPassesSize() >= 2 || render_passes->view_names_.size() >= 2))
-				{
-					fname_pass = path + base_name + " [pass " + pass_name + "]" + ext;
-					saveImageFile(fname_pass, idx);
+					if(num_view == 0 && ext_pass == 0)
+					{
+						saveImageFile(fname_, ext_pass); //default m_imagehandler filename, when not using views nor passes and for reloading into Blender
+						logger__.setImagePath(fname_); //to show the image in the HTML log output
+					}
 
-					if(idx == 0) logger__.setImagePath(fname_pass); //to show the image in the HTML log output
+					if(int_pass_type != PassDisabled && (ext_passes_settings.size() >= 2 || passes_settings_->view_names_.size() >= 2))
+					{
+						fname_pass = path + base_name + " [pass " + ext_pass_name + " - " + int_pass_name + "]" + ext;
+						saveImageFile(fname_pass, ext_pass);
+					}
 				}
 			}
 		}
@@ -149,9 +154,9 @@ void ImageOutput::saveImageFile(std::string filename, int idx)
 	image_->saveToFile(filename, idx);
 }
 
-void ImageOutput::saveImageFileMultiChannel(std::string filename, const RenderPasses *render_passes)
+void ImageOutput::saveImageFileMultiChannel(std::string filename, const PassesSettings *m_passes_settings)
 {
-	image_->saveToFileMultiChannel(filename, render_passes);
+	image_->saveToFileMultiChannel(filename, m_passes_settings);
 }
 END_YAFARAY
 

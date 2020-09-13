@@ -401,6 +401,11 @@ void Interface::setLogVerbosityLevel(const std::string &str_v_level)
 	logger__.setLogMasterVerbosity(str_v_level);
 }
 
+const PassesSettings *Interface::getPassesSettings() const
+{
+	return scene_->getPassesSettings();
+}
+
 // export "factory"...
 
 extern "C"
