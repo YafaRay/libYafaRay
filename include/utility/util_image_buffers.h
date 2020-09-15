@@ -64,6 +64,9 @@ class Rgba8888 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); setA((uint8_t)roundf(col.a_ * 255.f)); }
 
+		Rgba getColor() { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, (float) getA() / 255.f); }
+
+	private:
 		void setR(uint8_t red_8) { r_ = red_8; }
 		void setG(uint8_t green_8) { g_ = green_8; }
 		void setB(uint8_t blue_8) { b_ = blue_8; }
@@ -74,9 +77,6 @@ class Rgba8888 final
 		uint8_t getB() const { return b_; }
 		uint8_t getA() const { return a_; }
 
-		Rgba getColor() { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, (float) getA() / 255.f); }
-
-	private:
 		uint8_t r_ = 0;
 		uint8_t g_ = 0;
 		uint8_t b_ = 0;
@@ -91,6 +91,9 @@ class Rgba7773 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f));  setA((uint8_t)roundf(col.a_ * 255.f)); }
 
+		Rgba getColor() { return Rgba((float) getR() / 254.f, (float) getG() / 254.f, (float) getB() / 254.f, (float) getA() / 224.f); } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
+
+	private:
 		void setR(uint8_t red_8) { ra_ = (ra_ & 0x01) | (red_8 & 0xFE); }
 		void setG(uint8_t green_8) { ga_ = (ga_ & 0x01) | (green_8 & 0xFE); }
 		void setB(uint8_t blue_8) { ba_ = (ba_ & 0x01) | (blue_8 & 0xFE); }
@@ -106,9 +109,6 @@ class Rgba7773 final
 		uint8_t getB() const { return ba_ & 0xFE; }
 		uint8_t getA() const { return ((ra_ & 0x01) << 7) | ((ga_ & 0x01) << 6) | ((ba_ & 0x01) << 5); }
 
-		Rgba getColor() { return Rgba((float) getR() / 254.f, (float) getG() / 254.f, (float) getB() / 254.f, (float) getA() / 224.f); } //maximum range is 7bit 0xFE (254) for colors and 3bit 0xE0 (224) for alpha, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
-
-	private:
 		uint8_t ra_ = 0x01;		//red + alpha most significant bit
 		uint8_t ga_ = 0x01;		//green + alpha centre bit
 		uint8_t ba_ = 0x01;		//blue + alpha least significant bit
@@ -119,6 +119,9 @@ class Rgb888 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
 
+		Rgba getColor() { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, 1.f); }
+
+	private:
 		void setR(uint8_t red_8) { r_ = red_8; }
 		void setG(uint8_t green_8) { g_ = green_8; }
 		void setB(uint8_t blue_8) { b_ = blue_8; }
@@ -129,9 +132,6 @@ class Rgb888 final
 		uint8_t getB() const { return b_; }
 		uint8_t getA() const { return 255; }
 
-		Rgba getColor() { return Rgba((float) getR() / 255.f, (float) getG() / 255.f, (float) getB() / 255.f, 1.f); }
-
-	private:
 		uint8_t r_ = 0;
 		uint8_t g_ = 0;
 		uint8_t b_ = 0;
@@ -146,10 +146,6 @@ class Gray8 final
 			setGray((uint8_t)roundf(f_gray_avg * 255.f));
 		}
 
-		void setGray(uint8_t val) { value_ = val; }
-
-		uint8_t getGray() const { return value_; }
-
 		Rgba getColor()
 		{
 			float f_value = (float) value_ / 255.f;
@@ -157,6 +153,9 @@ class Gray8 final
 		}
 
 	private:
+		void setGray(uint8_t val) { value_ = val; }
+		uint8_t getGray() const { return value_; }
+
 		uint8_t value_ = 0;
 };
 
@@ -167,6 +166,9 @@ class Rgb565 final
 	public:
 		void setColor(const Rgba &col) { setR((uint8_t)roundf(col.r_ * 255.f)); setG((uint8_t)roundf(col.g_ * 255.f)); setB((uint8_t)roundf(col.b_ * 255.f)); }
 
+		Rgba getColor() { return Rgba((float) getR() / 248.f, (float) getG() / 252.f, (float) getB() / 248.f, 1.f); } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
+
+	private:
 		void setR(uint8_t red_8) { rgb_565_ = (rgb_565_ & 0x07FF) | ((red_8 & 0xF8) << 8); }
 		void setG(uint8_t green_8) { rgb_565_ = (rgb_565_ & 0xF81F) | ((green_8 & 0xFC) << 3); }
 		void setB(uint8_t blue_8) { rgb_565_ = (rgb_565_ & 0xFFE0) | ((blue_8 & 0xF8) >> 3); }
@@ -177,9 +179,6 @@ class Rgb565 final
 		uint8_t getB() const { return ((rgb_565_ & 0x001F) << 3); }
 		uint8_t getA() const { return 255; }
 
-		Rgba getColor() { return Rgba((float) getR() / 248.f, (float) getG() / 252.f, (float) getB() / 248.f, 1.f); } //maximum range is 5bit 0xF8 (248) for r,b colors and 6bit 0xFC (252) for g color, so I'm scaling acordingly. Loss of color data is happening and scaling may make it worse, but it's the only way of doing this consistently
-
-	private:
 		uint16_t rgb_565_ = 0;
 };
 
@@ -195,6 +194,9 @@ class Rgb101010 final
 			setB((uint16_t)roundf(col.b_ * 1023.f));
 		}
 
+		Rgba getColor() { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, 1.f); }
+
+	private:
 		void setR(uint16_t red_10) { r_ = (red_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x0F) | ((red_10 & 0x0300) >> 4); }
 		void setG(uint16_t green_10) { g_ = (green_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x33) | ((green_10 & 0x0300) >> 6); }
 		void setB(uint16_t blue_10) { b_ = (blue_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x3C) | ((blue_10 & 0x0300) >> 8); }
@@ -205,9 +207,6 @@ class Rgb101010 final
 		uint16_t getB() const { return b_ + ((uint16_t)(rgb_extra_ & 0x03) << 8); }
 		uint8_t getA() const { return 255; }
 
-		Rgba getColor() { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, 1.f); }
-
-	private:
 		uint8_t rgb_extra_ = 0;
 		uint8_t r_ = 0;
 		uint8_t g_ = 0;
@@ -227,6 +226,9 @@ class Rgba1010108 final
 			setA((uint8_t)roundf(col.a_ * 255.f));
 		}
 
+		Rgba getColor() { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, (float) getA() / 255.f); }
+
+	private:
 		void setR(uint16_t red_10) { r_ = (red_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x0F) | ((red_10 & 0x0300) >> 4); }
 		void setG(uint16_t green_10) { g_ = (green_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x33) | ((green_10 & 0x0300) >> 6); }
 		void setB(uint16_t blue_10) { b_ = (blue_10 & 0x00FF); rgb_extra_ = (rgb_extra_ & 0x3C) | ((blue_10 & 0x0300) >> 8); }
@@ -237,78 +239,11 @@ class Rgba1010108 final
 		uint16_t getB() const { return b_ + ((uint16_t)(rgb_extra_ & 0x03) << 8); }
 		uint8_t getA() const { return a_; }
 
-		Rgba getColor() { return Rgba((float) getR() / 1023.f, (float) getG() / 1023.f, (float) getB() / 1023.f, (float) getA() / 255.f); }
-
-	private:
 		uint8_t rgb_extra_ = 0;
 		uint8_t r_ = 0;
 		uint8_t g_ = 0;
 		uint8_t b_ = 0;
 		uint8_t a_ = 1;
-};
-
-template <class T> class Generic2DBuffer final
-{
-	public:
-		Generic2DBuffer() = default;
-		Generic2DBuffer(int w, int h) : width_(w), height_(h)
-		{
-			data_.resize(width_);
-			for(int i = 0; i < width_; i++) data_[i].resize(height_);
-		}
-
-		~Generic2DBuffer()
-		{
-			if(data_.size() > 0)
-			{
-				for(int i = 0; i < width_; i++) data_[i].clear();
-				data_.clear();
-			}
-		}
-
-		inline void clear()
-		{
-			if(data_.size() > 0)
-			{
-				for(int i = 0; i < width_; i++) data_[i].clear();
-				data_.clear();
-			}
-			data_.resize(width_);
-			for(int i = 0; i < width_; i++) data_[i].resize(height_);
-		}
-
-		inline void resizeAndClear(int new_width, int new_height)
-		{
-			if(data_.size() > 0)
-			{
-				for(int i = 0; i < width_; i++) data_[i].clear();
-				data_.clear();
-			}
-
-			width_ = new_width;
-			height_ = new_height;
-
-			data_.resize(width_);
-			for(int i = 0; i < width_; i++) data_[i].resize(height_);
-		}
-
-		inline T &operator()(int x, int y)
-		{
-			return data_[x][y];
-		}
-
-		inline const T &operator()(int x, int y) const
-		{
-			return data_[x][y];
-		}
-
-		inline int getWidth() const { return width_; }
-		inline int getHeight() const  { return height_; }
-
-	private:
-		std::vector< std::vector< T >> data_;
-		int width_;
-		int height_;
 };
 
 template <class T> class GenericScanlineBuffer final
@@ -340,22 +275,25 @@ template <class T> class GenericScanlineBuffer final
 			return data_[x * height_ + y];
 		}
 
+		inline int getWidth() const { return width_; }
+		inline int getHeight() const  { return height_; }
+
 	private:
 		std::vector< T > data_;
 		int width_;
 		int height_;
 };
 
-typedef Generic2DBuffer<Pixel> 		Rgba2DImageWeighed_t; //!< Weighted RGBA image buffer typedef
-typedef Generic2DBuffer<PixelGray> 	Gray2DImageWeighed_t; //!< Weighted monochromatic image buffer typedef
-typedef Generic2DBuffer<Rgb> 		Rgb2DImage_t; //!< Non-weighted RGB (96bit/pixel) image buffer typedef
-typedef Generic2DBuffer<Rgba> 	Rgba2DImage_t; //!< Non-weighted RGBA (128bit/pixel) image buffer typedef
-typedef Generic2DBuffer<float> 		Gray2DImage_t; //!< Non-weighted gray scale (32bit/gray pixel) image buffer typedef
-typedef Generic2DBuffer<Rgb101010>		RgbOptimizedImage_t; //!< Non-weighted optimized (32bit/pixel) without alpha image buffer typedef
-typedef Generic2DBuffer<Rgb565>		RgbCompressedImage_t; //!< Non-weighted compressed (16bit/pixel) LOSSY image buffer typedef
-typedef Generic2DBuffer<Rgba1010108>	RgbaOptimizedImage_t; //!< Non-weighted optimized (40bit/pixel) with alpha buffer typedef
-typedef Generic2DBuffer<Rgba7773>	RgbaCompressedImage_t; //!< Non-weighted compressed (24bit/pixel) LOSSY with alpha buffer typedef
-typedef Generic2DBuffer<Gray8>		GrayOptimizedImage_t; //!< Non-weighted gray scale (8bit/gray pixel) image buffer typedef
+typedef GenericScanlineBuffer<Pixel> 		Rgba2DImageWeighed_t; //!< Weighted RGBA image buffer typedef
+typedef GenericScanlineBuffer<PixelGray> 	Gray2DImageWeighed_t; //!< Weighted monochromatic image buffer typedef
+typedef GenericScanlineBuffer<Rgb> 		Rgb2DImage_t; //!< Non-weighted RGB (96bit/pixel) image buffer typedef
+typedef GenericScanlineBuffer<Rgba> 	Rgba2DImage_t; //!< Non-weighted RGBA (128bit/pixel) image buffer typedef
+typedef GenericScanlineBuffer<float> 		Gray2DImage_t; //!< Non-weighted gray scale (32bit/gray pixel) image buffer typedef
+typedef GenericScanlineBuffer<Rgb101010>		RgbOptimizedImage_t; //!< Non-weighted optimized (32bit/pixel) without alpha image buffer typedef
+typedef GenericScanlineBuffer<Rgb565>		RgbCompressedImage_t; //!< Non-weighted compressed (16bit/pixel) LOSSY image buffer typedef
+typedef GenericScanlineBuffer<Rgba1010108>	RgbaOptimizedImage_t; //!< Non-weighted optimized (40bit/pixel) with alpha buffer typedef
+typedef GenericScanlineBuffer<Rgba7773>	RgbaCompressedImage_t; //!< Non-weighted compressed (24bit/pixel) LOSSY with alpha buffer typedef
+typedef GenericScanlineBuffer<Gray8>		GrayOptimizedImage_t; //!< Non-weighted gray scale (8bit/gray pixel) image buffer typedef
 
 END_YAFARAY
 

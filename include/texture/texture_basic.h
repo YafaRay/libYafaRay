@@ -22,7 +22,6 @@
 
 #include "texture/texture.h"
 #include "texture/noise_generator.h"
-#include "utility/util_buffer.h"
 
 BEGIN_YAFARAY
 

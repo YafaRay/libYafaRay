@@ -17,7 +17,6 @@
  */
 
 #include "common/color.h"
-#include "utility/util_buffer.h"
 #include "output/output.h"
 #include "output/output_memory.h"
 #include <cstdlib>
