@@ -32,7 +32,6 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <iomanip>
 
 BEGIN_YAFARAY
 
@@ -303,8 +302,6 @@ bool HdrHandler::readOrle(FILE *fp, int y, int scan_width)
 	}
 
 	delete [] scanline;
-	scanline = nullptr;
-
 	return true;
 }
 
@@ -314,7 +311,7 @@ bool HdrHandler::readArle(FILE *fp, int y, int scan_width)
 	uint8_t count = 0; // run description
 	uint8_t col = 0; // color component
 
-	if(scanline == nullptr)
+	if(scanline == nullptr) //FIXME: this no longer does anything since exceptions were introduced, failing "new" does not return nullptr but an exception (which is unhandled here)
 	{
 		Y_ERROR << handler_name_ << ": Unable to allocate buffer memory..." << YENDL;
 		return false;
@@ -384,8 +381,6 @@ bool HdrHandler::readArle(FILE *fp, int y, int scan_width)
 	}
 
 	delete [] scanline;
-	scanline = nullptr;
-
 	return true;
 }
 

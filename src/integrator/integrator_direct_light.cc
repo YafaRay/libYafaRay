@@ -94,9 +94,9 @@ bool DirectLightIntegrator::preprocess()
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
+Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *int_passes) const
 {
-	const bool int_passes_used = state.raylevel_ == 0 && intPasses && intPasses->size() > 1;
+	const bool int_passes_used = state.raylevel_ == 0 && int_passes && int_passes->size() > 1;
 
 	Rgb col(0.0);
 	float alpha;
@@ -131,13 +131,13 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 			col += col_tmp;
 			if(int_passes_used)
 			{
-				if(Rgba * color_pass = intPasses->find(PassEmit)) *color_pass = col_tmp;
+				if(Rgba * color_pass = int_passes->find(PassEmit)) *color_pass = col_tmp;
 			}
 		}
 
 		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(state, sp, wo, intPasses);
+			col += estimateAllDirectLight(state, sp, wo, int_passes);
 
 			if(use_photon_caustics_)
 			{
@@ -146,25 +146,25 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 				col += col_tmp;
 				if(int_passes_used)
 				{
-					if(Rgba *color_pass = intPasses->find(PassIndirect)) *color_pass = col_tmp;
+					if(Rgba *color_pass = int_passes->find(PassIndirect)) *color_pass = col_tmp;
 				}
 			}
 
 			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(state, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, intPasses);
+		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, int_passes);
 
 		if(int_passes_used)
 		{
-			generateCommonPassesSettings(state, sp, ray, intPasses);
+			generateCommonPassesSettings(state, sp, ray, int_passes);
 
-			if(Rgba *color_pass = intPasses->find(PassAo))
+			if(Rgba *color_pass = int_passes->find(PassAo))
 			{
 				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
 			}
 
-			if(Rgba *color_pass = intPasses->find(PassAoClay))
+			if(Rgba *color_pass = int_passes->find(PassAoClay))
 			{
 				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
 			}
@@ -185,7 +185,7 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 			col += col_tmp;
 			if(int_passes_used)
 			{
-				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+				if(Rgba *color_pass = int_passes->find(PassEnv)) *color_pass = col_tmp;
 			}
 		}
 	}
@@ -200,8 +200,8 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 
 	if(int_passes_used)
 	{
-		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
-		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
+		if(Rgba *color_pass = int_passes->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
+		if(Rgba *color_pass = int_passes->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
 	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;

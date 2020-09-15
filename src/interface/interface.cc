@@ -121,6 +121,11 @@ bool Interface::setLoggingAndBadgeSettings()
 	return true;
 }
 
+void Interface::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components)
+{
+	scene_->createRenderPass(ext_pass_name, int_pass_name, color_components);
+}
+
 bool Interface::setupRenderPasses()
 {
 	scene_->setupRenderPasses(*params_);

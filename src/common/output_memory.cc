@@ -24,14 +24,6 @@
 
 BEGIN_YAFARAY
 
-
-MemoryInputOutput::MemoryInputOutput (int resx, int resy, float *i_mem, const PassesSettings *passes_settings) : ColorOutput(passes_settings)
-{
-	sizex_ = resx;
-	sizey_ = resy;
-	image_mem_ = i_mem; // iMem must be a valid pointer to memory of the size: sizex * sizey * 4 * sizeof(float)
-}
-
 // Depth channel support?
 
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes

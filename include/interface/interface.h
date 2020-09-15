@@ -101,6 +101,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
 		virtual bool setLoggingAndBadgeSettings();
+		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components);
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
 		virtual void abort();

@@ -1356,6 +1356,11 @@ Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
+void Scene::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components)
+{
+	passes_settings_.extPassAdd(ext_pass_name, int_pass_name, color_components);
+}
+
 void Scene::setupRenderPasses(const ParamMap &params)
 {
 	std::string external_pass, internal_pass;
@@ -1751,6 +1756,8 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output
 
 	film->setBackgroundResampling(background_resampling);
 
+	output.setPassesSettings(getPassesSettings());
+
 	return true;
 }
 
@@ -1785,6 +1792,11 @@ const std::vector<Light *> Scene::getLightsEmittingDiffusePhotons() const
 }
 
 bool Scene::passEnabled(const PassTypes &pass_type) const { return getPassesSettings()->intPassesSettings().enabled(pass_type); }
+
+void Scene::setOutput2(ColorOutput *out_2) {
+	output_2_ = out_2;
+	output_2_->setPassesSettings(getPassesSettings());
+}
 
 
 END_YAFARAY

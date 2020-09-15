@@ -38,7 +38,6 @@ class Rgba;
 class ColorOutput
 {
 	public:
-		ColorOutput(const PassesSettings *passes_settings) : passes_settings_(passes_settings) { }
 		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
 		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) = 0;
@@ -49,6 +48,7 @@ class ColorOutput
 		virtual bool isImageOutput() const { return false; }
 		virtual bool isPreview() const { return false; }
 		virtual std::string getDenoiseParams() const { return ""; }
+		void setPassesSettings(const PassesSettings *passes_settings) { passes_settings_ = passes_settings; }
 
 	protected:
 		const PassesSettings *passes_settings_ = nullptr;

@@ -28,6 +28,8 @@
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
+#include "common/renderpasses.h"
+#include "common/scene.h"
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>
@@ -42,7 +44,6 @@ using namespace Imath;
 BEGIN_YAFARAY
 
 typedef GenericScanlineBuffer<Rgba> HalfRgbaScanlineImage_t;
-typedef GenericScanlineBuffer<float> GrayScanlineImage_t;
 
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
 class CiStream: public Imf::IStream
@@ -185,25 +186,23 @@ bool ExrHandler::saveToFile(const std::string &name, int img_index)
 
 	file.setFrameBuffer(fb);
 
+	bool result = true;
 	try
 	{
 		file.writePixels(h);
 		Y_VERBOSE << handler_name_ << ": Done." << YENDL;
-		return true;
 	}
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << handler_name_ << ": " << exc.what() << YENDL;
-		return false;
+		result = false;
 	}
 
 	File::close(fp);
-	fp = nullptr;
-
-	return true;
+	return result;
 }
 
-bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSettings_t *passes_settings)
+bool ExrHandler::saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings)
 {
 	int h_0 = img_buffer_.at(0)->getHeight();
 	int w_0 = img_buffer_.at(0)->getWidth();
@@ -221,7 +220,7 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSet
 		return false;
 	}
 
-	std::string ext_pass_name;
+	std::string exr_layer_name;
 
 	std::string name_without_tmp = name;
 	name_without_tmp.erase(name_without_tmp.length() - 4);
@@ -241,13 +240,14 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSet
 
 	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
 	{
-		ext_pass_name = "RenderLayer." + passes_settings->extPassTypeStringFromIndex(idx) + ".";
-		Y_VERBOSE << "    Writing EXR Layer: " << passes_settings->extPassTypeStringFromIndex(idx) << YENDL;
+		const std::string ext_pass_name = passes_settings->extPassesSettings()(idx).name();
+		exr_layer_name = "RenderLayer." + ext_pass_name + ".";
+		Y_VERBOSE << "    Writing EXR Layer: " << ext_pass_name << YENDL;
 
-		const std::string channel_r_string = ext_pass_name + "R";
-		const std::string channel_g_string = ext_pass_name + "G";
-		const std::string channel_b_string = ext_pass_name + "B";
-		const std::string channel_a_string = ext_pass_name + "A";
+		const std::string channel_r_string = exr_layer_name + "R";
+		const std::string channel_g_string = exr_layer_name + "G";
+		const std::string channel_b_string = exr_layer_name + "B";
+		const std::string channel_a_string = exr_layer_name + "A";
 
 		const char *channel_r = channel_r_string.c_str();
 		const char *channel_g = channel_g_string.c_str();
@@ -287,6 +287,7 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSet
 	OutputFile file(ostr, header);
 	file.setFrameBuffer(fb);
 
+	bool result = true;
 	try
 	{
 		file.writePixels(h_0);
@@ -297,7 +298,6 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSet
 			pixels.at(idx) = nullptr;
 		}
 		pixels.clear();
-		return true;
 	}
 	catch(const std::exception &exc)
 	{
@@ -308,13 +308,11 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const passesSet
 			pixels.at(idx) = nullptr;
 		}
 		pixels.clear();
-		return false;
+		result = false;
 	}
 
 	File::close(fp);
-	fp = nullptr;
-
-	return true;
+	return result;
 }
 
 bool ExrHandler::loadFromFile(const std::string &name)
@@ -335,6 +333,7 @@ bool ExrHandler::loadFromFile(const std::string &name)
 		fseek(fp, 0, SEEK_SET);
 	}
 
+	bool result = true;
 	try
 	{
 		CiStream istr(fp, name.c_str());
@@ -374,13 +373,11 @@ bool ExrHandler::loadFromFile(const std::string &name)
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << handler_name_ << ": " << exc.what() << YENDL;
-		return false;
+		result = false;
 	}
 
 	File::close(fp);
-	fp = nullptr;
-
-	return true;
+	return result;
 }
 
 ImageHandler *ExrHandler::factory(ParamMap &params, Scene &scene)

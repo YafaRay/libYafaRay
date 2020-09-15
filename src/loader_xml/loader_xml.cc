@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 
 	if(ih)
 	{
-		out = new ImageOutput(ih, output_path, 0, 0, scene->getPassesSettings());
+		out = new ImageOutput(ih, output_path, 0, 0);
 		if(!out) return 1;
 	}
 	else return 1;

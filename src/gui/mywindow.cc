@@ -33,6 +33,7 @@
 #include "interface/interface.h"
 #include "common/param.h"
 #include "output/output_image.h"
+#include "imagehandler/imagehandler.h"
 
 // Embeded Resources:
 
@@ -185,7 +186,7 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	p->getParam("z_channel", use_zbuf_);
 
 	render_ = new RenderWidget(ui_->renderArea, use_zbuf_);
-	output_ = new QtOutput(render_, interface->getPassesSettings());
+	output_ = new QtOutput(render_);
 	worker_ = new Worker(interface_, this, output_);
 
 	output_->setRenderSize(QSize(resx, resy));
@@ -357,7 +358,7 @@ void MainWindow::slotFinished()
 		interface_->paramsSetBool("z_channel", use_zbuf_);
 
 		ImageHandler *ih = interface_->createImageHandler("saver", false);
-		ImageOutput *out = new ImageOutput(ih, file_name_, b_x_, b_y_, interface_->getPassesSettings());
+		ImageOutput *out = new ImageOutput(ih, file_name_, b_x_, b_y_);
 
 		interface_->paramsClearAll();
 
@@ -562,7 +563,7 @@ bool MainWindow::saveDlg()
 		last_path_ = QDir(file_name).absolutePath();
 
 		ImageHandler *ih = interface_->createImageHandler("saver", false);
-		ImageOutput *out = new ImageOutput(ih, last_path_.toStdString(), b_x_, b_y_, interface_->getPassesSettings());
+		ImageOutput *out = new ImageOutput(ih, last_path_.toStdString(), b_x_, b_y_);
 
 		interface_->paramsClearAll();
 

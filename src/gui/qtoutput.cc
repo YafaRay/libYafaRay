@@ -26,7 +26,7 @@
 #include <iostream>
 #include <cstdlib>
 
-QtOutput::QtOutput(RenderWidget *render, const yafaray4::PassesSettings *passes_settings): yafaray4::ColorOutput(passes_settings), render_buffer_(render)
+QtOutput::QtOutput(RenderWidget *render): render_buffer_(render)
 {
 }
 

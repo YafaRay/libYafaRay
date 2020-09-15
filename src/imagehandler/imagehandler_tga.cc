@@ -264,7 +264,6 @@ bool TgaHandler::precheckFile(TgaHeader &header, const std::string &name, bool &
 		case NoData:
 			Y_ERROR << handler_name_ << ": TGA file \"" << name << "\" has no image data!" << YENDL;
 			return false;
-			break;
 
 		case UncColorMap:
 			if(!header.color_map_type_)
@@ -512,7 +511,6 @@ bool TgaHandler::loadFromFile(const std::string &name)
 	}
 
 	File::close(fp);
-	fp = nullptr;
 
 	if(color_map_) delete color_map_;
 	color_map_ = nullptr;

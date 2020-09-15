@@ -261,7 +261,7 @@ class LIBYAFARAY_EXPORT Scene
 		const PassesSettings *getPassesSettings() const { return &passes_settings_; }
 		void			setupLoggingAndBadge(const ParamMap &params);
 		const 			std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
-		void			setOutput2(ColorOutput *out_2) { output_2_ = out_2; }
+		void			setOutput2(ColorOutput *out_2);
 		ColorOutput	*getOutput2() const { return output_2_; }
 
 		void clearAll();

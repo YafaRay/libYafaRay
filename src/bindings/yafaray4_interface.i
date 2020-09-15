@@ -156,8 +156,7 @@ class YafPyOutput : public yafaray4::ColorOutput
 
 public:
 
-	YafPyOutput(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallback, PyObject *flushCallback, const yafaray4::PassesSettings *passes_settings) :
-	yafaray4::ColorOutput(passes_settings),
+	YafPyOutput(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallback, PyObject *flushCallback) :
 	resx(x),
 	resy(y),
 	bsX(borderStartX),
@@ -549,7 +548,7 @@ private:
 {
 	void render(int x, int y, int borderStartX, int borderStartY, bool prev, PyObject *drawAreaCallBack, PyObject *flushCallBack, PyObject *progressCallback)
 	{
-		YafPyOutput output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack, self->getPassesSettings());
+		YafPyOutput output_wrap(x, y, borderStartX, borderStartY, prev, drawAreaCallBack, flushCallBack);
 		YafPyProgress *pbar_wrap = new YafPyProgress(progressCallback);
 
 		Py_BEGIN_ALLOW_THREADS;
@@ -567,6 +566,7 @@ private:
 #include "output/output_image.h"
 #include "output/output_memory.h"
 #include "common/matrix4.h"
+#include "imagehandler/imagehandler.h"
 using namespace yafaray4;
 %}
 
@@ -583,7 +583,6 @@ namespace yafaray4
 	class ColorOutput
 	{
 		public:
-		ColorOutput(const yafaray4::PassesSettings *passes_settings) : passes_settings_(passes_settings) { }
 		virtual ~ColorOutput() = default;
 		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
 		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) = 0;
@@ -627,8 +626,7 @@ namespace yafaray4
 	class ImageOutput : public ColorOutput
 	{
 		public:
-		ImageOutput(const PassesSettings *passes_settings) : ColorOutput(passes_settings) { }
-		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by, const PassesSettings *passes_settings);
+		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
 		private:
 		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) override;
 		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) override;
@@ -720,6 +718,7 @@ namespace yafaray4
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
 		virtual bool setLoggingAndBadgeSettings();
+		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components);
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
 		virtual void abort();

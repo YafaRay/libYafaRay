@@ -411,7 +411,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 				c_ray.time_ = rstate.time_;
 
-				int_passes(PassCombined) = integrate(rstate, c_ray, 0, nullptr);
+				int_passes(PassCombined) = integrate(rstate, c_ray, 0, &int_passes);
 
 				if(int_passes_used)
 				{
@@ -493,137 +493,140 @@ void TiledIntegrator::generateCommonPassesSettings(RenderState &state, const Sur
 	{
 		const PassesSettings *passes_settings = scene_->getPassesSettings();
 		Rgba *color_pass;
-		
+
+		if((color_pass = int_passes->find(PassUv)))
+		{
+			*color_pass = Rgba(sp.u_, sp.v_, 0.f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassNormalSmooth)))
+		{
+			*color_pass = Rgba((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassNormalGeom)))
+		{
+			*color_pass = Rgba((sp.ng_.x_ + 1.f) * .5f, (sp.ng_.y_ + 1.f) * .5f, (sp.ng_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugDpdu)))
+		{
+			*color_pass = Rgba((sp.dp_du_.x_ + 1.f) * .5f, (sp.dp_du_.y_ + 1.f) * .5f, (sp.dp_du_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugDpdv)))
+		{
+			*color_pass = Rgba((sp.dp_dv_.x_ + 1.f) * .5f, (sp.dp_dv_.y_ + 1.f) * .5f, (sp.dp_dv_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugDsdu)))
+		{
+			*color_pass = Rgba((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugDsdv)))
+		{
+			*color_pass = Rgba((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugNu)))
+		{
+			*color_pass = Rgba((sp.nu_.x_ + 1.f) * .5f, (sp.nu_.y_ + 1.f) * .5f, (sp.nu_.z_ + 1.f) * .5f, 1.f);
+		}
+		if((color_pass = int_passes->find(PassDebugNv)))
+		{
+			*color_pass = Rgba((sp.nv_.x_ + 1.f) * .5f, (sp.nv_.y_ + 1.f) * .5f, (sp.nv_.z_ + 1.f) * .5f, 1.f);
+		}
+
+		if((color_pass = int_passes->find(PassReflectAll)))
+		{
+			Rgba *color_pass_2;
+			if((color_pass_2 = int_passes->find(PassReflectPerfect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+			if((color_pass_2 = int_passes->find(PassGlossy)))
+			{
+				*color_pass += *color_pass_2;
+			}
+			if((color_pass_2 = int_passes->find(PassGlossyIndirect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+		}
+
+		if((color_pass = int_passes->find(PassRefractAll)))
+		{
+			Rgba *color_pass_2;
+			if((color_pass_2 = int_passes->find(PassRefractPerfect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+			if((color_pass_2 = int_passes->find(PassTrans)))
+			{
+				*color_pass += *color_pass_2;
+			}
+			if((color_pass_2 = int_passes->find(PassTransIndirect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+		}
+
+		if((color_pass = int_passes->find(PassIndirectAll)))
+		{
+			Rgba *color_pass_2;
+			if((color_pass_2 = int_passes->find(PassIndirect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+			if((color_pass_2 = int_passes->find(PassDiffuseIndirect)))
+			{
+				*color_pass += *color_pass_2;
+			}
+		}
+
+		if((color_pass = int_passes->find(PassDiffuseColor)))
+		{
+			*color_pass = sp.material_->getDiffuseColor(state);
+		}
+		if((color_pass = int_passes->find(PassGlossyColor)))
+		{
+			*color_pass = sp.material_->getGlossyColor(state);
+		}
+		if((color_pass = int_passes->find(PassTransColor)))
+		{
+			*color_pass = sp.material_->getTransColor(state);
+		}
+		if((color_pass = int_passes->find(PassSubsurfaceColor)))
+		{
+			*color_pass = sp.material_->getSubSurfaceColor(state);
+		}
+
+		if((color_pass = int_passes->find(PassObjIndexAbs)))
+		{
+			*color_pass = sp.object_->getAbsObjectIndexColor();
+		}
+		if((color_pass = int_passes->find(PassObjIndexNorm)))
+		{
+			*color_pass = sp.object_->getNormObjectIndexColor();
+		}
+		if((color_pass = int_passes->find(PassObjIndexAuto)))
+		{
+			*color_pass = sp.object_->getAutoObjectIndexColor();
+		}
+		if((color_pass = int_passes->find(PassObjIndexAutoAbs)))
+		{
+			*color_pass = sp.object_->getAutoObjectIndexNumber();
+		}
+
+		if((color_pass = int_passes->find(PassMatIndexAbs)))
+		{
+			*color_pass = sp.material_->getAbsMaterialIndexColor();
+		}
+
+		if((color_pass = int_passes->find(PassMatIndexNorm)))
+		{
+			*color_pass = sp.material_->getNormMaterialIndexColor();
+		}
+
 		if((color_pass = int_passes->find(PassMatIndexAuto)))
 		{
 			*color_pass = sp.material_->getAutoMaterialIndexColor();
-			if((color_pass = int_passes->find(PassMatIndexNorm)))
-			{
-				*color_pass = sp.material_->getNormMaterialIndexColor();
-				if((color_pass = int_passes->find(PassUv)))
-				{
-					*color_pass = Rgba(sp.u_, sp.v_, 0.f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassNormalSmooth)))
-				{
-					*color_pass = Rgba((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassNormalGeom)))
-				{
-					*color_pass = Rgba((sp.ng_.x_ + 1.f) * .5f, (sp.ng_.y_ + 1.f) * .5f, (sp.ng_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugDpdu)))
-				{
-					*color_pass = Rgba((sp.dp_du_.x_ + 1.f) * .5f, (sp.dp_du_.y_ + 1.f) * .5f, (sp.dp_du_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugDpdv)))
-				{
-					*color_pass = Rgba((sp.dp_dv_.x_ + 1.f) * .5f, (sp.dp_dv_.y_ + 1.f) * .5f, (sp.dp_dv_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugDsdu)))
-				{
-					*color_pass = Rgba((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugDsdv)))
-				{
-					*color_pass = Rgba((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugNu)))
-				{
-					*color_pass = Rgba((sp.nu_.x_ + 1.f) * .5f, (sp.nu_.y_ + 1.f) * .5f, (sp.nu_.z_ + 1.f) * .5f, 1.f);
-				}
-				if((color_pass = int_passes->find(PassDebugNv)))
-				{
-					*color_pass = Rgba((sp.nv_.x_ + 1.f) * .5f, (sp.nv_.y_ + 1.f) * .5f, (sp.nv_.z_ + 1.f) * .5f, 1.f);
-				}
-
-				if((color_pass = int_passes->find(PassReflectAll)))
-				{
-					Rgba *color_pass_2;
-					if((color_pass_2 = int_passes->find(PassReflectPerfect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-					if((color_pass_2 = int_passes->find(PassGlossy)))
-					{
-						*color_pass += *color_pass_2;
-					}
-					if((color_pass_2 = int_passes->find(PassGlossyIndirect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-				}
-
-				if((color_pass = int_passes->find(PassRefractAll)))
-				{
-					Rgba *color_pass_2;
-					if((color_pass_2 = int_passes->find(PassRefractPerfect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-					if((color_pass_2 = int_passes->find(PassTrans)))
-					{
-						*color_pass += *color_pass_2;
-					}
-					if((color_pass_2 = int_passes->find(PassTransIndirect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-				}
-
-				if((color_pass = int_passes->find(PassIndirectAll)))
-				{
-					Rgba *color_pass_2;
-					if((color_pass_2 = int_passes->find(PassIndirect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-					if((color_pass_2 = int_passes->find(PassDiffuseIndirect)))
-					{
-						*color_pass += *color_pass_2;
-					}
-				}
-
-				if((color_pass = int_passes->find(PassDiffuseColor)))
-				{
-					*color_pass = sp.material_->getDiffuseColor(state);
-				}
-				if((color_pass = int_passes->find(PassGlossyColor)))
-				{
-					*color_pass = sp.material_->getGlossyColor(state);
-				}
-				if((color_pass = int_passes->find(PassTransColor)))
-				{
-					*color_pass = sp.material_->getTransColor(state);
-				}
-				if((color_pass = int_passes->find(PassSubsurfaceColor)))
-				{
-					*color_pass = sp.material_->getSubSurfaceColor(state);
-				}
-
-				if((color_pass = int_passes->find(PassObjIndexAbs)))
-				{
-					*color_pass = sp.object_->getAbsObjectIndexColor();
-				}
-				if((color_pass = int_passes->find(PassObjIndexNorm)))
-				{
-					*color_pass = sp.object_->getNormObjectIndexColor();
-				}
-				if((color_pass = int_passes->find(PassObjIndexAuto)))
-				{
-					*color_pass = sp.object_->getAutoObjectIndexColor();
-				}
-				if((color_pass = int_passes->find(PassObjIndexAutoAbs)))
-				{
-					*color_pass = sp.object_->getAutoObjectIndexNumber();
-				}
-
-				if((color_pass = int_passes->find(PassMatIndexAbs)))
-				{
-					*color_pass = sp.material_->getAbsMaterialIndexColor();
-				}
-			}
 		}
+
 		if((color_pass = int_passes->find(PassMatIndexAutoAbs)))
 		{
 			*color_pass = sp.material_->getAutoMaterialIndexNumber();

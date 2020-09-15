@@ -35,7 +35,7 @@ class DirectLightIntegrator final : public MonteCarloIntegrator
 		virtual std::string getShortName() const override { return "DL"; }
 		virtual std::string getName() const override { return "DirectLight"; }
 		virtual bool preprocess() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses = nullptr) const override;
+		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *int_passes = nullptr) const override;
 };
 
 END_YAFARAY

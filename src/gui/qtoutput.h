@@ -31,7 +31,7 @@ class QWidget;
 class QtOutput final : public yafaray4::ColorOutput
 {
 	public:
-		QtOutput(RenderWidget *render, const yafaray4::PassesSettings *passes_settings);
+		QtOutput(RenderWidget *render);
 		~QtOutput() override {}
 
 		void setRenderSize(const QSize &s);

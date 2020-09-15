@@ -30,7 +30,7 @@ class PassesSettings;
 class LIBYAFARAY_EXPORT MemoryInputOutput final : public ColorOutput
 {
 	public:
-		MemoryInputOutput(int resx, int resy, float *i_mem, const PassesSettings *passes_settings);
+		MemoryInputOutput(int resx, int resy, float *i_mem) : sizex_(resx), sizey_(resy), image_mem_(i_mem) { }
 
 	private:
 		virtual ~MemoryInputOutput() override;

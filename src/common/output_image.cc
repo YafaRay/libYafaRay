@@ -21,14 +21,16 @@
  */
 
 #include "output/output_image.h"
+#include "common/color.h"
 #include "common/logging.h"
 #include "common/session.h"
 #include "common/file.h"
 #include "common/renderpasses.h"
+#include "imagehandler/imagehandler.h"
 
 BEGIN_YAFARAY
 
-ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by, const PassesSettings *passes_settings) : ColorOutput(passes_settings), image_(handle), fname_(name), b_x_(bx), b_y_(by)
+ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by) : image_(handle), fname_(name), b_x_(bx), b_y_(by)
 {
 	Path path(name);
 	Path output_path(path.getDirectory(), path.getBaseName(), "");
@@ -97,7 +99,7 @@ void ImageOutput::flush(int num_view)
 			}
 
 			fname_pass = path + base_name + " [" + "multilayer" + "]" + ext;
-			saveImageFileMultiChannel(fname_pass, passes_settings_);
+			saveImageFileMultiChannel(fname_pass);
 
 			logger__.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
@@ -148,15 +150,20 @@ void ImageOutput::flush(int num_view)
 	}
 }
 
-
 void ImageOutput::saveImageFile(std::string filename, int idx)
 {
 	image_->saveToFile(filename, idx);
 }
 
-void ImageOutput::saveImageFileMultiChannel(std::string filename, const PassesSettings *m_passes_settings)
+void ImageOutput::saveImageFileMultiChannel(std::string filename)
 {
-	image_->saveToFileMultiChannel(filename, m_passes_settings);
+	image_->saveToFileMultiChannel(filename, passes_settings_);
 }
+
+std::string ImageOutput::getDenoiseParams() const {
+	if(image_) return image_->getDenoiseParams();
+	else return "";
+}
+
 END_YAFARAY
 

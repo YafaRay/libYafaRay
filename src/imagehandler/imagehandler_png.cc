@@ -77,7 +77,6 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 	png_infop info_ptr;
 	PngStructs png_structs(png_ptr, info_ptr);
 	int channels;
-	png_bytep *row_pointers = nullptr;
 
 	FILE *fp = File::open(name, "wb");
 
@@ -93,7 +92,7 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 		return false;
 	}
 
-	row_pointers = new png_bytep[h];
+	png_bytep *row_pointers = new png_bytep[h];
 
 	channels = 3;
 

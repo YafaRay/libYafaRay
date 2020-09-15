@@ -732,6 +732,33 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 					if(flags & Image) col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 					else col_ext_passes[idx] = Rgba(0.f);
 				}
+				
+				col_ext_passes[idx].clampRgb0();
+
+				if(out_2) col_ext_passes_2[idx] = col_ext_passes[idx];
+
+				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what do not?
+				if(out_2) col_ext_passes_2[idx].colorSpaceFromLinearRgb(color_space_2_, gamma_2_);
+
+				if(premult_alpha_ && idx == 0)
+				{
+					col_ext_passes[idx].alphaPremultiply();
+				}
+
+				if(out_2 && premult_alpha_2_ && idx == 0)
+				{
+					col_ext_passes_2[idx].alphaPremultiply();
+				}
+
+				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+				if(col_ext_passes[idx].a_ < 0.f) col_ext_passes[idx].a_ = 0.f;
+				else if(col_ext_passes[idx].a_ > 1.f) col_ext_passes[idx].a_ = 1.f;
+
+				if(out_2)
+				{
+					if(col_ext_passes_2[idx].a_ < 0.f) col_ext_passes_2[idx].a_ = 0.f;
+					else if(col_ext_passes_2[idx].a_ > 1.f) col_ext_passes_2[idx].a_ = 1.f;
+				}
 
 				if(estimate_density_ && (flags & Densityimage) && idx == 0 && density_factor > 0.f) col_ext_passes[idx] += Rgba((*density_image_)(i, j) * density_factor, 0.f);
 			}
