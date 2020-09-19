@@ -538,6 +538,9 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 				{
 					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
 				}
+
+				col_ext_passes[idx].clampRgb0();
+				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what 
 			}
 
 			if(!output_->putPixel(num_view, i, j, col_ext_passes)) abort_ = true;
