@@ -37,9 +37,6 @@
 // If the version is not manually set, it will use the information obtained from the latest Git commit/tag.
 #define YAFARAY_BUILD_VERSION std::string("@YAFARAY_CORE_VERSION@@DEBUG@")
 
-// The directory where the plugins reside can be set in the YAF_RUNTIME_SEARCH_PLUGIN_DIR CMake variable. Otherwise it will try to find it automatically during runtime (if it can)
-#define YAFARAY_BUILD_SEARCH_PLUGIN_DIR std::string("@YAF_RUNTIME_SEARCH_PLUGIN_DIR@")
-
 // Several YafaRay build informative variables
 #define YAFARAY_BUILD_ARCHITECTURE std::string("@YAFARAY_BUILD_ARCHITECTURE@")
 #define YAFARAY_BUILD_COMPILER std::string("@YAFARAY_BUILD_COMPILER@")

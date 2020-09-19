@@ -8,9 +8,6 @@ To test, using the terminal (or Windows "cmd") do this:
 * Using "cd", enter the directory "test01" where this test01.xml file resides
 * Execute the "yafaray-xml" indicating the full path to it, and some parameters as, for example:
 <path-to-yafaray-xml>/yafaray-xml -a -f png -vl verbose -lvl verbose test01.xml test01_render
-
-Note: if yafaray-xml cannot find the plugins directory, add the -pp option to manually specify the plugins directory location, for example:
-<path-to-yafaray-xml>/yafaray-xml -pp <path-to-yafaray-plugins> -a -f png -vl verbose -lvl verbose test01.xml test01_render
 -->
 
 <scene type="triangle">

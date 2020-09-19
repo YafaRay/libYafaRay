@@ -92,7 +92,6 @@ int main(int argc, char *argv[])
 	parse.setAppName("YafaRay XML loader",
 	                 "[OPTIONS]... <input xml file> [output filename]\n<input xml file> : A valid yafaray XML file\n[output filename] : The filename of the rendered image without extension.\n*Note: If output filename is ommited the name \"yafaray\" will be used instead.");
 
-	parse.setOption("pp", "plugin-path", false, "Path to load plugins.");
 	parse.setOption("vl", "verbosity-level", false, "Set console verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basi info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.setOption("lvl", "log-verbosity-level", false, "Set log/HTML files verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basic info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.setOption("ccd", "console-colors-disabled", true, "If specified, disables the Console colors ANSI codes, useful for some 3rd party software that cannot handle ANSI codes well.");
@@ -106,8 +105,6 @@ int main(int argc, char *argv[])
 
 	Scene *scene = new Scene();
 
-	// Plugin load
-	std::string ppath = parse.getOptionString("pp");
 	std::string verb_level = parse.getOptionString("vl");
 	std::string log_verb_level = parse.getOptionString("lvl");
 

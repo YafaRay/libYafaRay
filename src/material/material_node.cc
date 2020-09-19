@@ -182,7 +182,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 		}
 		else
 		{
-			Y_ERROR << "NodeMaterial: No shader node was constructed by plugin '" << type << "'!" << YENDL;
+			Y_ERROR << "NodeMaterial: No shader node could be constructed.'" << type << "'!" << YENDL;
 			error = true;
 			break;
 		}

@@ -6,19 +6,19 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
    
 ####### Options ########
-option(WITH_Freetype "Build font rendering with FreeType" ON)
-option(WITH_OpenEXR "Build OpenEXR image I/O plugin" ON)
-option(WITH_JPEG "Build JPEG image I/O plugin" ON)
-option(WITH_PNG "Build PNG image I/O plugin" ON)
-option(WITH_TIFF "Build TIFF image I/O plugin" ON)
-option(WITH_XMLImport "Build XML import/parser support" ON)
+option(WITH_Freetype "Build with font rendering FreeType support" ON)
+option(WITH_OpenEXR "Build with OpenEXR image I/O support" ON)
+option(WITH_JPEG "Build with JPEG image I/O support" ON)
+option(WITH_PNG "Build with PNG image I/O support" ON)
+option(WITH_TIFF "Build with TIFF image I/O support" ON)
+option(WITH_XMLImport "Build with XML import/parser support" ON)
 option(WITH_XML_LOADER "Build XML Loader" ON)
 option(WITH_QT "Enable Qt Gui build" OFF)
 option(WITH_YAF_PY_BINDINGS "Enable the YafaRay Python bindings" ON)
 option(WITH_YAF_RUBY_BINDINGS "Enable the YafaRay Ruby bindings" OFF)
 option(WITH_OpenCV "Build OpenCV image processing support" ON)
 option(DEBUG_BUILD "Enable debug build mode" OFF)
-option(EMBED_FONT_QT "Embed font for QT GUI (usefull for some buggy QT installations)" OFF)
+option(EMBED_FONT_QT "Embed font for QT GUI (useful for some buggy QT installations)" OFF)
 option(FAST_MATH "Enable mathematic approximations to make code faster" ON)
 option(FAST_TRIG "Enable trigonometric approximations to make code faster" ON)
 option(WITH_MINGW_STD_THREADS "Use MinGW-Std-Threads 3rd party library. Useful with old MinGW versions that do not include C++11 threads libraries or where they are slower than they should. Set it to OFF with newer versions of MinGW or a conflict might happen causing crashes." OFF)
@@ -319,15 +319,7 @@ if(YAF_USER_EXTRA_DEFS)
 	add_definitions(${YAF_USER_EXTRA_DEFS})
 endif(YAF_USER_EXTRA_DEFS)
 
-# Paths and flags configuration
-
-if(NOT YAF_PLUGIN_DIR)
-	set(YAF_PLUGIN_DIR ${YAF_LIB_DIR}/yafaray-plugins)
-endif(NOT YAF_PLUGIN_DIR)
-
-if(NOT YAF_RUNTIME_SEARCH_PLUGIN_DIR)
-	set(YAF_RUNTIME_SEARCH_PLUGIN_DIR "${CMAKE_INSTALL_PREFIX}/${YAF_PLUGIN_DIR}")
-endif(NOT YAF_RUNTIME_SEARCH_PLUGIN_DIR)
+# Flags configuration
 
 if (USER_RELFLAGS)
 	set(CMAKE_CXX_FLAGS_RELEASE "${YAF_CXX_FLAGS_RELEASE} ${USER_RELFLAGS}" CACHE STRING "Release compiler flags" FORCE)

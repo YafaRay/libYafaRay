@@ -21,22 +21,22 @@ set(YAF_USER_CONFIG ON)
 # Enable DEBUG build mode for developer testing, default:OFF
 set(DEBUG_BUILD OFF)
 
-# Build font rendering with FreeType, default: ON
+# Build with font rendering FreeType support, default: ON
 set(WITH_Freetype ON)
 
 # Build with OpenCV image processing support, default: ON
 set(WITH_OpenCV ON)
 
-# Build OpenEXR image I/O plugin, default: ON
+# Build with OpenEXR image I/O support, default: ON
 set(WITH_OpenEXR ON)
 
-# Build JPEG image I/O plugin, default:ON
+# Build with JPEG image I/O support, default:ON
 set(WITH_JPEG ON)
 
-# Build PNG image I/O plugin, default:ON
+# Build with PNG image I/O support, default:ON
 set(WITH_PNG ON)
 
-# Build TIFF image I/O plugin, default:ON
+# Build with TIFF image I/O support, default:ON
 set(WITH_TIFF ON)
 
 # Enable XML Import capability (required for XML Loader), default:ON
@@ -77,30 +77,12 @@ set(EMBED_FONT_QT OFF)
 # The libraries instalation dir                                                
 # Default: lib                                                                 
 #                                                                              
-# this will install the libraries and plugins in ${USER_INSTALL_PREFIX}/lib    
+# this will install the libraries in ${USER_INSTALL_PREFIX}/lib
 # NOTE: under windows platforms this variable is ignored                       
 
 ##set(YAF_LIB_DIR lib)
 
-# The plugin instalation dir                                                   
-# Default:                                                                     
-#          ${YAF_LIB_DIR}/yafaray-plugins
-
-##set(YAF_PLUGIN_DIR "")
-
-# The plugin runtime search directory
-# When yafaray is executed, it will automatically search for the "yafaray-plugins" folder in the following locations:
-# * Directory specified with the "-pp" option in yafaray-xml or equivalent when using YafaRay API
-# * Subdirectory "yafaray-plugins" of the current subdirectory where YafaRay is executed from.
-# * Directory specified during the building process in this "YAF_RUNTIME_SEARCH_PLUGIN_DIR" variable.
-# Therefore this variable should be specified considering the expected location of the plugins folder after YafaRay is installed.
-# If not specified it will take the absolute plugin installation directory as defined in the CMake building process
-# Default:                                                                     
-#    ${CMAKE_INSTALL_PREFIX}/${YAF_PLUGIN_DIR}
-
-##set(YAF_RUNTIME_SEARCH_PLUGIN_DIR "")
-
-# The Python Bindings Installation Path                                        
+# The Python Bindings Installation Path
 # Default: ${YAF_LIB_DIR}
 #                                                                              
 # this will install the Python bindings on ${YAF_LIB_DIR}
