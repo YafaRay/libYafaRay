@@ -17,7 +17,7 @@
  */
 
 #include "volume/volumehandler_sss.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "material/material.h"
 #include "common/param.h"
 #include "utility/util_sample.h"

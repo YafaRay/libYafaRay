@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -16,24 +17,30 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "integrator/integrator_empty_volume.h"
-#include "background/background.h"
-#include "light/light.h"
-#include "photon/photon.h"
-#include <vector>
+#ifndef YAFARAY_ACCELERATOR_H
+#define YAFARAY_ACCELERATOR_H
+
+#include "constants.h"
 
 BEGIN_YAFARAY
 
-Rgba EmptyVolumeIntegrator::transmittance(RenderState &state, Ray &ray) const {
-	return Rgb(1.f);
-}
+struct RenderState;
+class IntersectData;
+class Rgb;
+class Bound;
+class ParamMap;
+class Ray;
 
-Rgba EmptyVolumeIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
-	return Rgba(0.f);
-}
-
-Integrator *EmptyVolumeIntegrator::factory(ParamMap &params, Scene &scene) {
-	return new EmptyVolumeIntegrator();
-}
+template<class T> class Accelerator
+{
+	public:
+		static Accelerator<T> *factory(const T **primitives_list, ParamMap &params);
+		virtual ~Accelerator() { };
+		virtual bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const = 0;
+		virtual bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const = 0;
+		virtual bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const = 0;
+		virtual Bound getBound() const = 0;
+};
 
 END_YAFARAY
+#endif    //YAFARAY_ACCELERATOR_H

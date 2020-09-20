@@ -23,7 +23,7 @@
 #include "common/param.h"
 #include "common/bound.h"
 #include "common/surface.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 
 BEGIN_YAFARAY
 

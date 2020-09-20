@@ -22,7 +22,7 @@
 #include "common/logging.h"
 #include "texture/texture.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "light/light.h"
 
 #include "utility/util_sample.h"

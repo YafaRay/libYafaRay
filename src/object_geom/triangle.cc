@@ -16,7 +16,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common/triangle.h"
+#include "object_geom/triangle.h"
 
 #ifdef __clang__
 #define inline  // aka inline removal

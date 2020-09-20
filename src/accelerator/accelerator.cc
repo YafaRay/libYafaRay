@@ -16,24 +16,34 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "integrator/integrator_empty_volume.h"
-#include "background/background.h"
-#include "light/light.h"
-#include "photon/photon.h"
-#include <vector>
+#include "accelerator/accelerator.h"
+#include "accelerator/accelerator_kdtree.h"
+#include "common/logging.h"
+#include "common/param.h"
 
 BEGIN_YAFARAY
 
-Rgba EmptyVolumeIntegrator::transmittance(RenderState &state, Ray &ray) const {
-	return Rgb(1.f);
-}
+class Triangle;
+class Primitive;
 
-Rgba EmptyVolumeIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
-	return Rgba(0.f);
-}
+template class Accelerator<Triangle>;
+template class Accelerator<Primitive>;
 
-Integrator *EmptyVolumeIntegrator::factory(ParamMap &params, Scene &scene) {
-	return new EmptyVolumeIntegrator();
+template<class T>
+Accelerator<T> *Accelerator<T>::factory(const T **primitives_list, ParamMap &params)
+{
+	std::string type;
+	params.getParam("type", type);
+	if(type == "kdtree")
+	{
+		Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
+		return AcceleratorKdTree<T>::factory(primitives_list, params);
+	}
+	else
+	{
+		Y_ERROR << "Accelerator type '" << type << "' could not be created." << YENDL;
+		return nullptr;
+	}
 }
 
 END_YAFARAY

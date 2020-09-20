@@ -18,11 +18,13 @@
 
 // search for "todo" and "IMPLEMENT" and "<<" or ">>"...
 
-#include "common/kdtree.h"
+#include "accelerator/accelerator_kdtree.h"
 #include "material/material.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/logging.h"
-#include "common/triangle.h"
+#include "object_geom/triangle.h"
+#include "common/param.h"
+#include <algorithm>
 #include <limits>
 #include <set>
 #include <cstring>
@@ -33,8 +35,27 @@ BEGIN_YAFARAY
 #define TRI_CLIP 1 //tempoarily disabled
 
 template<class T>
-KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
-				  float cost_ratio, float empty_bonus)
+Accelerator<T> *AcceleratorKdTree<T>::factory(const T **primitives_list, ParamMap &params)
+{
+	int num_primitives = 0;
+	int depth = -1;
+	int leaf_size = 2;
+	float cost_ratio = 0.35;
+	float empty_bonus = 0.33;
+
+	params.getParam("num_primitives", num_primitives);
+	params.getParam("depth", depth);
+	params.getParam("leaf_size", leaf_size);
+	params.getParam("cost_ratio", cost_ratio);
+	params.getParam("empty_bonus", empty_bonus);
+
+	Accelerator<T> *accelerator = new AcceleratorKdTree<T>(primitives_list, num_primitives, depth, leaf_size, cost_ratio, empty_bonus);
+	return accelerator;
+}
+
+template<class T>
+AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf_size,
+										float cost_ratio, float empty_bonus)
 	: cost_ratio_(cost_ratio), e_bonus_(empty_bonus), max_depth_(depth)
 {
 	Y_INFO << "Kd-Tree: Starting build (" << np << " prims, cr:" << cost_ratio_ << " eb:" << e_bonus_ << ")" << YENDL;
@@ -117,7 +138,7 @@ KdTree<T>::KdTree(const T **v, int np, int depth, int leaf_size,
 }
 
 template<class T>
-KdTree<T>::~KdTree()
+AcceleratorKdTree<T>::~AcceleratorKdTree()
 {
 	Y_INFO << "Kd-Tree: Freeing nodes..." << YENDL;
 	free(nodes_);
@@ -131,7 +152,7 @@ KdTree<T>::~KdTree()
 */
 
 template<class T>
-void KdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split)
+void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split)
 {
 	TreeBin bin[kd_bins_ + 1 ];
 	float d[3];
@@ -284,8 +305,8 @@ void KdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *pri
 */
 
 template<class T>
-void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
-							const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split)
+void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
+									   const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split)
 {
 	float d[3];
 	d[0] = node_bound.longX();
@@ -299,12 +320,10 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 	for(int axis = 0; axis < 3; axis++)
 	{
 		// << get edges for axis >>
-		int pn;
 		n_edge = 0;
 		//test!
 		if(all_bounds != all_bounds_) for(unsigned int i = 0; i < n_prims; i++)
 			{
-				pn = prim_idx[i];
 				const Bound &bbox = all_bounds[i];
 				if(bbox.a_[axis] == bbox.g_[axis])
 				{
@@ -320,7 +339,7 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 			}
 		else for(unsigned int i = 0; i < n_prims; i++)
 			{
-				pn = prim_idx[i];
+				const int pn = prim_idx[i];
 				const Bound &bbox = all_bounds[pn];
 				if(bbox.a_[axis] == bbox.g_[axis])
 				{
@@ -432,8 +451,8 @@ void KdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_
 				2 when neither current nor subsequent split reduced cost
 */
 template<class T>
-int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_nums,
-						 uint32_t *left_prims, uint32_t *right_prims, BoundEdge *edges[3], //working memory
+int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_nums,
+									uint32_t *left_prims, uint32_t *right_prims, BoundEdge *edges[3], //working memory
                            uint32_t right_mem_size, int depth, int bad_refines)  // status
 {
 	//	std::cout << "tree level: " << depth << std::endl;
@@ -675,7 +694,7 @@ int KdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_num
 	returns the closest hit within dist
 */
 template<class T>
-bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const
+bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const
 {
 	z = dist;
 
@@ -830,7 +849,7 @@ bool KdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, Intersec
 }
 
 template<class T>
-bool KdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const
+bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const
 {
 	float a, b, t; // entry/exit/splitting plane signed distance
 	float t_hit;
@@ -973,7 +992,7 @@ bool KdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias
 =============================================================*/
 
 template<class T>
-bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
+bool AcceleratorKdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
 {
 	float a, b, t; // entry/exit/splitting plane signed distance
 	float t_hit;
@@ -1153,7 +1172,7 @@ bool KdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, f
 }
 
 // explicit instantiation of template:
-template class KdTree<Triangle>;
-template class KdTree<Primitive>;
+template class AcceleratorKdTree<Triangle>;
+template class AcceleratorKdTree<Primitive>;
 
 END_YAFARAY

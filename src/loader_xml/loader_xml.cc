@@ -21,7 +21,7 @@
 #include "common/param.h"
 #include "common/session.h"
 #include "common/file.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/imagefilm.h"
 #include "common/import_xml.h"
 #include "utility/util_console.h"
@@ -103,7 +103,9 @@ int main(int argc, char *argv[])
 	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
 	else logger__.setConsoleLogColorsEnabled(true);
 
-	Scene *scene = new Scene();
+	ParamMap scene_params;
+	scene_params["type"] = "yafaray"; //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+	Scene *scene = Scene::factory(scene_params);
 
 	std::string verb_level = parse.getOptionString("vl");
 	std::string log_verb_level = parse.getOptionString("lvl");

@@ -18,7 +18,7 @@
 
 #include "integrator/integrator_emission.h"
 #include "volume/volume.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"

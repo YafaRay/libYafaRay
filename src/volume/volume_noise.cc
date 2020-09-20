@@ -23,7 +23,7 @@
 #include "common/surface.h"
 #include "texture/texture.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "utility/util_mcqmc.h"
 #include "utility/util_math_optimizations.h"
 

@@ -20,7 +20,7 @@
 
 #include "material/material_simple.h"
 #include "common/surface.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/param.h"
 #include "material/material_mask.h"
 //#include "common/spectrum.h"

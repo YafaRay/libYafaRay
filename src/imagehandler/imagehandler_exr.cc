@@ -29,7 +29,7 @@
 #include "utility/util_math.h"
 #include "common/file.h"
 #include "common/renderpasses.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 
 #include <ImfOutputFile.h>
 #include <ImfChannelList.h>

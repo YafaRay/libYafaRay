@@ -24,7 +24,7 @@
 #include "common/session.h"
 #include "volume/volume.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/monitor.h"
 #include "common/timer.h"
 #include "common/imagefilm.h"

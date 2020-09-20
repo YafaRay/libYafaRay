@@ -28,7 +28,7 @@
 #include "common/param.h"
 #include "utility/util_math.h"
 #include "common/file.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 
 #if defined(_WIN32)
 #include "utility/util_string.h"

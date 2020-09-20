@@ -21,7 +21,7 @@
 #define YAFARAY_INTEGRATOR_PHOTON_MAPPING_H
 
 #include "integrator/integrator_montecarlo.h"
-#include "common/photon.h"
+#include "photon/photon.h"
 #include <vector>
 
 BEGIN_YAFARAY

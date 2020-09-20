@@ -24,6 +24,14 @@
 #include "utility/util_thread.h"
 #include "common/aa_noise_params.h"
 #include "common/renderpasses.h"
+#include "common/bound.h"
+#include <vector>
+#include <map>
+#include <list>
+
+#define Y_SIG_ABORT 1
+#define Y_SIG_PAUSE 1<<1
+#define Y_SIG_STOP  1<<2
 
 constexpr unsigned int user_data_size__ = 1024;
 
@@ -55,7 +63,7 @@ class ColorOutput;
 class ProgressBar;
 class ImageHandler;
 class ParamMap;
-template<class T> class KdTree;
+template<class T> class Accelerator;
 class Primitive;
 class Triangle;
 class TriangleObject;
@@ -67,6 +75,7 @@ class SurfacePoint;
 class Random;
 class Matrix4;
 class Rgb;
+struct ObjData;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
@@ -122,19 +131,6 @@ struct RenderState
 	explicit RenderState(const RenderState &r): prng_(r.prng_) {} //forbiden
 };
 
-END_YAFARAY
-
-#include "bound.h"
-#include <vector>
-#include <map>
-#include <list>
-
-#define Y_SIG_ABORT 1
-#define Y_SIG_PAUSE 1<<1
-#define Y_SIG_STOP  1<<2
-
-BEGIN_YAFARAY
-
 /*! describes an instance of a scene, including all data and functionality to
 	create and render a whole scene on the lowest "layer".
 	Allocating, configuring and deallocating scene elements etc. however has
@@ -144,15 +140,6 @@ BEGIN_YAFARAY
 	for general geometric primitives there will most likely be a separate class
 	to keep this one as optimized as possible;
 */
-struct ObjData
-{
-	TriangleObject *obj_;
-	MeshObject *mobj_;
-	int type_;
-	size_t last_vert_id_;
-};
-
-
 
 struct SceneGeometryState
 {
@@ -168,28 +155,38 @@ struct SceneGeometryState
 class LIBYAFARAY_EXPORT Scene
 {
 	public:
+		static Scene *factory(ParamMap &params);
+
 		Scene();
-		~Scene();
 		Scene(const Scene &s) = delete;
-		bool render();
-		void abort();
-		bool startGeometry();
-		bool endGeometry();
-		bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		bool endTriMesh();
-		bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0);
-		bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape);
-		int  addVertex(const Point3 &p);
-		int  addVertex(const Point3 &p, const Point3 &orco);
-		void addNormal(const Vec3 &n);
-		bool addTriangle(int a, int b, int c, const Material *mat);
-		bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat);
-		int  addUv(float u, float v);
-		bool smoothMesh(const std::string &name, float angle);
-		bool update();
+		virtual ~Scene();
+
+		virtual bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) = 0;
+		virtual bool endTriMesh() = 0;
+		virtual bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0) = 0;
+		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) = 0;
+		virtual int  addVertex(const Point3 &p) = 0;
+		virtual int  addVertex(const Point3 &p, const Point3 &orco) = 0;
+		virtual void addNormal(const Vec3 &n) = 0;
+		virtual bool addTriangle(int a, int b, int c, const Material *mat) = 0;
+		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) = 0;
+		virtual int  addUv(float u, float v) = 0;
+		virtual bool smoothMesh(const std::string &name, float angle) = 0;
+		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) = 0;
+		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
+		virtual bool update() = 0;
+		virtual void clearGeometry() = 0;
+
+		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const = 0;
+		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const = 0;
+		virtual bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const = 0;
+		virtual bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const = 0;
+		virtual TriangleObject *getMesh(const std::string &name) const = 0;
+		virtual ObjectGeometric *getObject(const std::string &name) const = 0;
 
 		ObjId_t getNextFreeId();
-		bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world);
+		bool startGeometry();
+		bool endGeometry();
 		void setCamera(Camera *cam);
 		void setImageFilm(ImageFilm *film);
 		void setBackground(Background *bg);
@@ -200,27 +197,24 @@ class LIBYAFARAY_EXPORT Scene
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
 		void setMode(int m) { mode_ = m; }
+		void clearNonGeometry();
+		void clearAll();
+		bool render();
+		void abort();
+
 		Background *getBackground() const;
-		TriangleObject *getMesh(const std::string &name) const;
-		ObjectGeometric *getObject(const std::string &name) const;
 		const Camera *getCamera() const { return camera_; }
 		ImageFilm *getImageFilm() const { return image_film_; }
 		Bound getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		int getSignals() const;
-		//! only for backward compatibility!
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
-		bool intersect(const Ray &ray, SurfacePoint &sp) const;
-		bool intersect(const DiffRay &ray, SurfacePoint &sp) const;
-		bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const;
-		bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const;
 		bool passEnabled(const PassTypes &pass_type) const;
 
 		enum SceneState { Ready, Geometry, Object, Vmap };
 		enum ChangeFlags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2,
-		                   CAll = CGeom | CLight | COther
-		                 };
+			CAll = CGeom | CLight | COther };
 
 		VolumeIntegrator *vol_integrator_;
 
@@ -238,14 +232,13 @@ class LIBYAFARAY_EXPORT Scene
 		Integrator 	*getIntegrator(const std::string &name) const;
 		const std::map<std::string, VolumeRegion *> &getVolumeRegions() const { return volume_regions_; }
 		const std::map<std::string, Light *> &getLights() const { return lights_; }
-		const std::vector<Light *> getLightsVisible() const;;
-		const std::vector<Light *> getLightsEmittingCausticPhotons() const;;
-		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;;
+		const std::vector<Light *> getLightsVisible() const;
+		const std::vector<Light *> getLightsEmittingCausticPhotons() const;
+		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;
 
 		Light 		*createLight(const std::string &name, ParamMap &params);
 		Texture 		*createTexture(const std::string &name, ParamMap &params);
 		Material 	*createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
-		ObjectGeometric 	*createObject(const std::string &name, ParamMap &params);
 		Camera 		*createCamera(const std::string &name, ParamMap &params);
 		Background 	*createBackground(const std::string &name, ParamMap &params);
 		Integrator 	*createIntegrator(const std::string &name, ParamMap &params);
@@ -264,16 +257,12 @@ class LIBYAFARAY_EXPORT Scene
 		void			setOutput2(ColorOutput *out_2);
 		ColorOutput	*getOutput2() const { return output_2_; }
 
-		void clearAll();
-
 	protected:
 		template <class T> static void freeMap(std::map< std::string, T * > &map);
 
 		SceneGeometryState state_;
 		Camera *camera_ = nullptr;
 		ImageFilm *image_film_ = nullptr;
-		KdTree<Triangle> *tree_ = nullptr; //!< kdTree for triangle-only mode
-		KdTree<Primitive> *vtree_ = nullptr; //!< kdTree for universal mode
 		Background *background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
@@ -286,8 +275,6 @@ class LIBYAFARAY_EXPORT Scene
 		std::map<std::string, Light *> 	lights_;
 		std::map<std::string, Material *> 	materials_;
 		std::map<std::string, Texture *> 	textures_;
-		std::map<std::string, ObjectGeometric *> 	objects_;
-		std::map<std::string, ObjData> 	meshes_;
 		std::map<std::string, Camera *> 	cameras_;
 		std::map<std::string, Background *> backgrounds_;
 		std::map<std::string, Integrator *> integrators_;
@@ -301,6 +288,13 @@ class LIBYAFARAY_EXPORT Scene
 
 		mutable std::mutex sig_mutex_;
 };
+
+template <class T>
+inline void Scene::freeMap(std::map< std::string, T * > &map)
+{
+	for(auto &m : map) { delete m.second; m.second = nullptr; }
+}
+
 
 END_YAFARAY
 

@@ -52,6 +52,7 @@ int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts);
 class Triangle
 {
 		friend class Scene;
+		friend class YafaRayScene;
 		friend class TriangleObject;
 		friend class TriangleInstance;
 
@@ -106,6 +107,7 @@ class Triangle
 class TriangleInstance: public Triangle
 {
 		friend class Scene;
+		friend class YafaRayScene;
 		friend class TriangleObjectInstance;
 
 	public:
@@ -138,6 +140,7 @@ class TriangleInstance: public Triangle
 class VTriangle: public Primitive
 {
 		friend class Scene;
+		friend class YafaRayScene;
 	public:
 		VTriangle() {};
 		VTriangle(int ia, int ib, int ic, MeshObject *m): pa_(ia), pb_(ib), pc_(ic),
@@ -171,6 +174,7 @@ class VTriangle: public Primitive
 class BsTriangle: public Primitive
 {
 		friend class Scene;
+		friend class YafaRayScene;
 	public:
 		BsTriangle() {};
 		BsTriangle(int ia, int ib, int ic, MeshObject *m): pa_(ia), pb_(ib), pc_(ic),

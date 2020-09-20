@@ -34,7 +34,7 @@
 #include "common/scr_halton.h"
 #include "common/imagefilm.h"
 #include "camera/camera.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/monitor.h"
 #include "utility/util_mcqmc.h"
 #include "utility/util_sample.h"

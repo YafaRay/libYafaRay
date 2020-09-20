@@ -22,7 +22,7 @@
 #include "background/background_util_sunspectrum.h"
 #include "common/logging.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "light/light.h"
 
 BEGIN_YAFARAY

@@ -16,8 +16,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common/hashgrid.h"
-#include "common/photon.h"
+#include "photon/hashgrid.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

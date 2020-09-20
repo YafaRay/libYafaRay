@@ -24,7 +24,7 @@
 #include "material/material_utils_microfacet.h"
 #include "common/color_ramp.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/surface.h"
 
 BEGIN_YAFARAY

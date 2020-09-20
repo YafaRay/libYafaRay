@@ -24,9 +24,9 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/imagesplitter.h"
-#include "common/photon.h"
+#include "photon/photon.h"
 #include "utility/util_mcqmc.h"
 
 BEGIN_YAFARAY

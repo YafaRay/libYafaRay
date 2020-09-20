@@ -21,9 +21,9 @@
 #define YAFARAY_INTEGRATOR_SPPM_H
 
 #include "integrator/integrator_montecarlo.h"
-#include "common/hashgrid.h"
+#include "photon/hashgrid.h"
 #include "utility/util_mcqmc.h"
-#include "common/photon.h"
+#include "photon/photon.h"
 
 BEGIN_YAFARAY
 

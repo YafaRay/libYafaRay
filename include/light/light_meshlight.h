@@ -28,7 +28,7 @@ BEGIN_YAFARAY
 
 class TriangleObject;
 class Triangle;
-template<class T> class KdTree;
+template<class T> class Accelerator;
 class Pdf1D;
 class ParamMap;
 class Scene;
@@ -65,7 +65,7 @@ class MeshLight final : public Light
 		int n_tris_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		TriangleObject *mesh_;
-		KdTree<Triangle> *tree_;
+		Accelerator<Triangle> *tree_;
 		//debug stuff:
 		int *stats_;
 };

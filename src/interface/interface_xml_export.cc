@@ -18,7 +18,7 @@
 
 #include "interface/interface_xml_export.h"
 #include "common/logging.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/matrix4.h"
 #include "common/param.h"
 

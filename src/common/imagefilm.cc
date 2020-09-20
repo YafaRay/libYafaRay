@@ -26,7 +26,7 @@
 #include "common/session.h"
 #include "output/output.h"
 #include "imagehandler/imagehandler.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/file.h"
 #include "common/param.h"
 #include "common/monitor.h"

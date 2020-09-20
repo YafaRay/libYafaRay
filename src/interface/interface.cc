@@ -20,7 +20,7 @@
 #include "yafaray_config.h"
 #include "common/logging.h"
 #include "common/session.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/matrix4.h"
 #include "common/imagefilm.h"
 #include "common/param.h"
@@ -82,12 +82,22 @@ Interface::Interface(): scene_(nullptr), film_(nullptr), input_gamma_(1.f), inpu
 	sigaction(SIGINT, &signal_handler, nullptr);
 #endif
 
-	scene_ = new Scene();
-	global_scene__ = scene_;	//for the CTRL+C handler
-	//scene_->setMode(type); //FIXME!
 	params_ = new ParamMap;
 	eparams_ = new std::list<ParamMap>;
 	cparams_ = params_;
+
+	(*params_)["type"] = std::string("yafaray"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+	scene_ = Scene::factory(*params_);
+	std::string scene_type;
+	params_->getParam("type", scene_type);
+	params_->clear();
+
+	if(scene_) Y_INFO << "Interface: created scene of type '" << scene_type << "'" << YENDL;
+	else Y_ERROR << "Interface: could not create scene of type '" << scene_type << "'" << YENDL;
+
+	global_scene__ = scene_;	//for the CTRL+C handler
+	//scene_->setMode(type); //FIXME!
+
 }
 
 Interface::~Interface()

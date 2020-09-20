@@ -49,6 +49,7 @@ class MeshObject final : public ObjectGeometric
 		friend class VTriangle;
 		friend class BsTriangle;
 		friend class Scene;
+		friend class YafaRayScene;
 	public:
 		MeshObject(int ntris, bool has_uv = false, bool has_orco = false);
 		/*! the number of primitives the object holds. Primitive is an element
@@ -85,6 +86,7 @@ class TriangleObject: public ObjectGeometric
 		friend class Triangle;
 		friend class TriangleInstance;
 		friend class Scene;
+		friend class YafaRayScene;
 		friend class TriangleObjectInstance;
 
 	public:
@@ -117,6 +119,7 @@ class TriangleObjectInstance final: public TriangleObject
 {
 		friend class TriangleInstance;
 		friend class Scene;
+		friend class YafaRayScene;
 
 	public:
 		TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world);

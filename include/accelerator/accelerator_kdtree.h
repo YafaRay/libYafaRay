@@ -17,14 +17,13 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_KDTREE_H
-#define YAFARAY_KDTREE_H
+#ifndef YAFARAY_ACCELERATOR_KDTREE_H
+#define YAFARAY_ACCELERATOR_KDTREE_H
 
-#include "constants.h"
+#include "accelerator/accelerator.h"
 #include "utility/util_memory_arena.h"
 #include "common/bound.h"
 #include "object_geom/object_geom.h"
-#include <algorithm>
 
 BEGIN_YAFARAY
 
@@ -125,19 +124,22 @@ class TreeBin
 /*! This class holds a complete kd-tree with building and
 	traversal funtions
 */
-template<class T> class KdTree
+template<class T> class AcceleratorKdTree : public Accelerator<T>
 {
 	public:
-		KdTree(const T **v, int np, int depth = -1, int leaf_size = 2,
-			   float cost_ratio = 0.35, float empty_bonus = 0.33);
-		bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const;
-		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const;
-		bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const;
-		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
-		Bound getBound() { return tree_bound_; }
-		~KdTree();
+		static Accelerator<T> *factory(const T **v, ParamMap &params);
+
 	private:
+		AcceleratorKdTree(const T **v, int np, int depth = -1, int leaf_size = 2,
+						  float cost_ratio = 0.35, float empty_bonus = 0.33);
+		virtual ~AcceleratorKdTree() override;
+		virtual bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const override;
+		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
+		virtual bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const override;
+		virtual bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const override;
+		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
+		Bound getBound() const override { return tree_bound_; }
+
 		void pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
 		void minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
 						 const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split);
@@ -201,6 +203,5 @@ inline void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
 	kd_stats.kd_inodes_++;
 }
 
-
 END_YAFARAY
-#endif    //YAFARAY_KDTREE_H
+#endif    //YAFARAY_ACCELERATOR_KDTREE_H

@@ -21,7 +21,7 @@
 #include "material/material.h"
 #include "common/surface.h"
 #include "shader/shader_node.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "utility/util_sample.h"
 #include "utility/util_mcqmc.h"
 #include "common/scr_halton.h"

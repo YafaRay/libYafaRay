@@ -17,7 +17,7 @@
  */
 
 #include "integrator/integrator_sky.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"

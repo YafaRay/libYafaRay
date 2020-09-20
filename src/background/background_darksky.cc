@@ -29,7 +29,7 @@
 #include "background/background_darksky.h"
 #include "common/logging.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "light/light.h"
 
 #include "utility/util_color_conversion.h"

@@ -23,11 +23,11 @@
 #include "light/light_background_portal.h"
 #include "background/background.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "utility/util_sample.h"
 #include "utility/util_mcqmc.h"
-#include "common/kdtree.h"
-#include "common/triangle.h"
+#include "accelerator/accelerator_kdtree.h"
+#include "object_geom/triangle.h"
 
 BEGIN_YAFARAY
 
@@ -73,7 +73,16 @@ void BackgroundPortalLight::initIs()
 	//delete[] tris;
 	delete[] areas;
 	if(tree_) delete tree_;
-	tree_ = new KdTree<Triangle>(tris_, n_tris_, -1, 1, 0.8, 0.33);
+
+	ParamMap params;
+	params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+	params["num_primitives"] = n_tris_;
+	params["depth"] = -1;
+	params["leaf_size"] = 1;
+	params["cost_ratio"] = 0.8f;
+	params["empty_bonus"] = 0.33f;
+
+	tree_ = Accelerator<Triangle>::factory(tris_, params);
 }
 
 void BackgroundPortalLight::init(Scene &scene)

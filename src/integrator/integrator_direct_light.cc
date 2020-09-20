@@ -23,7 +23,7 @@
 #include "common/surface.h"
 #include "common/logging.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/imagesplitter.h"
 #include "common/timer.h"
 #include "material/material.h"

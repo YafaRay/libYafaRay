@@ -22,7 +22,7 @@
 #include "common/surface.h"
 #include "object_geom/object_geom.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "utility/util_sample.h"
 
 BEGIN_YAFARAY

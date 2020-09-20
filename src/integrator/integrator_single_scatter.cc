@@ -20,7 +20,7 @@
 #include "common/surface.h"
 #include "common/logging.h"
 #include "volume/volume.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"

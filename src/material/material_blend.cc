@@ -23,7 +23,7 @@
 #include "utility/util_sample.h"
 #include "common/surface.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 
 BEGIN_YAFARAY
 

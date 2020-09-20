@@ -21,7 +21,7 @@
 #include "light/light_directional.h"
 #include "common/surface.h"
 #include "common/param.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/bound.h"
 #include "utility/util_sample.h"
 

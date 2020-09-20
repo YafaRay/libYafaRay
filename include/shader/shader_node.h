@@ -21,7 +21,7 @@
 #define YAFARAY_SHADER_NODE_H
 
 #include "constants.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/color.h"
 #include <list>
 #include <map>

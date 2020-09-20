@@ -23,7 +23,7 @@
 #include "common/logging.h"
 #include "common/renderpasses.h"
 #include "material/material.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "volume/volume.h"
 #include "common/session.h"
 #include "light/light.h"
@@ -32,7 +32,7 @@
 #include "utility/util_mcqmc.h"
 #include "common/imagefilm.h"
 #include "common/monitor.h"
-#include "common/photon.h"
+#include "photon/photon.h"
 #include "utility/util_sample.h"
 
 #ifdef __clang__

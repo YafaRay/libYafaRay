@@ -20,7 +20,7 @@
 
 #include "common/import_xml.h"
 #include "common/logging.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "common/color.h"
 #include "common/matrix4.h"
 #include "utility/util_math.h"

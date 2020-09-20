@@ -19,7 +19,7 @@
  */
 
 #include "material/material_coated_glossy.h"
-#include "common/scene.h"
+#include "scene/scene.h"
 #include "shader/shader_node.h"
 #include "utility/util_sample.h"
 #include "material/material_utils_microfacet.h"

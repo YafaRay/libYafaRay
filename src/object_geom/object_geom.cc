@@ -18,7 +18,7 @@
 
 #include "object_geom/object_geom_mesh.h"
 #include "object_geom/primitive_basic.h"
-#include "common/triangle.h"
+#include "object_geom/triangle.h"
 #include "common/param.h"
 #include <cstdlib>
 
