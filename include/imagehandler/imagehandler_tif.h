@@ -34,7 +34,6 @@ class TifHandler final : public ImageHandler
 
 	private:
 		TifHandler();
-		virtual ~TifHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 };

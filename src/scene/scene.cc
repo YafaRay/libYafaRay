@@ -506,9 +506,9 @@ Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 	return nullptr;
 }
 
-void Scene::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components)
+void Scene::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type)
 {
-	passes_settings_.extPassAdd(ext_pass_name, int_pass_name, color_components);
+	passes_settings_.extPassAdd(ext_pass_name, int_pass_name, image_type);
 }
 
 void Scene::setupRenderPasses(const ParamMap &params)
@@ -941,7 +941,7 @@ const std::vector<Light *> Scene::getLightsEmittingDiffusePhotons() const
 	return result;
 }
 
-bool Scene::passEnabled(const PassTypes &pass_type) const { return getPassesSettings()->intPassesSettings().enabled(pass_type); }
+bool Scene::passEnabled(const IntPassType &pass_type) const { return getPassesSettings()->intPassesSettings().enabled(pass_type); }
 
 void Scene::setOutput2(ColorOutput *out_2) {
 	output_2_ = out_2;

@@ -35,7 +35,9 @@ BEGIN_YAFARAY
 
 class Rgba;
 
-enum PassTypes : int
+enum class ImageType : int { Unknown = 0, Gray = 1, GrayAlpha = 2, GrayWeight = 3, GrayAlphaWeight = 4, Color = 5, ColorAlpha = 6, ColorAlphaWeight = 7 };
+
+enum IntPassType : int
 {
 	PassDisabled = -1,
 	PassCombined = 0,
@@ -115,24 +117,24 @@ class IntPassesSettings
 {
 	public:
 		IntPassesSettings();
-		bool enabled(const PassTypes &type) const;
-		void enable(const PassTypes &type);
+		bool enabled(const IntPassType &type) const;
+		void enable(const IntPassType &type);
 
-		const std::set<PassTypes> &listEnabled() const { return enabled_list_; }
-		const std::map<PassTypes, std::string> &listAvailable() const { return map_type_name_; }
+		const std::set<IntPassType> &listEnabled() const { return enabled_list_; }
+		const std::map<IntPassType, std::string> &listAvailable() const { return map_type_name_; }
 
-		std::string name(const PassTypes &type) const;
-		PassTypes type(const std::string &name) const;
-		Rgba defaultColor(const PassTypes &type) const;
+		std::string name(const IntPassType &type) const;
+		IntPassType type(const std::string &name) const;
+		Rgba defaultColor(const IntPassType &type) const;
 
 	protected:
-		std::set<PassTypes> enabled_list_; //!List with the enabled internal passes
+		std::set<IntPassType> enabled_list_; //!List with the enabled internal passes
 		std::vector<bool> enabled_bool_; //!Enabled internal passes in bool vector format for performance search
-		std::map<PassTypes, std::string> map_type_name_; //!Dictionary available internal passes type->name
-		std::map<std::string, PassTypes> map_name_type_; //!Reverse dictionary name->type
+		std::map<IntPassType, std::string> map_type_name_; //!Dictionary available internal passes type->name
+		std::map<std::string, IntPassType> map_name_type_; //!Reverse dictionary name->type
 };
 
-inline bool IntPassesSettings::enabled(const PassTypes &type) const
+inline bool IntPassesSettings::enabled(const IntPassType &type) const
 {
 	if(type == PassCombined) return true;
 	else if(type == PassDisabled) return false;
@@ -146,16 +148,16 @@ class IntPasses //Internal YafaRay color passes generated in different points of
 	public:
 		IntPasses(const IntPassesSettings &settings);
 		size_t size() const { return settings().listEnabled().size(); }
-		bool enabled(const PassTypes &type) const { return settings().enabled(type); }
+		bool enabled(const IntPassType &type) const { return settings().enabled(type); }
 		const IntPassesSettings &settings() const { return settings_; }
 
-		std::set<PassTypes>::const_iterator begin() const { return settings().listEnabled().begin(); }
-		std::set<PassTypes>::const_iterator end() const { return settings().listEnabled().end(); }
+		std::set<IntPassType>::const_iterator begin() const { return settings().listEnabled().begin(); }
+		std::set<IntPassType>::const_iterator end() const { return settings().listEnabled().end(); }
 
 		void setDefaults();
-		Rgba &operator()(const PassTypes &type);
-		const Rgba &operator()(const PassTypes &type) const;
-		Rgba *find(const PassTypes &type);
+		Rgba &operator()(const IntPassType &type);
+		const Rgba &operator()(const IntPassType &type) const;
+		Rgba *find(const IntPassType &type);
 
 	protected:
 		std::vector <Rgba> passes_;
@@ -166,16 +168,21 @@ class IntPasses //Internal YafaRay color passes generated in different points of
 class ExtPassDefinition  //Render pass to be exported, for example, to Blender, and mapping to the internal YafaRay render passes generated in different points of the rendering process
 {
 	public:
-		ExtPassDefinition(const std::string &name, PassTypes internal_type, int color_components = 4, bool save = true): name_(name), color_components_(color_components), internal_type_(internal_type), save_(save) { }
+		ExtPassDefinition(const std::string &name, IntPassType internal_type, const ImageType &image_type, bool save = true): name_(name), image_type_(image_type), internal_type_(internal_type), save_(save) { }
 		std::string name() const { return name_; }
-		int colorComponents() const { return color_components_; }
-		PassTypes intPassType() const { return internal_type_; }
+		int getNumChannels() const { return getImageTypeNumChannels(image_type_); }
+		std::string getImageTypeName() const { return getImageTypeName(image_type_); }
+		ImageType getImageType() const { return image_type_; }
+		IntPassType intPassType() const { return internal_type_; }
 		bool toSave() const { return save_; }
+		LIBYAFARAY_EXPORT static int getImageTypeNumChannels(const ImageType &image_type);
+		static std::string getImageTypeName(const ImageType &image_type);
+		static ImageType getImageTypeFromName(const std::string &image_type_name);
 
 	protected:
 		std::string name_ = "default";
-		int color_components_ = 4; //!< Valid values: 1=Grayscale, 3=RGB, 4=RGBA
-		PassTypes internal_type_ = PassCombined;
+		ImageType image_type_ = ImageType::ColorAlpha;
+		IntPassType internal_type_ = PassCombined;
 		bool save_ = true; //!< Determine if this external pass should be saved or not (for example in auxiliary external passes that do not need to be saved to disk or exported to an external application)
 };
 
@@ -183,11 +190,12 @@ class ExtPassesSettings
 {
 	public:
 		size_t size() const { return passes_.size(); }
-		void extPassAdd(const std::string &ext_pass_name, PassTypes int_pass_type, int color_components = 4, bool save = true);
+		void extPassAdd(const std::string &ext_pass_name, IntPassType int_pass_type, const ImageType &image_type = ImageType::ColorAlpha, bool save = true);
 		std::vector<ExtPassDefinition>::const_iterator begin() const { return passes_.begin(); }
 		std::vector<ExtPassDefinition>::const_iterator end() const { return passes_.end(); }
 		ExtPassDefinition &operator()(size_t index) { return passes_.at(index); }
 		const ExtPassDefinition &operator()(size_t index) const { return passes_.at(index); }
+		int getNumChannels(size_t index) const { return passes_.at(index).getNumChannels(); }
 
 	protected:
 		std::vector<ExtPassDefinition> passes_; //List of the external Render passes to be exported
@@ -220,8 +228,8 @@ class PassesSettings
 {
 	public:
 		PassesSettings();
-		void extPassAdd(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components = 4);
-		void auxPassAdd(const PassTypes &type);
+		void extPassAdd(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type = ImageType::ColorAlpha);
+		void auxPassAdd(const IntPassType &int_pass_type, const ImageType &image_type);
 		void auxPassesGenerate();
 		const IntPassesSettings &intPassesSettings() const { return int_passes_settings_; }
 		const ExtPassesSettings &extPassesSettings() const { return ext_passes_settings_; }

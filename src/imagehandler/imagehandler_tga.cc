@@ -39,11 +39,6 @@ TgaHandler::TgaHandler()
 	handler_name_ = "TGAHandler";
 }
 
-TgaHandler::~TgaHandler()
-{
-	clearImgBuffers();
-}
-
 bool TgaHandler::saveToFile(const std::string &name, int img_index)
 {
 	int h = getHeight(img_index);
@@ -78,7 +73,7 @@ bool TgaHandler::saveToFile(const std::string &name, int img_index)
 #ifdef HAVE_OPENCV
 		if(denoise_)
 		{
-			ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
+			Image denoised_buffer = images_[img_index].getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 			for(int y = 0; y < h; y++)
 			{
 				for(int x = 0; x < w; x++)
@@ -108,7 +103,7 @@ bool TgaHandler::saveToFile(const std::string &name, int img_index)
 			{
 				for(int x = 0; x < w; x++)
 				{
-					Rgba col = img_buffer_.at(img_index)->getColor(x, y);
+					Rgba col = images_[img_index].getColor(x, y);
 					col.clampRgba01();
 
 					if(!has_alpha_)
@@ -143,7 +138,7 @@ template <class ColorType> void TgaHandler::readColorMap(FILE *fp, TgaHeader &he
 
 	for(int x = 0; x < (int)header.cm_number_of_entries_; x++)
 	{
-		(*color_map_)(x, 0) = (this->*cp)(&color[x]);
+		(*color_map_)(x, 0).setColor( (this->*cp)(&color[x]));
 	}
 
 	delete [] color;
@@ -170,7 +165,7 @@ template <class ColorType> void TgaHandler::readRleImage(FILE *fp, ColorProcesso
 		{
 			if(!rle_pack)  fread(&color, sizeof(ColorType), 1, fp);
 
-			img_buffer_.at(0)->setColor(x, y, (this->*cp)(&color), color_space_, gamma_);
+			images_[0].setColor(x, y, (this->*cp)(&color), color_space_, gamma_);
 
 			x += step_x_;
 
@@ -195,7 +190,7 @@ template <class ColorType> void TgaHandler::readDirectImage(FILE *fp, ColorProce
 	{
 		for(size_t x = min_x_; x != max_x_; x += step_x_)
 		{
-			img_buffer_.at(0)->setColor(x, y, (this->*cp)(&color[i]), color_space_, gamma_);
+			images_[0].setColor(x, y, (this->*cp)(&color[i]), color_space_, gamma_);
 			i++;
 		}
 	}
@@ -218,7 +213,7 @@ Rgba TgaHandler::processGray16(void *data)
 Rgba TgaHandler::processColor8(void *data)
 {
 	uint8_t color = *(uint8_t *)data;
-	return (*color_map_)(color, 0);
+	return (*color_map_)(color, 0).getColor();
 }
 
 Rgba TgaHandler::processColor15(void *data)
@@ -392,13 +387,13 @@ bool TgaHandler::loadFromFile(const std::string &name)
 	// Jump over any image Id
 	fseek(fp, header.id_length_, SEEK_CUR);
 
-	clearImgBuffers();
+	images_.clear();
 
-	int n_channels = 3;
-	if(header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32) n_channels = 4;
-	if(grayscale_) n_channels = 1;
+	ImageType type = ImageType::Color;
+	if(grayscale_) type = ImageType::Gray;
+	else if(header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)  type = ImageType::ColorAlpha;
 
-	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
+	images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 	color_map_ = nullptr;
 

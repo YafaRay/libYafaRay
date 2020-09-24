@@ -43,7 +43,7 @@ using namespace Imath;
 
 BEGIN_YAFARAY
 
-typedef GenericScanlineBuffer<Rgba> HalfRgbaScanlineImage_t;
+typedef ImageBuffer2D<Rgba> HalfRgbaScanlineImage_t;
 
 //Class C_IStream from "Reading and Writing OpenEXR Image Files with the IlmImf Library" in the OpenEXR sources
 class CiStream: public Imf::IStream
@@ -129,11 +129,6 @@ ExrHandler::ExrHandler()
 	handler_name_ = "EXRHandler";
 }
 
-ExrHandler::~ExrHandler()
-{
-	clearImgBuffers();
-}
-
 bool ExrHandler::saveToFile(const std::string &name, int img_index)
 {
 	int h = getHeight(img_index);
@@ -168,7 +163,7 @@ bool ExrHandler::saveToFile(const std::string &name, int img_index)
 	{
 		for(int j = 0; j < h; ++j)
 		{
-			Rgba col = img_buffer_.at(img_index)->getColor(i, j);
+			Rgba col = images_[img_index].getColor(i, j);
 			pixels[j][i].r = col.r_;
 			pixels[j][i].g = col.g_;
 			pixels[j][i].b = col.b_;
@@ -204,14 +199,14 @@ bool ExrHandler::saveToFile(const std::string &name, int img_index)
 
 bool ExrHandler::saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings)
 {
-	int h_0 = img_buffer_.at(0)->getHeight();
-	int w_0 = img_buffer_.at(0)->getWidth();
+	int h_0 = images_[0].getHeight();
+	int w_0 = images_[0].getWidth();
 
 	bool all_image_buffers_same_size = true;
-	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
+	for(size_t idx = 0; idx < images_.size(); ++idx)
 	{
-		if(img_buffer_.at(idx)->getHeight() != h_0) all_image_buffers_same_size = false;
-		if(img_buffer_.at(idx)->getWidth() != w_0) all_image_buffers_same_size = false;
+		if(images_[idx].getHeight() != h_0) all_image_buffers_same_size = false;
+		if(images_[idx].getWidth() != w_0) all_image_buffers_same_size = false;
 	}
 
 	if(!all_image_buffers_same_size)
@@ -238,7 +233,7 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const PassesSet
 
 	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
 
-	for(size_t idx = 0; idx < img_buffer_.size(); ++idx)
+	for(size_t idx = 0; idx < images_.size(); ++idx)
 	{
 		const std::string ext_pass_name = passes_settings->extPassesSettings()(idx).name();
 		exr_layer_name = "RenderLayer." + ext_pass_name + ".";
@@ -266,7 +261,7 @@ bool ExrHandler::saveToFileMultiChannel(const std::string &name, const PassesSet
 		{
 			for(int j = 0; j < h_0; ++j)
 			{
-				Rgba col = img_buffer_.at(idx)->getColor(i, j);
+				Rgba col = images_[idx].getColor(i, j);
 				(*pixels.at(idx))[j][i].r = col.r_;
 				(*pixels.at(idx))[j][i].g = col.g_;
 				(*pixels.at(idx))[j][i].b = col.b_;
@@ -344,13 +339,13 @@ bool ExrHandler::loadFromFile(const std::string &name)
 		height_ = dw.max.y - dw.min.y + 1;
 		has_alpha_ = true;
 
-		clearImgBuffers();
+		images_.clear();
 
-		int n_channels = 3;
-		if(grayscale_) n_channels = 1;
-		else if(has_alpha_) n_channels = 4;
+		ImageType type = ImageType::Color;
+		if(grayscale_) type = ImageType::Gray;
+		else if(has_alpha_) type = ImageType::ColorAlpha;
 
-		img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
+		images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(width_, height_);
@@ -366,7 +361,7 @@ bool ExrHandler::loadFromFile(const std::string &name)
 				col.g_ = pixels[i][j].g;
 				col.b_ = pixels[i][j].b;
 				col.a_ = pixels[i][j].a;
-				img_buffer_.at(0)->setColor(i, j, col, color_space_, gamma_);
+				images_[0].setColor(i, j, col, color_space_, gamma_);
 			}
 		}
 	}
@@ -411,7 +406,7 @@ ImageHandler *ExrHandler::factory(ParamMap &params, Scene &scene)
 	 */
 	ImageHandler *ih = new ExrHandler();
 
-	ih->setTextureOptimization(TextureOptimization::None);
+	ih->setImageOptimization(Image::Optimization::None);
 
 	if(for_output)
 	{

@@ -52,11 +52,6 @@ TifHandler::TifHandler()
 	handler_name_ = "TIFFHandler";
 }
 
-TifHandler::~TifHandler()
-{
-	clearImgBuffers();
-}
-
 bool TifHandler::saveToFile(const std::string &name, int img_index)
 {
 	int h = getHeight(img_index);
@@ -98,7 +93,7 @@ bool TifHandler::saveToFile(const std::string &name, int img_index)
 #ifdef HAVE_OPENCV
 	if(denoise_)
 	{
-		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
+		Image denoised_buffer = images_[img_index].getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
@@ -130,7 +125,7 @@ bool TifHandler::saveToFile(const std::string &name, int img_index)
 			for(int x = 0; x < w; x++)
 			{
 				int ix = x * channels;
-				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
+				Rgba col = images_[img_index].getColor(x, y);
 				col.clampRgba01();
 				scanline[ix] = (uint8_t)(col.getR() * 255.f);
 				scanline[ix + 1] = (uint8_t)(col.getG() * 255.f);
@@ -186,12 +181,13 @@ bool TifHandler::loadFromFile(const std::string &name)
 	width_ = (int)w;
 	height_ = (int)h;
 
-	clearImgBuffers();
+	images_.clear();
 
-	int n_channels = 3;
-	if(grayscale_) n_channels = 1;
-	else if(has_alpha_) n_channels = 4;
-	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
+	ImageType type = ImageType::Color;
+	if(grayscale_) type = ImageType::Gray;
+	else if(has_alpha_) type = ImageType::ColorAlpha;
+
+	images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 	int i = 0;
 
@@ -206,7 +202,7 @@ bool TifHandler::loadFromFile(const std::string &name)
 					  (float)TIFFGetA(tiff_data[i]) * inv_8__);
 			i++;
 
-			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
+			images_[0].setColor(x, y, color, color_space_, gamma_);
 		}
 	}
 

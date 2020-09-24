@@ -121,8 +121,7 @@ float lanczos2__(float dx, float dy)
 }
 
 ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size, FilterType filt,
-					  Scene *scene, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type, bool pm_a):
-		w_(width), h_(height), cx_0_(xstart), cy_0_(ystart), filterw_(filter_size * 0.5), output_(&out),
+					  Scene *scene, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type, bool pm_a) : weights_(width,height), flags_(width, height), w_(width), h_(height), cx_0_(xstart), cy_0_(ystart), filterw_(filter_size * 0.5), output_(&out),
 		scene_(scene), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), premult_alpha_(pm_a)
 {
 	cx_1_ = xstart + width;
@@ -134,7 +133,12 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 	//Creation of the image buffers for the render passes
 	for(size_t idx = 0; idx < passes_settings->extPassesSettings().size(); ++idx)
 	{
-		image_passes_.push_back(new Rgba2DImageWeighed_t(width, height));
+		ImageType image_type = passes_settings->extPassesSettings()(idx).getImageType();
+		//Alpha channel is needed in all images of the weight normalization process will cause problems
+		if(image_type == ImageType::Gray) image_type = ImageType::GrayAlpha;
+		else if(image_type == ImageType::Color) image_type = ImageType::ColorAlpha;
+		else if(image_type == ImageType::GrayWeight) image_type = ImageType::GrayAlphaWeight;
+		images_.emplace_back(Image{width, height, image_type, Image::Optimization::None});
 	}
 
 	density_image_ = nullptr;
@@ -145,7 +149,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 	float *f_tp = filter_table_;
 	float scale = 1.f / (float)FILTER_TABLE_SIZE;
 
-	FilterFunc_t *ffunc = 0;
+	FilterFunc_t *ffunc = nullptr;
 	switch(filt)
 	{
 		case ImageFilm::FilterType::Mitchell: ffunc = mitchell__; filterw_ *= 2.6f; break;
@@ -181,14 +185,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 
 ImageFilm::~ImageFilm ()
 {
-
-	//Deletion of the image buffers for the additional render passes
-	for(size_t idx = 0; idx < image_passes_.size(); ++idx)
-	{
-		delete(image_passes_[idx]);
-	}
-	image_passes_.clear();
-
+	images_.clear();
 	if(density_image_) delete density_image_;
 	delete[] filter_table_;
 	if(splitter_) delete splitter_;
@@ -199,9 +196,9 @@ ImageFilm::~ImageFilm ()
 void ImageFilm::init(int num_passes)
 {
 	// Clear color buffers
-	for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+	for(size_t idx = 0; idx < images_.size(); ++idx)
 	{
-		image_passes_[idx]->clear();
+		images_[idx].clear();
 	}
 
 	// Clear density image
@@ -282,11 +279,11 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		}
 	}
 
-	Rgba2DImageWeighed_t *sampling_factor_image_pass = getImagePassFromIntPassType(PassDebugSamplingFactor);
+	Image *sampling_factor_image_pass = getImagePassFromIntPassType(PassDebugSamplingFactor);
 
-	if(flags_) flags_->clear();
-	else flags_ = new TiledBitArray2D<3>(w_, h_, true);
-	std::vector<Rgba> col_ext_passes(image_passes_.size(), Rgba(0.f));
+	if(n_pass_ == 0) flags_.fill(true);
+	else flags_.fill(false);
+	std::vector<Rgba> col_ext_passes(images_.size(), Rgba(0.f));
 	int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
 
 	float aa_thresh_scaled = aa_noise_params_.threshold_;
@@ -299,7 +296,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		{
 			for(int x = 0; x < w_ - 1; ++x)
 			{
-				flags_->clearBit(x, y);
+				flags_.set(x, y, false);
 			}
 		}
 
@@ -308,17 +305,17 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 			for(int x = 0; x < w_ - 1; ++x)
 			{
 				//We will only consider the Combined Pass (pass 0) for the AA additional sampling calculations.
-
-				if((*image_passes_.at(0))(x, y).weight_ <= 0.f) flags_->setBit(x, y);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
+				const float weight = weights_(x, y).getFloat();
+				if(weight <= 0.f) flags_.set(x, y, true);	//If after reloading ImageFiles there are pixels that were not yet rendered at all, make sure they are marked to be rendered in the next AA pass
 
 				float mat_sample_factor = 1.f;
 				if(sampling_factor_image_pass)
 				{
-					mat_sample_factor = (*sampling_factor_image_pass)(x, y).normalized().r_;
+					mat_sample_factor = (weight == 0.f) ? 0.f : sampling_factor_image_pass->getFloat(x, y) / weight;
 					if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 				}
 
-				Rgba pix_col = (*image_passes_.at(0))(x, y).normalized();
+				Rgba pix_col = images_[0].getColor(x, y).normalized(weight);
 				float pix_col_bri = pix_col.abscol2Bri();
 
 				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
@@ -330,21 +327,21 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(images_[0].getColor(x + 1, y).normalized(weights_(x + 1, y).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_->setBit(x, y); flags_->setBit(x + 1, y);
+					flags_.set(x, y, true); flags_.set(x + 1, y, true);
 				}
-				if(pix_col.colorDifference((*image_passes_.at(0))(x, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(images_[0].getColor(x, y + 1).normalized(weights_(x, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_->setBit(x, y); flags_->setBit(x, y + 1);
+					flags_.set(x, y, true); flags_.set(x, y + 1, true);
 				}
-				if(pix_col.colorDifference((*image_passes_.at(0))(x + 1, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(images_[0].getColor(x + 1, y + 1).normalized(weights_(x + 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_->setBit(x, y); flags_->setBit(x + 1, y + 1);
+					flags_.set(x, y, true); flags_.set(x + 1, y + 1, true);
 				}
-				if(x > 0 && pix_col.colorDifference((*image_passes_.at(0))(x - 1, y + 1).normalized(), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(images_[0].getColor(x - 1, y + 1).normalized(weights_(x - 1, y + 1).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
-					flags_->setBit(x, y); flags_->setBit(x - 1, y + 1);
+					flags_.set(x, y, true); flags_.set(x - 1, y + 1, true);
 				}
 
 				if(aa_noise_params_.variance_pixels_ > 0)
@@ -359,8 +356,8 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 						if(xi < 0) xi = 0;
 						else if(xi >= w_ - 1) xi = w_ - 2;
 
-						Rgba cx_0 = (*image_passes_.at(0))(xi, y).normalized();
-						Rgba cx_1 = (*image_passes_.at(0))(xi + 1, y).normalized();
+						Rgba cx_0 = images_[0].getColor(xi, y).normalized(weights_(xi, y).getFloat());
+						Rgba cx_1 = images_[0].getColor(xi + 1, y).normalized(weights_(xi + 1, y).getFloat());
 
 						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
@@ -371,8 +368,8 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 						if(yi < 0) yi = 0;
 						else if(yi >= h_ - 1) yi = h_ - 2;
 
-						Rgba cy_0 = (*image_passes_.at(0))(x, yi).normalized();
-						Rgba cy_1 = (*image_passes_.at(0))(x, yi + 1).normalized();
+						Rgba cy_0 = images_[0].getColor(x, yi).normalized(weights_(x, yi).getFloat());
+						Rgba cy_1 = images_[0].getColor(x, yi + 1).normalized(weights_(x, yi + 1).getFloat());
 
 						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
@@ -391,7 +388,7 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 								if(yi < 0) yi = 0;
 								else if(yi >= h_) yi = h_ - 1;
 
-								flags_->setBit(xi, yi);
+								flags_.set(xi, yi, true);
 							}
 						}
 					}
@@ -403,22 +400,23 @@ int ImageFilm::nextPass(int num_view, bool adaptive_aa, std::string integrator_n
 		{
 			for(int x = 0; x < w_; ++x)
 			{
-				if(flags_->getBit(x, y))
+				if(flags_.get(x, y))
 				{
 					++n_resample;
 
 					if(session__.isInteractive() && show_mask_)
 					{
 						float mat_sample_factor = 1.f;
+						const float weight = weights_(x, y).getFloat();
 						if(sampling_factor_image_pass)
 						{
-							mat_sample_factor = (*sampling_factor_image_pass)(x, y).normalized().r_;
+							mat_sample_factor = (weight == 0.f) ? 0.f : sampling_factor_image_pass->getFloat(x, y) / weight;
 							if(!background_resampling_ && mat_sample_factor == 0.f) continue;
 						}
 
-						for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+						for(size_t idx = 0; idx < images_.size(); ++idx)
 						{
-							Rgb pix = (*image_passes_[idx])(x, y).normalized();
+							Rgb pix = images_[idx].getColor(x, y).normalized(weight);
 							float pix_col_bri = pix.abscol2Bri();
 
 							if(pix.r_ < pix.g_ && pix.r_ < pix.b_)
@@ -513,17 +511,18 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 
 	int end_x = a.x_ + a.w_ - cx_0_, end_y = a.y_ + a.h_ - cy_0_;
 
-	std::vector<Rgba> col_ext_passes(image_passes_.size(), Rgba(0.f));
+	std::vector<Rgba> col_ext_passes(images_.size(), Rgba(0.f));
 
 	for(int j = a.y_ - cy_0_; j < end_y; ++j)
 	{
 		for(int i = a.x_ - cx_0_; i < end_x; ++i)
 		{
-			for(size_t idx = 0; idx < ext_passes_settings.size() && idx < image_passes_.size(); ++idx)
+			const float weight = weights_(i, j).getFloat();
+			for(size_t idx = 0; idx < ext_passes_settings.size() && idx < images_.size(); ++idx)
 			{
 				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
 				{
-					col_ext_passes[idx] = (*image_passes_[idx])(i, j).weight_;
+					col_ext_passes[idx] = weight;
 				}
 				else if(ext_passes_settings(idx).intPassType() == PassObjIndexAbs ||
 						ext_passes_settings(idx).intPassType() == PassObjIndexAutoAbs ||
@@ -531,23 +530,28 @@ void ImageFilm::finishArea(int num_view, RenderArea &a)
 						ext_passes_settings(idx).intPassType() == PassMatIndexAutoAbs
 						)
 				{
-					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
+					col_ext_passes[idx] = images_[idx].getColor(i, j).normalized(weight);
 					col_ext_passes[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
 				}
 				else
 				{
-					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
+					col_ext_passes[idx] = images_[idx].getColor(i, j).normalized(weight);
 				}
 
 				col_ext_passes[idx].clampRgb0();
-				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what 
+				col_ext_passes[idx].colorSpaceFromLinearRgb(color_space_, gamma_);//FIXME DAVID: what passes must be corrected and what do not?
+				if(premult_alpha_ && idx == 0) col_ext_passes[idx].alphaPremultiply();
+
+				//To make sure we don't have any weird Alpha values outside the range [0.f, +1.f]
+				if(col_ext_passes[idx].a_ < 0.f) col_ext_passes[idx].a_ = 0.f;
+				else if(col_ext_passes[idx].a_ > 1.f) col_ext_passes[idx].a_ = 1.f;
 			}
 
 			if(!output_->putPixel(num_view, i, j, col_ext_passes)) abort_ = true;
 		}
 	}
 
-	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
+	for(size_t idx = 1; idx < images_.size(); ++idx)
 	{
 		if(ext_passes_settings(idx).intPassType() == PassDebugFacesEdges)
 		{
@@ -700,10 +704,10 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 	passes_settings = scene_->getPassesSettings();
 	const ExtPassesSettings ext_passes_settings = passes_settings->extPassesSettings();
-	std::vector<Rgba> col_ext_passes(image_passes_.size(), Rgba(0.f));
+	std::vector<Rgba> col_ext_passes(images_.size(), Rgba(0.f));
 
 	std::vector<Rgba> col_ext_passes_2;	//For secondary file output (when enabled)
-	if(out_2) col_ext_passes_2.resize(image_passes_.size(), Rgba(0.f));
+	if(out_2) col_ext_passes_2.resize(images_.size(), Rgba(0.f));
 
 	int output_displace_rendered_image_badge_height = 0, out_2_displace_rendered_image_badge_height = 0;
 
@@ -715,11 +719,12 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 	{
 		for(int i = 0; i < w_; i++)
 		{
-			for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+			const float weight = weights_(i, j).getFloat();
+			for(size_t idx = 0; idx < images_.size(); ++idx)
 			{
 				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
 				{
-					col_ext_passes[idx] = (*image_passes_[idx])(i, j).weight_;
+					col_ext_passes[idx] = images_[idx].getColor(i, j).normalized(weight);
 				}
 				else if(ext_passes_settings(idx).intPassType() == PassObjIndexAbs ||
 						ext_passes_settings(idx).intPassType() == PassObjIndexAutoAbs ||
@@ -727,15 +732,15 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 						ext_passes_settings(idx).intPassType() == PassMatIndexAutoAbs
 						)
 				{
-					col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
+					col_ext_passes[idx] = images_[idx].getColor(i, j).normalized(weight);
 					col_ext_passes[idx].ceil(); //To correct the antialiasing and ceil the "mixed" values to the upper integer
 				}
 				else
 				{
-					if(flags & Image) col_ext_passes[idx] = (*image_passes_[idx])(i, j).normalized();
+					if(flags & RegularImage) col_ext_passes[idx] = images_[idx].getColor(i, j).normalized(weight);
 					else col_ext_passes[idx] = Rgba(0.f);
 				}
-				
+
 				col_ext_passes[idx].clampRgb0();
 
 				if(out_2) col_ext_passes_2[idx] = col_ext_passes[idx];
@@ -771,7 +776,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 		}
 	}
 
-	for(size_t idx = 1; idx < image_passes_.size(); ++idx)
+	for(size_t idx = 1; idx < images_.size(); ++idx)
 	{
 		if(ext_passes_settings(idx).intPassType() == PassDebugFacesEdges)
 		{
@@ -796,9 +801,9 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 			{
 				for(int i = 0; i < w_; i++)
 				{
-					for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+					for(size_t idx = 0; idx < images_.size(); ++idx)
 					{
-						Rgba &dpcol = (*dp_image_)(i, j - badge_start_y);
+						Rgba dpcol = (*dp_image_)(i, j - badge_start_y).getColor();
 						col_ext_passes[idx] = Rgba(dpcol, 1.f);
 					}
 					out_1->putPixel(num_view, i, j, col_ext_passes);
@@ -816,9 +821,9 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 			{
 				for(int i = 0; i < w_; i++)
 				{
-					for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+					for(size_t idx = 0; idx < images_.size(); ++idx)
 					{
-						Rgba &dpcol = (*dp_image_)(i, j - badge_start_y);
+						Rgba dpcol = (*dp_image_)(i, j - badge_start_y).getColor();
 						col_ext_passes_2[idx] = Rgba(dpcol, 1.f);
 					}
 					out_2->putPixel(num_view, i, j, col_ext_passes_2);
@@ -889,7 +894,7 @@ void ImageFilm::flush(int num_view, int flags, ColorOutput *out)
 
 bool ImageFilm::doMoreSamples(int x, int y) const
 {
-	return aa_noise_params_.threshold_ <= 0.f || flags_->getBit(x - cx_0_, y - cy_0_);
+	return aa_noise_params_.threshold_ <= 0.f || flags_.get(x - cx_0_, y - cy_0_);
 }
 
 /* CAUTION! Implemantation of this function needs to be thread safe for samples that
@@ -938,29 +943,19 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			// get filter value at pixel (x,y)
-			int offset = y_index[j - y_0] * FILTER_TABLE_SIZE + x_index[i - x_0];
-			float filter_wt = filter_table_[offset];
+			const int offset = y_index[j - y_0] * FILTER_TABLE_SIZE + x_index[i - x_0];
+			const float filter_wt = filter_table_[offset];
+			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
 			// update pixel values with filtered sample contribution
-			for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+			for(size_t idx = 0; idx < images_.size(); ++idx)
 			{
 				Rgba col = int_passes ? (*int_passes)(ext_passes_settings(idx).intPassType()) : 0.f;
 
 				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
-
-				Pixel &pixel = (*image_passes_[idx])(i - cx_0_, j - cy_0_);
-
 				if(premult_alpha_) col.alphaPremultiply();
 
-				if(ext_passes_settings(idx).intPassType() == PassAaSamples)
-				{
-					pixel.weight_ += inv_aa_max_possible_samples / ((x_1 - x_0 + 1) * (y_1 - y_0 + 1));
-				}
-				else
-				{
-					pixel.col_ += (col * filter_wt);
-					pixel.weight_ += filter_wt;
-				}
+				images_[idx].setColor(i - cx_0_, j - cy_0_, images_[idx].getColor(i - cx_0_, j - cy_0_) + (col * filter_wt));
 			}
 		}
 	}
@@ -1075,7 +1070,7 @@ void drawFontBitmap__(const FT_Bitmap *bitmap, Rgba2DImage_t *badge_image, int x
 
 			if(tmp_buf > 0)
 			{
-				Rgba &col = (*badge_image)(std::max(0, i), std::max(0, j));
+				Rgba col = (*badge_image)(std::max(0, i), std::max(0, j)).getColor();
 				float alpha = (float) tmp_buf / 255.0;
 				col = Rgba(ALPHA_BLEND((Rgb)col, text_color, alpha), col.getA());
 			}
@@ -1244,8 +1239,8 @@ void ImageFilm::drawRenderSettings(std::stringstream &ss)
 
 		for(lx = 0; lx < im_width; lx++)
 			for(ly = 0; ly < im_height; ly++)
-				if(logger__.isParamsBadgeTop())(*dp_image_)(w_ - im_width + lx, ly) = logo->getPixel(lx, ly);
-				else(*dp_image_)(w_ - im_width + lx, dp_height_ - im_height + ly) = logo->getPixel(lx, ly);
+				if(logger__.isParamsBadgeTop())(*dp_image_)(w_ - im_width + lx, ly).setColor(logo->getPixel(lx, ly));
+				else(*dp_image_)(w_ - im_width + lx, dp_height_ - im_height + ly).setColor(logo->getPixel(lx, ly));
 
 		delete logo;
 	}
@@ -1360,21 +1355,29 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 		Y_WARNING << "imageFilm: loading/reusing film check failed. Number of render passes, expected=" << passes_settings->extPassesSettings().size() << ", in reused/loaded film=" << image_passes_size << YENDL;
 		return false;
 	}
-	else image_passes_.resize(image_passes_size);
 
-	for(auto &img : image_passes_)
+	for(int y = 0; y < h_; ++y)
 	{
-		img = new Rgba2DImageWeighed_t(w_, h_);
+		for(int x = 0; x < w_; ++x)
+		{
+			float weight;
+			file.read<float>(weight);
+			weights_(x, y).setFloat(weight);
+		}
+	}
+
+	for(auto &img : images_)
+	{
 		for(int y = 0; y < h_; ++y)
 		{
 			for(int x = 0; x < w_; ++x)
 			{
-				Pixel &p = (*img)(x, y);
-				file.read<float>(p.col_.r_);
-				file.read<float>(p.col_.g_);
-				file.read<float>(p.col_.b_);
-				file.read<float>(p.col_.a_);
-				file.read<float>(p.weight_);
+				Rgba col;
+				file.read<float>(col.r_);
+				file.read<float>(col.g_);
+				file.read<float>(col.b_);
+				file.read<float>(col.a_);
+				img.setColor(x, y, col);
 			}
 		}
 	}
@@ -1436,15 +1439,22 @@ void ImageFilm::imageFilmLoadAllInFolder()
 		}
 		else any_film_loaded = true;
 
-		for(size_t idx = 0; idx < image_passes_.size(); ++idx)
+		for(int i = 0; i < w_; ++i)
 		{
-			Rgba2DImageWeighed_t *loaded_image_buffer = loaded_film->image_passes_[idx];
+			for(int j = 0; j < h_; ++j)
+			{
+				weights_(i, j).setFloat(weights_(i, j).getFloat() + loaded_film->weights_(i, j).getFloat());
+			}
+		}
+
+		for(size_t idx = 0; idx < images_.size(); ++idx)
+		{
+			const Image &loaded_images = loaded_film->images_[idx];
 			for(int i = 0; i < w_; ++i)
 			{
 				for(int j = 0; j < h_; ++j)
 				{
-					(*image_passes_[idx])(i, j).col_ += (*loaded_image_buffer)(i, j).col_;
-					(*image_passes_[idx])(i, j).weight_ += (*loaded_image_buffer)(i, j).weight_;
+					images_[idx].setColor(i, j, images_[idx].getColor(i, j) + loaded_images.getColor(i, j));
 				}
 			}
 		}
@@ -1492,35 +1502,53 @@ bool ImageFilm::imageFilmSave()
 	file.append<int>(cx_1_);
 	file.append<int>(cy_0_);
 	file.append<int>(cy_1_);
-	file.append<int>((int) image_passes_.size());
+	file.append<int>((int) images_.size());
 
-	for(const auto &img : image_passes_)
+	const int weights_w = weights_.getWidth();
+	if(weights_w != w_)
 	{
-		const int img_w = img->getWidth();
+		Y_WARNING << "ImageFilm saving problems, film weights width " << w_ << " different from internal 2D image width " << weights_w << YENDL;
+		result_ok = false;
+	}
+	const int weights_h = weights_.getHeight();
+	if(weights_h != h_)
+	{
+		Y_WARNING << "ImageFilm saving problems, film weights height " << h_ << " different from internal 2D image height " << weights_h << YENDL;
+		result_ok = false;
+	}
+	for(int y = 0; y < h_; ++y)
+	{
+		for(int x = 0; x < w_; ++x)
+		{
+			file.append<float>(weights_(x, y).getFloat());
+		}
+	}
+
+	for(const auto &img : images_)
+	{
+		const int img_w = img.getWidth();
 		if(img_w != w_)
 		{
 			Y_WARNING << "ImageFilm saving problems, film width " << w_ << " different from internal 2D image width " << img_w << YENDL;
 			result_ok = false;
 			break;
 		}
-		const int img_h = img->getHeight();
+		const int img_h = img.getHeight();
 		if(img_h != h_)
 		{
 			Y_WARNING << "ImageFilm saving problems, film height " << h_ << " different from internal 2D image height " << img_h << YENDL;
 			result_ok = false;
 			break;
 		}
-
 		for(int y = 0; y < h_; ++y)
 		{
 			for(int x = 0; x < w_; ++x)
 			{
-				const Pixel &p = (*img)(x, y);
-				file.append<float>(p.col_.r_);
-				file.append<float>(p.col_.g_);
-				file.append<float>(p.col_.b_);
-				file.append<float>(p.col_.a_);
-				file.append<float>(p.weight_);
+				const Rgba &col = img.getColor(x, y);
+				file.append<float>(col.r_);
+				file.append<float>(col.g_);
+				file.append<float>(col.b_);
+				file.append<float>(col.a_);
 			}
 		}
 	}
@@ -1591,20 +1619,20 @@ void edgeImageDetection__(std::vector<cv::Mat> &image_mat, float edge_threshold,
 void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
 	const PassEdgeToonParams &edge_params = scene_->getPassesSettings()->passEdgeToonParams();
-	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassNormalGeom);
-	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
+	Image *normal_image_pass = getImagePassFromIntPassType(PassNormalGeom);
+	Image *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
 
 	if(normal_image_pass && z_depth_image_pass)
 	{
 		std::vector<cv::Mat> image_mat;
 		for(int i = 0; i < 4; ++i) image_mat.push_back(cv::Mat(h_, w_, CV_32FC1));
-
 		for(int j = ystart; j < height; ++j)
 		{
 			for(int i = xstart; i < width; ++i)
 			{
-				Rgb col_normal = (*normal_image_pass)(i, j).normalized();
-				float z_depth = (*z_depth_image_pass)(i, j).normalized().a_;
+				const float weight = weights_(i, j).getFloat();
+				Rgb col_normal = (*normal_image_pass).getColor(i, j).normalized(weight);
+				float z_depth = (*z_depth_image_pass).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();
@@ -1633,8 +1661,8 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement)
 {
 	const PassEdgeToonParams &edge_params = scene_->getPassesSettings()->passEdgeToonParams();
-	Rgba2DImageWeighed_t *normal_image_pass = getImagePassFromIntPassType(PassNormalSmooth);
-	Rgba2DImageWeighed_t *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
+	Image *normal_image_pass = getImagePassFromIntPassType(PassNormalSmooth);
+	Image *z_depth_image_pass = getImagePassFromIntPassType(PassZDepthNorm);
 
 	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
 	const float toon_quantization = edge_params.toon_quantization_;
@@ -1656,12 +1684,13 @@ void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int 
 		{
 			for(int i = xstart; i < width; ++i)
 			{
-				col_normal = (*normal_image_pass)(i, j).normalized();
-				z_depth = (*z_depth_image_pass)(i, j).normalized().a_;
+				const float weight = weights_(i, j).getFloat();
+				col_normal = (*normal_image_pass).getColor(i, j).normalized(weight);
+				z_depth = (*z_depth_image_pass).getColor(i, j).normalized(weight).a_; //FIXME: can be further optimized
 
-				image_mat_combined_vec(j, i)[0] = (*image_passes_[0])(i, j).normalized().b_;
-				image_mat_combined_vec(j, i)[1] = (*image_passes_[0])(i, j).normalized().g_;
-				image_mat_combined_vec(j, i)[2] = (*image_passes_[0])(i, j).normalized().r_;
+				image_mat_combined_vec(j, i)[0] = images_[0].getColor(i, j).normalized(weight).b_;
+				image_mat_combined_vec(j, i)[1] = images_[0].getColor(i, j).normalized(weight).g_;
+				image_mat_combined_vec(j, i)[2] = images_[0].getColor(i, j).normalized(weight).r_;
 
 				image_mat.at(0).at<float>(j, i) = col_normal.getR();
 				image_mat.at(1).at<float>(j, i) = col_normal.getG();
@@ -1743,17 +1772,17 @@ void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, 
 #endif
 
 
-Rgba2DImageWeighed_t *ImageFilm::getImagePassFromIntPassType(int pass_type)
+Image *ImageFilm::getImagePassFromIntPassType(int pass_type)
 {
 	const int idx = getImagePassIndexFromIntPassType(pass_type);
-	if(idx != -1) return image_passes_[idx];
+	if(idx != -1) return &images_[idx];
 	else return nullptr;
 }
 
 int ImageFilm::getImagePassIndexFromIntPassType(int pass_type)
 {
 	const ExtPassesSettings ext_passes_settings = scene_->getPassesSettings()->extPassesSettings();
-	for(size_t idx = 0; idx < ext_passes_settings.size() && idx < image_passes_.size(); ++idx)
+	for(size_t idx = 0; idx < ext_passes_settings.size() && idx < images_.size(); ++idx)
 	{
 		if(ext_passes_settings(idx).intPassType() == pass_type) return (int) idx;
 	}

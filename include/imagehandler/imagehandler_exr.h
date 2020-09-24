@@ -35,7 +35,6 @@ class ExrHandler final : public ImageHandler
 
 	private:
 		ExrHandler();
-		~ExrHandler();
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 		virtual bool saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings) override;

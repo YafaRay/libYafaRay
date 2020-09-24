@@ -97,7 +97,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -128,7 +128,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -159,7 +159,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -190,7 +190,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -221,7 +221,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -252,7 +252,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<texture_optimization sval="optimized"/>
+	<image_optimization sval="optimized"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>

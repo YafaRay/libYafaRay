@@ -43,11 +43,6 @@ HdrHandler::HdrHandler()
 	handler_name_ = "hdrHandler";
 }
 
-HdrHandler::~HdrHandler()
-{
-	clearImgBuffers();
-}
-
 bool HdrHandler::loadFromFile(const std::string &name)
 {
 	FILE *fp = File::open(name, "rb");
@@ -67,15 +62,14 @@ bool HdrHandler::loadFromFile(const std::string &name)
 		return false;
 	}
 
-	// discard old image data
-	clearImgBuffers();
+	images_.clear();
 
 	has_alpha_ = false;	//FIXME: why is alpha false in HDR??
-	int n_channels = 4;	//FIXME: despite alpha being false, number of channels was 4 anyway. I'm keeping this just in case, but I think it should be 3??
-	if(grayscale_) n_channels = 1;
-	else if(has_alpha_) n_channels = 4;
+	ImageType type = ImageType::ColorAlpha; //FIXME: despite alpha being false, number of channels was 4 anyway. I'm keeping this just in case, but I think it should be 3??
+	if(grayscale_) type = ImageType::Gray;
+	else if(has_alpha_) type = ImageType::ColorAlpha;
 
-	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
+	images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 	int scan_width = (header_.y_first_) ? width_ : height_;
 
@@ -296,8 +290,8 @@ bool HdrHandler::readOrle(FILE *fp, int y, int scan_width)
 	// put the pixels on the main buffer
 	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.max_[1])
 	{
-		if(header_.y_first_) img_buffer_.at(0)->setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
-		else img_buffer_.at(0)->setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
+		if(header_.y_first_) images_[0].setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
+		else images_[0].setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
 		j++;
 	}
 
@@ -375,8 +369,8 @@ bool HdrHandler::readArle(FILE *fp, int y, int scan_width)
 	// put the pixels on the main buffer
 	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.step_[1])
 	{
-		if(header_.y_first_) img_buffer_.at(0)->setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
-		else img_buffer_.at(0)->setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
+		if(header_.y_first_) images_[0].setColor(x, y, scanline[j].getRgba(), color_space_, gamma_);
+		else images_[0].setColor(y, x, scanline[j].getRgba(), color_space_, gamma_);
 		j++;
 	}
 
@@ -552,7 +546,7 @@ ImageHandler *HdrHandler::factory(ParamMap &params, Scene &scene)
 	 */
 	ImageHandler *ih = new HdrHandler();
 
-	ih->setTextureOptimization(TextureOptimization::None);
+	ih->setImageOptimization(Image::Optimization::None);
 
 	if(for_output)
 	{

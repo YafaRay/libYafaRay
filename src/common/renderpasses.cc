@@ -24,9 +24,9 @@
 
 BEGIN_YAFARAY
 
-/////////////////////////////////
-// --  intPassesSettings_t  -- //
-/////////////////////////////////
+///////////////////////////////
+// --  IntPassesSettings  -- //
+///////////////////////////////
 
 IntPassesSettings::IntPassesSettings()
 {
@@ -113,7 +113,7 @@ IntPassesSettings::IntPassesSettings()
 	enabled_bool_ = std::vector<bool>(listAvailable().size(), false);
 }
 
-void IntPassesSettings::enable(const PassTypes &type)
+void IntPassesSettings::enable(const IntPassType &type)
 {
 	enabled_list_.insert(type);
 	enabled_bool_.at(type) = true;
@@ -121,7 +121,7 @@ void IntPassesSettings::enable(const PassTypes &type)
 	if(type != PassCombined) Y_VERBOSE << "Render Passes: enabled internal pass: \"" << name(type) << "\" [" << (int) type << "]" << YENDL;
 }
 
-Rgba IntPassesSettings::defaultColor(const PassTypes &type) const
+Rgba IntPassesSettings::defaultColor(const IntPassType &type) const
 {
 	switch(type) //Default initialization color in general is black/opaque, except for SHADOW and MASK passes where the default is black/transparent for easier masking
 	{
@@ -137,7 +137,7 @@ Rgba IntPassesSettings::defaultColor(const PassTypes &type) const
 	}
 }
 
-std::string IntPassesSettings::name(const PassTypes &type) const
+std::string IntPassesSettings::name(const IntPassType &type) const
 {
 	if(type == PassDisabled) return "disabled";
 	auto it = map_type_name_.find(type);
@@ -145,7 +145,7 @@ std::string IntPassesSettings::name(const PassTypes &type) const
 	else return it->second;
 }
 
-PassTypes IntPassesSettings::type(const std::string &name) const
+IntPassType IntPassesSettings::type(const std::string &name) const
 {
 	if(name == "disabled" || name == "unknown" || name.empty()) return PassDisabled;
 	auto it = map_name_type_.find(name);
@@ -154,61 +154,109 @@ PassTypes IntPassesSettings::type(const std::string &name) const
 }
 
 
-/////////////////////////////////
-// --  extPassesSettings_t  -- //
-/////////////////////////////////
+///////////////////////////////
+// --  ExtPassDefinition  -- //
+///////////////////////////////
 
-void ExtPassesSettings::extPassAdd(const std::string &ext_pass_name, PassTypes int_pass_type, int color_components, bool save)
+ImageType ExtPassDefinition::getImageTypeFromName(const std::string &image_type_name)
 {
-	passes_.push_back(ExtPassDefinition(ext_pass_name, int_pass_type, color_components, save));
+	if(image_type_name == "ColorAlphaWeight") return ImageType::ColorAlphaWeight;
+	else if(image_type_name == "ColorAlpha") return ImageType::ColorAlpha;
+	else if(image_type_name == "Color") return ImageType::Color;
+	else if(image_type_name == "GrayAlphaWeight") return ImageType::GrayAlphaWeight;
+	else if(image_type_name == "GrayWeight") return ImageType::GrayWeight;
+	else if(image_type_name == "GrayAlpha") return ImageType::GrayAlpha;
+	else if(image_type_name == "Gray") return ImageType::Gray;
+	else return ImageType::Unknown;
+}
+
+int ExtPassDefinition::getImageTypeNumChannels(const ImageType &image_type)
+{
+	switch(image_type)
+	{
+		case ImageType::ColorAlphaWeight: return 5;
+		case ImageType::ColorAlpha: return 4;
+		case ImageType::Color:
+		case ImageType::GrayAlphaWeight: return 3;
+		case ImageType::GrayWeight:
+		case ImageType::GrayAlpha: return 2;
+		case ImageType::Gray: return 1;
+		default: return 0;
+	}
+}
+
+std::string ExtPassDefinition::getImageTypeName(const ImageType &image_type)
+{
+	switch(image_type)
+	{
+		case ImageType::ColorAlphaWeight: return "Color + Alpha (weighted) [5 channels]";
+		case ImageType::ColorAlpha: return "Color + Alpha [4 channels]";
+		case ImageType::Color: return "Color [3 channels]";
+		case ImageType::GrayAlphaWeight: return "Gray + Alpha (weighted) [3 channels]";
+		case ImageType::GrayWeight: return "Gray (weighted) [2 channels]";
+		case ImageType::GrayAlpha: return "Gray + Alpha [2 channels]";
+		case ImageType::Gray: return "Gray [1 channel]";
+		default: return "unknown image type [0 channels]";
+	}
 }
 
 
-//////////////////////////////
-// --  passesSettings_t  -- //
-//////////////////////////////
+
+///////////////////////////////
+// --  ExtPassesSettings  -- //
+///////////////////////////////
+
+void ExtPassesSettings::extPassAdd(const std::string &ext_pass_name, IntPassType int_pass_type, const ImageType &image_type, bool save)
+{
+	passes_.push_back(ExtPassDefinition(ext_pass_name, int_pass_type, image_type, save));
+}
+
+
+////////////////////////////
+// --  PassesSettings  -- //
+////////////////////////////
 
 PassesSettings::PassesSettings()
 {
 	extPassAdd("Combined", "combined"); //by default we will have an external/internal Combined pass
 }
 
-void PassesSettings::extPassAdd(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components)
+void PassesSettings::extPassAdd(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type)
 {
-	const PassTypes type = int_passes_settings_.type(int_pass_name);
-	if(type == PassDisabled)
+	const IntPassType int_pass_type = int_passes_settings_.type(int_pass_name);
+	if(int_pass_type == PassDisabled)
 	{
-		Y_ERROR << "Render Passes: error creating external pass \"" << ext_pass_name << "\" (linked to internal pass \"" << int_pass_name << "\")" << YENDL;
+		Y_ERROR << "Render Passes: error creating external pass \"" << ext_pass_name << "\" (linked to internal pass \"" << int_pass_name << "\") with image type: '" << ExtPassDefinition::getImageTypeName(image_type) << "'" << YENDL;
 		return; //do nothing if the string cannot be found
 	}
 
-	ext_passes_settings_.extPassAdd(ext_pass_name, type, color_components);
-	int_passes_settings_.enable(type);
+	ext_passes_settings_.extPassAdd(ext_pass_name, int_pass_type, image_type);
+	int_passes_settings_.enable(int_pass_type);
 
-	if(type != PassCombined) Y_INFO << "Render Passes: added pass \"" << ext_pass_name << "\"  (internal pass: \"" << int_pass_name << "\" [" << type << "])" << YENDL;
+	if(int_pass_type != PassCombined) Y_INFO << "Render Passes: added image pass \"" << ext_pass_name << "\"  (internal pass: \"" << int_pass_name << "\" [" << int_pass_type << "]) with image type: '" << ExtPassDefinition::getImageTypeName(image_type) << "'" << YENDL;
 }
 
-void PassesSettings::auxPassAdd(const PassTypes &type)
+void PassesSettings::auxPassAdd(const IntPassType &int_pass_type, const ImageType &image_type)
 {
-	const std::string int_pass_name = intPassesSettings().name(type);
+	const std::string int_pass_name = intPassesSettings().name(int_pass_type);
 	const std::string aux_pass_name = "aux_" + int_pass_name;
 
 	for(const auto &it : ext_passes_settings_)
 	{
-		if(it.intPassType() == type) return; //If the internal pass is already rendered into a certain external pass, the auxiliary pass is not necessary.
+		if(it.intPassType() == int_pass_type) return; //If the internal pass is already rendered into a certain external pass, the auxiliary pass is not necessary.
 		else if(it.name() == aux_pass_name) return; //If the auxiliary pass already exists, do nothing.
 	}
 
-	ext_passes_settings_.extPassAdd(aux_pass_name, type, 4, false);
-	int_passes_settings_.enable(type);
+	ext_passes_settings_.extPassAdd(aux_pass_name, int_pass_type, image_type, false);
+	int_passes_settings_.enable(int_pass_type);
 
-	Y_VERBOSE << "Render Passes: auxiliary Render pass \"" << aux_pass_name << "\" generated for internal pass type: \"" << int_pass_name << "\" [" << type << "]" << YENDL;
+	Y_VERBOSE << "Render Passes: auxiliary image pass \"" << aux_pass_name << "\" generated for internal pass type: \"" << int_pass_name << "\" [" << int_pass_type << "] with image type: '" << ExtPassDefinition::getImageTypeName(image_type) << "'" << YENDL;
 }
 
 
 void PassesSettings::auxPassesGenerate()
 {
-	auxPassAdd(PassDebugSamplingFactor); //This auxiliary pass will always be needed for material-specific number of samples calculation
+	auxPassAdd(PassDebugSamplingFactor, ImageType::Gray); //This auxiliary pass will always be needed for material-specific number of samples calculation
 
 	for(const auto &it : intPassesSettings().listEnabled())
 	{
@@ -243,17 +291,17 @@ void PassesSettings::auxPassesGenerate()
 				break;
 
 			case PassDebugFacesEdges:
-				auxPassAdd(PassNormalGeom);
-				auxPassAdd(PassZDepthNorm);
+				auxPassAdd(PassNormalGeom, ImageType::ColorAlpha);
+				auxPassAdd(PassZDepthNorm, ImageType::GrayAlpha);
 				break;
 
 			case PassDebugObjectsEdges:
-				auxPassAdd(PassNormalSmooth);
-				auxPassAdd(PassZDepthNorm);
+				auxPassAdd(PassNormalSmooth, ImageType::ColorAlpha);
+				auxPassAdd(PassZDepthNorm, ImageType::GrayAlpha);
 				break;
 
 			case PassToon:
-				auxPassAdd(PassDebugObjectsEdges);
+				auxPassAdd(PassDebugObjectsEdges, ImageType::ColorAlpha);
 				break;
 
 			default:
@@ -263,9 +311,9 @@ void PassesSettings::auxPassesGenerate()
 }
 
 
-/////////////////////////
-// -- intPasses_t -- //
-/////////////////////////
+/////////////////////
+// -- IntPasses -- //
+/////////////////////
 
 IntPasses::IntPasses(const IntPassesSettings &settings): settings_(settings)
 {
@@ -279,12 +327,12 @@ IntPasses::IntPasses(const IntPassesSettings &settings): settings_(settings)
 	}
 }
 
-Rgba &IntPasses::operator()(const PassTypes &type)
+Rgba &IntPasses::operator()(const IntPassType &type)
 {
 	return passes_.at(type);
 }
 
-const Rgba &IntPasses::operator()(const PassTypes &type) const
+const Rgba &IntPasses::operator()(const IntPassType &type) const
 {
 	return passes_.at(type);
 }
@@ -297,7 +345,7 @@ void IntPasses::setDefaults()
 	}
 }
 
-Rgba *IntPasses::find(const PassTypes &type)
+Rgba *IntPasses::find(const IntPassType &type)
 {
 	if(enabled(type))
 	{

@@ -40,7 +40,6 @@ class TgaHandler final : public ImageHandler
 
 	private:
 		TgaHandler();
-		virtual ~TgaHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 		void initForInput();

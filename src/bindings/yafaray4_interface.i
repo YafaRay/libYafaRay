@@ -261,11 +261,11 @@ public:
 				tiles_passes.at(view)[idx]->y0 = 0;
 				tiles_passes.at(view)[idx]->y1 = resy;
 				
-				tiles_passes.at(view)[idx]->color_components = passes_settings_->extPassesSettings()(idx).colorComponents();
-				
+				tiles_passes.at(view)[idx]->color_components = passes_settings_->extPassesSettings().getNumChannels(idx);
+
 				std::stringstream extPassName;
 				extPassName << passes_settings_->extPassesSettings()(idx).name();
-				PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tiles_passes.at(view)[idx]);				
+				PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tiles_passes.at(view)[idx]);
 				PyTuple_SET_ITEM(groupTile, tiles_passes.at(view).size()*view + idx, (PyObject*) groupItem);
 
 				//std::cout << "flush: groupItem->ob_refcnt=" << groupItem->ob_refcnt << std::endl;
@@ -306,8 +306,8 @@ public:
 			tiles_passes.at(numView)[idx]->y0 = y0 - bsY;
 			tiles_passes.at(numView)[idx]->y1 = y1 - bsY;
 			
-			tiles_passes.at(numView)[idx]->color_components = passes_settings_->extPassesSettings()(idx).colorComponents();
-			
+			tiles_passes.at(numView)[idx]->color_components = passes_settings_->extPassesSettings().getNumChannels(idx);
+
 			std::stringstream extPassName;
 			extPassName << passes_settings_->extPassesSettings()(idx).name();
 			PyObject* groupItem = Py_BuildValue("ssO", view_name.c_str(), extPassName.str().c_str(), tiles_passes.at(numView)[idx]);
@@ -607,8 +607,8 @@ namespace yafaray4
 		virtual bool isHdr() const { return false; }
 		bool isMultiLayer() const { return multi_layer_; }
 		bool denoiseEnabled() const { return denoise_; }
-		TextureOptimization getTextureOptimization() const { return texture_optimization_; }
-		void setTextureOptimization(const TextureOptimization &texture_optimization) { texture_optimization_ = texture_optimization; }
+		Image::Optimization getImageOptimization() const { return image_optimization_; }
+		void setImageOptimization(const Image::Optimization &image_optimization) { image_optimization_ = image_optimization; }
 		void setGrayScaleSetting(bool grayscale) { grayscale_ = grayscale; }
 		int getWidth(int img_index = 0) const { return img_buffer_.at(img_index)->getWidth(); }
 		int getHeight(int img_index = 0) const { return img_buffer_.at(img_index)->getHeight(); }
@@ -619,7 +619,6 @@ namespace yafaray4
 		void putPixel(int x, int y, const Rgba &rgba, int img_index = 0);
 		Rgba getPixel(int x, int y, int img_index = 0);
 		void initForOutput(int width, int height, const PassesSettings *passes_settings, bool denoise_enabled, int denoise_h_lum, int denoise_h_col, float denoise_mix, bool with_alpha = false, bool multi_layer = false, bool grayscale = false);
-		void clearImgBuffers();
 	};
 	// Outputs
 
@@ -662,7 +661,6 @@ namespace yafaray4
 	};
 
 	// Interfaces
-
 	class Interface
 	{
 		public:
@@ -718,7 +716,7 @@ namespace yafaray4
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
 		virtual bool setLoggingAndBadgeSettings();
-		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components);
+		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const std::string &image_type_name);
 		virtual bool setupRenderPasses(); //!< setup render passes information
 		bool setInteractive(bool interactive);
 		virtual void abort();

@@ -73,11 +73,6 @@ JpgHandler::JpgHandler()
 	handler_name_ = "JPEGHandler";
 }
 
-JpgHandler::~JpgHandler()
-{
-	clearImgBuffers();
-}
-
 bool JpgHandler::saveToFile(const std::string &name, int img_index)
 {
 	int h = getHeight(img_index);
@@ -126,7 +121,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 #ifdef HAVE_OPENCV
 	if(denoise_)
 	{
-		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
+		Image &&denoised_buffer = images_[img_index].getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(y = 0; y < h; y++)
 		{
 			for(x = 0; x < w; x++)
@@ -150,7 +145,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 			for(x = 0; x < w; x++)
 			{
 				ix = x * 3;
-				Rgba col = img_buffer_.at(img_index)->getColor(x, y);
+				Rgba col = images_[img_index].getColor(x, y);
 				col.clampRgba01();
 				scanline[ix] = (uint8_t)(col.getR() * 255);
 				scanline[ix + 1] = (uint8_t)(col.getG() * 255);
@@ -207,7 +202,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 		{
 			for(x = 0; x < w; x++)
 			{
-				float col = std::max(0.f, std::min(1.f, img_buffer_.at(img_index)->getColor(x, y).getA()));
+				float col = std::max(0.f, std::min(1.f, images_[img_index].getColor(x, y).getA()));
 
 				scanline[x] = (uint8_t)(col * 255);
 			}
@@ -282,13 +277,13 @@ bool JpgHandler::loadFromFile(const std::string &name)
 	width_ = info.output_width;
 	height_ = info.output_height;
 
-	clearImgBuffers();
+	images_.clear();
 
-	int n_channels = 3;
-	if(grayscale_) n_channels = 1;
-	else if(has_alpha_) n_channels = 4;
+	ImageType type = ImageType::Color;
+	if(grayscale_) type = ImageType::Gray;
+	else if(has_alpha_) type = ImageType::ColorAlpha;
 
-	img_buffer_.push_back(new ImageBuffer(width_, height_, n_channels, getTextureOptimization()));
+	images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 	uint8_t *scanline = new uint8_t[width_ * info.output_components];
 
@@ -338,7 +333,7 @@ bool JpgHandler::loadFromFile(const std::string &name)
 						  a);
 			}
 
-			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
+			images_[0].setColor(x, y, color, color_space_, gamma_);
 		}
 		y++;
 	}

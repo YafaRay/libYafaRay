@@ -186,6 +186,7 @@ class Rgba final : public Rgb
 		}
 
 		float colorDifference(Rgba color_2, bool use_rg_bcomponents = false);
+		Rgba normalized(float weight) const;
 
 		float a_ = 1.f;
 };
@@ -546,6 +547,12 @@ inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
 	r_ = r_1 + m;
 	g_ = g_1 + m;
 	b_ = b_1 + m;
+}
+
+inline Rgba Rgba::normalized(float weight) const
+{
+	if(weight != 0.f) return *this / weight;	//Changed from if(weight > 0.f) to if(weight != 0.f) because lanczos and mitchell filters, as they have a negative lobe, sometimes generate pixels with all negative values and also negative weight. Having if(weight > 0.f) caused such pixels to be incorrectly set to 0,0,0,0 and were shown as black dots (with alpha=0). Options are: clipping the filter output to values >=0, but they would lose ability to sharpen the image. Other option (applied here) is to allow negative values and normalize them correctly. This solves a problem stated in http://yafaray.org/node/712 but perhaps could cause other artifacts? We have to keep an eye on this to decide the best option.
+	else return {0.f};
 }
 
 END_YAFARAY

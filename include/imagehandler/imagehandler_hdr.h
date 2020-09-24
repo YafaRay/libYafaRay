@@ -37,7 +37,6 @@ class HdrHandler final : public ImageHandler
 
 	private:
 		HdrHandler();
-		virtual ~HdrHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 		virtual bool isHdr() const override { return true; }

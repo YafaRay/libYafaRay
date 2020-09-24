@@ -111,7 +111,7 @@ void ImageOutput::flush(int num_view)
 			{
 				if(ext_passes_settings(ext_pass).toSave())
 				{
-					const PassTypes int_pass_type = ext_passes_settings(ext_pass).intPassType();
+					const IntPassType int_pass_type = ext_passes_settings(ext_pass).intPassType();
 					const std::string int_pass_name = int_passes_settings.name(int_pass_type);
 					const std::string ext_pass_name = ext_passes_settings(ext_pass).name();
 

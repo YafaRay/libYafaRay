@@ -26,8 +26,7 @@
 
 #include "constants.h"
 #include "imagesplitter.h"
-#include "utility/util_image_buffers.h"
-#include "utility/util_tiled_array.h"
+#include "image/image.h"
 #include "utility/util_thread.h"
 #include "common/aa_noise_params.h"
 #include "renderpasses.h"
@@ -49,7 +48,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 {
 	public:
 		enum class FilterType : int { Box, Mitchell, Gauss, Lanczos };
-		enum Flags : unsigned int { Image = 1 << 0, Densityimage = 1 << 1, All = Image | Densityimage };
+		enum Flags : unsigned int { RegularImage = 1 << 0, Densityimage = 1 << 1, All = RegularImage | Densityimage };
 		enum class FilmSaveLoad : int { None, Save, LoadAndSave };
 		struct AutoSaveParams
 		{
@@ -122,6 +121,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		int getTileSize() const { return tile_size_; }
 		int getCurrentPass() const { return n_pass_; }
 		int getNumPasses() const { return n_passes_; }
+		float getWeight(int x, int y) const { return weights_(x, y).getFloat(); }
 		bool getBackgroundResampling() const { return background_resampling_; }
 		void setBackgroundResampling(bool background_resampling) { background_resampling_ = background_resampling; }
 		unsigned int getComputerNode() const { return computer_node_; }
@@ -146,14 +146,15 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		void generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
 		void generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement = 0, ColorOutput *out_2 = nullptr, int out_2_displacement = 0);
 
-		Rgba2DImageWeighed_t *getImagePassFromIntPassType(int pass_type);
+		Image *getImagePassFromIntPassType(int pass_type);
 		int getImagePassIndexFromIntPassType(int pass_type);
 
 	private:
-		std::vector<Rgba2DImageWeighed_t *> image_passes_; //!< rgba color buffers for the render passes
+		Gray2DImage_t weights_;
+		std::vector<Image> images_; //!< rgba color buffers for the render passes
 		Rgb2DImage_t *density_image_; //!< storage for z-buffer channel
 		Rgba2DImage_t *dp_image_; //!< render parameters badge image
-		TiledBitArray2D<3> *flags_ = nullptr; //!< flags for adaptive AA sampling;
+		FlagsBuffer_t flags_; //!< flags for adaptive AA sampling;
 		int dp_height_; //!< height of the rendering parameters badge;
 		int w_, h_, cx_0_, cx_1_, cy_0_, cy_1_;
 		int area_cnt_, completed_cnt_;

@@ -552,8 +552,8 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 	bool normalmap = false;
 	std::string color_space_string = "Raw_Manual_Gamma";
 	ColorSpace color_space = RawManualGamma;
-	std::string texture_optimization_string = "optimized";
-	TextureOptimization texture_optimization = TextureOptimization::Optimized;
+	std::string image_optimization_string = "optimized";
+	Image::Optimization image_optimization = Image::Optimization::Optimized;
 	bool img_grayscale = false;
 	ImageTexture *tex = nullptr;
 	ImageHandler *ih = nullptr;
@@ -563,7 +563,7 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
-	params.getParam("texture_optimization", texture_optimization_string);
+	params.getParam("image_optimization", image_optimization_string);
 	params.getParam("img_grayscale", img_grayscale);
 
 	if(name.empty())
@@ -602,8 +602,8 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 	{
 		if(color_space_string != "LinearRGB") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string << "' and the gamma setting." << YENDL;
 		color_space = LinearRgb;
-		if(texture_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << texture_optimization_string << "'" << YENDL;
-		texture_optimization = TextureOptimization::None;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
+		if(image_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_string << "'" << YENDL;
+		image_optimization = Image::Optimization::None;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	}
 	else
 	{
@@ -613,14 +613,14 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 		else if(color_space_string == "Raw_Manual_Gamma") color_space = RawManualGamma;
 		else color_space = Srgb;
 
-		if(texture_optimization_string == "none") texture_optimization = TextureOptimization::None;
-		else if(texture_optimization_string == "optimized") texture_optimization = TextureOptimization::Optimized;
-		else if(texture_optimization_string == "compressed") texture_optimization = TextureOptimization::Compressed;
-		else texture_optimization = TextureOptimization::None;
+		if(image_optimization_string == "none") image_optimization = Image::Optimization::None;
+		else if(image_optimization_string == "optimized") image_optimization = Image::Optimization::Optimized;
+		else if(image_optimization_string == "compressed") image_optimization = Image::Optimization::Compressed;
+		else image_optimization = Image::Optimization::None;
 	}
 
 	ih->setColorSpace(color_space, gamma);
-	ih->setTextureOptimization(texture_optimization);	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
+	ih->setImageOptimization(image_optimization);	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
 	ih->setGrayScaleSetting(img_grayscale);
 
 	if(!ih->loadFromFile(name))

@@ -322,7 +322,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 	IntPasses int_passes(passes_settings->intPassesSettings());
 	const bool int_passes_used = int_passes.size() > 1;
 
-	Rgba2DImageWeighed_t *sampling_factor_image_pass = image_film_->getImagePassFromIntPassType(PassDebugSamplingFactor);
+	Image *sampling_factor_image_pass = image_film_->getImagePassFromIntPassType(PassDebugSamplingFactor);
 
 	int film_cx_0 = image_film_->getCx0();
 	int film_cy_0 = image_film_->getCy0();
@@ -342,7 +342,8 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 				if(sampling_factor_image_pass)
 				{
-					mat_sample_factor = (*sampling_factor_image_pass)(j - film_cx_0, i - film_cy_0).normalized().r_;
+					const float weight = image_film_->getWeight(j - film_cx_0, i - film_cy_0);
+					mat_sample_factor = sampling_factor_image_pass->getColor(j - film_cx_0, i - film_cy_0).normalized(weight).r_;
 
 					if(image_film_->getBackgroundResampling()) mat_sample_factor = std::max(mat_sample_factor, 1.f); //If the background is set to be resampled, make sure the matSampleFactor is always >= 1.f
 

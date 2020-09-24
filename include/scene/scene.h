@@ -210,7 +210,7 @@ class LIBYAFARAY_EXPORT Scene
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
 		int getSignals() const;
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
-		bool passEnabled(const PassTypes &pass_type) const;
+		bool passEnabled(const IntPassType &pass_type) const;
 
 		enum SceneState { Ready, Geometry, Object, Vmap };
 		enum ChangeFlags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2,
@@ -249,7 +249,7 @@ class LIBYAFARAY_EXPORT Scene
 		ImageHandler *createImageHandler(const std::string &name, ParamMap &params);
 
 		bool			setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb = nullptr);
-		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, int color_components = 4);
+		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type);
 		void setupRenderPasses(const ParamMap &params); //!< This function sets the additional render passes parameters and generates the auxiliary passes. Must be called *after* defining all render passes with the createRenderPass function.
 		const PassesSettings *getPassesSettings() const { return &passes_settings_; }
 		void			setupLoggingAndBadge(const ParamMap &params);

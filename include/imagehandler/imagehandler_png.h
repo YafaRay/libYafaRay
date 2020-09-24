@@ -36,7 +36,6 @@ class PngHandler final : public ImageHandler
 
 	private:
 		PngHandler();
-		virtual ~PngHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool loadFromMemory(const uint8_t *data, size_t size) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;

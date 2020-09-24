@@ -35,7 +35,6 @@ class JpgHandler final : public ImageHandler
 
 	private:
 		JpgHandler();
-		virtual ~JpgHandler() override;
 		virtual bool loadFromFile(const std::string &name) override;
 		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
 };

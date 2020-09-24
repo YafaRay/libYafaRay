@@ -58,11 +58,6 @@ PngHandler::PngHandler()
 	handler_name_ = "PNGHandler";
 }
 
-PngHandler::~PngHandler()
-{
-	clearImgBuffers();
-}
-
 bool PngHandler::saveToFile(const std::string &name, int img_index)
 {
 	int h = getHeight(img_index);
@@ -107,7 +102,7 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 #ifdef HAVE_OPENCV
 	if(denoise_)
 	{
-		ImageBuffer denoised_buffer = img_buffer_.at(img_index)->getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
+		Image denoised_buffer = images_[img_index].getDenoisedLdrBuffer(denoise_hcol_, denoise_hlum_, denoise_mix_);
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
@@ -131,7 +126,7 @@ bool PngHandler::saveToFile(const std::string &name, int img_index)
 		{
 			for(int x = 0; x < w; x++)
 			{
-				Rgba color = img_buffer_.at(img_index)->getColor(x, y);
+				Rgba color = images_[img_index].getColor(x, y);
 				color.clampRgba01();
 
 				int i = x * channels;
@@ -355,13 +350,13 @@ void PngHandler::readFromStructs(const PngStructs &png_structs)
 	width_ = (int)w;
 	height_ = (int)h;
 
-	clearImgBuffers();
+	images_.clear();
 
-	int n_channels = num_chan;
-	if(grayscale_) n_channels = 1;
-	else if(has_alpha_) n_channels = 4;
+	ImageType type = ImageType::Color;
+	if(num_chan == 1 || grayscale_) type = ImageType::Gray;
+	else if(has_alpha_) type = ImageType::ColorAlpha;
 
-	img_buffer_.push_back(new ImageBuffer(w, h, n_channels, getTextureOptimization()));
+	images_.emplace_back(Image{width_, height_, type, getImageOptimization()});
 
 	png_bytepp row_pointers = new png_bytep[height_];
 
@@ -441,7 +436,7 @@ void PngHandler::readFromStructs(const PngStructs &png_structs)
 				}
 			}
 
-			img_buffer_.at(0)->setColor(x, y, color, color_space_, gamma_);
+			images_[0].setColor(x, y, color, color_space_, gamma_);
 		}
 	}
 
