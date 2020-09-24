@@ -18,6 +18,8 @@
 
 #include "constants.h"
 
+BEGIN_YAFARAY
+
 // base = 3
 int fp_2__[] = {0, 1, 2 };
 
@@ -439,3 +441,5 @@ const int *faure__[] = {fp_2__, fp_2__, fp_2__, fp_3__, fp_4__, fp_5__, fp_6__, 
 										   fp_32__, fp_33__, fp_34__, fp_35__, fp_36__, fp_37__, fp_38__, fp_39__, fp_40__, fp_41__, fp_42__, fp_43__, fp_44__, fp_45__, fp_46__,
 										   fp_47__, fp_48__, fp_49__, fp_50__
                                        };
+
+END_YAFARAY
