@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #if defined(_WIN32)
-#include "utility/util_string.h"
+#include "common/string.h"
 #include <sstream>
 #include <windows.h>
 #else //defined(_WIN32)

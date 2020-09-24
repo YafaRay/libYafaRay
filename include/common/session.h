@@ -24,7 +24,7 @@
 #define YAFARAY_SESSION_H
 
 #include "constants.h"
-#include "utility/util_thread.h"
+#include "thread.h"
 
 BEGIN_YAFARAY
 

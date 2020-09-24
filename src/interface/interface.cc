@@ -21,8 +21,8 @@
 #include "common/logging.h"
 #include "common/session.h"
 #include "scene/scene.h"
-#include "common/matrix4.h"
-#include "common/imagefilm.h"
+#include "geometry/matrix4.h"
+#include "render/imagefilm.h"
 #include "common/param.h"
 #include <signal.h>
 

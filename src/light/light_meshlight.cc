@@ -25,9 +25,9 @@
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 #include "accelerator/accelerator_kdtree.h"
-#include "object_geom/triangle.h"
+#include "geometry/triangle.h"
 
 BEGIN_YAFARAY
 
@@ -127,7 +127,7 @@ bool MeshLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	Vec3 ldir = p - sp.p_;
 	//normalize vec and compute inverse square distance
 	float dist_sqr = ldir.lengthSqr();
-	float dist = fSqrt__(dist_sqr);
+	float dist = math::sqrt(dist_sqr);
 	if(dist <= 0.0) return false;
 	ldir *= 1.f / dist;
 	float cos_angle = -(ldir * n);

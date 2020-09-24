@@ -26,7 +26,7 @@
 #include "imagehandler/imagehandler_tif.h"
 #include "common/param.h"
 #include "common/logging.h"
-#include "common/renderpasses.h"
+#include "render/passes.h"
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>

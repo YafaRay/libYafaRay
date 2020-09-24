@@ -19,7 +19,7 @@
 #include "shader/shader_node_layer.h"
 #include "common/param.h"
 #include "common/logging.h"
-#include "utility/util_string.h"
+#include "common/string.h"
 
 BEGIN_YAFARAY
 

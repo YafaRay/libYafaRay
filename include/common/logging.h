@@ -26,7 +26,7 @@
 #define YAFARAY_LOGGING_H
 
 #include "constants.h"
-#include "utility/util_thread.h"
+#include "thread.h"
 #include <ctime>
 #include <iostream>
 #include <iomanip>

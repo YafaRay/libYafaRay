@@ -18,18 +18,18 @@
  */
 
 #include "integrator/integrator.h"
-#include "integrator/integrator_bidirectional.h"
-#include "integrator/integrator_direct_light.h"
-#include "integrator/integrator_path_tracer.h"
-#include "integrator/integrator_photon_mapping.h"
-#include "integrator/integrator_sppm.h"
-#include "integrator/integrator_debug.h"
-#include "integrator/integrator_empty_volume.h"
-#include "integrator/integrator_sky.h"
-#include "integrator/integrator_single_scatter.h"
-#include "integrator/integrator_emission.h"
+#include "integrator/surface/integrator_bidirectional.h"
+#include "integrator/surface/integrator_direct_light.h"
+#include "integrator/surface/integrator_path_tracer.h"
+#include "integrator/surface/integrator_photon_mapping.h"
+#include "integrator/surface/integrator_sppm.h"
+#include "integrator/surface/integrator_debug.h"
+#include "integrator/volume/integrator_empty_volume.h"
+#include "integrator/volume/integrator_sky.h"
+#include "integrator/volume/integrator_single_scatter.h"
+#include "integrator/volume/integrator_emission.h"
 #include "common/param.h"
-#include "common/imagesplitter.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 

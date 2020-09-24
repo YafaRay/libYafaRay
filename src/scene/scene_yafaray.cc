@@ -19,7 +19,7 @@
 
 #include "scene/scene_yafaray.h"
 #include "common/logging.h"
-#include "object_geom/triangle.h"
+#include "geometry/triangle.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "common/param.h"
 #include "light/light.h"
@@ -29,11 +29,11 @@
 #include "background/background.h"
 #include "camera/camera.h"
 #include "shader/shader_node.h"
-#include "common/imagefilm.h"
+#include "render/imagefilm.h"
 #include "imagehandler/imagehandler.h"
-#include "object_geom/object_geom.h"
+#include "geometry/object_geom.h"
 #include "volume/volume.h"
-#include "object_geom/primitive_basic.h"
+#include "geometry/primitive_basic.h"
 #include "output/output.h"
 
 #include <iostream>
@@ -355,7 +355,7 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 	}
 	else if(angle > 0.1) // angle dependant smoothing
 	{
-		float thresh = fCos__(degToRad__(angle));
+		float thresh = math::cos(math::degToRad(angle));
 		std::vector<Vec3> vnormals;
 		std::vector<int> vn_index;
 		// create list of faces that include given vertex

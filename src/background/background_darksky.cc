@@ -32,9 +32,9 @@
 #include "scene/scene.h"
 #include "light/light.h"
 
-#include "utility/util_color_conversion.h"
-#include "utility/util_spectral_data.h"
-#include "utility/util_curve.h"
+#include "color/color_conversion.h"
+#include "color/spectral_data.h"
+#include "math/interpolation_curve.h"
 
 BEGIN_YAFARAY
 
@@ -51,18 +51,18 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 	sun_dir_.z_ += alt_;
 	sun_dir_.normalize();
 
-	theta_s_ = fAcos__(sun_dir_.z_);
+	theta_s_ = math::acos(sun_dir_.z_);
 
 	act = (night_sky_) ? "ON" : "OFF";
 	Y_VERBOSE << "DarkSky: Night mode [ " << act << " ]" << YENDL;
-	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << radToDeg__(theta_s_) << ")" << YENDL;
+	Y_VERBOSE << "DarkSky: Solar Declination in Degrees (" << math::radToDeg(theta_s_) << ")" << YENDL;
 	act = (clamp) ? "active." : "inactive.";
 	Y_VERBOSE << "DarkSky: RGB Clamping " << act << YENDL;
 	Y_VERBOSE << "DarkSky: Altitude " << alt_ << YENDL;
 
-	cos_theta_s_ = fCos__(theta_s_);
+	cos_theta_s_ = math::cos(theta_s_);
 	cos_theta_2_ = cos_theta_s_ * cos_theta_s_;
-	sin_theta_s_ = fSin__(theta_s_);
+	sin_theta_s_ = math::sin(theta_s_);
 
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
@@ -140,7 +140,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 	IrregularCurve kwa(kwa_amplitudes__, kwa_wavelengths__, 13);
 	RegularCurve sun_radiance_curve(sun_radiance__, 380, 750, 38);
 
-	m = 1.0 / (cos_theta_s_ + 0.15 * fPow__(93.885f - radToDeg__(theta_s_), -1.253f));
+	m = 1.0 / (cos_theta_s_ + 0.15 * math::pow(93.885f - math::radToDeg(theta_s_), -1.253f));
 	mw = m * w;
 	lm = -m * l;
 
@@ -155,11 +155,11 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 		kg_lm = kg(L) * m;
 		kwa_lmw = kwa(L) * mw;
 
-		rayleigh = fExp__(m_1 * fPow__(u_l, m_4));
-		angstrom = fExp__(m_b * fPow__(u_l, am));
-		ozone = fExp__(ko(L) * lm);
-		gas = fExp__((-1.41 * kg_lm) / fPow__(1 + 118.93 * kg_lm, 0.45));
-		water = fExp__((-0.2385 * kwa_lmw) / fPow__(1 + 20.07 * kwa_lmw, 0.45));
+		rayleigh = math::exp(m_1 * math::pow(u_l, m_4));
+		angstrom = math::exp(m_b * math::pow(u_l, am));
+		ozone = math::exp(ko(L) * lm);
+		gas = math::exp((-1.41 * kg_lm) / math::pow(1 + 118.93 * kg_lm, 0.45));
+		water = math::exp((-0.2385 * kwa_lmw) / math::pow(1 + 20.07 * kwa_lmw, 0.45));
 		spdf = sun_radiance_curve(L) * rayleigh * angstrom * ozone * gas * water;
 		s_xyz += chromaMatch__(L) * spdf * 0.013513514;
 	}
@@ -169,7 +169,7 @@ Rgb DarkSkyBackground::getSunColorFromSunRad()
 
 double DarkSkyBackground::prePerez(const double *perez)
 {
-	double p_num = ((1 + perez[0] * fExp__(perez[1])) * (1 + (perez[2] * fExp__(perez[3] * theta_s_)) + (perez[4] * cos_theta_2_)));
+	double p_num = ((1 + perez[0] * math::exp(perez[1])) * (1 + (perez[2] * math::exp(perez[3] * theta_s_)) + (perez[4] * cos_theta_2_)));
 	if(p_num == 0.0) return 0.0;
 
 	return 1.0 / p_num;
@@ -177,7 +177,7 @@ double DarkSkyBackground::prePerez(const double *perez)
 
 double DarkSkyBackground::perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz) const
 {
-	double num = ((1 + lam[0] * fExp__(lam[1] / cos_theta)) * (1 + lam[2] * fExp__(lam[3] * gamma) + lam[4] * cos_gamma));
+	double num = ((1 + lam[0] * math::exp(lam[1] / cos_theta)) * (1 + lam[2] * math::exp(lam[3] * gamma) + lam[4] * cos_gamma));
 	return lvz * num * lam[5];
 }
 
@@ -197,7 +197,7 @@ inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
 
 	cos_gamma = iw * sun_dir_;
 	cos_gamma_2 = cos_gamma * cos_gamma;
-	gamma = fAcos__(cos_gamma);
+	gamma = math::acos(cos_gamma);
 
 	x = perezFunction(perez_x_, cos_theta, gamma, cos_gamma_2, zenith_x_);
 	y = perezFunction(perez_y_, cos_theta, gamma, cos_gamma_2, zenith_y_);
@@ -291,7 +291,7 @@ Background *DarkSkyBackground::factory(ParamMap &params, Scene &scene)
 	DarkSkyBackground *dark_sky = new DarkSkyBackground(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
 														altitude, night, exp, gamma_enc, color_s, bgl, caus);
 
-	if(add_sun && radToDeg__(fAcos__(dir.z_)) < 100.0)
+	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
 	{
 		Vec3 d(dir);
 		d.normalize();

@@ -23,8 +23,8 @@
 #define YAFARAY_BACKGROUND_SUNSKY_H
 
 #include "background.h"
-#include "common/color.h"
-#include "common/vector.h"
+#include "color/color.h"
+#include "geometry/vector.h"
 
 BEGIN_YAFARAY
 

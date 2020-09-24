@@ -26,7 +26,6 @@
 #include "common/logging.h"
 #include "common/session.h"
 #include "common/param.h"
-#include "utility/util_math.h"
 #include "common/file.h"
 #include "scene/scene.h"
 
@@ -80,7 +79,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 
 	std::string name_without_tmp = name;
 	name_without_tmp.erase(name_without_tmp.length() - 4);
-	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << math::roundFloatPrecision(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") RGB" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 	else Y_INFO << handler_name_ << ": Saving RGB" << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
 	struct ::jpeg_compress_struct info;
@@ -166,7 +165,7 @@ bool JpgHandler::saveToFile(const std::string &name, int img_index)
 	if(has_alpha_)
 	{
 		std::string alphaname = name.substr(0, name.size() - 4) + "_alpha.jpg";
-		if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << YENDL;
+		if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << math::roundFloatPrecision(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << YENDL;
 		else Y_INFO << handler_name_ << ": Saving Alpha channel as \"" << alphaname << "\"...  " << getDenoiseParams() << YENDL;
 
 		fp = File::open(alphaname, "wb");

@@ -22,7 +22,7 @@
 
 #include "constants.h"
 #include "scene/scene.h"
-#include "common/color.h"
+#include "color/color.h"
 #include <list>
 #include <map>
 

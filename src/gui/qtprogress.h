@@ -22,7 +22,7 @@
 #ifndef YAFARAY_QTPROGRESS_H
 #define YAFARAY_QTPROGRESS_H
 
-#include "common/monitor.h"
+#include "render/monitor.h"
 
 class MainWindow;
 

@@ -21,11 +21,11 @@
 #include "shader/shader_node.h"
 #include "common/logging.h"
 #include "material/material_utils_microfacet.h"
-#include "utility/util_mcqmc.h"
-#include "common/spectrum.h"
-#include "common/color_ramp.h"
+#include "sampler/halton.h"
+#include "color/spectrum.h"
+#include "color/color_ramp.h"
 #include "common/param.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 #include <iostream>
 
 BEGIN_YAFARAY

@@ -17,9 +17,9 @@
  */
 
 #include "common/param.h"
-#include "common/vector.h"
-#include "common/color.h"
-#include "common/matrix4.h"
+#include "geometry/vector.h"
+#include "color/color.h"
+#include "geometry/matrix4.h"
 
 BEGIN_YAFARAY
 

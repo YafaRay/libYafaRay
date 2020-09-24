@@ -18,11 +18,11 @@
 
 #include "volume/volume_exp_density.h"
 #include "common/logging.h"
-#include "common/ray.h"
-#include "common/color.h"
+#include "geometry/ray.h"
+#include "color/color.h"
 #include "volume/volume.h"
-#include "common/bound.h"
-#include "common/surface.h"
+#include "geometry/bound.h"
+#include "geometry/surface.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -33,7 +33,7 @@ struct PSample;
 float ExpDensityVolumeRegion::density(Point3 p) const
 {
 	float height = p.z_ - b_box_.a_.z_;
-	return a_ * fExp__(-b_ * height);
+	return a_ * math::exp(-b_ * height);
 }
 
 VolumeRegion *ExpDensityVolumeRegion::factory(const ParamMap &params, Scene &scene)

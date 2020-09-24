@@ -36,13 +36,13 @@ ArchitectCamera::ArchitectCamera(const Point3 &pos, const Point3 &look, const Po
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = degToRad__(bro), wi = (mult_pi_by_2__) / (float)ns;
+		float w = math::degToRad(bro), wi = (math::mult_pi_by_2) / (float)ns;
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)
 		{
-			ls_[i] = fCos__(w);
-			ls_[i + 1] = fSin__(w);
+			ls_[i] = math::cos(w);
+			ls_[i + 1] = math::sin(w);
 			w += wi;
 		}
 	}

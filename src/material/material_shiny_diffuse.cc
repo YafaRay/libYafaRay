@@ -18,10 +18,10 @@
 
 #include "material/material_shiny_diffuse.h"
 #include "common/param.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 #include "material/material_utils_microfacet.h"
 #include "shader/shader_node.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 
 BEGIN_YAFARAY
 
@@ -136,7 +136,7 @@ inline void ShinyDiffuseMaterial::getFresnel(const Vec3 &wo, const Vec3 &n, floa
 		float c = wo * N;
 		float g = current_ior_squared + c * c - 1.f;
 		if(g < 0.f) g = 0.f;
-		else g = fSqrt__(g);
+		else g = math::sqrt(g);
 		float aux = c * (g + c);
 
 		kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) *
@@ -220,13 +220,13 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(cos_to >= cos_ti)
 	{
-		sin_alpha = fSqrt__(1.f - cos_ti * cos_ti);
-		tan_beta = fSqrt__(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = math::sqrt(1.f - cos_ti * cos_ti);
+		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
-		sin_alpha = fSqrt__(1.f - cos_to * cos_to);
-		tan_beta = fSqrt__(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = math::sqrt(1.f - cos_to * cos_to);
+		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
 	if(use_texture_sigma)

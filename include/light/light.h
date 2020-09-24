@@ -21,7 +21,7 @@
 #define YAFARAY_LIGHT_H
 
 #include "constants.h"
-#include "common/color.h"
+#include "color/color.h"
 #include <sstream>
 
 BEGIN_YAFARAY

@@ -20,10 +20,10 @@
 
 #include "material/material_glass.h"
 #include "shader/shader_node.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 #include "common/logging.h"
-#include "common/spectrum.h"
-#include "common/color_ramp.h"
+#include "color/spectrum.h"
+#include "color/color_ramp.h"
 #include "common/param.h"
 #include "scene/scene.h"
 

@@ -21,7 +21,7 @@
 #define YAFARAY_HASHGRID_H
 
 #include "constants.h"
-#include "common/bound.h"
+#include "geometry/bound.h"
 #include <list>
 #include <vector>
 

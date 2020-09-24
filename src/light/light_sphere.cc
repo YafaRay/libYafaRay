@@ -19,11 +19,11 @@
  */
 
 #include "light/light_sphere.h"
-#include "common/surface.h"
-#include "object_geom/object_geom.h"
+#include "geometry/surface.h"
+#include "geometry/object_geom.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
@@ -58,8 +58,8 @@ inline bool sphereIntersect__(const Ray &ray, const Point3 &c, float r_2, float 
 	float eb = 2.0 * vf * ray.dir_;
 	float ec = vf * vf - r_2;
 	float osc = eb * eb - 4.0 * ea * ec;
-	if(osc < 0) { d_1 = fSqrt__(ec / ea); return false; } // assume tangential hit/miss condition => Pythagoras
-	osc = fSqrt__(osc);
+	if(osc < 0) { d_1 = math::sqrt(ec / ea); return false; } // assume tangential hit/miss condition => Pythagoras
+	osc = math::sqrt(osc);
 	d_1 = (-eb - osc) / (2.0 * ea);
 	d_2 = (-eb + osc) / (2.0 * ea);
 	return true;
@@ -73,9 +73,9 @@ bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 
-	float dist = fSqrt__(dist_sqr);
+	float dist = math::sqrt(dist_sqr);
 	float idist_sqr = 1.f / (dist_sqr);
-	float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
+	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
 	Vec3 du, dv;
 	createCs__(cdir, du, dv);
@@ -108,7 +108,7 @@ bool SphereLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) con
 		float dist_sqr = cdir.lengthSqr();
 		if(dist_sqr <= square_radius_) return false; //only emit light on the outside!
 		float idist_sqr = 1.f / (dist_sqr);
-		float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
+		float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 		ipdf = 2.f * (1.f - cos_alpha);
 		col = color_;
 		return true;
@@ -122,7 +122,7 @@ float SphereLight::illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light
 	float dist_sqr = cdir.lengthSqr();
 	if(dist_sqr <= square_radius_) return 0.f; //only emit light on the outside!
 	float idist_sqr = 1.f / (dist_sqr);
-	float cos_alpha = fSqrt__(1.f - square_radius_ * idist_sqr);
+	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	return 1.f / (2.f * (1.f - cos_alpha));
 }
 

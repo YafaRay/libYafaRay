@@ -21,10 +21,10 @@
 #define YAFARAY_SCENE_H
 
 #include "constants.h"
-#include "utility/util_thread.h"
+#include "common/thread.h"
 #include "common/aa_noise_params.h"
-#include "common/renderpasses.h"
-#include "common/bound.h"
+#include "render/passes.h"
+#include "geometry/bound.h"
 #include <vector>
 #include <map>
 #include <list>

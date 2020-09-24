@@ -19,8 +19,8 @@
  */
 
 #include "light/light_point.h"
-#include "common/surface.h"
-#include "utility/util_sample.h"
+#include "geometry/surface.h"
+#include "sampler/sample.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -40,7 +40,7 @@ bool PointLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 
 	Vec3 ldir(position_ - sp.p_);
 	float dist_sqr = ldir.x_ * ldir.x_ + ldir.y_ * ldir.y_ + ldir.z_ * ldir.z_;
-	float dist = fSqrt__(dist_sqr);
+	float dist = math::sqrt(dist_sqr);
 	float idist_sqr = 0.0;
 	if(dist == 0.0) return false;
 
@@ -61,7 +61,7 @@ bool PointLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	// bleh...
 	Vec3 ldir(position_ - sp.p_);
 	float dist_sqr = ldir.x_ * ldir.x_ + ldir.y_ * ldir.y_ + ldir.z_ * ldir.z_;
-	float dist = fSqrt__(dist_sqr);
+	float dist = math::sqrt(dist_sqr);
 	if(dist == 0.0) return false;
 
 	ldir *= 1.f / dist;

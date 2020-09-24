@@ -19,9 +19,9 @@
  */
 
 #include "light/light_ies.h"
-#include "common/surface.h"
-#include "utility/util_sample.h"
-#include "utility/util_ies.h"
+#include "geometry/surface.h"
+#include "sampler/sample.h"
+#include "light/light_ies_data.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -40,23 +40,23 @@ IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float p
 		dir_ = -ndir_;
 
 		createCs__(dir_, du_, dv_);
-		cos_end_ = fCos__(ies_data_->getMaxVAngle());
+		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
-		tot_energy_ = mult_pi_by_2__ * (1.f - 0.5f * cos_end_);
+		tot_energy_ = math::mult_pi_by_2 * (1.f - 0.5f * cos_end_);
 	}
 }
 
 void IesLight::getAngles(float &u, float &v, const Vec3 &dir, const float &costheta) const
 {
-	u = (dir.z_ >= 1.f) ? 0.f : radToDeg__(fAcos__(dir.z_));
+	u = (dir.z_ >= 1.f) ? 0.f : math::radToDeg(math::acos(dir.z_));
 
 	if(dir.y_ < 0)
 	{
 		u = 360.f - u;
 	}
 
-	v = (costheta >= 1.f) ? 0.f : radToDeg__(fAcos__(costheta));
+	v = (costheta >= 1.f) ? 0.f : math::radToDeg(math::acos(costheta));
 }
 
 bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
@@ -65,7 +65,7 @@ bool IesLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 
 	Vec3 ldir(position_ - sp.p_);
 	float dist_sqrt = ldir.lengthSqr();
-	float dist = fSqrt__(dist_sqrt);
+	float dist = math::sqrt(dist_sqrt);
 	float i_dist_sqrt = 1.f / dist_sqrt;
 
 	if(dist == 0.0) return false;
@@ -93,7 +93,7 @@ bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 
 	Vec3 ldir(position_ - sp.p_);
 	float dist_sqrt = ldir.lengthSqr();
-	float dist = fSqrt__(dist_sqrt);
+	float dist = math::sqrt(dist_sqrt);
 	float i_dist_sqrt = 1.f / dist_sqrt;
 
 	if(dist == 0.0) return false;

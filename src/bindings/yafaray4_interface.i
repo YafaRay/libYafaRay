@@ -562,10 +562,10 @@ private:
 %{
 #include "constants.h"
 #include "interface/interface.h"
-#include "interface/interface_xml_export.h"
+#include "export/export_xml.h"
 #include "output/output_image.h"
 #include "output/output_memory.h"
-#include "common/matrix4.h"
+#include "geometry/matrix4.h"
 #include "imagehandler/imagehandler.h"
 using namespace yafaray4;
 %}
@@ -744,10 +744,10 @@ namespace yafaray4
 		const PassesSettings *getPassesSettings() const;
 	};
 
-	class XmlInterface: public Interface
+	class XmlExport: public Interface
 	{
 		public:
-		XmlInterface();
+		XmlExport();
 		// directly related to scene_t:
 		virtual bool setLoggingAndBadgeSettings() override;
 		virtual bool setupRenderPasses() override; //!< setup render passes information

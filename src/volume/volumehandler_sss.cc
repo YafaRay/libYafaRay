@@ -20,7 +20,7 @@
 #include "scene/scene.h"
 #include "material/material.h"
 #include "common/param.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 

@@ -23,7 +23,7 @@
 #include "constants.h"
 #include "common/logging.h"
 #include "common/file.h"
-#include "common/color_console.h"
+#include "color/color_console.h"
 #include <algorithm>
 #include <iomanip>
 #include <fstream>

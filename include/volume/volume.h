@@ -21,8 +21,8 @@
 #define YAFARAY_VOLUME_H
 
 #include "constants.h"
-#include "common/bound.h"
-#include "common/color.h"
+#include "geometry/bound.h"
+#include "color/color.h"
 #include <map>
 
 BEGIN_YAFARAY

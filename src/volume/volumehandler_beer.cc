@@ -20,7 +20,7 @@
 #include "scene/scene.h"
 #include "material/material.h"
 #include "common/param.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
@@ -42,7 +42,7 @@ bool BeerVolumeHandler::transmittance(const RenderState &state, const Ray &ray, 
 	}
 	float dist = ray.tmax_; // maybe substract ray.tmin...
 	Rgb be(-dist * sigma_a_);
-	col = Rgb(fExp__(be.getR()), fExp__(be.getG()), fExp__(be.getB()));
+	col = Rgb(math::exp(be.getR()), math::exp(be.getG()), math::exp(be.getB()));
 	return true;
 }
 

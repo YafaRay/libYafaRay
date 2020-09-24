@@ -16,10 +16,10 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "common/monitor.h"
+#include "render/monitor.h"
 #include "common/logging.h"
-#include "common/color_console.h"
-#include "utility/util_math.h"
+#include "color/color_console.h"
+#include "math/optimization.h"
 //#include <iostream>
 //#include <string>
 //#include <iomanip>
@@ -81,7 +81,7 @@ void ConsoleProgressBar::done()
 float ConsoleProgressBar::getPercent() const
 {
 	float progress = 0.f;
-	if(n_steps_ != 0) progress = 100.f * roundFloatPrecision__((float) std::min(done_steps_, n_steps_) / (float) n_steps_, 0.01);
+	if(n_steps_ != 0) progress = 100.f * math::roundFloatPrecision((float) std::min(done_steps_, n_steps_) / (float) n_steps_, 0.01);
 	return progress;
 }
 

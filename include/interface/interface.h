@@ -24,7 +24,7 @@
 #include <list>
 #include <vector>
 #include <string>
-#include "common/color.h"
+#include "color/color.h"
 
 
 BEGIN_YAFARAY

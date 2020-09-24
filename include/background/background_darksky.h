@@ -27,8 +27,8 @@
  */
 
 #include "background.h"
-#include "common/vector.h"
-#include "utility/util_color_conversion.h"
+#include "geometry/vector.h"
+#include "color/color_conversion.h"
 
 BEGIN_YAFARAY
 

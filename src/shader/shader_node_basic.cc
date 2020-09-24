@@ -18,11 +18,11 @@
 
 #include "shader/shader_node_basic.h"
 #include "shader/shader_node_layer.h"
-#include "object_geom/object_geom.h"
+#include "geometry/object_geom.h"
 #include "camera/camera.h"
 #include "common/param.h"
-#include "common/surface.h"
-#include "utility/util_string.h"
+#include "geometry/surface.h"
+#include "common/string.h"
 #include <iomanip>
 
 BEGIN_YAFARAY
@@ -67,7 +67,7 @@ inline Point3 tubemap__(const Point3 &p)
 	float d = p.x_ * p.x_ + p.y_ * p.y_;
 	if(d > 0)
 	{
-		res.z_ = 1.0 / fSqrt__(d);
+		res.z_ = 1.0 / math::sqrt(d);
 		res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
 	}
 	else res.x_ = res.z_ = 0;
@@ -81,9 +81,9 @@ inline Point3 spheremap__(const Point3 &p)
 	float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
 	if(d > 0)
 	{
-		res.z_ = fSqrt__(d);
+		res.z_ = math::sqrt(d);
 		if((p.x_ != 0) && (p.y_ != 0)) res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
-		res.y_ = 1.0f - 2.0f * (fAcos__(p.z_ / res.z_) * M_1_PI);
+		res.y_ = 1.0f - 2.0f * (math::acos(p.z_ / res.z_) * M_1_PI);
 	}
 	return res;
 }

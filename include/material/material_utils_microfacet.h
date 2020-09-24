@@ -27,15 +27,15 @@ inline float asDivisor__(float cos_1, float cos_i, float cos_o) { return 8.f * M
 
 inline void sampleQuadrantAniso__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
-	float phi = atan(fSqrt__((e_u + 1.f) / (e_v + 1.f)) * tanf(M_PI_2 * s_1));
-	float cos_phi = fCos__(phi);
-	float sin_phi = fSin__(phi);
+	float phi = atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * tanf(M_PI_2 * s_1));
+	float cos_phi = math::cos(phi);
+	float sin_phi = math::sin(phi);
 	float cos_theta, sin_theta;
 	float cos_phi_2 = cos_phi * cos_phi;
 	float sin_phi_2 = 1.f - cos_phi_2;
 
-	cos_theta = fPow__(1.f - s_2, 1.f / (e_u * cos_phi_2 + e_v * sin_phi_2 + 1.f));
-	sin_theta = fSqrt__(1.f - cos_theta * cos_theta);
+	cos_theta = math::pow(1.f - s_2, 1.f / (e_u * cos_phi_2 + e_v * sin_phi_2 + 1.f));
+	sin_theta = math::sqrt(1.f - cos_theta * cos_theta);
 
 	h = Vec3(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
 }
@@ -44,7 +44,7 @@ inline float asAnisoD__(Vec3 h, float e_u, float e_v)
 {
 	if(h.z_ <= 0.f) return 0.f;
 	float exponent = (e_u * h.x_ * h.x_ + e_v * h.y_ * h.y_) / (1.00001f - h.z_ * h.z_);
-	return fSqrt__((e_u + 1.f) * (e_v + 1.f)) * fPow__(std::max(0.f, h.z_), exponent);
+	return math::sqrt((e_u + 1.f) * (e_v + 1.f)) * math::pow(std::max(0.f, h.z_), exponent);
 }
 
 inline float asAnisoPdf__(Vec3 h, float cos_w_h, float e_u, float e_v)
@@ -78,7 +78,7 @@ inline void asAnisoSample__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 
 inline float blinnD__(float cos_h, float e)
 {
-	return (e + 1.f) * fPow__(cos_h, e);
+	return (e + 1.f) * math::pow(cos_h, e);
 }
 
 inline float blinnPdf__(float costheta, float cos_w_h, float e)
@@ -89,10 +89,10 @@ inline float blinnPdf__(float costheta, float cos_w_h, float e)
 inline void blinnSample__(Vec3 &h, float s_1, float s_2, float exponent)
 {
 	// Compute sampled half-angle vector H for Blinn distribution
-	float cos_theta = fPow__(1.f - s_2, 1.f / (exponent + 1.f));
-	float sin_theta = fSqrt__(1.f - cos_theta * cos_theta);
-	float phi = s_1 * mult_pi_by_2__;
-	h = Vec3(sin_theta * fCos__(phi), sin_theta * fSin__(phi), cos_theta);
+	float cos_theta = math::pow(1.f - s_2, 1.f / (exponent + 1.f));
+	float sin_theta = math::sqrt(1.f - cos_theta * cos_theta);
+	float phi = s_1 * math::mult_pi_by_2;
+	h = Vec3(sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta);
 }
 
 // implementation of microfacet model with GGX facet distribution
@@ -103,11 +103,11 @@ inline void ggxSample__(Vec3 &h, float alpha_2, float s_1, float s_2)
 	// using the flollowing identity:
 	// cosTheta == 1 / sqrt(1 + tanTheta2)
 	float tan_theta_2 = alpha_2 * (s_1 / (1.00001f - s_1));
-	float cos_theta = 1.f / fSqrt__(1.f + tan_theta_2);
-	float sin_theta  = fSqrt__(1.00001f - (cos_theta * cos_theta));
-	float phi = mult_pi_by_2__ * s_2;
+	float cos_theta = 1.f / math::sqrt(1.f + tan_theta_2);
+	float sin_theta  = math::sqrt(1.00001f - (cos_theta * cos_theta));
+	float phi = math::mult_pi_by_2 * s_2;
 
-	h = Vec3(sin_theta * fCos__(phi), sin_theta * fSin__(phi), cos_theta);
+	h = Vec3(sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta);
 }
 
 inline float ggxD__(float alpha_2, float cos_theta_2, float tan_theta_2)
@@ -124,8 +124,8 @@ inline float ggxG__(float alpha_2, float wo_n, float wi_n)
 	float wo_n_2 = wo_n * wo_n;
 	float wi_n_2 = wi_n * wi_n;
 
-	float sqr_term_1 = fSqrt__(1.f + alpha_2 * ((1.f - wo_n_2) / wo_n_2));
-	float sqr_term_2 = fSqrt__(1.f + alpha_2 * ((1.f - wi_n_2) / wi_n_2));
+	float sqr_term_1 = math::sqrt(1.f + alpha_2 * ((1.f - wo_n_2) / wo_n_2));
+	float sqr_term_2 = math::sqrt(1.f + alpha_2 * ((1.f - wi_n_2) / wi_n_2));
 
 	float g_1_wo = 2.f / (1.f + (sqr_term_1));
 	float g_1_wi = 2.f / (1.f + (sqr_term_2));
@@ -143,7 +143,7 @@ inline float microfacetFresnel__(float wo_h, float ior)
 	float g = ior * ior - 1 + c * c;
 	if(g > 0)
 	{
-		g = fSqrt__(g);
+		g = math::sqrt(g);
 		float a = (g - c) / (g + c);
 		float b = (c * (g + c) - 1) / (c * (g - c) + 1);
 		return 0.5f * a * a * (1 + b * b);
@@ -158,7 +158,7 @@ inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 
 	float sign = (c > 0.f) ? 1 : -1;
 	float t_1 = 1 - (eta * eta * (1 - c * c));
 	if(t_1 < 0.f) return false;
-	wi = eta * wo + (eta * c - sign * fSqrt__(t_1)) * h;
+	wi = eta * wo + (eta * c - sign * math::sqrt(t_1)) * h;
 	wi = -wi;
 
 	kr = 0.f;

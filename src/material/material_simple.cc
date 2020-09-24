@@ -19,7 +19,7 @@
  */
 
 #include "material/material_simple.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 #include "scene/scene.h"
 #include "common/param.h"
 #include "material/material_mask.h"

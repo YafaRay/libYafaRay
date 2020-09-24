@@ -25,7 +25,6 @@
 #include "common/logging.h"
 #include "common/session.h"
 #include "common/param.h"
-#include "utility/util_math.h"
 #include "common/file.h"
 #include "scene/scene.h"
 
@@ -46,7 +45,7 @@ bool TgaHandler::saveToFile(const std::string &name, int img_index)
 
 	std::string name_without_tmp = name;
 	name_without_tmp.erase(name_without_tmp.length() - 4);
-	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << roundFloatPrecision__(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") " << ((has_alpha_) ? "RGBA" : "RGB") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
+	if(session__.renderInProgress()) Y_INFO << handler_name_ << ": Autosaving partial render (" << math::roundFloatPrecision(session__.currentPassPercent(), 0.01) << "% of pass " << session__.currentPass() << " of " << session__.totalPasses() << ") " << ((has_alpha_) ? "RGBA" : "RGB") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 	else Y_INFO << handler_name_ << ": Saving " << ((has_alpha_) ? "RGBA" : "RGB") << " file as \"" << name_without_tmp << "\"...  " << getDenoiseParams() << YENDL;
 
 	std::string image_id = "Image rendered with YafaRay";

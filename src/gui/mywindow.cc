@@ -21,7 +21,7 @@
 
 // YafaRay Headers
 #include "common/logging.h"
-#include "common/color_console.h"
+#include "color/color_console.h"
 #include "gui/interface_qt.h"
 #include "mywindow.h"
 #include "worker.h"

@@ -19,7 +19,7 @@
  */
 
 #include "background/background_sunsky.h"
-#include "background/background_util_sunspectrum.h"
+#include "color/spectrum_sun.h"
 #include "common/logging.h"
 #include "common/param.h"
 #include "scene/scene.h"
@@ -40,7 +40,7 @@ SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, fl
 
 	sun_dir_.set(dir.x_, dir.y_, dir.z_);
 	sun_dir_.normalize();
-	theta_s_ = fAcos__(sun_dir_.z_);
+	theta_s_ = math::acos(sun_dir_.z_);
 	theta_2_ = theta_s_ * theta_s_;
 	theta_3_ = theta_2_ * theta_s_;
 	phi_s_ = atan2(sun_dir_.y_, sun_dir_.x_);
@@ -86,33 +86,33 @@ double SunSkyBackground::perezFunction(const double *lam, double theta, double g
 {
 	double e_1 = 0, e_2 = 0, e_3 = 0, e_4 = 0;
 	if(lam[1] <= 230.)
-		e_1 = fExp__(lam[1]);
+		e_1 = math::exp(lam[1]);
 	else
 		e_1 = 7.7220185e99;
 	if((e_2 = lam[3] * theta_s_) <= 230.)
-		e_2 = fExp__(e_2);
+		e_2 = math::exp(e_2);
 	else
 		e_2 = 7.7220185e99;
 	if((e_3 = lam[1] / cos(theta)) <= 230.)
-		e_3 = fExp__(e_3);
+		e_3 = math::exp(e_3);
 	else
 		e_3 = 7.7220185e99;
 	if((e_4 = lam[3] * gamma) <= 230.)
-		e_4 = fExp__(e_4);
+		e_4 = math::exp(e_4);
 	else
 		e_4 = 7.7220185e99;
-	double den = (1 + lam[0] * e_1) * (1 + lam[2] * e_2 + lam[4] * fCos__(theta_s_) * fCos__(theta_s_));
-	double num = (1 + lam[0] * e_3) * (1 + lam[2] * e_4 + lam[4] * fCos__(gamma) * fCos__(gamma));
+	double den = (1 + lam[0] * e_1) * (1 + lam[2] * e_2 + lam[4] * math::cos(theta_s_) * math::cos(theta_s_));
+	double num = (1 + lam[0] * e_3) * (1 + lam[2] * e_4 + lam[4] * math::cos(gamma) * math::cos(gamma));
 	return (lvz * num / den);
 }
 
 
 double SunSkyBackground::angleBetween(double thetav, double phiv) const
 {
-	double cospsi = fSin__(thetav) * fSin__(theta_s_) * fCos__(phi_s_ - phiv) + fCos__(thetav) * fCos__(theta_s_);
+	double cospsi = math::sin(thetav) * math::sin(theta_s_) * math::cos(phi_s_ - phiv) + math::cos(thetav) * math::cos(theta_s_);
 	if(cospsi > 1)  return 0;
 	if(cospsi < -1) return M_PI;
-	return fAcos__(cospsi);
+	return math::acos(cospsi);
 }
 
 inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
@@ -124,7 +124,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 
 	Rgb skycolor(0.0);
 
-	theta = fAcos__(iw.z_);
+	theta = math::acos(iw.z_);
 	if(theta > (0.5 * M_PI))
 	{
 		// this stretches horizon color below horizon, must be possible to do something better...
@@ -236,9 +236,9 @@ Background *SunSkyBackground::factory(ParamMap &params, Scene &scene)
 
 	if(add_sun)
 	{
-		Rgb suncol = computeAttenuatedSunlight__(fAcos__(std::fabs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		Rgb suncol = computeAttenuatedSunlight__(math::acos(std::fabs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
-		double cos_angle = cos(degToRad__(angle));
+		double cos_angle = cos(math::degToRad(angle));
 		float invpdf = (2.f * M_PI * (1.f - cos_angle));
 		suncol *= invpdf * power;
 

@@ -22,8 +22,8 @@
 
 #include "constants.h"
 #include "imagehandler/imagehandler.h"
-#include "common/color_ramp.h"
-#include "common/vector.h"
+#include "color/color_ramp.h"
+#include "geometry/vector.h"
 #include "common/logging.h"
 #include <sstream>
 
@@ -86,8 +86,8 @@ inline void angmap__(const Point3 &p, float &u, float &v)
 	u = v = 0.f;
 	if(r > 0.f)
 	{
-		float phi_ratio = M_1_PI * fAcos__(p.y_);//[0,1] range
-		r = phi_ratio / fSqrt__(r);
+		float phi_ratio = M_1_PI * math::acos(p.y_);//[0,1] range
+		r = phi_ratio / math::sqrt(r);
 		u = p.x_ * r;// costheta * r * phiRatio
 		v = p.z_ * r;// sintheta * r * phiRatio
 	}
@@ -102,7 +102,7 @@ inline void tubemap__(const Point3 &p, float &u, float &v)
 	float d = p.x_ * p.x_ + p.y_ * p.y_;
 	if(d > 0)
 	{
-		d = 1 / fSqrt__(d);
+		d = 1 / math::sqrt(d);
 		u = 0.5 * (1 - (atan2(p.x_ * d, p.y_ * d) * M_1_PI));
 	}
 }
@@ -119,21 +119,21 @@ inline void spheremap__(const Point3 &p, float &u, float &v)
 
 	if(sqrt_r_phi > 0.f)
 	{
-		if(p.y_ < 0.f) phi_ratio = (mult_pi_by_2__ - fAcos__(p.x_ / fSqrt__(sqrt_r_phi))) * div_1_by_2pi__;
-		else phi_ratio = fAcos__(p.x_ / fSqrt__(sqrt_r_phi)) * div_1_by_2pi__;
+		if(p.y_ < 0.f) phi_ratio = (math::mult_pi_by_2 - math::acos(p.x_ / math::sqrt(sqrt_r_phi))) * math::div_1_by_2pi;
+		else phi_ratio = math::acos(p.x_ / math::sqrt(sqrt_r_phi)) * math::div_1_by_2pi;
 		u = 1.f - phi_ratio;
 	}
 
-	v = 1.f - (fAcos__(p.z_ / fSqrt__(sqrt_r_theta)) * M_1_PI);
+	v = 1.f - (math::acos(p.z_ / math::sqrt(sqrt_r_theta)) * M_1_PI);
 }
 
 // maps u,v coords in the 0..1 interval to a direction
 inline void invSpheremap__(float u, float v, Vec3 &p)
 {
 	float theta = v * M_PI;
-	float phi = -(u * mult_pi_by_2__);
-	float costheta = fCos__(theta), sintheta = fSin__(theta);
-	float cosphi = fCos__(phi), sinphi = fSin__(phi);
+	float phi = -(u * math::mult_pi_by_2);
+	float costheta = math::cos(theta), sintheta = math::sin(theta);
+	float cosphi = math::cos(phi), sinphi = math::sin(phi);
 	p.x_ = sintheta * cosphi;
 	p.y_ = sintheta * sinphi;
 	p.z_ = -costheta;

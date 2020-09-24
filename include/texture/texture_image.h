@@ -25,7 +25,7 @@
 #define YAFARAY_TEXTURE_IMAGE_H
 
 #include "texture/texture.h"
-#include "utility/util_interpolation.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 

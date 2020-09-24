@@ -18,10 +18,10 @@
 
 #include "volume/volume_uniform.h"
 #include "common/logging.h"
-#include "common/ray.h"
-#include "common/color.h"
-#include "common/bound.h"
-#include "common/surface.h"
+#include "geometry/ray.h"
+#include "color/color.h"
+#include "geometry/bound.h"
+#include "geometry/surface.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY

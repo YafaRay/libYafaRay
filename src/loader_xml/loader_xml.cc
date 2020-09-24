@@ -22,9 +22,9 @@
 #include "common/session.h"
 #include "common/file.h"
 #include "scene/scene.h"
-#include "common/imagefilm.h"
-#include "common/import_xml.h"
-#include "utility/util_console.h"
+#include "render/imagefilm.h"
+#include "import/import_xml.h"
+#include "common/console.h"
 #include "output/output_image.h"
 #include <signal.h>
 

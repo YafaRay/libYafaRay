@@ -25,8 +25,8 @@
 #include "volume/volumehandler_beer.h"
 #include "volume/volumehandler_sss.h"
 #include "common/logging.h"
-#include "common/ray.h"
-#include "common/color.h"
+#include "geometry/ray.h"
+#include "color/color.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -129,7 +129,7 @@ inline float max__(float a, float b) { return (a < b) ? b : a; }
 
 inline double cosInter__(double y_1, double y_2, double mu)
 {
-	const double mu_2 = (1.0f - fCos__(mu * M_PI)) / 2.0f;
+	const double mu_2 = (1.0f - math::cos(mu * M_PI)) / 2.0f;
 	return y_1 * (1.0f - mu_2) + y_2 * mu_2;
 }
 

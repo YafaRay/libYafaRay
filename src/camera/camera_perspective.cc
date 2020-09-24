@@ -40,13 +40,13 @@ PerspectiveCamera::PerspectiveCamera(const Point3 &pos, const Point3 &look, cons
 	int ns = (int)bkhtype_;
 	if((ns >= 3) && (ns <= 6))
 	{
-		float w = degToRad__(bro), wi = (mult_pi_by_2__) / (float)ns;
+		float w = math::degToRad(bro), wi = (math::mult_pi_by_2) / (float)ns;
 		ns = (ns + 2) * 2;
 		ls_.resize(ns);
 		for(int i = 0; i < ns; i += 2)
 		{
-			ls_[i] = fCos__(w);
-			ls_[i + 1] = fSin__(w);
+			ls_[i] = math::cos(w);
+			ls_[i + 1] = math::sin(w);
 			w += wi;
 		}
 	}
@@ -73,14 +73,14 @@ void PerspectiveCamera::biasDist(float &r) const
 	switch(bkhbias_)
 	{
 		case BbCenter:
-			r = fSqrt__(fSqrt__(r) * r);
+			r = math::sqrt(math::sqrt(r) * r);
 			break;
 		case BbEdge:
-			r = fSqrt__((float) 1.0 - r * r);
+			r = math::sqrt((float) 1.0 - r * r);
 			break;
 		default:
 		case BbNone:
-			r = fSqrt__(r);
+			r = math::sqrt(r);
 	}
 }
 
@@ -110,11 +110,11 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 		case BkDisk2:
 		case BkRing:
 		{
-			float w = (float)mult_pi_by_2__ * r_2;
-			if(bkhtype_ == BkRing) r_1 = fSqrt__((float) 0.707106781 + (float) 0.292893218);
+			float w = (float)math::mult_pi_by_2 * r_2;
+			if(bkhtype_ == BkRing) r_1 = math::sqrt((float) 0.707106781 + (float) 0.292893218);
 			else biasDist(r_1);
-			u = r_1 * fCos__(w);
-			v = r_1 * fSin__(w);
+			u = r_1 * math::cos(w);
+			v = r_1 * math::sin(w);
 			break;
 		}
 		default:

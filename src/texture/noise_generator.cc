@@ -374,7 +374,7 @@ float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 }
 
 // distance metric function:
-float distRealF__(float x, float y, float z, float e) { return fSqrt__(x * x + y * y + z * z); }
+float distRealF__(float x, float y, float z, float e) { return math::sqrt(x * x + y * y + z * z); }
 float distSquaredF__(float x, float y, float z, float e) { return (x * x + y * y + z * z); }
 float distManhattanF__(float x, float y, float z, float e) { return (std::fabs(x) + std::fabs(y) + std::fabs(z)); }
 float distChebychevF__(float x, float y, float z, float e)
@@ -388,7 +388,7 @@ float distChebychevF__(float x, float y, float z, float e)
 // minkovsky preset exponent 0.5
 float distMinkovskyHf__(float x, float y, float z, float e)
 {
-	float d = fSqrt__(std::fabs(x)) + fSqrt__(std::fabs(y)) + fSqrt__(std::fabs(z));
+	float d = math::sqrt(std::fabs(x)) + math::sqrt(std::fabs(y)) + math::sqrt(std::fabs(z));
 	return (d * d);
 }
 // minkovsky preset exponent 4
@@ -397,12 +397,12 @@ float distMinkovsky4F__(float x, float y, float z, float e)
 	x *= x;
 	y *= y;
 	z *= z;
-	return fSqrt__(fSqrt__(x * x + y * y + z * z));
+	return math::sqrt(math::sqrt(x * x + y * y + z * z));
 }
 // Minkovsky, general case, slow
 float distMinkovskyF__(float x, float y, float z, float e)
 {
-	return fPow__(fPow__(std::fabs(x), e) + fPow__(std::fabs(y), e) + fPow__(std::fabs(z), e), (float) 1.0 / e);
+	return math::pow(math::pow(std::fabs(x), e) + math::pow(std::fabs(y), e) + math::pow(std::fabs(z), e), (float) 1.0 / e);
 }
 
 //------------------------------------------------------------------------------------
@@ -630,7 +630,7 @@ float CellNoiseGenerator::operator()(const Point3 &pt) const
  */
 float FBmMusgrave::operator()(const Point3 &pt) const
 {
-	float value = 0, pwr = 1, pw_hl = fPow__(lacunarity_, -h_);
+	float value = 0, pwr = 1, pw_hl = math::pow(lacunarity_, -h_);
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
@@ -659,7 +659,7 @@ float FBmMusgrave::operator()(const Point3 &pt) const
 * I modified it to something that made sense to me, so it might be wrong... */
 float MFractalMusgrave::operator()(const Point3 &pt) const
 {
-	float value = 1, pwr = 1, pw_hl = fPow__(lacunarity_, -h_);
+	float value = 1, pwr = 1, pw_hl = math::pow(lacunarity_, -h_);
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
@@ -685,7 +685,7 @@ float MFractalMusgrave::operator()(const Point3 &pt) const
  */
 float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
 {
-	float pw_hl = fPow__(lacunarity_, -h_);
+	float pw_hl = math::pow(lacunarity_, -h_);
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
@@ -721,7 +721,7 @@ float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
  */
 float HybridMFractalMusgrave::operator()(const Point3 &pt) const
 {
-	float pw_hl = fPow__(lacunarity_, -h_);
+	float pw_hl = math::pow(lacunarity_, -h_);
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
@@ -757,7 +757,7 @@ float HybridMFractalMusgrave::operator()(const Point3 &pt) const
  */
 float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 {
-	float pw_hl = fPow__(lacunarity_, -h_);
+	float pw_hl = math::pow(lacunarity_, -h_);
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 

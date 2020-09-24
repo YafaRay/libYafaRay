@@ -23,7 +23,7 @@
 #define YAFARAY_LIGHT_IES_H
 
 #include "light/light.h"
-#include "common/vector.h"
+#include "geometry/vector.h"
 
 BEGIN_YAFARAY
 

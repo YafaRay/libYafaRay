@@ -21,9 +21,9 @@
 #define YAFARAY_ACCELERATOR_KDTREE_H
 
 #include "accelerator/accelerator.h"
-#include "utility/util_memory_arena.h"
-#include "common/bound.h"
-#include "object_geom/object_geom.h"
+#include "common/memory_arena.h"
+#include "geometry/bound.h"
+#include "geometry/object_geom.h"
 
 BEGIN_YAFARAY
 

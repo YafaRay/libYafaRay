@@ -23,8 +23,8 @@
 #define YAFARAY_LIGHT_SPOT_H
 
 #include "light/light.h"
-#include "common/surface.h"
-#include "utility/util_sample.h"
+#include "geometry/surface.h"
+#include "sampler/sample.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY

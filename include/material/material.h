@@ -21,7 +21,7 @@
 #define YAFARAY_MATERIAL_H
 
 #include "constants.h"
-#include "common/color.h"
+#include "color/color.h"
 #include <list>
 
 BEGIN_YAFARAY

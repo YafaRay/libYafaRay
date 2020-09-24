@@ -21,7 +21,7 @@
 
 #include "texture/texture_image.h"
 #include "common/session.h"
-#include "utility/util_string.h"
+#include "common/string.h"
 #include "common/param.h"
 #include "scene/scene.h"
 
@@ -363,12 +363,12 @@ Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmaplevel) const
 	Rgba c_32 = image_->getPixel(x_3, y_2, mipmaplevel);
 	Rgba c_33 = image_->getPixel(x_3, y_3, mipmaplevel);
 
-	Rgba cy_0 = cubicInterpolate__(c_00, c_10, c_20, c_30, dx);
-	Rgba cy_1 = cubicInterpolate__(c_01, c_11, c_21, c_31, dx);
-	Rgba cy_2 = cubicInterpolate__(c_02, c_12, c_22, c_32, dx);
-	Rgba cy_3 = cubicInterpolate__(c_03, c_13, c_23, c_33, dx);
+	Rgba cy_0 = math::cubicInterpolate(c_00, c_10, c_20, c_30, dx);
+	Rgba cy_1 = math::cubicInterpolate(c_01, c_11, c_21, c_31, dx);
+	Rgba cy_2 = math::cubicInterpolate(c_02, c_12, c_22, c_32, dx);
+	Rgba cy_3 = math::cubicInterpolate(c_03, c_13, c_23, c_33, dx);
 
-	return cubicInterpolate__(cy_0, cy_1, cy_2, cy_3, dy);
+	return math::cubicInterpolate(cy_0, cy_1, cy_2, cy_3, dy);
 }
 
 Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const

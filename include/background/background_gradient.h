@@ -23,7 +23,7 @@
 #define YAFARAY_BACKGROUND_GRADIENT_H
 
 #include "background.h"
-#include "common/color.h"
+#include "color/color.h"
 
 BEGIN_YAFARAY
 

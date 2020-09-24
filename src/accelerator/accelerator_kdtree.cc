@@ -22,7 +22,7 @@
 #include "material/material.h"
 #include "scene/scene.h"
 #include "common/logging.h"
-#include "object_geom/triangle.h"
+#include "geometry/triangle.h"
 #include "common/param.h"
 #include <algorithm>
 #include <limits>

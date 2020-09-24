@@ -18,7 +18,7 @@
  */
 
 #include "image/image.h"
-#include "common/renderpasses.h"
+#include "render/passes.h"
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>

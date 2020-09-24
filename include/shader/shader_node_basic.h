@@ -22,7 +22,7 @@
 
 #include "shader/shader_node.h"
 #include "texture/texture.h"
-#include "common/matrix4.h"
+#include "geometry/matrix4.h"
 
 BEGIN_YAFARAY
 

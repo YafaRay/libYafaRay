@@ -25,7 +25,7 @@
 #include "scene/scene.h"
 #include "light/light.h"
 
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
@@ -36,8 +36,8 @@ TextureBackground::TextureBackground(const Texture *texture, Projection proj, fl
 	shoot_caustic_ = with_caustic;
 
 	rotation_ = 2.0f * rot / 360.f;
-	sin_r_ = fSin__(M_PI * rotation_);
-	cos_r_ = fCos__(M_PI * rotation_);
+	sin_r_ = math::sin(M_PI * rotation_);
+	cos_r_ = math::cos(M_PI * rotation_);
 }
 
 Rgb TextureBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const

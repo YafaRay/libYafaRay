@@ -17,15 +17,15 @@
  */
 
 #include "volume/volume_noise.h"
-#include "common/ray.h"
-#include "common/color.h"
-#include "common/bound.h"
-#include "common/surface.h"
+#include "geometry/ray.h"
+#include "color/color.h"
+#include "geometry/bound.h"
+#include "geometry/surface.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "utility/util_mcqmc.h"
-#include "utility/util_math_optimizations.h"
+#include "sampler/halton.h"
+#include "math/optimization.h"
 
 BEGIN_YAFARAY
 
@@ -36,7 +36,7 @@ float NoiseVolumeRegion::density(Point3 p) const
 {
 	float d = tex_dist_noise_->getColor(p * 0.1f).energy();
 
-	d = 1.0f / (1.0f + fExp__(sharpness_ * (1.0f - cover_ - d)));
+	d = 1.0f / (1.0f + math::exp(sharpness_ * (1.0f - cover_ - d)));
 	d *= density_;
 
 	return d;

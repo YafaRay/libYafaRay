@@ -21,11 +21,11 @@
 #include "material/material_coated_glossy.h"
 #include "scene/scene.h"
 #include "shader/shader_node.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 #include "material/material_utils_microfacet.h"
-#include "common/color_ramp.h"
+#include "color/color_ramp.h"
 #include "common/param.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 
 BEGIN_YAFARAY
 
@@ -104,13 +104,13 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(cos_to >= cos_ti)
 	{
-		sin_alpha = fSqrt__(1.f - cos_ti * cos_ti);
-		tan_beta = fSqrt__(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = math::sqrt(1.f - cos_ti * cos_ti);
+		tan_beta = math::sqrt(1.f - cos_to * cos_to) / ((cos_to == 0.f) ? 1e-8f : cos_to); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 	else
 	{
-		sin_alpha = fSqrt__(1.f - cos_to * cos_to);
-		tan_beta = fSqrt__(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
+		sin_alpha = math::sqrt(1.f - cos_to * cos_to);
+		tan_beta = math::sqrt(1.f - cos_ti * cos_ti) / ((cos_ti == 0.f) ? 1e-8f : cos_ti); // white (black on windows) dots fix for oren-nayar, could happen with bad normals
 	}
 
 	if(use_texture_sigma)

@@ -25,8 +25,8 @@
 #ifndef YAFARAY_IMAGEHANDLER_UTIL_HDR_H
 #define YAFARAY_IMAGEHANDLER_UTIL_HDR_H
 
-#include "common/color.h"
-#include "utility/util_string.h"
+#include "color/color.h"
+#include "common/string.h"
 
 BEGIN_YAFARAY
 
@@ -92,7 +92,7 @@ struct RgbePixel
 		if(e_)
 		{
 			/*nonzero pixel*/
-			f = fLdexp__(1.0, e_ - (int) (128 + 8));
+			f = math::ldexp(1.0, e_ - (int) (128 + 8));
 			return Rgba(f * r_, f * g_, f * b_, 1.0f);
 		}
 

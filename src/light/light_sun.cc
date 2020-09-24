@@ -19,7 +19,7 @@
  */
 
 #include "light/light_sun.h"
-#include "utility/util_sample.h"
+#include "sampler/sample.h"
 #include "common/param.h"
 #include "scene/scene.h"
 
@@ -34,8 +34,8 @@ SunLight::SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samp
 	direction_.normalize();
 	createCs__(dir, du_, dv_);
 	if(angle > 80.f) angle = 80.f;
-	cos_angle_ = fCos__(degToRad__(angle));
-	invpdf_ = (mult_pi_by_2__ * (1.f - cos_angle_));
+	cos_angle_ = math::cos(math::degToRad(angle));
+	invpdf_ = (math::mult_pi_by_2 * (1.f - cos_angle_));
 	pdf_ = 1.0 / invpdf_;
 	col_pdf_ = color_ * pdf_;
 }

@@ -33,9 +33,9 @@ AngularCamera::AngularCamera(const Point3 &pos, const Point3 &look, const Point3
 	// Initialize camera specific plane coordinates
 	setAxis(cam_x_, cam_y_, cam_z_);
 
-	if(projection == Projection::Orthographic) focal_length_ = 1.f / fSin__(angle);
+	if(projection == Projection::Orthographic) focal_length_ = 1.f / math::sin(angle);
 	else if(projection == Projection::Stereographic) focal_length_ = 1.f / 2.f / tan(angle / 2.f);
-	else if(projection == Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / fSin__(angle / 2.f);
+	else if(projection == Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / math::sin(angle / 2.f);
 	else if(projection == Projection::Rectilinear) focal_length_ = 1.f / tan(angle);
 	else focal_length_ = 1.f / angle; //By default, AngularProjection::Equidistant
 }
@@ -59,7 +59,7 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	float u = 1.f - 2.f * (px / (float)resx_);
 	float v = 2.f * (py / (float)resy_) - 1.f;
 	v *= aspect_ratio_;
-	float radius = fSqrt__(u * u + v * v);
+	float radius = math::sqrt(u * u + v * v);
 	if(circular_ && radius > max_radius_) { wt = 0; return ray; }
 	float theta = 0;
 	if(!((u == 0) && (v == 0))) theta = atan2(v, u);
@@ -70,7 +70,7 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	else if(projection_ == Projection::Rectilinear) phi = atan(radius / focal_length_);
 	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
-	ray.dir_ = fSin__(phi) * (fCos__(theta) * vright_ + fSin__(theta) * vup_) + fCos__(phi) * vto_;
+	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
 
 	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
 	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);

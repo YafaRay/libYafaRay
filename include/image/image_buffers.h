@@ -25,8 +25,8 @@
 #ifndef YAFARAY_IMAGE_BUFFERS_H
 #define YAFARAY_IMAGE_BUFFERS_H
 
-#include "common/color.h"
-#include "common/buffer.h"
+#include "color/color.h"
+#include "math/buffer.h"
 
 BEGIN_YAFARAY
 

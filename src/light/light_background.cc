@@ -24,8 +24,8 @@
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "common/surface.h"
-#include "utility/util_sample.h"
+#include "geometry/surface.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
@@ -40,8 +40,8 @@ static constexpr float addOff__(float v) { return (v + smpl_off__); }
 int clampSample__(int s, int m) { return std::max(0, std::min(s, m - 1)); }
 
 #define MULT_PDF(p0, p1) (p0 * p1)
-#define CALC_PDF(p0, p1, s) std::max( sigma__, MULT_PDF(p0, p1) * (float)div_1_by_2pi__ * clampZero__(sinSample__(s)) )
-#define CALC_INV_PDF(p0, p1, s) std::max( sigma__, (float)mult_pi_by_2__ * sinSample__(s) * clampZero__(MULT_PDF(p0, p1)) )
+#define CALC_PDF(p0, p1, s) std::max( sigma__, MULT_PDF(p0, p1) * (float)math::div_1_by_2pi * clampZero__(sinSample__(s)) )
+#define CALC_INV_PDF(p0, p1, s) std::max( sigma__, (float)math::mult_pi_by_2 * sinSample__(s) * clampZero__(MULT_PDF(p0, p1)) )
 
 inline float clampZero__(float val)
 {
@@ -51,7 +51,7 @@ inline float clampZero__(float val)
 
 inline float sinSample__(float s)
 {
-	return fSin__(s * M_PI);
+	return math::sin(s * M_PI);
 }
 
 BackgroundLight::BackgroundLight(int sampl, bool invert_intersect, bool light_enabled, bool cast_shadows):
@@ -110,7 +110,7 @@ void BackgroundLight::init(Scene &scene)
 	world_center_ = 0.5 * (w.a_ + w.g_);
 	world_radius_ = 0.5 * (w.g_ - w.a_).length();
 	a_pdf_ = world_radius_ * world_radius_;
-	world_pi_factor_ = (mult_pi_by_2__ * a_pdf_);
+	world_pi_factor_ = (math::mult_pi_by_2 * a_pdf_);
 }
 
 inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, float &v, bool inv) const

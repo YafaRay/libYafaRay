@@ -2,7 +2,7 @@ include_directories(${YAF_INCLUDE_DIRS})
 
 add_definitions(-DBUILDING_YAFARAYPLUGIN)
 
-add_library(yafaray4_plugin SHARED interface.cc interface_xml_export.cc)
+add_library(yafaray4_plugin SHARED interface.cc ../export/export_xml.cc)
 target_link_libraries(yafaray4_plugin libyafaray4)
 
 if(APPLE) # set rpath - Jens

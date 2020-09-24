@@ -200,9 +200,9 @@ float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params
 			break;
 		default:
 		case Sin:
-			w = (float)0.5 + (float)0.5 * fSin__(w);
+			w = (float)0.5 + (float)0.5 * math::sin(w);
 	}
-	return applyIntensityContrastAdjustments(fPow__(w, sharpness_));
+	return applyIntensityContrastAdjustments(math::pow(w, sharpness_));
 }
 
 Rgba MarbleTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -270,7 +270,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 {
 	float w;
 	if(rings_)
-		w = fSqrt__(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.0;
+		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.0;
 	else
 		w = (p.x_ + p.y_ + p.z_) * 10.0;
 	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_);
@@ -286,7 +286,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 			break;
 		default:
 		case Sin:
-			w = (float)0.5 + (float)0.5 * fSin__(w);
+			w = (float)0.5 + (float)0.5 * math::sin(w);
 	}
 	return applyIntensityContrastAdjustments(w);
 }
@@ -731,7 +731,7 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	}
 	else if(progression_type_ == Spherical || progression_type_ == QuadraticSphere)
 	{
-		blend = 1.f - fSqrt__(coord_1 * coord_1 + coord_2 * coord_2 + p.z_ * p.z_);
+		blend = 1.f - math::sqrt(coord_1 * coord_1 + coord_2 * coord_2 + p.z_ * p.z_);
 		if(blend < 0.f) blend = 0.f;
 		if(progression_type_ == QuadraticSphere) blend *= blend;
 	}

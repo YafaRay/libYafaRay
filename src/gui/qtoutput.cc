@@ -21,7 +21,7 @@
 
 #include "qtoutput.h"
 #include "events.h"
-#include "common/color.h"
+#include "color/color.h"
 #include <QCoreApplication>
 #include <iostream>
 #include <cstdlib>

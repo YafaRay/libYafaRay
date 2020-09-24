@@ -20,8 +20,8 @@
 
 #include "material/material_blend.h"
 #include "shader/shader_node.h"
-#include "utility/util_sample.h"
-#include "common/surface.h"
+#include "sampler/sample.h"
+#include "geometry/surface.h"
 #include "common/param.h"
 #include "scene/scene.h"
 

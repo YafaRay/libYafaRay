@@ -23,7 +23,7 @@
 #include "constants.h"
 
 #include "pkdtree.h"
-#include "common/color.h"
+#include "color/color.h"
 
 BEGIN_YAFARAY
 

@@ -22,8 +22,8 @@
 
 #include "constants.h"
 #include "common/logging.h"
-#include "utility/util_thread.h"
-#include "common/bound.h"
+#include "common/thread.h"
+#include "geometry/bound.h"
 #include <vector>
 #include <cstdlib>
 

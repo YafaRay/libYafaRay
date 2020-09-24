@@ -19,11 +19,11 @@
  */
 
 #include "light/light_directional.h"
-#include "common/surface.h"
+#include "geometry/surface.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "common/bound.h"
-#include "utility/util_sample.h"
+#include "geometry/bound.h"
+#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
