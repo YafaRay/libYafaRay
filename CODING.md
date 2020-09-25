@@ -32,13 +32,17 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Try to reduce states as much as possible, if a static class function can do the job in a "pure functional mode", better.
 * Avoid "free" (global) functions as much as possible, embed them in classes, as static functions if possible to provide them with context and better meaning.
 * Avoid global and static variables as much as possible. For global constants use constexpr and better if possible embed them in classes as static
+* Avoid global free functions as much as possible. Wrap them within namespaces. For example don't use something like fSin__(float x, float y) but a namespaced math::sin(float x, float y)
+* Try using templating for generic functions as long as it does not cause performance problems
 * Do NOT use defines as a replacement for Enums!
 * Avoid global Enums as much as possible. Embed them within classes.
 * Avoid using directly Enums as simple global labels for simple variables of type int, etc. Use Enum class (name) : (type), and provide any variable using enums with the Enum class name, and provide methods to handle operators like &, etc.
 * Avoid passing too many parameters to functions, if needed create a new Class or Struct and pass it.
 * Always try to add const (or better constexpr) to everything unless it really needs to change its internal state.
 * Always try to pass parameters by reference (&) unless it's a plain old data ("POD") like bool, float, int, etc.
-* Avoid raw pointers!!! Use references or smart pointers when possible.
+* Try to avoid raw pointers if possible. Use references or smart pointers when possible.
+* Try to avoid "c-style" casts like float x = (float) integer; Use float x = static_cast<float>(integer) instead when possible.
+* Declare const everything you can, unless it needs to be non-const.
 * Keep multithreading in mind, use mutexes when needed, but avoid using them directly and use them with lock_guard if possible.
 * Try to embed all OS-specific code in dedicated classes so all #IFDEF, etc, are in that class and not contaminating the entire code.
 * Try to avoid "spaghetti code" and create more smaller classes with good defined relationships

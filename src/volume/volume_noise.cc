@@ -25,7 +25,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/halton.h"
-#include "math/optimization.h"
+#include "math/math.h"
 
 BEGIN_YAFARAY
 

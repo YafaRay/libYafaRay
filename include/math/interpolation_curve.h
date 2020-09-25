@@ -142,19 +142,17 @@ RegularCurve::~RegularCurve()
 float RegularCurve::getSample(float x) const
 {
 	if(x < end_r_ || x > begin_r_) return 0.0;
-	float med, x_0, x_1, y;
-	int y_0, y_1;
 
-	med = (x - end_r_) * step_;
-	y_0 = static_cast<int>(floor(med));
-	y_1 = static_cast<int>(ceil(med));
+	const float med = (x - end_r_) * step_;
+	const int y_0 = static_cast<int>(floor(med));
+	const int y_1 = static_cast<int>(ceil(med));
 
 	if(y_0 == y_1) return c_[y_0];
 
-	x_0 = (y_0 / step_) + end_r_;
-	x_1 = (y_1 / step_) + end_r_;
+	const float x_0 = (y_0 / step_) + end_r_;
+	const float x_1 = (y_1 / step_) + end_r_;
 
-	y = x - x_0;
+	float y = x - x_0;
 	y *= (c_[y_1] - c_[y_0]) / (x_1 - x_0);
 	y += c_[y_0];
 

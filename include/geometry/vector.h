@@ -24,7 +24,7 @@
 #define YAFARAY_VECTOR_H
 
 #include "constants.h"
-#include "math/optimization.h"
+#include "math/math.h"
 #include <iostream>
 
 BEGIN_YAFARAY

@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
  *
- *      mathOptimizations.h: Math aproximations to speed up things
+ *      math.h: Math aproximations to speed up things
  *      This is part of the libYafaRay package
  *      Copyright (C) 2009 Rodrigo Placencia Vazquez (DarkTide)
  *      Creation date: 2009-03-26
@@ -32,8 +32,8 @@
  *
  */
 
-#ifndef YAFARAY_OPTIMIZATION_H
-#define YAFARAY_OPTIMIZATION_H
+#ifndef YAFARAY_MATH_H
+#define YAFARAY_MATH_H
 
 #include <cmath>
 #include <algorithm>
@@ -280,9 +280,17 @@ inline bool isValid(const T &value)	//To check a floating point number is not a 
 	return (value >= std::numeric_limits<T>::lowest() && value <= std::numeric_limits<T>::max());
 }
 
+template<typename T>
+inline T mod(const T &a, const T &b)
+{
+	const T n = static_cast<T>(a / b);
+	T result = a - n * b;
+	if(a < 0) result += b;
+	return result;
+}
 
 } //namespace math
 
 END_YAFARAY
 
-#endif // YAFARAY_OPTIMIZATION_H
+#endif // YAFARAY_MATH_H

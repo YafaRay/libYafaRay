@@ -21,8 +21,8 @@
  */
 #include "color/color.h"
 #include "color/color_ramp.h"
+#include "math/interpolation.h"
 #include "common/logging.h"
-#include <iterator>
 
 #include<iostream>
 
@@ -52,30 +52,6 @@ void ColorRamp::addItem(const Rgba &color, float position)
 	std::sort(ramp_.begin(), ramp_.end());
 }
 
-Rgba interpolationLinear__(float pos, const Rgba &col_1, float pos_1, const Rgba &col_2, float pos_2)
-{
-	if(pos == pos_1 || pos_1 == pos_2) return col_1;
-	else if(pos == pos_2) return col_2;
-
-	Rgba diff_col_21 = col_2 - col_1;
-	float diff_pos_21 = pos_2 - pos_1;
-	float diff_pos = pos - pos_1;
-
-	return col_1 + ((diff_pos / diff_pos_21) * diff_col_21);
-}
-
-float interpolationLinear__(float pos, float val_1, float pos_1, float val_2, float pos_2)
-{
-	if(pos == pos_1 || pos_1 == pos_2) return val_1;
-	else if(pos == pos_2) return val_2;
-
-	float diff_val_21 = val_2 - val_1;
-	float diff_pos_21 = pos_2 - pos_1;
-	float diff_pos = pos - pos_1;
-
-	return val_1 + ((diff_pos / diff_pos_21) * diff_val_21);
-}
-
 Rgba ColorRamp::getColorInterpolated(float pos) const
 {
 	Rgba result;
@@ -83,31 +59,30 @@ Rgba ColorRamp::getColorInterpolated(float pos) const
 	else if(pos > ramp_.back().position()) result = ramp_.back().color();
 	else
 	{
-		auto item_current = std::lower_bound(ramp_.begin(), ramp_.end(), pos);
-		auto item_previous = std::prev(item_current);
+		const auto item_current = std::lower_bound(ramp_.begin(), ramp_.end(), pos);
+		const auto item_previous = std::prev(item_current);
 
 		if(mode_ == Rgb)
 		{
 			if(interpolation_ == Constant) result = item_current->color();
-			else result = interpolationLinear__(pos, item_current->color(), item_current->position(), item_previous->color(), item_previous->position());
+			else result = math::lerpSegment(pos, item_current->color(), item_current->position(), item_previous->color(), item_previous->position());
 		}
 		else if(mode_ == Hsv)
 		{
-			float pos_1 = item_current->position();
-			float pos_2 = item_previous->position();
-			float h_1 = 0.f, s_1 = 0.f, v_1 = 0.f, a_1 = 0.f;
-			float h_2 = 0.f, s_2 = 0.f, v_2 = 0.f, a_2 = 0.f;
-			float h = 0.f, s = 0.f, v = 0.f, a = 0.f;
+			const float pos_1 = item_current->position();
+			const float pos_2 = item_previous->position();
+			float h_1 = 0.f, s_1 = 0.f, v_1 = 0.f;
+			float h_2 = 0.f, s_2 = 0.f, v_2 = 0.f;
 
 			item_current->color().rgbToHsv(h_1, s_1, v_1);
-			a_1 = item_current->color().a_;
+			const float a_1 = item_current->color().a_;
 
 			item_previous->color().rgbToHsv(h_2, s_2, v_2);
-			a_2 = item_previous->color().a_;
+			const float a_2 = item_previous->color().a_;
 
-			s = interpolationLinear__(pos, s_1, pos_1, s_2, pos_2);
-			v = interpolationLinear__(pos, v_1, pos_1, v_2, pos_2);
-			a = interpolationLinear__(pos, a_1, pos_1, a_2, pos_2);
+			const float s = math::lerpSegment(pos, s_1, pos_1, s_2, pos_2);
+			const float v = math::lerpSegment(pos, v_1, pos_1, v_2, pos_2);
+			const float a = math::lerpSegment(pos, a_1, pos_1, a_2, pos_2);
 
 			if(hue_interpolation_ == Clockwise && h_1 < h_2) h_1 += 6.f;
 			else if(hue_interpolation_ == Counterclockwise && h_1 > h_2) h_2 += 6.f;
@@ -116,7 +91,7 @@ Rgba ColorRamp::getColorInterpolated(float pos) const
 			else if(hue_interpolation_ == Far && h_1 < h_2 && (h_2 - h_1) < 3.f) h_1 += 6.f;
 			else if(hue_interpolation_ == Far && h_1 > h_2 && (h_2 - h_1) > -3.f) h_2 += 6.f;
 
-			h = interpolationLinear__(pos, h_1, pos_1, h_2, pos_2);
+			float h = math::lerpSegment(pos, h_1, pos_1, h_2, pos_2);
 
 			if(h < 0.f) h += 6.f;
 			else if(h > 6.f) h -= 6.f;
@@ -125,21 +100,20 @@ Rgba ColorRamp::getColorInterpolated(float pos) const
 		}
 		else if(mode_ == Hsl)
 		{
-			float pos_1 = item_current->position();
-			float pos_2 = item_previous->position();
-			float h_1 = 0.f, s_1 = 0.f, l_1 = 0.f, a_1 = 0.f;
-			float h_2 = 0.f, s_2 = 0.f, l_2 = 0.f, a_2 = 0.f;
-			float h = 0.f, s = 0.f, l = 0.f, a = 0.f;
+			const float pos_1 = item_current->position();
+			const float pos_2 = item_previous->position();
+			float h_1 = 0.f, s_1 = 0.f, l_1 = 0.f;
+			float h_2 = 0.f, s_2 = 0.f, l_2 = 0.f;
 
 			item_current->color().rgbToHsl(h_1, s_1, l_1);
-			a_1 = item_current->color().a_;
+			const float a_1 = item_current->color().a_;
 
 			item_previous->color().rgbToHsl(h_2, s_2, l_2);
-			a_2 = item_previous->color().a_;
+			const float a_2 = item_previous->color().a_;
 
-			s = interpolationLinear__(pos, s_1, pos_1, s_2, pos_2);
-			l = interpolationLinear__(pos, l_1, pos_1, l_2, pos_2);
-			a = interpolationLinear__(pos, a_1, pos_1, a_2, pos_2);
+			const float s = math::lerpSegment(pos, s_1, pos_1, s_2, pos_2);
+			const float l = math::lerpSegment(pos, l_1, pos_1, l_2, pos_2);
+			const float a = math::lerpSegment(pos, a_1, pos_1, a_2, pos_2);
 
 			if(hue_interpolation_ == Clockwise && h_1 < h_2) h_1 += 6.f;
 			else if(hue_interpolation_ == Counterclockwise && h_1 > h_2) h_2 += 6.f;
@@ -148,7 +122,7 @@ Rgba ColorRamp::getColorInterpolated(float pos) const
 			else if(hue_interpolation_ == Far && h_1 < h_2 && (h_2 - h_1) < 3.f) h_1 += 6.f;
 			else if(hue_interpolation_ == Far && h_1 > h_2 && (h_2 - h_1) > -3.f) h_2 += 6.f;
 
-			h = interpolationLinear__(pos, h_1, pos_1, h_2, pos_2);
+			float h = math::lerpSegment(pos, h_1, pos_1, h_2, pos_2);
 
 			if(h < 0.f) h += 6.f;
 			else if(h > 6.f) h -= 6.f;

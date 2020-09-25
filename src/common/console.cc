@@ -19,7 +19,7 @@
 #include "render/monitor.h"
 #include "common/logging.h"
 #include "color/color_console.h"
-#include "math/optimization.h"
+#include "math/math.h"
 //#include <iostream>
 //#include <string>
 //#include <iomanip>
