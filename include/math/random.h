@@ -36,7 +36,7 @@ class FastRandom final
 		static float getNextFloatNormalized(int &seed);
 
 	private:
-		static int myseed_;
+		static int myseed_; //FIXME: Should this be std::atomic<int> for thread safety? Performance??
 		static constexpr int a_ = 0x000041A7;
 		static constexpr int m_ = 0x7FFFFFFF;
 		static constexpr int q_ = 0x0001F31D; // m/a
