@@ -32,6 +32,7 @@
 #include "render/monitor.h"
 #include "common/timer.h"
 #include "math/filter.h"
+#include "math/interpolation.h"
 #include "resource/yafLogoTiny.h"
 #include <iomanip>
 
@@ -50,9 +51,6 @@ BEGIN_YAFARAY
 
 static constexpr int filter_table_size__ = 16;
 static constexpr int max_filter_size__ = 8;
-
-//! Simple alpha blending
-#define ALPHA_BLEND(b_bg_col, b_fg_col, b_alpha) (( b_bg_col * (1.f - b_alpha) ) + ( b_fg_col * b_alpha ))
 
 typedef float FilterFunc_t(float dx, float dy);
 
@@ -1008,7 +1006,7 @@ void drawFontBitmap__(const FT_Bitmap *bitmap, Rgba2DImage_t *badge_image, int x
 			{
 				Rgba col = (*badge_image)(std::max(0, i), std::max(0, j)).getColor();
 				float alpha = (float) tmp_buf / 255.0;
-				col = Rgba(ALPHA_BLEND(static_cast<Rgb>(col), text_color, alpha), col.getA());
+				col = static_cast<Rgba>(math::lerp(static_cast<Rgb>(col), text_color, alpha), col.getA());
 			}
 		}
 	}
