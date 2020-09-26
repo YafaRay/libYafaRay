@@ -31,11 +31,9 @@ namespace math
 {
 
 template<typename Y, typename X>
-inline static Y lerp(
-		Y const &y_1, Y const &y_2,
-		const X &x)
+inline static Y lerp(const Y &y_1, const Y &y_2, const X &x)
 {
-	return y_1 * x + y_2 * (1.0 - x);
+	return y_1 * (static_cast<X>(1) - x) + y_2 * x;
 }
 
 template<typename Y, typename X>
@@ -52,27 +50,23 @@ inline Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const
 }
 
 template<typename Y, typename X>
-inline static Y cosineInterpolate(
-		const Y &y_1, const Y &y_2,
-		const X &x)
+inline static Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
 {
-	const double x2 = (1 - math::cos(x * M_PI)) * 0.5f;
-	return (y_1 * (1 - x2) + y_2 * x2);
+	const X x_cos = (static_cast<X>(1) - math::cos(x * static_cast<X>(M_PI))) * static_cast<X>(0.5);
+	return (y_1 * (static_cast<X>(1) - x_cos) + y_2 * x_cos);
 }
 
 template<class Y, typename X>
-inline Y cubicInterpolate(
-		const Y &y_0, const Y &y_1,
-		const Y &y_2, const Y &y_3,
-		const X &x)
+inline Y cubicInterpolate(const Y &y_0, const Y &y_1, const Y &y_2, const Y &y_3, const X &x)
 {
-	const X x_2 = x * x;
+	const X x_squared = x * x;
+	const X x_cubed = x * x_squared;
 	const Y a_0 = y_3 - y_2 - y_0 + y_1;
 	const Y a_1 = y_0 - y_1 - a_0;
 	const Y a_2 = y_2 - y_0;
 	const Y a_3 = y_1;
 
-	return (a_0 * x * x_2 + a_1 * x_2 + a_2 * x + a_3);
+	return (a_0 * x_cubed + a_1 * x_squared + a_2 * x + a_3);
 }
 
 } // namespace math

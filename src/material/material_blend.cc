@@ -25,15 +25,9 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "common/logging.h"
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
-
-#define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
-
-#define SUM_COLORS(c1, c2) ((c1) + (c2))
-#define ADD_COLORS(c1, c2, v1, v2) SUM_COLORS(c1*v1, c2*v2)
-
-#define ADD_PDF(p1, p2) (p1*ival + p2*val)
 
 BlendMaterial::BlendMaterial(const Material *m_1, const Material *m_2, float bval, Visibility visibility):
 		mat_1_(m_1), mat_2_(m_2)
@@ -54,48 +48,37 @@ BlendMaterial::~BlendMaterial()
 	mat_2_flags_ = BsdfFlags::None;
 }
 
-inline void BlendMaterial::getBlendVal(const RenderState &state, const SurfacePoint &sp, float &val, float &ival) const
+inline float BlendMaterial::getBlendVal(const RenderState &state, const SurfacePoint &sp) const
 {
-
 	if(recalc_blend_)
 	{
 		void *old_dat = state.userdata_;
-
 		NodeStack stack(state.userdata_);
 		evalNodes(state, sp, all_sorted_, stack);
-		val = blend_s_->getScalar(stack);
+		const float blend_val = blend_s_->getScalar(stack);
 		state.userdata_ = old_dat;
+		return blend_val;
 	}
-	else
-	{
-		val = blend_val_;
-	}
-
-	ival = std::min(1.f, std::max(0.f, 1.f - val));
+	else return blend_val_;
 }
 
 void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	void *old_udat = state.userdata_;
-
 	bsdf_types = BsdfFlags::None;
-
-
-	float alpha, inv_alpha;
-	getBlendVal(state, sp, alpha, inv_alpha);
-
+	const float blend_val = getBlendVal(state, sp);
 
 	SurfacePoint sp_0 = sp;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
 	mat_1_->initBsdf(state, sp_0, mat_1_flags_);
 
 	SurfacePoint sp_1 = sp;
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
 	mat_2_->initBsdf(state, sp_1, mat_2_flags_);
 
-	sp = SurfacePoint::blendSurfacePoints(sp_0, sp_1, inv_alpha);
+	sp = SurfacePoint::blendSurfacePoints(sp_0, sp_1, blend_val);
 
 	bsdf_types = mat_1_flags_ | mat_2_flags_;
 
@@ -107,21 +90,19 @@ Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const 
 {
 	NodeStack stack(state.userdata_);
 
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
+	const float blend_val = getBlendVal(state, sp);
 
-	Rgb col_1(1.f), col_2(1.f);
 	void *old_udat = state.userdata_;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	col_1 = mat_1_->eval(state, sp, wo, wl, bsdfs);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+	Rgb col_1 = mat_1_->eval(state, sp, wo, wl, bsdfs);
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-	col_2 = mat_2_->eval(state, sp, wo, wl, bsdfs);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
+	const Rgb col_2 = mat_2_->eval(state, sp, wo, wl, bsdfs);
 
 	state.userdata_ = old_udat;
 
-	col_1 = ADD_COLORS(col_1, col_2, ival, val);
+	col_1 = math::lerp(col_1, col_2, blend_val);
 
 	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
@@ -131,32 +112,30 @@ Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const 
 Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	NodeStack stack(state.userdata_);
-
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
+	const float blend_val = getBlendVal(state, sp);
 
 	bool mat_1_sampled = false;
 	bool mat_2_sampled = false;
 
-	Rgb col1(0.f), col2(0.f);
-	Sample s1 = s, s2 = s;
+	Rgb col_1(0.f), col_2(0.f);
+	Sample s_1 = s, s_2 = s;
 	Vec3 wi_1(0.f), wi_2(0.f);
 	float w_1 = 0.f, w_2 = 0.f;
 	void *old_udat = state.userdata_;
 
-	s2.pdf_ = s1.pdf_ = s.pdf_ = 0.f;
+	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
 	if(Material::hasFlag(s.flags_, mat_1_flags_))
 	{
-		col1 = mat_1_->sample(state, sp, wo, wi_1, s1, w_1);
+		col_1 = mat_1_->sample(state, sp, wo, wi_1, s_1, w_1);
 		mat_1_sampled = true;
 	}
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
 	if(Material::hasFlag(s.flags_, mat_2_flags_))
 	{
-		col2 = mat_2_->sample(state, sp, wo, wi_2, s2, w_2);
+		col_2 = mat_2_->sample(state, sp, wo, wi_2, s_2, w_2);
 		mat_2_sampled = true;
 	}
 
@@ -164,73 +143,69 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 	{
 		wi = (wi_2 + wi_1).normalize();
 
-		s.pdf_ = ADD_PDF(s1.pdf_, s2.pdf_);
-		s.sampled_flags_ = s1.sampled_flags_ | s2.sampled_flags_;
-		s.reverse_ = s1.reverse_ | s2.reverse_;
+		s.pdf_ = math::lerp(s_1.pdf_, s_2.pdf_, blend_val);
+		s.sampled_flags_ = s_1.sampled_flags_ | s_2.sampled_flags_;
+		s.reverse_ = s_1.reverse_ | s_2.reverse_;
 		if(s.reverse_)
 		{
-			s.pdf_back_ = ADD_PDF(s1.pdf_back_, s2.pdf_back_);
-			s.col_back_ = ADD_COLORS((s1.col_back_ * w_1), (s2.col_back_ * w_2), ival, val);
+			s.pdf_back_ = math::lerp(s_1.pdf_back_, s_2.pdf_back_, blend_val);
+			s.col_back_ = math::lerp(s_1.col_back_ * w_1, s_2.col_back_ * w_2, blend_val);
 		}
-		col1 = ADD_COLORS((col1 * w_1), (col2 * w_2), ival, val);
+		col_1 = math::lerp(col_1 * w_1, col_2 * w_2, blend_val);
 		w = 1.f;//addPdf(W1, W2);
 	}
-	else if(mat_1_sampled && !mat_2_sampled)
+	else if(mat_1_sampled)
 	{
 		wi = wi_1;
 
-		s.pdf_ = s1.pdf_;
-		s.sampled_flags_ = s1.sampled_flags_;
-		s.reverse_ = s1.reverse_;
+		s.pdf_ = s_1.pdf_;
+		s.sampled_flags_ = s_1.sampled_flags_;
+		s.reverse_ = s_1.reverse_;
 		if(s.reverse_)
 		{
-			s.pdf_back_ = s1.pdf_back_;
-			s.col_back_ = s1.col_back_;
+			s.pdf_back_ = s_1.pdf_back_;
+			s.col_back_ = s_1.col_back_;
 		}
 		//col1 = col1;
 		w = w_1;
 	}
-	else if(!mat_1_sampled && mat_2_sampled)
+	else if(mat_2_sampled)
 	{
 		wi = wi_2;
 
-		s.pdf_ = s2.pdf_;
-		s.sampled_flags_ = s2.sampled_flags_;
-		s.reverse_ = s2.reverse_;
+		s.pdf_ = s_2.pdf_;
+		s.sampled_flags_ = s_2.sampled_flags_;
+		s.reverse_ = s_2.reverse_;
 		if(s.reverse_)
 		{
-			s.pdf_back_ = s2.pdf_back_;
-			s.col_back_ = s2.col_back_;
+			s.pdf_back_ = s_2.pdf_back_;
+			s.col_back_ = s_2.col_back_;
 		}
-		col1 = col2;
+		col_1 = col_2;
 		w = w_2;
 	}
 
 	state.userdata_ = old_udat;
 
 	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col1, wire_frame_amount, sp);
-	return col1;
+	applyWireFrame(col_1, wire_frame_amount, sp);
+	return col_1;
 }
 
 Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
 	NodeStack stack(state.userdata_);
 
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
-
 	Rgb col;
-
-	if(val <= 0.f) col = mat_1_->sample(state, sp, wo, dir, tcol, s, w);
-	else if(val >= 1.f) col = mat_2_->sample(state, sp, wo, dir, tcol, s, w);
-	else col = mat_1_->sample(state, sp, wo, dir, tcol, s, w) * ival + mat_2_->sample(state, sp, wo, dir, tcol, s, w) * val;
+	if(blend_val <= 0.f) col = mat_1_->sample(state, sp, wo, dir, tcol, s, w);
+	else if(blend_val >= 1.f) col = mat_2_->sample(state, sp, wo, dir, tcol, s, w);
+	else col = math::lerp(mat_1_->sample(state, sp, wo, dir, tcol, s, w), mat_2_->sample(state, sp, wo, dir, tcol, s, w), blend_val);
 
 	state.userdata_ = old_udat;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
@@ -238,21 +213,18 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 
 float BlendMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
-	float pdf_1 = 0.f, pdf_2 = 0.f;
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	pdf_1 = mat_1_->pdf(state, sp, wo, wi, bsdfs);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+	float pdf_1 = mat_1_->pdf(state, sp, wo, wi, bsdfs);
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-	pdf_2 = mat_2_->pdf(state, sp, wo, wi, bsdfs);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
+	const float pdf_2 = mat_2_->pdf(state, sp, wo, wi, bsdfs);
 
 	state.userdata_ = old_udat;
 
-	pdf_1 = ADD_PDF(pdf_1, pdf_2);
+	pdf_1 = math::lerp(pdf_1, pdf_2, blend_val);
 	return pdf_1;
 }
 
@@ -260,10 +232,7 @@ void BlendMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp
 								bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 {
 	NodeStack stack(state.userdata_);
-
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
 
 	reflect = false;
@@ -279,48 +248,48 @@ void BlendMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp
 	m_1_dir[0] = Vec3(0.f);
 	m_1_dir[1] = Vec3(0.f);
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
 	mat_1_->getSpecular(state, sp, wo, m_1_reflect, m_1_refract, m_1_dir, m_1_col);
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
 	mat_2_->getSpecular(state, sp, wo, reflect, refract, dir, col);
 
 	state.userdata_ = old_udat;
 
 	if(reflect && m_1_reflect)
 	{
-		col[0] = ADD_COLORS(m_1_col[0], col[0], ival, val);
+		col[0] = math::lerp(m_1_col[0], col[0], blend_val);
 		dir[0] = (dir[0] + m_1_dir[0]).normalize();
 	}
 	else if(m_1_reflect)
 	{
-		col[0] = m_1_col[0] * ival;
+		col[0] = m_1_col[0] * (1.f - blend_val);
 		dir[0] = m_1_dir[0];
 	}
 	else
 	{
-		col[0] = col[0] * val;
+		col[0] = col[0] * blend_val;
 	}
 
 	if(refract && m_1_refract)
 	{
-		col[1] = ADD_COLORS(m_1_col[1], col[1], ival, val);
+		col[1] = math::lerp(m_1_col[1], col[1], blend_val);
 		dir[1] = (dir[1] + m_1_dir[1]).normalize();
 	}
 	else if(m_1_refract)
 	{
-		col[1] = m_1_col[1] * ival;
+		col[1] = m_1_col[1] * (1.f - blend_val);
 		dir[1] = m_1_dir[1];
 	}
 	else
 	{
-		col[1] = col[1] * val;
+		col[1] = col[1] * blend_val;
 	}
 
 	refract = refract || m_1_refract;
 	reflect = reflect || m_1_reflect;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 }
 
@@ -337,25 +306,20 @@ bool BlendMaterial::isTransparent() const
 Rgb BlendMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	NodeStack stack(state.userdata_);
-
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
-	Rgb col_1(1.f), col_2(1.f);
-
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	col_1 = mat_1_->getTransparency(state, sp, wo);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+	Rgb col_1 = mat_1_->getTransparency(state, sp, wo);
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-	col_2 = mat_2_->getTransparency(state, sp, wo);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
+	const Rgb col_2 = mat_2_->getTransparency(state, sp, wo);
 
-	col_1 = ADD_COLORS(col_1, col_2, ival, val);
+	col_1 = math::lerp(col_1, col_2, blend_val);
 
 	state.userdata_ = old_udat;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
@@ -366,30 +330,25 @@ float BlendMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, 
 
 	if(isTransparent())
 	{
-		float val, ival;
-		getBlendVal(state, sp, val, ival);
-
-		float al_1 = 1.f, al_2 = 1.f;
-
 		void *old_udat = state.userdata_;
 
-		state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-		al_1 = mat_1_->getAlpha(state, sp, wo);
+		state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+		float al_1 = mat_1_->getAlpha(state, sp, wo);
 
-		state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-		al_2 = mat_2_->getAlpha(state, sp, wo);
+		state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
+		const float al_2 = mat_2_->getAlpha(state, sp, wo);
 
 		al_1 = std::min(al_1, al_2);
 
 		state.userdata_ = old_udat;
 
-		float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(al_1, wire_frame_amount, sp);
 		return al_1;
 	}
 
 	float result = 1.0;
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
@@ -397,51 +356,41 @@ float BlendMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, 
 Rgb BlendMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	NodeStack stack(state.userdata_);
-
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
-	Rgb col_1(0.0), col_2(0.0);
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	col_1 = mat_1_->emit(state, sp, wo);
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+	Rgb col_1 = mat_1_->emit(state, sp, wo);
 
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
-	col_2 = mat_2_->emit(state, sp, wo);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
+	const Rgb col_2 = mat_2_->emit(state, sp, wo);
 
-	col_1 = ADD_COLORS(col_1, col_2, ival, val);
+	col_1 = math::lerp(col_1, col_2, blend_val);
 
 	state.userdata_ = old_udat;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
 
 bool BlendMaterial::scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
 {
-	float val, ival;
-	getBlendVal(state, sp, val, ival);
-
+	const float blend_val = getBlendVal(state, sp);
 	void *old_udat = state.userdata_;
-	bool ret = false;
 
-	Rgb col_1(0.f), col_2(0.f);
-	float pdf_1 = 0.f, pdf_2 = 0.f;
+	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
+	bool ret = mat_1_->scatterPhoton(state, sp, wi, wo, s);
+	const Rgb col_1 = s.color_;
+	const float pdf_1 = s.pdf_;
 
-	state.userdata_ = PTR_ADD(state.userdata_, req_mem_);
-	ret = ret || mat_1_->scatterPhoton(state, sp, wi, wo, s);
-	col_1 = s.color_;
-	pdf_1 = s.pdf_;
-
-	state.userdata_ = PTR_ADD(state.userdata_, mmem_1_);
+	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
 	ret = ret || mat_2_->scatterPhoton(state, sp, wi, wo, s);
-	col_2 = s.color_;
-	pdf_2 = s.pdf_;
+	const Rgb col_2 = s.color_;
+	const float pdf_2 = s.pdf_;
 
-	s.color_ = ADD_COLORS(col_1, col_2, ival, val);
-	s.pdf_ = ADD_PDF(pdf_1, pdf_2);
+	s.color_ = math::lerp(col_1, col_2, blend_val);
+	s.pdf_ = math::lerp(pdf_1, pdf_2, blend_val);
 
 	state.userdata_ = old_udat;
 	return ret;
