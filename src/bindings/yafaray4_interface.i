@@ -37,10 +37,10 @@
 
 %{
 #include <sstream>
-#include "common/monitor.h"
+#include "render/monitor.h"
 #include "output/output.h"
 #include "interface/interface.h"
-#include "common/renderpasses.h"
+#include "render/passes.h"
 
 struct YafTilePixel
 {
