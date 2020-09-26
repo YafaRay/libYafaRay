@@ -32,7 +32,7 @@ SunLight::SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samp
 	cast_shadows_ = b_cast_shadows;
 	color_ = col * inte;
 	direction_.normalize();
-	createCs__(dir, du_, dv_);
+	Vec3::createCs(dir, du_, dv_);
 	if(angle > 80.f) angle = 80.f;
 	cos_angle_ = math::cos(math::degToRad(angle));
 	invpdf_ = (math::mult_pi_by_2 * (1.f - cos_angle_));
@@ -54,7 +54,7 @@ bool SunLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	if(photonOnly()) return false;
 
 	//sample direction uniformly inside cone:
-	wi.dir_ = sampleCone__(direction_, du_, dv_, cos_angle_, s.s_1_, s.s_2_);
+	wi.dir_ = sample::cone(direction_, du_, dv_, cos_angle_, s.s_1_, s.s_2_);
 	wi.tmax_ = -1.f;
 
 	s.col_ = col_pdf_;
@@ -77,12 +77,12 @@ bool SunLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	float u, v;
-	shirleyDisk__(s_3, s_4, u, v);
+	Vec3::shirleyDisk(s_3, s_4, u, v);
 
-	Vec3 ldir = sampleCone__(direction_, du_, dv_, cos_angle_, s_3, s_4);
+	Vec3 ldir = sample::cone(direction_, du_, dv_, cos_angle_, s_3, s_4);
 	Vec3 du_2, dv_2;
 
-	minRot__(direction_, du_, ldir, du_2, dv_2);
+	sample::minRot(direction_, du_, ldir, du_2, dv_2);
 
 	ipdf = invpdf_;
 	ray.from_ = world_center_ + world_radius_ * (u * du_2 + v * dv_2 + ldir);

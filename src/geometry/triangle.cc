@@ -120,7 +120,7 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	sp.prim_num_ = self_index_;
 	sp.material_ = material_;
 	sp.p_ = hit;
-	createCs__(sp.n_, sp.nu_, sp.nv_);
+	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
 	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
@@ -274,7 +274,7 @@ void TriangleInstance::getSurface(SurfacePoint &sp, const Point3 &hit, Intersect
 		{
 			Vec3 dp_1 = p_0 - p_2;
 			Vec3 dp_2 = p_1 - p_2;
-			createCs__((dp_2 ^ dp_1).normalize(), sp.dp_du_, sp.dp_dv_);
+			Vec3::createCs((dp_2 ^ dp_1).normalize(), sp.dp_du_, sp.dp_dv_);
 		}
 	}
 	else
@@ -295,9 +295,9 @@ void TriangleInstance::getSurface(SurfacePoint &sp, const Point3 &hit, Intersect
 	sp.prim_num_ = self_index;
 	sp.material_ = m_base_->material_;
 	sp.p_ = hit;
-	createCs__(sp.n_, sp.nu_, sp.nv_);
+	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	Vec3 u_vec, v_vec;
-	createCs__(sp.ng_, u_vec, v_vec);
+	Vec3::createCs(sp.ng_, u_vec, v_vec);
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = u_vec * sp.dp_du_;
 	sp.ds_du_.y_ = v_vec * sp.dp_du_;
@@ -496,7 +496,7 @@ void VTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &d
 	sp.prim_num_ = tri_index;
 	sp.material_ = material_;
 	sp.p_ = hit;
-	createCs__(sp.n_, sp.nu_, sp.nv_);
+	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
 	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
@@ -726,7 +726,7 @@ void BsTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &
 	}
 	sp.material_ = material_;
 	sp.p_ = hit;
-	createCs__(sp.n_, sp.nu_, sp.nv_);
+	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
 	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;

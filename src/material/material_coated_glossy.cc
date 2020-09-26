@@ -26,6 +26,7 @@
 #include "color/color_ramp.h"
 #include "common/param.h"
 #include "geometry/surface.h"
+#include "common/logging.h"
 
 BEGIN_YAFARAY
 
@@ -144,7 +145,7 @@ Rgb CoatedGlossyMaterial::eval(const RenderState &state, const SurfacePoint &sp,
 	float wi_n = std::fabs(wi * n);
 	float wo_n = std::fabs(wo * n);
 
-	fresnel__(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
+	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && Material::hasFlag(bsdfs, BsdfFlags::Glossy)))
 	{
@@ -197,7 +198,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 	float kr, kt;
 	float wi_n = 0.f, wo_n = 0.f;
 
-	fresnel__(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
+	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
 	// missing! get components
 	bool use[3] = {false, false, false};
@@ -224,7 +225,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 	}
 	if(!n_match || sum < 0.00001)
 	{
-		wi = reflectDir__(n, wo);	//If the sampling is prematurely ended for some reason, we need to give wi a value or it will be undefinded causing unexpected problems as black dots. By default I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
+		wi = Vec3::reflectDir(n, wo);	//If the sampling is prematurely ended for some reason, we need to give wi a value or it will be undefinded causing unexpected problems as black dots. By default I've chosen wi to be the reflection of wo, but it's an arbitrary choice.
 		return Rgb(0.f);
 	}
 
@@ -248,7 +249,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 	switch(c_index[pick])
 	{
 		case C_SPECULAR: // specular reflect
-			wi = reflectDir__(n, wo);
+			wi = Vec3::reflectDir(n, wo);
 
 			if(mirror_color_shader_) scolor = mirror_color_shader_->getColor(stack) * kr;
 			else scolor = mirror_color_ * kr;//)/std::fabs(N*wi);
@@ -272,7 +273,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
-			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{
@@ -310,7 +311,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderState &state, const SurfacePoint &s
 					cos_wo_h = wo * h;
 				}
 				// Compute incident direction by reflecting wo about H
-				wi = reflectDir__(h, wo);
+				wi = Vec3::reflectDir(h, wo);
 				cos_ng_wi = sp.ng_ * wi;
 				if(cos_ng_wo * cos_ng_wi < 0)
 				{
@@ -378,7 +379,7 @@ float CoatedGlossyMaterial::pdf(const RenderState &state, const SurfacePoint &sp
 	float pdf = 0.f;
 	float kr, kt;
 
-	fresnel__(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
+	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
 	float accum_c[3], sum = 0.f, width;
 	accum_c[0] = kr;
@@ -436,7 +437,7 @@ void CoatedGlossyMaterial::getSpecular(const RenderState &state, const SurfacePo
 	}
 
 	float kr, kt;
-	fresnel__(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
+	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
 	refr = false;
 

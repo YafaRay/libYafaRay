@@ -25,6 +25,7 @@
 
 #include "constants.h"
 #include "math/math.h"
+#include "math/random.h"
 #include <iostream>
 
 BEGIN_YAFARAY
@@ -65,6 +66,18 @@ class Vec3
 		Vec3 &operator *=(float s) { x_ *= s; y_ *= s; z_ *= s;  return *this;}
 		float operator[](int i) const { return (&x_)[i]; } //Lynx
 		float &operator[](int i) { return (&x_)[i]; } //Lynx
+
+		static Vec3 reflectDir(const Vec3 &n, const Vec3 &v);
+		static Vec3 toVector(const Point3 &p);
+		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
+		static void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
+		static void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
+		static void createCs(const Vec3 &n, Vec3 &u, Vec3 &v);
+		static void shirleyDisk(float r_1, float r_2, float &u, float &v);
+		static Vec3 randomSpherical();
+		static Vec3 randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2);
+		static Vec3 randomVectorCone(const Vec3 &dir, float cosangle, float r_1, float r_2);
+		static Vec3 discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square);
 
 		float x_, y_, z_;
 };
@@ -182,10 +195,10 @@ inline Point3 mult__(const Point3 &a, const Vec3 &b)
 
 inline Vec3 &Vec3::normalize()
 {
-	float len = x_ * x_ + y_ * y_ + z_ * z_;
-	if(len != 0)
+	float len = lengthSqr();
+	if(len != 0.f)
 	{
-		len = 1.0 / math::sqrt(len);
+		len = 1.f / math::sqrt(len);
 		x_ *= len;
 		y_ *= len;
 		z_ *= len;
@@ -193,10 +206,9 @@ inline Vec3 &Vec3::normalize()
 	return *this;
 }
 
-
 inline float Vec3::sinFromVectors(const Vec3 &v)
 {
-	float div = (length() * v.length()) * 0.99999f + 0.00001f;
+	const float div = (length() * v.length()) * 0.99999f + 0.00001f;
 	float asin_argument = ((*this ^ v).length() / div) * 0.99999f;
 	//Fix to avoid black "nan" areas when this argument goes slightly over +1.0. Why that happens in the first place, maybe floating point rounding errors?
 	if(asin_argument > 1.f) asin_argument = 1.f;
@@ -239,26 +251,19 @@ inline float Vec3::normLenSqr() {
 	return vl;
 }
 
-inline Vec3 reflectDir__(const Vec3 &n, const Vec3 &v)
+inline Vec3 Vec3::reflectDir(const Vec3 &n, const Vec3 &v)
 {
 	const float vn = v * n;
 	if(vn < 0) return -v;
 	return 2 * vn * n - v;
 }
 
-
-inline Vec3 toVector__(const Point3 &p)
+inline Vec3 Vec3::toVector(const Point3 &p)
 {
 	return Vec3(p.x_, p.y_, p.z_);
 }
 
-bool refract__(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
-bool refractTest__(const Vec3 &n, const Vec3 &wi, float ior);
-bool invRefractTest__(Vec3 &n, const Vec3 &wi, const Vec3 &wo, float ior);
-void fresnel__(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
-void fastFresnel__(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
-
-inline void createCs__(const Vec3 &n, Vec3 &u, Vec3 &v)
+inline void Vec3::createCs(const Vec3 &n, Vec3 &u, Vec3 &v)
 {
 	if((n.x_ == 0) && (n.y_ == 0))
 	{
@@ -278,64 +283,19 @@ inline void createCs__(const Vec3 &n, Vec3 &u, Vec3 &v)
 	}
 }
 
-void shirleyDisk__(float r_1, float r_2, float &u, float &v);
-
-extern int myseed__;
-
-inline int ourRandomI__()
+inline Vec3 Vec3::randomSpherical()
 {
-	const int a = 0x000041A7;
-	const int m = 0x7FFFFFFF;
-	const int q = 0x0001F31D; // m/a
-	const int r = 0x00000B14; // m%a;
-	myseed__ = a * (myseed__ % q) - r * (myseed__ / q);
-	if(myseed__ < 0)
-		myseed__ += m;
-	return myseed__;
-}
-
-inline float ourRandom__()
-{
-	const int a = 0x000041A7;
-	const int m = 0x7FFFFFFF;
-	const int q = 0x0001F31D; // m/a
-	const int r = 0x00000B14; // m%a;
-	myseed__ = a * (myseed__ % q) - r * (myseed__ / q);
-	if(myseed__ < 0)
-		myseed__ += m;
-	return (float)myseed__ / (float)m;
-}
-
-inline float ourRandom__(int &seed)
-{
-	const int a = 0x000041A7;
-	const int m = 0x7FFFFFFF;
-	const int q = 0x0001F31D; // m/a
-	const int r = 0x00000B14; // m%a;
-	seed = a * (seed % q) - r * (seed / q);
-	if(myseed__ < 0)
-		myseed__ += m;
-	return (float)seed / (float)m;
-}
-
-inline Vec3 randomSpherical__()
-{
-	float r;
-	Vec3 v(0.0, 0.0, ourRandom__());
-	if((r = 1.0 - v.z_ * v.z_) > 0.0)
+	Vec3 v(0.0, 0.0, FastRandom::getNextFloatNormalized());
+	float r = 1.0 - v.z_ * v.z_;
+	if(r > 0.0)
 	{
-		float a = math::mult_pi_by_2 * ourRandom__();
+		const float a = math::mult_pi_by_2 * FastRandom::getNextFloatNormalized();
 		r = math::sqrt(r);
 		v.x_ = r * math::cos(a); v.y_ = r * math::sin(a);
 	}
 	else v.z_ = 1.0;
 	return v;
 }
-
-Vec3 randomVectorCone__(const Vec3 &d, const Vec3 &u, const Vec3 &v,
-						float cosang, float z_1, float z_2);
-Vec3 randomVectorCone__(const Vec3 &dir, float cosangle, float r_1, float r_2);
-Vec3 discreteVectorCone__(const Vec3 &dir, float cangle, int sample, int square);
 
 END_YAFARAY
 

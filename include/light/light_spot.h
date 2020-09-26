@@ -23,11 +23,11 @@
 #define YAFARAY_LIGHT_SPOT_H
 
 #include "light/light.h"
-#include "geometry/surface.h"
-#include "sampler/sample.h"
-#include "common/param.h"
+#include "geometry/vector.h"
 
 BEGIN_YAFARAY
+
+class Pdf1D;
 
 class SpotLight final : public Light
 {

@@ -28,8 +28,8 @@
 #include "scene/scene.h"
 #include "render/monitor.h"
 #include "sampler/halton_scr.h"
-#include "sampler/halton.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "color/spectrum.h"
@@ -140,7 +140,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 	{
 		unsigned int haltoncurr = curr + n_diffuse_photons_thread * thread_id;
 
-		s_1 = riVdC__(haltoncurr);
+		s_1 = sample::riVdC(haltoncurr);
 		s_2 = scrHalton__(2, haltoncurr);
 		s_3 = scrHalton__(3, haltoncurr);
 		s_4 = scrHalton__(4, haltoncurr);
@@ -209,7 +209,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				}
 				// create entry for radiance photon:
 				// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
-				if(final_gather && ourRandom__() < 0.125 && !caustic_photon)
+				if(final_gather && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 				{
 					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
 					RadData rd(sp.p_, n);
@@ -510,7 +510,7 @@ bool PhotonIntegrator::preprocess()
 			{
 				if(scene_->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb_) delete pb; return false; }
 
-				s_1 = riVdC__(curr);
+				s_1 = sample::riVdC(curr);
 				s_2 = scrHalton__(2, curr);
 				s_3 = scrHalton__(3, curr);
 				s_4 = scrHalton__(4, curr);
@@ -577,7 +577,7 @@ bool PhotonIntegrator::preprocess()
 						}
 						// create entry for radiance photon:
 						// don't forget to choose subset only, face normal forward; geometric vs. smooth normal?
-						if(final_gather_ && ourRandom__() < 0.125 && !caustic_photon)
+						if(final_gather_ && FastRandom::getNextFloatNormalized() < 0.125 && !caustic_photon)
 						{
 							Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
 							RadData rd(sp.p_, n);
@@ -727,7 +727,7 @@ bool PhotonIntegrator::preprocess()
 				state.chromatic_ = true;
 				state.wavelength_ = scrHalton__(5, curr);
 
-				s_1 = riVdC__(curr);
+				s_1 = sample::riVdC(curr);
 				s_2 = scrHalton__(2, curr);
 				s_3 = scrHalton__(3, curr);
 				s_4 = scrHalton__(4, curr);
@@ -985,12 +985,12 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 		unsigned int offs = n_paths_ * state.pixel_sample_ + state.sampling_offs_ + i; // some redundancy here...
 		Rgb lcol, scol;
 		// "zero'th" FG bounce:
-		float s_1 = riVdC__(offs);
+		float s_1 = sample::riVdC(offs);
 		float s_2 = scrHalton__(2, offs);
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
@@ -1051,8 +1051,8 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 
 			if(state.ray_division_ > 1)
 			{
-				s_1 = addMod1__(s_1, state.dc_1_);
-				s_2 = addMod1__(s_2, state.dc_2_);
+				s_1 = math::addMod1(s_1, state.dc_1_);
+				s_2 = math::addMod1(s_2, state.dc_2_);
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);

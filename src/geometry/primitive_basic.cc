@@ -66,7 +66,7 @@ void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data
 	//sp.origin = (void*)this;
 	sp.has_orco_ = true;
 	sp.p_ = hit;
-	createCs__(sp.n_, sp.nu_, sp.nv_);
+	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	sp.u_ = atan2(normal.y_, normal.x_) * M_1_PI + 1;
 	sp.v_ = 1.f - math::acos(normal.z_) * M_1_PI;
 	sp.light_ = nullptr;

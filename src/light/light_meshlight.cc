@@ -26,6 +26,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "geometry/triangle.h"
 
@@ -161,15 +162,15 @@ Rgb MeshLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 	Vec3 normal, du, dv;
 	ipdf = area_;
 	sampleSurface(ray.from_, normal, s_3, s_4);
-	createCs__(normal, du, dv);
+	Vec3::createCs(normal, du, dv);
 
 	if(double_sided_)
 	{
 		ipdf *= 2.f;
-		if(s_1 > 0.5f) ray.dir_ = sampleCosHemisphere__(-normal, du, dv, (s_1 - 0.5f) * 2.f, s_2);
-		else 		ray.dir_ = sampleCosHemisphere__(normal, du, dv, s_1 * 2.f, s_2);
+		if(s_1 > 0.5f) ray.dir_ = sample::cosHemisphere(-normal, du, dv, (s_1 - 0.5f) * 2.f, s_2);
+		else 		ray.dir_ = sample::cosHemisphere(normal, du, dv, s_1 * 2.f, s_2);
 	}
-	else ray.dir_ = sampleCosHemisphere__(normal, du, dv, s_1, s_2);
+	else ray.dir_ = sample::cosHemisphere(normal, du, dv, s_1, s_2);
 	return color_;
 }
 
@@ -179,17 +180,17 @@ Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	Vec3 du, dv;
-	createCs__(s.sp_->ng_, du, dv);
+	Vec3::createCs(s.sp_->ng_, du, dv);
 
 	if(double_sided_)
 	{
-		if(s.s_1_ > 0.5f) wo = sampleCosHemisphere__(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
-		else 		wo = sampleCosHemisphere__(s.sp_->ng_, du, dv, s.s_1_ * 2.f, s.s_2_);
+		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
+		else 		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_ * 2.f, s.s_2_);
 		s.dir_pdf_ = 0.5f * std::fabs(s.sp_->ng_ * wo);
 	}
 	else
 	{
-		wo = sampleCosHemisphere__(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
+		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
 		s.dir_pdf_ = std::fabs(s.sp_->ng_ * wo);
 	}
 	s.flags_ = flags_;

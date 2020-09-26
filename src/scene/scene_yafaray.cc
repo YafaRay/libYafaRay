@@ -135,7 +135,7 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		{
 			N = points[i + 1] - points[i];
 			N.normalize();
-			createCs__(N, u, v);
+			Vec3::createCs(N, u, v);
 		}
 		// TODO: thikness?
 		a = o - (0.5 * r * v) - 1.5 * r / sqrt(3.f) * u;

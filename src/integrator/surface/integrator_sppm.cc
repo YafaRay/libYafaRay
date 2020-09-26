@@ -32,6 +32,7 @@
 #include "camera/camera.h"
 #include "sampler/halton_scr.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 #include "light/light.h"
 #include "material/material.h"
 #include "color/spectrum.h"
@@ -229,19 +230,19 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 			if(scene_->getSignals() & Y_SIG_ABORT) break;
 
 			rstate.pixel_number_ = x * i + j;
-			rstate.sampling_offs_ = fnv32ABuf__(i * fnv32ABuf__(j)); //fnv_32a_buf(rstate.pixelNumber);
+			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
 			float toff = scrHalton__(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
 
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
 				rstate.setDefaults();
 				rstate.pixel_sample_ = pass_offs + sample;
-				rstate.time_ = addMod1__((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
+				rstate.time_ = math::addMod1((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
 
-				dx = riVdC__(rstate.pixel_sample_, rstate.sampling_offs_);
-				dy = riS__(rstate.pixel_sample_, rstate.sampling_offs_);
+				dx = sample::riVdC(rstate.pixel_sample_, rstate.sampling_offs_);
+				dy = sample::riS(rstate.pixel_sample_, rstate.sampling_offs_);
 
 				if(sample_lns)
 				{
@@ -509,9 +510,9 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			if(n_bounces == max_bounces) break;
 
 			// scatter photon
-			s_5 = ourRandom__(); // now should use this to see correctness
-			s_6 = ourRandom__();
-			s_7 = ourRandom__();
+			s_5 = FastRandom::getNextFloatNormalized(); // now should use this to see correctness
+			s_6 = FastRandom::getNextFloatNormalized();
+			s_7 = FastRandom::getNextFloatNormalized();
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
@@ -756,9 +757,9 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 				if(n_bounces == max_bounces_) break;
 
 				// scatter photon
-				s_5 = ourRandom__(); // now should use this to see correctness
-				s_6 = ourRandom__();
-				s_7 = ourRandom__();
+				s_5 = FastRandom::getNextFloatNormalized(); // now should use this to see correctness
+				s_6 = FastRandom::getNextFloatNormalized();
+				s_7 = FastRandom::getNextFloatNormalized();
 
 				PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
@@ -1026,7 +1027,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				state.ray_division_ *= dsam;
 				int branch = state.ray_division_ * old_offset;
 				float d_1 = 1.f / (float)dsam;
-				float ss_1 = riS__(state.pixel_sample_ + state.sampling_offs_);
+				float ss_1 = sample::riS(state.pixel_sample_ + state.sampling_offs_);
 				Rgb dcol(0.f), vcol(1.f);
 				Vec3 wi;
 				const VolumeHandler *vol;
@@ -1040,7 +1041,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 					state.wavelength_ = (ns + ss_1) * d_1;
 					state.dc_1_ = scrHalton__(2 * state.raylevel_ + 1, branch + state.sampling_offs_);
 					state.dc_2_ = scrHalton__(2 * state.raylevel_ + 2, branch + state.sampling_offs_);
-					if(old_division > 1) state.wavelength_ = addMod1__(state.wavelength_, old_dc_1);
+					if(old_division > 1) state.wavelength_ = math::addMod1(state.wavelength_, old_dc_1);
 					state.ray_offset_ = branch;
 					++branch;
 					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);

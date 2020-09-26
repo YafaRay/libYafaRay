@@ -20,7 +20,9 @@
 
 #include "light/light_spot.h"
 #include "geometry/surface.h"
+#include "geometry/ray.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -33,7 +35,7 @@ SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float
 	ndir_ = (from - to).normalize();
 	dir_ = -ndir_;
 	color_ = col * power;
-	createCs__(dir_, du_, dv_);
+	Vec3::createCs(dir_, du_, dv_);
 	double rad_angle = math::degToRad(angle);
 	double rad_inner_angle = rad_angle * (1.f - falloff);
 	cos_start_ = math::cos(rad_inner_angle);
@@ -123,7 +125,7 @@ bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	if(cosa < cos_end_) return false; //outside cone
 
 	wi.tmax_ = dist;
-	wi.dir_ = sampleCone__(ldir, du_, dv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
+	wi.dir_ = sample::cone(ldir, du_, dv_, cos_end_, s.s_1_ * shadow_fuzzy_, s.s_2_ * shadow_fuzzy_);
 
 	if(cosa >= cos_start_) // not affected by falloff
 	{
@@ -155,7 +157,7 @@ Rgb SpotLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 
 	if(s_3 <= interv_1_) // sample from cone not affected by falloff:
 	{
-		ray.dir_ = sampleCone__(dir_, du_, dv_, cos_start_, s_1, s_2);
+		ray.dir_ = sample::cone(dir_, du_, dv_, cos_start_, s_1, s_2);
 		ipdf = math::mult_pi_by_2 * (1.f - cos_start_) / interv_1_;
 	}
 	else // sample in the falloff area
@@ -179,7 +181,7 @@ Rgb SpotLight::emitSample(Vec3 &wo, LSample &s) const
 	s.flags_ = flags_;
 	if(s.s_3_ <= interv_1_) // sample from cone not affected by falloff:
 	{
-		wo = sampleCone__(dir_, du_, dv_, cos_start_, s.s_1_, s.s_2_);
+		wo = sample::cone(dir_, du_, dv_, cos_start_, s.s_1_, s.s_2_);
 		s.dir_pdf_ = interv_1_ / (math::mult_pi_by_2 * (1.f - cos_start_));
 	}
 	else // sample in the falloff area

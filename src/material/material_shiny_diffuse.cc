@@ -19,9 +19,10 @@
 #include "material/material_shiny_diffuse.h"
 #include "common/param.h"
 #include "sampler/sample.h"
-#include "material/material_utils_microfacet.h"
 #include "shader/shader_node.h"
 #include "geometry/surface.h"
+#include "common/logging.h"
+#include <cstring>
 
 BEGIN_YAFARAY
 
@@ -360,7 +361,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 	switch(choice[pick])
 	{
 		case(BsdfFlags::SpecularReflect):
-			wi = reflectDir__(n, wo);
+			wi = Vec3::reflectDir(n, wo);
 			s.pdf_ = width[pick];
 			scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (accum_c[0]);
 			if(s.reverse_)
@@ -378,13 +379,13 @@ Rgb ShinyDiffuseMaterial::sample(const RenderState &state, const SurfacePoint &s
 			else s.pdf_ = width[pick];
 			break;
 		case(BsdfFlags::Translucency):
-			wi = sampleCosHemisphere__(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0) scolor = accum_c[2] * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 			s.pdf_ = std::fabs(wi * n) * width[pick]; break;
 		case(BsdfFlags::DiffuseReflect):
 		default:
-			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi > 0) scolor = accum_c[3] * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
 

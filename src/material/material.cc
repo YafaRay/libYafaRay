@@ -74,7 +74,7 @@ Material::Material() : bsdf_flags_(BsdfFlags::None), visibility_(Material::Visib
 
 Rgb Material::sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-	wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
+	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::fabs(wi * n);
 	w = (std::fabs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
 	return Rgb(1.0f);	//Clay color White 100%
@@ -198,10 +198,10 @@ Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, 
 	for(int i = 0; i < 16; ++i)
 	{
 		s_1 = 0.03125 + 0.0625 * (float)i; // (1.f/32.f) + (1.f/16.f)*(float)i;
-		s_2 = riVdC__(i);
+		s_2 = sample::riVdC(i);
 		s_3 = scrHalton__(2, i);
 		s_4 = scrHalton__(3, i);
-		wo = sampleCosHemisphere__(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
+		wo = sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
 		Sample s(s_3, s_4, flags);
 		col = sample(state, sp, wo, wi, s, w);
 		total += col * w;

@@ -24,6 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
+#include "common/logging.h"
 
 BEGIN_YAFARAY
 
@@ -78,9 +79,9 @@ bool SphereLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	float cos_alpha = math::sqrt(1.f - square_radius_ * idist_sqr);
 	cdir *= 1.f / dist;
 	Vec3 du, dv;
-	createCs__(cdir, du, dv);
+	Vec3::createCs(cdir, du, dv);
 
-	wi.dir_ = sampleCone__(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
+	wi.dir_ = sample::cone(cdir, du, dv, cos_alpha, s.s_1_, s.s_2_);
 	float d_1, d_2;
 	if(!sphereIntersect__(wi, center_, square_radius_epsilon_, d_1, d_2))
 	{
@@ -136,23 +137,23 @@ void SphereLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pd
 
 Rgb SphereLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
-	Vec3 sdir = sampleSphere__(s_3, s_4);
+	Vec3 sdir = sample::sphere(s_3, s_4);
 	ray.from_ = center_ + radius_ * sdir;
 	Vec3 du, dv;
-	createCs__(sdir, du, dv);
-	ray.dir_ = sampleCosHemisphere__(sdir, du, dv, s_1, s_2);
+	Vec3::createCs(sdir, du, dv);
+	ray.dir_ = sample::cosHemisphere(sdir, du, dv, s_1, s_2);
 	ipdf = area_;
 	return color_;
 }
 
 Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 {
-	Vec3 sdir = sampleSphere__(s.s_3_, s.s_4_);
+	Vec3 sdir = sample::sphere(s.s_3_, s.s_4_);
 	s.sp_->p_ = center_ + radius_ * sdir;
 	s.sp_->n_ = s.sp_->ng_ = sdir;
 	Vec3 du, dv;
-	createCs__(sdir, du, dv);
-	wo = sampleCosHemisphere__(sdir, du, dv, s.s_1_, s.s_2_);
+	Vec3::createCs(sdir, du, dv);
+	wo = sample::cosHemisphere(sdir, du, dv, s.s_1_, s.s_2_);
 	s.dir_pdf_ = std::fabs(sdir * wo);
 	s.area_pdf_ = inv_area_ * M_PI;
 	s.flags_ = flags_;

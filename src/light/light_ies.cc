@@ -22,6 +22,7 @@
 #include "geometry/surface.h"
 #include "sampler/sample.h"
 #include "light/light_ies_data.h"
+#include "geometry/ray.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -39,7 +40,7 @@ IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float p
 		ndir_.normalize();
 		dir_ = -ndir_;
 
-		createCs__(dir_, du_, dv_);
+		Vec3::createCs(dir_, du_, dv_);
 		cos_end_ = math::cos(ies_data_->getMaxVAngle());
 
 		color_ = col * power;
@@ -104,7 +105,7 @@ bool IesLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	if(cosa < cos_end_) return false;
 
 	wi.tmax_ = dist;
-	wi.dir_ = sampleCone__(ldir, du_, dv_, cosa, s.s_1_, s.s_2_);
+	wi.dir_ = sample::cone(ldir, du_, dv_, cosa, s.s_1_, s.s_2_);
 
 	float u, v;
 	getAngles(u, v, wi.dir_, cosa);
@@ -132,7 +133,7 @@ bool IesLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 Rgb IesLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ray.from_ = position_;
-	ray.dir_ = sampleCone__(dir_, du_, dv_, cos_end_, s_1, s_2);
+	ray.dir_ = sample::cone(dir_, du_, dv_, cos_end_, s_1, s_2);
 
 	ipdf = 0.f;
 
@@ -155,7 +156,7 @@ Rgb IesLight::emitSample(Vec3 &wo, LSample &s) const
 	s.sp_->p_ = position_;
 	s.flags_ = flags_;
 
-	wo = sampleCone__(dir_, du_, dv_, cos_end_, s.s_3_, s.s_4_);
+	wo = sample::cone(dir_, du_, dv_, cos_end_, s.s_3_, s.s_4_);
 
 	float u, v;
 	getAngles(u, v, wo, wo * dir_);

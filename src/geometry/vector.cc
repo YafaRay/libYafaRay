@@ -31,13 +31,11 @@ std::ostream &operator << (std::ostream &out, const Vec3 &v)
 	return out;
 }
 
-
 std::ostream &operator << (std::ostream &out, const Point3 &p)
 {
 	out << "(" << p.x_ << "," << p.y_ << "," << p.z_ << ")";
 	return out;
 }
-
 
 bool  operator == (const Vec3 &a, const Vec3 &b)
 {
@@ -61,11 +59,11 @@ bool  operator != (const Vec3 &a, const Vec3 &b)
 				medium in which n points. E.g. "outside" is air, "inside" is water, the normal points outside,
 				IOR = eta_air / eta_water = 1.33
 */
-bool refract__(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
+bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 {
-	Vec3 N = n, i;
+	Vec3 N = n;
 	float eta = ior;
-	i = -wi;
+	const Vec3 i = -wi;
 	float cos_v_n = wi * n;
 	if((cos_v_n) < 0)
 	{
@@ -76,7 +74,7 @@ bool refract__(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 	{
 		eta = 1.0 / ior;
 	}
-	float k = 1 - eta * eta * (1 - cos_v_n * cos_v_n);
+	const float k = 1 - eta * eta * (1 - cos_v_n * cos_v_n);
 	if(k <= 0.f) return false;
 
 	wo = eta * i + (eta * cos_v_n - math::sqrt(k)) * N;
@@ -85,7 +83,7 @@ bool refract__(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 	return true;
 }
 
-void fresnel__(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
+void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
 {
 	float eta;
 	Vec3 N;
@@ -101,13 +99,13 @@ void fresnel__(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
 		eta = ior;
 		N = n;
 	}
-	float c = i * N;
+	const float c = i * N;
 	float g = eta * eta + c * c - 1;
 	if(g <= 0)
 		g = 0;
 	else
 		g = math::sqrt(g);
-	float aux = c * (g + c);
+	const float aux = c * (g + c);
 
 	kr = ((0.5 * (g - c) * (g - c)) / ((g + c) * (g + c))) *
 		 (1 + ((aux - 1) * (aux - 1)) / ((aux + 1) * (aux + 1)));
@@ -117,22 +115,21 @@ void fresnel__(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt)
 		kt = 0;
 }
 
-
 // 'Faster' Schlick fresnel approximation,
-void fastFresnel__(const Vec3 &i, const Vec3 &n, float iorf,
-				   float &kr, float &kt)
+void Vec3::fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt)
 {
-	float t = 1 - (i * n);
+	const float t = 1 - (i * n);
 	//t = (t<0)?0:((t>1)?1:t);
-	float t_2 = t * t;
+	const float t_2 = t * t;
 	kr = iorf + (1 - iorf) * t_2 * t_2 * t;
 	kt = 1 - kr;
 }
 
 // P.Shirley's concentric disk algorithm, maps square to disk
-void shirleyDisk__(float r_1, float r_2, float &u, float &v)
+void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 {
-	float phi = 0, r = 0, a = 2 * r_1 - 1, b = 2 * r_2 - 1;
+	float phi = 0, r = 0;
+	const float a = 2 * r_1 - 1, b = 2 * r_2 - 1;
 	if(a > -b)
 	{
 		if(a > b)  	// Reg.1
@@ -166,33 +163,28 @@ void shirleyDisk__(float r_1, float r_2, float &u, float &v)
 	v = r * math::sin(phi);
 }
 
-
-
-int myseed__ = 123212;
-
-Vec3 randomVectorCone__(const Vec3 &d,
-						const Vec3 &u, const Vec3 &v,
-						float cosang, float z_1, float z_2)
+Vec3 Vec3::randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2)
 {
-	float t_1 = math::mult_pi_by_2 * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
+	const float t_1 = math::mult_pi_by_2 * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
 	return (u * math::cos(t_1) + v * math::sin(t_1)) * math::sqrt(1.0 - t_2 * t_2) + d * t_2;
 }
 
-Vec3 randomVectorCone__(const Vec3 &dir, float cangle, float r_1, float r_2)
+Vec3 Vec3::randomVectorCone(const Vec3 &dir, float cangle, float r_1, float r_2)
 {
 	Vec3 u, v;
-	createCs__(dir, u, v);
-	return randomVectorCone__(dir, u, v, cangle, r_1, r_2);
+	Vec3::createCs(dir, u, v);
+	return Vec3::randomVectorCone(dir, u, v, cangle, r_1, r_2);
 }
 
-Vec3 discreteVectorCone__(const Vec3 &dir, float cangle, int sample, int square)
+Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int square)
 {
-	float r_1 = (float)(sample / square) / (float)square;
-	float r_2 = (float)(sample % square) / (float)square;
-	float tt = math::mult_pi_by_2 * r_1;
-	float ss = math::acos(1.0 - (1.0 - cangle) * r_2);
-	Vec3	vx(math::cos(ss), math::sin(ss) * math::cos(tt), math::sin(ss) * math::sin(tt));
-	Vec3	i(1, 0, 0), c;
+	const float r_1 = static_cast<float>(sample / square) / static_cast<float>(square);
+	const float r_2 = static_cast<float>(sample % square) / static_cast<float>(square);
+	const float tt = math::mult_pi_by_2 * r_1;
+	const float ss = math::acos(1.0 - (1.0 - cangle) * r_2);
+	const Vec3 vx(math::cos(ss), math::sin(ss) * math::cos(tt), math::sin(ss) * math::sin(tt));
+	const Vec3 i(1, 0, 0);
+	Vec3 c;
 	Matrix4 m(1);
 	if((std::fabs(dir.y_) > 0.0) || (std::fabs(dir.z_) > 0.0))
 	{

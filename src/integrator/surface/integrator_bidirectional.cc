@@ -31,6 +31,7 @@
 #include "background/background.h"
 #include "sampler/sample.h"
 #include "sampler/halton.h"
+#include "sampler/sample_pdf1d.h"
 
 BEGIN_YAFARAY
 
@@ -1005,8 +1006,8 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionPass(RenderState &state, cons
 
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		light_ray.tmax_ = ao_dist_;
@@ -1062,8 +1063,8 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionPassClay(RenderState &state, 
 
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		light_ray.tmax_ = ao_dist_;

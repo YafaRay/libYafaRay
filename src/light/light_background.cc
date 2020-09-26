@@ -26,6 +26,7 @@
 #include "scene/scene.h"
 #include "geometry/surface.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 
 BEGIN_YAFARAY
 
@@ -189,9 +190,9 @@ Rgb BackgroundLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray 
 	ray.dir_ = -ray.dir_;
 
 	Vec3 u_vec, v_vec;
-	createCs__(ray.dir_, u_vec, v_vec);
+	Vec3::createCs(ray.dir_, u_vec, v_vec);
 	float u, v;
-	shirleyDisk__(s_1, s_2, u, v);
+	Vec3::shirleyDisk(s_1, s_2, u, v);
 	const Vec3 offs = u * u_vec + v * v_vec;
 	ray.from_ = world_center_ + world_radius_ * (offs - ray.dir_);
 	return pcol * a_pdf_;
@@ -205,9 +206,9 @@ Rgb BackgroundLight::emitSample(Vec3 &wo, LSample &s) const
 	wo = -wo;
 
 	Vec3 u_vec, v_vec;
-	createCs__(wo, u_vec, v_vec);
+	Vec3::createCs(wo, u_vec, v_vec);
 	float u, v;
-	shirleyDisk__(s.s_1_, s.s_2_, u, v);
+	Vec3::shirleyDisk(s.s_1_, s.s_2_, u, v);
 
 	const Vec3 offs = u * u_vec + v * v_vec;
 

@@ -33,7 +33,7 @@ bool SssVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_
 	float dist = -dist_s_ * log(s.s_1_);
 	if(dist >= ray.tmax_) return false;
 	s_ray.from_ = ray.from_ + dist * ray.dir_;
-	s_ray.dir_ = sampleSphere__(s.s_2_, s.s_3_);
+	s_ray.dir_ = sample::sphere(s.s_2_, s.s_3_);
 	s.color_ = scatter_col_;
 	return true;
 }

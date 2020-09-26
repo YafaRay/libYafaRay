@@ -34,6 +34,7 @@
 #include "render/monitor.h"
 #include "photon/photon.h"
 #include "sampler/sample.h"
+#include "sampler/sample_pdf1d.h"
 
 #ifdef __clang__
 #define inline  // aka inline removal
@@ -401,9 +402,9 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		const unsigned int haltoncurr = curr + n_caus_photons_thread * thread_id;
 
 		state.chromatic_ = true;
-		state.wavelength_ = riS__(haltoncurr);
+		state.wavelength_ = sample::riS(haltoncurr);
 
-		s_1 = riVdC__(haltoncurr);
+		s_1 = sample::riVdC(haltoncurr);
 		s_2 = scrHalton__(2, haltoncurr);
 		s_3 = scrHalton__(3, haltoncurr);
 		s_4 = scrHalton__(4, haltoncurr);
@@ -629,8 +630,8 @@ bool MonteCarloIntegrator::createCausticMap()
 			{
 				if(scene_->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb_) delete pb; return false; }
 				state.chromatic_ = true;
-				state.wavelength_ = riS__(curr);
-				s_1 = riVdC__(curr);
+				state.wavelength_ = sample::riS(curr);
+				s_1 = sample::riVdC(curr);
 				s_2 = scrHalton__(2, curr);
 				s_3 = scrHalton__(3, curr);
 				s_4 = scrHalton__(4, curr);
@@ -794,7 +795,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderState &state, const Surfa
 		{
 			photon = gathered[i].photon_;
 			surf_col = material->eval(state, sp, wo, photon->direction(), BsdfFlags::All);
-			k = kernel__(gathered[i].dist_square_, g_radius_square);
+			k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
 		sum *= 1.f / (float(session__.caustic_map_->nPaths()));
@@ -831,7 +832,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderState &state, DiffRay &ray, B
 			state.ray_division_ *= dsam;
 			int branch = state.ray_division_ * old_offset;
 			const float d_1 = 1.f / (float)dsam;
-			const float ss_1 = riS__(state.pixel_sample_ + state.sampling_offs_);
+			const float ss_1 = sample::riS(state.pixel_sample_ + state.sampling_offs_);
 			Rgb dcol(0.f), vcol(1.f);
 			Vec3 wi;
 			const VolumeHandler *vol;
@@ -844,7 +845,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderState &state, DiffRay &ray, B
 				state.wavelength_ = (ns + ss_1) * d_1;
 				state.dc_1_ = scrHalton__(2 * state.raylevel_ + 1, branch + state.sampling_offs_);
 				state.dc_2_ = scrHalton__(2 * state.raylevel_ + 2, branch + state.sampling_offs_);
-				if(old_division > 1) state.wavelength_ = addMod1__(state.wavelength_, old_dc_1);
+				if(old_division > 1) state.wavelength_ = math::addMod1(state.wavelength_, old_dc_1);
 				state.ray_offset_ = branch;
 				++branch;
 				Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
@@ -1112,8 +1113,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderState &state, const Surfa
 
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
@@ -1172,8 +1173,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionPass(RenderState &state, const S
 
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());
@@ -1233,8 +1234,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionPassClay(RenderState &state, con
 
 		if(state.ray_division_ > 1)
 		{
-			s_1 = addMod1__(s_1, state.dc_1_);
-			s_2 = addMod1__(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, state.dc_1_);
+			s_2 = math::addMod1(s_2, state.dc_2_);
 		}
 
 		if(scene_->shadow_bias_auto_) light_ray.tmin_ = scene_->shadow_bias_ * std::max(1.f, Vec3(sp.p_).length());

@@ -30,10 +30,12 @@
 #include "render/passes.h"
 #include "background/background.h"
 #include "volume/volume.h"
-#include "sampler/halton.h"
 #include "sampler/halton_scr.h"
+#include "common/logging.h"
 
 BEGIN_YAFARAY
+
+class Pdf1D;
 
 PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 {
@@ -204,14 +206,14 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_
 				Ray p_ray;
 
 				state.chromatic_ = was_chromatic;
-				if(was_chromatic) state.wavelength_ = riS__(offs);
+				if(was_chromatic) state.wavelength_ = sample::riS(offs);
 				//this mat already is initialized, just sample (diffuse...non-specular?)
-				float s_1 = riVdC__(offs);
+				float s_1 = sample::riVdC(offs);
 				float s_2 = scrHalton__(2, offs);
 				if(state.ray_division_ > 1)
 				{
-					s_1 = addMod1__(s_1, state.dc_1_);
-					s_2 = addMod1__(s_2, state.dc_2_);
+					s_1 = math::addMod1(s_1, state.dc_1_);
+					s_2 = math::addMod1(s_2, state.dc_2_);
 				}
 				// do proper sampling now...
 				Sample s(s_1, s_2, path_flags);
@@ -255,8 +257,8 @@ Rgba PathIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_
 
 					if(state.ray_division_ > 1)
 					{
-						s_1 = addMod1__(s_1, state.dc_1_);
-						s_2 = addMod1__(s_2, state.dc_2_);
+						s_1 = math::addMod1(s_1, state.dc_1_);
+						s_2 = math::addMod1(s_2, state.dc_2_);
 					}
 
 					s.flags_ = BsdfFlags::All;

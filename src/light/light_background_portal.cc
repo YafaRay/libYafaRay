@@ -28,6 +28,7 @@
 #include "sampler/halton.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "geometry/triangle.h"
+#include "sampler/sample_pdf1d.h"
 
 BEGIN_YAFARAY
 
@@ -130,7 +131,7 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	Rgb energy, col;
 	for(int i = 0; i < 1000; ++i) //exaggerated?
 	{
-		wo.dir_ = sampleSphere__(((float) i + 0.5f) / 1000.f, riVdC__(i));
+		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
 		col = bg_->eval(wo, true);
 		for(int j = 0; j < n_tris_; j++)
 		{
@@ -181,9 +182,9 @@ Rgb BackgroundPortalLight::emitPhoton(float s_1, float s_2, float s_3, float s_4
 	Vec3 normal, du, dv;
 	ipdf = area_;
 	sampleSurface(ray.from_, normal, s_3, s_4);
-	createCs__(normal, du, dv);
+	Vec3::createCs(normal, du, dv);
 
-	ray.dir_ = sampleCosHemisphere__(normal, du, dv, s_1, s_2);
+	ray.dir_ = sample::cosHemisphere(normal, du, dv, s_1, s_2);
 	Ray r_2(ray.from_, -ray.dir_);
 	return bg_->eval(r_2, true);
 }
@@ -194,9 +195,9 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 	sampleSurface(s.sp_->p_, s.sp_->ng_, s.s_3_, s.s_4_);
 	s.sp_->n_ = s.sp_->ng_;
 	Vec3 du, dv;
-	createCs__(s.sp_->ng_, du, dv);
+	Vec3::createCs(s.sp_->ng_, du, dv);
 
-	wo = sampleCosHemisphere__(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
+	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
 	s.dir_pdf_ = std::fabs(s.sp_->ng_ * wo);
 
 	s.flags_ = flags_;

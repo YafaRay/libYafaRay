@@ -24,6 +24,7 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 #include "scene/scene.h"
+#include "common/logging.h"
 
 BEGIN_YAFARAY
 

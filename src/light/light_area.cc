@@ -24,6 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
+#include "common/logging.h"
 #include <iostream>
 
 BEGIN_YAFARAY
@@ -99,7 +100,7 @@ Rgb AreaLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, 
 {
 	ipdf = area_/*  * M_PI */; // really two pi?
 	ray.from_ = corner_ + s_3 * to_x_ + s_4 * to_y_;
-	ray.dir_ = sampleCosHemisphere__(normal_, du_, dv_, s_1, s_2);
+	ray.dir_ = sample::cosHemisphere(normal_, du_, dv_, s_1, s_2);
 	return color_;
 }
 
@@ -107,7 +108,7 @@ Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	s.area_pdf_ = inv_area_ * M_PI;
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
-	wo = sampleCosHemisphere__(normal_, du_, dv_, s.s_1_, s.s_2_);
+	wo = sample::cosHemisphere(normal_, du_, dv_, s.s_1_, s.s_2_);
 	s.sp_->n_ = s.sp_->ng_ = normal_;
 	s.dir_pdf_ = std::fabs(normal_ * wo);
 	s.flags_ = Light::Flags::None; // no delta functions...

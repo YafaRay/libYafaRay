@@ -119,7 +119,7 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 		}
 		default:
 		case BkDisk1:
-			shirleyDisk__(r_1, r_2, u, v);
+			Vec3::shirleyDisk(r_1, r_2, u, v);
 	}
 }
 

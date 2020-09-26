@@ -26,6 +26,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "geometry/surface.h"
+#include "common/logging.h"
 
 BEGIN_YAFARAY
 
@@ -200,7 +201,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 		if(s_1 < s_p_diffuse)
 		{
 			s_1 /= s_p_diffuse;
-			wi = sampleCosHemisphere__(n, sp.nu_, sp.nv_, s_1, s.s_2_);
+			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
 
 			cos_ng_wi = sp.ng_ * wi;
 
@@ -283,7 +284,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = reflectDir__(h, wo);
+			wi = Vec3::reflectDir(h, wo);
 			cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)
@@ -310,7 +311,7 @@ Rgb GlossyMaterial::sample(const RenderState &state, const SurfacePoint &sp, con
 				cos_wo_h = wo * h;
 			}
 			// Compute incident direction by reflecting wo about H
-			wi = reflectDir__(h, wo);
+			wi = Vec3::reflectDir(h, wo);
 			cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)

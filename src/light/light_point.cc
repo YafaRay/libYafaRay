@@ -21,6 +21,7 @@
 #include "light/light_point.h"
 #include "geometry/surface.h"
 #include "sampler/sample.h"
+#include "geometry/ray.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -78,7 +79,7 @@ bool PointLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 Rgb PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const
 {
 	ray.from_ = position_;
-	ray.dir_ = sampleSphere__(s_1, s_2);
+	ray.dir_ = sample::sphere(s_1, s_2);
 	ipdf = 4.0f * M_PI;
 	return color_;
 }
@@ -86,7 +87,7 @@ Rgb PointLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray,
 Rgb PointLight::emitSample(Vec3 &wo, LSample &s) const
 {
 	s.sp_->p_ = position_;
-	wo = sampleSphere__(s.s_1_, s.s_2_);
+	wo = sample::sphere(s.s_1_, s.s_2_);
 	s.flags_ = flags_;
 	s.dir_pdf_ = 0.25f;
 	s.area_pdf_ = 1.f;

@@ -60,6 +60,11 @@ static constexpr double doublemagic = double (6755399441055744.0);
 //2^52 * 1.5,  uses limited precision to floor
 //#endif
 
+// fast base-2 van der Corput, Sobel, and Larcher & Pillichshammer sequences,
+// all from "Efficient Multidimensional Sampling" by Alexander Keller
+static constexpr double sample_mult_ratio = 0.00000000023283064365386962890625;
+
+
 union BitTwiddler
 {
 	int i_;
@@ -287,6 +292,32 @@ inline T mod(const T &a, const T &b)
 	T result = a - n * b;
 	if(a < 0) result += b;
 	return result;
+}
+
+//! Just a "modulo 1" addition, assumed that both values are in range [0;1]
+template<typename T>
+inline T addMod1(const T &a, const T &b)
+{
+	const T s = a + b;
+	return s > 1 ? s - 1 : s;
+}
+
+inline int nextPrime(int last_prime)
+{
+	int new_prime = last_prime + (last_prime & 1) + 1;
+	for(;;)
+	{
+		int dv = 3;
+		bool ispr = true;
+		while((ispr) && (dv * dv <= new_prime))
+		{
+			ispr = ((new_prime % dv) != 0);
+			dv += 2;
+		}
+		if(ispr) break;
+		new_prime += 2;
+	}
+	return new_prime;
 }
 
 } //namespace math

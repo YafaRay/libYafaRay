@@ -360,7 +360,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 			//Y_DEBUG << "idxSamplingFactorExtPass="<<idxSamplingFactorExtPass<<" idxSamplingFactorAuxPass="<<idxSamplingFactorAuxPass<<" matSampleFactor="<<matSampleFactor<<" n_samples_adjusted="<<n_samples_adjusted<<" n_samples="<<n_samples<<YENDL;
 
 			rstate.pixel_number_ = x * i + j;
-			rstate.sampling_offs_ = fnv32ABuf__(i * fnv32ABuf__(j)); //fnv_32a_buf(rstate.pixelNumber);
+			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
 			float toff = scrHalton__(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
 
 			hal_u.setStart(pass_offs + rstate.sampling_offs_);
@@ -371,19 +371,19 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 				int_passes.setDefaults();
 				rstate.setDefaults();
 				rstate.pixel_sample_ = pass_offs + sample;
-				rstate.time_ = addMod1__((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
+				rstate.time_ = math::addMod1((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
 
 				// the (1/n, Larcher&Pillichshammer-Seq.) only gives good coverage when total sample count is known
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA
 				if(aa_noise_params_.passes_ > 1)
 				{
-					dx = riVdC__(rstate.pixel_sample_, rstate.sampling_offs_);
-					dy = riS__(rstate.pixel_sample_, rstate.sampling_offs_);
+					dx = sample::riVdC(rstate.pixel_sample_, rstate.sampling_offs_);
+					dy = sample::riS(rstate.pixel_sample_, rstate.sampling_offs_);
 				}
 				else if(n_samples_adjusted > 1)
 				{
 					dx = (0.5 + (float)sample) * d_1;
-					dy = riLp__(sample + rstate.sampling_offs_);
+					dy = sample::riLp(sample + rstate.sampling_offs_);
 				}
 
 				if(sample_lns)
