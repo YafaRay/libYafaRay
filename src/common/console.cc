@@ -32,19 +32,19 @@ BEGIN_YAFARAY
 
 #define PRINT_BAR(progEmpty, progFull, per) \
 std::cout << "\r"; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Green); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(ConsoleColor::Green); \
 std::cout << "Progress: "; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Red, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(ConsoleColor::Red, true); \
 std::cout << "["; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Green, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(ConsoleColor::Green, true); \
 std::cout << std::string(progFull, '#') << std::string(progEmpty, ' '); \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Red, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(ConsoleColor::Red, true); \
 std::cout << "] "; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(); \
 std::cout << "("; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(Yellow, true); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(ConsoleColor::Yellow, true); \
 std::cout << per << "%"; \
-if(logger__.getConsoleLogColorsEnabled()) std::cout << SetColor(); \
+if(logger__.getConsoleLogColorsEnabled()) std::cout << ConsoleColor(); \
 std::cout << ")" << std::flush
 
 ConsoleProgressBar::ConsoleProgressBar(int cwidth): width_(cwidth), n_steps_(0), done_steps_(0)

@@ -238,13 +238,13 @@ Logger &Logger::out(int verbosity_level)
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug:		std::cout << SetColor(Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose:	std::cout << SetColor(Green) << "[" << printTime(current_datetime) << "] VERB"; break;
-				case VlInfo:		std::cout << SetColor(Green) << "[" << printTime(current_datetime) << "] INFO"; break;
-				case VlParams:		std::cout << SetColor(Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
-				case VlWarning:	std::cout << SetColor(Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
-				case VlError:		std::cout << SetColor(Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
-				default:			std::cout << SetColor(White) << "[" << printTime(current_datetime) << "] LOG"; break;
+				case VlDebug:		std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
+				case VlVerbose:	std::cout << ConsoleColor(ConsoleColor::Green) << "[" << printTime(current_datetime) << "] VERB"; break;
+				case VlInfo:		std::cout << ConsoleColor(ConsoleColor::Green) << "[" << printTime(current_datetime) << "] INFO"; break;
+				case VlParams:		std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
+				case VlWarning:	std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
+				case VlError:		std::cout << ConsoleColor(ConsoleColor::Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
+				default:			std::cout << ConsoleColor(ConsoleColor::White) << "[" << printTime(current_datetime) << "] LOG"; break;
 			}
 		}
 		else
@@ -264,7 +264,7 @@ Logger &Logger::out(int verbosity_level)
 		if(duration == 0) std::cout << ": ";
 		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
 
-		if(console_log_colors_enabled_) std::cout << SetColor();
+		if(console_log_colors_enabled_) std::cout << ConsoleColor();
 
 		previous_console_event_date_time_ = current_datetime;
 	}

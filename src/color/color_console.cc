@@ -26,12 +26,12 @@
 
 BEGIN_YAFARAY
 
-std::ostream &operator << (std::ostream &o, const SetColor &c)
+std::ostream &operator << (std::ostream &o, const ConsoleColor &c)
 {
 #if !defined(_WIN32)
 	o << "\033[" << (int)c.intense_;
-	if(c.fg_col_ != Default) o << ';' << c.fg_col_;
-	if(c.bg_col_ != Default) o << ';' << c.bg_col_;
+	if(c.fg_col_ != ConsoleColor::Default) o << ';' << c.fg_col_;
+	if(c.bg_col_ != ConsoleColor::Default) o << ';' << c.bg_col_;
 	return (o << 'm');
 #else
 	static WORD origAttr = 0;
@@ -45,8 +45,8 @@ std::ostream &operator << (std::ostream &o, const SetColor &c)
 		}
 	}
 
-	auto new_fg_col = (c.fg_col_ != Default) ? (c.fg_col_ | ((WORD)c.intense_ << 3)) : (origAttr & 0x0F);
-	auto new_bg_col = (c.bg_col_ != Default) ? c.bg_col_ : (origAttr & 0xF0);
+	auto new_fg_col = (c.fg_col_ != ConsoleColor::Default) ? (c.fg_col_ | ((WORD)c.intense_ << 3)) : (origAttr & 0x0F);
+	auto new_bg_col = (c.bg_col_ != ConsoleColor::Default) ? c.bg_col_ : (origAttr & 0xF0);
 
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), new_bg_col | new_fg_col);
 #endif

@@ -27,20 +27,22 @@
 
 BEGIN_YAFARAY
 
-enum ConsoleColor : unsigned int
+struct ConsoleColor final
 {
+	enum Color : unsigned int
+	{
 #if !defined(_WIN32)
-	Black,
-	Red,
-	Green,
-	Yellow,
-	Blue,
-	Magenta,
-	Cyan,
-	White,
-	Default
+		Black,
+		Red,
+		Green,
+		Yellow,
+		Blue,
+		Magenta,
+		Cyan,
+		White,
+		Default
 #else
-	Black 		= 0x0000,
+		Black 		= 0x0000,
 	Red			= 0x0004,
 	Green		= 0x0002,
 	Yellow		= Red | Green,
@@ -50,40 +52,38 @@ enum ConsoleColor : unsigned int
 	White		= Red | Green | Blue,
 	Default		= 0xFFFF
 #endif
-};
+	};
 
-struct SetColor final
-{
-	SetColor() : fg_col_(Default), bg_col_(Default), intense_(false) {}
-	SetColor(ConsoleColor fg_color, ConsoleColor bg_color, bool intensecolor = false)
+	ConsoleColor() : fg_col_(Default), bg_col_(Default), intense_(false) {}
+	ConsoleColor(Color fg_color, Color bg_color, bool intensecolor = false)
 	{
 #ifdef _WIN32
 		fg_col_ = fg_color;
-		bg_col_ = (bg_color != Default) ? (ConsoleColor)((unsigned int)bg_color << 4) : Default;
+		bg_col_ = (bg_color != Default) ? (Color)((unsigned int)bg_color << 4) : Default;
 #else
-		fg_col_ = (fg_color != Default) ? (ConsoleColor) ((unsigned int) fg_color + 30) : Default;
-		bg_col_ = (bg_color != Default) ? (ConsoleColor) ((unsigned int) bg_color + 40) : Default;
+		fg_col_ = (fg_color != Default) ? (Color) ((unsigned int) fg_color + 30) : Default;
+		bg_col_ = (bg_color != Default) ? (Color) ((unsigned int) bg_color + 40) : Default;
 #endif
 		intense_ = intensecolor;
 	}
-	SetColor(unsigned int fg_color, bool intensecolor = false)
+	ConsoleColor(unsigned int fg_color, bool intensecolor = false)
 	{
 #ifdef _WIN32
-		fg_col_ = (ConsoleColor)((unsigned int)fg_color);
+		fg_col_ = (Color)((unsigned int)fg_color);
 #else
-		fg_col_ = (fg_color != Default) ? (ConsoleColor) ((unsigned int) fg_color + 30) : Default;
+		fg_col_ = (fg_color != Default) ? (Color) ((unsigned int) fg_color + 30) : Default;
 #endif
 		bg_col_ = Default;
 		intense_ = intensecolor;
 	}
 
-	ConsoleColor fg_col_;
-	ConsoleColor bg_col_;
+	Color fg_col_;
+	Color bg_col_;
 	bool intense_;
 };
 
 
-std::ostream LIBYAFARAY_EXPORT &operator<<(std::ostream &o, const SetColor &c);
+std::ostream LIBYAFARAY_EXPORT &operator<<(std::ostream &o, const ConsoleColor &c);
 
 END_YAFARAY
 

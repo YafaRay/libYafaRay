@@ -416,7 +416,7 @@ void MainWindow::slotFinished()
 
 	rt.append(QString("Render time: %1 [%2s.]").arg(time_str).arg(time_sec, 5));
 	ui_->yafLabel->setText(rt);
-	Y_INFO << SetColor(Green, true) << "Render completed!" << SetColor() << YENDL;
+	Y_INFO << ConsoleColor(ConsoleColor::Green, true) << "Render completed!" << ConsoleColor() << YENDL;
 
 	render_->finishRendering();
 	update();
