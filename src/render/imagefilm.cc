@@ -31,6 +31,7 @@
 #include "common/param.h"
 #include "render/monitor.h"
 #include "common/timer.h"
+#include "math/filter.h"
 #include "resource/yafLogoTiny.h"
 #include <iomanip>
 
@@ -47,77 +48,13 @@
 
 BEGIN_YAFARAY
 
-#define FILTER_TABLE_SIZE 16
-#define MAX_FILTER_SIZE 8
+static constexpr int filter_table_size__ = 16;
+static constexpr int max_filter_size__ = 8;
 
 //! Simple alpha blending
 #define ALPHA_BLEND(b_bg_col, b_fg_col, b_alpha) (( b_bg_col * (1.f - b_alpha) ) + ( b_fg_col * b_alpha ))
 
 typedef float FilterFunc_t(float dx, float dy);
-
-float box__(float dx, float dy) { return 1.f; }
-
-/*!
-Mitchell-Netravali constants
-with B = 1/3 and C = 1/3 as suggested by the authors
-mnX1 = constants for 1 <= |x| < 2
-mna1 = (-B - 6 * C)/6
-mnb1 = (6 * B + 30 * C)/6
-mnc1 = (-12 * B - 48 * C)/6
-mnd1 = (8 * B + 24 * C)/6
-
-mnX2 = constants for 1 > |x|
-mna2 = (12 - 9 * B - 6 * C)/6
-mnb2 = (-18 + 12 * B + 6 * C)/6
-mnc2 = (6 - 2 * B)/6
-
-#define mna1 -0.38888889
-#define mnb1  2.0
-#define mnc1 -3.33333333
-#define mnd1  1.77777778
-
-#define mna2  1.16666666
-#define mnb2 -2.0
-#define mnc2  0.88888889
-*/
-#define GAUSS_EXP 0.00247875
-
-float mitchell__(float dx, float dy)
-{
-	float x = 2.f * math::sqrt(dx * dx + dy * dy);
-
-	if(x >= 2.f) return (0.f);
-
-	if(x >= 1.f) // from mitchell-netravali paper 1 <= |x| < 2
-	{
-		return (float)(x * (x * (x * -0.38888889f + 2.0f) - 3.33333333f) + 1.77777778f);
-	}
-
-	return (float)(x * x * (1.16666666f * x - 2.0f) + 0.88888889f);
-}
-
-float gauss__(float dx, float dy)
-{
-	float r_2 = dx * dx + dy * dy;
-	return std::max(0.f, float(math::exp(-6 * r_2) - GAUSS_EXP));
-}
-
-//Lanczos sinc window size 2
-float lanczos2__(float dx, float dy)
-{
-	float x = math::sqrt(dx * dx + dy * dy);
-
-	if(x == 0.f) return 1.f;
-
-	if(-2 < x && x < 2)
-	{
-		float a = M_PI * x;
-		float b = M_PI_2 * x;
-		return ((math::sin(a) * math::sin(b)) / (a * b));
-	}
-
-	return 0.f;
-}
 
 ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput &out, float filter_size, FilterType filt,
 					  Scene *scene, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type, bool pm_a) : weights_(width,height), flags_(width, height), w_(width), h_(height), cx_0_(xstart), cy_0_(ystart), filterw_(filter_size * 0.5), output_(&out),
@@ -125,7 +62,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
-	filter_table_ = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
+	filter_table_ = new float[filter_table_size__ * filter_table_size__];
 
 	const PassesSettings *passes_settings = scene_->getPassesSettings();
 
@@ -146,30 +83,30 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, ColorOutput
 
 	// fill filter table:
 	float *f_tp = filter_table_;
-	float scale = 1.f / (float)FILTER_TABLE_SIZE;
+	float scale = 1.f / static_cast<float>(filter_table_size__);
 
 	FilterFunc_t *ffunc = nullptr;
 	switch(filt)
 	{
-		case ImageFilm::FilterType::Mitchell: ffunc = mitchell__; filterw_ *= 2.6f; break;
-		case ImageFilm::FilterType::Lanczos: ffunc = lanczos2__; break;
-		case ImageFilm::FilterType::Gauss: ffunc = gauss__; filterw_ *= 2.f; break;
+		case ImageFilm::FilterType::Mitchell: ffunc = math::filter::mitchell; filterw_ *= 2.6f; break;
+		case ImageFilm::FilterType::Lanczos: ffunc = math::filter::lanczos2; break;
+		case ImageFilm::FilterType::Gauss: ffunc = math::filter::gauss; filterw_ *= 2.f; break;
 		case ImageFilm::FilterType::Box:
-		default:	ffunc = box__;
+		default:	ffunc = math::filter::box;
 	}
 
-	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * MAX_FILTER_SIZE); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
+	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size__); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
 
-	for(int y = 0; y < FILTER_TABLE_SIZE; ++y)
+	for(int y = 0; y < filter_table_size__; ++y)
 	{
-		for(int x = 0; x < FILTER_TABLE_SIZE; ++x)
+		for(int x = 0; x < filter_table_size__; ++x)
 		{
 			*f_tp = ffunc((x + .5f) * scale, (y + .5f) * scale);
 			++f_tp;
 		}
 	}
 
-	table_scale_ = 0.9999 * FILTER_TABLE_SIZE / filterw_;
+	table_scale_ = 0.9999 * filter_table_size__ / filterw_;
 	area_cnt_ = 0;
 
 	pbar_ = new ConsoleProgressBar(80);
@@ -916,7 +853,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	// get indizes in filter table
 	double x_offs = dx - 0.5;
 
-	int x_index[MAX_FILTER_SIZE + 1], y_index[MAX_FILTER_SIZE + 1];
+	int x_index[max_filter_size__ + 1], y_index[max_filter_size__ + 1];
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
@@ -942,7 +879,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			// get filter value at pixel (x,y)
-			const int offset = y_index[j - y_0] * FILTER_TABLE_SIZE + x_index[i - x_0];
+			const int offset = y_index[j - y_0] * filter_table_size__ + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
@@ -976,7 +913,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	dy_1 = std::min(cy_1_ - y - 1, math::roundToInt((double) dy + filterw_ - 1.0));
 
 
-	int x_index[MAX_FILTER_SIZE + 1], y_index[MAX_FILTER_SIZE + 1];
+	int x_index[max_filter_size__ + 1], y_index[max_filter_size__ + 1];
 
 	double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
@@ -1001,7 +938,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	{
 		for(int i = x_0; i <= x_1; ++i)
 		{
-			int offset = y_index[j - y_0] * FILTER_TABLE_SIZE + x_index[i - x_0];
+			int offset = y_index[j - y_0] * filter_table_size__ + x_index[i - x_0];
 
 			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
 			pixel += c * filter_table_[offset];
@@ -1071,7 +1008,7 @@ void drawFontBitmap__(const FT_Bitmap *bitmap, Rgba2DImage_t *badge_image, int x
 			{
 				Rgba col = (*badge_image)(std::max(0, i), std::max(0, j)).getColor();
 				float alpha = (float) tmp_buf / 255.0;
-				col = Rgba(ALPHA_BLEND((Rgb)col, text_color, alpha), col.getA());
+				col = Rgba(ALPHA_BLEND(static_cast<Rgb>(col), text_color, alpha), col.getA());
 			}
 		}
 	}
