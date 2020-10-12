@@ -38,7 +38,7 @@ template<class T> class Accelerator;
 class BackgroundPortalLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, Scene &scene);
+		static Light *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);

@@ -30,16 +30,16 @@ class Scene;
 class BeerVolumeHandler : public VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, Scene &scene);
+		static VolumeHandler *factory(const ParamMap &params, const Scene &scene);
 
 	protected:
 		BeerVolumeHandler(const Rgb &sigma): sigma_a_(sigma) {};
 		BeerVolumeHandler(const Rgb &acol, double dist);
 
 	private:
-		virtual bool transmittance(const RenderState &state, const Ray &ray, Rgb &col) const override;
-		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const override;
-		Rgb getSubSurfaceColor(const RenderState &state) const { return sigma_a_; }
+		virtual bool transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const override;
+		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const override;
+		Rgb getSubSurfaceColor(const RenderData &render_data) const { return sigma_a_; }
 		Rgb sigma_a_;
 };
 

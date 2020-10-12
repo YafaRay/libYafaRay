@@ -20,7 +20,7 @@
 
 #include "background/background_sunsky.h"
 #include "color/spectrum_sun.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
@@ -170,7 +170,7 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 	return skycolor;
 }
 
-Rgb SunSkyBackground::operator()(const Ray &ray, RenderState &state, bool from_postprocessed) const
+Rgb SunSkyBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
 {
 	return power_ * getSkyCol(ray);
 }

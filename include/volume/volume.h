@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 class Light;
 class Ray;
@@ -37,16 +37,16 @@ class Scene;
 class VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, Scene &scene);
-		virtual bool transmittance(const RenderState &state, const Ray &ray, Rgb &col) const = 0;
-		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
+		static VolumeHandler *factory(const ParamMap &params, const Scene &scene);
+		virtual bool transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const = 0;
+		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
 };
 
 class VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, Scene &scene);
+		static VolumeRegion *factory(const ParamMap &params, const Scene &scene);
 		VolumeRegion() = default;
 		VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
 

@@ -45,8 +45,8 @@ class NodeMaterial: public Material
 		   sets reqNodeMem to the amount of memory the node stack requires for evaluation of all nodes */
 		void solveNodesOrder(const std::vector<ShaderNode *> &roots);
 		void getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes);
-		void evalNodes(const RenderState &state, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const;
-		void evalBump(NodeStack &stack, const RenderState &state, SurfacePoint &sp, const ShaderNode *bump_s) const;
+		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const;
+		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const;
 		/*! filter out nodes with specific properties */
 		void filterNodes(const std::vector<ShaderNode *> &input, std::vector<ShaderNode *> &output, int flags);
 		virtual ~NodeMaterial();

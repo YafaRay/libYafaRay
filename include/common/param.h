@@ -40,6 +40,8 @@ class LIBYAFARAY_EXPORT Parameter
 		enum Type : int { None = -1, Int = 1, Bool, Float, String, Point, Color, Matrix };
 		//! return the type of the parameter_t
 		Type type() const { return type_; }
+		std::string print() const;
+		std::string printType() const;
 
 		Parameter() = default;
 		Parameter(const std::string &s);
@@ -97,6 +99,8 @@ class LIBYAFARAY_EXPORT ParamMap
 			return false;
 		}
 		Parameter &operator [](const std::string &key);
+		std::string print() const;
+		void printDebug() const;
 
 		void clear();
 		std::map<std::string, Parameter>::const_iterator begin() const;

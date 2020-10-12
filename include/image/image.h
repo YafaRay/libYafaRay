@@ -23,58 +23,71 @@
 #define YAFARAY_IMAGE_H
 
 #include "constants.h"
-#include "image_buffers.h"
+#include <string>
 
 BEGIN_YAFARAY
 
-enum class ImageType : int;
+class Rgba;
+class Layer;
+
+struct DenoiseParams
+{
+	bool enabled_ = false;
+	int hlum_ = 3;
+	int hcol_ = 3;
+	float mix_ = 0.8f;	//!< Mix factor between the de-noised image and the original "noisy" image to avoid banding artifacts in images with all noise removed.
+};
 
 class Image final
 {
 	public:
-		enum class Optimization : int { None = 1, Optimized = 2, Compressed = 3 };
-		Image(int width, int height, const ImageType &type, const Optimization &optimization);
-		Image(const Image &image) = delete;
+		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
+		enum class Optimization : int { None, Optimized, Compressed };
+		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
+		Image(int width, int height, const Type &type, const Optimization &optimization);
+		Image() = default;
+		Image(const Image &image);
 		Image(Image &&image);
 		~Image();
 
 		int getWidth() const { return width_; }
 		int getHeight() const { return height_; }
-		ImageType getType() const { return type_; }
-		Image getDenoisedLdrBuffer(float h_col, float h_lum, float mix) const; //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
+		Type getType() const { return type_; }
+		std::string getTypeName() const { return getTypeName(type_); }
+		int getNumChannels() const { return getNumChannels(type_); }
+		Optimization getOptimization() const { return optimization_; }
 		Rgba getColor(int x, int y) const;
 		float getFloat(int x, int y) const;
 		float getWeight(int x, int y) const;
+		bool hasAlpha() const;
+		bool isGrayscale() const;
 		int getInt(int x, int y) const;
 		void setColor(int x, int y, const Rgba &col);
-		void setColor(int x, int y, const Rgba &col, ColorSpace color_space, float gamma);
 		void setFloat(int x, int y, float val);
 		void setWeight(int x, int y, float val);
 		void setInt(int x, int y, int val);
 		void clear();
 
+		static Type imageTypeWithAlpha(Type image_type);
+		static Type imageTypeWithWeight(Type image_type);
+		static std::string getTypeName(const Type &image_type);
+		static Type getTypeFromName(const std::string &image_type_name);
+		static int getNumChannels(const Type &image_type);
+		static Optimization getOptimizationTypeFromName(const std::string &optimization_type_name);
+		static std::string getOptimizationName(const Optimization &optimization_type);
+		static bool hasAlpha(const Type &image_type);
+		static bool isGrayscale(const Type &image_type);
+		static Type getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight = false);
+		static const Image *getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
+		static Image *getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
+
 	protected:
 		int width_;
 		int height_;
-		ImageType type_;
+		Type type_;
 		Optimization optimization_;
 		void *buffer_ = nullptr;
 };
-
-
-inline void Image::setColor(int x, int y, const Rgba &col, ColorSpace color_space, float gamma)
-{
-	if(color_space == LinearRgb || (color_space == RawManualGamma && gamma == 1.f))
-	{
-		setColor(x, y, col);
-	}
-	else
-	{
-		Rgba col_linear = col;
-		col_linear.linearRgbFromColorSpace(color_space, gamma);
-		setColor(x, y, col_linear);
-	}
-}
 
 END_YAFARAY
 

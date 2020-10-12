@@ -25,6 +25,7 @@
 #define YAFARAY_IMAGEHANDLER_UTIL_TGA_H
 
 #include "constants.h"
+#include "color/color.h"
 
 BEGIN_YAFARAY
 
@@ -77,8 +78,9 @@ const char *tga_signature__ = "TRUEVISION-XFILE.\0";
 
 #pragma pack(push, 1)
 
-struct TgaHeader
+class TgaHeader
 {
+	public:
 	TgaHeader()
 	{
 		id_length_ = 0;

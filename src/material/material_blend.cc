@@ -24,8 +24,9 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "math/interpolation.h"
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
@@ -48,59 +49,59 @@ BlendMaterial::~BlendMaterial()
 	mat_2_flags_ = BsdfFlags::None;
 }
 
-inline float BlendMaterial::getBlendVal(const RenderState &state, const SurfacePoint &sp) const
+inline float BlendMaterial::getBlendVal(const RenderData &render_data, const SurfacePoint &sp) const
 {
 	if(recalc_blend_)
 	{
-		void *old_dat = state.userdata_;
-		NodeStack stack(state.userdata_);
-		evalNodes(state, sp, all_sorted_, stack);
+		void *old_dat = render_data.arena_;
+		NodeStack stack(render_data.arena_);
+		evalNodes(render_data, sp, all_sorted_, stack);
 		const float blend_val = blend_s_->getScalar(stack);
-		state.userdata_ = old_dat;
+		render_data.arena_ = old_dat;
 		return blend_val;
 	}
 	else return blend_val_;
 }
 
-void BlendMaterial::initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const
+void BlendMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
-	void *old_udat = state.userdata_;
+	void *old_udat = render_data.arena_;
 	bsdf_types = BsdfFlags::None;
-	const float blend_val = getBlendVal(state, sp);
+	const float blend_val = getBlendVal(render_data, sp);
 
 	SurfacePoint sp_0 = sp;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	mat_1_->initBsdf(state, sp_0, mat_1_flags_);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	mat_1_->initBsdf(render_data, sp_0, mat_1_flags_);
 
 	SurfacePoint sp_1 = sp;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	mat_2_->initBsdf(state, sp_1, mat_2_flags_);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	mat_2_->initBsdf(render_data, sp_1, mat_2_flags_);
 
 	sp = SurfacePoint::blendSurfacePoints(sp_0, sp_1, blend_val);
 
 	bsdf_types = mat_1_flags_ | mat_2_flags_;
 
 	//todo: bump mapping blending
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 }
 
-Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
+Rgb BlendMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	NodeStack stack(state.userdata_);
+	NodeStack stack(render_data.arena_);
 
-	const float blend_val = getBlendVal(state, sp);
+	const float blend_val = getBlendVal(render_data, sp);
 
-	void *old_udat = state.userdata_;
+	void *old_udat = render_data.arena_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	Rgb col_1 = mat_1_->eval(state, sp, wo, wl, bsdfs);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	Rgb col_1 = mat_1_->eval(render_data, sp, wo, wl, bsdfs);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	const Rgb col_2 = mat_2_->eval(state, sp, wo, wl, bsdfs);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	const Rgb col_2 = mat_2_->eval(render_data, sp, wo, wl, bsdfs);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	col_1 = math::lerp(col_1, col_2, blend_val);
 
@@ -109,10 +110,10 @@ Rgb BlendMaterial::eval(const RenderState &state, const SurfacePoint &sp, const 
 	return col_1;
 }
 
-Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+Rgb BlendMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	NodeStack stack(state.userdata_);
-	const float blend_val = getBlendVal(state, sp);
+	NodeStack stack(render_data.arena_);
+	const float blend_val = getBlendVal(render_data, sp);
 
 	bool mat_1_sampled = false;
 	bool mat_2_sampled = false;
@@ -121,21 +122,21 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 	Sample s_1 = s, s_2 = s;
 	Vec3 wi_1(0.f), wi_2(0.f);
 	float w_1 = 0.f, w_2 = 0.f;
-	void *old_udat = state.userdata_;
+	void *old_udat = render_data.arena_;
 
 	s_2.pdf_ = s_1.pdf_ = s.pdf_ = 0.f;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	if(Material::hasFlag(s.flags_, mat_1_flags_))
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	if(s.flags_.hasAny(mat_1_flags_))
 	{
-		col_1 = mat_1_->sample(state, sp, wo, wi_1, s_1, w_1);
+		col_1 = mat_1_->sample(render_data, sp, wo, wi_1, s_1, w_1);
 		mat_1_sampled = true;
 	}
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	if(Material::hasFlag(s.flags_, mat_2_flags_))
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	if(s.flags_.hasAny(mat_2_flags_))
 	{
-		col_2 = mat_2_->sample(state, sp, wo, wi_2, s_2, w_2);
+		col_2 = mat_2_->sample(render_data, sp, wo, wi_2, s_2, w_2);
 		mat_2_sampled = true;
 	}
 
@@ -185,25 +186,25 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 		w = w_2;
 	}
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
 
-Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
+Rgb BlendMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const
 {
-	NodeStack stack(state.userdata_);
+	NodeStack stack(render_data.arena_);
 
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 	Rgb col;
-	if(blend_val <= 0.f) col = mat_1_->sample(state, sp, wo, dir, tcol, s, w);
-	else if(blend_val >= 1.f) col = mat_2_->sample(state, sp, wo, dir, tcol, s, w);
-	else col = math::lerp(mat_1_->sample(state, sp, wo, dir, tcol, s, w), mat_2_->sample(state, sp, wo, dir, tcol, s, w), blend_val);
+	if(blend_val <= 0.f) col = mat_1_->sample(render_data, sp, wo, dir, tcol, s, w);
+	else if(blend_val >= 1.f) col = mat_2_->sample(render_data, sp, wo, dir, tcol, s, w);
+	else col = math::lerp(mat_1_->sample(render_data, sp, wo, dir, tcol, s, w), mat_2_->sample(render_data, sp, wo, dir, tcol, s, w), blend_val);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
@@ -211,29 +212,29 @@ Rgb BlendMaterial::sample(const RenderState &state, const SurfacePoint &sp, cons
 }
 
 
-float BlendMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float BlendMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	float pdf_1 = mat_1_->pdf(state, sp, wo, wi, bsdfs);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	float pdf_1 = mat_1_->pdf(render_data, sp, wo, wi, bsdfs);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	const float pdf_2 = mat_2_->pdf(state, sp, wo, wi, bsdfs);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	const float pdf_2 = mat_2_->pdf(render_data, sp, wo, wi, bsdfs);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	pdf_1 = math::lerp(pdf_1, pdf_2, blend_val);
 	return pdf_1;
 }
 
-void BlendMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+void BlendMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 								bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 {
-	NodeStack stack(state.userdata_);
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	NodeStack stack(render_data.arena_);
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 
 	reflect = false;
 	refract = false;
@@ -248,13 +249,13 @@ void BlendMaterial::getSpecular(const RenderState &state, const SurfacePoint &sp
 	m_1_dir[0] = Vec3(0.f);
 	m_1_dir[1] = Vec3(0.f);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	mat_1_->getSpecular(state, sp, wo, m_1_reflect, m_1_refract, m_1_dir, m_1_col);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	mat_1_->getSpecular(render_data, sp, wo, m_1_reflect, m_1_refract, m_1_dir, m_1_col);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	mat_2_->getSpecular(state, sp, wo, reflect, refract, dir, col);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	mat_2_->getSpecular(render_data, sp, wo, reflect, refract, dir, col);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	if(reflect && m_1_reflect)
 	{
@@ -303,44 +304,44 @@ bool BlendMaterial::isTransparent() const
 	return mat_1_->isTransparent() || mat_2_->isTransparent();
 }
 
-Rgb BlendMaterial::getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BlendMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(state.userdata_);
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	NodeStack stack(render_data.arena_);
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	Rgb col_1 = mat_1_->getTransparency(state, sp, wo);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	Rgb col_1 = mat_1_->getTransparency(render_data, sp, wo);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	const Rgb col_2 = mat_2_->getTransparency(state, sp, wo);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	const Rgb col_2 = mat_2_->getTransparency(render_data, sp, wo);
 
 	col_1 = math::lerp(col_1, col_2, blend_val);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
 
-float BlendMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
+float BlendMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(state.userdata_);
+	NodeStack stack(render_data.arena_);
 
 	if(isTransparent())
 	{
-		void *old_udat = state.userdata_;
+		void *old_udat = render_data.arena_;
 
-		state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-		float al_1 = mat_1_->getAlpha(state, sp, wo);
+		render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+		float al_1 = mat_1_->getAlpha(render_data, sp, wo);
 
-		state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-		const float al_2 = mat_2_->getAlpha(state, sp, wo);
+		render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+		const float al_2 = mat_2_->getAlpha(render_data, sp, wo);
 
 		al_1 = std::min(al_1, al_2);
 
-		state.userdata_ = old_udat;
+		render_data.arena_ = old_udat;
 
 		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(al_1, wire_frame_amount, sp);
@@ -353,46 +354,46 @@ float BlendMaterial::getAlpha(const RenderState &state, const SurfacePoint &sp, 
 	return result;
 }
 
-Rgb BlendMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb BlendMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(state.userdata_);
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	NodeStack stack(render_data.arena_);
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	Rgb col_1 = mat_1_->emit(state, sp, wo);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	Rgb col_1 = mat_1_->emit(render_data, sp, wo);
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	const Rgb col_2 = mat_2_->emit(state, sp, wo);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	const Rgb col_2 = mat_2_->emit(render_data, sp, wo);
 
 	col_1 = math::lerp(col_1, col_2, blend_val);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
 
-bool BlendMaterial::scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
+bool BlendMaterial::scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
 {
-	const float blend_val = getBlendVal(state, sp);
-	void *old_udat = state.userdata_;
+	const float blend_val = getBlendVal(render_data, sp);
+	void *old_udat = render_data.arena_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + req_mem_;
-	bool ret = mat_1_->scatterPhoton(state, sp, wi, wo, s);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + req_mem_;
+	bool ret = mat_1_->scatterPhoton(render_data, sp, wi, wo, s);
 	const Rgb col_1 = s.color_;
 	const float pdf_1 = s.pdf_;
 
-	state.userdata_ = static_cast<char *>(state.userdata_) + mmem_1_;
-	ret = ret || mat_2_->scatterPhoton(state, sp, wi, wo, s);
+	render_data.arena_ = static_cast<char *>(render_data.arena_) + mmem_1_;
+	ret = ret || mat_2_->scatterPhoton(render_data, sp, wi, wo, s);
 	const Rgb col_2 = s.color_;
 	const float pdf_2 = s.pdf_;
 
 	s.color_ = math::lerp(col_1, col_2, blend_val);
 	s.pdf_ = math::lerp(pdf_1, pdf_2, blend_val);
 
-	state.userdata_ = old_udat;
+	render_data.arena_ = old_udat;
 	return ret;
 }
 

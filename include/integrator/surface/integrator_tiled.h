@@ -28,7 +28,6 @@
 BEGIN_YAFARAY
 
 class SurfacePoint;
-class ImageFilm;
 class PhotonMap;
 class Pdf1D;
 enum class DarkDetectionType : int;
@@ -47,19 +46,19 @@ class TiledIntegrator : public SurfaceIntegrator
 {
 	public:
 		/*! Rendering prepasses to precalc suff in case needed */
-		virtual void prePass(int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
+		virtual void prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, const RenderView *render_view) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		virtual bool render(int num_view, ImageFilm *image_film) override;
+		virtual bool render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view) override;
 		/*! render a pass; only required by the default implementation of render() */
-		virtual bool renderPass(int num_view, int samples, int offset, bool adaptive, int aa_pass_number);
+		virtual bool renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control);
 		/*! render a tile; only required by default implementation of render() */
-		virtual bool renderTile(int num_view, RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
-		virtual void renderWorker(int m_num_view, TiledIntegrator *integrator, Scene *scene, ImageFilm *image_film, ThreadControl *control, int thread_id, int samples, int offset = 0, bool adaptive = false, int aa_pass = 0);
+		virtual bool renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number = 0);
+		virtual void renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, ThreadControl *control, int thread_id, int samples, int offset = 0, bool adaptive = false, int aa_pass = 0);
 
 		//		virtual void recursiveRaytrace(renderState_t &state, diffRay_t &ray, int rDepth, BSDF_t bsdfs, surfacePoint_t &sp, vector3d_t &wo, Rgb &col, float &alpha) const;
-		virtual void precalcDepths();
-		void generateCommonPassesSettings(RenderState &state, const SurfacePoint &sp, const DiffRay &ray, IntPasses *int_passes = nullptr) const; //!< Generates render passes common to all integrators
+		virtual void precalcDepths(const RenderView *render_view);
+		void generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, ColorLayers *color_layers = nullptr) const; //!< Generates render passes common to all integrators
 
 	protected:
 		float i_aa_passes_; //!< Inverse of AA_passes used for depth map
@@ -67,7 +66,6 @@ class TiledIntegrator : public SurfaceIntegrator
 		float aa_sample_multiplier_ = 1.f;
 		float aa_light_sample_multiplier_ = 1.f;
 		float aa_indirect_sample_multiplier_ = 1.f;
-		ImageFilm *image_film_;
 		float max_depth_; //!< Inverse of max depth from camera within the scene boundaries
 		float min_depth_; //!< Distance between camera and the closest object on the scene
 		bool diff_rays_enabled_;	//!< Differential rays enabled/disabled - for future motion blur / interference features

@@ -1,6 +1,5 @@
 /****************************************************************************
  *
- *      imageOutput.cc: generic color output based on imageHandlers
  *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
@@ -22,147 +21,262 @@
 
 #include "output/output_image.h"
 #include "color/color.h"
-#include "common/logging.h"
-#include "common/session.h"
+#include "color/color_layers.h"
+#include "common/logger.h"
 #include "common/file.h"
-#include "render/passes.h"
-#include "imagehandler/imagehandler.h"
+#include "common/param.h"
+#include "format/format.h"
+#include "image/image_layers.h"
+#include "common/badge.h"
 
 BEGIN_YAFARAY
 
-ImageOutput::ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by) : image_(handle), fname_(name), b_x_(bx), b_y_(by)
+ColorOutput *ImageOutput::factory(const ParamMap &params, const Scene &scene)
 {
-	Path path(name);
-	Path output_path(path.getDirectory(), path.getBaseName(), "");
-	//Y_DEBUG PR(name) PR(outputPath.getFullPath()) PREND;
-	session__.setPathImageOutput(output_path.getFullPath());
+	std::string name;
+	std::string image_path;
+	int border_x = 0;
+	int border_y = 0;
+	std::string color_space_str = "Raw_Manual_Gamma";
+	float gamma = 1.f;
+	bool with_alpha = false;
+	bool alpha_premultiply = false;
+	bool multi_layer = true;
+	DenoiseParams denoise_params;
+
+	params.getParam("name", name);
+	params.getParam("image_path", image_path);
+	params.getParam("border_x", border_x);
+	params.getParam("border_y", border_y);
+	params.getParam("color_space", color_space_str);
+	params.getParam("gamma", gamma);
+	params.getParam("alpha_channel", with_alpha);
+	params.getParam("alpha_premultiply", alpha_premultiply);
+	params.getParam("multi_layer", multi_layer);
+
+	params.getParam("denoiseEnabled", denoise_params.enabled_);
+	params.getParam("denoiseHLum", denoise_params.hlum_);
+	params.getParam("denoiseHCol", denoise_params.hcol_);
+	params.getParam("denoiseMix", denoise_params.mix_);
+
+	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
+	ColorOutput *output = new ImageOutput(image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer);
+	output->setLoggingParams(params);
+	output->setBadgeParams(params);
+	return output;
 }
 
-bool ImageOutput::putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha)
+ImageOutput::ImageOutput(const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name, const ColorSpace color_space, float gamma, bool with_alpha, bool alpha_premultiply, bool multi_layer) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply), image_path_(image_path), border_x_(border_x), border_y_(border_y), multi_layer_(multi_layer), denoise_params_(denoise_params)
 {
-	Rgba col(0.f);
-	col.set(color.r_, color.g_, color.b_, ((alpha || ext_pass > 0) ? color.a_ : 1.f));
-	image_->putPixel(x + b_x_, y + b_y_, col, ext_pass);
-	return true;
+	//Empty
 }
 
-bool ImageOutput::putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha)
+ImageOutput::~ImageOutput()
 {
-	if(image_)
+	clearImageLayers();
+}
+
+void ImageOutput::clearImageLayers()
+{
+	if(image_layers_)
 	{
-		for(size_t idx = 0; idx < colors.size(); ++idx)
+		for(auto &it : *image_layers_) delete it.second.image_;
+		delete image_layers_;
+		image_layers_ = nullptr;
+	}
+}
+
+void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views)
+{
+	ColorOutput::init(width, height, layers, render_views);
+	clearImageLayers();
+	image_layers_ = new ImageLayers();
+
+	const Layers layers_exported = layers_->getLayersWithExportedImages();
+	for(const auto &it : layers_exported)
+	{
 		{
-			Rgba col(0.f);
-			col.set(colors[idx].r_, colors[idx].g_, colors[idx].b_, ((alpha || idx > 0) ? colors[idx].a_ : 1.f));
-			image_->putPixel(x + b_x_, y + b_y_, col, idx);
+			Image::Type image_type = it.second.getImageType();
+			Image *image = new Image{width, height, image_type, Image::Optimization::None};
+			image_layers_->set(it.first, {image, it.second});
 		}
 	}
-	return true;
 }
 
-void ImageOutput::flush(int num_view)
+bool ImageOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
-	std::string fname_pass, path, name, base_name, ext;
-
-	size_t sep = fname_.find_last_of("\\/");
-	if(sep != std::string::npos)
-		name = fname_.substr(sep + 1, fname_.size() - sep - 1);
-
-	path = fname_.substr(0, sep + 1);
-
-	if(path == "") name = fname_;
-
-	size_t dot = name.find_last_of(".");
-
-	if(dot != std::string::npos)
+	if(image_layers_)
 	{
-		base_name = name.substr(0, dot);
-		ext  = name.substr(dot, name.size() - dot);
+		image_layers_->setColor(x + border_x_, y + border_y_, color_layer);
+		return true;
 	}
-	else
-	{
-		base_name = name;
-		ext  = "";
-	}
+	else return false;
+}
 
-	const std::string view_name = passes_settings_->view_names_.at(num_view);
-
+void ImageOutput::flush(const RenderControl &render_control)
+{
+	Path path(image_path_);
+	std::string directory = path.getDirectory();
+	std::string base_name = path.getBaseName();
+	const std::string ext = path.getExtension();
+	const std::string view_name = current_render_view_->getName();
 	if(view_name != "") base_name += " (view " + view_name + ")";
 
-	if(image_)
+	ParamMap params;
+	params["type"] = ext;
+	Format *format = Format::factory(params);
+	
+	if(format)
 	{
-		if(image_->isMultiLayer())
+		if(multi_layer_ && format->supportsMultiLayer())
 		{
-			if(num_view == 0)
+			if(view_name == current_render_view_->getName())
 			{
-				saveImageFile(fname_, 0); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayer EXR, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+				saveImageFile(image_path_, Layer::Combined, format, render_control); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 			}
 
-			fname_pass = path + base_name + " [" + "multilayer" + "]" + ext;
-			saveImageFileMultiChannel(fname_pass);
+			if(!directory.empty()) directory += "/";
+			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
+			saveImageFileMultiChannel(fname_pass, format, render_control);
 
 			logger__.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
 		else
 		{
-			const IntPassesSettings &int_passes_settings = passes_settings_->intPassesSettings();
-			const ExtPassesSettings &ext_passes_settings = passes_settings_->extPassesSettings();
-			for(size_t ext_pass = 0; ext_pass < ext_passes_settings.size(); ++ext_pass)
+			if(!directory.empty()) directory += "/";
+			for(const auto &image_layer : *image_layers_)
 			{
-				if(ext_passes_settings(ext_pass).toSave())
+				const Layer::Type layer_type = image_layer.first;
+				if(layer_type == Layer::Combined)
 				{
-					const IntPassType int_pass_type = ext_passes_settings(ext_pass).intPassType();
-					const std::string int_pass_name = int_passes_settings.name(int_pass_type);
-					const std::string ext_pass_name = ext_passes_settings(ext_pass).name();
+					saveImageFile(image_path_, layer_type, format, render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
+					logger__.setImagePath(image_path_); //to show the image in the HTML log output
+				}
 
-					if(num_view == 0 && ext_pass == 0)
-					{
-						saveImageFile(fname_, ext_pass); //default m_imagehandler filename, when not using views nor passes and for reloading into Blender
-						logger__.setImagePath(fname_); //to show the image in the HTML log output
-					}
-
-					if(int_pass_type != PassDisabled && (ext_passes_settings.size() >= 2 || passes_settings_->view_names_.size() >= 2))
-					{
-						fname_pass = path + base_name + " [pass " + ext_pass_name + " - " + int_pass_name + "]" + ext;
-						saveImageFile(fname_pass, ext_pass);
-					}
+				if(layer_type != Layer::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
+				{
+					const std::string layer_type_name = Layer::getTypeName(image_layer.first);
+					const std::string fname_pass = directory + base_name + " [" + layer_type_name + "]." + ext;
+					saveImageFile(fname_pass, layer_type, format, render_control);
 				}
 			}
 		}
+		delete format;
 	}
-
-	if(logger__.getSaveLog())
+	if(save_log_txt_)
 	{
-		std::string f_log_name = path + base_name + "_log.txt";
-		logger__.saveTxtLog(f_log_name);
+		std::string f_log_txt_name = directory + "/" + base_name + "_log.txt";
+		logger__.saveTxtLog(f_log_txt_name, badge_, render_control);
 	}
-
-	if(logger__.getSaveHtml())
+	if(save_log_html_)
 	{
-		std::string f_log_html_name = path + base_name + "_log.html";
-		logger__.saveHtmlLog(f_log_html_name);
+		std::string f_log_html_name = directory + "/" + base_name + "_log.html";
+		logger__.saveHtmlLog(f_log_html_name, badge_, render_control);
 	}
-
 	if(logger__.getSaveStats())
 	{
-		std::string f_stats_name = path + base_name + "_stats.csv";
+		std::string f_stats_name = directory + "/" + base_name + "_stats.csv";
 		logger__.statsSaveToFile(f_stats_name, /*sorted=*/ true);
 	}
 }
 
-void ImageOutput::saveImageFile(std::string filename, int idx)
+void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control)
 {
-	image_->saveToFile(filename, idx);
+	if(render_control.inProgress()) Y_INFO << name_ << ": Autosaving partial render (" << math::roundFloatPrecision(render_control.currentPassPercent(), 0.01) << "% of pass " << render_control.currentPass() << " of " << render_control.totalPasses() << ") file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
+	else Y_INFO << name_ << ": Saving file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
+
+	const Image *image = (*image_layers_)(layer_type).image_;
+
+	if(!image)
+	{
+		Y_WARNING << name_ << ": Image does not exist (it is null) and could not be saved." << YENDL;
+		return;
+	}
+
+	if(badge_.getPosition() != Badge::Position::None)
+	{
+		const Image *badge_image = generateBadgeImage(render_control);
+		Image::Position badge_image_position = Image::Position::Bottom;
+		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
+		image = Image::getComposedImage(image, badge_image, badge_image_position);
+		delete badge_image;
+		if(!image)
+		{
+			Y_WARNING << name_ << ": Image could not be composed with badge and could not be saved." << YENDL;
+			return;
+		}
+	}
+
+	if(denoiseEnabled())
+	{
+		const Image *image_denoised = Image::getDenoisedLdrImage(image, denoise_params_);
+		if(image_denoised)
+		{
+			format->saveToFile(filename, image_denoised);
+			if(image_denoised != image) delete image_denoised;
+		}
+		else
+		{
+			Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+			format->saveToFile(filename, image);
+		}
+	}
+	else format->saveToFile(filename, image);
+
+	if(with_alpha_ && !format->supportsAlpha())
+	{
+		Path file_path(filename);
+		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
+		Y_INFO << name_ << ": Saving separate alpha channel file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
+
+		if(denoiseEnabled())
+		{
+			const Image *image_denoised = Image::getDenoisedLdrImage(image, denoise_params_);
+			if(image_denoised)
+			{
+				format->saveAlphaChannelOnlyToFile(filename, image_denoised);
+				if(image_denoised != image) delete image_denoised;
+			}
+			else
+			{
+				Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
+				format->saveAlphaChannelOnlyToFile(filename, image);
+			}
+		}
+		else format->saveAlphaChannelOnlyToFile(filename, image);
+	}
+	if(image != (*image_layers_)(layer_type).image_) delete image; //only delete the image if it's a postprocessed copy and not the original
 }
 
-void ImageOutput::saveImageFileMultiChannel(std::string filename)
+void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control)
 {
-	image_->saveToFileMultiChannel(filename, passes_settings_);
+	if(badge_.getPosition() != Badge::Position::None)
+	{
+		const Image *badge_image = generateBadgeImage(render_control);
+		Image::Position badge_image_position = Image::Position::Bottom;
+		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
+		ImageLayers image_layers_badge;
+		for(const auto &image_layer : *image_layers_)
+		{
+			Image *image_layer_badge = Image::getComposedImage(image_layer.second.image_, badge_image, badge_image_position);
+			image_layers_badge.set(image_layer.first, {image_layer_badge, image_layer.first});
+		}
+		delete badge_image;
+		format->saveToFileMultiChannel(filename, &image_layers_badge);
+	}
+	else format->saveToFileMultiChannel(filename, image_layers_);
 }
 
-std::string ImageOutput::getDenoiseParams() const {
-	if(image_) return image_->getDenoiseParams();
-	else return "";
+std::string ImageOutput::printDenoiseParams() const
+{
+#ifdef HAVE_OPENCV	//Denoise only works if YafaRay is built with OpenCV support
+	if(!denoiseEnabled()) return "";
+	std::stringstream param_string;
+	param_string << "| Image file denoise enabled [mix=" << denoise_params_.mix_ << ", h(Luminance)=" << denoise_params_.hlum_ << ", h(Chrominance)=" << denoise_params_.hcol_ << "]" << YENDL;
+	return param_string.str();
+#else
+	return "";
+#endif
 }
 
 END_YAFARAY

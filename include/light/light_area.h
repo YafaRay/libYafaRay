@@ -31,7 +31,7 @@ class ParamMap;
 class AreaLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, Scene &scene);
+		static Light *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		AreaLight(const Point3 &c, const Vec3 &v_1, const Vec3 &v_2,

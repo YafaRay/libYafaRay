@@ -31,6 +31,7 @@
 #include "sampler/sample.h"
 #include "sampler/halton.h"
 #include "sampler/halton_scr.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
@@ -41,6 +42,7 @@ float Material::highest_sampling_factor_ = 1.f;	//Initially this class shared va
 
 Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Material) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "blend_mat") return BlendMaterial::factory(params, eparams, scene);
@@ -72,7 +74,7 @@ Material::Material() : bsdf_flags_(BsdfFlags::None), visibility_(Material::Visib
 	material_index_auto_number_ = material_index_auto_;
 }
 
-Rgb Material::sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
+Rgb Material::sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
 	s.pdf_ = std::fabs(wi * n);
@@ -170,10 +172,10 @@ void Material::applyWireFrame(Rgba *const col, float wire_frame_amount, const Su
 	}
 }
 
-bool Material::scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
+bool Material::scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const
 {
 	float w = 0.f;
-	Rgb scol = sample(state, sp, wi, wo, s, w);
+	Rgb scol = sample(render_data, sp, wi, wo, s, w);
 	if(s.pdf_ > 1.0e-6f)
 	{
 		Rgb cnew = s.lcol_ * s.alpha_ * scol * w;
@@ -189,9 +191,9 @@ bool Material::scatterPhoton(const RenderState &state, const SurfacePoint &sp, c
 	return false;
 }
 
-Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, BsdfFlags flags) const
+Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const
 {
-	if(!Material::hasFlag(flags, (BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
+	if(flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
 	float s_1, s_2, s_3, s_4, w = 0.f;
 	Rgb total(0.f), col;
 	Vec3 wi, wo;
@@ -203,7 +205,7 @@ Rgb Material::getReflectivity(const RenderState &state, const SurfacePoint &sp, 
 		s_4 = scrHalton__(3, i);
 		wo = sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
 		Sample s(s_3, s_4, flags);
-		col = sample(state, sp, wo, wi, s, w);
+		col = sample(render_data, sp, wo, wi, s, w);
 		total += col * w;
 	}
 	return total * 0.0625; //total / 16.f

@@ -25,33 +25,66 @@
 #define YAFARAY_OUTPUT_H
 
 #include "constants.h"
+#include "color/color.h"
+#include "render/render_view.h"
+#include "common/badge.h"
 #include <vector>
+#include <map>
 #include <string>
+#include <render/render_control.h>
 
 BEGIN_YAFARAY
 
-class PassesSettings;
-class Rgba;
+class Image;
+class Scene;
+class Layers;
+class ColorLayer;
+class ColorLayers;
+class ParamMap;
 
-/*! Base class for rendering output containers */
-
-class ColorOutput
+class LIBYAFARAY_EXPORT ColorOutput
 {
 	public:
+		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		void setLoggingParams(const ParamMap &params);
+		void setBadgeParams(const ParamMap &params);
 		virtual ~ColorOutput() = default;
-		virtual void initTilesPasses(int total_views, int num_ext_passes) {};
-		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) = 0;
-		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) = 0;
-		virtual void flush(int num_view) = 0;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) = 0;
-		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) {};
+		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) = 0;
+		virtual void flush(const RenderControl &render_control) = 0;
+		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) { }
+		virtual void highlightArea(int x_0, int y_0, int x_1, int y_1) { }
 		virtual bool isImageOutput() const { return false; }
 		virtual bool isPreview() const { return false; }
-		virtual std::string getDenoiseParams() const { return ""; }
-		void setPassesSettings(const PassesSettings *passes_settings) { passes_settings_ = passes_settings; }
+		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views);
+		bool putPixel(int x, int y, const ColorLayers &color_layers);
+		void setRenderView(const RenderView *render_view) { current_render_view_ = render_view; }
+		int getWidth() const { return width_; }
+		int getHeight() const { return height_; }
+		std::string getName() const { return name_; }
+		std::string printBadge(const RenderControl &render_control) const;
+		const Image *generateBadgeImage(const RenderControl &render_control) const;
 
 	protected:
-		const PassesSettings *passes_settings_ = nullptr;
+		LIBYAFARAY_EXPORT ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false);
+		ColorLayer preProcessColor(const ColorLayer &color_layer);
+		virtual std::string printDenoiseParams() const { return ""; }
+		ColorSpace getColorSpace() const { return color_space_; }
+		float getGamma() const { return gamma_; }
+		bool getAlphaPremultiply() const { return alpha_premultiply_; }
+
+		std::string name_;
+		int width_ = 0;
+		int height_ = 0;
+		ColorSpace color_space_;
+		float gamma_ = 1.f;
+		bool with_alpha_ = false;
+		bool alpha_premultiply_ = false;
+		bool save_log_txt_ = false; //Enable/disable text log file saving with exported images
+		bool save_log_html_ = false; //Enable/disable HTML file saving with exported images
+		Badge badge_;
+		const RenderView *current_render_view_ = nullptr;
+		const std::map<std::string, RenderView *> *render_views_ = nullptr;
+		const Layers *layers_ = nullptr;
 };
 
 END_YAFARAY

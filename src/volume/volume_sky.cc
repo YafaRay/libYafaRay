@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 
 Rgb SkyVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
@@ -96,7 +96,7 @@ float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 }
 
 
-VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, Scene &scene)
+VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

@@ -29,17 +29,17 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, Scene &scene);
+		static Integrator *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SkyIntegrator(float s_size, float a, float ss, float t);
 		virtual std::string getShortName() const override { return "Sky"; }
 		virtual std::string getName() const override { return "Sky"; }
-		virtual bool preprocess() override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		virtual Rgba transmittance(RenderData &render_data, Ray &ray) const override;
 		// emission and in-scattering
-		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const override;
+		virtual Rgba integrate(RenderData &render_data, Ray &ray, int additional_depth = 0) const override;
 		Rgba skyTau(const Ray &ray) const;
 		Rgba skyTau(const Ray &ray, float beta, float alpha) const;
 

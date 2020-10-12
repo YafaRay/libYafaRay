@@ -236,7 +236,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 	area_pdf = 1.f;
 }
 
-Light *BackgroundLight::factory(ParamMap &params, Scene &scene)
+Light *BackgroundLight::factory(ParamMap &params, const Scene &scene)
 {
 	int samples = 16;
 	bool shoot_d = true;

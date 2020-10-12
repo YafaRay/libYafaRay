@@ -17,7 +17,7 @@
  */
 
 #include "material/material_node.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/param.h"
 #include "shader/shader_node.h"
 #include <set>
@@ -77,9 +77,9 @@ NodeMaterial::~NodeMaterial()
 	m_shaders_table_.clear();
 }
 
-void NodeMaterial::evalNodes(const RenderState &state, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const {
+void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const {
 	auto end = nodes.end();
-	for(auto iter = nodes.begin(); iter != end; ++iter)(*iter)->eval(stack, state, sp);
+	for(auto iter = nodes.begin(); iter != end; ++iter)(*iter)->eval(stack, render_data, sp);
 }
 
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
@@ -128,10 +128,10 @@ void NodeMaterial::filterNodes(const std::vector<ShaderNode *> &input, std::vect
 	}
 }
 
-void NodeMaterial::evalBump(NodeStack &stack, const RenderState &state, SurfacePoint &sp, const ShaderNode *bump_s) const
+void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const
 {
 	auto end = bump_nodes_.end();
-	for(auto iter = bump_nodes_.begin(); iter != end; ++iter)(*iter)->evalDerivative(stack, state, sp);
+	for(auto iter = bump_nodes_.begin(); iter != end; ++iter)(*iter)->evalDerivative(stack, render_data, sp);
 	float du, dv;
 	bump_s->getDerivative(stack, du, dv);
 	applyBump(sp, du, dv);

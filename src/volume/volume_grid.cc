@@ -30,7 +30,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 
 float GridVolumeRegion::density(Point3 p) const
@@ -64,7 +64,7 @@ float GridVolumeRegion::density(Point3 p) const
 	return dens;
 }
 
-VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, Scene &scene)
+VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

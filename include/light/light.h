@@ -21,6 +21,7 @@
 #define YAFARAY_LIGHT_H
 
 #include "constants.h"
+#include "common/flags.h"
 #include "color/color.h"
 #include <sstream>
 
@@ -39,11 +40,15 @@ struct LSample;
 class Light
 {
 	public:
-		static Light *factory(ParamMap &params, Scene &scene);
-		enum class Flags : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
-		static constexpr bool hasFlag(const Light::Flags &f_1, const Light::Flags &f_2);
+		static Light *factory(ParamMap &params, const Scene &scene);
+		struct Flags : public yafaray4::Flags
+		{
+			Flags() = default;
+			Flags(unsigned int flags) : yafaray4::Flags(flags) { }
+			enum Enum : unsigned int { None = 0, DiracDir = 1, Singular = 1 << 1 };
+		};
 		Light() = default;
-		Light(Flags flags): flags_(flags) {}
+		Light(const Flags &flags): flags_(flags) {}
 		virtual ~Light() = default;
 		//! allow for preprocessing when scene loading has finished
 		virtual void init(Scene &scene) {}
@@ -87,10 +92,10 @@ class Light
 		bool photonOnly() const { return photon_only_; }
 		//! sets clampIntersect value to reduce noise at the expense of realism and inexact overall lighting
 		void setClampIntersect(float clamp) { clamp_intersect_ = clamp; }
-		Light::Flags getFlags() const { return flags_; }
+		Flags getFlags() const { return flags_; }
 
 	protected:
-		Light::Flags flags_;
+		Flags flags_;
 		Background *background_ = nullptr;
 		bool light_enabled_; //!< enable/disable light
 		bool cast_shadows_; //!< enable/disable if the light should cast direct shadows
@@ -113,32 +118,6 @@ struct LSample
 	Light::Flags flags_; //<! flags of the sampled light source
 	SurfacePoint *sp_; //!< surface point on the light source, may only be complete enough to call other light methods with it!
 };
-
-inline constexpr Light::Flags operator&(const Light::Flags &f_1, const Light::Flags &f_2)
-{
-	return static_cast<Light::Flags>(static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
-}
-
-inline constexpr Light::Flags operator|(const Light::Flags &f_1, const Light::Flags &f_2)
-{
-	return static_cast<Light::Flags>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
-}
-
-inline std::ostringstream &operator<<(std::ostringstream& os, const Light::Flags &f)
-{
-	os << std::hex << static_cast<unsigned int>(f);
-	return os;
-}
-
-inline Light::Flags operator|=(Light::Flags &f_1, const Light::Flags &f_2)
-{
-	return f_1 = (f_1 | f_2);
-}
-
-inline constexpr bool Light::hasFlag(const Light::Flags &f_1, const Light::Flags &f_2)
-{
-	return ((f_1 & f_2) != Light::Flags::None);
-}
 
 END_YAFARAY
 

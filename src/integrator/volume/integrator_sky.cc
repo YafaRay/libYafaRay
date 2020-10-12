@@ -22,8 +22,8 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "sampler/halton.h"
 #include "sampler/halton_scr.h"
+#include "render/render_data.h"
 #include <vector>
 
 BEGIN_YAFARAY
@@ -80,7 +80,8 @@ SkyIntegrator::SkyIntegrator(float s_size, float a, float ss, float t) {
 	std::cout << "SkyIntegrator: b_m: " << b_m_ << " b_r: " << b_r_ << std::endl;
 }
 
-bool SkyIntegrator::preprocess() {
+bool SkyIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+{
 	background_ = scene_->getBackground();
 	return true;
 }
@@ -147,7 +148,7 @@ Rgba SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const {
 	return tau_val;
 }
 
-Rgba SkyIntegrator::transmittance(RenderState &state, Ray &ray) const {
+Rgba SkyIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
 	//return Rgba(0.f);
 	Rgba result;
 
@@ -156,7 +157,7 @@ Rgba SkyIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	return Rgba(exp(-result.energy()));
 }
 
-Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
+Rgba SkyIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
 	//return Rgba(0.f);
 	Rgba i_r(0.f);
 	Rgba i_m(0.f);
@@ -174,7 +175,7 @@ Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth
 		float theta = (v * 0.3f + 0.2f) * 0.5f * M_PI;
 		for(int u = 0; u < u_vec; u++)
 		{
-			float phi = (u /* + (*state.prng)() */) * 2.0f * M_PI / (float)u_vec;
+			float phi = (u /* + (*render_data.prng)() */) * 2.0f * M_PI / (float)u_vec;
 			float z = cos(theta);
 			float x = sin(theta) * cos(phi);
 			float y = sin(theta) * sin(phi);
@@ -203,7 +204,7 @@ Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth
 
 	float step = step_size_ * scale_;
 
-	float pos = 0.f + (*state.prng_)() * step;
+	float pos = 0.f + (*render_data.prng_)() * step;
 
 	while(pos < s)
 	{
@@ -233,7 +234,7 @@ Rgba SkyIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth
 	return s_0_r * i_r + s_0_m * i_m;
 }
 
-Integrator *SkyIntegrator::factory(ParamMap &params, Scene &scene) {
+Integrator *SkyIntegrator::factory(ParamMap &params, const Scene &scene) {
 	float s_size = 1.f;
 	float a = .5f;
 	float ss = .1f;

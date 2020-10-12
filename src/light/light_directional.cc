@@ -24,7 +24,7 @@
 #include "scene/scene.h"
 #include "geometry/bound.h"
 #include "sampler/sample.h"
-#include "common/logging.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
@@ -115,7 +115,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light *DirectionalLight::factory(ParamMap &params, Scene &scene)
+Light *DirectionalLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 dir(0.0, 0.0, 1.0);

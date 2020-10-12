@@ -1,7 +1,7 @@
 #pragma once
 /****************************************************************************
  *
- *      imagehandler_exr.h: EXR format handler
+ *      imagehandler_jpg.h: Joint Photographic Experts Group (JPEG) format handler
  *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
@@ -21,26 +21,26 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_EXR_H
-#define YAFARAY_IMAGEHANDLER_EXR_H
+#ifndef YAFARAY_FORMAT_JPG_H
+#define YAFARAY_FORMAT_JPG_H
 
-#include "imagehandler/imagehandler.h"
+#include "format/format.h"
 
 BEGIN_YAFARAY
 
-class ExrHandler final : public ImageHandler
+class JpgFormat final : public Format
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		static Format *factory(ParamMap &params);
 
 	private:
-		ExrHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
-		virtual bool saveToFileMultiChannel(const std::string &name, const PassesSettings *passes_settings) override;
-		virtual bool isHdr() const override { return true; }
+		virtual std::string getFormatName() const override { return "JpgFormat"; }
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual bool saveToFile(const std::string &name, const Image *image) override;
+		virtual bool supportsAlpha() const override { return false; }
+		virtual bool saveAlphaChannelOnlyToFile(const std::string &name, const Image *image) override;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_EXR_H
+#endif // YAFARAY_FORMAT_JPG_H

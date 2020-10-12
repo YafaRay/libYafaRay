@@ -33,7 +33,7 @@ class Scene;
 class SunLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, Scene &scene);
+		static Light *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SunLight(Vec3 dir, const Rgb &col, float inte, float angle, int n_samples, bool b_light_enabled = true, bool b_cast_shadows = true);

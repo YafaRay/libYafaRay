@@ -33,8 +33,9 @@
 
 BEGIN_YAFARAY
 
-Integrator *Integrator::factory(ParamMap &params, Scene &scene)
+Integrator *Integrator::factory(ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Integrator) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "bidirectional")

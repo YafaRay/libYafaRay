@@ -18,15 +18,15 @@
 
 #include "integrator/volume/integrator_single_scatter.h"
 #include "geometry/surface.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "volume/volume.h"
 #include "scene/scene.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "sampler/halton.h"
 #include "sampler/halton_scr.h"
+#include "render/render_data.h"
 #include <vector>
 
 BEGIN_YAFARAY
@@ -40,10 +40,11 @@ SingleScatterIntegrator::SingleScatterIntegrator(float s_size, bool adapt, bool 
 	Y_PARAMS << "SingleScatter: stepSize: " << step_size_ << " adaptive: " << adaptive_ << " optimize: " << optimize_ << YENDL;
 }
 
-bool SingleScatterIntegrator::preprocess() {
+bool SingleScatterIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
+{
 	Y_INFO << "SingleScatter: Preprocessing..." << YENDL;
 
-	lights_ = scene_->getLightsVisible();
+	lights_ = render_view->getLightsVisible();
 	const auto &volumes = scene_->getVolumeRegions();
 	vr_size_ = volumes.size();
 	i_vr_size_ = 1.f / (float)vr_size_;
@@ -146,7 +147,7 @@ bool SingleScatterIntegrator::preprocess() {
 	return true;
 }
 
-Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, float current_step) const {
+Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const {
 	Rgb in_scatter(0.f);
 	SurfacePoint sp;
 	sp.p_ = step_ray.from_;
@@ -167,7 +168,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 			{
 				// ...shadowed...
 				if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-				bool shadowed = scene_->isShadowed(state, light_ray, mask_obj_index, mask_mat_index);
+				bool shadowed = scene_->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index);
 				if(!shadowed)
 				{
 					float light_tr = 0.0f;
@@ -212,14 +213,14 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 			for(int i = 0; i < n; ++i)
 			{
 				// ...get sample val...
-				ls.s_1_ = (*state.prng_)();
-				ls.s_2_ = (*state.prng_)();
+				ls.s_1_ = (*render_data.prng_)();
+				ls.s_2_ = (*render_data.prng_)();
 
 				if((*l)->illumSample(sp, ls, light_ray))
 				{
 					// ...shadowed...
 					if(light_ray.tmax_ < 0.f) light_ray.tmax_ = 1e10;  // infinitely distant light
-					bool shadowed = scene_->isShadowed(state, light_ray, mask_obj_index, mask_mat_index);
+					bool shadowed = scene_->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index);
 					if(!shadowed)
 					{
 						ccol += ls.col_ / ls.pdf_;
@@ -268,7 +269,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderState &state, Ray &step_ray, flo
 	return in_scatter;
 }
 
-Rgba SingleScatterIntegrator::transmittance(RenderState &state, Ray &ray) const {
+Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
 	Rgba tr(1.f);
 	//return Tr;
 	if(vr_size_ == 0) return tr;
@@ -279,7 +280,7 @@ Rgba SingleScatterIntegrator::transmittance(RenderState &state, Ray &ray) const 
 		float t_0 = -1, t_1 = -1;
 		if(v.second->intersect(ray, t_0, t_1))
 		{
-			float random = (*state.prng_)();
+			float random = (*render_data.prng_)();
 			Rgb optical_thickness = v.second->tau(ray, step_size_, random);
 			tr *= Rgba(math::exp(-optical_thickness.energy()));
 		}
@@ -288,7 +289,7 @@ Rgba SingleScatterIntegrator::transmittance(RenderState &state, Ray &ray) const 
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
+Rgba SingleScatterIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
 	float t_0 = 1e10f, t_1 = -1e10f;
 
 	Rgba result(0.f);
@@ -316,7 +317,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additi
 
 	float pos;
 	int samples;
-	pos = t_0 - (*state.prng_)() * step_size_; // start position of ray marching
+	pos = t_0 - (*render_data.prng_)() * step_size_; // start position of ray marching
 	dist = t_1 - pos;
 	samples = dist / step_size_ + 1;
 
@@ -403,7 +404,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additi
 
 		if(optimize_ && tr_tmp.energy() < 1e-3f)
 		{
-			float random = (*state.prng_)();
+			float random = (*render_data.prng_)();
 			if(random < 0.5f)
 			{
 				break;
@@ -425,7 +426,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additi
 
 		if(optimize_ && sigma_s < 1e-3f)
 		{
-			float random = (*state.prng_)();
+			float random = (*render_data.prng_)();
 			if(random < 0.5f)
 			{
 				pos += current_step;
@@ -434,7 +435,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additi
 			sigma_s = sigma_s / random;
 		}
 
-		result += tr_tmp * getInScatter(state, step_ray, current_step) * sigma_s * current_step;
+		result += tr_tmp * getInScatter(render_data, step_ray, current_step) * sigma_s * current_step;
 
 		if(adaptive_)
 		{
@@ -461,7 +462,7 @@ Rgba SingleScatterIntegrator::integrate(RenderState &state, Ray &ray, int additi
 	return result;
 }
 
-Integrator *SingleScatterIntegrator::factory(ParamMap &params, Scene &scene) {
+Integrator *SingleScatterIntegrator::factory(ParamMap &params, const Scene &scene) {
 	bool adapt = false;
 	bool opt = false;
 	float s_size = 1.f;

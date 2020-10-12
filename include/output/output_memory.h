@@ -20,26 +20,22 @@
 #ifndef YAFARAY_OUTPUT_MEMORY_H
 #define YAFARAY_OUTPUT_MEMORY_H
 
-#include "constants.h"
 #include "output/output.h"
 
 BEGIN_YAFARAY
 
-class PassesSettings;
+class ImageLayers;
 
 class LIBYAFARAY_EXPORT MemoryInputOutput final : public ColorOutput
 {
 	public:
-		MemoryInputOutput(int resx, int resy, float *i_mem) : sizex_(resx), sizey_(resy), image_mem_(i_mem) { }
+		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		MemoryInputOutput(int width, int height, float *i_mem, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply), image_mem_(i_mem) { width_ = width; height_ = height; }
 
 	private:
-		virtual ~MemoryInputOutput() override;
-		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) override;
-		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) override;
-		void flush(int num_view) override;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override {}; // no tiled file format used...yet
+		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
+		void flush(const RenderControl &render_control) override;
 
-		int sizex_, sizey_;
 		float *image_mem_;
 };
 

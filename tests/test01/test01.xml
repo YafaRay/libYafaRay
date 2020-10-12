@@ -1,77 +1,43 @@
 <?xml version="1.0"?>
 
 <!-- 
-# YafaRay v3 Test01
-# Tests for texture formats, render passes, denoise, logs and image film saving.
+# YafaRay v4 Test01
+# Tests for texture formats, render layers, denoise, logs and image film saving.
 
 To test, using the terminal (or Windows "cmd") do this:
 * Using "cd", enter the directory "test01" where this test01.xml file resides
 * Execute the "yafaray-xml" indicating the full path to it, and some parameters as, for example:
-<path-to-yafaray-xml>/yafaray-xml -a -f png -vl verbose -lvl verbose test01.xml test01_render
+<path-to-yafaray-xml>/yafaray-xml -vl verbose -lvl verbose test01.xml
 -->
 
 <scene type="triangle">
 
-<passes_settings name="passes_settings">
+<render_layers name="render_layers">
 	<facesEdgeSmoothness fval="0.5"/>
 	<facesEdgeThickness ival="1"/>
 	<facesEdgeThreshold fval="0.01"/>
 	<objectEdgeSmoothness fval="0.75"/>
 	<objectEdgeThickness ival="2"/>
 	<objectEdgeThreshold fval="0.3"/>
-	<pass_AO sval="ao-clay"/>
-	<pass_Color sval="disabled"/>
-	<pass_Depth sval="z-depth-norm"/>
-	<pass_DiffCol sval="disabled"/>
-	<pass_DiffDir sval="disabled"/>
-	<pass_DiffInd sval="disabled"/>
-	<pass_Diffuse sval="diffuse"/>
-	<pass_Emit sval="disabled"/>
-	<pass_Env sval="env"/>
-	<pass_GlossCol sval="disabled"/>
-	<pass_GlossDir sval="disabled"/>
-	<pass_GlossInd sval="disabled"/>
-	<pass_IndexMA sval="disabled"/>
-	<pass_IndexOB sval="disabled"/>
-	<pass_Indirect sval="disabled"/>
-	<pass_Mist sval="mist"/>
-	<pass_Normal sval="debug-normal-smooth"/>
-	<pass_Reflect sval="disabled"/>
-	<pass_Refract sval="disabled"/>
-	<pass_Shadow sval="shadow"/>
-	<pass_Spec sval="disabled"/>
-	<pass_SubsurfaceCol sval="disabled"/>
-	<pass_SubsurfaceDir sval="disabled"/>
-	<pass_SubsurfaceInd sval="disabled"/>
-	<pass_TransCol sval="disabled"/>
-	<pass_TransDir sval="disabled"/>
-	<pass_TransInd sval="disabled"/>
-	<pass_UV sval="obj-index-auto"/>
-	<pass_Vector sval="mat-index-auto"/>
-	<pass_enable bval="true"/>
-	<pass_mask_invert bval="false"/>
-	<pass_mask_mat_index ival="2"/>
-	<pass_mask_obj_index ival="2"/>
-	<pass_mask_only bval="false"/>
-	<toonEdgeColor r="0" g="0" b="0" a="1"/>
-	<toonPostSmooth fval="3"/>
-	<toonPreSmooth fval="3"/>
-	<toonQuantization fval="0.1"/>
-</passes_settings>
-
-<logging_badge name="logging_badge">
-	<logging_author sval=""/>
-	<logging_comments sval="Tests for texture formats, render passes, denoise, logs and image film saving."/>
-	<logging_contact sval=""/>
-	<logging_drawAANoiseSettings bval="false"/>
-	<logging_drawRenderSettings bval="false"/>
-	<logging_fontPath sval=""/>
-	<logging_fontSizeFactor fval="1"/>
-	<logging_paramsBadgePosition sval="top"/>
-	<logging_saveHTML bval="true"/>
-	<logging_saveLog bval="true"/>
-	<logging_title sval="YafaRay v3 Test01"/>
-</logging_badge>
+	<!-- Layer must be defined with parameter name layer_define_xx. Layer numbers are unimportant, but we just need a different parameter for each layer -->
+	<layer_define_01 sval="ao-clay"/>
+	<layer_define_02 sval="z-depth-norm"/>
+	<layer_define_03 sval="diffuse"/>
+	<layer_define_04 sval="env"/>
+	<layer_define_05 sval="mist"/>
+	<layer_define_06 sval="debug-normal-smooth"/>
+	<layer_define_07 sval="shadow"/>
+	<layer_define_08 sval="obj-index-auto"/>
+	<layer_define_09 sval="mat-index-auto"/>
+	<layer_mask_invert bval="false"/>
+	<layer_mask_mat_index ival="2"/>
+	<layer_mask_obj_index ival="2"/>
+	<layer_mask_only bval="false"/>
+	<layer_toon_edge_color r="0" g="0" b="0" a="1"/>
+	<layer_toon_post_smooth fval="3"/>
+	<layer_toon_pre_smooth fval="3"/>
+	<layer_toon_quantization fval="0.1"/>
+</render_layers>
 
 <texture name="Texture.005">
 	<adj_clamp bval="true"/>
@@ -89,7 +55,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.tif"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -120,7 +85,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.tga"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -151,7 +115,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.png"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -182,7 +145,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.jpg"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -213,7 +175,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.hdr"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -244,7 +205,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
-	<fileformat sval="JPEG"/>
 	<filename sval="test01_tex.exr"/>
 	<gamma fval="1"/>
 	<interpolate sval="bilinear"/>
@@ -623,10 +583,22 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_thickness fval="0.01"/>
 </material>
 
-<light name="Point">
+<light name="light_1">
 	<cast_shadows bval="true"/>
 	<color r="1" g="1" b="1" a="1"/>
 	<from x="5.27648" y="-4.88993" z="8.89514"/>
+	<light_enabled bval="true"/>
+	<photon_only bval="false"/>
+	<power fval="72"/>
+	<type sval="pointlight"/>
+	<with_caustic bval="true"/>
+	<with_diffuse bval="true"/>
+</light>
+
+<light name="light_2">
+	<cast_shadows bval="true"/>
+	<color r="0" g="1" b="1" a="1"/>
+	<from x="3.27648" y="-7.88993" z="4.89514"/>
 	<light_enabled bval="true"/>
 	<photon_only bval="false"/>
 	<power fval="72"/>
@@ -789,15 +761,30 @@ To test, using the terminal (or Windows "cmd") do this:
 			<f a="0" b="3" c="2"/>
 </mesh>
 
-<camera name="cam">
+<camera name="cam_1">
 	<aperture fval="0"/>
 	<bokeh_rotation fval="0"/>
 	<bokeh_type sval="disk1"/>
 	<dof_distance fval="0"/>
 	<focal fval="1.09375"/>
 	<from x="8.64791" y="-7.22615" z="8.1295"/>
-	<resx ival="480"/>
-	<resy ival="270"/>
+	<resx ival="640"/>
+	<resy ival="480"/>
+	<to x="8.03447" y="-6.65603" z="7.58301"/>
+	<type sval="perspective"/>
+	<up x="8.25644" y="-6.8447" z="8.9669"/>
+	<view_name sval=""/>
+</camera>
+
+<camera name="cam_2">
+	<aperture fval="0"/>
+	<bokeh_rotation fval="0"/>
+	<bokeh_type sval="disk1"/>
+	<dof_distance fval="0"/>
+	<focal fval="1.5"/>
+	<from x="8.64791" y="-7.22615" z="8.1295"/>
+	<resx ival="640"/>
+	<resy ival="480"/>
 	<to x="8.03447" y="-6.65603" z="7.58301"/>
 	<type sval="perspective"/>
 	<up x="8.25644" y="-6.8447" z="8.9669"/>
@@ -822,18 +809,68 @@ To test, using the terminal (or Windows "cmd") do this:
 	<AO_samples ival="32"/>
 	<bg_transp bval="false"/>
 	<bg_transp_refract bval="false"/>
-	<caustics bval="false"/>
+	<caustics bval="true"/>
+	<diffuse bval="true"/>
 	<do_AO bval="false"/>
 	<photon_maps_processing sval="generate-only"/>
 	<raydepth ival="8"/>
 	<shadowDepth ival="2"/>
 	<transpShad bval="false"/>
-	<type sval="directlighting"/>
+	<type sval="photonmapping"/>
+	<photon_maps_processing sval="generate-save"/>
 </integrator>
 
 <integrator name="volintegr">
 	<type sval="none"/>
 </integrator>
+
+<output name="output1_png">
+	<type sval="image_output"/>
+	<image_path sval="./test01_png.png"/>
+	<color_space sval="sRGB"/>
+	<gamma fval="1"/>
+	<denoiseEnabled bval="true"/>
+	<denoiseHCol ival="5"/>
+	<denoiseHLum ival="5"/>
+	<denoiseMix fval="0.8"/>
+	<badge_position sval="top"/>
+	<badge_title sval="YafaRay v4 Test01 (PNG output)"/>
+	<badge_author sval="YafaRay authors"/>
+	<badge_comment sval="Tests for texture formats, render passes, denoise, logs and image film saving."/>
+	<badge_contact sval="https://github.com/YafaRay/libYafaRay/issues"/>
+	<badge_font_path sval=""/>
+	<badge_font_size_factor fval="1"/>
+	<badge_draw_aa_noise_settings bval="false"/>
+	<badge_draw_render_settings bval="false"/>
+	<logging_save_html bval="true"/>
+	<logging_save_txt bval="true"/>
+</output>
+
+<output name="output2_exr">
+	<type sval="image_output"/>
+	<image_path sval="./test01_exr.exr"/>
+	<multi_layer bval="true"/>
+	<logging_save_txt bval="true"/>
+	<badge_position sval="top"/>
+	<badge_title sval="YafaRay v4 Test01 (EXR output)"/>
+</output>
+
+<!-- This can be used as a printed debug output for testing. Yo do it, uncomment this block
+<output name="output3_print">
+	<type sval="debug_output"/>
+</output>
+-->
+<render_view name="view_1">
+	<camera_name sval="cam_1"/>
+	<light_names sval="light_1;light_2"/>
+	<wavelength fval="0.0"/> <!-- wavelength = 0.0 means normal rendering, not spectral -->
+</render_view>
+
+<render_view name="view_2">
+	<camera_name sval="cam_2"/>
+	<light_names sval="light_2"/>
+	<wavelength fval="0.0"/> <!-- wavelength = 0.0 means normal rendering, not spectral -->
+</render_view>
 
 <render>
 	<AA_clamp_indirect fval="0"/>
@@ -861,21 +898,12 @@ To test, using the terminal (or Windows "cmd") do this:
 	<background_name sval="world_background"/>
 	<background_resampling bval="true"/>
 	<camera_name sval="cam"/>
-	<color_space sval="sRGB"/>
-	<color_space2 sval="sRGB"/>
-	<denoiseEnabled bval="true"/>
-	<denoiseHCol ival="5"/>
-	<denoiseHLum ival="5"/>
-	<denoiseMix fval="0.8"/>
+	<film_load_save_mode sval="save"/>
+	<film_load_save_path sval="./test01_v4"/>
 	<film_autosave_interval_passes ival="1"/>
 	<film_autosave_interval_seconds fval="300"/>
 	<film_autosave_interval_type sval="none"/>
-	<film_save_binary_format bval="true"/>
-	<film_save_load sval="save"/>
 	<filter_type sval="gauss"/>
-	<gamma fval="1"/>
-	<gamma2 fval="1"/>
-	<height ival="270"/>
 	<images_autosave_interval_passes ival="1"/>
 	<images_autosave_interval_seconds fval="300"/>
 	<images_autosave_interval_type sval="none"/>
@@ -888,7 +916,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<tiles_order sval="centre"/>
 	<type sval="none"/>
 	<volintegrator_name sval="volintegr"/>
-	<width ival="480"/>
+	<width ival="640"/>
+	<height ival="480"/>
 	<xstart ival="0"/>
 	<ystart ival="0"/>
 </render>

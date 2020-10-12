@@ -26,27 +26,26 @@
 #include "scene/scene.h"
 #include "math/math.h"
 #include "math/interpolation.h"
+#include "format/format.h"
+#include "common/file.h"
+
+#ifdef HAVE_OPENCV
+#include <opencv2/photo/photo.hpp>
+#endif
 
 BEGIN_YAFARAY
 
 float *ImageTexture::ewa_weight_lut_ = nullptr;
 
-ImageTexture::ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space):
-		image_(ih), color_space_(color_space), gamma_(gamma), mirror_x_(false), mirror_y_(false)
+ImageTexture::ImageTexture(Image &&image)
 {
-	interpolation_type_ = interpolation_type;
-}
-
-ImageTexture::~ImageTexture()
-{
-	// Here we simply clear the pointer, yafaray's core will handle the memory cleanup
-	image_ = nullptr;
+	images_.emplace_back(image);
 }
 
 void ImageTexture::resolution(int &x, int &y, int &z) const
 {
-	x = image_->getWidth();
-	y = image_->getHeight();
+	x = images_.at(0).getWidth();
+	y = images_.at(0).getHeight();
 	z = 0;
 }
 
@@ -107,8 +106,8 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 
 Rgba ImageTexture::getColor(int x, int y, int z, const MipMapParams *mipmap_params) const
 {
-	const int resx = image_->getWidth();
-	const int resy = image_->getHeight();
+	const int resx = images_.at(0).getWidth();
+	const int resy = images_.at(0).getHeight();
 
 	y = resy - y; //on occasion change image storage from bottom to top...
 
@@ -117,8 +116,8 @@ Rgba ImageTexture::getColor(int x, int y, int z, const MipMapParams *mipmap_para
 
 	Rgba ret(0.f);
 
-	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) ret = image_->getPixel(x, y, static_cast<int>(floorf(mipmap_params->force_image_level_ * image_->getHighestImgIndex())));
-	else ret = image_->getPixel(x, y);
+	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) ret = images_.at(static_cast<int>(floorf(mipmap_params->force_image_level_ * (images_.size() - 1)))).getColor(x, y);
+	else ret = images_.at(0).getColor(x, y);
 
 	return applyAdjustments(ret);
 }
@@ -145,7 +144,7 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 
 	texpt = 0.5f * texpt + 0.5f;
 	// repeat, only valid for REPEAT clipmode
-	if(tex_clip_mode_ == TexClipMode::Repeat)
+	if(tex_clip_mode_ == ClipMode::Repeat)
 	{
 
 		if(xrepeat_ > 1) texpt.x_ *= static_cast<float>(xrepeat_);
@@ -171,13 +170,13 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 	// clipping
 	switch(tex_clip_mode_)
 	{
-		case TexClipMode::ClipCube:
+		case ClipMode::ClipCube:
 		{
 			if((texpt.x_ < 0) || (texpt.x_ > 1) || (texpt.y_ < 0) || (texpt.y_ > 1) || (texpt.z_ < -1) || (texpt.z_ > 1))
 				outside = true;
 			break;
 		}
-		case TexClipMode::Checker:
+		case ClipMode::Checker:
 		{
 			const int xs = static_cast<int>(floor(texpt.x_)), ys = static_cast<int>(floor(texpt.y_));
 			texpt.x_ -= xs;
@@ -200,20 +199,20 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 			}
 			// continue to TCL_CLIP
 		}
-		case TexClipMode::Clip:
+		case ClipMode::Clip:
 		{
 			if((texpt.x_ < 0) || (texpt.x_ > 1) || (texpt.y_ < 0) || (texpt.y_ > 1))
 				outside = true;
 			break;
 		}
-		case TexClipMode::Extend:
+		case ClipMode::Extend:
 		{
 			if(texpt.x_ > 0.99999f) texpt.x_ = 0.99999f; else if(texpt.x_ < 0) texpt.x_ = 0;
 			if(texpt.y_ > 0.99999f) texpt.y_ = 0.99999f; else if(texpt.y_ < 0) texpt.y_ = 0;
 			// no break, fall thru to TEX_REPEAT
 		}
 		default:
-		case TexClipMode::Repeat: outside = false;
+		case ClipMode::Repeat: outside = false;
 	}
 	return outside;
 }
@@ -292,37 +291,37 @@ void ImageTexture::findTextureInterpolationCoordinates(int &coord_0, int &coord_
 
 Rgba ImageTexture::noInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	const int resx = image_->getWidth(mipmaplevel);
-	const int resy = image_->getHeight(mipmaplevel);
+	const int resx = images_.at(mipmaplevel).getWidth();
+	const int resy = images_.at(mipmaplevel).getHeight();
 
 	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_)));
 	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_)));
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
 
-	return image_->getPixel(x_1, y_1, mipmaplevel);
+	return images_.at(mipmaplevel).getColor(x_1, y_1);
 }
 
 Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	const int resx = image_->getWidth(mipmaplevel);
-	const int resy = image_->getHeight(mipmaplevel);
+	const int resx = images_.at(mipmaplevel).getWidth();
+	const int resy = images_.at(mipmaplevel).getHeight();
 
 	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
 	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
 
-	const Rgba c_11 = image_->getPixel(x_1, y_1, mipmaplevel);
-	const Rgba c_21 = image_->getPixel(x_2, y_1, mipmaplevel);
-	const Rgba c_12 = image_->getPixel(x_1, y_2, mipmaplevel);
-	const Rgba c_22 = image_->getPixel(x_2, y_2, mipmaplevel);
+	const Rgba c_11 = images_.at(mipmaplevel).getColor(x_1, y_1);
+	const Rgba c_21 = images_.at(mipmaplevel).getColor(x_2, y_1);
+	const Rgba c_12 = images_.at(mipmaplevel).getColor(x_1, y_2);
+	const Rgba c_22 = images_.at(mipmaplevel).getColor(x_2, y_2);
 
 	const float w_11 = (1 - dx) * (1 - dy);
 	const float w_12 = (1 - dx) * dy;
@@ -334,36 +333,36 @@ Rgba ImageTexture::bilinearInterpolation(const Point3 &p, int mipmaplevel) const
 
 Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmaplevel) const
 {
-	const int resx = image_->getWidth(mipmaplevel);
-	const int resy = image_->getHeight(mipmaplevel);
+	const int resx = images_.at(mipmaplevel).getWidth();
+	const int resy = images_.at(mipmaplevel).getHeight();
 
 	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
 	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
 
 	int x_0, x_1, x_2, x_3, y_0, y_1, y_2, y_3;
 	float dx, dy;
-	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == TexClipMode::Repeat, mirror_x_);
-	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == TexClipMode::Repeat, mirror_y_);
+	findTextureInterpolationCoordinates(x_0, x_1, x_2, x_3, dx, xf, resx, tex_clip_mode_ == ClipMode::Repeat, mirror_x_);
+	findTextureInterpolationCoordinates(y_0, y_1, y_2, y_3, dy, yf, resy, tex_clip_mode_ == ClipMode::Repeat, mirror_y_);
 
-	const Rgba c_00 = image_->getPixel(x_0, y_0, mipmaplevel);
-	const Rgba c_01 = image_->getPixel(x_0, y_1, mipmaplevel);
-	const Rgba c_02 = image_->getPixel(x_0, y_2, mipmaplevel);
-	const Rgba c_03 = image_->getPixel(x_0, y_3, mipmaplevel);
+	const Rgba c_00 = images_.at(mipmaplevel).getColor(x_0, y_0);
+	const Rgba c_01 = images_.at(mipmaplevel).getColor(x_0, y_1);
+	const Rgba c_02 = images_.at(mipmaplevel).getColor(x_0, y_2);
+	const Rgba c_03 = images_.at(mipmaplevel).getColor(x_0, y_3);
 
-	const Rgba c_10 = image_->getPixel(x_1, y_0, mipmaplevel);
-	const Rgba c_11 = image_->getPixel(x_1, y_1, mipmaplevel);
-	const Rgba c_12 = image_->getPixel(x_1, y_2, mipmaplevel);
-	const Rgba c_13 = image_->getPixel(x_1, y_3, mipmaplevel);
+	const Rgba c_10 = images_.at(mipmaplevel).getColor(x_1, y_0);
+	const Rgba c_11 = images_.at(mipmaplevel).getColor(x_1, y_1);
+	const Rgba c_12 = images_.at(mipmaplevel).getColor(x_1, y_2);
+	const Rgba c_13 = images_.at(mipmaplevel).getColor(x_1, y_3);
 
-	const Rgba c_20 = image_->getPixel(x_2, y_0, mipmaplevel);
-	const Rgba c_21 = image_->getPixel(x_2, y_1, mipmaplevel);
-	const Rgba c_22 = image_->getPixel(x_2, y_2, mipmaplevel);
-	const Rgba c_23 = image_->getPixel(x_2, y_3, mipmaplevel);
+	const Rgba c_20 = images_.at(mipmaplevel).getColor(x_2, y_0);
+	const Rgba c_21 = images_.at(mipmaplevel).getColor(x_2, y_1);
+	const Rgba c_22 = images_.at(mipmaplevel).getColor(x_2, y_2);
+	const Rgba c_23 = images_.at(mipmaplevel).getColor(x_2, y_3);
 
-	const Rgba c_30 = image_->getPixel(x_3, y_0, mipmaplevel);
-	const Rgba c_31 = image_->getPixel(x_3, y_1, mipmaplevel);
-	const Rgba c_32 = image_->getPixel(x_3, y_2, mipmaplevel);
-	const Rgba c_33 = image_->getPixel(x_3, y_3, mipmaplevel);
+	const Rgba c_30 = images_.at(mipmaplevel).getColor(x_3, y_0);
+	const Rgba c_31 = images_.at(mipmaplevel).getColor(x_3, y_1);
+	const Rgba c_32 = images_.at(mipmaplevel).getColor(x_3, y_2);
+	const Rgba c_33 = images_.at(mipmaplevel).getColor(x_3, y_3);
 
 	const Rgba cy_0 = math::cubicInterpolate(c_00, c_10, c_20, c_30, dx);
 	const Rgba cy_1 = math::cubicInterpolate(c_01, c_11, c_21, c_31, dx);
@@ -375,15 +374,15 @@ Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmaplevel) const
 
 Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	const float ds = std::max(fabsf(mipmap_params->ds_dx_), fabsf(mipmap_params->ds_dy_)) * image_->getWidth();
-	const float dt = std::max(fabsf(mipmap_params->dt_dx_), fabsf(mipmap_params->dt_dy_)) * image_->getHeight();
+	const float ds = std::max(fabsf(mipmap_params->ds_dx_), fabsf(mipmap_params->ds_dy_)) * images_.at(0).getWidth();
+	const float dt = std::max(fabsf(mipmap_params->dt_dx_), fabsf(mipmap_params->dt_dy_)) * images_.at(0).getHeight();
 	float mipmaplevel = 0.5f * log2(ds * ds + dt * dt);
 
-	if(mipmap_params->force_image_level_ > 0.f) mipmaplevel = mipmap_params->force_image_level_ * image_->getHighestImgIndex();
+	if(mipmap_params->force_image_level_ > 0.f) mipmaplevel = mipmap_params->force_image_level_ * static_cast<float>(images_.size() - 1);
 
 	mipmaplevel += trilinear_level_bias_;
 
-	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(image_->getHighestImgIndex()));
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(images_.size() - 1));
 
 	const int mipmaplevel_a = static_cast<int>(floor(mipmaplevel));
 	const int mipmaplevel_b = static_cast<int>(ceil(mipmaplevel));
@@ -425,8 +424,8 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy
 
 	if(minor_length <= 0.f) return bilinearInterpolation(p);
 
-	float mipmaplevel = image_->getHighestImgIndex() - 1.f + log2(minor_length);
-	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(image_->getHighestImgIndex()));
+	float mipmaplevel = static_cast<float>(images_.size() - 1) - 1.f + log2(minor_length);
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(static_cast<float>(images_.size() - 1)));
 
 	const int mipmaplevel_a = static_cast<int>(floor(mipmaplevel));
 	const int mipmaplevel_b = static_cast<int>(ceil(mipmaplevel));
@@ -442,16 +441,16 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy
 
 Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float d_s_0, float d_t_0, float d_s_1, float d_t_1, int mipmaplevel) const
 {
-	if(mipmaplevel >= image_->getHighestImgIndex())
+	if(mipmaplevel >= static_cast<float>(images_.size() - 1))
 	{
-		const int resx = image_->getWidth(mipmaplevel);
-		const int resy = image_->getHeight(mipmaplevel);
+		const int resx = images_.at(0).getWidth();
+		const int resy = images_.at(0).getHeight();
 
-		return image_->getPixel(math::mod(static_cast<int>(p.x_), resx), math::mod(static_cast<int>(p.y_), resy), image_->getHighestImgIndex());
+		return images_.at(static_cast<float>(images_.size() - 1)).getColor(math::mod(static_cast<int>(p.x_), resx), math::mod(static_cast<int>(p.y_), resy));
 	}
 
-	const int resx = image_->getWidth(mipmaplevel);
-	const int resy = image_->getHeight(mipmaplevel);
+	const int resx = images_.at(mipmaplevel).getWidth();
+	const int resy = images_.at(mipmaplevel).getHeight();
 
 	const float xf = (static_cast<float>(resx) * (p.x_ - floor(p.x_))) - 0.5f;
 	const float yf = (static_cast<float>(resy) * (p.y_ - floor(p.y_))) - 0.5f;
@@ -496,7 +495,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float d_s_0, float d_
 				const int ismod = math::mod(is, resx);
 				const int itmod = math::mod(it, resy);
 
-				sum_col += image_->getPixel(ismod, itmod, mipmaplevel) * weight;
+				sum_col += images_.at(mipmaplevel).getColor(ismod, itmod) * weight;
 				sum_wts += weight;
 			}
 		}
@@ -523,39 +522,100 @@ void ImageTexture::generateEwaLookupTable()
 	}
 }
 
-ImageTexture::TexClipMode string2Cliptype__(const std::string &clipname)
+void ImageTexture::generateMipMaps()
+{
+	if(images_.empty()) return;
+
+#ifdef HAVE_OPENCV
+	int img_index = 0;
+	//bool blur_seamless = true;
+	int w = images_.at(0).getWidth(), h = images_.at(0).getHeight();
+
+	Y_VERBOSE << "Format: generating mipmaps for texture of resolution [" << w << " x " << h << "]" << YENDL;
+
+	cv::Mat a(h, w, CV_32FC4);
+	cv::Mat_<cv::Vec4f> a_vec = a;
+
+	for(int j = 0; j < h; ++j)
+	{
+		for(int i = 0; i < w; ++i)
+		{
+			Rgba color = images_[img_index].getColor(i, j);
+
+			a_vec(j, i)[0] = color.getR();
+			a_vec(j, i)[1] = color.getG();
+			a_vec(j, i)[2] = color.getB();
+			a_vec(j, i)[3] = color.getA();
+		}
+	}
+
+	//Mipmap generation using the temporary full float buffer to reduce information loss
+	while(w > 1 || h > 1)
+	{
+		int w_2 = (w + 1) / 2;
+		int h_2 = (h + 1) / 2;
+		++img_index;
+		images_.emplace_back(Image{w_2, h_2, images_[img_index - 1].getType(), images_[img_index - 1].getOptimization()});
+
+		cv::Mat b(h_2, w_2, CV_32FC4);
+		cv::Mat_<cv::Vec4f> b_vec = b;
+		cv::resize(a, b, cv::Size(w_2, h_2), 0, 0, cv::INTER_AREA);
+		//A = B;
+
+		for(int j = 0; j < h_2; ++j)
+		{
+			for(int i = 0; i < w_2; ++i)
+			{
+				Rgba tmp_col(0.f);
+				tmp_col.r_ = b_vec(j, i)[0];
+				tmp_col.g_ = b_vec(j, i)[1];
+				tmp_col.b_ = b_vec(j, i)[2];
+				tmp_col.a_ = b_vec(j, i)[3];
+
+				images_[img_index].setColor(i, j, tmp_col);
+			}
+		}
+
+		w = w_2;
+		h = h_2;
+		Y_DEBUG << "Format: generated mipmap " << img_index << " [" << w_2 << " x " << h_2 << "]" << YENDL;
+	}
+
+	Y_VERBOSE << "Format: mipmap generation done: " << img_index << " mipmaps generated." << YENDL;
+#else
+	Y_WARNING << "Format: cannot generate mipmaps, YafaRay was not built with OpenCV support which is needed for mipmap processing." << YENDL;
+#endif
+}
+
+ImageTexture::ClipMode string2Cliptype__(const std::string &clipname)
 {
 	// default "repeat"
-	ImageTexture::TexClipMode	tex_clipmode = ImageTexture::TexClipMode::Repeat;
+	ImageTexture::ClipMode	tex_clipmode = ImageTexture::ClipMode::Repeat;
 	if(clipname.empty()) return tex_clipmode;
-	if(clipname == "extend")		tex_clipmode = ImageTexture::TexClipMode::Extend;
-	else if(clipname == "clip")		tex_clipmode = ImageTexture::TexClipMode::Clip;
-	else if(clipname == "clipcube")	tex_clipmode = ImageTexture::TexClipMode::ClipCube;
-	else if(clipname == "checker")	tex_clipmode = ImageTexture::TexClipMode::Checker;
+	if(clipname == "extend")		tex_clipmode = ImageTexture::ClipMode::Extend;
+	else if(clipname == "clip")		tex_clipmode = ImageTexture::ClipMode::Clip;
+	else if(clipname == "clipcube")	tex_clipmode = ImageTexture::ClipMode::ClipCube;
+	else if(clipname == "checker")	tex_clipmode = ImageTexture::ClipMode::Checker;
 	return tex_clipmode;
 }
 
-Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
+Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 {
 	std::string name;
-	std::string intpstr;
+	std::string interpolation_type_str;
 	double gamma = 1.0;
 	double expadj = 0.0;
 	bool normalmap = false;
-	std::string color_space_string = "Raw_Manual_Gamma";
-	ColorSpace color_space = RawManualGamma;
-	std::string image_optimization_string = "optimized";
-	Image::Optimization image_optimization = Image::Optimization::Optimized;
+	std::string color_space_str = "Raw_Manual_Gamma";
+	std::string image_optimization_str = "optimized";
 	bool img_grayscale = false;
-	ImageTexture *tex = nullptr;
-	ImageHandler *ih = nullptr;
-	params.getParam("interpolate", intpstr);
-	params.getParam("color_space", color_space_string);
+	params.getParam("interpolate", interpolation_type_str);
+	params.getParam("color_space", color_space_str);
 	params.getParam("gamma", gamma);
 	params.getParam("exposure_adjust", expadj);
 	params.getParam("normalmap", normalmap);
 	params.getParam("filename", name);
-	params.getParam("image_optimization", image_optimization_string);
+	params.getParam("image_optimization", image_optimization_str);
 	params.getParam("img_grayscale", img_grayscale);
 
 	if(name.empty())
@@ -564,74 +624,50 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 		return nullptr;
 	}
 
-	// interpolation type, bilinear default
-	InterpolationType interpolation_type = InterpolationType::Bilinear;
+	const InterpolationType interpolation_type = Texture::getInterpolationTypeFromName(interpolation_type_str);
+	ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
+	Image::Optimization image_optimization = Image::getOptimizationTypeFromName(image_optimization_str);
+	const Path path(name);
 
-	if(intpstr == "none") interpolation_type = InterpolationType::None;
-	else if(intpstr == "bicubic") interpolation_type = InterpolationType::Bicubic;
-	else if(intpstr == "mipmap_trilinear") interpolation_type = InterpolationType::Trilinear;
-	else if(intpstr == "mipmap_ewa") interpolation_type = InterpolationType::Ewa;
-
-	size_t l_dot = name.rfind(".") + 1;
-	size_t l_slash = name.rfind("/") + 1;
-
-	std::string ext = toLower__(name.substr(l_dot));
-
-	ParamMap ihpm;
-	ihpm["type"] = ext;
-	ihpm["for_output"] = false;
-	std::string ihname = "ih";
-	ihname.append(toLower__(name.substr(l_slash, l_dot - l_slash - 1)));
-
-	ih = scene.createImageHandler(ihname, ihpm);
-	if(!ih)
+	ParamMap format_params;
+	format_params["type"] = toLower__(path.getExtension());
+	std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(format_params));
+	if(!format)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image handler, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	if(ih->isHdr())
+	if(format->isHdr())
 	{
-		if(color_space_string != "LinearRGB") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_string << "' and the gamma setting." << YENDL;
+		if(color_space != ColorSpace::LinearRgb) Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing linear RGB and ignoring selected color space '" << color_space_str << "' and the gamma setting." << YENDL;
 		color_space = LinearRgb;
-		if(image_optimization_string != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_string << "'" << YENDL;
-		image_optimization = Image::Optimization::None;	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
-	}
-	else
-	{
-		if(color_space_string == "sRGB") color_space = Srgb;
-		else if(color_space_string == "XYZ") color_space = XyzD65;
-		else if(color_space_string == "LinearRGB") color_space = LinearRgb;
-		else if(color_space_string == "Raw_Manual_Gamma") color_space = RawManualGamma;
-		else color_space = Srgb;
-
-		if(image_optimization_string == "none") image_optimization = Image::Optimization::None;
-		else if(image_optimization_string == "optimized") image_optimization = Image::Optimization::Optimized;
-		else if(image_optimization_string == "compressed") image_optimization = Image::Optimization::Compressed;
-		else image_optimization = Image::Optimization::None;
+		if(image_optimization_str != "none") Y_VERBOSE << "ImageTexture: The image is a HDR/EXR file: forcing texture optimization to 'none' and ignoring selected texture optimization '" << image_optimization_str << "'" << YENDL;
+		image_optimization = Image::Optimization::None;
 	}
 
-	ih->setColorSpace(color_space, gamma);
-	ih->setImageOptimization(image_optimization);	//FIXME DAVID: Maybe we should leave this to imageHandler factory code...
-	ih->setGrayScaleSetting(img_grayscale);
+	format->setGrayScaleSetting(img_grayscale);
 
-	if(!ih->loadFromFile(name))
+	Image *image = format->loadFromFile(name, image_optimization);
+	if(!image)
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	tex = new ImageTexture(ih, interpolation_type, gamma, color_space);
-
+	ImageTexture *tex = new ImageTexture(static_cast<Image &&>(*image));
 	if(!tex)
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;
 		return nullptr;
 	}
 
+	tex->color_space_ = color_space;
+	tex->gamma_ = gamma;
+
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
-		ih->generateMipMaps();
+		tex->generateMipMaps();
 		if(!session__.getDifferentialRaysEnabled())
 		{
 			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
@@ -639,11 +675,11 @@ Texture *ImageTexture::factory(ParamMap &params, Scene &scene)
 		}
 
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
-		for(int i=0; i<=ih->getHighestImgIndex(); ++i)
+		for(int i=0; i<=format->getHighestImgIndex(); ++i)
 		{
 			std::stringstream ss;
 			ss << "//tmp//saved_mipmap_" << ihname << "__" << i;
-			ih->saveToFile(ss.str(), i);
+			format->saveToFile(ss.str(), i);
 		}*/
 	}
 

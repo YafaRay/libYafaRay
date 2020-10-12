@@ -18,7 +18,7 @@
 
 #include "shader/shader_node_layer.h"
 #include "common/param.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/string.h"
 
 BEGIN_YAFARAY
@@ -28,7 +28,7 @@ LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def
 		default_col_(def_col), mode_(mmod), do_color_(false), do_scalar_(false), color_input_(false)
 {}
 
-void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	Rgba rcol, texcolor;
 	float rval, tin = 0.f, ta = 1.f, stencil_tin = 1.f;
@@ -47,13 +47,13 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 	}
 	else tin = input_->getScalar(stack);
 
-	if(hasFlag(Flags::RgbToInt))
+	if(flags_.hasAny(Flags::RgbToInt))
 	{
 		tin = texcolor.col2Bri();
 		tex_rgb = false;
 	}
 
-	if(hasFlag(Flags::Negative))
+	if(flags_.hasAny(Flags::Negative))
 	{
 		if(tex_rgb) texcolor = Rgba(1.f) - texcolor;
 		tin = 1.f - tin;
@@ -61,7 +61,7 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 
 	float fact;
 
-	if(hasFlag(Flags::Stencil))
+	if(flags_.hasAny(Flags::Stencil))
 	{
 		if(tex_rgb) // only scalar input affects stencil...?
 		{
@@ -101,7 +101,7 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 			if(use_alpha_)
 			{
 				tin = ta;
-				if(hasFlag(Flags::Negative)) tin = 1.f - tin;
+				if(flags_.hasAny(Flags::Negative)) tin = 1.f - tin;
 			}
 			else
 			{
@@ -116,12 +116,12 @@ void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePo
 	stack[this->getId()] = NodeResult(rcol, rval);
 }
 
-void LayerNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
+void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
-	eval(stack, state, sp);
+	eval(stack, render_data, sp);
 }
 
-void LayerNode::evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	Rgba texcolor;
 	float rdu = 0.f, rdv = 0.f, tdu, tdv;
@@ -140,7 +140,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderState &state, const
 	tdu = texcolor.r_;
 	tdv = texcolor.g_;
 
-	if(hasFlag(Flags::Negative))
+	if(flags_.hasAny(Flags::Negative))
 	{
 		tdu = -tdu;
 		tdv = -tdv;
@@ -210,7 +210,7 @@ bool LayerNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 	return !dep.empty();
 }
 
-ShaderNode *LayerNode::factory(const ParamMap &params, Scene &scene)
+ShaderNode *LayerNode::factory(const ParamMap &params, const Scene &scene)
 {
 	Rgb def_col(1.f);
 	bool do_color = true, do_scalar = false, color_input = true, use_alpha = false;

@@ -23,7 +23,7 @@
 #define YAFARAY_CONSOLE_H
 
 #include "constants.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>

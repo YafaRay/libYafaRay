@@ -18,12 +18,13 @@
 
 #include "interface/interface.h"
 #include "yafaray_config.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/session.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
+#include "common/layers.h"
 #include <signal.h>
 
 #ifdef WIN32
@@ -32,44 +33,29 @@
 
 BEGIN_YAFARAY
 
-Scene *global_scene__ = nullptr;
+RenderControl *global_render_control__ = nullptr;
 
 #ifdef WIN32
 BOOL WINAPI ctrlCHandler__(DWORD signal)
 {
-	if(global_scene__)
+	Y_WARNING << "Interface: Render aborted by user." << YENDL;
+	if(global_render_control__)
 	{
-		global_scene__->abort();
-		session__.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << YENDL;
+		global_render_control__->setAborted();
+		return TRUE;
 	}
-	else
-	{
-		session__.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << YENDL;
-		exit(1);
-	}
-	return TRUE;
+	else exit(1);
 }
 #else
 void ctrlCHandler__(int signal)
 {
-	if(global_scene__)
-	{
-		global_scene__->abort();
-		session__.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << YENDL;
-	}
-	else
-	{
-		session__.setStatusRenderAborted();
-		Y_WARNING << "Interface: Render aborted by user." << YENDL;
-		exit(1);
-	}
+	Y_WARNING << "Interface: Render aborted by user." << YENDL;
+	if(global_render_control__) global_render_control__->setAborted();
+	else exit(1);
 }
 #endif
 
-Interface::Interface(): scene_(nullptr), film_(nullptr), input_gamma_(1.f), input_color_space_(RawManualGamma)
+Interface::Interface(): scene_(nullptr), input_gamma_(1.f), input_color_space_(RawManualGamma)
 {
 	//handle CTRL+C events
 #ifdef WIN32
@@ -95,7 +81,7 @@ Interface::Interface(): scene_(nullptr), film_(nullptr), input_gamma_(1.f), inpu
 	if(scene_) Y_INFO << "Interface: created scene of type '" << scene_type << "'" << YENDL;
 	else Y_ERROR << "Interface: could not create scene of type '" << scene_type << "'" << YENDL;
 
-	global_scene__ = scene_;	//for the CTRL+C handler
+	global_render_control__ = &scene_->getRenderControl();	//for the CTRL+C handler
 	//scene_->setMode(type); //FIXME!
 
 }
@@ -105,7 +91,6 @@ Interface::~Interface()
 	Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
 	if(scene_) delete scene_;
 	Y_INFO << "Interface: Done." << YENDL;
-	if(film_) delete film_;
 	delete params_;
 	delete eparams_;
 	logger__.clearAll();
@@ -115,30 +100,22 @@ void Interface::clearAll()
 {
 	Y_VERBOSE << "Interface: Cleaning scene..." << YENDL;
 	scene_->clearAll();
-	Y_VERBOSE << "Interface: Clearing film and parameter maps scene..." << YENDL;
-	scene_ = nullptr;//new scene_t();
-	if(film_) delete film_;
-	film_ = nullptr;
 	params_->clear();
 	eparams_->clear();
 	cparams_ = params_;
 	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
-bool Interface::setLoggingAndBadgeSettings()
+void Interface::addLayer(const std::string &layer_type_name, const std::string &exported_image_type_name)
 {
-	scene_->setupLoggingAndBadge(*params_);
-	return true;
+	const Layer::Type layer_type = Layer::getType(layer_type_name);
+	const Image::Type image_type = Image::getTypeFromName(exported_image_type_name);
+	scene_->defineLayer(layer_type, image_type, image_type);
 }
 
-void Interface::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const std::string &image_type_name)
+bool Interface::setupLayers()
 {
-	scene_->createRenderPass(ext_pass_name, int_pass_name, ExtPassDefinition::getImageTypeFromName(image_type_name));
-}
-
-bool Interface::setupRenderPasses()
-{
-	scene_->setupRenderPasses(*params_);
+	scene_->setupLayers(*params_);
 	return true;
 }
 
@@ -322,8 +299,9 @@ Camera 		*Interface::createCamera(const char *name)
 }
 Background 	*Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
 Integrator 	*Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
-ImageHandler *Interface::createImageHandler(const char *name, bool add_to_table) { return scene_->createImageHandler(name, *params_); }
 VolumeRegion 	*Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
+ColorOutput *Interface::createOutput(const char *name) { return scene_->createOutput(name, *params_); }
+RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 
 unsigned int Interface::createObject(const char *name)
 {
@@ -333,16 +311,8 @@ unsigned int Interface::createObject(const char *name)
 
 void Interface::abort()
 {
-	if(scene_) scene_->abort();
-	session__.setStatusRenderAborted();
+	if(scene_) scene_->getRenderControl().setAborted();
 	Y_WARNING << "Interface: Render aborted by user." << YENDL;
-}
-
-bool Interface::getRenderedImage(int num_view, ColorOutput &output)
-{
-	if(!film_) return false;
-	film_->flush(num_view, ImageFilm::Flags::All, &output);
-	return true;
 }
 
 std::string Interface::getVersion() const
@@ -380,30 +350,10 @@ void Interface::printError(const std::string &msg) const
 	Y_ERROR << msg << YENDL;
 }
 
-void Interface::render(ColorOutput &output, ProgressBar *pb)
+void Interface::render(ProgressBar *pb)
 {
-	if(! scene_->setupScene(*scene_, *params_, output, pb)) return;
-	session__.setStatusRenderStarted();
+	if(! scene_->setupScene(*scene_, *params_, pb)) return;
 	scene_->render();
-	film_ = scene_->getImageFilm();
-	//delete film;
-}
-
-void Interface::setParamsBadgePosition(const std::string &badge_position)
-{
-	logger__.setParamsBadgePosition(badge_position);
-}
-
-bool Interface::getDrawParams()
-{
-	bool dp = false;
-	dp = logger__.getUseParamsBadge();
-	return dp;
-}
-
-void Interface::setOutput2(ColorOutput *out_2)
-{
-	if(scene_) scene_->setOutput2(out_2);
 }
 
 void Interface::setConsoleVerbosityLevel(const std::string &str_v_level)
@@ -414,11 +364,6 @@ void Interface::setConsoleVerbosityLevel(const std::string &str_v_level)
 void Interface::setLogVerbosityLevel(const std::string &str_v_level)
 {
 	logger__.setLogMasterVerbosity(str_v_level);
-}
-
-const PassesSettings *Interface::getPassesSettings() const
-{
-	return scene_->getPassesSettings();
 }
 
 // export "factory"...

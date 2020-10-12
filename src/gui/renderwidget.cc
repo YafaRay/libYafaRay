@@ -94,13 +94,13 @@ void RenderWidget::finishRendering()
 	update();
 }
 
-void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha, bool with_alpha)
+void RenderWidget::setPixel(int x, int y, QRgb color, QRgb alpha)
 {
 	int ix = x + border_start_.x();
 	int iy = y + border_start_.y();
 
 	color_buffer_.setPixel(ix, iy, color);
-	if(with_alpha) alpha_channel_.setPixel(ix, iy, alpha);
+	alpha_channel_.setPixel(ix, iy, alpha);
 }
 
 void RenderWidget::paintColorBuffer()

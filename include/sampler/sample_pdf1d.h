@@ -22,7 +22,7 @@
 
 #include "constants.h"
 #include "sampler/sample.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include <cstring>
 
 BEGIN_YAFARAY

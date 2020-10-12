@@ -21,9 +21,10 @@
 
 #include "integrator/surface/integrator_photon_mapping.h"
 #include "geometry/surface.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/session.h"
 #include "volume/volume.h"
+#include "color/color_layers.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "render/monitor.h"
@@ -34,9 +35,10 @@
 #include "material/material.h"
 #include "color/spectrum.h"
 #include "common/timer.h"
-#include "render/passes.h"
 #include "background/background.h"
 #include "render/imagesplitter.h"
+#include "render/imagefilm.h"
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
@@ -107,7 +109,7 @@ PhotonIntegrator::PhotonIntegrator(unsigned int d_photons, unsigned int c_photon
 	max_bounces_ = 5;
 }
 
-void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
+void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_diffuse_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, bool final_gather, PreGatherData &pgdat)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -118,10 +120,10 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 	unsigned int curr = 0;
 
 	SurfacePoint sp;
-	RenderState state;
-	alignas (16) unsigned char userdata[user_data_size__];
-	state.userdata_ = static_cast<void *>(userdata);
-	state.cam_ = scene->getCamera();
+	RenderData render_data;
+	alignas (16) unsigned char userdata[user_data_size_];
+	render_data.arena_ = static_cast<void *>(userdata);
+	render_data.cam_ = render_view->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
 
@@ -189,17 +191,17 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 			if(material)
 			{
-				if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
-					if(vol->transmittance(state, ray, vcol)) transm = vcol;
+					if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
 				}
 			}
 
 			Vec3 wi = -ray.dir_, wo;
 			material = sp.material_;
-			material->initBsdf(state, sp, bsdfs);
+			material->initBsdf(render_data, sp, bsdfs);
 
-			if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+			if(bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				//deposit photon on surface
 				if(!caustic_photon)
@@ -213,8 +215,8 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 				{
 					Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
 					RadData rd(sp.p_, n);
-					rd.refl_ = material->getReflectivity(state, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect);
-					rd.transm_ = material->getReflectivity(state, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit);
+					rd.refl_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect);
+					rd.transm_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit);
 					local_rad_points.push_back(rd);
 				}
 			}
@@ -229,14 +231,14 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+			bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
 			if(!scattered) break; //photon was absorped.
 
 			pcol = sample.color_;
 
-			caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-							 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-			direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+			caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
 			ray.from_ = sp.p_;
 			ray.dir_ = wo;
@@ -250,7 +252,7 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			pb->mutx_.lock();
 			pb->update();
 			pb->mutx_.unlock();
-			if(scene->getSignals() & Y_SIG_ABORT) { return; }
+			if(render_control.aborted()) { return; }
 		}
 		done = (curr >= n_diffuse_photons_thread);
 	}
@@ -269,7 +271,7 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 	photon_map->updateTree();
 }
 
-bool PhotonIntegrator::preprocess()
+bool PhotonIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
 	ProgressBar *pb;
 	if(intpb_) pb = intpb_;
@@ -291,7 +293,7 @@ bool PhotonIntegrator::preprocess()
 	}
 	set << "RayDepth=" << r_depth_ << "  ";
 
-	lights_ = scene_->getLightsVisible();
+	lights_ = render_view->getLightsVisible();
 	std::vector<Light *> tmplights;
 
 	if(use_photon_caustics_)
@@ -318,7 +320,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_caustics_)
 		{
 			pb->setTag("Loading caustic photon map from file...");
-			const std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.caustic_map_->load(filename)) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			else caustic_map_failed_load = true;
@@ -327,7 +329,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_diffuse_)
 		{
 			pb->setTag("Loading diffuse photon map from file...");
-			const std::string filename = session__.getPathImageOutput() + "_diffuse.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_diffuse.photonmap";
 			Y_INFO << getName() << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.diffuse_map_->load(filename)) Y_VERBOSE << getName() << ": Diffuse map loaded." << YENDL;
 			else diffuse_map_failed_load = true;
@@ -336,7 +338,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_diffuse_ && final_gather_)
 		{
 			pb->setTag("Loading FG radiance photon map from file...");
-			const std::string filename = session__.getPathImageOutput() + "_fg_radiance.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_fg_radiance.photonmap";
 			Y_INFO << getName() << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
 			if(session__.radiance_map_->load(filename)) Y_VERBOSE << getName() << ": FG radiance map loaded." << YENDL;
 			else fg_radiance_map_failed_load = true;
@@ -399,7 +401,7 @@ bool PhotonIntegrator::preprocess()
 
 		set << " [" << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << "]";
 
-		logger__.appendRenderSettings(set.str());
+		render_info_ += set.str();
 
 		for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
 
@@ -434,10 +436,10 @@ bool PhotonIntegrator::preprocess()
 	PreGatherData pgdat(session__.diffuse_map_);
 
 	SurfacePoint sp;
-	RenderState state;
-	alignas (16) unsigned char userdata[user_data_size__];
-	state.userdata_ = static_cast<void *>(userdata);
-	state.cam_ = scene_->getCamera();
+	RenderData render_data;
+	alignas (16) unsigned char userdata[user_data_size_];
+	render_data.arena_ = static_cast<void *>(userdata);
+	render_data.cam_ = render_view->getCamera();
 	int pb_step;
 
 	tmplights.clear();
@@ -496,7 +498,7 @@ bool PhotonIntegrator::preprocess()
 		if(n_threads >= 2)
 		{
 			std::vector<std::thread> threads;
-			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session__.diffuse_map_, i, scene_, n_diffuse_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session__.diffuse_map_, i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 			for(auto &t : threads) t.join();
 		}
 		else
@@ -508,7 +510,7 @@ bool PhotonIntegrator::preprocess()
 
 			while(!done)
 			{
-				if(scene_->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb_) delete pb; return false; }
+				if(render_control.aborted()) {  pb->done(); if(!intpb_) delete pb; return false; }
 
 				s_1 = sample::riVdC(curr);
 				s_2 = scrHalton__(2, curr);
@@ -556,17 +558,17 @@ bool PhotonIntegrator::preprocess()
 
 					if(material)
 					{
-						if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+						if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 						{
-							if(vol->transmittance(state, ray, vcol)) transm = vcol;
+							if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
 						}
 					}
 
 					Vec3 wi = -ray.dir_, wo;
 					material = sp.material_;
-					material->initBsdf(state, sp, bsdfs);
+					material->initBsdf(render_data, sp, bsdfs);
 
-					if(Material::hasFlag(bsdfs, (BsdfFlags::Diffuse)))
+					if(bsdfs.hasAny((BsdfFlags::Diffuse)))
 					{
 						//deposit photon on surface
 						if(!caustic_photon)
@@ -581,8 +583,8 @@ bool PhotonIntegrator::preprocess()
 						{
 							Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wi);
 							RadData rd(sp.p_, n);
-							rd.refl_ = material->getReflectivity(state, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect);
-							rd.transm_ = material->getReflectivity(state, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit);
+							rd.refl_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Reflect);
+							rd.transm_ = material->getReflectivity(render_data, sp, BsdfFlags::Diffuse | BsdfFlags::Glossy | BsdfFlags::Transmit);
 							pgdat.rad_points_.push_back(rd);
 						}
 					}
@@ -597,14 +599,14 @@ bool PhotonIntegrator::preprocess()
 
 					PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-					bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+					bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
 					if(!scattered) break; //photon was absorped.
 
 					pcol = sample.color_;
 
-					caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-									 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-					direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+					caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+									 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+					direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
 					ray.from_ = sp.p_;
 					ray.dir_ = wo;
@@ -712,7 +714,7 @@ bool PhotonIntegrator::preprocess()
 		if(n_threads >= 2)
 		{
 			std::vector<std::thread> threads;
-			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, n_caus_photons_, light_power_d_, num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
+			for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session__.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_, num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
 			for(auto &t : threads) t.join();
 		}
 		else
@@ -723,9 +725,9 @@ bool PhotonIntegrator::preprocess()
 
 			while(!done)
 			{
-				if(scene_->getSignals() & Y_SIG_ABORT) { pb->done(); if(!intpb_) delete pb; return false; }
-				state.chromatic_ = true;
-				state.wavelength_ = scrHalton__(5, curr);
+				if(render_control.aborted()) { pb->done(); if(!intpb_) delete pb; return false; }
+				render_data.chromatic_ = true;
+				render_data.wavelength_ = scrHalton__(5, curr);
 
 				s_1 = sample::riVdC(curr);
 				s_2 = scrHalton__(2, curr);
@@ -772,17 +774,17 @@ bool PhotonIntegrator::preprocess()
 
 					if(material)
 					{
-						if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+						if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 						{
-							if(vol->transmittance(state, ray, vcol)) transm = vcol;
+							if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
 						}
 					}
 
 					Vec3 wi = -ray.dir_, wo;
 					material = sp.material_;
-					material->initBsdf(state, sp, bsdfs);
+					material->initBsdf(render_data, sp, bsdfs);
 
-					if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+					if(bsdfs.hasAny(BsdfFlags::Diffuse))
 					{
 						if(caustic_photon)
 						{
@@ -803,20 +805,20 @@ bool PhotonIntegrator::preprocess()
 
 					PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-					bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+					bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
 					if(!scattered) break; //photon was absorped.
 
 					pcol = sample.color_;
 
-					caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-									 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-					direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+					caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+									 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+					direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
-					if(state.chromatic_ && Material::hasFlag(sample.sampled_flags_, BsdfFlags::Dispersive))
+					if(render_data.chromatic_ && sample.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 					{
-						state.chromatic_ = false;
+						render_data.chromatic_ = false;
 						Rgb wl_col;
-						wl2Rgb__(state.wavelength_, wl_col);
+						wl2Rgb__(render_data.wavelength_, wl_col);
 						pcol *= wl_col;
 					}
 
@@ -923,7 +925,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_diffuse_)
 		{
 			pb->setTag("Saving diffuse photon map to file...");
-			const std::string filename = session__.getPathImageOutput() + "_diffuse.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_diffuse.photonmap";
 			Y_INFO << getName() << ": Saving diffuse photon map to: " << filename << YENDL;
 			if(session__.diffuse_map_->save(filename)) Y_VERBOSE << getName() << ": Diffuse map saved." << YENDL;
 		}
@@ -931,7 +933,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_caustics_)
 		{
 			pb->setTag("Saving caustic photon map to file...");
-			const std::string filename = session__.getPathImageOutput() + "_caustic.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
 			if(session__.caustic_map_->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
@@ -939,7 +941,7 @@ bool PhotonIntegrator::preprocess()
 		if(use_photon_diffuse_ && final_gather_)
 		{
 			pb->setTag("Saving FG radiance photon map to file...");
-			const std::string filename = session__.getPathImageOutput() + "_fg_radiance.photonmap";
+			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_fg_radiance.photonmap";
 			Y_INFO << getName() << ": Saving FG radiance photon map to: " << filename << YENDL;
 			if(session__.radiance_map_->save(filename)) Y_VERBOSE << getName() << ": FG radiance map saved." << YENDL;
 		}
@@ -950,7 +952,7 @@ bool PhotonIntegrator::preprocess()
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
-	logger__.appendRenderSettings(set.str());
+	render_info_ += set.str();
 
 	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
 
@@ -961,17 +963,17 @@ bool PhotonIntegrator::preprocess()
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	Rgb path_col(0.0);
-	void *first_udat = state.userdata_;
-	alignas (16) unsigned char userdata[user_data_size__];
+	void *first_udat = render_data.arena_;
+	alignas (16) unsigned char userdata[user_data_size_];
 	void *n_udat = static_cast<void *>(userdata);
 	const VolumeHandler *vol;
 	Rgb vcol(0.f);
 	float w = 0.f;
 
-	int n_sampl = (int) ceilf(std::max(1, n_paths_ / state.ray_division_) * aa_indirect_sample_multiplier_);
+	int n_sampl = (int) ceilf(std::max(1, n_paths_ / render_data.ray_division_) * aa_indirect_sample_multiplier_);
 	for(int i = 0; i < n_sampl; ++i)
 	{
 		Rgb throughput(1.0);
@@ -982,19 +984,19 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 		BsdfFlags mat_bsd_fs;
 		bool did_hit;
 		const Material *p_mat = sp.material_;
-		unsigned int offs = n_paths_ * state.pixel_sample_ + state.sampling_offs_ + i; // some redundancy here...
+		unsigned int offs = n_paths_ * render_data.pixel_sample_ + render_data.sampling_offs_ + i; // some redundancy here...
 		Rgb lcol, scol;
 		// "zero'th" FG bounce:
 		float s_1 = sample::riVdC(offs);
 		float s_2 = scrHalton__(2, offs);
-		if(state.ray_division_ > 1)
+		if(render_data.ray_division_ > 1)
 		{
-			s_1 = math::addMod1(s_1, state.dc_1_);
-			s_2 = math::addMod1(s_2, state.dc_2_);
+			s_1 = math::addMod1(s_1, render_data.dc_1_);
+			s_2 = math::addMod1(s_2, render_data.dc_2_);
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = p_mat->sample(state, hit, pwo, pRay.dir_, s, w);
+		scol = p_mat->sample(render_data, hit, pwo, pRay.dir_, s, w);
 
 		scol *= w;
 		if(scol.isBlack()) continue;
@@ -1008,9 +1010,9 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 
 		p_mat = hit.material_;
 		length = pRay.tmax_;
-		state.userdata_ = n_udat;
+		render_data.arena_ = n_udat;
 		mat_bsd_fs = p_mat->getFlags();
-		bool has_spec = Material::hasFlag(mat_bsd_fs, BsdfFlags::Specular);
+		bool has_spec = mat_bsd_fs.hasAny(BsdfFlags::Specular);
 		bool caustic = false;
 		bool close = length < gather_dist_;
 		bool do_bounce = close || has_spec;
@@ -1019,18 +1021,18 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 		{
 			int d_4 = 4 * depth;
 			pwo = -pRay.dir_;
-			p_mat->initBsdf(state, hit, mat_bsd_fs);
+			p_mat->initBsdf(render_data, hit, mat_bsd_fs);
 
-			if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0)))
+			if(mat_bsd_fs.hasAny(BsdfFlags::Volumetric) && (vol = p_mat->getVolumeHandler(hit.n_ * pwo < 0)))
 			{
-				if(vol->transmittance(state, pRay, vcol)) throughput *= vcol;
+				if(vol->transmittance(render_data, pRay, vcol)) throughput *= vcol;
 			}
 
-			if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Diffuse))
+			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse))
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(state, hit, pwo, offs);
+					lcol = estimateOneDirectLight(render_data, hit, pwo, offs);
 				}
 				else if(caustic)
 				{
@@ -1041,7 +1043,7 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 
 				if(close || caustic)
 				{
-					if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit)) lcol += p_mat->emit(state, hit, pwo);
+					if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(render_data, hit, pwo);
 					path_col += lcol * throughput;
 				}
 			}
@@ -1049,14 +1051,14 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 			s_1 = scrHalton__(d_4 + 3, offs);
 			s_2 = scrHalton__(d_4 + 4, offs);
 
-			if(state.ray_division_ > 1)
+			if(render_data.ray_division_ > 1)
 			{
-				s_1 = math::addMod1(s_1, state.dc_1_);
-				s_2 = math::addMod1(s_2, state.dc_2_);
+				s_1 = math::addMod1(s_1, render_data.dc_1_);
+				s_2 = math::addMod1(s_2, render_data.dc_2_);
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = p_mat->sample(state, hit, pwo, pRay.dir_, sb, w);
+			scol = p_mat->sample(render_data, hit, pwo, pRay.dir_, sb, w);
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -1077,38 +1079,38 @@ Rgb PhotonIntegrator::finalGathering(RenderState &state, const SurfacePoint &sp,
 				const auto &background = scene_->getBackground();
 				if(caustic && background && background->hasIbl() && background->shootsCaustic())
 				{
-					path_col += throughput * (*background)(pRay, state, true);
+					path_col += throughput * (*background)(pRay, render_data, true);
 				}
 				break;
 			}
 
 			p_mat = hit.material_;
 			length += pRay.tmax_;
-			caustic = (caustic || !depth) && Material::hasFlag(sb.sampled_flags_, (BsdfFlags::Specular | BsdfFlags::Filter));
+			caustic = (caustic || !depth) && sb.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Filter);
 			close = length < gather_dist_;
 			do_bounce = caustic || close;
 		}
 
 		if(did_hit)
 		{
-			p_mat->initBsdf(state, hit, mat_bsd_fs);
-			if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
+			p_mat->initBsdf(render_data, hit, mat_bsd_fs);
+			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -pRay.dir_);
 				const Photon *nearest = session__.radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color();
-				if(Material::hasFlag(mat_bsd_fs, BsdfFlags::Emit)) lcol += p_mat->emit(state, hit, -pRay.dir_);
+				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(render_data, hit, -pRay.dir_);
 				path_col += lcol * throughput;
 			}
 		}
-		state.userdata_ = first_udat;
+		render_data.arena_ = first_udat;
 	}
 	return path_col / (float)n_sampl;
 }
 
-Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
+Rgba PhotonIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool int_passes_used = state.raylevel_ == 0 && intPasses && intPasses->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 
 	static int n_max = 0;
 	static int calls = 0;
@@ -1117,38 +1119,38 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 	float alpha;
 	SurfacePoint sp;
 
-	void *o_udat = state.userdata_;
-	bool old_include_lights = state.include_lights_;
+	void *o_udat = render_data.arena_;
+	bool old_include_lights = render_data.include_lights_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
 	if(scene_->intersect(ray, sp))
 	{
-		alignas (16) unsigned char userdata[user_data_size__];
-		state.userdata_ = static_cast<void *>(userdata);
+		alignas (16) unsigned char userdata[user_data_size_];
+		render_data.arena_ = static_cast<void *>(userdata);
 
-		if(state.raylevel_ == 0)
+		if(render_data.raylevel_ == 0)
 		{
-			state.chromatic_ = true;
-			state.include_lights_ = true;
+			render_data.chromatic_ = true;
+			render_data.include_lights_ = true;
 		}
 		BsdfFlags bsdfs;
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		material->initBsdf(state, sp, bsdfs);
+		material->initBsdf(render_data, sp, bsdfs);
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		const Rgb col_emit = material->emit(state, sp, wo);
+		const Rgb col_emit = material->emit(render_data, sp, wo);
 		col += col_emit;
-		if(int_passes_used)
+		if(layers_used)
 		{
-			if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_emit;
+			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
 
-		state.include_lights_ = false;
+		render_data.include_lights_ = false;
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
@@ -1160,36 +1162,36 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 			}
 			else
 			{
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(Rgba *color_pass = intPasses->find(PassRadiance))
+					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
 						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) *color_pass = nearest->color();
+						if(nearest) color_layer->color_ = nearest->color();
 					}
 				}
 
 				// contribution of light emitting surfaces
-				if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+				if(bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(state, sp, wo);
+					const Rgb col_tmp = material->emit(render_data, sp, wo);
 					col += col_tmp;
-					if(int_passes_used)
+					if(layers_used)
 					{
-						if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 					}
 				}
 
-				if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+				if(bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(state, sp, wo, intPasses);
-					Rgb col_tmp = finalGathering(state, sp, wo);
+					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
+					Rgb col_tmp = finalGathering(render_data, sp, wo);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
-					if(int_passes_used)
+					if(layers_used)
 					{
-						if(Rgba *color_pass = intPasses->find(PassDiffuseIndirect)) *color_pass = col_tmp;
+						if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ = col_tmp;
 					}
 				}
 			}
@@ -1204,29 +1206,29 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 			}
 			else
 			{
-				if(use_photon_diffuse_ && int_passes_used)
+				if(use_photon_diffuse_ && layers_used)
 				{
-					if(Rgba *color_pass = intPasses->find(PassRadiance))
+					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
 						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 						const Photon *nearest = session__.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
-						if(nearest) *color_pass = nearest->color();
+						if(nearest) color_layer->color_ = nearest->color();
 					}
 				}
 
-				if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+				if(bsdfs.hasAny(BsdfFlags::Emit))
 				{
-					const Rgb col_tmp = material->emit(state, sp, wo);
+					const Rgb col_tmp = material->emit(render_data, sp, wo);
 					col += col_tmp;
-					if(int_passes_used)
+					if(layers_used)
 					{
-						if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_tmp;
+						if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_tmp;
 					}
 				}
 
-				if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+				if(bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(state, sp, wo, intPasses);
+					col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 				}
 
 				FoundPhoton *gathered = (FoundPhoton *)alloca(n_diffuse_search_ * sizeof(FoundPhoton));
@@ -1244,13 +1246,13 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();
-						const Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::Diffuse);
+						const Rgb surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::Diffuse);
 
 						const Rgb col_tmp = surf_col * scale * gathered[i].photon_->color();
 						col += col_tmp;
-						if(int_passes_used)
+						if(layers_used)
 						{
-							if(Rgba *color_pass = intPasses->find(PassDiffuseIndirect)) *color_pass += col_tmp;
+							if(ColorLayer *color_layer = color_layers->find(Layer::DiffuseIndirect)) color_layer->color_ += col_tmp;
 						}
 					}
 				}
@@ -1258,37 +1260,37 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 		}
 
 		// add caustics
-		if(use_photon_caustics_ && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+		if(use_photon_caustics_ && bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			Rgb col_tmp = estimateCausticPhotons(state, sp, wo);
+			Rgb col_tmp = estimateCausticPhotons(render_data, sp, wo);
 			if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 			col += col_tmp;
-			if(int_passes_used)
+			if(layers_used)
 			{
-				if(Rgba *color_pass = intPasses->find(PassIndirect)) *color_pass = col_tmp;
+				if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 			}
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, intPasses);
+		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
-		if(int_passes_used)
+		if(layers_used)
 		{
-			generateCommonPassesSettings(state, sp, ray, intPasses);
+			generateCommonLayers(render_data, sp, ray, color_layers);
 
-			if(Rgba *color_pass = intPasses->find(PassAo))
+			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
 			}
 
-			if(Rgba *color_pass = intPasses->find(PassAoClay))
+			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(render_data, sp, wo);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
@@ -1297,27 +1299,27 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
 			col += col_tmp;
-			if(int_passes_used)
+			if(layers_used)
 			{
-				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
 		}
 	}
 
-	state.userdata_ = o_udat;
-	state.include_lights_ = old_include_lights;
+	render_data.arena_ = o_udat;
+	render_data.include_lights_ = old_include_lights;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
+	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	if(int_passes_used)
+	if(layers_used)
 	{
-		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass += col_vol_transmittance;
-		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass += col_vol_integration;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ += col_vol_transmittance;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ += col_vol_integration;
 	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;
@@ -1325,7 +1327,7 @@ Rgba PhotonIntegrator::integrate(RenderState &state, DiffRay &ray, int additiona
 	return Rgba(col, alpha);
 }
 
-Integrator *PhotonIntegrator::factory(ParamMap &params, Scene &scene)
+Integrator *PhotonIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool final_gather = true;

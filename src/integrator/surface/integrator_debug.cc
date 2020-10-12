@@ -26,66 +26,65 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "render/imagesplitter.h"
-#include "photon/photon.h"
-#include "sampler/halton.h"
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
 DebugIntegrator::DebugIntegrator(SurfaceProperties dt)
 {
 	debug_type_ = dt;
-	logger__.appendRenderSettings("Debug integrator: '");
+	render_info_ += "Debug integrator: '";
 	switch(dt)
 	{
 		case N:
-			logger__.appendRenderSettings("N");
+			render_info_ += "N";
 			break;
 		case DPdU:
-			logger__.appendRenderSettings("dPdU");
+			render_info_ += "dPdU";
 			break;
 		case DPdV:
-			logger__.appendRenderSettings("dPdV");
+			render_info_ += "dPdV";
 			break;
 		case Nu:
-			logger__.appendRenderSettings("NU");
+			render_info_ += "NU";
 			break;
 		case Nv:
-			logger__.appendRenderSettings("NV");
+			render_info_ += "NV";
 			break;
 		case DSdU:
-			logger__.appendRenderSettings("dSdU");
+			render_info_ += "dSdU";
 			break;
 		case DSdV:
-			logger__.appendRenderSettings("dSdV");
+			render_info_ += "dSdV";
 			break;
 	}
 
-	logger__.appendRenderSettings("' | ");
+	render_info_ += "' | ";
 }
 
-bool DebugIntegrator::preprocess()
+bool DebugIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
+Rgba DebugIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.0);
 	SurfacePoint sp;
-	void *o_udat = state.userdata_;
-	bool old_include_lights = state.include_lights_;
+	void *o_udat = render_data.arena_;
+	bool old_include_lights = render_data.include_lights_;
 	//shoot ray into scene
 	if(scene_->intersect(ray, sp))
 	{
 		if(show_pn_)
 		{
 			// Normals perturbed by materials
-			alignas (16) unsigned char userdata[user_data_size__];
-			state.userdata_ = static_cast<void *>(userdata);
+			alignas (16) unsigned char userdata[user_data_size_];
+			render_data.arena_ = static_cast<void *>(userdata);
 
 			BsdfFlags bsdfs;
 			const Material *material = sp.material_;
-			material->initBsdf(state, sp, bsdfs);
+			material->initBsdf(render_data, sp, bsdfs);
 		}
 		if(debug_type_ == N)
 			col = Rgb((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f);
@@ -103,12 +102,12 @@ Rgba DebugIntegrator::integrate(RenderState &state, DiffRay &ray, int additional
 			col = Rgb((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f);
 
 	}
-	state.userdata_ = o_udat;
-	state.include_lights_ = old_include_lights;
+	render_data.arena_ = o_udat;
+	render_data.include_lights_ = old_include_lights;
 	return Rgba(col, 1.f);
 }
 
-Integrator *DebugIntegrator::factory(ParamMap &params, Scene &scene)
+Integrator *DebugIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	int dt = 1;
 	bool pn = false;

@@ -25,31 +25,39 @@
 #define YAFARAY_OUTPUT_IMAGE_H
 
 #include "output/output.h"
+#include "common/layers.h"
 
 BEGIN_YAFARAY
 
-class PassesSettings;
-class ImageHandler;
+class ImageLayers;
+class Format;
 
 class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
 {
 	public:
-		ImageOutput(ImageHandler *handle, const std::string &name, int bx, int by);
+		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		ImageOutput(const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = true);
+		virtual ~ImageOutput() override;
 
 	private:
-		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha = true) override;
-		virtual bool putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha = true) override;
-		virtual void flush(int num_view) override;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
+		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
+		virtual void flush(const RenderControl &render_control) override;
+		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
 		virtual bool isImageOutput() const override { return true; }
-		virtual std::string getDenoiseParams() const override;
-		void saveImageFile(std::string filename, int idx);
-		void saveImageFileMultiChannel(std::string filename);
+		virtual std::string printDenoiseParams() const override;
+		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views) override;
+		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control);
+		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
+		void clearImageLayers();
+		bool denoiseEnabled() const { return denoise_params_.enabled_; }
+		DenoiseParams getDenoiseParams() const { return denoise_params_; }
 
-		ImageHandler *image_ = nullptr;
-		std::string fname_;
-		float b_x_;
-		float b_y_;
+		std::string image_path_;
+		float border_x_;
+		float border_y_;
+		bool multi_layer_ = true;
+		DenoiseParams denoise_params_;
+		ImageLayers *image_layers_ = nullptr;
 };
 
 END_YAFARAY

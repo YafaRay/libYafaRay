@@ -17,40 +17,45 @@
  */
 
 #include "color/color.h"
-#include "output/output.h"
 #include "output/output_memory.h"
-#include <cstdlib>
+#include "color/color_layers.h"
+#include "common/param.h"
 
 BEGIN_YAFARAY
 
+ColorOutput *MemoryInputOutput::factory(const ParamMap &params, const Scene &scene)
+{
+	std::string name;
+	int width = 0;
+	int height = 0;
+	std::string color_space_str;
+	float gamma = 1.f;
+	bool alpha_premultiply = false;
+
+	params.getParam("name", name);
+	params.getParam("width", width);
+	params.getParam("height", height);
+	params.getParam("color_space", color_space_str);
+	params.getParam("gamma", gamma);
+	params.getParam("alpha_premultiply", alpha_premultiply);
+
+	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
+	float *image_mem = nullptr; //FIXME image_mem???
+	return nullptr; return new MemoryInputOutput(width, height, image_mem, name, color_space, gamma, alpha_premultiply);
+}
+
 // Depth channel support?
-
 //FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool MemoryInputOutput::putPixel(int num_view, int x, int y, int ext_pass, const Rgba &color, bool alpha)
+bool MemoryInputOutput::putPixel(int x, int y, const ColorLayer &color_layer)
 {
-	image_mem_[(x + sizex_ * y) * 4 + 0] = color.r_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = color.g_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = color.b_;
-	if(!alpha) image_mem_[(x + sizex_ * y) * 4 + 3] = 1.f;
-
+	image_mem_[(x + width_ * y) * 4 + 0] = color_layer.color_.r_;
+	image_mem_[(x + width_ * y) * 4 + 1] = color_layer.color_.g_;
+	image_mem_[(x + width_ * y) * 4 + 2] = color_layer.color_.b_;
+	image_mem_[(x + width_ * y) * 4 + 3] = color_layer.color_.a_;
 	return true;
 }
 
-//FIXME: the putpixel functions in MemoryIO are not actually using the Render Passes, always using the Combined pass. Probably no need for this to do anything for now, but in the future it might need to be extended to include all passes
-bool MemoryInputOutput::putPixel(int num_view, int x, int y, const std::vector<Rgba> &colors, bool alpha)
-{
-	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).r_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).g_;
-	image_mem_[(x + sizex_ * y) * 4 + 0] = colors.at(0).b_;
-	if(!alpha) image_mem_[(x + sizex_ * y) * 4 + 3] = 1.f;
-
-	return true;
-}
-
-void MemoryInputOutput::flush(int num_view) { }
-
-MemoryInputOutput::~MemoryInputOutput() { }
-
+void MemoryInputOutput::flush(const RenderControl &render_control) { }
 
 END_YAFARAY
 

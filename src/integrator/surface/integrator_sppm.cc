@@ -20,7 +20,8 @@
 
 #include "integrator/surface/integrator_sppm.h"
 #include "geometry/surface.h"
-#include "common/logging.h"
+#include "common/layers.h"
+#include "common/logger.h"
 #include "common/session.h"
 #include "volume/volume.h"
 #include "common/param.h"
@@ -28,7 +29,6 @@
 #include "render/monitor.h"
 #include "common/timer.h"
 #include "render/imagefilm.h"
-#include "render/passes.h"
 #include "camera/camera.h"
 #include "sampler/halton_scr.h"
 #include "sampler/sample.h"
@@ -36,8 +36,9 @@
 #include "light/light.h"
 #include "material/material.h"
 #include "color/spectrum.h"
+#include "color/color_layers.h"
 #include "background/background.h"
-
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
@@ -65,25 +66,25 @@ SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_
 	hal_4_.setStart(0);
 }
 
-bool SppmIntegrator::preprocess()
+bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
 	return true;
 }
 
-bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
+bool SppmIntegrator::render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view)
 {
-	std::stringstream pass_string;
 	image_film_ = image_film;
+
+	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
 
 	std::stringstream aa_settings;
 	aa_settings << " passes=" << pass_num_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
 	aa_settings << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
 
-	logger__.appendAaNoiseSettings(aa_settings.str());
+	aa_noise_info_ += aa_settings.str();
 
-
-	session__.setStatusTotalPasses(pass_num_);	//passNum is total number of passes in SPPM
+	render_control.setTotalPasses(pass_num_);	//passNum is total number of passes in SPPM
 
 	aa_sample_multiplier_ = 1.f;
 	aa_light_sample_multiplier_ = 1.f;
@@ -102,7 +103,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	}
 	set << "RayDepth=" << r_depth_ << "  ";
 
-	logger__.appendRenderSettings(set.str());
+	render_info_ += set.str();
 	Y_VERBOSE << set.str() << YENDL;
 
 
@@ -119,10 +120,10 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	image_film_->resetFilmAutoSaveTimer();
 	g_timer__.addEvent("filmAutoSaveTimer");
 
-	image_film_->init(pass_num_);
+	image_film_->init(render_control, pass_num_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
 
-	if(session__.renderResumed())
+	if(render_control.resumed())
 	{
 		pass_string.clear();
 		pass_string << "Loading film file, skipping pass 1...";
@@ -131,24 +132,24 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 
 	Y_INFO << getName() << ": " << pass_string.str() << YENDL;
 
-	const Camera *camera = scene_->getCamera();
+	const Camera *camera = render_view->getCamera();
 
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
 	diff_rays_enabled_ = session__.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
-	if(scene_->passEnabled(PassZDepthNorm) || scene_->passEnabled(PassMist)) precalcDepths();
+	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 
 	int acum_aa_samples = 1;
 
-	initializePpm(); // seems could integrate into the preRender
-	if(session__.renderResumed())
+	initializePpm(render_view); // seems could integrate into the preRender
+	if(render_control.resumed())
 	{
 		acum_aa_samples = image_film_->getSamplingOffset();
-		renderPass(num_view, 0, acum_aa_samples, false, 0);
+		renderPass(render_view, 0, acum_aa_samples, false, 0, render_control);
 	}
-	else renderPass(num_view, 1, 0, false, 0);
+	else renderPass(render_view, 1, 0, false, 0, render_control);
 
 	std::string initial_estimate = "no";
 	if(pm_ire_) initial_estimate = "yes";
@@ -159,11 +160,11 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	int pass_info = 1;
 	for(int i = 1; i < pass_num_; ++i) //progress pass, the offset start from 1 as it is 0 based.
 	{
-		if(scene_->getSignals() & Y_SIG_ABORT) break;
+		if(render_control.aborted()) break;
 		pass_info = i + 1;
-		image_film_->nextPass(num_view, false, getName());
+		image_film_->nextPass(render_view, render_control, false, getName());
 		n_refined_ = 0;
-		renderPass(num_view, 1, acum_aa_samples, false, i); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(render_view, 1, acum_aa_samples, false, i, render_control); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
 		Y_INFO << getName() << ": This pass refined " << n_refined_ << " of " << hp_num << " pixels." << YENDL;
 	}
@@ -171,7 +172,7 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 	g_timer__.stop("rendert");
 	g_timer__.stop("imagesAutoSaveTimer");
 	g_timer__.stop("filmAutoSaveTimer");
-	session__.setStatusRenderFinished();
+	render_control.setFinished();
 	Y_INFO << getName() << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s." << YENDL;
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
@@ -183,17 +184,17 @@ bool SppmIntegrator::render(int num_view, yafaray4::ImageFilm *image_film)
 
 	set << "\nPhotons=" << n_photons_ << " search=" << n_search_ << " radius=" << ds_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
 
-	logger__.appendRenderSettings(set.str());
+	render_info_ += set.str();
 	Y_VERBOSE << set.str() << YENDL;
 
 	return true;
 }
 
 
-bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	int x;
-	const Camera *camera = scene_->getCamera();
+	const Camera *camera = render_view->getCamera();
 	const float x_start_film = image_film_->getCx0();
 	const float y_start_film = image_film_->getCy0();
 	x = camera->resX();
@@ -203,7 +204,7 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 	float lens_u = 0.5f, lens_v = 0.5f;
 	float wt, wt_dummy;
 	Random prng(rand() + offset * (x * a.y_ + a.x_) + 123);
-	RenderState rstate(&prng);
+	RenderData rstate(&prng);
 	rstate.thread_id_ = thread_id;
 	rstate.cam_ = camera;
 	bool sample_lns = camera->sampleLense();
@@ -218,16 +219,16 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 
 	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);
 
-	const PassesSettings *passes_settings = scene_->getPassesSettings();
-	const PassMaskParams mask_params = passes_settings->passMaskParams();
-	IntPasses intPasses(passes_settings->intPassesSettings());
-	const bool int_passes_used = intPasses.size() > 1;
+	const Layers &layers = scene_->getLayers();
+	const MaskParams mask_params = layers.getMaskParams();
+	ColorLayers color_layers(layers);
+	const bool layers_used = color_layers.size() > 1;
 
 	for(int i = a.y_; i < end_y; ++i)
 	{
 		for(int j = a.x_; j < end_x; ++j)
 		{
-			if(scene_->getSignals() & Y_SIG_ABORT) break;
+			if(render_control.aborted()) break;
 
 			rstate.pixel_number_ = x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
@@ -252,7 +253,7 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 				c_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v, wt); // wt need to be considered
 				if(wt == 0.0)
 				{
-					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &intPasses); //maybe not need
+					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers); //maybe not need
 					continue;
 				}
 				if(diff_rays_enabled_)
@@ -296,68 +297,68 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 				Rgba color = col_indirect;
 				color += g_info.constant_randiance_;
 				color.a_ = g_info.constant_randiance_.a_; //the alpha value is hold in the constantRadiance variable
-				intPasses(PassCombined) = color;
+				color_layers(Layer::Combined).color_ = color;
 
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(intPasses.enabled(PassIndirect))
+					if(color_layers.find(Layer::Indirect))
 					{
-						intPasses(PassIndirect) = col_indirect;
-						intPasses(PassIndirect).a_ = g_info.constant_randiance_.a_;
+						color_layers(Layer::Indirect).color_ = col_indirect;
+						color_layers(Layer::Indirect).color_.a_ = g_info.constant_randiance_.a_;
 					}
 
-					if(intPasses.enabled(PassZDepthNorm) || intPasses.enabled(PassZDepthAbs) || intPasses.enabled(PassMist))
+					if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::ZDepthAbs, Layer::Mist}))
 					{
 						float depth_abs = 0.f, depth_norm = 0.f;
 
-						if(intPasses.enabled(PassZDepthNorm) || intPasses.enabled(PassMist))
+						if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::Mist}))
 						{
 							if(c_ray.tmax_ > 0.f)
 							{
 								depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
 							}
-							intPasses(PassZDepthNorm) = Rgba(depth_norm);
-							intPasses(PassMist) = Rgba(1.f - depth_norm);
+							color_layers(Layer::ZDepthNorm).color_ = Rgba(depth_norm);
+							color_layers(Layer::Mist).color_ = Rgba(1.f - depth_norm);
 						}
-						if(intPasses.enabled(PassZDepthAbs))
+						if(color_layers.find(Layer::ZDepthAbs))
 						{
 							depth_abs = c_ray.tmax_;
 							if(depth_abs <= 0.f)
 							{
 								depth_abs = 99999997952.f;
 							}
-							intPasses(PassZDepthAbs) = Rgba(depth_abs);
+							color_layers(Layer::ZDepthAbs).color_ = Rgba(depth_abs);
 						}
 					}
 
-					for(const auto &it : intPasses)
+					for(auto &it : color_layers)
 					{
-						intPasses(it) *= wt;
+						it.second.color_ *= wt;
 
-						if(intPasses(it).a_ > 1.f) intPasses(it).a_ = 1.f;
+						if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 
-						switch(it)
+						switch(it.first)
 						{
 							//Processing of mask render passes:
-							case PassObjIndexMask:
-							case PassObjIndexMaskShadow:
-							case PassObjIndexMaskAll:
-							case PassMatIndexMask:
-							case PassMatIndexMaskShadow:
-							case PassMatIndexMaskAll:
+							case Layer::ObjIndexMask:
+							case Layer::ObjIndexMaskShadow:
+							case Layer::ObjIndexMaskAll:
+							case Layer::MatIndexMask:
+							case Layer::MatIndexMaskShadow:
+							case Layer::MatIndexMaskAll:
 
-								intPasses(it).clampRgb01();
+								it.second.color_.clampRgb01();
 
 								if(mask_params.invert_)
 								{
-									intPasses(it) = Rgba(1.f) - intPasses(it);
+									it.second.color_ = Rgba(1.f) - it.second.color_;
 								}
 
 								if(!mask_params.only_)
 								{
-									Rgba col_combined = intPasses(PassCombined);
+									Rgba col_combined = color_layers(Layer::Combined).color_;
 									col_combined.a_ = 1.f;
-									intPasses(it) *= col_combined;
+									it.second.color_ *= col_combined;
 								}
 								break;
 
@@ -367,17 +368,17 @@ bool SppmIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int 
 				}
 				else
 				{
-					intPasses(PassCombined) *= wt;
+					color_layers(Layer::Combined).color_ *= wt;
 				}
 
-				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &intPasses);
+				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 			}
 		}
 	}
 	return true;
 }
 
-void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
+void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map, int thread_id, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, unsigned int n_photons, const Pdf1D *light_power_d, int num_d_lights, const std::vector<Light *> &tmplights, ProgressBar *pb, int pb_step, unsigned int &total_photons_shot, int max_bounces, Random &prng)
 {
 	Ray ray;
 	float light_num_pdf, light_pdf, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_l;
@@ -388,10 +389,10 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	unsigned int curr = 0;
 
 	SurfacePoint sp;
-	RenderState state(&prng);
-	alignas (16) unsigned char userdata[user_data_size__];
-	state.userdata_ = static_cast<void *>(userdata);
-	state.cam_ = scene->getCamera();
+	RenderData render_data(&prng);
+	alignas (16) unsigned char userdata[user_data_size_];
+	render_data.arena_ = static_cast<void *>(userdata);
+	render_data.cam_ = render_view->getCamera();
 
 	float f_num_lights = (float)num_d_lights;
 
@@ -415,8 +416,8 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 	{
 		unsigned int haltoncurr = curr + n_photons_thread * thread_id;
 
-		state.chromatic_ = true;
-		state.wavelength_ = scrHalton__(5, haltoncurr);
+		render_data.chromatic_ = true;
+		render_data.wavelength_ = scrHalton__(5, haltoncurr);
 
 		// Tried LD, get bad and strange results for some stategy.
 		{
@@ -471,18 +472,18 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			if(material)
 			{
-				if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 				{
-					if(vol->transmittance(state, ray, vcol)) transm = vcol;
+					if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
 				}
 			}
 
 			Vec3 wi = -ray.dir_, wo;
 			material = sp.material_;
-			material->initBsdf(state, sp, bsdfs);
+			material->initBsdf(render_data, sp, bsdfs);
 
 			//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-			if(!direct_photon && !caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+			if(!direct_photon && !caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -494,7 +495,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 				nd_photon_stored++;
 			}
 			// add caustic photon
-			if(!direct_photon && caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
+			if(!direct_photon && caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -516,20 +517,20 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-			bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+			bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
 			if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 			pcol = sample.color_;
 
-			caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-							 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-			direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+			caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+							 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+			direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
-			if(state.chromatic_ && Material::hasFlag(sample.sampled_flags_, BsdfFlags::Dispersive))
+			if(render_data.chromatic_ && sample.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 			{
-				state.chromatic_ = false;
+				render_data.chromatic_ = false;
 				Rgb wl_col;
-				wl2Rgb__(state.wavelength_, wl_col);
+				wl2Rgb__(render_data.wavelength_, wl_col);
 				pcol *= wl_col;
 			}
 
@@ -545,7 +546,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 			pb->mutx_.lock();
 			pb->update();
 			pb->mutx_.unlock();
-			if(scene->getSignals() & Y_SIG_ABORT) { return; }
+			if(render_control.aborted()) { return; }
 		}
 		done = (curr >= n_photons_thread);
 	}
@@ -560,7 +561,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 
 
 //photon pass, scatter photon
-void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
+void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const RenderControl &render_control, const RenderView *render_view)
 {
 	g_timer__.addEvent("prepass");
 	g_timer__.start("prepass");
@@ -581,7 +582,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 		session__.caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 	}
 
-	lights_ = scene_->getLightsVisible();
+	lights_ = render_view->getLightsVisible();
 	std::vector<Light *> tmplights;
 
 	//background do not emit photons, or it is merged into normal light?
@@ -625,10 +626,10 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 	SurfacePoint sp;
 	Random prng(rand() + offset * (4517) + 123);
-	RenderState state(&prng);
-	alignas (16) unsigned char userdata[user_data_size__];
-	state.userdata_ = static_cast<void *>(userdata);
-	state.cam_ = scene_->getCamera();
+	RenderData render_data(&prng);
+	alignas (16) unsigned char userdata[user_data_size_];
+	render_data.arena_ = static_cast<void *>(userdata);
+	render_data.cam_ = render_view->getCamera();
 
 	ProgressBar *pb;
 	std::string previous_progress_tag;
@@ -658,7 +659,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 	if(n_threads >= 2)
 	{
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session__.diffuse_map_, session__.caustic_map_, i, scene_, n_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session__.diffuse_map_, session__.caustic_map_, i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 		for(auto &t : threads) t.join();
 	}
 	else
@@ -673,9 +674,9 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 		while(!done)
 		{
-			if(scene_->getSignals() & Y_SIG_ABORT) {  pb->done(); if(!intpb_) delete pb; return; }
-			state.chromatic_ = true;
-			state.wavelength_ = scrHalton__(5, curr);
+			if(render_control.aborted()) {  pb->done(); if(!intpb_) delete pb; return; }
+			render_data.chromatic_ = true;
+			render_data.wavelength_ = scrHalton__(5, curr);
 
 			// Tried LD, get bad and strange results for some stategy.
 			s_1 = hal_1_.getNext();
@@ -716,18 +717,18 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 				if(material)
 				{
-					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
+					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * -ray.dir_ < 0)))
 					{
-						if(vol->transmittance(state, ray, vcol)) transm = vcol;
+						if(vol->transmittance(render_data, ray, vcol)) transm = vcol;
 					}
 				}
 
 				Vec3 wi = -ray.dir_, wo;
 				material = sp.material_;
-				material->initBsdf(state, sp, bsdfs);
+				material->initBsdf(render_data, sp, bsdfs);
 
 				//deposit photon on diffuse surface, now we only have one map for all, elimate directPhoton for we estimate it directly
-				if(!direct_photon && !caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+				if(!direct_photon && !caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse))
 				{
 					Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -740,7 +741,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 					nd_photon_stored++;
 				}
 				// add caustic photon
-				if(!direct_photon && caustic_photon && Material::hasFlag(bsdfs, BsdfFlags::Diffuse | BsdfFlags::Glossy))
+				if(!direct_photon && caustic_photon && bsdfs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 				{
 					Photon np(wi, sp.p_, pcol);// pcol used here
 
@@ -763,20 +764,20 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 
 				PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
-				bool scattered = material->scatterPhoton(state, sp, wi, wo, sample);
+				bool scattered = material->scatterPhoton(render_data, sp, wi, wo, sample);
 				if(!scattered) break; //photon was absorped.  actually based on russian roulette
 
 				pcol = sample.color_;
 
-				caustic_photon = (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
-								 (Material::hasFlag(sample.sampled_flags_, (BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
-				direct_photon = Material::hasFlag(sample.sampled_flags_, BsdfFlags::Filter) && direct_photon;
+				caustic_photon = (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Dispersive)) && direct_photon) ||
+								 (sample.sampled_flags_.hasAny((BsdfFlags::Glossy | BsdfFlags::Specular | BsdfFlags::Filter | BsdfFlags::Dispersive)) && caustic_photon);
+				direct_photon = sample.sampled_flags_.hasAny(BsdfFlags::Filter) && direct_photon;
 
-				if(state.chromatic_ && Material::hasFlag(sample.sampled_flags_, BsdfFlags::Dispersive))
+				if(render_data.chromatic_ && sample.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 				{
-					state.chromatic_ = false;
+					render_data.chromatic_ = false;
 					Rgb wl_col;
-					wl2Rgb__(state.wavelength_, wl_col);
+					wl2Rgb__(render_data.wavelength_, wl_col);
 					pcol *= wl_col;
 				}
 
@@ -850,15 +851,15 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive)
 }
 
 //now it's a dummy function
-Rgba SppmIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const
+Rgba SppmIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	return Rgba(0.f);
 }
 
 
-GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, IntPasses *intPasses)
+GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yafaray4::DiffRay &ray, yafaray4::HitPoint &hp, ColorLayers *color_layers)
 {
-	const bool int_passes_used = state.raylevel_ == 1 && intPasses && intPasses->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 1 && color_layers && color_layers->size() > 1;
 
 	static int n_max__ = 0;
 	static int calls__ = 0;
@@ -869,20 +870,20 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 	float alpha;
 	SurfacePoint sp;
 
-	void *o_udat = state.userdata_;
-	bool old_include_lights = state.include_lights_;
+	void *o_udat = render_data.arena_;
+	bool old_include_lights = render_data.include_lights_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
 
 	if(scene_->intersect(ray, sp))
 	{
-		alignas (16) unsigned char userdata[user_data_size__];
-		state.userdata_ = static_cast<void *>(userdata);
-		if(state.raylevel_ == 0)
+		alignas (16) unsigned char userdata[user_data_size_];
+		render_data.arena_ = static_cast<void *>(userdata);
+		if(render_data.raylevel_ == 0)
 		{
-			state.chromatic_ = true;
-			state.include_lights_ = true;
+			render_data.chromatic_ = true;
+			render_data.include_lights_ = true;
 		}
 
 		BsdfFlags bsdfs;
@@ -890,22 +891,22 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 		Vec3 wo = -ray.dir_;
 		const Material *material = sp.material_;
-		material->initBsdf(state, sp, bsdfs);
+		material->initBsdf(render_data, sp, bsdfs);
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
-		const Rgb col_emit = material->emit(state, sp, wo);
+		const Rgb col_emit = material->emit(render_data, sp, wo);
 		g_info.constant_randiance_ += col_emit; //add only once, but FG seems add twice?
-		if(int_passes_used)
+		if(layers_used)
 		{
-			if(Rgba *color_pass = intPasses->find(PassEmit)) *color_pass += col_emit;
+			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
-		state.include_lights_ = false;
+		render_data.include_lights_ = false;
 		SpDifferentials sp_diff(sp, ray);
 
-		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+		if(bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			g_info.constant_randiance_ += estimateAllDirectLight(state, sp, wo, intPasses);
+			g_info.constant_randiance_ += estimateAllDirectLight(render_data, sp, wo, color_layers);
 		}
 
 		// estimate radiance using photon map
@@ -968,7 +969,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 					g_info.photon_count_++;
 					Vec3 pdir = gathered[i].photon_->direction();
-					Rgb surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
+					Rgb surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
 					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?
 					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 
@@ -982,7 +983,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 			}
 
 			// gather caustics photons
-			if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse) && session__.caustic_map_->ready())
+			if(bsdfs.hasAny(BsdfFlags::Diffuse) && session__.caustic_map_->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
@@ -994,7 +995,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 					{
 						Vec3 pdir = gathered[i].photon_->direction();
 						g_info.photon_count_++;
-						surf_col = material->eval(state, sp, wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
+						surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
 						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::fabs(sp.N*pdir); //< wrong!?
 						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
 
@@ -1010,24 +1011,24 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 		}
 		delete [] gathered;
 
-		state.raylevel_++;
-		if(state.raylevel_ <= (r_depth_ + additional_depth))
+		render_data.raylevel_++;
+		if(render_data.raylevel_ <= (r_depth_ + additional_depth))
 		{
 			Halton hal_2(2);
 			Halton hal_3(3);
 			// dispersive effects with recursive raytracing:
-			if(Material::hasFlag(bsdfs, BsdfFlags::Dispersive) && state.chromatic_)
+			if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 			{
-				state.include_lights_ = false; //debatable...
+				render_data.include_lights_ = false; //debatable...
 				int dsam = 8;
-				int old_division = state.ray_division_;
-				int old_offset = state.ray_offset_;
-				float old_dc_1 = state.dc_1_, old_dc_2 = state.dc_2_;
-				if(state.ray_division_ > 1) dsam = std::max(1, dsam / old_division);
-				state.ray_division_ *= dsam;
-				int branch = state.ray_division_ * old_offset;
+				int old_division = render_data.ray_division_;
+				int old_offset = render_data.ray_offset_;
+				float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
+				if(render_data.ray_division_ > 1) dsam = std::max(1, dsam / old_division);
+				render_data.ray_division_ *= dsam;
+				int branch = render_data.ray_division_ * old_offset;
 				float d_1 = 1.f / (float)dsam;
-				float ss_1 = sample::riS(state.pixel_sample_ + state.sampling_offs_);
+				float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
 				Rgb dcol(0.f), vcol(1.f);
 				Vec3 wi;
 				const VolumeHandler *vol;
@@ -1038,37 +1039,37 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				Rgb dcol_trans_accum;
 				for(int ns = 0; ns < dsam; ++ns)
 				{
-					state.wavelength_ = (ns + ss_1) * d_1;
-					state.dc_1_ = scrHalton__(2 * state.raylevel_ + 1, branch + state.sampling_offs_);
-					state.dc_2_ = scrHalton__(2 * state.raylevel_ + 2, branch + state.sampling_offs_);
-					if(old_division > 1) state.wavelength_ = math::addMod1(state.wavelength_, old_dc_1);
-					state.ray_offset_ = branch;
+					render_data.wavelength_ = (ns + ss_1) * d_1;
+					render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+					render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+					if(old_division > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, old_dc_1);
+					render_data.ray_offset_ = branch;
 					++branch;
 					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
-					Rgb mcol = material->sample(state, sp, wo, wi, s, w);
+					Rgb mcol = material->sample(render_data, sp, wo, wi, s, w);
 
-					if(s.pdf_ > 1.0e-6f && Material::hasFlag(s.sampled_flags_, BsdfFlags::Dispersive))
+					if(s.pdf_ > 1.0e-6f && s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 					{
-						state.chromatic_ = false;
+						render_data.chromatic_ = false;
 						Rgb wl_col;
-						wl2Rgb__(state.wavelength_, wl_col);
+						wl2Rgb__(render_data.wavelength_, wl_col);
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
-						t_cing = traceGatherRay(state, ref_ray, hp);
+						t_cing = traceGatherRay(render_data, ref_ray, hp);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 
-						if(int_passes_used)
+						if(layers_used)
 						{
-							if(intPasses->enabled(PassTrans)) dcol_trans_accum += t_cing.constant_randiance_;
+							if(color_layers->find(Layer::Trans)) dcol_trans_accum += t_cing.constant_randiance_;
 						}
 
-						state.chromatic_ = true;
+						render_data.chromatic_ = true;
 					}
 					cing += t_cing;
 				}
-				if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
-					vol->transmittance(state, ref_ray, vcol);
+					vol->transmittance(render_data, ref_ray, vcol);
 					cing.photon_flux_ *= vcol;
 					cing.constant_randiance_ *= vcol;
 				}
@@ -1077,33 +1078,33 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				g_info.photon_flux_ += cing.photon_flux_ * d_1;
 				g_info.photon_count_ += cing.photon_count_ * d_1;
 
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(Rgba *color_pass = intPasses->find(PassTrans))
+					if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
 					{
 						dcol_trans_accum *= d_1;
-						*color_pass += dcol_trans_accum;
+						color_layer->color_ += dcol_trans_accum;
 					}
 				}
 
-				state.ray_division_ = old_division;
-				state.ray_offset_ = old_offset;
-				state.dc_1_ = old_dc_1; state.dc_2_ = old_dc_2;
+				render_data.ray_division_ = old_division;
+				render_data.ray_offset_ = old_offset;
+				render_data.dc_1_ = old_dc_1; render_data.dc_2_ = old_dc_2;
 			}
 
 			// glossy reflection with recursive raytracing:  Pure GLOSSY material doesn't hold photons?
 
-			if(Material::hasFlag(bsdfs, BsdfFlags::Glossy))
+			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
-				state.include_lights_ = false;
+				render_data.include_lights_ = false;
 				int gsam = 8;
-				int old_division = state.ray_division_;
-				int old_offset = state.ray_offset_;
-				float old_dc_1 = state.dc_1_, old_dc_2 = state.dc_2_;
-				if(state.ray_division_ > 1) gsam = std::max(1, gsam / old_division);
-				state.ray_division_ *= gsam;
-				int branch = state.ray_division_ * old_offset;
-				unsigned int offs = gsam * state.pixel_sample_ + state.sampling_offs_;
+				int old_division = render_data.ray_division_;
+				int old_offset = render_data.ray_offset_;
+				float old_dc_1 = render_data.dc_1_, old_dc_2 = render_data.dc_2_;
+				if(render_data.ray_division_ > 1) gsam = std::max(1, gsam / old_division);
+				render_data.ray_division_ *= gsam;
+				int branch = render_data.ray_division_ * old_offset;
+				unsigned int offs = gsam * render_data.pixel_sample_ + render_data.sampling_offs_;
 				float d_1 = 1.f / (float)gsam;
 				Rgb vcol(1.f);
 				Vec3 wi;
@@ -1121,9 +1122,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 
 				for(int ns = 0; ns < gsam; ++ns)
 				{
-					state.dc_1_ = scrHalton__(2 * state.raylevel_ + 1, branch + state.sampling_offs_);
-					state.dc_2_ = scrHalton__(2 * state.raylevel_ + 2, branch + state.sampling_offs_);
-					state.ray_offset_ = branch;
+					render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+					render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+					render_data.ray_offset_ = branch;
 					++offs;
 					++branch;
 
@@ -1133,108 +1134,108 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 					float W = 0.f;
 
 					Sample s(s_1, s_2, BsdfFlags::AllGlossy);
-					Rgb mcol = material->sample(state, sp, wo, wi, s, W);
+					Rgb mcol = material->sample(render_data, sp, wo, wi, s, W);
 
-					if(Material::hasFlag(material->getFlags(), BsdfFlags::Reflect) && !Material::hasFlag(material->getFlags(), BsdfFlags::Transmit))
+					if(material->getFlags().hasAny(BsdfFlags::Reflect) && !material->getFlags().hasAny(BsdfFlags::Transmit))
 					{
 						float w = 0.f;
 
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::Reflect);
-						Rgb mcol = material->sample(state, sp, wo, wi, s, w);
+						Rgb mcol = material->sample(render_data, sp, wo, wi, s, w);
 						Rgba integ = 0.f;
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
-						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
-						else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-						integ = (Rgb) integrate(state, ref_ray, additional_depth, nullptr);
+						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
+						else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
+						integ = (Rgb) integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 
-						if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+						if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 						{
-							if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
+							if(vol->transmittance(render_data, ref_ray, vcol)) integ *= vcol;
 						}
 
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.raylevel == 1);
-						t_ging = traceGatherRay(state, ref_ray, hp);
+						t_ging = traceGatherRay(render_data, ref_ray, hp);
 						t_ging.photon_flux_ *= mcol * w;
 						t_ging.constant_randiance_ *= mcol * w;
 						ging += t_ging;
 					}
-					else if(Material::hasFlag(material->getFlags(), BsdfFlags::Reflect) && Material::hasFlag(material->getFlags(), BsdfFlags::Transmit))
+					else if(material->getFlags().hasAny(BsdfFlags::Reflect) && material->getFlags().hasAny(BsdfFlags::Transmit))
 					{
 						Sample s(s_1, s_2, BsdfFlags::Glossy | BsdfFlags::AllGlossy);
 						Rgb mcol[2];
 						float w[2];
 						Vec3 dir[2];
 
-						mcol[0] = material->sample(state, sp, wo, dir, mcol[1], s, w);
+						mcol[0] = material->sample(render_data, sp, wo, dir, mcol[1], s, w);
 						Rgba integ = 0.f;
 
-						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect) && !Material::hasFlag(s.sampled_flags_, BsdfFlags::Dispersive))
+						if(s.sampled_flags_.hasAny(BsdfFlags::Reflect) && !s.sampled_flags_.hasAny(BsdfFlags::Dispersive))
 						{
 							ref_ray = DiffRay(sp.p_, dir[0], scene_->ray_min_dist_);
 							sp_diff.reflectedRay(ray, ref_ray);
-							integ = integrate(state, ref_ray, additional_depth, nullptr);
-							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
+								if(vol->transmittance(render_data, ref_ray, vcol)) integ *= vcol;
 							}
 							Rgb col_reflect_factor = mcol[0] * w[0];
 
-							t_ging = traceGatherRay(state, ref_ray, hp);
+							t_ging = traceGatherRay(render_data, ref_ray, hp);
 							t_ging.photon_flux_ *= col_reflect_factor;
 							t_ging.constant_randiance_ *= col_reflect_factor;
 
-							if(int_passes_used)
+							if(layers_used)
 							{
-								if(intPasses->enabled(PassGlossyIndirect)) gcol_indirect_accum += (Rgb) t_ging.constant_randiance_;
+								if(color_layers->find(Layer::GlossyIndirect)) gcol_indirect_accum += (Rgb) t_ging.constant_randiance_;
 							}
 							ging += t_ging;
 						}
 
-						if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit))
+						if(s.sampled_flags_.hasAny(BsdfFlags::Transmit))
 						{
 							ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
 							sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-							integ = integrate(state, ref_ray, additional_depth, nullptr);
-							if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+							integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
+							if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 							{
-								if(vol->transmittance(state, ref_ray, vcol)) integ *= vcol;
+								if(vol->transmittance(render_data, ref_ray, vcol)) integ *= vcol;
 							}
 
 							Rgb col_transmit_factor = mcol[1] * w[1];
 							alpha = integ.a_;
-							t_ging = traceGatherRay(state, ref_ray, hp);
+							t_ging = traceGatherRay(render_data, ref_ray, hp);
 							t_ging.photon_flux_ *= col_transmit_factor;
 							t_ging.constant_randiance_ *= col_transmit_factor;
-							if(int_passes_used)
+							if(layers_used)
 							{
-								if(intPasses->enabled(PassGlossyIndirect)) gcol_transmit_accum += (Rgb) t_ging.constant_randiance_;
+								if(color_layers->find(Layer::GlossyIndirect)) gcol_transmit_accum += (Rgb) t_ging.constant_randiance_;
 							}
 							ging += t_ging;
 						}
 					}
 
-					else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Glossy))
+					else if(s.sampled_flags_.hasAny(BsdfFlags::Glossy))
 					{
 						ref_ray = DiffRay(sp.p_, wi, scene_->ray_min_dist_);
 						if(diff_rays_enabled_)
 						{
-							if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
-							else if(Material::hasFlag(s.sampled_flags_, BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
+							if(s.sampled_flags_.hasAny(BsdfFlags::Reflect)) sp_diff.reflectedRay(ray, ref_ray);
+							else if(s.sampled_flags_.hasAny(BsdfFlags::Transmit)) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 						}
 
-						t_ging = traceGatherRay(state, ref_ray, hp);
+						t_ging = traceGatherRay(render_data, ref_ray, hp);
 						t_ging.photon_flux_ *= mcol * W;
 						t_ging.constant_randiance_ *= mcol * W;
-						if(int_passes_used)
+						if(layers_used)
 						{
-							if(intPasses->enabled(PassTrans)) gcol_reflect_accum += t_ging.constant_randiance_;
+							if(color_layers->find(Layer::Trans)) gcol_reflect_accum += t_ging.constant_randiance_;
 						}
 						ging += t_ging;
 					}
 
-					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						if(vol->transmittance(state, ref_ray, vcol))
+						if(vol->transmittance(render_data, ref_ray, vcol))
 						{
 							ging.photon_flux_ *= vcol;
 							ging.constant_randiance_ *= vcol;
@@ -1247,49 +1248,49 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				g_info.photon_flux_ += ging.photon_flux_ * d_1;
 				g_info.photon_count_ += ging.photon_count_ * d_1;
 
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(Rgba *color_pass = intPasses->find(PassGlossyIndirect))
+					if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
 					{
 						gcol_indirect_accum *= d_1;
-						*color_pass += gcol_indirect_accum;
+						color_layer->color_ += gcol_indirect_accum;
 					}
-					if(Rgba *color_pass = intPasses->find(PassTrans))
+					if(ColorLayer *color_layer = color_layers->find(Layer::Trans))
 					{
 						gcol_reflect_accum *= d_1;
-						*color_pass += gcol_reflect_accum;
+						color_layer->color_ += gcol_reflect_accum;
 					}
-					if(Rgba *color_pass = intPasses->find(PassGlossyIndirect))
+					if(ColorLayer *color_layer = color_layers->find(Layer::GlossyIndirect))
 					{
 						gcol_transmit_accum *= d_1;
-						*color_pass += gcol_transmit_accum;
+						color_layer->color_ += gcol_transmit_accum;
 					}
 				}
 
-				state.ray_division_ = old_division;
-				state.ray_offset_ = old_offset;
-				state.dc_1_ = old_dc_1;
-				state.dc_2_ = old_dc_2;
+				render_data.ray_division_ = old_division;
+				render_data.ray_offset_ = old_offset;
+				render_data.dc_1_ = old_dc_1;
+				render_data.dc_2_ = old_dc_2;
 			}
 
 			//...perfect specular reflection/refraction with recursive raytracing...
-			if(Material::hasFlag(bsdfs, BsdfFlags::Specular | BsdfFlags::Filter))
+			if(bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
-				state.include_lights_ = true;
+				render_data.include_lights_ = true;
 				bool reflect = false, refract = false;
 				Vec3 dir[2];
 				Rgb rcol[2], vcol;
-				material->getSpecular(state, sp, wo, reflect, refract, dir, rcol);
+				material->getSpecular(render_data, sp, wo, reflect, refract, dir, rcol);
 				const VolumeHandler *vol;
 
 				if(reflect)
 				{
 					DiffRay ref_ray(sp.p_, dir[0], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(state, ref_ray, hp);
-					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp);
+					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						if(vol->transmittance(state, ref_ray, vcol))
+						if(vol->transmittance(render_data, ref_ray, vcol))
 						{
 							refg.constant_randiance_ *= vcol;
 							refg.photon_flux_ *= vcol;
@@ -1297,9 +1298,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 					}
 					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(rcol[0]);
 					g_info.constant_randiance_ += col_radiance_reflect;
-					if(int_passes_used)
+					if(layers_used)
 					{
-						if(Rgba *color_pass = intPasses->find(PassReflectPerfect)) *color_pass += col_radiance_reflect;
+						if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_radiance_reflect;
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[0]);
 					g_info.photon_count_ += refg.photon_count_;
@@ -1308,10 +1309,10 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				{
 					DiffRay ref_ray(sp.p_, dir[1], scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
-					GatherInfo refg = traceGatherRay(state, ref_ray, hp);
-					if(Material::hasFlag(bsdfs, BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
+					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp);
+					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
-						if(vol->transmittance(state, ref_ray, vcol))
+						if(vol->transmittance(render_data, ref_ray, vcol))
 						{
 							refg.constant_randiance_ *= vcol;
 							refg.photon_flux_ *= vcol;
@@ -1319,9 +1320,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 					}
 					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(rcol[1]);
 					g_info.constant_randiance_ += col_radiance_refract;
-					if(int_passes_used)
+					if(layers_used)
 					{
-						if(Rgba *color_pass = intPasses->find(PassRefractPerfect)) *color_pass += col_radiance_refract;
+						if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_radiance_refract;
 					}
 					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[1]);
 					g_info.photon_count_ += refg.photon_count_;
@@ -1329,26 +1330,26 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 				}
 			}
 		}
-		--state.raylevel_;
+		--render_data.raylevel_;
 
-		if(int_passes_used)
+		if(layers_used)
 		{
-			generateCommonPassesSettings(state, sp, ray, intPasses);
+			generateCommonLayers(render_data, sp, ray, color_layers);
 
-			if(Rgba *color_pass = intPasses->find(PassAo))
+			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
 			}
 
-			if(Rgba *color_pass = intPasses->find(PassAoClay))
+			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(render_data, sp, wo);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
@@ -1358,27 +1359,27 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
 			g_info.constant_randiance_ += col_tmp;
-			if(int_passes_used)
+			if(layers_used)
 			{
-				if(Rgba *color_pass = intPasses->find(PassEnv)) *color_pass = col_tmp;
+				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
 		}
 	}
 
-	state.userdata_ = o_udat;
-	state.include_lights_ = old_include_lights;
+	render_data.arena_ = o_udat;
+	render_data.include_lights_ = old_include_lights;
 
-	Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgba col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
+	Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	Rgba col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	if(int_passes_used)
+	if(layers_used)
 	{
-		if(Rgba *color_pass = intPasses->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
-		if(Rgba *color_pass = intPasses->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
 	}
 
 	g_info.constant_randiance_ = (g_info.constant_randiance_ * col_vol_transmittance) + col_vol_integration;
@@ -1386,9 +1387,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderState &state, yafaray4
 	return g_info;
 }
 
-void SppmIntegrator::initializePpm()
+void SppmIntegrator::initializePpm(const RenderView *render_view)
 {
-	const Camera *camera = scene_->getCamera();
+	const Camera *camera = render_view->getCamera();
 	unsigned int resolution = camera->resX() * camera->resY();
 
 	hit_points_.reserve(resolution);
@@ -1413,7 +1414,7 @@ void SppmIntegrator::initializePpm()
 
 }
 
-Integrator *SppmIntegrator::factory(ParamMap &params, Scene &scene)
+Integrator *SppmIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool pm_ire = false;

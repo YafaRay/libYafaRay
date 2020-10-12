@@ -19,12 +19,9 @@
  */
 
 #include "background/background_constant.h"
-#include "common/logging.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
-
-#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
@@ -34,7 +31,7 @@ ConstantBackground::ConstantBackground(Rgb col, bool ibl, bool with_caustic) : c
 	shoot_caustic_ = with_caustic;
 }
 
-Rgb ConstantBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
+Rgb ConstantBackground::operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur) const
 {
 	return color_;
 }

@@ -21,7 +21,7 @@
  */
 
 #include "geometry/matrix4.h"
-#include "common/logging.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 

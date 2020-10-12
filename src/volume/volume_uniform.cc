@@ -17,7 +17,7 @@
  */
 
 #include "volume/volume_uniform.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "geometry/ray.h"
 #include "color/color.h"
 #include "geometry/bound.h"
@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 
 Rgb UniformVolumeRegion::sigmaA(const Point3 &p, const Vec3 &v) const
@@ -86,7 +86,7 @@ Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb(0.f);
 }
 
-VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, Scene &scene)
+VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

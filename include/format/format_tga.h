@@ -21,33 +21,35 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_TGA_H
-#define YAFARAY_IMAGEHANDLER_TGA_H
+#ifndef YAFARAY_FORMAT_TGA_H
+#define YAFARAY_FORMAT_TGA_H
 
-#include "imagehandler/imagehandler.h"
+#include "format.h"
 
 BEGIN_YAFARAY
 
-class TgaHandler;
+class TgaFormat;
 class TgaHeader;
+class RgbAlpha;
+template <typename T> class ImageBuffer2D;
 
-typedef Rgba (TgaHandler::*ColorProcessor_t)(void *data);
+typedef Rgba (TgaFormat::*ColorProcessor_t)(void *data);
 
-class TgaHandler final : public ImageHandler
+class TgaFormat final : public Format
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		static Format *factory(ParamMap &params);
 
 	private:
-		TgaHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
+		virtual std::string getFormatName() const override { return "TgaFormat"; }
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual bool saveToFile(const std::string &name, const Image *image) override;
 		void initForInput();
 
 		/*! Image data reading template functions */
 		template <class ColorType> void readColorMap(FILE *fp, TgaHeader &header, ColorProcessor_t cp);
-		template <class ColorType> void readRleImage(FILE *fp, ColorProcessor_t cp);
-		template <class ColorType> void readDirectImage(FILE *fp, ColorProcessor_t cp);
+		template <class ColorType> void readRleImage(FILE *fp, ColorProcessor_t cp, Image *image);
+		template <class ColorType> void readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image);
 
 		/*! colorProcesors definitions with signature Rgba (void *)
 		to be passed as pointer-to-non-static-member-functions */
@@ -61,7 +63,7 @@ class TgaHandler final : public ImageHandler
 
 		bool precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth);
 
-		Rgba2DImage_t *color_map_;
+		ImageBuffer2D<RgbAlpha> *color_map_;
 		size_t tot_pixels_;
 		size_t min_x_, max_x_, step_x_;
 		size_t min_y_, max_y_, step_y_;
@@ -70,4 +72,4 @@ class TgaHandler final : public ImageHandler
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_TGA_H
+#endif // YAFARAY_FORMAT_TGA_H

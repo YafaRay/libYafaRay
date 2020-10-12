@@ -32,5 +32,5 @@ Worker::Worker(yafaray4::Interface *interface, MainWindow *win, QtOutput *output
 
 void Worker::run()
 {
-	interface_->render(*output_, new QtProgress(win_));
+	interface_->render(new QtProgress(win_));
 }

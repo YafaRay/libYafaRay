@@ -21,7 +21,7 @@
 #include "accelerator/accelerator_kdtree.h"
 #include "material/material.h"
 #include "scene/scene.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "geometry/triangle.h"
 #include "common/param.h"
 #include <algorithm>
@@ -992,7 +992,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 =============================================================*/
 
 template<class T>
-bool AcceleratorKdTree<T>::intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
+bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
 {
 	float a, b, t; // entry/exit/splitting plane signed distance
 	float t_hit;
@@ -1122,7 +1122,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderState &state, const Ray &ray, int m
 							Point3 h = ray.from_ + t_hit * ray.dir_;
 							SurfacePoint sp;
 							mp->getSurface(sp, h, bary);
-							filt *= mat->getTransparency(state, sp, ray.dir_);
+							filt *= mat->getTransparency(render_data, sp, ray.dir_);
 							++depth;
 						}
 					}
@@ -1153,7 +1153,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderState &state, const Ray &ray, int m
 								Point3 h = ray.from_ + t_hit * ray.dir_;
 								SurfacePoint sp;
 								mp->getSurface(sp, h, bary);
-								filt *= mat->getTransparency(state, sp, ray.dir_);
+								filt *= mat->getTransparency(render_data, sp, ray.dir_);
 								++depth;
 							}
 						}

@@ -71,20 +71,20 @@ class NodeFinder
 class ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, Scene &scene);
+		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) { id_ = id; }
 		/*! evaluate the shader for given surface point; result has to be put on stack (using stack[ID]).
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const = 0;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const = 0;
 		/*! evaluate the shader for given surface point and directions; otherwise same behavious than the other eval.
 			Should only be called when the node returns true on isViewDependant() */
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const = 0;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const = 0;
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
-		virtual void evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{stack[this->id_] = NodeResult(Rgba(0.f), 0.f);}
 		/*! indicate whether the shader value depends on wi and wo */
 		virtual bool isViewDependant() const { return false; }

@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-Rgba EmissionIntegrator::transmittance(RenderState &state, Ray &ray) const {
+Rgba EmissionIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
 	Rgba result(1.f);
 	auto volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes) result *= v.second->tau(ray, 0, 0);
@@ -36,7 +36,7 @@ Rgba EmissionIntegrator::transmittance(RenderState &state, Ray &ray) const {
 	return result;
 }
 
-Rgba EmissionIntegrator::integrate(RenderState &state, Ray &ray, int additional_depth) const {
+Rgba EmissionIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
 	float t_0 = 0.f, t_1 = 0.f;
 	int n = 10; // samples + 1 on the ray inside the volume
 
@@ -65,7 +65,7 @@ Rgba EmissionIntegrator::integrate(RenderState &state, Ray &ray, int additional_
 	return result;
 }
 
-Integrator *EmissionIntegrator::factory(ParamMap &params, Scene &scene) {
+Integrator *EmissionIntegrator::factory(ParamMap &params, const Scene &scene) {
 	EmissionIntegrator *inte = new EmissionIntegrator();
 	return inte;
 }

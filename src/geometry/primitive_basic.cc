@@ -72,7 +72,7 @@ void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data
 	sp.light_ = nullptr;
 }
 
-ObjectGeometric *sphereFactory__(ParamMap &params, Scene &scene)
+ObjectGeometric *sphereFactory__(ParamMap &params, const Scene &scene)
 {
 	Point3 center(0.f, 0.f, 0.f);
 	double radius(1.f);

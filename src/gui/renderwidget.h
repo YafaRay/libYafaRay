@@ -48,7 +48,7 @@ class RenderWidget: public QLabel
 		bool isRendering() { return rendering_; }
 		void finishRendering();
 
-		void setPixel(int x, int y, QRgb color, QRgb alpha, bool with_alpha);
+		void setPixel(int x, int y, QRgb color, QRgb alpha);
 
 		void paintColorBuffer();
 		void paintAlpha();

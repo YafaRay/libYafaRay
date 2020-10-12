@@ -22,7 +22,7 @@
 #include "color/color.h"
 #include "color/color_ramp.h"
 #include "math/interpolation.h"
-#include "common/logging.h"
+#include "common/logger.h"
 
 #include<iostream>
 

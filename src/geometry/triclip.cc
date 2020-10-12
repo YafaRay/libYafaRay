@@ -20,7 +20,7 @@
 #include "constants.h"
 
 #include "geometry/bound.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include <string.h>
 
 BEGIN_YAFARAY

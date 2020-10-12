@@ -22,9 +22,7 @@
 #include "geometry/surface.h"
 #include "scene/scene.h"
 #include "common/param.h"
-#include "material/material_mask.h"
-//#include "common/spectrum.h"
-
+#include "render/render_data.h"
 
 /*=============================================================
 a material intended for visible light sources, i.e. it has no
@@ -39,23 +37,23 @@ LightMaterial::LightMaterial(Rgb light_c, bool ds): light_col_(light_c), double_
 	bsdf_flags_ = BsdfFlags::Emit;
 }
 
-Rgb LightMaterial::sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
+Rgb LightMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
 	s.pdf_ = 0.f;
 	w = 0.f;
 	return Rgb(0.f);
 }
 
-Rgb LightMaterial::emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const
+Rgb LightMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!state.include_lights_) return Rgb(0.f);
+	if(!render_data.include_lights_) return Rgb(0.f);
 	if(double_sided_) return light_col_;
 
 	float angle = wo * sp.n_;
 	return (angle > 0) ? light_col_ : Rgb(0.f);
 }
 
-float LightMaterial::pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
+float LightMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
 	return 0.f;
 }

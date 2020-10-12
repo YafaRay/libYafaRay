@@ -18,7 +18,7 @@
  */
 
 #include "scene/scene_yafaray.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "geometry/triangle.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "common/param.h"
@@ -30,18 +30,17 @@
 #include "camera/camera.h"
 #include "shader/shader_node.h"
 #include "render/imagefilm.h"
-#include "imagehandler/imagehandler.h"
 #include "geometry/object_geom.h"
 #include "volume/volume.h"
 #include "geometry/primitive_basic.h"
 #include "output/output.h"
+#include "render/render_data.h"
 
 #include <iostream>
 #include <limits>
 
 BEGIN_YAFARAY
 
-#define Y_INFO_SCENE Y_INFO << "Scene (YafaRay): "
 #define Y_VERBOSE_SCENE Y_VERBOSE << "Scene (YafaRay): "
 #define Y_ERROR_SCENE Y_ERROR << "Scene (YafaRay): "
 #define Y_WARN_SCENE Y_WARNING << "Scene (YafaRay): "
@@ -54,14 +53,25 @@ BEGIN_YAFARAY
 #define INFO_VERBOSE_SUCCESS(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
 #define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
 
+// Object flags
+// Lower order byte indicates type
+constexpr unsigned int trim__ = 0x0000;
+constexpr unsigned int vtrim__ = 0x0001;
+constexpr unsigned int mtrim__ = 0x0002;
+// Higher order byte indicates options
+constexpr unsigned int invisiblem__ = 0x0100;
+constexpr unsigned int basemesh__ = 0x0200;
 
-#define PREPARE_EDGES(q, v1, v2) e1 = vertices[v1] - vertices[q]; \
-			e2 = vertices[v2] - vertices[q];
 
 Scene *YafaRayScene::factory(ParamMap &params)
 {
 	Scene *scene = new YafaRayScene();
 	return scene;
+}
+
+YafaRayScene::YafaRayScene()
+{
+	geometry_creation_state_.cur_obj_ = nullptr;
 }
 
 YafaRayScene::~YafaRayScene()
@@ -85,7 +95,7 @@ void YafaRayScene::clearGeometry()
 
 bool YafaRayScene::startCurveMesh(const std::string &name, int vertices, int obj_pass_index)
 {
-	if(state_.stack_.front() != Geometry) return false;
+	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	int ptype = 0 & 0xFF;
 
 	ObjData &n_obj = meshes_.find(name)->second;
@@ -95,10 +105,10 @@ bool YafaRayScene::startCurveMesh(const std::string &name, int vertices, int obj
 	n_obj.obj_ = new TriangleObject(2 * (vertices - 1), true, false);
 	n_obj.obj_->setObjectIndex(obj_pass_index);
 	n_obj.type_ = ptype;
-	state_.stack_.push_front(Object);
-	state_.changes_ |= CGeom;
-	state_.orco_ = false;
-	state_.cur_obj_ = &n_obj;
+	creation_state_.stack_.push_front(CreationState::Object);
+	creation_state_.changes_ |= CreationState::Flags::CGeom;
+	geometry_creation_state_.orco_ = false;
+	geometry_creation_state_.cur_obj_ = &n_obj;
 
 	n_obj.obj_->points_.reserve(2 * vertices);
 	return true;
@@ -106,13 +116,13 @@ bool YafaRayScene::startCurveMesh(const std::string &name, int vertices, int obj
 
 bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape)
 {
-	if(state_.stack_.front() != Object) return false;
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
 
 	// TODO: Check if we have at least 2 vertex...
 	// TODO: math optimizations
 
 	// extrude vertices and create faces
-	std::vector<Point3> &points = state_.cur_obj_->obj_->points_;
+	std::vector<Point3> &points = geometry_creation_state_.cur_obj_->obj_->points_;
 	float r;	//current radius
 	int i;
 	Point3 o, a, b;
@@ -141,8 +151,8 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		a = o - (0.5 * r * v) - 1.5 * r / sqrt(3.f) * u;
 		b = o - (0.5 * r * v) + 1.5 * r / sqrt(3.f) * u;
 
-		state_.cur_obj_->obj_->points_.push_back(a);
-		state_.cur_obj_->obj_->points_.push_back(b);
+		geometry_creation_state_.cur_obj_->obj_->points_.push_back(a);
+		geometry_creation_state_.cur_obj_->obj_->points_.push_back(b);
 	}
 
 	// Face fill
@@ -166,76 +176,76 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		// Close bottom
 		if(i == 0)
 		{
-			tri = Triangle(a_1, a_3, a_2, state_.cur_obj_->obj_);
+			tri = Triangle(a_1, a_3, a_2, geometry_creation_state_.cur_obj_->obj_);
 			tri.setMaterial(mat);
-			state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-			state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
 		}
 
 		// Fill
-		tri = Triangle(a_1, b_2, b_1, state_.cur_obj_->obj_);
+		tri = Triangle(a_1, b_2, b_1, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
 		// StrandUV
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = Triangle(a_1, a_2, b_2, state_.cur_obj_->obj_);
+		tri = Triangle(a_1, a_2, b_2, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = Triangle(a_2, b_3, b_2, state_.cur_obj_->obj_);
+		tri = Triangle(a_2, b_3, b_2, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = Triangle(a_2, a_3, b_3, state_.cur_obj_->obj_);
+		tri = Triangle(a_2, a_3, b_3, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-		tri = Triangle(b_3, a_3, a_1, state_.cur_obj_->obj_);
+		tri = Triangle(b_3, a_3, a_1, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
 
-		tri = Triangle(b_3, a_1, b_1, state_.cur_obj_->obj_);
+		tri = Triangle(b_3, a_1, b_1, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
 	}
 	// Close top
-	tri = Triangle(i, 2 * i + n, 2 * i + n + 1, state_.cur_obj_->obj_);
+	tri = Triangle(i, 2 * i + n, 2 * i + n + 1, geometry_creation_state_.cur_obj_->obj_);
 	tri.setMaterial(mat);
-	state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
-	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-	state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
+	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
 
-	state_.cur_obj_->obj_->finish();
+	geometry_creation_state_.cur_obj_->obj_->finish();
 
-	state_.stack_.pop_front();
+	creation_state_.stack_.pop_front();
 	return true;
 }
 
 bool YafaRayScene::startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
-	if(state_.stack_.front() != Geometry) return false;
+	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	int ptype = type & 0xFF;
 	if(ptype != trim__ && type != vtrim__ && type != mtrim__) return false;
 
@@ -256,23 +266,23 @@ bool YafaRayScene::startTriMesh(const std::string &name, int vertices, int trian
 		default: return false;
 	}
 	n_obj.type_ = ptype;
-	state_.stack_.push_front(Object);
-	state_.changes_ |= CGeom;
-	state_.orco_ = has_orco;
-	state_.cur_obj_ = &n_obj;
+	creation_state_.stack_.push_front(CreationState::Object);
+	creation_state_.changes_ |= CreationState::Flags::CGeom;
+	geometry_creation_state_.orco_ = has_orco;
+	geometry_creation_state_.cur_obj_ = &n_obj;
 
 	return true;
 }
 
 bool YafaRayScene::endTriMesh()
 {
-	if(state_.stack_.front() != Object) return false;
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
 
-	if(state_.cur_obj_->type_ == trim__)
+	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		if(state_.cur_obj_->obj_->has_uv_)
+		if(geometry_creation_state_.cur_obj_->obj_->has_uv_)
 		{
-			if(state_.cur_obj_->obj_->uv_offsets_.size() != 3 * state_.cur_obj_->obj_->triangles_.size())
+			if(geometry_creation_state_.cur_obj_->obj_->uv_offsets_.size() != 3 * geometry_creation_state_.cur_obj_->obj_->triangles_.size())
 			{
 				Y_ERROR << "Scene: UV-offsets mismatch!" << YENDL;
 				return false;
@@ -280,20 +290,26 @@ bool YafaRayScene::endTriMesh()
 		}
 
 		//calculate geometric normals of tris
-		state_.cur_obj_->obj_->finish();
+		geometry_creation_state_.cur_obj_->obj_->finish();
 	}
 	else
 	{
-		state_.cur_obj_->mobj_->finish();
+		geometry_creation_state_.cur_obj_->mobj_->finish();
 	}
 
-	state_.stack_.pop_front();
+	creation_state_.stack_.pop_front();
 	return true;
+}
+
+void prepareEdges__(int vertex_common_index, int vertex_1_index, int vertex_2_index, const std::vector<Point3> &vertices, Vec3 &edge_1, Vec3 &edge_2)
+{
+	edge_1 = vertices[vertex_1_index] - vertices[vertex_common_index];
+	edge_2 = vertices[vertex_2_index] - vertices[vertex_common_index];
 }
 
 bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 {
-	if(state_.stack_.front() != Geometry) return false;
+	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	ObjData *odat;
 	if(!name.empty())
 	{
@@ -303,7 +319,7 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 	}
 	else
 	{
-		odat = state_.cur_obj_;
+		odat = geometry_creation_state_.cur_obj_;
 		if(!odat) return false;
 	}
 
@@ -319,7 +335,7 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 	std::vector<Triangle> &triangles = odat->obj_->triangles_;
 	size_t points = odat->obj_->points_.size();
 	std::vector<Triangle>::iterator tri;
-	std::vector<Point3> const &vertices = odat->obj_->points_;
+	const std::vector<Point3> &vertices = odat->obj_->points_;
 
 	normals.reserve(points);
 	normals.resize(points, {0, 0, 0});
@@ -330,20 +346,20 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 		{
 
 			const Vec3 n = tri->getNormal();
-			Vec3 e1, e2;
+			Vec3 e_1, e_2;
 
-			PREPARE_EDGES(tri->pa_, tri->pb_, tri->pc_)
-			float alpha = e1.sinFromVectors(e2);
+			prepareEdges__(tri->pa_, tri->pb_, tri->pc_, vertices, e_1, e_2);
+			float alpha = e_1.sinFromVectors(e_2);
 
 			normals[tri->pa_] += n * alpha;
 
-			PREPARE_EDGES(tri->pb_, tri->pa_, tri->pc_)
-			alpha = e1.sinFromVectors(e2);
+			prepareEdges__(tri->pb_, tri->pa_, tri->pc_, vertices, e_1, e_2);
+			alpha = e_1.sinFromVectors(e_2);
 
 			normals[tri->pb_] += n * alpha;
 
-			PREPARE_EDGES(tri->pc_, tri->pa_, tri->pb_)
-			alpha = e1.sinFromVectors(e2);
+			prepareEdges__(tri->pc_, tri->pa_, tri->pb_, vertices, e_1, e_2);
+			alpha = e_1.sinFromVectors(e_2);
 
 			normals[tri->pc_] += n * alpha;
 
@@ -363,18 +379,18 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 		std::vector<std::vector<float>> alphas(points);
 		for(tri = triangles.begin(); tri != triangles.end(); ++tri)
 		{
-			Vec3 e1, e2;
+			Vec3 e_1, e_2;
 
-			PREPARE_EDGES(tri->pa_, tri->pb_, tri->pc_)
-			alphas[tri->pa_].push_back(e1.sinFromVectors(e2));
+			prepareEdges__(tri->pa_, tri->pb_, tri->pc_, vertices, e_1, e_2);
+			alphas[tri->pa_].push_back(e_1.sinFromVectors(e_2));
 			vface[tri->pa_].push_back(&(*tri));
 
-			PREPARE_EDGES(tri->pb_, tri->pa_, tri->pc_)
-			alphas[tri->pb_].push_back(e1.sinFromVectors(e2));
+			prepareEdges__(tri->pb_, tri->pa_, tri->pc_, vertices, e_1, e_2);
+			alphas[tri->pb_].push_back(e_1.sinFromVectors(e_2));
 			vface[tri->pb_].push_back(&(*tri));
 
-			PREPARE_EDGES(tri->pc_, tri->pa_, tri->pb_)
-			alphas[tri->pc_].push_back(e1.sinFromVectors(e2));
+			prepareEdges__(tri->pc_, tri->pa_, tri->pb_, vertices, e_1, e_2);
+			alphas[tri->pc_].push_back(e_1.sinFromVectors(e_2));
 			vface[tri->pc_].push_back(&(*tri));
 		}
 		for(int i = 0; i < (int)vface.size(); ++i)
@@ -451,11 +467,11 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 
 int YafaRayScene::addVertex(const Point3 &p)
 {
-	if(state_.stack_.front() != Object) return -1;
-	state_.cur_obj_->obj_->points_.push_back(p);
-	if(state_.cur_obj_->type_ == mtrim__)
+	if(creation_state_.stack_.front() != CreationState::Object) return -1;
+	geometry_creation_state_.cur_obj_->obj_->points_.push_back(p);
+	if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
 	{
-		std::vector<Point3> &points = state_.cur_obj_->mobj_->points_;
+		std::vector<Point3> &points = geometry_creation_state_.cur_obj_->mobj_->points_;
 		int n = points.size();
 		if(n % 3 == 0)
 		{
@@ -465,34 +481,34 @@ int YafaRayScene::addVertex(const Point3 &p)
 		return (n - 1) / 3;
 	}
 
-	state_.cur_obj_->last_vert_id_ = state_.cur_obj_->obj_->points_.size() - 1;
+	geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->obj_->points_.size() - 1;
 
-	return state_.cur_obj_->last_vert_id_;
+	return geometry_creation_state_.cur_obj_->last_vert_id_;
 }
 
 int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 {
-	if(state_.stack_.front() != Object) return -1;
+	if(creation_state_.stack_.front() != CreationState::Object) return -1;
 
-	switch(state_.cur_obj_->type_)
+	switch(geometry_creation_state_.cur_obj_->type_)
 	{
 		case trim__:
-			state_.cur_obj_->obj_->points_.push_back(p);
-			state_.cur_obj_->obj_->points_.push_back(orco);
-			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->obj_->points_.size() - 1) / 2;
+			geometry_creation_state_.cur_obj_->obj_->points_.push_back(p);
+			geometry_creation_state_.cur_obj_->obj_->points_.push_back(orco);
+			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->obj_->points_.size() - 1) / 2;
 			break;
 
 		case vtrim__:
-			state_.cur_obj_->mobj_->points_.push_back(p);
-			state_.cur_obj_->mobj_->points_.push_back(orco);
-			state_.cur_obj_->last_vert_id_ = (state_.cur_obj_->mobj_->points_.size() - 1) / 2;
+			geometry_creation_state_.cur_obj_->mobj_->points_.push_back(p);
+			geometry_creation_state_.cur_obj_->mobj_->points_.push_back(orco);
+			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->mobj_->points_.size() - 1) / 2;
 			break;
 
 		case mtrim__:
 			return addVertex(p);
 	}
 
-	return state_.cur_obj_->last_vert_id_;
+	return geometry_creation_state_.cur_obj_->last_vert_id_;
 }
 
 void YafaRayScene::addNormal(const Vec3 &n)
@@ -502,40 +518,40 @@ void YafaRayScene::addNormal(const Vec3 &n)
 		Y_WARNING << "Normal exporting is only supported for triangle mode" << YENDL;
 		return;
 	}
-	if(state_.cur_obj_->obj_->points_.size() > state_.cur_obj_->last_vert_id_ && state_.cur_obj_->obj_->points_.size() > state_.cur_obj_->obj_->normals_.size())
+	if(geometry_creation_state_.cur_obj_->obj_->points_.size() > geometry_creation_state_.cur_obj_->last_vert_id_ && geometry_creation_state_.cur_obj_->obj_->points_.size() > geometry_creation_state_.cur_obj_->obj_->normals_.size())
 	{
-		if(state_.cur_obj_->obj_->normals_.size() < state_.cur_obj_->obj_->points_.size())
-			state_.cur_obj_->obj_->normals_.resize(state_.cur_obj_->obj_->points_.size());
+		if(geometry_creation_state_.cur_obj_->obj_->normals_.size() < geometry_creation_state_.cur_obj_->obj_->points_.size())
+			geometry_creation_state_.cur_obj_->obj_->normals_.resize(geometry_creation_state_.cur_obj_->obj_->points_.size());
 
-		state_.cur_obj_->obj_->normals_[state_.cur_obj_->last_vert_id_] = n;
-		state_.cur_obj_->obj_->normals_exported_ = true;
+		geometry_creation_state_.cur_obj_->obj_->normals_[geometry_creation_state_.cur_obj_->last_vert_id_] = n;
+		geometry_creation_state_.cur_obj_->obj_->normals_exported_ = true;
 	}
 }
 
 bool YafaRayScene::addTriangle(int a, int b, int c, const Material *mat)
 {
-	if(state_.stack_.front() != Object) return false;
-	if(state_.cur_obj_->type_ == mtrim__)
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
 	{
-		BsTriangle tri(3 * a, 3 * b, 3 * c, state_.cur_obj_->mobj_);
+		BsTriangle tri(3 * a, 3 * b, 3 * c, geometry_creation_state_.cur_obj_->mobj_);
 		tri.setMaterial(mat);
-		state_.cur_obj_->mobj_->addBsTriangle(tri);
+		geometry_creation_state_.cur_obj_->mobj_->addBsTriangle(tri);
 	}
-	else if(state_.cur_obj_->type_ == vtrim__)
+	else if(geometry_creation_state_.cur_obj_->type_ == vtrim__)
 	{
-		if(state_.orco_) a *= 2, b *= 2, c *= 2;
-		VTriangle tri(a, b, c, state_.cur_obj_->mobj_);
+		if(geometry_creation_state_.orco_) a *= 2, b *= 2, c *= 2;
+		VTriangle tri(a, b, c, geometry_creation_state_.cur_obj_->mobj_);
 		tri.setMaterial(mat);
-		state_.cur_obj_->mobj_->addTriangle(tri);
+		geometry_creation_state_.cur_obj_->mobj_->addTriangle(tri);
 	}
 	else
 	{
-		if(state_.orco_) a *= 2, b *= 2, c *= 2;
-		Triangle tri(a, b, c, state_.cur_obj_->obj_);
+		if(geometry_creation_state_.orco_) a *= 2, b *= 2, c *= 2;
+		Triangle tri(a, b, c, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		if(state_.cur_obj_->obj_->normals_exported_)
+		if(geometry_creation_state_.cur_obj_->obj_->normals_exported_)
 		{
-			if(state_.orco_)
+			if(geometry_creation_state_.orco_)
 			{
 				// Since the vertex indexes are duplicated with orco
 				// we divide by 2: a / 2 == a >> 1 since is an integer division
@@ -550,7 +566,7 @@ bool YafaRayScene::addTriangle(int a, int b, int c, const Material *mat)
 				tri.nc_ = c;
 			}
 		}
-		state_.cur_tri_ = state_.cur_obj_->obj_->addTriangle(tri);
+		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
 	}
 	return true;
 }
@@ -559,17 +575,17 @@ bool YafaRayScene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c
 {
 	if(!addTriangle(a, b, c, mat)) return false;
 
-	if(state_.cur_obj_->type_ == trim__)
+	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_a);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_b);
-		state_.cur_obj_->obj_->uv_offsets_.push_back(uv_c);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_a);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_b);
+		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_c);
 	}
 	else
 	{
-		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_a);
-		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_b);
-		state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_c);
+		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_a);
+		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_b);
+		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_c);
 	}
 
 	return true;
@@ -577,16 +593,16 @@ bool YafaRayScene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c
 
 int YafaRayScene::addUv(float u, float v)
 {
-	if(state_.stack_.front() != Object) return false;
-	if(state_.cur_obj_->type_ == trim__)
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		state_.cur_obj_->obj_->uv_values_.push_back(Uv(u, v));
-		return (int)state_.cur_obj_->obj_->uv_values_.size() - 1;
+		geometry_creation_state_.cur_obj_->obj_->uv_values_.push_back(Uv(u, v));
+		return (int)geometry_creation_state_.cur_obj_->obj_->uv_values_.size() - 1;
 	}
 	else
 	{
-		state_.cur_obj_->mobj_->uv_values_.push_back(Uv(u, v));
-		return (int)state_.cur_obj_->mobj_->uv_values_.size() - 1;
+		geometry_creation_state_.cur_obj_->mobj_->uv_values_.push_back(Uv(u, v));
+		return (int)geometry_creation_state_.cur_obj_->mobj_->uv_values_.size() - 1;
 	}
 }
 
@@ -636,133 +652,104 @@ ObjectGeometric *YafaRayScene::getObject(const std::string &name) const
 	return nullptr;
 }
 
-/*! update scene state to prepare for rendering.
-	\return false if something vital to render the scene is missing
-			true otherwise
-*/
-bool YafaRayScene::update()
+bool YafaRayScene::updateGeometry()
 {
-	Y_VERBOSE << "Scene: Mode \"" << ((mode_ == 0) ? "Triangle" : "Universal") << "\"" << YENDL;
-	if(!camera_ || !image_film_) return false;
-	if(state_.changes_ & CGeom)
+	if(tree_) delete tree_;
+	if(vtree_) delete vtree_;
+	tree_ = nullptr, vtree_ = nullptr;
+	int nprims = 0;
+	if(mode_ == 0)
 	{
-		if(tree_) delete tree_;
-		if(vtree_) delete vtree_;
-		tree_ = nullptr, vtree_ = nullptr;
-		int nprims = 0;
-		if(mode_ == 0)
+		for(const auto &m : meshes_)
 		{
+			if(!m.second.obj_->isVisible()) continue;
+			if(m.second.obj_->isBaseObject()) continue;
+
+			if(m.second.type_ == trim__) nprims += m.second.obj_->numPrimitives();
+		}
+		if(nprims > 0)
+		{
+			const Triangle **tris = new const Triangle *[nprims];
+			const Triangle **insert = tris;
 			for(const auto &m : meshes_)
 			{
 				if(!m.second.obj_->isVisible()) continue;
 				if(m.second.obj_->isBaseObject()) continue;
 
-				if(m.second.type_ == trim__) nprims += m.second.obj_->numPrimitives();
+				if(m.second.type_ == trim__) insert += m.second.obj_->getPrimitives(insert);
 			}
-			if(nprims > 0)
-			{
-				const Triangle **tris = new const Triangle *[nprims];
-				const Triangle **insert = tris;
-				for(const auto &m : meshes_)
-				{
-					if(!m.second.obj_->isVisible()) continue;
-					if(m.second.obj_->isBaseObject()) continue;
 
-					if(m.second.type_ == trim__) insert += m.second.obj_->getPrimitives(insert);
-				}
+			ParamMap params;
+			params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+			params["num_primitives"] = nprims;
+			params["depth"] = -1;
+			params["leaf_size"] = 1;
+			params["cost_ratio"] = 0.8f;
+			params["empty_bonus"] = 0.33f;
 
-				ParamMap params;
-				params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-				params["num_primitives"] = nprims;
-				params["depth"] = -1;
-				params["leaf_size"] = 1;
-				params["cost_ratio"] = 0.8f;
-				params["empty_bonus"] = 0.33f;
+			tree_ = Accelerator<Triangle>::factory(tris, params);
 
-				tree_ = Accelerator<Triangle>::factory(tris, params);
+			delete [] tris;
+			scene_bound_ = tree_->getBound();
+			Y_VERBOSE << "Scene: New scene bound is:" <<
+					  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
+					  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-				delete [] tris;
-				scene_bound_ = tree_->getBound();
-				Y_VERBOSE << "Scene: New scene bound is:" <<
-						  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
-						  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+			if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
+			if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
 
-				if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
-				if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
-
-				Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
-			}
-			else Y_WARNING << "Scene: Scene is empty..." << YENDL;
+			Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 		}
-		else
+		else Y_WARNING << "Scene: Scene is empty..." << YENDL;
+	}
+	else
+	{
+		for(const auto &m : meshes_)
 		{
+			if(m.second.type_ != trim__) nprims += m.second.mobj_->numPrimitives();
+		}
+		// include all non-mesh objects; eventually make a common map...
+		for(const auto &o : objects_)
+		{
+			nprims += o.second->numPrimitives();
+		}
+		if(nprims > 0)
+		{
+			const Primitive **tris = new const Primitive *[nprims];
+			const Primitive **insert = tris;
 			for(const auto &m : meshes_)
 			{
-				if(m.second.type_ != trim__) nprims += m.second.mobj_->numPrimitives();
+				if(m.second.type_ != trim__) insert += m.second.mobj_->getPrimitives(insert);
 			}
-			// include all non-mesh objects; eventually make a common map...
 			for(const auto &o : objects_)
 			{
-				nprims += o.second->numPrimitives();
+				insert += o.second->getPrimitives(insert);
 			}
-			if(nprims > 0)
-			{
-				const Primitive **tris = new const Primitive *[nprims];
-				const Primitive **insert = tris;
-				for(const auto &m : meshes_)
-				{
-					if(m.second.type_ != trim__) insert += m.second.mobj_->getPrimitives(insert);
-				}
-				for(const auto &o : objects_)
-				{
-					insert += o.second->getPrimitives(insert);
-				}
 
-				ParamMap params;
-				params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-				params["num_primitives"] = nprims;
-				params["depth"] = -1;
-				params["leaf_size"] = 1;
-				params["cost_ratio"] = 0.8f;
-				params["empty_bonus"] = 0.33f;
+			ParamMap params;
+			params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+			params["num_primitives"] = nprims;
+			params["depth"] = -1;
+			params["leaf_size"] = 1;
+			params["cost_ratio"] = 0.8f;
+			params["empty_bonus"] = 0.33f;
 
-				vtree_ = Accelerator<Primitive>::factory(tris, params);
+			vtree_ = Accelerator<Primitive>::factory(tris, params);
 
-				delete [] tris;
-				scene_bound_ = vtree_->getBound();
-				Y_VERBOSE << "Scene: New scene bound is:" << YENDL <<
-						  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
-						  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+			delete [] tris;
+			scene_bound_ = vtree_->getBound();
+			Y_VERBOSE << "Scene: New scene bound is:" << YENDL <<
+					  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
+					  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-				if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
-				if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
+			if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
+			if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
 
-				Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
+			Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 
-			}
-			else Y_ERROR << "Scene: Scene is empty..." << YENDL;
 		}
+		else Y_ERROR << "Scene: Scene is empty..." << YENDL;
 	}
-
-	for(auto &l : lights_) l.second->init(*this);
-
-	if(!surf_integrator_)
-	{
-		Y_ERROR << "Scene: No surface integrator, bailing out..." << YENDL;
-		return false;
-	}
-
-	if(state_.changes_ != CNone)
-	{
-		std::stringstream inte_settings;
-
-		bool success = (surf_integrator_->preprocess() && vol_integrator_->preprocess());
-
-		if(!success) return false;
-	}
-
-	state_.changes_ = CNone;
-
 	return true;
 }
 
@@ -832,12 +819,12 @@ bool YafaRayScene::intersect(const DiffRay &ray, SurfacePoint &sp) const
 	return true;
 }
 
-bool YafaRayScene::isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const
+bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const
 {
 
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
-	sray.time_ = state.time_;
+	sray.time_ = render_data.time_;
 	float dis;
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else  dis = sray.tmax_ - 2 * sray.tmin_;
@@ -866,7 +853,7 @@ bool YafaRayScene::isShadowed(RenderState &state, const Ray &ray, float &obj_ind
 	}
 }
 
-bool YafaRayScene::isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const
+bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const
 {
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
@@ -874,16 +861,16 @@ bool YafaRayScene::isShadowed(RenderState &state, const Ray &ray, int max_depth,
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else  dis = sray.tmax_ - 2 * sray.tmin_;
 	filt = Rgb(1.0);
-	void *odat = state.userdata_;
-	alignas (16) unsigned char userdata[user_data_size__];
-	state.userdata_ = static_cast<void *>(userdata);
+	void *odat = render_data.arena_;
+	alignas (16) unsigned char userdata[Integrator::getUserDataSize()];
+	render_data.arena_ = static_cast<void *>(userdata);
 	bool isect = false;
 	if(mode_ == 0)
 	{
 		Triangle *hitt = nullptr;
 		if(tree_)
 		{
-			isect = tree_->intersectTs(state, sray, max_depth, dis, &hitt, filt, shadow_bias_);
+			isect = tree_->intersectTs(render_data, sray, max_depth, dis, &hitt, filt, shadow_bias_);
 			if(hitt)
 			{
 				if(hitt->getMesh()) obj_index = hitt->getMesh()->getAbsObjectIndex();	//Object index of the object casting the shadow
@@ -896,14 +883,14 @@ bool YafaRayScene::isShadowed(RenderState &state, const Ray &ray, int max_depth,
 		Primitive *hitt = nullptr;
 		if(vtree_)
 		{
-			isect = vtree_->intersectTs(state, sray, max_depth, dis, &hitt, filt, shadow_bias_);
+			isect = vtree_->intersectTs(render_data, sray, max_depth, dis, &hitt, filt, shadow_bias_);
 			if(hitt)
 			{
 				if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
 			}
 		}
 	}
-	state.userdata_ = odat;
+	render_data.arena_ = odat;
 	return isect;
 }
 

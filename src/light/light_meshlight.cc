@@ -238,7 +238,7 @@ void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 }
 
 
-Light *MeshLight::factory(ParamMap &params, Scene &scene)
+Light *MeshLight::factory(ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);

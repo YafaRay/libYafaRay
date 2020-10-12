@@ -27,7 +27,7 @@
  */
 
 #include "background/background_darksky.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
@@ -210,7 +210,7 @@ inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
 	return sky_col * sky_brightness_;
 }
 
-Rgb DarkSkyBackground::operator()(const Ray &ray, RenderState &state, bool from_postprocessed) const
+Rgb DarkSkyBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
 {
 	Rgb ret = getSkyCol(ray);
 	return ret;

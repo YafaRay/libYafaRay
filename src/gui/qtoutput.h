@@ -26,6 +26,7 @@
 #include "renderwidget.h"
 #include <QImage>
 
+class ColorLayer;
 class QWidget;
 
 class QtOutput final : public yafaray4::ColorOutput
@@ -37,11 +38,10 @@ class QtOutput final : public yafaray4::ColorOutput
 		void setRenderSize(const QSize &s);
 
 		// inherited from yafaray4::colorOutput_t
-		virtual bool putPixel(int num_view, int x, int y, int ext_pass, const yafaray4::Rgba &color, bool alpha = true) override;
-		virtual bool putPixel(int num_view, int x, int y, const std::vector<yafaray4::Rgba> &colors, bool alpha = true) override;
-		virtual void flush(int num_view) override;
-		virtual void flushArea(int num_view, int x_0, int y_0, int x_1, int y_1) override;
-		virtual void highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1) override;
+		virtual bool putPixel(int x, int y, const yafaray4::ColorLayer &color_layer) override;
+		virtual void flush(const yafaray4::RenderControl &render_control) override;
+		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) override;
+		virtual void highlightArea(int x_0, int y_0, int x_1, int y_1) override;
 
 	private:
 		RenderWidget *render_buffer_;

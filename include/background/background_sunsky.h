@@ -39,11 +39,11 @@ class ParamMap;
 class SunSkyBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, Scene &);
+		static Background *factory(ParamMap &params, Scene &scene);
 
 	private:
 		SunSkyBackground(const Point3 dir, float turb, float a_var, float b_var, float c_var, float d_var, float e_var, float pwr, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 		virtual ~SunSkyBackground() override;
 		Rgb getSkyCol(const Ray &ray) const;

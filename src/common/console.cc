@@ -17,7 +17,7 @@
  */
 
 #include "render/monitor.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "color/color_console.h"
 #include "math/math.h"
 //#include <iostream>

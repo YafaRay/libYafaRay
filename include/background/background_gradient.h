@@ -33,11 +33,11 @@ class ParamMap;
 class GradientBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, Scene &);
+		static Background *factory(ParamMap &params, Scene &scene);
 
 	private:
 		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 
 		Rgb gzenith_, ghoriz_, szenith_, shoriz_;

@@ -42,7 +42,7 @@ class Point3;
 class Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, Scene &scene);
+		static Camera *factory(ParamMap &params, const Scene &scene);
 
 		Camera() = default;
 		Camera(const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);

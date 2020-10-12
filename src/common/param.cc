@@ -20,6 +20,7 @@
 #include "geometry/vector.h"
 #include "color/color.h"
 #include "geometry/matrix4.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
@@ -141,6 +142,94 @@ Parameter &Parameter::operator=(const Matrix4 &m)
 			vval_.at(i * 4 + j) = m[i][j];
 	return *this;
 }
+
+std::string Parameter::print() const
+{
+	if(type_ == Int)
+	{
+		int value;
+		getVal(value);
+		return std::to_string(value);
+	}
+	else if(type_ == Bool)
+	{
+		bool value;
+		getVal(value);
+		return value == true ? "true" : "false";
+	}
+	else if(type_ == Float)
+	{
+		double value;
+		getVal(value);
+		return std::to_string(value);
+	}
+	else if(type_ == String)
+	{
+		std::string value;
+		getVal(value);
+		return value;
+	}
+	else if(type_ == Point)
+	{
+		Point3 value;
+		getVal(value);
+		return "(x:" + std::to_string(value.x_) + ", y:" + std::to_string(value.x_) + ", z:" + std::to_string(value.z_) + ")";
+	}
+	else if(type_ == Color)
+	{
+		Rgba value;
+		getVal(value);
+		return "(r:" + std::to_string(value.r_) + ", g:" + std::to_string(value.g_) + ", b:" + std::to_string(value.b_) + ", a:" + std::to_string(value.a_) + ")";
+	}
+	else if(type_ == Matrix)
+	{
+		Matrix4 value;
+		getVal(value);
+		std::string result = "(";
+		for(int i = 0; i < 4; ++i)
+			for(int j = 0; j < 4; ++j)
+			{
+				result += "m" + std::to_string(i) + "," + std::to_string(j) + ":" + std::to_string(value[i][j]);
+				if(i != 3 && j != 3) result += ", ";
+			}
+		return result;
+	}
+	else return "";
+}
+
+std::string Parameter::printType() const
+{
+	switch(type_)
+	{
+		case Int: return "Int";
+		case Bool: return "Bool";
+		case Float: return "Float";
+		case String: return "String";
+		case Point: return "Point";
+		case Color: return "Color";
+		case Matrix: return "Matrix";
+		default: return "None/Unknown";
+	}
+}
+
+std::string ParamMap::print() const
+{
+	std::string result;
+	for(const auto &it : dicc_)
+	{
+		result += "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+	}
+	return result;
+}
+
+void ParamMap::printDebug() const
+{
+	for(const auto &it : dicc_)
+	{
+		Y_DEBUG << "'" + it.first + "' (" + it.second.printType() + ") = '" + it.second.print() + "'\n";
+	}
+}
+
 
 Parameter &ParamMap::operator[](const std::string &key) { return dicc_[key]; }
 void ParamMap::clear() { dicc_.clear(); }

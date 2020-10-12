@@ -39,7 +39,7 @@ typedef void (*StartElementCb_t)(XmlParser &p, const char *element, const char *
 typedef void (*EndElementCb_t)(XmlParser &p, const char *element);
 
 #if HAVE_XML
-struct ParserStateT
+struct ParserState
 {
 	StartElementCb_t start_;
 	EndElementCb_t end_;
@@ -76,8 +76,8 @@ class XmlParser
 		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
 	protected:
-		std::vector<ParserStateT> state_stack_;
-		ParserStateT *current_;
+		std::vector<ParserState> state_stack_;
+		ParserState *current_;
 		int level_;
 		float input_gamma_;
 		ColorSpace input_color_space_;

@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 class ParamMap;
 class Scene;
@@ -32,7 +32,7 @@ class Scene;
 class SkyVolumeRegion final : public VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, Scene &scene);
+		static VolumeRegion *factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);

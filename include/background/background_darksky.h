@@ -38,12 +38,12 @@ class ParamMap;
 class DarkSkyBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &, Scene &);
+		static Background *factory(ParamMap &params, Scene &scene);
 
 	private:
 		DarkSkyBackground(const Point3 dir, float turb, float pwr, float sky_bright, bool clamp, float av, float bv, float cv, float dv, float ev,
 						  float altitude, bool night, float exp, bool genc, ColorConv::ColorSpace cs, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, RenderState &state, bool from_postprocessed = false) const override;
+		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const override;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const override;
 		Rgb getAttenuatedSunColor();
 		Rgb getSkyCol(const Ray &ray) const;

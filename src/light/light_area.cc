@@ -24,7 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include <iostream>
 
 BEGIN_YAFARAY
@@ -169,7 +169,7 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-Light *AreaLight::factory(ParamMap &params, Scene &scene)
+Light *AreaLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 corner(0.0);
 	Point3 p_1(0.0);

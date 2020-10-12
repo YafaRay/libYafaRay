@@ -33,19 +33,19 @@ class GlassMaterial final : public NodeMaterial
 
 	private:
 		GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Material::Visibility::NormalVisible);
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
+		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
+		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
 		virtual bool isTransparent() const { return fake_shadow_; }
-		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const;
 		virtual float getMatIor() const;
-		virtual Rgb getGlossyColor(const RenderState &state) const;
-		virtual Rgb getTransColor(const RenderState &state) const;
-		virtual Rgb getMirrorColor(const RenderState &state) const;
+		virtual Rgb getGlossyColor(const RenderData &render_data) const;
+		virtual Rgb getTransColor(const RenderData &render_data) const;
+		virtual Rgb getMirrorColor(const RenderData &render_data) const;
 
 		ShaderNode *bump_shader_ = nullptr;
 		ShaderNode *mirror_color_shader_ = nullptr;
@@ -77,10 +77,10 @@ class MirrorMaterial final : public Material
 			ref_col_ = r_col * ref_val;
 			bsdf_flags_ = BsdfFlags::Specular;
 		}
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = bsdf_flags_; }
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = bsdf_flags_; }
+		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const override;
 		Rgb ref_col_;
 		float ref_;
@@ -98,9 +98,9 @@ class NullMaterial final : public Material
 
 	private:
 		NullMaterial() = default;
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = BsdfFlags::None; }
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = BsdfFlags::None; }
+		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 };
 
 END_YAFARAY

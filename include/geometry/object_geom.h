@@ -37,7 +37,7 @@ class Scene;
 class ObjectGeometric
 {
 	public:
-		static ObjectGeometric *factory(ParamMap &params, Scene &scene);
+		static ObjectGeometric *factory(ParamMap &params, const Scene &scene);
 		ObjectGeometric();
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */

@@ -24,11 +24,13 @@
 #include "background/background_constant.h"
 #include "background/background_sunsky.h"
 #include "common/param.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
 Background *Background::factory(ParamMap &params, Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Background) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "darksky") return DarkSkyBackground::factory(params, scene);

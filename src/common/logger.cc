@@ -21,48 +21,31 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include "constants.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/file.h"
+#include "common/badge.h"
 #include "color/color_console.h"
 #include <algorithm>
 #include <iomanip>
-#include <fstream>
 #include <cmath>
 
 BEGIN_YAFARAY
 
-Logger::Logger()
+void Logger::saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control)
 {
-}
-
-Logger::Logger(const Logger &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one log object in the session anyway so it should be ok.
-{
-}
-
-Logger::~Logger()
-{
-}
-
-
-// Definition of the logging functions
-
-void Logger::saveTxtLog(const std::string &name)
-{
-	if(!save_log_) return;
-
 	std::stringstream ss;
 
 	ss << "YafaRay Image Log file " << std::endl << std::endl;
 
 	ss << "Image: \"" << image_path_ << "\"" << std::endl << std::endl;
 
-	if(!title_.empty()) ss << "Title: \"" << title_ << "\"" << std::endl;
-	if(!author_.empty()) ss << "Author: \"" << author_ << "\"" << std::endl;
-	if(!contact_.empty()) ss << "Contact: \"" << contact_ << "\"" << std::endl;
-	if(!comments_.empty()) ss << "Comments: \"" << comments_ << "\"" << std::endl;
+	if(!badge.getTitle().empty()) ss << "Title: \"" << badge.getTitle() << "\"" << std::endl;
+	if(!badge.getAuthor().empty()) ss << "Author: \"" << badge.getAuthor() << "\"" << std::endl;
+	if(!badge.getContact().empty()) ss << "Contact: \"" << badge.getContact() << "\"" << std::endl;
+	if(!badge.getComments().empty()) ss << "Comments: \"" << badge.getComments() << "\"" << std::endl;
 
-	ss << std::endl << "Render Information:" << std::endl << "  " << render_info_ << std::endl << "  " << render_settings_ << std::endl;
-	ss << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << aa_noise_settings_ << std::endl;
+	ss << std::endl << "Render Information:" << std::endl << "  " << badge.getRenderInfo(render_control) << std::endl << "  " << render_control.getRenderInfo() << std::endl;
+	ss << std::endl << "AA/Noise Control Settings:" << std::endl << "  " << render_control.getAaNoiseInfo() << std::endl;
 
 	if(!memory_log_.empty())
 	{
@@ -70,7 +53,7 @@ void Logger::saveTxtLog(const std::string &name)
 
 		for(auto it = memory_log_.begin() ; it != memory_log_.end(); ++it)
 		{
-			ss << "[" << printDate(it->event_date_time_) << " " << printTime(it->event_date_time_) << " (" << printDuration(it->event_duration_) << ")] ";
+			ss << "[" << Logger::printDate(it->event_date_time_) << " " << Logger::printTime(it->event_date_time_) << " (" << Logger::printDuration(it->event_duration_) << ")] ";
 
 			switch(it->verbosity_level_)
 			{
@@ -91,15 +74,14 @@ void Logger::saveTxtLog(const std::string &name)
 	log_file.save(ss.str(), true);
 }
 
-void Logger::saveHtmlLog(const std::string &name)
+void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control)
 {
-	if(!save_html_) return;
+	const Path image_path(image_path_);
+	const std::string base_img_path = image_path.getDirectory();
+	const std::string base_img_file_name = image_path.getBaseName();
+	const std::string img_extension = image_path.getExtension();
 
 	std::stringstream ss;
-
-	std::string base_img_path, base_img_file_name, img_extension;
-
-	splitPath(image_path_, base_img_path, base_img_file_name, img_extension);
 
 	ss << "<!DOCTYPE html>" << std::endl;
 	ss << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
@@ -149,16 +131,16 @@ void Logger::saveHtmlLog(const std::string &name)
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
 	ss << "<tr><th>Image file:</th><td><a href=\"" << base_img_file_name << "." << img_extension << "\" target=\"_blank\"</a>" << base_img_file_name << "." << img_extension << "</td></tr>" << std::endl;
-	if(!title_.empty()) ss << "<tr><th>Title:</th><td>" << title_ << "</td></tr>" << std::endl;
-	if(!author_.empty()) ss << "<tr><th>Author:</th><td>" << author_ << "</td></tr>" << std::endl;
-	if(!custom_icon_.empty()) ss << "<tr><th></th><td><a href=\"" << custom_icon_ << "\" target=\"_blank\">" << "<img src=\"" << custom_icon_ << "\" width=\"80\" alt=\"" << custom_icon_ << "\"/></a></td></tr>" << std::endl;
-	if(!contact_.empty()) ss << "<tr><th>Contact:</th><td>" << contact_ << "</td></tr>" << std::endl;
-	if(!comments_.empty()) ss << "<tr><th>Comments:</th><td>" << comments_ << "</td></tr>" << std::endl;
+	if(!badge.getTitle().empty()) ss << "<tr><th>Title:</th><td>" << badge.getTitle() << "</td></tr>" << std::endl;
+	if(!badge.getAuthor().empty()) ss << "<tr><th>Author:</th><td>" << badge.getAuthor() << "</td></tr>" << std::endl;
+	if(!badge.getIconPath().empty()) ss << "<tr><th></th><td><a href=\"" << badge.getIconPath() << "\" target=\"_blank\">" << "<img src=\"" << badge.getIconPath() << "\" width=\"80\" alt=\"" << badge.getIconPath() << "\"/></a></td></tr>" << std::endl;
+	if(!badge.getContact().empty()) ss << "<tr><th>Contact:</th><td>" << badge.getContact() << "</td></tr>" << std::endl;
+	if(!badge.getComments().empty()) ss << "<tr><th>Comments:</th><td>" << badge.getComments() << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
 
 	ss << "<p /><table id=\"yafalog\">" << std::endl;
-	ss << "<tr><th>Render Information:</th><td><p>" << render_info_ << "</p><p>" << render_settings_ << "</p></td></tr>" << std::endl;
-	ss << "<tr><th>AA/Noise Control Settings:</th><td>" << aa_noise_settings_ << "</td></tr>" << std::endl;
+	ss << "<tr><th>Render Information:</th><td><p>" << badge.getRenderInfo(render_control) << "</p><p>" << render_control.getRenderInfo() << "</p></td></tr>" << std::endl;
+	ss << "<tr><th>AA/Noise Control Settings:</th><td>" << render_control.getAaNoiseInfo() << "</td></tr>" << std::endl;
 	ss << "</table>" << std::endl;
 
 	if(!memory_log_.empty())
@@ -167,7 +149,7 @@ void Logger::saveHtmlLog(const std::string &name)
 
 		for(auto it = memory_log_.begin() ; it != memory_log_.end(); ++it)
 		{
-			ss << "<tr><td>" << printDate(it->event_date_time_) << "</td><td>" << printTime(it->event_date_time_) << "</td><td>" << printDuration(it->event_duration_) << "</td>";
+			ss << "<tr><td>" << Logger::printDate(it->event_date_time_) << "</td><td>" << Logger::printTime(it->event_date_time_) << "</td><td>" << Logger::printDuration(it->event_duration_) << "</td>";
 
 			switch(it->verbosity_level_)
 			{
@@ -199,13 +181,6 @@ void Logger::clearAll()
 	clearMemoryLog();
 	statsClear();
 	image_path_ = "";
-	title_ = "";
-	author_ = "";
-	contact_ = "";
-	comments_ = "";
-	custom_icon_ = "";
-	aa_noise_settings_ = "";
-	render_settings_ = "";
 }
 
 Logger &Logger::out(int verbosity_level)
@@ -238,31 +213,31 @@ Logger &Logger::out(int verbosity_level)
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug:		std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose:	std::cout << ConsoleColor(ConsoleColor::Green) << "[" << printTime(current_datetime) << "] VERB"; break;
-				case VlInfo:		std::cout << ConsoleColor(ConsoleColor::Green) << "[" << printTime(current_datetime) << "] INFO"; break;
-				case VlParams:		std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << printTime(current_datetime) << "] PARM"; break;
-				case VlWarning:	std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << printTime(current_datetime) << "] WARNING"; break;
-				case VlError:		std::cout << ConsoleColor(ConsoleColor::Red) << "[" << printTime(current_datetime) << "] ERROR"; break;
-				default:			std::cout << ConsoleColor(ConsoleColor::White) << "[" << printTime(current_datetime) << "] LOG"; break;
+				case VlDebug:		std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
+				case VlVerbose:	std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
+				case VlInfo:		std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
+				case VlParams:		std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
+				case VlWarning:	std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
+				case VlError:		std::cout << ConsoleColor(ConsoleColor::Red) << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
+				default:			std::cout << ConsoleColor(ConsoleColor::White) << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
 			}
 		}
 		else
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug:		std::cout << "[" << printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose:	std::cout << "[" << printTime(current_datetime) << "] VERB"; break;
-				case VlInfo:		std::cout << "[" << printTime(current_datetime) << "] INFO"; break;
-				case VlParams:		std::cout << "[" << printTime(current_datetime) << "] PARM"; break;
-				case VlWarning:	std::cout << "[" << printTime(current_datetime) << "] WARNING"; break;
-				case VlError:		std::cout << "[" << printTime(current_datetime) << "] ERROR"; break;
-				default:			std::cout << "[" << printTime(current_datetime) << "] LOG"; break;
+				case VlDebug:		std::cout << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
+				case VlVerbose:	std::cout << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
+				case VlInfo:		std::cout << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
+				case VlParams:		std::cout << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
+				case VlWarning:	std::cout << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
+				case VlError:		std::cout << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
+				default:			std::cout << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
 			}
 		}
 
 		if(duration == 0) std::cout << ": ";
-		else std::cout << " (" << printDurationSimpleFormat(duration) << "): ";
+		else std::cout << " (" << Logger::printDurationSimpleFormat(duration) << "): ";
 
 		if(console_log_colors_enabled_) std::cout << ConsoleColor();
 
@@ -274,7 +249,7 @@ Logger &Logger::out(int verbosity_level)
 	return *this;
 }
 
-int Logger::vlevelFromString(std::string str_v_level) const
+int Logger::vlevelFromString(std::string str_v_level)
 {
 	int vlevel;
 
@@ -293,33 +268,33 @@ int Logger::vlevelFromString(std::string str_v_level) const
 
 void Logger::setConsoleMasterVerbosity(const std::string &str_v_level)
 {
-	int vlevel = vlevelFromString(str_v_level);
+	int vlevel = Logger::vlevelFromString(str_v_level);
 	console_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
 }
 
 void Logger::setLogMasterVerbosity(const std::string &str_v_level)
 {
-	int vlevel = vlevelFromString(str_v_level);
+	int vlevel = Logger::vlevelFromString(str_v_level);
 	log_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
 }
 
-std::string Logger::printTime(std::time_t datetime) const
+std::string Logger::printTime(std::time_t datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime));
 	return std::string(mbstr);
 }
 
-std::string Logger::printDate(std::time_t datetime) const
+std::string Logger::printDate(std::time_t datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime));
 	return std::string(mbstr);
 }
 
-std::string Logger::printDuration(double duration) const
+std::string Logger::printDuration(double duration)
 {
-	std::ostringstream str_dur;
+	std::stringstream str_dur;
 
 	int duration_int = (int) duration;
 	int hours = duration_int / 3600;
@@ -330,7 +305,7 @@ std::string Logger::printDuration(double duration) const
 	else str_dur << "+" << std::setw(3) << hours << "h";
 
 	if(hours == 0 && minutes == 0) str_dur << "    ";
-	else if(hours == 0 && minutes != 0) str_dur << "+" << std::setw(2) << minutes << "m";
+	else if(hours == 0) str_dur << "+" << std::setw(2) << minutes << "m";
 	else str_dur << " " << std::setw(2) << minutes << "m";
 
 	if(hours == 0 && minutes == 0 && seconds == 0) str_dur << "    ";
@@ -340,7 +315,7 @@ std::string Logger::printDuration(double duration) const
 	return std::string(str_dur.str());
 }
 
-std::string Logger::printDurationSimpleFormat(double duration) const
+std::string Logger::printDurationSimpleFormat(double duration)
 {
 	std::ostringstream str_dur;
 
@@ -353,7 +328,7 @@ std::string Logger::printDurationSimpleFormat(double duration) const
 	else str_dur << "+" << std::setw(2) << hours << "h";
 
 	if(hours == 0 && minutes == 0) str_dur << "";
-	else if(hours == 0 && minutes != 0) str_dur << "+" << std::setw(2) << minutes << "m";
+	else if(hours == 0) str_dur << "+" << std::setw(2) << minutes << "m";
 	else str_dur << "" << std::setw(2) << minutes << "m";
 
 	if(hours == 0 && minutes == 0 && seconds == 0) str_dur << "";
@@ -363,58 +338,6 @@ std::string Logger::printDurationSimpleFormat(double duration) const
 	return std::string(str_dur.str());
 }
 
-void Logger::appendAaNoiseSettings(const std::string &aa_noise_settings)
-{
-	aa_noise_settings_ += aa_noise_settings;
-}
-
-void Logger::appendRenderSettings(const std::string &render_settings)
-{
-	render_settings_ += render_settings;
-}
-
-void Logger::splitPath(const std::string &full_file_path, std::string &base_path, std::string &base_file_name, std::string &extension)
-{
-	//DEPRECATED: use path_t instead
-	Path full_path {full_file_path };
-	base_path = full_path.getDirectory();
-	base_file_name = full_path.getBaseName();
-	extension = full_path.getExtension();
-}
-
-void Logger::setParamsBadgePosition(const std::string &badge_position)
-{
-	if(badge_position == "top")
-	{
-		draw_params_ = true;
-		params_badge_top_ = true;
-	}
-	else if(badge_position == "bottom")
-	{
-		draw_params_ = true;
-		params_badge_top_ = false;
-	}
-	else
-	{
-		draw_params_ = false;
-		params_badge_top_ = false;
-	}
-}
-
-
-int Logger::getBadgeHeight() const
-{
-	int badge_height = 0;
-	if(draw_aa_noise_settings_ && draw_render_settings_) badge_height = 150;
-	else if(!draw_aa_noise_settings_ && !draw_render_settings_) badge_height = 70;
-	else badge_height = 110;
-
-	badge_height = (int) std::ceil(badge_height * font_size_factor_);
-
-	return badge_height;
-}
-
-
 void Logger::statsPrint(bool sorted) const
 {
 	std::cout << "name, index, value" << std::endl;
@@ -423,19 +346,18 @@ void Logger::statsPrint(bool sorted) const
 	for(auto &it : vector_print) std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
 }
 
-void Logger::statsSaveToFile(std::string file_path, bool sorted) const
+void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
 {
-	//FIXME: migrate to new file_t class
-	std::ofstream stats_file;
-	stats_file.open(file_path);
-	stats_file << "name, index, value" << std::endl;
+	File file(file_path);
+	std::stringstream ss;
+	ss << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
 	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(auto &it : vector_print) stats_file << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
-	stats_file.close();
+	for(auto &it : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	file.save(ss.str(), true);
 }
 
-void Logger::statsAdd(std::string stat_name, double stat_value, double index)
+void Logger::statsAdd(const std::string &stat_name, double stat_value, double index)
 {
 	std::stringstream ss;
 	ss << stat_name << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1 + std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";

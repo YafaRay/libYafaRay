@@ -21,6 +21,7 @@
  */
 
 #include "common/file.h"
+#include "common/logger.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #if defined(_WIN32)
@@ -107,6 +108,7 @@ File::File(const Path &path) : path_(path)
 
 File::~File()
 {
+	Y_DEBUG PRTEXT(File::~File closing) PR(fp_) PR(path_.getFullPath()) PREND;
 	File::close();
 }
 
@@ -202,6 +204,7 @@ bool File::append(const char *buffer, size_t size)
 
 int File::close()
 {
+	Y_DEBUG PRTEXT(File::close) PR(fp_) PR(path_.getFullPath()) PREND;
 	if(!fp_) return false;
 	int result = ::fclose(fp_);
 	fp_ = nullptr;
@@ -220,6 +223,7 @@ FILE *File::open(const std::string &path, const std::string &access_mode)
 #else //_WIN32
 	fp = ::fopen(path.c_str(), access_mode.c_str());
 #endif //_WIN32
+	Y_DEBUG PRTEXT(File::open) PR(path) PR(access_mode) PR(fp) PREND;
 	return fp;
 }
 
@@ -230,6 +234,7 @@ FILE *File::open(const Path &path, const std::string &access_mode)
 
 int File::close(FILE *fp)
 {
+	Y_DEBUG PRTEXT(File::close execution) PR(fp) PREND;
 	return ::fclose(fp);
 }
 

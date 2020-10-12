@@ -25,19 +25,33 @@
 #define YAFARAY_TEXTURE_IMAGE_H
 
 #include "texture/texture.h"
-#include "math/interpolation.h"
+#include "image/image.h"
 
 BEGIN_YAFARAY
+
+class Format;
+
+class MipMapParams final
+{
+	public:
+		MipMapParams(float force_image_level) : force_image_level_(force_image_level) { }
+		MipMapParams(float dsdx, float dtdx, float dsdy, float dtdy) : ds_dx_(dsdx), dt_dx_(dtdx), ds_dy_(dsdy), dt_dy_(dtdy) { }
+
+		float force_image_level_ = 0.f;
+		float ds_dx_ = 0.f;
+		float dt_dx_ = 0.f;
+		float ds_dy_ = 0.f;
+		float dt_dy_ = 0.f;
+};
 
 class ImageTexture final : public Texture
 {
 	public:
-		enum class TexClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
-		static Texture *factory(ParamMap &params, Scene &scene);
+		enum class ClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
-		ImageTexture(ImageHandler *ih, const InterpolationType &interpolation_type, float gamma, const ColorSpace &color_space = RawManualGamma);
-		virtual ~ImageTexture() override;
+		ImageTexture(Image &&image);
 		virtual bool discrete() const override { return true; }
 		virtual bool isThreeD() const override { return false; }
 		virtual bool isNormalmap() const override { return normalmap_; }
@@ -46,7 +60,7 @@ class ImageTexture final : public Texture
 		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual Rgba getRawColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual void resolution(int &x, int &y, int &z) const override;
-		virtual void generateMipMaps() override { if(image_->getHighestImgIndex() == 0) image_->generateMipMaps(); }
+		virtual void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
 		Rgba noInterpolation(const Point3 &p, int mipmaplevel = 0) const;
@@ -66,8 +80,8 @@ class ImageTexture final : public Texture
 		float cropminx_, cropmaxx_, cropminy_, cropmaxy_;
 		float checker_dist_;
 		int xrepeat_, yrepeat_;
-		TexClipMode tex_clip_mode_;
-		ImageHandler *image_;
+		ClipMode tex_clip_mode_;
+		std::vector<Image> images_;
 		ColorSpace color_space_;
 		float gamma_;
 		bool mirror_x_;

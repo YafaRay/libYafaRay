@@ -50,7 +50,7 @@ class Sphere final : public Primitive
 		const Material *material_ = nullptr;
 };
 
-ObjectGeometric *sphereFactory__(ParamMap &params, Scene &scene);
+ObjectGeometric *sphereFactory__(ParamMap &params, const Scene &scene);
 
 END_YAFARAY
 

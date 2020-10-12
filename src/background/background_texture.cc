@@ -19,7 +19,7 @@
  */
 
 #include "background/background_texture.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
@@ -40,7 +40,7 @@ TextureBackground::TextureBackground(const Texture *texture, Projection proj, fl
 	cos_r_ = math::cos(M_PI * rotation_);
 }
 
-Rgb TextureBackground::operator()(const Ray &ray, RenderState &state, bool use_ibl_blur) const
+Rgb TextureBackground::operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur) const
 {
 	return eval(ray, use_ibl_blur);
 }
@@ -69,10 +69,7 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	Rgb ret;
 	if(use_ibl_blur)
 	{
-		MipMapParams *mip_map_params = new MipMapParams(ibl_blur_mipmap_level_);
-		ret = tex_->getColor(Point3(u, v, 0.f), mip_map_params);
-		delete mip_map_params;
-		mip_map_params = nullptr;
+		ret = tex_->getColor(Point3(u, v, 0.f)); //FIXME!
 	}
 	else ret = tex_->getColor(Point3(u, v, 0.f));
 

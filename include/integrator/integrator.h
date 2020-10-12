@@ -25,6 +25,8 @@
 
 #include "constants.h"
 #include <string>
+#include <render/render_control.h>
+#include <render/render_view.h>
 
 BEGIN_YAFARAY
 
@@ -34,62 +36,67 @@ BEGIN_YAFARAY
 
 class ParamMap;
 class Scene;
-class Scene;
 class ProgressBar;
-class ImageFilm;
 struct RenderArea;
 class Rgba;
-struct RenderState;
+class RenderData;
 class Ray;
 class DiffRay;
-class IntPasses;
-
+class ColorLayers;
+class ImageFilm;
 
 class Integrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, Scene &scene);
+		static Integrator *factory(ParamMap &params, const Scene &scene);
 
 		Integrator() = default;
 		virtual ~Integrator() = default;
 		//! this MUST be called before any other member function!
-		virtual bool render(int num_view, ImageFilm *image_film) { return false; }
-		void setScene(Scene *s) { scene_ = s; }
+		virtual bool render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view) { return false; }
+		void setScene(const Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
-		virtual bool preprocess() { return true; };
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) { return true; };
 		/*! allow the integrator to do some cleanup when an image is done
 		(possibly also important for multiframe rendering in the future)	*/
-		virtual void cleanup() {}
+		virtual void cleanup() { render_info_.clear(); aa_noise_info_.clear(); }
 		virtual std::string getShortName() const = 0;
 		virtual std::string getName() const = 0;
 		enum Type { Surface, Volume };
-		virtual Type integratorType() const = 0;
+		virtual Type getType() const = 0;
+		std::string getRenderInfo() const { return render_info_; }
+		std::string getAaNoiseInfo() const { return aa_noise_info_; }
+		static constexpr unsigned int getUserDataSize() { return user_data_size_; } //Total number of bytes used for the "arena"-style "userdata" memory
 
 	protected:
-		Scene *scene_ = nullptr;
+		static constexpr unsigned int user_data_size_ = 1024; //Total number of bytes used for the "arena"-style "userdata" memory
+		std::string render_info_;
+		std::string aa_noise_info_;
+		const Scene *scene_ = nullptr;
 		ProgressBar *intpb_ = nullptr;
 };
 
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth = 0, IntPasses *intPasses = nullptr) const = 0;
+		virtual Rgba integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const = 0;
 	protected:
 		SurfaceIntegrator() = default;
-		virtual Type integratorType() const override { return Surface; }
+		virtual Type getType() const override { return Surface; }
+		ImageFilm *image_film_ = nullptr;
 };
 
 class VolumeIntegrator: public Integrator
 {
 	public:
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const = 0;
-		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const = 0;
+		virtual Rgba transmittance(RenderData &render_data, Ray &ray) const = 0;
+		virtual Rgba integrate(RenderData &render_data, Ray &ray, int additional_depth = 0) const = 0;
 	protected:
 		VolumeIntegrator() = default;
-		virtual Type integratorType() const override { return Volume; }
+		virtual Type getType() const override { return Volume; }
 };
 
 END_YAFARAY

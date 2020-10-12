@@ -1,8 +1,6 @@
+#pragma once
 /****************************************************************************
- *
- *      imagehandler_tiff.h: Tag Image File Format (TIFF) image handler
  *      This is part of the libYafaRay package
- *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -20,24 +18,34 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_TIF_H
-#define YAFARAY_IMAGEHANDLER_TIF_H
+#ifndef YAFARAY_COLOR_LAYERS_H
+#define YAFARAY_COLOR_LAYERS_H
 
-#include "imagehandler/imagehandler.h"
+#include "common/layers.h"
+#include "color/color.h"
 
 BEGIN_YAFARAY
 
-class TifHandler final : public ImageHandler
+struct ColorLayer final
+{
+	ColorLayer() = default;
+	ColorLayer(const Layer::Type &layer_type) : color_(Layer::getDefaultColor(layer_type)), layer_type_(layer_type) { }
+	Rgba color_;
+	Layer::Type layer_type_;
+};
+
+class ColorLayers final : public Collection<Layer::Type, ColorLayer>  //Actual buffer of colors in the rendering process, one entry for each enabled layer.
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		ColorLayers(const Layers &layers);
+		void setDefaultColors();
+		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
+		MaskParams getMaskParams() const { return mask_params_; }
 
 	private:
-		TifHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
+		const MaskParams &mask_params_;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_TIF_H
+#endif //YAFARAY_COLOR_LAYERS_H

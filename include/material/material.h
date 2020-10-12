@@ -21,6 +21,7 @@
 #define YAFARAY_MATERIAL_H
 
 #include "constants.h"
+#include "common/flags.h"
 #include "color/color.h"
 #include <list>
 
@@ -30,30 +31,36 @@ class ParamMap;
 class Scene;
 class Vec3;
 class SurfacePoint;
-struct RenderState;
+class RenderData;
 class VolumeHandler;
 struct Sample;
 struct PSample;
 
-enum class BsdfFlags : unsigned int
+struct BsdfFlags : public yafaray4::Flags
 {
-	None		= 0,
-	Specular	= 1 << 0,
-	Glossy		= 1 << 1,
-	Diffuse		= 1 << 2,
-	Dispersive	= 1 << 3,
-	Reflect		= 1 << 4,
-	Transmit	= 1 << 5,
-	Filter		= 1 << 6,
-	Emit		= 1 << 7,
-	Volumetric	= 1 << 8,
-	DiffuseReflect = Diffuse | Reflect,
-	SpecularReflect = Specular | Reflect,
-	SpecularTransmit = Transmit | Filter,
-	Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
-	AllSpecular = Specular | Reflect | Transmit,
-	AllGlossy = Glossy | Reflect | Transmit,
-	All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
+	BsdfFlags() = default;
+	BsdfFlags(const yafaray4::Flags &flags) : yafaray4::Flags(flags) { }
+	BsdfFlags(unsigned int flags) : yafaray4::Flags(flags) { }
+	enum Enum : unsigned int
+	{
+			None		= 0,
+			Specular	= 1 << 0,
+			Glossy		= 1 << 1,
+			Diffuse		= 1 << 2,
+			Dispersive	= 1 << 3,
+			Reflect		= 1 << 4,
+			Transmit	= 1 << 5,
+			Filter		= 1 << 6,
+			Emit		= 1 << 7,
+			Volumetric	= 1 << 8,
+			DiffuseReflect = Diffuse | Reflect,
+			SpecularReflect = Specular | Reflect,
+			SpecularTransmit = Transmit | Filter,
+			Translucency = Diffuse | Transmit,// translucency (diffuse transmitt)
+			AllSpecular = Specular | Reflect | Transmit,
+			AllGlossy = Glossy | Reflect | Transmit,
+			All = Specular | Glossy | Diffuse | Dispersive | Reflect | Transmit | Filter
+	};
 };
 
 class Material
@@ -64,31 +71,29 @@ class Material
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }
 
-		static constexpr bool hasFlag(const BsdfFlags &f_1, const BsdfFlags &f_2);
-
 		/*! Initialize the BSDF of a material. You must call this with the current surface point
 			first before any other methods (except isTransparent/getTransparency)! The renderstate
 			holds a pointer to preallocated userdata to save data that only depends on the current sp,
 			like texture lookups etc.
 			\param bsdf_types returns flags for all bsdf components the material has
 		 */
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const = 0;
+		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const = 0;
 
 		/*! evaluate the BSDF for the given components.
 				@param types the types of BSDFs to be evaluated (e.g. diffuse only, or diffuse and glossy) */
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
+		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &types, bool force_eval = false) const = 0;
 
 		/*! take a sample from the BSDF, given a 2-dimensional sample value and the BSDF types to be sampled from
 			\param s s1, s2 and flags members give necessary information for creating the sample, pdf and sampledFlags need to be returned
 			\param w returns the weight for importance sampling
 		*/
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const = 0;// {return Rgb(0.f);}
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const {return Rgb(0.f);}
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const = 0;// {return Rgb(0.f);}
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const {return Rgb(0.f);}
 
-		virtual Rgb sampleClay(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
+		virtual Rgb sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;
 		/*! return the pdf for sampling the BSDF with wi and wo
 		*/
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
+		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const {return 0.f;}
 
 
 		/*! indicate whether light can (partially) pass the material without getting refracted,
@@ -99,47 +104,47 @@ class Material
 
 		/*!	used for computing transparent shadows.	Default implementation returns black (i.e. solid shadow).
 			This is only used for shadow calculations and may only be called when isTransparent returned true.	*/
-		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
+		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
 			Typical use: recursive raytracing of integrators.
 			\param dir dir[0] returns reflected direction, dir[1] refracted direction
 			\param col col[0] returns reflected spectrum, dir[1] refracted spectrum */
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo,
+		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 		{ reflect = false; refract = false; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
-		virtual Rgb getReflectivity(const RenderState &state, const SurfacePoint &sp, BsdfFlags flags) const;
+		virtual Rgb getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const;
 
 		/*!	allow light emitting materials, for realizing correctly visible area lights.
 			default implementation returns black obviously.	*/
-		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
+		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
 
 		/*! get the volumetric handler for space at specified side of the surface
 			\param inside true means space opposite of surface normal, which is considered "inside" */
 		virtual const VolumeHandler *getVolumeHandler(bool inside) const { return inside ? vol_i_ : vol_o_; }
 
 		/*! special function, get the alpha-value of a material, used to calculate the alpha-channel */
-		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const { return 1.f; }
+		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return 1.f; }
 
 		/*! specialized function for photon mapping. Default function uses the sample function, which will do fine for
 			most materials unless there's a less expensive way or smarter scattering approach */
-		virtual bool scatterPhoton(const RenderState &state, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const;
+		virtual bool scatterPhoton(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wi, Vec3 &wo, PSample &s) const;
 
 		BsdfFlags getFlags() const { return bsdf_flags_; }
 		/*! Materials may have to do surface point specific (pre-)calculation that need extra storage.
-			returns the required amount of "userdata" memory for all the functions that require a render state */
+			returns the required amount of "arena/userdata" memory for all the functions that require a RenderData */
 		size_t getReqMem() const { return req_mem_; }
 
 		/*! Get materials IOR (for refracted photons) */
 
 		virtual float getMatIor() const { return 1.5f; }
-		virtual Rgb getDiffuseColor(const RenderState &state) const { return Rgb(0.f); }
-		virtual Rgb getGlossyColor(const RenderState &state) const { return Rgb(0.f); }
-		virtual Rgb getTransColor(const RenderState &state) const { return Rgb(0.f); }
-		virtual Rgb getMirrorColor(const RenderState &state) const { return Rgb(0.f); }
-		virtual Rgb getSubSurfaceColor(const RenderState &state) const { return Rgb(0.f); }
+		virtual Rgb getDiffuseColor(const RenderData &render_data) const { return Rgb(0.f); }
+		virtual Rgb getGlossyColor(const RenderData &render_data) const { return Rgb(0.f); }
+		virtual Rgb getTransColor(const RenderData &render_data) const { return Rgb(0.f); }
+		virtual Rgb getMirrorColor(const RenderData &render_data) const { return Rgb(0.f); }
+		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const { return Rgb(0.f); }
 		void setMaterialIndex(const float &new_mat_index)
 		{
 			material_index_ = new_mat_index;
@@ -245,26 +250,6 @@ struct PSample final : public Sample // << whats with the public?? structs inher
 	const Rgb alpha_; //!< the filter color between last scattering and this hit (not pre-applied to lcol!)
 	Rgb color_; //!< the new color after scattering, i.e. what will be lcol for next scatter.
 };
-
-inline constexpr BsdfFlags operator&(const BsdfFlags &f_1, const BsdfFlags &f_2)
-{
-	return static_cast<BsdfFlags>(static_cast<unsigned int>(f_1) & static_cast<unsigned int>(f_2));
-}
-
-inline constexpr BsdfFlags operator|(const BsdfFlags &f_1, const BsdfFlags &f_2)
-{
-	return static_cast<BsdfFlags>(static_cast<unsigned int>(f_1) | static_cast<unsigned int>(f_2));
-}
-
-inline BsdfFlags operator|=(BsdfFlags &f_1, const BsdfFlags &f_2)
-{
-	return f_1 = (f_1 | f_2);
-}
-
-inline constexpr bool Material::hasFlag(const BsdfFlags &f_1, const BsdfFlags &f_2)
-{
-	return ((f_1 & f_2) != BsdfFlags::None);
-}
 
 END_YAFARAY
 

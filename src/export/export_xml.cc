@@ -17,7 +17,7 @@
  */
 
 #include "export/export_xml.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "scene/scene.h"
 #include "geometry/matrix4.h"
 #include "common/param.h"
@@ -46,21 +46,12 @@ void XmlExport::clearAll()
 	next_obj_ = 0;
 }
 
-bool XmlExport::setLoggingAndBadgeSettings()
+bool XmlExport::setupLayers()
 {
-	xml_file_ << "\n<logging_badge name=\"logging_badge\">\n";
+	xml_file_ << "\n<render_layers name=\"render_layers\">\n";
 	writeParamMap(*params_);
 	params_->clear();
-	xml_file_ << "</logging_badge>\n";
-	return true;
-}
-
-bool XmlExport::setupRenderPasses()
-{
-	xml_file_ << "\n<passes_settings name=\"passes_settings\">\n";
-	writeParamMap(*params_);
-	params_->clear();
-	xml_file_ << "</passes_settings>\n";
+	xml_file_ << "</render_layers>\n";
 	return true;
 }
 
@@ -318,6 +309,22 @@ VolumeRegion 	*XmlExport::createVolumeRegion(const char *name)
 	return nullptr;
 }
 
+ColorOutput *XmlExport::createOutput(const char *name)
+{
+	xml_file_ << "\n<output name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</output>\n";
+	return nullptr;
+}
+
+RenderView *XmlExport::createRenderView(const char *name)
+{
+	xml_file_ << "\n<render_view name=\"" << name << "\">\n";
+	writeParamMap(*params_);
+	xml_file_ << "</render_view>\n";
+	return nullptr;
+}
+
 unsigned int 	XmlExport::createObject(const char *name)
 {
 	xml_file_ << "\n<object name=\"" << name << "\">\n";
@@ -326,7 +333,7 @@ unsigned int 	XmlExport::createObject(const char *name)
 	return ++next_obj_;
 }
 
-void XmlExport::render(ColorOutput &output, ProgressBar *pb)
+void XmlExport::render(ProgressBar *pb)
 {
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);

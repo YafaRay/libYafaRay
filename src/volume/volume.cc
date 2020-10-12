@@ -24,15 +24,16 @@
 #include "volume/volume_exp_density.h"
 #include "volume/volumehandler_beer.h"
 #include "volume/volumehandler_sss.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "geometry/ray.h"
 #include "color/color.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-VolumeRegion *VolumeRegion::factory(const ParamMap &params, Scene &scene)
+VolumeRegion *VolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**VolumeRegion) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "ExpDensityVolume") return ExpDensityVolumeRegion::factory(params, scene);
@@ -43,8 +44,9 @@ VolumeRegion *VolumeRegion::factory(const ParamMap &params, Scene &scene)
 	else return nullptr;
 }
 
-VolumeHandler *VolumeHandler::factory(const ParamMap &params, Scene &scene)
+VolumeHandler *VolumeHandler::factory(const ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**VolumeHandler) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "beer") return BeerVolumeHandler::factory(params, scene);

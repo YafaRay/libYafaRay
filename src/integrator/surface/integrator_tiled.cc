@@ -24,9 +24,9 @@
  */
 
 #include "integrator/surface/integrator_tiled.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/session.h"
-#include "render/passes.h"
+#include "common/layers.h"
 #include "material/material.h"
 #include "geometry/surface.h"
 #include "geometry/object_geom.h"
@@ -38,6 +38,8 @@
 #include "render/monitor.h"
 #include "sampler/halton.h"
 #include "sampler/sample.h"
+#include "color/color_layers.h"
+#include "render/render_data.h"
 #include <sstream>
 
 BEGIN_YAFARAY
@@ -45,14 +47,14 @@ BEGIN_YAFARAY
 
 std::vector<int> TiledIntegrator::correlative_sample_number_(0);
 
-void TiledIntegrator::renderWorker(int m_num_view, TiledIntegrator *integrator, Scene *scene, ImageFilm *image_film, ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
+void TiledIntegrator::renderWorker(TiledIntegrator *integrator, const Scene *scene, const RenderView *render_view, const RenderControl &render_control, ThreadControl *control, int thread_id, int samples, int offset, bool adaptive, int aa_pass)
 {
 	RenderArea a;
 
-	while(image_film->nextArea(m_num_view, a))
+	while(image_film_->nextArea(a))
 	{
-		if(scene->getSignals() & Y_SIG_ABORT) break;
-		integrator->renderTile(m_num_view, a, samples, offset, adaptive, thread_id, aa_pass);
+		if(render_control.aborted()) break;
+		integrator->renderTile(a, render_view, render_control, samples, offset, adaptive, thread_id, aa_pass);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.push_back(a);
@@ -64,9 +66,9 @@ void TiledIntegrator::renderWorker(int m_num_view, TiledIntegrator *integrator, 
 	control->c_.notify_one();
 }
 
-void TiledIntegrator::precalcDepths()
+void TiledIntegrator::precalcDepths(const RenderView *render_view)
 {
-	const Camera *camera = scene_->getCamera();
+	const Camera *camera = render_view->getCamera();
 
 	if(camera->getFarClip() > -1)
 	{
@@ -97,10 +99,11 @@ void TiledIntegrator::precalcDepths()
 	if(max_depth_ > 0.f) max_depth_ = 1.f / (max_depth_ - min_depth_);
 }
 
-bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
+bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view)
 {
-	std::stringstream pass_string;
 	image_film_ = image_film;
+
+	std::stringstream pass_string;
 	aa_noise_params_ = scene_->getAaParameters();
 
 	std::stringstream aa_settings;
@@ -113,11 +116,11 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 
 	aa_settings << " var.edge=" << aa_noise_params_.variance_edge_size_ << " var.pix=" << aa_noise_params_.variance_pixels_ << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
 
-	logger__.appendAaNoiseSettings(aa_settings.str());
+	aa_noise_info_ += aa_settings.str();
 
 	i_aa_passes_ = 1.f / (float) aa_noise_params_.passes_;
 
-	session__.setStatusTotalPasses(aa_noise_params_.passes_);
+	render_control.setTotalPasses(aa_noise_params_.passes_);
 
 	aa_sample_multiplier_ = 1.f;
 	aa_light_sample_multiplier_ = 1.f;
@@ -152,10 +155,10 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 	g_timer__.addEvent("rendert");
 	g_timer__.start("rendert");
 
-	image_film_->init(aa_noise_params_.passes_);
+	image_film_->init(render_control, aa_noise_params_.passes_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
 
-	if(session__.renderResumed())
+	if(render_control.resumed())
 	{
 		pass_string.clear();
 		pass_string << "Combining ImageFilm files, skipping pass 1...";
@@ -169,27 +172,25 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 
 	diff_rays_enabled_ = session__.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
-	if(scene_->passEnabled(PassZDepthNorm) || scene_->passEnabled(PassMist)) precalcDepths();
+	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 
 	correlative_sample_number_.clear();
 	correlative_sample_number_.resize(scene_->getNumThreads());
 	std::fill(correlative_sample_number_.begin(), correlative_sample_number_.end(), 0);
 
-	int acum_aa_samples = aa_noise_params_.samples_;
-
-	if(session__.renderResumed())
+	if(render_control.resumed())
 	{
-		acum_aa_samples = image_film_->getSamplingOffset();
-		renderPass(num_view, 0, acum_aa_samples, false, 0);
+		renderPass(render_view, 0, image_film_->getSamplingOffset(), false, 0, render_control);
 	}
-	else renderPass(num_view, aa_noise_params_.samples_, 0, false, 0);
+	else renderPass(render_view, aa_noise_params_.samples_, 0, false, 0, render_control);
 
 	bool aa_threshold_changed = true;
 	int resampled_pixels = 0;
+	int acum_aa_samples = aa_noise_params_.samples_;
 
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
-		if(scene_->getSignals() & Y_SIG_ABORT) break;
+		if(render_control.aborted()) break;
 
 		//scene->getSurfIntegrator()->setSampleMultiplier(scene->getSurfIntegrator()->getSampleMultiplier() * AA_sample_multiplier_factor);
 
@@ -204,12 +205,12 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
 			Y_INFO << getName() << ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped." << YENDL;
-			image_film_->nextPass(num_view, true, getName(), /*skipNextPass=*/true);
+			image_film_->nextPass(render_view, render_control, true, getName(), /*skipNextPass=*/true);
 		}
 		else
 		{
 			image_film_->setAaThreshold(aa_noise_params_.threshold_);
-			resampled_pixels = image_film_->nextPass(num_view, true, getName());
+			resampled_pixels = image_film_->nextPass(render_view, render_control, true, getName());
 			aa_threshold_changed = false;
 		}
 
@@ -217,7 +218,7 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 
 		Y_DEBUG << "acumAASamples=" << acum_aa_samples << " AA_samples=" << aa_noise_params_.samples_ << " AA_samples_mult=" << aa_samples_mult << YENDL;
 
-		if(resampled_pixels > 0) renderPass(num_view, aa_samples_mult, acum_aa_samples, true, i);
+		if(resampled_pixels > 0) renderPass(render_view, aa_samples_mult, acum_aa_samples, true, i, render_control);
 
 		acum_aa_samples += aa_samples_mult;
 
@@ -233,22 +234,22 @@ bool TiledIntegrator::render(int num_view, ImageFilm *image_film)
 	}
 	max_depth_ = 0.f;
 	g_timer__.stop("rendert");
-	session__.setStatusRenderFinished();
+	render_control.setFinished();
 	Y_INFO << getName() << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s" << YENDL;
 
 	return true;
 }
 
 
-bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool adaptive, int aa_pass_number)
+bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int offset, bool adaptive, int aa_pass_number, RenderControl &render_control)
 {
 	Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + image_film_->getBaseSamplingOffset() << "  AA_pass_number=" << aa_pass_number << YENDL;
 
-	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive);
+	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, nullptr);
 
 	int nthreads = scene_->getNumThreads();
 
-	session__.setStatusCurrentPass(aa_pass_number + 1);
+	render_control.setCurrentPass(aa_pass_number + 1);
 
 	image_film_->setSamplingOffset(offset + samples);
 
@@ -258,7 +259,7 @@ bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool ada
 		std::vector<std::thread> threads;
 		for(int i = 0; i < nthreads; ++i)
 		{
-			threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, num_view, this, scene_, image_film_, &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
+			threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, this, scene_, render_view, std::ref(render_control), &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
 		}
 
 		std::unique_lock<std::mutex> lk(tc.m_);
@@ -267,7 +268,7 @@ bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool ada
 			tc.c_.wait(lk);
 			for(size_t i = 0; i < tc.areas_.size(); ++i)
 			{
-				image_film_->finishArea(num_view, tc.areas_[i]);
+				image_film_->finishArea(render_view, render_control, tc.areas_[i]);
 			}
 			tc.areas_.clear();
 		}
@@ -277,21 +278,21 @@ bool TiledIntegrator::renderPass(int num_view, int samples, int offset, bool ada
 	else
 	{
 		RenderArea a;
-		while(image_film_->nextArea(num_view, a))
+		while(image_film_->nextArea(a))
 		{
-			if(scene_->getSignals() & Y_SIG_ABORT) break;
-			renderTile(num_view, a, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, 0);
-			image_film_->finishArea(num_view, a);
+			if(render_control.aborted()) break;
+			renderTile(a, render_view, render_control, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, 0);
+			image_film_->finishArea(render_view, render_control, a);
 		}
 	}
 
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
+bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, const RenderControl &render_control, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number)
 {
 	int x;
-	const Camera *camera = scene_->getCamera();
+	const Camera *camera = render_view->getCamera();
 	x = camera->resX();
 	DiffRay c_ray;
 	Ray d_ray;
@@ -299,7 +300,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 	float lens_u = 0.5f, lens_v = 0.5f;
 	float wt, wt_dummy;
 	Random prng(rand() + offset * (x * a.y_ + a.x_) + 123);
-	RenderState rstate(&prng);
+	RenderData rstate(&prng);
 	rstate.thread_id_ = thread_id;
 	rstate.cam_ = camera;
 	bool sample_lns = camera->sampleLense();
@@ -317,12 +318,12 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 	Halton hal_u(3);
 	Halton hal_v(5);
 
-	const PassesSettings *passes_settings = scene_->getPassesSettings();
-	const PassMaskParams mask_params = passes_settings->passMaskParams();
-	IntPasses int_passes(passes_settings->intPassesSettings());
-	const bool int_passes_used = int_passes.size() > 1;
+	const Layers &layers = scene_->getLayers();
+	const MaskParams &mask_params = layers.getMaskParams();
+	ColorLayers color_layers(layers);
+	const bool layers_used = color_layers.size() > 1;
 
-	Image *sampling_factor_image_pass = image_film_->getImagePassFromIntPassType(PassDebugSamplingFactor);
+	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_;
 
 	int film_cx_0 = image_film_->getCx0();
 	int film_cy_0 = image_film_->getCy0();
@@ -331,7 +332,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 	{
 		for(int j = a.x_; j < end_x; ++j)
 		{
-			if(scene_->getSignals() & Y_SIG_ABORT) break;
+			if(render_control.aborted()) break;
 
 			float mat_sample_factor = 1.f;
 			int n_samples_adjusted = n_samples;
@@ -368,7 +369,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
 			{
-				int_passes.setDefaults();
+				color_layers.setDefaultColors();
 				rstate.setDefaults();
 				rstate.pixel_sample_ = pass_offs + sample;
 				rstate.time_ = math::addMod1((float) sample * d_1, toff); //(0.5+(float)sample)*d1;
@@ -395,7 +396,7 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 				if(wt == 0.0)
 				{
-					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &int_passes);
+					image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 					continue;
 				}
 				if(diff_rays_enabled_)
@@ -412,61 +413,61 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 
 				c_ray.time_ = rstate.time_;
 
-				int_passes(PassCombined) = integrate(rstate, c_ray, 0, &int_passes);
+				color_layers(Layer::Combined).color_ = integrate(rstate, c_ray, 0, &color_layers, nullptr);
 
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(int_passes.enabled(PassZDepthNorm) || int_passes.enabled(PassZDepthAbs) || int_passes.enabled(PassMist))
+					if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::ZDepthAbs, Layer::Mist}))
 					{
-						if(int_passes.enabled(PassZDepthNorm) || int_passes.enabled(PassMist))
+						if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::Mist}))
 						{
 							float depth_norm = 0.f;
 							if(c_ray.tmax_ > 0.f)
 							{
 								depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
 							}
-							int_passes(PassZDepthNorm) = Rgba(depth_norm);
-							int_passes(PassMist) = Rgba(1.f - depth_norm);
+							color_layers(Layer::ZDepthNorm).color_ = Rgba(depth_norm);
+							color_layers(Layer::Mist).color_ = Rgba(1.f - depth_norm);
 						}
-						if(int_passes.enabled(PassZDepthAbs))
+						if(color_layers.find(Layer::ZDepthAbs))
 						{
 							float depth_abs = c_ray.tmax_;
 							if(depth_abs <= 0.f)
 							{
 								depth_abs = 99999997952.f;
 							}
-							int_passes(PassZDepthAbs) = Rgba(depth_abs);
+							color_layers(Layer::ZDepthAbs).color_ = Rgba(depth_abs);
 						}
 					}
 
-					for(const auto &it : int_passes)
+					for(auto &it : color_layers)
 					{
-						int_passes(it) *= wt;
+						it.second.color_ *= wt;
 
-						if(int_passes(it).a_ > 1.f) int_passes(it).a_ = 1.f;
+						if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
 
-						switch(it)
+						switch(it.first)
 						{
 							//Processing of mask render passes:
-							case PassObjIndexMask:
-							case PassObjIndexMaskShadow:
-							case PassObjIndexMaskAll:
-							case PassMatIndexMask:
-							case PassMatIndexMaskShadow:
-							case PassMatIndexMaskAll:
+							case Layer::ObjIndexMask:
+							case Layer::ObjIndexMaskShadow:
+							case Layer::ObjIndexMaskAll:
+							case Layer::MatIndexMask:
+							case Layer::MatIndexMaskShadow:
+							case Layer::MatIndexMaskAll:
 
-								int_passes(it).clampRgb01();
+								it.second.color_.clampRgb01();
 
 								if(mask_params.invert_)
 								{
-									int_passes(it) = Rgba(1.f) - int_passes(it);
+									it.second.color_ = Rgba(1.f) - it.second.color_;
 								}
 
 								if(!mask_params.only_)
 								{
-									Rgba col_combined = int_passes(PassCombined);
+									Rgba col_combined = color_layers(Layer::Combined).color_;
 									col_combined.a_ = 1.f;
-									int_passes(it) *= col_combined;
+									it.second.color_ *= col_combined;
 								}
 								break;
 
@@ -476,255 +477,254 @@ bool TiledIntegrator::renderTile(int num_view, RenderArea &a, int n_samples, int
 				}
 				else
 				{
-					int_passes(PassCombined) *= wt;
+					color_layers(Layer::Combined).color_ *= wt;
 				}
 
-				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &int_passes);
+				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
 			}
 		}
 	}
 	return true;
 }
 
-void TiledIntegrator::generateCommonPassesSettings(RenderState &state, const SurfacePoint &sp, const DiffRay &ray, IntPasses *int_passes) const
+void TiledIntegrator::generateCommonLayers(RenderData &render_data, const SurfacePoint &sp, const DiffRay &ray, ColorLayers *color_layers) const
 {
-	const bool int_passes_used = state.raylevel_ == 0 && int_passes && int_passes->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 
-	if(int_passes_used)
+	if(layers_used)
 	{
-		const PassesSettings *passes_settings = scene_->getPassesSettings();
-		Rgba *color_pass;
+		ColorLayer *color_layer;
 
-		if((color_pass = int_passes->find(PassUv)))
+		if((color_layer = color_layers->find(Layer::Uv)))
 		{
-			*color_pass = Rgba(sp.u_, sp.v_, 0.f, 1.f);
+			color_layer->color_ = Rgba(sp.u_, sp.v_, 0.f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassNormalSmooth)))
+		if((color_layer = color_layers->find(Layer::NormalSmooth)))
 		{
-			*color_pass = Rgba((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.n_.x_ + 1.f) * .5f, (sp.n_.y_ + 1.f) * .5f, (sp.n_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassNormalGeom)))
+		if((color_layer = color_layers->find(Layer::NormalGeom)))
 		{
-			*color_pass = Rgba((sp.ng_.x_ + 1.f) * .5f, (sp.ng_.y_ + 1.f) * .5f, (sp.ng_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.ng_.x_ + 1.f) * .5f, (sp.ng_.y_ + 1.f) * .5f, (sp.ng_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugDpdu)))
+		if((color_layer = color_layers->find(Layer::DebugDpdu)))
 		{
-			*color_pass = Rgba((sp.dp_du_.x_ + 1.f) * .5f, (sp.dp_du_.y_ + 1.f) * .5f, (sp.dp_du_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.dp_du_.x_ + 1.f) * .5f, (sp.dp_du_.y_ + 1.f) * .5f, (sp.dp_du_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugDpdv)))
+		if((color_layer = color_layers->find(Layer::DebugDpdv)))
 		{
-			*color_pass = Rgba((sp.dp_dv_.x_ + 1.f) * .5f, (sp.dp_dv_.y_ + 1.f) * .5f, (sp.dp_dv_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.dp_dv_.x_ + 1.f) * .5f, (sp.dp_dv_.y_ + 1.f) * .5f, (sp.dp_dv_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugDsdu)))
+		if((color_layer = color_layers->find(Layer::DebugDsdu)))
 		{
-			*color_pass = Rgba((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.ds_du_.x_ + 1.f) * .5f, (sp.ds_du_.y_ + 1.f) * .5f, (sp.ds_du_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugDsdv)))
+		if((color_layer = color_layers->find(Layer::DebugDsdv)))
 		{
-			*color_pass = Rgba((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.ds_dv_.x_ + 1.f) * .5f, (sp.ds_dv_.y_ + 1.f) * .5f, (sp.ds_dv_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugNu)))
+		if((color_layer = color_layers->find(Layer::DebugNu)))
 		{
-			*color_pass = Rgba((sp.nu_.x_ + 1.f) * .5f, (sp.nu_.y_ + 1.f) * .5f, (sp.nu_.z_ + 1.f) * .5f, 1.f);
+			color_layer->color_ = Rgba((sp.nu_.x_ + 1.f) * .5f, (sp.nu_.y_ + 1.f) * .5f, (sp.nu_.z_ + 1.f) * .5f, 1.f);
 		}
-		if((color_pass = int_passes->find(PassDebugNv)))
+		if((color_layer = color_layers->find(Layer::DebugNv)))
 		{
-			*color_pass = Rgba((sp.nv_.x_ + 1.f) * .5f, (sp.nv_.y_ + 1.f) * .5f, (sp.nv_.z_ + 1.f) * .5f, 1.f);
-		}
-
-		if((color_pass = int_passes->find(PassReflectAll)))
-		{
-			Rgba *color_pass_2;
-			if((color_pass_2 = int_passes->find(PassReflectPerfect)))
-			{
-				*color_pass += *color_pass_2;
-			}
-			if((color_pass_2 = int_passes->find(PassGlossy)))
-			{
-				*color_pass += *color_pass_2;
-			}
-			if((color_pass_2 = int_passes->find(PassGlossyIndirect)))
-			{
-				*color_pass += *color_pass_2;
-			}
+			color_layer->color_ = Rgba((sp.nv_.x_ + 1.f) * .5f, (sp.nv_.y_ + 1.f) * .5f, (sp.nv_.z_ + 1.f) * .5f, 1.f);
 		}
 
-		if((color_pass = int_passes->find(PassRefractAll)))
+		if((color_layer = color_layers->find(Layer::ReflectAll)))
 		{
-			Rgba *color_pass_2;
-			if((color_pass_2 = int_passes->find(PassRefractPerfect)))
+			ColorLayer *color_layer_2;
+			if((color_layer_2 = color_layers->find(Layer::ReflectPerfect)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
-			if((color_pass_2 = int_passes->find(PassTrans)))
+			if((color_layer_2 = color_layers->find(Layer::Glossy)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
-			if((color_pass_2 = int_passes->find(PassTransIndirect)))
+			if((color_layer_2 = color_layers->find(Layer::GlossyIndirect)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
 		}
 
-		if((color_pass = int_passes->find(PassIndirectAll)))
+		if((color_layer = color_layers->find(Layer::RefractAll)))
 		{
-			Rgba *color_pass_2;
-			if((color_pass_2 = int_passes->find(PassIndirect)))
+			ColorLayer *color_layer_2;
+			if((color_layer_2 = color_layers->find(Layer::RefractPerfect)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
-			if((color_pass_2 = int_passes->find(PassDiffuseIndirect)))
+			if((color_layer_2 = color_layers->find(Layer::Trans)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
-		}
-
-		if((color_pass = int_passes->find(PassDiffuseColor)))
-		{
-			*color_pass = sp.material_->getDiffuseColor(state);
-		}
-		if((color_pass = int_passes->find(PassGlossyColor)))
-		{
-			*color_pass = sp.material_->getGlossyColor(state);
-		}
-		if((color_pass = int_passes->find(PassTransColor)))
-		{
-			*color_pass = sp.material_->getTransColor(state);
-		}
-		if((color_pass = int_passes->find(PassSubsurfaceColor)))
-		{
-			*color_pass = sp.material_->getSubSurfaceColor(state);
-		}
-
-		if((color_pass = int_passes->find(PassObjIndexAbs)))
-		{
-			*color_pass = sp.object_->getAbsObjectIndexColor();
-		}
-		if((color_pass = int_passes->find(PassObjIndexNorm)))
-		{
-			*color_pass = sp.object_->getNormObjectIndexColor();
-		}
-		if((color_pass = int_passes->find(PassObjIndexAuto)))
-		{
-			*color_pass = sp.object_->getAutoObjectIndexColor();
-		}
-		if((color_pass = int_passes->find(PassObjIndexAutoAbs)))
-		{
-			*color_pass = sp.object_->getAutoObjectIndexNumber();
-		}
-
-		if((color_pass = int_passes->find(PassMatIndexAbs)))
-		{
-			*color_pass = sp.material_->getAbsMaterialIndexColor();
-		}
-
-		if((color_pass = int_passes->find(PassMatIndexNorm)))
-		{
-			*color_pass = sp.material_->getNormMaterialIndexColor();
-		}
-
-		if((color_pass = int_passes->find(PassMatIndexAuto)))
-		{
-			*color_pass = sp.material_->getAutoMaterialIndexColor();
-		}
-
-		if((color_pass = int_passes->find(PassMatIndexAutoAbs)))
-		{
-			*color_pass = sp.material_->getAutoMaterialIndexNumber();
-		}
-
-		if((color_pass = int_passes->find(PassObjIndexMask)))
-		{
-			if(sp.object_->getAbsObjectIndex() == passes_settings->passMaskParams().obj_index_) *color_pass = Rgba(1.f);
-		}
-
-		if((color_pass = int_passes->find(PassObjIndexMaskAll)))
-		{
-			Rgba *color_pass_2;
-			if((color_pass_2 = int_passes->find(PassObjIndexMask)))
+			if((color_layer_2 = color_layers->find(Layer::TransIndirect)))
 			{
-				*color_pass += *color_pass_2;
-			}
-			if((color_pass_2 = int_passes->find(PassObjIndexMaskShadow)))
-			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
 		}
 
-		if((color_pass = int_passes->find(PassMatIndexMask)))
+		if((color_layer = color_layers->find(Layer::IndirectAll)))
 		{
-			if(sp.material_->getAbsMaterialIndex() == passes_settings->passMaskParams().mat_index_) *color_pass = Rgba(1.f);
-		}
-
-		if((color_pass = int_passes->find(PassMatIndexMaskAll)))
-		{
-			Rgba *color_pass_2;
-			if((color_pass_2 = int_passes->find(PassMatIndexMask)))
+			ColorLayer *color_layer_2;
+			if((color_layer_2 = color_layers->find(Layer::Indirect)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
-			if((color_pass_2 = int_passes->find(PassMatIndexMaskShadow)))
+			if((color_layer_2 = color_layers->find(Layer::DiffuseIndirect)))
 			{
-				*color_pass += *color_pass_2;
+				color_layer->color_ += color_layer_2->color_;
 			}
 		}
 
-		if((color_pass = int_passes->find(PassDebugWireframe)))
+		if((color_layer = color_layers->find(Layer::DiffuseColor)))
+		{
+			color_layer->color_ = sp.material_->getDiffuseColor(render_data);
+		}
+		if((color_layer = color_layers->find(Layer::GlossyColor)))
+		{
+			color_layer->color_ = sp.material_->getGlossyColor(render_data);
+		}
+		if((color_layer = color_layers->find(Layer::TransColor)))
+		{
+			color_layer->color_ = sp.material_->getTransColor(render_data);
+		}
+		if((color_layer = color_layers->find(Layer::SubsurfaceColor)))
+		{
+			color_layer->color_ = sp.material_->getSubSurfaceColor(render_data);
+		}
+
+		if((color_layer = color_layers->find(Layer::ObjIndexAbs)))
+		{
+			color_layer->color_ = sp.object_->getAbsObjectIndexColor();
+		}
+		if((color_layer = color_layers->find(Layer::ObjIndexNorm)))
+		{
+			color_layer->color_ = sp.object_->getNormObjectIndexColor();
+		}
+		if((color_layer = color_layers->find(Layer::ObjIndexAuto)))
+		{
+			color_layer->color_ = sp.object_->getAutoObjectIndexColor();
+		}
+		if((color_layer = color_layers->find(Layer::ObjIndexAutoAbs)))
+		{
+			color_layer->color_ = sp.object_->getAutoObjectIndexNumber();
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexAbs)))
+		{
+			color_layer->color_ = sp.material_->getAbsMaterialIndexColor();
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexNorm)))
+		{
+			color_layer->color_ = sp.material_->getNormMaterialIndexColor();
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexAuto)))
+		{
+			color_layer->color_ = sp.material_->getAutoMaterialIndexColor();
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexAutoAbs)))
+		{
+			color_layer->color_ = sp.material_->getAutoMaterialIndexNumber();
+		}
+
+		if((color_layer = color_layers->find(Layer::ObjIndexMask)))
+		{
+			if(sp.object_->getAbsObjectIndex() == color_layers->getMaskParams().obj_index_) color_layer->color_ = Rgba(1.f);
+		}
+
+		if((color_layer = color_layers->find(Layer::ObjIndexMaskAll)))
+		{
+			ColorLayer *color_layer_2;
+			if((color_layer_2 = color_layers->find(Layer::ObjIndexMask)))
+			{
+				color_layer->color_ += color_layer_2->color_;
+			}
+			if((color_layer_2 = color_layers->find(Layer::ObjIndexMaskShadow)))
+			{
+				color_layer->color_ += color_layer_2->color_;
+			}
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexMask)))
+		{
+			if(sp.material_->getAbsMaterialIndex() == color_layers->getMaskParams().mat_index_) color_layer->color_ = Rgba(1.f);
+		}
+
+		if((color_layer = color_layers->find(Layer::MatIndexMaskAll)))
+		{
+			ColorLayer *color_layer_2;
+			if((color_layer_2 = color_layers->find(Layer::MatIndexMask)))
+			{
+				color_layer->color_ += color_layer_2->color_;
+			}
+			if((color_layer_2 = color_layers->find(Layer::MatIndexMaskShadow)))
+			{
+				color_layer->color_ += color_layer_2->color_;
+			}
+		}
+
+		if((color_layer = color_layers->find(Layer::DebugWireframe)))
 		{
 			Rgba wireframe_color = Rgba(0.f, 0.f, 0.f, 0.f);
 			sp.material_->applyWireFrame(wireframe_color, 1.f, sp);
-			*color_pass = wireframe_color;
+			color_layer->color_ = wireframe_color;
 		}
 
-		if((color_pass = int_passes->find(PassDebugSamplingFactor)))
+		if((color_layer = color_layers->find(Layer::DebugSamplingFactor)))
 		{
-			*color_pass = Rgba(sp.material_->getSamplingFactor());
+			color_layer->color_ = Rgba(sp.material_->getSamplingFactor());
 		}
 
-		if(int_passes->enabled(PassDebugDpLengths) || int_passes->enabled(PassDebugDpdx) || int_passes->enabled(PassDebugDpdy) || int_passes->enabled(PassDebugDpdxy) || int_passes->enabled(PassDebugDudxDvdx) || int_passes->enabled(PassDebugDudyDvdy) || int_passes->enabled(PassDebugDudxyDvdxy))
+		if(color_layers->isDefinedAny({Layer::DebugDpLengths, Layer::DebugDpdx, Layer::DebugDpdy, Layer::DebugDpdxy, Layer::DebugDudxDvdx, Layer::DebugDudyDvdy, Layer::DebugDudxyDvdxy}))
 		{
 			SpDifferentials sp_diff(sp, ray);
 
-			if((color_pass = int_passes->find(PassDebugDpLengths)))
+			if((color_layer = color_layers->find(Layer::DebugDpLengths)))
 			{
-				*color_pass = Rgba(sp_diff.dp_dx_.length(), sp_diff.dp_dy_.length(), 0.f, 1.f);
+				color_layer->color_ = Rgba(sp_diff.dp_dx_.length(), sp_diff.dp_dy_.length(), 0.f, 1.f);
 			}
 
-			if((color_pass = int_passes->find(PassDebugDpdx)))
+			if((color_layer = color_layers->find(Layer::DebugDpdx)))
 			{
-				*color_pass = Rgba((sp_diff.dp_dx_.x_ + 1.f) * .5f, (sp_diff.dp_dx_.y_ + 1.f) * .5f, (sp_diff.dp_dx_.z_ + 1.f) * .5f, 1.f);
+				color_layer->color_ = Rgba((sp_diff.dp_dx_.x_ + 1.f) * .5f, (sp_diff.dp_dx_.y_ + 1.f) * .5f, (sp_diff.dp_dx_.z_ + 1.f) * .5f, 1.f);
 			}
 
-			if((color_pass = int_passes->find(PassDebugDpdy)))
+			if((color_layer = color_layers->find(Layer::DebugDpdy)))
 			{
-				*color_pass = Rgba((sp_diff.dp_dy_.x_ + 1.f) * .5f, (sp_diff.dp_dy_.y_ + 1.f) * .5f, (sp_diff.dp_dy_.z_ + 1.f) * .5f, 1.f);
+				color_layer->color_ = Rgba((sp_diff.dp_dy_.x_ + 1.f) * .5f, (sp_diff.dp_dy_.y_ + 1.f) * .5f, (sp_diff.dp_dy_.z_ + 1.f) * .5f, 1.f);
 			}
 
-			if((color_pass = int_passes->find(PassDebugDpdxy)))
+			if((color_layer = color_layers->find(Layer::DebugDpdxy)))
 			{
-				*color_pass = Rgba((sp_diff.dp_dx_.x_ + sp_diff.dp_dy_.x_ + 1.f) * .5f, (sp_diff.dp_dx_.y_ + sp_diff.dp_dy_.y_ + 1.f) * .5f, (sp_diff.dp_dx_.z_ + sp_diff.dp_dy_.z_ + 1.f) * .5f, 1.f);
+				color_layer->color_ = Rgba((sp_diff.dp_dx_.x_ + sp_diff.dp_dy_.x_ + 1.f) * .5f, (sp_diff.dp_dx_.y_ + sp_diff.dp_dy_.y_ + 1.f) * .5f, (sp_diff.dp_dx_.z_ + sp_diff.dp_dy_.z_ + 1.f) * .5f, 1.f);
 			}
 
-			if(int_passes->enabled(PassDebugDudxDvdx) || int_passes->enabled(PassDebugDudyDvdy) || int_passes->enabled(PassDebugDudxyDvdxy))
+			if(color_layers->isDefinedAny({Layer::DebugDudxDvdx, Layer::DebugDudyDvdy, Layer::DebugDudxyDvdxy}))
 			{
 
 				float du_dx = 0.f, dv_dx = 0.f;
 				float du_dy = 0.f, dv_dy = 0.f;
 				sp_diff.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 
-				if((color_pass = int_passes->find(PassDebugDudxDvdx)))
+				if((color_layer = color_layers->find(Layer::DebugDudxDvdx)))
 				{
-					*color_pass = Rgba((du_dx + 1.f) * .5f, (dv_dx + 1.f) * .5f, 0.f, 1.f);
+					color_layer->color_ = Rgba((du_dx + 1.f) * .5f, (dv_dx + 1.f) * .5f, 0.f, 1.f);
 				}
 
-				if((color_pass = int_passes->find(PassDebugDudyDvdy)))
+				if((color_layer = color_layers->find(Layer::DebugDudyDvdy)))
 				{
-					*color_pass = Rgba((du_dy + 1.f) * .5f, (dv_dy + 1.f) * .5f, 0.f, 1.f);
+					color_layer->color_ = Rgba((du_dy + 1.f) * .5f, (dv_dy + 1.f) * .5f, 0.f, 1.f);
 				}
 
-				if((color_pass = int_passes->find(PassDebugDudxyDvdxy)))
+				if((color_layer = color_layers->find(Layer::DebugDudxyDvdxy)))
 				{
-					*color_pass = Rgba((du_dx + du_dy + 1.f) * .5f, (dv_dx + dv_dy + 1.f) * .5f, 0.f, 1.f);
+					color_layer->color_ = Rgba((du_dx + du_dy + 1.f) * .5f, (dv_dx + dv_dy + 1.f) * .5f, 0.f, 1.f);
 				}
 			}
 		}

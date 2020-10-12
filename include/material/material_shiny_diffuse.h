@@ -45,20 +45,20 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 	private:
 		ShinyDiffuseMaterial(const Rgb &diffuse_color, const Rgb &mirror_color, float diffuse_strength, float transparency_strength = 0.0, float translucency_strength = 0.0, float mirror_strength = 0.0, float emit_strength = 0.0, float transmit_filter_strength = 1.0, Visibility visibility = Material::Visibility::NormalVisible);
 		virtual ~ShinyDiffuseMaterial() override;
-		virtual void initBsdf(const RenderState &state, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
-		virtual Rgb eval(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
-		virtual Rgb sample(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual float pdf(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
+		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
+		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
+		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
+		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 		virtual bool isTransparent() const override { return m_is_transparent_; }
-		virtual Rgb getTransparency(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Rgb emit(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
-		virtual void getSpecular(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const override;
-		virtual float getAlpha(const RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual Rgb getDiffuseColor(const RenderState &state) const override;
-		virtual Rgb getGlossyColor(const RenderState &state) const override;
-		virtual Rgb getTransColor(const RenderState &state) const override;
-		virtual Rgb getMirrorColor(const RenderState &state) const override;
-		virtual Rgb getSubSurfaceColor(const RenderState &state) const override;
+		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
+		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const override;
+		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
+		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
+		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
+		virtual Rgb getTransColor(const RenderData &render_data) const override;
+		virtual Rgb getMirrorColor(const RenderData &render_data) const override;
+		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const override;
 
 		struct SdDat
 		{

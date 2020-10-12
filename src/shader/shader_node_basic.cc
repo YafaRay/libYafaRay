@@ -22,8 +22,8 @@
 #include "camera/camera.h"
 #include "common/param.h"
 #include "geometry/surface.h"
-#include "common/string.h"
-#include <iomanip>
+#include "texture/texture_image.h"
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
@@ -153,18 +153,18 @@ Point3 evalUv__(const SurfacePoint &sp)
 	return Point3(sp.u_, sp.v_, 0.f);
 }
 
-void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderState &state) const
+void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const
 {
 	switch(coords_)
 	{
 		case Uv: texpt = evalUv__(sp); ng = sp.ng_; break;
 		case Orco:	texpt = sp.orco_p_; ng = sp.orco_ng_; break;
 		case Tran:	texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Win:	texpt = state.cam_->screenproject(sp.p_); ng = sp.ng_; break;
+		case Win:	texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;
 		case Nor:
 		{
 			Vec3 camx, camy, camz;
-			state.cam_->getAxis(camx, camy, camz);
+			render_data.cam_->getAxis(camx, camy, camz);
 			texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0); ng = sp.ng_;
 			break;
 		}
@@ -179,7 +179,7 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 }
 
 
-void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
@@ -189,7 +189,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const S
 	{
 		SpDifferentials sp_diff(sp, *(sp.ray_));
 
-		getCoords(texpt, ng, sp, state);
+		getCoords(texpt, ng, sp, render_data);
 
 		Point3 texptorig = texpt;
 
@@ -209,7 +209,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const S
 	}
 	else
 	{
-		getCoords(texpt, ng, sp, state);
+		getCoords(texpt, ng, sp, render_data);
 		texpt = doMapping(texpt, ng);
 	}
 
@@ -223,20 +223,20 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const S
 }
 
 // Basically you shouldn't call this anyway, but for the sake of consistency, redirect:
-void TextureMapperNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
+void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
-	eval(stack, state, sp);
+	eval(stack, render_data, sp);
 }
 
 // Normal perturbation
 
-void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
 	float du = 0.0f, dv = 0.0f;
 
-	getCoords(texpt, ng, sp, state);
+	getCoords(texpt, ng, sp, render_data);
 
 	if(tex_->discrete() && sp.has_uv_ && coords_ == Uv)
 	{
@@ -343,7 +343,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderState &stat
 	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-ShaderNode *TextureMapperNode::factory(const ParamMap &params, Scene &scene)
+ShaderNode *TextureMapperNode::factory(const ParamMap &params, const Scene &scene)
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
@@ -413,17 +413,17 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, Scene &scene)
 /  The most simple node you could imagine...
 /  ========================================== */
 
-void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-void ValueNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
+void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-ShaderNode *ValueNode::factory(const ParamMap &params, Scene &scene)
+ShaderNode *ValueNode::factory(const ParamMap &params, const Scene &scene)
 {
 	Rgb col(1.f);
 	float alpha = 1.f;
@@ -444,7 +444,7 @@ MixNode::MixNode(): cfactor_(0.f), input_1_(0), input_2_(0), factor_(0)
 MixNode::MixNode(float val): cfactor_(val), input_1_(0), input_2_(0), factor_(0)
 {}
 
-void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	float f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
 	float f_1 = 1.f - f_2, fin_1, fin_2;
@@ -475,9 +475,9 @@ void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoin
 	stack[this->getId()] = NodeResult(color, scalar);
 }
 
-void MixNode::eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
+void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
 {
-	eval(stack, state, sp);
+	eval(stack, render_data, sp);
 }
 
 bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)
@@ -567,7 +567,7 @@ void MixNode::getInputs(NodeStack &stack, Rgba &cin_1, Rgba &cin_2, float &fin_1
 class AddNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -582,7 +582,7 @@ class AddNode: public MixNode
 class MultNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -598,7 +598,7 @@ class MultNode: public MixNode
 class SubNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -613,7 +613,7 @@ class SubNode: public MixNode
 class ScreenNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -629,7 +629,7 @@ class ScreenNode: public MixNode
 class DiffNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -648,7 +648,7 @@ class DiffNode: public MixNode
 class DarkNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -668,7 +668,7 @@ class DarkNode: public MixNode
 class LightNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -688,7 +688,7 @@ class LightNode: public MixNode
 class OverlayNode: public MixNode
 {
 	public:
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 		{
 			float f_1, f_2, fin_1, fin_2;
 			Rgba cin_1, cin_2;
@@ -706,7 +706,7 @@ class OverlayNode: public MixNode
 };
 
 
-ShaderNode *MixNode::factory(const ParamMap &params, Scene &scene)
+ShaderNode *MixNode::factory(const ParamMap &params, const Scene &scene)
 {
 	float cfactor = 0.5f;
 	std::string blend_mode;

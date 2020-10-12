@@ -35,7 +35,7 @@ class ParamMap;
 class BackgroundLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, Scene &scene);
+		static Light *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		BackgroundLight(int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);

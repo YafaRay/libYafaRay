@@ -27,11 +27,13 @@
 #include "camera/camera_orthographic.h"
 #include "camera/camera_perspective.h"
 #include "common/param.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
-Camera *Camera::factory(ParamMap &params, Scene &scene)
+Camera *Camera::factory(ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Camera) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "angular") return AngularCamera::factory(params, scene);

@@ -34,34 +34,17 @@ class LIBYAFARAY_EXPORT Session
 {
 	public:
 		Session();
-		Session(const Session &);	//customizing copy constructor so we can use a std::mutex as a class member (not copiable)
+		Session(const Session &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
 		~Session();
 
-		void setStatusRenderStarted();
-		void setStatusRenderResumed();
-		void setStatusRenderFinished();
-		void setStatusRenderAborted();
-		void setStatusTotalPasses(int total_passes);
-		void setStatusCurrentPass(int current_pass);
-		void setStatusCurrentPassPercent(float current_pass_percent);
 		void setInteractive(bool interactive);
-		void setPathYafaRayXml(std::string path);
-		void setPathImageOutput(std::string path);
 		void setDifferentialRaysEnabled(bool value) { ray_differentials_enabled_ = value; }
 
-		bool renderInProgress();
-		bool renderResumed();
-		bool renderFinished();
-		bool renderAborted();
 		bool getDifferentialRaysEnabled() const { return ray_differentials_enabled_; }
+		bool isPreview() const { return false; } //FIXME!
 
-		int totalPasses();
-		int currentPass();
-		float currentPassPercent();
 		bool isInteractive();
-		std::string getPathYafaRayXml();
-		std::string getPathImageOutput();
 
 		PhotonMap *caustic_map_ = nullptr;
 		PhotonMap *diffuse_map_ = nullptr;
@@ -70,17 +53,8 @@ class LIBYAFARAY_EXPORT Session
 		std::mutex mutx_;
 
 	protected:
-		bool render_in_progress_ = false;
-		bool render_finished_ = false;
-		bool render_resumed_ = false;
-		bool render_aborted_ = false;
 		bool ray_differentials_enabled_ = false;  //!< By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials. This should avoid the (many) extra calculations when they are not necessary.
-		int total_passes_ = 0;
-		int current_pass_ = 0;
-		float current_pass_percent_ = 0.f;
 		bool interactive_ = false;
-		std::string path_yafa_ray_xml_;
-		std::string path_image_output_;
 };
 
 extern LIBYAFARAY_EXPORT Session session__;

@@ -1,7 +1,6 @@
-#pragma once
 /****************************************************************************
  *
- *      imagehandler_jpg.h: Joint Photographic Experts Group (JPEG) format handler
+ *      imagehandler_tiff.h: Tag Image File Format (TIFF) image handler
  *      This is part of the libYafaRay package
  *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
@@ -21,24 +20,24 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_JPG_H
-#define YAFARAY_IMAGEHANDLER_JPG_H
+#ifndef YAFARAY_FORMAT_TIF_H
+#define YAFARAY_FORMAT_TIF_H
 
-#include "imagehandler/imagehandler.h"
+#include "format.h"
 
 BEGIN_YAFARAY
 
-class JpgHandler final : public ImageHandler
+class TifFormat final : public Format
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		static Format *factory(ParamMap &params);
 
 	private:
-		JpgHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
+		virtual std::string getFormatName() const override { return "TifFormat"; }
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual bool saveToFile(const std::string &name, const Image *image) override;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_JPG_H
+#endif // YAFARAY_FORMAT_TIF_H

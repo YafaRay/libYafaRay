@@ -21,7 +21,7 @@
 #include "scene/scene.h"
 #include "scene/scene_yafaray.h"
 #include "common/session.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/sysinfo.h"
 #include "geometry/triangle.h"
 #include "accelerator/accelerator_kdtree.h"
@@ -34,7 +34,7 @@
 #include "camera/camera.h"
 #include "shader/shader_node.h"
 #include "render/imagefilm.h"
-#include "imagehandler/imagehandler.h"
+#include "format/format.h"
 #include "volume/volume.h"
 #include "output/output.h"
 
@@ -43,7 +43,6 @@
 
 BEGIN_YAFARAY
 
-#define Y_INFO_SCENE Y_INFO << "Scene: "
 #define Y_VERBOSE_SCENE Y_VERBOSE << "Scene: "
 #define Y_ERROR_SCENE Y_ERROR << "Scene: "
 #define Y_WARN_SCENE Y_WARNING << "Scene: "
@@ -58,6 +57,7 @@ BEGIN_YAFARAY
 
 Scene *Scene::factory(ParamMap &params)
 {
+	Y_DEBUG PRTEXT(**Scene::factory) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "yafaray") return YafaRayScene::factory(params);
@@ -66,54 +66,37 @@ Scene *Scene::factory(ParamMap &params)
 
 Scene::Scene()
 {
-	state_.changes_ = CAll;
-	state_.stack_.push_front(Ready);
-	state_.next_free_id_ = std::numeric_limits<int>::max();
-	state_.cur_obj_ = nullptr;
+	creation_state_.changes_ = CreationState::Flags::CAll;
+	creation_state_.stack_.push_front(CreationState::Ready);
+	creation_state_.next_free_id_ = std::numeric_limits<int>::max();
 
 	std::string compiler = YAFARAY_BUILD_COMPILER;
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 
 	Y_INFO << "LibYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << YENDL;
-	output_2_ = nullptr;
 	session__.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 
 #ifndef HAVE_OPENCV
-	Y_WARNING << "libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render passes, toon render pass." << YENDL;
+	Y_WARNING << "libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer." << YENDL;
 #endif
 }
 
 Scene::~Scene()
 {
 	clearAll();
-}
-
-void Scene::abort()
-{
-	sig_mutex_.lock();
-	signals_ |= Y_SIG_ABORT;
-	sig_mutex_.unlock();
-}
-
-int Scene::getSignals() const
-{
-	int sig;
-	sig_mutex_.lock();
-	sig = signals_;
-	sig_mutex_.unlock();
-	return sig;
+	delete image_film_;
 }
 
 bool Scene::startGeometry()
 {
-	if(state_.stack_.front() != Ready) return false;
-	state_.stack_.push_front(Geometry);
+	if(creation_state_.stack_.front() != CreationState::Ready) return false;
+	creation_state_.stack_.push_front(CreationState::Geometry);
 	return true;
 }
 
 bool Scene::endGeometry()
 {
-	if(state_.stack_.front() != Geometry) return false;
+	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	// in case objects share arrays, so they all need to be updated
 	// after each object change, uncomment the below block again:
 	// don't forget to update the mesh object iterators!
@@ -123,7 +106,7 @@ bool Scene::endGeometry()
 			objData_t &dat = (*i).second;
 			dat.obj->setContext(dat.points.begin(), dat.normals.begin() );
 		}*/
-	state_.stack_.pop_front();
+	creation_state_.stack_.pop_front();
 	return true;
 }
 
@@ -148,7 +131,7 @@ void Scene::setNumThreads(int threads)
 	std::stringstream set;
 	set << "CPU threads=" << nthreads_ << std::endl;
 
-	logger__.appendRenderSettings(set.str());
+	render_control_.setRenderInfo(set.str());
 }
 
 void Scene::setNumThreadsPhotons(int threads_photons)
@@ -170,16 +153,6 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons_ << "] Threads." << YENDL;
 }
 
-void Scene::setCamera(Camera *cam)
-{
-	camera_ = cam;
-}
-
-void Scene::setImageFilm(ImageFilm *film)
-{
-	image_film_ = film;
-}
-
 void Scene::setBackground(Background *bg)
 {
 	background_ = bg;
@@ -189,14 +162,14 @@ void Scene::setSurfIntegrator(SurfaceIntegrator *s)
 {
 	surf_integrator_ = s;
 	surf_integrator_->setScene(this);
-	state_.changes_ |= COther;
+	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
 void Scene::setVolIntegrator(VolumeIntegrator *v)
 {
 	vol_integrator_ = v;
 	vol_integrator_->setScene(this);
-	state_.changes_ |= COther;
+	creation_state_.changes_ |= CreationState::Flags::COther;
 }
 
 Background *Scene::getBackground() const
@@ -211,12 +184,6 @@ Bound Scene::getSceneBound() const
 
 bool Scene::render()
 {
-	sig_mutex_.lock();
-	signals_ = 0;
-	sig_mutex_.unlock();
-
-	bool success = false;
-
 	const std::map<std::string, Camera *> *camera_table = getCameraTable();
 
 	if(camera_table->size() == 0)
@@ -225,25 +192,64 @@ bool Scene::render()
 		return false;
 	}
 
-	for(auto cam_table_entry = camera_table->begin(); cam_table_entry != camera_table->end(); ++cam_table_entry)
+	Y_VERBOSE << "Scene: Mode \"" << ((mode_ == 0) ? "Triangle" : "Universal") << "\"" << YENDL;
+	if(!image_film_)
 	{
-		int num_view = distance(camera_table->begin(), cam_table_entry);
-		Camera *cam = cam_table_entry->second;
-		setCamera(cam);
-		if(!update()) return false;
-
-		success = surf_integrator_->render(num_view, image_film_);
-
-		surf_integrator_->cleanup();
-		image_film_->flush(num_view);
+		Y_ERROR << "Scene: No ImageFilm present, bailing out..." << YENDL;
+		return false;
+	}
+	if(!surf_integrator_)
+	{
+		Y_ERROR << "Scene: No surface integrator, bailing out..." << YENDL;
+		return false;
 	}
 
-	return success;
+	if(creation_state_.changes_ != CreationState::Flags::CNone)
+	{
+		for(auto &output : outputs_)
+		{
+			output.second->init(image_film_->getWidth(), image_film_->getHeight(), &layers_, &render_views_);
+		}
+
+		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateGeometry();
+		for(auto &it : render_views_)
+		{
+			for(auto &o : outputs_) o.second->setRenderView(it.second);
+			for(auto &l : it.second->getLights()) l.second->init(*this);
+			std::stringstream inte_settings;
+			bool success = (surf_integrator_->preprocess(render_control_, it.second) && vol_integrator_->preprocess(render_control_, it.second));
+			if(!success)
+			{
+				Y_ERROR << "Scene: Preprocessing process failed, exiting..." << YENDL;
+				return false;
+			}
+			surf_integrator_->cleanup();
+			image_film_->cleanup();
+			render_control_.setStarted();
+			success = surf_integrator_->render(image_film_, render_control_, it.second);
+			if(!success)
+			{
+				Y_ERROR << "Scene: Rendering process failed, exiting..." << YENDL;
+				return false;
+			}
+			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
+			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
+			image_film_->flush(it.second, render_control_);
+			render_control_.setFinished();
+		}
+	}
+	else
+	{
+		Y_INFO << "Scene: No changes in scene since last render, bailing out..." << YENDL;
+		return false;
+	}
+	creation_state_.changes_ = CreationState::Flags::CNone;
+	return true;
 }
 
 ObjId_t Scene::getNextFreeId()
 {
-	return --state_.next_free_id_;
+	return --creation_state_.next_free_id_;
 }
 
 void Scene::clearNonGeometry()
@@ -256,7 +262,8 @@ void Scene::clearNonGeometry()
 	freeMap(integrators_);
 	freeMap(volume_handlers_);
 	freeMap(volume_regions_);
-	freeMap(imagehandlers_);
+	freeMap(render_views_);
+	//Do *NOT* delete or free the outputs, we do not have ownership!
 
 	lights_.clear();
 	textures_.clear();
@@ -266,7 +273,8 @@ void Scene::clearNonGeometry()
 	integrators_.clear();
 	volume_handlers_.clear();
 	volume_regions_.clear();
-	imagehandlers_.clear();
+	outputs_.clear();
+	render_views_.clear();
 }
 
 void Scene::clearAll()
@@ -275,51 +283,63 @@ void Scene::clearAll()
 	clearNonGeometry();
 }
 
+template <typename T>
+T *Scene::findMapItem(const std::string &name, const std::map<std::string, T*> &map)
+{
+	auto i = map.find(name);
+	if(i != map.end()) return i->second;
+	else return nullptr;
+}
+
 Material *Scene::getMaterial(const std::string &name) const
 {
-	auto i = materials_.find(name);
-	if(i != materials_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<Material>(name, materials_);
 }
 
 Texture *Scene::getTexture(const std::string &name) const
 {
-	auto i = textures_.find(name);
-	if(i != textures_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<Texture>(name, textures_);
 }
 
 Camera *Scene::getCamera(const std::string &name) const
 {
-	auto i = cameras_.find(name);
-	if(i != cameras_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<Camera>(name, cameras_);
+}
+
+Light *Scene::getLight(const std::string &name) const
+{
+	return Scene::findMapItem<Light>(name, lights_);
 }
 
 Background *Scene::getBackground(const std::string &name) const
 {
-	auto i = backgrounds_.find(name);
-	if(i != backgrounds_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<Background>(name, backgrounds_);
 }
 
 Integrator *Scene::getIntegrator(const std::string &name) const
 {
-	auto i = integrators_.find(name);
-	if(i != integrators_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<Integrator>(name, integrators_);
 }
 
 ShaderNode *Scene::getShaderNode(const std::string &name) const
 {
-	auto i = shaders_.find(name);
-	if(i != shaders_.end()) return i->second;
-	else return nullptr;
+	return Scene::findMapItem<ShaderNode>(name, shaders_);
+}
+
+ColorOutput *Scene::getOutput(const std::string &name) const
+{
+	return Scene::findMapItem<ColorOutput>(name, outputs_);
+}
+
+RenderView *Scene::getRenderView(const std::string &name) const
+{
+	return Scene::findMapItem<RenderView>(name, render_views_);
 }
 
 Light *Scene::createLight(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Light";
+	params["name"] = std::string(name);
 	if(lights_.find(name) != lights_.end())
 	{
 		WARN_EXIST; return nullptr;
@@ -335,54 +355,8 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 		lights_[name] = light;
 		if(light->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
 		else INFO_VERBOSE_SUCCESS_DISABLED(name, type);
-		state_.changes_ |= CLight;
+		creation_state_.changes_ |= CreationState::Flags::CLight;
 		return light;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
-}
-
-Texture *Scene::createTexture(const std::string &name, ParamMap &params)
-{
-	std::string pname = "Texture";
-	if(textures_.find(name) != textures_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	Texture *texture = Texture::factory(params, *this);
-	if(texture)
-	{
-		textures_[name] = texture;
-		INFO_VERBOSE_SUCCESS(name, type);
-		return texture;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
-}
-
-ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
-{
-	std::string pname = "ShaderNode";
-	if(shaders_.find(name) != shaders_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	ShaderNode *shader = ShaderNode::factory(params, *this);
-	if(shader)
-	{
-		shaders_[name] = shader;
-		INFO_VERBOSE_SUCCESS(name, type);
-		return shader;
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
@@ -391,6 +365,7 @@ ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
 Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams)
 {
 	std::string pname = "Material";
+	params["name"] = std::string(name);
 	if(materials_.find(name) != materials_.end())
 	{
 		WARN_EXIST; return nullptr;
@@ -412,372 +387,88 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	return nullptr;
 }
 
-Background *Scene::createBackground(const std::string &name, ParamMap &params)
+template <typename T>
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists)
 {
-	std::string pname = "Background";
-	if(backgrounds_.find(name) != backgrounds_.end())
+	std::string pname = class_name;
+	params["name"] = std::string(name);
+	if(map.find(name) != map.end())
 	{
 		WARN_EXIST; return nullptr;
 	}
 	std::string type;
 	if(! params.getParam("type", type))
 	{
-		ERR_NO_TYPE; return nullptr;
+		if(check_type_exists)
+		{
+			ERR_NO_TYPE;
+			return nullptr;
+		}
 	}
-	Background *background = Background::factory(params, *this);
-	if(background)
+	T *item = T::factory(params, *scene);
+	if(item)
 	{
-		backgrounds_[name] = background;
+		map[name] = item;
 		INFO_VERBOSE_SUCCESS(name, type);
-		return background;
+		return item;
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-ImageHandler *Scene::createImageHandler(const std::string &name, ParamMap &params)
+ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params)
 {
-	const std::string pname = "ImageHandler";
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	ImageHandler *ih = ImageHandler::factory(params, *this);
-	if(ih)
-	{
-		INFO_VERBOSE_SUCCESS(name, type);
-		return ih;
-	}
+	return createMapItem<ColorOutput>(name, "ColorOutput", params, outputs_, this);
+}
 
-	ERR_ON_CREATE(type);
-	return nullptr;
+Texture *Scene::createTexture(const std::string &name, ParamMap &params)
+{
+	return createMapItem<Texture>(name, "Texture", params, textures_, this);
+}
+
+ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
+{
+	return createMapItem<ShaderNode>(name, "ShaderNode", params, shaders_, this);
+}
+
+Background *Scene::createBackground(const std::string &name, ParamMap &params)
+{
+	return createMapItem<Background>(name, "Background", params, backgrounds_, this);
 }
 
 Camera *Scene::createCamera(const std::string &name, ParamMap &params)
 {
-	std::string pname = "Camera";
-	if(cameras_.find(name) != cameras_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	Camera *camera = Camera::factory(params, *this);
-	if(camera)
-	{
-		cameras_[name] = camera;
-		INFO_VERBOSE_SUCCESS(name, type);
-		int view_number = passes_settings_.view_names_.size();
-		camera->setCameraName(name);
-		passes_settings_.view_names_.push_back(camera->getViewName());
-
-		Y_INFO << "Environment: View number=" << view_number << ", view name: '" << passes_settings_.view_names_[view_number] << "', camera name: '" << camera->getCameraName() << "'" << YENDL;
-
-		return camera;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
+	return createMapItem<Camera>(name, "Camera", params, cameras_, this);
 }
 
 Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 {
-	std::string pname = "Integrator";
-	if(integrators_.find(name) != integrators_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	Integrator *integrator = Integrator::factory(params, *this);
-	if(integrator)
-	{
-		integrators_[name] = integrator;
-		INFO_VERBOSE_SUCCESS(name, type);
-		return integrator;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
+	return createMapItem<Integrator>(name, "Integrator", params, integrators_, this);
 }
 
-void Scene::createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type)
+VolumeHandler *Scene::createVolumeH(const std::string &name, ParamMap &params)
 {
-	passes_settings_.extPassAdd(ext_pass_name, int_pass_name, image_type);
-}
-
-void Scene::setupRenderPasses(const ParamMap &params)
-{
-	std::string external_pass, internal_pass;
-	int pass_mask_obj_index = 0, pass_mask_mat_index = 0;
-	bool pass_mask_invert = false;
-	bool pass_mask_only = false;
-
-	Rgb toon_edge_color(0.f);
-	int object_edge_thickness = 2;
-	float object_edge_threshold = 0.3f;
-	float object_edge_smoothness = 0.75f;
-	float toon_pre_smooth = 3.f;
-	float toon_quantization = 0.1f;
-	float toon_post_smooth = 3.f;
-	int faces_edge_thickness = 1;
-	float faces_edge_threshold = 0.01f;
-	float faces_edge_smoothness = 0.5f;
-
-	params.getParam("pass_mask_obj_index", pass_mask_obj_index);
-	params.getParam("pass_mask_mat_index", pass_mask_mat_index);
-	params.getParam("pass_mask_invert", pass_mask_invert);
-	params.getParam("pass_mask_only", pass_mask_only);
-
-	params.getParam("toonEdgeColor", toon_edge_color);
-	params.getParam("objectEdgeThickness", object_edge_thickness);
-	params.getParam("objectEdgeThreshold", object_edge_threshold);
-	params.getParam("objectEdgeSmoothness", object_edge_smoothness);
-	params.getParam("toonPreSmooth", toon_pre_smooth);
-	params.getParam("toonQuantization", toon_quantization);
-	params.getParam("toonPostSmooth", toon_post_smooth);
-	params.getParam("facesEdgeThickness", faces_edge_thickness);
-	params.getParam("facesEdgeThreshold", faces_edge_threshold);
-	params.getParam("facesEdgeSmoothness", faces_edge_smoothness);
-
-	PassMaskParams mask_params;
-	mask_params.obj_index_ = (float) pass_mask_obj_index;
-	mask_params.mat_index_ = (float) pass_mask_mat_index;
-	mask_params.invert_ = pass_mask_invert;
-	mask_params.only_ = pass_mask_only;
-	passes_settings_.setPassMaskParams(mask_params);
-
-	PassEdgeToonParams edge_params;
-	edge_params.thickness_ = object_edge_thickness;
-	edge_params.threshold_ = object_edge_threshold;
-	edge_params.smoothness_ = object_edge_smoothness;
-	edge_params.toon_color_[0] = toon_edge_color.r_;
-	edge_params.toon_color_[1] = toon_edge_color.g_;
-	edge_params.toon_color_[2] = toon_edge_color.b_;
-	edge_params.toon_pre_smooth_ = toon_pre_smooth;
-	edge_params.toon_quantization_ = toon_quantization;
-	edge_params.toon_post_smooth_ = toon_post_smooth;
-	edge_params.face_thickness_ = faces_edge_thickness;
-	edge_params.face_threshold_ = faces_edge_threshold;
-	edge_params.face_smoothness_ = faces_edge_smoothness;
-	passes_settings_.setPassEdgeToonParams(edge_params);
-
-	//Generate any necessary auxiliar render passes
-	passes_settings_.auxPassesGenerate();
-}
-
-ImageFilm *Scene::createImageFilm(const ParamMap &params, ColorOutput &output)
-{
-	std::string name;
-	std::string tiles_order;
-	int width = 320, height = 240, xstart = 0, ystart = 0;
-	std::string color_space_string = "Raw_Manual_Gamma";
-	ColorSpace color_space = RawManualGamma;
-	std::string color_space_string_2 = "Raw_Manual_Gamma";
-	ColorSpace color_space_2 = RawManualGamma;
-	float filt_sz = 1.5, gamma = 1.f, gamma_2 = 1.f;
-	bool show_sampled_pixels = false;
-	int tile_size = 32;
-	bool premult = false;
-	bool premult_2 = false;
-	std::string images_autosave_interval_type_string = "none";
-	ImageFilm::AutoSaveParams images_autosave_params;
-	std::string film_save_load_string = "none";
-	ImageFilm::FilmSaveLoad film_save_load = ImageFilm::FilmSaveLoad::None;
-	std::string film_autosave_interval_type_string = "none";
-	ImageFilm::AutoSaveParams film_autosave_params;
-
-	params.getParam("color_space", color_space_string);
-	params.getParam("gamma", gamma);
-	params.getParam("color_space2", color_space_string_2);
-	params.getParam("gamma2", gamma_2);
-	params.getParam("AA_pixelwidth", filt_sz);
-	params.getParam("width", width); // width of rendered image
-	params.getParam("height", height); // height of rendered image
-	params.getParam("xstart", xstart); // x-offset (for cropped rendering)
-	params.getParam("ystart", ystart); // y-offset (for cropped rendering)
-	params.getParam("filter_type", name); // AA filter type
-	params.getParam("show_sam_pix", show_sampled_pixels); // Show pixels marked to be resampled on adaptative sampling
-	params.getParam("tile_size", tile_size); // Size of the render buckets or tiles
-	params.getParam("tiles_order", tiles_order); // Order of the render buckets or tiles
-	params.getParam("premult", premult); // Premultipy Alpha channel for better alpha antialiasing against bg
-	params.getParam("premult2", premult_2); // Premultipy Alpha channel for better alpha antialiasing against bg, for the optional secondary output
-	params.getParam("images_autosave_interval_type", images_autosave_interval_type_string);
-	params.getParam("images_autosave_interval_passes", images_autosave_params.interval_passes_);
-	params.getParam("images_autosave_interval_seconds", images_autosave_params.interval_seconds_);
-	params.getParam("film_save_load", film_save_load_string);
-	params.getParam("film_autosave_interval_type", film_autosave_interval_type_string);
-	params.getParam("film_autosave_interval_passes", film_autosave_params.interval_passes_);
-	params.getParam("film_autosave_interval_seconds", film_autosave_params.interval_seconds_);
-
-	Y_DEBUG << "Images autosave: " << images_autosave_interval_type_string << ", " << images_autosave_params.interval_passes_ << ", " << images_autosave_params.interval_seconds_ << YENDL;
-
-	Y_DEBUG << "ImageFilm autosave: " << film_save_load_string << ", " << film_autosave_interval_type_string << ", " << film_autosave_params.interval_passes_ << ", " << film_autosave_params.interval_seconds_ << YENDL;
-
-	if(color_space_string == "sRGB") color_space = Srgb;
-	else if(color_space_string == "XYZ") color_space = XyzD65;
-	else if(color_space_string == "LinearRGB") color_space = LinearRgb;
-	else if(color_space_string == "Raw_Manual_Gamma") color_space = RawManualGamma;
-	else color_space = Srgb;
-
-	if(color_space_string_2 == "sRGB") color_space_2 = Srgb;
-	else if(color_space_string_2 == "XYZ") color_space_2 = XyzD65;
-	else if(color_space_string_2 == "LinearRGB") color_space_2 = LinearRgb;
-	else if(color_space_string_2 == "Raw_Manual_Gamma") color_space_2 = RawManualGamma;
-	else color_space_2 = Srgb;
-
-	if(images_autosave_interval_type_string == "pass-interval") images_autosave_params.interval_type_ = ImageFilm::ImageFilm::AutoSaveParams::IntervalType::Pass;
-	else if(images_autosave_interval_type_string == "time-interval") images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
-	else images_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
-
-	if(film_save_load_string == "load-save") film_save_load = ImageFilm::FilmSaveLoad::LoadAndSave;
-	else if(film_save_load_string == "save") film_save_load = ImageFilm::FilmSaveLoad::Save;
-	else film_save_load = ImageFilm::FilmSaveLoad::None;
-
-	if(film_autosave_interval_type_string == "pass-interval") film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Pass;
-	else if(film_autosave_interval_type_string == "time-interval") film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::Time;
-	else film_autosave_params.interval_type_ = ImageFilm::AutoSaveParams::IntervalType::None;
-
-	output.initTilesPasses(cameras_.size(), passes_settings_.extPassesSettings().size());
-
-	ImageFilm::FilterType type = ImageFilm::FilterType::Box;
-	if(name == "mitchell") type = ImageFilm::FilterType::Mitchell;
-	else if(name == "gauss") type = ImageFilm::FilterType::Gauss;
-	else if(name == "lanczos") type = ImageFilm::FilterType::Lanczos;
-	else if(name != "box") Y_WARN_SCENE << "No AA filter defined defaulting to Box!" << YENDL;
-
-	ImageSplitter::TilesOrderType tilesOrder = ImageSplitter::CentreRandom;
-	if(tiles_order == "linear") tilesOrder = ImageSplitter::Linear;
-	else if(tiles_order == "random") tilesOrder = ImageSplitter::Random;
-	else if(tiles_order != "centre") Y_VERBOSE_SCENE << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
-
-	ImageFilm *film = new ImageFilm(width, height, xstart, ystart, output, filt_sz, type, this, show_sampled_pixels, tile_size, tilesOrder, premult);
-
-	if(color_space == RawManualGamma)
-	{
-		if(gamma > 0 && std::fabs(1.f - gamma) > 0.001) film->setColorSpace(color_space, gamma);
-		else film->setColorSpace(LinearRgb, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
-	}
-	else film->setColorSpace(color_space, gamma);
-
-	if(color_space_2 == RawManualGamma)
-	{
-		if(gamma_2 > 0 && std::fabs(1.f - gamma_2) > 0.001) film->setColorSpace2(color_space_2, gamma_2);
-		else film->setColorSpace2(LinearRgb, 1.f); //If the gamma is too close to 1.f, or negative, ignore gamma and do a pure linear RGB processing without gamma.
-	}
-	else film->setColorSpace2(color_space_2, gamma_2);
-
-	film->setPremult2(premult_2);
-
-	film->setImagesAutoSaveParams(images_autosave_params);
-	film->setFilmAutoSaveParams(film_autosave_params);
-	film->setFilmSaveLoad(film_save_load);
-
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO_SCENE << "AutoSave partially rendered image every " << images_autosave_params.interval_passes_ << " passes" << YENDL;
-
-	if(images_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO_SCENE << "AutoSave partially rendered image every " << images_autosave_params.interval_seconds_ << " seconds" << YENDL;
-
-	if(film_save_load != ImageFilm::FilmSaveLoad::Save) Y_INFO_SCENE << "Enabling imageFilm file saving feature" << YENDL;
-	if(film_save_load == ImageFilm::FilmSaveLoad::LoadAndSave) Y_INFO_SCENE << "Enabling imageFilm Loading feature. It will load and combine the ImageFilm files from the currently selected image output folder before start rendering, autodetecting each film format (binary/text) automatically. If they don't match exactly the scene, bad results could happen. Use WITH CARE!" << YENDL;
-
-	if(film_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) Y_INFO_SCENE << "AutoSave internal imageFilm every " << film_autosave_params.interval_passes_ << " passes" << YENDL;
-
-	if(film_autosave_params.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) Y_INFO_SCENE << "AutoSave internal imageFilm image every " << film_autosave_params.interval_seconds_ << " seconds" << YENDL;
-
-	return film;
-}
-
-VolumeHandler *Scene::createVolumeH(const std::string &name, const ParamMap &params)
-{
-	std::string pname = "VolumeHandler";
-	if(volume_handlers_.find(name) != volume_handlers_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	VolumeHandler *volume = VolumeHandler::factory(params, *this);
-	if(volume)
-	{
-		volume_handlers_[name] = volume;
-		INFO_VERBOSE_SUCCESS(name, type);
-		return volume;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
+	return createMapItem<VolumeHandler>(name, "VolumeHandler", params, volume_handlers_, this);
 }
 
 VolumeRegion *Scene::createVolumeRegion(const std::string &name, ParamMap &params)
 {
-	std::string pname = "VolumeRegion";
-	if(volume_regions_.find(name) != volume_regions_.end())
-	{
-		WARN_EXIST; return nullptr;
-	}
-	std::string type;
-	if(! params.getParam("type", type))
-	{
-		ERR_NO_TYPE; return nullptr;
-	}
-	VolumeRegion *volumeregion = VolumeRegion::factory(params, *this);
-	if(volumeregion)
-	{
-		volume_regions_[name] = volumeregion;
-		INFO_VERBOSE_SUCCESS(name, type);
-		return volumeregion;
-	}
-	ERR_ON_CREATE(type);
-	return nullptr;
+	return createMapItem<VolumeRegion>(name, "VolumeRegion", params, volume_regions_, this);
 }
 
-void Scene::setupLoggingAndBadge(const ParamMap &params)
+RenderView *Scene::createRenderView(const std::string &name, ParamMap &params)
 {
-	bool logging_save_log = false;
-	bool logging_save_html = false;
-	bool logging_draw_render_settings = true;
-	bool logging_draw_aa_noise_settings = true;
-	std::string logging_params_badge_position;
-	std::string logging_title;
-	std::string logging_author;
-	std::string logging_contact;
-	std::string logging_comments;
-	std::string logging_custom_icon;
-	std::string logging_font_path;
-	float logging_font_size_factor = 1.f;
+	return createMapItem<RenderView>(name, "RenderView", params, render_views_, this, false);
+}
 
-	params.getParam("logging_paramsBadgePosition", logging_params_badge_position);
-	params.getParam("logging_saveLog", logging_save_log);
-	params.getParam("logging_saveHTML", logging_save_html);
-	params.getParam("logging_drawRenderSettings", logging_draw_render_settings);
-	params.getParam("logging_drawAANoiseSettings", logging_draw_aa_noise_settings);
-	params.getParam("logging_author", logging_author);
-	params.getParam("logging_title", logging_title);
-	params.getParam("logging_contact", logging_contact);
-	params.getParam("logging_comments", logging_comments);
-	params.getParam("logging_customIcon", logging_custom_icon);
-	params.getParam("logging_fontPath", logging_font_path);
-	params.getParam("logging_fontSizeFactor", logging_font_size_factor);
+const Layers Scene::getLayersWithImages() const
+{
+	return layers_.getLayersWithImages();
+}
 
-	logger__.setSaveLog(logging_save_log);
-	logger__.setSaveHtml(logging_save_html);
-	logger__.setDrawRenderSettings(logging_draw_render_settings);
-	logger__.setDrawAaNoiseSettings(logging_draw_aa_noise_settings);
-	logger__.setParamsBadgePosition(logging_params_badge_position);
-	logger__.setLoggingTitle(logging_title);
-	logger__.setLoggingAuthor(logging_author);
-	logger__.setLoggingContact(logging_contact);
-	logger__.setLoggingComments(logging_comments);
-	logger__.setLoggingCustomIcon(logging_custom_icon);
-	logger__.setLoggingFontPath(logging_font_path);
-	logger__.setLoggingFontSizeFactor(logging_font_size_factor);
+const Layers Scene::getLayersWithExportedImages() const
+{
+	return layers_.getLayersWithExportedImages();
 }
 
 /*! setup the scene for rendering (set camera, background, integrator, create image film,
@@ -785,8 +476,9 @@ void Scene::setupLoggingAndBadge(const ParamMap &params)
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Scene::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb)
+bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 {
+	Y_DEBUG PRTEXT(**Scene::setupScene) PREND; params.printDebug();
 	std::string name;
 	std::string aa_dark_detection_type_string = "none";
 	AaNoiseParams aa_noise_params;
@@ -797,8 +489,9 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output
 	float adv_min_raydist_value = MIN_RAYDIST;
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
-
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
+
+	if(layers_.size() == 0) setupLayers(params);
 
 	if(! params.getParam("camera_name", name))
 	{
@@ -811,34 +504,35 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output
 		Y_ERROR_SCENE << "Specify an Integrator!!" << YENDL;
 		return false;
 	}
-
-	Integrator *inte = this->getIntegrator(name);
-
-	if(!inte)
+	Integrator *integrator = this->getIntegrator(name);
+	if(!integrator)
 	{
 		Y_ERROR_SCENE << "Specify an _existing_ Integrator!!" << YENDL;
 		return false;
 	}
-
-	if(inte->integratorType() != Integrator::Surface)
+	if(integrator->getType() != Integrator::Surface)
 	{
-		Y_ERROR_SCENE << "Integrator is no surface integrator!" << YENDL;
+		Y_ERROR_SCENE << "Integrator '" << name << "' is not a surface integrator!" << YENDL;
 		return false;
 	}
 
-	if(! params.getParam("volintegrator_name", name))
+	if(!params.getParam("volintegrator_name", name))
 	{
 		Y_ERROR_SCENE << "Specify a Volume Integrator!" << YENDL;
 		return false;
 	}
+	Integrator *volume_integrator = this->getIntegrator(name);
+	if(volume_integrator->getType() != Integrator::Volume)
+	{
+		Y_ERROR_SCENE << "Integrator '" << name << "' is not a volume integrator!" << YENDL;
+		return false;
+	}
 
-	Integrator *vol_inte = this->getIntegrator(name);
-
-	Background *backg = nullptr;
+	Background *background = nullptr;
 	if(params.getParam("background_name", name))
 	{
-		backg = this->getBackground(name);
-		if(!backg) Y_ERROR_SCENE << "please specify an _existing_ Background!!" << YENDL;
+		background = this->getBackground(name);
+		if(!background) Y_ERROR_SCENE << "please specify an _existing_ Background!!" << YENDL;
 	}
 
 	params.getParam("AA_passes", aa_noise_params.passes_);
@@ -869,84 +563,236 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ColorOutput &output
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
 	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
-	ImageFilm *film = createImageFilm(params, output);
+
+	delete image_film_;
+	image_film_ = ImageFilm::factory(params, this);
 
 	if(pb)
 	{
-		film->setProgressBar(pb);
-		inte->setProgressBar(pb);
+		image_film_->setProgressBar(pb);
+		integrator->setProgressBar(pb);
 	}
 
 	params.getParam("filter_type", name); // AA filter type
-
 	std::stringstream aa_settings;
-	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << film->getTileSize();
-	logger__.appendAaNoiseSettings(aa_settings.str());
+	aa_settings << "AA Settings (" << ((!name.empty()) ? name : "box") << "): Tile size=" << image_film_->getTileSize();
+	render_control_.setAaNoiseInfo(aa_settings.str());
 
 	if(aa_dark_detection_type_string == "linear") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Linear;
 	else if(aa_dark_detection_type_string == "curve") aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::Curve;
 	else aa_noise_params.dark_detection_type_ = AaNoiseParams::DarkDetectionType::None;
 
-	//setup scene and render.
-	scene.setImageFilm(film);
-	scene.setSurfIntegrator((SurfaceIntegrator *)inte);
-	scene.setVolIntegrator((VolumeIntegrator *)vol_inte);
+	scene.setSurfIntegrator(static_cast<SurfaceIntegrator *>(integrator));
+	scene.setVolIntegrator(static_cast<VolumeIntegrator *>(volume_integrator));
 	scene.setAntialiasing(aa_noise_params);
 	scene.setNumThreads(nthreads);
 	scene.setNumThreadsPhotons(nthreads_photons);
-	if(backg) scene.setBackground(backg);
+	if(background) scene.setBackground(background);
 	scene.shadow_bias_auto_ = adv_auto_shadow_bias_enabled;
 	scene.shadow_bias_ = adv_shadow_bias_value;
 	scene.ray_min_dist_auto_ = adv_auto_min_raydist_enabled;
 	scene.ray_min_dist_ = adv_min_raydist_value;
-
 	Y_DEBUG << "adv_base_sampling_offset=" << adv_base_sampling_offset << YENDL;
-	film->setBaseSamplingOffset(adv_base_sampling_offset);
-	film->setComputerNode(adv_computer_node);
-
-	film->setBackgroundResampling(background_resampling);
-
-	output.setPassesSettings(getPassesSettings());
-
+	image_film_->setBaseSamplingOffset(adv_base_sampling_offset);
+	image_film_->setComputerNode(adv_computer_node);
+	image_film_->setBackgroundResampling(background_resampling);
 	return true;
 }
 
-const std::vector<Light *> Scene::getLightsVisible() const
+void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_type, const Image::Type &exported_image_type)
 {
-	std::vector<Light *> result;
-	for(const auto &l : lights_)
+	if(layer_type == Layer::Disabled)
 	{
-		if(l.second->lightEnabled() && !l.second->photonOnly()) result.push_back(l.second);
+		Y_WARNING << "Scene: cannot create layer '" << Layer::getTypeName(layer_type) << "' of unknown or disabled layer type" << YENDL;
+		return;
 	}
-	return result;
+
+	if(Layer *existing_layer = layers_.find(layer_type))
+	{
+		if(existing_layer->getType() == layer_type &&
+				existing_layer->getImageType() == image_type &&
+				existing_layer->getExportedImageType() == exported_image_type) return;
+
+		std::stringstream ss;
+		ss << "Scene: layer '" << Layer::getTypeName(layer_type) << "' was previously defined as: (" << (existing_layer->isExported() ? "exported" : "internal") << ")";
+		if(existing_layer->hasInternalImage()) ss << " with internal image type: '"  << existing_layer->getImageTypeName() << "'";
+		if(existing_layer->isExported()) ss << " with exported image type: '"  << existing_layer->getExportedImageTypeName() << "'";
+		Y_DEBUG << ss.str() << YENDL;
+
+		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
+		{
+			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' had previously a defined internal image which cannot be removed." << YENDL;
+		}
+		else existing_layer->setImageType(image_type);
+
+		if(exported_image_type == Image::Type::None && existing_layer->getExportedImageType() != Image::Type::None)
+		{
+			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' was previously an exported layer and cannot be changed into an internal layer now." << YENDL;
+		}
+		else existing_layer->setExportedImageType(exported_image_type);
+
+		existing_layer->setType(layer_type);
+
+		ss.clear();
+		ss << "Scene: layer redefined (" << (existing_layer->isExported() ? "exported" : "internal") << ") '" << Layer::getTypeName(layer_type) << "')";
+		if(existing_layer->hasInternalImage()) ss << " with internal image type: '" << existing_layer->getImageTypeName() << "'";
+		if(existing_layer->isExported()) ss << " with exported image type: '" << existing_layer->getExportedImageTypeName() << "'";
+		Y_INFO << ss.str() << YENDL;
+	}
+	else
+	{
+		Layer new_layer(layer_type, image_type, exported_image_type);
+		layers_.set(layer_type, new_layer);
+
+		std::stringstream ss;
+		ss << "Scene: layer defined (" << (new_layer.isExported() ? "exported" : "internal") << ") '" << Layer::getTypeName(layer_type) << "')";
+		if(new_layer.hasInternalImage()) ss << " with internal image type: '" << new_layer.getImageTypeName() << "'";
+		if(new_layer.isExported()) ss << " with exported image type: '" << new_layer.getExportedImageTypeName() << "'";
+		Y_INFO << ss.str() << YENDL;
+	}
 }
 
-const std::vector<Light *> Scene::getLightsEmittingCausticPhotons() const
+void Scene::setupLayers(const ParamMap &params)
 {
-	std::vector<Light *> result;
-	for(const auto &l : lights_)
+	Y_DEBUG PRTEXT(**Scene::setupLayers) PREND; params.printDebug();
+	layers_.clear();
+	setEdgeToonParams(params);
+	setMaskParams(params);
+	//by default we will have an external/internal Combined layer
+	defineLayer(Layer::Combined, Image::Type::ColorAlpha, Image::Type::ColorAlpha);
+	//Generate any necessary auxiliar render passes
+	defineLayer(Layer::DebugSamplingFactor, Image::Type::Gray); //This auxiliary layer will always be needed for material-specific number of samples calculation
+
+	for(const auto &param : params)
 	{
-		if(l.second->lightEnabled() && l.second->shootsCausticP()) result.push_back(l.second);
+		if(param.first.substr(0, 13) == "layer_define_")
+		{
+			std::string param_value_string;
+			param.second.getVal(param_value_string);
+			defineLayer(Layer::getType(param_value_string), Image::Type::ColorAlpha, Image::Type::ColorAlpha);
+		}
 	}
-	return result;
+
+	for(const auto &layer : layers_)
+	{
+		//If any internal layer needs an auxiliary internal layer and/or auxiliary Render layer, enable also the auxiliary layeres.
+		switch(layer.first)
+		{
+			case Layer::ZDepthNorm:
+				defineLayer(Layer::Mist);
+				break;
+
+			case Layer::Mist:
+				defineLayer(Layer::ZDepthNorm);
+				break;
+
+			case Layer::ReflectAll:
+				defineLayer(Layer::ReflectPerfect);
+				defineLayer(Layer::Glossy);
+				defineLayer(Layer::GlossyIndirect);
+				break;
+
+			case Layer::RefractAll:
+				defineLayer(Layer::RefractPerfect);
+				defineLayer(Layer::Trans);
+				defineLayer(Layer::TransIndirect);
+				break;
+
+			case Layer::IndirectAll:
+				defineLayer(Layer::Indirect);
+				defineLayer(Layer::DiffuseIndirect);
+				break;
+
+			case Layer::ObjIndexMaskAll:
+				defineLayer(Layer::ObjIndexMask);
+				defineLayer(Layer::ObjIndexMaskShadow);
+				break;
+
+			case Layer::MatIndexMaskAll:
+				defineLayer(Layer::MatIndexMask);
+				defineLayer(Layer::MatIndexMaskShadow);
+				break;
+
+			case Layer::DebugFacesEdges:
+				defineLayer(Layer::NormalGeom, Image::Type::ColorAlpha);
+				defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+				break;
+
+			case Layer::DebugObjectsEdges:
+				defineLayer(Layer::NormalSmooth, Image::Type::ColorAlpha);
+				defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+				break;
+
+			case Layer::Toon:
+				defineLayer(Layer::DebugObjectsEdges, Image::Type::ColorAlpha);
+				break;
+
+			default:
+				break;
+		}
+	}
 }
 
-const std::vector<Light *> Scene::getLightsEmittingDiffusePhotons() const
+void Scene::setMaskParams(const ParamMap &params)
 {
-	std::vector<Light *> result;
-	for(const auto &l : lights_)
-	{
-		if(l.second->lightEnabled() && l.second->shootsDiffuseP()) result.push_back(l.second);
-	}
-	return result;
+	std::string external_pass, internal_pass;
+	int mask_obj_index = 0, mask_mat_index = 0;
+	bool mask_invert = false;
+	bool mask_only = false;
+
+	params.getParam("mask_obj_index", mask_obj_index);
+	params.getParam("mask_mat_index", mask_mat_index);
+	params.getParam("mask_invert", mask_invert);
+	params.getParam("mask_only", mask_only);
+
+	MaskParams mask_params;
+	mask_params.obj_index_ = (float) mask_obj_index;
+	mask_params.mat_index_ = (float) mask_mat_index;
+	mask_params.invert_ = mask_invert;
+	mask_params.only_ = mask_only;
+
+	layers_.setMaskParams(mask_params);
 }
 
-bool Scene::passEnabled(const IntPassType &pass_type) const { return getPassesSettings()->intPassesSettings().enabled(pass_type); }
+void Scene::setEdgeToonParams(const ParamMap &params)
+{
+	Rgb toon_edge_color(0.f);
+	int object_edge_thickness = 2;
+	float object_edge_threshold = 0.3f;
+	float object_edge_smoothness = 0.75f;
+	float toon_pre_smooth = 3.f;
+	float toon_quantization = 0.1f;
+	float toon_post_smooth = 3.f;
+	int faces_edge_thickness = 1;
+	float faces_edge_threshold = 0.01f;
+	float faces_edge_smoothness = 0.5f;
 
-void Scene::setOutput2(ColorOutput *out_2) {
-	output_2_ = out_2;
-	output_2_->setPassesSettings(getPassesSettings());
+	params.getParam("layer_toon_edge_color", toon_edge_color);
+	params.getParam("objectEdgeThickness", object_edge_thickness);
+	params.getParam("objectEdgeThreshold", object_edge_threshold);
+	params.getParam("objectEdgeSmoothness", object_edge_smoothness);
+	params.getParam("layer_toon_pre_smooth", toon_pre_smooth);
+	params.getParam("layer_toon_quantization", toon_quantization);
+	params.getParam("layer_toon_post_smooth", toon_post_smooth);
+	params.getParam("facesEdgeThickness", faces_edge_thickness);
+	params.getParam("facesEdgeThreshold", faces_edge_threshold);
+	params.getParam("facesEdgeSmoothness", faces_edge_smoothness);
+
+	EdgeToonParams edge_params;
+	edge_params.thickness_ = object_edge_thickness;
+	edge_params.threshold_ = object_edge_threshold;
+	edge_params.smoothness_ = object_edge_smoothness;
+	edge_params.toon_color_[0] = toon_edge_color.r_;
+	edge_params.toon_color_[1] = toon_edge_color.g_;
+	edge_params.toon_color_[2] = toon_edge_color.b_;
+	edge_params.toon_pre_smooth_ = toon_pre_smooth;
+	edge_params.toon_quantization_ = toon_quantization;
+	edge_params.toon_post_smooth_ = toon_post_smooth;
+	edge_params.face_thickness_ = faces_edge_thickness;
+	edge_params.face_threshold_ = faces_edge_threshold;
+	edge_params.face_smoothness_ = faces_edge_smoothness;
+
+	layers_.setEdgeToonParams(edge_params);
 }
-
 
 END_YAFARAY

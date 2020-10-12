@@ -78,7 +78,7 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	return ray;
 }
 
-Camera *AngularCamera::factory(ParamMap &params, Scene &scene)
+Camera *AngularCamera::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;

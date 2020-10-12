@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 struct PSample;
 
 float NoiseVolumeRegion::density(Point3 p) const
@@ -42,7 +42,7 @@ float NoiseVolumeRegion::density(Point3 p) const
 	return d;
 }
 
-VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, Scene &scene)
+VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;

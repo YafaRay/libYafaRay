@@ -1,8 +1,6 @@
+#pragma once
 /****************************************************************************
- *
- *      imagehandler_png.h: Portable Network Graphics (PNG) format handler
  *      This is part of the libYafaRay package
- *      Copyright (C) 2010 Rodrigo Placencia Vazquez
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -17,33 +15,25 @@
  *      You should have received a copy of the GNU Lesser General Public
  *      License along with this library; if not, write to the Free Software
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_PNG_H
-#define YAFARAY_IMAGEHANDLER_PNG_H
-
-#include "imagehandler/imagehandler.h"
+#ifndef YAFARAY_OUTPUT_DEBUG_H
+#define YAFARAY_OUTPUT_DEBUG_H
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
-struct PngStructs;
-
-class PngHandler final : public ImageHandler
+class LIBYAFARAY_EXPORT DebugOutput final : public ColorOutput
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		DebugOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply) { }
 
 	private:
-		PngHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool loadFromMemory(const uint8_t *data, size_t size) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
-		void readFromStructs(const PngStructs &png_structs);
-		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
-		bool fillWriteStructs(FILE *fp, unsigned int color_type, const PngStructs &png_structs, int img_index);
+		virtual bool putPixel(int x, int y, const ColorLayer &color_layer) override;
+		void flush(const RenderControl &render_control) override;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_PNG_H
+#endif //YAFARAY_OUTPUT_DEBUG_H

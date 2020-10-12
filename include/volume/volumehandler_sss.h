@@ -30,12 +30,11 @@ class Scene;
 class SssVolumeHandler final : public BeerVolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, Scene &scene);
+		static VolumeHandler *factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist);
-		//virtual bool transmittance(const renderState_t &state, const ray_t &ray, Rgb &col) const { return false; };
-		virtual bool scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const override;
+		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const override;
 
 		float dist_s_;
 		Rgb scatter_col_;

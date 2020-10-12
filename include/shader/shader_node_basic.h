@@ -29,21 +29,21 @@ BEGIN_YAFARAY
 class TextureMapperNode final : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, Scene &scene);
+		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		enum Coords : int { Uv, Glob, Orco, Tran, Nor, Refl, Win, Stick, Stress, Tan };
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
 		TextureMapperNode(const Texture *texture);
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
-		virtual void evalDerivative(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
+		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 
 		void setup();
-		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderState &state) const;
+		void getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const;
 		Point3 doMapping(const Point3 &p, const Vec3 &n) const ;
 
 		Coords coords_;
@@ -62,12 +62,12 @@ class TextureMapperNode final : public ShaderNode
 class ValueNode final : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, Scene &scene);
+		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) {}
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override { return true; };
 
 		Rgba color_;
@@ -77,7 +77,7 @@ class ValueNode final : public ShaderNode
 class MixNode : public ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, Scene &scene);
+		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 
 	protected:
 		MixNode();
@@ -85,8 +85,8 @@ class MixNode : public ShaderNode
 
 	private:
 		MixNode(float val);
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderState &state, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
+		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
 

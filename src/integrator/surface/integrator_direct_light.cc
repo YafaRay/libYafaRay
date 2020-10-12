@@ -21,14 +21,15 @@
 
 #include "integrator/surface/integrator_direct_light.h"
 #include "geometry/surface.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "render/imagesplitter.h"
 #include "common/timer.h"
 #include "material/material.h"
-#include "render/passes.h"
 #include "background/background.h"
+#include "color/color_layers.h"
+#include "render/render_data.h"
 
 BEGIN_YAFARAY
 
@@ -44,7 +45,7 @@ DirectLightIntegrator::DirectLightIntegrator(bool transp_shad, int shadow_depth,
 	r_depth_ = ray_depth;
 }
 
-bool DirectLightIntegrator::preprocess()
+bool DirectLightIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
 	bool success = true;
 	std::stringstream set;
@@ -64,11 +65,11 @@ bool DirectLightIntegrator::preprocess()
 		set << "AO samples=" << ao_samples_ << " dist=" << ao_dist_ << "  ";
 	}
 
-	lights_ = scene_->getLightsVisible();
+	lights_ = render_view->getLightsVisible();
 
 	if(use_photon_caustics_)
 	{
-		success = createCausticMap();
+		success = createCausticMap(render_view, render_control);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << n_caus_search_ << " radius=" << caus_radius_ << " depth=" << caus_depth_ << "  ";
 
 		if(photon_map_processing_ == PhotonsLoad)
@@ -87,22 +88,22 @@ bool DirectLightIntegrator::preprocess()
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
-	logger__.appendRenderSettings(set.str());
+	render_info_ += set.str();
 
 	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
 
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *int_passes) const
+Rgba DirectLightIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
-	const bool int_passes_used = state.raylevel_ == 0 && int_passes && int_passes->size() > 1;
+	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 
 	Rgb col(0.0);
 	float alpha;
 	SurfacePoint sp;
-	void *o_udat = state.userdata_;
-	bool old_include_lights = state.include_lights_;
+	void *o_udat = render_data.arena_;
+	bool old_include_lights = render_data.include_lights_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
@@ -111,68 +112,68 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 
 	if(scene_->intersect(ray, sp)) // If it hits
 	{
-		alignas (16) unsigned char userdata[user_data_size__];
-		state.userdata_ = static_cast<void *>(userdata);
+		alignas (16) unsigned char userdata[user_data_size_];
+		render_data.arena_ = static_cast<void *>(userdata);
 
 		const Material *material = sp.material_;
 		BsdfFlags bsdfs;
 
 		Vec3 wo = -ray.dir_;
-		if(state.raylevel_ == 0) state.include_lights_ = true;
+		if(render_data.raylevel_ == 0) render_data.include_lights_ = true;
 
-		material->initBsdf(state, sp, bsdfs);
+		material->initBsdf(render_data, sp, bsdfs);
 
 		if(additional_depth < material->getAdditionalDepth()) additional_depth = material->getAdditionalDepth();
 
 
-		if(Material::hasFlag(bsdfs, BsdfFlags::Emit))
+		if(bsdfs.hasAny(BsdfFlags::Emit))
 		{
-			const Rgb col_tmp = material->emit(state, sp, wo);
+			const Rgb col_tmp = material->emit(render_data, sp, wo);
 			col += col_tmp;
-			if(int_passes_used)
+			if(layers_used)
 			{
-				if(Rgba * color_pass = int_passes->find(PassEmit)) *color_pass = col_tmp;
+				if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ = col_tmp;
 			}
 		}
 
-		if(Material::hasFlag(bsdfs, BsdfFlags::Diffuse))
+		if(bsdfs.hasAny(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(state, sp, wo, int_passes);
+			col += estimateAllDirectLight(render_data, sp, wo, color_layers);
 
 			if(use_photon_caustics_)
 			{
-				Rgb col_tmp = estimateCausticPhotons(state, sp, wo);
+				Rgb col_tmp = estimateCausticPhotons(render_data, sp, wo);
 				if(aa_noise_params_.clamp_indirect_ > 0) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 				col += col_tmp;
-				if(int_passes_used)
+				if(layers_used)
 				{
-					if(Rgba *color_pass = int_passes->find(PassIndirect)) *color_pass = col_tmp;
+					if(ColorLayer *color_layer = color_layers->find(Layer::Indirect)) color_layer->color_ = col_tmp;
 				}
 			}
 
-			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(state, sp, wo);
+			if(use_ambient_occlusion_) col += sampleAmbientOcclusion(render_data, sp, wo);
 		}
 
-		recursiveRaytrace(state, ray, bsdfs, sp, wo, col, alpha, additional_depth, int_passes);
+		recursiveRaytrace(render_data, ray, bsdfs, sp, wo, col, alpha, additional_depth, color_layers);
 
-		if(int_passes_used)
+		if(layers_used)
 		{
-			generateCommonPassesSettings(state, sp, ray, int_passes);
+			generateCommonLayers(render_data, sp, ray, color_layers);
 
-			if(Rgba *color_pass = int_passes->find(PassAo))
+			if(ColorLayer *color_layer = color_layers->find(Layer::Ao))
 			{
-				*color_pass = sampleAmbientOcclusionPass(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionLayer(render_data, sp, wo);
 			}
 
-			if(Rgba *color_pass = int_passes->find(PassAoClay))
+			if(ColorLayer *color_layer = color_layers->find(Layer::AoClay))
 			{
-				*color_pass = sampleAmbientOcclusionPassClay(state, sp, wo);
+				color_layer->color_ = sampleAmbientOcclusionClayLayer(render_data, sp, wo);
 			}
 		}
 
 		if(transp_refracted_background_)
 		{
-			float m_alpha = material->getAlpha(state, sp, wo);
+			float m_alpha = material->getAlpha(render_data, sp, wo);
 			alpha = m_alpha + (1.f - m_alpha) * alpha;
 		}
 		else alpha = 1.0;
@@ -181,27 +182,27 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 	{
 		if(scene_->getBackground() && !transp_refracted_background_)
 		{
-			const Rgb col_tmp = (*scene_->getBackground())(ray, state);
+			const Rgb col_tmp = (*scene_->getBackground())(ray, render_data);
 			col += col_tmp;
-			if(int_passes_used)
+			if(layers_used)
 			{
-				if(Rgba *color_pass = int_passes->find(PassEnv)) *color_pass = col_tmp;
+				if(ColorLayer *color_layer = color_layers->find(Layer::Env)) color_layer->color_ = col_tmp;
 			}
 		}
 	}
 
-	state.userdata_ = o_udat;
-	state.include_lights_ = old_include_lights;
+	render_data.arena_ = o_udat;
+	render_data.include_lights_ = old_include_lights;
 
-	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(state, ray);
-	Rgb col_vol_integration = scene_->vol_integrator_->integrate(state, ray);
+	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
+	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);
 
 	if(transp_background_) alpha = std::max(alpha, 1.f - col_vol_transmittance.r_);
 
-	if(int_passes_used)
+	if(layers_used)
 	{
-		if(Rgba *color_pass = int_passes->find(PassVolumeTransmittance)) *color_pass = col_vol_transmittance;
-		if(Rgba *color_pass = int_passes->find(PassVolumeIntegration)) *color_pass = col_vol_integration;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeTransmittance)) color_layer->color_ = col_vol_transmittance;
+		if(ColorLayer *color_layer = color_layers->find(Layer::VolumeIntegration)) color_layer->color_ = col_vol_integration;
 	}
 
 	col = (col * col_vol_transmittance) + col_vol_integration;
@@ -209,7 +210,7 @@ Rgba DirectLightIntegrator::integrate(RenderState &state, DiffRay &ray, int addi
 	return Rgba(col, alpha);
 }
 
-Integrator *DirectLightIntegrator::factory(ParamMap &params, Scene &scene)
+Integrator *DirectLightIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool caustics = false;

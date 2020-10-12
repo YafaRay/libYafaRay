@@ -24,8 +24,9 @@
 
 BEGIN_YAFARAY
 
-Texture *Texture::factory(ParamMap &params, Scene &scene)
+Texture *Texture::factory(ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Texture) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "blend") return BlendTexture::factory(params, scene);
@@ -38,6 +39,30 @@ Texture *Texture::factory(ParamMap &params, Scene &scene)
 	else if(type == "rgb_cube") return RgbCubeTexture::factory(params, scene);
 	else if(type == "image") return ImageTexture::factory(params, scene);
 	else return nullptr;
+}
+
+InterpolationType Texture::getInterpolationTypeFromName(const std::string &interpolation_type_name)
+{
+	// interpolation type, bilinear default
+	if(interpolation_type_name == "none") return InterpolationType::None;
+	else if(interpolation_type_name == "bicubic") return InterpolationType::Bicubic;
+	else if(interpolation_type_name == "mipmap_trilinear") return InterpolationType::Trilinear;
+	else if(interpolation_type_name == "mipmap_ewa") return InterpolationType::Ewa;
+	else return InterpolationType::Bilinear;
+}
+
+std::string Texture::getInterpolationTypeName(const InterpolationType &interpolation_type)
+{
+	// interpolation type, bilinear default
+	switch(interpolation_type)
+	{
+		case InterpolationType::None: return "none";
+		case InterpolationType::Bilinear: return "bilinear";
+		case InterpolationType::Bicubic: return "bicubic";
+		case InterpolationType::Trilinear: return "mipmap_trilinear";
+		case InterpolationType::Ewa: return "mipmap_ewa";
+		default: return "bilinear";
+	}
 }
 
 END_YAFARAY

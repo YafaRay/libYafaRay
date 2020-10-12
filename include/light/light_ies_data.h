@@ -24,7 +24,7 @@
 
 #include "constants.h"
 #include <fstream>
-#include "common/logging.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 //!TODO: Preblur data

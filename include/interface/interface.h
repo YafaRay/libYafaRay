@@ -26,7 +26,6 @@
 #include <string>
 #include "color/color.h"
 
-
 BEGIN_YAFARAY
 
 class Light;
@@ -39,13 +38,12 @@ class VolumeRegion;
 class Scene;
 class Scene;
 class ColorOutput;
+class RenderView;
 class ParamMap;
 class ImageFilm;
-class ImageHandler;
+class Format;
 class ProgressBar;
 class Matrix4;
-class PassesSettings;
-enum class ImageType : int;
 
 class LIBYAFARAY_EXPORT Interface
 {
@@ -97,24 +95,19 @@ class LIBYAFARAY_EXPORT Interface
 		virtual Background 	*createBackground(const char *name);
 		virtual Integrator 	*createIntegrator(const char *name);
 		virtual VolumeRegion 	*createVolumeRegion(const char *name);
-		virtual ImageHandler	*createImageHandler(const char *name, bool add_to_table = true);  //!< The addToTable parameter, if true, allows to avoid the interface from taking ownership of the image handler
+		virtual ColorOutput *createOutput(const char *name);
+		virtual RenderView *createRenderView(const char *name);
 		virtual unsigned int 	createObject(const char *name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr); //!< render the scene...
-		virtual bool setLoggingAndBadgeSettings();
-		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const std::string &image_type_name);
-		virtual bool setupRenderPasses(); //!< setup render passes information
+		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
+		void addLayer(const std::string &layer_type_name, const std::string &exported_image_type_name);
+		virtual bool setupLayers();
 		bool setInteractive(bool interactive);
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }
-		virtual bool getRenderedImage(int num_view, ColorOutput &output); //!< put the rendered image to output
 
 		void setConsoleVerbosityLevel(const std::string &str_v_level);
 		void setLogVerbosityLevel(const std::string &str_v_level);
-
-		virtual void setParamsBadgePosition(const std::string &badge_position = "none");
-		virtual bool getDrawParams();
-
 		std::string getVersion() const; //!< Get version to check against the exporters
 
 		/*! Console Printing wrappers to report in color with yafaray's own console coloring */
@@ -126,15 +119,12 @@ class LIBYAFARAY_EXPORT Interface
 		void printError(const std::string &msg) const;
 
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
-		void setOutput2(ColorOutput *out_2);
-		const PassesSettings *getPassesSettings() const;
 
 	protected:
 		ParamMap *params_;
 		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
 		Scene *scene_;
-		ImageFilm *film_;
 		float input_gamma_;
 		ColorSpace input_color_space_;
 };

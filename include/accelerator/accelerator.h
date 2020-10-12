@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 class IntersectData;
 class Rgb;
 class Bound;
@@ -38,7 +38,7 @@ template<class T> class Accelerator
 		virtual ~Accelerator() { };
 		virtual bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const = 0;
 		virtual bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const = 0;
-		virtual bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const = 0;
+		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const = 0;
 		virtual Bound getBound() const = 0;
 };
 

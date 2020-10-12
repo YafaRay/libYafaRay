@@ -32,8 +32,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 	public:
 		XmlExport();
 		// directly related to scene_t:
-		virtual bool setLoggingAndBadgeSettings() override;
-		virtual bool setupRenderPasses() override; //!< setup render passes information
+		virtual bool setupLayers() override; //!< setup render passes information
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
 		virtual unsigned int getNextFreeId() override;
@@ -58,9 +57,11 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual Background 	*createBackground(const char *name) override;
 		virtual Integrator 	*createIntegrator(const char *name) override;
 		virtual VolumeRegion 	*createVolumeRegion(const char *name) override;
+		virtual ColorOutput *createOutput(const char *name) override;
+		virtual RenderView *createRenderView(const char *name) override;
 		virtual unsigned int 	createObject(const char *name) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
-		virtual void render(ColorOutput &output, ProgressBar *pb = nullptr) override; //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...
 		void setOutfile(const char *fname);
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 

@@ -20,7 +20,7 @@
  */
 
 // YafaRay Headers
-#include "common/logging.h"
+#include "common/logger.h"
 #include "color/color_console.h"
 #include "gui/interface_qt.h"
 #include "mywindow.h"
@@ -33,7 +33,7 @@
 #include "interface/interface.h"
 #include "common/param.h"
 #include "output/output_image.h"
-#include "imagehandler/imagehandler.h"
+#include "format/format.h"
 
 // Embeded Resources:
 
@@ -254,8 +254,8 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	//FIXME:		this, SLOT(setDrawParams(bool)));
 
 	ui_->actionShowRGB->setChecked(true);
-	use_draw_params_ = interface_->getDrawParams();
-	ui_->actionDrawParams->setChecked(use_draw_params_);
+	//FIXME badge use_draw_params_ = interface_->getDrawParams();
+	//FIXME badge ui_->actionDrawParams->setChecked(use_draw_params_);
 
 	// offset when using border rendering
 	render_->setRenderBorderStart(QPoint(b_start_x, b_start_y));
@@ -357,18 +357,18 @@ void MainWindow::slotFinished()
 		interface_->paramsSetBool("alpha_channel", auto_save_alpha_);
 		interface_->paramsSetBool("z_channel", use_zbuf_);
 
-		ImageHandler *ih = interface_->createImageHandler("saver", false);
-		ImageOutput *out = new ImageOutput(ih, file_name_, b_x_, b_y_);
+		Format *format = interface_->createImageHandler("saver", false);
+		ImageOutput *out = new ImageOutput(file_name_, b_x_, b_y_, false);
 
 		interface_->paramsClearAll();
 
-		interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
+		//interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
 		render_saved_ = true;
 
 		rt = QString("Image Auto-saved. ");
 
-		delete ih;
+		delete format;
 		delete out;
 
 		if(auto_close_)
@@ -484,7 +484,7 @@ void MainWindow::setDrawParams(bool checked)
 	if(!render_->isRendering())
 	{
 		//FIXME: interf->setDrawParams(useDrawParams);
-		interface_->getRenderedImage(0, *output_); //FIXME DAVID VIEWS!!
+		//interface_->getRenderedImage(0, *output_); //FIXME DAVID VIEWS!!
 		showColor(true);
 	}
 }
@@ -561,15 +561,14 @@ bool MainWindow::saveDlg()
 		interface_->paramsSetBool("alpha_channel", save_with_alpha_);
 
 		last_path_ = QDir(file_name).absolutePath();
-
-		ImageHandler *ih = interface_->createImageHandler("saver", false);
-		ImageOutput *out = new ImageOutput(ih, last_path_.toStdString(), b_x_, b_y_);
-
+		ImageOutput *out = new ImageOutput(last_path_.toStdString(), b_x_, b_y_, false);
+		//FIXME add output to scene
 		interface_->paramsClearAll();
 
 		//FIXME: interf->setDrawParams(useDrawParams);
 
-		interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
+
+		//interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
 		render_saved_ = true;
 
@@ -579,8 +578,6 @@ bool MainWindow::saveDlg()
 		savemesg.append("saved.");
 
 		ui_->yafLabel->setText(savemesg);
-
-		delete ih;
 		delete out;
 	}
 

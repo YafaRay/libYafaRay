@@ -26,6 +26,7 @@
 #define YAFARAY_STRING_H
 
 #include <string>
+#include <vector>
 #include <sstream>
 #include <cctype>
 #include <locale>

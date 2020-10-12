@@ -22,6 +22,7 @@
 #include "qtoutput.h"
 #include "events.h"
 #include "color/color.h"
+#include "color/color_layers.h"
 #include <QCoreApplication>
 #include <iostream>
 #include <cstdlib>
@@ -39,57 +40,34 @@ void QtOutput::setRenderSize(const QSize &s)
 / colorOutput_t implementations
 =====================================*/
 
-bool QtOutput::putPixel(int num_view, int x, int y, int ext_pass, const yafaray4::Rgba &color, bool alpha)
+bool QtOutput::putPixel(int x, int y, const yafaray4::ColorLayer &color_layer)
 {
-	int r = std::max(0, std::min(255, (int)(color.r_ * 255.f)));
-	int g = std::max(0, std::min(255, (int)(color.g_ * 255.f)));
-	int b = std::max(0, std::min(255, (int)(color.b_ * 255.f)));
+	int r = std::max(0, std::min(255, (int)(color_layer.color_.r_ * 255.f)));
+	int g = std::max(0, std::min(255, (int)(color_layer.color_.g_ * 255.f)));
+	int b = std::max(0, std::min(255, (int)(color_layer.color_.b_ * 255.f)));
 	QRgb aval = Qt::white;
 	//QRgb zval = Qt::black;
 	QRgb rgb = qRgb(r, g, b);
 
-	if(alpha)
-	{
-		int a = std::max(0, std::min(255, (int)(color.a_ * 255.f)));
-		aval = qRgb(a, a, a);
-	}
+	int a = std::max(0, std::min(255, (int)(color_layer.color_.a_ * 255.f)));
+	aval = qRgb(a, a, a);
 
-	render_buffer_->setPixel(x, y, rgb, aval, alpha);
+	render_buffer_->setPixel(x, y, rgb, aval);
 
 	return true;
 }
 
-bool QtOutput::putPixel(int num_view, int x, int y, const std::vector<yafaray4::Rgba> &colors, bool alpha)
-{
-	int r = std::max(0, std::min(255, (int)(colors.at(0).r_ * 255.f)));
-	int g = std::max(0, std::min(255, (int)(colors.at(0).g_ * 255.f)));
-	int b = std::max(0, std::min(255, (int)(colors.at(0).b_ * 255.f)));
-	QRgb aval = Qt::white;
-	//QRgb zval = Qt::black;
-	QRgb rgb = qRgb(r, g, b);
-
-	if(alpha)
-	{
-		int a = std::max(0, std::min(255, (int)(colors.at(0).a_ * 255.f)));
-		aval = qRgb(a, a, a);
-	}
-
-	render_buffer_->setPixel(x, y, rgb, aval, alpha);
-
-	return true;
-}
-
-void QtOutput::flush(int num_view)
+void QtOutput::flush(const RenderControl &render_control)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(), true));
 }
 
-void QtOutput::flushArea(int num_view, int x_0, int y_0, int x_1, int y_1)
+void QtOutput::flushArea(int x_0, int y_0, int x_1, int y_1)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(x_0, y_0, x_1 - x_0, y_1 - y_0)));
 }
 
-void QtOutput::highlightArea(int num_view, int x_0, int y_0, int x_1, int y_1)
+void QtOutput::highlightArea(int x_0, int y_0, int x_1, int y_1)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiAreaHighliteEvent(QRect(x_0, y_0, x_1 - x_0, y_1 - y_0)));
 }

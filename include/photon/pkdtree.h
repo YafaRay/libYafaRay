@@ -21,7 +21,7 @@
 #define YAFARAY_PKDTREE_H
 
 #include "constants.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/thread.h"
 #include "geometry/bound.h"
 #include <vector>

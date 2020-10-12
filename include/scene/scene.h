@@ -22,29 +22,15 @@
 
 #include "constants.h"
 #include "common/thread.h"
+#include "common/layers.h"
+#include "render/render_view.h"
+#include "render/render_control.h"
+#include "image/image.h"
 #include "common/aa_noise_params.h"
-#include "render/passes.h"
 #include "geometry/bound.h"
 #include <vector>
 #include <map>
 #include <list>
-
-#define Y_SIG_ABORT 1
-#define Y_SIG_PAUSE 1<<1
-#define Y_SIG_STOP  1<<2
-
-constexpr unsigned int user_data_size__ = 1024;
-
-// Object flags
-
-// Lower order byte indicates type
-constexpr unsigned int trim__ = 0x0000;
-constexpr unsigned int vtrim__ = 0x0001;
-constexpr unsigned int mtrim__ = 0x0002;
-
-// Higher order byte indicates options
-constexpr unsigned int invisiblem__ = 0x0100;
-constexpr unsigned int basemesh__ = 0x0200;
 
 BEGIN_YAFARAY
 
@@ -57,79 +43,25 @@ class Camera;
 class Background;
 class ShaderNode;
 class ObjectGeometric;
+class TriangleObject;
 class ImageFilm;
 class Scene;
 class ColorOutput;
 class ProgressBar;
-class ImageHandler;
+class Format;
 class ParamMap;
-template<class T> class Accelerator;
-class Primitive;
-class Triangle;
-class TriangleObject;
-class MeshObject;
 class Integrator;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
-class Random;
 class Matrix4;
 class Rgb;
 struct ObjData;
+class RenderData;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
 
-/*!
-	\var renderState_t::wavelength
-		the range is defined going from 400nm (0.0) to 700nm (1.0)
-		although the widest range humans can perceive is ofteb given 380-780nm.
-*/
-struct RenderState
-{
-	RenderState(): raylevel_(0), current_pass_(0), pixel_sample_(0), ray_division_(1), ray_offset_(0), dc_1_(0), dc_2_(0),
-				   traveled_(0.0), chromatic_(true), include_lights_(false), userdata_(nullptr), lightdata_(nullptr), prng_(nullptr) {};
-	RenderState(Random *rand): raylevel_(0), current_pass_(0), pixel_sample_(0), ray_division_(1), ray_offset_(0), dc_1_(0), dc_2_(0),
-							   traveled_(0.0), chromatic_(true), include_lights_(false), userdata_(nullptr), lightdata_(nullptr), prng_(rand) {};
-	~RenderState() {};
-
-	int raylevel_;
-	float depth_;
-	float contribution_; //?
-	const void *skipelement_;
-	int current_pass_;
-	int pixel_sample_; //!< number of samples inside this pixels so far
-	int ray_division_; //!< keep track of trajectory splitting
-	int ray_offset_; //!< keep track of trajectory splitting
-	float dc_1_, dc_2_; //!< used to decorrelate samples from trajectory splitting
-	float traveled_;
-	int pixel_number_;
-	int thread_id_; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
-	unsigned int sampling_offs_; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
-	//point3d_t screenpos; //!< the image coordinates of the pixel being computed currently
-	const Camera *cam_;
-	bool chromatic_; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
-	bool include_lights_; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
-	float wavelength_; //!< the (normalized) wavelength being used when chromatic is false.
-	float time_; //!< the current (normalized) frame time
-	mutable void *userdata_; //!< a fixed amount of memory where materials may keep data to avoid recalculations...really need better memory management :(
-	void *lightdata_; //!< reserved; non-dirac lights may do some surface-point dependant initializations in the future to reduce redundancy...
-	Random *const prng_; //!< a pseudorandom number generator
-
-	//! set some initial values that are always the same before integrating a primary ray
-	void setDefaults()
-	{
-		raylevel_ = 0;
-		chromatic_ = true;
-		ray_division_ = 1;
-		ray_offset_ = 0;
-		dc_1_ = dc_2_ = 0.f;
-		traveled_ = 0;
-	}
-
-	//	protected:
-	explicit RenderState(const RenderState &r): prng_(r.prng_) {} //forbiden
-};
 
 /*! describes an instance of a scene, including all data and functionality to
 	create and render a whole scene on the lowest "layer".
@@ -140,17 +72,6 @@ struct RenderState
 	for general geometric primitives there will most likely be a separate class
 	to keep this one as optimized as possible;
 */
-
-struct SceneGeometryState
-{
-	std::list<unsigned int> stack_;
-	unsigned int changes_;
-	ObjId_t next_free_id_;
-	ObjData *cur_obj_;
-	Triangle *cur_tri_;
-	bool orco_;
-	float smooth_angle_;
-};
 
 class LIBYAFARAY_EXPORT Scene
 {
@@ -165,30 +86,28 @@ class LIBYAFARAY_EXPORT Scene
 		virtual bool endTriMesh() = 0;
 		virtual bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0) = 0;
 		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) = 0;
-		virtual int  addVertex(const Point3 &p) = 0;
-		virtual int  addVertex(const Point3 &p, const Point3 &orco) = 0;
+		virtual int addVertex(const Point3 &p) = 0;
+		virtual int addVertex(const Point3 &p, const Point3 &orco) = 0;
 		virtual void addNormal(const Vec3 &n) = 0;
 		virtual bool addTriangle(int a, int b, int c, const Material *mat) = 0;
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) = 0;
-		virtual int  addUv(float u, float v) = 0;
+		virtual int addUv(float u, float v) = 0;
 		virtual bool smoothMesh(const std::string &name, float angle) = 0;
 		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) = 0;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
-		virtual bool update() = 0;
+		virtual bool updateGeometry() = 0;
 		virtual void clearGeometry() = 0;
 
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const = 0;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const = 0;
-		virtual bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const = 0;
-		virtual bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const = 0;
+		virtual bool isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const = 0;
+		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const = 0;
 		virtual TriangleObject *getMesh(const std::string &name) const = 0;
 		virtual ObjectGeometric *getObject(const std::string &name) const = 0;
 
 		ObjId_t getNextFreeId();
 		bool startGeometry();
 		bool endGeometry();
-		void setCamera(Camera *cam);
-		void setImageFilm(ImageFilm *film);
 		void setBackground(Background *bg);
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
@@ -200,21 +119,16 @@ class LIBYAFARAY_EXPORT Scene
 		void clearNonGeometry();
 		void clearAll();
 		bool render();
-		void abort();
 
 		Background *getBackground() const;
-		const Camera *getCamera() const { return camera_; }
-		ImageFilm *getImageFilm() const { return image_film_; }
+		const ImageFilm *getImageFilm() const { return image_film_; }
+		RenderControl render_control_;
 		Bound getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
 		int getNumThreadsPhotons() const { return nthreads_photons_; }
-		int getSignals() const;
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
-		bool passEnabled(const IntPassType &pass_type) const;
-
-		enum SceneState { Ready, Geometry, Object, Vmap };
-		enum ChangeFlags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2,
-			CAll = CGeom | CLight | COther };
+		const RenderControl &getRenderControl() const { return render_control_; }
+		RenderControl &getRenderControl() { return render_control_; }
 
 		VolumeIntegrator *vol_integrator_;
 
@@ -228,40 +142,54 @@ class LIBYAFARAY_EXPORT Scene
 		Texture *getTexture(const std::string &name) const;
 		ShaderNode *getShaderNode(const std::string &name) const;
 		Camera *getCamera(const std::string &name) const;
-		Background 	*getBackground(const std::string &name) const;
-		Integrator 	*getIntegrator(const std::string &name) const;
+		Light *getLight(const std::string &name) const;
+		Background *getBackground(const std::string &name) const;
+		Integrator *getIntegrator(const std::string &name) const;
+		ColorOutput *getOutput(const std::string &name) const;
+		RenderView *getRenderView(const std::string &name) const;
+		const std::map<std::string, RenderView *> &getRenderViews() const { return render_views_; }
 		const std::map<std::string, VolumeRegion *> &getVolumeRegions() const { return volume_regions_; }
 		const std::map<std::string, Light *> &getLights() const { return lights_; }
-		const std::vector<Light *> getLightsVisible() const;
-		const std::vector<Light *> getLightsEmittingCausticPhotons() const;
-		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;
 
-		Light 		*createLight(const std::string &name, ParamMap &params);
-		Texture 		*createTexture(const std::string &name, ParamMap &params);
-		Material 	*createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
-		Camera 		*createCamera(const std::string &name, ParamMap &params);
-		Background 	*createBackground(const std::string &name, ParamMap &params);
-		Integrator 	*createIntegrator(const std::string &name, ParamMap &params);
-		ShaderNode 	*createShaderNode(const std::string &name, ParamMap &params);
-		VolumeHandler *createVolumeH(const std::string &name, const ParamMap &params);
-		VolumeRegion	*createVolumeRegion(const std::string &name, ParamMap &params);
-		ImageFilm	*createImageFilm(const ParamMap &params, ColorOutput &output);
-		ImageHandler *createImageHandler(const std::string &name, ParamMap &params);
+		Light *createLight(const std::string &name, ParamMap &params);
+		Texture *createTexture(const std::string &name, ParamMap &params);
+		Material *createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
+		Camera *createCamera(const std::string &name, ParamMap &params);
+		Background *createBackground(const std::string &name, ParamMap &params);
+		Integrator *createIntegrator(const std::string &name, ParamMap &params);
+		ShaderNode *createShaderNode(const std::string &name, ParamMap &params);
+		VolumeHandler *createVolumeH(const std::string &name, ParamMap &params);
+		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
+		RenderView *createRenderView(const std::string &name, ParamMap &params);
+		ColorOutput *createOutput(const std::string &name, ParamMap &params); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+		std::map<std::string, ColorOutput *> &getOutputs() { return outputs_; }
+		const std::map<std::string, ColorOutput *> getOutputs() const { return outputs_; }
 
-		bool			setupScene(Scene &scene, const ParamMap &params, ColorOutput &output, ProgressBar *pb = nullptr);
-		void createRenderPass(const std::string &ext_pass_name, const std::string &int_pass_name, const ImageType &image_type);
-		void setupRenderPasses(const ParamMap &params); //!< This function sets the additional render passes parameters and generates the auxiliary passes. Must be called *after* defining all render passes with the createRenderPass function.
-		const PassesSettings *getPassesSettings() const { return &passes_settings_; }
-		void			setupLoggingAndBadge(const ParamMap &params);
-		const 			std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
-		void			setOutput2(ColorOutput *out_2);
-		ColorOutput	*getOutput2() const { return output_2_; }
+		bool setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb = nullptr);
+		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None);
+		void setupLayers(const ParamMap &params); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+		const std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
+		const Layers &getLayers() const { return layers_; }
+		const Layers getLayersWithImages() const;
+		const Layers getLayersWithExportedImages() const;
+		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, T*> &map);
+
+	private:
+		void setMaskParams(const ParamMap &params);
+		void setEdgeToonParams(const ParamMap &params);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists = true);
 
 	protected:
 		template <class T> static void freeMap(std::map< std::string, T * > &map);
-
-		SceneGeometryState state_;
-		Camera *camera_ = nullptr;
+		struct CreationState
+		{
+			enum State { Ready, Geometry, Object };
+			enum Flags { CNone = 0, CGeom = 1, CLight = 1 << 1, COther = 1 << 2, CAll = CGeom | CLight | COther };
+			std::list<State> stack_;
+			unsigned int changes_;
+			ObjId_t next_free_id_;
+		};
+		CreationState creation_state_;
 		ImageFilm *image_film_ = nullptr;
 		Background *background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
@@ -270,23 +198,19 @@ class LIBYAFARAY_EXPORT Scene
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
 		int mode_ = 0; //!< sets the scene mode (0=triangle-only, 1=virtual primitives)
-		int signals_ = 0;
 
-		std::map<std::string, Light *> 	lights_;
-		std::map<std::string, Material *> 	materials_;
-		std::map<std::string, Texture *> 	textures_;
-		std::map<std::string, Camera *> 	cameras_;
+		std::map<std::string, Light *> lights_;
+		std::map<std::string, Material *> materials_;
+		std::map<std::string, Texture *> textures_;
+		std::map<std::string, Camera *> cameras_;
 		std::map<std::string, Background *> backgrounds_;
 		std::map<std::string, Integrator *> integrators_;
 		std::map<std::string, ShaderNode *> shaders_;
 		std::map<std::string, VolumeHandler *> volume_handlers_;
 		std::map<std::string, VolumeRegion *> volume_regions_;
-		std::map<std::string, ImageHandler *> imagehandlers_;
-
-		PassesSettings passes_settings_;
-		ColorOutput *output_2_ = nullptr; //secondary color output to export to file at the same time it's exported to Blender
-
-		mutable std::mutex sig_mutex_;
+		std::map<std::string, ColorOutput *> outputs_;
+		std::map<std::string, RenderView *> render_views_;
+		Layers layers_;
 };
 
 template <class T>

@@ -18,7 +18,7 @@
 
 #include "accelerator/accelerator.h"
 #include "accelerator/accelerator_kdtree.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -32,6 +32,7 @@ template class Accelerator<Primitive>;
 template<class T>
 Accelerator<T> *Accelerator<T>::factory(const T **primitives_list, ParamMap &params)
 {
+	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "kdtree")

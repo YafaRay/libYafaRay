@@ -18,46 +18,110 @@
  */
 
 #include "image/image.h"
-#include "render/passes.h"
+#include "image/image_buffers.h"
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>
 #endif
 
 BEGIN_YAFARAY
-Image::Image(int width, int height, const ImageType &type, const Optimization &optimization): width_(width), height_(height), type_(type), optimization_(optimization)
+Image::Image(int width, int height, const Type &type, const Optimization &optimization): width_(width), height_(height), type_(type), optimization_(optimization)
 {
 	switch(type_)
 	{
-		case ImageType::ColorAlphaWeight: buffer_ = new Rgba2DImageWeighed_t(width, height); break; //!< Rgba weighted float (160 bit/pixel)
-		case ImageType::ColorAlpha:
+		case Type::ColorAlphaWeight: buffer_ = new Rgba2DImageWeighed_t(width_, height_); break; //!< Rgba weighted float (160 bit/pixel)
+		case Type::ColorAlpha:
 			switch(optimization_)
 			{
 				default:
-				case Optimization::None: buffer_ = new Rgba2DImage_t(width, height); break; //!< Rgba float (128 bit/pixel)
-				case Optimization::Optimized: buffer_ = new RgbaOptimizedImage_t(width, height); break; //!< optimized Rgba (40 bit/pixel)
-				case Optimization::Compressed: buffer_ = new RgbaCompressedImage_t(width, height); break; //!< compressed Rgba (24 bit/pixel) LOSSY!
+				case Optimization::None: buffer_ = new Rgba2DImage_t(width_, height_); break; //!< Rgba float (128 bit/pixel)
+				case Optimization::Optimized: buffer_ = new RgbaOptimizedImage_t(width_, height_); break; //!< optimized Rgba (40 bit/pixel)
+				case Optimization::Compressed: buffer_ = new RgbaCompressedImage_t(width_, height_); break; //!< compressed Rgba (24 bit/pixel) LOSSY!
 			}
 			break;
-		case ImageType::Color:
+		case Type::Color:
 			switch(optimization_)
 			{
 				default:
-				case Optimization::None: buffer_ = new Rgb2DImage_t(width, height); break; //!< Rgb float (128 bit/pixel)
-				case Optimization::Optimized: buffer_ = new RgbOptimizedImage_t(width, height); break; //!< optimized Rgb (32 bit/pixel)
-				case Optimization::Compressed: buffer_ = new RgbCompressedImage_t(width, height); break; //!< compressed Rgb (16 bit/pixel) LOSSY!
+				case Optimization::None: buffer_ = new Rgb2DImage_t(width_, height_); break; //!< Rgb float (128 bit/pixel)
+				case Optimization::Optimized: buffer_ = new RgbOptimizedImage_t(width_, height_); break; //!< optimized Rgb (32 bit/pixel)
+				case Optimization::Compressed: buffer_ = new RgbCompressedImage_t(width_, height_); break; //!< compressed Rgb (16 bit/pixel) LOSSY!
 			}
 			break;
-		case ImageType::GrayWeight: buffer_ = new Gray2DImageWeighed_t(width, height); break; //!< grayscale weighted float (64 bit/pixel)
-		case ImageType::GrayAlpha: buffer_ = new GrayAlpha2DImage_t (width, height); break; //!< grayscale with alpha float (64 bit/pixel)
-		case ImageType::GrayAlphaWeight: buffer_ = new GrayAlpha2DImageWeighed_t (width, height); break; //!< grayscale weighted with alpha float (96 bit/pixel)
-		case ImageType::Gray:
+		case Type::GrayWeight: buffer_ = new Gray2DImageWeighed_t(width_, height_); break; //!< grayscale weighted float (64 bit/pixel)
+		case Type::GrayAlpha: buffer_ = new GrayAlpha2DImage_t (width_, height_); break; //!< grayscale with alpha float (64 bit/pixel)
+		case Type::GrayAlphaWeight: buffer_ = new GrayAlpha2DImageWeighed_t (width_, height_); break; //!< grayscale weighted with alpha float (96 bit/pixel)
+		case Type::Gray:
 			switch(optimization_)
 			{
 				default:
-				case Optimization::None: buffer_ = new Gray2DImage_t(width, height); break; //!< grayscale float (32 bit/pixel)
+				case Optimization::None: buffer_ = new Gray2DImage_t(width_, height_); break; //!< grayscale float (32 bit/pixel)
 				case Optimization::Optimized:
-				case Optimization::Compressed: buffer_ = new GrayOptimizedImage_t(width, height); break; //!< optimized grayscale (8 bit/pixel)
+				case Optimization::Compressed: buffer_ = new GrayOptimizedImage_t(width_, height_); break; //!< optimized grayscale (8 bit/pixel)
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+Image::Image(const Image &image) : width_(image.width_), height_(image.height_), type_(image.type_), optimization_(image.optimization_)
+{
+	switch(type_)
+	{
+		case Type::ColorAlphaWeight:
+			buffer_ = new Rgba2DImageWeighed_t(*static_cast<Rgba2DImageWeighed_t *>(image.buffer_));
+			break;
+		case Type::ColorAlpha:
+			switch(optimization_)
+			{
+				default:
+				case Optimization::None:
+					buffer_ = new Rgba2DImage_t(*static_cast<Rgba2DImage_t *>(image.buffer_));
+					break;
+				case Optimization::Optimized:
+					buffer_ = new RgbaOptimizedImage_t(*static_cast<RgbaOptimizedImage_t *>(image.buffer_));
+					break;
+				case Optimization::Compressed:
+					buffer_ = new RgbaCompressedImage_t(*static_cast<RgbaCompressedImage_t *>(image.buffer_));
+					break;
+			}
+			break;
+		case Type::Color:
+			switch(optimization_)
+			{
+				default:
+				case Optimization::None:
+					buffer_ = new Rgb2DImage_t(*static_cast<Rgb2DImage_t *>(image.buffer_));
+					break;
+				case Optimization::Optimized:
+					buffer_ = new RgbOptimizedImage_t(*static_cast<RgbOptimizedImage_t *>(image.buffer_));
+					break;
+				case Optimization::Compressed:
+					buffer_ = new RgbCompressedImage_t(*static_cast<RgbCompressedImage_t *>(image.buffer_));
+					break;
+			}
+			break;
+		case Type::GrayWeight:
+			buffer_ = new Gray2DImageWeighed_t(*static_cast<Gray2DImageWeighed_t *>(image.buffer_));
+			break;
+		case Type::GrayAlpha:
+			buffer_ = new GrayAlpha2DImage_t (*static_cast<GrayAlpha2DImage_t *>(image.buffer_));
+			break;
+		case Type::GrayAlphaWeight:
+			buffer_ = new GrayAlpha2DImageWeighed_t (*static_cast<GrayAlpha2DImageWeighed_t *>(image.buffer_));
+			break;
+		case Type::Gray:
+			switch(optimization_)
+			{
+				default:
+				case Optimization::None:
+					buffer_ = new Gray2DImage_t(*static_cast<Gray2DImage_t *>(image.buffer_));
+					break;
+				case Optimization::Optimized:
+				case Optimization::Compressed:
+					buffer_ = new GrayOptimizedImage_t(*static_cast<GrayOptimizedImage_t *>(image.buffer_));
+					break;
 			}
 			break;
 		default:
@@ -82,8 +146,8 @@ void Image::clear()
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: static_cast<Rgba2DImageWeighed_t *>(buffer_)->clear(); break;
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: static_cast<Rgba2DImageWeighed_t *>(buffer_)->clear(); break;
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -92,7 +156,7 @@ void Image::clear()
 					case Optimization::Compressed: static_cast<RgbaCompressedImage_t *>(buffer_)->clear(); break;
 				}
 				break;
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -101,10 +165,10 @@ void Image::clear()
 					case Optimization::Compressed: static_cast<RgbCompressedImage_t *>(buffer_)->clear(); break;
 				}
 				break;
-			case ImageType::GrayWeight: static_cast<Gray2DImageWeighed_t *>(buffer_)->clear(); break;
-			case ImageType::GrayAlpha: static_cast<GrayAlpha2DImage_t  *>(buffer_)->clear(); break;
-			case ImageType::GrayAlphaWeight: static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_)->clear(); break;
-			case ImageType::Gray:
+			case Type::GrayWeight: static_cast<Gray2DImageWeighed_t *>(buffer_)->clear(); break;
+			case Type::GrayAlpha: static_cast<GrayAlpha2DImage_t  *>(buffer_)->clear(); break;
+			case Type::GrayAlphaWeight: static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_)->clear(); break;
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -125,8 +189,8 @@ Image::~Image()
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: delete static_cast<Rgba2DImageWeighed_t *>(buffer_); break;
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: delete static_cast<Rgba2DImageWeighed_t *>(buffer_); break;
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -135,7 +199,7 @@ Image::~Image()
 					case Optimization::Compressed: delete static_cast<RgbaCompressedImage_t *>(buffer_); break;
 				}
 				break;
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -144,10 +208,10 @@ Image::~Image()
 					case Optimization::Compressed: delete static_cast<RgbCompressedImage_t *>(buffer_); break;
 				}
 				break;
-			case ImageType::GrayWeight: delete static_cast<Gray2DImageWeighed_t *>(buffer_); break;
-			case ImageType::GrayAlpha: delete static_cast<GrayAlpha2DImage_t  *>(buffer_); break;
-			case ImageType::GrayAlphaWeight: delete static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_); break;
-			case ImageType::Gray:
+			case Type::GrayWeight: delete static_cast<Gray2DImageWeighed_t *>(buffer_); break;
+			case Type::GrayAlpha: delete static_cast<GrayAlpha2DImage_t  *>(buffer_); break;
+			case Type::GrayAlphaWeight: delete static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_); break;
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -162,14 +226,31 @@ Image::~Image()
 	}
 }
 
+Image::Type Image::imageTypeWithAlpha(Type image_type)
+{
+	if(image_type == Type::Gray) image_type = Type::GrayAlpha;
+	else if(image_type == Type::Color) image_type = Type::ColorAlpha;
+	else if(image_type == Type::GrayWeight) image_type = Type::GrayAlphaWeight;
+	return image_type;
+}
+
+Image::Type Image::imageTypeWithWeight(Type image_type)
+{
+	if(image_type == Type::Gray) image_type = Type::GrayWeight;
+	else if(image_type == Type::GrayAlpha) image_type = Type::GrayAlphaWeight;
+	else if(image_type == Type::Color) image_type = Type::ColorAlphaWeight;
+	else if(image_type == Type::ColorAlpha) image_type = Type::ColorAlphaWeight;
+	return image_type;
+}
+
 Rgba Image::getColor(int x, int y) const
 {
 	if(buffer_)
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getColor();
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getColor();
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -177,7 +258,7 @@ Rgba Image::getColor(int x, int y) const
 					case Optimization::Optimized: return (*static_cast<RgbaOptimizedImage_t *>(buffer_))(x, y).getColor();
 					case Optimization::Compressed: return (*static_cast<RgbaCompressedImage_t *>(buffer_))(x, y).getColor();
 				}
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -185,10 +266,10 @@ Rgba Image::getColor(int x, int y) const
 					case Optimization::Optimized: return (*static_cast<RgbOptimizedImage_t *>(buffer_))(x, y).getColor();
 					case Optimization::Compressed: return (*static_cast<RgbCompressedImage_t *>(buffer_))(x, y).getColor();
 				}
-			case ImageType::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getColor();
-			case ImageType::GrayAlpha: return (*static_cast<GrayAlpha2DImage_t *>(buffer_))(x, y).getColor();
-			case ImageType::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getColor();
-			case ImageType::Gray:
+			case Type::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getColor();
+			case Type::GrayAlpha: return (*static_cast<GrayAlpha2DImage_t *>(buffer_))(x, y).getColor();
+			case Type::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getColor();
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -208,8 +289,8 @@ float Image::getFloat(int x, int y) const
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getColor().r_;
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getColor().r_;
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -217,7 +298,7 @@ float Image::getFloat(int x, int y) const
 					case Optimization::Optimized: return (*static_cast<RgbaOptimizedImage_t *>(buffer_))(x, y).getColor().r_;
 					case Optimization::Compressed: return (*static_cast<RgbaCompressedImage_t *>(buffer_))(x, y).getColor().r_;
 				}
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -225,10 +306,10 @@ float Image::getFloat(int x, int y) const
 					case Optimization::Optimized: return (*static_cast<RgbOptimizedImage_t *>(buffer_))(x, y).getColor().r_;
 					case Optimization::Compressed: return (*static_cast<RgbCompressedImage_t *>(buffer_))(x, y).getColor().r_;
 				}
-			case ImageType::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getFloat();
-			case ImageType::GrayAlpha: return (*static_cast<GrayAlpha2DImage_t *>(buffer_))(x, y).getFloat();
-			case ImageType::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getFloat();
-			case ImageType::Gray:
+			case Type::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getFloat();
+			case Type::GrayAlpha: return (*static_cast<GrayAlpha2DImage_t *>(buffer_))(x, y).getFloat();
+			case Type::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getFloat();
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -248,9 +329,9 @@ float Image::getWeight(int x, int y) const
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getWeight();
-			case ImageType::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getWeight();
-			case ImageType::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getWeight();
+			case Type::ColorAlphaWeight: return (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).getWeight();
+			case Type::GrayWeight: return (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).getWeight();
+			case Type::GrayAlphaWeight: return (*static_cast<GrayAlpha2DImageWeighed_t *>(buffer_))(x, y).getWeight();
 			default: return 0.f;
 		}
 	}
@@ -263,7 +344,7 @@ int Image::getInt(int x, int y) const
 	{
 		switch(type_)
 		{
-			case ImageType::Gray:
+			case Type::Gray:
 				switch(optimization_)
 				{
 					case Optimization::Optimized:
@@ -282,8 +363,8 @@ void Image::setColor(int x, int y, const Rgba &col)
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setColor(col); break;
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setColor(col); break;
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -292,7 +373,7 @@ void Image::setColor(int x, int y, const Rgba &col)
 					case Optimization::Compressed: (*static_cast<RgbaCompressedImage_t *>(buffer_))(x, y).setColor(col); break;
 				}
 				break;
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -301,10 +382,10 @@ void Image::setColor(int x, int y, const Rgba &col)
 					case Optimization::Compressed: (*static_cast<RgbCompressedImage_t *>(buffer_))(x, y).setColor(col); break;
 				}
 				break;
-			case ImageType::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setColor(col); break;
-			case ImageType::GrayAlpha: (*static_cast<GrayAlpha2DImage_t  *>(buffer_))(x, y).setColor(col); break;
-			case ImageType::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setColor(col); break;
-			case ImageType::Gray:
+			case Type::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setColor(col); break;
+			case Type::GrayAlpha: (*static_cast<GrayAlpha2DImage_t  *>(buffer_))(x, y).setColor(col); break;
+			case Type::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setColor(col); break;
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -325,8 +406,8 @@ void Image::setFloat(int x, int y, float val)
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setColor(val); break;
-			case ImageType::ColorAlpha:
+			case Type::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setColor(val); break;
+			case Type::ColorAlpha:
 				switch(optimization_)
 				{
 					default:
@@ -335,7 +416,7 @@ void Image::setFloat(int x, int y, float val)
 					case Optimization::Compressed: (*static_cast<RgbaCompressedImage_t *>(buffer_))(x, y).setColor(val); break;
 				}
 				break;
-			case ImageType::Color:
+			case Type::Color:
 				switch(optimization_)
 				{
 					default:
@@ -344,10 +425,10 @@ void Image::setFloat(int x, int y, float val)
 					case Optimization::Compressed: (*static_cast<RgbCompressedImage_t *>(buffer_))(x, y).setColor(val); break;
 				}
 				break;
-			case ImageType::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setFloat(val); break;
-			case ImageType::GrayAlpha: (*static_cast<GrayAlpha2DImage_t  *>(buffer_))(x, y).setFloat(val); break;
-			case ImageType::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setFloat(val); break;
-			case ImageType::Gray:
+			case Type::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setFloat(val); break;
+			case Type::GrayAlpha: (*static_cast<GrayAlpha2DImage_t  *>(buffer_))(x, y).setFloat(val); break;
+			case Type::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setFloat(val); break;
+			case Type::Gray:
 				switch(optimization_)
 				{
 					default:
@@ -368,9 +449,9 @@ void Image::setWeight(int x, int y, float val)
 	{
 		switch(type_)
 		{
-			case ImageType::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setWeight(val); break;
-			case ImageType::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setWeight(val); break;
-			case ImageType::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setWeight(val); break;
+			case Type::ColorAlphaWeight: (*static_cast<Rgba2DImageWeighed_t *>(buffer_))(x, y).setWeight(val); break;
+			case Type::GrayWeight: (*static_cast<Gray2DImageWeighed_t *>(buffer_))(x, y).setWeight(val); break;
+			case Type::GrayAlphaWeight: (*static_cast<GrayAlpha2DImageWeighed_t  *>(buffer_))(x, y).setWeight(val); break;
 			default:
 				break;
 		}
@@ -383,7 +464,7 @@ void Image::setInt(int x, int y, int val)
 	{
 		switch(type_)
 		{
-			case ImageType::Gray:
+			case Type::Gray:
 				switch(optimization_)
 				{
 					case Optimization::Optimized:
@@ -397,21 +478,139 @@ void Image::setInt(int x, int y, int val)
 	}
 }
 
-Image Image::getDenoisedLdrBuffer(float h_col, float h_lum, float mix) const
+Image::Type Image::getTypeFromName(const std::string &image_type_name)
 {
-	Image denoised_buffer = Image(width_, height_, type_, optimization_);
+	if(image_type_name == "ColorAlphaWeight") return Type::ColorAlphaWeight;
+	else if(image_type_name == "ColorAlpha") return Type::ColorAlpha;
+	else if(image_type_name == "Color") return Type::Color;
+	else if(image_type_name == "GrayAlphaWeight") return Type::GrayAlphaWeight;
+	else if(image_type_name == "GrayWeight") return Type::GrayWeight;
+	else if(image_type_name == "GrayAlpha") return Type::GrayAlpha;
+	else if(image_type_name == "Gray") return Type::Gray;
+	else return Type::None;
+}
 
+int Image::getNumChannels(const Type &image_type)
+{
+	switch(image_type)
+	{
+		case Type::ColorAlphaWeight: return 5;
+		case Type::ColorAlpha: return 4;
+		case Type::Color:
+		case Type::GrayAlphaWeight: return 3;
+		case Type::GrayWeight:
+		case Type::GrayAlpha: return 2;
+		case Type::Gray: return 1;
+		default: return 0;
+	}
+}
+
+bool Image::hasAlpha(const Type &image_type)
+{
+	switch(image_type)
+	{
+		case Type::Color:
+		case Type::GrayWeight:
+		case Type::Gray: return false;
+		case Type::ColorAlphaWeight:
+		case Type::ColorAlpha:
+		case Type::GrayAlphaWeight:
+		case Type::GrayAlpha:
+		default: return true;
+	}
+}
+
+bool Image::isGrayscale(const Type &image_type)
+{
+	switch(image_type)
+	{
+		case Type::Gray:
+		case Type::GrayAlpha:
+		case Type::GrayWeight:
+		case Type::GrayAlphaWeight: return true;
+		case Type::Color:
+		case Type::ColorAlpha:
+		case Type::ColorAlphaWeight:
+		default: return false;
+	}
+}
+
+Image::Type Image::getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight)
+{
+	Type result = Type::Color;
+	if(grayscale) result = Type::Gray;
+	if(has_alpha) result = Image::imageTypeWithAlpha(result);
+	if(has_weight) result = Image::imageTypeWithWeight(result);
+	return result;
+}
+
+bool Image::hasAlpha() const
+{
+	return hasAlpha(type_);
+}
+
+bool Image::isGrayscale() const
+{
+	return isGrayscale(type_);
+}
+
+Image::Optimization Image::getOptimizationTypeFromName(const std::string &optimization_type_name)
+{
+	//Optimized by default
+	if(optimization_type_name == "none") return Image::Optimization::None;
+	else if(optimization_type_name == "optimized") return Image::Optimization::Optimized;
+	else if(optimization_type_name == "compressed") return Image::Optimization::Compressed;
+	else return Image::Optimization::Optimized;
+}
+
+std::string Image::getOptimizationName(const Optimization &optimization_type)
+{
+	//Optimized by default
+	switch(optimization_type)
+	{
+		case Image::Optimization::None: return "none";
+		case Image::Optimization::Optimized: return "optimized";
+		case Image::Optimization::Compressed: return "compressed";
+		default: return "optimized";
+	}
+}
+
+std::string Image::getTypeName(const Type &image_type)
+{
+	switch(image_type)
+	{
+		case Type::ColorAlphaWeight: return "Color + Alpha (weighted) [5 channels]";
+		case Type::ColorAlpha: return "Color + Alpha [4 channels]";
+		case Type::Color: return "Color [3 channels]";
+		case Type::GrayAlphaWeight: return "Gray + Alpha (weighted) [3 channels]";
+		case Type::GrayWeight: return "Gray (weighted) [2 channels]";
+		case Type::GrayAlpha: return "Gray + Alpha [2 channels]";
+		case Type::Gray: return "Gray [1 channel]";
+		default: return "unknown image type [0 channels]";
+	}
+}
+
+const Image *Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
+{
 #ifdef HAVE_OPENCV
-	cv::Mat a(height_, width_, CV_8UC3);
-	cv::Mat b(height_, width_, CV_8UC3);
+	if(!denoise_params.enabled_) return nullptr;
+
+	Image *image_denoised = new Image(image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
+	if(!image_denoised) return image_denoised;
+
+	const int width = image_denoised->getWidth();
+	const int height = image_denoised->getHeight();
+
+	cv::Mat a(height, width, CV_8UC3);
+	cv::Mat b(height, width, CV_8UC3);
 	cv::Mat_<cv::Vec3b> a_vec = a;
 	cv::Mat_<cv::Vec3b> b_vec = b;
 
-	for(int y = 0; y < height_; ++y)
+	for(int y = 0; y < height; ++y)
 	{
-		for(int x = 0; x < width_; ++x)
+		for(int x = 0; x < width; ++x)
 		{
-			Rgb color = getColor(x, y);
+			Rgb color = image->getColor(x, y);
 			color.clampRgb01();
 
 			a_vec(y, x)[0] = (uint8_t)(color.getR() * 255);
@@ -420,33 +619,80 @@ Image Image::getDenoisedLdrBuffer(float h_col, float h_lum, float mix) const
 		}
 	}
 
-	cv::fastNlMeansDenoisingColored(a, b, h_lum, h_col, 7, 21);
+	cv::fastNlMeansDenoisingColored(a, b, denoise_params.hlum_, denoise_params.hcol_, 7, 21);
 
-	for(int y = 0; y < height_; ++y)
+	for(int y = 0; y < height; ++y)
 	{
-		for(int x = 0; x < width_; ++x)
+		for(int x = 0; x < width; ++x)
 		{
 			Rgba col;
-			col.r_ = (mix * (float)b_vec(y, x)[0] + (1.f - mix) * (float)a_vec(y, x)[0]) / 255.0;
-			col.g_ = (mix * (float)b_vec(y, x)[1] + (1.f - mix) * (float)a_vec(y, x)[1]) / 255.0;
-			col.b_ = (mix * (float)b_vec(y, x)[2] + (1.f - mix) * (float)a_vec(y, x)[2]) / 255.0;
-			col.a_ = getColor(x, y).a_;
-			denoised_buffer.setColor(x, y, col);
+			col.r_ = (denoise_params.mix_ * (float)b_vec(y, x)[0] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[0]) / 255.0;
+			col.g_ = (denoise_params.mix_ * (float)b_vec(y, x)[1] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[1]) / 255.0;
+			col.b_ = (denoise_params.mix_ * (float)b_vec(y, x)[2] + (1.f - denoise_params.mix_) * (float)a_vec(y, x)[2]) / 255.0;
+			col.a_ = image->getColor(x, y).a_;
+			image_denoised->setColor(x, y, col);
 		}
 	}
+	return image_denoised;
 #else //HAVE_OPENCV
-	//FIXME: Useless duplication work when OpenCV is not built in... avoid calling this function in the first place if OpenCV support not built.
-	//This is kept here for interface compatibility when OpenCV not built in.
-	for(int y = 0; y < height_; ++y)
+	return nullptr;
+#endif //HAVE_OPENCV
+}
+
+Image *Image::getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
+{
+	if(!image_1 || !image_2) return nullptr;
+	const int width_1 = image_1->getWidth();
+	const int height_1 = image_1->getHeight();
+	const int width_2 = image_2->getWidth();
+	const int height_2 = image_2->getHeight();
+	int width = width_1;
+	int height = height_1;
+	switch(position_image_2)
 	{
-		for(int x = 0; x < width_; ++x)
+		case Position::Bottom:
+		case Position::Top: height += height_2; break;
+		case Position::Left:
+		case Position::Right: width += width_2; break;
+		case Position::Overlay: break;
+		default: return nullptr;
+	}
+	Image *result = new Image(width, height, image_1->getType(), image_1->getOptimization());
+
+	for(int x = 0; x < width; ++x)
+	{
+		for(int y = 0; y < height; ++y)
 		{
-			denoised_buffer.setColor(x, y, getColor(x, y));
+			Rgba color;
+			if(position_image_2 == Position::Top)
+			{
+				if(y < height_2 && x < width_2) color = image_2->getColor(x, y);
+				else if(y >= height_2) color = image_1->getColor(x, y - height_2);
+			}
+			else if(position_image_2 == Position::Bottom)
+			{
+				if(y >= height_1 && x < width_2) color = image_2->getColor(x, y - height_1);
+				else if(y < height_1) color = image_1->getColor(x, y);
+			}
+			else if(position_image_2 == Position::Left)
+			{
+				if(x < width_2 && y < height_2) color = image_2->getColor(x, y);
+				else if(x > width_2) color = image_1->getColor(x - width_2, y);
+			}
+			else if(position_image_2 == Position::Right)
+			{
+				if(x >= width_1 && y < height_2) color = image_2->getColor(x - width_1, y);
+				else if(x < width_1) color = image_1->getColor(x, y);
+			}
+			else if(position_image_2 == Position::Overlay)
+			{
+				if(x >= overlay_x && x < overlay_x + width_2 && y >= overlay_y && y < overlay_y + height_2) color = image_2->getColor(x - overlay_x, y - overlay_y);
+				else color = image_1->getColor(x, y);
+			}
+			result->setColor(x, y, color);
 		}
 	}
-	Y_WARNING << "ImageHandler: built without OpenCV support, image cannot be de-noised." << YENDL;
-#endif //HAVE_OPENCV
-	return denoised_buffer;
+	return result;
 }
 
 END_YAFARAY

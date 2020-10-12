@@ -187,7 +187,7 @@ void IesLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, 
 	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 
-Light *IesLight::factory(ParamMap &params, Scene &scene)
+Light *IesLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);

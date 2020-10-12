@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-struct RenderState;
+class RenderData;
 class IntersectData;
 
 // ============================================================
@@ -136,7 +136,7 @@ template<class T> class AcceleratorKdTree : public Accelerator<T>
 		virtual bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
 		virtual bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const override;
-		virtual bool intersectTs(RenderState &state, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const override;
+		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
 		Bound getBound() const override { return tree_bound_; }
 

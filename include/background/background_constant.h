@@ -37,7 +37,7 @@ class ConstantBackground final : public Background
 
 	private:
 		ConstantBackground(Rgb col, bool ibl, bool with_caustic);
-		virtual Rgb operator()(const Ray &ray, RenderState &state, bool use_ibl_blur = false) const override;
+		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool use_ibl_blur = false) const override;
 		virtual Rgb eval(const Ray &ray, bool use_ibl_blur = false) const override;
 
 		Rgb color_;

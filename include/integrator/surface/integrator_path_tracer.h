@@ -20,7 +20,7 @@
 #ifndef YAFARAY_INTEGRATOR_PATH_TRACER_H
 #define YAFARAY_INTEGRATOR_PATH_TRACER_H
 
-#include <render/passes.h>
+#include <render/render_view.h>
 #include "integrator_montecarlo.h"
 
 BEGIN_YAFARAY
@@ -28,14 +28,14 @@ BEGIN_YAFARAY
 class PathIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, Scene &scene);
+		static Integrator *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		PathIntegrator(bool transp_shad = false, int shadow_depth = 4);
 		virtual std::string getShortName() const override { return "PT"; }
 		virtual std::string getName() const override { return "PathTracer"; }
-		virtual bool preprocess() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses = nullptr) const override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
+		virtual Rgba integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 		enum class CausticType { None, Path, Photon, Both };
 
 		bool trace_caustics_; //!< use path tracing for caustics (determined by causticType)

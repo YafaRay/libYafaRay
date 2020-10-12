@@ -24,7 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
-#include "common/logging.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
@@ -160,7 +160,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light *SphereLight::factory(ParamMap &params, Scene &scene)
+Light *SphereLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);

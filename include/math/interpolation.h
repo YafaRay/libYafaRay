@@ -23,6 +23,8 @@
 #ifndef YAFARAY_INTERPOLATION_H
 #define YAFARAY_INTERPOLATION_H
 
+#include "math/math.h"
+
 BEGIN_YAFARAY
 
 // Algorithms from: http://local.wasp.uwa.edu.au/~pbourke/miscellaneous/interpolation/

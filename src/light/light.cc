@@ -29,11 +29,13 @@
 #include "light/light_ies.h"
 #include "light/light_meshlight.h"
 #include "common/param.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
-Light *Light::factory(ParamMap &params, Scene &scene)
+Light *Light::factory(ParamMap &params, const Scene &scene)
 {
+	Y_DEBUG PRTEXT(**Light) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
 	if(type == "arealight") return AreaLight::factory(params, scene);

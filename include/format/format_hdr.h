@@ -22,33 +22,33 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_HDR_H
-#define YAFARAY_IMAGEHANDLER_HDR_H
+#ifndef YAFARAY_FORMAT_HDR_H
+#define YAFARAY_FORMAT_HDR_H
 
-#include "imagehandler/imagehandler.h"
-#include "imagehandler/imagehandler_util_hdr.h"
+#include "format/format.h"
+#include "format/format_hdr_util.h"
 
 BEGIN_YAFARAY
 
-class HdrHandler final : public ImageHandler
+class HdrFormat final : public Format
 {
 	public:
-		static ImageHandler *factory(ParamMap &params, Scene &scene);
+		static Format *factory(ParamMap &params);
 
 	private:
-		HdrHandler();
-		virtual bool loadFromFile(const std::string &name) override;
-		virtual bool saveToFile(const std::string &name, int img_index = 0) override;
+		virtual std::string getFormatName() const override { return "HdrFormat"; }
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual bool saveToFile(const std::string &name, const Image *image) override;
 		virtual bool isHdr() const override { return true; }
-		bool writeHeader(std::ofstream &file, int img_index);
-		bool writeScanline(std::ofstream &file, RgbePixel *scanline, int img_index);
-		bool readHeader(FILE *fp); //!< Reads file header and detects if the file is valid
-		bool readOrle(FILE *fp, int y, int scan_width); //!< Reads the scanline with the original Radiance RLE schema or without compression
-		bool readArle(FILE *fp, int y, int scan_width); //!< Reads a scanline with Adaptative RLE schema
+		bool writeHeader(std::ofstream &file, const Image *image);
+		bool writeScanline(std::ofstream &file, RgbePixel *scanline, const Image *image);
+		bool readHeader(FILE *fp, int &width, int &height); //!< Reads file header and detects if the file is valid
+		bool readOrle(FILE *fp, int y, int scan_width, Image *image); //!< Reads the scanline with the original Radiance RLE schema or without compression
+		bool readArle(FILE *fp, int y, int scan_width, Image *image); //!< Reads a scanline with Adaptative RLE schema
 
 		RgbeHeader header_;
 };
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_HDR_H
+#endif // YAFARAY_FORMAT_HDR_H

@@ -1,8 +1,5 @@
 /****************************************************************************
- *      session.cc: YafaRay Session control
  *      This is part of the libYafaRay package
- *      Copyright (C) 2016 David Bluecame
- *      Session control and persistent objects between renders
  *
  *      This library is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
@@ -28,14 +25,10 @@
 BEGIN_YAFARAY
 
 // Initialization of the master instance of yafLog
-Logger logger__ = Logger();
+Logger logger__{ };
 
 // Initialization of the master session instance
-Session session__ = Session();
-
-Session::Session(const Session &)	//We need to redefine the copy constructor to avoid trying to copy the mutex (not copiable). This copy constructor will not copy anything, but we only have one session object anyway so it should be ok.
-{
-}
+Session session__{ };
 
 Session::Session()
 {
@@ -59,74 +52,6 @@ Session::~Session()
 	Y_VERBOSE << "Session: ended" << YENDL;
 }
 
-void Session::setStatusRenderStarted()
-{
-	mutx_.lock();
-
-	render_in_progress_ = true;
-	render_finished_ = false;
-	render_resumed_ = false;
-	render_aborted_ = false;
-	total_passes_ = 0;
-	current_pass_ = 0;
-	current_pass_percent_ = 0.f;
-
-	mutx_.unlock();
-}
-
-void Session::setStatusRenderResumed()
-{
-	mutx_.lock();
-
-	render_in_progress_ = true;
-	render_finished_ = false;
-	render_resumed_ = true;
-	render_aborted_ = false;
-
-	mutx_.unlock();
-}
-
-void Session::setStatusRenderFinished()
-{
-	mutx_.lock();
-
-	render_in_progress_ = false;
-	render_finished_ = true;
-
-	mutx_.unlock();
-}
-
-void Session::setStatusRenderAborted()
-{
-	mutx_.lock();
-
-	render_in_progress_ = false;
-	render_aborted_ = true;
-
-	mutx_.unlock();
-}
-
-void Session::setStatusTotalPasses(int total_passes)
-{
-	mutx_.lock();
-	total_passes_ = total_passes;
-	mutx_.unlock();
-}
-
-void Session::setStatusCurrentPass(int current_pass)
-{
-	mutx_.lock();
-	current_pass_ = current_pass;
-	mutx_.unlock();
-}
-
-void Session::setStatusCurrentPassPercent(float current_pass_percent)
-{
-	mutx_.lock();
-	current_pass_percent_ = current_pass_percent;
-	mutx_.unlock();
-}
-
 void Session::setInteractive(bool interactive)
 {
 	mutx_.lock();
@@ -134,68 +59,9 @@ void Session::setInteractive(bool interactive)
 	mutx_.unlock();
 }
 
-void Session::setPathYafaRayXml(std::string path)
-{
-	mutx_.lock();
-	path_yafa_ray_xml_ = path;
-	mutx_.unlock();
-}
-
-void Session::setPathImageOutput(std::string path)
-{
-	mutx_.lock();
-	path_image_output_ = path;
-	mutx_.unlock();
-}
-
-bool Session::renderInProgress()
-{
-	return render_in_progress_;
-}
-
-bool Session::renderResumed()
-{
-	return render_resumed_;
-}
-
-bool Session::renderFinished()
-{
-	return render_finished_;
-}
-
-bool Session::renderAborted()
-{
-	return render_aborted_;
-}
-
-int Session::totalPasses()
-{
-	return total_passes_;
-}
-
-int Session::currentPass()
-{
-	return current_pass_;
-}
-
-float Session::currentPassPercent()
-{
-	return current_pass_percent_;
-}
-
 bool Session::isInteractive()
 {
 	return interactive_;
-}
-
-std::string Session::getPathYafaRayXml()
-{
-	return path_yafa_ray_xml_;
-}
-
-std::string Session::getPathImageOutput()
-{
-	return path_image_output_;
 }
 
 END_YAFARAY

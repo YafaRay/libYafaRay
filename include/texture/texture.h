@@ -21,20 +21,24 @@
 #define YAFARAY_TEXTURE_H
 
 #include "constants.h"
-#include "imagehandler/imagehandler.h"
+#include "color/color.h"
 #include "color/color_ramp.h"
 #include "geometry/vector.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include <sstream>
 
 BEGIN_YAFARAY
 
-enum class InterpolationType : int;
+class ParamMap;
+class Scene;
+class MipMapParams;
+
+enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 
 class Texture
 {
 	public :
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
@@ -65,6 +69,8 @@ class Texture
 		void colorRampCreate(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str) { color_ramp_ = std::unique_ptr<ColorRamp>(new ColorRamp(mode_str, interpolation_str, hue_interpolation_str)); }
 		void colorRampAddItem(const Rgba &color, float position) { if(color_ramp_) color_ramp_->addItem(color, position); }
 		InterpolationType getInterpolationType() const { return interpolation_type_; }
+		static InterpolationType getInterpolationTypeFromName(const std::string &interpolation_type_name);
+		static std::string getInterpolationTypeName(const InterpolationType &interpolation_type);
 
 	protected:
 		float adj_intensity_ = 1.f;

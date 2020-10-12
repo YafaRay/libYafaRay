@@ -24,6 +24,11 @@
 
 BEGIN_YAFARAY
 
+class MeshObject;
+class Triangle;
+template <typename T> class Accelerator;
+class Primitive;
+
 struct ObjData
 {
 	TriangleObject *obj_;
@@ -38,7 +43,14 @@ class YafaRayScene final : public Scene
 		static Scene *factory(ParamMap &params);
 
 	private:
-		YafaRayScene() = default;
+		struct GeometryCreationState
+		{
+			ObjData *cur_obj_;
+			Triangle *cur_tri_;
+			bool orco_;
+			float smooth_angle_;
+		};
+		YafaRayScene();
 		YafaRayScene(const YafaRayScene &s) = delete;
 		virtual ~YafaRayScene() override;
 		virtual bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
@@ -54,16 +66,17 @@ class YafaRayScene final : public Scene
 		virtual bool smoothMesh(const std::string &name, float angle) override;
 		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) override;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) override;
-		virtual bool update() override;
+		virtual bool updateGeometry() override;
 		virtual void clearGeometry() override;
 
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const override;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const override;
-		virtual bool isShadowed(RenderState &state, const Ray &ray, float &obj_index, float &mat_index) const override;
-		virtual bool isShadowed(RenderState &state, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const override;
+		virtual bool isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const override;
+		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const override;
 		virtual TriangleObject *getMesh(const std::string &name) const override;
 		virtual ObjectGeometric *getObject(const std::string &name) const override;
 
+		GeometryCreationState geometry_creation_state_;
 		Accelerator<Triangle> *tree_ = nullptr; //!< kdTree for triangle-only mode
 		Accelerator<Primitive> *vtree_ = nullptr; //!< kdTree for universal mode
 		std::map<std::string, ObjectGeometric *> objects_;

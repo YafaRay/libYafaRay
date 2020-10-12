@@ -19,7 +19,7 @@
  */
 
 #include "import/import_xml.h"
-#include "common/logging.h"
+#include "common/logger.h"
 #include "scene/scene.h"
 #include "color/color.h"
 #include "geometry/matrix4.h"
@@ -187,7 +187,7 @@ XmlParser::XmlParser(Scene *scene, ParamMap &r, ColorSpace input_color_space, fl
 
 void XmlParser::pushState(StartElementCb_t start, EndElementCb_t end, void *userdata)
 {
-	ParserStateT state;
+	ParserState state;
 	state.start_ = start;
 	state.end_ = end;
 	state.userdata_ = userdata;
@@ -381,7 +381,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 
 	std::string el(element), *name = 0;
 	if(el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "passes_settings" || el == "logging_badge")
+	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_layers" || el == "logging_badge" || el == "output" || el == "render_view")
 	{
 		if(!attrs[0])
 		{
@@ -707,8 +707,9 @@ void endElParammap__(XmlParser &p, const char *element)
 			else if(el == "background") p.scene_->createBackground(*name, p.params_);
 			else if(el == "object") p.scene_->createObject(*name, p.params_);
 			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
-			else if(el == "passes_settings") p.scene_->setupRenderPasses(p.params_);
-			else if(el == "logging_badge") p.scene_->setupLoggingAndBadge(p.params_);
+			else if(el == "render_layers") p.scene_->setupLayers(p.params_);
+			else if(el == "output") p.scene_->createOutput(*name, p.params_);
+			else if(el == "render_view") p.scene_->createRenderView(*name, p.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
 

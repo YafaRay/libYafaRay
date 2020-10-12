@@ -28,7 +28,7 @@ SssVolumeHandler::SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double di
 		BeerVolumeHandler(a_col, dist), dist_s_(dist), scatter_col_(s_col)
 {}
 
-bool SssVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_ray, PSample &s) const
+bool SssVolumeHandler::scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const
 {
 	float dist = -dist_s_ * log(s.s_1_);
 	if(dist >= ray.tmax_) return false;
@@ -38,7 +38,7 @@ bool SssVolumeHandler::scatter(const RenderState &state, const Ray &ray, Ray &s_
 	return true;
 }
 
-VolumeHandler *SssVolumeHandler::factory(const ParamMap &params, Scene &scene)
+VolumeHandler *SssVolumeHandler::factory(const ParamMap &params, const Scene &scene)
 {
 	Rgb a_col(0.5f), s_col(0.8f);
 	double dist = 1.f;

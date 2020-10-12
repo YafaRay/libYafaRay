@@ -28,7 +28,7 @@ BEGIN_YAFARAY
 class CloudsTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		CloudsTexture(int dep, float sz, bool hd,
@@ -50,7 +50,7 @@ class CloudsTexture final : public Texture
 class MarbleTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
@@ -79,7 +79,7 @@ class MarbleTexture final : public Texture
 class WoodTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
@@ -108,7 +108,7 @@ class WoodTexture final : public Texture
 class VoronoiTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
@@ -132,7 +132,7 @@ class VoronoiTexture final : public Texture
 class MusgraveTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
@@ -153,7 +153,7 @@ class MusgraveTexture final : public Texture
 class DistortedNoiseTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
@@ -176,7 +176,7 @@ class DistortedNoiseTexture final : public Texture
 class RgbCubeTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		RgbCubeTexture() = default;
@@ -187,7 +187,7 @@ class RgbCubeTexture final : public Texture
 class BlendTexture final : public Texture
 {
 	public:
-		static Texture *factory(ParamMap &params, Scene &scene);
+		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		enum ProgressionType : int { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };

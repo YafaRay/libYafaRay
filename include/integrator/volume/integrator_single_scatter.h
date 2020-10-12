@@ -23,6 +23,7 @@
 
 #include "integrator/integrator.h"
 #include <vector>
+#include <render/render_view.h>
 
 BEGIN_YAFARAY
 
@@ -33,18 +34,18 @@ class Rgb;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, Scene &scene);
+		static Integrator *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SingleScatterIntegrator(float s_size, bool adapt, bool opt);
 		virtual std::string getShortName() const override { return "SSc"; }
 		virtual std::string getName() const override { return "SingleScatter"; }
-		virtual bool preprocess() override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
 		// optical thickness, absorption, attenuation, extinction
-		virtual Rgba transmittance(RenderState &state, Ray &ray) const override;
+		virtual Rgba transmittance(RenderData &render_data, Ray &ray) const override;
 		// emission and in-scattering
-		virtual Rgba integrate(RenderState &state, Ray &ray, int additional_depth = 0) const override;
-		Rgb getInScatter(RenderState &state, Ray &step_ray, float current_step) const;
+		virtual Rgba integrate(RenderData &render_data, Ray &ray, int additional_depth = 0) const override;
+		Rgb getInScatter(RenderData &render_data, Ray &step_ray, float current_step) const;
 
 		bool adaptive_;
 		bool optimize_;

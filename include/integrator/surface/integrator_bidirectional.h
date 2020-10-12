@@ -24,7 +24,6 @@
 #include "integrator_tiled.h"
 #include "color/color.h"
 #include <map>
-#include <render/passes.h>
 
 BEGIN_YAFARAY
 
@@ -34,32 +33,32 @@ class Camera;
 class Light;
 class PathData;
 class PathVertex;
+class ImageFilm;
 
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, Scene &scene);
+		static Integrator *factory(ParamMap &params, const Scene &scene);
 
 	private:
 		BidirectionalIntegrator(bool transp_shad = false, int shadow_depth = 4);
 		virtual ~BidirectionalIntegrator() override;
 		virtual std::string getShortName() const override { return "BdPT"; }
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
-		virtual bool preprocess() override;
+		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(RenderState &state, DiffRay &ray, int additional_depth, IntPasses *intPasses) const override;
-		Rgb sampleAmbientOcclusionPass(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		Rgb sampleAmbientOcclusionPassClay(RenderState &state, const SurfacePoint &sp, const Vec3 &wo) const;
-		int createPath(RenderState &state, Ray &start, std::vector<PathVertex> &path, int max_len) const;
-		Rgb evalPath(RenderState &state, int s, int t, PathData &pd) const;
-		Rgb evalLPath(RenderState &state, int t, PathData &pd, Ray &l_ray, const Rgb &lcol) const;
-		Rgb evalPathE(RenderState &state, int s, PathData &pd) const;
-		bool connectPaths(RenderState &state, int s, int t, PathData &pd) const;
-		bool connectLPath(RenderState &state, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const;
-		bool connectPathE(RenderState &state, int s, PathData &pd) const;
-		//Rgb estimateOneDirect(renderState_t &state, const surfacePoint_t &sp, vector3d_t wo, pathCon_t &pc) const;
-		float pathWeight(RenderState &state, int s, int t, PathData &pd) const;
-		float pathWeight0T(RenderState &state, int t, PathData &pd) const;
+		virtual Rgba integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
+		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
+		int createPath(RenderData &render_data, Ray &start, std::vector<PathVertex> &path, int max_len) const;
+		Rgb evalPath(RenderData &render_data, int s, int t, PathData &pd) const;
+		Rgb evalLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, const Rgb &lcol) const;
+		Rgb evalPathE(RenderData &render_data, int s, PathData &pd) const;
+		bool connectPaths(RenderData &render_data, int s, int t, PathData &pd) const;
+		bool connectLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, Rgb &lcol) const;
+		bool connectPathE(const RenderView *render_view, RenderData &render_data, int s, PathData &pd) const;
+		float pathWeight(RenderData &render_data, int s, int t, PathData &pd) const;
+		float pathWeight0T(RenderData &render_data, int t, PathData &pd) const;
 
 		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
 		bool use_bg_;        //!< configuration; include background for GI
