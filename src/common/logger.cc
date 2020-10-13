@@ -26,7 +26,6 @@
 #include "common/badge.h"
 #include "color/color_console.h"
 #include <algorithm>
-#include <iomanip>
 #include <cmath>
 
 BEGIN_YAFARAY

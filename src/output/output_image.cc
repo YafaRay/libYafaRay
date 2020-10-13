@@ -20,14 +20,12 @@
  */
 
 #include "output/output_image.h"
-#include "color/color.h"
 #include "color/color_layers.h"
 #include "common/logger.h"
 #include "common/file.h"
 #include "common/param.h"
 #include "format/format.h"
 #include "image/image_layers.h"
-#include "common/badge.h"
 
 BEGIN_YAFARAY
 

@@ -25,7 +25,6 @@
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "common/logger.h"
-#include <iostream>
 
 BEGIN_YAFARAY
 
@@ -110,7 +109,7 @@ Rgb AreaLight::emitSample(Vec3 &wo, LSample &s) const
 	s.sp_->p_ = corner_ + s.s_3_ * to_x_ + s.s_4_ * to_y_;
 	wo = sample::cosHemisphere(normal_, du_, dv_, s.s_1_, s.s_2_);
 	s.sp_->n_ = s.sp_->ng_ = normal_;
-	s.dir_pdf_ = std::fabs(normal_ * wo);
+	s.dir_pdf_ = std::abs(normal_ * wo);
 	s.flags_ = Light::Flags::None; // no delta functions...
 	return color_; // still not 100% sure this is correct without cosine...
 }

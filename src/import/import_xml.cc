@@ -23,7 +23,6 @@
 #include "scene/scene.h"
 #include "color/color.h"
 #include "geometry/matrix4.h"
-#include <iomanip>
 
 #if HAVE_XML
 #include <libxml/parser.h>

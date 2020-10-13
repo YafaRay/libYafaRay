@@ -96,7 +96,7 @@ void HashGrid::updateGrid()
 unsigned int HashGrid::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float sq_radius)
 {
 	unsigned int count = 0;
-	float radius = sqrt(sq_radius);
+	float radius = math::sqrt(sq_radius);
 
 	Point3 rad(radius, radius, radius);
 	Point3 b_min = ((p - rad) - (Vec3) bounding_box_.a_) * inv_cell_size_;

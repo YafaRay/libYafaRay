@@ -40,7 +40,6 @@
 #include "sampler/sample.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
-#include <sstream>
 
 BEGIN_YAFARAY
 

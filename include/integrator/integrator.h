@@ -26,7 +26,7 @@
 #include "constants.h"
 #include <string>
 #include <render/render_control.h>
-#include <render/render_view.h>
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 
@@ -37,7 +37,6 @@ BEGIN_YAFARAY
 class ParamMap;
 class Scene;
 class ProgressBar;
-struct RenderArea;
 class Rgba;
 class RenderData;
 class Ray;

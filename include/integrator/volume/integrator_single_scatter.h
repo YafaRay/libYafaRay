@@ -23,7 +23,7 @@
 
 #include "integrator/integrator.h"
 #include <vector>
-#include <render/render_view.h>
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 

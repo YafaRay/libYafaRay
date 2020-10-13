@@ -24,8 +24,6 @@
 #include "math/interpolation.h"
 #include "common/logger.h"
 
-#include<iostream>
-
 BEGIN_YAFARAY
 
 ColorRamp::ColorRamp(const std::string &mode_str, const std::string &interpolation_str, const std::string &hue_interpolation_str)

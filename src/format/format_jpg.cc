@@ -24,7 +24,6 @@
 
 #include "format/format_jpg.h"
 #include "common/logger.h"
-#include "common/session.h"
 #include "common/param.h"
 #include "common/file.h"
 #include "scene/scene.h"

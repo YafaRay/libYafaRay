@@ -25,12 +25,10 @@
 #include "scene/scene.h"
 #include "light/light.h"
 
-#include "sampler/sample.h"
-
 BEGIN_YAFARAY
 
 TextureBackground::TextureBackground(const Texture *texture, Projection proj, float bpower, float rot, bool ibl, float ibl_blur, bool with_caustic):
-		tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(pow(ibl_blur, 2.f))
+		tex_(texture), project_(proj), power_(bpower), ibl_blur_mipmap_level_(math::pow(ibl_blur, 2.f))
 {
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;

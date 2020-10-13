@@ -25,7 +25,6 @@
 #include "scene/scene.h"
 #include "common/logger.h"
 #include "common/param.h"
-#include "common/badge.h"
 
 BEGIN_YAFARAY
 

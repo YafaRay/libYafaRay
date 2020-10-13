@@ -21,13 +21,10 @@
 #include "shader/shader_node.h"
 #include "common/logger.h"
 #include "material/material_utils_microfacet.h"
-#include "sampler/halton.h"
 #include "color/spectrum.h"
-#include "color/color_ramp.h"
 #include "common/param.h"
 #include "geometry/surface.h"
 #include "render/render_data.h"
-#include <iostream>
 
 BEGIN_YAFARAY
 
@@ -129,13 +126,13 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 			float ht = ior_wo * wo_h + ior_wi * wi_h;
 			jacobian = (ior_wi * ior_wi) / std::max(1.0e-8f, ht * ht);
 
-			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
+			glossy = std::abs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && render_data.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
-			w = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 		else if(s.flags_.hasAny(BsdfFlags::Reflect))
 		{
@@ -146,15 +143,15 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 			glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wi_h)));
-			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
+			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::abs(wi_h)));
+			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 
 			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
-			w = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 		}
 	}
 	else // TIR
@@ -244,13 +241,13 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 			float ht = ior_wo * wo_h + ior_wi * wi_h;
 			jacobian = (ior_wi * ior_wi) / std::max(1.0e-8f, ht * ht);
 
-			glossy = std::fabs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
+			glossy = std::abs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::fabs(wi_h));
+			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && render_data.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
-			w[0] = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w[0] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[0] = wi;
 
 		}
@@ -263,15 +260,15 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 			glossy_g = ggxG__(alpha_2, wi_n, wo_n);
 
-			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::fabs(wi_h)));
-			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::fabs(wo_n * wi_n)));
+			jacobian = 1.f / std::max(1.0e-8f, (4.f * std::abs(wi_h)));
+			glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
 
 			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
 
 			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 
-			w[1] = std::fabs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
+			w[1] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
 			dir[1] = wi;
 		}
 	}

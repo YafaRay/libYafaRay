@@ -22,17 +22,12 @@
 #include "common/badge.h"
 #include "common/param.h"
 #include "color/color.h"
-#include "common/sysinfo.h"
 #include "common/logger.h"
 #include "common/timer.h"
 #include "resource/yafLogoTiny.h"
 #include "format/format.h"
-#include "image/image.h"
 #include "common/string.h"
 #include "math/interpolation.h"
-
-#include <iomanip>
-#include <cmath>
 
 #if HAVE_FREETYPE
 	#include "resource/guifont.h"
@@ -128,8 +123,8 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 	int i, j, p, q;
 	const int width = badge_image->getWidth();
 	const int height = badge_image->getHeight();
-	int x_max = std::min(static_cast<int>(x + bitmap->width), width);
-	int y_max = std::min(static_cast<int>(y + bitmap->rows), height);
+	int x_max = std::min(x + bitmap->width, width);
+	int y_max = std::min(y + bitmap->rows, height);
 	Rgb text_color(1.f);
 
 	for(i = x, p = 0; i < x_max; i++, p++)
@@ -141,7 +136,7 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 			if(tmp_buf > 0)
 			{
 				Rgba col = badge_image->getColor(std::max(0, i), std::max(0, j));
-				const float alpha = (float) tmp_buf / 255.0;
+				const float alpha = static_cast<float>(tmp_buf) / 255.f;
 				col = Rgba(math::lerp(static_cast<Rgb>(col), text_color, alpha), col.getA());
 				badge_image->setColor(std::max(0, i), std::max(0, j), col);
 			}

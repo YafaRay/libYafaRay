@@ -21,7 +21,6 @@
 
 #include "integrator/surface/integrator_photon_mapping.h"
 #include "geometry/surface.h"
-#include "common/logger.h"
 #include "common/session.h"
 #include "volume/volume.h"
 #include "color/color_layers.h"
@@ -33,10 +32,8 @@
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
 #include "material/material.h"
-#include "color/spectrum.h"
 #include "common/timer.h"
 #include "background/background.h"
-#include "render/imagesplitter.h"
 #include "render/imagefilm.h"
 #include "render/render_data.h"
 
@@ -434,8 +431,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	unsigned int curr = 0;
 	// for radiance map:
 	PreGatherData pgdat(session__.diffuse_map_);
-
-	SurfacePoint sp;
 	RenderData render_data;
 	alignas (16) unsigned char userdata[user_data_size_];
 	render_data.arena_ = static_cast<void *>(userdata);
@@ -996,7 +991,6 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, DiffRay &ray, int addi
 				int n_gathered = 0;
 
 				if(use_photon_diffuse_ && session__.diffuse_map_->nPhotons() > 0) n_gathered = session__.diffuse_map_->gather(sp.p_, gathered, n_diffuse_search_, radius);
-				Rgb sum(0.0);
 				if(use_photon_diffuse_ && n_gathered > 0)
 				{
 					if(n_gathered > n_max) n_max = n_gathered;

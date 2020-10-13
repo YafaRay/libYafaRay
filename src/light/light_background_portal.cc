@@ -25,7 +25,6 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
-#include "sampler/halton.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "geometry/triangle.h"
 #include "sampler/sample_pdf1d.h"
@@ -198,7 +197,7 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 	Vec3::createCs(s.sp_->ng_, du, dv);
 
 	wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
-	s.dir_pdf_ = std::fabs(s.sp_->ng_ * wo);
+	s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 
 	s.flags_ = flags_;
 	Ray r_2(s.sp_->p_, -wo);

@@ -12,7 +12,6 @@
 /* Thanks to David Hunt for finding a ">="-bug!         */
 /********************************************************/
 #include <cmath>
-#include <stdio.h>
 // #include <pbrt.h"
 
 #include "constants.h"
@@ -142,23 +141,23 @@ int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts)
 
 	/* Bullet 3:  */
 	/*  test the 9 tests first (this was faster) */
-	fex = std::fabs(e0[X]);
-	fey = std::fabs(e0[Y]);
-	fez = std::fabs(e0[Z]);
+	fex = std::abs(e0[X]);
+	fey = std::abs(e0[Y]);
+	fez = std::abs(e0[Z]);
 	AXISTEST_X_01(e0[Z], e0[Y], fez, fey);
 	AXISTEST_Y_02(e0[Z], e0[X], fez, fex);
 	AXISTEST_Z_12(e0[Y], e0[X], fey, fex);
 
-	fex = std::fabs(e1[X]);
-	fey = std::fabs(e1[Y]);
-	fez = std::fabs(e1[Z]);
+	fex = std::abs(e1[X]);
+	fey = std::abs(e1[Y]);
+	fez = std::abs(e1[Z]);
 	AXISTEST_X_01(e1[Z], e1[Y], fez, fey);
 	AXISTEST_Y_02(e1[Z], e1[X], fez, fex);
 	AXISTEST_Z_0(e1[Y], e1[X], fey, fex);
 
-	fex = std::fabs(e2[X]);
-	fey = std::fabs(e2[Y]);
-	fez = std::fabs(e2[Z]);
+	fex = std::abs(e2[X]);
+	fey = std::abs(e2[Y]);
+	fez = std::abs(e2[Z]);
 	AXISTEST_X_2(e2[Z], e2[Y], fez, fey);
 	AXISTEST_Y_1(e2[Z], e2[X], fez, fex);
 	AXISTEST_Z_12(e2[Y], e2[X], fey, fex);

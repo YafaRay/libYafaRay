@@ -25,7 +25,6 @@
 #include "light/light.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "render/imagesplitter.h"
 #include "render/render_data.h"
 
 BEGIN_YAFARAY

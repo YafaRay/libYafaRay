@@ -22,9 +22,7 @@
 #include "shader/shader_node.h"
 #include "sampler/sample.h"
 #include "material/material_utils_microfacet.h"
-#include "color/color_ramp.h"
 #include "common/param.h"
-#include "scene/scene.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "render/render_data.h"
@@ -108,7 +106,7 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 	}
 	else
 	{
-		return std::min(1.f, std::max(0.f, (float)(oren_a_ + oren_b_ * maxcos_f * sin_alpha * tan_beta)));
+		return std::min(1.f, std::max(0.f, oren_a_ + oren_b_ * maxcos_f * sin_alpha * tan_beta));
 	}
 }
 
@@ -126,8 +124,8 @@ Rgb GlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, 
 	NodeStack stack(dat->stack_);
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
-	float wi_n = std::fabs(wi * n);
-	float wo_n = std::fabs(wo * n);
+	float wi_n = std::abs(wi * n);
+	float wo_n = std::abs(wo * n);
 
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
@@ -184,7 +182,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 	Vec3 Hs;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
-	float wo_n = std::fabs(wo * n);
+	float wo_n = std::abs(wo * n);
 	float cos_wo_h = 0.f;
 
 	Rgb scolor(0.f);
@@ -213,7 +211,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 				return scolor;
 			}
 
-			wi_n = std::fabs(wi * n);
+			wi_n = std::abs(wi * n);
 
 			s.pdf_ = wi_n;
 
@@ -221,7 +219,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 			{
 				Vec3 h = (wi + wo).normalize();
 				cos_wo_h = wo * h;
-				float cos_wi_h = std::fabs(wi * h);
+				float cos_wi_h = std::abs(wi * h);
 				float cos_n_h = n * h;
 				if(anisotropic_)
 				{
@@ -296,7 +294,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 				return scolor;
 			}
 
-			wi_n = std::fabs(wi * n);
+			wi_n = std::abs(wi * n);
 
 			s.pdf_ = asAnisoPdf__(Hs, cos_wo_h, exp_u_, exp_v_);
 			glossy = asAnisoD__(Hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
@@ -323,7 +321,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 				return scolor;
 			}
 
-			wi_n = std::fabs(wi * n);
+			wi_n = std::abs(wi * n);
 			float cos_hn = h * n;
 
 			s.pdf_ = blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
@@ -375,7 +373,7 @@ float GlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp,
 
 	if(use_diffuse)
 	{
-		pdf = std::fabs(wi * n);
+		pdf = std::abs(wi * n);
 		if(use_glossy)
 		{
 			Vec3 h = (wi + wo).normalize();

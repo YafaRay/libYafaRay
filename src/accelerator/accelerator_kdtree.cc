@@ -24,11 +24,7 @@
 #include "common/logger.h"
 #include "geometry/triangle.h"
 #include "common/param.h"
-#include <algorithm>
-#include <limits>
-#include <set>
 #include <cstring>
-#include <time.h>
 
 BEGIN_YAFARAY
 
@@ -704,7 +700,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 	if(!tree_bound_.cross(ray, a, b, dist)) { return false; }
 
 	IntersectData current_data, temp_data;
-	Vec3 inv_dir(1.0 / ray.dir_.x_, 1.0 / ray.dir_.y_, 1.0 / ray.dir_.z_); //was 1.f!
+	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 	//	int rayId = curMailboxId++;
 	bool hit = false;
 

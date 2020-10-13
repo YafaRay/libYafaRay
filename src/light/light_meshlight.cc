@@ -186,12 +186,12 @@ Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 	{
 		if(s.s_1_ > 0.5f) wo = sample::cosHemisphere(-s.sp_->ng_, du, dv, (s.s_1_ - 0.5f) * 2.f, s.s_2_);
 		else 		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_ * 2.f, s.s_2_);
-		s.dir_pdf_ = 0.5f * std::fabs(s.sp_->ng_ * wo);
+		s.dir_pdf_ = 0.5f * std::abs(s.sp_->ng_ * wo);
 	}
 	else
 	{
 		wo = sample::cosHemisphere(s.sp_->ng_, du, dv, s.s_1_, s.s_2_);
-		s.dir_pdf_ = std::fabs(s.sp_->ng_ * wo);
+		s.dir_pdf_ = std::abs(s.sp_->ng_ * wo);
 	}
 	s.flags_ = flags_;
 	return color_;
@@ -212,7 +212,7 @@ bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0)
 	{
-		if(double_sided_) cos_angle = std::fabs(cos_angle);
+		if(double_sided_) cos_angle = std::abs(cos_angle);
 		else return false;
 	}
 	float idist_sqr = 1.f / (t * t);

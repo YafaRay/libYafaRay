@@ -376,19 +376,19 @@ float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 // distance metric function:
 float distRealF__(float x, float y, float z, float e) { return math::sqrt(x * x + y * y + z * z); }
 float distSquaredF__(float x, float y, float z, float e) { return (x * x + y * y + z * z); }
-float distManhattanF__(float x, float y, float z, float e) { return (std::fabs(x) + std::fabs(y) + std::fabs(z)); }
+float distManhattanF__(float x, float y, float z, float e) { return (std::abs(x) + std::abs(y) + std::abs(z)); }
 float distChebychevF__(float x, float y, float z, float e)
 {
-	x = std::fabs(x);
-	y = std::fabs(y);
-	z = std::fabs(z);
+	x = std::abs(x);
+	y = std::abs(y);
+	z = std::abs(z);
 	float t = (x > y) ? x : y;
 	return ((z > t) ? z : t);
 }
 // minkovsky preset exponent 0.5
 float distMinkovskyHf__(float x, float y, float z, float e)
 {
-	float d = math::sqrt(std::fabs(x)) + math::sqrt(std::fabs(y)) + math::sqrt(std::fabs(z));
+	float d = math::sqrt(std::abs(x)) + math::sqrt(std::abs(y)) + math::sqrt(std::abs(z));
 	return (d * d);
 }
 // minkovsky preset exponent 4
@@ -402,7 +402,7 @@ float distMinkovsky4F__(float x, float y, float z, float e)
 // Minkovsky, general case, slow
 float distMinkovskyF__(float x, float y, float z, float e)
 {
-	return math::pow(math::pow(std::fabs(x), e) + math::pow(std::fabs(y), e) + math::pow(std::fabs(z), e), (float) 1.0 / e);
+	return math::pow(math::pow(std::abs(x), e) + math::pow(std::abs(y), e) + math::pow(std::abs(z), e), (float) 1.0 / e);
 }
 
 //------------------------------------------------------------------------------------
@@ -761,7 +761,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
-	float signal = offset_ - std::fabs(getSignedNoise__(n_gen_, tp));
+	float signal = offset_ - std::abs(getSignedNoise__(n_gen_, tp));
 	signal *= signal;
 	float result = signal;
 	float weight = 1.0;
@@ -771,7 +771,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 		tp *= lacunarity_;
 		weight = signal * gain_;
 		if(weight > (float)1.0) weight = (float)1.0; else if(weight < (float)0.0) weight = (float)0.0;
-		signal = offset_ - std::fabs(getSignedNoise__(n_gen_, tp));
+		signal = offset_ - std::abs(getSignedNoise__(n_gen_, tp));
 		signal *= signal;
 		signal *= weight;
 		result += signal * pwr;
@@ -803,7 +803,7 @@ float turbulence__(const NoiseGenerator *ngen, const Point3 &pt, int oct, float 
 	for(int i = 0; i <= oct; i++, amp *= 0.5, tp *= 2.0)
 	{
 		val = (*ngen)(tp);
-		if(hard) val = std::fabs(2.0 * val - 1.0);
+		if(hard) val = std::abs(2.0 * val - 1.0);
 		sum += amp * val;
 	}
 

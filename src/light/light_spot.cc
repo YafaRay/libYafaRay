@@ -63,7 +63,7 @@ SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float
 
 	interv_1_ = (1.0 - cos_start_);
 	interv_2_ = 0.5 * (cos_start_ - cos_end_); // as said, energy linear to delta cos, integral is 0.5;
-	float sum = std::fabs(interv_1_) + std::fabs(interv_2_);
+	float sum = std::abs(interv_1_) + std::abs(interv_2_);
 	if(sum > 0.f) sum = 1.0 / sum;
 	interv_1_ *= sum;
 	interv_2_ *= sum;
@@ -96,13 +96,13 @@ bool SpotLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	if(cosa < cos_end_) return false; //outside cone
 	if(cosa >= cos_start_) // not affected by falloff
 	{
-		col = color_ * (float)idist_sqr;
+		col = color_ * idist_sqr;
 	}
 	else
 	{
 		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		col = color_ * (float)(v * idist_sqr);
+		col = color_ * v * idist_sqr;
 	}
 
 	wi.tmax_ = dist;
@@ -135,7 +135,7 @@ bool SpotLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const
 	{
 		float v = (cosa - cos_end_) * icos_diff_;
 		v = v * v * (3.f - 2.f * v);
-		s.col_ = color_ * (float)v;
+		s.col_ = color_ * v;
 	}
 
 	s.flags_ = flags_;

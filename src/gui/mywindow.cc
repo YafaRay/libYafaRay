@@ -26,11 +26,9 @@
 #include "mywindow.h"
 #include "worker.h"
 #include "qtoutput.h"
-#include "renderwidget.h"
 #include "ui_windowbase.h"
 #include "events.h"
 #include "animworking.h"
-#include "interface/interface.h"
 #include "common/param.h"
 #include "output/output_image.h"
 #include "format/format.h"
@@ -60,17 +58,10 @@
 // End of resources inclusion
 
 // Standard Headers
-#include <iostream>
-#include <string>
-#include <algorithm>
 
 // Qt Headers
-#include <QHBoxLayout>
-#include <QScrollArea>
 #include <QFileDialog>
-#include <QtCore/QDir>
 #include <QImageWriter>
-#include <QErrorMessage>
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QDesktopWidget>

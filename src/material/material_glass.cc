@@ -23,9 +23,7 @@
 #include "geometry/surface.h"
 #include "common/logger.h"
 #include "color/spectrum.h"
-#include "color/color_ramp.h"
 #include "common/param.h"
-#include "scene/scene.h"
 #include "render/render_data.h"
 
 BEGIN_YAFARAY
@@ -106,7 +104,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				s.pdf_ = (MATCHES(s.flags_, BsdfFlags::Specular | BsdfFlags::Reflect)) ? p_kt : 1.f;
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
-				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_); // * (Kt/std::fabs(sp.N*wi));
+				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_); // * (Kt/std::abs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
@@ -118,7 +116,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				s.pdf_ = p_kr;
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
-				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_); // * (Kr/std::fabs(sp.N*wi));
+				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
@@ -130,7 +128,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 			wi.reflect(n);
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
-			Rgb scolor = 1.f; //Rgb(1.f/std::fabs(sp.N*wi));
+			Rgb scolor = 1.f; //Rgb(1.f/std::abs(sp.N*wi));
 			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 			applyWireFrame(scolor, wire_frame_amount, sp);
 			return scolor;
@@ -167,10 +165,10 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);//*(Kt/std::fabs(sp.N*wo));
+					s.col_back_ = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);//*(Kt/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);//*(Kt/std::fabs(sp.N*wi));
+				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);//*(Kt/std::abs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
@@ -184,10 +182,10 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				if(s.reverse_)
 				{
 					s.pdf_back_ = s.pdf_; //wrong...need to calc fresnel explicitly!
-					s.col_back_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);// * (Kr/std::fabs(sp.N*wo));
+					s.col_back_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wo));
 				}
 				w = 1.f;
-				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);// * (Kr/std::fabs(sp.N*wi));
+				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
 				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
@@ -198,7 +196,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 			wi = wo;
 			wi.reflect(n);
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
-			//Rgb tir_col(1.f/std::fabs(sp.N*wi));
+			//Rgb tir_col(1.f/std::abs(sp.N*wi));
 			if(s.reverse_)
 			{
 				s.pdf_back_ = s.pdf_;
@@ -468,7 +466,7 @@ Rgb MirrorMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 	wi = Vec3::reflectDir(sp.n_, wo);
 	s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 	w = 1.f;
-	return ref_col_ * (1.f / std::fabs(sp.n_ * wi));
+	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
 }
 
 void MirrorMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,

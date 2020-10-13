@@ -24,7 +24,6 @@
 #include "geometry/matrix4.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
-#include "common/layers.h"
 #include <signal.h>
 
 #ifdef WIN32

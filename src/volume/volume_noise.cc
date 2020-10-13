@@ -17,15 +17,10 @@
  */
 
 #include "volume/volume_noise.h"
-#include "geometry/ray.h"
-#include "color/color.h"
-#include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "texture/texture.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "sampler/halton.h"
-#include "math/math.h"
 
 BEGIN_YAFARAY
 

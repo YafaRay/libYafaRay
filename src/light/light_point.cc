@@ -51,7 +51,7 @@ bool PointLight::illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const
 	wi.tmax_ = dist;
 	wi.dir_ = ldir;
 
-	col = color_ * (float)idist_sqr;
+	col = color_ * idist_sqr;
 	return true;
 }
 

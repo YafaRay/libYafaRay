@@ -176,8 +176,8 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 							 float turb, float shp, bool hrd, const std::string &ntype, const std::string &shape)
 	: octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
 {
-	sharpness_ = 1.0;
-	if(shp > 1) sharpness_ = 1.0 / shp;
+	sharpness_ = 1.f;
+	if(shp > 1) sharpness_ = 1.f / shp;
 	n_gen_ = newNoise__(ntype);
 	wshape_ = Sin;
 	if(shape == "saw") wshape_ = Saw;
@@ -186,21 +186,21 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.0
+	float w = (p.x_ + p.y_ + p.z_) * 5.f
 	          + ((turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Saw:
-			w *= (float)(0.5 * M_1_PI);
+			w *= 0.5f * M_1_PI;
 			w -= floor(w);
 			break;
 		case Tri:
-			w *= (float)(0.5 * M_1_PI);
-			w = std::fabs((float)2.0 * (w - floor(w)) - (float)1.0);
+			w *= 0.5f * M_1_PI;
+			w = std::abs(2.f * (w - floor(w)) -1.f);
 			break;
 		default:
 		case Sin:
-			w = (float)0.5 + (float)0.5 * math::sin(w);
+			w = 0.5f + 0.5f * math::sin(w);
 	}
 	return applyIntensityContrastAdjustments(math::pow(w, sharpness_));
 }
@@ -270,23 +270,23 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 {
 	float w;
 	if(rings_)
-		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.0;
+		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.f;
 	else
-		w = (p.x_ + p.y_ + p.z_) * 10.0;
+		w = (p.x_ + p.y_ + p.z_) * 10.f;
 	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
 		case Saw:
-			w *= (float)(0.5 * M_1_PI);
+			w *= 0.5f * M_1_PI;
 			w -= floor(w);
 			break;
 		case Tri:
-			w *= (float)(0.5 * M_1_PI);
-			w = std::fabs((float)2.0 * (w - floor(w)) - (float)1.0);
+			w *= 0.5f * M_1_PI;
+			w = std::abs(2.f * (w - floor(w)) - 1.f);
 			break;
 		default:
 		case Sin:
-			w = (float)0.5 + (float)0.5 * math::sin(w);
+			w = 0.5f + 0.5f * math::sin(w);
 	}
 	return applyIntensityContrastAdjustments(w);
 }
@@ -410,10 +410,10 @@ VoronoiTexture::VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
 		dm = VoronoiNoiseGenerator::DistMinkovsky;
 	v_gen_.setDistM(dm);
 	v_gen_.setMinkovskyExponent(mex);
-	aw_1_ = std::fabs(w_1);
-	aw_2_ = std::fabs(w_2);
-	aw_3_ = std::fabs(w_3);
-	aw_4_ = std::fabs(w_4);
+	aw_1_ = std::abs(w_1);
+	aw_2_ = std::abs(w_2);
+	aw_3_ = std::abs(w_3);
+	aw_4_ = std::abs(w_4);
 	iscale_ = aw_1_ + aw_2_ + aw_3_ + aw_4_;
 	if(iscale_ != 0) iscale_ = isc / iscale_;
 }
@@ -423,7 +423,7 @@ float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_param
 	float da[4];
 	Point3 pa[4];
 	v_gen_.getFeatures(p * size_, da, pa);
-	return applyIntensityContrastAdjustments(iscale_ * std::fabs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
+	return applyIntensityContrastAdjustments(iscale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
 																 + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da)));
 }
 
@@ -432,7 +432,7 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	float da[4];
 	Point3 pa[4];
 	v_gen_.getFeatures(p * size_, da, pa);
-	float inte = iscale_ * std::fabs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
+	float inte = iscale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
 									 + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da));
 	Rgba col(0.0);
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));
@@ -444,7 +444,7 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 		col += aw_4_ * cellNoiseColor__(v_gen_.getPoint(3, pa));
 		if(coltype_ >= 2)
 		{
-			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.0;
+			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.f;
 			if(t_1 > 1) t_1 = 1;
 			if(coltype_ == 3) t_1 *= inte; else t_1 *= iscale_;
 			col *= t_1;

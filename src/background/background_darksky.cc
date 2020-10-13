@@ -31,8 +31,6 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
-
-#include "color/color_conversion.h"
 #include "color/spectral_data.h"
 #include "math/interpolation_curve.h"
 
@@ -72,7 +70,7 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 
 	double chi = (0.44444444 - (t_ / 120.0)) * (M_PI - (2.0 * theta_s_));
 
-	zenith_Y_ = (4.0453 * t_ - 4.9710) * tan(chi) - 0.2155 * t_ + 2.4192;
+	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
 	zenith_x_ =

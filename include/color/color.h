@@ -58,7 +58,7 @@ class Rgb
 		float energy() const {return (r_ + g_ + b_) * 0.333333f;};
 		// Using ITU/Photometric values Y = 0.2126 R + 0.7152 G + 0.0722 B
 		float col2Bri() const { return (0.2126f * r_ + 0.7152f * g_ + 0.0722f * b_); }
-		float abscol2Bri() const { return (0.2126f * std::fabs(r_) + 0.7152f * std::fabs(g_) + 0.0722f * std::fabs(b_)); }
+		float abscol2Bri() const { return (0.2126f * std::abs(r_) + 0.7152f * std::abs(g_) + 0.0722f * std::abs(b_)); }
 		void gammaAdjust(float g) { r_ = math::pow(r_, g); g_ = math::pow(g_, g); b_ = math::pow(b_, g); }
 		void expgamAdjust(float e, float g, bool clamp_rgb);
 		float getR() const { return r_; }
@@ -72,7 +72,7 @@ class Rgb
 			if(g_ != 0.f) g_ = 1.f / g_;
 			if(b_ != 0.f) b_ = 1.f / b_;
 		}
-		void absRgb() { r_ = std::fabs(r_); g_ = std::fabs(g_); b_ = std::fabs(b_); }
+		void absRgb() { r_ = std::abs(r_); g_ = std::abs(g_); b_ = std::abs(b_); }
 		void darkenRgb(const Rgb &col)
 		{
 			if(r_ > col.r_) r_ = col.r_;
@@ -89,7 +89,7 @@ class Rgb
 		void black() { r_ = g_ = b_ = 0; }
 		float minimum() const { return std::min(r_, std::min(g_, b_)); }
 		float maximum() const { return std::max(r_, std::max(g_, b_)); }
-		float absmax() const { return std::max(std::fabs(r_), std::max(std::fabs(g_), std::fabs(b_))); }
+		float absmax() const { return std::max(std::abs(r_), std::max(std::abs(g_), std::abs(b_))); }
 		void clampRgb0()
 		{
 			if(r_ < 0.0) r_ = 0.0;
@@ -450,14 +450,14 @@ inline void Rgb::clampProportionalRgb(float max_value)	//Function to clamp the c
 
 inline float Rgba::colorDifference(Rgba color_2, bool use_rg_bcomponents)
 {
-	float color_difference = std::fabs(color_2.col2Bri() - col2Bri());
+	float color_difference = std::abs(color_2.col2Bri() - col2Bri());
 
 	if(use_rg_bcomponents)
 	{
-		float rdiff = std::fabs(color_2.r_ - r_);
-		float gdiff = std::fabs(color_2.g_ - g_);
-		float bdiff = std::fabs(color_2.b_ - b_);
-		float adiff = std::fabs(color_2.a_ - a_);
+		float rdiff = std::abs(color_2.r_ - r_);
+		float gdiff = std::abs(color_2.g_ - g_);
+		float bdiff = std::abs(color_2.b_ - b_);
+		float adiff = std::abs(color_2.a_ - a_);
 
 		if(color_difference < rdiff) color_difference = rdiff;
 		if(color_difference < gdiff) color_difference = gdiff;
@@ -481,7 +481,7 @@ inline void Rgb::rgbToHsv(float &h, float &s, float &v) const
 	float range = max_component - min_component;
 	v = max_component;
 
-	if(std::fabs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
+	if(std::abs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
 	else if(max_component == r_1) { h = std::fmod((g_1 - b_1) / range, 6.f); s = range / std::max(v, 1.0e-6f); }
 	else if(max_component == g_1) { h = ((b_1 - r_1) / range) + 2.f; s = range / std::max(v, 1.0e-6f); }
 	else if(max_component == b_1) { h = ((r_1 - g_1) / range) + 4.f; s = range / std::max(v, 1.0e-6f); }
@@ -494,7 +494,7 @@ inline void Rgb::hsvToRgb(const float &h, const float &s, const float &v)
 {
 	//RGB-HSV Based on https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
 	float c = v * s;
-	float x = c * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
+	float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
 	float m = v - c;
 	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 
@@ -523,10 +523,10 @@ inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 	float range = max_component - min_component;
 	l = 0.5f * (max_component + min_component);
 
-	if(std::fabs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
-	else if(max_component == r_1) { h = std::fmod((g_1 - b_1) / range, 6.f); s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
-	else if(max_component == g_1) { h = ((b_1 - r_1) / range) + 2.f; s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
-	else if(max_component == b_1) { h = ((r_1 - g_1) / range) + 4.f; s = range / std::max((1.f - std::fabs((2.f * l) - 1)), 1.0e-6f); }
+	if(std::abs(range) < 1.0e-6f) { h = 0.f; s = 0.f; }
+	else if(max_component == r_1) { h = std::fmod((g_1 - b_1) / range, 6.f); s = range / std::max((1.f - std::abs((2.f * l) - 1)), 1.0e-6f); }
+	else if(max_component == g_1) { h = ((b_1 - r_1) / range) + 2.f; s = range / std::max((1.f - std::abs((2.f * l) - 1)), 1.0e-6f); }
+	else if(max_component == b_1) { h = ((r_1 - g_1) / range) + 4.f; s = range / std::max((1.f - std::abs((2.f * l) - 1)), 1.0e-6f); }
 	else { h = 0.f; s = 0.f; l = 0.f; }
 
 	if(h < 0.f) h += 6.f;
@@ -535,8 +535,8 @@ inline void Rgb::rgbToHsl(float &h, float &s, float &l) const
 inline void Rgb::hslToRgb(const float &h, const float &s, const float &l)
 {
 	//RGB-hsl Based on https://en.wikipedia.org/wiki/HSL_and_hsl#Converting_to_RGB
-	float c = (1.f - std::fabs((2.f * l) - 1.f)) * s;
-	float x = c * (1.f - std::fabs(std::fmod(h, 2.f) - 1.f));
+	float c = (1.f - std::abs((2.f * l) - 1.f)) * s;
+	float x = c * (1.f - std::abs(std::fmod(h, 2.f) - 1.f));
 	float m = l - 0.5f * c;
 	float r_1 = 0.f, g_1 = 0.f, b_1 = 0.f;
 

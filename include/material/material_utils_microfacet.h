@@ -139,7 +139,7 @@ inline float ggxPdf__(float d, float cos_theta, float jacobian)
 
 inline float microfacetFresnel__(float wo_h, float ior)
 {
-	float c = std::fabs(wo_h);
+	float c = std::abs(wo_h);
 	float g = ior * ior - 1 + c * c;
 	if(g > 0)
 	{

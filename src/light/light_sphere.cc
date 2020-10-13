@@ -154,7 +154,7 @@ Rgb SphereLight::emitSample(Vec3 &wo, LSample &s) const
 	Vec3 du, dv;
 	Vec3::createCs(sdir, du, dv);
 	wo = sample::cosHemisphere(sdir, du, dv, s.s_1_, s.s_2_);
-	s.dir_pdf_ = std::fabs(sdir * wo);
+	s.dir_pdf_ = std::abs(sdir * wo);
 	s.area_pdf_ = inv_area_ * M_PI;
 	s.flags_ = flags_;
 	return color_;

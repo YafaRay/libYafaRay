@@ -100,8 +100,8 @@ Point3 EquirectangularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	s.x_ = -dx / (4.0 * M_PI * dz);
-	s.y_ = -dy / (4.0 * M_PI * dz);
+	s.x_ = -dx / (4.f * M_PI * dz);
+	s.y_ = -dy / (4.f * M_PI * dz);
 	s.z_ = 0;
 
 	return s;

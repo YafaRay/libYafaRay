@@ -18,10 +18,6 @@
 
 #include "volume/volume_exp_density.h"
 #include "common/logger.h"
-#include "geometry/ray.h"
-#include "color/color.h"
-#include "volume/volume.h"
-#include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "common/param.h"
 

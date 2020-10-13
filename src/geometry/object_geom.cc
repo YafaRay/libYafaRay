@@ -21,7 +21,6 @@
 #include "geometry/triangle.h"
 #include "common/param.h"
 #include "common/logger.h"
-#include <cstdlib>
 
 BEGIN_YAFARAY
 

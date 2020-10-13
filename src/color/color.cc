@@ -21,7 +21,6 @@
  */
 #include "color/color.h"
 using namespace std;
-#include<iostream>
 
 BEGIN_YAFARAY
 

@@ -240,7 +240,7 @@ float ShinyDiffuseMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	}
 	else
 	{
-		return std::min(1.f, std::max(0.f, (float)(oren_nayar_a_ + oren_nayar_b_ * maxcos_f * sin_alpha * tan_beta)));
+		return std::min(1.f, std::max(0.f, oren_nayar_a_ + oren_nayar_b_ * maxcos_f * sin_alpha * tan_beta));
 	}
 }
 
@@ -368,14 +368,14 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 			if(s.reverse_)
 			{
 				s.pdf_back_ = s.pdf_;
-				s.col_back_ = scolor / std::max(std::fabs(sp.n_ * wo), 1.0e-6f);
+				s.col_back_ = scolor / std::max(std::abs(sp.n_ * wo), 1.0e-6f);
 			}
-			scolor *= 1.f / std::max(std::fabs(sp.n_ * wi), 1.0e-6f);
+			scolor *= 1.f / std::max(std::abs(sp.n_ * wi), 1.0e-6f);
 			break;
 		case(BsdfFlags::SpecularTransmit):
 			wi = -wo;
 			scolor = accum_c[1] * (transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_));
-			cos_n = std::fabs(wi * n);
+			cos_n = std::abs(wi * n);
 			if(cos_n < 1e-6) s.pdf_ = 0.f;
 			else s.pdf_ = width[pick];
 			break;
@@ -383,7 +383,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 			wi = sample::cosHemisphere(-n, sp.nu_, sp.nv_, s_1, s.s_2_);
 			cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0) scolor = accum_c[2] * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_);
-			s.pdf_ = std::fabs(wi * n) * width[pick]; break;
+			s.pdf_ = std::abs(wi * n) * width[pick]; break;
 		case(BsdfFlags::DiffuseReflect):
 		default:
 			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
@@ -397,10 +397,10 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 				scolor *= orenNayar(wo, wi, n, use_texture_sigma, texture_sigma);
 			}
-			s.pdf_ = std::fabs(wi * n) * width[pick]; break;
+			s.pdf_ = std::abs(wi * n) * width[pick]; break;
 	}
 	s.sampled_flags_ = choice[pick];
-	w = (std::fabs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
+	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
 
 	const float alpha = getAlpha(render_data, sp, wo);
 	w = w * (alpha) + 1.f * (1.f - alpha);
@@ -448,12 +448,12 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 			{
 				case(BsdfFlags::Diffuse | BsdfFlags::Transmit):  // translucency (diffuse transmitt)
 					cos_ng_wi = sp.ng_ * wi;
-					if(cos_ng_wo * cos_ng_wi < 0) pdf += std::fabs(wi * n) * width;
+					if(cos_ng_wo * cos_ng_wi < 0) pdf += std::abs(wi * n) * width;
 					break;
 
 				case(BsdfFlags::Diffuse | BsdfFlags::Reflect):  // lambertian
 					cos_ng_wi = sp.ng_ * wi;
-					pdf += std::fabs(wi * n) * width;
+					pdf += std::abs(wi * n) * width;
 					break;
 				default:
 					break;

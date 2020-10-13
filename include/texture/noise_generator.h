@@ -100,16 +100,16 @@ struct dist_Squared : public distanceMetric_t
 
 struct dist_Manhattan : public distanceMetric_t
 {
-	virtual float operator() (float x, float y, float z, float e) { return (std::fabs(x) + std::fabs(y) + std::fabs(z)); }
+	virtual float operator() (float x, float y, float z, float e) { return (std::abs(x) + std::abs(y) + std::abs(z)); }
 };
 
 struct dist_Chebychev : public distanceMetric_t
 {
 	virtual float operator() (float x, float y, float z, float e)
 	{
-		x = std::fabs(x);
-		y = std::fabs(y);
-		z = std::fabs(z);
+		x = std::abs(x);
+		y = std::abs(y);
+		z = std::abs(z);
 		float t = (x>y)?x:y;
 		return ((z>t)?z:t);
 	}
@@ -120,7 +120,7 @@ struct dist_MinkovskyH : public distanceMetric_t
 {
 	virtual float operator() (float x, float y, float z, float e)
 	{
-		float d = sqrt(std::fabs(x)) + sqrt(std::fabs(y)) + sqrt(std::fabs(z));
+		float d = sqrt(std::abs(x)) + sqrt(std::abs(y)) + sqrt(std::abs(z));
 		return (d*d);
 	}
 };
@@ -142,7 +142,7 @@ struct dist_Minkovsky : public distanceMetric_t
 {
 	virtual float operator() (float x, float y, float z, float e)
 	{
-		return pow(pow(std::fabs(x), e) + pow(std::fabs(y), e) + pow(std::fabs(z), e), (float)1.0/e);
+		return pow(pow(std::abs(x), e) + pow(std::abs(y), e) + pow(std::abs(z), e), (float)1.0/e);
 	}
 };
 */
@@ -268,7 +268,7 @@ Rgba cellNoiseColor__(const Point3 &pt);
 
 static inline float getSignedNoise__(const NoiseGenerator *n_gen, const Point3 &pt)
 {
-	return (float)2.0 * (*n_gen)(pt) - (float)1.0;
+	return 2.f * (*n_gen)(pt) - 1.f;
 }
 
 

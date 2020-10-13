@@ -31,7 +31,7 @@ Matrix4::Matrix4(const float init): invalid_(0)
 		for(int j = 0; j < 4; ++j)
 		{
 			if(i == j)
-				matrix_[i][j] = (float)init;
+				matrix_[i][j] = init;
 			else
 				matrix_[i][j] = 0;
 		}
@@ -76,9 +76,9 @@ Matrix4 &Matrix4::inverse()
 		int ci = 0;
 		for(int k = i; k < 4; ++k)
 		{
-			if(std::fabs(matrix_[k][i]) > max)
+			if(std::abs(matrix_[k][i]) > max)
 			{
-				max = std::fabs(matrix_[k][i]);
+				max = std::abs(matrix_[k][i]);
 				ci = k;
 			}
 		}

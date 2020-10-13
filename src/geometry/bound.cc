@@ -17,7 +17,6 @@
  */
 
 #include "geometry/bound.h"
-#include <iostream>
 
 BEGIN_YAFARAY
 

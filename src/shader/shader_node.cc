@@ -123,7 +123,7 @@ float ShaderNode::textureValueBlend(float tex, float out, float fact, float facg
 			return facm * out + fact * out / tex;
 
 		case BlendMode::Diff:
-			return facm * out + fact * std::fabs(tex - out);
+			return facm * out + fact * std::abs(tex - out);
 
 		case BlendMode::Dark:
 		{

@@ -18,7 +18,6 @@
 
 #include "render/imagesplitter.h"
 #include <iostream>
-#include <math.h>
 #include <algorithm>
 
 BEGIN_YAFARAY

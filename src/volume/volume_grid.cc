@@ -17,16 +17,9 @@
  */
 
 #include "volume/volume_grid.h"
-#include "geometry/ray.h"
-#include "color/color.h"
-#include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "texture/texture.h"
 #include "common/param.h"
-#include "sampler/halton.h"
-
-#include <fstream>
-#include <cstdlib>
 
 BEGIN_YAFARAY
 

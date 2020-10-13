@@ -22,8 +22,9 @@
 #ifndef YAFARAY_INTEGRATOR_DEBUG_H
 #define YAFARAY_INTEGRATOR_DEBUG_H
 
-#include <render/render_view.h>
+#include "render/render_view.h"
 #include "integrator_tiled.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 

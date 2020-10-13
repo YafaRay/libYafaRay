@@ -72,7 +72,7 @@ bool Vec3::refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior)
 	}
 	else
 	{
-		eta = 1.0 / ior;
+		eta = 1.f / ior;
 	}
 	const float k = 1 - eta * eta * (1 - cos_v_n * cos_v_n);
 	if(k <= 0.f) return false;
@@ -107,7 +107,7 @@ void Vec3::fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt
 		g = math::sqrt(g);
 	const float aux = c * (g + c);
 
-	kr = ((0.5 * (g - c) * (g - c)) / ((g + c) * (g + c))) *
+	kr = ((0.5f * (g - c) * (g - c)) / ((g + c) * (g + c))) *
 		 (1 + ((aux - 1) * (aux - 1)) / ((aux + 1) * (aux + 1)));
 	if(kr < 1.0)
 		kt = 1 - kr;
@@ -165,8 +165,8 @@ void Vec3::shirleyDisk(float r_1, float r_2, float &u, float &v)
 
 Vec3 Vec3::randomVectorCone(const Vec3 &d, const Vec3 &u, const Vec3 &v, float cosang, float z_1, float z_2)
 {
-	const float t_1 = math::mult_pi_by_2 * z_1, t_2 = 1.0 - (1.0 - cosang) * z_2;
-	return (u * math::cos(t_1) + v * math::sin(t_1)) * math::sqrt(1.0 - t_2 * t_2) + d * t_2;
+	const float t_1 = math::mult_pi_by_2 * z_1, t_2 = 1.f - (1.f - cosang) * z_2;
+	return (u * math::cos(t_1) + v * math::sin(t_1)) * math::sqrt(1.f - t_2 * t_2) + d * t_2;
 }
 
 Vec3 Vec3::randomVectorCone(const Vec3 &dir, float cangle, float r_1, float r_2)
@@ -181,12 +181,12 @@ Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int squ
 	const float r_1 = static_cast<float>(sample / square) / static_cast<float>(square);
 	const float r_2 = static_cast<float>(sample % square) / static_cast<float>(square);
 	const float tt = math::mult_pi_by_2 * r_1;
-	const float ss = math::acos(1.0 - (1.0 - cangle) * r_2);
+	const float ss = math::acos(1.f - (1.f - cangle) * r_2);
 	const Vec3 vx(math::cos(ss), math::sin(ss) * math::cos(tt), math::sin(ss) * math::sin(tt));
 	const Vec3 i(1, 0, 0);
 	Vec3 c;
 	Matrix4 m(1);
-	if((std::fabs(dir.y_) > 0.0) || (std::fabs(dir.z_) > 0.0))
+	if((std::abs(dir.y_) > 0.0) || (std::abs(dir.z_) > 0.0))
 	{
 		m[0][0] = dir.x_;
 		m[1][0] = dir.y_;
@@ -202,7 +202,7 @@ Vec3 Vec3::discreteVectorCone(const Vec3 &dir, float cangle, int sample, int squ
 		m[1][2] = c.y_;
 		m[2][2] = c.z_;
 	}
-	else if(dir.x_ < 0.0) m[0][0] = -1.0;
+	else if(dir.x_ < 0.0) m[0][0] = -1.f;
 	return m * vx;
 }
 

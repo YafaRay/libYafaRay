@@ -47,7 +47,7 @@ SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, fl
 	t_ = turb;
 	t_2_ = turb * turb;
 	double chi = (4.0 / 9.0 - t_ / 120.0) * (M_PI - 2.0 * theta_s_);
-	zenith_Y_ = (4.0453 * t_ - 4.9710) * tan(chi) - 0.2155 * t_ + 2.4192;
+	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
 	zenith_x_ = (0.00165 * theta_3_ - 0.00375 * theta_2_ + 0.00209 * theta_s_) * t_2_ +
@@ -93,7 +93,7 @@ double SunSkyBackground::perezFunction(const double *lam, double theta, double g
 		e_2 = math::exp(e_2);
 	else
 		e_2 = 7.7220185e99;
-	if((e_3 = lam[1] / cos(theta)) <= 230.)
+	if((e_3 = lam[1] / math::cos(theta)) <= 230.)
 		e_3 = math::exp(e_3);
 	else
 		e_3 = 7.7220185e99;
@@ -236,9 +236,9 @@ Background *SunSkyBackground::factory(ParamMap &params, Scene &scene)
 
 	if(add_sun)
 	{
-		Rgb suncol = computeAttenuatedSunlight__(math::acos(std::fabs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
+		Rgb suncol = computeAttenuatedSunlight__(math::acos(std::abs(dir.z_)), turb);//(*new_sunsky)(vector3d_t(dir.x, dir.y, dir.z));
 		double angle = 0.27;
-		double cos_angle = cos(math::degToRad(angle));
+		double cos_angle = math::cos(math::degToRad(angle));
 		float invpdf = (2.f * M_PI * (1.f - cos_angle));
 		suncol *= invpdf * power;
 

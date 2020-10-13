@@ -34,9 +34,9 @@ AngularCamera::AngularCamera(const Point3 &pos, const Point3 &look, const Point3
 	setAxis(cam_x_, cam_y_, cam_z_);
 
 	if(projection == Projection::Orthographic) focal_length_ = 1.f / math::sin(angle);
-	else if(projection == Projection::Stereographic) focal_length_ = 1.f / 2.f / tan(angle / 2.f);
+	else if(projection == Projection::Stereographic) focal_length_ = 1.f / 2.f / std::tan(angle / 2.f);
 	else if(projection == Projection::EquisolidAngle) focal_length_ = 1.f / 2.f / math::sin(angle / 2.f);
-	else if(projection == Projection::Rectilinear) focal_length_ = 1.f / tan(angle);
+	else if(projection == Projection::Rectilinear) focal_length_ = 1.f / std::tan(angle);
 	else focal_length_ = 1.f / angle; //By default, AngularProjection::Equidistant
 }
 
@@ -64,10 +64,10 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	float theta = 0;
 	if(!((u == 0) && (v == 0))) theta = atan2(v, u);
 	float phi = 0.f;
-	if(projection_ == Projection::Orthographic) phi = asin(radius / focal_length_);
-	else if(projection_ == Projection::Stereographic) phi = 2.f * atan(radius / (2.f * focal_length_));
-	else if(projection_ == Projection::EquisolidAngle) phi = 2.f * asin(radius / (2.f * focal_length_));
-	else if(projection_ == Projection::Rectilinear) phi = atan(radius / focal_length_);
+	if(projection_ == Projection::Orthographic) phi = math::asin(radius / focal_length_);
+	else if(projection_ == Projection::Stereographic) phi = 2.f * std::atan(radius / (2.f * focal_length_));
+	else if(projection_ == Projection::EquisolidAngle) phi = 2.f * math::asin(radius / (2.f * focal_length_));
+	else if(projection_ == Projection::Rectilinear) phi = std::atan(radius / focal_length_);
 	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
@@ -131,8 +131,8 @@ Point3 AngularCamera::screenproject(const Point3 &p) const
 	float dy = cam_y_ * dir;
 	float dz = cam_z_ * dir;
 
-	s.x_ = -dx / (4.0 * M_PI * dz);
-	s.y_ = -dy / (4.0 * M_PI * dz);
+	s.x_ = -dx / (4.f * M_PI * dz);
+	s.y_ = -dy / (4.f * M_PI * dz);
 	s.z_ = 0;
 
 	return s;

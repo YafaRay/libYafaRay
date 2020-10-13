@@ -25,7 +25,6 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "geometry/surface.h"
-#include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 
 BEGIN_YAFARAY

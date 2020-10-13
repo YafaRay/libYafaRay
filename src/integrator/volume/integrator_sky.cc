@@ -22,9 +22,7 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "sampler/halton_scr.h"
 #include "render/render_data.h"
-#include <vector>
 
 BEGIN_YAFARAY
 
@@ -121,7 +119,7 @@ Rgba SkyIntegrator::skyTau(const Ray &ray) const {
 	tauVal = Rgba(K*(H-u));
 	*/
 
-	tau_val = Rgba(sigma_t_ * exp(-alpha_ * h_0) * (1.f - exp(-alpha_ * cos_theta * s)) / (alpha_ * cos_theta));
+	tau_val = Rgba(sigma_t_ * math::exp(-alpha_ * h_0) * (1.f - math::exp(-alpha_ * cos_theta * s)) / (alpha_ * cos_theta));
 
 	//std::cout << tauVal.energy() << " " << cos_theta << " " << dist << " " << ray.tmax << std::endl;
 
@@ -142,7 +140,7 @@ Rgba SkyIntegrator::skyTau(const Ray &ray, float beta, float alpha) const {
 
 	float h_0 = ray.from_.z_ * scale_;
 
-	tau_val = Rgba(beta * exp(-alpha * h_0) * (1.f - exp(-alpha * cos_theta * s)) / (alpha * cos_theta));
+	tau_val = Rgba(beta * math::exp(-alpha * h_0) * (1.f - math::exp(-alpha * cos_theta * s)) / (alpha * cos_theta));
 	//tauVal = Rgba(-beta / (alpha * cos_theta) * ( exp(-alpha * (h0 + cos_theta * s)) - exp(-alpha*h0) ));
 
 	return tau_val;
@@ -154,7 +152,7 @@ Rgba SkyIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
 
 	result = skyTau(ray, b_m_, alpha_m_);
 	result += skyTau(ray, b_r_, alpha_r_);
-	return Rgba(exp(-result.energy()));
+	return Rgba(math::exp(-result.energy()));
 }
 
 Rgba SkyIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
@@ -176,9 +174,9 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_
 		for(int u = 0; u < u_vec; u++)
 		{
 			float phi = (u /* + (*render_data.prng)() */) * 2.0f * M_PI / (float)u_vec;
-			float z = cos(theta);
-			float x = sin(theta) * cos(phi);
-			float y = sin(theta) * sin(phi);
+			float z = math::cos(theta);
+			float x = math::sin(theta) * math::cos(phi);
+			float y = math::sin(theta) * math::sin(phi);
 			Vec3 w(x, y, z);
 			Ray bgray(Point3(0, 0, 0), w, 0, 1, 0);
 			Rgb l_s = background_->eval(bgray);
@@ -210,14 +208,14 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_
 	{
 		Ray step_ray(ray.from_, ray.dir_, 0, pos / scale_, 0);
 
-		float u_r = exp(-alpha_r_ * (h_0 + pos * cos_theta));
-		float u_m = exp(-alpha_m_ * (h_0 + pos * cos_theta));
+		float u_r = math::exp(-alpha_r_ * (h_0 + pos * cos_theta));
+		float u_m = math::exp(-alpha_m_ * (h_0 + pos * cos_theta));
 
 		Rgba tau_m = skyTau(step_ray, b_m_, alpha_m_);
 		Rgba tau_r = skyTau(step_ray, b_r_, alpha_r_);
 
-		float tr_r = exp(-tau_r.energy());
-		float tr_m = exp(-tau_m.energy());
+		float tr_r = math::exp(-tau_r.energy());
+		float tr_m = math::exp(-tau_m.energy());
 
 		//if (Tr < 1e-3) // || u < 1e-3)
 		//	break;

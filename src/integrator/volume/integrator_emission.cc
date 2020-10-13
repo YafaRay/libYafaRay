@@ -22,9 +22,6 @@
 #include "material/material.h"
 #include "background/background.h"
 #include "light/light.h"
-#include "sampler/halton.h"
-#include "sampler/halton_scr.h"
-#include <vector>
 
 BEGIN_YAFARAY
 

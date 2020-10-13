@@ -38,9 +38,6 @@
 #include "volume/volume.h"
 #include "output/output.h"
 
-#include <iostream>
-#include <limits>
-
 BEGIN_YAFARAY
 
 #define Y_VERBOSE_SCENE Y_VERBOSE << "Scene: "

@@ -30,14 +30,10 @@
 #include "camera/camera.h"
 #include "shader/shader_node.h"
 #include "render/imagefilm.h"
-#include "geometry/object_geom.h"
 #include "volume/volume.h"
 #include "geometry/primitive_basic.h"
 #include "output/output.h"
 #include "render/render_data.h"
-
-#include <iostream>
-#include <limits>
 
 BEGIN_YAFARAY
 
@@ -134,11 +130,11 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		o = points[i];
 		if(strand_shape < 0)
 		{
-			r = strand_start + pow((float)i / (n - 1), 1 + strand_shape) * (strand_end - strand_start);
+			r = strand_start + math::pow((float)i / (n - 1), 1 + strand_shape) * (strand_end - strand_start);
 		}
 		else
 		{
-			r = strand_start + (1 - pow(((float)(n - i - 1)) / (n - 1), 1 - strand_shape)) * (strand_end - strand_start);
+			r = strand_start + (1 - math::pow(((float)(n - i - 1)) / (n - 1), 1 - strand_shape)) * (strand_end - strand_start);
 		}
 		// Last point keep previous tangent plane
 		if(i < n - 1)
@@ -148,8 +144,8 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 			Vec3::createCs(N, u, v);
 		}
 		// TODO: thikness?
-		a = o - (0.5 * r * v) - 1.5 * r / sqrt(3.f) * u;
-		b = o - (0.5 * r * v) + 1.5 * r / sqrt(3.f) * u;
+		a = o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u;
+		b = o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u;
 
 		geometry_creation_state_.cur_obj_->obj_->points_.push_back(a);
 		geometry_creation_state_.cur_obj_->obj_->points_.push_back(b);

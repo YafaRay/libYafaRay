@@ -112,7 +112,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *ligh
 			if(cast_shadows) shadowed = (tr_shad_) ? scene_->isShadowed(render_data, light_ray, s_depth_, scol, mask_obj_index, mask_mat_index) : scene_->isShadowed(render_data, light_ray, mask_obj_index, mask_mat_index);
 			else shadowed = false;
 
-			const float angle_light_normal = (material->isFlat() ? 1.f : std::fabs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+			const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 
 			if(!shadowed || (layers_used && color_layers->find(Layer::DiffuseNoShadow)))
 			{
@@ -200,7 +200,7 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *ligh
 
 					if(layers_used && (!shadowed && ls.pdf_ > 1e-6f) && color_layers->find(Layer::Shadow)) col_shadow += Rgb(1.f);
 
-					const float angle_light_normal = (material->isFlat() ? 1.f : std::fabs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
+					const float angle_light_normal = (material->isFlat() ? 1.f : std::abs(sp.n_ * light_ray.dir_));	//If the material has the special attribute "isFlat()" then we will not multiply the surface reflection by the cosine of the angle between light and normal
 
 					if(can_intersect)
 					{
@@ -1013,7 +1013,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 
 		if(!shadowed)
 		{
-			const float cos = std::fabs(sp.n_ * light_ray.dir_);
+			const float cos = std::abs(sp.n_ * light_ray.dir_);
 			if(tr_shad_) col += ao_col_ * scol * surf_col * cos * w;
 			else col += ao_col_ * surf_col * cos * w;
 		}
@@ -1024,7 +1024,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	Rgb col(0.f), surf_col(0.f), scol(0.f);
+	Rgb col(0.f), surf_col(0.f);
 	bool shadowed;
 	const Material *material = sp.material_;
 	Ray light_ray;
@@ -1073,7 +1073,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 
 		if(!shadowed)
 		{
-			float cos = std::fabs(sp.n_ * light_ray.dir_);
+			float cos = std::abs(sp.n_ * light_ray.dir_);
 			//if(trShad) col += aoCol * scol * surfCol * cos * W;
 			col += ao_col_ * surf_col * cos * w;
 		}
@@ -1085,7 +1085,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 
 Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	Rgb col(0.f), surf_col(0.f), scol(0.f);
+	Rgb col(0.f), surf_col(0.f);
 	bool shadowed;
 	const Material *material = sp.material_;
 	Ray light_ray;
@@ -1135,7 +1135,7 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 
 		if(!shadowed)
 		{
-			float cos = std::fabs(sp.n_ * light_ray.dir_);
+			float cos = std::abs(sp.n_ * light_ray.dir_);
 			//if(trShad) col += aoCol * scol * surfCol * cos * W;
 			col += ao_col_ * surf_col * cos * w;
 		}

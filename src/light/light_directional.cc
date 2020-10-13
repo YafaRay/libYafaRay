@@ -22,8 +22,6 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "geometry/bound.h"
-#include "sampler/sample.h"
 #include "common/logger.h"
 
 BEGIN_YAFARAY

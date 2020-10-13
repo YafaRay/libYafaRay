@@ -177,11 +177,11 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 	u = dx * focal_distance_ / dz;
 	if(u < -0.5 || u > 0.5) return false;
-	u = (u + 0.5) * (float) resx_;
+	u = (u + 0.5f) * (float) resx_;
 
 	v = dy * focal_distance_ / (dz * aspect_ratio_);
 	if(v < -0.5 || v > 0.5) return false;
-	v = (v + 0.5) * (float) resy_;
+	v = (v + 0.5f) * (float) resy_;
 
 	// pdf = 1/A_pix * r^2 / cos(forward, dir), where r^2 is also 1/cos(vto, dir)^2
 	float cos_wo = dz; //camZ * wo.dir;

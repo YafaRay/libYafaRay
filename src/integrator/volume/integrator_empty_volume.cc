@@ -20,7 +20,6 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "photon/photon.h"
-#include <vector>
 
 BEGIN_YAFARAY
 

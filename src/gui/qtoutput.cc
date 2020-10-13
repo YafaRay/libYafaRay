@@ -21,11 +21,8 @@
 
 #include "qtoutput.h"
 #include "events.h"
-#include "color/color.h"
 #include "color/color_layers.h"
 #include <QCoreApplication>
-#include <iostream>
-#include <cstdlib>
 
 QtOutput::QtOutput(RenderWidget *render): render_buffer_(render)
 {

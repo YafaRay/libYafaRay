@@ -24,7 +24,6 @@
 #include "common/string.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "math/math.h"
 #include "math/interpolation.h"
 #include "format/format.h"
 #include "common/file.h"
@@ -67,8 +66,8 @@ Rgba ImageTexture::interpolateImage(const Point3 &p, const MipMapParams *mipmap_
 			if(mipmap_params) interpolated_color = mipMapsEwaInterpolation(p, ewa_max_anisotropy_, mipmap_params);
 			else interpolated_color = bilinearInterpolation(p);
 			break;
-		case InterpolationType::Bilinear:
-		default: interpolated_color = bilinearInterpolation(p); break;	//By default use Bilinear
+		default: //By default use Bilinear
+		case InterpolationType::Bilinear: interpolated_color = bilinearInterpolation(p); break;
 	}
 
 	return interpolated_color;
@@ -194,8 +193,8 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 			// scale around center, (0.5, 0.5)
 			if(checker_dist_ < 1.0)
 			{
-				texpt.x_ = (texpt.x_ - 0.5) / (1.0 - checker_dist_) + 0.5;
-				texpt.y_ = (texpt.y_ - 0.5) / (1.0 - checker_dist_) + 0.5;
+				texpt.x_ = (texpt.x_ - 0.5f) / (1.f - checker_dist_) + 0.5f;
+				texpt.y_ = (texpt.y_ - 0.5f) / (1.f - checker_dist_) + 0.5f;
 			}
 			// continue to TCL_CLIP
 		}
@@ -212,7 +211,7 @@ bool ImageTexture::doMapping(Point3 &texpt) const
 			// no break, fall thru to TEX_REPEAT
 		}
 		default:
-		case ClipMode::Repeat: outside = false;
+		case ClipMode::Repeat: outside = false; break;
 	}
 	return outside;
 }
@@ -376,7 +375,7 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapPa
 {
 	const float ds = std::max(fabsf(mipmap_params->ds_dx_), fabsf(mipmap_params->ds_dy_)) * images_.at(0).getWidth();
 	const float dt = std::max(fabsf(mipmap_params->dt_dx_), fabsf(mipmap_params->dt_dy_)) * images_.at(0).getHeight();
-	float mipmaplevel = 0.5f * log2(ds * ds + dt * dt);
+	float mipmaplevel = 0.5f * math::log2(ds * ds + dt * dt);
 
 	if(mipmap_params->force_image_level_ > 0.f) mipmaplevel = mipmap_params->force_image_level_ * static_cast<float>(images_.size() - 1);
 
@@ -424,8 +423,8 @@ Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy
 
 	if(minor_length <= 0.f) return bilinearInterpolation(p);
 
-	float mipmaplevel = static_cast<float>(images_.size() - 1) - 1.f + log2(minor_length);
-	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(static_cast<float>(images_.size() - 1)));
+	float mipmaplevel = static_cast<float>(images_.size() - 1) - 1.f + math::log2(minor_length);
+	mipmaplevel = std::min(std::max(0.f, mipmaplevel), static_cast<float>(images_.size() - 1));
 
 	const int mipmaplevel_a = static_cast<int>(floor(mipmaplevel));
 	const int mipmaplevel_b = static_cast<int>(ceil(mipmaplevel));
@@ -445,8 +444,7 @@ Rgba ImageTexture::ewaEllipticCalculation(const Point3 &p, float d_s_0, float d_
 	{
 		const int resx = images_.at(0).getWidth();
 		const int resy = images_.at(0).getHeight();
-
-		return images_.at(static_cast<float>(images_.size() - 1)).getColor(math::mod(static_cast<int>(p.x_), resx), math::mod(static_cast<int>(p.y_), resy));
+		return images_.at(images_.size() - 1).getColor(math::mod(static_cast<int>(p.x_), resx), math::mod(static_cast<int>(p.y_), resy));
 	}
 
 	const int resx = images_.at(mipmaplevel).getWidth();

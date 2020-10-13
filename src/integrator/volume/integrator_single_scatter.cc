@@ -25,9 +25,7 @@
 #include "background/background.h"
 #include "light/light.h"
 #include "common/param.h"
-#include "sampler/halton_scr.h"
 #include "render/render_data.h"
-#include <vector>
 
 BEGIN_YAFARAY
 
@@ -372,7 +370,7 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, Ray &ray, int a
 			if(!adapt_now)
 			{
 				int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
-				if(std::fabs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
+				if(std::abs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
 				{
 					adapt_now = true;
 					step_length = 1;
@@ -442,7 +440,7 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, Ray &ray, int a
 			if(adapt_now && step_sample >= step_to_stop_adapt)
 			{
 				int next_sample = (step_sample + adaptive_resolution > samples - 1) ? samples - 1 : step_sample + adaptive_resolution;
-				if(std::fabs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
+				if(std::abs(accum_density.at(step_sample) - accum_density.at(next_sample)) > adapt_thresh)
 				{
 					// continue moving slowly ahead until the discontinuity is found
 					step_to_stop_adapt = step_sample + lookahead_samples;

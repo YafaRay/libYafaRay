@@ -20,7 +20,6 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include "shader/shader_node.h"
-#include <set>
 
 BEGIN_YAFARAY
 

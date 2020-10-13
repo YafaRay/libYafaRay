@@ -29,7 +29,6 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 #include "sampler/sample.h"
-#include "sampler/halton.h"
 #include "sampler/halton_scr.h"
 #include "common/logger.h"
 
@@ -77,8 +76,8 @@ Material::Material() : bsdf_flags_(BsdfFlags::None), visibility_(Material::Visib
 Rgb Material::sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s.s_1_, s.s_2_);
-	s.pdf_ = std::fabs(wi * n);
-	w = (std::fabs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
+	s.pdf_ = std::abs(wi * n);
+	w = (std::abs(wi * sp.n_)) / (s.pdf_ * 0.99f + 0.01f);
 	return Rgb(1.0f);	//Clay color White 100%
 }
 
@@ -92,7 +91,7 @@ void Material::applyWireFrame(float &value, float wire_frame_amount, const Surfa
 		{
 			if(wireframe_exponent_ > 0.f)
 			{
-				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
 			value = value * (1.f - wire_frame_amount);
 		}
@@ -109,7 +108,7 @@ void Material::applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePo
 			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
 			if(wireframe_exponent_ > 0.f)
 			{
-				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
 			col.blend(wire_frame_col, wire_frame_amount);
 		}
@@ -126,7 +125,7 @@ void Material::applyWireFrame(Rgb *const col, float wire_frame_amount, const Sur
 			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
 			if(wireframe_exponent_ > 0.f)
 			{
-				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
 			col[0].blend(wire_frame_col, wire_frame_amount);
 			col[1].blend(wire_frame_col, wire_frame_amount);
@@ -144,7 +143,7 @@ void Material::applyWireFrame(Rgba &col, float wire_frame_amount, const SurfaceP
 			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
 			if(wireframe_exponent_ > 0.f)
 			{
-				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
 			col.blend(wire_frame_col, wire_frame_amount);
 			col.a_ = wire_frame_amount;
@@ -162,7 +161,7 @@ void Material::applyWireFrame(Rgba *const col, float wire_frame_amount, const Su
 			Rgb wire_frame_col = wireframe_color_ * wire_frame_amount;
 			if(wireframe_exponent_ > 0.f)
 			{
-				wire_frame_amount *= std::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
+				wire_frame_amount *= math::pow((wireframe_thickness_ - dist) / wireframe_thickness_, wireframe_exponent_);
 			}
 			col[0].blend(wire_frame_col, wire_frame_amount);
 			col[0].a_ = wire_frame_amount;

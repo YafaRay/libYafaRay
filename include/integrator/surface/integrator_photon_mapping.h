@@ -23,7 +23,7 @@
 #include "integrator_montecarlo.h"
 #include "photon/photon.h"
 #include <vector>
-#include <render/render_view.h>
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 

@@ -16,11 +16,9 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "constants.h"
 #include "yafaray_config.h"
 #include "common/param.h"
 #include "common/session.h"
-#include "common/file.h"
 #include "scene/scene.h"
 #include "render/imagefilm.h"
 #include "import/import_xml.h"

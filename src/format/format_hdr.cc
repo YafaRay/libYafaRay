@@ -28,8 +28,6 @@
 #include "scene/scene.h"
 
 #include <fstream>
-#include <iostream>
-#include <vector>
 
 BEGIN_YAFARAY
 

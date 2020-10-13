@@ -20,16 +20,15 @@
 #include "scene/scene.h"
 #include "material/material.h"
 #include "common/param.h"
-#include "sampler/sample.h"
 
 BEGIN_YAFARAY
 
 BeerVolumeHandler::BeerVolumeHandler(const Rgb &acol, double dist)
 {
-	const float maxlog = log(1e38);
-	sigma_a_.r_ = (acol.r_ > 1e-38) ? -log(acol.r_) : maxlog;
-	sigma_a_.g_ = (acol.g_ > 1e-38) ? -log(acol.g_) : maxlog;
-	sigma_a_.b_ = (acol.b_ > 1e-38) ? -log(acol.b_) : maxlog;
+	const float maxlog = math::log(1e38f);
+	sigma_a_.r_ = (acol.r_ > 1e-38f) ? -log(acol.r_) : maxlog;
+	sigma_a_.g_ = (acol.g_ > 1e-38f) ? -log(acol.g_) : maxlog;
+	sigma_a_.b_ = (acol.b_ > 1e-38f) ? -log(acol.b_) : maxlog;
 	if(dist != 0.f) sigma_a_ *= 1.f / dist;
 }
 

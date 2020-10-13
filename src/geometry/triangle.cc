@@ -85,7 +85,7 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 		float dv_2 = uv_2.v_ - uv_3.v_;
 		float invdet, det = du_1 * dv_2 - dv_1 * du_2;
 
-		if(std::fabs(det) > 1e-30f)
+		if(std::abs(det) > 1e-30f)
 		{
 			invdet = 1.f / det;
 			Vec3 dp_1 = p_0 - p_2;
@@ -175,7 +175,7 @@ float Triangle::surfaceArea() const
 	Vec3 edge_1, edge_2;
 	edge_1 = b - a;
 	edge_2 = c - a;
-	return 0.5 * (edge_1 ^ edge_2).length();
+	return 0.5f * (edge_1 ^ edge_2).length();
 }
 
 void Triangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
@@ -262,7 +262,7 @@ void TriangleInstance::getSurface(SurfacePoint &sp, const Point3 &hit, Intersect
 		float dv_2 = uv_2.v_ - uv_3.v_;
 		float invdet, det = du_1 * dv_2 - dv_1 * du_2;
 
-		if(std::fabs(det) > 1e-30f)
+		if(std::abs(det) > 1e-30f)
 		{
 			invdet = 1.f / det;
 			Vec3 dp_1 = p_0 - p_2;
@@ -368,7 +368,7 @@ float TriangleInstance::surfaceArea() const
 	Vec3 edge_1, edge_2;
 	edge_1 = b - a;
 	edge_2 = c - a;
-	return 0.5 * (edge_1 ^ edge_2).length();
+	return 0.5f * (edge_1 ^ edge_2).length();
 }
 
 void TriangleInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
@@ -399,7 +399,7 @@ bool VTriangle::intersect(const Ray &ray, float *t, IntersectData &data) const
 	pvec = ray.dir_ ^ edge_2;
 	det = edge_1 * pvec;
 	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
-	inv_det = 1.0 / det;
+	inv_det = 1.f / det;
 	tvec = ray.from_ - a;
 	u = (tvec * pvec) * inv_det;
 	if(u < 0.0 || u > 1.0) return false;
@@ -470,7 +470,7 @@ void VTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &d
 		float dv_2 = it[uvi_2].v_ - it[uvi_3].v_;
 		float invdet, det = du_1 * dv_2 - dv_1 * du_2;
 
-		if(std::fabs(det) > 1e-30f)
+		if(std::abs(det) > 1e-30f)
 		{
 			invdet = 1.f / det;
 			Vec3 dp_1 = mesh_->points_[pa_] - mesh_->points_[pc_];
@@ -559,7 +559,7 @@ float VTriangle::surfaceArea() const
 	Vec3 edge_1, edge_2;
 	edge_1 = b - a;
 	edge_2 = c - a;
-	return 0.5 * (edge_1 ^ edge_2).length();
+	return 0.5f * (edge_1 ^ edge_2).length();
 }
 
 void VTriangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
@@ -598,7 +598,7 @@ bool BsTriangle::intersect(const Ray &ray, float *t, IntersectData &data) const
 	pvec = ray.dir_ ^ edge_2;
 	det = edge_1 * pvec;
 	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
-	inv_det = 1.0 / det;
+	inv_det = 1.f / det;
 	tvec = ray.from_ - a;
 	u = (tvec * pvec) * inv_det;
 	if(u < 0.0 || u > 1.0) return false;
@@ -702,7 +702,7 @@ void BsTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &
 		float dv_2 = it[uvi_2].v_ - it[uvi_3].v_;
 		float invdet, det = du_1 * dv_2 - dv_1 * du_2;
 
-		if(std::fabs(det) > 1e-30f)
+		if(std::abs(det) > 1e-30f)
 		{
 			invdet = 1.f / det;
 			Vec3 dp_1 = mesh_->points_[pa_] - mesh_->points_[pc_];

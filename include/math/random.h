@@ -94,7 +94,6 @@ inline float FastRandom::getNextFloatNormalized(int &seed)
 	return static_cast<float>(getNextInt(seed)) / static_cast<float>(m_);
 }
 
-
 inline double Random::operator()()
 {
 	const unsigned int xh = x_ >> 16, xl = x_ & 65535;

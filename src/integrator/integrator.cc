@@ -29,7 +29,6 @@
 #include "integrator/volume/integrator_single_scatter.h"
 #include "integrator/volume/integrator_emission.h"
 #include "common/param.h"
-#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 

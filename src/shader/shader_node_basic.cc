@@ -92,16 +92,16 @@ inline Point3 spheremap__(const Point3 &p)
 inline Point3 cubemap__(const Point3 &p, const Vec3 &n)
 {
 	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
-	// int axis = std::fabs(n.x) > std::fabs(n.y) ? (std::fabs(n.x) > std::fabs(n.z) ? 0 : 2) : (std::fabs(n.y) > std::fabs(n.z) ? 1 : 2);
+	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
 
 	int axis;
 
-	if(std::fabs(n.z_) >= std::fabs(n.x_) && std::fabs(n.z_) >= std::fabs(n.y_))
+	if(std::abs(n.z_) >= std::abs(n.x_) && std::abs(n.z_) >= std::abs(n.y_))
 	{
 		axis = 2;
 	}
-	else if(std::fabs(n.y_) >= std::fabs(n.x_) && std::fabs(n.y_) >= std::fabs(n.z_))
+	else if(std::abs(n.y_) >= std::abs(n.x_) && std::abs(n.y_) >= std::abs(n.z_))
 	{
 		axis = 1;
 	}
@@ -279,7 +279,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 
 		norm.normalize();
 
-		if(std::fabs(norm.z_) > 1e-30f)
+		if(std::abs(norm.z_) > 1e-30f)
 		{
 			float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
 			du = norm.x_ * nf;
@@ -310,7 +310,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 
 			norm.normalize();
 
-			if(std::fabs(norm.z_) > 1e-30f)
+			if(std::abs(norm.z_) > 1e-30f)
 			{
 				float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
 				du = norm.x_ * nf;
@@ -636,11 +636,11 @@ class DiffNode: public MixNode
 			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 			f_1 = 1.f - f_2;
 
-			cin_1.r_ = f_1 * cin_1.r_ + f_2 * std::fabs(cin_1.r_ - cin_2.r_);
-			cin_1.g_ = f_1 * cin_1.g_ + f_2 * std::fabs(cin_1.g_ - cin_2.g_);
-			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::fabs(cin_1.b_ - cin_2.b_);
-			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::fabs(cin_1.a_ - cin_2.a_);
-			fin_1   = f_1 * fin_1 + f_2 * std::fabs(fin_1 - fin_2);
+			cin_1.r_ = f_1 * cin_1.r_ + f_2 * std::abs(cin_1.r_ - cin_2.r_);
+			cin_1.g_ = f_1 * cin_1.g_ + f_2 * std::abs(cin_1.g_ - cin_2.g_);
+			cin_1.b_ = f_1 * cin_1.b_ + f_2 * std::abs(cin_1.b_ - cin_2.b_);
+			cin_1.a_ = f_1 * cin_1.a_ + f_2 * std::abs(cin_1.a_ - cin_2.a_);
+			fin_1   = f_1 * fin_1 + f_2 * std::abs(fin_1 - fin_2);
 			stack[this->getId()] = NodeResult(cin_1, fin_1);
 		}
 };

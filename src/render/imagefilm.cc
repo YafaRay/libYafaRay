@@ -33,7 +33,6 @@
 #include "color/color_layers.h"
 #include "math/filter.h"
 #include "math/interpolation.h"
-#include <iomanip>
 
 #ifdef HAVE_OPENCV
 #include <opencv2/photo/photo.hpp>
@@ -155,8 +154,8 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 		case ImageFilm::FilterType::Mitchell: ffunc = math::filter::mitchell; filterw_ *= 2.6f; break;
 		case ImageFilm::FilterType::Lanczos: ffunc = math::filter::lanczos2; break;
 		case ImageFilm::FilterType::Gauss: ffunc = math::filter::gauss; filterw_ *= 2.f; break;
-		case ImageFilm::FilterType::Box:
-		default:	ffunc = math::filter::box;
+		default:
+		case ImageFilm::FilterType::Box: ffunc = math::filter::box; break;
 	}
 
 	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size__); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
@@ -736,7 +735,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		double d = std::fabs((double(i) - x_offs) * table_scale_);
+		double d = std::abs((double(i) - x_offs) * table_scale_);
 		x_index[n] = math::floorToInt(d);
 	}
 
@@ -744,7 +743,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		double d = std::fabs((double(i) - y_offs) * table_scale_);
+		double d = std::abs((double(i) - y_offs) * table_scale_);
 		y_index[n] = math::floorToInt(d);
 	}
 
@@ -796,7 +795,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
-		double d = std::fabs((double(i) - x_offs) * table_scale_);
+		double d = std::abs((double(i) - x_offs) * table_scale_);
 		x_index[n] = math::floorToInt(d);
 	}
 

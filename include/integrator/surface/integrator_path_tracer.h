@@ -20,7 +20,7 @@
 #ifndef YAFARAY_INTEGRATOR_PATH_TRACER_H
 #define YAFARAY_INTEGRATOR_PATH_TRACER_H
 
-#include <render/render_view.h>
+#include "render/render_view.h"
 #include "integrator_montecarlo.h"
 
 BEGIN_YAFARAY

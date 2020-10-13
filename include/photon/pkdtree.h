@@ -121,8 +121,8 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 
 	for(uint32_t i = 1; i < n_elements_; ++i) tree_bound_.include(dat[i].pos_);
 
-	max_level_threads_ = (int) std::ceil(std::log2((float) num_threads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
-	int real_threads = (int) pow(2.f, max_level_threads_); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
+	max_level_threads_ = (int) std::ceil(math::log2((float) num_threads)); //in how many pkdtree levels we will spawn threads, so we create at least as many threads as scene threads parameter (or more)
+	int real_threads = static_cast<int>(math::pow(2.f, max_level_threads_)); //real amount of threads we will create during pkdtree creation depending on the maximum level where we will generate threads
 
 	Y_INFO << "pointKdTree: Starting " << map_name << " recusive tree build for " << n_elements_ << " elements [using " << real_threads << " threads]" << YENDL;
 

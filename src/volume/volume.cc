@@ -25,8 +25,6 @@
 #include "volume/volumehandler_beer.h"
 #include "volume/volumehandler_sss.h"
 #include "common/logger.h"
-#include "geometry/ray.h"
-#include "color/color.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
@@ -104,7 +102,7 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 
 			float epsilon = 0.01f;
 
-			if(std::fabs(tau_tmp.energy() - tau_prev.energy()) > epsilon && step > step_size / 50.f)
+			if(std::abs(tau_tmp.energy() - tau_prev.energy()) > epsilon && step > step_size / 50.f)
 			{
 				pos -= step;
 				step /= 2.f;

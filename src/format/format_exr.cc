@@ -34,7 +34,6 @@
 #include <ImfChannelList.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
-#include <ImfVersion.h>
 #include <IexThrowErrnoExc.h>
 
 using namespace Imf;

@@ -23,7 +23,6 @@
 #include "shader/shader_node.h"
 #include "sampler/sample.h"
 #include "material/material_utils_microfacet.h"
-#include "color/color_ramp.h"
 #include "common/param.h"
 #include "geometry/surface.h"
 #include "common/logger.h"
@@ -124,7 +123,7 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 	}
 	else
 	{
-		return std::min(1.f, std::max(0.f, (float)(oren_a_ + oren_b_ * maxcos_f * sin_alpha * tan_beta)));
+		return std::min(1.f, std::max(0.f, oren_a_ + oren_b_ * maxcos_f * sin_alpha * tan_beta));
 	}
 
 }
@@ -143,8 +142,8 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 	NodeStack stack(dat->stack_);
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
-	float wi_n = std::fabs(wi * n);
-	float wo_n = std::fabs(wo * n);
+	float wi_n = std::abs(wi * n);
+	float wo_n = std::abs(wo * n);
 
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
@@ -162,7 +161,7 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 		{
 			glossy = kt * blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
-		col = (float)glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
+		col = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
 	if(with_diffuse_ && diffuse_flag)
 	{
@@ -253,7 +252,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			wi = Vec3::reflectDir(n, wo);
 
 			if(mirror_color_shader_) scolor = mirror_color_shader_->getColor(stack) * kr;
-			else scolor = mirror_color_ * kr;//)/std::fabs(N*wi);
+			else scolor = mirror_color_ * kr;//)/std::abs(N*wi);
 
 			scolor *= (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_);
 
@@ -263,7 +262,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 				s.pdf_back_ = s.pdf_; // mirror is symmetrical
 
 				if(mirror_color_shader_) s.col_back_ = mirror_color_shader_->getColor(stack) * kr;
-				else s.col_back_ = mirror_color_ * kr;//)/std::fabs(N*wi);
+				else s.col_back_ = mirror_color_ * kr;//)/std::abs(N*wi);
 
 				s.col_back_ *= (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_);
 			}
@@ -285,8 +284,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			}
 	}
 
-	wi_n = std::fabs(wi * n);
-	wo_n = std::fabs(wo * n);
+	wi_n = std::abs(wi * n);
+	wo_n = std::abs(wo * n);
 
 	if(c_index[pick] != C_SPECULAR)
 	{
@@ -323,7 +322,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 				}
 			}
 
-			wi_n = std::fabs(wi * n);
+			wi_n = std::abs(wi * n);
 
 			if(anisotropic_)
 			{
@@ -336,7 +335,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 				s.pdf_ += blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
 				glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 			}
-			scolor = (float)glossy * kt * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
+			scolor = glossy * kt * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		}
 
 		if(use[C_DIFFUSE])
@@ -408,7 +407,7 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 			}
 			else if(i == C_DIFFUSE)
 			{
-				pdf += std::fabs(wi * n) * width;
+				pdf += std::abs(wi * n) * width;
 			}
 			++n_match;
 		}
@@ -448,7 +447,7 @@ void CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const Surf
 	dir[0].reflect(n);
 
 	if(mirror_color_shader_) col[0] = mirror_color_shader_->getColor(stack) * kr;
-	else col[0] = mirror_color_ * kr;//)/std::fabs(N*wi);
+	else col[0] = mirror_color_ * kr;//)/std::abs(N*wi);
 
 	col[0] *= (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_);
 

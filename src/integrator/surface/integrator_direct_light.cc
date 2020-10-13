@@ -24,12 +24,12 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "render/imagesplitter.h"
 #include "common/timer.h"
 #include "material/material.h"
 #include "background/background.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 

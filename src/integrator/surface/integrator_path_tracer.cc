@@ -24,7 +24,6 @@
 #include "common/param.h"
 #include "color/color_layers.h"
 #include "scene/scene.h"
-#include "render/imagesplitter.h"
 #include "sampler/sample.h"
 #include "common/timer.h"
 #include "material/material.h"
@@ -33,6 +32,7 @@
 #include "sampler/halton_scr.h"
 #include "common/logger.h"
 #include "render/render_data.h"
+#include "render/imagesplitter.h"
 
 BEGIN_YAFARAY
 

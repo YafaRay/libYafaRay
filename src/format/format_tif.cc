@@ -26,7 +26,6 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include "scene/scene.h"
-#include "image/image.h"
 #include "color/color.h"
 
 #if defined(_WIN32)

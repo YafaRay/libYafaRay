@@ -21,7 +21,6 @@
 #include "integrator/surface/integrator_sppm.h"
 #include "geometry/surface.h"
 #include "common/layers.h"
-#include "common/logger.h"
 #include "common/session.h"
 #include "volume/volume.h"
 #include "common/param.h"
@@ -214,7 +213,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 
 	for(int i = 1; i < aa_noise_params_.passes_; ++i)
 	{
-		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * pow(aa_noise_params_.sample_multiplier_factor_, i));
+		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * math::pow(aa_noise_params_.sample_multiplier_factor_, i));
 	}
 
 	float inv_aa_max_possible_samples = 1.f / ((float) aa_max_possible_samples);
@@ -623,8 +622,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 
 	//shoot photons
 	unsigned int curr = 0;
-
-	SurfacePoint sp;
 	Random prng(rand() + offset * (4517) + 123);
 	RenderData render_data(&prng);
 	alignas (16) unsigned char userdata[user_data_size_];
@@ -730,7 +727,6 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 	static int n_max__ = 0;
 	static int calls__ = 0;
 	++calls__;
-	Rgb col(0.0);
 	GatherInfo g_info;
 
 	float alpha;
@@ -836,8 +832,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 					g_info.photon_count_++;
 					Vec3 pdir = gathered[i].photon_->direction();
 					Rgb surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::Diffuse); // seems could speed up using rho, (something pbrt made)
-					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?
-					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
+					g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp.N*pdir); //< wrong!?
+					//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp.N*pdir); //< wrong!?
 
 					////start refine here
 					//double ALPHA = 0.7;
@@ -862,8 +858,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 						Vec3 pdir = gathered[i].photon_->direction();
 						g_info.photon_count_++;
 						surf_col = material->eval(render_data, sp, wo, pdir, BsdfFlags::All); // seems could speed up using rho, (something pbrt made)
-						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::fabs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::fabs(sp.N*pdir); //< wrong!?
-						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::fabs(sp.N*pdir); //< wrong!?
+						g_info.photon_flux_ += surf_col * gathered[i].photon_->color();// * std::abs(sp.N*pdir); //< wrong!?//gInfo.photonFlux += colorPasses.probe_add(PASS_INT_DIFFUSE_INDIRECT, surfCol * gathered[i].photon->color(), state.raylevel == 0);// * std::abs(sp.N*pdir); //< wrong!?
+						//Rgb  flux= surfCol * gathered[i].photon->color();// * std::abs(sp.N*pdir); //< wrong!?
 
 						////start refine here
 						//double ALPHA = 0.7;
@@ -895,7 +891,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 				int branch = render_data.ray_division_ * old_offset;
 				float d_1 = 1.f / (float)dsam;
 				float ss_1 = sample::riS(render_data.pixel_sample_ + render_data.sampling_offs_);
-				Rgb dcol(0.f), vcol(1.f);
+				Rgb vcol(1.f);
 				Vec3 wi;
 				const VolumeHandler *vol;
 				DiffRay ref_ray;

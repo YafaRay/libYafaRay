@@ -18,9 +18,6 @@
 
 #include "volume/volume_uniform.h"
 #include "common/logger.h"
-#include "geometry/ray.h"
-#include "color/color.h"
-#include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "common/param.h"
 

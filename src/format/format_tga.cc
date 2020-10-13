@@ -25,7 +25,6 @@
 #include "common/logger.h"
 #include "common/param.h"
 #include "common/file.h"
-#include "image/image.h"
 #include "image/image_buffers.h"
 #include "scene/scene.h"
 
@@ -107,7 +106,7 @@ template <class ColorType> void TgaFormat::readRleImage(FILE *fp, ColorProcessor
 		fread(&pack_desc, sizeof(uint8_t), 1, fp);
 
 		bool rle_pack = (pack_desc & RLE_PACK_MASK);
-		int rle_rep = (int)(pack_desc & RLE_REP_MASK) + 1;
+		int rle_rep = static_cast<int>(pack_desc & RLE_REP_MASK) + 1;
 
 		ColorType color;
 
