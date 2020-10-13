@@ -253,38 +253,25 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 
 	image_film_->setSamplingOffset(offset + samples);
 
-	if(nthreads > 1)
+	ThreadControl tc;
+	std::vector<std::thread> threads;
+	for(int i = 0; i < nthreads; ++i)
 	{
-		ThreadControl tc;
-		std::vector<std::thread> threads;
-		for(int i = 0; i < nthreads; ++i)
-		{
-			threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, this, scene_, render_view, std::ref(render_control), &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
-		}
-
-		std::unique_lock<std::mutex> lk(tc.m_);
-		while(tc.finished_threads_ < nthreads)
-		{
-			tc.c_.wait(lk);
-			for(size_t i = 0; i < tc.areas_.size(); ++i)
-			{
-				image_film_->finishArea(render_view, render_control, tc.areas_[i]);
-			}
-			tc.areas_.clear();
-		}
-
-		for(auto &t : threads) t.join();	//join all threads (although they probably have exited already, but not necessarily):
+		threads.push_back(std::thread(&TiledIntegrator::renderWorker, this, this, scene_, render_view, std::ref(render_control), &tc, i, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, aa_pass_number));
 	}
-	else
+
+	std::unique_lock<std::mutex> lk(tc.m_);
+	while(tc.finished_threads_ < nthreads)
 	{
-		RenderArea a;
-		while(image_film_->nextArea(a))
+		tc.c_.wait(lk);
+		for(size_t i = 0; i < tc.areas_.size(); ++i)
 		{
-			if(render_control.aborted()) break;
-			renderTile(a, render_view, render_control, samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, 0);
-			image_film_->finishArea(render_view, render_control, a);
+			image_film_->finishArea(render_view, render_control, tc.areas_[i]);
 		}
+		tc.areas_.clear();
 	}
+
+	for(auto &t : threads) t.join();	//join all threads (although they probably have exited already, but not necessarily):
 
 	return true; //hm...quite useless the return value :)
 }
