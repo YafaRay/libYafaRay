@@ -39,7 +39,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
 		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0) override;
 		virtual bool endTriMesh() override;
-		virtual bool addInstance(const char *base_object_name, Matrix4 obj_to_world) override;
+		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) override;
 		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) override;
 		virtual int  addVertex(double x, double y, double z) override; //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle

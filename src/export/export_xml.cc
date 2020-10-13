@@ -220,7 +220,7 @@ inline void writeParam__(const std::string &name, const Parameter &param, std::o
 	}
 }
 
-bool XmlExport::addInstance(const char *base_object_name, Matrix4 obj_to_world)
+bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
 {
 	xml_file_ << "\n<instance base_object_name=\"" << base_object_name << "\" >\n\t";
 	writeMatrix__("transform", obj_to_world, xml_file_);

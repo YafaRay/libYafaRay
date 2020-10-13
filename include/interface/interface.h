@@ -69,7 +69,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUv(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
 		virtual bool smoothMesh(const char *name, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
-		virtual bool addInstance(const char *base_object_name, Matrix4 obj_to_world);
+		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
 		virtual void paramsSetPoint(const char *name, double x, double y, double z);

@@ -174,7 +174,7 @@ int Interface::addUv(float u, float v) { return scene_->addUv(u, v); }
 
 bool Interface::smoothMesh(const char *name, double angle) { return scene_->smoothMesh(name, angle); }
 
-bool Interface::addInstance(const char *base_object_name, Matrix4 obj_to_world)
+bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
 {
 	return scene_->addInstance(base_object_name, obj_to_world);
 }
