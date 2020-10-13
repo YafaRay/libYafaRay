@@ -51,7 +51,6 @@ struct RenderArea
 		real_w_ = w;
 		real_h_ = h;
 	}
-	bool checkResample(float threshold);
 	//	bool out(colorOutput_t &o);
 
 	//	Rgba & imagePixel(int x,int y) {return image[(y-Y)*W+(x-X)];};
@@ -86,7 +85,7 @@ class ImageSplitter final
 		bool getArea(int n, RenderArea &area);
 
 		bool empty() const {return regions_.empty();};
-		int size() const {return regions_.size();};
+		int size() const {return static_cast<int>(regions_.size());};
 
 	private:
 		int width_, height_, blocksize_;

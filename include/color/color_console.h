@@ -71,7 +71,7 @@ struct ConsoleColor final
 #ifdef _WIN32
 		fg_col_ = (Color)((unsigned int)fg_color);
 #else
-		fg_col_ = (fg_color != Default) ? (Color) ((unsigned int) fg_color + 30) : Default;
+		fg_col_ = (fg_color != Default) ? (Color) (fg_color + 30) : Default;
 #endif
 		bg_col_ = Default;
 		intense_ = intensecolor;

@@ -24,9 +24,21 @@
 
 BEGIN_YAFARAY
 
-XmlExport::XmlExport(): last_mat_(nullptr), next_obj_(0), xml_gamma_(1.f), xml_color_space_(RawManualGamma)
+XmlExport::XmlExport(const char *fname, int type) : xml_name_(std::string(fname))
 {
-	xml_name_ = "yafaray.xml";
+	xml_file_.open(xml_name_.c_str());
+	if(!xml_file_.is_open())
+	{
+		Y_ERROR << "XmlExport: Couldn't open " << xml_name_ << YENDL;
+		return;
+	}
+	else Y_INFO << "XmlExport: Writing scene to: " << xml_name_ << YENDL;
+	xml_file_ << std::boolalpha;
+	xml_file_ << "<?xml version=\"1.0\"?>" << YENDL;
+	xml_file_ << "<scene type=\"";
+	if(type==0) xml_file_ << "triangle";
+	else 		xml_file_ << "universal";
+	xml_file_ << "\">" << YENDL;
 }
 
 void XmlExport::clearAll()
@@ -55,11 +67,6 @@ bool XmlExport::setupLayers()
 	return true;
 }
 
-void XmlExport::setOutfile(const char *fname)
-{
-	xml_name_ = std::string(fname);
-}
-
 bool XmlExport::startGeometry() { return true; }
 
 bool XmlExport::endGeometry() { return true; }
@@ -68,7 +75,6 @@ unsigned int XmlExport::getNextFreeId()
 {
 	return ++next_obj_;
 }
-
 
 bool XmlExport::startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
@@ -356,9 +362,9 @@ void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val
 
 extern "C"
 {
-	XmlExport *getYafrayXml__()
+	XmlExport *getYafrayXml__(const char *fname, int type)
 	{
-		return new XmlExport();
+		return new XmlExport(fname, type);
 	}
 }
 

@@ -36,8 +36,7 @@ class CloudsTexture final : public Texture
 					  const std::string &ntype, const std::string &btype);
 		virtual ~CloudsTexture() override;
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		int depth_, bias_;
 		float size_;
@@ -65,8 +64,7 @@ class MarbleTexture final : public Texture
 		}
 
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -94,8 +92,7 @@ class WoodTexture final : public Texture
 		}
 
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		int octaves_;
 		Rgb color_1_, color_2_;
@@ -117,8 +114,7 @@ class VoronoiTexture final : public Texture
 					   float mex, float sz,
 					   float isc, const std::string &dname);
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		Rgb color_1_, color_2_;
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
@@ -141,8 +137,7 @@ class MusgraveTexture final : public Texture
 						const std::string &ntype, const std::string &mtype);
 		virtual ~MusgraveTexture() override;
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		Rgb color_1_, color_2_;
 		float size_, iscale_;
@@ -161,8 +156,7 @@ class DistortedNoiseTexture final : public Texture
 							  const std::string &noiseb_1, const std::string noiseb_2);
 		virtual ~DistortedNoiseTexture() override;
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual void getInterpolationStep(float &step) const override { step = size_; };
+		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
 		Rgb color_1_, color_2_;
 		float distort_, size_;

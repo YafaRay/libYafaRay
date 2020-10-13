@@ -68,7 +68,6 @@ class Vec3
 		float &operator[](int i) { return (&x_)[i]; } //Lynx
 
 		static Vec3 reflectDir(const Vec3 &n, const Vec3 &v);
-		static Vec3 toVector(const Point3 &p);
 		static bool refract(const Vec3 &n, const Vec3 &wi, Vec3 &wo, float ior);
 		static void fresnel(const Vec3 &i, const Vec3 &n, float ior, float &kr, float &kt);
 		static void fastFresnel(const Vec3 &i, const Vec3 &n, float iorf, float &kr, float &kt);
@@ -212,7 +211,7 @@ inline float Vec3::sinFromVectors(const Vec3 &v)
 	float asin_argument = ((*this ^ v).length() / div) * 0.99999f;
 	//Fix to avoid black "nan" areas when this argument goes slightly over +1.0. Why that happens in the first place, maybe floating point rounding errors?
 	if(asin_argument > 1.f) asin_argument = 1.f;
-	return asin(asin_argument);
+	return math::asin(asin_argument);
 }
 
 /** Vector reflection.
@@ -258,11 +257,6 @@ inline Vec3 Vec3::reflectDir(const Vec3 &n, const Vec3 &v)
 	return 2 * vn * n - v;
 }
 
-inline Vec3 Vec3::toVector(const Point3 &p)
-{
-	return Vec3(p.x_, p.y_, p.z_);
-}
-
 inline void Vec3::createCs(const Vec3 &n, Vec3 &u, Vec3 &v)
 {
 	if((n.x_ == 0) && (n.y_ == 0))
@@ -277,7 +271,7 @@ inline void Vec3::createCs(const Vec3 &n, Vec3 &u, Vec3 &v)
 	{
 		// Note: The root cannot become zero if
 		// N.x==0 && N.y==0.
-		const float d = 1.0 / math::sqrt(n.y_ * n.y_ + n.x_ * n.x_);
+		const float d = 1.f / math::sqrt(n.y_ * n.y_ + n.x_ * n.x_);
 		u.set(n.y_ * d, -n.x_ * d, 0);
 		v = n ^ u;
 	}

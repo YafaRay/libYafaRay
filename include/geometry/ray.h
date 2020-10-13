@@ -28,8 +28,8 @@ BEGIN_YAFARAY
 class Ray
 {
 	public:
-		Ray(): tmin_(0), tmax_(-1.0), time_(0.0) {}
-		Ray(const Point3 &f, const Vec3 &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
+		Ray(): tmin_(0), tmax_(-1.f), time_(0.f) {}
+		Ray(const Point3 &f, const Vec3 &d, float start = 0.f, float end = -1.f, float ftime = 0.f):
 				from_(f), dir_(d), tmin_(start), tmax_(end), time_(ftime) { }
 
 		Point3 from_;
@@ -43,7 +43,7 @@ class DiffRay: public Ray
 	public:
 		DiffRay(): Ray(), has_differentials_(false) {}
 		DiffRay(const Ray &r): Ray(r), has_differentials_(false) {}
-		DiffRay(const Point3 &f, const Vec3 &d, float start = 0.0, float end = -1.0, float ftime = 0.0):
+		DiffRay(const Point3 &f, const Vec3 &d, float start = 0.0, float end = -1.f, float ftime = 0.f):
 				Ray(f, d, start, end, ftime), has_differentials_(false) {}
 		bool has_differentials_;
 		Point3 xfrom_, yfrom_;

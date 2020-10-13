@@ -305,8 +305,8 @@ class ImageBuffer2D final : public Buffer<T, 2>
 		T &operator()(int x, int y) { return Buffer<T, 2>::operator()({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
 		const T &operator()(int x, int y) const { return Buffer<T, 2>::operator()({ static_cast<size_t>(x), static_cast<size_t>(y) }); }
 		void clear() { Buffer<T, 2>::zero(); }
-		int getWidth() const { return Buffer<T, 2>::getDimensions().at(0); }
-		int getHeight() const { return Buffer<T, 2>::getDimensions().at(1); }
+		int getWidth() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(0)); }
+		int getHeight() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(1)); }
 };
 
 typedef ImageBuffer2D<Pixel> 		Rgba2DImageWeighed_t; //!< Weighted RGBA image buffer typedef

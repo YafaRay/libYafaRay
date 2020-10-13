@@ -30,8 +30,7 @@ BEGIN_YAFARAY
 class LIBYAFARAY_EXPORT XmlExport: public Interface
 {
 	public:
-		XmlExport();
-		// directly related to scene_t:
+		XmlExport(const char *fname, int type);
 		virtual bool setupLayers() override; //!< setup render passes information
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
@@ -62,7 +61,6 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual unsigned int 	createObject(const char *name) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...
-		void setOutfile(const char *fname);
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:
@@ -72,12 +70,12 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		std::map<const Material *, std::string> materials_;
 		std::ofstream xml_file_;
 		std::string xml_name_;
-		const Material *last_mat_;
-		size_t nmat_;
-		int n_uvs_;
-		unsigned int next_obj_;
-		float xml_gamma_;
-		ColorSpace xml_color_space_;
+		const Material *last_mat_ = nullptr;
+		size_t nmat_ = 0;
+		int n_uvs_ = 0;
+		unsigned int next_obj_ = 0;
+		float xml_gamma_ = 1.f;
+		ColorSpace xml_color_space_ = RawManualGamma;
 };
 
 typedef XmlExport *XmlExportConstructor_t();

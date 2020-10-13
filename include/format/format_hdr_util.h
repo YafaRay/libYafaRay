@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_UTIL_HDR_H
-#define YAFARAY_IMAGEHANDLER_UTIL_HDR_H
+#ifndef YAFARAY_FORMAT_HDR_UTIL_H
+#define YAFARAY_FORMAT_HDR_UTIL_H
 
 #include "color/color.h"
 #include "common/string.h"
@@ -60,7 +60,7 @@ struct RgbePixel
 		}
 		else
 		{
-			v = frexp(v, &e) * 255.9999 / v;
+			v = frexp(v, &e) * 255.9999f / v;
 			r_ = (uint8_t)(c.getR() * v);
 			g_ = (uint8_t)(c.getG() * v);
 			b_ = (uint8_t)(c.getB() * v);
@@ -92,7 +92,7 @@ struct RgbePixel
 		if(e_)
 		{
 			/*nonzero pixel*/
-			f = math::ldexp(1.0, e_ - (int) (128 + 8));
+			f = math::ldexp(1.0, e_ - (128 + 8));
 			return Rgba(f * r_, f * g_, f * b_, 1.0f);
 		}
 
@@ -137,4 +137,4 @@ struct RgbePixel
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_UTIL_HDR_H
+#endif // YAFARAY_FORMAT_HDR_UTIL_H

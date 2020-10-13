@@ -75,7 +75,7 @@ void RenderControl::setCurrentPassPercent(float current_pass_percent)
 
 void RenderControl::setAaNoiseInfo(const std::string &aa_noise_settings)
 {
-	aa_noise_info = aa_noise_settings;
+	aa_noise_info_ = aa_noise_settings;
 }
 
 void RenderControl::setRenderInfo(const std::string &render_settings)

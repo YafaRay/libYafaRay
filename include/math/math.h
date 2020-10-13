@@ -91,7 +91,7 @@ inline float exp2(float x)
 	return (expipart.f_ * math::polyexp(fpart.f_));
 }
 
-inline constexpr float polylog__(float x) { return (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452) + -3.3241990f) + 3.1157899f); }
+inline constexpr float polylog__(float x) { return (x * (x * (x * (x * (x * -3.4436006e-2f + 3.1821337e-1f) + -1.2315303f) + 2.5988452f) + -3.3241990f) + 3.1157899f); }
 
 inline float log2(float x)
 {

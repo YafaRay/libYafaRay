@@ -50,7 +50,6 @@ class SingleScatterIntegrator final : public VolumeIntegrator
 		bool adaptive_;
 		bool optimize_;
 		float adaptive_step_size_;
-		std::vector<VolumeRegion *> list_vr_;
 		std::vector<Light *> lights_;
 		unsigned int vr_size_;
 		float i_vr_size_;

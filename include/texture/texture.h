@@ -57,9 +57,7 @@ class Texture
 		virtual float getFloat(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z, mipmap_params).col2Bri()); }
 
 		/* gives the number of values in each dimension for discrete textures */
-		virtual void resolution(int &x, int &y, int &z) const { x = 0, y = 0, z = 0; }
-
-		virtual void getInterpolationStep(float &step) const { step = 0.f; };
+		virtual void resolution(int &x, int &y, int &z) const { x = 0, y = 0, z = 0; };
 		virtual void generateMipMaps() {}
 		void setAdjustments(float intensity, float contrast, float saturation, float hue, bool clamp, float factor_red, float factor_green, float factor_blue);
 		Rgba applyAdjustments(const Rgba &tex_col) const;
@@ -92,7 +90,7 @@ inline void angmap__(const Point3 &p, float &u, float &v)
 	u = v = 0.f;
 	if(r > 0.f)
 	{
-		float phi_ratio = M_1_PI * math::acos(p.y_);//[0,1] range
+		const float phi_ratio = M_1_PI * math::acos(p.y_);//[0,1] range
 		r = phi_ratio / math::sqrt(r);
 		u = p.x_ * r;// costheta * r * phiRatio
 		v = p.z_ * r;// sintheta * r * phiRatio
@@ -104,20 +102,20 @@ inline void angmap__(const Point3 &p, float &u, float &v)
 inline void tubemap__(const Point3 &p, float &u, float &v)
 {
 	u = 0;
-	v = 1 - (p.z_ + 1) * 0.5;
+	v = 1 - (p.z_ + 1) * 0.5f;
 	float d = p.x_ * p.x_ + p.y_ * p.y_;
 	if(d > 0)
 	{
 		d = 1 / math::sqrt(d);
-		u = 0.5 * (1 - (atan2(p.x_ * d, p.y_ * d) * M_1_PI));
+		u = 0.5f * (1 - (atan2(p.x_ * d, p.y_ * d) * M_1_PI));
 	}
 }
 
 // maps a direction to a 2d 0..1 interval
 inline void spheremap__(const Point3 &p, float &u, float &v)
 {
-	float sqrt_r_phi = p.x_ * p.x_ + p.y_ * p.y_;
-	float sqrt_r_theta = sqrt_r_phi + p.z_ * p.z_;
+	const float sqrt_r_phi = p.x_ * p.x_ + p.y_ * p.y_;
+	const float sqrt_r_theta = sqrt_r_phi + p.z_ * p.z_;
 	float phi_ratio;
 
 	u = 0.f;
@@ -136,10 +134,10 @@ inline void spheremap__(const Point3 &p, float &u, float &v)
 // maps u,v coords in the 0..1 interval to a direction
 inline void invSpheremap__(float u, float v, Vec3 &p)
 {
-	float theta = v * M_PI;
-	float phi = -(u * math::mult_pi_by_2);
-	float costheta = math::cos(theta), sintheta = math::sin(theta);
-	float cosphi = math::cos(phi), sinphi = math::sin(phi);
+	const float theta = v * M_PI;
+	const float phi = -(u * math::mult_pi_by_2);
+	const float costheta = math::cos(theta), sintheta = math::sin(theta);
+	const float cosphi = math::cos(phi), sinphi = math::sin(phi);
 	p.x_ = sintheta * cosphi;
 	p.y_ = sintheta * sinphi;
 	p.z_ = -costheta;

@@ -91,7 +91,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		uint64_t totaln_photons_; // amount of total photons that have been emited, used to normalize photon energy
 		bool pm_ire_; // flag to  say if using PM for initial radius estimate
 		bool b_hashgrid_; // flag to choose using hashgrid or not.
-		Halton hal_1_, hal_2_, hal_3_, hal_4_, hal_7_, hal_8_, hal_9_, hal_10_; // halton sequence to do
+		Halton hal_1_, hal_2_, hal_3_, hal_4_, hal_10_; // halton sequence to do
 		std::vector<HitPoint>hit_points_; // per-pixel refine data
 		unsigned int n_refined_; // Debug info: Refined pixel per pass
 		std::mutex mutex_;

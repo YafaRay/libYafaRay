@@ -125,8 +125,6 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		int getCx0() const { return cx_0_; }
 		int getCy0() const { return cy_0_; }
 		int getTileSize() const { return tile_size_; }
-		int getCurrentPass() const { return n_pass_; }
-		int getNumPasses() const { return n_passes_; }
 		float getWeight(int x, int y) const { return weights_(x, y).getFloat(); }
 		bool getBackgroundResampling() const { return background_resampling_; }
 		void setBackgroundResampling(bool background_resampling) { background_resampling_ = background_resampling; }

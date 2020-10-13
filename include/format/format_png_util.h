@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_UTIL_PNG_H
-#define YAFARAY_IMAGEHANDLER_UTIL_PNG_H
+#ifndef YAFARAY_FORMAT_PNG_UTIL_H
+#define YAFARAY_FORMAT_PNG_UTIL_H
 
 BEGIN_YAFARAY
 
@@ -78,4 +78,4 @@ void readFromMem__(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_re
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_UTIL_PNG_H
+#endif // YAFARAY_FORMAT_PNG_UTIL_H

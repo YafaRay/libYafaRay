@@ -38,7 +38,7 @@ float gauss(float dx, float dy)
 {
 	constexpr float gauss_exp = 0.00247875f;
 	const float r_2 = dx * dx + dy * dy;
-	return std::max(0.f, float(math::exp(-6 * r_2) - gauss_exp));
+	return std::max(0.f, math::exp(-6 * r_2) - gauss_exp);
 }
 
 //Lanczos sinc window size 2
@@ -85,9 +85,9 @@ mnc2 = (6 - 2 * B)/6
 	if(x >= 2.f) return (0.f);
 	if(x >= 1.f) // from mitchell-netravali paper 1 <= |x| < 2
 	{
-		return static_cast<float>(x * (x * (x * -0.38888889f + 2.0f) - 3.33333333f) + 1.77777778f);
+		return x * (x * (x * -0.38888889f + 2.0f) - 3.33333333f) + 1.77777778f;
 	}
-	return static_cast<float>(x * x * (1.16666666f * x - 2.0f) + 0.88888889f);
+	return x * x * (1.16666666f * x - 2.0f) + 0.88888889f;
 }
 
 } // namespace filter

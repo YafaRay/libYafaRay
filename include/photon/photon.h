@@ -112,8 +112,8 @@ struct FoundPhoton
 class PhotonMap
 {
 	public:
-		PhotonMap(): paths_(0), updated_(false), search_radius_(1.), tree_(nullptr) { }
-		PhotonMap(const std::string &mapname, int threads): paths_(0), updated_(false), search_radius_(1.), tree_(nullptr), name_(mapname), threads_pkd_tree_(threads) { }
+		PhotonMap(): paths_(0), updated_(false), search_radius_(1.f), tree_(nullptr) { }
+		PhotonMap(const std::string &mapname, int threads): paths_(0), updated_(false), search_radius_(1.f), tree_(nullptr), name_(mapname), threads_pkd_tree_(threads) { }
 		~PhotonMap() { if(tree_) delete tree_; }
 		void setNumPaths(int n) { paths_ = n; }
 		void setName(const std::string &mapname) { name_ = mapname; }

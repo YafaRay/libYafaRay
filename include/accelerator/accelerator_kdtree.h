@@ -91,7 +91,7 @@ class BoundEdge
 		bool operator<(const BoundEdge &e) const
 		{
 			if(pos_ == e.pos_)
-				return (int)end_ > (int)e.end_;
+				return end_ > e.end_;
 			else return pos_ < e.pos_;
 		}
 		float pos_;

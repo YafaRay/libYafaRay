@@ -206,7 +206,7 @@ class Rgbe final
 			if(rgbe_[3])
 			{
 				/*nonzero pixel*/
-				f = math::ldexp(1.0, rgbe_[3] - (int) (128 + 8));
+				f = math::ldexp(1.0, rgbe_[3] - (128 + 8));
 				return Rgb(rgbe_[0] * f, rgbe_[1] * f, rgbe_[2] * f);
 			}
 			else return Rgb(0, 0, 0);
@@ -313,7 +313,7 @@ inline Rgba operator * (const Rgba &b, const float f)
 
 inline Rgba operator / (const Rgba &b, float f)
 {
-	if(f != 0) f = 1.0 / f;
+	if(f != 0) f = 1.f / f;
 	return Rgba(b.r_ * f, b.g_ * f, b.b_ * f, b.a_ * f);
 }
 

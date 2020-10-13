@@ -61,8 +61,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		float pathWeight0T(RenderData &render_data, int t, PathData &pd) const;
 
 		bool tr_shad_;        //!< calculate transparent shadows for transparent objects
-		bool use_bg_;        //!< configuration; include background for GI
-		bool ibl_;           //!< configuration; use background light, if available
 		bool include_bg_;    //!< determined on precrocess;
 		int s_depth_, bounces_;
 		//mutable std::vector<pathVertex_t> lightPath, eyePath;

@@ -166,7 +166,7 @@ class VoronoiNoiseGenerator final : public NoiseGenerator
 
 		VoronoiType v_type_;
 		DMetricType dm_type_;
-		float mk_exp_, w_1_, w_2_, w_3_, w_4_;
+		float mk_exp_;
 		//	distanceMetric_t* distfunc; //test...replace functors
 		DistMetricFunc_t distfunc_2_;
 		//	mutable float da[4];			// distance array

@@ -36,10 +36,6 @@ BEGIN_YAFARAY
  *
  */
 
-class Bound;
-float boundDistance__(const Bound &l, const Bound &r);
-float boundIntersect__(const Bound &l, const Bound &r);
-
 class Bound
 {
 		//friend float bound_distance(const bound_t &l,const bound_t &r);
@@ -107,10 +103,10 @@ class Bound
 					(pn.y_ >= a_.y_) && (pn.y_ <= g_.y_) &&
 					(pn.z_ >= a_.z_) && (pn.z_ <= g_.z_));
 		};
-		float centerX() const {return (g_.x_ + a_.x_) * 0.5;};
-		float centerY() const {return (g_.y_ + a_.y_) * 0.5;};
-		float centerZ() const {return (g_.z_ + a_.z_) * 0.5;};
-		Point3 center() const {return (g_ + a_) * 0.5;};
+		float centerX() const { return (g_.x_ + a_.x_) * 0.5f; }
+		float centerY() const { return (g_.y_ + a_.y_) * 0.5f; }
+		float centerZ() const { return (g_.z_ + a_.z_) * 0.5f; }
+		Point3 center() const { return (g_ + a_) * 0.5f; }
 		int largestAxis()
 		{
 			Vec3 d = g_ - a_;
@@ -147,11 +143,11 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 	const Point3 &a_0 = a_, &a_1 = g_;
 	const Point3 &p = ray.from_ - a_0;
 
-	float lmin = -1e38, lmax = 1e38, ltmin, ltmax; //infinity check initial values
+	float lmin = -1e38f, lmax = 1e38f, ltmin, ltmax; //infinity check initial values
 
 	if(ray.dir_.x_ != 0)
 	{
-		float invrx = 1. / ray.dir_.x_;
+		float invrx = 1.f / ray.dir_.x_;
 		if(invrx > 0)
 		{
 			lmin = -p.x_ * invrx;
@@ -167,7 +163,7 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 	}
 	if(ray.dir_.y_ != 0)
 	{
-		float invry = 1. / ray.dir_.y_;
+		float invry = 1.f / ray.dir_.y_;
 		if(invry > 0)
 		{
 			ltmin = -p.y_ * invry;
@@ -185,7 +181,7 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 	}
 	if(ray.dir_.z_ != 0)
 	{
-		float invrz = 1. / ray.dir_.z_;
+		float invrz = 1.f / ray.dir_.z_;
 		if(invrz > 0)
 		{
 			ltmin = -p.z_ * invrz;

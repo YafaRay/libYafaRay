@@ -47,7 +47,6 @@ class TextureBackground final : public Background
 		float power_;
 		float rotation_;
 		float sin_r_, cos_r_;
-		bool with_ibl_;
 		float ibl_blur_mipmap_level_; //Calculated based on the IBL_Blur parameter. As mipmap levels have half size each, this parameter is not linear
 };
 

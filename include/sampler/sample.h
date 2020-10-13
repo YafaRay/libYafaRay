@@ -49,7 +49,7 @@ Vec3 inline cosHemisphere(const Vec3 &n, const Vec3 &ru, const Vec3 &rv, float s
 	{
 		const float z_1 = s_1;
 		const float z_2 = s_2 * math::mult_pi_by_2;
-		return (ru * math::cos(z_2) + rv * math::sin(z_2)) * math::sqrt(1.0 - z_1) + n * math::sqrt(z_1);
+		return (ru * math::cos(z_2) + rv * math::sin(z_2)) * math::sqrt(1.f - z_1) + n * math::sqrt(z_1);
 	}
 }
 

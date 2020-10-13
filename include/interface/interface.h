@@ -50,14 +50,13 @@ class LIBYAFARAY_EXPORT Interface
 	public:
 		Interface();
 		virtual ~Interface();
-		// directly related to scene_t:
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
+		virtual unsigned int getNextFreeId();
 		/*! start a triangle mesh
 			in this state only vertices, UVs and triangles can be created
 			\param id returns the ID of the created mesh
 		*/
-		virtual unsigned int getNextFreeId();
 		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
 		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0);
 		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
@@ -87,7 +86,6 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
-		// functions directly related to Scene_t
 		virtual Light 		*createLight(const char *name);
 		virtual Texture 		*createTexture(const char *name);
 		virtual Material 	*createMaterial(const char *name);
@@ -121,12 +119,12 @@ class LIBYAFARAY_EXPORT Interface
 		void setInputColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:
-		ParamMap *params_;
+		ParamMap *params_ = nullptr;
 		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
-		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
-		Scene *scene_;
-		float input_gamma_;
-		ColorSpace input_color_space_;
+		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element
+		Scene *scene_ = nullptr;
+		float input_gamma_ = 1.f;
+		ColorSpace input_color_space_ = RawManualGamma;
 };
 
 END_YAFARAY

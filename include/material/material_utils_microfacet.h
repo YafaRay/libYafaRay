@@ -27,7 +27,7 @@ inline float asDivisor__(float cos_1, float cos_i, float cos_o) { return 8.f * M
 
 inline void sampleQuadrantAniso__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
-	float phi = atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * tanf(M_PI_2 * s_1));
+	float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(M_PI_2 * s_1));
 	float cos_phi = math::cos(phi);
 	float sin_phi = math::sin(phi);
 	float cos_theta, sin_theta;

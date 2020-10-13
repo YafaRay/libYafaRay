@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef YAFARAY_IMAGEHANDLER_UTIL_TGA_H
-#define YAFARAY_IMAGEHANDLER_UTIL_TGA_H
+#ifndef YAFARAY_FORMAT_TGA_UTIL_H
+#define YAFARAY_FORMAT_TGA_UTIL_H
 
 #include "constants.h"
 #include "color/color.h"
@@ -174,4 +174,4 @@ struct TgaPixelRgba
 
 END_YAFARAY
 
-#endif // YAFARAY_IMAGEHANDLER_UTIL_TGA_H
+#endif // YAFARAY_FORMAT_TGA_UTIL_H

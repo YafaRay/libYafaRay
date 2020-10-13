@@ -46,7 +46,7 @@ class LIBYAFARAY_EXPORT RenderControl final
 		int currentPass() const;
 		float currentPassPercent() const;
 		std::string getRenderInfo() const { return render_info_; }
-		std::string getAaNoiseInfo() const { return aa_noise_info; }
+		std::string getAaNoiseInfo() const { return aa_noise_info_; }
 
 	private:
 		bool render_in_progress_ = false;
@@ -57,7 +57,7 @@ class LIBYAFARAY_EXPORT RenderControl final
 		int current_pass_ = 0;
 		float current_pass_percent_ = 0.f;
 		std::string render_info_;
-		std::string aa_noise_info;
+		std::string aa_noise_info_;
 
 		std::mutex mutx_;
 };

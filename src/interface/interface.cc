@@ -55,7 +55,7 @@ void ctrlCHandler__(int signal)
 }
 #endif
 
-Interface::Interface(): scene_(nullptr), input_gamma_(1.f), input_color_space_(RawManualGamma)
+Interface::Interface()
 {
 	//handle CTRL+C events
 #ifdef WIN32
@@ -83,7 +83,6 @@ Interface::Interface(): scene_(nullptr), input_gamma_(1.f), input_color_space_(R
 
 	global_render_control__ = &scene_->getRenderControl();	//for the CTRL+C handler
 	//scene_->setMode(type); //FIXME!
-
 }
 
 Interface::~Interface()

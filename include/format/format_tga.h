@@ -44,7 +44,6 @@ class TgaFormat final : public Format
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
 		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
-		void initForInput();
 
 		/*! Image data reading template functions */
 		template <class ColorType> void readColorMap(FILE *fp, TgaHeader &header, ColorProcessor_t cp);
