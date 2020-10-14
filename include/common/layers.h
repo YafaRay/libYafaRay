@@ -170,7 +170,6 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	class Layers final : public Collection<Layer::Type, Layer>
 {
 	public:
-		Layers();
 		bool isDefined(const Layer::Type &type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		Layer::Type highestDefined() const { if(!items_.empty()) return items_.rbegin()->first; else return Layer::Combined; };
@@ -185,7 +184,6 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 		static const std::map<Layer::Type, std::string> &listAvailable() { return Layer::getMapTypeTypeName(); }
 
 	private:
-		std::vector<bool> defined_bool_; //!Defined layers in bool vector format for performance search
 		MaskParams mask_params_;
 		EdgeToonParams edge_toon_params_;
 };
@@ -194,8 +192,7 @@ inline bool Layers::isDefined(const Layer::Type &type) const
 {
 	if(type == Layer::Combined) return true;
 	else if(type == Layer::Disabled) return false;
-	else if(static_cast<size_t>(type) >= defined_bool_.size()) return false;
-	else return defined_bool_.at(type);
+	else return find(type);
 }
 
 END_YAFARAY

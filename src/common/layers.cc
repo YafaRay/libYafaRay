@@ -192,11 +192,6 @@ bool Layer::applyColorSpace(const Type &type)
 	}
 }
 
-Layers::Layers()
-{
-	defined_bool_ = std::vector<bool>(listAvailable().size(), false);
-}
-
 bool Layers::isDefinedAny(const std::vector<Layer::Type> &types) const
 {
 	for(const auto &type : types)
