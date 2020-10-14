@@ -307,7 +307,6 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	const Layers &layers = scene_->getLayers();
 	const MaskParams &mask_params = layers.getMaskParams();
 	ColorLayers color_layers(layers);
-	const bool layers_used = color_layers.size() > 1;
 
 	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_;
 
@@ -401,69 +400,53 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 
 				color_layers(Layer::Combined).color_ = integrate(rstate, c_ray, 0, &color_layers, nullptr);
 
-				if(layers_used)
+				for(auto &it : color_layers)
 				{
-					if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::ZDepthAbs, Layer::Mist}))
+					switch(it.first)
 					{
-						if(color_layers.isDefinedAny({Layer::ZDepthNorm, Layer::Mist}))
-						{
-							float depth_norm = 0.f;
-							if(c_ray.tmax_ > 0.f)
+						case Layer::ObjIndexMask:
+						case Layer::ObjIndexMaskShadow:
+						case Layer::ObjIndexMaskAll:
+						case Layer::MatIndexMask:
+						case Layer::MatIndexMaskShadow:
+						case Layer::MatIndexMaskAll:
+							it.second.color_ *= wt;
+							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							it.second.color_.clampRgb01();
+							if(mask_params.invert_)
 							{
-								depth_norm = 1.f - (c_ray.tmax_ - min_depth_) * max_depth_; // Distance normalization
+								it.second.color_ = Rgba(1.f) - it.second.color_;
 							}
-							color_layers(Layer::ZDepthNorm).color_ = Rgba(depth_norm);
-							color_layers(Layer::Mist).color_ = Rgba(1.f - depth_norm);
-						}
-						if(color_layers.find(Layer::ZDepthAbs))
-						{
-							float depth_abs = c_ray.tmax_;
-							if(depth_abs <= 0.f)
+							if(!mask_params.only_)
 							{
-								depth_abs = 99999997952.f;
+								Rgba col_combined = color_layers(Layer::Combined).color_;
+								col_combined.a_ = 1.f;
+								it.second.color_ *= col_combined;
 							}
-							color_layers(Layer::ZDepthAbs).color_ = Rgba(depth_abs);
-						}
+							break;
+						case Layer::ZDepthAbs:
+							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb(c_ray.tmax_);
+							it.second.color_ *= wt;
+							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							break;
+						case Layer::ZDepthNorm:
+							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb(1.f - (c_ray.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							it.second.color_ *= wt;
+							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							break;
+						case Layer::Mist:
+							if(c_ray.tmax_ < 0.f) it.second.color_ = Rgba(0.f, 0.f); // Show background as fully transparent
+							else it.second.color_ = Rgb((c_ray.tmax_ - min_depth_) * max_depth_); // Distance normalization
+							it.second.color_ *= wt;
+							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							break;
+						default:
+							it.second.color_ *= wt;
+							if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
+							break;
 					}
-
-					for(auto &it : color_layers)
-					{
-						it.second.color_ *= wt;
-
-						if(it.second.color_.a_ > 1.f) it.second.color_.a_ = 1.f;
-
-						switch(it.first)
-						{
-							//Processing of mask render passes:
-							case Layer::ObjIndexMask:
-							case Layer::ObjIndexMaskShadow:
-							case Layer::ObjIndexMaskAll:
-							case Layer::MatIndexMask:
-							case Layer::MatIndexMaskShadow:
-							case Layer::MatIndexMaskAll:
-
-								it.second.color_.clampRgb01();
-
-								if(mask_params.invert_)
-								{
-									it.second.color_ = Rgba(1.f) - it.second.color_;
-								}
-
-								if(!mask_params.only_)
-								{
-									Rgba col_combined = color_layers(Layer::Combined).color_;
-									col_combined.a_ = 1.f;
-									it.second.color_ *= col_combined;
-								}
-								break;
-
-							default: break;
-						}
-					}
-				}
-				else
-				{
-					color_layers(Layer::Combined).color_ *= wt;
 				}
 
 				image_film_->addSample(j, i, dx, dy, &a, sample, aa_pass_number, inv_aa_max_possible_samples, &color_layers);
