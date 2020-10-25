@@ -64,7 +64,6 @@ class Camera
 		float getFarClip() const { return far_clip_; }
 		void setCameraName(std::string name) { camera_name_ = name; }
 		std::string getCameraName() const { return camera_name_; }
-		std::string getViewName() const { return view_name_; }
 
 	protected:
 		Point3 position_;	//!< Camera position
@@ -78,7 +77,6 @@ class Camera
 		Vec3 vright_;
 		float aspect_ratio_;	//<! Aspect ratio of camera (not image in pixel units!)
 		std::string camera_name_;       //<! Camera name
-		std::string view_name_;       //<! View name for file saving and Blender MultiView environment
 		Plane near_plane_, far_plane_;
 		float near_clip_, far_clip_;
 };

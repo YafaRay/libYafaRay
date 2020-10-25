@@ -36,7 +36,6 @@ class Background;
 class Integrator;
 class VolumeRegion;
 class Scene;
-class Scene;
 class ColorOutput;
 class RenderView;
 class ParamMap;
@@ -93,17 +92,20 @@ class LIBYAFARAY_EXPORT Interface
 		virtual Background 	*createBackground(const char *name);
 		virtual Integrator 	*createIntegrator(const char *name);
 		virtual VolumeRegion 	*createVolumeRegion(const char *name);
-		virtual ColorOutput *createOutput(const char *name);
+		virtual ColorOutput *createOutput(const char *name); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+		virtual ColorOutput *createOutput(const std::string &name, ColorOutput *output); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+		bool removeOutput(const std::string &name); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
+		void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		virtual RenderView *createRenderView(const char *name);
-		virtual unsigned int 	createObject(const char *name);
+		virtual unsigned int createObject(const char *name);
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
-		void addLayer(const std::string &layer_type_name, const std::string &exported_image_type_name);
-		virtual bool setupLayers();
-		bool setInteractive(bool interactive);
+		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
+		virtual bool setupLayersParameters();
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }
 
+		bool setInteractive(bool interactive);
 		void setConsoleVerbosityLevel(const std::string &str_v_level);
 		void setLogVerbosityLevel(const std::string &str_v_level);
 		std::string getVersion() const; //!< Get version to check against the exporters
@@ -116,7 +118,7 @@ class LIBYAFARAY_EXPORT Interface
 		void printWarning(const std::string &msg) const;
 		void printError(const std::string &msg) const;
 
-		void setInputColorSpace(std::string color_space_string, float gamma_val);
+		void setInputColorSpace(const std::string &color_space_string, float gamma_val);
 
 	protected:
 		ParamMap *params_ = nullptr;

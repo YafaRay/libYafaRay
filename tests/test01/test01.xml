@@ -12,23 +12,64 @@ To test, using the terminal (or Windows "cmd") do this:
 
 <scene type="triangle">
 
-<render_layers name="render_layers">
-	<facesEdgeSmoothness fval="0.5"/>
-	<facesEdgeThickness ival="1"/>
-	<facesEdgeThreshold fval="0.01"/>
-	<objectEdgeSmoothness fval="0.75"/>
-	<objectEdgeThickness ival="2"/>
-	<objectEdgeThreshold fval="0.3"/>
-	<!-- Layer must be defined with parameter name layer_define_xx. Layer numbers are unimportant, but we just need a different parameter for each layer -->
-	<layer_define_01 sval="ao-clay"/>
-	<layer_define_02 sval="z-depth-norm"/>
-	<layer_define_03 sval="diffuse"/>
-	<layer_define_04 sval="env"/>
-	<layer_define_05 sval="mist"/>
-	<layer_define_06 sval="debug-normal-smooth"/>
-	<layer_define_07 sval="shadow"/>
-	<layer_define_08 sval="obj-index-auto"/>
-	<layer_define_09 sval="mat-index-auto"/>
+<layer>
+	<type sval="combined"/>
+	<exported_image_name sval="Combined"/>
+	<exported_image_type sval="ColorAlpha"/>
+</layer>
+<layer>
+	<type sval="ao-clay"/>
+	<exported_image_name sval="AO"/>
+	<exported_image_type sval="Color"/>
+</layer>
+<layer>
+	<type sval="z-depth-norm"/>
+	<exported_image_name sval="Depth"/>
+	<exported_image_type sval="GrayAlpha"/>
+</layer>
+<layer>
+	<type sval="diffuse"/>
+	<exported_image_name sval="Diffuse"/>
+	<exported_image_type sval="Color"/>
+</layer>
+<layer>
+	<type sval="env"/>
+	<exported_image_name sval="Env"/>
+	<exported_image_type sval="Color"/>
+</layer>
+<layer>
+	<type sval="mist"/>
+	<exported_image_name sval="Mist"/>
+	<exported_image_type sval="GrayAlpha"/>
+</layer>
+<layer>
+	<type sval="debug-normal-smooth"/>
+	<exported_image_name sval="Normal"/>
+	<exported_image_type sval="Color"/>
+</layer>
+<layer>
+	<type sval="shadow"/>
+	<exported_image_name sval="Shadow"/>
+	<exported_image_type sval="Gray"/>
+</layer>
+<layer>
+	<type sval="obj-index-auto"/>
+	<exported_image_name sval="UV"/>
+	<exported_image_type sval="Color"/>
+</layer>
+<layer>
+	<type sval="mat-index-auto"/>
+	<exported_image_name sval="Vector"/>
+	<exported_image_type sval="Color"/>
+</layer>
+
+<layers_parameters>
+	<layer_faces_edge_smoothness fval="0.5"/>
+	<layer_faces_edge_thickness ival="1"/>
+	<layer_faces_edge_threshold fval="0.01"/>
+	<layer_object_edge_smoothness fval="0.75"/>
+	<layer_object_edge_thickness ival="2"/>
+	<layer_object_edge_threshold fval="0.3"/>
 	<layer_mask_invert bval="false"/>
 	<layer_mask_mat_index ival="2"/>
 	<layer_mask_obj_index ival="2"/>
@@ -37,7 +78,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<layer_toon_post_smooth fval="3"/>
 	<layer_toon_pre_smooth fval="3"/>
 	<layer_toon_quantization fval="0.1"/>
-</render_layers>
+</layers_parameters>
 
 <texture name="Texture.005">
 	<adj_clamp bval="true"/>
@@ -829,10 +870,10 @@ To test, using the terminal (or Windows "cmd") do this:
 	<image_path sval="./test01_png.png"/>
 	<color_space sval="sRGB"/>
 	<gamma fval="1"/>
-	<denoiseEnabled bval="true"/>
-	<denoiseHCol ival="5"/>
-	<denoiseHLum ival="5"/>
-	<denoiseMix fval="0.8"/>
+	<denoise_enabled bval="true"/>
+	<denoise_h_col ival="5"/>
+	<denoise_h_lum ival="5"/>
+	<denoise_mix fval="0.8"/>
 	<badge_position sval="top"/>
 	<badge_title sval="YafaRay v4 Test01 (PNG output)"/>
 	<badge_author sval="YafaRay authors"/>
@@ -897,7 +938,6 @@ To test, using the terminal (or Windows "cmd") do this:
 	<adv_shadow_bias_value fval="0.0005"/>
 	<background_name sval="world_background"/>
 	<background_resampling bval="true"/>
-	<camera_name sval="cam"/>
 	<film_load_save_mode sval="save"/>
 	<film_load_save_path sval="./test01_v4"/>
 	<film_autosave_interval_passes ival="1"/>

@@ -228,11 +228,7 @@ Camera *PerspectiveCamera::factory(ParamMap &params, const Scene &scene)
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
 
-	PerspectiveCamera *cam = new PerspectiveCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
-
-	cam->view_name_ = view_name;
-
-	return cam;
+	return new PerspectiveCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }
 
 END_YAFARAY

@@ -104,16 +104,16 @@ void Interface::clearAll()
 	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
-void Interface::addLayer(const std::string &layer_type_name, const std::string &exported_image_type_name)
+void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
 {
 	const Layer::Type layer_type = Layer::getType(layer_type_name);
 	const Image::Type image_type = Image::getTypeFromName(exported_image_type_name);
-	scene_->defineLayer(layer_type, image_type, image_type);
+	scene_->defineLayer(layer_type, image_type, image_type, exported_image_name);
 }
 
-bool Interface::setupLayers()
+bool Interface::setupLayersParameters()
 {
-	scene_->setupLayers(*params_);
+	scene_->setupLayersParameters(*params_);
 	return true;
 }
 
@@ -248,14 +248,9 @@ void Interface::paramsSetMemMatrix(const char *name, double *matrix, bool transp
 	paramsSetMatrix(name, mat, transpose);
 }
 
-void Interface::setInputColorSpace(std::string color_space_string, float gamma_val)
+void Interface::setInputColorSpace(const std::string &color_space_string, float gamma_val)
 {
-	if(color_space_string == "sRGB") input_color_space_ = Srgb;
-	else if(color_space_string == "XYZ") input_color_space_ = XyzD65;
-	else if(color_space_string == "LinearRGB") input_color_space_ = LinearRgb;
-	else if(color_space_string == "Raw_Manual_Gamma") input_color_space_ = RawManualGamma;
-	else input_color_space_ = Srgb;
-
+	input_color_space_ = Rgb::colorSpaceFromName(color_space_string);
 	input_gamma_ = gamma_val;
 }
 
@@ -298,7 +293,12 @@ Camera 		*Interface::createCamera(const char *name)
 Background 	*Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
 Integrator 	*Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
 VolumeRegion 	*Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
-ColorOutput *Interface::createOutput(const char *name) { return scene_->createOutput(name, *params_); }
+
+ColorOutput *Interface::createOutput(const char *name) { return scene_->createOutput(name, *params_); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+ColorOutput *Interface::createOutput(const std::string &name, ColorOutput *output) { return scene_->createOutput(name, output); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+bool Interface::removeOutput(const std::string &name) { return scene_->removeOutput(name); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
+void Interface::clearOutputs() { return scene_->clearOutputs(); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
+
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 
 unsigned int Interface::createObject(const char *name)

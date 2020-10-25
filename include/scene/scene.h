@@ -96,7 +96,6 @@ class LIBYAFARAY_EXPORT Scene
 		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) = 0;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
 		virtual bool updateGeometry() = 0;
-		virtual void clearGeometry() = 0;
 
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const = 0;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const = 0;
@@ -162,13 +161,19 @@ class LIBYAFARAY_EXPORT Scene
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		ColorOutput *createOutput(const std::string &name, ParamMap &params); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+		ColorOutput *createOutput(const std::string &name, ColorOutput *output); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
+		bool removeOutput(const std::string &name); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
+		void clearOutputs();; //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		std::map<std::string, ColorOutput *> &getOutputs() { return outputs_; }
 		const std::map<std::string, ColorOutput *> getOutputs() const { return outputs_; }
 
 		bool setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb = nullptr);
-		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None);
-		void setupLayers(const ParamMap &params); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
-		const std::map<std::string, Camera *> *getCameraTable() const { return &cameras_; }
+		void defineLayer(const ParamMap &params);
+		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
+		void setupLayersParameters(const ParamMap &params);
+		void clearLayers();
+		void clearRenderViews();
+
 		const Layers &getLayers() const { return layers_; }
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
@@ -177,9 +182,13 @@ class LIBYAFARAY_EXPORT Scene
 	private:
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map);
 		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists = true);
 
 	protected:
+		void defineBasicLayers();
+		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+
 		template <class T> static void freeMap(std::map< std::string, T * > &map);
 		struct CreationState
 		{
@@ -212,13 +221,6 @@ class LIBYAFARAY_EXPORT Scene
 		std::map<std::string, RenderView *> render_views_;
 		Layers layers_;
 };
-
-template <class T>
-inline void Scene::freeMap(std::map< std::string, T * > &map)
-{
-	for(auto &m : map) { delete m.second; m.second = nullptr; }
-}
-
 
 END_YAFARAY
 

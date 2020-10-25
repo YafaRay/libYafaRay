@@ -26,6 +26,7 @@
 #include "common/param.h"
 #include "format/format.h"
 #include "image/image_layers.h"
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 
@@ -52,10 +53,10 @@ ColorOutput *ImageOutput::factory(const ParamMap &params, const Scene &scene)
 	params.getParam("alpha_premultiply", alpha_premultiply);
 	params.getParam("multi_layer", multi_layer);
 
-	params.getParam("denoiseEnabled", denoise_params.enabled_);
-	params.getParam("denoiseHLum", denoise_params.hlum_);
-	params.getParam("denoiseHCol", denoise_params.hcol_);
-	params.getParam("denoiseMix", denoise_params.mix_);
+	params.getParam("denoise_enabled", denoise_params.enabled_);
+	params.getParam("denoise_h_lum", denoise_params.hlum_);
+	params.getParam("denoise_h_col", denoise_params.hcol_);
+	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
 	ColorOutput *output = new ImageOutput(image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer);
@@ -145,6 +146,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 			for(const auto &image_layer : *image_layers_)
 			{
 				const Layer::Type layer_type = image_layer.first;
+				const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
 				if(layer_type == Layer::Combined)
 				{
 					saveImageFile(image_path_, layer_type, format, render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
@@ -154,7 +156,9 @@ void ImageOutput::flush(const RenderControl &render_control)
 				if(layer_type != Layer::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
 				{
 					const std::string layer_type_name = Layer::getTypeName(image_layer.first);
-					const std::string fname_pass = directory + base_name + " [" + layer_type_name + "]." + ext;
+					std::string fname_pass = directory + base_name + " [" + layer_type_name;
+					if(!exported_image_name.empty()) fname_pass += " - " + exported_image_name;
+					fname_pass += "]." + ext;
 					saveImageFile(fname_pass, layer_type, format, render_control);
 				}
 			}
@@ -257,7 +261,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		for(const auto &image_layer : *image_layers_)
 		{
 			Image *image_layer_badge = Image::getComposedImage(image_layer.second.image_, badge_image, badge_image_position);
-			image_layers_badge.set(image_layer.first, {image_layer_badge, image_layer.first});
+			image_layers_badge.set(image_layer.first, {image_layer_badge, image_layer.second.layer_});
 		}
 		delete badge_image;
 		format->saveToFileMultiChannel(filename, &image_layers_badge);

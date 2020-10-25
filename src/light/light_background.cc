@@ -66,18 +66,15 @@ BackgroundLight::BackgroundLight(int sampl, bool invert_intersect, bool light_en
 
 BackgroundLight::~BackgroundLight()
 {
-	for(int i = 0; i < v_dist_->count_; i++) delete u_dist_[i];
 	if(u_dist_) delete[] u_dist_;
-	u_dist_ = nullptr;
-	if(v_dist_) delete v_dist_;
-	v_dist_ = nullptr;
+	delete v_dist_;
 }
 
 void BackgroundLight::init(Scene &scene)
 {
 	float *fu = new float[max_usamples__];
 	float *fv = new float[max_vsamples__];
-	int nv = max_vsamples__;
+	const int nv = max_vsamples__;
 
 	Ray ray;
 	ray.from_ = Point3(0.f);

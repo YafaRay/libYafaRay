@@ -26,12 +26,10 @@
 
 #include "constants.h"
 #include "color/color.h"
-#include "render/render_view.h"
 #include "common/badge.h"
 #include <vector>
 #include <map>
 #include <string>
-#include <render/render_control.h>
 
 BEGIN_YAFARAY
 
@@ -41,6 +39,7 @@ class Layers;
 class ColorLayer;
 class ColorLayers;
 class ParamMap;
+class RenderView;
 
 class LIBYAFARAY_EXPORT ColorOutput
 {

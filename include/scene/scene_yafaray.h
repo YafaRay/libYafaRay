@@ -67,7 +67,6 @@ class YafaRayScene final : public Scene
 		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) override;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) override;
 		virtual bool updateGeometry() override;
-		virtual void clearGeometry() override;
 
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const override;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const override;
@@ -75,6 +74,8 @@ class YafaRayScene final : public Scene
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const override;
 		virtual TriangleObject *getMesh(const std::string &name) const override;
 		virtual ObjectGeometric *getObject(const std::string &name) const override;
+
+		void clearGeometry();
 
 		GeometryCreationState geometry_creation_state_;
 		Accelerator<Triangle> *tree_ = nullptr; //!< kdTree for triangle-only mode

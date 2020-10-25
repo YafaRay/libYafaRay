@@ -263,7 +263,9 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 
 	for(const auto &image_layer : *image_layers)
 	{
-		const std::string layer_name = image_layer.second.layer_.getTypeName();
+		std::string layer_name = image_layer.second.layer_.getTypeName();
+		const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
+		if(!exported_image_name.empty()) layer_name += "-" + exported_image_name;
 		exr_layer_name = "RenderLayer." + layer_name + ".";
 		Y_VERBOSE << "    Writing EXR Layer: " << layer_name << YENDL;
 

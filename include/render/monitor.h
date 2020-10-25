@@ -51,14 +51,14 @@ class LIBYAFARAY_EXPORT ConsoleProgressBar : public ProgressBar
 {
 	public:
 		ConsoleProgressBar(int cwidth = 80);
-		virtual void init(int total_steps);
-		virtual void update(int steps = 1);
-		virtual void done();
-		virtual void setTag(const char *text) { tag_ = std::string(text); };
-		virtual void setTag(std::string text) { tag_ = text; };
-		virtual std::string getTag() const { return tag_; }
-		virtual float getPercent() const;
-		virtual float getTotalSteps() const { return n_steps_; }
+		virtual void init(int total_steps) override;
+		virtual void update(int steps = 1) override;
+		virtual void done() override;
+		virtual void setTag(const char *text) override { tag_ = std::string(text); };
+		virtual void setTag(std::string text) override { tag_ = text; };
+		virtual std::string getTag() const override { return tag_; }
+		virtual float getPercent() const override;
+		virtual float getTotalSteps() const override { return n_steps_; }
 
 	protected:
 		int width_, total_bar_len_;

@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 
 class ImageLayers;
 
-class LIBYAFARAY_EXPORT MemoryInputOutput final : public ColorOutput
+class MemoryInputOutput final : public ColorOutput
 {
 	public:
 		static ColorOutput *factory(const ParamMap &params, const Scene &scene);

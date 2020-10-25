@@ -113,9 +113,6 @@ Camera *AngularCamera::factory(ParamMap &params, const Scene &scene)
 
 	AngularCamera *cam = new AngularCamera(from, to, up, resx, resy, aspect, angle_degrees * M_PI / 180.f, max_angle_degrees * M_PI / 180.f, circular, projection, near_clip, far_clip);
 	if(mirrored) cam->vright_ *= -1.0;
-
-	cam->view_name_ = view_name;
-
 	return cam;
 }
 

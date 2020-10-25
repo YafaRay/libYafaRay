@@ -33,7 +33,7 @@ class Scene;
 class XmlParser;
 enum ColorSpace : int;
 
-bool LIBYAFARAY_EXPORT parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, std::string color_space_string, float input_gamma);
+bool LIBYAFARAY_EXPORT parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, const std::string &color_space_string, float input_gamma);
 
 typedef void (*StartElementCb_t)(XmlParser &p, const char *element, const char **attrs);
 typedef void (*EndElementCb_t)(XmlParser &p, const char *element);

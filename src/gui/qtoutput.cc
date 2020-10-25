@@ -54,7 +54,7 @@ bool QtOutput::putPixel(int x, int y, const yafaray4::ColorLayer &color_layer)
 	return true;
 }
 
-void QtOutput::flush(const RenderControl &render_control)
+void QtOutput::flush(const yafaray4::RenderControl &render_control)
 {
 	QCoreApplication::postEvent(render_buffer_, new GuiUpdateEvent(QRect(), true));
 }

@@ -37,6 +37,7 @@
 #include "format/format.h"
 #include "volume/volume.h"
 #include "output/output.h"
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 
@@ -181,14 +182,6 @@ Bound Scene::getSceneBound() const
 
 bool Scene::render()
 {
-	const std::map<std::string, Camera *> *camera_table = getCameraTable();
-
-	if(camera_table->size() == 0)
-	{
-		Y_ERROR << "No cameras/views found, exiting." << YENDL;
-		return false;
-	}
-
 	Y_VERBOSE << "Scene: Mode \"" << ((mode_ == 0) ? "Triangle" : "Universal") << "\"" << YENDL;
 	if(!image_film_)
 	{
@@ -203,6 +196,8 @@ bool Scene::render()
 
 	if(creation_state_.changes_ != CreationState::Flags::CNone)
 	{
+		for(auto &l : getLights()) l.second->init(*this);
+
 		for(auto &output : outputs_)
 		{
 			output.second->init(image_film_->getWidth(), image_film_->getHeight(), &layers_, &render_views_);
@@ -212,9 +207,14 @@ bool Scene::render()
 		for(auto &it : render_views_)
 		{
 			for(auto &o : outputs_) o.second->setRenderView(it.second);
-			for(auto &l : it.second->getLights()) l.second->init(*this);
 			std::stringstream inte_settings;
-			bool success = (surf_integrator_->preprocess(render_control_, it.second) && vol_integrator_->preprocess(render_control_, it.second));
+			bool success = it.second->init(*this);
+			if(!success)
+			{
+				Y_WARNING << "Scene: No cameras or lights found at RenderView " << it.second->getName() << "', skipping this RenderView..." << YENDL;
+				continue;
+			}
+			success = (surf_integrator_->preprocess(render_control_, it.second) && vol_integrator_->preprocess(render_control_, it.second));
 			if(!success)
 			{
 				Y_ERROR << "Scene: Preprocessing process failed, exiting..." << YENDL;
@@ -272,12 +272,36 @@ void Scene::clearNonGeometry()
 	volume_regions_.clear();
 	outputs_.clear();
 	render_views_.clear();
+
+	clearLayers();
 }
 
 void Scene::clearAll()
 {
-	clearGeometry();
 	clearNonGeometry();
+}
+
+template <class T>
+void Scene::freeMap(std::map< std::string, T * > &map)
+{
+	for(auto &m : map) { delete m.second; m.second = nullptr; }
+}
+
+template void Scene::freeMap<ObjectGeometric>(std::map< std::string, ObjectGeometric * > &map);
+
+void Scene::clearOutputs()
+{
+	freeMap(outputs_); outputs_.clear();
+}
+
+void Scene::clearLayers()
+{
+	layers_.clear();
+}
+
+void Scene::clearRenderViews()
+{
+	freeMap(render_views_); render_views_.clear();
 }
 
 template <typename T>
@@ -333,6 +357,15 @@ RenderView *Scene::getRenderView(const std::string &name) const
 	return Scene::findMapItem<RenderView>(name, render_views_);
 }
 
+bool Scene::removeOutput(const std::string &name)
+{
+	ColorOutput *output = getOutput(name);
+	if(!output) return false;
+	delete output;
+	outputs_.erase(name);
+	return true;
+}
+
 Light *Scene::createLight(const std::string &name, ParamMap &params)
 {
 	std::string pname = "Light";
@@ -383,6 +416,30 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 	ERR_ON_CREATE(type);
 	return nullptr;
 }
+
+template <typename T>
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map)
+{
+	std::string pname = class_name;
+	if(map.find(name) != map.end())
+	{
+		WARN_EXIST; return nullptr;
+	}
+	if(item)
+	{
+		map[name] = item;
+		INFO_VERBOSE_SUCCESS(name, class_name);
+		return item;
+	}
+	ERR_ON_CREATE(class_name);
+	return item;
+}
+
+ColorOutput *Scene::createOutput(const std::string &name, ColorOutput *output)
+{
+	return createMapItem<ColorOutput>(name, "ColorOutput", output, outputs_);
+}
+
 
 template <typename T>
 T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists)
@@ -488,14 +545,6 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	int adv_computer_node = 0;
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes
 
-	if(layers_.size() == 0) setupLayers(params);
-
-	if(! params.getParam("camera_name", name))
-	{
-		Y_ERROR_SCENE << "Specify a Camera!!" << YENDL;
-		return false;
-	}
-
 	if(!params.getParam("integrator_name", name))
 	{
 		Y_ERROR_SCENE << "Specify an Integrator!!" << YENDL;
@@ -562,6 +611,8 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
 
 	delete image_film_;
+	defineBasicLayers();
+	defineDependentLayers();
 	image_film_ = ImageFilm::factory(params, this);
 
 	if(pb)
@@ -596,7 +647,22 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	return true;
 }
 
-void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_type, const Image::Type &exported_image_type)
+void Scene::defineLayer(const ParamMap &params)
+{
+	Y_DEBUG PRTEXT(**Scene::defineLayer) PREND; params.printDebug();
+
+	std::string layer_type_name, exported_image_name, exported_image_type_name;
+	params.getParam("type", layer_type_name);
+	params.getParam("exported_image_name", exported_image_name);
+	params.getParam("exported_image_type", exported_image_type_name);
+
+	const Layer::Type layer_type = Layer::getType(layer_type_name);
+	const Image::Type image_type = Layer::getDefaultImageType(layer_type);
+	const Image::Type exported_image_type = Image::getTypeFromName(exported_image_type_name);
+	defineLayer(layer_type, image_type, exported_image_type, exported_image_name);
+}
+
+void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_type, const Image::Type &exported_image_type, const std::string &exported_image_name)
 {
 	if(layer_type == Layer::Disabled)
 	{
@@ -610,12 +676,7 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 				existing_layer->getImageType() == image_type &&
 				existing_layer->getExportedImageType() == exported_image_type) return;
 
-		std::stringstream ss;
-		ss << "Scene: layer '" << Layer::getTypeName(layer_type) << "' was previously defined as: (" << (existing_layer->isExported() ? "exported" : "internal") << ")";
-		if(existing_layer->hasInternalImage()) ss << " with internal image type: '"  << existing_layer->getImageTypeName() << "'";
-		if(existing_layer->isExported()) ss << " with exported image type: '"  << existing_layer->getExportedImageTypeName() << "'";
-		Y_DEBUG << ss.str() << YENDL;
-
+		Y_DEBUG << "Scene: had previously defined: " << existing_layer->print() << YENDL;
 		if(image_type == Image::Type::None && existing_layer->getImageType() != Image::Type::None)
 		{
 			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' had previously a defined internal image which cannot be removed." << YENDL;
@@ -626,108 +687,98 @@ void Scene::defineLayer(const Layer::Type &layer_type, const Image::Type &image_
 		{
 			Y_DEBUG << "Scene: the layer '" << Layer::getTypeName(layer_type) << "' was previously an exported layer and cannot be changed into an internal layer now." << YENDL;
 		}
-		else existing_layer->setExportedImageType(exported_image_type);
-
+		else
+		{
+			existing_layer->setExportedImageType(exported_image_type);
+			existing_layer->setExportedImageName(exported_image_name);
+		}
 		existing_layer->setType(layer_type);
-
-		ss.clear();
-		ss << "Scene: layer redefined (" << (existing_layer->isExported() ? "exported" : "internal") << ") '" << Layer::getTypeName(layer_type) << "')";
-		if(existing_layer->hasInternalImage()) ss << " with internal image type: '" << existing_layer->getImageTypeName() << "'";
-		if(existing_layer->isExported()) ss << " with exported image type: '" << existing_layer->getExportedImageTypeName() << "'";
-		Y_INFO << ss.str() << YENDL;
+		Y_INFO << "Scene: layer redefined: " + existing_layer->print() << YENDL;
 	}
 	else
 	{
-		Layer new_layer(layer_type, image_type, exported_image_type);
+		Layer new_layer(layer_type, image_type, exported_image_type, exported_image_name);
 		layers_.set(layer_type, new_layer);
-
-		std::stringstream ss;
-		ss << "Scene: layer defined (" << (new_layer.isExported() ? "exported" : "internal") << ") '" << Layer::getTypeName(layer_type) << "')";
-		if(new_layer.hasInternalImage()) ss << " with internal image type: '" << new_layer.getImageTypeName() << "'";
-		if(new_layer.isExported()) ss << " with exported image type: '" << new_layer.getExportedImageTypeName() << "'";
-		Y_INFO << ss.str() << YENDL;
+		Y_INFO << "Scene: layer defined: " << new_layer.print() << YENDL;
 	}
 }
 
-void Scene::setupLayers(const ParamMap &params)
+void Scene::defineBasicLayers()
 {
-	Y_DEBUG PRTEXT(**Scene::setupLayers) PREND; params.printDebug();
-	layers_.clear();
-	setEdgeToonParams(params);
-	setMaskParams(params);
 	//by default we will have an external/internal Combined layer
-	defineLayer(Layer::Combined, Image::Type::ColorAlpha, Image::Type::ColorAlpha);
-	//Generate any necessary auxiliar render passes
-	defineLayer(Layer::DebugSamplingFactor, Image::Type::Gray); //This auxiliary layer will always be needed for material-specific number of samples calculation
+	if(!layers_.isDefined(Layer::Combined)) defineLayer(Layer::Combined, Image::Type::ColorAlpha, Image::Type::ColorAlpha);
 
-	for(const auto &param : params)
-	{
-		if(param.first.substr(0, 13) == "layer_define_")
-		{
-			std::string param_value_string;
-			param.second.getVal(param_value_string);
-			defineLayer(Layer::getType(param_value_string), Image::Type::ColorAlpha, Image::Type::ColorAlpha);
-		}
-	}
+	//This auxiliary layer will always be needed for material-specific number of samples calculation
+	if(!layers_.isDefined(Layer::DebugSamplingFactor)) defineLayer(Layer::DebugSamplingFactor, Image::Type::Gray);
+}
 
+void Scene::defineDependentLayers()
+{
 	for(const auto &layer : layers_)
 	{
-		//If any internal layer needs an auxiliary internal layer and/or auxiliary Render layer, enable also the auxiliary layeres.
 		switch(layer.first)
 		{
 			case Layer::ZDepthNorm:
-				defineLayer(Layer::Mist);
+				if(!layers_.isDefined(Layer::Mist)) defineLayer(Layer::Mist);
 				break;
 
 			case Layer::Mist:
-				defineLayer(Layer::ZDepthNorm);
+				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm);
 				break;
 
 			case Layer::ReflectAll:
-				defineLayer(Layer::ReflectPerfect);
-				defineLayer(Layer::Glossy);
-				defineLayer(Layer::GlossyIndirect);
+				if(!layers_.isDefined(Layer::ReflectPerfect)) defineLayer(Layer::ReflectPerfect);
+				if(!layers_.isDefined(Layer::Glossy)) defineLayer(Layer::Glossy);
+				if(!layers_.isDefined(Layer::GlossyIndirect)) defineLayer(Layer::GlossyIndirect);
 				break;
 
 			case Layer::RefractAll:
-				defineLayer(Layer::RefractPerfect);
-				defineLayer(Layer::Trans);
-				defineLayer(Layer::TransIndirect);
+				if(!layers_.isDefined(Layer::RefractPerfect)) defineLayer(Layer::RefractPerfect);
+				if(!layers_.isDefined(Layer::Trans)) defineLayer(Layer::Trans);
+				if(!layers_.isDefined(Layer::TransIndirect)) defineLayer(Layer::TransIndirect);
 				break;
 
 			case Layer::IndirectAll:
-				defineLayer(Layer::Indirect);
-				defineLayer(Layer::DiffuseIndirect);
+				if(!layers_.isDefined(Layer::Indirect)) defineLayer(Layer::Indirect);
+				if(!layers_.isDefined(Layer::DiffuseIndirect)) defineLayer(Layer::DiffuseIndirect);
 				break;
 
 			case Layer::ObjIndexMaskAll:
-				defineLayer(Layer::ObjIndexMask);
-				defineLayer(Layer::ObjIndexMaskShadow);
+				if(!layers_.isDefined(Layer::ObjIndexMask)) defineLayer(Layer::ObjIndexMask);
+				if(!layers_.isDefined(Layer::ObjIndexMask)) defineLayer(Layer::ObjIndexMaskShadow);
 				break;
 
 			case Layer::MatIndexMaskAll:
-				defineLayer(Layer::MatIndexMask);
-				defineLayer(Layer::MatIndexMaskShadow);
+				if(!layers_.isDefined(Layer::MatIndexMask)) defineLayer(Layer::MatIndexMask);
+				if(!layers_.isDefined(Layer::MatIndexMaskShadow)) defineLayer(Layer::MatIndexMaskShadow);
 				break;
 
 			case Layer::DebugFacesEdges:
-				defineLayer(Layer::NormalGeom, Image::Type::ColorAlpha);
-				defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+				if(!layers_.isDefined(Layer::NormalGeom)) defineLayer(Layer::NormalGeom, Image::Type::ColorAlpha);
+				if(!layers_.isDefined(Layer::NormalGeom)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
 				break;
 
 			case Layer::DebugObjectsEdges:
-				defineLayer(Layer::NormalSmooth, Image::Type::ColorAlpha);
-				defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
+				if(!layers_.isDefined(Layer::NormalSmooth)) defineLayer(Layer::NormalSmooth, Image::Type::ColorAlpha);
+				if(!layers_.isDefined(Layer::ZDepthNorm)) defineLayer(Layer::ZDepthNorm, Image::Type::GrayAlpha);
 				break;
 
 			case Layer::Toon:
-				defineLayer(Layer::DebugObjectsEdges, Image::Type::ColorAlpha);
+				if(!layers_.isDefined(Layer::DebugObjectsEdges)) defineLayer(Layer::DebugObjectsEdges, Image::Type::ColorAlpha);
 				break;
 
 			default:
 				break;
 		}
 	}
+}
+
+void Scene::setupLayersParameters(const ParamMap &params)
+{
+	Y_DEBUG PRTEXT(**Scene::setupLayersParameters) PREND;
+	params.printDebug();
+	setEdgeToonParams(params);
+	setMaskParams(params);
 }
 
 void Scene::setMaskParams(const ParamMap &params)
@@ -765,15 +816,15 @@ void Scene::setEdgeToonParams(const ParamMap &params)
 	float faces_edge_smoothness = 0.5f;
 
 	params.getParam("layer_toon_edge_color", toon_edge_color);
-	params.getParam("objectEdgeThickness", object_edge_thickness);
-	params.getParam("objectEdgeThreshold", object_edge_threshold);
-	params.getParam("objectEdgeSmoothness", object_edge_smoothness);
+	params.getParam("layer_object_edge_thickness", object_edge_thickness);
+	params.getParam("layer_object_edge_threshold", object_edge_threshold);
+	params.getParam("layer_object_edge_smoothness", object_edge_smoothness);
 	params.getParam("layer_toon_pre_smooth", toon_pre_smooth);
 	params.getParam("layer_toon_quantization", toon_quantization);
 	params.getParam("layer_toon_post_smooth", toon_post_smooth);
-	params.getParam("facesEdgeThickness", faces_edge_thickness);
-	params.getParam("facesEdgeThreshold", faces_edge_threshold);
-	params.getParam("facesEdgeSmoothness", faces_edge_smoothness);
+	params.getParam("layer_faces_edge_thickness", faces_edge_thickness);
+	params.getParam("layer_faces_edge_threshold", faces_edge_threshold);
+	params.getParam("layer_faces_edge_smoothness", faces_edge_smoothness);
 
 	EdgeToonParams edge_params;
 	edge_params.thickness_ = object_edge_thickness;

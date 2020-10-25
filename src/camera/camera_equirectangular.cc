@@ -79,13 +79,8 @@ Camera *EquirectangularCamera::factory(ParamMap &params, const Scene &scene)
 	params.getParam("aspect_ratio", aspect);
 	params.getParam("nearClip", near_clip);
 	params.getParam("farClip", far_clip);
-	params.getParam("view_name", view_name);
 
-	EquirectangularCamera *cam = new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip);
-
-	cam->view_name_ = view_name;
-
-	return cam;
+	return new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip);
 }
 
 Point3 EquirectangularCamera::screenproject(const Point3 &p) const

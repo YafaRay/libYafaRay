@@ -342,24 +342,17 @@ void MainWindow::slotFinished()
 		using namespace yafaray4;
 
 		interface_->paramsClearAll();
-		interface_->paramsSetString("type", "png");
-		interface_->paramsSetInt("width", res_x_);
-		interface_->paramsSetInt("height", res_y_);
-		interface_->paramsSetBool("alpha_channel", auto_save_alpha_);
-		interface_->paramsSetBool("z_channel", use_zbuf_);
-
-		Format *format = interface_->createImageHandler("saver", false);
-		ImageOutput *out = new ImageOutput(file_name_, b_x_, b_y_, false);
+		interface_->paramsSetString("type", "image_output");
+		interface_->paramsSetString("image_path", "file_name_");
+		interface_->paramsSetInt("border_x", b_x_);
+		interface_->paramsSetInt("border_y", b_y_);
+		ColorOutput *out = interface_->createOutput("image_output");
 
 		interface_->paramsClearAll();
-
-		//interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
-
 		render_saved_ = true;
 
 		rt = QString("Image Auto-saved. ");
 
-		delete format;
 		delete out;
 
 		if(auto_close_)
@@ -550,16 +543,15 @@ bool MainWindow::saveDlg()
 		interface_->paramsSetInt("width", res_x_);
 		interface_->paramsSetInt("height", res_y_);
 		interface_->paramsSetBool("alpha_channel", save_with_alpha_);
-
 		last_path_ = QDir(file_name).absolutePath();
-		ImageOutput *out = new ImageOutput(last_path_.toStdString(), b_x_, b_y_, false);
-		//FIXME add output to scene
+
+		interface_->paramsSetString("type", "image_output");
+		interface_->paramsSetString("image_path", last_path_.toStdString().c_str());
+		interface_->paramsSetInt("border_x", b_x_);
+		interface_->paramsSetInt("border_y", b_y_);
+		ColorOutput *out = interface_->createOutput("image_output");
 		interface_->paramsClearAll();
-
 		//FIXME: interf->setDrawParams(useDrawParams);
-
-
-		//interface_->getRenderedImage(0, *out); //FIXME DAVID VIEWS!!
 
 		render_saved_ = true;
 

@@ -671,8 +671,8 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 		if(output.second && (render_control.finished() || output.second->isImageOutput()))
 		{
 			std::stringstream pass_string;
-			if(output.second->isImageOutput()) pass_string << "Saving image files";
-			else pass_string << "Flushing output";
+			pass_string << "Flushing output '" << output.second->getName() << "'";
+			if(output.second->isImageOutput()) pass_string << " and saving image files.";
 			if(render_control.finished())
 			{
 				std::stringstream ss;

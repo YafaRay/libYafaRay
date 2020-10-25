@@ -97,11 +97,7 @@ Camera *OrthographicCamera::factory(ParamMap &params, const Scene &scene)
 	params.getParam("farClip", far_clip);
 	params.getParam("view_name", view_name);
 
-	OrthographicCamera *cam = new OrthographicCamera(from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
-
-	cam->view_name_ = view_name;
-
-	return cam;
+	return new OrthographicCamera(from, to, up, resx, resy, aspect, scale, near_clip, far_clip);
 }
 
 END_YAFARAY

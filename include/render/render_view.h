@@ -38,7 +38,7 @@ class RenderView final
 {
 	public:
 		static RenderView *factory(ParamMap &params, const Scene &scene);
-		RenderView(const std::string &name, const Camera *camera, const std::map<std::string, Light *> &lights, float wavelength) : name_(name), camera_(camera), lights_(lights), wavelength_(wavelength) { }
+		bool init(const Scene &scene);
 		std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }
 		const std::map<std::string, Light *> getLights() const { return lights_; }
@@ -49,10 +49,13 @@ class RenderView final
 		const std::vector<Light *> getLightsEmittingDiffusePhotons() const;
 
 	private:
+		RenderView(const std::string &name, const std::string &camera_name, const std::string &light_names, float wavelength) : name_(name), camera_name_(camera_name), light_names_(light_names), wavelength_(wavelength) { }
 		std::string name_;
-		const Camera *camera_ = nullptr;
-		const std::map<std::string, Light *> lights_;
+		std::string camera_name_;
+		std::string light_names_;
 		float wavelength_ = 0.f;
+		const Camera *camera_ = nullptr;
+		std::map<std::string, Light *> lights_;
 };
 
 END_YAFARAY

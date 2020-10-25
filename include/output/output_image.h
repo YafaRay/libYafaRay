@@ -32,7 +32,7 @@ BEGIN_YAFARAY
 class ImageLayers;
 class Format;
 
-class LIBYAFARAY_EXPORT ImageOutput final : public ColorOutput
+class ImageOutput final : public ColorOutput
 {
 	public:
 		static ColorOutput *factory(const ParamMap &params, const Scene &scene);

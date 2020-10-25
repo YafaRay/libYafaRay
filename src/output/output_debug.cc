@@ -23,6 +23,7 @@
 #include "color/color_layers.h"
 #include "common/param.h"
 #include "common/logger.h"
+#include "render/render_view.h"
 
 BEGIN_YAFARAY
 

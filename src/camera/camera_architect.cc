@@ -124,11 +124,8 @@ Camera *ArchitectCamera::factory(ParamMap &params, const Scene &scene)
 	BkhBiasType bbt = BbNone;
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
-	ArchitectCamera *cam = new ArchitectCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 
-	cam->view_name_ = view_name;
-
-	return cam;
+	return new ArchitectCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
 }
 
 END_YAFARAY

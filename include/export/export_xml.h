@@ -31,7 +31,8 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 {
 	public:
 		XmlExport(const char *fname, int type);
-		virtual bool setupLayers() override; //!< setup render passes information
+		virtual bool setupLayersParameters() override; //!< setup render passes information
+		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name) override;
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
 		virtual unsigned int getNextFreeId() override;

@@ -33,7 +33,7 @@ BEGIN_YAFARAY
 
 class Rgba;
 
-class Layer final
+class LIBYAFARAY_EXPORT Layer final
 {
 	public:
 		enum Type : int
@@ -112,8 +112,8 @@ class Layer final
 			DebugDudxyDvdxy,
 		};
 		Layer() = default;
-		Layer(const Type &type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None);
-		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "");
+		Layer(const Type &type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
+		Layer(const std::string &type_name, const std::string &image_type_name = "", const std::string &exported_image_type_name = "", const std::string &exported_image_name = "");
 		Type getType() const { return type_; }
 		std::string getTypeName() const { return getTypeName(type_); }
 		int getNumExportedChannels() const { return Image::getNumChannels(exported_image_type_); }
@@ -123,10 +123,13 @@ class Layer final
 		std::string getImageTypeName() const { return Image::getTypeName(image_type_); }
 		Image::Type getExportedImageType() const { return exported_image_type_; }
 		std::string getExportedImageTypeName() const { return Image::getTypeName(exported_image_type_); }
+		std::string getExportedImageName() const { return exported_image_name_; }
+		std::string print() const;
 
 		void setType(const Type &type) { type_ = type; }
 		void setImageType(const Image::Type &image_type) { image_type_ = image_type; }
 		void setExportedImageType(const Image::Type &exported_image_type) { exported_image_type_ = exported_image_type; }
+		void setExportedImageName(const std::string &exported_image_name) { exported_image_name_ = exported_image_name; }
 
 		static std::string getTypeName(const Type &type);
 		static Type getType(const std::string &type_name);
@@ -136,12 +139,16 @@ class Layer final
 		static const std::map<Type, std::string> &getMapTypeTypeName() { return map_type_typename_; }
 
 	private:
+		static std::map<std::string, Type> initMapTypeNamesTypes();
+		static std::map<Type, std::string> initMapTypeTypeNames(const std::map<std::string, Type> &map_typename_type);
+
 		Type type_ = Disabled;
 		Image::Type image_type_ = Image::Type::None;
 		Image::Type exported_image_type_ = Image::Type::None;
+		std::string exported_image_name_;
 
-		static std::map<Type, std::string> map_type_typename_; //!Dictionary available layers layer->name
-		static std::map<std::string, Type> map_typename_type_; //!Reverse dictionary name->layer
+		static std::map<std::string, Type> map_typename_type_; //!Dictionary name->layer
+		static std::map<Type, std::string> map_type_typename_; //!Dictionary layer->name
 };
 
 struct MaskParams
@@ -167,14 +174,14 @@ struct EdgeToonParams //Options for Edge detection and Toon Render Layers
 	float face_smoothness_ = 0.5f; //!Smoothness (blur) of the edges used in the Faces Edge Render Layers
 };
 
-	class Layers final : public Collection<Layer::Type, Layer>
+class Layers final : public Collection<Layer::Type, Layer>
 {
 	public:
 		bool isDefined(const Layer::Type &type) const;
 		bool isDefinedAny(const std::vector<Layer::Type> &types) const;
 		Layer::Type highestDefined() const { if(!items_.empty()) return items_.rbegin()->first; else return Layer::Combined; };
 		const Layers getLayersWithImages() const;
-		const Layers getLayersWithExportedImages() const;
+		LIBYAFARAY_EXPORT const Layers getLayersWithExportedImages() const;
 
 		const MaskParams &getMaskParams() const { return mask_params_; }
 		void setMaskParams(const MaskParams &mask_params) { mask_params_ = mask_params; }

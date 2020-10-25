@@ -31,7 +31,7 @@ class ColorLayer;
 class Layer;
 class Rgba;
 
-class ImageLayer final
+class ImageLayer
 {
 	public:
 		ImageLayer() = default;
@@ -41,7 +41,7 @@ class ImageLayer final
 		Layer layer_;
 };
 
-	class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
+class ImageLayers final : public Collection<Layer::Type, ImageLayer>  //Actual buffer of images in the rendering process, one entry for each enabled layer.
 {
 	public:
 		void setColor(int x, int y, const ColorLayer &color_layer);

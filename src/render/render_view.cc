@@ -29,7 +29,8 @@ BEGIN_YAFARAY
 
 RenderView *RenderView::factory(ParamMap &params, const Scene &scene)
 {
-	Y_DEBUG PRTEXT(**RenderView) PREND; params.printDebug();
+	Y_DEBUG PRTEXT(**RenderView) PREND;
+	params.printDebug();
 	std::string name;
 	std::string camera_name;
 	std::string light_names; //Separated by semicolon ";"
@@ -39,13 +40,22 @@ RenderView *RenderView::factory(ParamMap &params, const Scene &scene)
 	params.getParam("light_names", light_names);
 	params.getParam("wavelength", wavelength);
 
-	const Camera *camera = scene.getCamera(camera_name);
-	const std::map<std::string, Light *> &scene_lights = scene.getLights();
+	return new RenderView(name, camera_name, light_names, wavelength);
+}
 
-	std::map<std::string, Light *> selected_lights;
-	const std::vector<std::string> selected_lights_names = tokenize__(light_names, ";");
+bool RenderView::init(const Scene &scene)
+{
+	camera_ = scene.getCamera(camera_name_);
+	if(!camera_)
+	{
+		Y_ERROR << "RenderView '" << name_ << "': Camera not found in the scene." << YENDL;
+		return false;
+	}
 
-	if(selected_lights_names.empty()) selected_lights = scene_lights;
+	lights_.clear();
+	const std::vector<std::string> selected_lights_names = tokenize__(light_names_, ";");
+
+	if(selected_lights_names.empty()) lights_ = scene.getLights();
 	else
 	{
 		for(const auto &light_name : selected_lights_names)
@@ -53,13 +63,18 @@ RenderView *RenderView::factory(ParamMap &params, const Scene &scene)
 			const Light *light = scene.getLight(light_name);
 			if(!light)
 			{
-				Y_WARNING << "RenderView: view '" << name << "' could not find light '" << light_name << "', skipping..." << YENDL;
+				Y_WARNING << "RenderView '" << name_ << "' init: view '" << name_ << "' could not find light '" << light_name << "', skipping..." << YENDL;
 				continue;
 			}
-			selected_lights[light_name] = scene.getLight(light_name);
+			lights_[light_name] = scene.getLight(light_name);
 		}
 	}
-	return new RenderView(name, camera, selected_lights, wavelength);
+	if(lights_.empty())
+	{
+		Y_ERROR << "RenderView '" << name_ << "': Camera not found in the scene." << YENDL;
+		return false;
+	}
+	return true;
 }
 
 const std::vector<Light *> RenderView::getLightsVisible() const

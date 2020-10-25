@@ -58,13 +58,22 @@ void XmlExport::clearAll()
 	next_obj_ = 0;
 }
 
-bool XmlExport::setupLayers()
+bool XmlExport::setupLayersParameters()
 {
-	xml_file_ << "\n<render_layers name=\"render_layers\">\n";
+	xml_file_ << "\n<layers_parameters>\n";
 	writeParamMap(*params_);
 	params_->clear();
-	xml_file_ << "</render_layers>\n";
+	xml_file_ << "</layers_parameters>\n";
 	return true;
+}
+
+void XmlExport::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
+{
+	xml_file_ << "\n<layer>\n";
+	xml_file_ << "\t<type sval=\"" << layer_type_name << "\"/>\n";
+	xml_file_ << "\t<exported_image_name sval=\"" << exported_image_name << "\"/>\n";
+	xml_file_ << "\t<exported_image_type sval=\"" << exported_image_type_name << "\"/>\n";
+	xml_file_ << "</layer>\n";
 }
 
 bool XmlExport::startGeometry() { return true; }
@@ -162,7 +171,7 @@ int XmlExport::addUv(float u, float v)
 
 bool XmlExport::smoothMesh(const char *name, double angle)
 {
-	xml_file_ << "<smooth name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
+	xml_file_ << "<smooth mesh_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 

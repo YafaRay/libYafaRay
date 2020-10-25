@@ -159,10 +159,10 @@ int main(int argc, char *argv[])
 	bool denoise_enabled = false;
 	int denoise_h_col = 5, denoise_h_lum = 5;
 	float denoise_mix = 0.8;
-	params.getParam("denoiseEnabled", denoise_enabled);
-	params.getParam("denoiseHCol", denoise_h_col);
-	params.getParam("denoiseHLum", denoise_h_lum);
-	params.getParam("denoiseMix", denoise_mix);
+	params.getParam("denoise_enabled", denoise_enabled);
+	params.getParam("denoise_h_col", denoise_h_col);
+	params.getParam("denoise_h_lum", denoise_h_lum);
+	params.getParam("denoise_mix", denoise_mix);
 
 	if(threads >= -1) params["threads"] = threads;
 

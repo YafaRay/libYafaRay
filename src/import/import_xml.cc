@@ -146,20 +146,12 @@ static xmlSAXHandler my_handler__ =
 };
 #endif // HAVE_XML
 
-bool parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, std::string color_space_string, float input_gamma)
+bool parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, const std::string &color_space_string, float input_gamma)
 {
 #if HAVE_XML
 
-	ColorSpace input_color_space = RawManualGamma;
-
-	if(color_space_string == "sRGB") input_color_space = Srgb;
-	else if(color_space_string == "XYZ") input_color_space = XyzD65;
-	else if(color_space_string == "LinearRGB") input_color_space = LinearRgb;
-	//else if(color_space_string == "Raw_Manual_Gamma") input_color_space = RAW_MANUAL_GAMMA; //not available for now
-	else input_color_space = Srgb;
-
+	ColorSpace input_color_space = Rgb::colorSpaceFromName(color_space_string);
 	XmlParser parser(scene, render, input_color_space, input_gamma);
-
 	if(xmlSAXUserParseFile(&my_handler__, &parser, filename) < 0)
 	{
 		Y_ERROR << "XMLParser: Parsing the file " << filename << YENDL;
@@ -378,9 +370,8 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
-	std::string el(element), *name = 0;
-	if(el == "material" || el == "integrator" || el == "light" || el == "texture" ||
-	        el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "render_layers" || el == "logging_badge" || el == "output" || el == "render_view")
+	std::string el(element), *name = nullptr;
+	if(el == "material" || el == "integrator" || el == "light" || el == "texture" || el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "logging_badge" || el == "output" || el == "render_view")
 	{
 		if(!attrs[0])
 		{
@@ -393,6 +384,11 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 			Y_ERROR << "XMLParser: Attribute for scene element does not match 'name'!" << YENDL;
 			return;
 		}
+		parser.pushState(startElParammap__, endElParammap__, name);
+	}
+	else if(el == "layer" || el == "layers_parameters")
+	{
+		name = new std::string("");
 		parser.pushState(startElParammap__, endElParammap__, name);
 	}
 	else if(el == "mesh")
@@ -424,18 +420,19 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 	}
 	else if(el == "smooth")
 	{
-		unsigned int id = 0;
 		float angle = 181;
+		std::string mesh_name;
 		for(int n = 0; attrs[n]; ++n)
 		{
-			std::string name(attrs[n]);
-			if(name == "ID") id = atoi(attrs[n + 1]);
-			else if(name == "angle") angle = atof(attrs[n + 1]);
+			std::string attr_name(attrs[n]);
+			if(attr_name == "mesh_name") mesh_name = std::string(attrs[n + 1]);
+			else if(attr_name == "angle") angle = atof(attrs[n + 1]);
 		}
 		//not optimal to take ID blind...
 		parser.scene_->startGeometry();
-		bool success = parser.scene_->smoothMesh(std::to_string(id), angle);
-		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh ID = " << id << ", angle = " << angle << YENDL;
+		bool success = parser.scene_->smoothMesh(mesh_name, angle);
+		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh with mesh_name='" << mesh_name << "', angle = " << angle << YENDL;
+
 		parser.scene_->endGeometry();
 		parser.pushState(startElDummy__, endElDummy__);
 	}
@@ -706,7 +703,8 @@ void endElParammap__(XmlParser &p, const char *element)
 			else if(el == "background") p.scene_->createBackground(*name, p.params_);
 			else if(el == "object") p.scene_->createObject(*name, p.params_);
 			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
-			else if(el == "render_layers") p.scene_->setupLayers(p.params_);
+			else if(el == "layers_parameters") p.scene_->setupLayersParameters(p.params_);
+			else if(el == "layer") p.scene_->defineLayer(p.params_);
 			else if(el == "output") p.scene_->createOutput(*name, p.params_);
 			else if(el == "render_view") p.scene_->createRenderView(*name, p.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;

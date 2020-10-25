@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-class LIBYAFARAY_EXPORT DebugOutput final : public ColorOutput
+class DebugOutput final : public ColorOutput
 {
 	public:
 		static ColorOutput *factory(const ParamMap &params, const Scene &scene);

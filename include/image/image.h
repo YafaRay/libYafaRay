@@ -38,7 +38,7 @@ struct DenoiseParams
 	float mix_ = 0.8f;	//!< Mix factor between the de-noised image and the original "noisy" image to avoid banding artifacts in images with all noise removed.
 };
 
-class Image final
+class LIBYAFARAY_EXPORT Image final
 {
 	public:
 		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
