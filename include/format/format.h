@@ -32,14 +32,15 @@ BEGIN_YAFARAY
 class ImageLayers;
 class ParamMap;
 class Scene;
+enum ColorSpace : int;
 
 class LIBYAFARAY_EXPORT Format
 {
 	public:
 		static Format *factory(ParamMap &params);
 		virtual ~Format() { }
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) = 0;
-		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization) {return nullptr; }
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
+		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) {return nullptr; }
 		virtual bool saveToFile(const std::string &name, const Image *image) = 0;
 		virtual bool saveAlphaChannelOnlyToFile(const std::string &name, const Image *image) { return false; }
 		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers) { return false; };

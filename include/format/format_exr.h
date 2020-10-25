@@ -35,7 +35,7 @@ class ExrFormat final : public Format
 
 	private:
 		virtual std::string getFormatName() const override { return "ExrFormat"; }
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
 		virtual bool saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers) override;
 		virtual bool isHdr() const override { return true; }

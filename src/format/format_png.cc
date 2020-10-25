@@ -121,7 +121,7 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 	return true;
 }
 
-Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization)
+Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	png_structp png_ptr = nullptr;
 	png_infop info_ptr = nullptr;
@@ -156,7 +156,7 @@ Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 
 	png_set_sig_bytes(png_ptr, 8);
 
-	Image *image = readFromStructs(png_structs, optimization);
+	Image *image = readFromStructs(png_structs, optimization, color_space, gamma);
 
 	File::close(fp);
 
@@ -165,7 +165,7 @@ Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	return image;
 }
 
-Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization)
+Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	png_structp png_ptr = nullptr;
 	png_infop info_ptr = nullptr;
@@ -192,7 +192,7 @@ Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::
 
 	png_set_sig_bytes(png_ptr, 8);
 
-	Image *image = readFromStructs(png_structs, optimization);
+	Image *image = readFromStructs(png_structs, optimization, color_space, gamma);
 
 	delete reader;
 
@@ -266,7 +266,7 @@ bool PngFormat::fillWriteStructs(FILE *fp, unsigned int color_type, const PngStr
 	return true;
 }
 
-Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization)
+Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	png_uint_32 w, h;
 
@@ -392,8 +392,8 @@ Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Op
 						break;
 				}
 			}
-
-			image->setColor(x, y, color);//FIXME, color_space_, gamma_);
+			color.linearRgbFromColorSpace(color_space, gamma);
+			image->setColor(x, y, color);
 		}
 	}
 

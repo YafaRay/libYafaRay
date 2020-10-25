@@ -80,8 +80,8 @@ class ImageTexture final : public Texture
 		int xrepeat_, yrepeat_;
 		ClipMode tex_clip_mode_;
 		std::vector<Image> images_;
-		ColorSpace color_space_;
-		float gamma_;
+		ColorSpace original_image_file_color_space_;
+		float original_image_file_gamma_;
 		bool mirror_x_;
 		bool mirror_y_;
 		float trilinear_level_bias_ = 0.f; //!< manually specified delta to be added/subtracted from the calculated mipmap level. Negative values will choose higher resolution mipmaps than calculated, reducing the blurry artifacts at the cost of increasing texture noise. Positive values will choose lower resolution mipmaps than calculated. Default (and recommended) is 0.0 to use the calculated mipmaps as-is.

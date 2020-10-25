@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization)
+Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	FILE *fp = File::open(name, "rb");
 
@@ -62,7 +62,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 	{
 		for(int y = header_.min_[0]; y != header_.max_[0]; y += header_.step_[0])
 		{
-			if(!readOrle(fp, y, scan_width, image))
+			if(!readOrle(fp, y, scan_width, image, color_space, gamma))
 			{
 				Y_ERROR << getFormatName() << ": An error has occurred while reading uncompressed scanline..." << YENDL;
 				File::close(fp);
@@ -100,7 +100,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 				return nullptr;
 			}
 
-			if(!readArle(fp, y, pix.getArleCount(), image))
+			if(!readArle(fp, y, pix.getArleCount(), image, color_space, gamma))
 			{
 				Y_ERROR << getFormatName() << ": An error has occurred while reading ARLE scanline..." << YENDL;
 				File::close(fp);
@@ -112,7 +112,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 			// rewind the read pixel to start reading from the begining of the scanline
 			fseek(fp, (long int) - sizeof(RgbePixel), SEEK_CUR);
 
-			if(!readOrle(fp, y, scan_width, image))
+			if(!readOrle(fp, y, scan_width, image, color_space, gamma))
 			{
 				Y_ERROR << getFormatName() << ": An error has occurred while reading RLE scanline..." << YENDL;
 				File::close(fp);
@@ -228,7 +228,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 	return true;
 }
 
-bool HdrFormat::readOrle(FILE *fp, int y, int scan_width, Image *image)
+bool HdrFormat::readOrle(FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma)
 {
 	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
 	int rshift = 0;
@@ -270,20 +270,21 @@ bool HdrFormat::readOrle(FILE *fp, int y, int scan_width, Image *image)
 	}
 
 	int j = 0;
-
 	// put the pixels on the main buffer
 	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.max_[1])
 	{
-		if(header_.y_first_) image->setColor(x, y, scanline[j].getRgba());//FIXME, color_space_, gamma_);
-		else image->setColor(y, x, scanline[j].getRgba());//FIXME, color_space_, gamma_);
-		j++;
+		Rgba color = scanline[j].getRgba();
+		color.linearRgbFromColorSpace(color_space, gamma);
+		if(header_.y_first_) image->setColor(x, y, color);
+		else image->setColor(y, x, color);
+		++j;
 	}
 
 	delete [] scanline;
 	return true;
 }
 
-bool HdrFormat::readArle(FILE *fp, int y, int scan_width, Image *image)
+bool HdrFormat::readArle(FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma)
 {
 	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
 	uint8_t count = 0; // run description
@@ -349,13 +350,14 @@ bool HdrFormat::readArle(FILE *fp, int y, int scan_width, Image *image)
 	}
 
 	j = 0;
-
 	// put the pixels on the main buffer
 	for(int x = header_.min_[1]; x != header_.max_[1]; x += header_.step_[1])
 	{
-		if(header_.y_first_) image->setColor(x, y, scanline[j].getRgba());//FIXME, color_space_, gamma_);
-		else image->setColor(y, x, scanline[j].getRgba());//FIXME, color_space_, gamma_);
-		j++;
+		Rgba color = scanline[j].getRgba();
+		color.linearRgbFromColorSpace(color_space, gamma);
+		if(header_.y_first_) image->setColor(x, y, color);
+		else image->setColor(y, x, color);
+		++j;
 	}
 
 	delete [] scanline;

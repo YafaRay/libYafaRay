@@ -339,7 +339,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	return result;
 }
 
-Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization)
+Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	FILE *fp = File::open(name.c_str(), "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
@@ -380,23 +380,21 @@ Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		{
 			for(int j = 0; j < height; ++j)
 			{
-				Rgba col;
-				col.r_ = pixels[i][j].r;
-				col.g_ = pixels[i][j].g;
-				col.b_ = pixels[i][j].b;
-				col.a_ = pixels[i][j].a;
-				image->setColor(i, j, col);//FIXME, color_space_, gamma_);
+				Rgba color;
+				color.r_ = pixels[i][j].r;
+				color.g_ = pixels[i][j].g;
+				color.b_ = pixels[i][j].b;
+				color.a_ = pixels[i][j].a;
+				color.linearRgbFromColorSpace(color_space, gamma);
+				image->setColor(i, j, color);
 			}
 		}
 	}
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
-		if(image)
-		{
-			delete image;
-			image = nullptr;
-		}
+		delete image;
+		image = nullptr;
 	}
 	return image;
 }

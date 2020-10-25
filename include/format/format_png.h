@@ -36,10 +36,10 @@ class PngFormat final : public Format
 
 	private:
 		virtual std::string getFormatName() const override { return "PngFormat"; }
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
-		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization) override;
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		virtual Image *loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
-		Image *readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization);
+		Image *readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
 		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
 		bool fillWriteStructs(FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image);
 };

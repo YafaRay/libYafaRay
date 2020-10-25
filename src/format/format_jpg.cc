@@ -193,7 +193,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	return true;
 }
 
-Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization)
+Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	jpeg_decompress_struct info;
 	JpgErrorManager jerr;
@@ -289,8 +289,8 @@ Image * JpgFormat::loadFromFile(const std::string &name, const Image::Optimizati
 						  std::max(0.f, std::min((scanline[ix + 2] * INV_8) - i_a, 1.f)),
 						  a);
 			}
-
-			image->setColor(x, y, color);//FIXME, color_space_, gamma_);
+			color.linearRgbFromColorSpace(color_space, gamma);
+			image->setColor(x, y, color);
 		}
 		y++;
 	}

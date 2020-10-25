@@ -105,7 +105,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 	return true;
 }
 
-Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization)
+Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	libtiff::uint32 w, h;
 
@@ -132,7 +132,6 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	Image *image = new Image(w, h, type, optimization);
 
 	int i = 0;
-
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{
 		for(int x = 0; x < static_cast<int>(w); x++)
@@ -142,9 +141,9 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 					  (float)TIFFGetG(tiff_data[i]) * inv_8__,
 					  (float)TIFFGetB(tiff_data[i]) * inv_8__,
 					  (float)TIFFGetA(tiff_data[i]) * inv_8__);
-			i++;
-
-			image->setColor(x, y, color);//FIXME, color_space_, gamma_);
+			color.linearRgbFromColorSpace(color_space, gamma);
+			image->setColor(x, y, color);
+			++i;
 		}
 	}
 

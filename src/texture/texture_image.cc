@@ -85,7 +85,7 @@ Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) 
 
 Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
+	// As from v3.2.0 all image buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
 
 	// For example for Non-RGB / Stencil / Bump / Normal maps, etc, textures are typically already linear and the user should select "linearRGB" in the texture properties, but if the user (by mistake) keeps the default sRGB for them, for example, the default linearization would apply a sRGB to linearRGB conversion that messes up the texture values. This function will try to reconstruct the original texture values. In this case (if the user selected incorrectly sRGB for a normal map, for example), this function will prevent wrong results, but it will be slower and it could be slightly inaccurate as the interpolation will take place in the (incorrectly) linearized texels.
 
@@ -94,7 +94,7 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
 
 	Rgba ret = getColor(p, mipmap_params);
-	ret.colorSpaceFromLinearRgb(color_space_, gamma_);
+	ret.colorSpaceFromLinearRgb(original_image_file_color_space_, original_image_file_gamma_);
 
 	return ret;
 }
@@ -608,7 +608,7 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 
 	format->setGrayScaleSetting(img_grayscale);
 
-	Image *image = format->loadFromFile(name, image_optimization);
+	Image *image = format->loadFromFile(name, image_optimization, color_space, gamma);
 	if(!image)
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
@@ -622,8 +622,8 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 		return nullptr;
 	}
 
-	tex->color_space_ = color_space;
-	tex->gamma_ = gamma;
+	tex->original_image_file_color_space_ = color_space;
+	tex->original_image_file_gamma_ = gamma;
 
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{

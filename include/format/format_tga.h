@@ -42,13 +42,13 @@ class TgaFormat final : public Format
 
 	private:
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization) override;
+		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
 
 		/*! Image data reading template functions */
 		template <class ColorType> void readColorMap(FILE *fp, TgaHeader &header, ColorProcessor_t cp);
-		template <class ColorType> void readRleImage(FILE *fp, ColorProcessor_t cp, Image *image);
-		template <class ColorType> void readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image);
+		template <class ColorType> void readRleImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
+		template <class ColorType> void readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
 
 		/*! colorProcesors definitions with signature Rgba (void *)
 		to be passed as pointer-to-non-static-member-functions */
