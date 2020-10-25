@@ -77,13 +77,9 @@ Rgba ImageTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) 
 {
 	Point3 p_1 = Point3(p.x_, -p.y_, p.z_);
 	Rgba ret(0.f);
-
 	const bool outside = doMapping(p_1);
-
 	if(outside) return ret;
-
 	ret = interpolateImage(p_1, mipmap_params);
-
 	return applyAdjustments(ret);
 }
 
@@ -98,40 +94,6 @@ Rgba ImageTexture::getRawColor(const Point3 &p, const MipMapParams *mipmap_param
 	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
 
 	Rgba ret = getColor(p, mipmap_params);
-	ret.colorSpaceFromLinearRgb(color_space_, gamma_);
-
-	return ret;
-}
-
-Rgba ImageTexture::getColor(int x, int y, int z, const MipMapParams *mipmap_params) const
-{
-	const int resx = images_.at(0).getWidth();
-	const int resy = images_.at(0).getHeight();
-
-	y = resy - y; //on occasion change image storage from bottom to top...
-
-	x = std::max(0, std::min(resx - 1, x));
-	y = std::max(0, std::min(resy - 1, y));
-
-	Rgba ret(0.f);
-
-	if(mipmap_params && mipmap_params->force_image_level_ > 0.f) ret = images_.at(static_cast<int>(floorf(mipmap_params->force_image_level_ * (images_.size() - 1)))).getColor(x, y);
-	else ret = images_.at(0).getColor(x, y);
-
-	return applyAdjustments(ret);
-}
-
-Rgba ImageTexture::getRawColor(int x, int y, int z, const MipMapParams *mipmap_params) const
-{
-	// As from v3.2.0 all color buffers are already Linear RGB, if any part of the code requires the original "raw" color, a "de-linearization" (encoding again into the original color space) takes place in this function.
-
-	// For example for Non-RGB / Stencil / Bump / Normal maps, etc, textures are typically already linear and the user should select "linearRGB" in the texture properties, but if the user (by mistake) keeps the default sRGB for them, for example, the default linearization would apply a sRGB to linearRGB conversion that messes up the texture values. This function will try to reconstruct the original texture values. In this case (if the user selected incorrectly sRGB for a normal map, for example), this function will prevent wrong results, but it will be slower and it could be slightly inaccurate as the interpolation will take place in the (incorrectly) linearized texels.
-
-	//If the user correctly selected "linearRGB" for these kind of textures, the function below will not make any changes to the color and will keep the texture "as is" without any linearization nor de-linearization, which is the ideal case (fast and correct).
-
-	//The user is responsible to select the correct textures color spaces, if the user does not do it, results may not be the expected. This function is only a coarse "fail safe"
-
-	Rgba ret = getColor(x, y, z, mipmap_params);
 	ret.colorSpaceFromLinearRgb(color_space_, gamma_);
 
 	return ret;

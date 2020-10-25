@@ -56,9 +56,7 @@ class ImageTexture final : public Texture
 		virtual bool isThreeD() const override { return false; }
 		virtual bool isNormalmap() const override { return normalmap_; }
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual Rgba getColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
-		virtual Rgba getRawColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual void resolution(int &x, int &y, int &z) const override;
 		virtual void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);

@@ -49,12 +49,8 @@ class Texture
 		virtual bool isNormalmap() const { return false; }
 
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const { return Rgba(0.f); }
-		virtual Rgba getColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const { return Rgba(0.f); }
 		virtual Rgba getRawColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const { return getColor(p, mipmap_params); }
-		virtual Rgba getRawColor(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const { return getColor(x, y, z, mipmap_params); }
-
 		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const { return applyIntensityContrastAdjustments(getRawColor(p, mipmap_params).col2Bri()); }
-		virtual float getFloat(int x, int y, int z, const MipMapParams *mipmap_params = nullptr) const { return applyIntensityContrastAdjustments(getRawColor(x, y, z, mipmap_params).col2Bri()); }
 
 		/* gives the number of values in each dimension for discrete textures */
 		virtual void resolution(int &x, int &y, int &z) const { x = 0, y = 0, z = 0; };
