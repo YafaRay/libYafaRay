@@ -123,8 +123,8 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 	int i, j, p, q;
 	const int width = badge_image->getWidth();
 	const int height = badge_image->getHeight();
-	int x_max = std::min(x + bitmap->width, width);
-	int y_max = std::min(y + bitmap->rows, height);
+	int x_max = std::min(x + static_cast<int>(bitmap->width), width);
+	int y_max = std::min(y + static_cast<int>(bitmap->rows), height);
 	Rgb text_color(1.f);
 
 	for(i = x, p = 0; i < x_max; i++, p++)
