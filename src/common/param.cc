@@ -30,7 +30,7 @@ Parameter::Parameter(bool b) : type_(Bool) { bval_ = b; }
 Parameter::Parameter(float f) : type_(Float) { fval_ = f; }
 Parameter::Parameter(double f) : type_(Float) { fval_ = f; }
 
-Parameter::Parameter(const Point3 &p) : type_(Point)
+Parameter::Parameter(const Vec3 &p) : type_(Vector)
 {
 	vval_.resize(3); vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
 }
@@ -54,8 +54,8 @@ bool Parameter::getVal(bool &b) const {if(type_ == Bool)  { b = bval_; return tr
 bool Parameter::getVal(float &f) const {if(type_ == Float) { f = (float)fval_; return true;} return false;}
 bool Parameter::getVal(double &f) const {if(type_ == Float) { f = fval_; return true;} return false;}
 
-bool Parameter::getVal(Point3 &p) const {
-	if(type_ == Point)
+bool Parameter::getVal(Vec3 &p) const {
+	if(type_ == Vector)
 	{
 		p.x_ = vval_.at(0), p.y_ = vval_.at(1), p.z_ = vval_.at(2);
 		return true;
@@ -121,9 +121,9 @@ Parameter &Parameter::operator=(float f)
 	return *this;
 }
 
-Parameter &Parameter::operator=(const Point3 &p)
+Parameter &Parameter::operator=(const Vec3 &p)
 {
-	if(type_ != Point) { type_ = Point; sval_.clear(); vval_.resize(3); }
+	if(type_ != Vector) { type_ = Vector; sval_.clear(); vval_.resize(3); }
 	vval_.at(0) = p.x_, vval_.at(1) = p.y_, vval_.at(2) = p.z_;
 	return *this;
 }
@@ -169,7 +169,7 @@ std::string Parameter::print() const
 		getVal(value);
 		return value;
 	}
-	else if(type_ == Point)
+	else if(type_ == Vector)
 	{
 		Point3 value;
 		getVal(value);
@@ -205,7 +205,7 @@ std::string Parameter::printType() const
 		case Bool: return "Bool";
 		case Float: return "Float";
 		case String: return "String";
-		case Point: return "Point";
+		case Vector: return "Vector";
 		case Color: return "Color";
 		case Matrix: return "Matrix";
 		default: return "None/Unknown";

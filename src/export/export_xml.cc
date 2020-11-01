@@ -210,7 +210,7 @@ inline void writeParam__(const std::string &name, const Parameter &param, std::o
 		param.getVal(s);
 		if(!s.empty()) xml_file << "<" << name << " sval=\"" << s << "\"/>\n";
 	}
-	else if(type == Parameter::Point)
+	else if(type == Parameter::Vector)
 	{
 		Point3 p(0.f);
 		param.getVal(p);

@@ -70,7 +70,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world);
 		// functions to build paramMaps instead of passing them from Blender
 		// (decouling implementation details of STL containers, paraMap_t etc. as much as possible)
-		virtual void paramsSetPoint(const char *name, double x, double y, double z);
+		virtual void paramsSetVector(const char *name, double x, double y, double z);
 		virtual void paramsSetString(const char *name, const char *s);
 		virtual void paramsSetBool(const char *name, bool b);
 		virtual void paramsSetInt(const char *name, int i);

@@ -176,10 +176,10 @@ bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_
 {
 	return scene_->addInstance(base_object_name, obj_to_world);
 }
-// paraMap_t related functions:
-void Interface::paramsSetPoint(const char *name, double x, double y, double z)
+
+void Interface::paramsSetVector(const char *name, double x, double y, double z)
 {
-	(*cparams_)[std::string(name)] = Parameter(Point3(x, y, z));
+	(*cparams_)[std::string(name)] = Parameter(Vec3(x, y, z));
 }
 
 void Interface::paramsSetString(const char *name, const char *s)

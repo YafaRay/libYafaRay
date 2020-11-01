@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 class Rgb;
 class Rgba;
-class Point3;
+class Vec3;
 class Matrix4;
 
 /*! a class that can hold exactly one value of a range types.
@@ -37,7 +37,7 @@ class Matrix4;
 class LIBYAFARAY_EXPORT Parameter
 {
 	public:
-		enum Type : int { None = -1, Int = 1, Bool, Float, String, Point, Color, Matrix };
+		enum Type : int { None = -1, Int = 1, Bool, Float, String, Vector, Color, Matrix };
 		//! return the type of the parameter_t
 		Type type() const { return type_; }
 		std::string print() const;
@@ -49,7 +49,7 @@ class LIBYAFARAY_EXPORT Parameter
 		Parameter(bool b);
 		Parameter(float f);
 		Parameter(double f);
-		Parameter(const Point3 &p);
+		Parameter(const Vec3 &p);
 		Parameter(const Rgba &c);
 		Parameter(const Matrix4 &m);
 
@@ -60,7 +60,7 @@ class LIBYAFARAY_EXPORT Parameter
 		bool getVal(bool &b) const;
 		bool getVal(float &f) const;
 		bool getVal(double &f) const;
-		bool getVal(Point3 &p) const;
+		bool getVal(Vec3 &p) const;
 		bool getVal(Rgb &c) const;
 		bool getVal(Rgba &c) const;
 		bool getVal(Matrix4 &m) const;
@@ -70,7 +70,7 @@ class LIBYAFARAY_EXPORT Parameter
 		Parameter &operator = (int i);
 		Parameter &operator = (bool b);
 		Parameter &operator = (float f);
-		Parameter &operator = (const Point3 &p);
+		Parameter &operator = (const Vec3 &p);
 		Parameter &operator = (const Rgba &c);
 		Parameter &operator = (const Matrix4 &m);
 

@@ -270,7 +270,7 @@ void parseParam__(const char **attrs, Parameter &param, XmlParser &parser)
 		else if(name == "bval") { bool b = str2Bool__(attrs[1]); param = Parameter(b); return; }
 		else if(name == "sval") { param = Parameter(std::string(attrs[1])); return; }
 	}
-	Rgba c(0.f); Point3 p(0, 0, 0); Matrix4 m;
+	Rgba c(0.f); Vec3 v(0, 0, 0); Matrix4 m;
 	Parameter::Type type = Parameter::None;
 	for(int n = 0; attrs[n]; ++n)
 	{
@@ -278,14 +278,14 @@ void parseParam__(const char **attrs, Parameter &param, XmlParser &parser)
 		{
 			switch(attrs[n][0])
 			{
-				case 'x': p.x_ = atof(attrs[n + 1]); type = Parameter::Point; break;
-				case 'y': p.y_ = atof(attrs[n + 1]); type = Parameter::Point; break;
-				case 'z': p.z_ = atof(attrs[n + 1]); type = Parameter::Point; break;
+				case 'x': v.x_ = atof(attrs[n + 1]); type = Parameter::Vector; break;
+				case 'y': v.y_ = atof(attrs[n + 1]); type = Parameter::Vector; break;
+				case 'z': v.z_ = atof(attrs[n + 1]); type = Parameter::Vector; break;
 
-				case 'r': c.r_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
-				case 'g': c.g_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
-				case 'b': c.b_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
-				case 'a': c.a_ = (float)atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'r': c.r_ = atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'g': c.g_ = atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'b': c.b_ = atof(attrs[n + 1]); type = Parameter::Color; break;
+				case 'a': c.a_ = atof(attrs[n + 1]); type = Parameter::Color; break;
 			}
 		}
 		else if(attrs[n][3] == '\0' && attrs[n][0] == 'm' && attrs[n][1] >= '0' && attrs[n][1] <= '3' && attrs[n][2] >= '0' && attrs[n][2] <= '3') //"mij" where i and j are between 0 and 3 (inclusive)
@@ -297,7 +297,7 @@ void parseParam__(const char **attrs, Parameter &param, XmlParser &parser)
 		}
 	}
 
-	if(type == Parameter::Point) param = Parameter(p);
+	if(type == Parameter::Vector) param = Parameter(v);
 	else if(type == Parameter::Matrix) param = Parameter(m);
 	else if(type == Parameter::Color)
 	{
