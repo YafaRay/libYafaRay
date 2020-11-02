@@ -79,9 +79,6 @@ class ShaderNode
 			i know, could've passed const stack and have nodeResult_t return val, but this should be marginally
 			more efficient, so do me the favour and just don't mess up other stack elements ;) */
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const = 0;
-		/*! evaluate the shader for given surface point and directions; otherwise same behavious than the other eval.
-			Should only be called when the node returns true on isViewDependant() */
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const = 0;
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
@@ -107,11 +104,6 @@ class ShaderNode
 		void getDerivative(const NodeStack &stack, float &du, float &dv) const
 		{ du = stack(this->id_).col_.r_; dv = stack(this->id_).col_.g_; }
 		/* virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const {du=0.f, dv=0.f;} */
-
-	protected:
-		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
-		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode);
-		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
 
 	private:
 		unsigned int id_;

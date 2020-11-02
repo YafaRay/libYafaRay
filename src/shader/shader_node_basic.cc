@@ -222,12 +222,6 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 	}
 }
 
-// Basically you shouldn't call this anyway, but for the sake of consistency, redirect:
-void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
-{
-	eval(stack, render_data, sp);
-}
-
 // Normal perturbation
 
 void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
@@ -418,11 +412,6 @@ void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
-{
-	stack[this->getId()] = NodeResult(color_, value_);
-}
-
 ShaderNode *ValueNode::factory(const ParamMap &params, const Scene &scene)
 {
 	Rgb col(1.f);
@@ -473,11 +462,6 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 	Rgba color = f_1 * cin_1 + f_2 * cin_2;
 	float   scalar = f_1 * fin_1 + f_2 * fin_2;
 	stack[this->getId()] = NodeResult(color, scalar);
-}
-
-void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
-{
-	eval(stack, render_data, sp);
 }
 
 bool MixNode::configInputs(const ParamMap &params, const NodeFinder &find)

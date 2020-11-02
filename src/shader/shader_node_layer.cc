@@ -89,7 +89,7 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 		else if(tin < 0.f) tin_truncated_range = 0.f;
 		else tin_truncated_range = tin;
 
-		rcol = ShaderNode::textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
+		rcol = textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
 		rcol.clampRgb0();
 	}
 
@@ -109,16 +109,11 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 			}
 		}
 
-		rval = ShaderNode::textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, mode_);
+		rval = textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, mode_);
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
 	stack[this->getId()] = NodeResult(rcol, rval);
-}
-
-void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const
-{
-	eval(stack, render_data, sp);
 }
 
 void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
@@ -208,6 +203,115 @@ bool LayerNode::getDependencies(std::vector<const ShaderNode *> &dep) const
 	if(input_) dep.push_back(input_);
 	if(upper_layer_) dep.push_back(upper_layer_);
 	return !dep.empty();
+}
+
+Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode)
+{
+	switch(blend_mode)
+	{
+		case BlendMode::Mult:
+			fact *= facg;
+			return (Rgb(1.f - facg) + fact * tex) * out;
+
+		case BlendMode::Screen:
+		{
+			Rgb white(1.0);
+			fact *= facg;
+			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
+		}
+
+		case BlendMode::Sub:
+			fact = -fact;
+		case BlendMode::Add:
+			fact *= facg;
+			return fact * tex + out;
+
+		case BlendMode::Div:
+		{
+			fact *= facg;
+			Rgb itex(tex);
+			itex.invertRgb();
+			return (1.f - fact) * out + fact * out * itex;
+		}
+
+		case BlendMode::Diff:
+		{
+			fact *= facg;
+			Rgb tmo(tex - out);
+			tmo.absRgb();
+			return (1.f - fact) * out + fact * tmo;
+		}
+
+		case BlendMode::Dark:
+		{
+			fact *= facg;
+			Rgb col(fact * tex);
+			col.darkenRgb(out);
+			return col;
+		}
+
+		case BlendMode::Light:
+		{
+			fact *= facg;
+			Rgb col(fact * tex);
+			col.lightenRgb(out);
+			return col;
+		}
+
+			//case BlendMode::Mix:
+		default:
+			fact *= facg;
+			return fact * tex + (1.f - fact) * out;
+	}
+
+}
+
+float LayerNode::textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip)
+{
+	fact *= facg;
+	float facm = 1.f - fact;
+	if(flip) std::swap(fact, facm);
+
+	switch(blend_mode)
+	{
+		case BlendMode::Mult:
+			facm = 1.f - facg;
+			return (facm + fact * tex) * out;
+
+		case BlendMode::Screen:
+			facm = 1.f - facg;
+			return 1.f - (facm + fact * (1.f - tex)) * (1.f - out);
+
+		case BlendMode::Sub:
+			fact = -fact;
+		case BlendMode::Add:
+			return fact * tex + out;
+
+		case BlendMode::Div:
+			if(tex == 0.f) return 0.f;
+			return facm * out + fact * out / tex;
+
+		case BlendMode::Diff:
+			return facm * out + fact * std::abs(tex - out);
+
+		case BlendMode::Dark:
+		{
+			float col = fact * tex;
+			if(col < out) return col;
+			return out;
+		}
+
+		case BlendMode::Light:
+		{
+			float col = fact * tex;
+			if(col > out) return col;
+			return out;
+		}
+
+			//case BlendMode::Mix:
+		default:
+			return fact * tex + facm * out;
+	}
 }
 
 ShaderNode *LayerNode::factory(const ParamMap &params, const Scene &scene)

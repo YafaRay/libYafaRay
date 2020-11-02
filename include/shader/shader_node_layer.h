@@ -37,9 +37,12 @@ class LayerNode final : public ShaderNode
 		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 
 	private:
+		enum class BlendMode { Mix, Add, Mult, Sub, Screen, Div, Diff, Dark, Light };
+		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode);
+		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
+
 		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool isViewDependant() const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;

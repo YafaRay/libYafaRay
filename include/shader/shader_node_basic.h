@@ -37,7 +37,6 @@ class TextureMapperNode final : public ShaderNode
 
 		TextureMapperNode(const Texture *texture);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override { return true; };
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
@@ -67,7 +66,6 @@ class ValueNode final : public ShaderNode
 	private:
 		ValueNode(Rgba col, float val): color_(col), value_(val) {}
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override { return true; };
 
 		Rgba color_;
@@ -86,7 +84,6 @@ class MixNode : public ShaderNode
 	private:
 		MixNode(float val);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
 
