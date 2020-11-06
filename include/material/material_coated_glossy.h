@@ -50,7 +50,7 @@ class CoatedGlossyMaterial final : public NodeMaterial
 
 		struct MDat
 		{
-			float m_diffuse_, m_glossy_, p_diffuse_;
+			float diffuse_, glossy_, p_diffuse_;
 			void *stack_;
 		};
 

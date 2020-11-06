@@ -54,7 +54,7 @@ inline float BlendMaterial::getBlendVal(const RenderData &render_data, const Sur
 		void *old_dat = render_data.arena_;
 		NodeStack stack(render_data.arena_);
 		evalNodes(render_data, sp, all_sorted_, stack);
-		const float blend_val = blend_s_->getScalar(stack);
+		const float blend_val = blend_shader_->getScalar(stack);
 		render_data.arena_ = old_dat;
 		return blend_val;
 	}
@@ -465,12 +465,12 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->m_shaders_table_.find(name);
-			if(i != mat->m_shaders_table_.end())
+			auto i = mat->shaders_table_.find(name);
+			if(i != mat->shaders_table_.end())
 			{
-				mat->blend_s_ = i->second;
+				mat->blend_shader_ = i->second;
 				mat->recalc_blend_ = true;
-				roots.push_back(mat->blend_s_);
+				roots.push_back(mat->blend_shader_);
 			}
 			else
 			{

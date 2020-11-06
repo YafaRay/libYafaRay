@@ -49,7 +49,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual bool isTransparent() const override { return m_is_transparent_; }
+		virtual bool isTransparent() const override { return is_transparent_; }
 		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
 		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const override;
@@ -73,14 +73,14 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		void initOrenNayar(double sigma);
 		float orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const;
 
-		bool m_is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
-		bool m_is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component
+		bool is_transparent_ = false;                  //!< Boolean value which is true if you have transparent component
+		bool is_translucent_ = false;                  //!< Boolean value which is true if you have translucent component
 		bool is_mirror_ = false;                       //!< Boolean value which is true if you have specular reflection component
 		bool is_diffuse_ = false;                      //!< Boolean value which is true if you have diffuse component
 
-		bool m_has_fresnel_effect_ = false;               //!< Boolean value which is true if you have Fresnel specular effect
+		bool has_fresnel_effect_ = false;               //!< Boolean value which is true if you have Fresnel specular effect
 		float ior_ = 1.f;                              //!< IOR
-		float m_ior_squared_ = 1.f;                     //!< Squared IOR
+		float ior_squared_ = 1.f;                     //!< Squared IOR
 
 		bool vi_nodes_[4], vd_nodes_[4];                  //!< describes if the nodes are viewdependant or not (if available)
 		ShaderNode *diffuse_shader_ = nullptr;       //!< Shader node for diffuse color
@@ -91,7 +91,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		ShaderNode *mirror_color_shader_ = nullptr;   //!< Shader node for specular reflection color
 		ShaderNode *sigma_oren_shader_ = nullptr;     //!< Shader node for sigma in Oren Nayar material
 		ShaderNode *diffuse_refl_shader_ = nullptr;   //!< Shader node for diffuse reflection strength (float)
-		ShaderNode *ior_s_ = nullptr;                 //!< Shader node for IOR value (float)
+		ShaderNode *ior_shader_ = nullptr;                 //!< Shader node for IOR value (float)
 		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 
 		Rgb diffuse_color_;              //!< BSDF Diffuse component color

@@ -55,8 +55,7 @@ void GlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, B
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 
-	auto end = all_viewindep_.end();
-	for(auto iter = all_viewindep_.begin(); iter != end; ++iter)(*iter)->eval(stack, render_data, sp);
+	for(const auto &node : all_viewindep_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
 	dat->m_diffuse_ = diffuse_;
 	dat->m_glossy_ = glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_;

@@ -166,8 +166,8 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	{
 		if(params.getParam("mask", name))
 		{
-			auto i = mat->m_shaders_table_.find(name);
-			if(i != mat->m_shaders_table_.end()) { mat->mask_ = i->second; roots.push_back(mat->mask_); }
+			auto i = mat->shaders_table_.find(name);
+			if(i != mat->shaders_table_.end()) { mat->mask_ = i->second; roots.push_back(mat->mask_); }
 			else
 			{
 				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << YENDL;

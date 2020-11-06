@@ -56,7 +56,7 @@ class BlendMaterial final : public NodeMaterial
 		float getBlendVal(const RenderData &render_data, const SurfacePoint &sp) const;
 
 		const Material *mat_1_ = nullptr, *mat_2_ = nullptr;
-		ShaderNode *blend_s_ = nullptr; //!< the shader node used for blending the materials
+		ShaderNode *blend_shader_ = nullptr; //!< the shader node used for blending the materials
 		ShaderNode *wireframe_shader_ = nullptr;     //!< Shader node for wireframe shading (float)
 		float blend_val_;
 		float min_thres_;

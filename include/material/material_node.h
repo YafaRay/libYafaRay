@@ -52,7 +52,7 @@ class NodeMaterial: public Material
 		virtual ~NodeMaterial();
 
 		std::vector<ShaderNode *> all_nodes_, all_sorted_, all_viewdep_, all_viewindep_, bump_nodes_;
-		std::map<std::string, ShaderNode *> m_shaders_table_;
+		std::map<std::string, ShaderNode *> shaders_table_;
 		size_t req_node_mem_;
 };
 

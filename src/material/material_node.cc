@@ -26,10 +26,9 @@ BEGIN_YAFARAY
 class ShaderNodeFinder: public NodeFinder
 {
 	public:
-		ShaderNodeFinder(const std::map<std::string, ShaderNode *> &table): node_table_(table) {}
+		ShaderNodeFinder(const std::map<std::string, ShaderNode *> &table) : node_table_(table) { }
 		virtual const ShaderNode *operator()(const std::string &name) const;
-
-		virtual ~ShaderNodeFinder() {};
+		virtual ~ShaderNodeFinder() = default;
 	protected:
 		const std::map<std::string, ShaderNode *> &node_table_;
 };
@@ -45,25 +44,25 @@ void recursiveSolver__(ShaderNode *node, std::vector<ShaderNode *> &sorted)
 {
 	if(node->getId() != 0) return;
 	node->setId(1);
-	std::vector<const ShaderNode *> deps;
-	if(node->getDependencies(deps))
+	std::vector<const ShaderNode *> dependency_nodes;
+	if(node->getDependencies(dependency_nodes))
 	{
-		for(auto i = deps.begin(); i != deps.end(); ++i)
-			// someone tell me a smarter way than casting away a const...
-			if((*i)->getId() == 0) recursiveSolver__((ShaderNode *) *i, sorted);
+		for(const auto &dependency_node : dependency_nodes)
+			// FIXME someone tell me a smarter way than casting away a const...
+			if(dependency_node->getId() == 0) recursiveSolver__((ShaderNode *) dependency_node, sorted);
 	}
 	sorted.push_back(node);
 }
 
 void recursiveFinder__(const ShaderNode *node, std::set<const ShaderNode *> &tree)
 {
-	std::vector<const ShaderNode *> deps;
-	if(node->getDependencies(deps))
+	std::vector<const ShaderNode *> dependency_nodes;
+	if(node->getDependencies(dependency_nodes))
 	{
-		for(auto i = deps.begin(); i != deps.end(); ++i)
+		for(const auto &dependency_node : dependency_nodes)
 		{
-			tree.insert(*i);
-			recursiveFinder__(*i, tree);
+			tree.insert(dependency_node);
+			recursiveFinder__(dependency_node, tree);
 		}
 	}
 	tree.insert(node);
@@ -72,13 +71,12 @@ void recursiveFinder__(const ShaderNode *node, std::set<const ShaderNode *> &tre
 NodeMaterial::~NodeMaterial()
 {
 	//clear nodes map:
-	for(auto i = m_shaders_table_.begin(); i != m_shaders_table_.end(); ++i) delete i->second;
-	m_shaders_table_.clear();
+	for(const auto &node : shaders_table_) delete node.second;
+	shaders_table_.clear();
 }
 
 void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const {
-	auto end = nodes.end();
-	for(auto iter = nodes.begin(); iter != end; ++iter)(*iter)->eval(stack, render_data, sp);
+	for(const auto &node : nodes) node->eval(stack, render_data, sp);
 }
 
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
@@ -109,28 +107,24 @@ void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes)
 {
 	std::set<const ShaderNode *> in_tree;
-	for(unsigned int i = 0; i < nodes.size(); ++i) in_tree.insert(nodes[i]);
+	for(const auto &node : nodes) in_tree.insert(node);
 	recursiveFinder__(root, in_tree);
-	auto send = in_tree.end();
-	auto end = all_sorted_.end();
 	nodes.clear();
-	for(auto i = all_sorted_.begin(); i != end; ++i) if(in_tree.find(*i) != send) nodes.push_back(*i);
+	for(const auto &node : all_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
 }
 
 void NodeMaterial::filterNodes(const std::vector<ShaderNode *> &input, std::vector<ShaderNode *> &output, int flags)
 {
-	for(unsigned int i = 0; i < input.size(); ++i)
+	for(const auto &node : input)
 	{
-		ShaderNode *n = input[i];
-		bool vp = n->isViewDependant();
-		if((vp && flags & ViewDep) || (!vp && flags & ViewIndep)) output.push_back(n);
+		const bool vp = node->isViewDependant();
+		if((vp && flags & ViewDep) || (!vp && flags & ViewIndep)) output.push_back(node);
 	}
 }
 
 void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const
 {
-	auto end = bump_nodes_.end();
-	for(auto iter = bump_nodes_.begin(); iter != end; ++iter)(*iter)->evalDerivative(stack, render_data, sp);
+	for(const auto &node : bump_nodes_) node->evalDerivative(stack, render_data, sp);
 	float du, dv;
 	bump_s->getDerivative(stack, du, dv);
 	applyBump(sp, du, dv);
@@ -143,39 +137,39 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 	std::string name;
 	std::string element;
 
-	for(const auto &i : params_list)
+	for(const auto &param_map : params_list)
 	{
-		if(i.getParam("element", element))
+		if(param_map.getParam("element", element))
 		{
 			if(element != "shader_node") continue;
 		}
 		else Y_WARNING << "NodeMaterial: No element type given; assuming shader node" << YENDL;
 
-		if(! i.getParam("name", name))
+		if(!param_map.getParam("name", name))
 		{
 			Y_ERROR << "NodeMaterial: Name of shader node not specified!" << YENDL;
 			error = true;
 			break;
 		}
 
-		if(m_shaders_table_.find(name) != m_shaders_table_.end())
+		if(shaders_table_.find(name) != shaders_table_.end())
 		{
 			Y_ERROR << "NodeMaterial: Multiple nodes with identically names!" << YENDL;
 			error = true;
 			break;
 		}
 
-		if(! i.getParam("type", type))
+		if(!param_map.getParam("type", type))
 		{
 			Y_ERROR << "NodeMaterial: Type of shader node not specified!" << YENDL;
 			error = true;
 			break;
 		}
 
-		ShaderNode *shader = ShaderNode::factory(i, scene);
+		ShaderNode *shader = ShaderNode::factory(param_map, scene);
 		if(shader)
 		{
-			m_shaders_table_[name] = shader;
+			shaders_table_[name] = shader;
 			all_nodes_.push_back(shader);
 			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shader << ")" << YENDL;
 		}
@@ -189,11 +183,11 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 
 	if(!error) //configure node inputs
 	{
-		ShaderNodeFinder finder(m_shaders_table_);
+		ShaderNodeFinder finder(shaders_table_);
 		int n = 0;
-		for(const auto &i : params_list)
+		for(const auto &param_map : params_list)
 		{
-			if(!all_nodes_[n]->configInputs(i, finder))
+			if(!all_nodes_[n]->configInputs(param_map, finder))
 			{
 				Y_ERROR << "NodeMaterial: Shader node configuration failed! (n=" << n << ")" << YENDL;
 				error = true; break;
@@ -205,8 +199,8 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 	if(error)
 	{
 		//clear nodes map:
-		for(auto i = m_shaders_table_.begin(); i != m_shaders_table_.end(); ++i) delete i->second;
-		m_shaders_table_.clear();
+		for(const auto &node : shaders_table_) delete node.second;
+		shaders_table_.clear();
 	}
 
 	return !error;
@@ -216,18 +210,17 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<ShaderNode *> 
 {
 	std::string name;
 
-	for(auto current_node = node_list.begin(); current_node != node_list.end(); ++current_node)
+	for(auto &current_node : node_list)
 	{
-		if(params.getParam(current_node->first, name))
+		if(params.getParam(current_node.first, name))
 		{
-			auto i = m_shaders_table_.find(name);
-
-			if(i != m_shaders_table_.end())
+			const auto node_found = shaders_table_.find(name);
+			if(node_found != shaders_table_.end())
 			{
-				current_node->second = i->second;
-				roots.push_back(current_node->second);
+				current_node.second = node_found->second;
+				roots.push_back(current_node.second);
 			}
-			else Y_WARNING << "Shader node " << current_node->first << " '" << name << "' does not exist!" << YENDL;
+			else Y_WARNING << "Shader node " << current_node.first << " '" << name << "' does not exist!" << YENDL;
 		}
 	}
 }
