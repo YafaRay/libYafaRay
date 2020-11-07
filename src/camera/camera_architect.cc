@@ -67,24 +67,22 @@ void ArchitectCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 Point3 ArchitectCamera::screenproject(const Point3 &p) const
 {
 	// FIXME
-	Point3 s;
-	Vec3 dir = p - position_;
-
+	const Vec3 dir = p - position_;
 	// project p to pixel plane:
-	Vec3 camy = Vec3(0, 0, 1);
-	Vec3 camz = camy ^cam_x_;
-	Vec3 camx = camz ^camy;
+	const Vec3 camy = Vec3(0, 0, 1);
+	const Vec3 camz = camy ^cam_x_;
+	const Vec3 camx = camz ^camy;
 
-	float dx = dir * camx;
-	float dy = dir * cam_y_;
+	const float dx = dir * camx;
+	const float dy = dir * cam_y_;
 	float dz = dir * camz;
 
+	Point3 s;
 	s.y_ = 2 * dy * focal_distance_ / (dz * aspect_ratio_);
 	// Needs focal_distance correction
-	float fod = (focal_distance_) * camy * cam_y_ / (camx * cam_x_);
+	const float fod = focal_distance_ * camy * cam_y_ / (camx * cam_x_);
 	s.x_ = 2 * dx * fod / dz;
-	s.z_ = 0;
-
+	s.z_ = 0.f;
 	return s;
 }
 

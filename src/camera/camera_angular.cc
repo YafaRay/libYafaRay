@@ -53,13 +53,13 @@ void AngularCamera::setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz)
 
 Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
+	wt = 1.f; // for now always 1, or 0 when circular and outside angle
 	Ray ray;
-	wt = 1;	// for now always 1, or 0 when circular and outside angle
 	ray.from_ = position_;
-	float u = 1.f - 2.f * (px / (float)resx_);
+	const float u = 1.f - 2.f * (px / (float)resx_);
 	float v = 2.f * (py / (float)resy_) - 1.f;
 	v *= aspect_ratio_;
-	float radius = math::sqrt(u * u + v * v);
+	const float radius = math::sqrt(u * u + v * v);
 	if(circular_ && radius > max_radius_) { wt = 0; return ray; }
 	float theta = 0;
 	if(!((u == 0) && (v == 0))) theta = atan2(v, u);
@@ -71,10 +71,8 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
-
 	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
 	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
-
 	return ray;
 }
 
@@ -119,20 +117,13 @@ Camera *AngularCamera::factory(ParamMap &params, const Scene &scene)
 Point3 AngularCamera::screenproject(const Point3 &p) const
 {
 	//FIXME
-	Point3 s;
-	Vec3 dir = Vec3(p) - Vec3(position_);
+	Vec3 dir = p - position_;
 	dir.normalize();
-
 	// project p to pixel plane:
-	float dx = cam_x_ * dir;
-	float dy = cam_y_ * dir;
-	float dz = cam_z_ * dir;
-
-	s.x_ = -dx / (4.f * M_PI * dz);
-	s.y_ = -dy / (4.f * M_PI * dz);
-	s.z_ = 0;
-
-	return s;
+	const float dx = cam_x_ * dir;
+	const float dy = cam_y_ * dir;
+	const float dz = cam_z_ * dir;
+	return { -dx / (4.f * static_cast<float>(M_PI) * dz), -dy / (4.f * static_cast<float>(M_PI) * dz), 0.f };
 }
 
 END_YAFARAY

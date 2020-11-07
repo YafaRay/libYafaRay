@@ -127,22 +127,18 @@ void PerspectiveCamera::getLensUv(float r_1, float r_2, float &u, float &v) cons
 
 Ray PerspectiveCamera::shootRay(float px, float py, float lu, float lv, float &wt) const
 {
+	wt = 1; // for now always 1, except 0 for probe when outside sphere
 	Ray ray;
-	wt = 1;	// for now always 1, except 0 for probe when outside sphere
-
 	ray.from_ = position_;
 	ray.dir_ = vright_ * px + vup_ * py + vto_;
 	ray.dir_.normalize();
-
 	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
 	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
-
-	if(aperture_ != 0)
+	if(aperture_ != 0.f)
 	{
 		float u, v;
-
 		getLensUv(lu, lv, u, v);
-		Vec3 li = dof_rt_ * u + dof_up_ * v;
+		const Vec3 li = dof_rt_ * u + dof_up_ * v;
 		ray.from_ += Point3(li);
 		ray.dir_ = (ray.dir_ * dof_distance_) - li;
 		ray.dir_.normalize();
@@ -152,27 +148,20 @@ Ray PerspectiveCamera::shootRay(float px, float py, float lu, float lv, float &w
 
 Point3 PerspectiveCamera::screenproject(const Point3 &p) const
 {
-	Point3 s;
-	Vec3 dir = p - position_;
-
+	const Vec3 dir = p - position_;
 	// project p to pixel plane:
-	float dx = dir * cam_x_;
-	float dy = dir * cam_y_;
-	float dz = dir * cam_z_;
-
-	s.x_ = 2.0f * dx * focal_distance_ / dz;
-	s.y_ = -2.0f * dy * focal_distance_ / (dz * aspect_ratio_);
-	s.z_ = 0;
-
-	return s;
+	const float dx = dir * cam_x_;
+	const float dy = dir * cam_y_;
+	const float dz = dir * cam_z_;
+	return { 2.f * dx * focal_distance_ / dz, -2.f * dy * focal_distance_ / (dz * aspect_ratio_), 0.f };
 }
 
 bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, float &v, float &pdf) const
 {
 	// project wo to pixel plane:
-	float dx = cam_x_ * wo.dir_;
-	float dy = cam_y_ * wo.dir_;
-	float dz = cam_z_ * wo.dir_;
+	const float dx = cam_x_ * wo.dir_;
+	const float dy = cam_y_ * wo.dir_;
+	const float dz = cam_z_ * wo.dir_;
 	if(dz <= 0) return false;
 
 	u = dx * focal_distance_ / dz;
@@ -184,7 +173,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 	v = (v + 0.5f) * (float) resy_;
 
 	// pdf = 1/A_pix * r^2 / cos(forward, dir), where r^2 is also 1/cos(vto, dir)^2
-	float cos_wo = dz; //camZ * wo.dir;
+	const float cos_wo = dz; //camZ * wo.dir;
 	pdf = 8.f * M_PI / (a_pix_ * cos_wo * cos_wo * cos_wo);
 	return true;
 }
