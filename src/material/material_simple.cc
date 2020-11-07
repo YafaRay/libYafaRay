@@ -49,7 +49,7 @@ Rgb LightMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, c
 	if(!render_data.include_lights_) return Rgb(0.f);
 	if(double_sided_) return light_col_;
 
-	float angle = wo * sp.n_;
+	const float angle = wo * sp.n_;
 	return (angle > 0) ? light_col_ : Rgb(0.f);
 }
 

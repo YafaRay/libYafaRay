@@ -64,7 +64,7 @@ void GlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, B
 
 void GlossyMaterial::initOrenNayar(double sigma)
 {
-	double sigma_2 = sigma * sigma;
+	const double sigma_2 = sigma * sigma;
 	oren_a_ = 1.0 - 0.5 * (sigma_2 / (sigma_2 + 0.33));
 	oren_b_ = 0.45 * sigma_2 / (sigma_2 + 0.09);
 	oren_nayar_ = true;
@@ -72,8 +72,8 @@ void GlossyMaterial::initOrenNayar(double sigma)
 
 float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const
 {
-	float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
-	float cos_to = std::max(-1.f, std::min(1.f, n * wo));
+	const float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
+	const float cos_to = std::max(-1.f, std::min(1.f, n * wo));
 	float maxcos_f = 0.f;
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
@@ -98,9 +98,9 @@ float GlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, b
 
 	if(use_texture_sigma)
 	{
-		double sigma_squared = texture_sigma * texture_sigma;
-		double m_oren_nayar_texture_a = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
-		double m_oren_nayar_texture_b = 0.45 * sigma_squared / (sigma_squared + 0.09);
+		const double sigma_squared = texture_sigma * texture_sigma;
+		const double m_oren_nayar_texture_a = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
+		const double m_oren_nayar_texture_b = 0.45 * sigma_squared / (sigma_squared + 0.09);
 		return std::min(1.f, std::max(0.f, (float)(m_oren_nayar_texture_a + m_oren_nayar_texture_b * maxcos_f * sin_alpha * tan_beta)));
 	}
 	else
@@ -118,55 +118,45 @@ Rgb GlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, 
 
 	MDat *dat = (MDat *)render_data.arena_;
 	Rgb col(0.f);
-	bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
+	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
 
 	NodeStack stack(dat->stack_);
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 
-	float wi_n = std::abs(wi * n);
-	float wo_n = std::abs(wo * n);
-
+	const float wi_n = std::abs(wi * n);
+	const float wo_n = std::abs(wo * n);
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
 	{
-		Vec3 h = (wo + wi).normalize(); // half-angle
-		float cos_wi_h = std::max(0.f, wi * h);
+		const Vec3 h = (wo + wi).normalize(); // half-angle
+		const float cos_wi_h = std::max(0.f, wi * h);
 		float glossy;
-
 		if(anisotropic_)
 		{
-			Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
+			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
 			glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
 			glossy = blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
-
 		}
-
 		col = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
 
 	if(with_diffuse_ && diffuse_flag)
 	{
 		Rgb add_col = dat->m_diffuse_ * (1.f - dat->m_glossy_) * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_);
-
 		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
-
 		if(oren_nayar_)
 		{
-			double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
-			bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
-
+			const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
-
 		col += add_col;
-
 		//diffuseReflect(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color)) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
@@ -174,24 +164,19 @@ Rgb GlossyMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, 
 
 Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	float cos_ng_wo = sp.ng_ * wo;
-	float cos_ng_wi;
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
+	const MDat *dat = (MDat *)render_data.arena_;
+	const float cos_ng_wo = sp.ng_ * wo;
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);//(cos_Ng_wo < 0) ? -sp.N : sp.N;
 	Vec3 Hs;
 	s.pdf_ = 0.f;
 	float wi_n = 0.f;
-	float wo_n = std::abs(wo * n);
-	float cos_wo_h = 0.f;
-
+	const float wo_n = std::abs(wo * n);
 	Rgb scolor(0.f);
-
 	float s_1 = s.s_1_;
 	float cur_p_diffuse = dat->p_diffuse_;
-	bool use_glossy = as_diffuse_ ? s.flags_.hasAny(BsdfFlags::Diffuse) : s.flags_.hasAny(BsdfFlags::Glossy);
-	bool use_diffuse = with_diffuse_ && s.flags_.hasAny(BsdfFlags::Diffuse);
-	NodeStack stack(dat->stack_);
-	float glossy = 0.f;
+	const bool use_glossy = as_diffuse_ ? s.flags_.hasAny(BsdfFlags::Diffuse) : s.flags_.hasAny(BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && s.flags_.hasAny(BsdfFlags::Diffuse);
+	const NodeStack stack(dat->stack_);
 
 	if(use_diffuse)
 	{
@@ -200,29 +185,25 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 		{
 			s_1 /= s_p_diffuse;
 			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
-
-			cos_ng_wi = sp.ng_ * wi;
-
+			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wi * cos_ng_wo < 0.f)
 			{
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
-
 			wi_n = std::abs(wi * n);
-
 			s.pdf_ = wi_n;
-
+			float glossy = 0.f;
 			if(use_glossy)
 			{
 				Vec3 h = (wi + wo).normalize();
-				cos_wo_h = wo * h;
-				float cos_wi_h = std::abs(wi * h);
-				float cos_n_h = n * h;
+				const float cos_wo_h = wo * h;
+				const float cos_wi_h = std::abs(wi * h);
+				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
-					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+					const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
 					s.pdf_ = s.pdf_ * cur_p_diffuse + asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 					glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->m_glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 				}
@@ -237,7 +218,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 			if(!s.flags_.hasAny(BsdfFlags::Reflect))
 			{
 				scolor = Rgb(0.f);
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
@@ -247,21 +228,17 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 			if(use_diffuse)
 			{
 				Rgb add_col = diffuseReflect__(wi_n, wo_n, dat->m_glossy_, dat->m_diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_));
-
 				if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
-
 				if(oren_nayar_)
 				{
-					double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
-					bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
-
+					const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+					const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 					add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 				}
 				scolor += add_col;
 			}
 			w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-
-			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+			const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 			applyWireFrame(scolor, wire_frame_amount, sp);
 			return scolor;
 		}
@@ -271,11 +248,12 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 
 	if(use_glossy)
 	{
+		float glossy = 0.f;
 		if(anisotropic_)
 		{
 			asAnisoSample__(Hs, s_1, s.s_2_, exp_u_, exp_v_);
 			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
-			cos_wo_h = wo * h;
+			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
 				h.reflect(n);
@@ -283,18 +261,16 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 			}
 			// Compute incident direction by reflecting wo about H
 			wi = Vec3::reflectDir(h, wo);
-			cos_ng_wi = sp.ng_ * wi;
+			const float cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
-
 			wi_n = std::abs(wi * n);
-
 			s.pdf_ = asAnisoPdf__(Hs, cos_wo_h, exp_u_, exp_v_);
 			glossy = asAnisoD__(Hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 		}
@@ -302,7 +278,7 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 		{
 			blinnSample__(Hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
 			Vec3 h = Hs.x_ * sp.nu_ + Hs.y_ * sp.nv_ + Hs.z_ * n;
-			cos_wo_h = wo * h;
+			float cos_wo_h = wo * h;
 			if(cos_wo_h < 0.f)
 			{
 				h.reflect(n);
@@ -310,23 +286,20 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 			}
 			// Compute incident direction by reflecting wo about H
 			wi = Vec3::reflectDir(h, wo);
-			cos_ng_wi = sp.ng_ * wi;
+			const float cos_ng_wi = sp.ng_ * wi;
 
 			if(cos_ng_wo * cos_ng_wi < 0.f)
 			{
 				scolor = Rgb(0.f);
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
-
 			wi_n = std::abs(wi * n);
-			float cos_hn = h * n;
-
+			const float cos_hn = h * n;
 			s.pdf_ = blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
 			glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->m_glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
 		}
-
 		scolor = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		s.sampled_flags_ = as_diffuse_ ? BsdfFlags::Diffuse | BsdfFlags::Reflect : BsdfFlags::Glossy | BsdfFlags::Reflect;
 	}
@@ -334,53 +307,44 @@ Rgb GlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 	if(use_diffuse)
 	{
 		Rgb add_col = diffuseReflect__(wi_n, wo_n, dat->m_glossy_, dat->m_diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_));
-
 		if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
-
 		if(oren_nayar_)
 		{
-			double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
-			bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
-
+			const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
 		s.pdf_ = wi_n * cur_p_diffuse + s.pdf_ * (1.f - cur_p_diffuse);
 		scolor += add_col;
 	}
-
 	w = wi_n / (s.pdf_ * 0.99f + 0.01f);
-
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(scolor, wire_frame_amount, sp);
 	return scolor;
 }
 
 float GlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	NodeStack stack(dat->stack_);
-
+	const MDat *dat = (MDat *)render_data.arena_;
+	const NodeStack stack(dat->stack_);
 	if((sp.ng_ * wo) * (sp.ng_ * wi) < 0.f) return 0.f;
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float pdf = 0.f;
-	float cos_wo_h = 0.f;
-	float cos_n_h = 0.f;
-
-	float cur_p_diffuse = dat->p_diffuse_;
-	bool use_glossy = as_diffuse_ ? flags.hasAny(BsdfFlags::Diffuse) : flags.hasAny(BsdfFlags::Glossy);
-	bool use_diffuse = with_diffuse_ && flags.hasAny(BsdfFlags::Diffuse);
+	const float cur_p_diffuse = dat->p_diffuse_;
+	const bool use_glossy = as_diffuse_ ? flags.hasAny(BsdfFlags::Diffuse) : flags.hasAny(BsdfFlags::Glossy);
+	const bool use_diffuse = with_diffuse_ && flags.hasAny(BsdfFlags::Diffuse);
 
 	if(use_diffuse)
 	{
 		pdf = std::abs(wi * n);
 		if(use_glossy)
 		{
-			Vec3 h = (wi + wo).normalize();
-			cos_wo_h = wo * h;
-			cos_n_h = n * h;
+			const Vec3 h = (wi + wo).normalize();
+			const float cos_wo_h = wo * h;
+			const float cos_n_h = n * h;
 			if(anisotropic_)
 			{
-				Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+				const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
 				pdf = pdf * cur_p_diffuse + asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * (1.f - cur_p_diffuse);
 			}
 			else pdf = pdf * cur_p_diffuse + blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * (1.f - cur_p_diffuse);
@@ -390,12 +354,12 @@ float GlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp,
 
 	if(use_glossy)
 	{
-		Vec3 h = (wi + wo).normalize();
-		cos_wo_h = wo * h;
-		cos_n_h = n * h;
+		const Vec3 h = (wi + wo).normalize();
+		const float cos_wo_h = wo * h;
+		const float cos_n_h = n * h;
 		if(anisotropic_)
 		{
-			Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
+			const Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
 			pdf = asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_);
 		}
 		else pdf = blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));

@@ -31,8 +31,6 @@ MaskMaterial::MaskMaterial(const Material *m_1, const Material *m_2, float thres
 {
 	visibility_ = visibility;
 	bsdf_flags_ = mat_1_->getFlags() | mat_2_->getFlags();
-
-	visibility_ = visibility;
 }
 
 #define PTR_ADD(ptr,sz) ((char*)ptr+(sz))
@@ -40,8 +38,8 @@ void MaskMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bsd
 {
 	NodeStack stack(render_data.arena_);
 	evalNodes(render_data, sp, color_nodes_, stack);
-	float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
-	bool mv = val > threshold_;
+	const float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
+	const bool mv = val > threshold_;
 	*(bool *)render_data.arena_ = mv;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) mat_2_->initBsdf(render_data, sp, bsdf_types);
@@ -51,7 +49,7 @@ void MaskMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bsd
 
 Rgb MaskMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	Rgb col;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) col = mat_2_->eval(render_data, sp, wo, wi, bsdfs);
@@ -62,7 +60,7 @@ Rgb MaskMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, co
 
 Rgb MaskMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	Rgb col;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) col = mat_2_->sample(render_data, sp, wo, wi, s, w);
@@ -73,7 +71,7 @@ Rgb MaskMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, 
 
 float MaskMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	float pdf;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) pdf = mat_2_->pdf(render_data, sp, wo, wi, bsdfs);
@@ -100,7 +98,7 @@ Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePo
 void MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 							   bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) mat_2_->getSpecular(render_data, sp, wo, reflect, refract, dir, col);
 	else   mat_1_->getSpecular(render_data, sp, wo, reflect, refract, dir, col);
@@ -109,7 +107,7 @@ void MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint
 
 Rgb MaskMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	Rgb col;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) col = mat_2_->emit(render_data, sp, wo);
@@ -120,7 +118,7 @@ Rgb MaskMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, co
 
 float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	bool mv = *(bool *)render_data.arena_;
+	const bool mv = *(bool *)render_data.arena_;
 	float alpha;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
 	if(mv) alpha = mat_2_->getAlpha(render_data, sp, wo);

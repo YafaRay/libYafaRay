@@ -45,9 +45,9 @@ class MaskMaterial final : public NodeMaterial
 		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 
-		const Material *mat_1_;
-		const Material *mat_2_;
-		ShaderNode *mask_;
+		const Material *mat_1_ = nullptr;
+		const Material *mat_2_ = nullptr;
+		ShaderNode *mask_ = nullptr;
 		float threshold_;
 };
 

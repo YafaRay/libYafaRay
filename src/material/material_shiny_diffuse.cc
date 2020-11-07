@@ -438,7 +438,7 @@ void ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const Surf
 	{
 		do_refract = true;
 		wi[1] = -wo;
-		Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
+		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
 		col[1] = (1.f - dat->component_[0] * kr) * dat->component_[1] * tcol;
 	}
 	else do_refract = false;
@@ -458,7 +458,6 @@ void ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const Surf
 		col[0] = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (dat->component_[0] * kr);
 	}
 	else do_reflect = false;
-
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 }
@@ -488,7 +487,6 @@ Rgb ShinyDiffuseMaterial::getTransparency(const RenderData &render_data, const S
 		accum *= transparency_shader_ ? transparency_shader_->getScalar(stack) * accum : transparency_strength_ * accum;
 	}
 	const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
-
 	Rgb result = accum * tcol;
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(result, wire_frame_amount, sp);
@@ -510,7 +508,6 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 			cur_ior_squared *= cur_ior_squared;
 		}
 		else cur_ior_squared = ior_squared_;
-
 		const float kr = getFresnelKr(wo, n, cur_ior_squared);
 		const float refl = (1.f - dat->component_[0] * kr) * dat->component_[1];
 		float result = 1.f - refl;

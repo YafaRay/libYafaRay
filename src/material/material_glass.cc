@@ -58,18 +58,18 @@ void GlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bs
 
 Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_);
 	if(!s.flags_.hasAny(BsdfFlags::Specular) && !(s.flags_.hasAny(bsdf_flags_ & BsdfFlags::Dispersive) && render_data.chromatic_))
 	{
 		s.pdf_ = 0.f;
 		Rgb scolor = Rgb(0.f);
-		float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 		applyWireFrame(scolor, wire_frame_amount, sp);
 		return scolor;
 	}
 	Vec3 refdir, n;
-	bool outside = sp.ng_ * wo > 0;
-	float cos_wo_n = sp.n_ * wo;
+	const bool outside = sp.ng_ * wo > 0;
+	const float cos_wo_n = sp.n_ * wo;
 	if(outside) n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
 	else n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
 	s.pdf_ = 1.f;
@@ -78,12 +78,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 	if(disperse_ && render_data.chromatic_)
 	{
 		float cur_ior = ior_;
-
-		if(ior_shader_)
-		{
-			cur_ior += ior_shader_->getScalar(stack);
-		}
-
+		if(ior_shader_) cur_ior += ior_shader_->getScalar(stack);
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
 
@@ -94,7 +89,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 		{
 			float kr, kt;
 			Vec3::fresnel(wo, n, cur_ior, kr, kt);
-			float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
+			const float p_kr = 0.01 + 0.99 * kr, p_kt = 0.01 + 0.99 * kt;
 			if(!s.flags_.hasAny(BsdfFlags::Specular) || s.s_1_ < p_kt)
 			{
 				wi = refdir;
@@ -102,7 +97,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				s.sampled_flags_ = BsdfFlags::Dispersive | BsdfFlags::Transmit;
 				w = 1.f;
 				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_); // * (Kt/std::abs(sp.N*wi));
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
@@ -114,7 +109,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 				w = 1.f;
 				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_); // * (Kr/std::abs(sp.N*wi));
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
@@ -126,7 +121,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 			s.sampled_flags_ = BsdfFlags::Specular | BsdfFlags::Reflect;
 			w = 1.f;
 			Rgb scolor = 1.f; //Rgb(1.f/std::abs(sp.N*wi));
-			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+			const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 			applyWireFrame(scolor, wire_frame_amount, sp);
 			return scolor;
 		}
@@ -134,17 +129,11 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 	else // no dispersion calculation necessary, regardless of material settings
 	{
 		float cur_ior = ior_;
-
-		if(ior_shader_)
-		{
-			cur_ior += ior_shader_->getScalar(stack);
-		}
-
+		if(ior_shader_) cur_ior += ior_shader_->getScalar(stack);
 		if(disperse_ && render_data.chromatic_)
 		{
 			float cur_cauchy_a = cauchy_a_;
 			float cur_cauchy_b = cauchy_b_;
-
 			if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
 			cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 		}
@@ -166,7 +155,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				}
 				w = 1.f;
 				Rgb scolor = (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);//*(Kt/std::abs(sp.N*wi));
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
@@ -183,7 +172,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 				}
 				w = 1.f;
 				Rgb scolor = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_);// * (Kr/std::abs(sp.N*wi));
-				float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+				const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 				applyWireFrame(scolor, wire_frame_amount, sp);
 				return scolor;
 			}
@@ -201,7 +190,7 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 			}
 			w = 1.f;
 			Rgb scolor = 1.f;//tir_col;
-			float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+			const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 			applyWireFrame(scolor, wire_frame_amount, sp);
 			return scolor;
 		}
@@ -212,24 +201,22 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 
 Rgb GlassMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(render_data.arena_);
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const NodeStack stack(render_data.arena_);
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_shader_->getScalar(stack) : ior_), kr, kt);
 	Rgb result = kt * (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);
-
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(result, wire_frame_amount, sp);
 	return result;
 }
 
 float GlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	NodeStack stack(render_data.arena_);
+	const NodeStack stack(render_data.arena_);
 	float alpha = 1.0 - getTransparency(render_data, sp, wo).energy();
 	if(alpha < 0.0f) alpha = 0.0f;
-
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(alpha, wire_frame_amount, sp);
 	return alpha;
 }
@@ -237,33 +224,28 @@ float GlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint 
 void GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 								bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
 {
-	NodeStack stack(render_data.arena_);
-	bool outside = sp.ng_ * wo > 0;
+	const NodeStack stack(render_data.arena_);
+	const bool outside = sp.ng_ * wo > 0;
 	Vec3 n;
-	float cos_wo_n = sp.n_ * wo;
+	const float cos_wo_n = sp.n_ * wo;
 	if(outside)
 	{
-		n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
+		n = (cos_wo_n >= 0.f) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 	}
 	else
 	{
-		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
+		n = (cos_wo_n <= 0.f) ? sp.n_ : (sp.n_ - (1.00001f * cos_wo_n) * wo).normalize();
 	}
 	//	vector3d_t N = SurfacePoint::normalFaceForward(sp.Ng, sp.N, wo);
 	Vec3 refdir;
 
 	float cur_ior = ior_;
-
-	if(ior_shader_)
-	{
-		cur_ior += ior_shader_->getScalar(stack);
-	}
+	if(ior_shader_) cur_ior += ior_shader_->getScalar(stack);
 
 	if(disperse_ && render_data.chromatic_)
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-
 		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
 		cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
@@ -299,7 +281,7 @@ void GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoin
 		refr = false;
 	}
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 }
 

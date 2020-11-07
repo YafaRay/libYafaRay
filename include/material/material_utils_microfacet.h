@@ -151,17 +151,16 @@ inline float microfacetFresnel__(float wo_h, float ior)
 	return 1.0f; // TIR
 }
 
-inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float wo_n, float &kr, float &kt)
+inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float &kr, float &kt)
 {
 	wi = Vec3(0.f);
-	float c = -wo * h;
-	float sign = (c > 0.f) ? 1 : -1;
-	float t_1 = 1 - (eta * eta * (1 - c * c));
+	const float c = -wo * h;
+	const float sign = (c > 0.f) ? 1 : -1;
+	const float t_1 = 1 - (eta * eta * (1 - c * c));
 	if(t_1 < 0.f) return false;
 	wi = eta * wo + (eta * c - sign * math::sqrt(t_1)) * h;
 	wi = -wi;
 
-	kr = 0.f;
 	kt = 0.f;
 	kr = microfacetFresnel__(wo_h, 1.f / eta);
 	if(kr == 1.f) return false;
@@ -169,7 +168,7 @@ inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 
 	return true;
 }
 
-inline void reflectMicrofacet__(const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h)
+inline void reflectMicrofacet__(const Vec3 &wo, Vec3 &wi, const Vec3 &h)
 {
 	wi = wo + (2.f * (h * -wo) * h);
 	wi = -wi;

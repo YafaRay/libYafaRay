@@ -81,7 +81,7 @@ void CoatedGlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint 
 
 void CoatedGlossyMaterial::initOrenNayar(double sigma)
 {
-	double sigma_2 = sigma * sigma;
+	const double sigma_2 = sigma * sigma;
 	oren_a_ = 1.0 - 0.5 * (sigma_2 / (sigma_2 + 0.33));
 	oren_b_ = 0.45 * sigma_2 / (sigma_2 + 0.09);
 	oren_nayar_ = true;
@@ -89,14 +89,14 @@ void CoatedGlossyMaterial::initOrenNayar(double sigma)
 
 float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3 &n, bool use_texture_sigma, double texture_sigma) const
 {
-	float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
-	float cos_to = std::max(-1.f, std::min(1.f, n * wo));
+	const float cos_ti = std::max(-1.f, std::min(1.f, n * wi));
+	const float cos_to = std::max(-1.f, std::min(1.f, n * wo));
 	float maxcos_f = 0.f;
 
 	if(cos_ti < 0.9999f && cos_to < 0.9999f)
 	{
-		Vec3 v_1 = (wi - n * cos_ti).normalize();
-		Vec3 v_2 = (wo - n * cos_to).normalize();
+		const Vec3 v_1 = (wi - n * cos_ti).normalize();
+		const Vec3 v_2 = (wo - n * cos_to).normalize();
 		maxcos_f = std::max(0.f, v_1 * v_2);
 	}
 
@@ -115,9 +115,9 @@ float CoatedGlossyMaterial::orenNayar(const Vec3 &wi, const Vec3 &wo, const Vec3
 
 	if(use_texture_sigma)
 	{
-		double sigma_squared = texture_sigma * texture_sigma;
-		double m_oren_nayar_texture_a = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
-		double m_oren_nayar_texture_b = 0.45 * sigma_squared / (sigma_squared + 0.09);
+		const double sigma_squared = texture_sigma * texture_sigma;
+		const double m_oren_nayar_texture_a = 1.0 - 0.5 * (sigma_squared / (sigma_squared + 0.33));
+		const double m_oren_nayar_texture_b = 0.45 * sigma_squared / (sigma_squared + 0.09);
 		return std::min(1.f, std::max(0.f, (float)(m_oren_nayar_texture_a + m_oren_nayar_texture_b * maxcos_f * sin_alpha * tan_beta)));
 	}
 	else
@@ -131,7 +131,7 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 {
 	MDat *dat = (MDat *)render_data.arena_;
 	Rgb col(0.f);
-	bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
+	const bool diffuse_flag = bsdfs.hasAny(BsdfFlags::Diffuse);
 
 	if(!force_eval)	//If the flag force_eval = true then the next line will be skipped, necessary for the Glossy Direct render pass
 	{
@@ -139,21 +139,21 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 	}
 
 	NodeStack stack(dat->stack_);
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float kr, kt;
-	float wi_n = std::abs(wi * n);
-	float wo_n = std::abs(wo * n);
+	const float wi_n = std::abs(wi * n);
+	const float wo_n = std::abs(wo * n);
 
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
 	if((as_diffuse_ && diffuse_flag) || (!as_diffuse_ && bsdfs.hasAny(BsdfFlags::Glossy)))
 	{
-		Vec3 h = (wo + wi).normalize(); // half-angle
-		float cos_wi_h = wi * h;
+		const Vec3 h = (wo + wi).normalize(); // half-angle
+		const float cos_wi_h = wi * h;
 		float glossy;
 		if(anisotropic_)
 		{
-			Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
+			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
 			glossy = kt * asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
 		}
 		else
@@ -170,28 +170,24 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 
 		if(oren_nayar_)
 		{
-			double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
-			bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
-
+			const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+			const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 			add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 		}
-
 		col += add_col;//diffuseReflectFresnel(wiN, woN, dat->mGlossy, dat->mDiffuse, (diffuseS ? diffuseS->getColor(stack) : diff_color), Kt) * ((orenNayar)?OrenNayar(wi, wo, N):1.f);
 	}
-
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 	return col;
 }
 
 Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	NodeStack stack(dat->stack_);
+	const MDat *dat = (MDat *)render_data.arena_;
+	const NodeStack stack(dat->stack_);
 
-	float cos_ng_wo = sp.ng_ * wo;
-	float cos_ng_wi;
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const float cos_ng_wo = sp.ng_ * wo;
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	Vec3 hs(0.f);
 	s.pdf_ = 0.f;
 	float kr, kt;
@@ -231,7 +227,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 	else if(n_match == 1) { pick = 0; width[0] = 1.f; }
 	else
 	{
-		float inv_sum = 1.f / sum;
+		const float inv_sum = 1.f / sum;
 		for(int i = 0; i < n_match; ++i)
 		{
 			val[i] *= inv_sum;
@@ -273,7 +269,7 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 		case C_DIFFUSE: // lambertian
 		default:
 			wi = sample::cosHemisphere(n, sp.nu_, sp.nv_, s_1, s.s_2_);
-			cos_ng_wi = sp.ng_ * wi;
+			const float cos_ng_wi = sp.ng_ * wi;
 			if(cos_ng_wo * cos_ng_wi < 0)
 			{
 				scolor = Rgb(0.f);
@@ -311,11 +307,11 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 				}
 				// Compute incident direction by reflecting wo about H
 				wi = Vec3::reflectDir(h, wo);
-				cos_ng_wi = sp.ng_ * wi;
+				const float cos_ng_wi = sp.ng_ * wi;
 				if(cos_ng_wo * cos_ng_wi < 0)
 				{
 					scolor = Rgb(0.f);
-					float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+					const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 					applyWireFrame(scolor, wire_frame_amount, sp);
 					return scolor;
 				}
@@ -345,8 +341,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 			if(oren_nayar_)
 			{
-				double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
-				bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
+				const double texture_sigma = (sigma_oren_shader_ ? sigma_oren_shader_->getScalar(stack) : 0.f);
+				const bool use_texture_sigma = (sigma_oren_shader_ ? true : false);
 
 				add_col *= orenNayar(wi, wo, n, use_texture_sigma, texture_sigma);
 			}
@@ -363,18 +359,18 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 	s.sampled_flags_ = c_flags_[c_index[pick]];
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(scolor, wire_frame_amount, sp);
 	return scolor;
 }
 
 float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &flags) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	NodeStack stack(dat->stack_);
-	bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
+	const MDat *dat = (MDat *)render_data.arena_;
+	const NodeStack stack(dat->stack_);
+	const bool transmit = ((sp.ng_ * wo) * (sp.ng_ * wi)) < 0.f;
 	if(transmit) return 0.f;
-	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
+	const Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
 	float pdf = 0.f;
 	float kr, kt;
 
@@ -394,9 +390,9 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 			sum += width;
 			if(i == C_GLOSSY)
 			{
-				Vec3 h = (wi + wo).normalize();
-				float cos_wo_h = wo * h;
-				float cos_n_h = n * h;
+				const Vec3 h = (wi + wo).normalize();
+				const float cos_wo_h = wo * h;
+				const float cos_n_h = n * h;
 				if(anisotropic_)
 				{
 					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
@@ -418,12 +414,12 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 void CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
 									   bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
 {
-	MDat *dat = (MDat *)render_data.arena_;
-	NodeStack stack(dat->stack_);
+	const MDat *dat = (MDat *)render_data.arena_;
+	const NodeStack stack(dat->stack_);
 
-	bool outside = sp.ng_ * wo >= 0;
+	const bool outside = sp.ng_ * wo >= 0;
 	Vec3 n, ng;
-	float cos_wo_n = sp.n_ * wo;
+	const float cos_wo_n = sp.n_ * wo;
 	if(outside)
 	{
 		n = (cos_wo_n >= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
@@ -458,7 +454,7 @@ void CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const Surf
 	}
 	refl = true;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col, wire_frame_amount, sp);
 }
 

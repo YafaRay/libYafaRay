@@ -88,7 +88,6 @@ void BlendMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bs
 Rgb BlendMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval) const
 {
 	NodeStack stack(render_data.arena_);
-
 	const float blend_val = getBlendVal(render_data, sp);
 
 	void *old_udat = render_data.arena_;
@@ -103,7 +102,7 @@ Rgb BlendMaterial::eval(const RenderData &render_data, const SurfacePoint &sp, c
 
 	col_1 = math::lerp(col_1, col_2, blend_val);
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
@@ -186,7 +185,7 @@ Rgb BlendMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 
 	render_data.arena_ = old_udat;
 
-	float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
 	applyWireFrame(col_1, wire_frame_amount, sp);
 	return col_1;
 }
