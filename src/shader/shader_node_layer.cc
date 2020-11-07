@@ -125,7 +125,7 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	// == get result of upper layer (or base values) ==
 	if(upper_layer_)
 	{
-		Rgba ucol = upper_layer_->getColor(stack);
+		const Rgba ucol = upper_layer_->getColor(stack);
 		rdu = ucol.r_, rdv = ucol.g_;
 		stencil_tin = ucol.a_;
 	}

@@ -17,12 +17,14 @@
  */
 
 #include "texture/noise_generator.h"
+#include "math/interpolation.h"
+#include <array>
 
 BEGIN_YAFARAY
 
 // needed for voronoi
-#define HASHPNT(x,y,z) hashpntf__+3*hash__[ (hash__[ (hash__[(z) & 255]+(y)) & 255]+(x)) & 255]
-static float hashpntf__[768] = {0.536902, 0.020915, 0.501445, 0.216316, 0.517036, 0.822466, 0.965315,
+
+static constexpr float hashpntf__[768] = {0.536902, 0.020915, 0.501445, 0.216316, 0.517036, 0.822466, 0.965315,
 								0.377313, 0.678764, 0.744545, 0.097731, 0.396357, 0.247202, 0.520897,
 								0.613396, 0.542124, 0.146813, 0.255489, 0.810868, 0.638641, 0.980742,
 								0.292316, 0.357948, 0.114382, 0.861377, 0.629634, 0.722530, 0.714103,
@@ -134,7 +136,7 @@ static float hashpntf__[768] = {0.536902, 0.020915, 0.501445, 0.216316, 0.517036
 								0.114246, 0.905043, 0.713870, 0.555261, 0.951333
                              };
 
-static unsigned char hash__[512] =
+static constexpr unsigned char hash__[512] =
 {
 	0xA2, 0xA0, 0x19, 0x3B, 0xF8, 0xEB, 0xAA, 0xEE, 0xF3, 0x1C, 0x67, 0x28, 0x1D, 0xED, 0x0, 0xDE, 0x95, 0x2E, 0xDC, 0x3F, 0x3A, 0x82, 0x35, 0x4D, 0x6C, 0xBA, 0x36, 0xD0, 0xF6, 0xC, 0x79, 0x32, 0xD1, 0x59, 0xF4, 0x8, 0x8B, 0x63, 0x89, 0x2F, 0xB8, 0xB4, 0x97, 0x83, 0xF2, 0x8F, 0x18, 0xC7, 0x51, 0x14, 0x65, 0x87, 0x48, 0x20, 0x42, 0xA8, 0x80, 0xB5, 0x40, 0x13, 0xB2, 0x22, 0x7E, 0x57,
 	0xBC, 0x7F, 0x6B, 0x9D, 0x86, 0x4C, 0xC8, 0xDB, 0x7C, 0xD5, 0x25, 0x4E, 0x5A, 0x55, 0x74, 0x50, 0xCD, 0xB3, 0x7A, 0xBB, 0xC3, 0xCB, 0xB6, 0xE2, 0xE4, 0xEC, 0xFD, 0x98, 0xB, 0x96, 0xD3, 0x9E, 0x5C, 0xA1, 0x64, 0xF1, 0x81, 0x61, 0xE1, 0xC4, 0x24, 0x72, 0x49, 0x8C, 0x90, 0x4B, 0x84, 0x34, 0x38, 0xAB, 0x78, 0xCA, 0x1F, 0x1, 0xD7, 0x93, 0x11, 0xC1, 0x58, 0xA9, 0x31, 0xF9, 0x44, 0x6D,
@@ -146,7 +148,7 @@ static unsigned char hash__[512] =
 	0xDA, 0x2A, 0xBD, 0x68, 0x17, 0x9F, 0xBE, 0xD4, 0xA, 0xCC, 0xD2, 0xE8, 0x43, 0x3D, 0x70, 0xB7, 0x2, 0x7D, 0x99, 0xD8, 0xD, 0x60, 0x8A, 0x4, 0x2C, 0x3E, 0x92, 0xE5, 0xAF, 0x53, 0x7, 0xE0, 0x29, 0xA6, 0xC5, 0xE3, 0xF5, 0xF7, 0x4A, 0x41, 0x26, 0x6A, 0x16, 0x5E, 0x52, 0x2D, 0x21, 0xAD, 0xF0, 0x91, 0xFF, 0xEA, 0x54, 0xFA, 0x66, 0x1A, 0x45, 0x39, 0xCF, 0x75, 0xA4, 0x88, 0xFB, 0x5D,
 };
 
-static float hashvectf__[768] =
+static constexpr float hashvectf__[768] =
 {
 	0.33783, 0.715698, -0.611206, -0.944031, -0.326599, -0.045624, -0.101074, -0.416443, -0.903503, 0.799286, 0.49411, -0.341949, -0.854645, 0.518036, 0.033936, 0.42514, -0.437866, -0.792114, -0.358948, 0.597046, 0.717377, -0.985413, 0.144714, 0.089294, -0.601776, -0.33728, -0.723907, -0.449921, 0.594513, 0.666382, 0.208313, -0.10791,
 	0.972076, 0.575317, 0.060425, 0.815643, 0.293365, -0.875702, -0.383453, 0.293762, 0.465759, 0.834686, -0.846008, -0.233398, -0.47934, -0.115814, 0.143036, -0.98291, 0.204681, -0.949036, -0.239532, 0.946716, -0.263947, 0.184326, -0.235596, 0.573822, 0.784332, 0.203705, -0.372253, -0.905487, 0.756989, -0.651031, 0.055298, 0.497803,
@@ -174,40 +176,53 @@ static float hashvectf__[768] =
 	0.592773, 0.481384, 0.117706, -0.949524, -0.29068, -0.535004, -0.791901, -0.294312, -0.627167, -0.214447, 0.748718, -0.047974, -0.813477, -0.57959, -0.175537, 0.477264, -0.860992, 0.738556, -0.414246, -0.53183, 0.562561, -0.704071, 0.433289, -0.754944, 0.64801, -0.100586, 0.114716, 0.044525, -0.992371, 0.966003, 0.244873, -0.082764,
 };
 
-#define LERP(t, a, b) ((a)+(t)*((b)-(a)))
-
 //------------------------------------------------------------------------------------
 // New Perlin noise
 
 float NewPerlinNoiseGenerator::operator()(const Point3 &pt) const
 {
-	float x = pt.x_, y = pt.y_, z = pt.z_;
-	float u = floor(x), v = floor(y), w = floor(z);
-	int X = ((int)u) & 255, Y = ((int)v) & 255, Z = ((int)w) & 255; // FIND UNIT CUBE THAT CONTAINS POINT
+	float x = pt.x_;
+	float y = pt.y_;
+	float z = pt.z_;
+	float u = std::floor(x);
+	float v = std::floor(y);
+	float w = std::floor(z);
+
+	// FIND UNIT CUBE THAT CONTAINS POINT
+	const int xi = static_cast<int>(u) & 255;
+	const int yi = static_cast<int>(v) & 255;
+	const int zi = static_cast<int>(w) & 255;
 	x -= u;  // FIND RELATIVE X,Y,Z
 	y -= v;  // OF POINT IN CUBE.
 	z -= w;
 	u = fade(x);  // COMPUTE FADE CURVES
 	v = fade(y);  // FOR EACH OF X,Y,Z.
 	w = fade(z);
-	int a = hash__[X  ] + Y, aa = hash__[a] + Z, ab = hash__[a + 1] + Z, // HASH COORDINATES OF
-	    b = hash__[X + 1] + Y, ba = hash__[b] + Z, bb = hash__[b + 1] + Z; // THE 8 CUBE CORNERS,
-	float nv = LERP(w, LERP(v, LERP(u, grad(hash__[aa  ], x, y, z),         // AND ADD
-	                                grad(hash__[ba  ], x - 1, y, z)),     // BLENDED
-	                        LERP(u, grad(hash__[ab  ], x, y - 1, z),      // RESULTS
-	                             grad(hash__[bb  ], x - 1, y - 1, z))), // FROM  8
-	                LERP(v, LERP(u, grad(hash__[aa + 1], x, y, z - 1),    // CORNERS
-	                             grad(hash__[ba + 1], x - 1, y, z - 1)), // OF CUBE
-	                     LERP(u, grad(hash__[ab + 1], x, y - 1, z - 1),
-							  grad(hash__[bb + 1], x - 1, y - 1, z - 1))));
-	return (0.5 + 0.5 * nv);
+
+	//Hash coordinates of the 8 cube corners and add blended results from 8 corners of cube
+	const int a = hash__[xi] + yi;
+	const int aa = hash__[a] + zi;
+	const int ab = hash__[a + 1] + zi;
+	const int b = hash__[xi + 1] + yi;
+	const int ba = hash__[b] + zi;
+	const int bb = hash__[b + 1] + zi;
+
+	const float lerp_00 = math::lerp(grad(hash__[ab + 1], x, y - 1, z - 1), grad(hash__[bb + 1], x - 1, y - 1, z - 1), u);
+	const float lerp_01 = math::lerp(grad(hash__[aa + 1], x, y, z - 1), grad(hash__[ba + 1], x - 1, y, z - 1), u);
+	const float lerp_02 = math::lerp(lerp_01, lerp_00, v);
+	const float lerp_03 = math::lerp(grad(hash__[ab], x, y - 1, z), grad(hash__[bb], x - 1, y - 1, z), u);
+	const float lerp_04 = math::lerp(grad(hash__[aa], x, y, z), grad(hash__[ba], x - 1, y, z), u);
+	const float lerp_05 = math::lerp(lerp_04, lerp_03, v);
+	const float nv = math::lerp(lerp_05, lerp_02, w);
+
+	return (0.5f + 0.5f * nv);
 }
 
 //------------------------------------------------------------------------------------
 // Standard (old) Perlin noise
 
 // unsigned!!
-static unsigned char stdp_p__[512 + 2] =
+static constexpr unsigned char stdp_p__[512 + 2] =
 {
 	0xA2, 0xA0, 0x19, 0x3B, 0xF8, 0xEB, 0xAA, 0xEE, 0xF3, 0x1C, 0x67, 0x28, 0x1D, 0xED, 0x0, 0xDE, 0x95, 0x2E, 0xDC, 0x3F, 0x3A, 0x82, 0x35, 0x4D, 0x6C, 0xBA, 0x36, 0xD0, 0xF6, 0xC, 0x79, 0x32, 0xD1, 0x59, 0xF4, 0x8, 0x8B, 0x63, 0x89, 0x2F, 0xB8, 0xB4, 0x97, 0x83, 0xF2, 0x8F, 0x18, 0xC7, 0x51, 0x14, 0x65, 0x87, 0x48, 0x20, 0x42, 0xA8, 0x80, 0xB5, 0x40, 0x13, 0xB2, 0x22, 0x7E, 0x57,
 	0xBC, 0x7F, 0x6B, 0x9D, 0x86, 0x4C, 0xC8, 0xDB, 0x7C, 0xD5, 0x25, 0x4E, 0x5A, 0x55, 0x74, 0x50, 0xCD, 0xB3, 0x7A, 0xBB, 0xC3, 0xCB, 0xB6, 0xE2, 0xE4, 0xEC, 0xFD, 0x98, 0xB, 0x96, 0xD3, 0x9E, 0x5C, 0xA1, 0x64, 0xF1, 0x81, 0x61, 0xE1, 0xC4, 0x24, 0x72, 0x49, 0x8C, 0x90, 0x4B, 0x84, 0x34, 0x38, 0xAB, 0x78, 0xCA, 0x1F, 0x1, 0xD7, 0x93, 0x11, 0xC1, 0x58, 0xA9, 0x31, 0xF9, 0x44, 0x6D,
@@ -221,7 +236,7 @@ static unsigned char stdp_p__[512 + 2] =
 };
 
 
-static float stdp_g__[512 + 2][3] =
+static constexpr float stdp_g__[512 + 2][3] =
 {
 	{0.33783, 0.715698, -0.611206},	{-0.944031, -0.326599, -0.045624}, {-0.101074, -0.416443, -0.903503}, {0.799286, 0.49411, -0.341949},	{-0.854645, 0.518036, 0.033936},	{0.42514, -0.437866, -0.792114},
 	{-0.358948, 0.597046, 0.717377},	{-0.985413, 0.144714, 0.089294},	{-0.601776, -0.33728, -0.723907},	{-0.449921, 0.594513, 0.666382},	{0.208313, -0.10791, 0.972076},	{0.575317, 0.060425, 0.815643},
@@ -311,84 +326,93 @@ static float stdp_g__[512 + 2][3] =
 	{0.114716, 0.044525, -0.992371},	{0.966003, 0.244873, -0.082764},	{0.33783, 0.715698, -0.611206},	{-0.944031, -0.326599, -0.045624}
 };
 
-#define STDP_AT(rx,ry,rz) (rx*q[0] + ry*q[1] + rz*q[2])
-#define SURVE(t) (t*t*(3.0-2.0*t))
-#define SETUP(i,b0,b1,r0,r1) \
-        t = vec[i] + 10000.0; \
-        b0 = ((int)t) & 255; \
-        b1 = (b0+1) & 255; \
-        r0 = t - (int)t; \
-        r1 = r0 - 1.0;
+constexpr float stdpAt__(float rx, float ry, float rz, const float *q)
+{
+	return rx * q[0] + ry * q[1] + rz * q[2];
+}
+
+constexpr float surve__(float t)
+{
+	return t * t * (3.f - 2.f * t);
+}
+
+void setup__(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec)
+{
+	const float t = vec[i] + 10000.0;
+	b_0 = static_cast<int>(t) & 255;
+	b_1 = (b_0 + 1) & 255;
+	r_0 = t - static_cast<int>(t);
+	r_1 = r_0 - 1.f;
+}
 
 float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 {
-	int bx0, bx1, by0, by1, bz0, bz1, b_00, b_10, b_01, b_11;
-	float rx0, rx1, ry0, ry1, rz0, rz1, *q, sx, sy, sz, a, b, c, d, t, u, v;
-	float vec[3] = {pt.x_, pt.y_, pt.z_};
+	int bx_0, bx_1, by_0, by_1, bz_0, bz_1;
+	float rx_0, rx_1, ry_0, ry_1, rz_0, rz_1;
+	const std::array<float, 3> vec { pt.x_, pt.y_, pt.z_ };
 
-	SETUP(0, bx0, bx1, rx0, rx1);
-	SETUP(1, by0, by1, ry0, ry1);
-	SETUP(2, bz0, bz1, rz0, rz1);
+	setup__(0, bx_0, bx_1, rx_0, rx_1, vec);
+	setup__(1, by_0, by_1, ry_0, ry_1, vec);
+	setup__(2, bz_0, bz_1, rz_0, rz_1, vec);
 
-	int i = stdp_p__[ bx0 ];
-	int j = stdp_p__[ bx1 ];
+	const int i = stdp_p__[ bx_0 ];
+	const int j = stdp_p__[ bx_1 ];
 
-	b_00 = stdp_p__[i + by0 ];
-	b_10 = stdp_p__[j + by0 ];
-	b_01 = stdp_p__[i + by1 ];
-	b_11 = stdp_p__[j + by1 ];
+	const int b_00 = stdp_p__[i + by_0 ];
+	const int b_10 = stdp_p__[j + by_0 ];
+	const int b_01 = stdp_p__[i + by_1 ];
+	const int b_11 = stdp_p__[j + by_1 ];
 
-	sx = SURVE(rx0);
-	sy = SURVE(ry0);
-	sz = SURVE(rz0);
+	const float sx = surve__(rx_0);
+	const float sy = surve__(ry_0);
+	const float sz = surve__(rz_0);
 
-	q = stdp_g__[b_00 + bz0 ] ;
-	u = STDP_AT(rx0, ry0, rz0);
-	q = stdp_g__[b_10 + bz0 ] ;
-	v = STDP_AT(rx1, ry0, rz0);
-	a = LERP(sx, u, v);
+	const float *q = stdp_g__[b_00 + bz_0 ] ;
+	float u = stdpAt__(rx_0, ry_0, rz_0, q);
+	q = stdp_g__[b_10 + bz_0 ] ;
+	float v = stdpAt__(rx_1, ry_0, rz_0, q);
+	float a = math::lerp(u, v, sx);
 
-	q = stdp_g__[b_01 + bz0 ] ;
-	u = STDP_AT(rx0, ry1, rz0);
-	q = stdp_g__[b_11 + bz0 ] ;
-	v = STDP_AT(rx1, ry1, rz0);
-	b = LERP(sx, u, v);
+	q = stdp_g__[b_01 + bz_0 ] ;
+	u = stdpAt__(rx_0, ry_1, rz_0, q);
+	q = stdp_g__[b_11 + bz_0 ] ;
+	v = stdpAt__(rx_1, ry_1, rz_0, q);
+	float b = math::lerp(u, v, sx);
 
-	c = LERP(sy, a, b);
+	const float c = math::lerp(a, b, sy);
 
-	q = stdp_g__[b_00 + bz1 ] ;
-	u = STDP_AT(rx0, ry0, rz1);
-	q = stdp_g__[b_10 + bz1 ] ;
-	v = STDP_AT(rx1, ry0, rz1);
-	a = LERP(sx, u, v);
+	q = stdp_g__[b_00 + bz_1 ] ;
+	u = stdpAt__(rx_0, ry_0, rz_1, q);
+	q = stdp_g__[b_10 + bz_1 ] ;
+	v = stdpAt__(rx_1, ry_0, rz_1, q);
+	a = math::lerp(u, v, sx);
 
-	q = stdp_g__[b_01 + bz1 ] ;
-	u = STDP_AT(rx0, ry1, rz1);
-	q = stdp_g__[b_11 + bz1 ] ;
-	v = STDP_AT(rx1, ry1, rz1);
-	b = LERP(sx, u, v);
+	q = stdp_g__[b_01 + bz_1 ] ;
+	u = stdpAt__(rx_0, ry_1, rz_1, q);
+	q = stdp_g__[b_11 + bz_1 ] ;
+	v = stdpAt__(rx_1, ry_1, rz_1, q);
+	b = math::lerp(u, v, sx);
 
-	d = LERP(sy, a, b);
-
-	return 0.5 + 0.75 * LERP(sz, c, d);
+	const float d = math::lerp(a, b, sy);
+	return 0.5f + 0.75f * math::lerp(c, d, sz);
 }
 
 // distance metric function:
 float distRealF__(float x, float y, float z, float e) { return math::sqrt(x * x + y * y + z * z); }
-float distSquaredF__(float x, float y, float z, float e) { return (x * x + y * y + z * z); }
+float distSquaredF__(float x, float y, float z, float e) { return x * x + y * y + z * z; }
 float distManhattanF__(float x, float y, float z, float e) { return (std::abs(x) + std::abs(y) + std::abs(z)); }
 float distChebychevF__(float x, float y, float z, float e)
 {
 	x = std::abs(x);
 	y = std::abs(y);
 	z = std::abs(z);
-	float t = (x > y) ? x : y;
+	const float t = (x > y) ? x : y;
 	return ((z > t) ? z : t);
 }
 // minkovsky preset exponent 0.5
 float distMinkovskyHf__(float x, float y, float z, float e)
 {
-	float d = math::sqrt(std::abs(x)) + math::sqrt(std::abs(y)) + math::sqrt(std::abs(z));
+	const float d = math::sqrt(std::abs(x)) + math::sqrt(std::abs(y)) + math::sqrt(std::abs(z));
 	return (d * d);
 }
 // minkovsky preset exponent 4
@@ -410,43 +434,40 @@ float distMinkovskyF__(float x, float y, float z, float e)
 
 float BlenderNoiseGenerator::operator()(const Point3 &pt) const
 {
-	//float cn1, cn2, cn3, cn4, cn5, cn6, i, *h;
-	//float ox, oy, oz, jx, jy, jz;
-	//float n= 0.5;
-	float cn_1, cn_2, cn_3, cn_4, cn_5, cn_6, i, *h;
-	float ox, oy, oz, jx, jy, jz;
-	float n = 0.5;
-	int ix, iy, iz, b_00, b_01, b_10, b_11, b_20, b_21;
+	const float x = pt.x_, y = pt.y_, z = pt.z_;
+	const int ix = static_cast<int>(floor(x));
+	const int iy = static_cast<int>(floor(y));
+	const int iz = static_cast<int>(floor(z));
+	const float ox = x - ix;
+	const float oy = y - iy;
+	const float oz = z - iz;
+	const float jx = ox - 1.f;
+	const float jy = oy - 1.f;
+	const float jz = oz - 1.f;
+	float cn_1 = ox * ox;
+	float cn_2 = oy * oy;
+	float cn_3 = oz * oz;
+	float cn_4 = jx * jx;
+	float cn_5 = jy * jy;
+	float cn_6 = jz * jz;
+	cn_1 = 1.f - 3.f * cn_1 + 2.f * cn_1 * ox;
+	cn_2 = 1.f - 3.f * cn_2 + 2.f * cn_2 * oy;
+	cn_3 = 1.f - 3.f * cn_3 + 2.f * cn_3 * oz;
+	cn_4 = 1.f - 3.f * cn_4 - 2.f * cn_4 * jx;
+	cn_5 = 1.f - 3.f * cn_5 - 2.f * cn_5 * jy;
+	cn_6 = 1.f - 3.f * cn_6 - 2.f * cn_6 * jz;
 
-	float x = pt.x_, y = pt.y_, z = pt.z_;
-	ox = (x - (ix = (int)floor(x)));
-	oy = (y - (iy = (int)floor(y)));
-	oz = (z - (iz = (int)floor(z)));
-
-	jx = ox - 1;
-	jy = oy - 1;
-	jz = oz - 1;
-
-	cn_1 = ox * ox; cn_2 = oy * oy; cn_3 = oz * oz;
-	cn_4 = jx * jx; cn_5 = jy * jy; cn_6 = jz * jz;
-
-	cn_1 = 1.0 - 3.0 * cn_1 + 2.0 * cn_1 * ox;
-	cn_2 = 1.0 - 3.0 * cn_2 + 2.0 * cn_2 * oy;
-	cn_3 = 1.0 - 3.0 * cn_3 + 2.0 * cn_3 * oz;
-	cn_4 = 1.0 - 3.0 * cn_4 - 2.0 * cn_4 * jx;
-	cn_5 = 1.0 - 3.0 * cn_5 - 2.0 * cn_5 * jy;
-	cn_6 = 1.0 - 3.0 * cn_6 - 2.0 * cn_6 * jz;
-
-	b_00 = hash__[hash__[ix & 255] + (iy & 255)];
-	b_10 = hash__[hash__[(ix + 1) & 255] + (iy & 255)];
-	b_01 = hash__[hash__[ix & 255] + ((iy + 1) & 255)];
-	b_11 = hash__[hash__[(ix + 1) & 255] + ((iy + 1) & 255)];
-
-	b_20 = iz & 255; b_21 = (iz + 1) & 255;
+	const int b_00 = hash__[hash__[ix & 255] + (iy & 255)];
+	const int b_10 = hash__[hash__[(ix + 1) & 255] + (iy & 255)];
+	const int b_01 = hash__[hash__[ix & 255] + ((iy + 1) & 255)];
+	const int b_11 = hash__[hash__[(ix + 1) & 255] + ((iy + 1) & 255)];
+	const int b_20 = iz & 255;
+	const int b_21 = (iz + 1) & 255;
 
 	/* 0 */
-	i = (cn_1 * cn_2 * cn_3);
-	h = hashvectf__ + 3 * hash__[b_20 + b_00];
+	float i = (cn_1 * cn_2 * cn_3);
+	const float *h = hashvectf__ + 3 * hash__[b_20 + b_00];
+	float n = 0.5f;
 	n += i * (h[0] * ox + h[1] * oy + h[2] * oz);
 	/* 1 */
 	i = (cn_1 * cn_2 * cn_6);
@@ -528,12 +549,17 @@ VoronoiNoiseGenerator::VoronoiNoiseGenerator(VoronoiType vt, DMetricType dm, flo
 	setDistM(dm_type_);
 }
 
+const float *hash_pnt__(int x, int y, int z)
+{
+	return hashpntf__ + 3 * hash__[(hash__[(hash__[z & 255] + y) & 255] + x) & 255];
+}
+
 void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const
 {
 	int xx, yy, zz, xi, yi, zi;
 	//float xd, yd, zd, d, *p;
 	//float x=pt.x, y=pt.y, z=pt.z;
-	float xd, yd, zd, d, *p;
+	float xd, yd, zd, d;
 	float x = pt.x_, y = pt.y_, z = pt.z_;
 	xi = (int)(floor(x));
 	yi = (int)(floor(y));
@@ -545,7 +571,7 @@ void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa
 		{
 			for(zz = zi - 1; zz <= zi + 1; zz++)
 			{
-				p = HASHPNT(xx, yy, zz);
+				const float *p = hash_pnt__(xx, yy, zz);
 				xd = x - (p[0] + xx);
 				yd = y - (p[1] + yy);
 				zd = z - (p[2] + zz);
@@ -791,7 +817,7 @@ Rgba cellNoiseColor__(const Point3 &pt)
 	int xi = (int)(floor(pt.x_));
 	int yi = (int)(floor(pt.y_));
 	int zi = (int)(floor(pt.z_));
-	float *cl = HASHPNT(xi, yi, zi);
+	const float *cl = hash_pnt__(xi, yi, zi);
 	return Rgba(cl[0], cl[1], cl[2], 1.0);
 }
 

@@ -92,11 +92,11 @@ void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *>
 	for(const auto &node : color_nodes_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
 }
 
-void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const
+void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const
 {
 	for(const auto &node : bump_nodes_) node->evalDerivative(stack, render_data, sp);
 	float du, dv;
-	bump_s->getDerivative(stack, du, dv);
+	bump_shader_node->getDerivative(stack, du, dv);
 	applyBump(sp, du, dv);
 }
 

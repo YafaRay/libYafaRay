@@ -46,7 +46,7 @@ class NodeMaterial: public Material
 		void solveNodesOrder(const std::vector<ShaderNode *> &roots);
 		void getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes);
 		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const;
-		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const;
+		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const;
 
 		std::vector<ShaderNode *> color_nodes_, color_nodes_sorted_, bump_nodes_;
 		std::map<std::string, ShaderNode *> shaders_table_;
