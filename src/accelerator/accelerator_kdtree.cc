@@ -62,7 +62,7 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf
 	allocated_nodes_count_ = 256;
 	nodes_ = (KdTreeNode<T> *) malloc(256 * sizeof(KdTreeNode<T>));
 	if(max_depth_ <= 0) max_depth_ = int(7.0f + 1.66f * log(float(total_prims_)));
-	double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
+	const double log_leaves = 1.442695f * log(double(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
 	{
 		//maxLeafSize = int( 1.442695f * log(float(totalPrims)/62500.0) );
@@ -87,13 +87,13 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf
 	//lying in a bound plane (still slight bug with trees where one dim. is 0)
 	for(int i = 0; i < 3; i++)
 	{
-		double foo = (tree_bound_.g_[i] - tree_bound_.a_[i]) * 0.001;
+		const double foo = (tree_bound_.g_[i] - tree_bound_.a_[i]) * 0.001;
 		tree_bound_.a_[i] -= foo, tree_bound_.g_[i] += foo;
 	}
 	Y_VERBOSE << "Kd-Tree: Done." << YENDL;
 	// get working memory for tree construction
 	BoundEdge *edges[3];
-	uint32_t r_mem_size = 3 * total_prims_; // (maxDepth+1)*totalPrims;
+	const uint32_t r_mem_size = 3 * total_prims_; // (maxDepth+1)*totalPrims;
 	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * tri_clip_thresh_, total_prims_)];
 	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
 	//	uint32_t *primNums = new uint32_t[totalPrims]; //isn't this like...totaly unnecessary? use leftPrims?
@@ -157,22 +157,20 @@ void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, ui
 	d[2] = node_bound.longZ();
 	split.old_cost_ = float(n_prims);
 	split.best_cost_ = std::numeric_limits<float>::infinity();
-	float inv_total_sa = 1.0f / (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]);
-	float t_low, t_up;
-	int b_left, b_right;
+	const float inv_total_sa = 1.0f / (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]);
 
 	for(int axis = 0; axis < 3; axis++)
 	{
-		float s = kd_bins_ / d[axis];
-		float min = node_bound.a_[axis];
+		const float s = kd_bins_ / d[axis];
+		const float min = node_bound.a_[axis];
 		// pigeonhole sort:
 		for(unsigned int i = 0; i < n_prims; ++i)
 		{
 			const Bound &bbox = all_bounds_[ prim_idx[i] ];
-			t_low = bbox.a_[axis];
-			t_up  = bbox.g_[axis];
-			b_left = (int)((t_low - min) * s);
-			b_right = (int)((t_up - min) * s);
+			const float t_low = bbox.a_[axis];
+			const float t_up  = bbox.g_[axis];
+			int b_left = (int)((t_low - min) * s);
+			int b_right = (int)((t_up - min) * s);
 			//			b_left = Y_Round2Int( ((t_low - min)*s) );
 			//			b_right = Y_Round2Int( ((t_up - min)*s) );
 
@@ -223,12 +221,11 @@ void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, ui
 				}
 				bin[b_right].n_++;
 			}
-
 		}
 
 		const int axis_lut[3][3] = {{0, 1, 2}, {1, 2, 0}, {2, 0, 1} };
-		float cap_area = d[ axis_lut[1][axis] ] * d[ axis_lut[2][axis] ];
-		float cap_perim = d[ axis_lut[1][axis] ] + d[ axis_lut[2][axis] ];
+		const float cap_area = d[ axis_lut[1][axis] ] * d[ axis_lut[2][axis] ];
+		const float cap_perim = d[ axis_lut[1][axis] ] + d[ axis_lut[2][axis] ];
 
 		unsigned int n_below = 0, n_above = n_prims;
 		// cumulate prims and evaluate cost
@@ -239,23 +236,22 @@ void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, ui
 				n_below += bin[i].c_left_;
 				n_above -= bin[i].c_right_;
 				// cost:
-				float edget = bin[i].t_;
+				const float edget = bin[i].t_;
 				if(edget > node_bound.a_[axis] && edget < node_bound.g_[axis])
 				{
 					// Compute cost for split at _i_th edge
-					float l_1 = edget - node_bound.a_[axis];
-					float l_2 = node_bound.g_[axis] - edget;
-					float below_sa = cap_area + l_1 * cap_perim;
-					float above_sa = cap_area + l_2 * cap_perim;
-					float raw_costs = (below_sa * n_below + above_sa * n_above);
+					const float l_1 = edget - node_bound.a_[axis];
+					const float l_2 = node_bound.g_[axis] - edget;
+					const float below_sa = cap_area + l_1 * cap_perim;
+					const float above_sa = cap_area + l_2 * cap_perim;
+					const float raw_costs = (below_sa * n_below + above_sa * n_above);
 					//float eb = (nAbove == 0 || nBelow == 0) ? eBonus*rawCosts : 0.f;
 					float eb;
-
 					if(n_above == 0) eb = (0.1f + l_2 / d[axis]) * e_bonus_ * raw_costs;
 					else if(n_below == 0) eb = (0.1f + l_1 / d[axis]) * e_bonus_ * raw_costs;
 					else eb = 0.0f;
 
-					float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
+					const float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
 
 					// Update best split if this is lowest cost so far
 					if(cost < split.best_cost_)
@@ -310,50 +306,48 @@ void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint
 	d[2] = node_bound.longZ();
 	split.old_cost_ = float(n_prims);
 	split.best_cost_ = std::numeric_limits<float>::infinity();
-	float inv_total_sa = 1.0f / (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]);
-	int n_edge;
-
+	const float inv_total_sa = 1.0f / (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]);
 	for(int axis = 0; axis < 3; axis++)
 	{
 		// << get edges for axis >>
-		n_edge = 0;
+		int n_edge = 0;
 		//test!
 		if(all_bounds != all_bounds_) for(unsigned int i = 0; i < n_prims; i++)
+		{
+			const Bound &bbox = all_bounds[i];
+			if(bbox.a_[axis] == bbox.g_[axis])
 			{
-				const Bound &bbox = all_bounds[i];
-				if(bbox.a_[axis] == bbox.g_[axis])
-				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, both_b_);
-					++n_edge;
-				}
-				else
-				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, lower_b_);
-					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], i /* pn */, upper_b_);
-					n_edge += 2;
-				}
+				edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, both_b_);
+				++n_edge;
 			}
+			else
+			{
+				edges[axis][n_edge] = BoundEdge(bbox.a_[axis], i /* pn */, lower_b_);
+				edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], i /* pn */, upper_b_);
+				n_edge += 2;
+			}
+		}
 		else for(unsigned int i = 0; i < n_prims; i++)
+		{
+			const int pn = prim_idx[i];
+			const Bound &bbox = all_bounds[pn];
+			if(bbox.a_[axis] == bbox.g_[axis])
 			{
-				const int pn = prim_idx[i];
-				const Bound &bbox = all_bounds[pn];
-				if(bbox.a_[axis] == bbox.g_[axis])
-				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, both_b_);
-					++n_edge;
-				}
-				else
-				{
-					edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, lower_b_);
-					edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], pn, upper_b_);
-					n_edge += 2;
-				}
+				edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, both_b_);
+				++n_edge;
 			}
+			else
+			{
+				edges[axis][n_edge] = BoundEdge(bbox.a_[axis], pn, lower_b_);
+				edges[axis][n_edge + 1] = BoundEdge(bbox.g_[axis], pn, upper_b_);
+				n_edge += 2;
+			}
+		}
 		std::sort(&edges[axis][0], &edges[axis][n_edge]);
 		// Compute cost of all splits for _axis_ to find best
-		const int axis_lut[3][3] = {{0, 1, 2}, {1, 2, 0}, {2, 0, 1} };
-		float cap_area = d[ axis_lut[1][axis] ] * d[ axis_lut[2][axis] ];
-		float cap_perim = d[ axis_lut[1][axis] ] + d[ axis_lut[2][axis] ];
+		const int axis_lut[3][3] = { {0, 1, 2}, {1, 2, 0}, {2, 0, 1} };
+		const float cap_area = d[ axis_lut[1][axis] ] * d[ axis_lut[2][axis] ];
+		const float cap_perim = d[ axis_lut[1][axis] ] + d[ axis_lut[2][axis] ];
 		unsigned int n_below = 0, n_above = n_prims;
 		//todo: early-out criteria: if l1 > l2*nPrims (l2 > l1*nPrims) => minimum is lowest (highest) edge!
 		if(n_prims > 5)
@@ -363,8 +357,8 @@ void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint
 			float l_2 = node_bound.g_[axis] - edget;
 			if(l_1 > l_2 * float(n_prims) && l_2 > 0.f)
 			{
-				float raw_costs = (cap_area + l_2 * cap_perim) * n_prims;
-				float cost = cost_ratio_ + inv_total_sa * (raw_costs - e_bonus_); //todo: use proper ebonus...
+				const float raw_costs = (cap_area + l_2 * cap_perim) * n_prims;
+				const float cost = cost_ratio_ + inv_total_sa * (raw_costs - e_bonus_); //todo: use proper ebonus...
 				//optimal cost is definitely here, and nowhere else!
 				if(cost < split.best_cost_)
 				{
@@ -381,8 +375,8 @@ void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint
 			l_2 = node_bound.g_[axis] - edget;
 			if(l_2 > l_1 * float(n_prims) && l_1 > 0.f)
 			{
-				float raw_costs = (cap_area + l_1 * cap_perim) * n_prims;
-				float cost = cost_ratio_ + inv_total_sa * (raw_costs - e_bonus_); //todo: use proper ebonus...
+				const float raw_costs = (cap_area + l_1 * cap_perim) * n_prims;
+				const float cost = cost_ratio_ + inv_total_sa * (raw_costs - e_bonus_); //todo: use proper ebonus...
 				if(cost < split.best_cost_)
 				{
 					split.best_cost_ = cost;
@@ -398,24 +392,23 @@ void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint
 		for(int i = 0; i < n_edge; ++i)
 		{
 			if(edges[axis][i].end_ == upper_b_) --n_above;
-			float edget = edges[axis][i].pos_;
+			const float edget = edges[axis][i].pos_;
 			if(edget > node_bound.a_[axis] &&
 			   edget < node_bound.g_[axis])
 			{
 				// Compute cost for split at _i_th edge
-				float l_1 = edget - node_bound.a_[axis];
-				float l_2 = node_bound.g_[axis] - edget;
-				float below_sa = cap_area + (l_1) * cap_perim;
-				float above_sa = cap_area + (l_2) * cap_perim;
-				float raw_costs = (below_sa * n_below + above_sa * n_above);
+				const float l_1 = edget - node_bound.a_[axis];
+				const float l_2 = node_bound.g_[axis] - edget;
+				const float below_sa = cap_area + (l_1) * cap_perim;
+				const float above_sa = cap_area + (l_2) * cap_perim;
+				const float raw_costs = (below_sa * n_below + above_sa * n_above);
 				//float eb = (nAbove == 0 || nBelow == 0) ? eBonus*rawCosts : 0.f;
 				float eb;
-
 				if(n_above == 0) eb = (0.1f + l_2 / d[axis]) * e_bonus_ * raw_costs;
 				else if(n_below == 0) eb = (0.1f + l_1 / d[axis]) * e_bonus_ * raw_costs;
 				else eb = 0.0f;
 
-				float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
+				const float cost = cost_ratio_ + inv_total_sa * (raw_costs - eb);
 				// Update best split if this is lowest cost so far
 				if(cost < split.best_cost_)
 				{
@@ -522,8 +515,8 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 
 	//<< calculate cost for all axes and chose minimum >>
 	SplitCost split;
-	float base_bonus = e_bonus_;
-	e_bonus_ *= 1.1 - (float)depth / (float)max_depth_;
+	const float base_bonus = e_bonus_;
+	e_bonus_ *= 1.1 - static_cast<float>(depth) / static_cast<float>(max_depth_);
 	if(n_prims > 128) pigeonMinCost(n_prims, node_bound, prim_nums, split);
 #if TRI_CLIP > 0
 	else if(n_prims > tri_clip_thresh_) minimalCost(n_prims, node_bound, prim_nums, all_bounds_, edges, split);
@@ -564,10 +557,9 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	int n_0 = 0, n_1 = 0;
 	if(n_prims > 128) // we did pigeonhole
 	{
-		int pn;
 		for(unsigned int i = 0; i < n_prims; i++)
 		{
-			pn = prim_nums[i];
+			const int pn = prim_nums[i];
 			if(all_bounds_[ pn ].a_[split.best_axis_] >= split.t_) n_right_prims[n_1++] = pn;
 			else
 			{
@@ -694,13 +686,11 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 {
 	z = dist;
 
-	float a, b, t; // entry/exit/splitting plane signed distance
-	float t_hit;
-
+	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist)) { return false; }
 
 	IntersectData current_data, temp_data;
-	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
+	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 	//	int rayId = curMailboxId++;
 	bool hit = false;
 
@@ -712,7 +702,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 	stack[en_pt].t_ = a;
 
 	//distinguish between internal and external origin
-	if(a >= 0.0) // ray with external origin
+	if(a >= 0.f) // ray with external origin
 		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
@@ -730,8 +720,8 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			int axis = curr_node->splitAxis();
-			float split_val = curr_node->splitPos();
+			const int axis = curr_node->splitAxis();
+			const float split_val = curr_node->splitPos();
 
 			if(stack[en_pt].pb_[axis] <= split_val)
 			{
@@ -761,18 +751,18 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 			}
 			// traverse both children
 
-			t = (split_val - ray.from_[axis]) * inv_dir[axis];
+			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
 			// setup the new exit point
-			int tmp = ex_pt;
+			const int tmp = ex_pt;
 			ex_pt++;
 
 			// possibly skip current entry point so not to overwrite the data
 			if(ex_pt == en_pt) ex_pt++;
 			// push values onto the stack //todo: lookup table
 			static const int np_axis[2][3] = {{1, 2, 0}, {2, 0, 1} };
-			int next_axis = np_axis[0][axis];//(axis+1)%3;
-			int prev_axis = np_axis[1][axis];//(axis+2)%3;
+			const int next_axis = np_axis[0][axis];//(axis+1)%3;
+			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
 			stack[ex_pt].prev_ = tmp;
 			stack[ex_pt].t_ = t;
 			stack[ex_pt].node_ = far_child;
@@ -782,17 +772,16 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 		}
 
 		// Check for intersections inside leaf node
-		uint32_t n_primitives = curr_node->nPrimitives();
-
+		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			T *mp = curr_node->one_primitive_;
+			float t_hit;
 			if(mp->intersect(ray, &t_hit, temp_data))
 			{
 				if(t_hit < z && t_hit >= ray.tmin_)
 				{
 					const Material *mat = mp->getMaterial();
-
 					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
 					{
 						z = t_hit;
@@ -809,12 +798,12 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
+				float t_hit;
 				if(mp->intersect(ray, &t_hit, temp_data))
 				{
 					if(t_hit < z && t_hit >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
-
 						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
 						{
 							z = t_hit;
@@ -836,25 +825,20 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 		en_pt = ex_pt;
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
-
 	} // while
-
 	data = current_data;
-
 	return hit;
 }
 
 template<class T>
 bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const
 {
-	float a, b, t; // entry/exit/splitting plane signed distance
-	float t_hit;
-
+	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist))
 		return false;
 
 	IntersectData bary;
-	Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
+	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 
 	KdStack<T> stack[kd_max_stack_];
 	const KdTreeNode<T> *far_child, *curr_node;
@@ -864,7 +848,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 	stack[en_pt].t_ = a;
 
 	//distinguish between internal and external origin
-	if(a >= 0.0) // ray with external origin
+	if(a >= 0.f) // ray with external origin
 		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
@@ -882,9 +866,8 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			int axis = curr_node->splitAxis();
-			float split_val = curr_node->splitPos();
-
+			const int axis = curr_node->splitAxis();
+			const float split_val = curr_node->splitPos();
 			if(stack[en_pt].pb_[axis] <= split_val)
 			{
 				if(stack[ex_pt].pb_[axis] <= split_val)
@@ -913,18 +896,18 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 			}
 			// traverse both children
 
-			t = (split_val - ray.from_[axis]) * inv_dir[axis];
+			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
 			// setup the new exit point
-			int tmp = ex_pt;
+			const int tmp = ex_pt;
 			ex_pt++;
 
 			// possibly skip current entry point so not to overwrite the data
 			if(ex_pt == en_pt) ex_pt++;
 			// push values onto the stack //todo: lookup table
 			static const int np_axis[2][3] = {{1, 2, 0}, {2, 0, 1} };
-			int next_axis = np_axis[0][axis];//(axis+1)%3;
-			int prev_axis = np_axis[1][axis];//(axis+2)%3;
+			const int next_axis = np_axis[0][axis];//(axis+1)%3;
+			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
 			stack[ex_pt].prev_ = tmp;
 			stack[ex_pt].t_ = t;
 			stack[ex_pt].node_ = far_child;
@@ -934,16 +917,16 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 		}
 
 		// Check for intersections inside leaf node
-		uint32_t n_primitives = curr_node->nPrimitives();
+		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			T *mp = curr_node->one_primitive_;
+			float t_hit;
 			if(mp->intersect(ray, &t_hit, bary))
 			{
 				if(t_hit < dist && t_hit >= 0.f)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
-
 					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
 						*tr = mp;
@@ -958,12 +941,12 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
+				float t_hit;
 				if(mp->intersect(ray, &t_hit, bary))
 				{
 					if(t_hit < dist && t_hit >= 0.f)
 					{
 						const Material *mat = mp->getMaterial();
-
 						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
@@ -973,13 +956,10 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 				}
 			}
 		}
-
 		en_pt = ex_pt;
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
-
 	} // while
-
 	return false;
 }
 
@@ -990,9 +970,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 template<class T>
 bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
 {
-	float a, b, t; // entry/exit/splitting plane signed distance
-	float t_hit;
-
+	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist))
 		return false;
 
@@ -1026,7 +1004,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 	stack[en_pt].t_ = a;
 
 	//distinguish between internal and external origin
-	if(a >= 0.0) // ray with external origin
+	if(a >= 0.f) // ray with external origin
 		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
@@ -1044,9 +1022,8 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
-			int axis = curr_node->splitAxis();
-			float split_val = curr_node->splitPos();
-
+			const int axis = curr_node->splitAxis();
+			const float split_val = curr_node->splitPos();
 			if(stack[en_pt].pb_[axis] <= split_val)
 			{
 				if(stack[ex_pt].pb_[axis] <= split_val)
@@ -1074,19 +1051,18 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 				curr_node = &nodes_[curr_node->getRightChild()];
 			}
 			// traverse both children
-
-			t = (split_val - ray.from_[axis]) * inv_dir[axis];
+			const float t = (split_val - ray.from_[axis]) * inv_dir[axis]; //splitting plane signed distance
 
 			// setup the new exit point
-			int tmp = ex_pt;
+			const int tmp = ex_pt;
 			ex_pt++;
 
 			// possibly skip current entry point so not to overwrite the data
 			if(ex_pt == en_pt) ex_pt++;
 			// push values onto the stack //todo: lookup table
 			static const int np_axis[2][3] = {{1, 2, 0}, {2, 0, 1} };
-			int next_axis = np_axis[0][axis];//(axis+1)%3;
-			int prev_axis = np_axis[1][axis];//(axis+2)%3;
+			const int next_axis = np_axis[0][axis];//(axis+1)%3;
+			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
 			stack[ex_pt].prev_ = tmp;
 			stack[ex_pt].t_ = t;
 			stack[ex_pt].node_ = far_child;
@@ -1096,26 +1072,24 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 		}
 
 		// Check for intersections inside leaf node
-		uint32_t n_primitives = curr_node->nPrimitives();
+		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
 			T *mp = curr_node->one_primitive_;
+			float t_hit;
 			if(mp->intersect(ray, &t_hit, bary))
 			{
 				if(t_hit < dist && t_hit >= ray.tmin_)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
-
 					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
 						*tr = mp;
-
 						if(!mat->isTransparent()) return true;
-
 						if(filtered.insert(mp).second)
 						{
 							if(depth >= max_depth) return true;
-							Point3 h = ray.from_ + t_hit * ray.dir_;
+							const Point3 h = ray.from_ + t_hit * ray.dir_;
 							SurfacePoint sp;
 							mp->getSurface(sp, h, bary);
 							filt *= mat->getTransparency(render_data, sp, ray.dir_);
@@ -1131,22 +1105,20 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
+				float t_hit;
 				if(mp->intersect(ray, &t_hit, bary))
 				{
 					if(t_hit < dist && t_hit >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
-
 						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
-
 							if(!mat->isTransparent()) return true;
-
 							if(filtered.insert(mp).second)
 							{
 								if(depth >= max_depth) return true;
-								Point3 h = ray.from_ + t_hit * ray.dir_;
+								const Point3 h = ray.from_ + t_hit * ray.dir_;
 								SurfacePoint sp;
 								mp->getSurface(sp, h, bary);
 								filt *= mat->getTransparency(render_data, sp, ray.dir_);
@@ -1157,13 +1129,10 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 				}
 			}
 		}
-
 		en_pt = ex_pt;
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
-
 	} // while
-
 	return false;
 }
 
