@@ -41,21 +41,21 @@ class LayerNode final : public ShaderNode
 		static Rgb textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float facg, const BlendMode &blend_mode);
 		static float textureValueBlend(float tex, float out, float fact, float facg, const BlendMode &blend_mode, bool flip = false);
 
-		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod);
+		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;
 
-		const ShaderNode *input_, *upper_layer_;
+		const ShaderNode *input_ = nullptr, *upper_layer_ = nullptr;
 		Flags flags_;
 		float colfac_;
 		float valfac_;
 		float default_val_, upper_val_;
 		Rgba default_col_, upper_col_;
-		BlendMode mode_;
-		bool do_color_, do_scalar_, color_input_, use_alpha_;
+		BlendMode blend_mode_;
+		bool do_color_ = false, do_scalar_ = false, color_input_ = false, use_alpha_ = false;
 };
 
 END_YAFARAY

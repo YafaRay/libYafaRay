@@ -23,19 +23,19 @@
 
 BEGIN_YAFARAY
 
-LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod):
-		input_(nullptr), upper_layer_(nullptr), flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
-		default_col_(def_col), mode_(mmod), do_color_(false), do_scalar_(false), color_input_(false)
+LayerNode::LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, const Rgba &def_col, const BlendMode &blend_mode):
+		flags_(flags), colfac_(col_fac), valfac_(var_fac), default_val_(def_val),
+		default_col_(def_col), blend_mode_(blend_mode)
 {}
 
 void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
-	Rgba rcol, texcolor;
-	float rval, tin = 0.f, ta = 1.f, stencil_tin = 1.f;
+	Rgba texcolor;
+	float tin = 0.f, ta = 1.f;
 	// == get result of upper layer (or base values) ==
-	rcol = (upper_layer_) ? upper_layer_->getColor(stack) : upper_col_;
-	rval = (upper_layer_) ? upper_layer_->getScalar(stack) : upper_val_;
-	stencil_tin = rcol.a_;
+	Rgba rcol = (upper_layer_) ? upper_layer_->getColor(stack) : upper_col_;
+	float rval = (upper_layer_) ? upper_layer_->getScalar(stack) : upper_val_;
+	float stencil_tin = rcol.a_;
 
 	// == get texture input color ==
 	bool tex_rgb = color_input_;
@@ -59,19 +59,17 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 		tin = 1.f - tin;
 	}
 
-	float fact;
-
 	if(flags_.hasAny(Flags::Stencil))
 	{
 		if(tex_rgb) // only scalar input affects stencil...?
 		{
-			fact = ta;
+			const float fact = ta;
 			ta *= stencil_tin;
 			stencil_tin *= fact;
 		}
 		else
 		{
-			fact = tin;
+			const float fact = tin;
 			tin *= stencil_tin;
 			stencil_tin *= fact;
 		}
@@ -84,12 +82,11 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 		else tin = ta;
 
 		float tin_truncated_range;
-
 		if(tin > 1.f) tin_truncated_range = 1.f;
 		else if(tin < 0.f) tin_truncated_range = 0.f;
 		else tin_truncated_range = tin;
 
-		rcol = textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, mode_);
+		rcol = textureRgbBlend(texcolor, rcol, tin_truncated_range, stencil_tin * colfac_, blend_mode_);
 		rcol.clampRgb0();
 	}
 
@@ -109,7 +106,7 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 			}
 		}
 
-		rval = textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, mode_);
+		rval = textureValueBlend(default_val_, rval, tin, stencil_tin * valfac_, blend_mode_);
 		if(rval < 0.f) rval = 0.f;
 	}
 	rcol.a_ = stencil_tin;
@@ -118,8 +115,7 @@ void LayerNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 
 void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
-	Rgba texcolor;
-	float rdu = 0.f, rdv = 0.f, tdu, tdv;
+	float rdu = 0.f, rdv = 0.f;
 	float stencil_tin = 1.f;
 
 	// == get result of upper layer (or base values) ==
@@ -131,9 +127,9 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	}
 
 	// == get texture input derivative ==
-	texcolor = input_->getColor(stack);
-	tdu = texcolor.r_;
-	tdv = texcolor.g_;
+	const Rgba texcolor = input_->getColor(stack);
+	float tdu = texcolor.r_;
+	float tdv = texcolor.g_;
 
 	if(flags_.hasAny(Flags::Negative))
 	{
@@ -207,7 +203,7 @@ Rgb LayerNode::textureRgbBlend(const Rgb &tex, const Rgb &out, float fact, float
 
 		case BlendMode::Screen:
 		{
-			Rgb white(1.0);
+			const Rgb white(1.0);
 			fact *= facg;
 			return white - (Rgb(1.f - facg) + fact * (white - tex)) * (white - out);
 		}
@@ -288,14 +284,14 @@ float LayerNode::textureValueBlend(float tex, float out, float fact, float facg,
 
 		case BlendMode::Dark:
 		{
-			float col = fact * tex;
+			const float col = fact * tex;
 			if(col < out) return col;
 			return out;
 		}
 
 		case BlendMode::Light:
 		{
-			float col = fact * tex;
+			const float col = fact * tex;
 			if(col > out) return col;
 			return out;
 		}

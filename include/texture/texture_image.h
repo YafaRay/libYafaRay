@@ -61,12 +61,12 @@ class ImageTexture final : public Texture
 		virtual void generateMipMaps() override;
 		void setCrop(float minx, float miny, float maxx, float maxy);
 		void findTextureInterpolationCoordinates(int &coord_0, int &coord_1, int &coord_2, int &coord_3, float &coord_decimal_part, float coord_float, int resolution, bool repeat, bool mirror) const;
-		Rgba noInterpolation(const Point3 &p, int mipmaplevel = 0) const;
-		Rgba bilinearInterpolation(const Point3 &p, int mipmaplevel = 0) const;
-		Rgba bicubicInterpolation(const Point3 &p, int mipmaplevel = 0) const;
+		Rgba noInterpolation(const Point3 &p, int mipmap_level = 0) const;
+		Rgba bilinearInterpolation(const Point3 &p, int mipmap_level = 0) const;
+		Rgba bicubicInterpolation(const Point3 &p, int mipmap_level = 0) const;
 		Rgba mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const;
 		Rgba mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const;
-		Rgba ewaEllipticCalculation(const Point3 &p, float d_s_0, float d_t_0, float d_s_1, float d_t_1, int mipmaplevel = 0) const;
+		Rgba ewaEllipticCalculation(const Point3 &p, float ds_0, float dt_0, float ds_1, float dt_1, int mipmap_level = 0) const;
 		void generateEwaLookupTable();
 		bool doMapping(Point3 &texp) const;
 		Rgba interpolateImage(const Point3 &p, const MipMapParams *mipmap_params) const;

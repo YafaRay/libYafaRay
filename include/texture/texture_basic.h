@@ -31,6 +31,7 @@ class CloudsTexture final : public Texture
 		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
+		enum BiasType : int { None, Positive, Negative };
 		CloudsTexture(int dep, float sz, bool hd,
 					  const Rgb &c_1, const Rgb &c_2,
 					  const std::string &ntype, const std::string &btype);
@@ -71,7 +72,7 @@ class MarbleTexture final : public Texture
 		float turb_, sharpness_, size_;
 		bool hard_;
 		NoiseGenerator *n_gen_ = nullptr;
-		enum {Sin, Saw, Tri} wshape_;
+		enum Shape {Sin, Saw, Tri} wshape_;
 };
 
 class WoodTexture final : public Texture
@@ -99,7 +100,7 @@ class WoodTexture final : public Texture
 		float turb_, size_;
 		bool hard_, rings_;
 		NoiseGenerator *n_gen_ = nullptr;
-		enum {Sin, Saw, Tri} wshape_;
+		enum Shape {Sin, Saw, Tri} wshape_;
 };
 
 class VoronoiTexture final : public Texture
@@ -108,8 +109,9 @@ class VoronoiTexture final : public Texture
 		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
+		enum class ColorMode : int { IntensityWithoutColor, Position, PositionOutline, PositionOutlineIntensity};
 		VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
-					   int ct,
+					   const ColorMode &color_mode,
 					   float w_1, float w_2, float w_3, float w_4,
 					   float mex, float sz,
 					   float isc, const std::string &dname);
@@ -119,9 +121,9 @@ class VoronoiTexture final : public Texture
 		Rgb color_1_, color_2_;
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
 		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
-		float size_;
-		int coltype_;	// color return type
-		float iscale_;	// intensity scale
+		float size_ = 1.f;
+		ColorMode color_mode_ = ColorMode::IntensityWithoutColor;
+		float intensity_scale_ = 1.f;
 		VoronoiNoiseGenerator v_gen_;
 };
 
@@ -186,7 +188,6 @@ class BlendTexture final : public Texture
 	private:
 		enum ProgressionType : int { Linear, Quadratic, Easing, Diagonal, Spherical, QuadraticSphere, Radial };
 		BlendTexture(const std::string &stype, bool use_flip_axis);
-		virtual ~BlendTexture() override;
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 

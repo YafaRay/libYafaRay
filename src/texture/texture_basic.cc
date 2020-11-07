@@ -100,25 +100,24 @@ CloudsTexture::CloudsTexture(int dep, float sz, bool hd,
 							 const std::string &ntype, const std::string &btype)
 	: depth_(dep), size_(sz), hard_(hd), color_1_(c_1), color_2_(c_2)
 {
-	bias_ = 0;	// default, no bias
-	if(btype == "positive") bias_ = 1;
-	else if(btype == "negative") bias_ = 2;
+	bias_ = BiasType::None;
+	if(btype == "positive") bias_ = BiasType::Positive;
+	else if(btype == "negative") bias_ = BiasType::Negative;
 	n_gen_ = newNoise__(ntype);
 }
 
 CloudsTexture::~CloudsTexture()
 {
-	if(n_gen_) delete n_gen_;
-	n_gen_ = nullptr;
+	delete n_gen_;
 }
 
 float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	float v = turbulence__(n_gen_, p, depth_, size_, hard_);
-	if(bias_)
+	if(bias_ != BiasType::None)
 	{
 		v *= v;
-		if(bias_ == 1) return -v;	// !!!
+		if(bias_ == BiasType::Positive) return -v; //FIXME why?
 	}
 	return applyIntensityContrastAdjustments(v);
 }
@@ -179,27 +178,26 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 	sharpness_ = 1.f;
 	if(shp > 1) sharpness_ = 1.f / shp;
 	n_gen_ = newNoise__(ntype);
-	wshape_ = Sin;
-	if(shape == "saw") wshape_ = Saw;
-	else if(shape == "tri") wshape_ = Tri;
+	if(shape == "saw") wshape_ = Shape::Saw;
+	else if(shape == "tri") wshape_ = Shape::Tri;
+	else wshape_ = Shape::Sin;
 }
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.f
-	          + ((turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_));
+	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
-		case Saw:
+		case Shape::Saw:
 			w *= 0.5f * M_1_PI;
 			w -= floor(w);
 			break;
-		case Tri:
+		case Shape::Tri:
 			w *= 0.5f * M_1_PI;
 			w = std::abs(2.f * (w - floor(w)) -1.f);
 			break;
 		default:
-		case Sin:
+		case Shape::Sin:
 			w = 0.5f + 0.5f * math::sin(w);
 	}
 	return applyIntensityContrastAdjustments(math::pow(w, sharpness_));
@@ -261,9 +259,9 @@ WoodTexture::WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, floa
 {
 	rings_ = (wtype == "rings");
 	n_gen_ = newNoise__(ntype);
-	wshape_ = Sin;
-	if(shape == "saw") wshape_ = Saw;
-	else if(shape == "tri") wshape_ = Tri;
+	if(shape == "saw") wshape_ = Shape::Saw;
+	else if(shape == "tri") wshape_ = Shape::Tri;
+	else wshape_ = Shape::Sin;
 }
 
 float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -276,16 +274,16 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
-		case Saw:
+		case Shape::Saw:
 			w *= 0.5f * M_1_PI;
 			w -= floor(w);
 			break;
-		case Tri:
+		case Shape::Tri:
 			w *= 0.5f * M_1_PI;
 			w = std::abs(2.f * (w - floor(w)) - 1.f);
 			break;
 		default:
-		case Sin:
+		case Shape::Sin:
 			w = 0.5f + 0.5f * math::sin(w);
 	}
 	return applyIntensityContrastAdjustments(w);
@@ -348,7 +346,6 @@ Rgba RgbCubeTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 {
 	Rgba col = Rgba(p.x_, p.y_, p.z_);
 	col.clampRgb01();
-
 	if(adjustments_set_) return applyAdjustments(col);
 	else return col;
 }
@@ -389,11 +386,11 @@ Texture *RgbCubeTexture::factory(ParamMap &params, const Scene &scene)
 //-----------------------------------------------------------------------------------------
 
 VoronoiTexture::VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
-							   int ct,
+							   const ColorMode &color_mode,
 							   float w_1, float w_2, float w_3, float w_4,
 							   float mex, float sz,
 							   float isc, const std::string &dname)
-	: w_1_(w_1), w_2_(w_2), w_3_(w_3), w_4_(w_4), size_(sz), coltype_(ct)
+	: w_1_(w_1), w_2_(w_2), w_3_(w_3), w_4_(w_4), size_(sz), color_mode_(color_mode)
 {
 	VoronoiNoiseGenerator::DMetricType dm = VoronoiNoiseGenerator::DistReal;
 	if(dname == "squared")
@@ -414,8 +411,8 @@ VoronoiTexture::VoronoiTexture(const Rgb &c_1, const Rgb &c_2,
 	aw_2_ = std::abs(w_2);
 	aw_3_ = std::abs(w_3);
 	aw_4_ = std::abs(w_4);
-	iscale_ = aw_1_ + aw_2_ + aw_3_ + aw_4_;
-	if(iscale_ != 0) iscale_ = isc / iscale_;
+	intensity_scale_ = aw_1_ + aw_2_ + aw_3_ + aw_4_;
+	if(intensity_scale_ != 0.f) intensity_scale_ = isc / intensity_scale_;
 }
 
 float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -423,8 +420,7 @@ float VoronoiTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_param
 	float da[4];
 	Point3 pa[4];
 	v_gen_.getFeatures(p * size_, da, pa);
-	return applyIntensityContrastAdjustments(iscale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
-																 + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da)));
+	return applyIntensityContrastAdjustments(intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da)));
 }
 
 Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -432,24 +428,24 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	float da[4];
 	Point3 pa[4];
 	v_gen_.getFeatures(p * size_, da, pa);
-	float inte = iscale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da)
-									 + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da));
+	const float inte = intensity_scale_ * std::abs(w_1_ * v_gen_.getDistance(0, da) + w_2_ * v_gen_.getDistance(1, da) + w_3_ * v_gen_.getDistance(2, da) + w_4_ * v_gen_.getDistance(3, da));
 	Rgba col(0.0);
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));
-	else if(coltype_)
+	else if(color_mode_ != ColorMode::IntensityWithoutColor)
 	{
 		col += aw_1_ * cellNoiseColor__(v_gen_.getPoint(0, pa));
 		col += aw_2_ * cellNoiseColor__(v_gen_.getPoint(1, pa));
 		col += aw_3_ * cellNoiseColor__(v_gen_.getPoint(2, pa));
 		col += aw_4_ * cellNoiseColor__(v_gen_.getPoint(3, pa));
-		if(coltype_ >= 2)
+		if(color_mode_ == ColorMode::PositionOutline || color_mode_ == ColorMode::PositionOutlineIntensity)
 		{
 			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.f;
 			if(t_1 > 1) t_1 = 1;
-			if(coltype_ == 3) t_1 *= inte; else t_1 *= iscale_;
+			if(color_mode_ == ColorMode::PositionOutlineIntensity) t_1 *= inte;
+			else t_1 *= intensity_scale_;
 			col *= t_1;
 		}
-		else col *= iscale_;
+		else col *= intensity_scale_;
 		return applyAdjustments(col);
 	}
 	else return applyColorAdjustments(Rgba(inte, inte, inte, inte));
@@ -463,7 +459,6 @@ Texture *VoronoiTexture::factory(ParamMap &params, const Scene &scene)
 	float mex = 2.5;	// minkovsky exponent
 	float isc = 1;	// intensity scale
 	float sz = 1;	// size
-	int ct = 0;	// default "int" color type (intensity)
 	float intensity = 1.f, contrast = 1.f, saturation = 1.f, hue = 0.f, factor_red = 1.f, factor_green = 1.f, factor_blue = 1.f;
 	bool clamp = false;
 	bool use_color_ramp = false;
@@ -471,10 +466,11 @@ Texture *VoronoiTexture::factory(ParamMap &params, const Scene &scene)
 	params.getParam("color1", col_1);
 	params.getParam("color2", col_2);
 
-	params.getParam("color_type", cltype);
-	if(cltype == "col1") ct = 1;
-	else if(cltype == "col2") ct = 2;
-	else if(cltype == "col3") ct = 3;
+	params.getParam("color_mode", cltype);
+	ColorMode color_mode = ColorMode::IntensityWithoutColor;
+	if(cltype == "position") color_mode = ColorMode::Position;
+	else if(cltype == "position-outline") color_mode = ColorMode::PositionOutline;
+	else if(cltype == "position-outline-intensity") color_mode = ColorMode::PositionOutlineIntensity;
 
 	params.getParam("weight1", fw_1);
 	params.getParam("weight2", fw_2);
@@ -498,7 +494,7 @@ Texture *VoronoiTexture::factory(ParamMap &params, const Scene &scene)
 
 	params.getParam("use_color_ramp", use_color_ramp);
 
-	VoronoiTexture *tex = new VoronoiTexture(col_1, col_2, ct, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname);
+	VoronoiTexture *tex = new VoronoiTexture(col_1, col_2, color_mode, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 	if(use_color_ramp) textureReadColorRamp__(params, tex);
 
@@ -530,16 +526,8 @@ MusgraveTexture::MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
 
 MusgraveTexture::~MusgraveTexture()
 {
-	if(n_gen_)
-	{
-		delete n_gen_;
-		n_gen_ = nullptr;
-	}
-	if(m_gen_)
-	{
-		delete m_gen_;
-		m_gen_ = nullptr;
-	}
+	delete n_gen_;
+	delete m_gen_;
 }
 
 float MusgraveTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -609,24 +597,16 @@ DistortedNoiseTexture::DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
 
 DistortedNoiseTexture::~DistortedNoiseTexture()
 {
-	if(n_gen_1_)
-	{
-		delete n_gen_1_;
-		n_gen_1_ = nullptr;
-	}
-	if(n_gen_2_)
-	{
-		delete n_gen_2_;
-		n_gen_2_ = nullptr;
-	}
+	delete n_gen_1_;
+	delete n_gen_2_;
 }
 
 float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	// get a random vector and scale the randomization
 	const Point3 ofs(13.5, 13.5, 13.5);
-	Point3 tp(p * size_);
-	Point3 rv(getSignedNoise__(n_gen_1_, tp + ofs), getSignedNoise__(n_gen_1_, tp), getSignedNoise__(n_gen_1_, tp - ofs));
+	const Point3 tp(p * size_);
+	const Point3 rv(getSignedNoise__(n_gen_1_, tp + ofs), getSignedNoise__(n_gen_1_, tp), getSignedNoise__(n_gen_1_, tp - ofs));
 	return applyIntensityContrastAdjustments(getSignedNoise__(n_gen_2_, tp + rv * distort_));	// distorted-domain noise
 }
 
@@ -680,7 +660,6 @@ Texture *DistortedNoiseTexture::factory(ParamMap &params, const Scene &scene)
 BlendTexture::BlendTexture(const std::string &stype, bool use_flip_axis)
 {
 	use_flip_axis_ = use_flip_axis;
-
 	if(stype == "lin") progression_type_ = Linear;
 	else if(stype == "quad") progression_type_ = Quadratic;
 	else if(stype == "ease") progression_type_ = Easing;
@@ -691,14 +670,9 @@ BlendTexture::BlendTexture(const std::string &stype, bool use_flip_axis)
 	else progression_type_ = Linear;
 }
 
-BlendTexture::~BlendTexture()
-{
-}
-
 float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	float blend = 0.f;
-
 	float coord_1 = p.x_;
 	float coord_2 = p.y_;
 
@@ -746,7 +720,6 @@ float BlendTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params)
 	}
 	// Clipping to 0..1
 	blend = std::max(0.f, std::min(blend, 1.f));
-
 	return applyIntensityContrastAdjustments(blend);
 }
 
