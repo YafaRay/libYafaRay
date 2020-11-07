@@ -68,7 +68,7 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 	t_ = turb;
 	t_2_ = turb * turb;
 
-	double chi = (0.44444444 - (t_ / 120.0)) * (M_PI - (2.0 * theta_s_));
+	const double chi = (0.44444444 - (t_ / 120.0)) * (M_PI - (2.0 * theta_s_));
 
 	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
@@ -108,74 +108,61 @@ DarkSkyBackground::DarkSkyBackground(const Point3 dir, float turb, float pwr, fl
 Rgb DarkSkyBackground::getAttenuatedSunColor()
 {
 	Rgb light_color(1.0);
-
 	light_color = getSunColorFromSunRad();
-
-	if(night_sky_)
-	{
-		light_color *= Rgb(0.8, 0.8, 1.0);
-	}
-
+	if(night_sky_) light_color *= Rgb(0.8, 0.8, 1.0);
 	return light_color;
 }
 
 Rgb DarkSkyBackground::getSunColorFromSunRad()
 {
-	int L;
-	double u_l;
-	double kg_lm, kwa_lmw, mw;
-	double rayleigh, angstrom, ozone, gas, water, m, lm, m_1, m_b, am, m_4;
+	const double b = (0.04608365822050 * t_) - 0.04586025928522;
+	const double a = 1.3;
+	const double l = 0.35;
+	const double w = 2.0;
+
+	const IrregularCurve ko(ko_amplitudes__, ko_wavelengths__, 64);
+	const IrregularCurve kg(kg_amplitudes__, kg_wavelengths__, 4);
+	const IrregularCurve kwa(kwa_amplitudes__, kwa_wavelengths__, 13);
+	const RegularCurve sun_radiance_curve(sun_radiance__, 380, 750, 38);
+
+	const double m = 1.0 / (cos_theta_s_ + 0.15 * std::pow(93.885f - math::radToDeg(theta_s_), -1.253f));
+	const double mw = m * w;
+	const double lm = -m * l;
+
+	const double m_1 = -0.008735;
+	const double m_b = -b;
+	const double am = -a * m;
+	const double m_4 = -4.08 * m;
+
 	Rgb s_xyz(0.0);
 	Rgb spdf(0.0);
-
-	double b = (0.04608365822050 * t_) - 0.04586025928522;
-	double a = 1.3;
-	double l = 0.35;
-	double w = 2.0;
-
-	IrregularCurve ko(ko_amplitudes__, ko_wavelengths__, 64);
-	IrregularCurve kg(kg_amplitudes__, kg_wavelengths__, 4);
-	IrregularCurve kwa(kwa_amplitudes__, kwa_wavelengths__, 13);
-	RegularCurve sun_radiance_curve(sun_radiance__, 380, 750, 38);
-
-	m = 1.0 / (cos_theta_s_ + 0.15 * math::pow(93.885f - math::radToDeg(theta_s_), -1.253f));
-	mw = m * w;
-	lm = -m * l;
-
-	m_1 = -0.008735;
-	m_b = -b;
-	am = -a * m;
-	m_4 = -4.08 * m;
-
-	for(L = 380; L < 750; L += 5)
+	for(int wavelength = 380; wavelength < 750; wavelength += 5)
 	{
-		u_l = L * 0.001;
-		kg_lm = kg(L) * m;
-		kwa_lmw = kwa(L) * mw;
+		const double u_l = wavelength * 0.001;
+		const double kg_lm = kg(wavelength) * m;
+		const double kwa_lmw = kwa(wavelength) * mw;
 
-		rayleigh = math::exp(m_1 * math::pow(u_l, m_4));
-		angstrom = math::exp(m_b * math::pow(u_l, am));
-		ozone = math::exp(ko(L) * lm);
-		gas = math::exp((-1.41 * kg_lm) / math::pow(1 + 118.93 * kg_lm, 0.45));
-		water = math::exp((-0.2385 * kwa_lmw) / math::pow(1 + 20.07 * kwa_lmw, 0.45));
-		spdf = sun_radiance_curve(L) * rayleigh * angstrom * ozone * gas * water;
-		s_xyz += chromaMatch__(L) * spdf * 0.013513514;
+		const double rayleigh = std::exp(m_1 * std::pow(u_l, m_4));
+		const double angstrom = std::exp(m_b * std::pow(u_l, am));
+		const double ozone = std::exp(ko(wavelength) * lm);
+		const double gas = std::exp((-1.41 * kg_lm) / std::pow(1 + 118.93 * kg_lm, 0.45));
+		const double water = std::exp((-0.2385 * kwa_lmw) / std::pow(1 + 20.07 * kwa_lmw, 0.45));
+		spdf = sun_radiance_curve(wavelength) * rayleigh * angstrom * ozone * gas * water;
+		s_xyz += chromaMatch__(wavelength) * spdf * 0.013513514;
 	}
-
 	return color_conv_.fromXyz(s_xyz, true);
 }
 
 double DarkSkyBackground::prePerez(const double *perez)
 {
-	double p_num = ((1 + perez[0] * math::exp(perez[1])) * (1 + (perez[2] * math::exp(perez[3] * theta_s_)) + (perez[4] * cos_theta_2_)));
+	const double p_num = ((1 + perez[0] * std::exp(perez[1])) * (1 + (perez[2] * std::exp(perez[3] * theta_s_)) + (perez[4] * cos_theta_2_)));
 	if(p_num == 0.0) return 0.0;
-
 	return 1.0 / p_num;
 }
 
 double DarkSkyBackground::perezFunction(const double *lam, double cos_theta, double gamma, double cos_gamma, double lvz) const
 {
-	double num = ((1 + lam[0] * math::exp(lam[1] / cos_theta)) * (1 + lam[2] * math::exp(lam[3] * gamma) + lam[4] * cos_gamma));
+	const double num = ((1 + lam[0] * std::exp(lam[1] / cos_theta)) * (1 + lam[2] * std::exp(lam[3] * gamma) + lam[4] * cos_gamma));
 	return lvz * num * lam[5];
 }
 
@@ -185,39 +172,29 @@ inline Rgb DarkSkyBackground::getSkyCol(const Ray &ray) const
 	iw.z_ += alt_;
 	iw.normalize();
 
-	double cos_theta, gamma, cos_gamma, cos_gamma_2;
-	double x, y, Y;
-	Rgb sky_col(0.0);
-
-	cos_theta = iw.z_;
-
+	double cos_theta = iw.z_;
 	if(cos_theta <= 0.0) cos_theta = 1e-6;
+	double cos_gamma = iw * sun_dir_;
+	const double cos_gamma_2 = cos_gamma * cos_gamma;
+	const double gamma = std::acos(cos_gamma);
 
-	cos_gamma = iw * sun_dir_;
-	cos_gamma_2 = cos_gamma * cos_gamma;
-	gamma = math::acos(cos_gamma);
+	const double x = perezFunction(perez_x_, cos_theta, gamma, cos_gamma_2, zenith_x_);
+	const double y = perezFunction(perez_y_, cos_theta, gamma, cos_gamma_2, zenith_y_);
+	const double Y = perezFunction(perez_Y_, cos_theta, gamma, cos_gamma_2, zenith_Y_) * 6.66666667e-5;
 
-	x = perezFunction(perez_x_, cos_theta, gamma, cos_gamma_2, zenith_x_);
-	y = perezFunction(perez_y_, cos_theta, gamma, cos_gamma_2, zenith_y_);
-	Y = perezFunction(perez_Y_, cos_theta, gamma, cos_gamma_2, zenith_Y_) * 6.66666667e-5;
-
-	sky_col = color_conv_.fromxyY(x, y, Y);
-
+	Rgb sky_col = color_conv_.fromxyY(x, y, Y);
 	if(night_sky_) sky_col *= Rgb(0.05, 0.05, 0.08);
-
 	return sky_col * sky_brightness_;
 }
 
 Rgb DarkSkyBackground::operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed) const
 {
-	Rgb ret = getSkyCol(ray);
-	return ret;
+	return getSkyCol(ray);
 }
 
 Rgb DarkSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 {
-	Rgb ret = getSkyCol(ray) * power_;
-	return ret;
+	return getSkyCol(ray) * power_;
 }
 
 Background *DarkSkyBackground::factory(ParamMap &params, Scene &scene)

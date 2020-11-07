@@ -39,28 +39,21 @@ Rgb GradientBackground::operator()(const Ray &ray, RenderData &render_data, bool
 
 Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 {
-	Rgb color;
-
 	float blend = ray.dir_.z_;
-
-	if(blend >= 0.f)
-	{
-		color = blend * szenith_ + (1.f - blend) * shoriz_;
-	}
+	Rgb color;
+	if(blend >= 0.f) color = blend * szenith_ + (1.f - blend) * shoriz_;
 	else
 	{
 		blend = -blend;
 		color = blend * gzenith_ + (1.f - blend) * ghoriz_;
 	}
-
 	if(color.minimum() < 1e-6f) color = Rgb(1e-5f);
-
 	return color;
 }
 
 Background *GradientBackground::factory(ParamMap &params, Scene &scene)
 {
-	Rgb gzenith,  ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
+	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
 	bool bgl = false;
 	int bgl_sam = 16;

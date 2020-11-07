@@ -46,7 +46,7 @@ SunSkyBackground::SunSkyBackground(const Point3 dir, float turb, float a_var, fl
 	phi_s_ = atan2(sun_dir_.y_, sun_dir_.x_);
 	t_ = turb;
 	t_2_ = turb * turb;
-	double chi = (4.0 / 9.0 - t_ / 120.0) * (M_PI - 2.0 * theta_s_);
+	const double chi = (4.0 / 9.0 - t_ / 120.0) * (M_PI - 2.0 * theta_s_);
 	zenith_Y_ = (4.0453 * t_ - 4.9710) * std::tan(chi) - 0.2155 * t_ + 2.4192;
 	zenith_Y_ *= 1000;  // conversion from kcd/m^2 to cd/m^2
 
@@ -84,7 +84,7 @@ SunSkyBackground::~SunSkyBackground()
 
 double SunSkyBackground::perezFunction(const double *lam, double theta, double gamma, double lvz) const
 {
-	double e_1 = 0, e_2 = 0, e_3 = 0, e_4 = 0;
+	double e_1, e_2, e_3, e_4;
 	if(lam[1] <= 230.)
 		e_1 = math::exp(lam[1]);
 	else
@@ -101,16 +101,16 @@ double SunSkyBackground::perezFunction(const double *lam, double theta, double g
 		e_4 = math::exp(e_4);
 	else
 		e_4 = 7.7220185e99;
-	double den = (1 + lam[0] * e_1) * (1 + lam[2] * e_2 + lam[4] * math::cos(theta_s_) * math::cos(theta_s_));
-	double num = (1 + lam[0] * e_3) * (1 + lam[2] * e_4 + lam[4] * math::cos(gamma) * math::cos(gamma));
+	const double den = (1 + lam[0] * e_1) * (1 + lam[2] * e_2 + lam[4] * math::cos(theta_s_) * math::cos(theta_s_));
+	const double num = (1 + lam[0] * e_3) * (1 + lam[2] * e_4 + lam[4] * math::cos(gamma) * math::cos(gamma));
 	return (lvz * num / den);
 }
 
 
 double SunSkyBackground::angleBetween(double thetav, double phiv) const
 {
-	double cospsi = math::sin(thetav) * math::sin(theta_s_) * math::cos(phi_s_ - phiv) + math::cos(thetav) * math::cos(theta_s_);
-	if(cospsi > 1)  return 0;
+	const double cospsi = math::sin(thetav) * math::sin(theta_s_) * math::cos(phi_s_ - phiv) + math::cos(thetav) * math::cos(theta_s_);
+	if(cospsi > 1)  return 0.0;
 	if(cospsi < -1) return M_PI;
 	return math::acos(cospsi);
 }
@@ -119,12 +119,10 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 {
 	Vec3 iw = ray.dir_;
 	iw.normalize();
-
-	double theta, phi, hfade = 1, nfade = 1;
+	double hfade = 1, nfade = 1;
 
 	Rgb skycolor(0.0);
-
-	theta = math::acos(iw.z_);
+	double theta = math::acos(iw.z_);
 	if(theta > (0.5 * M_PI))
 	{
 		// this stretches horizon color below horizon, must be possible to do something better...
@@ -144,24 +142,24 @@ inline Rgb SunSkyBackground::getSkyCol(const Ray &ray) const
 			nfade = nfade * nfade * (3.0 - 2.0 * nfade);
 		}
 	}
-
+	double phi;
 	if((iw.y_ == 0.0) && (iw.x_ == 0.0))
 		phi = M_PI * 0.5;
 	else
 		phi = atan2(iw.y_, iw.x_);
 
-	double gamma = angleBetween(theta, phi);
+	const double gamma = angleBetween(theta, phi);
 	// Compute xyY values
-	double x = perezFunction(perez_x_, theta, gamma, zenith_x_);
-	double y = perezFunction(perez_y_, theta, gamma, zenith_y_);
+	const double x = perezFunction(perez_x_, theta, gamma, zenith_x_);
+	const double y = perezFunction(perez_y_, theta, gamma, zenith_y_);
 	// Luminance scale 1.0/15000.0
-	double Y = 6.666666667e-5 * nfade * hfade * perezFunction(perez_Y_, theta, gamma, zenith_Y_);
+	const double Y = 6.666666667e-5 * nfade * hfade * perezFunction(perez_Y_, theta, gamma, zenith_Y_);
 
 	if(y == 0.f) return skycolor;
 
 	// conversion to RGB, from gamedev.net thread on skycolor computation
-	double X = (x / y) * Y;
-	double z = ((1.0 - x - y) / y) * Y;
+	const double X = (x / y) * Y;
+	const double z = ((1.0 - x - y) / y) * Y;
 
 	skycolor.set((3.240479 * X - 1.537150 * Y - 0.498535 * z),
 	             (-0.969256 * X + 1.875992 * Y + 0.041556 * z),

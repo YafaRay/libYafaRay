@@ -33,7 +33,7 @@ TextureBackground::TextureBackground(const Texture *texture, Projection proj, fl
 	with_ibl_ = ibl;
 	shoot_caustic_ = with_caustic;
 
-	rotation_ = 2.0f * rot / 360.f;
+	rotation_ = 2.f * rot / 360.f;
 	sin_r_ = math::sin(M_PI * rotation_);
 	cos_r_ = math::cos(M_PI * rotation_);
 }
@@ -46,7 +46,6 @@ Rgb TextureBackground::operator()(const Ray &ray, RenderData &render_data, bool 
 Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 {
 	float u = 0.f, v = 0.f;
-
 	if(project_ == Angular)
 	{
 		Point3 dir(ray.dir_);
@@ -71,12 +70,10 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	}
 	else ret = tex_->getColor(Point3(u, v, 0.f));
 
-	float min_component = 1.0e-5f;
-
+	const float min_component = 1.0e-5f;
 	if(ret.r_ < min_component) ret.r_ = min_component;
 	if(ret.g_ < min_component) ret.g_ = min_component;
 	if(ret.b_ < min_component) ret.b_ = min_component;
-
 	return power_ * ret;
 }
 
