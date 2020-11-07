@@ -402,7 +402,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 				map["type"] = std::string("beer");
 				map["absorption_col"] = absorp;
 				map["absorption_dist"] = Parameter(dist);
-				mat->vol_i_ = scene.createVolumeH(name, map);
+				mat->vol_i_ = scene.createVolumeHandler(name, map);
 				mat->bsdf_flags_ |= BsdfFlags::Volumetric;
 			}
 		}

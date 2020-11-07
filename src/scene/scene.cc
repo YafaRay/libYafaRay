@@ -500,7 +500,7 @@ Integrator *Scene::createIntegrator(const std::string &name, ParamMap &params)
 	return createMapItem<Integrator>(name, "Integrator", params, integrators_, this);
 }
 
-VolumeHandler *Scene::createVolumeH(const std::string &name, ParamMap &params)
+VolumeHandler *Scene::createVolumeHandler(const std::string &name, ParamMap &params)
 {
 	return createMapItem<VolumeHandler>(name, "VolumeHandler", params, volume_handlers_, this);
 }

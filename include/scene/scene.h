@@ -157,7 +157,7 @@ class LIBYAFARAY_EXPORT Scene
 		Background *createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		ShaderNode *createShaderNode(const std::string &name, ParamMap &params);
-		VolumeHandler *createVolumeH(const std::string &name, ParamMap &params);
+		VolumeHandler *createVolumeHandler(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
 		ColorOutput *createOutput(const std::string &name, ParamMap &params); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
