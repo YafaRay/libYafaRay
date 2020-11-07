@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "scene/scene.h"
 #include "color/color.h"
+#include "common/collection.h"
 #include <list>
 #include <map>
 
@@ -50,13 +51,10 @@ class NodeStack final
 		NodeResult *dat_ = nullptr;
 };
 
-class NodeFinder final
+class NodeFinder final : public Collection<std::string, ShaderNode *>
 {
 	public:
-		NodeFinder(const std::map<std::string, ShaderNode *> &table) : node_table_(table) { }
-		const ShaderNode *operator()(const std::string &name) const;
-	protected:
-		const std::map<std::string, ShaderNode *> &node_table_;
+		NodeFinder(const std::map<std::string, ShaderNode *> &table) { items_ = table; }
 };
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.
