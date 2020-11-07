@@ -27,11 +27,6 @@
 
 BEGIN_YAFARAY
 
-TextureMapperNode::TextureMapperNode(const Texture *texture): tex_(texture), bump_str_(0.02), do_scalar_(true)
-{
-	map_x_ = 1; map_y_ = 2, map_z_ = 3;
-}
-
 void TextureMapperNode::setup()
 {
 	if(tex_->discrete())
@@ -45,7 +40,7 @@ void TextureMapperNode::setup()
 	}
 	else
 	{
-		float step = 0.0002f;
+		const float step = 0.0002f;
 		d_u_ = d_v_ = d_w_ = step;
 	}
 
@@ -64,13 +59,13 @@ inline Point3 tubemap__(const Point3 &p)
 {
 	Point3 res;
 	res.y_ = p.z_;
-	float d = p.x_ * p.x_ + p.y_ * p.y_;
-	if(d > 0)
+	const float d = p.x_ * p.x_ + p.y_ * p.y_;
+	if(d > 0.f)
 	{
-		res.z_ = 1.0 / math::sqrt(d);
+		res.z_ = 1.f / math::sqrt(d);
 		res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
 	}
-	else res.x_ = res.z_ = 0;
+	else res.x_ = res.z_ = 0.f;
 	return res;
 }
 
@@ -78,12 +73,12 @@ inline Point3 tubemap__(const Point3 &p)
 inline Point3 spheremap__(const Point3 &p)
 {
 	Point3 res(0.f);
-	float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
-	if(d > 0)
+	const float d = p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_;
+	if(d > 0.f)
 	{
 		res.z_ = math::sqrt(d);
-		if((p.x_ != 0) && (p.y_ != 0)) res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
-		res.y_ = 1.0f - 2.0f * (math::acos(p.z_ / res.z_) * M_1_PI);
+		if((p.x_ != 0.f) && (p.y_ != 0.f)) res.x_ = -atan2(p.x_, p.y_) * M_1_PI;
+		res.y_ = 1.f - 2.f * (math::acos(p.z_ / res.z_) * M_1_PI);
 	}
 	return res;
 }
@@ -94,23 +89,11 @@ inline Point3 cubemap__(const Point3 &p, const Vec3 &n)
 	const int ma[3][3] = { {1, 2, 0}, {0, 2, 1}, {0, 1, 2} };
 	// int axis = std::abs(n.x) > std::abs(n.y) ? (std::abs(n.x) > std::abs(n.z) ? 0 : 2) : (std::abs(n.y) > std::abs(n.z) ? 1 : 2);
 	// no functionality changes, just more readable code
-
 	int axis;
-
-	if(std::abs(n.z_) >= std::abs(n.x_) && std::abs(n.z_) >= std::abs(n.y_))
-	{
-		axis = 2;
-	}
-	else if(std::abs(n.y_) >= std::abs(n.x_) && std::abs(n.y_) >= std::abs(n.z_))
-	{
-		axis = 1;
-	}
-	else
-	{
-		axis = 0;
-	}
-
-	return Point3(p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]]);
+	if(std::abs(n.z_) >= std::abs(n.x_) && std::abs(n.z_) >= std::abs(n.y_)) axis = 2;
+	else if(std::abs(n.y_) >= std::abs(n.x_) && std::abs(n.y_) >= std::abs(n.z_)) axis = 1;
+	else axis = 0;
+	return { p[ma[axis][0]], p[ma[axis][1]], p[ma[axis][2]] };
 }
 
 // Map the texture to a plane but it should not be used by now as it does nothing, it's just for completeness sake
@@ -125,32 +108,31 @@ Point3 TextureMapperNode::doMapping(const Point3 &p, const Vec3 &n) const
 	// Texture coordinates standardized, if needed, to -1..1
 	switch(coords_)
 	{
-		case Uv: texpt = Point3(2.0f * texpt.x_ - 1.0f, 2.0f * texpt.y_ - 1.0f, texpt.z_); break;
+		case Uv: texpt = Point3(2.f * texpt.x_ - 1.f, 2.f * texpt.y_ - 1.f, texpt.z_); break;
 		default: break;
 	}
 	// Texture axis mapping
-	float texmap[4] = {0, texpt.x_, texpt.y_, texpt.z_};
+	const float texmap[4] = { 0.f, texpt.x_, texpt.y_, texpt.z_ };
 	texpt.x_ = texmap[map_x_];
 	texpt.y_ = texmap[map_y_];
 	texpt.z_ = texmap[map_z_];
 	// Texture coordinates mapping
 	switch(projection_)
 	{
-		case Tube:	texpt = tubemap__(texpt); break;
+		case Tube: texpt = tubemap__(texpt); break;
 		case Sphere: texpt = spheremap__(texpt); break;
-		case Cube:	texpt = cubemap__(texpt, n); break;
-		case Plain:	// texpt = flatmap(texpt); break;
+		case Cube: texpt = cubemap__(texpt, n); break;
+		case Plain: // texpt = flatmap(texpt); break;
 		default: break;
 	}
 	// Texture scale and offset
 	texpt = mult__(texpt, scale_) + offset_;
-
 	return texpt;
 }
 
 Point3 evalUv__(const SurfacePoint &sp)
 {
-	return Point3(sp.u_, sp.v_, 0.f);
+	return { sp.u_, sp.v_, 0.f };
 }
 
 void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &sp, const RenderData &render_data) const
@@ -158,52 +140,45 @@ void TextureMapperNode::getCoords(Point3 &texpt, Vec3 &ng, const SurfacePoint &s
 	switch(coords_)
 	{
 		case Uv: texpt = evalUv__(sp); ng = sp.ng_; break;
-		case Orco:	texpt = sp.orco_p_; ng = sp.orco_ng_; break;
-		case Tran:	texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
-		case Win:	texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;
-		case Nor:
-		{
+		case Orco: texpt = sp.orco_p_; ng = sp.orco_ng_; break;
+		case Transformed: texpt = mtx_ * sp.p_; ng = mtx_ * sp.ng_; break;  // apply 4x4 matrix of object for mapping also to true surface normals
+		case Window: texpt = render_data.cam_->screenproject(sp.p_); ng = sp.ng_; break;
+		case Normal:
 			Vec3 camx, camy, camz;
 			render_data.cam_->getAxis(camx, camy, camz);
-			texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0); ng = sp.ng_;
+			texpt = Point3(sp.n_ * camx, -sp.n_ * camy, 0);
+			ng = sp.ng_;
 			break;
-		}
-		case Stick:	// Not implemented yet use GLOB
-		case Stress:// Not implemented yet use GLOB
-		case Tan:	// Not implemented yet use GLOB
-		case Refl:	// Not implemented yet use GLOB
-		case Glob:	// GLOB mapped as default
-		default:		texpt = sp.p_; ng = sp.ng_;
+		case Stick: // Not implemented yet use GLOB
+		case Stress: // Not implemented yet use GLOB
+		case Tangent: // Not implemented yet use GLOB
+		case Reflect: // Not implemented yet use GLOB
+		case Global: // GLOB mapped as default
+		default:
+			texpt = sp.p_; ng = sp.ng_;
 			break;
 	}
 }
-
 
 void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
-	MipMapParams *mip_map_params = nullptr;
+	const MipMapParams *mip_map_params = nullptr;
 
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_ && sp.ray_->has_differentials_)
 	{
-		SpDifferentials sp_diff(sp, *(sp.ray_));
-
+		const SpDifferentials sp_diff(sp, *(sp.ray_));
 		getCoords(texpt, ng, sp, render_data);
-
-		Point3 texptorig = texpt;
-
+		const Point3 texptorig = texpt;
 		texpt = doMapping(texptorig, ng);
-
 		if(coords_ == Uv && sp.has_uv_)
 		{
 			float du_dx = 0.f, dv_dx = 0.f;
 			float du_dy = 0.f, dv_dy = 0.f;
 			sp_diff.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
-
-			Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
-			Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
-
+			const Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
+			const Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
 			mip_map_params = new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_);
 		}
 	}
@@ -255,12 +230,12 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		}
 		else
 		{
-			Point3 i_0 = (texpt - p_du_);
-			Point3 i_1 = (texpt + p_du_);
-			Point3 j_0 = (texpt - p_dv_);
-			Point3 j_1 = (texpt + p_dv_);
-			float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
-			float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
+			const Point3 i_0 = (texpt - p_du_);
+			const Point3 i_1 = (texpt + p_du_);
+			const Point3 j_0 = (texpt - p_dv_);
+			const Point3 j_1 = (texpt + p_dv_);
+			const float dfdu = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
+			const float dfdv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
 
 			// now we got the derivative in UV-space, but need it in shading space:
 			Vec3 vec_u = sp.ds_du_;
@@ -275,7 +250,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 
 		if(std::abs(norm.z_) > 1e-30f)
 		{
-			float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
+			const float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
 			du = norm.x_ * nf;
 			dv = norm.y_ * nf;
 		}
@@ -306,7 +281,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 
 			if(std::abs(norm.z_) > 1e-30f)
 			{
-				float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
+				const float nf = 1.0 / norm.z_ * bump_str_; // normalizes z to 1, why?
 				du = norm.x_ * nf;
 				dv = norm.y_ * nf;
 			}
@@ -316,10 +291,10 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 		{
 			// no uv coords -> procedurals usually, this mapping only depends on NU/NV which is fairly arbitrary
 			// weird things may happen when objects are rotated, i.e. incorrect bump change
-			Point3 i_0 = doMapping(texpt - d_u_ * sp.nu_, ng);
-			Point3 i_1 = doMapping(texpt + d_u_ * sp.nu_, ng);
-			Point3 j_0 = doMapping(texpt - d_v_ * sp.nv_, ng);
-			Point3 j_1 = doMapping(texpt + d_v_ * sp.nv_, ng);
+			const Point3 i_0 = doMapping(texpt - d_u_ * sp.nu_, ng);
+			const Point3 i_1 = doMapping(texpt + d_u_ * sp.nu_, ng);
+			const Point3 j_0 = doMapping(texpt - d_v_ * sp.nv_, ng);
+			const Point3 j_1 = doMapping(texpt + d_v_ * sp.nv_, ng);
 
 			du = (tex_->getFloat(i_0) - tex_->getFloat(i_1)) / d_u_;
 			dv = (tex_->getFloat(j_0) - tex_->getFloat(j_1)) / d_v_;
@@ -341,7 +316,7 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, const Scene &scen
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
-	Coords tc = Glob;
+	Coords tc = Global;
 	Projection projection = Plain;
 	float bump_str = 1.f;
 	bool scalar = true;
@@ -363,15 +338,15 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, const Scene &scen
 	if(params.getParam("texco", option))
 	{
 		if(option == "uv") tc = Uv;
-		else if(option == "global") tc = Glob;
+		else if(option == "global") tc = Global;
 		else if(option == "orco") tc = Orco;
-		else if(option == "transformed") tc = Tran;
-		else if(option == "window") tc = Win;
-		else if(option == "normal") tc = Nor;
-		else if(option == "reflect") tc = Refl;
+		else if(option == "transformed") tc = Transformed;
+		else if(option == "window") tc = Window;
+		else if(option == "normal") tc = Normal;
+		else if(option == "reflect") tc = Reflect;
 		else if(option == "stick") tc = Stick;
 		else if(option == "stress") tc = Stress;
-		else if(option == "tangent") tc = Tan;
+		else if(option == "tangent") tc = Tangent;
 	}
 	if(params.getParam("mapping", option) && tex->discrete())
 	{
@@ -435,8 +410,9 @@ MixNode::MixNode(float val): cfactor_(val), input_1_(0), input_2_(0), factor_(0)
 
 void MixNode::eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
 {
-	float f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
-	float f_1 = 1.f - f_2, fin_1, fin_2;
+	const float f_2 = (factor_) ? factor_->getScalar(stack) : cfactor_;
+	const float f_1 = 1.f - f_2;
+	float fin_1, fin_2;
 	Rgba cin_1, cin_2;
 	if(input_1_)
 	{
@@ -459,8 +435,8 @@ void MixNode::eval(NodeStack &stack, const RenderData &render_data, const Surfac
 		fin_2 = val_2_;
 	}
 
-	Rgba color = f_1 * cin_1 + f_2 * cin_2;
-	float   scalar = f_1 * fin_1 + f_2 * fin_2;
+	const Rgba color = f_1 * cin_1 + f_2 * cin_2;
+	const float scalar = f_1 * fin_1 + f_2 * fin_2;
 	stack[this->getId()] = NodeResult(color, scalar);
 }
 
@@ -604,8 +580,8 @@ class ScreenNode: public MixNode
 			getInputs(stack, cin_1, cin_2, fin_1, fin_2, f_2);
 			f_1 = 1.f - f_2;
 
-			Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
-			float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
+			const Rgba color = Rgba(1.f) - (Rgba(f_1) + f_2 * (1.f - cin_2)) * (1.f - cin_1);
+			const float scalar   = 1.0 - (f_1 + f_2 * (1.f - fin_2)) * (1.f - fin_1);
 			stack[this->getId()] = NodeResult(color, scalar);
 		}
 };
@@ -684,7 +660,7 @@ class OverlayNode: public MixNode
 			color.g_ = (cin_1.g_ < 0.5f) ? cin_1.g_ * (f_1 + 2.0f * f_2 * cin_2.g_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.g_)) * (1.0 - cin_1.g_);
 			color.b_ = (cin_1.b_ < 0.5f) ? cin_1.b_ * (f_1 + 2.0f * f_2 * cin_2.b_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.b_)) * (1.0 - cin_1.b_);
 			color.a_ = (cin_1.a_ < 0.5f) ? cin_1.a_ * (f_1 + 2.0f * f_2 * cin_2.a_) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - cin_2.a_)) * (1.0 - cin_1.a_);
-			float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
+			const float scalar = (fin_1 < 0.5f) ? fin_1 * (f_1 + 2.0f * f_2 * fin_2) : 1.0 - (f_1 + 2.0f * f_2 * (1.0 - fin_2)) * (1.0 - fin_1);
 			stack[this->getId()] = NodeResult(color, scalar);
 		}
 };

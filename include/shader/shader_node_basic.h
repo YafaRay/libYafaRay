@@ -32,10 +32,10 @@ class TextureMapperNode final : public ShaderNode
 		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
 
 	private:
-		enum Coords : int { Uv, Glob, Orco, Tran, Nor, Refl, Win, Stick, Stress, Tan };
+		enum Coords : int { Uv, Global, Orco, Transformed, Normal, Reflect, Window, Stick, Stress, Tangent };
 		enum Projection : int { Plain = 0, Cube, Tube, Sphere };
 
-		TextureMapperNode(const Texture *texture);
+		TextureMapperNode(const Texture *texture) : tex_(texture) { }
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override { return true; };
@@ -47,14 +47,14 @@ class TextureMapperNode final : public ShaderNode
 
 		Coords coords_;
 		Projection projection_;
-		int map_x_, map_y_, map_z_; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
+		int map_x_ = 1, map_y_ = 2, map_z_ = 3; //!< axis mapping; 0:set to zero, 1:x, 2:y, 3:z
 		Point3 p_du_, p_dv_, p_dw_;
 		float d_u_, d_v_, d_w_, d_uv_;
 		const Texture *tex_ = nullptr;
 		Vec3 scale_;
 		Vec3 offset_;
-		float bump_str_;
-		bool do_scalar_;
+		float bump_str_ = 0.02f;
+		bool do_scalar_ = true;
 		Matrix4 mtx_;
 };
 
