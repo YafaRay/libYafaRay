@@ -75,12 +75,12 @@ inline void TilesLayers::setColor(int x, int y, const ColorLayer &color_layer)
 
 inline Rgba TilesLayers::getColor(int x, int y, const Layer &layer)
 {
-	Tile *tile = find(layer.getType());
+	const Tile *tile = find(layer.getType());
 	if(tile) return tile->image_layer_->image_->getColor(x, y);
 	else return {0.f};
 }
 
-static Py_ssize_t pythonTileSize__(Tile *tile)
+static Py_ssize_t pythonTileSize__(const Tile *tile)
 {
 	const int area_w = (tile->area_x_1_ - tile->area_x_0_);
 	const int area_h = (tile->area_y_1_ - tile->area_y_0_);
@@ -89,11 +89,11 @@ static Py_ssize_t pythonTileSize__(Tile *tile)
 }
 
 
-static PyObject *pythonTileSubscriptInt__(Tile *tile, int py_index)
+static PyObject *pythonTileSubscriptInt__(const Tile *tile, int py_index)
 {
 	const int num_channels = tile->image_layer_->image_->getNumChannels();
 	// Check boundaries and fill w and h
-	if (py_index >= pythonTileSize__(tile) || py_index < 0)
+	if(py_index >= pythonTileSize__(tile) || py_index < 0)
 	{
 		PyObject* groupPix = PyTuple_New(num_channels);
 		for(int i = 0; i < num_channels; ++i)
@@ -115,7 +115,7 @@ static PyObject *pythonTileSubscriptInt__(Tile *tile, int py_index)
 	vy = (tile->area_y_0_ + area_h - 1) - vy;
 
 	// Get pixel
-	Rgba color = tile->image_layer_->image_->getColor(vx, vy);
+	const Rgba color = tile->image_layer_->image_->getColor(vx, vy);
 
 	PyObject* groupPix = PyTuple_New(num_channels);
 	if(num_channels >= 1)
@@ -447,29 +447,29 @@ private:
 class YafPyProgress : public ProgressBar
 {
 public:
-	YafPyProgress(PyObject *callback) : callb(callback) {}
+	YafPyProgress(PyObject *callback) : py_callback_(callback) {}
 
 	void report_progress(float percent)
 	{
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyObject* result = PyObject_CallFunction(callb, "sf", "progress", percent);
+		PyObject* result = PyObject_CallFunction(py_callback_, "sf", "progress", percent);
 		Py_XDECREF(result);
 		PyGILState_Release(gstate);
 	}
 
-	virtual void init(int totalSteps) override
+	virtual void init(int total_steps) override
 	{
-		nSteps = totalSteps;
-		steps_to_percent = 1.f / (float) nSteps;
-		doneSteps = 0;
+		num_steps_ = total_steps;
+		steps_to_percent_ = 1.f / static_cast<float>(num_steps_);
+		done_steps_ = 0;
 		report_progress(0.f);
 	}
 
 	virtual void update(int steps = 1) override
 	{
-		doneSteps += steps;
-		report_progress(doneSteps * steps_to_percent);
+		done_steps_ += steps;
+		report_progress(done_steps_ * steps_to_percent_);
 	}
 
 	virtual void done() override
@@ -479,37 +479,33 @@ public:
 
 	virtual void setTag(const char* text) override
 	{
-		tag = std::string(text);
+		tag_ = std::string(text);
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text);
+		PyObject* result = PyObject_CallFunction(py_callback_, "ss", "tag", text);
 		Py_XDECREF(result);
 		PyGILState_Release(gstate);
 	}
 
 	virtual void setTag(std::string text) override
 	{
-		tag = text;
+		tag_ = text;
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-		PyObject* result = PyObject_CallFunction(callb, "ss", "tag", text.c_str());
+		PyObject* result = PyObject_CallFunction(py_callback_, "ss", "tag", text.c_str());
 		Py_XDECREF(result);
 		PyGILState_Release(gstate);
 	}
 	
-	virtual std::string getTag() const override
-	{
-		return tag;
-	}
-	
-	virtual float getPercent() const override { return 100.f * std::min(1.f, (float) doneSteps * steps_to_percent); }
-	virtual float getTotalSteps() const override { return nSteps; }
+	virtual std::string getTag() const override { return tag_; }
+	virtual float getPercent() const override { return 100.f * std::min(1.f, static_cast<float>(done_steps_) * steps_to_percent_); }
+	virtual float getTotalSteps() const override { return num_steps_; }
 
 private:
-	PyObject *callb;
-	float steps_to_percent;
-	int doneSteps, nSteps;
-	std::string tag;
+	PyObject *py_callback_ = nullptr;
+	float steps_to_percent_;
+	int done_steps_, num_steps_;
+	std::string tag_;
 };
 
 END_YAFARAY
