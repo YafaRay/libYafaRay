@@ -36,4 +36,11 @@ ShaderNode *ShaderNode::factory(const ParamMap &params, const Scene &scene)
 	else return nullptr;
 }
 
+const ShaderNode *NodeFinder::operator()(const std::string &name) const
+{
+	auto i = node_table_.find(name);
+	if(i != node_table_.end()) return i->second;
+	else return nullptr;
+}
+
 END_YAFARAY

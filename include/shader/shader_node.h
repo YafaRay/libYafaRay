@@ -59,8 +59,10 @@ class NodeStack
 class NodeFinder
 {
 	public:
-		virtual const ShaderNode *operator()(const std::string &name) const = 0;
-		virtual ~NodeFinder() = default;
+		NodeFinder(const std::map<std::string, ShaderNode *> &table) : node_table_(table) { }
+		const ShaderNode *operator()(const std::string &name) const;
+	protected:
+		const std::map<std::string, ShaderNode *> &node_table_;
 };
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.

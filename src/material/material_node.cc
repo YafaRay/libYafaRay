@@ -23,23 +23,6 @@
 
 BEGIN_YAFARAY
 
-class ShaderNodeFinder: public NodeFinder
-{
-	public:
-		ShaderNodeFinder(const std::map<std::string, ShaderNode *> &table) : node_table_(table) { }
-		virtual const ShaderNode *operator()(const std::string &name) const;
-		virtual ~ShaderNodeFinder() = default;
-	protected:
-		const std::map<std::string, ShaderNode *> &node_table_;
-};
-
-const ShaderNode *ShaderNodeFinder::operator()(const std::string &name) const
-{
-	auto i = node_table_.find(name);
-	if(i != node_table_.end()) return i->second;
-	else return nullptr;
-}
-
 void recursiveSolver__(ShaderNode *node, std::vector<ShaderNode *> &sorted)
 {
 	if(node->getId() != 0) return;
@@ -183,7 +166,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 
 	if(!error) //configure node inputs
 	{
-		ShaderNodeFinder finder(shaders_table_);
+		NodeFinder finder(shaders_table_);
 		int n = 0;
 		for(const auto &param_map : params_list)
 		{
