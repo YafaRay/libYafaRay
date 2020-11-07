@@ -33,10 +33,10 @@ class NodeStack;
 class NodeMaterial: public Material
 {
 	public:
-		enum NodeType { ViewDep = 1, ViewIndep = 1 << 1 };
-		NodeMaterial(): req_node_mem_(0) {}
+		NodeMaterial() = default;
 
 	protected:
+		virtual ~NodeMaterial() override;
 		/*! load nodes from parameter map list */
 		bool loadNodes(const std::list<ParamMap> &params_list, Scene &scene);
 		/** parse node shaders to fill nodeList */
@@ -47,13 +47,10 @@ class NodeMaterial: public Material
 		void getNodeList(const ShaderNode *root, std::vector<ShaderNode *> &nodes);
 		void evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const;
 		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const;
-		/*! filter out nodes with specific properties */
-		void filterNodes(const std::vector<ShaderNode *> &input, std::vector<ShaderNode *> &output, int flags);
-		virtual ~NodeMaterial();
 
-		std::vector<ShaderNode *> all_nodes_, all_sorted_, all_viewdep_, all_viewindep_, bump_nodes_;
+		std::vector<ShaderNode *> color_nodes_, color_nodes_sorted_, bump_nodes_;
 		std::map<std::string, ShaderNode *> shaders_table_;
-		size_t req_node_mem_;
+		size_t req_node_mem_ = 0;
 };
 
 END_YAFARAY

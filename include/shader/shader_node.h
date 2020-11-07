@@ -31,32 +31,26 @@ BEGIN_YAFARAY
 class ParamMap;
 class ShaderNode;
 
-struct NodeResult
+struct NodeResult final
 {
 	NodeResult() = default;
 	NodeResult(Rgba color, float fval): col_(color), f_(fval) {}
-	Rgba col_;
-	float f_;
+	Rgba col_ {0.f};
+	float f_ = 0.f;
 };
 
-class NodeStack
+class NodeStack final
 {
 	public:
-		NodeStack() { dat_ = nullptr; }
-		NodeStack(void *data) { dat_ = (NodeResult *)data; }
-		const NodeResult &operator()(unsigned int id) const
-		{
-			return dat_[id];//*(dat+ID);
-		}
-		NodeResult &operator[](unsigned int id)
-		{
-			return dat_[id];//*(dat+ID);
-		}
+		NodeStack() = default;
+		NodeStack(void *data) : dat_(static_cast<NodeResult *>(data)) { }
+		const NodeResult &operator()(unsigned int id) const { return dat_[id]; } //*(dat+ID);
+		NodeResult &operator[](unsigned int id) { return dat_[id]; } //*(dat+ID);
 	private:
-		NodeResult *dat_;
+		NodeResult *dat_ = nullptr;
 };
 
-class NodeFinder
+class NodeFinder final
 {
 	public:
 		NodeFinder(const std::map<std::string, ShaderNode *> &table) : node_table_(table) { }
@@ -84,9 +78,7 @@ class ShaderNode
 		/*! evaluate the shader partial derivatives for given surface point (e.g. for bump mapping);
 			attention: uses color component of node stack to store result, so only use a stack for either eval or evalDeriv! */
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const
-		{stack[this->id_] = NodeResult(Rgba(0.f), 0.f);}
-		/*! indicate whether the shader value depends on wi and wo */
-		virtual bool isViewDependant() const { return false; }
+		{ stack[this->id_] = NodeResult(Rgba(0.f), 0.f); }
 		/*! configure the inputs. gets the same paramMap the factory functions get, but shader nodes
 			may be created in any order and linked afterwards, so inputs may not exist yet on instantiation */
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) = 0;

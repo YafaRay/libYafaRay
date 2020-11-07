@@ -148,14 +148,6 @@ void LayerNode::evalDerivative(NodeStack &stack, const RenderData &render_data, 
 	stack[this->getId()] = NodeResult(Rgba(rdu, rdv, 0.f, stencil_tin), 0.f);
 }
 
-bool LayerNode::isViewDependant() const
-{
-	bool view_dep = false;
-	if(input_) view_dep = view_dep || input_->isViewDependant();
-	if(upper_layer_) view_dep = view_dep || upper_layer_->isViewDependant();
-	return view_dep;
-}
-
 bool LayerNode::configInputs(const ParamMap &params, const NodeFinder &find)
 {
 	std::string name;

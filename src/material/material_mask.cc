@@ -39,7 +39,7 @@ MaskMaterial::MaskMaterial(const Material *m_1, const Material *m_2, float thres
 void MaskMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const
 {
 	NodeStack stack(render_data.arena_);
-	evalNodes(render_data, sp, all_nodes_, stack);
+	evalNodes(render_data, sp, color_nodes_, stack);
 	float val = mask_->getScalar(stack); //mask->getFloat(sp.P);
 	bool mv = val > threshold_;
 	*(bool *)render_data.arena_ = mv;
@@ -90,7 +90,7 @@ bool MaskMaterial::isTransparent() const
 Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
 	NodeStack stack(render_data.arena_);
-	evalNodes(render_data, sp, all_nodes_, stack);
+	evalNodes(render_data, sp, color_nodes_, stack);
 	float val = mask_->getScalar(stack);
 	bool mv = val > 0.5;
 	if(mv) return mat_2_->getTransparency(render_data, sp, wo);

@@ -50,9 +50,7 @@ void GlassMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, Bs
 {
 	NodeStack stack(render_data.arena_);
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
-
-	//eval viewindependent nodes
-	for(const auto &node : all_viewindep_) node->eval(stack, render_data, sp);
+	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
 }
 
@@ -423,17 +421,11 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 	if(!roots.empty())
 	{
 		mat->solveNodesOrder(roots);
-		std::vector<ShaderNode *> color_nodes;
-		if(mat->mirror_color_shader_) mat->getNodeList(mat->mirror_color_shader_, color_nodes);
-		if(mat->filter_color_shader_) mat->getNodeList(mat->filter_color_shader_, color_nodes);
-		if(mat->ior_shader_) mat->getNodeList(mat->ior_shader_, color_nodes);
-		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, color_nodes);
-		mat->filterNodes(color_nodes, mat->all_viewdep_, ViewDep);
-		mat->filterNodes(color_nodes, mat->all_viewindep_, ViewIndep);
-		if(mat->bump_shader_)
-		{
-			mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
-		}
+		if(mat->mirror_color_shader_) mat->getNodeList(mat->mirror_color_shader_, mat->color_nodes_);
+		if(mat->filter_color_shader_) mat->getNodeList(mat->filter_color_shader_, mat->color_nodes_);
+		if(mat->ior_shader_) mat->getNodeList(mat->ior_shader_, mat->color_nodes_);
+		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, mat->color_nodes_);
+		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 	}
 	mat->req_mem_ = mat->req_node_mem_;
 	return mat;

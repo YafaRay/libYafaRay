@@ -55,7 +55,7 @@ void GlossyMaterial::initBsdf(const RenderData &render_data, SurfacePoint &sp, B
 	NodeStack stack(dat->stack_);
 	if(bump_shader_) evalBump(stack, render_data, sp, bump_shader_);
 
-	for(const auto &node : all_viewindep_) node->eval(stack, render_data, sp);
+	for(const auto &node : color_nodes_) node->eval(stack, render_data, sp);
 	bsdf_types = bsdf_flags_;
 	dat->m_diffuse_ = diffuse_;
 	dat->m_glossy_ = glossy_reflection_shader_ ? glossy_reflection_shader_->getScalar(stack) : reflectivity_;
@@ -512,19 +512,14 @@ Material *GlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param
 	// solve nodes order
 	if(!roots.empty())
 	{
-		std::vector<ShaderNode *> color_nodes;
-
 		mat->solveNodesOrder(roots);
-
-		if(mat->diffuse_shader_) mat->getNodeList(mat->diffuse_shader_, color_nodes);
-		if(mat->glossy_shader_) mat->getNodeList(mat->glossy_shader_, color_nodes);
-		if(mat->glossy_reflection_shader_) mat->getNodeList(mat->glossy_reflection_shader_, color_nodes);
-		if(mat->sigma_oren_shader_)    mat->getNodeList(mat->sigma_oren_shader_, color_nodes);
-		if(mat->exponent_shader_) mat->getNodeList(mat->exponent_shader_, color_nodes);
-		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, color_nodes);
-		if(mat->diffuse_reflection_shader_)  mat->getNodeList(mat->diffuse_reflection_shader_, color_nodes);
-		mat->filterNodes(color_nodes, mat->all_viewdep_, ViewDep);
-		mat->filterNodes(color_nodes, mat->all_viewindep_, ViewIndep);
+		if(mat->diffuse_shader_) mat->getNodeList(mat->diffuse_shader_, mat->color_nodes_);
+		if(mat->glossy_shader_) mat->getNodeList(mat->glossy_shader_, mat->color_nodes_);
+		if(mat->glossy_reflection_shader_) mat->getNodeList(mat->glossy_reflection_shader_, mat->color_nodes_);
+		if(mat->sigma_oren_shader_)    mat->getNodeList(mat->sigma_oren_shader_, mat->color_nodes_);
+		if(mat->exponent_shader_) mat->getNodeList(mat->exponent_shader_, mat->color_nodes_);
+		if(mat->wireframe_shader_)    mat->getNodeList(mat->wireframe_shader_, mat->color_nodes_);
+		if(mat->diffuse_reflection_shader_)  mat->getNodeList(mat->diffuse_reflection_shader_, mat->color_nodes_);
 		if(mat->bump_shader_) mat->getNodeList(mat->bump_shader_, mat->bump_nodes_);
 	}
 

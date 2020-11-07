@@ -44,7 +44,6 @@ class LayerNode final : public ShaderNode
 		LayerNode(const Flags &flags, float col_fac, float var_fac, float def_val, Rgba def_col, BlendMode mmod);
 		virtual void eval(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
 		virtual void evalDerivative(NodeStack &stack, const RenderData &render_data, const SurfacePoint &sp) const override;
-		virtual bool isViewDependant() const override;
 		virtual bool configInputs(const ParamMap &params, const NodeFinder &find) override;
 		//virtual void getDerivative(const surfacePoint_t &sp, float &du, float &dv) const;
 		virtual bool getDependencies(std::vector<const ShaderNode *> &dep) const override;

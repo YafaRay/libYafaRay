@@ -53,7 +53,7 @@ inline float BlendMaterial::getBlendVal(const RenderData &render_data, const Sur
 	{
 		void *old_dat = render_data.arena_;
 		NodeStack stack(render_data.arena_);
-		evalNodes(render_data, sp, all_sorted_, stack);
+		evalNodes(render_data, sp, color_nodes_sorted_, stack);
 		const float blend_val = blend_shader_->getScalar(stack);
 		render_data.arena_ = old_dat;
 		return blend_val;

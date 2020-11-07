@@ -65,21 +65,17 @@ void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &
 void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 {
 	//set all IDs = 0 to indicate "not tested yet"
-	for(unsigned int i = 0; i < all_nodes_.size(); ++i) all_nodes_[i]->setId(0);
-	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver__(roots[i], all_sorted_);
-	if(all_nodes_.size() != all_sorted_.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << YENDL;
+	for(unsigned int i = 0; i < color_nodes_.size(); ++i) color_nodes_[i]->setId(0);
+	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver__(roots[i], color_nodes_sorted_);
+	if(color_nodes_.size() != color_nodes_sorted_.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << YENDL;
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
-	for(unsigned int i = 0; i < all_sorted_.size(); ++i)
+	for(unsigned int i = 0; i < color_nodes_sorted_.size(); ++i)
 	{
-		ShaderNode *n = all_sorted_[i];
+		ShaderNode *n = color_nodes_sorted_[i];
 		n->setId(i);
-		// sort nodes in view depandant and view independant
-		// not sure if this is a good idea...should not include bump-only nodes
-		//if(n->isViewDependant()) allViewdep.push_back(n);
-		//else allViewindep.push_back(n);
 	}
-	req_node_mem_ = all_sorted_.size() * sizeof(NodeResult);
+	req_node_mem_ = color_nodes_sorted_.size() * sizeof(NodeResult);
 }
 
 /*! get a list of all nodes that are in the tree given by root
@@ -93,16 +89,7 @@ void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *>
 	for(const auto &node : nodes) in_tree.insert(node);
 	recursiveFinder__(root, in_tree);
 	nodes.clear();
-	for(const auto &node : all_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
-}
-
-void NodeMaterial::filterNodes(const std::vector<ShaderNode *> &input, std::vector<ShaderNode *> &output, int flags)
-{
-	for(const auto &node : input)
-	{
-		const bool vp = node->isViewDependant();
-		if((vp && flags & ViewDep) || (!vp && flags & ViewIndep)) output.push_back(node);
-	}
+	for(const auto &node : color_nodes_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
 }
 
 void NodeMaterial::evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_s) const
@@ -153,7 +140,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 		if(shader)
 		{
 			shaders_table_[name] = shader;
-			all_nodes_.push_back(shader);
+			color_nodes_.push_back(shader);
 			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shader << ")" << YENDL;
 		}
 		else
@@ -170,7 +157,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 		int n = 0;
 		for(const auto &param_map : params_list)
 		{
-			if(!all_nodes_[n]->configInputs(param_map, finder))
+			if(!color_nodes_[n]->configInputs(param_map, finder))
 			{
 				Y_ERROR << "NodeMaterial: Shader node configuration failed! (n=" << n << ")" << YENDL;
 				error = true; break;
