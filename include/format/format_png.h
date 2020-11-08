@@ -41,7 +41,7 @@ class PngFormat final : public Format
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
 		Image *readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma);
 		bool fillReadStructs(uint8_t *sig, const PngStructs &png_structs);
-		bool fillWriteStructs(FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image);
+		bool fillWriteStructs(std::FILE *fp, unsigned int color_type, const PngStructs &png_structs, const Image *image);
 };
 
 END_YAFARAY

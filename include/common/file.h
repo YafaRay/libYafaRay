@@ -59,9 +59,9 @@ class File final
 		File(const Path &path);
 		~File();
 		bool save(const std::string &str, bool with_tmp);
-		static FILE *open(const std::string &path, const std::string &access_mode);
-		static FILE *open(const Path &path, const std::string &access_mode);
-		static int close(FILE *fp);
+		static std::FILE *open(const std::string &path, const std::string &access_mode);
+		static std::FILE *open(const Path &path, const std::string &access_mode);
+		static int close(std::FILE *fp);
 		static bool exists(const std::string &path, bool files_only);
 		static bool remove(const std::string &path, bool files_only);
 		static bool rename(const std::string &path_old, const std::string &path_new, bool overwrite, bool files_only);
@@ -78,7 +78,7 @@ class File final
 		bool read(char *buffer, size_t size) const;
 		bool append(const char *buffer, size_t size);
 		Path path_;
-		FILE *fp_ = nullptr;
+		std::FILE *fp_ = nullptr;
 };
 
 template <typename T> bool File::read(T &value) const

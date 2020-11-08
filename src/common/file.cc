@@ -22,7 +22,6 @@
 
 #include "common/file.h"
 #include "common/logger.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #if defined(_WIN32)
 #include "common/string.h"
@@ -95,7 +94,6 @@ std::string Path::getFullPath() const
 	if(!extension_.empty()) full_path += "." + extension_;
 	return full_path;
 }
-
 
 
 File::File(const std::string &path) : path_(path)
@@ -198,7 +196,7 @@ bool File::append(const std::string &str)
 bool File::append(const char *buffer, size_t size)
 {
 	if(!fp_) return false;
-	::fwrite(buffer, 1, size, fp_);
+	std::fwrite(buffer, 1, size, fp_);
 	return true;
 }
 
@@ -206,36 +204,36 @@ int File::close()
 {
 	Y_DEBUG PRTEXT(File::close) PR(fp_) PR(path_.getFullPath()) PREND;
 	if(!fp_) return false;
-	int result = ::fclose(fp_);
+	int result = std::fclose(fp_);
 	fp_ = nullptr;
 	return result;
 }
 
-FILE *File::open(const std::string &path, const std::string &access_mode)
+std::FILE *File::open(const std::string &path, const std::string &access_mode)
 {
-	FILE *fp = nullptr;
+	std::FILE *fp = nullptr;
 #if defined(_WIN32)
 	const std::wstring w_path = utf8ToWutf16Le__(path);
 	std::wstringstream w_access_mode;
 	w_access_mode << access_mode.c_str();
 	//fp = ::_wfopen(wPath.c_str(), wAccessMode.str().c_str());	//Windows needs the path in UTF16LE (unicode UTF-16, little endian) so we have to convert the UTF8 path to UTF16
-	::errno_t err = ::_wfopen_s(&fp, w_path.c_str(), w_access_mode.str().c_str());	//Windows needs the path in UTF16LE (unicode UTF-16, little endian) so we have to convert the UTF8 path to UTF16
+	/* ::errno_t err = */ ::_wfopen_s(&fp, w_path.c_str(), w_access_mode.str().c_str());	//Windows needs the path in UTF16LE (unicode UTF-16, little endian) so we have to convert the UTF8 path to UTF16
 #else //_WIN32
-	fp = ::fopen(path.c_str(), access_mode.c_str());
+	fp = std::fopen(path.c_str(), access_mode.c_str());
 #endif //_WIN32
 	Y_DEBUG PRTEXT(File::open) PR(path) PR(access_mode) PR(fp) PREND;
 	return fp;
 }
 
-FILE *File::open(const Path &path, const std::string &access_mode)
+std::FILE *File::open(const Path &path, const std::string &access_mode)
 {
 	return File::open(path.getFullPath(), access_mode);
 }
 
-int File::close(FILE *fp)
+int File::close(std::FILE *fp)
 {
 	Y_DEBUG PRTEXT(File::close execution) PR(fp) PREND;
-	return ::fclose(fp);
+	return std::fclose(fp);
 }
 
 bool File::exists(const std::string &path, bool files_only)
@@ -247,7 +245,7 @@ bool File::exists(const std::string &path, bool files_only)
 	/*const int result = */::_wstat(wPath.c_str(), &buf);
 	const int errsav = errno;
 	char timebuf[26];
-	const errno_t err = ::ctime_s(timebuf, 26, &buf.st_mtime);
+	/* const errno_t err = */ ::ctime_s(timebuf, 26, &buf.st_mtime);
 	//Y_DEBUG <<  "Time modified : " << timebuf << YENDL;
 #else //_WIN32
 	struct ::stat buf;

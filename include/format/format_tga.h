@@ -46,9 +46,9 @@ class TgaFormat final : public Format
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
 
 		/*! Image data reading template functions */
-		template <class ColorType> void readColorMap(FILE *fp, TgaHeader &header, ColorProcessor_t cp);
-		template <class ColorType> void readRleImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
-		template <class ColorType> void readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
+		template <class ColorType> void readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp);
+		template <class ColorType> void readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
+		template <class ColorType> void readDirectImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma);
 
 		/*! colorProcesors definitions with signature Rgba (void *)
 		to be passed as pointer-to-non-static-member-functions */

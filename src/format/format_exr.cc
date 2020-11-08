@@ -45,8 +45,7 @@ BEGIN_YAFARAY
 class CiStream: public Imf::IStream
 {
 	public:
-		CiStream(FILE *file, const char file_name[]):
-				Imf::IStream(file_name), file_(file) {}
+		CiStream(std::FILE *file, const char file_name[]) : Imf::IStream(file_name), file_(file) { }
 		virtual ~CiStream() override;
 		virtual bool read(char c[], int n) override;
 		virtual Int64 tellg() override;
@@ -54,32 +53,29 @@ class CiStream: public Imf::IStream
 		virtual void clear() override;
 		void close();
 	private:
-		FILE *file_ = nullptr;
+		std::FILE *file_ = nullptr;
 };
 
 bool CiStream::read(char c[], int n)
 {
 	if(file_)
 	{
-		if(n != (int) fread(c, 1, n, file_))
+		if(n != static_cast<int>(std::fread(c, 1, n, file_)))
 		{
 			// fread() failed, but the return value does not distinguish
 			// between I/O errors and end of file, so we call ferror() to
 			// determine what happened.
-			if(ferror(file_)) Iex::throwErrnoExc();
+			if(std::ferror(file_)) Iex::throwErrnoExc();
 			else throw Iex::InputExc("Unexpected end of file.");
 		}
-		return feof(file_);
+		return (std::feof(file_) > 0);
 	}
-	else return 0;
+	else return false;
 }
 
 Int64 CiStream::tellg()
 {
-	if(file_)
-	{
-		return ftell(file_);
-	}
+	if(file_) return std::ftell(file_);
 	else return 0;
 }
 
@@ -87,14 +83,14 @@ void CiStream::seekg(Int64 pos)
 {
 	if(file_)
 	{
-		clearerr(file_);
-		fseek(file_, pos, SEEK_SET);
+		std::clearerr(file_);
+		std::fseek(file_, pos, SEEK_SET);
 	}
 }
 
 void CiStream::clear()
 {
-	if(file_) clearerr(file_);
+	if(file_) std::clearerr(file_);
 }
 
 void CiStream::close()
@@ -115,27 +111,26 @@ CiStream::~CiStream()
 class CoStream: public Imf::OStream
 {
 	public:
-		CoStream(FILE *file, const char file_name[]):
-				Imf::OStream(file_name), file_(file) {}
+		CoStream(std::FILE *file, const char file_name[]) : Imf::OStream(file_name), file_(file) { }
 		virtual ~CoStream() override;
 		virtual void write(const char c[], int n) override;
 		virtual Int64 tellp() override;
 		virtual void seekp(Int64 pos) override;
 		void close();
 	private:
-		FILE *file_ = nullptr;
+		std::FILE *file_ = nullptr;
 };
 
 void CoStream::write(const char c[], int n)
 {
 	if(file_)
 	{
-		if(n != (int) fwrite(c, 1, n, file_))
+		if(n != static_cast<int>(std::fwrite(c, 1, n, file_)))
 		{
 			// fwrite() failed, but the return value does not distinguish
 			// between I/O errors and end of file, so we call ferror() to
 			// determine what happened.
-			if(ferror(file_)) Iex::throwErrnoExc();
+			if(std::ferror(file_)) Iex::throwErrnoExc();
 			else throw Iex::InputExc("Unexpected end of file.");
 		}
 	}
@@ -143,7 +138,7 @@ void CoStream::write(const char c[], int n)
 
 Int64 CoStream::tellp()
 {
-	if(file_) return ftell(file_);
+	if(file_) return std::ftell(file_);
 	else return 0;
 }
 
@@ -151,8 +146,8 @@ void CoStream::seekp(Int64 pos)
 {
 	if(file_)
 	{
-		clearerr(file_);
-		fseek(file_, pos, SEEK_SET);
+		std::clearerr(file_);
+		std::fseek(file_, pos, SEEK_SET);
 	}
 }
 
@@ -172,23 +167,19 @@ CoStream::~CoStream()
 
 bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 {
-	int h = image->getHeight();
-	int w = image->getWidth();
-
-	int chan_size = sizeof(half);
+	const int h = image->getHeight();
+	const int w = image->getWidth();
+	const int chan_size = sizeof(half);
 	const int num_colchan = 4;
-	int totchan_size = num_colchan * chan_size;
-
+	const int totchan_size = num_colchan * chan_size;
 	Header header(w, h);
-
 	header.compression() = ZIP_COMPRESSION;
-
 	header.channels().insert("R", Channel(HALF));
 	header.channels().insert("G", Channel(HALF));
 	header.channels().insert("B", Channel(HALF));
 	header.channels().insert("A", Channel(HALF));
 
-	FILE *fp = File::open(name.c_str(), "wb");
+	std::FILE *fp = File::open(name.c_str(), "wb");
 	CoStream ostr(fp, name.c_str());
 	OutputFile file(ostr, header);
 
@@ -234,8 +225,8 @@ bool ExrFormat::saveToFile(const std::string &name, const Image *image)
 
 bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayers *image_layers)
 {
-	int h_0 = (*image_layers)(Layer::Combined).image_->getHeight();
-	int w_0 = (*image_layers)(Layer::Combined).image_->getWidth();
+	const int h_0 = (*image_layers)(Layer::Combined).image_->getHeight();
+	const int w_0 = (*image_layers)(Layer::Combined).image_->getWidth();
 
 	bool all_image_buffers_same_size = true;
 	for(const auto &image_layer : *image_layers)
@@ -251,9 +242,9 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	}
 
 	std::string exr_layer_name;
-	int chan_size = sizeof(half);
+	const int chan_size = sizeof(half);
 	const int num_colchan = 4;
-	int totchan_size = num_colchan * chan_size;
+	const int totchan_size = num_colchan * chan_size;
 
 	Header header(w_0, h_0);
 	FrameBuffer fb;
@@ -291,7 +282,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		{
 			for(int j = 0; j < h_0; ++j)
 			{
-				Rgba col = image_layer.second.image_->getColor(i, j);
+				const Rgba col = image_layer.second.image_->getColor(i, j);
 				(*pixels.back())[j][i].r = col.r_;
 				(*pixels.back())[j][i].g = col.g_;
 				(*pixels.back())[j][i].b = col.b_;
@@ -317,34 +308,23 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	{
 		file.writePixels(h_0);
 		Y_VERBOSE << getFormatName() << ": Done." << YENDL;
-		for(size_t idx = 0; idx < pixels.size(); ++idx)
-		{
-			delete pixels.at(idx);
-			pixels.at(idx) = nullptr;
-		}
+		for(auto &pixel : pixels) delete pixel;
 		pixels.clear();
 	}
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
-		for(size_t idx = 0; idx < pixels.size(); ++idx)
-		{
-			delete pixels.at(idx);
-			pixels.at(idx) = nullptr;
-		}
+		for(auto &pixel : pixels) delete pixel;
 		pixels.clear();
 		result = false;
 	}
-
 	return result;
 }
 
 Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	FILE *fp = File::open(name.c_str(), "rb");
+	std::FILE *fp = File::open(name.c_str(), "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
-
-	Image *image = nullptr;
 
 	if(!fp)
 	{
@@ -354,23 +334,21 @@ Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	else
 	{
 		char bytes[4];
-		fread(&bytes, 1, 4, fp);
+		std::fread(&bytes, 1, 4, fp);
 		if(!isImfMagic(bytes)) return nullptr;
-		fseek(fp, 0, SEEK_SET);
+		std::fseek(fp, 0, SEEK_SET);
 	}
 
+	Image *image = nullptr;
 	try
 	{
 		CiStream istr(fp, name.c_str());
 		RgbaInputFile file(istr);
-		Box2i dw = file.dataWindow();
-
+		const Box2i dw = file.dataWindow();
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
-
 		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
 		image = new Image(width, height, type, optimization);
-
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(width, height);
 		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height, height, 1);

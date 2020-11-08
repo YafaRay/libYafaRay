@@ -32,9 +32,12 @@ BEGIN_YAFARAY
 
 bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 {
-	int h = image->getHeight();
-	int w = image->getWidth();
-	std::string image_id = "Image rendered with YafaRay";
+	std::FILE *fp = File::open(name, "wb");
+	if(fp == nullptr) return false;
+
+	const int h = image->getHeight();
+	const int w = image->getWidth();
+	const std::string image_id = "Image rendered with YafaRay";
 	TgaHeader header;
 	TgaFooter footer;
 
@@ -45,75 +48,61 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	header.bit_depth_ = ((image->hasAlpha()) ? 32 : 24);
 	header.desc_ = TL | ((image->hasAlpha()) ? ALPHA_8 : NO_ALPHA);
 
-	FILE *fp = File::open(name, "wb");
+	std::fwrite(&header, sizeof(TgaHeader), 1, fp);
+	std::fwrite(image_id.c_str(), static_cast<size_t>(header.id_length_), 1, fp);
 
-	if(fp == nullptr)
-		return false;
-	else
+	for(int y = 0; y < h; y++)
 	{
-		fwrite(&header, sizeof(TgaHeader), 1, fp);
-		fwrite(image_id.c_str(), (size_t)header.id_length_, 1, fp);
-
-		for(int y = 0; y < h; y++)
+		for(int x = 0; x < w; x++)
 		{
-			for(int x = 0; x < w; x++)
+			Rgba col = image->getColor(x, y);
+			col.clampRgba01();
+			if(!image->hasAlpha())
 			{
-				Rgba col = image->getColor(x, y);
-				col.clampRgba01();
-
-				if(!image->hasAlpha())
-				{
-					TgaPixelRgb rgb;
-					rgb = (Rgb) col;
-					fwrite(&rgb, sizeof(TgaPixelRgb), 1, fp);
-				}
-				else
-				{
-					TgaPixelRgba rgba;
-					rgba = col;
-					fwrite(&rgba, sizeof(TgaPixelRgba), 1, fp);
-				}
+				TgaPixelRgb rgb;
+				rgb = static_cast<Rgb>(col);
+				std::fwrite(&rgb, sizeof(TgaPixelRgb), 1, fp);
+			}
+			else
+			{
+				TgaPixelRgba rgba;
+				rgba = col;
+				std::fwrite(&rgba, sizeof(TgaPixelRgba), 1, fp);
 			}
 		}
-		fwrite(&footer, sizeof(TgaFooter), 1, fp);
-		File::close(fp);
 	}
-
+	std::fwrite(&footer, sizeof(TgaFooter), 1, fp);
+	File::close(fp);
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
-
 	return true;
 }
 
-template <class ColorType> void TgaFormat::readColorMap(FILE *fp, TgaHeader &header, ColorProcessor_t cp)
+template <class ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp)
 {
 	ColorType *color = new ColorType[header.cm_number_of_entries_];
-	fread(color, sizeof(ColorType), header.cm_number_of_entries_, fp);
-	for(int x = 0; x < (int)header.cm_number_of_entries_; x++)
+	std::fread(color, sizeof(ColorType), header.cm_number_of_entries_, fp);
+	for(int x = 0; x < static_cast<int>(header.cm_number_of_entries_); x++)
 	{
 		(*color_map_)(x, 0).setColor( (this->*cp)(&color[x]));
 	}
 	delete [] color;
 }
 
-template <class ColorType> void TgaFormat::readRleImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
+template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
 	size_t y = min_y_;
 	size_t x = min_x_;
-
-	while(!feof(fp) && y != max_y_)
+	while(!std::feof(fp) && y != max_y_)
 	{
 		uint8_t pack_desc = 0;
-		fread(&pack_desc, sizeof(uint8_t), 1, fp);
-
+		std::fread(&pack_desc, sizeof(uint8_t), 1, fp);
 		bool rle_pack = (pack_desc & RLE_PACK_MASK);
 		int rle_rep = static_cast<int>(pack_desc & RLE_REP_MASK) + 1;
-
 		ColorType color_type;
-		if(rle_pack) fread(&color_type, sizeof(ColorType), 1, fp);
-
+		if(rle_pack) std::fread(&color_type, sizeof(ColorType), 1, fp);
 		for(int i = 0; i < rle_rep; i++)
 		{
-			if(!rle_pack)  fread(&color_type, sizeof(ColorType), 1, fp);
+			if(!rle_pack) std::fread(&color_type, sizeof(ColorType), 1, fp);
 			Rgba color = (this->*cp)(&color_type);
 			color.linearRgbFromColorSpace(color_space, gamma);
 			image->setColor(x, y, color);
@@ -130,8 +119,7 @@ template <class ColorType> void TgaFormat::readRleImage(FILE *fp, ColorProcessor
 template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
 	ColorType *color_type = new ColorType[tot_pixels_];
-	fread(color_type, sizeof(ColorType), tot_pixels_, fp);
-
+	std::fread(color_type, sizeof(ColorType), tot_pixels_, fp);
 	size_t i = 0;
 	for(size_t y = min_y_; y != max_y_; y += step_y_)
 	{
@@ -154,19 +142,18 @@ Rgba TgaFormat::processGray8(void *data)
 Rgba TgaFormat::processGray16(void *data)
 {
 	uint16_t color = *(uint16_t *)data;
-	return Rgba(Rgb((color & GRAY_MASK_8_BIT) * INV_255),
-				((color & ALPHA_GRAY_MASK_8_BIT) >> 8) * INV_255);
+	return Rgba(Rgb((color & GRAY_MASK_8_BIT) * INV_255), ((color & ALPHA_GRAY_MASK_8_BIT) >> 8) * INV_255);
 }
 
 Rgba TgaFormat::processColor8(void *data)
 {
-	uint8_t color = *(uint8_t *)data;
+	const uint8_t color = *(uint8_t *)data;
 	return (*color_map_)(color, 0).getColor();
 }
 
 Rgba TgaFormat::processColor15(void *data)
 {
-	uint16_t color = *(uint16_t *)data;
+	const uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & RED_MASK) >> 11) * INV_31,
 				((color & GREEN_MASK) >> 6) * INV_31,
 				((color & BLUE_MASK) >> 1) * INV_31,
@@ -175,7 +162,7 @@ Rgba TgaFormat::processColor15(void *data)
 
 Rgba TgaFormat::processColor16(void *data)
 {
-	uint16_t color = *(uint16_t *)data;
+	const uint16_t color = *(uint16_t *)data;
 	return Rgba(((color & RED_MASK) >> 11) * INV_31,
 				((color & GREEN_MASK) >> 6) * INV_31,
 				((color & BLUE_MASK) >> 1) * INV_31,
@@ -184,7 +171,7 @@ Rgba TgaFormat::processColor16(void *data)
 
 Rgba TgaFormat::processColor24(void *data)
 {
-	TgaPixelRgb *color = (TgaPixelRgb *)data;
+	const TgaPixelRgb *color = (TgaPixelRgb *)data;
 	return Rgba(color->r_ * INV_255,
 				color->g_ * INV_255,
 				color->b_ * INV_255,
@@ -193,7 +180,7 @@ Rgba TgaFormat::processColor24(void *data)
 
 Rgba TgaFormat::processColor32(void *data)
 {
-	TgaPixelRgba *color = (TgaPixelRgba *)data;
+	const TgaPixelRgba *color = (TgaPixelRgba *)data;
 	return Rgba(color->r_ * INV_255,
 				color->g_ * INV_255,
 				color->b_ * INV_255,
@@ -207,7 +194,6 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 		case NoData:
 			Y_ERROR << getFormatName() << ": TGA file \"" << name << "\" has no image data!" << YENDL;
 			return false;
-
 		case UncColorMap:
 			if(!header.color_map_type_)
 			{
@@ -216,11 +202,9 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 			}
 			has_color_map = true;
 			break;
-
 		case UncGray:
 			is_gray = true;
 			break;
-
 		case RleColorMap:
 			if(!header.color_map_type_)
 			{
@@ -230,20 +214,16 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 			has_color_map = true;
 			is_rle = true;
 			break;
-
 		case RleGray:
 			is_gray = true;
 			is_rle = true;
 			break;
-
 		case RleTrueColor:
 			is_rle = true;
 			break;
-
 		case UncTrueColor:
 			break;
 	}
-
 	if(has_color_map)
 	{
 		if(header.cm_entry_bit_depth_ != 15 && header.cm_entry_bit_depth_ != 16 && header.cm_entry_bit_depth_ != 24 && header.cm_entry_bit_depth_ != 32)
@@ -252,7 +232,6 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 			return false;
 		}
 	}
-
 	if(is_gray)
 	{
 		if(header.bit_depth_ != 8 && header.bit_depth_ != 16)
@@ -292,107 +271,80 @@ bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &i
 			return false;
 		}
 	}
-
 	return true;
 }
 
 Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	FILE *fp = File::open(name, "rb");
-
+	std::FILE *fp = File::open(name, "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
-
 	if(!fp)
 	{
 		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
 		return nullptr;
 	}
-
 	TgaHeader header;
-
-	fread(&header, 1, sizeof(TgaHeader), fp);
-
+	std::fread(&header, 1, sizeof(TgaHeader), fp);
 	// Prereading checks
-
 	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & ALPHA_BIT_DEPTH_MASK);
-
-	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
-
 	bool is_rle = false;
 	bool has_color_map = false;
 	bool is_gray = false;
-	bool from_top = ((header.desc_ & TOP_MASK) >> 5);
-	bool from_left = ((header.desc_ & LEFT_MASK) >> 4);
-
 	if(!precheckFile(header, name, is_gray, is_rle, has_color_map, alpha_bit_depth))
 	{
 		File::close(fp);
 		return nullptr;
 	}
-
 	// Jump over any image Id
-	fseek(fp, header.id_length_, SEEK_CUR);
-
+	std::fseek(fp, header.id_length_, SEEK_CUR);
+	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
 	Image::Type type = Image::getTypeFromSettings(has_alpha, grayscale_);
 	if(!has_alpha && !grayscale_ && (header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)) type = Image::Type::ColorAlpha;
-
 	Image *image = new Image(header.width_, header.height_, type, optimization);
-
 	color_map_ = nullptr;
-
 	// Read the colormap if needed
 	if(has_color_map)
 	{
 		color_map_ = new Rgba2DImage_t(header.cm_number_of_entries_, 1);
-
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:
 				readColorMap<uint16_t>(fp, header, &TgaFormat::processColor15);
 				break;
-
 			case 16:
 				readColorMap<uint16_t>(fp, header, &TgaFormat::processColor16);
 				break;
-
 			case 24:
 				readColorMap<TgaPixelRgb>(fp, header, &TgaFormat::processColor24);
 				break;
-
 			case 32:
 				readColorMap<TgaPixelRgba>(fp, header, &TgaFormat::processColor32);
 				break;
 		}
 	}
-
 	tot_pixels_ = header.width_ * header.height_;
-
 	// Set the reading order to fit yafaray's image coordinates
-
 	min_x_ = 0;
 	max_x_ = header.width_;
 	step_x_ = 1;
-
 	min_y_ = 0;
 	max_y_ = header.height_;
 	step_y_ = 1;
-
+	const bool from_top = ((header.desc_ & TOP_MASK) >> 5);
 	if(!from_top)
 	{
 		min_y_ = header.height_ - 1;
 		max_y_ = -1;
 		step_y_ = -1;
 	}
-
+	const bool from_left = ((header.desc_ & LEFT_MASK) >> 4);
 	if(from_left)
 	{
 		min_x_ = header.width_ - 1;
 		max_x_ = -1;
 		step_x_ = -1;
 	}
-
 	// Read the image data
-
 	if(is_rle) // RLE compressed image data
 	{
 		switch(header.bit_depth_)
@@ -401,20 +353,16 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 				if(is_gray)readRleImage<uint8_t>(fp, &TgaFormat::processGray8, image, color_space, gamma);
 				else readRleImage<uint8_t>(fp, &TgaFormat::processColor8, image, color_space, gamma);
 				break;
-
 			case 15:
 				readRleImage<uint16_t>(fp, &TgaFormat::processColor15, image, color_space, gamma);
 				break;
-
 			case 16:
 				if(is_gray) readRleImage<uint16_t>(fp, &TgaFormat::processGray16, image, color_space, gamma);
 				else readRleImage<uint16_t>(fp, &TgaFormat::processColor16, image, color_space, gamma);
 				break;
-
 			case 24:
 				readRleImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image, color_space, gamma);
 				break;
-
 			case 32:
 				readRleImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image, color_space, gamma);
 				break;
@@ -428,33 +376,25 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 				if(is_gray) readDirectImage<uint8_t>(fp, &TgaFormat::processGray8, image, color_space, gamma);
 				else readDirectImage<uint8_t>(fp, &TgaFormat::processColor8, image, color_space, gamma);
 				break;
-
 			case 15:
 				readDirectImage<uint16_t>(fp, &TgaFormat::processColor15, image, color_space, gamma);
 				break;
-
 			case 16:
 				if(is_gray) readDirectImage<uint16_t>(fp, &TgaFormat::processGray16, image, color_space, gamma);
 				else readDirectImage<uint16_t>(fp, &TgaFormat::processColor16, image, color_space, gamma);
 				break;
-
 			case 24:
 				readDirectImage<TgaPixelRgb>(fp, &TgaFormat::processColor24, image, color_space, gamma);
 				break;
-
 			case 32:
 				readDirectImage<TgaPixelRgba>(fp, &TgaFormat::processColor32, image, color_space, gamma);
 				break;
 		}
 	}
-
 	File::close(fp);
-
 	if(color_map_) delete color_map_;
 	color_map_ = nullptr;
-
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
-
 	return image;
 }
 

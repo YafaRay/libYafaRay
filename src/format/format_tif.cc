@@ -44,19 +44,20 @@ static constexpr double inv_16__ = 0.00001525902189669642; // 1 / 65535
 
 bool TifFormat::saveToFile(const std::string &name, const Image *image)
 {
-	int h = image->getHeight();
-	int w = image->getWidth();
-
 #if defined(_WIN32)
 	std::wstring wname = utf8ToWutf16Le__(name);
 	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *out = libtiff::TIFFOpen(name.c_str(), "w");
 #endif
-
+	if(!out)
+	{
+		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		return false;
+	}
+	const int h = image->getHeight();
+	const int w = image->getWidth();
 	int channels;
-	size_t bytes_per_scanline;
-
 	if(image->hasAlpha()) channels = 4;
 	else channels = 3;
 
@@ -68,17 +69,15 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 	libtiff::TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	libtiff::TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 
-	bytes_per_scanline = channels * w;
-
-	uint8_t *scanline = (uint8_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
-
+	const size_t bytes_per_scanline = channels * w;
 	libtiff::TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, libtiff::TIFFDefaultStripSize(out, bytes_per_scanline));
 
+	uint8_t *scanline = (uint8_t *)libtiff::_TIFFmalloc(bytes_per_scanline);
 	for(int y = 0; y < h; y++)
 	{
 		for(int x = 0; x < w; x++)
 		{
-			int ix = x * channels;
+			const int ix = x * channels;
 			Rgba col = image->getColor(x, y);
 			col.clampRgba01();
 			scanline[ix] = (uint8_t)(col.getR() * 255.f);
@@ -86,51 +85,45 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 			scanline[ix + 2] = (uint8_t)(col.getB() * 255.f);
 			if(image->hasAlpha()) scanline[ix + 3] = (uint8_t)(col.getA() * 255.f);
 		}
-
 		if(TIFFWriteScanline(out, scanline, y, 0) < 0)
 		{
 			Y_ERROR << getFormatName() << ": An error occurred while writing TIFF file" << YENDL;
 			libtiff::TIFFClose(out);
 			libtiff::_TIFFfree(scanline);
-
 			return false;
 		}
 	}
-
 	libtiff::TIFFClose(out);
 	libtiff::_TIFFfree(scanline);
-
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
-
 	return true;
 }
 
 Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	libtiff::uint32 w, h;
-
 #if defined(_WIN32)
 	std::wstring wname = utf8ToWutf16Le__(name);
 	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *tif = libtiff::TIFFOpen(name.c_str(), "r");
 #endif
+	if(!tif)
+	{
+		Y_ERROR << getFormatName() << ": Cannot open file " << name << YENDL;
+		return nullptr;
+	}
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
-
+	libtiff::uint32 w, h;
 	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
-
 	libtiff::uint32 *tiff_data = (libtiff::uint32 *)libtiff::_TIFFmalloc(w * h * sizeof(libtiff::uint32));
-
 	if(!libtiff::TIFFReadRGBAImage(tif, w, h, tiff_data, 0))
 	{
 		Y_ERROR << getFormatName() << ": Error reading TIFF file" << YENDL;
 		return nullptr;
 	}
-
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
 	Image *image = new Image(w, h, type, optimization);
-
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{
@@ -146,7 +139,6 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 			++i;
 		}
 	}
-
 	libtiff::_TIFFfree(tiff_data);
 	libtiff::TIFFClose(tif);
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;

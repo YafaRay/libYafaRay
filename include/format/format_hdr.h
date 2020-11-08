@@ -42,9 +42,9 @@ class HdrFormat final : public Format
 		virtual bool isHdr() const override { return true; }
 		bool writeHeader(std::ofstream &file, const Image *image);
 		bool writeScanline(std::ofstream &file, RgbePixel *scanline, const Image *image);
-		bool readHeader(FILE *fp, int &width, int &height); //!< Reads file header and detects if the file is valid
-		bool readOrle(FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads the scanline with the original Radiance RLE schema or without compression
-		bool readArle(FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads a scanline with Adaptative RLE schema
+		bool readHeader(std::FILE *fp, int &width, int &height); //!< Reads file header and detects if the file is valid
+		bool readOrle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads the scanline with the original Radiance RLE schema or without compression
+		bool readArle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma); //!< Reads a scanline with Adaptative RLE schema
 
 		RgbeHeader header_;
 };

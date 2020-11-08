@@ -41,7 +41,6 @@ Format *Format::factory(ParamMap &params)
 	else if(type == "jpeg") type = "jpg";
 	else if(type == "pic") type = "hdr";
 
-
 	if(type == "tga") return TgaFormat::factory(params);
 	else if(type == "hdr") return HdrFormat::factory(params);
 #ifdef HAVE_OPENEXR
