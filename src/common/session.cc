@@ -54,9 +54,8 @@ Session::~Session()
 
 void Session::setInteractive(bool interactive)
 {
-	mutx_.lock();
+	std::lock_guard<std::mutex> lock_guard(mutx_);
 	interactive_ = interactive;
-	mutx_.unlock();
 }
 
 bool Session::isInteractive()

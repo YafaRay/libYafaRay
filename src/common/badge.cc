@@ -123,8 +123,8 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 	int i, j, p, q;
 	const int width = badge_image->getWidth();
 	const int height = badge_image->getHeight();
-	int x_max = std::min(x + static_cast<int>(bitmap->width), width);
-	int y_max = std::min(y + static_cast<int>(bitmap->rows), height);
+	const int x_max = std::min(x + static_cast<int>(bitmap->width), width);
+	const int y_max = std::min(y + static_cast<int>(bitmap->rows), height);
 	Rgb text_color(1.f);
 
 	for(i = x, p = 0; i < x_max; i++, p++)
@@ -132,7 +132,7 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 		for(j = y, q = 0; j < y_max; j++, q++)
 		{
 			if(i >= width || j >= height) continue;
-			int tmp_buf = bitmap->buffer[q * bitmap->width + p];
+			const int tmp_buf = bitmap->buffer[q * bitmap->width + p];
 			if(tmp_buf > 0)
 			{
 				Rgba col = badge_image->getColor(std::max(0, i), std::max(0, j));
@@ -171,8 +171,8 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	FT_GlyphSlot slot;
 	FT_Vector pen; // untransformed origin
 
-	std::string text_utf_8 = ss_badge.str();
-	std::u32string wtext_utf_32 = utf8ToWutf32__(text_utf_8);
+	const std::string text_utf_8 = ss_badge.str();
+	const std::u32string wtext_utf_32 = utf8ToWutf32__(text_utf_8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f * getFontSizeFactor();
@@ -185,7 +185,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	}
 
 	// create face object
-	std::string font_path = getFontPath();
+	const std::string font_path = getFontPath();
 	if(font_path.empty())
 	{
 		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont__, guifont_size__, 0, &face))
@@ -217,9 +217,9 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	slot = face->glyph;
 
 	// offsets
-	int text_offset_x = 4;
-	int text_offset_y = -1 * (int) ceil(12 * getFontSizeFactor());
-	int text_interline_offset = (int) ceil(13 * getFontSizeFactor());
+	const int text_offset_x = 4;
+	const int text_offset_y = -1 * (int) ceil(12 * getFontSizeFactor());
+	const int text_interline_offset = (int) ceil(13 * getFontSizeFactor());
 
 	// The pen position in 26.6 cartesian space coordinates
 	pen.x = text_offset_x * 64;

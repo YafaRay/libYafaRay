@@ -180,7 +180,7 @@ Image::Type Layer::getDefaultImageType(const Type &type)
 std::string Layer::getTypeName(const Type &type)
 {
 	if(type == Disabled) return "disabled";
-	auto it = map_type_typename_.find(type);
+	const auto it = map_type_typename_.find(type);
 	if(it == map_type_typename_.end()) return "unknown";
 	else return it->second;
 }
@@ -188,7 +188,7 @@ std::string Layer::getTypeName(const Type &type)
 Layer::Type Layer::getType(const std::string &name)
 {
 	if(name == "disabled" || name == "unknown" || name.empty()) return Disabled;
-	auto it = map_typename_type_.find(name);
+	const auto it = map_typename_type_.find(name);
 	if(it == map_typename_type_.end()) return Disabled;
 	else return it->second;
 }

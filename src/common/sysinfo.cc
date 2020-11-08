@@ -41,7 +41,7 @@ int SysInfo::getNumSystemThreads() const
 #ifdef WIN32
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
-	nthreads = (int) info.dwNumberOfProcessors;
+	nthreads = static_cast<int>(info.dwNumberOfProcessors);
 #else
 #	ifdef __APPLE__
 	int mib[2];

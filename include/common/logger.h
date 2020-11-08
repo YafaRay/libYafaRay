@@ -52,13 +52,13 @@ class LogEntry
 		friend class Logger;
 
 	public:
-		LogEntry(std::time_t datetime, double duration, int verb_level, std::string description): event_date_time_(datetime), event_duration_(duration), verbosity_level_(verb_level), event_description_(description) {}
+		LogEntry(std::time_t datetime, double duration, int verb_level, std::string description): date_time_(datetime), duration_(duration), verbosity_level_(verb_level), description_(description) {}
 
 	protected:
-		std::time_t event_date_time_;
-		double event_duration_;
+		std::time_t date_time_;
+		double duration_;
 		int verbosity_level_;
-		std::string event_description_;
+		std::string description_;
 };
 
 class LIBYAFARAY_EXPORT Logger
@@ -97,10 +97,10 @@ class LIBYAFARAY_EXPORT Logger
 		void statsIncrementBucket(std::string stat_name, float stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0) { statsIncrementBucket(stat_name, (double) stat_value, bucket_precision_step, increment_amount); }
 		void statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step = 1.0, double increment_amount = 1.0);
 
-		static std::string printTime(std::time_t datetime);
+		static std::string printTime(const std::time_t &datetime);
 		static std::string printDuration(double duration);
 		static std::string printDurationSimpleFormat(double duration);
-		static std::string printDate(std::time_t datetime);
+		static std::string printDate(const std::time_t &datetime);
 		static int vlevelFromString(std::string str_v_level);
 
 		template <typename T> Logger &operator << (const T &obj);
@@ -126,7 +126,7 @@ inline Logger &Logger::operator<<(const T &obj) {
 	tmp_stream << obj;
 
 	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
-	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
 	return *this;
 }
 
@@ -135,7 +135,7 @@ inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
 	tmp_stream << obj;
 
 	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
-	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().event_description_ += tmp_stream.str();
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
 	return *this;
 }
 

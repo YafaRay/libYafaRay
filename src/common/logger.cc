@@ -50,25 +50,23 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 	{
 		ss << std::endl;
 
-		for(auto it = memory_log_.begin() ; it != memory_log_.end(); ++it)
+		for(const auto &log_entry : memory_log_)
 		{
-			ss << "[" << Logger::printDate(it->event_date_time_) << " " << Logger::printTime(it->event_date_time_) << " (" << Logger::printDuration(it->event_duration_) << ")] ";
+			ss << "[" << Logger::printDate(log_entry.date_time_) << " " << Logger::printTime(log_entry.date_time_) << " (" << Logger::printDuration(log_entry.duration_) << ")] ";
 
-			switch(it->verbosity_level_)
+			switch(log_entry.verbosity_level_)
 			{
-				case VlDebug:		ss << "DEBUG: "; break;
-				case VlVerbose:	ss << "VERB: "; break;
-				case VlInfo:		ss << "INFO: "; break;
-				case VlParams:		ss << "PARM: "; break;
-				case VlWarning:	ss << "WARNING: "; break;
-				case VlError:		ss << "ERROR: "; break;
-				default:			ss << "LOG: "; break;
+				case VlDebug: ss << "DEBUG: "; break;
+				case VlVerbose: ss << "VERB: "; break;
+				case VlInfo: ss << "INFO: "; break;
+				case VlParams: ss << "PARM: "; break;
+				case VlWarning: ss << "WARNING: "; break;
+				case VlError: ss << "ERROR: "; break;
+				default: ss << "LOG: "; break;
 			}
-
-			ss << it->event_description_;
+			ss << log_entry.description_;
 		}
 	}
-
 	File log_file(name);
 	log_file.save(ss.str(), true);
 }
@@ -146,26 +144,24 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 	{
 		ss << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
-		for(auto it = memory_log_.begin() ; it != memory_log_.end(); ++it)
+		for(const auto &log_entry : memory_log_)
 		{
-			ss << "<tr><td>" << Logger::printDate(it->event_date_time_) << "</td><td>" << Logger::printTime(it->event_date_time_) << "</td><td>" << Logger::printDuration(it->event_duration_) << "</td>";
+			ss << "<tr><td>" << Logger::printDate(log_entry.date_time_) << "</td><td>" << Logger::printTime(log_entry.date_time_) << "</td><td>" << Logger::printDuration(log_entry.duration_) << "</td>";
 
-			switch(it->verbosity_level_)
+			switch(log_entry.verbosity_level_)
 			{
-				case VlDebug:		ss << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
-				case VlVerbose:	ss << "<td BGCOLOR=#80ff80>VERB: "; break;
-				case VlInfo:		ss << "<td BGCOLOR=#40ff40>INFO: "; break;
-				case VlParams:		ss << "<td BGCOLOR=#80ffff>PARM: "; break;
-				case VlWarning:	ss << "<td BGCOLOR=#ffff00>WARNING: "; break;
-				case VlError:		ss << "<td BGCOLOR=#ff4040>ERROR: "; break;
-				default:			ss << "<td>LOG: "; break;
+				case VlDebug: ss << "<td BGCOLOR=#ff80ff>DEBUG: "; break;
+				case VlVerbose: ss << "<td BGCOLOR=#80ff80>VERB: "; break;
+				case VlInfo: ss << "<td BGCOLOR=#40ff40>INFO: "; break;
+				case VlParams: ss << "<td BGCOLOR=#80ffff>PARM: "; break;
+				case VlWarning: ss << "<td BGCOLOR=#ffff00>WARNING: "; break;
+				case VlError: ss << "<td BGCOLOR=#ff4040>ERROR: "; break;
+				default: ss << "<td>LOG: "; break;
 			}
-
-			ss << "</td><td>" << it->event_description_ << "</td></tr>";
+			ss << "</td><td>" << log_entry.description_ << "</td></tr>";
 		}
 		ss << std::endl << "</table></body></html>" << std::endl;
 	}
-
 	File log_file(name);
 	log_file.save(ss.str(), true);
 }
@@ -179,79 +175,68 @@ void Logger::clearAll()
 {
 	clearMemoryLog();
 	statsClear();
-	image_path_ = "";
+	image_path_.clear();
 }
 
 Logger &Logger::out(int verbosity_level)
 {
 #if !defined(_WIN32) || defined(__MINGW32__)
-	mutx_.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+	std::lock_guard<std::mutex> lock_guard(mutx_);
 #else
 #endif
-
 	verbosity_level_ = verbosity_level;
-
-	std::time_t current_datetime = std::time(nullptr);
+	const std::time_t current_datetime = std::time(nullptr);
 
 	if(verbosity_level_ <= log_master_verbosity_level_)
 	{
 		if(previous_log_event_date_time_ == 0) previous_log_event_date_time_ = current_datetime;
-		double duration = std::difftime(current_datetime, previous_log_event_date_time_);
-
+		const double duration = std::difftime(current_datetime, previous_log_event_date_time_);
 		memory_log_.push_back(LogEntry(current_datetime, duration, verbosity_level_, ""));
-
 		previous_log_event_date_time_ = current_datetime;
 	}
 
 	if(verbosity_level_ <= console_master_verbosity_level_)
 	{
 		if(previous_console_event_date_time_ == 0) previous_console_event_date_time_ = current_datetime;
-		double duration = std::difftime(current_datetime, previous_console_event_date_time_);
-
+		const double duration = std::difftime(current_datetime, previous_console_event_date_time_);
 		if(console_log_colors_enabled_)
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug:		std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose:	std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
-				case VlInfo:		std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
-				case VlParams:		std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
-				case VlWarning:	std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
-				case VlError:		std::cout << ConsoleColor(ConsoleColor::Red) << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
-				default:			std::cout << ConsoleColor(ConsoleColor::White) << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
+				case VlDebug: std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
+				case VlVerbose: std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
+				case VlInfo: std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
+				case VlParams: std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
+				case VlWarning: std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
+				case VlError: std::cout << ConsoleColor(ConsoleColor::Red) << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
+				default: std::cout << ConsoleColor(ConsoleColor::White) << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
 			}
 		}
 		else
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug:		std::cout << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose:	std::cout << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
-				case VlInfo:		std::cout << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
-				case VlParams:		std::cout << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
-				case VlWarning:	std::cout << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
-				case VlError:		std::cout << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
-				default:			std::cout << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
+				case VlDebug: std::cout << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
+				case VlVerbose: std::cout << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
+				case VlInfo: std::cout << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
+				case VlParams: std::cout << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
+				case VlWarning: std::cout << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
+				case VlError: std::cout << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
+				default: std::cout << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
 			}
 		}
-
 		if(duration == 0) std::cout << ": ";
 		else std::cout << " (" << Logger::printDurationSimpleFormat(duration) << "): ";
-
 		if(console_log_colors_enabled_) std::cout << ConsoleColor();
-
 		previous_console_event_date_time_ = current_datetime;
 	}
-
-	mutx_.unlock();
-
 	return *this;
 }
 
 int Logger::vlevelFromString(std::string str_v_level)
 {
 	int vlevel;
-
 	if(str_v_level == "debug") vlevel = VlDebug;
 	else if(str_v_level == "verbose") vlevel = VlVerbose;
 	else if(str_v_level == "info") vlevel = VlInfo;
@@ -261,30 +246,29 @@ int Logger::vlevelFromString(std::string str_v_level)
 	else if(str_v_level == "mute") vlevel = VlMute;
 	else if(str_v_level == "disabled") vlevel = VlMute;
 	else vlevel = VlVerbose;
-
 	return vlevel;
 }
 
 void Logger::setConsoleMasterVerbosity(const std::string &str_v_level)
 {
-	int vlevel = Logger::vlevelFromString(str_v_level);
+	const int vlevel = Logger::vlevelFromString(str_v_level);
 	console_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
 }
 
 void Logger::setLogMasterVerbosity(const std::string &str_v_level)
 {
-	int vlevel = Logger::vlevelFromString(str_v_level);
+	const int vlevel = Logger::vlevelFromString(str_v_level);
 	log_master_verbosity_level_ = std::max((int)VlMute, std::min(vlevel, (int)VlDebug));
 }
 
-std::string Logger::printTime(std::time_t datetime)
+std::string Logger::printTime(const std::time_t &datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%H:%M:%S", std::localtime(&datetime));
 	return std::string(mbstr);
 }
 
-std::string Logger::printDate(std::time_t datetime)
+std::string Logger::printDate(const std::time_t &datetime)
 {
 	char mbstr[20];
 	std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", std::localtime(&datetime));
@@ -294,11 +278,10 @@ std::string Logger::printDate(std::time_t datetime)
 std::string Logger::printDuration(double duration)
 {
 	std::stringstream str_dur;
-
-	int duration_int = (int) duration;
-	int hours = duration_int / 3600;
-	int minutes = (duration_int % 3600) / 60;
-	int seconds = duration_int % 60;
+	const int duration_int = (int) duration;
+	const int hours = duration_int / 3600;
+	const int minutes = (duration_int % 3600) / 60;
+	const int seconds = duration_int % 60;
 
 	if(hours == 0) str_dur << "     ";
 	else str_dur << "+" << std::setw(3) << hours << "h";
@@ -317,11 +300,10 @@ std::string Logger::printDuration(double duration)
 std::string Logger::printDurationSimpleFormat(double duration)
 {
 	std::ostringstream str_dur;
-
-	int duration_int = (int) duration;
-	int hours = duration_int / 3600;
-	int minutes = (duration_int % 3600) / 60;
-	int seconds = duration_int % 60;
+	const int duration_int = (int) duration;
+	const int hours = duration_int / 3600;
+	const int minutes = (duration_int % 3600) / 60;
+	const int seconds = duration_int % 60;
 
 	if(hours == 0) str_dur << "";
 	else str_dur << "+" << std::setw(2) << hours << "h";
@@ -352,7 +334,7 @@ void Logger::statsSaveToFile(const std::string &file_path, bool sorted) const
 	ss << "name, index, value" << std::endl;
 	std::vector<std::pair<std::string, double>> vector_print(diagnostics_stats_.begin(), diagnostics_stats_.end());
 	if(sorted) std::sort(vector_print.begin(), vector_print.end());
-	for(auto &it : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
+	for(const auto &it : vector_print) ss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << it.first << it.second << std::endl;
 	file.save(ss.str(), true);
 }
 
@@ -361,16 +343,15 @@ void Logger::statsAdd(const std::string &stat_name, double stat_value, double in
 	std::stringstream ss;
 	ss << stat_name << ", " << std::fixed << std::setfill('0') << std::setw(std::numeric_limits<int>::digits10 + 1 + std::numeric_limits<double>::digits10 + 1) << std::setprecision(std::numeric_limits<double>::digits10) << index << ", ";
 #if !defined(_WIN32) || defined(__MINGW32__)
-	mutx_.lock();	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
-#else
+	//Don't lock if building with Visual Studio because it cause hangs when executing YafaRay in Windows 7 for some weird reason!
+	std::lock_guard<std::mutex> lock_guard(mutx_);
 #endif
 	diagnostics_stats_[ss.str()] += stat_value;
-	mutx_.unlock();
 }
 
 void Logger::statsIncrementBucket(std::string stat_name, double stat_value, double bucket_precision_step, double increment_amount)
 {
-	double index = floor(stat_value / bucket_precision_step) * bucket_precision_step;
+	const double index = floor(stat_value / bucket_precision_step) * bucket_precision_step;
 	statsAdd(stat_name, increment_amount, index);
 }
 

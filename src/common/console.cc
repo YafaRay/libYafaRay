@@ -63,7 +63,7 @@ void ConsoleProgressBar::init(int total_steps)
 void ConsoleProgressBar::update(int steps)
 {
 	done_steps_ += steps;
-	float progress = (float) std::min(done_steps_, n_steps_) / (float) n_steps_;
+	const float progress = (float) std::min(done_steps_, n_steps_) / (float) n_steps_;
 	int bar_len = std::min(total_bar_len_, (int)(total_bar_len_ * progress));
 	if(!(bar_len >= 0)) bar_len = 0;
 	if(bar_len > last_bar_len_)

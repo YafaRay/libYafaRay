@@ -20,7 +20,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#else
 #endif
 
 BEGIN_YAFARAY
@@ -52,7 +51,7 @@ bool Timer::stop(const std::string &name)
 {
 	auto i = events_.find(name);
 	if(i == events_.end()) return false;
-	if(!(i->second.started_))return false;
+	if(!(i->second.started_)) return false;
 #ifdef WIN32
 	i->second.finish_ = clock();
 #else
@@ -77,7 +76,7 @@ double Timer::getTime(const std::string &name)
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;
 #ifdef WIN32
-	else return ((double)(i->second.finish_ - i->second.start_)) / CLOCKS_PER_SEC;
+	else return (static_cast<double>(i->second.finish_ - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
@@ -92,7 +91,7 @@ double Timer::getTimeNotStopping(const std::string &name)
 	auto i = events_.find(name);
 	if(i == events_.end()) return -1;
 #ifdef WIN32
-	else return ((double)(clock() - i->second.start_)) / CLOCKS_PER_SEC;
+	else return (static_cast<double>(clock() - i->second.start_)) / CLOCKS_PER_SEC;
 #else
 	else
 	{
@@ -108,33 +107,33 @@ double Timer::getTimeNotStopping(const std::string &name)
 
 bool Timer::includes(const std::string &label) const
 {
-	auto i = events_.find(label);
+	const auto i = events_.find(label);
 	return (i == events_.end()) ? false : true;
 }
 
 void Timer::splitTime(double t, double *secs, int *mins, int *hours, int *days)
 {
-	int times = (int)t;
-	int s = times;
-	int d = times / 86400;
+	int times = static_cast<int>(t);
+	const int s = times;
+	const int d = times / 86400;
 	if(days)
 	{
 		*days = d;
 		times -= d * 86400;
 	}
-	int h = times / 3600;
+	const int h = times / 3600;
 	if(hours)
 	{
 		*hours = h;
 		times -= h * 3600;
 	}
-	int m = times / 60;
+	const int m = times / 60;
 	if(mins)
 	{
 		*mins = m;
 		times -= m * 60;
 	}
-	*secs = t - double(s - times);
+	*secs = t - static_cast<double>(s - times);
 }
 
 END_YAFARAY
