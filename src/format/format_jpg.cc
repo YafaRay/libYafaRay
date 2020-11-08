@@ -37,8 +37,6 @@ extern "C"
 
 BEGIN_YAFARAY
 
-#define INV_8  0.00392156862745098039f // 1 / 255
-
 // error handlers for libJPEG,
 
 METHODDEF(void) jpgErrorMessage__(j_common_ptr info)
@@ -216,35 +214,35 @@ Image *JpgFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 			Rgba color;
 			if(is_gray)
 			{
-				const float colscan = scanline[x] * INV_8;
+				const float colscan = scanline[x] * inv_max_8_bit_;
 				color.set(colscan, colscan, colscan, 1.f);
 			}
 			else if(is_rgb)
 			{
 				const int ix = x * 3;
-				color.set(scanline[ix] * INV_8,
-						  scanline[ix + 1] * INV_8,
-						  scanline[ix + 2] * INV_8,
+				color.set(scanline[ix] * inv_max_8_bit_,
+						  scanline[ix + 1] * inv_max_8_bit_,
+						  scanline[ix + 2] * inv_max_8_bit_,
 				          1.f);
 			}
 			else if(is_cmyk)
 			{
 				const int ix = x * 4;
-				const float k = scanline[ix + 3] * INV_8;
+				const float k = scanline[ix + 3] * inv_max_8_bit_;
 				const float i_k = 1.f - k;
-				color.set(1.f - std::max((scanline[ix] * INV_8 * i_k) + k, 1.f),
-				          1.f - std::max((scanline[ix + 1] * INV_8 * i_k) + k, 1.f),
-				          1.f - std::max((scanline[ix + 2] * INV_8 * i_k) + k, 1.f),
+				color.set(1.f - std::max((scanline[ix] * static_cast<float>(inv_max_8_bit_) * i_k) + k, 1.f),
+				          1.f - std::max((scanline[ix + 1] * static_cast<float>(inv_max_8_bit_) * i_k) + k, 1.f),
+				          1.f - std::max((scanline[ix + 2] * static_cast<float>(inv_max_8_bit_) * i_k) + k, 1.f),
 				          1.f);
 			}
 			else // this is probabbly (surely) never executed, i need to research further; this assumes blender non-standard jpeg + alpha
 			{
 				const int ix = x * 4;
-				const float a = scanline[ix + 3] * INV_8;
+				const float a = scanline[ix + 3] * inv_max_8_bit_;
 				const float i_a = 1.f - a;
-				color.set(std::max(0.f, std::min((scanline[ix] * INV_8) - i_a, 1.f)),
-						  std::max(0.f, std::min((scanline[ix + 1] * INV_8) - i_a, 1.f)),
-						  std::max(0.f, std::min((scanline[ix + 2] * INV_8) - i_a, 1.f)),
+				color.set(std::max(0.f, std::min((scanline[ix] * static_cast<float>(inv_max_8_bit_)) - i_a, 1.f)),
+						  std::max(0.f, std::min((scanline[ix + 1] * static_cast<float>(inv_max_8_bit_)) - i_a, 1.f)),
+						  std::max(0.f, std::min((scanline[ix + 2] * static_cast<float>(inv_max_8_bit_)) - i_a, 1.f)),
 						  a);
 			}
 			color.linearRgbFromColorSpace(color_space, gamma);

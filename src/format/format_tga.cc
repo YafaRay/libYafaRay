@@ -46,7 +46,7 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	header.width_ = w;
 	header.height_ = h;
 	header.bit_depth_ = ((image->hasAlpha()) ? 32 : 24);
-	header.desc_ = TL | ((image->hasAlpha()) ? ALPHA_8 : NO_ALPHA);
+	header.desc_ = tl__ | ((image->hasAlpha()) ? alpha_8__ : no_alpha__);
 
 	std::fwrite(&header, sizeof(TgaHeader), 1, fp);
 	std::fwrite(image_id.c_str(), static_cast<size_t>(header.id_length_), 1, fp);
@@ -96,8 +96,8 @@ template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProc
 	{
 		uint8_t pack_desc = 0;
 		std::fread(&pack_desc, sizeof(uint8_t), 1, fp);
-		bool rle_pack = (pack_desc & RLE_PACK_MASK);
-		int rle_rep = static_cast<int>(pack_desc & RLE_REP_MASK) + 1;
+		bool rle_pack = (pack_desc & rle_pack_mask__);
+		int rle_rep = static_cast<int>(pack_desc & rle_rep_mask__) + 1;
 		ColorType color_type;
 		if(rle_pack) std::fread(&color_type, sizeof(ColorType), 1, fp);
 		for(int i = 0; i < rle_rep; i++)
@@ -136,13 +136,13 @@ template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProces
 
 Rgba TgaFormat::processGray8(void *data)
 {
-	return Rgba(*(uint8_t *)data * INV_255);
+	return Rgba(*(uint8_t *)data * inv_max_8_bit_);
 }
 
 Rgba TgaFormat::processGray16(void *data)
 {
 	uint16_t color = *(uint16_t *)data;
-	return Rgba(Rgb((color & GRAY_MASK_8_BIT) * INV_255), ((color & ALPHA_GRAY_MASK_8_BIT) >> 8) * INV_255);
+	return Rgba(Rgb((color & gray_mask_8_bit__) * inv_max_8_bit_), ((color & alpha_gray_mask_8_bit__) >> 8) * inv_max_8_bit_);
 }
 
 Rgba TgaFormat::processColor8(void *data)
@@ -154,37 +154,37 @@ Rgba TgaFormat::processColor8(void *data)
 Rgba TgaFormat::processColor15(void *data)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & RED_MASK) >> 11) * INV_31,
-				((color & GREEN_MASK) >> 6) * INV_31,
-				((color & BLUE_MASK) >> 1) * INV_31,
+	return Rgba(((color & red_mask__) >> 11) * inv_31_,
+				((color & green_mask__) >> 6) * inv_31_,
+				((color & blue_mask__) >> 1) * inv_31_,
 				1.f);
 }
 
 Rgba TgaFormat::processColor16(void *data)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & RED_MASK) >> 11) * INV_31,
-				((color & GREEN_MASK) >> 6) * INV_31,
-				((color & BLUE_MASK) >> 1) * INV_31,
-				(float)(color & ALPHA_MASK));
+	return Rgba(((color & red_mask__) >> 11) * inv_31_,
+				((color & green_mask__) >> 6) * inv_31_,
+				((color & blue_mask__) >> 1) * inv_31_,
+				(float)(color & alpha_mask__));
 }
 
 Rgba TgaFormat::processColor24(void *data)
 {
 	const TgaPixelRgb *color = (TgaPixelRgb *)data;
-	return Rgba(color->r_ * INV_255,
-				color->g_ * INV_255,
-				color->b_ * INV_255,
+	return Rgba(color->r_ * inv_max_8_bit_,
+				color->g_ * inv_max_8_bit_,
+				color->b_ * inv_max_8_bit_,
 				1.f);
 }
 
 Rgba TgaFormat::processColor32(void *data)
 {
 	const TgaPixelRgba *color = (TgaPixelRgba *)data;
-	return Rgba(color->r_ * INV_255,
-				color->g_ * INV_255,
-				color->b_ * INV_255,
-				color->a_ * INV_255);
+	return Rgba(color->r_ * inv_max_8_bit_,
+				color->g_ * inv_max_8_bit_,
+				color->b_ * inv_max_8_bit_,
+				color->a_ * inv_max_8_bit_);
 }
 
 bool TgaFormat::precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth)
@@ -286,7 +286,7 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	TgaHeader header;
 	std::fread(&header, 1, sizeof(TgaHeader), fp);
 	// Prereading checks
-	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & ALPHA_BIT_DEPTH_MASK);
+	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & alpha_bit_depth_mask__);
 	bool is_rle = false;
 	bool has_color_map = false;
 	bool is_gray = false;
@@ -330,14 +330,14 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	min_y_ = 0;
 	max_y_ = header.height_;
 	step_y_ = 1;
-	const bool from_top = ((header.desc_ & TOP_MASK) >> 5);
+	const bool from_top = ((header.desc_ & top_mask__) >> 5);
 	if(!from_top)
 	{
 		min_y_ = header.height_ - 1;
 		max_y_ = -1;
 		step_y_ = -1;
 	}
-	const bool from_left = ((header.desc_ & LEFT_MASK) >> 4);
+	const bool from_left = ((header.desc_ & left_mask__) >> 4);
 	if(from_left)
 	{
 		min_x_ = header.width_ - 1;

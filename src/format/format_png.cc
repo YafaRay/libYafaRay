@@ -41,9 +41,6 @@ extern "C"
 
 BEGIN_YAFARAY
 
-#define INV_8  0.00392156862745098039 // 1 / 255
-#define INV_16 0.00001525902189669642 // 1 / 65535
-
 struct PngStructs
 {
 	PngStructs(png_structp &png_ptr, png_infop &info_ptr) : png_ptr_(png_ptr), info_ptr_(info_ptr) { }
@@ -257,8 +254,8 @@ Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Op
 	for(size_t i = 0; i < h; i++) row_pointers[i] = new uint8_t[w * num_chan * bit_mult ];
 	png_read_image(png_structs.png_ptr_, row_pointers);
 	float divisor = 1.f;
-	if(bit_depth == 8) divisor = INV_8;
-	else if(bit_depth == 16) divisor = INV_16;
+	if(bit_depth == 8) divisor = inv_max_8_bit_;
+	else if(bit_depth == 16) divisor = inv_max_16_bit_;
 	for(size_t x = 0; x < w; x++)
 	{
 		for(size_t y = 0; y < h; y++)

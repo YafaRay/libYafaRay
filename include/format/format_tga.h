@@ -29,7 +29,7 @@
 BEGIN_YAFARAY
 
 class TgaFormat;
-class TgaHeader;
+struct TgaHeader;
 class RgbAlpha;
 template <typename T> class ImageBuffer2D;
 

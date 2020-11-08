@@ -39,9 +39,6 @@ namespace libtiff
 
 BEGIN_YAFARAY
 
-static constexpr double inv_8__ = 0.00392156862745098039; // 1 / 255
-static constexpr double inv_16__ = 0.00001525902189669642; // 1 / 65535
-
 bool TifFormat::saveToFile(const std::string &name, const Image *image)
 {
 #if defined(_WIN32)
@@ -130,10 +127,10 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		for(int x = 0; x < static_cast<int>(w); x++)
 		{
 			Rgba color;
-			color.set((float)TIFFGetR(tiff_data[i]) * inv_8__,
-					  (float)TIFFGetG(tiff_data[i]) * inv_8__,
-					  (float)TIFFGetB(tiff_data[i]) * inv_8__,
-					  (float)TIFFGetA(tiff_data[i]) * inv_8__);
+			color.set((float)TIFFGetR(tiff_data[i]) * inv_max_8_bit_,
+					  (float)TIFFGetG(tiff_data[i]) * inv_max_8_bit_,
+					  (float)TIFFGetB(tiff_data[i]) * inv_max_8_bit_,
+					  (float)TIFFGetA(tiff_data[i]) * inv_max_8_bit_);
 			color.linearRgbFromColorSpace(color_space, gamma);
 			image->setColor(x, y, color);
 			++i;

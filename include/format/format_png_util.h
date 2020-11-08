@@ -36,22 +36,18 @@ class PngDataReader
 	private:
 		uint8_t *data_;
 		size_t size_;
-		size_t cursor_;
+		size_t cursor_ = 0;
 };
 
-inline PngDataReader::PngDataReader(const uint8_t *d, size_t s) : size_(s), cursor_(0)
+inline PngDataReader::PngDataReader(const uint8_t *d, size_t s) : size_(s)
 {
 	data_ = new uint8_t[size_];
-	for(size_t i = 0; i < size_; i++)
-	{
-		data_[i] = d[i];
-	}
+	for(size_t i = 0; i < size_; i++) data_[i] = d[i];
 }
 
 inline PngDataReader::~PngDataReader()
 {
-	delete [] data_;
-	data_ = nullptr;
+	delete[] data_;
 }
 
 inline size_t PngDataReader::read(uint8_t *buf, size_t s)

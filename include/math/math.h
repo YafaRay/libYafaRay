@@ -42,7 +42,6 @@ BEGIN_YAFARAY
 
 namespace math
 {
-
 static constexpr double mult_pi_by_2 = 6.28318530717958647692; // PI * 2
 static constexpr double squared_pi = 9.86960440108935861882; // PI ^ 2
 static constexpr double div_1_by_2pi = 0.15915494309189533577; // 1 / (2 * PI)

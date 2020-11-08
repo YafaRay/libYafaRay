@@ -77,11 +77,11 @@ inline RgbePixel &RgbePixel::operator=(const Rgb &c)
 	else
 	{
 		int e;
-		v = frexp(v, &e) * 255.9999f / v;
-		r_ = (uint8_t)(c.getR() * v);
-		g_ = (uint8_t)(c.getG() * v);
-		b_ = (uint8_t)(c.getB() * v);
-		e_ = (uint8_t)(e + 128);
+		v = std::frexp(v, &e) * 255.9999f / v;
+		r_ = static_cast<uint8_t>(c.getR() * v);
+		g_ = static_cast<uint8_t>(c.getG() * v);
+		b_ = static_cast<uint8_t>(c.getB() * v);
+		e_ = static_cast<uint8_t>(e + 128);
 	}
 	return *this;
 }
