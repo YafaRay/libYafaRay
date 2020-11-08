@@ -38,7 +38,7 @@ class ObjectGeometric
 {
 	public:
 		static ObjectGeometric *factory(ParamMap &params, const Scene &scene);
-		ObjectGeometric();
+		virtual ~ObjectGeometric() { resetObjectIndex(); }
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
 		virtual int numPrimitives() const = 0;
@@ -53,7 +53,7 @@ class ObjectGeometric
 		/*! try to enable sampling (may require additional memory and preprocessing time, if supported) */
 		virtual bool enableSampling() { return false; }
 		/*! sample object surface */
-		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const {};
+		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const { }
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
 		void setVisibility(bool v) { visible_ = v; }
 		/*! Indicates that this object should be used as base object for instances */
@@ -62,30 +62,24 @@ class ObjectGeometric
 		bool isVisible() const { return visible_; }
 		/*! Returns if this object is used as base object for instances. */
 		bool isBaseObject() const { return is_base_mesh_; }
-		virtual ~ObjectGeometric() { resetObjectIndex(); }
-		void setObjectIndex(const float &new_obj_index);
-		void resetObjectIndex() { highest_object_index_ = 1.f; object_index_auto_ = 0; }
-		void setObjectIndex(const int &new_obj_index) { setObjectIndex((float) new_obj_index); }
-		float getAbsObjectIndex() const { return object_index_; }
-		float getNormObjectIndex() const { return (object_index_ / highest_object_index_); }
-		Rgb getAbsObjectIndexColor() const { return Rgb(object_index_); }
-		Rgb getNormObjectIndexColor() const
-		{
-			float normalized_object_index = getNormObjectIndex();
-			return Rgb(normalized_object_index);
-		}
+		void resetObjectIndex() { highest_object_index_ = 1; object_index_auto_ = 0; }
+		void setObjectIndex(unsigned int new_obj_index);
+		unsigned int getAbsObjectIndex() const { return object_index_; }
+		float getNormObjectIndex() const { return static_cast<float>(getAbsObjectIndex()) / static_cast<float>(highest_object_index_); }
+		Rgb getAbsObjectIndexColor() const { return getAbsObjectIndex(); }
+		Rgb getNormObjectIndexColor() const { return getNormObjectIndex(); }
 		Rgb getAutoObjectIndexColor() const { return object_index_auto_color_; }
-		Rgb getAutoObjectIndexNumber() const { return object_index_auto_number_; }
+		Rgb getAutoObjectIndexNumber() const { return object_index_auto_; }
 
 	protected:
-		const Light *light_;
-		bool visible_; //!< toggle whether geometry is visible or only guidance for other stuff
-		bool is_base_mesh_;
-		float object_index_;	//!< Object Index for the object-index render pass
+		ObjectGeometric();
+		const Light *light_ = nullptr;
+		bool visible_ = true; //!< toggle whether geometry is visible or only guidance for other stuff
+		bool is_base_mesh_ = true;
+		unsigned int object_index_ = 0;	//!< Object Index for the object-index render pass
+		Rgb object_index_auto_color_ = 0.f;	//!< Object Index color automatically generated for the object-index-auto color render pass
 		static unsigned int object_index_auto_;	//!< Object Index automatically generated for the object-index-auto render pass
-		Rgb object_index_auto_color_;	//!< Object Index color automatically generated for the object-index-auto color render pass
-		Rgb object_index_auto_number_ = 0.f;	//!< Object Index number automatically generated for the object-index-auto-abs numeric render pass
-		static float highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
+		static unsigned int highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
 };
 
 
@@ -94,11 +88,11 @@ class ObjectGeometric
 class PrimitiveObject : public ObjectGeometric
 {
 	public:
-		PrimitiveObject(Primitive *p): prim_(p) { };
+		PrimitiveObject(Primitive *p): prim_(p) { }
 		virtual int numPrimitives() const { return 1; }
 		virtual int getPrimitives(const Primitive **prims) const { *prims = prim_; return 1; }
 	private:
-		Primitive *prim_;
+		Primitive *prim_ = nullptr;
 };
 
 END_YAFARAY

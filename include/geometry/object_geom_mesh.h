@@ -70,10 +70,10 @@ class MeshObject final : public ObjectGeometric
 		std::vector<Vec3> normals_;
 		std::vector<int> uv_offsets_;
 		std::vector<Uv> uv_values_;
-		bool has_orco_;
-		bool has_uv_;
-		bool is_smooth_;
-		const Light *light_;
+		bool has_orco_ = false;
+		bool has_uv_ = false;
+		bool is_smooth_ = false;
+		const Light *light_ = nullptr;
 };
 
 /*!	This is a special version of meshObject_t!
@@ -90,7 +90,7 @@ class TriangleObject: public ObjectGeometric
 		friend class TriangleObjectInstance;
 
 	public:
-		TriangleObject() : has_orco_(false), has_uv_(false), is_smooth_(false), normals_exported_(false) { /* Empty */ }
+		TriangleObject() = default;
 		TriangleObject(int ntris, bool has_uv = false, bool has_orco = false);
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
@@ -109,10 +109,10 @@ class TriangleObject: public ObjectGeometric
 		std::vector<Uv> uv_values_;
 
 	protected:
-		bool has_orco_;
-		bool has_uv_;
-		bool is_smooth_;
-		bool normals_exported_;
+		bool has_orco_ = false;
+		bool has_uv_ = false;
+		bool is_smooth_ = false;
+		bool normals_exported_ = false;
 };
 
 class TriangleObjectInstance final: public TriangleObject
@@ -129,14 +129,11 @@ class TriangleObjectInstance final: public TriangleObject
 			that by definition can perform ray-triangle intersection */
 		virtual int numPrimitives() const override { return triangles_.size(); }
 		virtual int getPrimitives(const Triangle **prims) const override;
-
 		virtual void finish() override;
-
 		virtual Vec3 getVertexNormal(int index) const override
 		{
 			return Vec3(obj_to_world_ * m_base_->normals_[index]);
 		}
-
 		virtual Point3 getVertex(int index) const override
 		{
 			return obj_to_world_ * m_base_->points_[index];
@@ -144,7 +141,7 @@ class TriangleObjectInstance final: public TriangleObject
 
 		std::vector<TriangleInstance> triangles_;
 		Matrix4 obj_to_world_;
-		TriangleObject *m_base_;
+		TriangleObject *m_base_ = nullptr;
 };
 
 END_YAFARAY

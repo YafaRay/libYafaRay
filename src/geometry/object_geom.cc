@@ -16,6 +16,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <geometry/object_geom.h>
+
 #include "geometry/object_geom_mesh.h"
 #include "geometry/primitive_basic.h"
 #include "geometry/triangle.h"
@@ -24,8 +26,8 @@
 
 BEGIN_YAFARAY
 
-float ObjectGeometric::highest_object_index_ = 1.f;	//Initially this class shared variable will be 1.f
-unsigned int ObjectGeometric::object_index_auto_ = 0;	//Initially this class shared variable will be 0
+unsigned int ObjectGeometric::object_index_auto_ = 0;
+unsigned int ObjectGeometric::highest_object_index_ = 1;
 
 ObjectGeometric *ObjectGeometric::factory(ParamMap &params, const Scene &scene)
 {
@@ -36,22 +38,23 @@ ObjectGeometric *ObjectGeometric::factory(ParamMap &params, const Scene &scene)
 	else return nullptr;
 }
 
-ObjectGeometric::ObjectGeometric() : light_(nullptr), visible_(true), is_base_mesh_(false), object_index_(0.f)
+ObjectGeometric::ObjectGeometric()
 {
 	object_index_auto_++;
 	srand(object_index_auto_);
 	float r, g, b;
 	do
 	{
-		r = (float)(rand() % 8) / 8.f;
-		g = (float)(rand() % 8) / 8.f;
-		b = (float)(rand() % 8) / 8.f;
+		r = static_cast<float>(rand() % 8) / 8.f;
+		g = static_cast<float>(rand() % 8) / 8.f;
+		b = static_cast<float>(rand() % 8) / 8.f;
 	}
 	while(r + g + b < 0.5f);
 	object_index_auto_color_ = Rgb(r, g, b);
-	object_index_auto_number_ = object_index_auto_;
 }
-void ObjectGeometric::setObjectIndex(const float &new_obj_index) {
+
+void ObjectGeometric::setObjectIndex(unsigned int new_obj_index)
+{
 	object_index_ = new_obj_index;
 	if(highest_object_index_ < object_index_) highest_object_index_ = object_index_;
 }

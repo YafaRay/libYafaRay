@@ -153,8 +153,8 @@ class LIBYAFARAY_EXPORT Layer final
 
 struct MaskParams
 {
-	float obj_index_ = 0.f; //!Object Index used for masking in/out in the Mask Render Layers
-	float mat_index_ = 0.f; //!Material Index used for masking in/out in the Mask Render Layers
+	unsigned int obj_index_ = 0; //!Object Index used for masking in/out in the Mask Render Layers
+	unsigned int mat_index_ = 0; //!Material Index used for masking in/out in the Mask Render Layers
 	bool invert_ = false; //!False=mask in, True=mask out
 	bool only_ = false; //!False=rendered image is masked, True=only the mask is shown without rendered image
 };

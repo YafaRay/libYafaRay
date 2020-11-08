@@ -145,33 +145,18 @@ class Material
 		virtual Rgb getTransColor(const RenderData &render_data) const { return Rgb(0.f); }
 		virtual Rgb getMirrorColor(const RenderData &render_data) const { return Rgb(0.f); }
 		virtual Rgb getSubSurfaceColor(const RenderData &render_data) const { return Rgb(0.f); }
-		void setMaterialIndex(const float &new_mat_index)
+		void setMaterialIndex(unsigned int new_mat_index)
 		{
 			material_index_ = new_mat_index;
 			if(material_index_highest_ < material_index_) material_index_highest_ = material_index_;
 		}
 		void resetMaterialIndex() { material_index_highest_ = 1.f; material_index_auto_ = 0; }
-		void setMaterialIndex(const int &new_mat_index) { setMaterialIndex((float) new_mat_index); }
-		float getAbsMaterialIndex() const { return material_index_; }
-		float getNormMaterialIndex() const { return (material_index_ / material_index_highest_); }
-		Rgb getAbsMaterialIndexColor() const
-		{
-			return Rgb(material_index_);
-		}
-		Rgb getNormMaterialIndexColor() const
-		{
-			float normalized_material_index = getNormMaterialIndex();
-			return Rgb(normalized_material_index);
-		}
-		Rgb getAutoMaterialIndexColor() const
-		{
-			return material_index_auto_color_;
-		}
-		Rgb getAutoMaterialIndexNumber() const
-		{
-			return material_index_auto_number_;
-		}
-
+		unsigned int getAbsMaterialIndex() const { return material_index_; }
+		float getNormMaterialIndex() const { return static_cast<float>(getAbsMaterialIndex()) / static_cast<float>(material_index_highest_); }
+		Rgb getAbsMaterialIndexColor() const { return getAbsMaterialIndex(); }
+		Rgb getNormMaterialIndexColor() const { return getNormMaterialIndex(); }
+		Rgb getAutoMaterialIndexColor() const { return material_index_auto_color_; }
+		Rgb getAutoMaterialIndexNumber() const { return material_index_auto_; }
 		Visibility getVisibility() const { return visibility_; }
 		bool getReceiveShadows() const { return receive_shadows_; }
 
@@ -199,21 +184,18 @@ class Material
 			you need to determine the partial derivatives for NU and NV first, e.g. from a shader node */
 		void applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const;
 
-		BsdfFlags bsdf_flags_;
+		BsdfFlags bsdf_flags_ = BsdfFlags::None;
 
-		Visibility visibility_; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
+		Visibility visibility_ = Visibility::NormalVisible; //!< sets material visibility (Normal:visible, visible without shadows, invisible (shadows only) or totally invisible.
 
-		bool receive_shadows_; //!< enables/disables material reception of shadows.
+		bool receive_shadows_ = true; //!< enables/disables material reception of shadows.
 
-		size_t req_mem_; //!< the amount of "temporary" memory required to compute/store surface point specific data
+		size_t req_mem_ = 0; //!< the amount of "temporary" memory required to compute/store surface point specific data
 		VolumeHandler *vol_i_ = nullptr; //!< volumetric handler for space inside material (opposed to surface normal)
 		VolumeHandler *vol_o_ = nullptr; //!< volumetric handler for space outside ofmaterial (where surface normal points to)
-		float material_index_;	//!< Material Index for the material-index render pass
-		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
-		Rgb material_index_auto_color_;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
-		float material_index_auto_number_ = 0.f;	//!< Material Index number automatically generated for the material-index-auto-abs (numeric) render pass
-		static float material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
-		int additional_depth_;	//!< Per-material additional ray-depth
+		unsigned int material_index_ = 0;	//!< Material Index for the material-index render pass
+		Rgb material_index_auto_color_ = 0.f;	//!< Material Index color automatically generated for the material-index-auto (color) render pass
+		int additional_depth_ = 0;	//!< Per-material additional ray-depth
 		float transparent_bias_factor_ = 0.f;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If >0.f this function is enabled and the result will no longer be realistic and may have artifacts.
 		bool transparent_bias_multiply_ray_depth_ = false;	//!< Per-material additional ray-bias setting for transparency (trick to avoid black areas due to insufficient depth when many transparent surfaces stacked). If enabled the bias will be multiplied by the current ray depth so the first transparent surfaces are rendered better and subsequent surfaces might be skipped.
 
@@ -227,6 +209,8 @@ class Material
 		bool flat_material_ = false;		//!< Flat Material is a special non-photorealistic material that does not multiply the surface color by the cosine of the angle with the light, as happens in real life. Also, if receive_shadows is disabled, this flat material does no longer self-shadow. For special applications only.
 
 		static float highest_sampling_factor_;	//!< Class shared variable containing the highest material sampling factor. This is used to calculate the max. possible samples for the Sampling pass.
+		static unsigned int material_index_auto_;	//!< Material Index automatically generated for the material-index-auto render pass
+		static unsigned int material_index_highest_;	//!< Class shared variable containing the highest material index used for the Normalized Material Index pass.
 };
 
 struct Sample

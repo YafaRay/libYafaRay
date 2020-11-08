@@ -34,10 +34,9 @@
 
 BEGIN_YAFARAY
 
-float Material::material_index_highest_ = 1.f;	//Initially this class shared variable will be 1.f
-unsigned int Material::material_index_auto_ = 0;	//Initially this class shared variable will be 0
-float Material::highest_sampling_factor_ = 1.f;	//Initially this class shared variable will be 1.f
-
+unsigned int Material::material_index_highest_ = 1;
+unsigned int Material::material_index_auto_ = 0;
+float Material::highest_sampling_factor_ = 1.f;
 
 Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
@@ -57,20 +56,19 @@ Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scen
 	else return nullptr;
 }
 
-Material::Material() : bsdf_flags_(BsdfFlags::None), visibility_(Material::Visibility::NormalVisible), receive_shadows_(true), req_mem_(0), vol_i_(nullptr), vol_o_(nullptr), additional_depth_(0)
+Material::Material()
 {
 	material_index_auto_++;
 	srand(material_index_auto_);
 	float r, g, b;
 	do
 	{
-		r = (float)(rand() % 8) / 8.f;
-		g = (float)(rand() % 8) / 8.f;
-		b = (float)(rand() % 8) / 8.f;
+		r = static_cast<float>(rand() % 8) / 8.f;
+		g = static_cast<float>(rand() % 8) / 8.f;
+		b = static_cast<float>(rand() % 8) / 8.f;
 	}
 	while(r + g + b < 0.5f);
 	material_index_auto_color_ = Rgb(r, g, b);
-	material_index_auto_number_ = material_index_auto_;
 }
 
 Rgb Material::sampleClay(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const {
@@ -193,21 +191,21 @@ bool Material::scatterPhoton(const RenderData &render_data, const SurfacePoint &
 Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const
 {
 	if(flags.hasAny((BsdfFlags::Transmit | BsdfFlags::Reflect) & bsdf_flags_)) return Rgb(0.f);
-	float s_1, s_2, s_3, s_4, w = 0.f;
-	Rgb total(0.f), col;
-	Vec3 wi, wo;
+	Rgb total(0.f);
 	for(int i = 0; i < 16; ++i)
 	{
-		s_1 = 0.03125 + 0.0625 * (float)i; // (1.f/32.f) + (1.f/16.f)*(float)i;
-		s_2 = sample::riVdC(i);
-		s_3 = scrHalton__(2, i);
-		s_4 = scrHalton__(3, i);
-		wo = sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
+		const float s_1 = 0.03125f + 0.0625f * static_cast<float>(i); // (1.f/32.f) + (1.f/16.f)*(float)i;
+		const float s_2 = sample::riVdC(i);
+		const float s_3 = scrHalton__(2, i);
+		const float s_4 = scrHalton__(3, i);
+		const Vec3 wo = sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
+		Vec3 wi;
 		Sample s(s_3, s_4, flags);
-		col = sample(render_data, sp, wo, wi, s, w);
+		float w = 0.f;
+		const Rgb col = sample(render_data, sp, wo, wi, s, w);
 		total += col * w;
 	}
-	return total * 0.0625; //total / 16.f
+	return total * 0.0625f; //total / 16.f
 }
 
 void Material::applyBump(SurfacePoint &sp, float df_dnu, float df_dnv) const

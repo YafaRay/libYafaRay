@@ -51,8 +51,7 @@ class Bound
 		 */
 		Bound(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; /* null=false; */ };
 		//! Default constructor
-		Bound() {};
-
+		Bound() = default;
 		/*! Two child constructor.
 		 * This creates a bound that includes the two given bounds. It's used when
 		 * building a bounding tree
@@ -215,8 +214,8 @@ class ExBound: public Bound
 		{
 			for(int i = 0; i < 3; ++i)
 			{
-				center_[i]   = ((double)a_[i] + (double)g_[i]) * 0.5;
-				half_size_[i] = ((double)g_[i] - (double)a_[i]) * 0.5;
+				center_[i] = (static_cast<double>(a_[i]) + static_cast<double>(g_[i])) * 0.5;
+				half_size_[i] = (static_cast<double>(g_[i]) - static_cast<double>(a_[i])) * 0.5;
 			}
 		}
 
