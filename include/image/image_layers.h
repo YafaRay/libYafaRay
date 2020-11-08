@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-class ColorLayer;
+struct ColorLayer;
 class Layer;
 class Rgba;
 

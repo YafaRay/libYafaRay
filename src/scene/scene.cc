@@ -538,9 +538,9 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	AaNoiseParams aa_noise_params;
 	int nthreads = -1, nthreads_photons = -1;
 	bool adv_auto_shadow_bias_enabled = true;
-	float adv_shadow_bias_value = YAF_SHADOW_BIAS;
+	float adv_shadow_bias_value = shadow_bias__;
 	bool adv_auto_min_raydist_enabled = true;
-	float adv_min_raydist_value = MIN_RAYDIST;
+	float adv_min_raydist_value = min_raydist__;
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes

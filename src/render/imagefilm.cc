@@ -802,7 +802,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	double y_offs = dy - 0.5;
 	for(int i = dy_0, n = 0; i <= dy_1; ++i, ++n)
 	{
-		float d = fabsf((float)((double(i) - y_offs) * table_scale_));
+		float d = std::abs((float)((double(i) - y_offs) * table_scale_));
 		y_index[n] = math::floorToInt(d);
 	}
 

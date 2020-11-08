@@ -323,8 +323,8 @@ Rgba ImageTexture::bicubicInterpolation(const Point3 &p, int mipmap_level) const
 
 Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	const float ds = std::max(fabsf(mipmap_params->ds_dx_), fabsf(mipmap_params->ds_dy_)) * images_.at(0).getWidth();
-	const float dt = std::max(fabsf(mipmap_params->dt_dx_), fabsf(mipmap_params->dt_dy_)) * images_.at(0).getHeight();
+	const float ds = std::max(std::abs(mipmap_params->ds_dx_), std::abs(mipmap_params->ds_dy_)) * images_.at(0).getWidth();
+	const float dt = std::max(std::abs(mipmap_params->dt_dx_), std::abs(mipmap_params->dt_dy_)) * images_.at(0).getHeight();
 	float mipmap_level = 0.5f * math::log2(ds * ds + dt * dt);
 
 	if(mipmap_params->force_image_level_ > 0.f) mipmap_level = mipmap_params->force_image_level_ * static_cast<float>(images_.size() - 1);
@@ -348,10 +348,10 @@ Rgba ImageTexture::mipMapsTrilinearInterpolation(const Point3 &p, const MipMapPa
 
 Rgba ImageTexture::mipMapsEwaInterpolation(const Point3 &p, float max_anisotropy, const MipMapParams *mipmap_params) const
 {
-	float ds_0 = fabsf(mipmap_params->ds_dx_);
-	float ds_1 = fabsf(mipmap_params->ds_dy_);
-	float dt_0 = fabsf(mipmap_params->dt_dx_);
-	float dt_1 = fabsf(mipmap_params->dt_dy_);
+	float ds_0 = std::abs(mipmap_params->ds_dx_);
+	float ds_1 = std::abs(mipmap_params->ds_dy_);
+	float dt_0 = std::abs(mipmap_params->dt_dx_);
+	float dt_1 = std::abs(mipmap_params->dt_dy_);
 
 	if((ds_0 * ds_0 + dt_0 * dt_0) < (ds_1 * ds_1 + dt_1 * dt_1))
 	{

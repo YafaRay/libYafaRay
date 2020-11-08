@@ -63,27 +63,14 @@ TriangleObject::TriangleObject(int ntris, bool has_uv, bool has_orco):
 		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), normals_exported_(false)
 {
 	triangles_.reserve(ntris);
-	if(has_uv)
-	{
-		uv_offsets_.reserve(ntris);
-	}
-
-	if(has_orco)
-	{
-		points_.reserve(2 * 3 * ntris);
-	}
-	else
-	{
-		points_.reserve(3 * ntris);
-	}
+	if(has_uv) uv_offsets_.reserve(ntris);
+	if(has_orco) points_.reserve(2 * 3 * ntris);
+	else points_.reserve(3 * ntris);
 }
 
 int TriangleObject::getPrimitives(const Triangle **prims) const
 {
-	for(unsigned int i = 0; i < triangles_.size(); ++i)
-	{
-		prims[i] = &(triangles_[i]);
-	}
+	for(unsigned int i = 0; i < triangles_.size(); ++i) prims[i] = &(triangles_[i]);
 	return triangles_.size();
 }
 
@@ -96,15 +83,12 @@ Triangle *TriangleObject::addTriangle(const Triangle &t)
 
 void TriangleObject::finish()
 {
-	for(auto i = triangles_.begin(); i != triangles_.end(); ++i)
-	{
-		i->recNormal();
-	}
+	for(auto &triangle : triangles_) triangle.recNormal();
 }
 
 // triangleObjectInstance_t Methods
 
-TriangleObjectInstance::TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world)
+TriangleObjectInstance::TriangleObjectInstance(const TriangleObject *base, Matrix4 obj_2_world)
 {
 	obj_to_world_ = obj_2_world;
 	m_base_ = base;
@@ -114,21 +98,16 @@ TriangleObjectInstance::TriangleObjectInstance(TriangleObject *base, Matrix4 obj
 	normals_exported_ = m_base_->normals_exported_;
 	visible_ = true;
 	is_base_mesh_ = false;
-
 	triangles_.reserve(m_base_->triangles_.size());
-
-	for(size_t i = 0; i < m_base_->triangles_.size(); i++)
+	for(const auto &triangle : m_base_->triangles_)
 	{
-		triangles_.push_back(TriangleInstance(&m_base_->triangles_[i], this));
+		triangles_.push_back(TriangleInstance(&triangle, this));
 	}
 }
 
 int TriangleObjectInstance::getPrimitives(const Triangle **prims) const
 {
-	for(size_t i = 0; i < triangles_.size(); i++)
-	{
-		prims[i] = &triangles_[i];
-	}
+	for(size_t i = 0; i < triangles_.size(); i++) prims[i] = &triangles_[i];
 	return triangles_.size();
 }
 
@@ -145,10 +124,7 @@ MeshObject::MeshObject(int ntris, bool has_uv, bool has_orco):
 		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), light_(nullptr)
 {
 	//triangles.reserve(ntris);
-	if(has_uv)
-	{
-		uv_offsets_.reserve(ntris);
-	}
+	if(has_uv) uv_offsets_.reserve(ntris);
 }
 
 int MeshObject::getPrimitives(const Primitive **prims) const
@@ -179,10 +155,7 @@ Primitive *MeshObject::addBsTriangle(const BsTriangle &t)
 
 void MeshObject::finish()
 {
-	for(auto i = triangles_.begin(); i != triangles_.end(); ++i)
-	{
-		i->recNormal();
-	}
+	for(auto &triangle : triangles_) triangle.recNormal();
 }
 
 END_YAFARAY

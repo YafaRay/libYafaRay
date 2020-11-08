@@ -48,6 +48,7 @@ std::map<std::string, Layer::Type> Layer::initMapTypeNamesTypes()
 	map_typename_type["debug-normal-geom"] = Layer::NormalGeom;
 	map_typename_type["adv-radiance"] = Layer::Radiance;
 	map_typename_type["debug-uv"] = Layer::Uv;
+	map_typename_type["debug-barycentric-uvw"] = Layer::BarycentricUvw;
 	map_typename_type["emit"] = Layer::Emit;
 	map_typename_type["mist"] = Layer::Mist;
 	map_typename_type["diffuse"] = Layer::Diffuse;

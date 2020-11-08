@@ -36,7 +36,7 @@ BEGIN_YAFARAY
 class Image;
 class Scene;
 class Layers;
-class ColorLayer;
+struct ColorLayer;
 class ColorLayers;
 class ParamMap;
 class RenderView;

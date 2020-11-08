@@ -42,7 +42,7 @@ BEGIN_YAFARAY
   if(x2<min) min=x2;\
   if(x2>max) max=x2;
 
-int planeBoxOverlap__(double *normal, double *vert, double *maxbox)	// -NJMP-
+int planeBoxOverlap__(const double *normal, const double *vert, const double *maxbox)	// -NJMP-
 {
 	int q;
 	double vmin[3], vmax[3], v;
@@ -113,7 +113,7 @@ int planeBoxOverlap__(double *normal, double *vert, double *maxbox)	// -NJMP-
 	rad = fa * boxhalfsize[X] + fb * boxhalfsize[Y];   \
 	if(min>rad || max<-rad) return 0;
 
-int triBoxOverlap__(double *boxcenter, double *boxhalfsize, double **triverts)
+int triBoxOverlap__(const double *boxcenter, const double *boxhalfsize, double **triverts)
 {
 
 	/*    use separating axis theorem to test overlap between triangle and box */

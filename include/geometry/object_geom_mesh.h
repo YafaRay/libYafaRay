@@ -32,7 +32,7 @@ class BsTriangle;
 
 struct Uv
 {
-	Uv(float u, float v): u_(u), v_(v) {};
+	Uv(float u, float v): u_(u), v_(v) { }
 	float u_, v_;
 };
 
@@ -98,7 +98,7 @@ class TriangleObject: public ObjectGeometric
 		virtual int getPrimitives(const Triangle **prims) const override;
 		Triangle *addTriangle(const Triangle &t);
 		virtual void finish();
-		virtual Vec3 getVertexNormal(int index) const { return Vec3(normals_[index]); }
+		virtual Vec3 getVertexNormal(int index) const { return normals_[index]; }
 		virtual Point3 getVertex(int index) const { return points_[index]; }
 
 	private:
@@ -122,7 +122,7 @@ class TriangleObjectInstance final: public TriangleObject
 		friend class YafaRayScene;
 
 	public:
-		TriangleObjectInstance(TriangleObject *base, Matrix4 obj_2_world);
+		TriangleObjectInstance(const TriangleObject *base, Matrix4 obj_2_world);
 
 	private:
 		/*! the number of primitives the object holds. Primitive is an element
@@ -130,18 +130,12 @@ class TriangleObjectInstance final: public TriangleObject
 		virtual int numPrimitives() const override { return triangles_.size(); }
 		virtual int getPrimitives(const Triangle **prims) const override;
 		virtual void finish() override;
-		virtual Vec3 getVertexNormal(int index) const override
-		{
-			return Vec3(obj_to_world_ * m_base_->normals_[index]);
-		}
-		virtual Point3 getVertex(int index) const override
-		{
-			return obj_to_world_ * m_base_->points_[index];
-		}
+		virtual Vec3 getVertexNormal(int index) const override { return obj_to_world_ * m_base_->normals_[index]; }
+		virtual Point3 getVertex(int index) const override { return obj_to_world_ * m_base_->points_[index]; }
 
 		std::vector<TriangleInstance> triangles_;
 		Matrix4 obj_to_world_;
-		TriangleObject *m_base_ = nullptr;
+		const TriangleObject *m_base_ = nullptr;
 };
 
 END_YAFARAY

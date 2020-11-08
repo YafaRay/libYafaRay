@@ -691,8 +691,8 @@ bool YafaRayScene::updateGeometry()
 					  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
 					  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-			if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
-			if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
+			if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
+			if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
 
 			Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 		}
@@ -738,8 +738,8 @@ bool YafaRayScene::updateGeometry()
 					  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
 					  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-			if(shadow_bias_auto_) shadow_bias_ = YAF_SHADOW_BIAS;
-			if(ray_min_dist_auto_) ray_min_dist_ = MIN_RAYDIST;
+			if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
+			if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
 
 			Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 

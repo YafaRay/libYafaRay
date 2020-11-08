@@ -35,19 +35,12 @@ class ObjectGeometric;
 class DiffRay;
 class Vec3;
 
-class IntersectData
+struct IntersectData
 {
-	public:
-		IntersectData()
-		{
-			// Empty
-		}
-		float b_0_ = 0.f;
-		float b_1_ = 0.f;
-		float b_2_ = 0.f;
-		float t_ = 0.f;
-		const Vec3 *edge_1_ = nullptr;
-		const Vec3 *edge_2_ = nullptr;
+	float barycentric_u_ = 0.f;
+	float barycentric_v_ = 0.f;
+	float barycentric_w_ = 0.f;
+	float time_ = 0.f;
 };
 
 /*! This holds a sampled surface point's data
@@ -103,21 +96,13 @@ class SurfacePoint
 
 inline float SurfacePoint::getDistToNearestEdge() const
 {
-	if(data_.edge_1_ && data_.edge_2_)
-	{
-		float edge_1_len = data_.edge_1_->length();
-		float edge_2_len = data_.edge_2_->length();
-		float edge_12_len = (*(data_.edge_1_) + * (data_.edge_2_)).length() * 0.5f;
-
-		float edge_1_dist = data_.b_1_ * edge_1_len;
-		float edge_2_dist = data_.b_2_ * edge_2_len;
-		float edge_12_dist = data_.b_0_ * edge_12_len;
-
-		float edge_min_dist = std::min(edge_12_dist, std::min(edge_1_dist, edge_2_dist));
-
-		return edge_min_dist;
-	}
-	else return std::numeric_limits<float>::infinity();
+	const float u_dist_rel = 0.5f - std::abs(data_.barycentric_u_ - 0.5f);
+	const float u_dist_abs = u_dist_rel * dp_du_abs_.length();
+	const float v_dist_rel = 0.5f - std::abs(data_.barycentric_v_ - 0.5f);
+	const float v_dist_abs = v_dist_rel * dp_dv_abs_.length();
+	const float w_dist_rel = 0.5f - std::abs(data_.barycentric_w_ - 0.5f);
+	const float w_dist_abs = w_dist_rel * (dp_dv_abs_ - dp_du_abs_).length();
+	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
 }
 
 inline Vec3 SurfacePoint::normalFaceForward(const Vec3 &normal_geometry, const Vec3 &normal, const Vec3 &incoming_vector)

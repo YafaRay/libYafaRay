@@ -63,6 +63,11 @@ static constexpr double doublemagic = double (6755399441055744.0);
 // all from "Efficient Multidimensional Sampling" by Alexander Keller
 static constexpr double sample_mult_ratio = 0.00000000023283064365386962890625;
 
+template <class T>
+constexpr T min(const T &a, const T &b, const T &c) { return std::min(a, std::min(b, c)); }
+
+template <class T>
+constexpr T max(const T &a, const T &b, const T &c) { return std::max(a, std::max(b, c)); }
 
 union BitTwiddler
 {

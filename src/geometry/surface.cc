@@ -121,19 +121,19 @@ void SpDifferentials::dUdvFromDpdPdUdPdV(float &du, float &dv, const Point3 &dp,
 	const float det_xz = (dp_du.x_ * dp_dv.z_) - (dp_dv.x_ * dp_du.z_);
 	const float det_yz = (dp_du.y_ * dp_dv.z_) - (dp_dv.y_ * dp_du.z_);
 
-	if(fabsf(det_xy) > 0.f && fabsf(det_xy) > fabsf(det_xz) && fabsf(det_xy) > fabsf(det_yz))
+	if(std::abs(det_xy) > 0.f && std::abs(det_xy) > std::abs(det_xz) && std::abs(det_xy) > std::abs(det_yz))
 	{
 		du = ((dp.x_ * dp_dv.y_) - (dp_dv.x_ * dp.y_)) / det_xy;
 		dv = ((dp_du.x_ * dp.y_) - (dp.x_ * dp_du.y_)) / det_xy;
 	}
 
-	else if(fabsf(det_xz) > 0.f && fabsf(det_xz) > fabsf(det_xy) && fabsf(det_xz) > fabsf(det_yz))
+	else if(std::abs(det_xz) > 0.f && std::abs(det_xz) > std::abs(det_xy) && std::abs(det_xz) > std::abs(det_yz))
 	{
 		du = ((dp.x_ * dp_dv.z_) - (dp_dv.x_ * dp.z_)) / det_xz;
 		dv = ((dp_du.x_ * dp.z_) - (dp.x_ * dp_du.z_)) / det_xz;
 	}
 
-	else if(fabsf(det_yz) > 0.f && fabsf(det_yz) > fabsf(det_xy) && fabsf(det_yz) > fabsf(det_xz))
+	else if(std::abs(det_yz) > 0.f && std::abs(det_yz) > std::abs(det_xy) && std::abs(det_yz) > std::abs(det_xz))
 	{
 		du = ((dp.y_ * dp_dv.z_) - (dp_dv.y_ * dp.z_)) / det_yz;
 		dv = ((dp_du.y_ * dp.z_) - (dp.y_ * dp_du.z_)) / det_yz;

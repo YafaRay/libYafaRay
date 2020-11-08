@@ -45,6 +45,7 @@ class LIBYAFARAY_EXPORT Layer final
 			NormalSmooth,
 			NormalGeom,
 			Uv,
+			BarycentricUvw,
 			Radiance,
 			Emit,
 			Diffuse,

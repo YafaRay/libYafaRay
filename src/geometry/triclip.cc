@@ -247,7 +247,7 @@ int triBoxClip__(const double b_min[3], const double b_max[3], const double triv
 	return 0;
 }
 
-int triPlaneClip__(double pos, int axis, bool lower, Bound &box, void *o_dat, void *n_dat)
+int triPlaneClip__(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat)
 {
 	ClipDump *input = (ClipDump *)o_dat;
 	ClipDump *output = (ClipDump *)n_dat;

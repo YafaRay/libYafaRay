@@ -26,7 +26,7 @@
 #include "renderwidget.h"
 #include <QImage>
 
-class ColorLayer;
+struct ColorLayer;
 class QWidget;
 
 class QtOutput final : public yafaray4::ColorOutput
