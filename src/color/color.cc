@@ -20,46 +20,39 @@
  *
  */
 #include "color/color.h"
-using namespace std;
+#include "math/interpolation.h"
 
 BEGIN_YAFARAY
 
 void operator >> (unsigned char *data, Rgb &c)
 {
-	c.r_ = ((float) data[0]) / ((float)255);
-	c.g_ = ((float) data[1]) / ((float)255);
-	c.b_ = ((float) data[2]) / ((float)255);
+	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
+	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
+	c.b_ = static_cast<float>(data[2]) / static_cast<float>(255);
 }
 
 void operator << (unsigned char *data, const Rgb &c)
 {
-	//	data[0]=(char) (((c.R<(float)0) ? 0 : ((c.R>(float)1) ? 255 : (((float)255)*c.R) )) );
-	//	data[1]=(char) (((c.G<(float)0) ? 0 : ((c.G>(float)1) ? 255 : (((float)255)*c.G) )) );
-	//	data[2]=(char) (((c.B<(float)0) ? 0 : ((c.B>(float)1) ? 255 : (((float)255)*c.B) )) );
-	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : (unsigned char)(255.f * c.r_));
-	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : (unsigned char)(255.f * c.g_));
-	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : (unsigned char)(255.f * c.b_));
+	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.r_));
+	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.g_));
+	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.b_));
 }
 
 void operator >> (unsigned char *data, Rgba &c)
 {
-	c.r_ = ((float) data[0]) / ((float)255);
-	c.g_ = ((float) data[1]) / ((float)255);
-	c.b_ = ((float) data[2]) / ((float)255);
-	c.a_ = ((float) data[3]) / ((float)255);
+	c.r_ = static_cast<float>(data[0]) / static_cast<float>(255);
+	c.g_ = static_cast<float>(data[1]) / static_cast<float>(255);
+	c.b_ = static_cast<float>(data[2]) / static_cast<float>(255);
+	c.a_ = static_cast<float>(data[3]) / static_cast<float>(255);
 }
 
 
 void operator << (unsigned char *data, const Rgba &c)
 {
-	//	data[0]=(char) (((c.R<(float)0) ? 0 : ((c.R>(float)1) ? 255 : (((float)255)*c.R) )) );
-	//	data[1]=(char) (((c.G<(float)0) ? 0 : ((c.G>(float)1) ? 255 : (((float)255)*c.G) )) );
-	//	data[2]=(char) (((c.B<(float)0) ? 0 : ((c.B>(float)1) ? 255 : (((float)255)*c.B) )) );
-	//	data[3]=(char) (((c.A<(float)0) ? 0 : ((c.A>(float)1) ? 255 : (((float)255)*c.A) )) );
-	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : (unsigned char)(255.f * c.r_));
-	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : (unsigned char)(255.f * c.g_));
-	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : (unsigned char)(255.f * c.b_));
-	data[3] = (c.a_ < 0.f) ? 0 : ((c.a_ >= 1.f) ? 255 : (unsigned char)(255.f * c.a_));
+	data[0] = (c.r_ < 0.f) ? 0 : ((c.r_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.r_));
+	data[1] = (c.g_ < 0.f) ? 0 : ((c.g_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.g_));
+	data[2] = (c.b_ < 0.f) ? 0 : ((c.b_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.b_));
+	data[3] = (c.a_ < 0.f) ? 0 : ((c.a_ >= 1.f) ? 255 : static_cast<unsigned char>(255.f * c.a_));
 }
 
 void operator >> (float *data, Rgb &c)
@@ -68,7 +61,6 @@ void operator >> (float *data, Rgb &c)
 	c.g_ = data[1];
 	c.b_ = data[2];
 }
-
 
 void operator << (float *data, const Rgb &c)
 {
@@ -85,7 +77,6 @@ void operator >> (float *data, Rgba &c)
 	c.a_ = data[3];
 }
 
-
 void operator << (float *data, const Rgba &c)
 {
 	data[0] = c.r_;
@@ -94,13 +85,13 @@ void operator << (float *data, const Rgba &c)
 	data[3] = c.a_;
 }
 
-ostream &operator << (ostream &out, const Rgb c)
+std::ostream &operator << (std::ostream &out, const Rgb c)
 {
 	out << "[" << c.r_ << " " << c.g_ << " " << c.b_ << "]";
 	return out;
 }
 
-ostream &operator << (ostream &out, const Rgba c)
+std::ostream &operator << (std::ostream &out, const Rgba c)
 {
 	out << "[" << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << "]";
 	return out;
@@ -108,18 +99,12 @@ ostream &operator << (ostream &out, const Rgba c)
 
 Rgb mix__(const Rgb &a, const Rgb &b, float point)
 {
-	if(point <= 0.0) return b;
-	if(point >= 1.0) return a;
-
-	return (a * point + (1 - point) * b);
+	return math::lerpTruncated(b, a, point);
 }
 
 Rgba mix__(const Rgba &a, const Rgba &b, float point)
 {
-	if(point <= 0.0) return b;
-	if(point >= 1.0) return a;
-
-	return (a * point + (1 - point) * b);
+	return math::lerpTruncated(b, a, point);
 }
 
 std::string Rgb::colorSpaceName(const ColorSpace &color_space)
@@ -148,12 +133,11 @@ Rgbe::Rgbe(const Rgb &s)
 	float v = s.getR();
 	if(s.getG() > v) v = s.getG();
 	if(s.getB() > v) v = s.getB();
-	if(v < 1e-32f)
-		rgbe_[0] = rgbe_[1] = rgbe_[2] = rgbe_[3] = 0;
+	if(v < 1e-32f) rgbe_[0] = rgbe_[1] = rgbe_[2] = rgbe_[3] = 0.f;
 	else
 	{
 		int e;
-		v = frexp(v, &e) * 256.0 / v;
+		v = std::frexp(v, &e) * 256.f / v;
 		rgbe_[0] = (unsigned char)(s.getR() * v);
 		rgbe_[1] = (unsigned char)(s.getG() * v);
 		rgbe_[2] = (unsigned char)(s.getB() * v);

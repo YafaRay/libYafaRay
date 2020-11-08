@@ -21,7 +21,7 @@
 BEGIN_YAFARAY
 
 // CIE color matching function table, 1931, 2 degree
-static float cie_xy_zcolmat__[471][4] =
+constexpr float cie_xy_zcolmat__[471][4] =
 {
 	{360.f, 0.000129900000f, 0.000003917000f, 0.000606100000f}, {361.f, 0.000145847000f, 0.000004393581f, 0.000680879200f},
 	{362.f, 0.000163802100f, 0.000004929604f, 0.000765145600f}, {363.f, 0.000184003700f, 0.000005532136f, 0.000860012400f},
@@ -268,7 +268,7 @@ void xyzToRgb__(float x, float y, float z, Rgb &col)
 	        -0.511651380743862f * x + 1.42275837632178f * y + 0.0888930017552939f * z,
 	        0.00572040983140966f * x - 0.0159068485104036f * y + 1.0101864083734f * z);
 	// correct if outside gamut
-	float wt = col.minimum();
+	const float wt = col.minimum();
 	if(wt < 0.f) col -= Rgb(wt);
 }
 
@@ -276,30 +276,30 @@ void xyzToRgb__(float x, float y, float z, Rgb &col)
 void wl2RgbFromCie__(float wl, Rgb &col)
 {
 	float fr = wl - 360.f;
-	int p_1 = int(fr);
+	const int p_1 = int(fr);
 	if(p_1 < 0) { col.black(); return; }
-	int p_2 = p_1 + 1;
+	const int p_2 = p_1 + 1;
 	if(p_2 > 470) { col.black(); return; }
-	fr -= floor(fr);
-	float fr_2 = 1.f - fr;
-	float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
-	float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
-	float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
+	fr -= std::floor(fr);
+	const float fr_2 = 1.f - fr;
+	const float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
+	const float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
+	const float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
 	xyzToRgb__(x, y, z, col);
 }
 
 Rgb wl2Xyz__(float wl)
 {
 	float fr = wl - 360.f;
-	int p_1 = int(fr);
+	const int p_1 = int(fr);
 	if(p_1 < 0) { return Rgb(0.f); }
-	int p_2 = p_1 + 1;
+	const int p_2 = p_1 + 1;
 	if(p_2 > 470) { return Rgb(0.f); }
-	fr -= floor(fr);
-	float fr_2 = 1.f - fr;
-	float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
-	float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
-	float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
+	fr -= std::floor(fr);
+	const float fr_2 = 1.f - fr;
+	const float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
+	const float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
+	const float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
 	return Rgb(x, y, z);
 }
 
@@ -308,9 +308,9 @@ Rgb wl2Xyz__(float wl)
 // slow but might be useful sometime
 void approxSpectrum__(float wl, Rgb &col)
 {
-	float t_1 = wl - 445.f, t_2 = wl - 595.f, t_3 = wl - 560.f, t_4 = wl - 451.f;
-	float x = 0.38f * math::exp(-t_1 * t_1 * 1.3691796159e-3f) + 1.06f * math::exp(-t_2 * t_2 * 4.3321698785e-4f);
-	float y = math::exp(-t_3 * t_3 * 2.7725887222e-4f), z = 1.8f * math::exp(-t_4 * t_4 * 9.1655825529e-4f);
+	const float t_1 = wl - 445.f, t_2 = wl - 595.f, t_3 = wl - 560.f, t_4 = wl - 451.f;
+	const float x = 0.38f * math::exp(-t_1 * t_1 * 1.3691796159e-3f) + 1.06f * math::exp(-t_2 * t_2 * 4.3321698785e-4f);
+	const float y = math::exp(-t_3 * t_3 * 2.7725887222e-4f), z = 1.8f * math::exp(-t_4 * t_4 * 9.1655825529e-4f);
 	xyzToRgb__(x, y, z, col);
 }
 
@@ -319,7 +319,7 @@ void approxSpectrum__(float wl, Rgb &col)
 // p in range 0 to 1
 void fakeSpectrum__(float p, Rgb &col)
 {
-	float r = 4.f * (p - 0.75f), g = 4.f * (p - 0.5f), b = 4.f * (p - 0.25f);
+	const float r = 4.f * (p - 0.75f), g = 4.f * (p - 0.5f), b = 4.f * (p - 0.25f);
 	col.set(1.f - r * r, 1.f - g * g, 1.f - b * b);
 	col.clampRgb0();
 }
@@ -333,10 +333,10 @@ void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauc
 	if(disp_pw > 0)
 	{
 		// Fraunhofer line wavelengths, Hydrogen F, Helium d, Hydrogen C
-		const float l_f_2 = 486.13 * 486.13, ld_2 = 587.56 * 587.56, l_c_2 = 656.27 * 656.27;
-		float vd = (ior - 1.0) / disp_pw;	// Abbe number
+		const float l_f_2 = 486.13f * 486.13f, ld_2 = 587.56f * 587.56f, l_c_2 = 656.27f * 656.27f;
+		const float vd = (ior - 1.0) / disp_pw;	// Abbe number
 		cauchy_b = (l_c_2 - l_f_2) * vd;
-		if(cauchy_b != 0.0) cauchy_b = (l_f_2 * l_c_2 * (ior - 1.0)) / cauchy_b;
+		if(cauchy_b != 0.0) cauchy_b = (l_f_2 * l_c_2 * (ior - 1.f)) / cauchy_b;
 		cauchy_a = ior - cauchy_b / ld_2;
 	}
 }
@@ -347,7 +347,7 @@ void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauc
 float getIoRcolor__(float w, float cauchy_a, float cauchy_b, Rgb &col)
 {
 	//float wl = 400.0*w + 380.0;
-	float wl = 300.0 * w + 400.0;
+	const float wl = 300.f * w + 400.f;
 	wl2RgbFromCie__(wl, col);
 	col *= 2.214032659670777114f;	// scale for CIE sys. equal energy, range 400-700
 	return cauchy_a + cauchy_b / (wl * wl);

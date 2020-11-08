@@ -33,9 +33,17 @@ namespace math
 {
 
 template<typename Y, typename X>
-inline static Y lerp(const Y &y_1, const Y &y_2, const X &x)
+inline constexpr Y lerp(const Y &y_1, const Y &y_2, const X &x)
 {
 	return y_1 * (static_cast<X>(1) - x) + y_2 * x;
+}
+
+template<typename Y, typename X>
+inline Y lerpTruncated(const Y &y_1, const Y &y_2, const X &x)
+{
+	if(x <= 0) return y_1;
+	else if(x >= 1) return y_2;
+	else return y_1 * (static_cast<X>(1) - x) + y_2 * x;
 }
 
 template<typename Y, typename X>
@@ -52,7 +60,7 @@ inline Y lerpSegment(const X &x, const Y &y_1, const X &x_1, const Y &y_2, const
 }
 
 template<typename Y, typename X>
-inline static Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
+inline Y cosineInterpolate(const Y &y_1, const Y &y_2, const X &x)
 {
 	const X x_cos = (static_cast<X>(1) - math::cos(x * static_cast<X>(M_PI))) * static_cast<X>(0.5);
 	return (y_1 * (static_cast<X>(1) - x_cos) + y_2 * x_cos);
