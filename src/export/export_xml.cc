@@ -108,44 +108,44 @@ bool XmlExport::endTriMesh()
 
 bool XmlExport::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape)
 {
-	auto i = materials_.find(mat);
+	const auto i = materials_.find(mat);
 	if(i == materials_.end()) return false;
-	xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n"
-			  << "\t\t\t<strand_start fval=\"" << strand_start << "\"/>\n"
-			  << "\t\t\t<strand_end fval=\"" << strand_end << "\"/>\n"
-			  << "\t\t\t<strand_shape fval=\"" << strand_shape << "\"/>\n"
+	xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n"
+			  << "\t<strand_start fval=\"" << strand_start << "\"/>\n"
+			  << "\t<strand_end fval=\"" << strand_end << "\"/>\n"
+			  << "\t<strand_shape fval=\"" << strand_shape << "\"/>\n"
 			  << "</curve>\n";
 	return true;
 }
 
 int  XmlExport::addVertex(double x, double y, double z)
 {
-	xml_file_ << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 	return 0;
 }
 
 int  XmlExport::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
-	xml_file_ << "\t\t\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
+	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
 			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
 	return 0;
 }
 
 void XmlExport::addNormal(double x, double y, double z)
 {
-	xml_file_ << "\t\t\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
+	xml_file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
 bool XmlExport::addTriangle(int a, int b, int c, const Material *mat)
 {
 	if(mat != last_mat_) //need to set current material
 	{
-		auto i = materials_.find(mat);
+		const auto i = materials_.find(mat);
 		if(i == materials_.end()) return false;
-		xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
+		xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n";
 		last_mat_ = mat;
 	}
-	xml_file_ << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
+	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
 	return true;
 }
 
@@ -153,19 +153,19 @@ bool XmlExport::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, c
 {
 	if(mat != last_mat_) //need to set current material
 	{
-		auto i = materials_.find(mat);
+		const auto i = materials_.find(mat);
 		if(i == materials_.end()) return false;
-		xml_file_ << "\t\t\t<set_material sval=\"" << i->second << "\"/>\n";
+		xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n";
 		last_mat_ = mat;
 	}
-	xml_file_ << "\t\t\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
+	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
 			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
 	return true;
 }
 
 int XmlExport::addUv(float u, float v)
 {
-	xml_file_ << "\t\t\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
+	xml_file_ << "\t<uv u=\"" << u << "\" v=\"" << v << "\"/>\n";
 	return n_uvs_++;
 }
 
@@ -243,32 +243,28 @@ bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_
 	return true;
 }
 
-void XmlExport::writeParamMap(const ParamMap &pmap, int indent)
+void XmlExport::writeParamMap(const ParamMap &param_map, int indent)
 {
-	std::string tabs(indent, '\t');
-	for(const auto &p : pmap)
+	const std::string tabs(indent, '\t');
+	for(const auto &param : param_map)
 	{
 		xml_file_ << tabs;
-		writeParam__(p.first, p.second, xml_file_, xml_color_space_, xml_gamma_);
+		writeParam__(param.first, param.second, xml_file_, xml_color_space_, xml_gamma_);
 	}
 }
 
 void XmlExport::writeParamList(int indent)
 {
-	std::string tabs(indent, '\t');
-
-	auto ip = eparams_->begin();
-	auto end = eparams_->end();
-
-	for(; ip != end; ++ip)
+	const std::string tabs(indent, '\t');
+	for(const auto &param : *eparams_)
 	{
 		xml_file_ << tabs << "<list_element>\n";
-		writeParamMap(*ip, indent + 1);
+		writeParamMap(param, indent + 1);
 		xml_file_ << tabs << "</list_element>\n";
 	}
 }
 
-Light 		*XmlExport::createLight(const char *name)
+Light *XmlExport::createLight(const char *name)
 {
 	xml_file_ << "\n<light name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -276,7 +272,7 @@ Light 		*XmlExport::createLight(const char *name)
 	return nullptr;
 }
 
-Texture 		*XmlExport::createTexture(const char *name)
+Texture *XmlExport::createTexture(const char *name)
 {
 	xml_file_ << "\n<texture name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -284,9 +280,9 @@ Texture 		*XmlExport::createTexture(const char *name)
 	return nullptr;
 }
 
-Material 	*XmlExport::createMaterial(const char *name)
+Material *XmlExport::createMaterial(const char *name)
 {
-	Material *matp = (Material *)++nmat_;
+	Material *matp = (Material *)++nmat_; //FIXME: strange hack, should it be replaced by a better solution to keep track of the materials during the export process?
 	materials_[matp] = std::string(name);
 	xml_file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -294,21 +290,21 @@ Material 	*XmlExport::createMaterial(const char *name)
 	xml_file_ << "</material>\n";
 	return matp;
 }
-Camera 		*XmlExport::createCamera(const char *name)
+Camera *XmlExport::createCamera(const char *name)
 {
 	xml_file_ << "\n<camera name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	xml_file_ << "</camera>\n";
 	return nullptr;
 }
-Background 	*XmlExport::createBackground(const char *name)
+Background *XmlExport::createBackground(const char *name)
 {
 	xml_file_ << "\n<background name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	xml_file_ << "</background>\n";
 	return nullptr;
 }
-Integrator 	*XmlExport::createIntegrator(const char *name)
+Integrator *XmlExport::createIntegrator(const char *name)
 {
 	xml_file_ << "\n<integrator name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -316,7 +312,7 @@ Integrator 	*XmlExport::createIntegrator(const char *name)
 	return nullptr;
 }
 
-VolumeRegion 	*XmlExport::createVolumeRegion(const char *name)
+VolumeRegion *XmlExport::createVolumeRegion(const char *name)
 {
 	xml_file_ << "\n<volumeregion name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -340,7 +336,7 @@ RenderView *XmlExport::createRenderView(const char *name)
 	return nullptr;
 }
 
-unsigned int 	XmlExport::createObject(const char *name)
+unsigned int XmlExport::createObject(const char *name)
 {
 	xml_file_ << "\n<object name=\"" << name << "\">\n";
 	writeParamMap(*params_);
@@ -360,12 +356,7 @@ void XmlExport::render(ProgressBar *pb)
 
 void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val)
 {
-	if(color_space_string == "sRGB") xml_color_space_ = Srgb;
-	else if(color_space_string == "XYZ") xml_color_space_ = XyzD65;
-	else if(color_space_string == "LinearRGB") xml_color_space_ = LinearRgb;
-	else if(color_space_string == "Raw_Manual_Gamma") xml_color_space_ = RawManualGamma;
-	else xml_color_space_ = Srgb;
-
+	xml_color_space_ = Rgb::colorSpaceFromName(color_space_string, ColorSpace::Srgb);
 	xml_gamma_ = gamma_val;
 }
 

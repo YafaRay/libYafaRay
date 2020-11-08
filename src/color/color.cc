@@ -119,13 +119,13 @@ std::string Rgb::colorSpaceName(const ColorSpace &color_space)
 	}
 }
 
-ColorSpace Rgb::colorSpaceFromName(const std::string &color_space_name)
+ColorSpace Rgb::colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space)
 {
 	if(color_space_name == "Raw_Manual_Gamma") return ColorSpace::RawManualGamma;
 	else if(color_space_name == "LinearRGB") return ColorSpace::LinearRgb;
 	else if(color_space_name == "sRGB") return ColorSpace::Srgb;
 	else if(color_space_name == "XYZ") return ColorSpace::XyzD65;
-	else return ColorSpace::RawManualGamma;
+	else return default_color_space;
 }
 
 Rgbe::Rgbe(const Rgb &s)

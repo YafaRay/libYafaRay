@@ -65,7 +65,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:
-		void writeParamMap(const ParamMap &pmap, int indent = 1);
+		void writeParamMap(const ParamMap &param_map, int indent = 1);
 		void writeParamList(int indent);
 
 		std::map<const Material *, std::string> materials_;

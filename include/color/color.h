@@ -131,7 +131,7 @@ class Rgb
 		void hslToRgb(const float &h, const float &s, const float &l);
 
 		static std::string colorSpaceName(const ColorSpace &color_space);
-		static LIBYAFARAY_EXPORT ColorSpace colorSpaceFromName(const std::string &color_space_name);
+		static LIBYAFARAY_EXPORT ColorSpace colorSpaceFromName(const std::string &color_space_name, const ColorSpace &default_color_space = ColorSpace::RawManualGamma);
 
 		float r_ = 0.f;
 		float g_ = 0.f;
