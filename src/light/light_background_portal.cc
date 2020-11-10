@@ -18,8 +18,6 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <limits>
-
 #include "light/light_background_portal.h"
 #include "background/background.h"
 #include "common/param.h"
@@ -27,7 +25,10 @@
 #include "sampler/sample.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "geometry/triangle.h"
+#include "geometry/object_triangle.h"
+#include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
+#include <limits>
 
 BEGIN_YAFARAY
 

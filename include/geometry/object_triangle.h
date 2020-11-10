@@ -17,61 +17,64 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_GEOM_MESH_H
-#define YAFARAY_OBJECT_GEOM_MESH_H
+#ifndef YAFARAY_OBJECT_TRIANGLE_H
+#define YAFARAY_OBJECT_TRIANGLE_H
 
-#include "geometry/object_geom.h"
-#include <vector>
+#include "object_geom.h"
+#include "geometry/vector.h"
+#include "geometry/uv.h"
+#include "geometry/triangle.h"
+#include "vector"
 
 BEGIN_YAFARAY
 
-struct Uv;
-class VTriangle;
-class BsTriangle;
+/*!	This is a special version of MeshObject!
+	The only difference is that it returns a Triangle instead of VTriangle,
+	see declaration if Triangle for more details!
+*/
 
-/*!	MeshObject holds various polygonal primitives */
-class MeshObject final : public ObjectGeometric
+class TriangleObject: public ObjectGeometric
 {
 	public:
-		MeshObject(int ntris, bool has_uv = false, bool has_orco = false);
+		TriangleObject() = default;
+		TriangleObject(int ntris, bool has_uv = false, bool has_orco = false);
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		int numPrimitives() const { return v_triangles_.size() + bs_triangles_.size(); }
-		int getPrimitives(const Primitive **prims) const;
-
-		Primitive *addTriangle(const VTriangle &t);
-		Primitive *addBsTriangle(const BsTriangle &t);
-
-		//void setContext(std::vector<point3d_t>::iterator p, std::vector<normal_t>::iterator n);
-		void setLight(const Light *l) { light_ = l; }
-		void finish();
-		const std::vector<VTriangle> &getVTriangles() const { return v_triangles_; }
-		const std::vector<BsTriangle> &getBsTriangles() const { return bs_triangles_; }
+		virtual int numPrimitives() const override { return triangles_.size(); }
+		virtual int getPrimitives(const Triangle **prims) const override;
+		Triangle *addTriangle(const Triangle &t);
+		virtual void finish();
+		virtual Vec3 getVertexNormal(int index) const { return normals_[index]; }
+		virtual Point3 getVertex(int index) const { return points_[index]; }
+		const std::vector<Triangle> &getTriangles() const { return triangles_; }
 		const std::vector<Point3> &getPoints() const { return points_; }
 		const std::vector<Vec3> &getNormals() const { return normals_; }
 		const std::vector<int> &getUvOffsets() const { return uv_offsets_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
-		bool hasOrco() const { return has_orco_; }
-		bool hasUv() const { return has_uv_; }
-		bool isSmooth() const { return is_smooth_; }
+		virtual bool hasOrco() const { return has_orco_; }
+		virtual bool hasUv() const { return has_uv_; }
+		virtual bool isSmooth() const { return is_smooth_; }
+		virtual bool hasNormalsExported() const { return normals_exported_; }
 		void addPoint(const Point3 &p) { points_.push_back(p); }
+		void addNormal(const Vec3 &n, size_t last_vert_id);
 		void addUvOffset(int uv_offset) { uv_offsets_.push_back(uv_offset); }
 		void addUvValue(const Uv &uv) { uv_values_.push_back(uv); }
-		int convertToBezierControlPoints();
+		void setSmooth(bool smooth) { is_smooth_ = smooth; }
+		bool smoothMesh(float angle);
 
-	protected:
-		std::vector<VTriangle> v_triangles_;
-		std::vector<BsTriangle> bs_triangles_;
+	private:
+		std::vector<Triangle> triangles_;
 		std::vector<Point3> points_;
 		std::vector<Vec3> normals_;
 		std::vector<int> uv_offsets_;
 		std::vector<Uv> uv_values_;
+
 		bool has_orco_ = false;
 		bool has_uv_ = false;
 		bool is_smooth_ = false;
+		bool normals_exported_ = false;
 };
 
 END_YAFARAY
 
-#endif //YAFARAY_OBJECT_GEOM_MESH_H
-
+#endif //YAFARAY_OBJECT_TRIANGLE_H

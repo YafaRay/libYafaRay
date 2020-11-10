@@ -19,7 +19,6 @@
 
 #include "scene/scene_yafaray.h"
 #include "common/logger.h"
-#include "geometry/triangle.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "common/param.h"
 #include "light/light.h"
@@ -34,6 +33,13 @@
 #include "geometry/primitive_basic.h"
 #include "output/output.h"
 #include "render/render_data.h"
+#include "geometry/triangle.h"
+#include "geometry/object_triangle.h"
+#include "geometry/object_geom_mesh.h"
+#include "geometry/object_triangle_instance.h"
+#include "geometry/primitive_triangle.h"
+#include "geometry/primitive_triangle_bspline_time.h"
+#include "geometry/surface.h"
 
 BEGIN_YAFARAY
 
@@ -105,8 +111,6 @@ bool YafaRayScene::startCurveMesh(const std::string &name, int vertices, int obj
 	creation_state_.changes_ |= CreationState::Flags::CGeom;
 	geometry_creation_state_.orco_ = false;
 	geometry_creation_state_.cur_obj_ = &n_obj;
-
-	n_obj.obj_->points_.reserve(2 * vertices);
 	return true;
 }
 
@@ -118,7 +122,7 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 	// TODO: math optimizations
 
 	// extrude vertices and create faces
-	std::vector<Point3> &points = geometry_creation_state_.cur_obj_->obj_->points_;
+	const std::vector<Point3> &points = geometry_creation_state_.cur_obj_->obj_->getPoints();
 	float r;	//current radius
 	int i;
 	Point3 o, a, b;
@@ -147,8 +151,8 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		a = o - (0.5 * r * v) - 1.5 * r / math::sqrt(3.f) * u;
 		b = o - (0.5 * r * v) + 1.5 * r / math::sqrt(3.f) * u;
 
-		geometry_creation_state_.cur_obj_->obj_->points_.push_back(a);
-		geometry_creation_state_.cur_obj_->obj_->points_.push_back(b);
+		geometry_creation_state_.cur_obj_->obj_->addPoint(a);
+		geometry_creation_state_.cur_obj_->obj_->addPoint(b);
 	}
 
 	// Face fill
@@ -175,9 +179,9 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 			tri = Triangle(a_1, a_3, a_2, geometry_creation_state_.cur_obj_->obj_);
 			tri.setMaterial(mat);
 			geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-			geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+			geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+			geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+			geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
 		}
 
 		// Fill
@@ -185,53 +189,53 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
 		// StrandUV
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 		tri = Triangle(a_1, a_2, b_2, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 		tri = Triangle(a_2, b_3, b_2, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 		tri = Triangle(a_2, a_3, b_3, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 		tri = Triangle(b_3, a_3, a_1, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
 
 		tri = Triangle(b_3, a_1, b_1, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iu);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iu);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 	}
 	// Close top
 	tri = Triangle(i, 2 * i + n, 2 * i + n + 1, geometry_creation_state_.cur_obj_->obj_);
 	tri.setMaterial(mat);
 	geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
-	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
-	geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(iv);
+	geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+	geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
+	geometry_creation_state_.cur_obj_->obj_->addUvOffset(iv);
 
 	geometry_creation_state_.cur_obj_->obj_->finish();
 
@@ -241,6 +245,7 @@ bool YafaRayScene::endCurveMesh(const Material *mat, float strand_start, float s
 
 bool YafaRayScene::startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
 {
+	Y_DEBUG PRTEXT(YafaRayScene::startTriMesh) PR(name) PR(vertices) PR(triangles) PR(has_orco) PR(has_uv) PR(type) PR(obj_pass_index) PREND;
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	int ptype = type & 0xFF;
 	if(ptype != trim__ && type != vtrim__ && type != mtrim__) return false;
@@ -272,13 +277,14 @@ bool YafaRayScene::startTriMesh(const std::string &name, int vertices, int trian
 
 bool YafaRayScene::endTriMesh()
 {
+	Y_DEBUG PRTEXT(YafaRayScene::endTriMesh) PREND;
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
 
 	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		if(geometry_creation_state_.cur_obj_->obj_->has_uv_)
+		if(geometry_creation_state_.cur_obj_->obj_->hasUv())
 		{
-			if(geometry_creation_state_.cur_obj_->obj_->uv_offsets_.size() != 3 * geometry_creation_state_.cur_obj_->obj_->triangles_.size())
+			if(geometry_creation_state_.cur_obj_->obj_->getUvOffsets().size() != 3 * geometry_creation_state_.cur_obj_->obj_->getTriangles().size())
 			{
 				Y_ERROR << "Scene: UV-offsets mismatch!" << YENDL;
 				return false;
@@ -297,14 +303,9 @@ bool YafaRayScene::endTriMesh()
 	return true;
 }
 
-void prepareEdges__(int vertex_common_index, int vertex_1_index, int vertex_2_index, const std::vector<Point3> &vertices, Vec3 &edge_1, Vec3 &edge_2)
-{
-	edge_1 = vertices[vertex_1_index] - vertices[vertex_common_index];
-	edge_2 = vertices[vertex_2_index] - vertices[vertex_common_index];
-}
-
 bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 {
+	Y_DEBUG PRTEXT(YafaRayScene::startTriMesh) PR(name) PR(angle) PREND;
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	ObjData *odat;
 	if(!name.empty())
@@ -319,165 +320,27 @@ bool YafaRayScene::smoothMesh(const std::string &name, float angle)
 		if(!odat) return false;
 	}
 
-	if(odat->obj_->normals_exported_ && odat->obj_->points_.size() == odat->obj_->normals_.size())
+	if(odat->obj_->hasNormalsExported() && odat->obj_->getPoints().size() == odat->obj_->getNormals().size())
 	{
-		odat->obj_->is_smooth_ = true;
+		odat->obj_->setSmooth(true);
 		return true;
 	}
 
 	// cannot smooth other mesh types yet...
 	if(odat->type_ > 0) return false;
-	std::vector<Vec3> &normals = odat->obj_->normals_;
-	std::vector<Triangle> &triangles = odat->obj_->triangles_;
-	size_t points = odat->obj_->points_.size();
-	std::vector<Triangle>::iterator tri;
-	const std::vector<Point3> &vertices = odat->obj_->points_;
-
-	normals.reserve(points);
-	normals.resize(points, {0, 0, 0});
-
-	if(angle >= 180)
-	{
-		for(tri = triangles.begin(); tri != triangles.end(); ++tri)
-		{
-
-			const Vec3 n = tri->getNormal();
-			Vec3 e_1, e_2;
-
-			prepareEdges__(tri->pa_, tri->pb_, tri->pc_, vertices, e_1, e_2);
-			float alpha = e_1.sinFromVectors(e_2);
-
-			normals[tri->pa_] += n * alpha;
-
-			prepareEdges__(tri->pb_, tri->pa_, tri->pc_, vertices, e_1, e_2);
-			alpha = e_1.sinFromVectors(e_2);
-
-			normals[tri->pb_] += n * alpha;
-
-			prepareEdges__(tri->pc_, tri->pa_, tri->pb_, vertices, e_1, e_2);
-			alpha = e_1.sinFromVectors(e_2);
-
-			normals[tri->pc_] += n * alpha;
-
-			tri->setNormals(tri->pa_, tri->pb_, tri->pc_);
-		}
-
-		for(size_t idx = 0; idx < normals.size(); ++idx) normals[idx].normalize();
-
-	}
-	else if(angle > 0.1) // angle dependant smoothing
-	{
-		float thresh = math::cos(math::degToRad(angle));
-		std::vector<Vec3> vnormals;
-		std::vector<int> vn_index;
-		// create list of faces that include given vertex
-		std::vector<std::vector<Triangle *>> vface(points);
-		std::vector<std::vector<float>> alphas(points);
-		for(tri = triangles.begin(); tri != triangles.end(); ++tri)
-		{
-			Vec3 e_1, e_2;
-
-			prepareEdges__(tri->pa_, tri->pb_, tri->pc_, vertices, e_1, e_2);
-			alphas[tri->pa_].push_back(e_1.sinFromVectors(e_2));
-			vface[tri->pa_].push_back(&(*tri));
-
-			prepareEdges__(tri->pb_, tri->pa_, tri->pc_, vertices, e_1, e_2);
-			alphas[tri->pb_].push_back(e_1.sinFromVectors(e_2));
-			vface[tri->pb_].push_back(&(*tri));
-
-			prepareEdges__(tri->pc_, tri->pa_, tri->pb_, vertices, e_1, e_2);
-			alphas[tri->pc_].push_back(e_1.sinFromVectors(e_2));
-			vface[tri->pc_].push_back(&(*tri));
-		}
-		for(int i = 0; i < (int)vface.size(); ++i)
-		{
-			std::vector<Triangle *> &tris = vface[i];
-			int j = 0;
-			for(auto fi = tris.begin(); fi != tris.end(); ++fi)
-			{
-				Triangle *f = *fi;
-				bool smooth = false;
-				// calculate vertex normal for face
-				Vec3 vnorm, fnorm;
-
-				fnorm = f->getNormal();
-				vnorm = fnorm * alphas[i][j];
-				int k = 0;
-				for(auto f_2 = tris.begin(); f_2 != tris.end(); ++f_2)
-				{
-					if(**fi == **f_2)
-					{
-						k++;
-						continue;
-					}
-					Vec3 f_2_norm = (*f_2)->getNormal();
-					if((fnorm * f_2_norm) > thresh)
-					{
-						smooth = true;
-						vnorm += f_2_norm * alphas[i][k];
-					}
-					k++;
-				}
-				int n_idx = -1;
-				if(smooth)
-				{
-					vnorm.normalize();
-					//search for existing normal
-					for(unsigned int l = 0; l < vnormals.size(); ++l)
-					{
-						if(vnorm * vnormals[l] > 0.999)
-						{
-							n_idx = vn_index[l];
-							break;
-						}
-					}
-					// create new if none found
-					if(n_idx == -1)
-					{
-						n_idx = normals.size();
-						vnormals.push_back(vnorm);
-						vn_index.push_back(n_idx);
-						normals.push_back(vnorm);
-					}
-				}
-				// set vertex normal to idx
-				if(f->pa_ == i) f->na_ = n_idx;
-				else if(f->pb_ == i) f->nb_ = n_idx;
-				else if(f->pc_ == i) f->nc_ = n_idx;
-				else
-				{
-					Y_ERROR << "Scene: Mesh smoothing error!" << YENDL;
-					return false;
-				}
-				j++;
-			}
-			vnormals.clear();
-			vn_index.clear();
-		}
-	}
-
-	odat->obj_->is_smooth_ = true;
-
-	return true;
+	return odat->obj_->smoothMesh(angle);
 }
 
 int YafaRayScene::addVertex(const Point3 &p)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	geometry_creation_state_.cur_obj_->obj_->points_.push_back(p);
+	geometry_creation_state_.cur_obj_->obj_->addPoint(p);
 	if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
 	{
-		std::vector<Point3> &points = geometry_creation_state_.cur_obj_->mobj_->points_;
-		int n = points.size();
-		if(n % 3 == 0)
-		{
-			//convert point 2 to quadratic bezier control point
-			points[n - 2] = 2.f * points[n - 2] - 0.5f * (points[n - 3] + points[n - 1]);
-		}
-		return (n - 1) / 3;
+		return geometry_creation_state_.cur_obj_->mobj_->convertToBezierControlPoints();
 	}
 
-	geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->obj_->points_.size() - 1;
+	geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->obj_->getPoints().size() - 1;
 
 	return geometry_creation_state_.cur_obj_->last_vert_id_;
 }
@@ -489,15 +352,15 @@ int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 	switch(geometry_creation_state_.cur_obj_->type_)
 	{
 		case trim__:
-			geometry_creation_state_.cur_obj_->obj_->points_.push_back(p);
-			geometry_creation_state_.cur_obj_->obj_->points_.push_back(orco);
-			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->obj_->points_.size() - 1) / 2;
+			geometry_creation_state_.cur_obj_->obj_->addPoint(p);
+			geometry_creation_state_.cur_obj_->obj_->addPoint(orco);
+			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->obj_->getPoints().size() - 1) / 2;
 			break;
 
 		case vtrim__:
-			geometry_creation_state_.cur_obj_->mobj_->points_.push_back(p);
-			geometry_creation_state_.cur_obj_->mobj_->points_.push_back(orco);
-			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->mobj_->points_.size() - 1) / 2;
+			geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
+			geometry_creation_state_.cur_obj_->mobj_->addPoint(orco);
+			geometry_creation_state_.cur_obj_->last_vert_id_ = (geometry_creation_state_.cur_obj_->mobj_->getPoints().size() - 1) / 2;
 			break;
 
 		case mtrim__:
@@ -514,14 +377,7 @@ void YafaRayScene::addNormal(const Vec3 &n)
 		Y_WARNING << "Normal exporting is only supported for triangle mode" << YENDL;
 		return;
 	}
-	if(geometry_creation_state_.cur_obj_->obj_->points_.size() > geometry_creation_state_.cur_obj_->last_vert_id_ && geometry_creation_state_.cur_obj_->obj_->points_.size() > geometry_creation_state_.cur_obj_->obj_->normals_.size())
-	{
-		if(geometry_creation_state_.cur_obj_->obj_->normals_.size() < geometry_creation_state_.cur_obj_->obj_->points_.size())
-			geometry_creation_state_.cur_obj_->obj_->normals_.resize(geometry_creation_state_.cur_obj_->obj_->points_.size());
-
-		geometry_creation_state_.cur_obj_->obj_->normals_[geometry_creation_state_.cur_obj_->last_vert_id_] = n;
-		geometry_creation_state_.cur_obj_->obj_->normals_exported_ = true;
-	}
+	geometry_creation_state_.cur_obj_->obj_->addNormal(n, geometry_creation_state_.cur_obj_->last_vert_id_);
 }
 
 bool YafaRayScene::addTriangle(int a, int b, int c, const Material *mat)
@@ -545,22 +401,15 @@ bool YafaRayScene::addTriangle(int a, int b, int c, const Material *mat)
 		if(geometry_creation_state_.orco_) a *= 2, b *= 2, c *= 2;
 		Triangle tri(a, b, c, geometry_creation_state_.cur_obj_->obj_);
 		tri.setMaterial(mat);
-		if(geometry_creation_state_.cur_obj_->obj_->normals_exported_)
+		if(geometry_creation_state_.cur_obj_->obj_->hasNormalsExported())
 		{
 			if(geometry_creation_state_.orco_)
 			{
 				// Since the vertex indexes are duplicated with orco
 				// we divide by 2: a / 2 == a >> 1 since is an integer division
-				tri.na_ = a >> 1;
-				tri.nb_ = b >> 1;
-				tri.nc_ = c >> 1;
+				tri.setNormalsIndices({a >> 1, b >> 1, c >> 1});
 			}
-			else
-			{
-				tri.na_ = a;
-				tri.nb_ = b;
-				tri.nc_ = c;
-			}
+			else tri.setNormalsIndices({a, b, c});
 		}
 		geometry_creation_state_.cur_tri_ = geometry_creation_state_.cur_obj_->obj_->addTriangle(tri);
 	}
@@ -573,15 +422,15 @@ bool YafaRayScene::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c
 
 	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_a);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_b);
-		geometry_creation_state_.cur_obj_->obj_->uv_offsets_.push_back(uv_c);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(uv_a);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(uv_b);
+		geometry_creation_state_.cur_obj_->obj_->addUvOffset(uv_c);
 	}
 	else
 	{
-		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_a);
-		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_b);
-		geometry_creation_state_.cur_obj_->mobj_->uv_offsets_.push_back(uv_c);
+		geometry_creation_state_.cur_obj_->mobj_->addUvOffset(uv_a);
+		geometry_creation_state_.cur_obj_->mobj_->addUvOffset(uv_b);
+		geometry_creation_state_.cur_obj_->mobj_->addUvOffset(uv_c);
 	}
 
 	return true;
@@ -592,13 +441,13 @@ int YafaRayScene::addUv(float u, float v)
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
 	if(geometry_creation_state_.cur_obj_->type_ == trim__)
 	{
-		geometry_creation_state_.cur_obj_->obj_->uv_values_.push_back(Uv(u, v));
-		return (int)geometry_creation_state_.cur_obj_->obj_->uv_values_.size() - 1;
+		geometry_creation_state_.cur_obj_->obj_->addUvValue({u, v});
+		return (int)geometry_creation_state_.cur_obj_->obj_->getUvValues().size() - 1;
 	}
 	else
 	{
-		geometry_creation_state_.cur_obj_->mobj_->uv_values_.push_back(Uv(u, v));
-		return (int)geometry_creation_state_.cur_obj_->mobj_->uv_values_.size() - 1;
+		geometry_creation_state_.cur_obj_->mobj_->addUvValue({u, v});
+		return (int)geometry_creation_state_.cur_obj_->mobj_->getUvValues().size() - 1;
 	}
 }
 
@@ -893,6 +742,7 @@ bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, int max_d
 
 bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world)
 {
+	Y_DEBUG PRTEXT(YafaRayScene::addInstance) PR(base_object_name) PREND;
 	if(mode_ != 0) return false;
 
 	if(meshes_.find(base_object_name) == meshes_.end())
@@ -908,9 +758,8 @@ bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
 		ObjData &od = meshes_[instance_name];
 		ObjData &base = meshes_[base_object_name];
-
+		Y_DEBUG << "  " PRTEXT(Instance:) PR(instance_name) PR(base_object_name) PREND;
 		od.obj_ = new TriangleObjectInstance(base.obj_, obj_to_world);
-
 		return true;
 	}
 	else

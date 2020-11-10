@@ -264,11 +264,11 @@ void parseParam__(const char **attrs, Parameter &param, XmlParser &parser)
 	if(!attrs[0]) return;
 	if(!attrs[2]) // only one attribute => bool, integer or float value
 	{
-		std::string name(attrs[0]);
-		if(name == "ival") { int i = atoi(attrs[1]); param = Parameter(i); return; }
-		else if(name == "fval") { double f = atof(attrs[1]); param = Parameter(f); return; }
-		else if(name == "bval") { bool b = str2Bool__(attrs[1]); param = Parameter(b); return; }
-		else if(name == "sval") { param = Parameter(std::string(attrs[1])); return; }
+		std::string attr(attrs[0]);
+		if(attr == "ival") { int i = atoi(attrs[1]); param = Parameter(i); return; }
+		else if(attr == "fval") { double f = atof(attrs[1]); param = Parameter(f); return; }
+		else if(attr == "bval") { bool b = str2Bool__(attrs[1]); param = Parameter(b); return; }
+		else if(attr == "sval") { param = Parameter(std::string(attrs[1])); return; }
 	}
 	Rgba c(0.f); Vec3 v(0, 0, 0); Matrix4 m;
 	Parameter::Type type = Parameter::None;
@@ -345,20 +345,21 @@ void endElDocument__(XmlParser &parser, const char *element)
 
 struct MeshDat
 {
-	MeshDat(): has_orco_(false), has_uv_(false), smooth_(false), smooth_angle_(0), id_(0), mat_(0) {};
-	bool has_orco_, has_uv_;
-	bool smooth_;
-	float smooth_angle_;
-	ObjId_t id_;
-	const Material *mat_;
+	std::string name_;
+	bool has_orco_ = false;
+	bool has_uv_ = false;
+	bool smooth_ = false;
+	float smooth_angle_ = 0.f;
+	const Material *mat_ = nullptr;
 };
 
 struct CurveDat
 {
-	CurveDat(): id_(0), mat_(nullptr), strand_start_(0), strand_end_(0), strand_shape_(0) {};
-	ObjId_t id_;
-	const Material *mat_;
-	float strand_start_, strand_end_, strand_shape_;
+	std::string name_;
+	float strand_start_ = 0.f;
+	float strand_end_ = 0.f;
+	float strand_shape_ = 0.f;
+	const Material *mat_ = nullptr;
 };
 
 // scene-state, i.e. expect only primary elements
@@ -394,26 +395,22 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 	else if(el == "mesh")
 	{
 		MeshDat *md = new MeshDat();
-		int vertices = 0, triangles = 0, type = 0, id = -1, obj_pass_index = 0;
+		int vertices = 0, triangles = 0, type = 0, obj_pass_index = 0;
 		for(int n = 0; attrs[n]; ++n)
 		{
-			std::string name(attrs[n]);
-			if(name == "has_orco") md->has_orco_ = str2Bool__(attrs[n + 1]);
-			else if(name == "has_uv") md->has_uv_ = str2Bool__(attrs[n + 1]);
-			else if(name == "vertices") vertices = atoi(attrs[n + 1]);
-			else if(name == "faces") triangles = atoi(attrs[n + 1]);
-			else if(name == "type")	type = atoi(attrs[n + 1]);
-			else if(name == "id") id = atoi(attrs[n + 1]);
-			else if(name == "obj_pass_index") obj_pass_index = atoi(attrs[n + 1]);
+			std::string attr(attrs[n]);
+			if(attr == "has_orco") md->has_orco_ = str2Bool__(attrs[n + 1]);
+			else if(attr == "has_uv") md->has_uv_ = str2Bool__(attrs[n + 1]);
+			else if(attr == "vertices") vertices = atoi(attrs[n + 1]);
+			else if(attr == "faces") triangles = atoi(attrs[n + 1]);
+			else if(attr == "type") type = atoi(attrs[n + 1]);
+			else if(attr == "name") md->name_ = attrs[n + 1];
+			else if(attr == "obj_pass_index") obj_pass_index = atoi(attrs[n + 1]);
 		}
+		if(md->name_.empty()) md->name_ = "Mesh_" + std::to_string(parser.scene_->getNextFreeId());
 		parser.pushState(startElMesh__, endElMesh__, md);
 		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
-
-		// Get a new object ID if we did not get one
-		if(id == -1) md->id_ = parser.scene_->getNextFreeId();
-		else md->id_ = id;
-
-		if(!parser.scene_->startTriMesh(std::to_string(md->id_), vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
+		if(!parser.scene_->startTriMesh(md->name_, vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << YENDL;
 		}
@@ -443,34 +440,30 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 	}
 	else if(el == "instance")
 	{
-		ObjId_t *base_object_id = new ObjId_t();
-		*base_object_id = -1;
+		std::string *base_object_name = new std::string;
 		for(int n = 0; attrs[n]; n++)
 		{
-			std::string name(attrs[n]);
-			if(name == "base_object_id") *base_object_id = atoi(attrs[n + 1]);
+			std::string attr(attrs[n]);
+			if(attr == "base_object_name") *base_object_name = attrs[n + 1];
 		}
-		parser.pushState(startElInstance__, endElInstance__, base_object_id);
+		parser.pushState(startElInstance__, endElInstance__, base_object_name);
 	}
 	else if(el == "curve")
 	{
 		CurveDat *cvd = new CurveDat();
-		int vertex = 0, idc = -1;
+		int vertex = 0;
 		// attribute's loop
 		for(int n = 0; attrs[n]; ++n)
 		{
-			std::string name(attrs[n]);
-			if(name == "vertices") vertex = atoi(attrs[n + 1]);
-			else if(name == "id") idc = atoi(attrs[n + 1]);
+			std::string attr(attrs[n]);
+			if(attr == "vertices") vertex = atoi(attrs[n + 1]);
+			else if(attr == "name") cvd->name_ = attrs[n + 1];
 		}
+		// Get a new object ID if we did not get one
+		if(cvd->name_.empty()) cvd->name_ = "Curve_" + std::to_string(parser.scene_->getNextFreeId());
 		parser.pushState(startElCurve__, endElCurve__, cvd);
 		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
-
-		// Get a new object ID if we did not get one
-		if(idc == -1) cvd->id_ = parser.scene_->getNextFreeId();
-		else cvd->id_ = idc;
-
-		if(!parser.scene_->startCurveMesh(std::to_string(cvd->id_), vertex))
+		if(!parser.scene_->startCurveMesh(cvd->name_, vertex))
 		{
 			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << YENDL;
 		}
@@ -638,7 +631,7 @@ void startElInstance__(XmlParser &parser, const char *element, const char **attr
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element);
-	ObjId_t boi = *(ObjId_t *)parser.stateData();
+	const std::string base_object_name = *(std::string *)parser.stateData();
 	if(el == "transform")
 	{
 		float m[4][4];
@@ -652,7 +645,7 @@ void startElInstance__(XmlParser &parser, const char *element, const char **attr
 			}
 		}
 		Matrix4 *m_4 = new Matrix4(m);
-		parser.scene_->addInstance(std::to_string(boi), *m_4);
+		parser.scene_->addInstance(base_object_name, *m_4);
 	}
 }
 

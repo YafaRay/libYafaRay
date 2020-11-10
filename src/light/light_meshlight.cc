@@ -29,6 +29,8 @@
 #include "sampler/sample_pdf1d.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "geometry/triangle.h"
+#include "geometry/object_triangle.h"
+#include "geometry/surface.h"
 
 BEGIN_YAFARAY
 

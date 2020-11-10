@@ -17,39 +17,171 @@
  */
 
 #include "geometry/triangle.h"
-
-#ifdef __clang__
-#define inline  // aka inline removal
-#endif
+#include "geometry/vector_double.h"
+#include "geometry/bound.h"
+#include "common/logger.h"
+#include "geometry/ray.h"
+#include "geometry/surface.h"
+#include "geometry/object_triangle.h"
+#include "geometry/uv.h"
+#include <string.h>
 
 BEGIN_YAFARAY
 
-int triBoxClip__(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat);
-int triPlaneClip__(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat);
+Point3 Triangle::getVertex(size_t index) const
+{
+	return getMesh()->getVertex(point_id_[index]);
+}
+
+Point3 Triangle::getOrcoVertex(size_t index) const
+{
+	//If the object is an instance, the vertex positions (+1) are the orcos
+	if(getMesh()->hasOrco()) return getMesh()->getVertex(point_id_[index] + 1);
+	else return getVertex(index);
+}
+
+Point3 Triangle::getVertexNormal(size_t index, const Vec3 &surface_normal) const
+{
+	return (normal_id_[index] >= 0) ? getMesh()->getVertexNormal(normal_id_[index]) : surface_normal;
+}
+
+Uv Triangle::getVertexUv(size_t index) const
+{
+	const size_t uvi = self_index_ * 3;
+	return getMesh()->getUvValues()[getMesh()->getUvOffsets()[uvi + index]];
+}
+
+std::array<Point3, 3> Triangle::getVertices() const
+{
+	return { getVertex(0), getVertex(1), getVertex(2) };
+}
+
+std::array<Point3, 3> Triangle::getOrcoVertices() const
+{
+	return { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
+}
+
+std::array<Vec3, 3> Triangle::getVerticesNormals(const Vec3 &surface_normal) const
+{
+	return {
+		getVertexNormal(0, surface_normal),
+		getVertexNormal(1, surface_normal),
+		getVertexNormal(2, surface_normal)
+	};
+}
+
+std::array<Uv, 3> Triangle::getVerticesUvs() const
+{
+	return { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
+}
+
+void Triangle::updateIntersectCachedValues()
+{
+	const std::array<Point3, 3> p = getVertices();
+	vec_0_1_ = p[1] - p[0];
+	vec_0_2_ = p[2] - p[0];
+	intersect_bias_factor_ = 0.1f * min_raydist__ * std::max(vec_0_1_.length(), vec_0_2_.length());
+}
+
+bool Triangle::intersect(const Ray &ray, float *t, IntersectData &intersect_data) const
+{
+	return Triangle::intersect(ray, t, intersect_data, getVertex(0), vec_0_1_, vec_0_2_, intersect_bias_factor_);
+}
+
+bool Triangle::intersect(const Ray &ray, float *t, IntersectData &intersect_data, const Point3 &p_0, const Vec3 &vec_0_1, const Vec3 &vec_0_2, float intersection_bias_factor)
+{
+	// Tomas Möller and Ben Trumbore ray intersection scheme
+	// Getting the barycentric coordinates of the hit point
+	// const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
+	const Vec3 pvec = ray.dir_ ^vec_0_2;
+	const float det = vec_0_1 * pvec;
+	const float epsilon = intersection_bias_factor;
+	if(det > -epsilon && det < epsilon) return false;
+	const float inv_det = 1.f / det;
+	const Vec3 tvec = ray.from_ - p_0;
+	const float u = (tvec * pvec) * inv_det;
+	if(u < 0.f || u > 1.f) return false;
+	const Vec3 qvec = tvec ^vec_0_1;
+	const float v = (ray.dir_ * qvec) * inv_det;
+	if((v < 0.f) || ((u + v) > 1.f)) return false;
+	*t = vec_0_2 * qvec * inv_det;
+	if(*t < epsilon) return false;
+	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
+	intersect_data.barycentric_u_ = 1.f - u - v;
+	intersect_data.barycentric_v_ = u;
+	intersect_data.barycentric_w_ = v;
+	intersect_data.time_ = ray.time_;
+	return true;
+}
+
+Bound Triangle::getBound() const
+{
+	return getBound(getVertices());
+}
+
+Bound Triangle::getBound(const std::array<Point3, 3> &triangle_verts)
+{
+	const auto &p = triangle_verts; //Just to code easier and shorter
+	const Point3 l {
+		math::min(p[0].x_, p[1].x_, p[2].x_),
+		math::min(p[0].y_, p[1].y_, p[2].y_),
+		math::min(p[0].z_, p[1].z_, p[2].z_)
+	};
+	const Point3 h {
+		math::max(p[0].x_, p[1].x_, p[2].x_),
+		math::max(p[0].y_, p[1].y_, p[2].y_),
+		math::max(p[0].z_, p[1].z_, p[2].z_)
+	};
+	return Bound(l, h);
+}
+
+bool Triangle::intersectsBound(const ExBound &ex_bound) const
+{
+	return Triangle::intersectsBound(ex_bound, getVertices());
+}
+
+bool Triangle::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &triangle_verts)
+{
+	double t_points[3][3];
+	for(size_t i = 0; i < 3; ++i)
+	{
+		t_points[0][i] = triangle_verts[0][i];
+		t_points[1][i] = triangle_verts[1][i];
+		t_points[2][i] = triangle_verts[2][i];
+	}
+	// triBoxOverlap__() is in src/yafraycore/tribox3_d.cc!
+	return triBoxOverlap__(ex_bound.center_, ex_bound.half_size_, (double **) t_points);
+}
+
+void Triangle::recNormal()
+{
+	geometric_normal_ = calculateNormal(getVertices());
+}
+
+Vec3 Triangle::calculateNormal(const std::array<Point3, 3> &triangle_verts)
+{
+	const auto &p = triangle_verts; //Just to code easier and shorter
+	return ((p[1] - p[0]) ^ (p[2] - p[0])).normalize();
+}
 
 void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
 {
 	sp.ng_ = getNormal();
 	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
 
-	if(mesh_->is_smooth_ || mesh_->normals_exported_)
+	if(getMesh()->isSmooth() || getMesh()->hasNormalsExported())
 	{
-		const Vec3 va = (na_ >= 0) ? mesh_->getVertexNormal(na_) : sp.ng_;
-		const Vec3 vb = (nb_ >= 0) ? mesh_->getVertexNormal(nb_) : sp.ng_;
-		const Vec3 vc = (nc_ >= 0) ? mesh_->getVertexNormal(nc_) : sp.ng_;
-		sp.n_ = barycentric_u * va + barycentric_v * vb + barycentric_w * vc;
+		std::array<Vec3, 3> v = getVerticesNormals(sp.ng_);
+		sp.n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp.n_.normalize();
 	}
 	else sp.n_ = sp.ng_;
 
-	if(mesh_->has_orco_)
+	if(getMesh()->hasOrco())
 	{
-		// if the object is an instance, the vertex positions are the orcos
-		const Point3 &p_0 = mesh_->getVertex(pa_ + 1);
-		const Point3 &p_1 = mesh_->getVertex(pb_ + 1);
-		const Point3 &p_2 = mesh_->getVertex(pc_ + 1);
-		sp.orco_p_ = barycentric_u * p_0 + barycentric_v * p_1 + barycentric_w * p_2;
-		sp.orco_ng_ = ((p_1 - p_0) ^ (p_2 - p_0)).normalize();
+		const std::array<Point3, 3> orco_p = getOrcoVertices();
+		sp.orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
+		sp.orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp.has_orco_ = true;
 	}
 	else
@@ -59,48 +191,36 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 		sp.orco_ng_ = sp.ng_;
 	}
 
-	const Point3 &p_0 = mesh_->getVertex(pa_);
-	const Point3 &p_1 = mesh_->getVertex(pb_);
-	const Point3 &p_2 = mesh_->getVertex(pc_);
-	if(mesh_->has_uv_)
+	bool implicit_uv = true;
+	const std::array<Point3, 3> p = getVertices();
+	if(getMesh()->hasUv())
 	{
-		const size_t uvi = self_index_ * 3;
-		const Uv &uv_0 = mesh_->uv_values_[mesh_->uv_offsets_[uvi]];
-		const Uv &uv_1 = mesh_->uv_values_[mesh_->uv_offsets_[uvi + 1]];
-		const Uv &uv_2 = mesh_->uv_values_[mesh_->uv_offsets_[uvi + 2]];
-
-		sp.u_ = barycentric_u * uv_0.u_ + barycentric_v * uv_1.u_ + barycentric_w * uv_2.u_;
-		sp.v_ = barycentric_u * uv_0.v_ + barycentric_v * uv_1.v_ + barycentric_w * uv_2.v_;
+		const std::array<Uv, 3> uv = getVerticesUvs();
+		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
+		sp.v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
 
 		// calculate dPdU and dPdV
-		const float du_1 = uv_1.u_ - uv_0.u_;
-		const float du_2 = uv_2.u_ - uv_0.u_;
-		const float dv_1 = uv_1.v_ - uv_0.v_;
-		const float dv_2 = uv_2.v_ - uv_0.v_;
+		const float du_1 = uv[1].u_ - uv[0].u_;
+		const float du_2 = uv[2].u_ - uv[0].u_;
+		const float dv_1 = uv[1].v_ - uv[0].v_;
+		const float dv_2 = uv[2].v_ - uv[0].v_;
 		const float det = du_1 * dv_2 - dv_1 * du_2;
 
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
-			const Vec3 dp_1 = p_1 - p_0;
-			const Vec3 dp_2 = p_2 - p_0;
+			const Vec3 dp_1 = p[1] - p[0];
+			const Vec3 dp_2 = p[2] - p[0];
 			sp.dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
 			sp.dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
-		}
-		else
-		{
-			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-			sp.dp_du_ = p_1 - p_0;
-			sp.dp_dv_ = p_2 - p_0;
-			sp.u_ = barycentric_u;
-			sp.v_ = barycentric_v;
+			implicit_uv = false;
 		}
 	}
-	else
+	if(implicit_uv)
 	{
 		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-		sp.dp_du_ = p_1 - p_0;
-		sp.dp_dv_ = p_2 - p_0;
+		sp.dp_du_ = p[1] - p[0];
+		sp.dp_dv_ = p[2] - p[0];
 		sp.u_ = barycentric_u;
 		sp.v_ = barycentric_v;
 	}
@@ -112,11 +232,19 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	sp.dp_du_.normalize();
 	sp.dp_dv_.normalize();
 
-	sp.object_ = mesh_;
-	sp.prim_num_ = self_index_;
-	sp.material_ = material_;
+	const TriangleObject *triangle_object = getMesh();
+	sp.object_ = triangle_object;
+	sp.light_ = triangle_object->getLight();
+	sp.has_uv_ = triangle_object->hasUv();
+	sp.prim_num_ = getSelfIndex();
+	sp.material_ = getMaterial();
 	sp.p_ = hit;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
+	calculateShadingSpace(sp);
+}
+
+void Triangle::calculateShadingSpace(SurfacePoint &sp) const
+{
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
 	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
@@ -124,8 +252,6 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	sp.ds_dv_.x_ = sp.nu_ * sp.dp_dv_;
 	sp.ds_dv_.y_ = sp.nv_ * sp.dp_dv_;
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
-	sp.light_ = mesh_->light_;
-	sp.has_uv_ = mesh_->has_uv_;
 }
 
 bool Triangle::clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new) const
@@ -135,7 +261,7 @@ bool Triangle::clipToBound(const double bound[2][3], int axis, Bound &clipped, c
 		const bool lower = axis & ~3;
 		const int axis_calc = axis & 3;
 		const double split = lower ? bound[0][axis_calc] : bound[1][axis_calc];
-		const int tri_plane_clip = triPlaneClip__(split, axis_calc, lower, clipped, d_old, d_new);
+		const int tri_plane_clip = Triangle::triPlaneClip(split, axis_calc, lower, clipped, d_old, d_new);
 		// if an error occured due to precision limits...ugly solution i admitt
 		if(tri_plane_clip > 1) goto WHOOPS;
 		return (tri_plane_clip == 0) ? true : false;
@@ -143,572 +269,419 @@ bool Triangle::clipToBound(const double bound[2][3], int axis, Bound &clipped, c
 	else // initial clip
 	{
 WHOOPS:
-
-		const Point3 &a = mesh_->getVertex(pa_);
-		const Point3 &b = mesh_->getVertex(pb_);
-		const Point3 &c = mesh_->getVertex(pc_);
+		const std::array<Point3, 3> p = getVertices();
 		double t_points[3][3];
 		for(int i = 0; i < 3; ++i)
 		{
-			t_points[0][i] = a[i];
-			t_points[1][i] = b[i];
-			t_points[2][i] = c[i];
+			t_points[0][i] = p[0][i];
+			t_points[1][i] = p[1][i];
+			t_points[2][i] = p[2][i];
 		}
-		const int tri_box_clip = triBoxClip__(bound[0], bound[1], t_points, clipped, d_new);
+		const int tri_box_clip = Triangle::triBoxClip(bound[0], bound[1], t_points, clipped, d_new);
 		return (tri_box_clip == 0) ? true : false;
 	}
 	return true;
 }
 
-float Triangle::surfaceArea() const
+float Triangle::surfaceArea(const std::array<Point3, 3> &vertices)
 {
-	const Point3 &a = mesh_->getVertex(pa_);
-	const Point3 &b = mesh_->getVertex(pb_);
-	const Point3 &c = mesh_->getVertex(pc_);
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	return 0.5f * (edge_1 ^ edge_2).length();
+	const Vec3 vec_0_1 = vertices[1] - vertices[0];
+	const Vec3 vec_0_2 = vertices[2] - vertices[0];
+	return 0.5f * (vec_0_1 ^ vec_0_2).length();
 }
 
 void Triangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
 {
-	const Point3 &a = mesh_->getVertex(pa_);
-	const Point3 &b = mesh_->getVertex(pb_);
-	const Point3 &c = mesh_->getVertex(pc_);
-	const float su_1 = math::sqrt(s_1);
-	const float u = 1.f - su_1;
-	const float v = s_2 * su_1;
-	p = u * a + v * b + (1.f - u - v) * c;
+	Triangle::sample(s_1, s_2, p, getVertices());
 	n = getNormal();
 }
 
-// triangleInstance_t Methods
-
-void TriangleInstance::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
+void Triangle::sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices)
 {
-	sp.ng_ = getNormal();
-	const int pa = m_base_->pa_;
-	const int pb = m_base_->pb_;
-	const int pc = m_base_->pc_;
-	const int na = m_base_->na_;
-	const int nb = m_base_->nb_;
-	const int nc = m_base_->nc_;
-	const size_t self_index = m_base_->self_index_;
-	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
-	if(mesh_->is_smooth_ || mesh_->normals_exported_)
-	{
-		// assume the smoothed normals exist, if the mesh is smoothed; if they don't, fix this
-		// assert(na > 0 && nb > 0 && nc > 0);
-		const Vec3 va = (na > 0) ? mesh_->getVertexNormal(na) : sp.ng_;
-		const Vec3 vb = (nb > 0) ? mesh_->getVertexNormal(nb) : sp.ng_;
-		const Vec3 vc = (nc > 0) ? mesh_->getVertexNormal(nc) : sp.ng_;
-		sp.n_ = barycentric_u * va + barycentric_v * vb + barycentric_w * vc;
-		sp.n_.normalize();
-	}
-	else sp.n_ = sp.ng_;
-
-	if(mesh_->has_orco_)
-	{
-		// if the object is an instance, the vertex positions are the orcos
-		const Point3 &p_0 = m_base_->mesh_->getVertex(pa + 1);
-		const Point3 &p_1 = m_base_->mesh_->getVertex(pb + 1);
-		const Point3 &p_2 = m_base_->mesh_->getVertex(pc + 1);
-		sp.orco_p_ = barycentric_u * p_0 + barycentric_v * p_1 + barycentric_w * p_2;
-		sp.orco_ng_ = ((p_1 - p_0) ^ (p_2 - p_0)).normalize();
-		sp.has_orco_ = true;
-	}
-	else
-	{
-		sp.orco_p_ = hit;
-		sp.has_orco_ = false;
-		sp.orco_ng_ = sp.ng_;
-	}
-
-	const Point3 &p_0 = mesh_->getVertex(pa);
-	const Point3 &p_1 = mesh_->getVertex(pb);
-	const Point3 &p_2 = mesh_->getVertex(pc);
-
-	if(mesh_->has_uv_)
-	{
-		const size_t uvi = self_index * 3;
-		const Uv &uv_0 = mesh_->m_base_->uv_values_[mesh_->m_base_->uv_offsets_[uvi]];
-		const Uv &uv_1 = mesh_->m_base_->uv_values_[mesh_->m_base_->uv_offsets_[uvi + 1]];
-		const Uv &uv_2 = mesh_->m_base_->uv_values_[mesh_->m_base_->uv_offsets_[uvi + 2]];
-
-		sp.u_ = barycentric_u * uv_0.u_ + barycentric_v * uv_1.u_ + barycentric_w * uv_2.u_;
-		sp.v_ = barycentric_u * uv_0.v_ + barycentric_v * uv_1.v_ + barycentric_w * uv_2.v_;
-
-		// calculate dPdU and dPdV
-		const float du_1 = uv_0.u_ - uv_2.u_;
-		const float du_2 = uv_1.u_ - uv_2.u_;
-		const float dv_1 = uv_0.v_ - uv_2.v_;
-		const float dv_2 = uv_1.v_ - uv_2.v_;
-		const float det = du_1 * dv_2 - dv_1 * du_2;
-
-		if(std::abs(det) > 1e-30f)
-		{
-			const float invdet = 1.f / det;
-			const Vec3 dp_1 = p_0 - p_2;
-			const Vec3 dp_2 = p_1 - p_2;
-			sp.dp_du_ = (dv_2 * dp_1 - dv_1 * dp_2) * invdet;
-			sp.dp_dv_ = (du_1 * dp_2 - du_2 * dp_1) * invdet;
-		}
-		else
-		{
-			const Vec3 dp_1 = p_0 - p_2;
-			const Vec3 dp_2 = p_1 - p_2;
-			Vec3::createCs((dp_2 ^ dp_1).normalize(), sp.dp_du_, sp.dp_dv_);
-		}
-	}
-	else
-	{
-		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-		sp.dp_du_ = p_1 - p_0;
-		sp.dp_dv_ = p_2 - p_0;
-		sp.u_ = barycentric_u;
-		sp.v_ = barycentric_v;
-	}
-
-	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp.dp_du_abs_ = sp.dp_du_;
-	sp.dp_dv_abs_ = sp.dp_dv_;
-
-	sp.dp_du_.normalize();
-	sp.dp_dv_.normalize();
-
-	sp.object_ = mesh_;
-	sp.prim_num_ = self_index;
-	sp.material_ = m_base_->material_;
-	sp.p_ = hit;
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	Vec3 u_vec, v_vec;
-	Vec3::createCs(sp.ng_, u_vec, v_vec);
-	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x_ = u_vec * sp.dp_du_;
-	sp.ds_du_.y_ = v_vec * sp.dp_du_;
-	sp.ds_du_.z_ = sp.ng_ * sp.dp_du_;
-	sp.ds_dv_.x_ = u_vec * sp.dp_dv_;
-	sp.ds_dv_.y_ = v_vec * sp.dp_dv_;
-	sp.ds_dv_.z_ = sp.ng_ * sp.dp_dv_;
-	sp.ds_du_.normalize();
-	sp.ds_dv_.normalize();
-	sp.light_ = mesh_->m_base_->light_;
-	sp.has_uv_ = mesh_->has_uv_;
+	const float su_1 = math::sqrt(s_1);
+	const float u = 1.f - su_1;
+	const float v = s_2 * su_1;
+	p = u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
 }
 
-bool TriangleInstance::clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new) const
+template <class T>
+void swap__(T **a, T **b)
 {
-	if(axis >= 0) // re-clip
-	{
-		const bool lower = axis & ~3;
-		const int axis_calc = axis & 3;
-		const double split = lower ? bound[0][axis_calc] : bound[1][axis_calc];
-		const int tri_plane_clip = triPlaneClip__(split, axis_calc, lower, clipped, d_old, d_new);
-		// if an error occured due to precision limits...ugly solution i admit
-		if(tri_plane_clip > 1)
-		{
-			const Point3 &a = mesh_->getVertex(m_base_->pa_);
-			const Point3 &b = mesh_->getVertex(m_base_->pb_);
-			const Point3 &c = mesh_->getVertex(m_base_->pc_);
+	T *x;
+	x = *a;
+	*a = *b;
+	*b = x;
+}
 
-			double t_points[3][3];
-			for(int i = 0; i < 3; ++i)
+struct ClipDump
+{
+	int nverts_;
+	DVector poly_[10];
+};
+
+/*! function to clip a triangle against an axis aligned bounding box and return new bound
+	\param box the AABB of the clipped triangle
+	\return 0: triangle was clipped successfully
+			1: triangle didn't overlap the bound at all => disappeared
+			2: fatal error occured (didn't ever happen to me :)
+			3: resulting polygon degenerated to less than 3 edges (never happened either)
+*/
+
+int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
+{
+	DVector dump_1[11], dump_2[11]; double t;
+	DVector *poly = dump_1, *cpoly = dump_2;
+
+	for(int q = 0; q < 3; q++)
+	{
+		poly[q][0] = triverts[q][0], poly[q][1] = triverts[q][1], poly[q][2] = triverts[q][2];
+		poly[3][q] = triverts[0][q];
+	}
+
+	int n = 3, nc;
+	bool p_1_inside;
+
+	//for each axis
+	for(int axis = 0; axis < 3; axis++)
+	{
+		DVector *p_1, *p_2;
+		int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
+
+		// === clip lower ===
+		nc = 0;
+		p_1_inside = (poly[0][axis] >= b_min[axis]) ? true : false;
+		for(int i = 0; i < n; i++) // for each poly edge
+		{
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)   // p1 inside
 			{
-				t_points[0][i] = a[i];
-				t_points[1][i] = b[i];
-				t_points[2][i] = c[i];
+				if((*p_2)[axis] >= b_min[axis]) //both "inside"
+				{
+					// copy p2 to new poly
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else
+				{
+					// clip line, add intersection to new poly
+					t = (b_min[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
+					cpoly[nc][axis] = b_min[axis];
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
+					nc++;
+					p_1_inside = false;
+				}
 			}
-			const int tri_box_clip = triBoxClip__(bound[0], bound[1], t_points, clipped, d_new);
-			return (tri_box_clip == 0);
-		}
-		return (tri_plane_clip == 0);
-	}
-	else // initial clip
-	{
-		const Point3 &a = mesh_->getVertex(m_base_->pa_);
-		const Point3 &b = mesh_->getVertex(m_base_->pb_);
-		const Point3 &c = mesh_->getVertex(m_base_->pc_);
+			else //p1 < b_min -> outside
+			{
+				if((*p_2)[axis] > b_min[axis]) //p2 inside, add s and p2
+				{
+					t = (b_min[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
+					cpoly[nc][axis] = b_min[axis];
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
+					nc++;
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else if((*p_2)[axis] == b_min[axis]) //p2 and s are identical, only add p2
+				{
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else p_1_inside = false;
+			}
+			//else: both outse, do nothing.
+		} //for all edges
 
-		double t_points[3][3];
-		for(int i = 0; i < 3; ++i)
+		if(nc > 9)
 		{
-			t_points[0][i] = a[i];
-			t_points[1][i] = b[i];
-			t_points[2][i] = c[i];
+			Y_VERBOSE << "TriangleClip: after min n is now " << nc << ", that's bad!" << YENDL;
+			return 2;
 		}
-		const int tri_box_clip = triBoxClip__(bound[0], bound[1], t_points, clipped, d_new);
-		return (tri_box_clip == 0);
-	}
-}
 
-float TriangleInstance::surfaceArea() const
-{
-	const Point3 &a = mesh_->getVertex(m_base_->pa_);
-	const Point3 &b = mesh_->getVertex(m_base_->pb_);
-	const Point3 &c = mesh_->getVertex(m_base_->pc_);
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	return 0.5f * (edge_1 ^ edge_2).length();
-}
+		cpoly[nc] = cpoly[0];
+		n = nc;
+		swap__(&cpoly, &poly);
 
-void TriangleInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
-{
-	const Point3 &a = mesh_->getVertex(m_base_->pa_);
-	const Point3 &b = mesh_->getVertex(m_base_->pb_);
-	const Point3 &c = mesh_->getVertex(m_base_->pc_);
-	const float su_1 = math::sqrt(s_1);
-	const float u = 1.f - su_1;
-	const float v = s_2 * su_1;
-	p = u * a + v * b + (1.f - u - v) * c;
-	n = getNormal();
-}
 
-//==========================================
-// vTriangle_t methods, mosty c&p...
-//==========================================
+		// === clip upper ===
+		nc = 0;
+		p_1_inside = (poly[0][axis] <= b_max[axis]) ? true : false;
+		for(int i = 0; i < n; i++) // for each poly edge
+		{
+			p_1 = &poly[i], p_2 = &poly[i + 1];
+			if(p_1_inside)
+			{
+				if((*p_2)[axis] <= b_max[axis]) //both "inside"
+				{
+					// copy p2 to new poly
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else
+				{
+					// clip line, add intersection to new poly
+					t = (b_max[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
+					cpoly[nc][axis] = b_max[axis];
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
+					nc++;
+					p_1_inside = false;
+				}
+			}
+			else //p1 > b_max -> outside
+			{
+				if((*p_2)[axis] < b_max[axis]) //p2 inside, add s and p2
+				{
+					t = (b_max[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
+					cpoly[nc][axis] = b_max[axis];
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
+					nc++;
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else if((*p_2)[axis] == b_max[axis]) //p2 and s are identical, only add p2
+				{
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else p_1_inside = false;
+			}
+			//else: both outse, do nothing.
+		} //for all edges
 
-bool VTriangle::intersect(const Ray &ray, float *t, IntersectData &data) const
-{
-	//Tomas Moller and Ben Trumbore ray intersection scheme
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	const Vec3 pvec = ray.dir_ ^ edge_2;
-	const float det = edge_1 * pvec;
-	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
-	const float inv_det = 1.f / det;
-	const Vec3 tvec = ray.from_ - a;
-	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.0 || u > 1.0) return false;
-	const Vec3 qvec = tvec ^ edge_1;
-	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.0) || ((u + v) > 1.0)) return false;
-	*t = edge_2 * qvec * inv_det;
-	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	data.barycentric_u_ = 1.f - u - v;
-	data.barycentric_v_ = u;
-	data.barycentric_w_ = v;
-	data.time_ = ray.time_;
-	return true;
-}
+		if(nc > 9)
+		{
+			Y_VERBOSE << "TriangleClip: After max n is now " << nc << ", that's bad!" << YENDL;
+			return 2;
+		}
 
-Bound VTriangle::getBound() const
-{
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	const Point3 l { math::min(a.x_, b.x_, c.x_), math::min(a.y_, b.y_, c.y_), math::min(a.z_, b.z_, c.z_) };
-	const Point3 h { math::max(a.x_, b.x_, c.x_), math::max(a.y_, b.y_, c.y_), math::max(a.z_, b.z_, c.z_) };
-	return Bound(l, h);
-}
+		if(nc == 0) return 1;
 
-void VTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
-{
-	sp.ng_ = normal_;
-	// gives the index in triangle array, according to my latest informations
-	// it _should be_ safe to rely on array-like contiguous memory in std::vector<>!
-	const int tri_index = this - &(mesh_->triangles_.front());
-	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
-	if(mesh_->is_smooth_)
+		cpoly[nc] = cpoly[0];
+		n = nc;
+		swap__(&cpoly, &poly);
+	} //for all axis
+
+	if(n < 2)
 	{
-		const Vec3 va(na_ > 0 ? mesh_->normals_[na_] : normal_), vb(nb_ > 0 ? mesh_->normals_[nb_] : normal_), vc(nc_ > 0 ? mesh_->normals_[nc_] : normal_);
-		sp.n_ = barycentric_u * va + barycentric_v * vb + barycentric_w * vc;
-		sp.n_.normalize();
-	}
-	else sp.n_ = normal_;
+		static bool foobar = false;
+		if(foobar) return 3;
+		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << YENDL;
+		Y_VERBOSE << "TriangleClip: b_min:\t" << b_min[0] << ",\t" << b_min[1] << ",\t" << b_min[2] << YENDL;
+		Y_VERBOSE << "TriangleClip: b_max:\t" << b_max[0] << ",\t" << b_max[1] << ",\t" << b_max[2] << YENDL;
+		Y_VERBOSE << "TriangleClip: delta:\t" << b_max[0] - b_min[0] << ",\t" << b_max[1] - b_min[1] << ",\t" << b_max[2] - b_min[2] << YENDL;
 
-	if(mesh_->has_orco_)
+		for(int j = 0; j < 3; j++)
+		{
+			Y_VERBOSE << "TriangleClip: point" << j << ": " << triverts[j][0] << ",\t" << triverts[j][1] << ",\t" << triverts[j][2] << YENDL;
+		}
+		foobar = true;
+		return 3;
+	}
+
+	double a[3], g[3];
+	for(int i = 0; i < 3; ++i) a[i] = g[i] = poly[0][i];
+	for(int i = 1; i < n; i++)
 	{
-		sp.orco_p_ = barycentric_u * mesh_->points_[pa_ + 1] + barycentric_v * mesh_->points_[pb_ + 1] + barycentric_w * mesh_->points_[pc_ + 1];
-		sp.orco_ng_ = ((mesh_->points_[pb_ + 1] - mesh_->points_[pa_ + 1]) ^ (mesh_->points_[pc_ + 1] - mesh_->points_[pa_ + 1])).normalize();
-		sp.has_orco_ = true;
+		a[0] = std::min(a[0], poly[i][0]);
+		a[1] = std::min(a[1], poly[i][1]);
+		a[2] = std::min(a[2], poly[i][2]);
+		g[0] = std::max(g[0], poly[i][0]);
+		g[1] = std::max(g[1], poly[i][1]);
+		g[2] = std::max(g[2], poly[i][2]);
+	}
+
+	box.a_[0] = a[0], box.g_[0] = g[0];
+	box.a_[1] = a[1], box.g_[1] = g[1];
+	box.a_[2] = a[2], box.g_[2] = g[2];
+
+	ClipDump *output = (ClipDump *)n_dat;
+	output->nverts_ = n;
+	memcpy(output->poly_, poly, (n + 1) * sizeof(DVector));
+
+	return 0;
+}
+
+int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat)
+{
+	ClipDump *input = (ClipDump *) o_dat; //FIXME: casting const away and writing to it using swap__, dangerous!
+	ClipDump *output = (ClipDump *) n_dat;
+	DVector *poly = input->poly_;
+	DVector *cpoly = output->poly_;
+	int nverts = input->nverts_;
+	int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
+
+	if(lower)
+	{
+		// === clip lower ===
+		int nc = 0;
+		bool p_1_inside = (poly[0][axis] >= pos) ? true : false;
+		for(int i = 0; i < nverts; i++) // for each poly edge
+		{
+			const DVector *p_1 = &poly[i], *p_2 = &poly[i + 1];
+			if(p_1_inside)   // p1 inside
+			{
+				if((*p_2)[axis] >= pos) //both "inside"
+				{
+					// copy p2 to new poly
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else
+				{
+					// clip line, add intersection to new poly
+					const double t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
+					cpoly[nc][axis] = pos;
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
+					nc++;
+					p_1_inside = false;
+				}
+			}
+			else //p1 < b_min -> outside
+			{
+				if((*p_2)[axis] > pos) //p2 inside, add s and p2
+				{
+					const double t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
+					cpoly[nc][axis] = pos;
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
+					nc++;
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
+				{
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else p_1_inside = false;
+			}
+			//else: both outse, do nothing.
+		} //for all edges
+
+		if(nc == 0) return 1;
+
+		if(nc > 9)
+		{
+			Y_VERBOSE << "TriangleClip: After min n is now " << nc << ", that's bad!" << YENDL;
+			return 2;
+		}
+
+		cpoly[nc] = cpoly[0];
+		nverts = nc;
+		swap__(&cpoly, &poly);
 	}
 	else
 	{
-		sp.orco_p_ = hit;
-		sp.orco_ng_ = sp.ng_;
-		sp.has_orco_ = false;
-	}
-	if(mesh_->has_uv_)
-	{
-		const auto uvi = mesh_->uv_offsets_.begin() + 3 * tri_index;
-		const int uvi_1 = *uvi, uvi_2 = *(uvi + 1), uvi_3 = *(uvi + 2);
-		const auto it = mesh_->uv_values_.begin();
-
-		sp.u_ = barycentric_u * it[uvi_1].u_ + barycentric_v * it[uvi_2].u_ + barycentric_w * it[uvi_3].u_;
-		sp.v_ = barycentric_u * it[uvi_1].v_ + barycentric_v * it[uvi_2].v_ + barycentric_w * it[uvi_3].v_;
-
-		// calculate dPdU and dPdV
-		const float du_1 = it[uvi_1].u_ - it[uvi_3].u_;
-		const float du_2 = it[uvi_2].u_ - it[uvi_3].u_;
-		const float dv_1 = it[uvi_1].v_ - it[uvi_3].v_;
-		const float dv_2 = it[uvi_2].v_ - it[uvi_3].v_;
-		const float det = du_1 * dv_2 - dv_1 * du_2;
-
-		if(std::abs(det) > 1e-30f)
+		// === clip upper ===
+		int nc = 0;
+		bool p_1_inside = (poly[0][axis] <= pos) ? true : false;
+		for(int i = 0; i < nverts; i++) // for each poly edge
 		{
-			const float invdet = 1.f / det;
-			Vec3 dp_1 = mesh_->points_[pa_] - mesh_->points_[pc_];
-			Vec3 dp_2 = mesh_->points_[pb_] - mesh_->points_[pc_];
-			sp.dp_du_ = (dv_2 * invdet) * dp_1 - (dv_1 * invdet) * dp_2;
-			sp.dp_dv_ = (du_1 * invdet) * dp_2 - (du_2 * invdet) * dp_1;
-		}
-		else
+			const DVector *p_1 = &poly[i], *p_2 = &poly[i + 1];
+			if(p_1_inside)
+			{
+				if((*p_2)[axis] <= pos) //both "inside"
+				{
+					// copy p2 to new poly
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else
+				{
+					// clip line, add intersection to new poly
+					const double t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
+					cpoly[nc][axis] = pos;
+					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
+					nc++;
+					p_1_inside = false;
+				}
+			}
+			else //p1 > pos -> outside
+			{
+				if((*p_2)[axis] < pos) //p2 inside, add s and p2
+				{
+					const double t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
+					cpoly[nc][axis] = pos;
+					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
+					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
+					nc++;
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
+				{
+					cpoly[nc] = *p_2;
+					nc++;
+					p_1_inside = true;
+				}
+				else p_1_inside = false;
+			}
+			//else: both outse, do nothing.
+		} //for all edges
+
+		if(nc == 0) return 1;
+
+		if(nc > 9)
 		{
-			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-			sp.dp_du_ = mesh_->points_[pb_] - mesh_->points_[pa_];
-			sp.dp_dv_ = mesh_->points_[pc_] - mesh_->points_[pa_];
-			sp.u_ = barycentric_u;
-			sp.v_ = barycentric_v;
+			Y_VERBOSE << "TriangleClip: after max n is now " << nc << ", that's bad!" << YENDL;
+			return 2;
 		}
-	}
-	else
+
+		cpoly[nc] = cpoly[0];
+		nverts = nc;
+		swap__(&cpoly, &poly);
+	} //for all axis
+
+	if(nverts < 2)
 	{
-		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-		sp.dp_du_ = mesh_->points_[pb_] - mesh_->points_[pa_];
-		sp.dp_dv_ = mesh_->points_[pc_] - mesh_->points_[pa_];
-		sp.u_ = barycentric_u;
-		sp.v_ = barycentric_v;
+		static bool foobar = false;
+		if(foobar) return 3;
+		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << nverts << YENDL;
+		foobar = true;
+		return 3;
 	}
 
-	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp.dp_du_abs_ = sp.dp_du_;
-	sp.dp_dv_abs_ = sp.dp_dv_;
+	double a[3], g[3];
+	for(int i = 0; i < 3; ++i) a[i] = g[i] = poly[0][i];
+	for(int i = 1; i < nverts; i++)
+	{
+		a[0] = std::min(a[0], poly[i][0]);
+		a[1] = std::min(a[1], poly[i][1]);
+		a[2] = std::min(a[2], poly[i][2]);
+		g[0] = std::max(g[0], poly[i][0]);
+		g[1] = std::max(g[1], poly[i][1]);
+		g[2] = std::max(g[2], poly[i][2]);
+	}
 
-	sp.dp_du_.normalize();
-	sp.dp_dv_.normalize();
+	box.a_[0] = a[0], box.g_[0] = g[0];
+	box.a_[1] = a[1], box.g_[1] = g[1];
+	box.a_[2] = a[2], box.g_[2] = g[2];
 
-	sp.prim_num_ = tri_index;
-	sp.material_ = material_;
-	sp.p_ = hit;
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
-	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
-	sp.ds_du_.z_ = sp.n_ * sp.dp_du_;
-	sp.ds_dv_.x_ = sp.nu_ * sp.dp_dv_;
-	sp.ds_dv_.y_ = sp.nv_ * sp.dp_dv_;
-	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
-	sp.light_ = mesh_->light_;
-	sp.has_uv_ = mesh_->has_uv_;
+	output->nverts_ = nverts;
+
+	return 0;
 }
 
-bool VTriangle::intersectsBound(ExBound &eb) const
-{
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	double t_points[3][3];
-	for(int j = 0; j < 3; ++j)
-	{
-		t_points[0][j] = a[j];
-		t_points[1][j] = b[j];
-		t_points[2][j] = c[j];
-	}
-	// triBoxOverlap() is in src/yafraycore/tribox3_d.cc!
-	return triBoxOverlap__(eb.center_, eb.half_size_, (double **) t_points);
+std::ostream &operator<<(std::ostream &out, const Triangle &t) {
+	out << "[ idx = " << t.self_index_ << " (" << t.point_id_[0] << "," << t.point_id_[1] << "," << t.point_id_[2] << ")]";
+	return out;
 }
-
-bool VTriangle::clipToBound(double bound[2][3], int axis, Bound &clipped, void *d_old, void *d_new) const
-{
-	if(axis >= 0) // re-clip
-	{
-		const bool lower = axis & ~3;
-		const int axis_calc = axis & 3;
-		const double split = lower ? bound[0][axis_calc] : bound[1][axis_calc];
-		const int tri_plane_clip = triPlaneClip__(split, axis_calc, lower, clipped, d_old, d_new);
-		// if an error occured due to precision limits...ugly solution i admitt
-		if(tri_plane_clip > 1) goto JUMP_WHOOPS; //FIXME: Try to find a better way rather than doing jumps
-		return (tri_plane_clip == 0) ? true : false;
-	}
-	else // initial clip
-	{
-		//		std::cout << "+";
-JUMP_WHOOPS: //FIXME: Try to find a better way rather than doing jumps
-		//		std::cout << "!";
-		const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-		double t_points[3][3];
-		for(int i = 0; i < 3; ++i)
-		{
-			t_points[0][i] = a[i];
-			t_points[1][i] = b[i];
-			t_points[2][i] = c[i];
-		}
-		const int tri_box_clip = triBoxClip__(bound[0], bound[1], t_points, clipped, d_new);
-		return (tri_box_clip == 0) ? true : false;
-	}
-}
-
-float VTriangle::surfaceArea() const
-{
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	return 0.5f * (edge_1 ^ edge_2).length();
-}
-
-void VTriangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
-{
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	const float su_1 = math::sqrt(s_1);
-	const float u = 1.f - su_1;
-	const float v = s_2 * su_1;
-	p = u * a + v * b + (1.f - u - v) * c;
-	n = Vec3(normal_);
-}
-
-void VTriangle::recNormal()
-{
-	const Point3 &a = mesh_->points_[pa_], &b = mesh_->points_[pb_], &c = mesh_->points_[pc_];
-	normal_ = ((b - a) ^ (c - a)).normalize();
-}
-
-//==========================================
-// bsTriangle_t methods
-//==========================================
-
-bool BsTriangle::intersect(const Ray &ray, float *t, IntersectData &data) const
-{
-	const Point3 *an = &mesh_->points_[pa_], *bn = &mesh_->points_[pb_], *cn = &mesh_->points_[pc_];
-	const float tc = 1.f - ray.time_;
-	const float b_1 = tc * tc, b_2 = 2.f * ray.time_ * tc, b_3 = ray.time_ * ray.time_;
-	const Point3 a = b_1 * an[0] + b_2 * an[1] + b_3 * an[2];
-	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
-	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
-	const Vec3 edge_1 = b - a;
-	const Vec3 edge_2 = c - a;
-	const Vec3 pvec = ray.dir_ ^ edge_2;
-	const float det = edge_1 * pvec;
-	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
-	const float inv_det = 1.f / det;
-	const Vec3 tvec = ray.from_ - a;
-	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.0 || u > 1.0) return false;
-	const Vec3 qvec = tvec ^ edge_1;
-	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.0) || ((u + v) > 1.0)) return false;
-	*t = edge_2 * qvec * inv_det;
-	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	data.barycentric_u_ = 1.f - u - v;
-	data.barycentric_v_ = u;
-	data.barycentric_w_ = v;
-	data.time_ = ray.time_;
-	return true;
-}
-
-Bound BsTriangle::getBound() const
-{
-	const Point3 *an = &mesh_->points_[pa_], *bn = &mesh_->points_[pb_], *cn = &mesh_->points_[pc_];
-	const Point3 amin { math::min(an[0].x_, an[1].x_, an[2].x_), math::min(an[0].y_, an[1].y_, an[2].y_), math::min(an[0].z_, an[1].z_, an[2].z_) };
-	const Point3 bmin { math::min(bn[0].x_, bn[1].x_, bn[2].x_), math::min(bn[0].y_, bn[1].y_, bn[2].y_), math::min(bn[0].z_, bn[1].z_, bn[2].z_) };
-	const Point3 cmin { math::min(cn[0].x_, cn[1].x_, cn[2].x_), math::min(cn[0].y_, cn[1].y_, cn[2].y_), math::min(cn[0].z_, cn[1].z_, cn[2].z_) };
-	const Point3 amax { math::max(an[0].x_, an[1].x_, an[2].x_), math::max(an[0].y_, an[1].y_, an[2].y_), math::max(an[0].z_, an[1].z_, an[2].z_) };
-	const Point3 bmax { math::max(bn[0].x_, bn[1].x_, bn[2].x_), math::max(bn[0].y_, bn[1].y_, bn[2].y_), math::max(bn[0].z_, bn[1].z_, bn[2].z_) };
-	const Point3 cmax { math::max(cn[0].x_, cn[1].x_, cn[2].x_), math::max(cn[0].y_, cn[1].y_, cn[2].y_), math::max(cn[0].z_, cn[1].z_, cn[2].z_) };
-	const Point3 l { math::min(amin.x_, bmin.x_, cmin.x_), math::min(amin.y_, bmin.y_, cmin.y_), math::min(amin.z_, bmin.z_, cmin.z_) };
-	const Point3 h { math::max(amax.x_, bmax.x_, cmax.x_), math::max(amax.y_, bmax.y_, cmax.y_), math::max(amax.z_, bmax.z_, cmax.z_) };
-	return Bound(l, h);
-}
-
-void BsTriangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
-{
-	// recalculating the points is not really the nicest solution...
-	const Point3 *an = &mesh_->points_[pa_], *bn = &mesh_->points_[pb_], *cn = &mesh_->points_[pc_];
-	const float time = data.time_;
-	const float tc = 1.f - time;
-	const float b_1 = tc * tc, b_2 = 2.f * time * tc, b_3 = time * time;
-	const Point3 a = b_1 * an[0] + b_2 * an[1] + b_3 * an[2];
-	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
-	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
-
-	sp.ng_ = ((b - a) ^ (c - a)).normalize();
-	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
-
-	//todo: calculate smoothed normal...
-	/* if(mesh->is_smooth || mesh->normals_exported)
-	{
-		vector3d_t va(na>0? mesh->normals[na] : normal), vb(nb>0? mesh->normals[nb] : normal), vc(nc>0? mesh->normals[nc] : normal);
-		sp.N = u*va + v*vb + w*vc;
-		sp.N.normalize();
-	}
-	else  */sp.n_ = sp.ng_;
-
-	if(mesh_->has_orco_)
-	{
-		sp.orco_p_ = barycentric_u * mesh_->points_[pa_ + 1] + barycentric_v * mesh_->points_[pb_ + 1] + barycentric_w * mesh_->points_[pc_ + 1];
-		sp.orco_ng_ = ((mesh_->points_[pb_ + 1] - mesh_->points_[pa_ + 1]) ^ (mesh_->points_[pc_ + 1] - mesh_->points_[pa_ + 1])).normalize();
-		sp.has_orco_ = true;
-	}
-	else
-	{
-		sp.orco_p_ = hit;
-		sp.orco_ng_ = sp.ng_;
-		sp.has_orco_ = false;
-	}
-	if(mesh_->has_uv_)
-	{
-		//		static bool test=true;
-
-		// gives the index in triangle array, according to my latest informations
-		// it _should be_ safe to rely on array-like contiguous memory in std::vector<>!
-		const unsigned int tri_index = this - &(mesh_->s_triangles_.front());
-		const auto uvi = mesh_->uv_offsets_.begin() + 3 * tri_index;
-		const int uvi_1 = *uvi, uvi_2 = *(uvi + 1), uvi_3 = *(uvi + 2);
-		const auto it = mesh_->uv_values_.begin();
-		sp.u_ = barycentric_u * it[uvi_1].u_ + barycentric_v * it[uvi_2].u_ + barycentric_w * it[uvi_3].u_;
-		sp.v_ = barycentric_u * it[uvi_1].v_ + barycentric_v * it[uvi_2].v_ + barycentric_w * it[uvi_3].v_;
-
-		// calculate dPdU and dPdV
-		const float du_1 = it[uvi_1].u_ - it[uvi_3].u_;
-		const float du_2 = it[uvi_2].u_ - it[uvi_3].u_;
-		const float dv_1 = it[uvi_1].v_ - it[uvi_3].v_;
-		const float dv_2 = it[uvi_2].v_ - it[uvi_3].v_;
-		const float det = du_1 * dv_2 - dv_1 * du_2;
-
-		if(std::abs(det) > 1e-30f)
-		{
-			const float invdet = 1.f / det;
-			const Vec3 dp_1 = mesh_->points_[pa_] - mesh_->points_[pc_];
-			const Vec3 dp_2 = mesh_->points_[pb_] - mesh_->points_[pc_];
-			sp.dp_du_ = (dv_2 * invdet) * dp_1 - (dv_1 * invdet) * dp_2;
-			sp.dp_dv_ = (du_1 * invdet) * dp_2 - (du_2 * invdet) * dp_1;
-		}
-		else
-		{
-			// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-			sp.dp_du_ = mesh_->points_[pb_] - mesh_->points_[pa_];
-			sp.dp_dv_ = mesh_->points_[pc_] - mesh_->points_[pa_];
-			sp.u_ = barycentric_u;
-			sp.v_ = barycentric_v;
-		}
-	}
-	else
-	{
-		// implicit mapping, p0 = 0/0, p1 = 1/0, p2 = 0/1 => sp.u_ = barycentric_u, sp.v_ = barycentric_v; (arbitrary choice)
-		sp.dp_du_ = mesh_->points_[pb_] - mesh_->points_[pa_];
-		sp.dp_dv_ = mesh_->points_[pc_] - mesh_->points_[pa_];
-		sp.u_ = barycentric_u;
-		sp.v_ = barycentric_v;
-	}
-
-	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
-	sp.dp_du_abs_ = sp.dp_du_;
-	sp.dp_dv_abs_ = sp.dp_dv_;
-
-	sp.dp_du_.normalize();
-	sp.dp_dv_.normalize();
-
-	sp.material_ = material_;
-	sp.p_ = hit;
-	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
-	// transform dPdU and dPdV in shading space
-	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
-	sp.ds_du_.y_ = sp.nv_ * sp.dp_du_;
-	sp.ds_du_.z_ = sp.n_ * sp.dp_du_;
-	sp.ds_dv_.x_ = sp.nu_ * sp.dp_dv_;
-	sp.ds_dv_.y_ = sp.nv_ * sp.dp_dv_;
-	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
-	sp.light_ = mesh_->light_;
-	sp.has_uv_ = mesh_->has_uv_;
-}
-
 
 END_YAFARAY

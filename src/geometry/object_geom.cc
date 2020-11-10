@@ -17,10 +17,10 @@
  */
 
 #include <geometry/object_geom.h>
-
-#include "geometry/object_geom_mesh.h"
 #include "geometry/primitive_basic.h"
 #include "geometry/triangle.h"
+#include "geometry/triangle_instance.h"
+#include "geometry/primitive_triangle_bspline_time.h"
 #include "common/param.h"
 #include "common/logger.h"
 
@@ -57,105 +57,6 @@ void ObjectGeometric::setObjectIndex(unsigned int new_obj_index)
 {
 	object_index_ = new_obj_index;
 	if(highest_object_index_ < object_index_) highest_object_index_ = object_index_;
-}
-
-TriangleObject::TriangleObject(int ntris, bool has_uv, bool has_orco):
-		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), normals_exported_(false)
-{
-	triangles_.reserve(ntris);
-	if(has_uv) uv_offsets_.reserve(ntris);
-	if(has_orco) points_.reserve(2 * 3 * ntris);
-	else points_.reserve(3 * ntris);
-}
-
-int TriangleObject::getPrimitives(const Triangle **prims) const
-{
-	for(unsigned int i = 0; i < triangles_.size(); ++i) prims[i] = &(triangles_[i]);
-	return triangles_.size();
-}
-
-Triangle *TriangleObject::addTriangle(const Triangle &t)
-{
-	triangles_.push_back(t);
-	triangles_.back().self_index_ = triangles_.size() - 1;
-	return &(triangles_.back());
-}
-
-void TriangleObject::finish()
-{
-	for(auto &triangle : triangles_) triangle.recNormal();
-}
-
-// triangleObjectInstance_t Methods
-
-TriangleObjectInstance::TriangleObjectInstance(const TriangleObject *base, Matrix4 obj_2_world)
-{
-	obj_to_world_ = obj_2_world;
-	m_base_ = base;
-	has_orco_ = m_base_->has_orco_;
-	has_uv_ = m_base_->has_uv_;
-	is_smooth_ = m_base_->is_smooth_;
-	normals_exported_ = m_base_->normals_exported_;
-	visible_ = true;
-	is_base_mesh_ = false;
-	triangles_.reserve(m_base_->triangles_.size());
-	for(const auto &triangle : m_base_->triangles_)
-	{
-		triangles_.push_back(TriangleInstance(&triangle, this));
-	}
-}
-
-int TriangleObjectInstance::getPrimitives(const Triangle **prims) const
-{
-	for(size_t i = 0; i < triangles_.size(); i++) prims[i] = &triangles_[i];
-	return triangles_.size();
-}
-
-void TriangleObjectInstance::finish()
-{
-	// Empty
-}
-
-/*===================
-	meshObject_t methods
-=====================================*/
-
-MeshObject::MeshObject(int ntris, bool has_uv, bool has_orco):
-		has_orco_(has_orco), has_uv_(has_uv), is_smooth_(false), light_(nullptr)
-{
-	//triangles.reserve(ntris);
-	if(has_uv) uv_offsets_.reserve(ntris);
-}
-
-int MeshObject::getPrimitives(const Primitive **prims) const
-{
-	int n = 0;
-	for(unsigned int i = 0; i < triangles_.size(); ++i, ++n)
-	{
-		prims[n] = &(triangles_[i]);
-	}
-	for(unsigned int i = 0; i < s_triangles_.size(); ++i, ++n)
-	{
-		prims[n] = &(s_triangles_[i]);
-	}
-	return n;
-}
-
-Primitive *MeshObject::addTriangle(const VTriangle &t)
-{
-	triangles_.push_back(t);
-	return &(triangles_.back());
-}
-
-Primitive *MeshObject::addBsTriangle(const BsTriangle &t)
-{
-	s_triangles_.push_back(t);
-	return &(triangles_.back());
-}
-
-void MeshObject::finish()
-{
-	for(auto &triangle : triangles_) triangle.recNormal();
 }
 
 END_YAFARAY

@@ -23,6 +23,8 @@
 #include "scene/scene.h"
 #include "common/logger.h"
 #include "geometry/triangle.h"
+#include "geometry/surface.h"
+#include "geometry/primitive.h"
 #include "common/param.h"
 #include <cstring>
 

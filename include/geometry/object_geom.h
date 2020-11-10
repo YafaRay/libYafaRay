@@ -57,11 +57,11 @@ class ObjectGeometric
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
 		void setVisibility(bool v) { visible_ = v; }
 		/*! Indicates that this object should be used as base object for instances */
-		void useAsBaseObject(bool v) { is_base_mesh_ = v; }
+		void useAsBaseObject(bool v) { is_base_object_ = v; }
 		/*! Returns if this object should be used for rendering. */
 		bool isVisible() const { return visible_; }
 		/*! Returns if this object is used as base object for instances. */
-		bool isBaseObject() const { return is_base_mesh_; }
+		bool isBaseObject() const { return is_base_object_; }
 		void resetObjectIndex() { highest_object_index_ = 1; object_index_auto_ = 0; }
 		void setObjectIndex(unsigned int new_obj_index);
 		unsigned int getAbsObjectIndex() const { return object_index_; }
@@ -70,29 +70,17 @@ class ObjectGeometric
 		Rgb getNormObjectIndexColor() const { return getNormObjectIndex(); }
 		Rgb getAutoObjectIndexColor() const { return object_index_auto_color_; }
 		Rgb getAutoObjectIndexNumber() const { return object_index_auto_; }
+		virtual const Light *getLight() const { return light_; }
 
 	protected:
 		ObjectGeometric();
 		const Light *light_ = nullptr;
 		bool visible_ = true; //!< toggle whether geometry is visible or only guidance for other stuff
-		bool is_base_mesh_ = true;
+		bool is_base_object_ = true;
 		unsigned int object_index_ = 0;	//!< Object Index for the object-index render pass
 		Rgb object_index_auto_color_ = 0.f;	//!< Object Index color automatically generated for the object-index-auto color render pass
 		static unsigned int object_index_auto_;	//!< Object Index automatically generated for the object-index-auto render pass
 		static unsigned int highest_object_index_;	//!< Class shared variable containing the highest object index used for the Normalized Object Index pass.
-};
-
-
-/*! simple "container" to handle primitives as objects, for objects that
-	consist of just one primitive like spheres etc. */
-class PrimitiveObject : public ObjectGeometric
-{
-	public:
-		PrimitiveObject(Primitive *p): prim_(p) { }
-		virtual int numPrimitives() const { return 1; }
-		virtual int getPrimitives(const Primitive **prims) const { *prims = prim_; return 1; }
-	private:
-		Primitive *prim_ = nullptr;
 };
 
 END_YAFARAY

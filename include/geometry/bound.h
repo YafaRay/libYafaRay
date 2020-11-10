@@ -38,9 +38,6 @@ BEGIN_YAFARAY
 
 class Bound
 {
-		//friend float bound_distance(const bound_t &l,const bound_t &r);
-		//friend float b_intersect(const bound_t &l,const bound_t &r);
-
 	public:
 
 		/*! Main constructor.

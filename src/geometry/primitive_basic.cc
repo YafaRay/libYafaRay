@@ -19,6 +19,7 @@
  */
 
 #include "geometry/primitive_basic.h"
+#include "geometry/object_primitive.h"
 #include "geometry/object_geom.h"
 #include "common/param.h"
 #include "geometry/bound.h"
