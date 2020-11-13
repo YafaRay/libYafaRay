@@ -24,14 +24,12 @@
 
 BEGIN_YAFARAY
 
-class DVector
+class Vec3Double
 {
 	public:
-		DVector() {}
-		DVector &operator = (const DVector &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
+		Vec3Double &operator = (const Vec3Double &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
 		double   operator[](int i) const { return (&x_)[i]; }
 		double  &operator[](int i) { return (&x_)[i]; }
-		~DVector() {}
 		double x_, y_, z_;
 };
 

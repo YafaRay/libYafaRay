@@ -316,7 +316,7 @@ void swap__(T **a, T **b)
 struct ClipDump
 {
 	int nverts_;
-	DVector poly_[10];
+	Vec3Double poly_[10];
 };
 
 /*! function to clip a triangle against an axis aligned bounding box and return new bound
@@ -329,8 +329,8 @@ struct ClipDump
 
 int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
 {
-	DVector dump_1[11], dump_2[11]; double t;
-	DVector *poly = dump_1, *cpoly = dump_2;
+	Vec3Double dump_1[11], dump_2[11]; double t;
+	Vec3Double *poly = dump_1, *cpoly = dump_2;
 
 	for(int q = 0; q < 3; q++)
 	{
@@ -344,7 +344,7 @@ int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const dou
 	//for each axis
 	for(int axis = 0; axis < 3; axis++)
 	{
-		DVector *p_1, *p_2;
+		Vec3Double *p_1, *p_2;
 		int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
 
 		// === clip lower ===
@@ -506,7 +506,7 @@ int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const dou
 
 	ClipDump *output = (ClipDump *)n_dat;
 	output->nverts_ = n;
-	memcpy(output->poly_, poly, (n + 1) * sizeof(DVector));
+	memcpy(output->poly_, poly, (n + 1) * sizeof(Vec3Double));
 
 	return 0;
 }
@@ -515,8 +515,8 @@ int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const v
 {
 	ClipDump *input = (ClipDump *) o_dat; //FIXME: casting const away and writing to it using swap__, dangerous!
 	ClipDump *output = (ClipDump *) n_dat;
-	DVector *poly = input->poly_;
-	DVector *cpoly = output->poly_;
+	Vec3Double *poly = input->poly_;
+	Vec3Double *cpoly = output->poly_;
 	int nverts = input->nverts_;
 	int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
 
@@ -527,7 +527,7 @@ int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const v
 		bool p_1_inside = (poly[0][axis] >= pos) ? true : false;
 		for(int i = 0; i < nverts; i++) // for each poly edge
 		{
-			const DVector *p_1 = &poly[i], *p_2 = &poly[i + 1];
+			const Vec3Double *p_1 = &poly[i], *p_2 = &poly[i + 1];
 			if(p_1_inside)   // p1 inside
 			{
 				if((*p_2)[axis] >= pos) //both "inside"
@@ -591,7 +591,7 @@ int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const v
 		bool p_1_inside = (poly[0][axis] <= pos) ? true : false;
 		for(int i = 0; i < nverts; i++) // for each poly edge
 		{
-			const DVector *p_1 = &poly[i], *p_2 = &poly[i + 1];
+			const Vec3Double *p_1 = &poly[i], *p_2 = &poly[i + 1];
 			if(p_1_inside)
 			{
 				if((*p_2)[axis] <= pos) //both "inside"
