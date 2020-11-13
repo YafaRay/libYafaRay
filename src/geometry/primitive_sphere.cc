@@ -18,7 +18,7 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/primitive_basic.h"
+#include "geometry/primitive_sphere.h"
 #include "geometry/object_primitive.h"
 #include "geometry/object_geom.h"
 #include "common/param.h"

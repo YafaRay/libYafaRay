@@ -30,7 +30,6 @@
 #include "shader/shader_node.h"
 #include "render/imagefilm.h"
 #include "volume/volume.h"
-#include "geometry/primitive_basic.h"
 #include "output/output.h"
 #include "render/render_data.h"
 #include "geometry/triangle.h"

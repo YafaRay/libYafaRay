@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_BASIC_H
-#define YAFARAY_PRIMITIVE_BASIC_H
+#ifndef YAFARAY_PRIMITIVE_SPHERE_H
+#define YAFARAY_PRIMITIVE_SPHERE_H
 
 #include "geometry/primitive.h"
 #include "vector.h"
@@ -36,7 +36,7 @@ class SurfacePoint;
 class Sphere final : public Primitive
 {
 	public:
-		Sphere(Point3 centr, float rad, const Material *m): center_(centr), radius_(rad), material_(m) {}
+		Sphere(const Point3 &centr, float rad, const Material *m): center_(centr), radius_(rad), material_(m) {}
 
 	private:
 		virtual Bound getBound() const override;
@@ -54,4 +54,4 @@ ObjectGeometric *sphereFactory__(ParamMap &params, const Scene &scene);
 
 END_YAFARAY
 
-#endif //YAFARAY_PRIMITIVE_BASIC_H
+#endif //YAFARAY_PRIMITIVE_SPHERE_H

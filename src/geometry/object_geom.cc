@@ -17,7 +17,7 @@
  */
 
 #include <geometry/object_geom.h>
-#include "geometry/primitive_basic.h"
+#include "geometry/primitive_sphere.h"
 #include "geometry/triangle.h"
 #include "geometry/triangle_instance.h"
 #include "geometry/primitive_triangle_bspline_time.h"
