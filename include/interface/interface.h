@@ -43,28 +43,25 @@ class ImageFilm;
 class Format;
 class ProgressBar;
 class Matrix4;
+class Object;
 
 class LIBYAFARAY_EXPORT Interface
 {
 	public:
 		Interface();
 		virtual ~Interface();
+		virtual void createScene();
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
 		virtual unsigned int getNextFreeId();
-		/*! start a triangle mesh
-			in this state only vertices, UVs and triangles can be created
-			\param id returns the ID of the created mesh
-		*/
-		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0);
-		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0);
-		virtual bool endTriMesh(); //!< end current mesh and return to geometry state
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape); //!< end current mesh and return to geometry state
+		virtual void setCurrentMaterial(const Material *material);
+		virtual const Material *getCurrentMaterial() const;
+		virtual bool endObject(); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 		virtual void addNormal(double nx, double ny, double nz); //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c, const Material *mat); //!< add a triangle given vertex indices and material pointer
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat); //!< add a triangle given vertex and uv indices and material pointer
+		virtual bool addFace(int a, int b, int c); //!< add a triangle given vertex indices and material pointer
+		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c); //!< add a triangle given vertex and uv indices and material pointer
 		virtual int  addUv(float u, float v); //!< add a UV coordinate pair; returns index to be used for addTriangle
 		virtual bool smoothMesh(const char *name, double angle); //!< smooth vertex normals of mesh with given ID and angle (in degrees)
 		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world);
@@ -85,19 +82,19 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
-		virtual Light 		*createLight(const char *name);
-		virtual Texture 		*createTexture(const char *name);
-		virtual Material 	*createMaterial(const char *name);
-		virtual Camera 		*createCamera(const char *name);
-		virtual Background 	*createBackground(const char *name);
-		virtual Integrator 	*createIntegrator(const char *name);
-		virtual VolumeRegion 	*createVolumeRegion(const char *name);
+		virtual Object *createObject(const char *name);
+		virtual Light *createLight(const char *name);
+		virtual Texture *createTexture(const char *name);
+		virtual Material *createMaterial(const char *name);
+		virtual Camera *createCamera(const char *name);
+		virtual Background *createBackground(const char *name);
+		virtual Integrator *createIntegrator(const char *name);
+		virtual VolumeRegion *createVolumeRegion(const char *name);
+		virtual RenderView *createRenderView(const char *name);
 		virtual ColorOutput *createOutput(const char *name); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
 		virtual ColorOutput *createOutput(const std::string &name, ColorOutput *output); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
 		bool removeOutput(const std::string &name); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		virtual RenderView *createRenderView(const char *name);
-		virtual unsigned int createObject(const char *name);
+		virtual void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);

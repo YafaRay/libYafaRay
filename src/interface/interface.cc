@@ -70,18 +70,13 @@ Interface::Interface()
 	params_ = new ParamMap;
 	eparams_ = new std::list<ParamMap>;
 	cparams_ = params_;
+}
 
-	(*params_)["type"] = std::string("yafaray"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
+void Interface::createScene()
+{
 	scene_ = Scene::factory(*params_);
-	std::string scene_type;
-	params_->getParam("type", scene_type);
 	params_->clear();
-
-	if(scene_) Y_INFO << "Interface: created scene of type '" << scene_type << "'" << YENDL;
-	else Y_ERROR << "Interface: could not create scene of type '" << scene_type << "'" << YENDL;
-
 	global_render_control__ = &scene_->getRenderControl();	//for the CTRL+C handler
-	//scene_->setMode(type); //FIXME!
 }
 
 Interface::~Interface()
@@ -123,9 +118,9 @@ bool Interface::setInteractive(bool interactive)
 	return true;
 }
 
-bool Interface::startGeometry() { return scene_->startGeometry(); }
+bool Interface::startGeometry() { return scene_->startObjects(); }
 
-bool Interface::endGeometry() { return scene_->endGeometry(); }
+bool Interface::endGeometry() { return scene_->endObjects(); }
 
 unsigned int Interface::getNextFreeId()
 {
@@ -134,20 +129,7 @@ unsigned int Interface::getNextFreeId()
 	return id;
 }
 
-bool Interface::startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
-{
-	bool success = scene_->startTriMesh(name, vertices, triangles, has_orco, has_uv, type, obj_pass_index);
-	return success;
-}
-
-bool Interface::startCurveMesh(const char *name, int vertices, int obj_pass_index)
-{
-	bool success = scene_->startCurveMesh(name, vertices, obj_pass_index);
-	return success;
-}
-
-bool Interface::endTriMesh() { return scene_->endTriMesh(); }
-bool Interface::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) { return scene_->endCurveMesh(mat, strand_start, strand_end, strand_shape); }
+bool Interface::endObject() { return scene_->endObject(); }
 
 int  Interface::addVertex(double x, double y, double z) { return scene_->addVertex(Point3(x, y, z)); }
 
@@ -161,16 +143,19 @@ void Interface::addNormal(double x, double y, double z)
 	scene_->addNormal(Vec3(x, y, z));
 }
 
-bool Interface::addTriangle(int a, int b, int c, const Material *mat) { return scene_->addTriangle(a, b, c, mat); }
-
-bool Interface::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat)
+bool Interface::addFace(int a, int b, int c)
 {
-	return scene_->addTriangle(a, b, c, uv_a, uv_b, uv_c, mat);
+	return scene_->addFace({a, b, c});
+}
+
+bool Interface::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c)
+{
+	return scene_->addFace({a, b, c}, {uv_a, uv_b, uv_c});
 }
 
 int Interface::addUv(float u, float v) { return scene_->addUv(u, v); }
 
-bool Interface::smoothMesh(const char *name, double angle) { return scene_->smoothMesh(name, angle); }
+bool Interface::smoothMesh(const char *name, double angle) { return scene_->smoothNormals(name, angle); }
 
 bool Interface::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
 {
@@ -278,39 +263,35 @@ void Interface::paramsEndList()
 	cparams_ = params_;
 }
 
-Light *Interface::createLight(const char *name)
-{
-	return scene_->createLight(name, *params_);
-}
-
-Texture 		*Interface::createTexture(const char *name) { return scene_->createTexture(name, *params_); }
-Material 	*Interface::createMaterial(const char *name) { return scene_->createMaterial(name, *params_, *eparams_); }
-Camera 		*Interface::createCamera(const char *name)
-{
-	Camera *camera = scene_->createCamera(name, *params_);
-	return camera;
-}
-Background 	*Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
-Integrator 	*Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
-VolumeRegion 	*Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
-
+Object *Interface::createObject(const char *name) { return scene_->createObject(name, *params_); }
+Light *Interface::createLight(const char *name) { return scene_->createLight(name, *params_); }
+Texture *Interface::createTexture(const char *name) { return scene_->createTexture(name, *params_); }
+Material *Interface::createMaterial(const char *name) { return scene_->createMaterial(name, *params_, *eparams_); }
+Camera *Interface::createCamera(const char *name) { return scene_->createCamera(name, *params_); }
+Background *Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
+Integrator *Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
+VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
+RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
 ColorOutput *Interface::createOutput(const char *name) { return scene_->createOutput(name, *params_); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
 ColorOutput *Interface::createOutput(const std::string &name, ColorOutput *output) { return scene_->createOutput(name, output); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
 bool Interface::removeOutput(const std::string &name) { return scene_->removeOutput(name); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 void Interface::clearOutputs() { return scene_->clearOutputs(); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 
-RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
-
-unsigned int Interface::createObject(const char *name)
-{
-	scene_->createObject(name, *params_);
-	return 0;
-}
-
 void Interface::abort()
 {
 	if(scene_) scene_->getRenderControl().setAborted();
 	Y_WARNING << "Interface: Render aborted by user." << YENDL;
+}
+
+void Interface::setCurrentMaterial(const Material *material)
+{
+	if(scene_) scene_->setCurrentMaterial(material);
+}
+
+const Material *Interface::getCurrentMaterial() const
+{
+	if(scene_) return scene_->getCurrentMaterial();
+	else return nullptr;
 }
 
 std::string Interface::getVersion() const

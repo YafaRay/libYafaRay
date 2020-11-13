@@ -29,7 +29,7 @@
 #include "common/layers.h"
 #include "material/material.h"
 #include "geometry/surface.h"
-#include "geometry/object_geom.h"
+#include "scene/yafaray/object_yafaray.h"
 #include "common/timer.h"
 #include "sampler/halton_scr.h"
 #include "render/imagefilm.h"

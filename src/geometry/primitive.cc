@@ -1,4 +1,3 @@
-#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -17,41 +16,29 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_SPHERE_H
-#define YAFARAY_PRIMITIVE_SPHERE_H
-
 #include "geometry/primitive.h"
-#include "vector.h"
+#include "geometry/object.h"
+#include "scene/yafaray/primitive_triangle.h"
+#include "scene/yafaray/primitive_sphere.h"
+#include "geometry/bound.h"
+#include "common/logger.h"
+#include "common/param.h"
 
 BEGIN_YAFARAY
 
-class Scene;
-class ParamMap;
-class ObjectGeometric;
-class Bound;
-class ExBound;
-class Ray;
-class SurfacePoint;
-
-class Sphere final : public Primitive
+Primitive *Primitive::factory(ParamMap &params, const Scene &scene)
 {
-	public:
-		Sphere(const Point3 &centr, float rad, const Material *m): center_(centr), radius_(rad), material_(m) {}
+	Y_DEBUG PRTEXT(**Primitive) PREND; params.printDebug();
+	std::string type;
+	params.getParam("type", type);
+	if(type == "triangle") return TrianglePrimitive::factory(params, scene);
+	else if(type == "sphere") return SpherePrimitive::factory(params, scene);
+	else return nullptr;
+}
 
-	private:
-		virtual Bound getBound() const override;
-		virtual bool intersectsBound(ExBound &b) const override { return true; };
-		virtual bool intersect(const Ray &ray, float *t, IntersectData &data) const override;
-		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const override;
-		virtual const Material *getMaterial() const override { return material_; }
-
-		Point3 center_;
-		float radius_;
-		const Material *material_ = nullptr;
-};
-
-ObjectGeometric *sphereFactory__(ParamMap &params, const Scene &scene);
+Visibility Primitive::getVisibility() const
+{
+	return base_object_->getVisibility();
+}
 
 END_YAFARAY
-
-#endif //YAFARAY_PRIMITIVE_SPHERE_H

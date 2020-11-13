@@ -17,25 +17,25 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_OBJECT_PRIMITIVE_H
-#define YAFARAY_OBJECT_PRIMITIVE_H
+#ifndef YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H
+#define YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H
 
-#include "object_geom.h"
+#include "primitive_face.h"
 
 BEGIN_YAFARAY
 
-/*! simple "container" to handle primitives as objects, for objects that
-	consist of just one primitive like spheres etc. */
-class PrimitiveObject : public ObjectGeometric
+class MeshObject;
+
+/*! a triangle supporting time based deformation described by a quadratic bezier spline */
+class BsTrianglePrimitive: public FacePrimitive
 {
 	public:
-		PrimitiveObject(Primitive *p): prim_(p) { }
-		virtual int numPrimitives() const { return 1; }
-		virtual int getPrimitives(const Primitive **prims) const { *prims = prim_; return 1; }
-	private:
-		Primitive *prim_ = nullptr;
+		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object);
+		virtual bool intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const override;
+		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
+		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const override;
 };
 
 END_YAFARAY
 
-#endif //YAFARAY_OBJECT_PRIMITIVE_H
+#endif //YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H

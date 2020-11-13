@@ -33,7 +33,7 @@ class MaskMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
-		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Material::Visibility::NormalVisible);
+		MaskMaterial(const Material *m_1, const Material *m_2, float thresh, Visibility visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

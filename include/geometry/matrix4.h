@@ -86,7 +86,7 @@ inline Point3 operator * (const Matrix4 &a, const Point3 &b)
 }
 
 //matrix4x4_t rayToZ(const point3d_t &from,const vector3d_t & ray);
-std::ostream &operator << (std::ostream &out, Matrix4 &m);
+std::ostream &operator << (std::ostream &out, const Matrix4 &m);
 
 END_YAFARAY
 

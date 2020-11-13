@@ -17,20 +17,34 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_UV_H
-#define YAFARAY_UV_H
+#ifndef YAFARAY_VISIBILITY_H
+#define YAFARAY_VISIBILITY_H
 
 #include "constants.h"
+#include <string>
 
 BEGIN_YAFARAY
 
-struct Uv
+enum class Visibility : int { NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible };
+
+inline Visibility visibilityFromString__(const std::string &str)
 {
-	Uv() = default;
-	Uv(float u, float v): u_(u), v_(v) { }
-	float u_, v_;
-};
+	if(str == "normal") return Visibility::NormalVisible;
+	else if(str == "invisible") return Visibility::Invisible;
+	else if(str == "shadow_only") return Visibility::InvisibleShadowsOnly;
+	else if(str == "no_shadows") return Visibility::VisibleNoShadows;
+	else return Visibility::NormalVisible;
+}
+
+inline std::string stringFromVisibility__(const Visibility &visibility)
+{
+	if(visibility == Visibility::NormalVisible) return "normal";
+	else if(visibility == Visibility::Invisible) return "invisible";
+	else if(visibility == Visibility::InvisibleShadowsOnly) return "shadow_only";
+	else if(visibility == Visibility::VisibleNoShadows) return "no_shadows";
+	else return "unknown";
+}
 
 END_YAFARAY
 
-#endif //YAFARAY_UV_H
+#endif //YAFARAY_VISIBILITY_H

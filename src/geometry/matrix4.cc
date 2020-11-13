@@ -194,7 +194,7 @@ void Matrix4::identity()
 		}
 }
 
-std::ostream &operator << (std::ostream &out, Matrix4 &m)
+std::ostream &operator << (std::ostream &out, const Matrix4 &m)
 {
 	out << "/ " << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << " \\\n";
 	out << "| " << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << " |\n";

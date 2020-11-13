@@ -24,18 +24,8 @@
 
 BEGIN_YAFARAY
 
-class MeshObject;
-class Triangle;
 template <typename T> class Accelerator;
 class Primitive;
-
-struct ObjData
-{
-	TriangleObject *obj_;
-	MeshObject *mobj_;
-	int type_;
-	size_t last_vert_id_;
-};
 
 class YafaRayScene final : public Scene
 {
@@ -43,45 +33,29 @@ class YafaRayScene final : public Scene
 		static Scene *factory(ParamMap &params);
 
 	private:
-		struct GeometryCreationState
-		{
-			ObjData *cur_obj_;
-			Triangle *cur_tri_;
-			bool orco_;
-			float smooth_angle_;
-		};
 		YafaRayScene();
 		YafaRayScene(const YafaRayScene &s) = delete;
 		virtual ~YafaRayScene() override;
-		virtual bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
-		virtual bool endTriMesh() override;
-		virtual bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0) override;
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) override;
 		virtual int  addVertex(const Point3 &p) override;
 		virtual int  addVertex(const Point3 &p, const Point3 &orco) override;
 		virtual void addNormal(const Vec3 &n) override;
-		virtual bool addTriangle(int a, int b, int c, const Material *mat) override;
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) override;
+		virtual bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {}) override;
 		virtual int  addUv(float u, float v) override;
-		virtual bool smoothMesh(const std::string &name, float angle) override;
-		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) override;
+		virtual bool smoothNormals(const std::string &name, float angle) override;
+		virtual Object *createObject(const std::string &name, ParamMap &params) override;
+		virtual bool endObject() override;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) override;
-		virtual bool updateGeometry() override;
-
+		virtual bool updateObjects() override;
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const override;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const override;
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const override;
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const override;
-		virtual TriangleObject *getMesh(const std::string &name) const override;
-		virtual ObjectGeometric *getObject(const std::string &name) const override;
+		virtual Object *getObject(const std::string &name) const override;
+		void clearObjects();
 
-		void clearGeometry();
-
-		GeometryCreationState geometry_creation_state_;
-		Accelerator<Triangle> *tree_ = nullptr; //!< kdTree for triangle-only mode
-		Accelerator<Primitive> *vtree_ = nullptr; //!< kdTree for universal mode
-		std::map<std::string, ObjectGeometric *> objects_;
-		std::map<std::string, ObjData> meshes_;
+		Object *current_object_ = nullptr;
+		Accelerator<Primitive> *accelerator_ = nullptr;
+		std::map<std::string, Object *> objects_;
 };
 
 END_YAFARAY

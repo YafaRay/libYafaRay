@@ -37,7 +37,7 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
-		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Material::Visibility::NormalVisible);
+		CoatedGlossyMaterial(const Rgb &col, const Rgb &dcol, const Rgb &mir_col, float mirror_strength, float reflect, float diff, float ior, float expo, bool as_diff, Visibility e_visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;

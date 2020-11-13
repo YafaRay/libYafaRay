@@ -18,33 +18,49 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/primitive_sphere.h"
-#include "geometry/object_primitive.h"
-#include "geometry/object_geom.h"
+#include "scene/yafaray/primitive_sphere.h"
+#include "scene/yafaray/object_yafaray.h"
 #include "common/param.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "scene/scene.h"
+#include "common/logger.h"
 
 BEGIN_YAFARAY
 
-Bound Sphere::getBound() const
+Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene)
 {
-	Vec3 r(radius_ * 1.0001);
+	Y_DEBUG PRTEXT(**SpherePrimitive) PREND; params.printDebug();
+	Point3 center(0.f, 0.f, 0.f);
+	double radius(1.f);
+	const Material *mat;
+	std::string matname;
+	params.getParam("center", center);
+	params.getParam("radius", radius);
+	params.getParam("material", matname);
+	if(matname.empty()) return nullptr;
+	mat = scene.getMaterial(matname);
+	if(!mat) return nullptr;
+	return new SpherePrimitive(center, radius, mat);
+}
+
+Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const
+{
+	const Vec3 r(radius_ * 1.0001);
 	return Bound(center_ - r, center_ + r);
 }
 
-bool Sphere::intersect(const Ray &ray, float *t, IntersectData &data) const
+bool SpherePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const
 {
-	Vec3 vf = ray.from_ - center_;
-	float ea = ray.dir_ * ray.dir_;
-	float eb = 2.0 * (vf * ray.dir_);
-	float ec = vf * vf - radius_ * radius_;
+	const Vec3 vf = ray.from_ - center_;
+	const float ea = ray.dir_ * ray.dir_;
+	const float eb = 2.0 * (vf * ray.dir_);
+	const float ec = vf * vf - radius_ * radius_;
 	float osc = eb * eb - 4.0 * ea * ec;
 	if(osc < 0) return false;
 	osc = math::sqrt(osc);
-	float sol_1 = (-eb - osc) / (2.0 * ea);
-	float sol_2 = (-eb + osc) / (2.0 * ea);
+	const float sol_1 = (-eb - osc) / (2.0 * ea);
+	const float sol_2 = (-eb + osc) / (2.0 * ea);
 	float sol = sol_1;
 	if(sol < ray.tmin_)
 	{
@@ -52,11 +68,11 @@ bool Sphere::intersect(const Ray &ray, float *t, IntersectData &data) const
 		if(sol < ray.tmin_) return false;
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
-	*t = sol;
+	t = sol;
 	return true;
 }
 
-void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
+void SpherePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const
 {
 	Vec3 normal = hit - center_;
 	sp.orco_p_ = normal;
@@ -73,20 +89,19 @@ void Sphere::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data
 	sp.light_ = nullptr;
 }
 
-ObjectGeometric *sphereFactory__(ParamMap &params, const Scene &scene)
+float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 {
-	Point3 center(0.f, 0.f, 0.f);
-	double radius(1.f);
-	const Material *mat;
-	std::string matname;
-	params.getParam("center", center);
-	params.getParam("radius", radius);
-	params.getParam("material", matname);
-	if(matname.empty()) return nullptr;
-	mat = scene.getMaterial(matname);
-	if(!mat) return nullptr;
-	Sphere *sphere = new Sphere(center, radius, mat);
-	return new PrimitiveObject(sphere);
+	return 0; //FIXME
+}
+
+Vec3 SpherePrimitive::getGeometricNormal(const Matrix4 *obj_to_world, float u, float v) const
+{
+	return Vec3(); //FIXME
+}
+
+void SpherePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
+{
+	//FIXME
 }
 
 END_YAFARAY

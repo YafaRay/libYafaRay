@@ -33,7 +33,7 @@ struct Plane
 
 inline float rayPlaneIntersection__(Ray const &ray, Plane const &plane)
 {
-	return plane.n_ * (plane.p_ - Vec3(ray.from_)) / (ray.dir_ * plane.n_);
+	return plane.n_ * (plane.p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * plane.n_);
 }
 
 END_YAFARAY

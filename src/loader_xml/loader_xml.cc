@@ -83,15 +83,6 @@ int main(int argc, char *argv[])
 	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
 	else logger__.setConsoleLogColorsEnabled(true);
 
-	ParamMap scene_params;
-	scene_params["type"] = std::string("yafaray"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-	Scene *scene = Scene::factory(scene_params);
-	if(!scene)
-	{
-		Y_ERROR << "XML Loader: scene could not be created, exiting..." << YENDL;
-		return -1;
-	}
-
 	std::string verb_level = parse.getOptionString("vl");
 	std::string log_verb_level = parse.getOptionString("lvl");
 
@@ -141,12 +132,10 @@ int main(int argc, char *argv[])
 	std::string xml_file_path = files.at(0);
 	if(files.size() > 1) output_file_path = files.at(1);
 
-	global_render_control__ = &scene->getRenderControl();	//for the CTRL+C handler
-
 	ParamMap params;
-
-	bool success = parseXmlFile__(xml_file_path.c_str(), scene, params, input_color_space_string, input_gamma);
-	if(!success) exit(1);
+	Scene *scene =parseXmlFile__(xml_file_path.c_str(), params, input_color_space_string, input_gamma);
+	if(!scene) exit(1);
+	global_render_control__ = &scene->getRenderControl();	//for the CTRL+C handler
 
 	int width = 320, height = 240;
 	int bx = 0, by = 0;

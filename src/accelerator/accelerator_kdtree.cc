@@ -22,7 +22,6 @@
 #include "material/material.h"
 #include "scene/scene.h"
 #include "common/logger.h"
-#include "geometry/triangle.h"
 #include "geometry/surface.h"
 #include "geometry/primitive.h"
 #include "common/param.h"
@@ -30,10 +29,10 @@
 
 BEGIN_YAFARAY
 
-#define TRI_CLIP 1 //tempoarily disabled
+#define PRIMITIVE_CLIPPING 1
 
 template<class T>
-Accelerator<T> *AcceleratorKdTree<T>::factory(const T **primitives_list, ParamMap &params)
+Accelerator<T> *AcceleratorKdTree<T>::factory(const std::vector<const T *> &primitives_list, ParamMap &params)
 {
 	int num_primitives = 0;
 	int depth = -1;
@@ -52,7 +51,7 @@ Accelerator<T> *AcceleratorKdTree<T>::factory(const T **primitives_list, ParamMa
 }
 
 template<class T>
-AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf_size,
+AcceleratorKdTree<T>::AcceleratorKdTree(const std::vector<const T *> &primitives_list, int np, int depth, int leaf_size,
 										float cost_ratio, float empty_bonus)
 	: cost_ratio_(cost_ratio), e_bonus_(empty_bonus), max_depth_(depth)
 {
@@ -76,11 +75,11 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf
 	if(max_depth_ > kd_max_stack_) max_depth_ = kd_max_stack_; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
-	all_bounds_ = new Bound[total_prims_ + tri_clip_thresh_ + 1];
-	Y_VERBOSE << "Kd-Tree: Getting triangle bounds..." << YENDL;
+	all_bounds_ = new Bound[total_prims_ + prim_clip_thresh_ + 1];
+	Y_VERBOSE << "Kd-Tree: Getting primitive bounds..." << YENDL;
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
-		all_bounds_[i] = v[i]->getBound();
+		all_bounds_[i] = primitives_list[i]->getBound();
 		/* calc tree bound. Remember to upgrade bound_t class... */
 		if(i) tree_bound_ = Bound(tree_bound_, all_bounds_[i]);
 		else tree_bound_ = all_bounds_[i];
@@ -96,19 +95,19 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf
 	// get working memory for tree construction
 	BoundEdge *edges[3];
 	const uint32_t r_mem_size = 3 * total_prims_; // (maxDepth+1)*totalPrims;
-	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * tri_clip_thresh_, total_prims_)];
+	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * prim_clip_thresh_, total_prims_)];
 	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
 	//	uint32_t *primNums = new uint32_t[totalPrims]; //isn't this like...totaly unnecessary? use leftPrims?
 	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514/*2*totalPrims*/];
 	clip_ = new int[max_depth_ + 2];
-	cdata_ = (char *) malloc((max_depth_ + 2) * tri_clip_thresh_ * clip_data_size_);
+	cdata_ = (char *) malloc((max_depth_ + 2) * prim_clip_thresh_ * clip_data_size_);
 
 	// prepare data
 	for(uint32_t i = 0; i < total_prims_; i++) left_prims[i] = i; //primNums[i] = i;
 	for(int i = 0; i < max_depth_ + 2; i++) clip_[i] = -1;
 
 	/* build tree */
-	prims_ = v;
+	prims_ = primitives_list;
 	Y_VERBOSE << "Kd-Tree: Starting recursive build..." << YENDL;
 	buildTree(total_prims_, tree_bound_, left_prims,
 			  left_prims, right_prims, edges, // <= working memory
@@ -132,7 +131,7 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const T **v, int np, int depth, int leaf
 	Y_VERBOSE << "Kd-Tree: Leaf prims: " << kd_stats_.kd_prims_ << " (" << float(kd_stats_.kd_prims_) / total_prims_ << " x prims in tree, leaf size: " << max_leaf_size_ << ")" << YENDL;
 	Y_VERBOSE << "Kd-Tree: => " << float(kd_stats_.kd_prims_) / (kd_stats_.kd_leaves_ - kd_stats_.empty_kd_leaves_) << " prims per non-empty leaf" << YENDL;
 	Y_VERBOSE << "Kd-Tree: Leaves due to depth limit/bad splits: " << kd_stats_.depth_limit_reached_ << "/" << kd_stats_.num_bad_splits_ << YENDL;
-	Y_VERBOSE << "Kd-Tree: clipped triangles: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
+	Y_VERBOSE << "Kd-Tree: clipped primitives: " << kd_stats_.clip_ << " (" << kd_stats_.bad_clip_ << " bad clips, " << kd_stats_.null_clip_ << " null clips)" << YENDL;
 }
 
 template<class T>
@@ -458,11 +457,11 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 		allocated_nodes_count_ = new_count;
 	}
 
-#if TRI_CLIP > 0
-	if(n_prims <= tri_clip_thresh_)
+#if PRIMITIVE_CLIPPING > 0
+	if(n_prims <= prim_clip_thresh_)
 	{
 		//		exBound_t ebound(nodeBound);
-		int o_prims[tri_clip_thresh_], n_overl = 0;
+		int o_prims[prim_clip_thresh_], n_overl = 0;
 		double b_half_size[3];
 		double b_ext[2][3];
 		for(int i = 0; i < 3; ++i)
@@ -474,8 +473,8 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 			b_ext[1][i] = node_bound.g_[i] + 0.021 * b_half_size[i] + 0.00001 * temp;
 			//			ebound.halfSize[i] *= 1.01;
 		}
-		char *c_old = cdata_ + (tri_clip_thresh_ * clip_data_size_ * depth);
-		char *c_new = cdata_ + (tri_clip_thresh_ * clip_data_size_ * (depth + 1));
+		char *c_old = cdata_ + (prim_clip_thresh_ * clip_data_size_ * depth);
+		char *c_new = cdata_ + (prim_clip_thresh_ * clip_data_size_ * (depth + 1));
 		for(unsigned int i = 0; i < n_prims; ++i)
 		{
 			const T *ct = prims_[ prim_nums[i] ];
@@ -486,7 +485,7 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 			if(ct->clippingSupport())
 			{
 				if(ct->clipToBound(b_ext, clip_[depth], all_bounds_[total_prims_ + n_overl],
-				                   c_old + old_idx * clip_data_size_, c_new + n_overl * clip_data_size_))
+								   c_old + old_idx * clip_data_size_, c_new + n_overl * clip_data_size_, nullptr))
 				{
 					++kd_stats_.clip_;
 					o_prims[n_overl] = prim_nums[i]; n_overl++;
@@ -520,8 +519,8 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	const float base_bonus = e_bonus_;
 	e_bonus_ *= 1.1 - static_cast<float>(depth) / static_cast<float>(max_depth_);
 	if(n_prims > 128) pigeonMinCost(n_prims, node_bound, prim_nums, split);
-#if TRI_CLIP > 0
-	else if(n_prims > tri_clip_thresh_) minimalCost(n_prims, node_bound, prim_nums, all_bounds_, edges, split);
+#if PRIMITIVE_CLIPPING > 0
+	else if(n_prims > prim_clip_thresh_) minimalCost(n_prims, node_bound, prim_nums, all_bounds_, edges, split);
 	else minimalCost(n_prims, node_bound, prim_nums, all_bounds_ + total_prims_, edges, split);
 #else
 	else minimalCost(nPrims, nodeBound, primNums, allBounds, edges, split);
@@ -541,7 +540,7 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	//todo: check working memory for child recursive calls
 	uint32_t remaining_mem, *more_prims = nullptr, *n_right_prims;
 	uint32_t *old_right_prims = right_prims;
-	if(n_prims > right_mem_size || 2 * tri_clip_thresh_ > right_mem_size) // *possibly* not enough, get some more
+	if(n_prims > right_mem_size || 2 * prim_clip_thresh_ > right_mem_size) // *possibly* not enough, get some more
 	{
 		//		std::cout << "buildTree: more memory allocated!\n";
 		remaining_mem = n_prims * 3;
@@ -579,10 +578,10 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 					foo++;
 				}*/
 	}
-	else if(n_prims <= tri_clip_thresh_)
+	else if(n_prims <= prim_clip_thresh_)
 	{
-		int cindizes[tri_clip_thresh_];
-		uint32_t old_prims[tri_clip_thresh_];
+		int cindizes[prim_clip_thresh_];
+		uint32_t old_prims[prim_clip_thresh_];
 		//		std::cout << "memcpy\n";
 		memcpy(old_prims, prim_nums, n_prims * sizeof(int));
 
@@ -648,8 +647,8 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 		case 2: bound_l.setMaxZ(split_pos); bound_r.setMinZ(split_pos); break;
 	}
 
-#if TRI_CLIP > 0
-	if(n_prims <= tri_clip_thresh_)
+#if PRIMITIVE_CLIPPING > 0
+	if(n_prims <= prim_clip_thresh_)
 	{
 		remaining_mem -= n_1;
 		//<< recurse below child >>
@@ -669,7 +668,7 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 		//<< recurse above child >>
 		nodes_[cur_node].setRightChild(next_free_node_);
 		buildTree(n_1, bound_r, n_right_prims, left_prims, n_right_prims + n_1, edges, remaining_mem, depth + 1, bad_refines);
-#if TRI_CLIP > 0
+#if PRIMITIVE_CLIPPING > 0
 	}
 #endif
 	// free additional working memory, if present
@@ -684,7 +683,7 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	returns the closest hit within dist
 */
 template<class T>
-bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const
+bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const
 {
 	z = dist;
 
@@ -777,14 +776,21 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
-			T *mp = curr_node->one_primitive_;
+			const T *mp = curr_node->one_primitive_;
 			float t_hit;
-			if(mp->intersect(ray, &t_hit, temp_data))
+			if(mp->intersect(ray, t_hit, temp_data, nullptr))
 			{
 				if(t_hit < z && t_hit >= ray.tmin_)
 				{
-					const Material *mat = mp->getMaterial();
-					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
+					bool check_instersection = false;
+					Visibility visibility = mp->getVisibility();
+					if(visibility != Visibility::InvisibleShadowsOnly)
+					{
+						const Material *mat = mp->getMaterial();
+						visibility = mat->getVisibility();
+						if(visibility != Visibility::InvisibleShadowsOnly) check_instersection = true;
+					}
+					if(check_instersection)
 					{
 						z = t_hit;
 						*tr = mp;
@@ -801,12 +807,19 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 			{
 				T *mp = prims[i];
 				float t_hit;
-				if(mp->intersect(ray, &t_hit, temp_data))
+				if(mp->intersect(ray, t_hit, temp_data, nullptr))
 				{
 					if(t_hit < z && t_hit >= ray.tmin_)
 					{
-						const Material *mat = mp->getMaterial();
-						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::VisibleNoShadows)
+						bool check_instersection = false;
+						Visibility visibility = mp->getVisibility();
+						if(visibility != Visibility::InvisibleShadowsOnly)
+						{
+							const Material *mat = mp->getMaterial();
+							visibility = mat->getVisibility();
+							if(visibility != Visibility::InvisibleShadowsOnly) check_instersection = true;
+						}
+						if(check_instersection)
 						{
 							z = t_hit;
 							*tr = mp;
@@ -833,7 +846,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, T **tr, float &
 }
 
 template<class T>
-bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const
+bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, float shadow_bias) const
 {
 	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist))
@@ -922,14 +935,21 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
-			T *mp = curr_node->one_primitive_;
+			const T *mp = curr_node->one_primitive_;
 			float t_hit;
-			if(mp->intersect(ray, &t_hit, bary))
+			if(mp->intersect(ray, t_hit, bary, nullptr))
 			{
 				if(t_hit < dist && t_hit >= 0.f)  // '>=' ?
 				{
-					const Material *mat = mp->getMaterial();
-					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
+					bool check_instersection = false;
+					Visibility visibility = mp->getVisibility();
+					if(visibility != Visibility::VisibleNoShadows)
+					{
+						const Material *mat = mp->getMaterial();
+						visibility = mat->getVisibility();
+						if(visibility != Visibility::VisibleNoShadows) check_instersection = true;
+					}
+					if(check_instersection)
 					{
 						*tr = mp;
 						return true;
@@ -944,12 +964,12 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 			{
 				T *mp = prims[i];
 				float t_hit;
-				if(mp->intersect(ray, &t_hit, bary))
+				if(mp->intersect(ray, t_hit, bary, nullptr))
 				{
 					if(t_hit < dist && t_hit >= 0.f)
 					{
 						const Material *mat = mp->getMaterial();
-						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
+						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
 							return true;
@@ -970,7 +990,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, T **tr, float 
 =============================================================*/
 
 template<class T>
-bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const
+bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, const T **tr, Rgb &filt, float shadow_bias) const
 {
 	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist))
@@ -1077,14 +1097,14 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 		const uint32_t n_primitives = curr_node->nPrimitives();
 		if(n_primitives == 1)
 		{
-			T *mp = curr_node->one_primitive_;
+			const T *mp = curr_node->one_primitive_;
 			float t_hit;
-			if(mp->intersect(ray, &t_hit, bary))
+			if(mp->intersect(ray, t_hit, bary, nullptr))
 			{
 				if(t_hit < dist && t_hit >= ray.tmin_)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
-					if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly) // '>=' ?
+					if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly) // '>=' ?
 					{
 						*tr = mp;
 						if(!mat->isTransparent()) return true;
@@ -1093,7 +1113,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 							if(depth >= max_depth) return true;
 							const Point3 h = ray.from_ + t_hit * ray.dir_;
 							SurfacePoint sp;
-							mp->getSurface(sp, h, bary);
+							mp->getSurface(sp, h, bary, nullptr);
 							filt *= mat->getTransparency(render_data, sp, ray.dir_);
 							++depth;
 						}
@@ -1108,12 +1128,12 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 			{
 				T *mp = prims[i];
 				float t_hit;
-				if(mp->intersect(ray, &t_hit, bary))
+				if(mp->intersect(ray, t_hit, bary, nullptr))
 				{
 					if(t_hit < dist && t_hit >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
-						if(mat->getVisibility() == Material::Visibility::NormalVisible || mat->getVisibility() == Material::Visibility::InvisibleShadowsOnly)
+						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 						{
 							*tr = mp;
 							if(!mat->isTransparent()) return true;
@@ -1122,7 +1142,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 								if(depth >= max_depth) return true;
 								const Point3 h = ray.from_ + t_hit * ray.dir_;
 								SurfacePoint sp;
-								mp->getSurface(sp, h, bary);
+								mp->getSurface(sp, h, bary, nullptr);
 								filt *= mat->getTransparency(render_data, sp, ray.dir_);
 								++depth;
 							}
@@ -1139,7 +1159,6 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 }
 
 // explicit instantiation of template:
-template class AcceleratorKdTree<Triangle>;
 template class AcceleratorKdTree<Primitive>;
 
 END_YAFARAY

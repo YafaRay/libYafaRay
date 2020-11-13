@@ -146,21 +146,21 @@ static xmlSAXHandler my_handler__ =
 };
 #endif // HAVE_XML
 
-bool parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, const std::string &color_space_string, float input_gamma)
+Scene *parseXmlFile__(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma)
 {
 #if HAVE_XML
 
 	ColorSpace input_color_space = Rgb::colorSpaceFromName(color_space_string);
-	XmlParser parser(scene, render, input_color_space, input_gamma);
+	XmlParser parser(render, input_color_space, input_gamma);
 	if(xmlSAXUserParseFile(&my_handler__, &parser, filename) < 0)
 	{
 		Y_ERROR << "XMLParser: Parsing the file " << filename << YENDL;
-		return false;
+		return nullptr;
 	}
-	return true;
+	return parser.getScene();
 #else
 	Y_WARNING << "XMLParser: yafray was compiled without XML support, cannot parse file." << YENDL;
-	return false;
+	return nullptr;
 #endif
 }
 
@@ -169,8 +169,8 @@ bool parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, const 
 / parser functions
 =============================================================*/
 
-XmlParser::XmlParser(Scene *scene, ParamMap &r, ColorSpace input_color_space, float input_gamma):
-		scene_(scene), render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
+XmlParser::XmlParser(ParamMap &r, ColorSpace input_color_space, float input_gamma):
+		render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
 {
 	cparams_ = &params_;
 	pushState(startElDocument__, endElDocument__);
@@ -200,12 +200,13 @@ void XmlParser::popState()
 
 inline bool str2Bool__(const char *s) { return strcmp(s, "true") ? false : true; }
 
-static bool parsePoint__(const char **attrs, Point3 &p, Point3 &op)
+static bool parsePoint__(const char **attrs, Point3 &p, Point3 &op, bool &has_orco)
 {
 	for(; attrs && attrs[0]; attrs += 2)
 	{
 		if(attrs[0][0] == 'o')
 		{
+			has_orco = true;
 			if(attrs[0][1] == 0 || attrs[0][2] != 0)
 			{
 				Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in orco point (1)" << YENDL;
@@ -323,44 +324,13 @@ void startElDocument__(XmlParser &parser, const char *element, const char **attr
 	parser.setLastElementNameAttrs(attrs);
 
 	if(strcmp(element, "scene")) Y_WARNING << "XMLParser: skipping <" << element << ">" << YENDL;   /* parser.error("Expected scene definition"); */
-	else
-	{
-		for(; attrs && attrs[0]; attrs += 2)
-		{
-			if(!strcmp(attrs[0], "type"))
-			{
-				std::string val(attrs[1]);
-				if(val == "triangle")  parser.scene_->setMode(0);
-				else if(val == "universal") parser.scene_->setMode(1);
-			}
-		}
-		parser.pushState(startElScene__, endElScene__);
-	}
+	else parser.pushState(startElScene__, endElScene__);
 }
 
 void endElDocument__(XmlParser &parser, const char *element)
 {
 	Y_VERBOSE << "XMLParser: Finished document" << YENDL;
 }
-
-struct MeshDat
-{
-	std::string name_;
-	bool has_orco_ = false;
-	bool has_uv_ = false;
-	bool smooth_ = false;
-	float smooth_angle_ = 0.f;
-	const Material *mat_ = nullptr;
-};
-
-struct CurveDat
-{
-	std::string name_;
-	float strand_start_ = 0.f;
-	float strand_end_ = 0.f;
-	float strand_shape_ = 0.f;
-	const Material *mat_ = nullptr;
-};
 
 // scene-state, i.e. expect only primary elements
 // such as light, material, texture, object, integrator, render...
@@ -372,7 +342,7 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element), *name = nullptr;
-	if(el == "material" || el == "integrator" || el == "light" || el == "texture" || el == "camera" || el == "background" || el == "object" || el == "volumeregion" || el == "logging_badge" || el == "output" || el == "render_view")
+	if(el == "material" || el == "integrator" || el == "light" || el == "texture" || el == "camera" || el == "background" || el == "volumeregion" || el == "logging_badge" || el == "output" || el == "render_view")
 	{
 		if(!attrs[0])
 		{
@@ -387,50 +357,33 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 		}
 		parser.pushState(startElParammap__, endElParammap__, name);
 	}
-	else if(el == "layer" || el == "layers_parameters")
+	else if(el == "layer" || el == "layers_parameters" || el == "scene_parameters")
 	{
 		name = new std::string("");
 		parser.pushState(startElParammap__, endElParammap__, name);
 	}
-	else if(el == "mesh")
+	else if(el == "object")
 	{
-		MeshDat *md = new MeshDat();
-		int vertices = 0, triangles = 0, type = 0, obj_pass_index = 0;
-		for(int n = 0; attrs[n]; ++n)
-		{
-			std::string attr(attrs[n]);
-			if(attr == "has_orco") md->has_orco_ = str2Bool__(attrs[n + 1]);
-			else if(attr == "has_uv") md->has_uv_ = str2Bool__(attrs[n + 1]);
-			else if(attr == "vertices") vertices = atoi(attrs[n + 1]);
-			else if(attr == "faces") triangles = atoi(attrs[n + 1]);
-			else if(attr == "type") type = atoi(attrs[n + 1]);
-			else if(attr == "name") md->name_ = attrs[n + 1];
-			else if(attr == "obj_pass_index") obj_pass_index = atoi(attrs[n + 1]);
-		}
-		if(md->name_.empty()) md->name_ = "Mesh_" + std::to_string(parser.scene_->getNextFreeId());
-		parser.pushState(startElMesh__, endElMesh__, md);
-		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
-		if(!parser.scene_->startTriMesh(md->name_, vertices, triangles, md->has_orco_, md->has_uv_, type, obj_pass_index))
-		{
-			Y_ERROR << "XMLParser: Invalid scene state on startTriMesh()!" << YENDL;
-		}
+		name = new std::string("Object_" + std::to_string(parser.scene_->getNextFreeId()));
+		parser.pushState(startElObject__, endElObject__, name);
+		if(!parser.scene_->startObjects()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
 	}
 	else if(el == "smooth")
 	{
 		float angle = 181;
-		std::string mesh_name;
+		std::string object_name;
 		for(int n = 0; attrs[n]; ++n)
 		{
 			std::string attr_name(attrs[n]);
-			if(attr_name == "mesh_name") mesh_name = std::string(attrs[n + 1]);
+			if(attr_name == "object_name") object_name = std::string(attrs[n + 1]);
 			else if(attr_name == "angle") angle = atof(attrs[n + 1]);
 		}
 		//not optimal to take ID blind...
-		parser.scene_->startGeometry();
-		bool success = parser.scene_->smoothMesh(mesh_name, angle);
-		if(!success) Y_ERROR << "XMLParser: Couldn't smooth mesh with mesh_name='" << mesh_name << "', angle = " << angle << YENDL;
+		parser.scene_->startObjects();
+		bool success = parser.scene_->smoothNormals(object_name, angle);
+		if(!success) Y_ERROR << "XMLParser: Couldn't smooth object with object_name='" << object_name << "', angle = " << angle << YENDL;
 
-		parser.scene_->endGeometry();
+		parser.scene_->endObjects();
 		parser.pushState(startElDummy__, endElDummy__);
 	}
 	else if(el == "render")
@@ -448,26 +401,6 @@ void startElScene__(XmlParser &parser, const char *element, const char **attrs)
 		}
 		parser.pushState(startElInstance__, endElInstance__, base_object_name);
 	}
-	else if(el == "curve")
-	{
-		CurveDat *cvd = new CurveDat();
-		int vertex = 0;
-		// attribute's loop
-		for(int n = 0; attrs[n]; ++n)
-		{
-			std::string attr(attrs[n]);
-			if(attr == "vertices") vertex = atoi(attrs[n + 1]);
-			else if(attr == "name") cvd->name_ = attrs[n + 1];
-		}
-		// Get a new object ID if we did not get one
-		if(cvd->name_.empty()) cvd->name_ = "Curve_" + std::to_string(parser.scene_->getNextFreeId());
-		parser.pushState(startElCurve__, endElCurve__, cvd);
-		if(!parser.scene_->startGeometry()) Y_ERROR << "XMLParser: Invalid scene state on startGeometry()!" << YENDL;
-		if(!parser.scene_->startCurveMesh(cvd->name_, vertex))
-		{
-			Y_ERROR << "XMLParser: Invalid scene state on startCurveMesh()!" << YENDL;
-		}
-	}
 	else Y_WARNING << "XMLParser: Skipping unrecognized scene element" << YENDL;
 }
 
@@ -479,75 +412,23 @@ void endElScene__(XmlParser &parser, const char *element)
 		parser.popState();
 	}
 }
-void startElCurve__(XmlParser &parser, const char *element, const char **attrs)
+
+// object-state, i.e. expect only points (vertices), faces and material settings
+// since we're supposed to be inside an object block, exit state on "object" element
+void startElObject__(XmlParser &parser, const char *element, const char **attrs)
 {
-	parser.setLastSection("Curve");
+	parser.setLastSection("Object");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
 
 	std::string el(element);
-	CurveDat *dat = (CurveDat *)parser.stateData();
-
 	if(el == "p")
 	{
 		Point3 p, op;
-		if(!parsePoint__(attrs, p, op)) return;
-		parser.scene_->addVertex(p);
-	}
-	else if(el == "strand_start")
-	{
-		dat->strand_start_ = atof(attrs[1]);
-	}
-	else if(el == "strand_end")
-	{
-		dat->strand_end_ = atof(attrs[1]);
-	}
-	else if(el == "strand_shape")
-	{
-		dat->strand_shape_ = atof(attrs[1]);
-
-	}
-	else if(el == "set_material")
-	{
-		std::string mat_name(attrs[1]);
-		dat->mat_ = parser.scene_->getMaterial(mat_name);
-		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
-	}
-}
-void endElCurve__(XmlParser &parser, const char *element)
-{
-	if(std::string(element) == "curve")
-	{
-		CurveDat *cd = (CurveDat *)parser.stateData();
-		if(!parser.scene_->endCurveMesh(cd->mat_, cd->strand_start_, cd->strand_end_, cd->strand_shape_))
-		{
-			Y_WARNING << "XMLParser: Invalid scene state on endCurveMesh()!" << YENDL;
-		}
-		if(!parser.scene_->endGeometry())
-		{
-			Y_WARNING << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
-		}
-		delete cd;
-		parser.popState();
-	}
-}
-
-// mesh-state, i.e. expect only points (vertices), faces and material settings
-// since we're supposed to be inside a mesh block, exit state on "mesh" element
-void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
-{
-	parser.setLastSection("Mesh");
-	parser.setLastElementName(element);
-	parser.setLastElementNameAttrs(attrs);
-
-	std::string el(element);
-	MeshDat *dat = (MeshDat *)parser.stateData();
-	if(el == "p")
-	{
-		Point3 p, op;
-		if(!parsePoint__(attrs, p, op)) return;
-		if(dat->has_orco_)	parser.scene_->addVertex(p, op);
-		else 				parser.scene_->addVertex(p);
+		bool has_orco = false;
+		if(!parsePoint__(attrs, p, op, has_orco)) return;
+		if(has_orco) parser.scene_->addVertex(p, op);
+		else parser.scene_->addVertex(p);
 	}
 	else if(el == "n")
 	{
@@ -557,25 +438,26 @@ void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
 	}
 	else if(el == "f")
 	{
-		int a = 0, b = 0, c = 0, uv_a = 0, uv_b = 0, uv_c = 0;
+		std::vector<int> vertices_indices, uv_indices;
+		vertices_indices.reserve(3);
+		vertices_indices.reserve(3);
 		for(; attrs && attrs[0]; attrs += 2)
 		{
-			if(attrs[0][1] == 0) switch(attrs[0][0])
-				{
-					case 'a' : a = atoi(attrs[1]); break;
-					case 'b' : b = atoi(attrs[1]); break;
-					case 'c' : c = atoi(attrs[1]); break;
-					default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << YENDL;
-				}
+			const std::string attribute = attrs[0];
+			if(attribute.size() == 1) switch(attribute[0])
+			{
+				case 'a' :
+				case 'b' :
+				case 'c' :
+				case 'd' : vertices_indices.push_back(atoi(attrs[1])); break;
+				default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in face" << YENDL;
+			}
 			else
 			{
-				if(!strcmp(attrs[0], "uv_a")) 	   uv_a = atoi(attrs[1]);
-				else if(!strcmp(attrs[0], "uv_b")) uv_b = atoi(attrs[1]);
-				else if(!strcmp(attrs[0], "uv_c")) uv_c = atoi(attrs[1]);
+				if(attribute.substr(0, 3) == "uv_") uv_indices.push_back(atoi(attrs[1]));
 			}
 		}
-		if(dat->has_uv_) parser.scene_->addTriangle(a, b, c, uv_a, uv_b, uv_c, dat->mat_);
-		else 			parser.scene_->addTriangle(a, b, c, dat->mat_);
+		parser.scene_->addFace(vertices_indices, uv_indices);
 	}
 	else if(el == "uv")
 	{
@@ -607,19 +489,24 @@ void startElMesh__(XmlParser &parser, const char *element, const char **attrs)
 	else if(el == "set_material")
 	{
 		std::string mat_name(attrs[1]);
-		dat->mat_ = parser.scene_->getMaterial(mat_name);
-		if(!dat->mat_) Y_WARNING << "XMLParser: Unknown material!" << YENDL;
+		const Material *material = parser.scene_->getMaterial(mat_name);
+		if(!material) Y_WARNING << "XMLParser: Unknown material, using default!" << YENDL;
+		parser.scene_->setCurrentMaterial(material);
+	}
+	else if(el == "object_parameters")
+	{
+		std::string *name = nullptr;
+		if(!strcmp(attrs[0], "name")) name = new std::string(attrs[1]);
+		parser.pushState(startElParammap__, endElParammap__, name);
 	}
 }
 
-void endElMesh__(XmlParser &parser, const char *element)
+void endElObject__(XmlParser &parser, const char *element)
 {
-	if(std::string(element) == "mesh")
+	if(std::string(element) == "object")
 	{
-		MeshDat *md = (MeshDat *)parser.stateData();
-		if(!parser.scene_->endTriMesh()) Y_ERROR << "XMLParser: Invalid scene state on endTriMesh()!" << YENDL;
-		if(!parser.scene_->endGeometry()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
-		delete md;
+		if(!parser.scene_->endObject()) Y_ERROR << "XMLParser: Invalid scene state on endObject()!" << YENDL;
+		if(!parser.scene_->endObjects()) Y_ERROR << "XMLParser: Invalid scene state on endGeometry()!" << YENDL;
 		parser.popState();
 	}
 }
@@ -688,13 +575,21 @@ void endElParammap__(XmlParser &p, const char *element)
 		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
 		else
 		{
-			if(el == "material") p.scene_->createMaterial(*name, p.params_, p.eparams_);
+			if(el == "scene_parameters")
+			{
+				p.scene_ = Scene::factory(p.params_);
+				if(!p.scene_)
+				{
+					Y_ERROR << "XML Loader: scene could not be created." << YENDL;
+				}
+			}
+			else if(el == "material") p.scene_->createMaterial(*name, p.params_, p.eparams_);
 			else if(el == "integrator") p.scene_->createIntegrator(*name, p.params_);
 			else if(el == "light") p.scene_->createLight(*name, p.params_);
 			else if(el == "texture") p.scene_->createTexture(*name, p.params_);
 			else if(el == "camera") p.scene_->createCamera(*name, p.params_);
 			else if(el == "background") p.scene_->createBackground(*name, p.params_);
-			else if(el == "object") p.scene_->createObject(*name, p.params_);
+			else if(el == "object_parameters") p.scene_->createObject(*name, p.params_);
 			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
 			else if(el == "layers_parameters") p.scene_->setupLayersParameters(p.params_);
 			else if(el == "layer") p.scene_->defineLayer(p.params_);
@@ -702,8 +597,7 @@ void endElParammap__(XmlParser &p, const char *element)
 			else if(el == "render_view") p.scene_->createRenderView(*name, p.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
-
-		if(name) delete name;
+		delete name;
 		p.popState(); p.params_.clear(); p.eparams_.clear();
 	}
 }

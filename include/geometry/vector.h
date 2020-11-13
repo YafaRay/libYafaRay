@@ -57,7 +57,7 @@ class Vec3
 		float lengthSqr() const { return x_ * x_ + y_ * y_ + z_ * z_; }
 		float length() const { return math::sqrt(lengthSqr()); }
 		bool null() const { return ((x_ == 0.f) && (y_ == 0.f) && (z_ == 0.f)); }
-		float sinFromVectors(const Vec3 &v);
+		float sinFromVectors(const Vec3 &v) const;
 
 		Vec3 &operator = (const Vec3 &s) { x_ = s.x_; y_ = s.y_; z_ = s.z_;  return *this;}
 		Vec3 &operator +=(const Vec3 &s) { x_ += s.x_; y_ += s.y_; z_ += s.z_;  return *this;}
@@ -205,7 +205,7 @@ inline Vec3 &Vec3::normalize()
 	return *this;
 }
 
-inline float Vec3::sinFromVectors(const Vec3 &v)
+inline float Vec3::sinFromVectors(const Vec3 &v) const
 {
 	const float div = (length() * v.length()) * 0.99999f + 0.00001f;
 	float asin_argument = ((*this ^ v).length() / div) * 0.99999f;

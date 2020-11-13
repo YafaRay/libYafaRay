@@ -33,7 +33,7 @@ class Scene;
 class XmlParser;
 enum ColorSpace : int;
 
-bool LIBYAFARAY_EXPORT parseXmlFile__(const char *filename, Scene *scene, ParamMap &render, const std::string &color_space_string, float input_gamma);
+LIBYAFARAY_EXPORT Scene *parseXmlFile__(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma);
 
 typedef void (*StartElementCb_t)(XmlParser &p, const char *element, const char **attrs);
 typedef void (*EndElementCb_t)(XmlParser &p, const char *element);
@@ -53,13 +53,13 @@ struct ParserState
 class XmlParser
 {
 	public:
-		XmlParser(Scene *scene, ParamMap &r, ColorSpace input_color_space, float input_gamma);
+		XmlParser(ParamMap &r, ColorSpace input_color_space, float input_gamma);
 		void pushState(StartElementCb_t start, EndElementCb_t end, void *userdata = nullptr);
 		void popState();
 		void startElement(const char *element, const char **attrs) { ++level_; if(current_) current_->start_(*this, element, attrs); }
 		void endElement(const char *element)	{ if(current_) current_->end_(*this, element); --level_; }
 		void *stateData() { return current_->userdata_; }
-		void setParam(const std::string &name, Parameter &param) { (*cparams_)[name] = param; }
+		void setParam(const std::string &name, const Parameter &param) { (*cparams_)[name] = param; }
 		int currLevel() const { return level_; }
 		int stateLevel() const { return current_ ? current_->level_ : -1; }
 		ColorSpace getInputColorSpace() const { return input_color_space_; }
@@ -70,8 +70,9 @@ class XmlParser
 		std::string getLastSection() const { return current_->last_section_; }
 		std::string getLastElementName() const { return current_->last_element_; }
 		std::string getLastElementNameAttrs() const { return current_->last_element_attrs_; }
+		Scene *getScene() { return scene_; }
 
-		Scene *scene_;
+		Scene *scene_ = nullptr;
 		ParamMap params_, &render_;
 		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
@@ -88,8 +89,8 @@ void startElDocument__(XmlParser &p, const char *element, const char **attrs);
 void endElDocument__(XmlParser &p, const char *element);
 void startElScene__(XmlParser &p, const char *element, const char **attrs);
 void endElScene__(XmlParser &p, const char *element);
-void startElMesh__(XmlParser &p, const char *element, const char **attrs);
-void endElMesh__(XmlParser &p, const char *element);
+void startElObject__(XmlParser &p, const char *element, const char **attrs);
+void endElObject__(XmlParser &p, const char *element);
 void startElInstance__(XmlParser &p, const char *element, const char **attrs);
 void endElInstance__(XmlParser &p, const char *element);
 void startElParammap__(XmlParser &p, const char *element, const char **attrs);
@@ -97,8 +98,6 @@ void endElParammap__(XmlParser &p, const char *element);
 void startElParamlist__(XmlParser &p, const char *element, const char **attrs);
 void endElParamlist__(XmlParser &p, const char *element);
 void endElRender__(XmlParser &p, const char *element);
-void startElCurve__(XmlParser &p, const char *element, const char **attrs);
-void endElCurve__(XmlParser &p, const char *element);
 
 #endif // HAVE_XML
 

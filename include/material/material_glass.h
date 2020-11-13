@@ -32,7 +32,7 @@ class GlassMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
-		GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Material::Visibility::NormalVisible);
+		GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double disp_pow, bool fake_s, Visibility e_visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const;

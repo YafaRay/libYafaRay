@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-XmlExport::XmlExport(const char *fname, int type) : xml_name_(std::string(fname))
+XmlExport::XmlExport(const char *fname) : xml_name_(std::string(fname))
 {
 	xml_file_.open(xml_name_.c_str());
 	if(!xml_file_.is_open())
@@ -35,16 +35,20 @@ XmlExport::XmlExport(const char *fname, int type) : xml_name_(std::string(fname)
 	else Y_INFO << "XmlExport: Writing scene to: " << xml_name_ << YENDL;
 	xml_file_ << std::boolalpha;
 	xml_file_ << "<?xml version=\"1.0\"?>" << YENDL;
-	xml_file_ << "<scene type=\"";
-	if(type==0) xml_file_ << "triangle";
-	else 		xml_file_ << "universal";
-	xml_file_ << "\">" << YENDL;
+}
+
+void XmlExport::createScene()
+{
+	xml_file_ << "<scene>\n\n";
+	xml_file_ << "<scene_parameters>\n";
+	writeParamMap(*params_);
+	params_->clear();
+	xml_file_ << "</scene_parameters>\n";
 }
 
 void XmlExport::clearAll()
 {
 	Y_VERBOSE << "XmlExport: cleaning up..." << YENDL;
-	scene_->clearAll();
 	materials_.clear();
 	if(xml_file_.is_open())
 	{
@@ -85,46 +89,19 @@ unsigned int XmlExport::getNextFreeId()
 	return ++next_obj_;
 }
 
-bool XmlExport::startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv, int type, int obj_pass_index)
+bool XmlExport::endObject()
 {
-	last_mat_ = nullptr;
-	n_uvs_ = 0;
-	xml_file_ << "\n<mesh name=\"" << name << "\" vertices=\"" << vertices << "\" faces=\"" << triangles
-			  << "\" has_orco=\"" << has_orco << "\" has_uv=\"" << has_uv << "\" type=\"" << type << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
+	xml_file_ << "</object>\n";
 	return true;
 }
 
-bool XmlExport::startCurveMesh(const char *name, int vertices, int obj_pass_index)
-{
-	xml_file_ << "\n<curve name=\"" << name << "\" vertices=\"" << vertices << "\" obj_pass_index=\"" << obj_pass_index << "\">\n";
-	return true;
-}
-
-bool XmlExport::endTriMesh()
-{
-	xml_file_ << "</mesh>\n";
-	return true;
-}
-
-bool XmlExport::endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape)
-{
-	const auto i = materials_.find(mat);
-	if(i == materials_.end()) return false;
-	xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n"
-			  << "\t<strand_start fval=\"" << strand_start << "\"/>\n"
-			  << "\t<strand_end fval=\"" << strand_end << "\"/>\n"
-			  << "\t<strand_shape fval=\"" << strand_shape << "\"/>\n"
-			  << "</curve>\n";
-	return true;
-}
-
-int  XmlExport::addVertex(double x, double y, double z)
+int XmlExport::addVertex(double x, double y, double z)
 {
 	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 	return 0;
 }
 
-int  XmlExport::addVertex(double x, double y, double z, double ox, double oy, double oz)
+int XmlExport::addVertex(double x, double y, double z, double ox, double oy, double oz)
 {
 	xml_file_ << "\t<p x=\"" << x << "\" y=\"" << y << "\" z=\"" << z
 			  << "\" ox=\"" << ox << "\" oy=\"" << oy << "\" oz=\"" << oz << "\"/>\n";
@@ -136,28 +113,25 @@ void XmlExport::addNormal(double x, double y, double z)
 	xml_file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
-bool XmlExport::addTriangle(int a, int b, int c, const Material *mat)
+void XmlExport::setCurrentMaterial(const Material *material)
 {
-	if(mat != last_mat_) //need to set current material
+	if(material != getCurrentMaterial()) //need to set current material
 	{
-		const auto i = materials_.find(mat);
-		if(i == materials_.end()) return false;
+		const auto &i = materials_.find(material);
+		if(i == materials_.end()) return;
 		xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n";
-		last_mat_ = mat;
+		current_material_ = material;
 	}
+}
+
+bool XmlExport::addFace(int a, int b, int c)
+{
 	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c << "\"/>\n";
 	return true;
 }
 
-bool XmlExport::addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat)
+bool XmlExport::addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c)
 {
-	if(mat != last_mat_) //need to set current material
-	{
-		const auto i = materials_.find(mat);
-		if(i == materials_.end()) return false;
-		xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n";
-		last_mat_ = mat;
-	}
 	xml_file_ << "\t<f a=\"" << a << "\" b=\"" << b << "\" c=\"" << c
 			  << "\" uv_a=\"" << uv_a << "\" uv_b=\"" << uv_b << "\" uv_c=\"" << uv_c << "\"/>\n";
 	return true;
@@ -171,7 +145,7 @@ int XmlExport::addUv(float u, float v)
 
 bool XmlExport::smoothMesh(const char *name, double angle)
 {
-	xml_file_ << "<smooth mesh_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
+	xml_file_ << "<smooth object_name=\"" << name << "\" angle=\"" << angle << "\"/>\n";
 	return true;
 }
 
@@ -336,12 +310,15 @@ RenderView *XmlExport::createRenderView(const char *name)
 	return nullptr;
 }
 
-unsigned int XmlExport::createObject(const char *name)
+Object *XmlExport::createObject(const char *name)
 {
-	xml_file_ << "\n<object name=\"" << name << "\">\n";
-	writeParamMap(*params_);
-	xml_file_ << "</object>\n";
-	return ++next_obj_;
+	n_uvs_ = 0;
+	xml_file_ << "\n<object>\n";
+	xml_file_ << "\t<object_parameters name=\"" << name << "\">\n";
+	writeParamMap(*params_, 2);
+	xml_file_ << "\t</object_parameters>\n";
+	++next_obj_;
+	return nullptr;
 }
 
 void XmlExport::render(ProgressBar *pb)
@@ -362,9 +339,9 @@ void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val
 
 extern "C"
 {
-	XmlExport *getYafrayXml__(const char *fname, int type)
+	XmlExport *getYafrayXml__(const char *fname)
 	{
-		return new XmlExport(fname, type);
+		return new XmlExport(fname);
 	}
 }
 

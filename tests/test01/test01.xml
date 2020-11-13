@@ -10,75 +10,71 @@ To test, using the terminal (or Windows "cmd") do this:
 <path-to-yafaray-xml>/yafaray-xml -vl verbose -lvl verbose test01.xml
 -->
 
-<scene type="triangle">
+<scene>
+
+<scene_parameters>
+	<type sval="yafaray"/>
+</scene_parameters>
 
 <layer>
 	<type sval="combined"/>
 	<exported_image_name sval="Combined"/>
 	<exported_image_type sval="ColorAlpha"/>
 </layer>
-<layer>
-	<type sval="ao-clay"/>
-	<exported_image_name sval="AO"/>
-	<exported_image_type sval="Color"/>
-</layer>
+
 <layer>
 	<type sval="z-depth-norm"/>
 	<exported_image_name sval="Depth"/>
-	<exported_image_type sval="GrayAlpha"/>
+	<exported_image_type sval="Gray"/>
 </layer>
+
 <layer>
-	<type sval="diffuse"/>
-	<exported_image_name sval="Diffuse"/>
-	<exported_image_type sval="Color"/>
+	<type sval="mat-index-auto"/>
+	<exported_image_name sval="Vector"/>
+	<exported_image_type sval="ColorAlpha"/>
 </layer>
-<layer>
-	<type sval="env"/>
-	<exported_image_name sval="Env"/>
-	<exported_image_type sval="Color"/>
-</layer>
-<layer>
-	<type sval="mist"/>
-	<exported_image_name sval="Mist"/>
-	<exported_image_type sval="GrayAlpha"/>
-</layer>
+
 <layer>
 	<type sval="debug-normal-smooth"/>
 	<exported_image_name sval="Normal"/>
 	<exported_image_type sval="Color"/>
 </layer>
-<layer>
-	<type sval="shadow"/>
-	<exported_image_name sval="Shadow"/>
-	<exported_image_type sval="Gray"/>
-</layer>
+
 <layer>
 	<type sval="obj-index-auto"/>
 	<exported_image_name sval="UV"/>
 	<exported_image_type sval="Color"/>
 </layer>
+
 <layer>
-	<type sval="mat-index-auto"/>
-	<exported_image_name sval="Vector"/>
+	<type sval="mist"/>
+	<exported_image_name sval="Mist"/>
+	<exported_image_type sval="Gray"/>
+</layer>
+
+<layer>
+	<type sval="diffuse"/>
+	<exported_image_name sval="Diffuse"/>
 	<exported_image_type sval="Color"/>
 </layer>
 
-<layers_parameters>
-	<layer_faces_edge_smoothness fval="0.5"/>
-	<layer_faces_edge_thickness ival="1"/>
-	<layer_faces_edge_threshold fval="0.01"/>
-	<layer_object_edge_smoothness fval="0.75"/>
-	<layer_object_edge_thickness ival="2"/>
-	<layer_object_edge_threshold fval="0.3"/>
-	<layer_mask_invert bval="false"/>
-	<layer_mask_mat_index ival="2"/>
-	<layer_mask_obj_index ival="2"/>
-	<layer_mask_only bval="false"/>
-	<layer_toon_edge_color r="0" g="0" b="0" a="1"/>
-	<layer_toon_post_smooth fval="3"/>
-	<layer_toon_pre_smooth fval="3"/>
-	<layer_toon_quantization fval="0.1"/>
-</layers_parameters>
+<layer>
+	<type sval="ao-clay"/>
+	<exported_image_name sval="AO"/>
+	<exported_image_type sval="Color"/>
+</layer>
+
+<layer>
+	<type sval="env"/>
+	<exported_image_name sval="Env"/>
+	<exported_image_type sval="Color"/>
+</layer>
+
+<layer>
+	<type sval="shadow"/>
+	<exported_image_name sval="Shadow"/>
+	<exported_image_type sval="Color"/>
+</layer>
 
 <texture name="Texture.005">
 	<adj_clamp bval="true"/>
@@ -96,14 +92,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.tif"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -126,14 +126,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.tga"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -156,14 +160,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.png"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -186,14 +194,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.jpg"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -216,14 +228,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.hdr"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -246,14 +262,18 @@ To test, using the terminal (or Windows "cmd") do this:
 	<cropmax_y fval="1"/>
 	<cropmin_x fval="0"/>
 	<cropmin_y fval="0"/>
+	<ewa_max_anisotropy fval="8"/>
+	<fileformat sval="PNG"/>
 	<filename sval="test01_tex.exr"/>
 	<gamma fval="1"/>
+	<image_optimization sval="optimized"/>
+	<img_grayscale bval="false"/>
 	<interpolate sval="bilinear"/>
 	<mirror_x bval="false"/>
 	<mirror_y bval="false"/>
 	<normalmap bval="false"/>
 	<rot90 bval="false"/>
-	<image_optimization sval="optimized"/>
+	<trilinear_level_bias fval="0"/>
 	<type sval="image"/>
 	<use_alpha bval="false"/>
 	<xrepeat ival="1"/>
@@ -265,13 +285,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	<type sval="shinydiffusemat"/>
 </material>
 
-<material name="Material.008--9223363248046659264">
+<material name="Material.008">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="0.5"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="2"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -281,6 +302,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -288,6 +311,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="1"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -296,7 +320,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -321,13 +344,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.007--9223363248046659360">
+<material name="Material.007">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="1"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="2"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -337,6 +361,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -344,6 +370,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="1"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -352,7 +379,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -377,13 +403,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.006--9223363248046659456">
+<material name="Material.006">
 	<IOR fval="1.5"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="0.6"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="1"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -393,6 +420,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -400,6 +429,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="1"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -408,7 +438,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -433,13 +462,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.005--9223363248046659552">
+<material name="Material.005">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="0.4"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="1"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -449,6 +479,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -456,6 +488,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="1"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -464,7 +497,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -489,13 +521,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.004--9223363248046659648">
+<material name="Material.004">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="1"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="0"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -505,6 +538,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -512,6 +547,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="0.95"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -520,7 +556,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -545,13 +580,14 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.003--9223363248046659744">
+<material name="Material.003">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="1"/>
 	<diffuse_shader sval="diff_layer0"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="0"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -561,6 +597,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -568,6 +606,7 @@ To test, using the terminal (or Windows "cmd") do this:
 	<wireframe_exponent fval="0"/>
 	<wireframe_thickness fval="0.01"/>
 	<list_element>
+		<blend_mode sval="mix"/>
 		<colfac fval="0.95"/>
 		<color_input bval="true"/>
 		<def_col r="1" g="0" b="1" a="1"/>
@@ -576,7 +615,6 @@ To test, using the terminal (or Windows "cmd") do this:
 		<do_scalar bval="false"/>
 		<element sval="shader_node"/>
 		<input sval="map0"/>
-		<mode ival="0"/>
 		<name sval="diff_layer0"/>
 		<negative bval="false"/>
 		<noRGB bval="false"/>
@@ -601,12 +639,13 @@ To test, using the terminal (or Windows "cmd") do this:
 	</list_element>
 </material>
 
-<material name="Material.002--9223363248046659840">
+<material name="Material.002">
 	<IOR fval="1.8"/>
 	<additionaldepth ival="0"/>
 	<color r="0.906329" g="0.906329" b="0.906329" a="1"/>
 	<diffuse_reflect fval="1"/>
 	<emit fval="0"/>
+	<flat_material bval="false"/>
 	<fresnel_effect bval="false"/>
 	<mat_pass_index ival="0"/>
 	<mirror_color r="1" g="1" b="1" a="1"/>
@@ -616,6 +655,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<translucency fval="0"/>
 	<transmit_filter fval="1"/>
 	<transparency fval="0"/>
+	<transparentbias_factor fval="0"/>
+	<transparentbias_multiply_raydepth bval="false"/>
 	<type sval="shinydiffusemat"/>
 	<visibility sval="normal"/>
 	<wireframe_amount fval="0"/>
@@ -648,159 +689,215 @@ To test, using the terminal (or Windows "cmd") do this:
 	<with_diffuse bval="true"/>
 </light>
 
-<mesh id="1" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="5">
-			<p x="-4.40469" y="1.44162" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="-4.40469" y="1.44162" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="-4.40469" y="3.44162" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="-4.40469" y="3.44162" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="-2.40468" y="1.44162" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="-2.40468" y="1.44162" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="-2.40468" y="3.44162" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="-2.40468" y="3.44162" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.008--9223363248046659264"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube.005">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="5"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-4.40469" y="1.44162" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="-4.40469" y="1.44162" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="-4.40469" y="3.44162" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="-4.40469" y="3.44162" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="-2.40468" y="1.44162" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="-2.40468" y="1.44162" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="-2.40468" y="3.44162" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="-2.40468" y="3.44162" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.008"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="2" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="4">
-			<p x="3.26859" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="3.26859" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="3.26859" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="3.26859" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="5.26859" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="5.26859" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="5.26859" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="5.26859" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.007--9223363248046659360"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube.004">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="4"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="3.26859" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="3.26859" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="3.26859" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="3.26859" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="5.26859" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="5.26859" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="5.26859" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="5.26859" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.007"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="3" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="3">
-			<p x="-0.635578" y="3.54144" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="-0.635578" y="3.54144" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="-0.635578" y="5.54144" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="-0.635578" y="5.54144" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="1.36442" y="3.54144" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="1.36442" y="3.54144" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="1.36442" y="5.54144" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="1.36442" y="5.54144" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.006--9223363248046659456"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube.003">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="3"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-0.635578" y="3.54144" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="-0.635578" y="3.54144" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="-0.635578" y="5.54144" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="-0.635578" y="5.54144" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="1.36442" y="3.54144" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="1.36442" y="3.54144" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="1.36442" y="5.54144" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="1.36442" y="5.54144" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.006"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="4" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="2">
-			<p x="-0.635578" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="-0.635578" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="-0.635578" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="-0.635578" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="1.36442" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="1.36442" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="1.36442" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="1.36442" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.005--9223363248046659552"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube.002">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="2"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-0.635578" y="-0.393062" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="-0.635578" y="-0.393062" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="-0.635578" y="1.60694" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="-0.635578" y="1.60694" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="1.36442" y="-0.393062" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="1.36442" y="-0.393062" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="1.36442" y="1.60694" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="1.36442" y="1.60694" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.005"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="5" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="1">
-			<p x="-0.635578" y="-3.81854" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="-0.635578" y="-3.81854" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="-0.635578" y="-1.81854" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="-0.635578" y="-1.81854" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="1.36442" y="-3.81854" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="1.36442" y="-3.81854" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="1.36442" y="-1.81854" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="1.36442" y="-1.81854" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.004--9223363248046659648"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube.001">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="1"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-0.635578" y="-3.81854" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="-0.635578" y="-3.81854" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="-0.635578" y="-1.81854" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="-0.635578" y="-1.81854" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="1.36442" y="-3.81854" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="1.36442" y="-3.81854" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="1.36442" y="-1.81854" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="1.36442" y="-1.81854" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.004"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="6" vertices="8" faces="6" has_orco="true" has_uv="false" type="0" obj_pass_index="0">
-			<p x="-5.01096" y="-1.94285" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
-			<p x="-5.01096" y="-1.94285" z="2.00001" ox="-1" oy="-1" oz="1"/>
-			<p x="-5.01096" y="0.0571451" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
-			<p x="-5.01096" y="0.0571451" z="2.00001" ox="-1" oy="1" oz="1"/>
-			<p x="-3.01096" y="-1.94285" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
-			<p x="-3.01096" y="-1.94285" z="2.00001" ox="1" oy="-1" oz="1"/>
-			<p x="-3.01096" y="0.0571451" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
-			<p x="-3.01096" y="0.0571451" z="2.00001" ox="1" oy="1" oz="1"/>
-			<set_material sval="Material.003--9223363248046659744"/>
-			<f a="2" b="0" c="1"/>
-			<f a="2" b="1" c="3"/>
-			<f a="3" b="7" c="6"/>
-			<f a="3" b="6" c="2"/>
-			<f a="7" b="5" c="4"/>
-			<f a="7" b="4" c="6"/>
-			<f a="0" b="4" c="5"/>
-			<f a="0" b="5" c="1"/>
-			<f a="0" b="2" c="6"/>
-			<f a="0" b="6" c="4"/>
-			<f a="5" b="7" c="3"/>
-			<f a="5" b="3" c="1"/>
-</mesh>
+<object>
+	<object_parameters name="Cube">
+		<has_orco bval="true"/>
+		<has_uv bval="false"/>
+		<num_faces ival="6"/>
+		<num_vertices ival="8"/>
+		<object_index ival="0"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-5.01096" y="-1.94285" z="1.00136e-05" ox="-1" oy="-1" oz="-1"/>
+	<p x="-5.01096" y="-1.94285" z="2.00001" ox="-1" oy="-1" oz="1"/>
+	<p x="-5.01096" y="0.0571451" z="1.00136e-05" ox="-1" oy="1" oz="-1"/>
+	<p x="-5.01096" y="0.0571451" z="2.00001" ox="-1" oy="1" oz="1"/>
+	<p x="-3.01096" y="-1.94285" z="1.00136e-05" ox="1" oy="-1" oz="-1"/>
+	<p x="-3.01096" y="-1.94285" z="2.00001" ox="1" oy="-1" oz="1"/>
+	<p x="-3.01096" y="0.0571451" z="1.00136e-05" ox="1" oy="1" oz="-1"/>
+	<p x="-3.01096" y="0.0571451" z="2.00001" ox="1" oy="1" oz="1"/>
+	<set_material sval="Material.003"/>
+	<f a="2" b="0" c="1"/>
+	<f a="2" b="1" c="3"/>
+	<f a="3" b="7" c="6"/>
+	<f a="3" b="6" c="2"/>
+	<f a="7" b="5" c="4"/>
+	<f a="7" b="4" c="6"/>
+	<f a="0" b="4" c="5"/>
+	<f a="0" b="5" c="1"/>
+	<f a="0" b="2" c="6"/>
+	<f a="0" b="6" c="4"/>
+	<f a="5" b="7" c="3"/>
+	<f a="5" b="3" c="1"/>
+</object>
 
-<mesh id="7" vertices="4" faces="1" has_orco="false" has_uv="false" type="0" obj_pass_index="0">
-			<p x="-10" y="-10" z="0"/>
-			<p x="10" y="-10" z="0"/>
-			<p x="-10" y="10" z="0"/>
-			<p x="10" y="10" z="0"/>
-			<set_material sval="Material.002--9223363248046659840"/>
-			<f a="0" b="1" c="3"/>
-			<f a="0" b="3" c="2"/>
-</mesh>
+<object>
+	<object_parameters name="Plane">
+		<has_orco bval="false"/>
+		<has_uv bval="false"/>
+		<num_faces ival="1"/>
+		<num_vertices ival="4"/>
+		<object_index ival="0"/>
+		<type sval="mesh"/>
+	</object_parameters>
+	<p x="-10" y="-10" z="0"/>
+	<p x="10" y="-10" z="0"/>
+	<p x="-10" y="10" z="0"/>
+	<p x="10" y="10" z="0"/>
+	<set_material sval="Material.002"/>
+	<f a="0" b="1" c="3"/>
+	<f a="0" b="3" c="2"/>
+</object>
 
 <camera name="cam_1">
 	<aperture fval="0"/>
@@ -850,15 +947,13 @@ To test, using the terminal (or Windows "cmd") do this:
 	<AO_samples ival="32"/>
 	<bg_transp bval="false"/>
 	<bg_transp_refract bval="false"/>
-	<caustics bval="true"/>
-	<diffuse bval="true"/>
+	<caustics bval="false"/>
 	<do_AO bval="false"/>
 	<photon_maps_processing sval="generate-only"/>
 	<raydepth ival="8"/>
 	<shadowDepth ival="2"/>
 	<transpShad bval="false"/>
-	<type sval="photonmapping"/>
-	<photon_maps_processing sval="generate-save"/>
+	<type sval="directlighting"/>
 </integrator>
 
 <integrator name="volintegr">

@@ -21,6 +21,7 @@
 #define YAFARAY_ACCELERATOR_H
 
 #include "constants.h"
+#include <vector>
 
 BEGIN_YAFARAY
 
@@ -34,11 +35,11 @@ class Ray;
 template<class T> class Accelerator
 {
 	public:
-		static Accelerator<T> *factory(const T **primitives_list, ParamMap &params);
+		static Accelerator<T> *factory(const std::vector<const T *> &primitives_list, ParamMap &params);
 		virtual ~Accelerator() { };
-		virtual bool intersect(const Ray &ray, float dist, T **tr, float &z, IntersectData &data) const = 0;
-		virtual bool intersectS(const Ray &ray, float dist, T **tr, float shadow_bias) const = 0;
-		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, T **tr, Rgb &filt, float shadow_bias) const = 0;
+		virtual bool intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const = 0;
+		virtual bool intersectS(const Ray &ray, float dist, const T **tr, float shadow_bias) const = 0;
+		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, const T **tr, Rgb &filt, float shadow_bias) const = 0;
 		virtual Bound getBound() const = 0;
 };
 

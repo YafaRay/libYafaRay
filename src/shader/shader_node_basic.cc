@@ -18,7 +18,7 @@
 
 #include "shader/shader_node_basic.h"
 #include "shader/shader_node_layer.h"
-#include "geometry/object_geom.h"
+#include "scene/yafaray/object_yafaray.h"
 #include "camera/camera.h"
 #include "common/param.h"
 #include "geometry/surface.h"

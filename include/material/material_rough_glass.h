@@ -30,7 +30,7 @@ class RoughGlassMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &, std::list< ParamMap > &, Scene &);
 
 	private:
-		RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = Material::Visibility::NormalVisible);
+		RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, bool fake_s, float alpha, float disp_pow, Visibility e_visibility = Visibility::NormalVisible);
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 *const dir, Rgb &tcol, Sample &s, float *const w) const override;

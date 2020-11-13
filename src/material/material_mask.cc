@@ -133,7 +133,6 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	const Material *m_1 = nullptr, *m_2 = nullptr;
 	double thresh = 0.5;
 	std::string s_visibility = "normal";
-	Visibility visibility = Material::Visibility::NormalVisible;
 	bool receive_shadows = true;
 
 	params.getParam("threshold", thresh);
@@ -147,11 +146,7 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
 
-	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
-	else visibility = Material::Visibility::NormalVisible;
+	const Visibility visibility = visibilityFromString__(s_visibility);
 
 	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 

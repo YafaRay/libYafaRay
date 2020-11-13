@@ -42,8 +42,7 @@ class Texture;
 class Camera;
 class Background;
 class ShaderNode;
-class ObjectGeometric;
-class TriangleObject;
+class Object;
 class ImageFilm;
 class Scene;
 class ColorOutput;
@@ -56,7 +55,6 @@ class VolumeIntegrator;
 class SurfacePoint;
 class Matrix4;
 class Rgb;
-struct ObjData;
 class RenderData;
 enum class DarkDetectionType : int;
 
@@ -77,36 +75,28 @@ class LIBYAFARAY_EXPORT Scene
 {
 	public:
 		static Scene *factory(ParamMap &params);
-
 		Scene();
 		Scene(const Scene &s) = delete;
 		virtual ~Scene();
-
-		virtual bool startTriMesh(const std::string &name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) = 0;
-		virtual bool endTriMesh() = 0;
-		virtual bool startCurveMesh(const std::string &name, int vertices, int obj_pass_index = 0) = 0;
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) = 0;
 		virtual int addVertex(const Point3 &p) = 0;
 		virtual int addVertex(const Point3 &p, const Point3 &orco) = 0;
 		virtual void addNormal(const Vec3 &n) = 0;
-		virtual bool addTriangle(int a, int b, int c, const Material *mat) = 0;
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) = 0;
+		virtual bool addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices = {}) = 0;
 		virtual int addUv(float u, float v) = 0;
-		virtual bool smoothMesh(const std::string &name, float angle) = 0;
-		virtual ObjectGeometric *createObject(const std::string &name, ParamMap &params) = 0;
+		virtual bool smoothNormals(const std::string &name, float angle) = 0;
+		virtual Object *createObject(const std::string &name, ParamMap &params) = 0;
+		virtual bool endObject() = 0;
 		virtual bool addInstance(const std::string &base_object_name, const Matrix4 &obj_to_world) = 0;
-		virtual bool updateGeometry() = 0;
-
+		virtual bool updateObjects() = 0;
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const = 0;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const = 0;
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const = 0;
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const = 0;
-		virtual TriangleObject *getMesh(const std::string &name) const = 0;
-		virtual ObjectGeometric *getObject(const std::string &name) const = 0;
+		virtual Object *getObject(const std::string &name) const = 0;
 
 		ObjId_t getNextFreeId();
-		bool startGeometry();
-		bool endGeometry();
+		bool startObjects();
+		bool endObjects();
 		void setBackground(Background *bg);
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
@@ -114,8 +104,10 @@ class LIBYAFARAY_EXPORT Scene
 		void setAntialiasing(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
 		void setNumThreads(int threads);
 		void setNumThreadsPhotons(int threads_photons);
-		void setMode(int m) { mode_ = m; }
-		void clearNonGeometry();
+		void setCurrentMaterial(const Material *material);
+		const Material *getCurrentMaterial() const { return creation_state_.current_material_; }
+		void createDefaultMaterial();
+		void clearNonObjects();
 		void clearAll();
 		bool render();
 
@@ -128,15 +120,6 @@ class LIBYAFARAY_EXPORT Scene
 		AaNoiseParams getAaParameters() const { return aa_noise_params_; }
 		const RenderControl &getRenderControl() const { return render_control_; }
 		RenderControl &getRenderControl() { return render_control_; }
-
-		VolumeIntegrator *vol_integrator_;
-
-		float shadow_bias_;  //shadow bias to apply to shadows to avoid self-shadow artifacts
-		bool shadow_bias_auto_;  //enable automatic shadow bias calculation
-
-		float ray_min_dist_;  //ray minimum distance
-		bool ray_min_dist_auto_;  //enable automatic ray minimum distance calculation
-
 		Material *getMaterial(const std::string &name) const;
 		Texture *getTexture(const std::string &name) const;
 		ShaderNode *getShaderNode(const std::string &name) const;
@@ -166,29 +149,21 @@ class LIBYAFARAY_EXPORT Scene
 		void clearOutputs();; //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		std::map<std::string, ColorOutput *> &getOutputs() { return outputs_; }
 		const std::map<std::string, ColorOutput *> getOutputs() const { return outputs_; }
-
 		bool setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb = nullptr);
 		void defineLayer(const ParamMap &params);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		void setupLayersParameters(const ParamMap &params);
 		void clearLayers();
 		void clearRenderViews();
-
 		const Layers &getLayers() const { return layers_; }
-		const Layers getLayersWithImages() const;
-		const Layers getLayersWithExportedImages() const;
-		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, T*> &map);
 
-	private:
-		void setMaskParams(const ParamMap &params);
-		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists = true);
+		VolumeIntegrator *vol_integrator_ = nullptr;
+		float shadow_bias_ = 1.0e-4f;  //shadow bias to apply to shadows to avoid self-shadow artifacts
+		bool shadow_bias_auto_ = true;  //enable automatic shadow bias calculation
+		float ray_min_dist_ = 1.0e-5f;  //ray minimum distance
+		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 
 	protected:
-		void defineBasicLayers();
-		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
-
 		template <class T> static void freeMap(std::map< std::string, T * > &map);
 		struct CreationState
 		{
@@ -197,19 +172,29 @@ class LIBYAFARAY_EXPORT Scene
 			std::list<State> stack_;
 			unsigned int changes_;
 			ObjId_t next_free_id_;
-		};
-		CreationState creation_state_;
-		ImageFilm *image_film_ = nullptr;
-		Background *background_ = nullptr;
-		SurfaceIntegrator *surf_integrator_ = nullptr;
+			const Material *current_material_ = nullptr;
+		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
+		std::map<std::string, Light *> lights_;
+		std::map<std::string, Material *> materials_;
+
+	private:
+		const Layers getLayersWithImages() const;
+		const Layers getLayersWithExportedImages() const;
+		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, T*> &map);
+		void setMaskParams(const ParamMap &params);
+		void setEdgeToonParams(const ParamMap &params);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists = true);
+		void defineBasicLayers();
+		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
+
 		AaNoiseParams aa_noise_params_;
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
-		int mode_ = 0; //!< sets the scene mode (0=triangle-only, 1=virtual primitives)
-
-		std::map<std::string, Light *> lights_;
-		std::map<std::string, Material *> materials_;
+		ImageFilm *image_film_ = nullptr;
+		Background *background_ = nullptr;
+		SurfaceIntegrator *surf_integrator_ = nullptr;
 		std::map<std::string, Texture *> textures_;
 		std::map<std::string, Camera *> cameras_;
 		std::map<std::string, Background *> backgrounds_;

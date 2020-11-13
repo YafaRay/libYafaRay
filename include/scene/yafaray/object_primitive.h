@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -16,34 +17,27 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "accelerator/accelerator.h"
-#include "accelerator/accelerator_kdtree.h"
-#include "common/logger.h"
-#include "common/param.h"
+#ifndef YAFARAY_OBJECT_PRIMITIVE_H
+#define YAFARAY_OBJECT_PRIMITIVE_H
+
+#include "scene/yafaray/object_yafaray.h"
 
 BEGIN_YAFARAY
 
-class Primitive;
-
-//template class Accelerator<Triangle>;
-template class Accelerator<Primitive>;
-
-template<class T>
-Accelerator<T> *Accelerator<T>::factory(const std::vector<const T *> &primitives_list, ParamMap &params)
+/*! simple "container" to handle primitives as objects, for objects that
+	consist of just one primitive like spheres etc. */
+class PrimitiveObject : public ObjectYafaRay
 {
-	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
-	std::string type;
-	params.getParam("type", type);
-	if(type == "kdtree")
-	{
-		Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
-		return AcceleratorKdTree<T>::factory(primitives_list, params);
-	}
-	else
-	{
-		Y_ERROR << "Accelerator type '" << type << "' could not be created." << YENDL;
-		return nullptr;
-	}
-}
+	public:
+		PrimitiveObject(const Primitive *p): primitive_(p) { }
+		virtual int numPrimitives() const override { return 1; }
+		virtual const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
+		virtual bool calculateObject(const Material *material) override { return true; }
+
+	private:
+		const Primitive *primitive_ = nullptr;
+};
 
 END_YAFARAY
+
+#endif //YAFARAY_OBJECT_PRIMITIVE_H

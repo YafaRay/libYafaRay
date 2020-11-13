@@ -530,7 +530,6 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	float emit_strength = 0.f;
 	bool has_fresnel_effect = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = Material::Visibility::NormalVisible;
 	bool receive_shadows = true;
 	bool flat_material = false;
 	float ior = 1.33f;
@@ -570,11 +569,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
-	else visibility = Material::Visibility::NormalVisible;
+	const Visibility visibility = visibilityFromString__(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
 	ShinyDiffuseMaterial *mat = new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);

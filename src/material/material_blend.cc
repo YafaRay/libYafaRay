@@ -414,7 +414,6 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	const Material *m_1 = nullptr, *m_2 = nullptr;
 	double blend_val = 0.5;
 	std::string s_visibility = "normal";
-	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	float samplingfactor = 1.f;
 	bool receive_shadows = true;
@@ -439,11 +438,7 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
-	else visibility = Material::Visibility::NormalVisible;
+	const Visibility visibility = visibilityFromString__(s_visibility);
 
 	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 

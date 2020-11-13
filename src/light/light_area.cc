@@ -20,7 +20,7 @@
 
 #include "light/light_area.h"
 #include "geometry/surface.h"
-#include "geometry/object_geom.h"
+#include "scene/yafaray/object_yafaray.h"
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
@@ -55,7 +55,7 @@ void AreaLight::init(Scene &scene)
 {
 	if(!object_name_.empty())
 	{
-		ObjectGeometric *obj = scene.getObject(object_name_);
+		Object *obj = scene.getObject(object_name_);
 		if(obj) obj->setLight(this);
 		else Y_WARNING << "AreaLight: Invalid object ID given!" << YENDL;
 	}

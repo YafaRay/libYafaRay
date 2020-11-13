@@ -277,7 +277,6 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	std::string name;
 	bool fake_shad = false;
 	std::string s_visibility = "normal";
-	Visibility visibility = Material::Visibility::NormalVisible;
 	int mat_pass_index = 0;
 	bool receive_shadows = true;
 	int additionaldepth = 0;
@@ -306,11 +305,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	if(s_visibility == "normal") visibility = Material::Visibility::NormalVisible;
-	else if(s_visibility == "no_shadows") visibility = Material::Visibility::VisibleNoShadows;
-	else if(s_visibility == "shadow_only") visibility = Material::Visibility::InvisibleShadowsOnly;
-	else if(s_visibility == "invisible") visibility = Material::Visibility::Invisible;
-	else visibility = Material::Visibility::NormalVisible;
+	const Visibility visibility = visibilityFromString__(s_visibility);
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 

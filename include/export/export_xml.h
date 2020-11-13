@@ -30,37 +30,37 @@ BEGIN_YAFARAY
 class LIBYAFARAY_EXPORT XmlExport: public Interface
 {
 	public:
-		XmlExport(const char *fname, int type);
+		XmlExport(const char *fname);
+		virtual void createScene() override;
 		virtual bool setupLayersParameters() override; //!< setup render passes information
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name) override;
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
 		virtual unsigned int getNextFreeId() override;
-		virtual bool startTriMesh(const char *name, int vertices, int triangles, bool has_orco, bool has_uv = false, int type = 0, int obj_pass_index = 0) override;
-		virtual bool startCurveMesh(const char *name, int vertices, int obj_pass_index = 0) override;
-		virtual bool endTriMesh() override;
+		virtual bool endObject() override;
 		virtual bool addInstance(const char *base_object_name, const Matrix4 &obj_to_world) override;
-		virtual bool endCurveMesh(const Material *mat, float strand_start, float strand_end, float strand_shape) override;
 		virtual int  addVertex(double x, double y, double z) override; //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz) override; //!< add vertex with Orco to mesh; returns index to be used for addTriangle
 		virtual void addNormal(double nx, double ny, double nz) override; //!< add vertex normal to mesh; the vertex that will be attached to is the last one inserted by addVertex method
-		virtual bool addTriangle(int a, int b, int c, const Material *mat) override;
-		virtual bool addTriangle(int a, int b, int c, int uv_a, int uv_b, int uv_c, const Material *mat) override;
+		virtual bool addFace(int a, int b, int c) override;
+		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) override;
 		virtual int  addUv(float u, float v) override;
 		virtual bool smoothMesh(const char *name, double angle) override;
+		virtual void setCurrentMaterial(const Material *material) override;
+		virtual const Material *getCurrentMaterial() const override { return current_material_; }
 
-		// functions directly related to Scene_t
-		virtual Light 		*createLight(const char *name) override;
-		virtual Texture 		*createTexture(const char *name) override;
-		virtual Material 	*createMaterial(const char *name) override;
-		virtual Camera 		*createCamera(const char *name) override;
-		virtual Background 	*createBackground(const char *name) override;
-		virtual Integrator 	*createIntegrator(const char *name) override;
-		virtual VolumeRegion 	*createVolumeRegion(const char *name) override;
-		virtual ColorOutput *createOutput(const char *name) override;
+		virtual Object *createObject(const char *name) override;
+		virtual Light *createLight(const char *name) override;
+		virtual Texture *createTexture(const char *name) override;
+		virtual Material *createMaterial(const char *name) override;
+		virtual Camera *createCamera(const char *name) override;
+		virtual Background *createBackground(const char *name) override;
+		virtual Integrator *createIntegrator(const char *name) override;
+		virtual VolumeRegion *createVolumeRegion(const char *name) override;
 		virtual RenderView *createRenderView(const char *name) override;
-		virtual unsigned int 	createObject(const char *name) override;
+		virtual ColorOutput *createOutput(const char *name) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
+		virtual void clearOutputs() override { }
 		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
@@ -71,7 +71,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		std::map<const Material *, std::string> materials_;
 		std::ofstream xml_file_;
 		std::string xml_name_;
-		const Material *last_mat_ = nullptr;
+		const Material *current_material_ = nullptr;
 		size_t nmat_ = 0;
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;

@@ -16,170 +16,104 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "geometry/triangle.h"
-#include "geometry/vector_double.h"
-#include "geometry/bound.h"
-#include "common/logger.h"
+#include "yafaray_config.h"
+#include "scene/yafaray/primitive_triangle.h"
+#include "scene/yafaray/object_mesh.h"
 #include "geometry/ray.h"
+#include "geometry/bound.h"
 #include "geometry/surface.h"
-#include "geometry/object_triangle.h"
 #include "geometry/uv.h"
+#include "geometry/matrix4.h"
+#include "scene/yafaray/vector_double.h"
+#include "common/logger.h"
+#include "common/param.h"
 #include <string.h>
 
 BEGIN_YAFARAY
 
-Point3 Triangle::getVertex(size_t index) const
+TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
 {
-	return getMesh()->getVertex(point_id_[index]);
+	calculateGeometricNormal();
 }
 
-Point3 Triangle::getOrcoVertex(size_t index) const
+bool TrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const
 {
-	//If the object is an instance, the vertex positions (+1) are the orcos
-	if(getMesh()->hasOrco()) return getMesh()->getVertex(point_id_[index] + 1);
-	else return getVertex(index);
+	const std::vector<Point3> vertices = getVertices(obj_to_world);
+	return TrianglePrimitive::intersect(ray, t, data, {vertices[0], vertices[1], vertices[2]});
 }
 
-Point3 Triangle::getVertexNormal(size_t index, const Vec3 &surface_normal) const
+bool TrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const std::array<Point3, 3> &vertices)
 {
-	return (normal_id_[index] >= 0) ? getMesh()->getVertexNormal(normal_id_[index]) : surface_normal;
-}
-
-Uv Triangle::getVertexUv(size_t index) const
-{
-	const size_t uvi = self_index_ * 3;
-	return getMesh()->getUvValues()[getMesh()->getUvOffsets()[uvi + index]];
-}
-
-std::array<Point3, 3> Triangle::getVertices() const
-{
-	return { getVertex(0), getVertex(1), getVertex(2) };
-}
-
-std::array<Point3, 3> Triangle::getOrcoVertices() const
-{
-	return { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
-}
-
-std::array<Vec3, 3> Triangle::getVerticesNormals(const Vec3 &surface_normal) const
-{
-	return {
-		getVertexNormal(0, surface_normal),
-		getVertexNormal(1, surface_normal),
-		getVertexNormal(2, surface_normal)
-	};
-}
-
-std::array<Uv, 3> Triangle::getVerticesUvs() const
-{
-	return { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
-}
-
-void Triangle::updateIntersectCachedValues()
-{
-	const std::array<Point3, 3> p = getVertices();
-	vec_0_1_ = p[1] - p[0];
-	vec_0_2_ = p[2] - p[0];
-	intersect_bias_factor_ = 0.1f * min_raydist__ * std::max(vec_0_1_.length(), vec_0_2_.length());
-}
-
-bool Triangle::intersect(const Ray &ray, float *t, IntersectData &intersect_data) const
-{
-	return Triangle::intersect(ray, t, intersect_data, getVertex(0), vec_0_1_, vec_0_2_, intersect_bias_factor_);
-}
-
-bool Triangle::intersect(const Ray &ray, float *t, IntersectData &intersect_data, const Point3 &p_0, const Vec3 &vec_0_1, const Vec3 &vec_0_2, float intersection_bias_factor)
-{
-	// Tomas Möller and Ben Trumbore ray intersection scheme
-	// Getting the barycentric coordinates of the hit point
-	// const point3d_t &a=mesh->points[pa], &b=mesh->points[pb], &c=mesh->points[pc];
-	const Vec3 pvec = ray.dir_ ^vec_0_2;
-	const float det = vec_0_1 * pvec;
-	const float epsilon = intersection_bias_factor;
+	//Tomas Moller and Ben Trumbore ray intersection scheme
+	const Vec3 edge_1 = vertices[1] - vertices[0];
+	const Vec3 edge_2 = vertices[2] - vertices[0];
+	const float epsilon = 0.1f * min_raydist__ * std::max(edge_1.length(), edge_2.length());
+	const Vec3 pvec = ray.dir_ ^ edge_2;
+	const float det = edge_1 * pvec;
 	if(det > -epsilon && det < epsilon) return false;
 	const float inv_det = 1.f / det;
-	const Vec3 tvec = ray.from_ - p_0;
+	const Vec3 tvec = ray.from_ - vertices[0];
 	const float u = (tvec * pvec) * inv_det;
 	if(u < 0.f || u > 1.f) return false;
-	const Vec3 qvec = tvec ^vec_0_1;
+	const Vec3 qvec = tvec ^ edge_1;
 	const float v = (ray.dir_ * qvec) * inv_det;
 	if((v < 0.f) || ((u + v) > 1.f)) return false;
-	*t = vec_0_2 * qvec * inv_det;
-	if(*t < epsilon) return false;
+	t = edge_2 * qvec * inv_det;
+	if(t < epsilon) return false;
 	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	intersect_data.barycentric_u_ = 1.f - u - v;
-	intersect_data.barycentric_v_ = u;
-	intersect_data.barycentric_w_ = v;
-	intersect_data.time_ = ray.time_;
+	data.barycentric_u_ = 1.f - u - v;
+	data.barycentric_v_ = u;
+	data.barycentric_w_ = v;
+	data.time_ = ray.time_;
 	return true;
 }
 
-Bound Triangle::getBound() const
+bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const
 {
-	return getBound(getVertices());
+	const std::vector<Point3> vertices = getVertices(obj_to_world);
+	return TrianglePrimitive::intersectsBound(ex_bound, {vertices[0], vertices[1], vertices[2]});
 }
 
-Bound Triangle::getBound(const std::array<Point3, 3> &triangle_verts)
-{
-	const auto &p = triangle_verts; //Just to code easier and shorter
-	const Point3 l {
-		math::min(p[0].x_, p[1].x_, p[2].x_),
-		math::min(p[0].y_, p[1].y_, p[2].y_),
-		math::min(p[0].z_, p[1].z_, p[2].z_)
-	};
-	const Point3 h {
-		math::max(p[0].x_, p[1].x_, p[2].x_),
-		math::max(p[0].y_, p[1].y_, p[2].y_),
-		math::max(p[0].z_, p[1].z_, p[2].z_)
-	};
-	return Bound(l, h);
-}
-
-bool Triangle::intersectsBound(const ExBound &ex_bound) const
-{
-	return Triangle::intersectsBound(ex_bound, getVertices());
-}
-
-bool Triangle::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &triangle_verts)
+bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices)
 {
 	double t_points[3][3];
 	for(size_t i = 0; i < 3; ++i)
 	{
-		t_points[0][i] = triangle_verts[0][i];
-		t_points[1][i] = triangle_verts[1][i];
-		t_points[2][i] = triangle_verts[2][i];
+		t_points[0][i] = vertices[0][i];
+		t_points[1][i] = vertices[1][i];
+		t_points[2][i] = vertices[2][i];
 	}
 	// triBoxOverlap__() is in src/yafraycore/tribox3_d.cc!
 	return triBoxOverlap__(ex_bound.center_, ex_bound.half_size_, (double **) t_points);
 }
 
-void Triangle::recNormal()
+void TrianglePrimitive::calculateGeometricNormal()
 {
-	geometric_normal_ = calculateNormal(getVertices());
+	const std::vector<Point3> vertices = getVertices();
+	normal_geometric_ = calculateNormal({vertices[0], vertices[1], vertices[2]});
 }
 
-Vec3 Triangle::calculateNormal(const std::array<Point3, 3> &triangle_verts)
+Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
 {
-	const auto &p = triangle_verts; //Just to code easier and shorter
-	return ((p[1] - p[0]) ^ (p[2] - p[0])).normalize();
+	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
 
-void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data) const
+void TrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const
 {
-	sp.ng_ = getNormal();
+	sp.ng_ = getGeometricNormal(obj_to_world);
 	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
 
-	if(getMesh()->isSmooth() || getMesh()->hasNormalsExported())
+	if(static_cast<const MeshObject *>(base_object_)->isSmooth() || static_cast<const MeshObject *>(base_object_)->hasNormalsExported())
 	{
-		std::array<Vec3, 3> v = getVerticesNormals(sp.ng_);
+		const std::vector<Vec3> v = getVerticesNormals(sp.ng_, obj_to_world);
 		sp.n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp.n_.normalize();
 	}
 	else sp.n_ = sp.ng_;
 
-	if(getMesh()->hasOrco())
+	if(static_cast<const MeshObject *>(base_object_)->hasOrco())
 	{
-		const std::array<Point3, 3> orco_p = getOrcoVertices();
+		const std::vector<Point3> orco_p = getOrcoVertices();
 		sp.orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
 		sp.orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp.has_orco_ = true;
@@ -188,14 +122,14 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	{
 		sp.orco_p_ = hit;
 		sp.has_orco_ = false;
-		sp.orco_ng_ = sp.ng_;
+		sp.orco_ng_ = getGeometricNormal();
 	}
 
 	bool implicit_uv = true;
-	const std::array<Point3, 3> p = getVertices();
-	if(getMesh()->hasUv())
+	const std::vector<Point3> p = getVertices(obj_to_world);
+	if(static_cast<const MeshObject *>(base_object_)->hasUv())
 	{
-		const std::array<Uv, 3> uv = getVerticesUvs();
+		const std::vector<Uv> &uv = getVerticesUvs();
 		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
 		sp.v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
 
@@ -224,6 +158,7 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 		sp.u_ = barycentric_u;
 		sp.v_ = barycentric_v;
 	}
+	sp.has_uv_ = !implicit_uv;
 
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp.dp_du_abs_ = sp.dp_du_;
@@ -232,10 +167,9 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	sp.dp_du_.normalize();
 	sp.dp_dv_.normalize();
 
-	const TriangleObject *triangle_object = getMesh();
-	sp.object_ = triangle_object;
-	sp.light_ = triangle_object->getLight();
-	sp.has_uv_ = triangle_object->hasUv();
+	sp.object_ = base_object_;
+	sp.light_ = static_cast<const MeshObject *>(base_object_)->getLight();
+	sp.has_uv_ = static_cast<const MeshObject *>(base_object_)->hasUv();
 	sp.prim_num_ = getSelfIndex();
 	sp.material_ = getMaterial();
 	sp.p_ = hit;
@@ -243,7 +177,7 @@ void Triangle::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &da
 	calculateShadingSpace(sp);
 }
 
-void Triangle::calculateShadingSpace(SurfacePoint &sp) const
+void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const
 {
 	// transform dPdU and dPdV in shading space
 	sp.ds_du_.x_ = sp.nu_ * sp.dp_du_;
@@ -254,22 +188,22 @@ void Triangle::calculateShadingSpace(SurfacePoint &sp) const
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
 }
 
-bool Triangle::clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new) const
+bool TrianglePrimitive::clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const
 {
 	if(axis >= 0) // re-clip
 	{
 		const bool lower = axis & ~3;
 		const int axis_calc = axis & 3;
 		const double split = lower ? bound[0][axis_calc] : bound[1][axis_calc];
-		const int tri_plane_clip = Triangle::triPlaneClip(split, axis_calc, lower, clipped, d_old, d_new);
+		const int tri_plane_clip = TrianglePrimitive::triPlaneClip(split, axis_calc, lower, clipped, d_old, d_new);
 		// if an error occured due to precision limits...ugly solution i admitt
 		if(tri_plane_clip > 1) goto WHOOPS;
 		return (tri_plane_clip == 0) ? true : false;
 	}
 	else // initial clip
 	{
-WHOOPS:
-		const std::array<Point3, 3> p = getVertices();
+		WHOOPS:
+		const std::vector<Point3> p = getVertices(obj_to_world);
 		double t_points[3][3];
 		for(int i = 0; i < 3; ++i)
 		{
@@ -277,32 +211,40 @@ WHOOPS:
 			t_points[1][i] = p[1][i];
 			t_points[2][i] = p[2][i];
 		}
-		const int tri_box_clip = Triangle::triBoxClip(bound[0], bound[1], t_points, clipped, d_new);
+		const int tri_box_clip = TrianglePrimitive::triBoxClip(bound[0], bound[1], t_points, clipped, d_new);
 		return (tri_box_clip == 0) ? true : false;
 	}
-	return true;
 }
 
-float Triangle::surfaceArea(const std::array<Point3, 3> &vertices)
+float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)
 {
 	const Vec3 vec_0_1 = vertices[1] - vertices[0];
 	const Vec3 vec_0_2 = vertices[2] - vertices[0];
 	return 0.5f * (vec_0_1 ^ vec_0_2).length();
 }
 
-void Triangle::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const
+float TrianglePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 {
-	Triangle::sample(s_1, s_2, p, getVertices());
-	n = getNormal();
+	const std::vector<Point3> vertices = getVertices(obj_to_world);
+	return surfaceArea({vertices[0], vertices[1], vertices[2]});
 }
 
-void Triangle::sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices)
+
+void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
+{
+	const std::vector<Point3> vertices = getVertices(obj_to_world);
+	TrianglePrimitive::sample(s_1, s_2, p, {vertices[0], vertices[1], vertices[2]});
+	n = getGeometricNormal(obj_to_world);
+}
+
+void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices)
 {
 	const float su_1 = math::sqrt(s_1);
 	const float u = 1.f - su_1;
 	const float v = s_2 * su_1;
 	p = u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
 }
+
 
 template <class T>
 void swap__(T **a, T **b)
@@ -327,7 +269,7 @@ struct ClipDump
 			3: resulting polygon degenerated to less than 3 edges (never happened either)
 */
 
-int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
+int TrianglePrimitive::triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
 {
 	Vec3Double dump_1[11], dump_2[11]; double t;
 	Vec3Double *poly = dump_1, *cpoly = dump_2;
@@ -511,7 +453,7 @@ int Triangle::triBoxClip(const double b_min[3], const double b_max[3], const dou
 	return 0;
 }
 
-int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat)
+int TrianglePrimitive::triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat)
 {
 	ClipDump *input = (ClipDump *) o_dat; //FIXME: casting const away and writing to it using swap__, dangerous!
 	ClipDump *output = (ClipDump *) n_dat;
@@ -677,11 +619,6 @@ int Triangle::triPlaneClip(double pos, int axis, bool lower, Bound &box, const v
 	output->nverts_ = nverts;
 
 	return 0;
-}
-
-std::ostream &operator<<(std::ostream &out, const Triangle &t) {
-	out << "[ idx = " << t.self_index_ << " (" << t.point_id_[0] << "," << t.point_id_[1] << "," << t.point_id_[2] << ")]";
-	return out;
 }
 
 END_YAFARAY

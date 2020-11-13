@@ -16,34 +16,34 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "accelerator/accelerator.h"
-#include "accelerator/accelerator_kdtree.h"
-#include "common/logger.h"
+#include "scene/yafaray/object_yafaray.h"
+#include "scene/yafaray/primitive_sphere.h"
 #include "common/param.h"
 
 BEGIN_YAFARAY
 
-class Primitive;
+unsigned int ObjectYafaRay::object_index_auto_ = 0;
+unsigned int ObjectYafaRay::highest_object_index_ = 1;
 
-//template class Accelerator<Triangle>;
-template class Accelerator<Primitive>;
-
-template<class T>
-Accelerator<T> *Accelerator<T>::factory(const std::vector<const T *> &primitives_list, ParamMap &params)
+ObjectYafaRay::ObjectYafaRay()
 {
-	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
-	std::string type;
-	params.getParam("type", type);
-	if(type == "kdtree")
+	object_index_auto_++;
+	srand(object_index_auto_);
+	float r, g, b;
+	do
 	{
-		Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
-		return AcceleratorKdTree<T>::factory(primitives_list, params);
+		r = static_cast<float>(rand() % 8) / 8.f;
+		g = static_cast<float>(rand() % 8) / 8.f;
+		b = static_cast<float>(rand() % 8) / 8.f;
 	}
-	else
-	{
-		Y_ERROR << "Accelerator type '" << type << "' could not be created." << YENDL;
-		return nullptr;
-	}
+	while(r + g + b < 0.5f);
+	object_index_auto_color_ = Rgb(r, g, b);
+}
+
+void ObjectYafaRay::setObjectIndex(unsigned int new_obj_index)
+{
+	object_index_ = new_obj_index;
+	if(highest_object_index_ < object_index_) highest_object_index_ = object_index_;
 }
 
 END_YAFARAY

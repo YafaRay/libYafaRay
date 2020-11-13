@@ -19,11 +19,11 @@
  */
 
 #include "scene/scene.h"
-#include "scene/scene_yafaray.h"
+#include "yafaray_config.h"
+#include "scene/yafaray/scene_yafaray.h"
 #include "common/session.h"
 #include "common/logger.h"
 #include "common/sysinfo.h"
-#include "geometry/triangle.h"
 #include "accelerator/accelerator_kdtree.h"
 #include "common/param.h"
 #include "light/light.h"
@@ -58,8 +58,13 @@ Scene *Scene::factory(ParamMap &params)
 	Y_DEBUG PRTEXT(**Scene::factory) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
-	if(type == "yafaray") return YafaRayScene::factory(params);
-	else return nullptr;
+	Scene *scene;
+	if(type == "yafaray") scene = YafaRayScene::factory(params);
+	else scene = YafaRayScene::factory(params);
+
+	if(scene) Y_INFO << "Interface: created scene of type '" << type << "'" << YENDL;
+	else Y_ERROR << "Interface: could not create scene of type '" << type << "'" << YENDL;
+	return scene;
 }
 
 Scene::Scene()
@@ -73,6 +78,7 @@ Scene::Scene()
 
 	Y_INFO << "LibYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << YENDL;
 	session__.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
+	createDefaultMaterial();
 
 #ifndef HAVE_OPENCV
 	Y_WARNING << "libYafaRay built without OpenCV support. The following functionality will not work: image output denoise, background IBL blur, object/face edge render layers, toon render layer." << YENDL;
@@ -85,14 +91,30 @@ Scene::~Scene()
 	delete image_film_;
 }
 
-bool Scene::startGeometry()
+void Scene::createDefaultMaterial()
+{
+	ParamMap param_map;
+	std::list<ParamMap> eparams;
+	//Note: keep the std::string or the parameter will be created incorrectly as a bool. This should improve with the new C++17 string literals, but for now with C++11 this should be done.
+	param_map["type"] = std::string("shinydiffusemat");
+	const Material *material = createMaterial("YafaRay_Default_Material", param_map, eparams);
+	setCurrentMaterial(material);
+}
+
+void Scene::setCurrentMaterial(const Material *material)
+{
+	if(material) creation_state_.current_material_ = material;
+	else creation_state_.current_material_ = getMaterial("YafaRay_Default_Material");
+}
+
+bool Scene::startObjects()
 {
 	if(creation_state_.stack_.front() != CreationState::Ready) return false;
 	creation_state_.stack_.push_front(CreationState::Geometry);
 	return true;
 }
 
-bool Scene::endGeometry()
+bool Scene::endObjects()
 {
 	if(creation_state_.stack_.front() != CreationState::Geometry) return false;
 	// in case objects share arrays, so they all need to be updated
@@ -182,7 +204,6 @@ Bound Scene::getSceneBound() const
 
 bool Scene::render()
 {
-	Y_VERBOSE << "Scene: Mode \"" << ((mode_ == 0) ? "Triangle" : "Universal") << "\"" << YENDL;
 	if(!image_film_)
 	{
 		Y_ERROR << "Scene: No ImageFilm present, bailing out..." << YENDL;
@@ -203,7 +224,7 @@ bool Scene::render()
 			output.second->init(image_film_->getWidth(), image_film_->getHeight(), &layers_, &render_views_);
 		}
 
-		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateGeometry();
+		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
 		for(auto &it : render_views_)
 		{
 			for(auto &o : outputs_) o.second->setRenderView(it.second);
@@ -249,7 +270,7 @@ ObjId_t Scene::getNextFreeId()
 	return --creation_state_.next_free_id_;
 }
 
-void Scene::clearNonGeometry()
+void Scene::clearNonObjects()
 {
 	freeMap(lights_);
 	freeMap(textures_);
@@ -278,7 +299,7 @@ void Scene::clearNonGeometry()
 
 void Scene::clearAll()
 {
-	clearNonGeometry();
+	clearNonObjects();
 }
 
 template <class T>
@@ -287,7 +308,7 @@ void Scene::freeMap(std::map< std::string, T * > &map)
 	for(auto &m : map) { delete m.second; m.second = nullptr; }
 }
 
-template void Scene::freeMap<ObjectGeometric>(std::map< std::string, ObjectGeometric * > &map);
+template void Scene::freeMap<Object>(std::map< std::string, Object * > &map);
 
 void Scene::clearOutputs()
 {

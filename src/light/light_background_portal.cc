@@ -24,66 +24,56 @@
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "accelerator/accelerator_kdtree.h"
-#include "geometry/triangle.h"
-#include "geometry/object_triangle.h"
 #include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
+#include "scene/yafaray/object_mesh.h"
+#include "scene/yafaray/primitive_face.h"
 #include <limits>
 
 BEGIN_YAFARAY
 
 BackgroundPortalLight::BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled, bool cast_shadows):
-		object_name_(object_name), samples_(sampl), power_(pow), tree_(nullptr)
+		object_name_(object_name), samples_(sampl), power_(pow)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
-	mesh_ = nullptr;
 	a_pdf_ = 0.f;
-	area_dist_ = nullptr;
-	tris_ = nullptr;
 }
 
 BackgroundPortalLight::~BackgroundPortalLight()
 {
-	if(area_dist_) delete area_dist_;
-	area_dist_ = nullptr;
-	if(tris_) delete[] tris_;
-	tris_ = nullptr;
-	if(tree_)
-	{
-		delete tree_;
-		tree_ = nullptr;
-	}
+	delete area_dist_;
+	delete accelerator_;
 }
 
 void BackgroundPortalLight::initIs()
 {
-	n_tris_ = mesh_->numPrimitives();
-	tris_ = new const Triangle *[n_tris_];
-	mesh_->getPrimitives(tris_);
-	float *areas = new float[n_tris_];
+	num_primitives_ = mesh_object_->numPrimitives();
+	primitives_ = mesh_object_->getPrimitives();
+	float *areas = new float[num_primitives_];
 	double total_area = 0.0;
-	for(int i = 0; i < n_tris_; ++i)
+	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = tris_[i]->surfaceArea();
+		areas[i] = static_cast<const FacePrimitive *>(primitives_[i])->surfaceArea();
 		total_area += areas[i];
 	}
-	area_dist_ = new Pdf1D(areas, n_tris_);
+	area_dist_ = new Pdf1D(areas, num_primitives_);
 	area_ = (float)total_area;
 	inv_area_ = (float)(1.0 / total_area);
 	//delete[] tris;
 	delete[] areas;
-	if(tree_) delete tree_;
+	delete accelerator_;
+	accelerator_ = nullptr;
 
 	ParamMap params;
 	params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-	params["num_primitives"] = n_tris_;
+	params["num_primitives"] = num_primitives_;
 	params["depth"] = -1;
 	params["leaf_size"] = 1;
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	tree_ = Accelerator<Triangle>::factory(tris_, params);
+	accelerator_ = Accelerator<Primitive>::factory(primitives_, params);
 }
 
 void BackgroundPortalLight::init(Scene &scene)
@@ -94,14 +84,13 @@ void BackgroundPortalLight::init(Scene &scene)
 	a_pdf_ = world_radius * world_radius;
 
 	world_center_ = 0.5 * (w.a_ + w.g_);
-	mesh_ = scene.getMesh(object_name_);
-	if(mesh_)
+	mesh_object_ = static_cast<MeshObject *>(scene.getObject(object_name_));
+	if(mesh_object_)
 	{
-		mesh_->setVisibility(false);
-
+		mesh_object_->setVisibility(Visibility::Invisible);
 		initIs();
-		Y_VERBOSE << "bgPortalLight: Triangles:" << n_tris_ << ", Area:" << area_ << YENDL;
-		mesh_->setLight(this);
+		Y_VERBOSE << "bgPortalLight: Triangles:" << num_primitives_ << ", Area:" << area_ << YENDL;
+		mesh_object_->setLight(this);
 	}
 }
 
@@ -121,7 +110,7 @@ void BackgroundPortalLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s
 		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	tris_[prim_num]->sample(ss_1, s_2, p, n);
+	static_cast<const FacePrimitive *>(primitives_[prim_num])->sample(ss_1, s_2, p, n);
 }
 
 Rgb BackgroundPortalLight::totalEnergy() const
@@ -133,10 +122,10 @@ Rgb BackgroundPortalLight::totalEnergy() const
 	{
 		wo.dir_ = sample::sphere(((float) i + 0.5f) / 1000.f, sample::riVdC(i));
 		col = bg_->eval(wo, true);
-		for(int j = 0; j < n_tris_; j++)
+		for(int j = 0; j < num_primitives_; j++)
 		{
-			float cos_n = -wo.dir_ * tris_[j]->getNormal(); //not 100% sure about sign yet...
-			if(cos_n > 0) energy += col * cos_n * tris_[j]->surfaceArea();
+			float cos_n = -wo.dir_ * static_cast<const FacePrimitive *>(primitives_[j])->getGeometricNormal(); //not 100% sure about sign yet...
+			if(cos_n > 0) energy += col * cos_n * static_cast<const FacePrimitive *>(primitives_[j])->surfaceArea();
 		}
 	}
 
@@ -207,16 +196,16 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 
 bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	if(!tree_) return false;
+	if(!accelerator_) return false;
 	float dis;
 	IntersectData bary;
-	Triangle *hitt = nullptr;
+	const Primitive *hitt = nullptr;
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else dis = ray.tmax_;
 	// intersect with tree:
-	if(!tree_->intersect(ray, dis, &hitt, t, bary)) { return false; }
+	if(!accelerator_->intersect(ray, dis, &hitt, t, bary)) { return false; }
 
-	Vec3 n = hitt->getNormal();
+	Vec3 n = static_cast<const FacePrimitive *>(hitt)->getGeometricNormal();
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0) return false;
 	float idist_sqr = 1.f / (t * t);

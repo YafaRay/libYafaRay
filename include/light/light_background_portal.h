@@ -24,11 +24,12 @@
 
 #include "light/light.h"
 #include "geometry/vector.h"
+#include <vector>
 
 BEGIN_YAFARAY
 
-class TriangleObject;
-class Triangle;
+class MeshObject;
+class Primitive;
 class Pdf1D;
 class ParamMap;
 class Scene;
@@ -52,7 +53,7 @@ class BackgroundPortalLight final : public Light
 		virtual bool illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) const override;
 		virtual bool illuminate(const SurfacePoint &sp, Rgb &col, Ray &wi) const override { return false; }
 		virtual int nSamples() const override { return samples_; }
-		virtual bool canIntersect() const override { return tree_ != 0 /* false */ ; }
+		virtual bool canIntersect() const override { return accelerator_ != 0 /* false */ ; }
 		virtual bool intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const override;
 		virtual float illumPdf(const SurfacePoint &sp, const SurfacePoint &sp_light) const override;
 		virtual void emitPdf(const SurfacePoint &sp, const Vec3 &wi, float &area_pdf, float &dir_pdf, float &cos_wo) const override;
@@ -61,13 +62,13 @@ class BackgroundPortalLight final : public Light
 
 		std::string object_name_;
 		Pdf1D *area_dist_ = nullptr;
-		const Triangle **tris_ = nullptr;
+		std::vector<const Primitive *> primitives_;
 		int samples_;
-		int n_tris_; //!< gives the array size of uDist
+		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		float power_;
-		TriangleObject *mesh_ = nullptr;
-		Accelerator<Triangle> *tree_ = nullptr;
+		MeshObject *mesh_object_ = nullptr;
+		Accelerator<Primitive> *accelerator_ = nullptr;
 		Background *bg_ = nullptr;
 		Point3 world_center_;
 		float a_pdf_;

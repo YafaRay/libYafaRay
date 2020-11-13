@@ -28,72 +28,65 @@
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "accelerator/accelerator_kdtree.h"
-#include "geometry/triangle.h"
-#include "geometry/object_triangle.h"
 #include "geometry/surface.h"
+#include "scene/yafaray/object_mesh.h"
+#include "scene/yafaray/primitive_face.h"
 
 BEGIN_YAFARAY
 
 MeshLight::MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s, bool light_enabled, bool cast_shadows):
-		object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl), tree_(nullptr)
+		object_name_(object_name), double_sided_(dbl_s), color_(col), samples_(sampl)
 {
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
-	mesh_ = nullptr;
-	area_dist_ = nullptr;
-	tris_ = nullptr;
-	//initIS();
+	//initIs();
 }
 
 MeshLight::~MeshLight()
 {
-	if(area_dist_) delete area_dist_;
-	area_dist_ = nullptr;
-	if(tris_) delete[] tris_;
-	tris_ = nullptr;
-	if(tree_) delete tree_;
-	tree_ = nullptr;
+	delete area_dist_;
+	delete accelerator_;
 }
 
 void MeshLight::initIs()
 {
-	n_tris_ = mesh_->numPrimitives();
-	tris_ = new const Triangle *[n_tris_];
-	mesh_->getPrimitives(tris_);
-	float *areas = new float[n_tris_];
+	num_primitives_ = mesh_object_->numPrimitives();
+	primitives_ = mesh_object_->getPrimitives();
+	float *areas = new float[num_primitives_];
 	double total_area = 0.0;
-	for(int i = 0; i < n_tris_; ++i)
+	for(int i = 0; i < num_primitives_; ++i)
 	{
-		areas[i] = tris_[i]->surfaceArea();
+		areas[i] = static_cast<const FacePrimitive *>(primitives_[i])->surfaceArea();
 		total_area += areas[i];
 	}
-	area_dist_ = new Pdf1D(areas, n_tris_);
+	area_dist_ = new Pdf1D(areas, num_primitives_);
 	area_ = (float)total_area;
 	inv_area_ = (float)(1.0 / total_area);
 	delete[] areas;
-	if(tree_) delete tree_;
+	delete accelerator_;
+	accelerator_ = nullptr;
 
 	ParamMap params;
 	params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-	params["num_primitives"] = n_tris_;
+	params["num_primitives"] = num_primitives_;
 	params["depth"] = -1;
 	params["leaf_size"] = 1;
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	tree_ = Accelerator<Triangle>::factory(tris_, params);
+	accelerator_ = Accelerator<Primitive>::factory(primitives_, params);
 }
 
 void MeshLight::init(Scene &scene)
 {
-	mesh_ = scene.getMesh(object_name_);
-	if(mesh_)
+	mesh_object_ = static_cast<MeshObject *>(scene.getObject(object_name_));
+	if(mesh_object_)
 	{
 		initIs();
 		// tell the mesh that a meshlight is associated with it (not sure if this is the best place though):
-		mesh_->setLight(this);
+		mesh_object_->setLight(this);
 
-		Y_VERBOSE << "MeshLight: triangles:" << n_tris_ << ", double sided:" << double_sided_ << ", area:" << area_ << " color:" << color_ << YENDL;
+		Y_VERBOSE << "MeshLight: triangles:" << num_primitives_ << ", double sided:" << double_sided_ << ", area:" << area_ << " color:" << color_ << YENDL;
 	}
 }
 
@@ -113,7 +106,7 @@ void MeshLight::sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const
 		ss_1 = (s_1 - area_dist_->cdf_[prim_num]) / delta;
 	}
 	else ss_1 = s_1 / delta;
-	tris_[prim_num]->sample(ss_1, s_2, p, n);
+	static_cast<const FacePrimitive *>(primitives_[prim_num])->sample(ss_1, s_2, p, n);
 	//	++stats[primNum];
 }
 
@@ -201,16 +194,16 @@ Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 
 bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
-	if(!tree_) return false;
+	if(!accelerator_) return false;
 	float dis;
 	IntersectData bary;
-	Triangle *hitt = nullptr;
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else dis = ray.tmax_;
 	// intersect with tree:
-	if(!tree_->intersect(ray, dis, &hitt, t, bary)) { return false; }
+	const Primitive *hitt;
+	if(!accelerator_->intersect(ray, dis, &hitt, t, bary)) { return false; }
 
-	Vec3 n = hitt->getNormal();
+	const Vec3 n = static_cast<const FacePrimitive *>(hitt)->getGeometricNormal();
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0)
 	{

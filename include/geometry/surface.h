@@ -31,9 +31,10 @@
 BEGIN_YAFARAY
 class Material;
 class Light;
-class ObjectGeometric;
+class Object;
 class DiffRay;
 class Vec3;
+class Primitive;
 
 struct IntersectData
 {
@@ -58,9 +59,9 @@ class SurfacePoint
 		//int object; //!< the object owner of the point.
 		const Material *material_; //!< the surface material
 		const Light *light_; //!< light source if surface point is on a light
-		const ObjectGeometric *object_; //!< object the prim belongs to
+		const Object *object_; //!< object the prim belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
-		void *origin_;
+		const Primitive *origin_;
 		IntersectData data_;
 
 		// Geometry related

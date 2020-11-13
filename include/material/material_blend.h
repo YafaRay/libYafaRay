@@ -37,7 +37,7 @@ class BlendMaterial final : public NodeMaterial
 		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 
 	private:
-		BlendMaterial(const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Material::Visibility::NormalVisible);
+		BlendMaterial(const Material *m_1, const Material *m_2, float blendv, Visibility visibility = Visibility::NormalVisible);
 		virtual ~BlendMaterial() override;
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override;
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override;

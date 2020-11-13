@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "common/flags.h"
 #include "color/color.h"
+#include "common/visibility.h"
 #include <list>
 
 BEGIN_YAFARAY
@@ -66,7 +67,6 @@ struct BsdfFlags : public yafaray4::Flags
 class Material
 {
 	public:
-		enum class Visibility : int { NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible };
 		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }

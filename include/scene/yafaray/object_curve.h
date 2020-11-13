@@ -1,3 +1,4 @@
+#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -16,34 +17,30 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "accelerator/accelerator.h"
-#include "accelerator/accelerator_kdtree.h"
-#include "common/logger.h"
-#include "common/param.h"
+#ifndef YAFARAY_OBJECT_CURVE_H
+#define YAFARAY_OBJECT_CURVE_H
+
+#include "scene/yafaray/object_mesh.h"
 
 BEGIN_YAFARAY
 
-class Primitive;
+struct Uv;
+class FacePrimitive;
+class Material;
 
-//template class Accelerator<Triangle>;
-template class Accelerator<Primitive>;
-
-template<class T>
-Accelerator<T> *Accelerator<T>::factory(const std::vector<const T *> &primitives_list, ParamMap &params)
+class CurveObject final : public MeshObject
 {
-	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
-	std::string type;
-	params.getParam("type", type);
-	if(type == "kdtree")
-	{
-		Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
-		return AcceleratorKdTree<T>::factory(primitives_list, params);
-	}
-	else
-	{
-		Y_ERROR << "Accelerator type '" << type << "' could not be created." << YENDL;
-		return nullptr;
-	}
-}
+	public:
+		static Object *factory(ParamMap &params, const Scene &scene);
+		CurveObject(int num_vertices, float strand_start, float strand_end, float strand_shape, bool has_uv = false, bool has_orco = false);
+		virtual bool calculateObject(const Material *material) override;
+
+	private:
+		float strand_start_ = 0.01f;
+		float strand_end_ = 0.01f;
+		float strand_shape_ = 0.f;
+};
 
 END_YAFARAY
+
+#endif //YAFARAY_OBJECT_CURVE_H
