@@ -71,7 +71,7 @@ bool RenderView::init(const Scene &scene)
 	}
 	if(lights_.empty())
 	{
-		Y_ERROR << "RenderView '" << name_ << "': Camera not found in the scene." << YENDL;
+		Y_ERROR << "RenderView '" << name_ << "': Lights not found in the scene." << YENDL;
 		return false;
 	}
 	return true;
