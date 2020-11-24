@@ -49,7 +49,7 @@ Image * HdrFormat::loadFromFile(const std::string &name, const Image::Optimizati
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	Image *image = new Image(width, height, type, optimization);
+	Image *image = Image::factory(width, height, type, optimization);
 	const int scan_width = (header_.y_first_) ? width : height;
 	// run length encoding is not allowed so read flat and exit
 	if((scan_width < 8) || (scan_width > 0x7fff))

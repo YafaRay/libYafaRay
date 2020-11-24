@@ -210,7 +210,7 @@ public:
 			for(const auto &it : layers_exported)
 			{
 				Image::Type image_type = it.second.getImageType();
-				Image *image = new Image{width, height, image_type, Image::Optimization::None};
+				Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
 				Tile *tile = PyObject_New(Tile, &python_tile_type__);
 				tile->init();
 				tile->image_layer_->image_ = image;

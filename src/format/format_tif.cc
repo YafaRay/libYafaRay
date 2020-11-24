@@ -120,7 +120,7 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	Image *image = new Image(w, h, type, optimization);
+	Image *image = Image::factory(w, h, type, optimization);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{

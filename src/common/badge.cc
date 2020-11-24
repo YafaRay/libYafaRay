@@ -162,7 +162,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	std::string line;
 	while(std::getline(ss_badge, line)) ++badge_line_count;
 	const int badge_height = (badge_line_count + additional_blank_lines) * std::ceil(line_height * font_size_factor_);
-	Image *badge_image = new Image(image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
+	Image *badge_image = Image::factory(image_width_, badge_height, Image::Type::Color, Image::Optimization::None);
 
 #ifdef HAVE_FREETYPE
 	FT_Library library;

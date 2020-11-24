@@ -309,20 +309,6 @@ class ImageBuffer2D final : public Buffer<T, 2>
 		int getHeight() const { return static_cast<int>(Buffer<T, 2>::getDimensions().at(1)); }
 };
 
-typedef ImageBuffer2D<Pixel> 		Rgba2DImageWeighed_t; //!< Weighted RGBA image buffer typedef
-typedef ImageBuffer2D<PixelGray> 	Gray2DImageWeighed_t; //!< Weighted monochromatic image buffer typedef
-typedef ImageBuffer2D<PixelGrayAlpha> 	GrayAlpha2DImageWeighed_t; //!< Weighted monochromatic with alpha (96 bit / pixel) image buffer typedef
-typedef ImageBuffer2D<GrayAlpha> 	GrayAlpha2DImage_t; //!< Non-weighted monochromatic with alpha (64 bit / pixel) image buffer typedef
-typedef ImageBuffer2D<Rgb> 		Rgb2DImage_t; //!< Non-weighted RGB (96bit/pixel) image buffer typedef
-typedef ImageBuffer2D<RgbAlpha> 	Rgba2DImage_t; //!< Non-weighted RGBA (128bit/pixel) image buffer typedef
-typedef ImageBuffer2D<Gray> 		Gray2DImage_t; //!< Non-weighted gray scale (32bit/gray pixel) image buffer typedef
-typedef ImageBuffer2D<Rgb101010>		RgbOptimizedImage_t; //!< Non-weighted optimized (32bit/pixel) without alpha image buffer typedef
-typedef ImageBuffer2D<Rgb565>		RgbCompressedImage_t; //!< Non-weighted compressed (16bit/pixel) LOSSY image buffer typedef
-typedef ImageBuffer2D<Rgba1010108>	RgbaOptimizedImage_t; //!< Non-weighted optimized (40bit/pixel) with alpha buffer typedef
-typedef ImageBuffer2D<Rgba7773>	RgbaCompressedImage_t; //!< Non-weighted compressed (24bit/pixel) LOSSY with alpha buffer typedef
-typedef ImageBuffer2D<Gray8>		GrayOptimizedImage_t; //!< Non-weighted gray scale (8bit/gray pixel) image buffer typedef
-typedef ImageBuffer2D<bool>		FlagsBuffer_t; //!< boolean buffer, for example for flags, typedef
-
 END_YAFARAY
 
 #endif

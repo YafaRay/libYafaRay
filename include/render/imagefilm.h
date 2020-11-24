@@ -186,10 +186,10 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		// Thread mutes for shared access
 		std::mutex image_mutex_, splitter_mutex_, out_mutex_, density_image_mutex_;
 
-		FlagsBuffer_t flags_; //!< flags for adaptive AA sampling;
-		Gray2DImage_t weights_;
+		ImageBuffer2D<bool> flags_; //!< flags for adaptive AA sampling;
+		ImageBuffer2D<Gray> weights_;
 		ImageLayers image_layers_;
-		Rgb2DImage_t *density_image_; //!< storage for z-buffer channel
+		ImageBuffer2D<Rgb> *density_image_; //!< storage for z-buffer channel
 };
 
 END_YAFARAY

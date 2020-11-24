@@ -247,7 +247,7 @@ Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Op
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	Image *image = new Image(w, h, type, optimization);
+	Image *image = Image::factory(w, h, type, optimization);
 	png_bytepp row_pointers = new png_bytep[h];
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;

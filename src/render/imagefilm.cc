@@ -137,7 +137,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 	{
 		Image::Type image_type = l.second.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		Image *image = new Image{width, height, image_type, Image::Optimization::None};
+		Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
 		image_layers_.set(l.first, {image, l.second});
 	}
 
@@ -202,7 +202,7 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	// Clear density image
 	if(estimate_density_)
 	{
-		if(!density_image_) density_image_ = new Rgb2DImage_t(width_, height_);
+		if(!density_image_) density_image_ = new ImageBuffer2D<Rgb>(width_, height_);
 		else density_image_->clear();
 	}
 
@@ -831,7 +831,7 @@ void ImageFilm::setDensityEstimation(bool enable)
 {
 	if(enable)
 	{
-		if(!density_image_) density_image_ = new Rgb2DImage_t(width_, height_);
+		if(!density_image_) density_image_ = new ImageBuffer2D<Rgb>(width_, height_);
 		else density_image_->clear();
 	}
 	else

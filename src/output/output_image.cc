@@ -96,7 +96,7 @@ void ImageOutput::init(int width, int height, const Layers *layers, const std::m
 	{
 		{
 			Image::Type image_type = it.second.getImageType();
-			Image *image = new Image{width, height, image_type, Image::Optimization::None};
+			Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
 			image_layers_->set(it.first, {image, it.second});
 		}
 	}

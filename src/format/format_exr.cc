@@ -348,7 +348,7 @@ Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
 		const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-		image = new Image(width, height, type, optimization);
+		image = Image::factory(width, height, type, optimization);
 		Imf::Array2D<Imf::Rgba> pixels;
 		pixels.resizeErase(width, height);
 		file.setFrameBuffer(&pixels[0][0] - dw.min.y - dw.min.x * height, height, 1);

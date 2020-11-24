@@ -38,35 +38,33 @@ struct DenoiseParams
 	float mix_ = 0.8f;	//!< Mix factor between the de-noised image and the original "noisy" image to avoid banding artifacts in images with all noise removed.
 };
 
-class LIBYAFARAY_EXPORT Image final
+class LIBYAFARAY_EXPORT Image
 {
 	public:
 		enum class Type : int { None, Gray, GrayAlpha, GrayWeight, GrayAlphaWeight, Color, ColorAlpha, ColorAlphaWeight };
 		enum class Optimization : int { None, Optimized, Compressed };
 		enum class Position : int { None, Top, Bottom, Left, Right, Overlay };
-		Image(int width, int height, const Type &type, const Optimization &optimization);
-		Image() = default;
-		Image(const Image &image);
-		Image(Image &&image);
-		~Image();
+		static Image *factory(int width, int height, const Type &type, const Optimization &optimization);
+		virtual ~Image() = default;
+
+		virtual Type getType() const = 0;
+		virtual Optimization getOptimization() const = 0;
+		virtual Rgba getColor(int x, int y) const = 0;
+		virtual float getFloat(int x, int y) const = 0;
+		virtual float getWeight(int x, int y) const { return 0.f; }
+		virtual int getInt(int x, int y) const = 0;
+		virtual void setColor(int x, int y, const Rgba &col) = 0;
+		virtual void setFloat(int x, int y, float val) = 0;
+		virtual void setWeight(int x, int y, float val) { }
+		virtual void setInt(int x, int y, int val) = 0;
+		virtual void clear() = 0;
 
 		int getWidth() const { return width_; }
 		int getHeight() const { return height_; }
-		Type getType() const { return type_; }
-		std::string getTypeName() const { return getTypeName(type_); }
-		int getNumChannels() const { return getNumChannels(type_); }
-		Optimization getOptimization() const { return optimization_; }
-		Rgba getColor(int x, int y) const;
-		float getFloat(int x, int y) const;
-		float getWeight(int x, int y) const;
-		bool hasAlpha() const;
-		bool isGrayscale() const;
-		int getInt(int x, int y) const;
-		void setColor(int x, int y, const Rgba &col);
-		void setFloat(int x, int y, float val);
-		void setWeight(int x, int y, float val);
-		void setInt(int x, int y, int val);
-		void clear();
+		std::string getTypeName() const { return getTypeName(getType()); }
+		int getNumChannels() const { return getNumChannels(getType()); }
+		bool hasAlpha() const { return hasAlpha(getType()); }
+		bool isGrayscale() const { return isGrayscale(getType()); }
 
 		static Type imageTypeWithAlpha(Type image_type);
 		static Type imageTypeWithWeight(Type image_type);
@@ -82,11 +80,9 @@ class LIBYAFARAY_EXPORT Image final
 		static Image *getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
 
 	protected:
-		int width_;
-		int height_;
-		Type type_;
-		Optimization optimization_;
-		void *buffer_ = nullptr;
+		Image(int width, int height) : width_(width), height_(height) { }
+		int width_ = 0;
+		int height_ = 0;
 };
 
 END_YAFARAY

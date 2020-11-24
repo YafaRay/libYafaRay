@@ -300,12 +300,12 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	const bool has_alpha = (alpha_bit_depth != 0 || header.cm_entry_bit_depth_ == 32);
 	Image::Type type = Image::getTypeFromSettings(has_alpha, grayscale_);
 	if(!has_alpha && !grayscale_ && (header.cm_entry_bit_depth_ == 16 || header.cm_entry_bit_depth_ == 32 || header.bit_depth_ == 16 || header.bit_depth_ == 32)) type = Image::Type::ColorAlpha;
-	Image *image = new Image(header.width_, header.height_, type, optimization);
+	Image *image = Image::factory(header.width_, header.height_, type, optimization);
 	color_map_ = nullptr;
 	// Read the colormap if needed
 	if(has_color_map)
 	{
-		color_map_ = new Rgba2DImage_t(header.cm_number_of_entries_, 1);
+		color_map_ = new ImageBuffer2D<RgbAlpha>(header.cm_number_of_entries_, 1);
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:
