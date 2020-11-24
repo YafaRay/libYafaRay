@@ -244,7 +244,7 @@ bool TiledIntegrator::renderPass(const RenderView *render_view, int samples, int
 {
 	Y_DEBUG << "Sampling: samples=" << samples << " Offset=" << offset << " Base Offset=" << + image_film_->getBaseSamplingOffset() << "  AA_pass_number=" << aa_pass_number << YENDL;
 
-	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, nullptr);
+	prePass(samples, (offset + image_film_->getBaseSamplingOffset()), adaptive, render_control, render_view);
 
 	int nthreads = scene_->getNumThreads();
 
@@ -398,7 +398,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 
 				c_ray.time_ = rstate.time_;
 
-				color_layers(Layer::Combined).color_ = integrate(rstate, c_ray, 0, &color_layers, nullptr);
+				color_layers(Layer::Combined).color_ = integrate(rstate, c_ray, 0, &color_layers, render_view);
 
 				for(auto &it : color_layers)
 				{
