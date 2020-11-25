@@ -250,7 +250,7 @@ void BidirectionalIntegrator::cleanup()
 /* ============================================================
     integrate
  ============================================================ */
-Rgba BidirectionalIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 
@@ -457,7 +457,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, DiffRay &ray, i
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(RenderData &render_data, Ray &start, std::vector<PathVertex> &path, int max_len) const
+int BidirectionalIntegrator::createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len) const
 {
 	static int dbg = 0;
 	Random &prng = *render_data.prng_;

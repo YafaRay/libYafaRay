@@ -862,7 +862,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 	return path_col / (float)n_sampl;
 }
 
-Rgba PhotonIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 

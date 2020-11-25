@@ -95,7 +95,7 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 	return success;
 }
 
-Rgba DirectLightIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
 
@@ -118,7 +118,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, DiffRay &ray, int
 		const Material *material = sp.material_;
 		BsdfFlags bsdfs;
 
-		Vec3 wo = -ray.dir_;
+		const Vec3 wo = -ray.dir_;
 		if(render_data.raylevel_ == 0) render_data.include_lights_ = true;
 
 		material->initBsdf(render_data, sp, bsdfs);

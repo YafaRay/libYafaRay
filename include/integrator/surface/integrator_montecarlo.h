@@ -55,7 +55,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		/*! Does the actual light estimation on a specific light for the given surface point */
 		Rgb doLightEstimation(RenderData &render_data, Light *light, const SurfacePoint &sp, const Vec3 &wo, const unsigned int &loffs, ColorLayers *color_layers = nullptr) const;
 		/*! Does recursive mc raytracing with MIS (Multiple Importance Sampling) for a given surface point */
-		void recursiveRaytrace(RenderData &render_data, DiffRay &ray, BsdfFlags bsdfs, SurfacePoint &sp, Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers = nullptr) const;
+		void recursiveRaytrace(RenderData &render_data, const DiffRay &ray, const BsdfFlags &bsdfs, SurfacePoint &sp, const Vec3 &wo, Rgb &col, float &alpha, int additional_depth, ColorLayers *color_layers = nullptr) const;
 		/*! Creates and prepares the caustic photon map */
 		bool createCausticMap(const RenderView *render_view, const RenderControl &render_control);
 		/*! Estimates caustic photons for a given surface point */

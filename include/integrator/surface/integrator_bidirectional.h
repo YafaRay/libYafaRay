@@ -47,10 +47,10 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;
 		virtual void cleanup() override;
-		virtual Rgba integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
+		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const override;
 		Rgb sampleAmbientOcclusionLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		Rgb sampleAmbientOcclusionClayLayer(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		int createPath(RenderData &render_data, Ray &start, std::vector<PathVertex> &path, int max_len) const;
+		int createPath(RenderData &render_data, const Ray &start, std::vector<PathVertex> &path, int max_len) const;
 		Rgb evalPath(RenderData &render_data, int s, int t, PathData &pd) const;
 		Rgb evalLPath(RenderData &render_data, int t, PathData &pd, Ray &l_ray, const Rgb &lcol) const;
 		Rgb evalPathE(RenderData &render_data, int s, PathData &pd) const;

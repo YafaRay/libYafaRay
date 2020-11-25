@@ -267,7 +267,7 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 	return in_scatter;
 }
 
-Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
+Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
 	Rgba tr(1.f);
 	//return Tr;
 	if(vr_size_ == 0) return tr;
@@ -287,7 +287,7 @@ Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, Ray &ray) c
 	return tr;
 }
 
-Rgba SingleScatterIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
+Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const {
 	float t_0 = 1e10f, t_1 = -1e10f;
 
 	Rgba result(0.f);

@@ -81,7 +81,7 @@ class Integrator
 class SurfaceIntegrator: public Integrator
 {
 	public:
-		virtual Rgba integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const = 0;
+		virtual Rgba integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const = 0;
 	protected:
 		SurfaceIntegrator() = default;
 		virtual Type getType() const override { return Surface; }
@@ -91,8 +91,8 @@ class SurfaceIntegrator: public Integrator
 class VolumeIntegrator: public Integrator
 {
 	public:
-		virtual Rgba transmittance(RenderData &render_data, Ray &ray) const = 0;
-		virtual Rgba integrate(RenderData &render_data, Ray &ray, int additional_depth = 0) const = 0;
+		virtual Rgba transmittance(RenderData &render_data, const Ray &ray) const = 0;
+		virtual Rgba integrate(RenderData &render_data, const Ray &ray, int additional_depth = 0) const = 0;
 	protected:
 		VolumeIntegrator() = default;
 		virtual Type getType() const override { return Volume; }

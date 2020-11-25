@@ -66,7 +66,7 @@ bool DebugIntegrator::preprocess(const RenderControl &render_control, const Rend
 	return true;
 }
 
-Rgba DebugIntegrator::integrate(RenderData &render_data, DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
+Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int additional_depth, ColorLayers *color_layers, const RenderView *render_view) const
 {
 	Rgb col(0.0);
 	SurfacePoint sp;

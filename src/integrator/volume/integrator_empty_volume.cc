@@ -23,11 +23,11 @@
 
 BEGIN_YAFARAY
 
-Rgba EmptyVolumeIntegrator::transmittance(RenderData &render_data, Ray &ray) const {
+Rgba EmptyVolumeIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
 	return Rgb(1.f);
 }
 
-Rgba EmptyVolumeIntegrator::integrate(RenderData &render_data, Ray &ray, int additional_depth) const {
+Rgba EmptyVolumeIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const {
 	return Rgba(0.f);
 }
 
