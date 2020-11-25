@@ -99,10 +99,8 @@ bool CurveObject::calculateObject(const Material *material)
 		// 1D particles UV mapping
 		const float su = static_cast<float>(i) / (points_size - 1);
 		const float sv = su + 1. / (points_size - 1);
-		addUvValue({su, su});
-		const int iu = getUvValues().size() - 1;
-		addUvValue({sv, sv});
-		iv = getUvValues().size() - 1;
+		const int iu = addUvValue({su, su});
+		iv = addUvValue({sv, sv});
 		const int a_1 = i;
 		const int a_2 = 2 * i + points_size;
 		const int a_3 = a_2 + 1;

@@ -234,6 +234,15 @@ bool MeshObject::smoothNormals(float angle)
 	return true;
 }
 
+MeshObject *MeshObject::getMeshFromObject(Object *object)
+{
+	if(!object->isMesh())
+	{
+		Y_ERROR << "Scene: the object '" << object->getName() << "' is not a mesh object" << YENDL;
+		return nullptr;
+	}
+	else return static_cast<MeshObject *>(object);
+}
 
 /*int MeshObject::convertToBezierControlPoints()
 {

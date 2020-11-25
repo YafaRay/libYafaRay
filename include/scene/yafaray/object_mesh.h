@@ -40,13 +40,14 @@ class MeshObject : public ObjectYafaRay
 		virtual bool isMesh() const override { return true; }
 		/*! the number of primitives the object holds. Primitive is an element
 			that by definition can perform ray-triangle intersection */
-		virtual int numPrimitives() const override { return numFaces(); }
+		virtual int numPrimitives() const override { return faces_.size(); }
 		virtual const std::vector<const Primitive *> getPrimitives() const override;
 		int lastVertexId() const { return points_.size() - 1; }
 		Vec3 getVertexNormal(int index) const { return normals_[index]; }
 		Point3 getVertex(int index) const { return points_[index]; }
 		Point3 getOrcoVertex(int index) const { return orco_points_[index]; }
-		int numFaces() const { return faces_.size(); }
+		int numVertices() const { return points_.size(); }
+		int numNormals() const { return normals_.size(); }
 		void addFace(FacePrimitive *face);
 		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat);
 		void calculateNormals();
@@ -62,11 +63,12 @@ class MeshObject : public ObjectYafaRay
 		void addPoint(const Point3 &p) { points_.push_back(p); }
 		void addOrcoPoint(const Point3 &p) { orco_points_.push_back(p); }
 		void addNormal(const Vec3 &n);
-		void addUvValue(const Uv &uv) { uv_values_.push_back(uv); }
+		int addUvValue(const Uv &uv) { uv_values_.push_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
 		void setSmooth(bool smooth) { is_smooth_ = smooth; }
 		bool smoothNormals(float angle);
 		//int convertToBezierControlPoints();
 		virtual bool calculateObject(const Material *material) override;
+		static MeshObject *getMeshFromObject(Object *object);
 
 	protected:
 		std::vector<FacePrimitive *> faces_;

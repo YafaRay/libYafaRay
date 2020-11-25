@@ -105,15 +105,9 @@ bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 		object = current_object_;
 		if(!object) return false;
 	}
-
-	if(!object->isMesh())
-	{
-		Y_ERROR << "Scene: the object '" << object->getName() << "' is not a mesh object" << YENDL;
-		return false;
-	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(object);
-	
-	if(mesh_object->hasNormalsExported() && mesh_object->getPoints().size() == mesh_object->getNormals().size())
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(object);
+	if(!mesh_object) return false;
+	else if(mesh_object->hasNormalsExported() && mesh_object->numNormals() == mesh_object->numVertices())
 	{
 		mesh_object->setSmooth(true);
 		return true;
@@ -125,78 +119,59 @@ int YafaRayScene::addVertex(const Point3 &p)
 {
 	//Y_DEBUG PRTEXT(YafaRayScene::addVertex) PR(p) PREND;
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	if(!current_object_->isMesh())
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	if(!mesh_object) return -1;
+	else
 	{
-		Y_ERROR << "Scene: the object '" << current_object_->getName() << "' is not a mesh object" << YENDL;
-		return -1;
+		mesh_object->addPoint(p);
+		return mesh_object->lastVertexId();
 	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(current_object_);
-	/*FIXME! if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
+/*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
 	{
 		geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
 		geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->mobj_->getPoints().size() - 1;
 		return geometry_creation_state_.cur_obj_->mobj_->convertToBezierControlPoints();
-	}
-	else */{
-		mesh_object->addPoint(p);
-		return mesh_object->lastVertexId();
-	}
+	}*/
 }
 
 int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 {
 	if(creation_state_.stack_.front() != CreationState::Object) return -1;
-	if(!current_object_->isMesh())
-	{
-		Y_ERROR << "Scene: the object '" << current_object_->getName() << "' is not a mesh object" << YENDL;
-		return -1;
-	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(current_object_);
-
-/*	if(object_creation_state_.cur_obj_->type_ == mtrim__) return addVertex(p);
-	else*/
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	if(!mesh_object) return -1;
+	else
 	{
 		mesh_object->addPoint(p);
 		mesh_object->addOrcoPoint(orco);
 	}
-
 	return mesh_object->lastVertexId();
+
+	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim__) return addVertex(p);
 }
 
 void YafaRayScene::addNormal(const Vec3 &n)
 {
-	if(!current_object_->isMesh())
-	{
-		Y_ERROR << "Scene: the object '" << current_object_->getName() << "' is not a mesh object" << YENDL;
-		return;
-	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(current_object_);
+	if(creation_state_.stack_.front() != CreationState::Object) return;
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	if(!mesh_object) return;
 	mesh_object->addNormal(n);
 }
 
 bool YafaRayScene::addFace(const std::vector<int> &vert_indices, const std::vector<int> &uv_indices)
 {
-	if(!current_object_->isMesh())
-	{
-		Y_ERROR << "Scene: the object '" << current_object_->getName() << "' is not a mesh object" << YENDL;
-		return false;
-	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(current_object_);
+	if(creation_state_.stack_.front() != CreationState::Object) return false;
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	if(!mesh_object) return false;
 	mesh_object->addFace(vert_indices, uv_indices, creation_state_.current_material_);
 	return true;
 }
 
 int YafaRayScene::addUv(float u, float v)
 {
-	if(!current_object_->isMesh())
-	{
-		Y_ERROR << "Scene: the object '" << current_object_->getName() << "' is not a mesh object" << YENDL;
-		return false;
-	}
-	MeshObject *mesh_object = static_cast<MeshObject *>(current_object_);
 	if(creation_state_.stack_.front() != CreationState::Object) return false;
-	mesh_object->addUvValue({u, v});
-	return static_cast<int>(mesh_object->getUvValues().size()) - 1;
+	MeshObject *mesh_object = MeshObject::getMeshFromObject(current_object_);
+	if(!mesh_object) return -1;
+	return mesh_object->addUvValue({u, v});
 }
 
 Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)
