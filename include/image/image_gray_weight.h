@@ -39,11 +39,9 @@ class LIBYAFARAY_EXPORT ImageGrayWeight final : public Image
 		virtual Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
 		virtual float getFloat(int x, int y) const override { return buffer_(x, y).getFloat(); }
 		virtual float getWeight(int x, int y) const override { return buffer_(x, y).getWeight(); }
-		virtual int getInt(int x, int y) const override { return 0; }
 		virtual void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
 		virtual void setFloat(int x, int y, float val) override { buffer_(x, y).setFloat(val); }
 		virtual void setWeight(int x, int y, float val) override { buffer_(x, y).setWeight(val); }
-		virtual void setInt(int x, int y, int val) override { }
 		virtual void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<PixelGray> buffer_;

@@ -38,10 +38,8 @@ class LIBYAFARAY_EXPORT ImageGray final : public Image
 		virtual Image::Optimization getOptimization() const override { return Image::Optimization::None; }
 		virtual Rgba getColor(int x, int y) const override { return buffer_(x, y).getColor(); }
 		virtual float getFloat(int x, int y) const override { return buffer_(x, y).getFloat(); }
-		virtual int getInt(int x, int y) const override { return 0; }
 		virtual void setColor(int x, int y, const Rgba &col) override { buffer_(x, y).setColor(col); }
 		virtual void setFloat(int x, int y, float val) override { buffer_(x, y).setFloat(val); }
-		virtual void setInt(int x, int y, int val) override { }
 		virtual void clear() override { buffer_.clear(); }
 
 		ImageBuffer2D<Gray> buffer_;

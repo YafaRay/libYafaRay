@@ -52,11 +52,9 @@ class LIBYAFARAY_EXPORT Image
 		virtual Rgba getColor(int x, int y) const = 0;
 		virtual float getFloat(int x, int y) const = 0;
 		virtual float getWeight(int x, int y) const { return 0.f; }
-		virtual int getInt(int x, int y) const = 0;
 		virtual void setColor(int x, int y, const Rgba &col) = 0;
 		virtual void setFloat(int x, int y, float val) = 0;
 		virtual void setWeight(int x, int y, float val) { }
-		virtual void setInt(int x, int y, int val) = 0;
 		virtual void clear() = 0;
 
 		int getWidth() const { return width_; }
