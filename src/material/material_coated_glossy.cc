@@ -191,7 +191,6 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 	Vec3 hs(0.f);
 	s.pdf_ = 0.f;
 	float kr, kt;
-	float wi_n = 0.f, wo_n = 0.f;
 
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
 
@@ -279,8 +278,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			}
 	}
 
-	wi_n = std::abs(wi * n);
-	wo_n = std::abs(wo * n);
+	float wi_n = std::abs(wi * n);
+	const float wo_n = std::abs(wo * n);
 
 	if(c_index[pick] != C_SPECULAR)
 	{
@@ -411,12 +410,11 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 	return pdf / sum;
 }
 
-void CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-									   bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
+Material::Specular CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	Specular specular;
 	const MDat *dat = (MDat *)render_data.arena_;
 	const NodeStack stack(dat->stack_);
-
 	const bool outside = sp.ng_ * wo >= 0;
 	Vec3 n, ng;
 	const float cos_wo_n = sp.n_ * wo;
@@ -430,32 +428,24 @@ void CoatedGlossyMaterial::getSpecular(const RenderData &render_data, const Surf
 		n = (cos_wo_n <= 0) ? sp.n_ : (sp.n_ - (1.00001 * cos_wo_n) * wo).normalize();
 		ng = -sp.ng_;
 	}
-
 	float kr, kt;
 	Vec3::fresnel(wo, n, (ior_shader_ ? ior_ + ior_shader_->getScalar(stack) : ior_), kr, kt);
-
-	refr = false;
-
-	if(render_data.raylevel_ > 5) return;
-
-	dir[0] = wo;
-	dir[0].reflect(n);
-
-	if(mirror_color_shader_) col[0] = mirror_color_shader_->getColor(stack) * kr;
-	else col[0] = mirror_color_ * kr;//)/std::abs(N*wi);
-
-	col[0] *= (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_);
-
-	float cos_wi_ng = dir[0] * ng;
+	if(render_data.raylevel_ > 5) return specular;
+	specular.reflect_.dir_ = wo;
+	specular.reflect_.dir_.reflect(n);
+	if(mirror_color_shader_) specular.reflect_.col_ = mirror_color_shader_->getColor(stack) * kr;
+	else specular.reflect_.col_ = mirror_color_ * kr;//)/std::abs(N*wi);
+	specular.reflect_.col_ *= (mirror_shader_ ? mirror_shader_->getScalar(stack) : mirror_strength_);
+	const float cos_wi_ng = specular.reflect_.dir_ * ng;
 	if(cos_wi_ng < 0.01)
 	{
-		dir[0] += (0.01 - cos_wi_ng) * ng;
-		dir[0].normalize();
+		specular.reflect_.dir_ += (0.01 - cos_wi_ng) * ng;
+		specular.reflect_.dir_.normalize();
 	}
-	refl = true;
-
+	specular.reflect_.enabled_ = true;
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col, wire_frame_amount, sp);
+	applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+	return specular;
 }
 
 Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)

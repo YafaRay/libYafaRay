@@ -40,8 +40,7 @@ class MaskMaterial final : public NodeMaterial
 		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
 		virtual bool isTransparent() const override;
 		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const override;
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 

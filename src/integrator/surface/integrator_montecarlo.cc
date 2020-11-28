@@ -894,28 +894,26 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 		if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)) && render_data.raylevel_ < 20)
 		{
 			render_data.include_lights_ = true;
-			bool reflect = false, refract = false;
-			Vec3 dir[2];
-			Rgb rcol[2], vcol;
-			material->getSpecular(render_data, sp, wo, reflect, refract, dir, rcol);
-			if(reflect)
+			const Material::Specular specular = material->getSpecular(render_data, sp, wo);
+			if(specular.reflect_.enabled_)
 			{
-				DiffRay ref_ray(sp.p_, dir[0], scene_->ray_min_dist_);
+				DiffRay ref_ray(sp.p_, specular.reflect_.dir_, scene_->ray_min_dist_);
 				if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray);
 				Rgb integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 				const VolumeHandler *vol;
+				Rgb vcol;
 				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
 					if(vol->transmittance(render_data, ref_ray, vcol)) integ *= vcol;
 				}
-				const Rgb col_ind = static_cast<Rgb>(integ) * rcol[0];
+				const Rgb col_ind = static_cast<Rgb>(integ) * specular.reflect_.col_;
 				col += col_ind;
 				if(layers_used)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_ind;
 				}
 			}
-			if(refract)
+			if(specular.refract_.enabled_)
 			{
 				DiffRay ref_ray;
 				float transp_bias_factor = material->getTransparentBiasFactor();
@@ -923,26 +921,25 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 				{
 					const bool transpbias_multiply_raydepth = material->getTransparentBiasMultiplyRayDepth();
 					if(transpbias_multiply_raydepth) transp_bias_factor *= render_data.raylevel_;
-					ref_ray = DiffRay(sp.p_ + dir[1] * transp_bias_factor, dir[1], scene_->ray_min_dist_);
+					ref_ray = DiffRay(sp.p_ + specular.refract_.dir_ * transp_bias_factor, specular.refract_.dir_, scene_->ray_min_dist_);
 				}
-				else ref_ray = DiffRay(sp.p_, dir[1], scene_->ray_min_dist_);
+				else ref_ray = DiffRay(sp.p_, specular.refract_.dir_, scene_->ray_min_dist_);
 
 				if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 				Rgba integ = integrate(render_data, ref_ray, additional_depth, nullptr, nullptr);
 
 				const VolumeHandler *vol;
+				Rgb vcol;
 				if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 				{
 					if(vol->transmittance(render_data, ref_ray, vcol)) integ *= vcol;
 				}
-
-				const Rgb col_ind = static_cast<Rgb>(integ) * rcol[1];
+				const Rgb col_ind = static_cast<Rgb>(integ) * specular.refract_.col_;
 				col += col_ind;
 				if(layers_used)
 				{
 					if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_ind;
 				}
-
 				alpha = integ.a_;
 			}
 		}

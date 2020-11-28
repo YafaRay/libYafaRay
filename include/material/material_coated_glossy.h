@@ -42,8 +42,7 @@ class CoatedGlossyMaterial final : public NodeMaterial
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs, bool force_eval = false) const override;
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
 		virtual float pdf(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wi, const BsdfFlags &bsdfs) const override;
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const override;
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
 		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
 		virtual Rgb getMirrorColor(const RenderData &render_data) const override;

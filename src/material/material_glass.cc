@@ -221,9 +221,9 @@ float GlassMaterial::getAlpha(const RenderData &render_data, const SurfacePoint 
 	return alpha;
 }
 
-void GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
+Material::Specular GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	Material::Specular specular;
 	const NodeStack stack(render_data.arena_);
 	const bool outside = sp.ng_ * wo > 0;
 	Vec3 n;
@@ -256,33 +256,34 @@ void GlassMaterial::getSpecular(const RenderData &render_data, const SurfacePoin
 		Vec3::fresnel(wo, n, cur_ior, kr, kt);
 		if(!render_data.chromatic_ || !disperse_)
 		{
-			col[1] = kt * (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);
-			dir[1] = refdir;
-			refr = true;
+			specular.refract_.col_ = kt * (filter_color_shader_ ? filter_color_shader_->getColor(stack) : filter_color_);
+			specular.refract_.dir_ = refdir;
+			specular.refract_.enabled_ = true;
 		}
-		else refr = false; // in this case, we need to sample dispersion, i.e. not considered specular
+		//FIXME? If the above does not happen, in this case, we need to sample dispersion, i.e. not considered specular
+
 		// accounting for fresnel reflection when leaving refractive material is a real performance
 		// killer as rays keep bouncing inside objects and contribute little after few bounces, so limit we it:
 		if(outside || render_data.raylevel_ < 3)
 		{
-			dir[0] = wo;
-			dir[0].reflect(n);
-			col[0] = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_) * kr;
-			refl = true;
+			specular.reflect_.dir_ = wo;
+			specular.reflect_.dir_.reflect(n);
+			specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_) * kr;
+			specular.reflect_.enabled_ = true;
 		}
-		else refl = false;
 	}
 	else //total inner reflection
 	{
-		col[0] = mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
-		dir[0] = wo;
-		dir[0].reflect(n);
-		refl = true;
-		refr = false;
+		specular.reflect_.col_ = mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_;
+		specular.reflect_.dir_ = wo;
+		specular.reflect_.dir_.reflect(n);
+		specular.reflect_.enabled_ = true;
 	}
 
 	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col, wire_frame_amount, sp);
+	applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
+	applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
+	return specular;
 }
 
 float GlassMaterial::getMatIor() const
@@ -437,15 +438,14 @@ Rgb MirrorMaterial::sample(const RenderData &render_data, const SurfacePoint &sp
 	return ref_col_ * (1.f / std::abs(sp.n_ * wi));
 }
 
-void MirrorMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const
+Material::Specular MirrorMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	col[0] = ref_col_;
-	col[1] = Rgb(1.0);
+	Specular specular;
+	specular.reflect_.col_ = ref_col_;
 	Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-	dir[0] = Vec3::reflectDir(n, wo);
-	refl = true;
-	refr = false;
+	specular.reflect_.dir_ = Vec3::reflectDir(n, wo);
+	specular.reflect_.enabled_ = true;
+	return specular;
 }
 
 Material *MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)

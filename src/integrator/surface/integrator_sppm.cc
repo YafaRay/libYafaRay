@@ -1121,54 +1121,53 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			if(bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
 				render_data.include_lights_ = true;
-				bool reflect = false, refract = false;
-				Vec3 dir[2];
-				Rgb rcol[2], vcol;
-				material->getSpecular(render_data, sp, wo, reflect, refract, dir, rcol);
-				const VolumeHandler *vol;
-
-				if(reflect)
+				const Material::Specular specular = material->getSpecular(render_data, sp, wo);
+				if(specular.reflect_.enabled_)
 				{
-					DiffRay ref_ray(sp.p_, dir[0], scene_->ray_min_dist_);
+					DiffRay ref_ray(sp.p_, specular.reflect_.dir_, scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.reflectedRay(ray, ref_ray); // compute the ray differentaitl
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp);
+					const VolumeHandler *vol;
 					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
+						Rgb vcol;
 						if(vol->transmittance(render_data, ref_ray, vcol))
 						{
 							refg.constant_randiance_ *= vcol;
 							refg.photon_flux_ *= vcol;
 						}
 					}
-					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(rcol[0]);
+					const Rgba col_radiance_reflect = refg.constant_randiance_ * Rgba(specular.reflect_.col_);
 					g_info.constant_randiance_ += col_radiance_reflect;
 					if(layers_used)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::ReflectPerfect)) color_layer->color_ += col_radiance_reflect;
 					}
-					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[0]);
+					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.reflect_.col_);
 					g_info.photon_count_ += refg.photon_count_;
 				}
-				if(refract)
+				if(specular.refract_.enabled_)
 				{
-					DiffRay ref_ray(sp.p_, dir[1], scene_->ray_min_dist_);
+					DiffRay ref_ray(sp.p_, specular.refract_.dir_, scene_->ray_min_dist_);
 					if(diff_rays_enabled_) sp_diff.refractedRay(ray, ref_ray, material->getMatIor());
 					GatherInfo refg = traceGatherRay(render_data, ref_ray, hp);
+					const VolumeHandler *vol;
 					if(bsdfs.hasAny(BsdfFlags::Volumetric) && (vol = material->getVolumeHandler(sp.ng_ * ref_ray.dir_ < 0)))
 					{
+						Rgb vcol;
 						if(vol->transmittance(render_data, ref_ray, vcol))
 						{
 							refg.constant_randiance_ *= vcol;
 							refg.photon_flux_ *= vcol;
 						}
 					}
-					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(rcol[1]);
+					const Rgba col_radiance_refract = refg.constant_randiance_ * Rgba(specular.refract_.col_);
 					g_info.constant_randiance_ += col_radiance_refract;
 					if(layers_used)
 					{
 						if(ColorLayer *color_layer = color_layers->find(Layer::RefractPerfect)) color_layer->color_ += col_radiance_refract;
 					}
-					g_info.photon_flux_ += refg.photon_flux_ * Rgba(rcol[1]);
+					g_info.photon_flux_ += refg.photon_flux_ * Rgba(specular.refract_.col_);
 					g_info.photon_count_ += refg.photon_count_;
 					alpha = refg.constant_randiance_.a_;
 				}

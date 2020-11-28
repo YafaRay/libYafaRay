@@ -415,15 +415,14 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
  *  @param  wi Array of two vectors to record reflected ray direction (wi[0]) and refracted ray direction (wi[1])
  *  @param  col Array of two colors to record reflected ray color (col[0]) and refracted ray color (col[1])
  */
-void ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const wi, Rgb *const col) const
+Material::Specular ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	Specular specular;
 	const SdDat *dat = (SdDat *)render_data.arena_;
 	const NodeStack stack(dat->node_stack_);
-
 	const bool backface = wo * sp.ng_ < 0.f;
 	const Vec3 n  = backface ? -sp.n_ : sp.n_;
 	const Vec3 ng = backface ? -sp.ng_ : sp.ng_;
-
 	float cur_ior_squared;
 	if(ior_shader_)
 	{
@@ -431,35 +430,33 @@ void ShinyDiffuseMaterial::getSpecular(const RenderData &render_data, const Surf
 		cur_ior_squared *= cur_ior_squared;
 	}
 	else cur_ior_squared = ior_squared_;
-
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-
 	if(is_transparent_)
 	{
-		do_refract = true;
-		wi[1] = -wo;
+		specular.refract_.enabled_ = true;
+		specular.refract_.dir_ = -wo;
 		const Rgb tcol = transmit_filter_strength_ * (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diffuse_color_) + Rgb(1.f - transmit_filter_strength_);
-		col[1] = (1.f - dat->component_[0] * kr) * dat->component_[1] * tcol;
+		specular.refract_.col_ = (1.f - dat->component_[0] * kr) * dat->component_[1] * tcol;
+		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+		applyWireFrame(specular.refract_.col_, wire_frame_amount, sp);
 	}
-	else do_refract = false;
-
 	if(is_mirror_)
 	{
-		do_reflect = true;
+		specular.reflect_.enabled_ = true;
 		//Y_WARNING << sp.N << " | " << N << YENDL;
-		wi[0] = wo;
-		wi[0].reflect(n);
-		const float cos_wi_ng = wi[0] * ng;
+		specular.reflect_.dir_ = wo;
+		specular.reflect_.dir_.reflect(n);
+		const float cos_wi_ng = specular.reflect_.dir_ * ng;
 		if(cos_wi_ng < 0.01)
 		{
-			wi[0] += (0.01 - cos_wi_ng) * ng;
-			wi[0].normalize();
+			specular.reflect_.dir_ += (0.01 - cos_wi_ng) * ng;
+			specular.reflect_.dir_.normalize();
 		}
-		col[0] = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (dat->component_[0] * kr);
+		specular.reflect_.col_ = (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : mirror_color_) * (dat->component_[0] * kr);
+		const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
+		applyWireFrame(specular.reflect_.col_, wire_frame_amount, sp);
 	}
-	else do_reflect = false;
-	const float wire_frame_amount = (wireframe_shader_ ? wireframe_shader_->getScalar(stack) * wireframe_amount_ : wireframe_amount_);
-	applyWireFrame(col, wire_frame_amount, sp);
+	return specular;
 }
 
 Rgb ShinyDiffuseMaterial::getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const

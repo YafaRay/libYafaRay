@@ -95,14 +95,15 @@ Rgb MaskMaterial::getTransparency(const RenderData &render_data, const SurfacePo
 	else   return mat_1_->getTransparency(render_data, sp, wo);
 }
 
-void MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-							   bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
+Material::Specular MaskMaterial::getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
+	Specular specular;
 	const bool mv = *(bool *)render_data.arena_;
 	render_data.arena_ = PTR_ADD(render_data.arena_, sizeof(bool));
-	if(mv) mat_2_->getSpecular(render_data, sp, wo, reflect, refract, dir, col);
-	else   mat_1_->getSpecular(render_data, sp, wo, reflect, refract, dir, col);
+	if(mv) specular = mat_2_->getSpecular(render_data, sp, wo);
+	else specular = mat_1_->getSpecular(render_data, sp, wo);
 	render_data.arena_ = PTR_ADD(render_data.arena_, -sizeof(bool));
+	return specular;
 }
 
 Rgb MaskMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const

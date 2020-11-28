@@ -24,13 +24,13 @@
 #include "common/flags.h"
 #include "color/color.h"
 #include "common/visibility.h"
+#include "geometry/vector.h"
 #include <list>
 
 BEGIN_YAFARAY
 
 class ParamMap;
 class Scene;
-class Vec3;
 class SurfacePoint;
 class RenderData;
 class VolumeHandler;
@@ -67,6 +67,15 @@ struct BsdfFlags : public yafaray4::Flags
 class Material
 {
 	public:
+		struct Specular
+		{
+			struct
+			{
+				bool enabled_ = false;
+				Vec3 dir_;
+				Rgb col_;
+			} reflect_, refract_;
+		};
 		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }
@@ -107,12 +116,8 @@ class Material
 		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return Rgb(0.0); }
 		/*! evaluate the specular components for given direction. Somewhat a specialization of sample(),
 			because neither sample values nor pdf values are necessary for this.
-			Typical use: recursive raytracing of integrators.
-			\param dir dir[0] returns reflected direction, dir[1] refracted direction
-			\param col col[0] returns reflected spectrum, dir[1] refracted spectrum */
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &reflect, bool &refract, Vec3 *const dir, Rgb *const col) const
-		{ reflect = false; refract = false; }
+			Typical use: recursive raytracing of integrators. */
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const { return {}; }
 
 		/*! get the overall reflectivity of the material (used to compute radiance map for example) */
 		virtual Rgb getReflectivity(const RenderData &render_data, const SurfacePoint &sp, BsdfFlags flags) const;
@@ -168,9 +173,7 @@ class Material
 
 		void applyWireFrame(float &value, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgb &col, float wire_frame_amount, const SurfacePoint &sp) const;
-		void applyWireFrame(Rgb *const col, float wire_frame_amount, const SurfacePoint &sp) const;
 		void applyWireFrame(Rgba &col, float wire_frame_amount, const SurfacePoint &sp) const;
-		void applyWireFrame(Rgba *const col, float wire_frame_amount, const SurfacePoint &sp) const;
 
 		void setSamplingFactor(const float &new_sampling_factor)
 		{

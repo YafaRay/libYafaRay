@@ -40,8 +40,7 @@ class GlassMaterial final : public NodeMaterial
 		virtual bool isTransparent() const { return fake_shadow_; }
 		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const;
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const;
 		virtual float getMatIor() const;
 		virtual Rgb getGlossyColor(const RenderData &render_data) const;
 		virtual Rgb getTransColor(const RenderData &render_data) const;
@@ -80,8 +79,7 @@ class MirrorMaterial final : public Material
 		virtual void initBsdf(const RenderData &render_data, SurfacePoint &sp, BsdfFlags &bsdf_types) const override { bsdf_types = bsdf_flags_; }
 		virtual Rgb eval(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, const Vec3 &wl, const BsdfFlags &bsdfs, bool force_eval = false) const override {return Rgb(0.0);}
 		virtual Rgb sample(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, Vec3 &wi, Sample &s, float &w) const override;
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo,
-								 bool &refl, bool &refr, Vec3 *const dir, Rgb *const col) const override;
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		Rgb ref_col_;
 		float ref_;
 };

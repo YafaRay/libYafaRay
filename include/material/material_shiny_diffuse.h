@@ -51,7 +51,7 @@ class ShinyDiffuseMaterial final : public NodeMaterial
 		virtual bool isTransparent() const override { return is_transparent_; }
 		virtual Rgb getTransparency(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual Rgb emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override; // { return emitCol; }
-		virtual void getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, bool &do_reflect, bool &do_refract, Vec3 *const dir, Rgb *const col) const override;
+		virtual Specular getSpecular(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual float getAlpha(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const override;
 		virtual Rgb getDiffuseColor(const RenderData &render_data) const override;
 		virtual Rgb getGlossyColor(const RenderData &render_data) const override;
