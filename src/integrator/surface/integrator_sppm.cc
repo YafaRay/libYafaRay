@@ -53,16 +53,6 @@ SppmIntegrator::SppmIntegrator(unsigned int d_photons, int passnum, bool transp_
 	s_depth_ = shadow_depth;
 	tr_shad_ = transp_shad;
 	b_hashgrid_ = false;
-
-	hal_1_.setBase(2);
-	hal_2_.setBase(3);
-	hal_3_.setBase(5);
-	hal_4_.setBase(7);
-
-	hal_1_.setStart(0);
-	hal_2_.setStart(0);
-	hal_3_.setStart(0);
-	hal_4_.setStart(0);
 }
 
 bool SppmIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)

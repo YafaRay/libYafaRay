@@ -72,10 +72,8 @@ Rgb MonteCarloIntegrator::estimateOneDirectLight(RenderData &render_data, const 
 
 	if(light_num == 0) return Rgb(0.f); //??? if you get this far the lights must be >= 1 but, what the hell... :)
 
-	Halton hal_2(2);
-
-	hal_2.setStart(scene_->getImageFilm()->getBaseSamplingOffset() + correlative_sample_number_[render_data.thread_id_] - 1); //Probably with this change the parameter "n" is no longer necessary, but I will keep it just in case I have to revert back this change!
-	int lnum = std::min((int)(hal_2.getNext() * (float)light_num), light_num - 1);
+	Halton hal_2(2,  scene_->getImageFilm()->getBaseSamplingOffset() + correlative_sample_number_[render_data.thread_id_] - 1); //Probably with this change the parameter "n" is no longer necessary, but I will keep it just in case I have to revert back this change!
+	const int lnum = std::min(static_cast<int>(hal_2.getNext() * static_cast<float>(light_num)), light_num - 1);
 
 	++correlative_sample_number_[render_data.thread_id_];
 
@@ -160,8 +158,6 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *ligh
 	}
 	else // area light and suchlike
 	{
-		Halton hal_2(2);
-		Halton hal_3(3);
 		int n = (int) ceilf(light->nSamples() * aa_light_sample_multiplier_);
 		if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
 		const float inv_ns = 1.f / (float)n;
@@ -170,8 +166,8 @@ Rgb MonteCarloIntegrator::doLightEstimation(RenderData &render_data, Light *ligh
 		Rgb ccol(0.0);
 		LSample ls;
 
-		hal_2.setStart(offs - 1);
-		hal_3.setStart(offs - 1);
+		Halton hal_2(2, offs - 1);
+		Halton hal_3(3, offs - 1);
 
 		Rgba col_shadow(0.f), col_shadow_obj_mask(0.f), col_shadow_mat_mask(0.f), col_diff_dir(0.f), col_diff_no_shadow(0.f), col_glossy_dir(0.f);
 
@@ -958,10 +954,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusion(RenderData &render_data, const 
 	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
 	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
-	Halton hal_2(2);
-	Halton hal_3(3);
-	hal_2.setStart(offs - 1);
-	hal_3.setStart(offs - 1);
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
 	for(int i = 0; i < n; ++i)
 	{
 		float s_1 = hal_2.getNext();
@@ -1004,10 +998,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data, c
 	int n = ao_samples_;//(int) ceilf(aoSamples*getSampleMultiplier());
 	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
 	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
-	Halton hal_2(2);
-	Halton hal_3(3);
-	hal_2.setStart(offs - 1);
-	hal_3.setStart(offs - 1);
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
 	for(int i = 0; i < n; ++i)
 	{
 		float s_1 = hal_2.getNext();
@@ -1049,10 +1041,8 @@ Rgb MonteCarloIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_dat
 	int n = ao_samples_;
 	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
 	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
-	Halton hal_2(2);
-	Halton hal_3(3);
-	hal_2.setStart(offs - 1);
-	hal_3.setStart(offs - 1);
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
 	for(int i = 0; i < n; ++i)
 	{
 		float s_1 = hal_2.getNext();

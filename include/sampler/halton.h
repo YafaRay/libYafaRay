@@ -21,67 +21,60 @@
 #define YAFARAY_HALTON_H
 
 BEGIN_YAFARAY
+
 // fast incremental Halton sequence generator
 // calculation of value must be double prec.
-class Halton
+class Halton final
 {
 	public:
-		Halton() = default;
-		Halton(int base)
-		{
-			setBase(base);
-		}
-
-		void setBase(int base)
-		{
-			base_ = base;
-			inv_base_ = 1.0 / (double) base;
-			value_ = 0;
-		}
-
-		void reset()
-		{
-			value_ = 0.0;
-		}
-
-		inline void setStart(unsigned int i)
-		{
-			double factor = inv_base_;
-			value_ = 0.0;
-			while(i > 0)
-			{
-				value_ += (double)(i % base_) * factor;
-				i /= base_;
-				factor *= inv_base_;
-			}
-		}
-
-		inline float getNext()
-		{
-			const double r = 0.9999999999 - value_;
-			if(inv_base_ < r)
-			{
-				value_ += inv_base_;
-			}
-			else
-			{
-				double hh = 0.0, h = inv_base_;
-				while(h >= r)
-				{
-					hh = h;
-					h *= inv_base_;
-				}
-
-				value_ += hh + h - 1.0;
-			}
-			return std::max(0.f, std::min(1.f, (float)value_));
-		}
+		Halton(int base) { setBase(base); }
+		Halton(int base, unsigned int start) : Halton(base) { setStart(start); }
+		void setStart(unsigned int start);
+		void reset() { value_ = 0.0; }
+		float getNext();
 
 	private:
+		void setBase(int base);
 		unsigned int base_;
 		double inv_base_;
 		double value_;
 };
+
+inline void Halton::setBase(int base)
+{
+	base_ = base;
+	inv_base_ = 1.0 / static_cast<double>(base);
+	value_ = 0.0;
+}
+
+inline void Halton::setStart(unsigned int start)
+{
+	double factor = inv_base_;
+	value_ = 0.0;
+	while(start > 0)
+	{
+		value_ += static_cast<double>(start % base_) * factor;
+		start /= base_;
+		factor *= inv_base_;
+	}
+}
+
+inline float Halton::getNext()
+{
+	const double r = 0.9999999999 - value_;
+	if(inv_base_ < r) value_ += inv_base_;
+	else
+	{
+		double hh = 0.0, h = inv_base_;
+		while(h >= r)
+		{
+			hh = h;
+			h *= inv_base_;
+		}
+		value_ += hh + h - 1.0;
+	}
+	return std::max(0.f, std::min(1.f, static_cast<float>(value_)));
+}
 
 END_YAFARAY
 

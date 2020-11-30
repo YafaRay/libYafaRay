@@ -993,11 +993,8 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionLayer(RenderData &render_data
 
 	unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
 
-	Halton hal_2(2);
-	Halton hal_3(3);
-
-	hal_2.setStart(offs - 1);
-	hal_3.setStart(offs - 1);
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
 
 	for(int i = 0; i < n; ++i)
 	{
@@ -1048,13 +1045,9 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 	int n = ao_samples_;
 	if(render_data.ray_division_ > 1) n = std::max(1, n / render_data.ray_division_);
 
-	unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
-
-	Halton hal_2(2);
-	Halton hal_3(3);
-
-	hal_2.setStart(offs - 1);
-	hal_3.setStart(offs - 1);
+	const unsigned int offs = n * render_data.pixel_sample_ + render_data.sampling_offs_;
+	Halton hal_2(2, offs - 1);
+	Halton hal_3(3, offs - 1);
 
 	for(int i = 0; i < n; ++i)
 	{
