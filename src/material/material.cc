@@ -29,7 +29,7 @@
 #include "geometry/surface.h"
 #include "common/param.h"
 #include "sampler/sample.h"
-#include "sampler/halton_scr.h"
+#include "sampler/halton.h"
 #include "common/logger.h"
 
 BEGIN_YAFARAY
@@ -158,8 +158,8 @@ Rgb Material::getReflectivity(const RenderData &render_data, const SurfacePoint 
 	{
 		const float s_1 = 0.03125f + 0.0625f * static_cast<float>(i); // (1.f/32.f) + (1.f/16.f)*(float)i;
 		const float s_2 = sample::riVdC(i);
-		const float s_3 = scrHalton__(2, i);
-		const float s_4 = scrHalton__(3, i);
+		const float s_3 = Halton::lowDiscrepancySampling(2, i);
+		const float s_4 = Halton::lowDiscrepancySampling(3, i);
 		const Vec3 wo = sample::cosHemisphere(sp.n_, sp.nu_, sp.nv_, s_1, s_2);
 		Vec3 wi;
 		Sample s(s_3, s_4, flags);

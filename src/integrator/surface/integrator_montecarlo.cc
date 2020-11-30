@@ -28,7 +28,6 @@
 #include "volume/volume.h"
 #include "common/session.h"
 #include "light/light.h"
-#include "sampler/halton_scr.h"
 #include "color/spectrum.h"
 #include "sampler/halton.h"
 #include "render/imagefilm.h"
@@ -403,9 +402,9 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 		render_data.wavelength_ = sample::riS(haltoncurr);
 
 		s_1 = sample::riVdC(haltoncurr);
-		s_2 = scrHalton__(2, haltoncurr);
-		s_3 = scrHalton__(3, haltoncurr);
-		s_4 = scrHalton__(4, haltoncurr);
+		s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
+		s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
+		s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 
 		s_l = float(haltoncurr) / float(n_caus_photons);
 
@@ -474,9 +473,9 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 			const int d_5 = 3 * n_bounces + 5;
 			//int d6 = d5 + 1;
 
-			s_5 = scrHalton__(d_5, haltoncurr);
-			s_6 = scrHalton__(d_5 + 1, haltoncurr);
-			s_7 = scrHalton__(d_5 + 2, haltoncurr);
+			s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
+			s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
+			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			bool scattered = material->scatterPhoton(render_data, *hit, wi, wo, sample);
@@ -713,8 +712,8 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 			for(int ns = 0; ns < dsam; ++ns)
 			{
 				render_data.wavelength_ = (ns + ss_1) * d_1;
-				render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-				render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+				render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+				render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
 				if(old_division > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, old_dc_1);
 				render_data.ray_offset_ = branch;
 				++branch;
@@ -781,8 +780,8 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 
 			for(int ns = 0; ns < gsam; ++ns)
 			{
-				render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-				render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+				render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+				render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
 				render_data.ray_offset_ = branch;
 				++offs;
 				++branch;

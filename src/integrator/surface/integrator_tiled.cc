@@ -31,7 +31,7 @@
 #include "geometry/surface.h"
 #include "scene/yafaray/object_yafaray.h"
 #include "common/timer.h"
-#include "sampler/halton_scr.h"
+#include "sampler/halton.h"
 #include "render/imagefilm.h"
 #include "camera/camera.h"
 #include "scene/scene.h"
@@ -347,7 +347,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 
 			rstate.pixel_number_ = x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			float toff = scrHalton__(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
+			float toff = Halton::lowDiscrepancySampling(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
 
 			hal_u.setStart(pass_offs + rstate.sampling_offs_);
 			hal_v.setStart(pass_offs + rstate.sampling_offs_);

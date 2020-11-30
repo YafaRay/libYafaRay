@@ -29,7 +29,7 @@
 #include "material/material.h"
 #include "background/background.h"
 #include "volume/volume.h"
-#include "sampler/halton_scr.h"
+#include "sampler/halton.h"
 #include "common/logger.h"
 #include "render/render_data.h"
 #include "render/imagesplitter.h"
@@ -210,7 +210,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				if(was_chromatic) render_data.wavelength_ = sample::riS(offs);
 				//this mat already is initialized, just sample (diffuse...non-specular?)
 				float s_1 = sample::riVdC(offs);
-				float s_2 = scrHalton__(2, offs);
+				float s_2 = Halton::lowDiscrepancySampling(2, offs);
 				if(render_data.ray_division_ > 1)
 				{
 					s_1 = math::addMod1(s_1, render_data.dc_1_);
@@ -253,8 +253,8 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 				for(int depth = 1; depth < max_bounces_; ++depth)
 				{
 					int d_4 = 4 * depth;
-					s.s_1_ = scrHalton__(d_4 + 3, offs); //ourRandom();//
-					s.s_2_ = scrHalton__(d_4 + 4, offs); //ourRandom();//
+					s.s_1_ = Halton::lowDiscrepancySampling(d_4 + 3, offs); //ourRandom();//
+					s.s_2_ = Halton::lowDiscrepancySampling(d_4 + 4, offs); //ourRandom();//
 
 					if(render_data.ray_division_ > 1)
 					{

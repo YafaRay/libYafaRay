@@ -27,7 +27,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "render/monitor.h"
-#include "sampler/halton_scr.h"
+#include "sampler/halton.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
@@ -140,9 +140,9 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 		unsigned int haltoncurr = curr + n_diffuse_photons_thread * thread_id;
 
 		s_1 = sample::riVdC(haltoncurr);
-		s_2 = scrHalton__(2, haltoncurr);
-		s_3 = scrHalton__(3, haltoncurr);
-		s_4 = scrHalton__(4, haltoncurr);
+		s_2 = Halton::lowDiscrepancySampling(2, haltoncurr);
+		s_3 = Halton::lowDiscrepancySampling(3, haltoncurr);
+		s_4 = Halton::lowDiscrepancySampling(4, haltoncurr);
 
 		s_l = float(haltoncurr) * inv_diff_photons;
 		int light_num = light_power_d->dSample(s_l, &light_num_pdf);
@@ -222,9 +222,9 @@ void PhotonIntegrator::diffuseWorker(PhotonMap *diffuse_map, int thread_id, cons
 			// scatter photon
 			int d_5 = 3 * n_bounces + 5;
 
-			s_5 = scrHalton__(d_5, haltoncurr);
-			s_6 = scrHalton__(d_5 + 1, haltoncurr);
-			s_7 = scrHalton__(d_5 + 2, haltoncurr);
+			s_5 = Halton::lowDiscrepancySampling(d_5, haltoncurr);
+			s_6 = Halton::lowDiscrepancySampling(d_5 + 1, haltoncurr);
+			s_7 = Halton::lowDiscrepancySampling(d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
@@ -742,7 +742,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 		Rgb lcol, scol;
 		// "zero'th" FG bounce:
 		float s_1 = sample::riVdC(offs);
-		float s_2 = scrHalton__(2, offs);
+		float s_2 = Halton::lowDiscrepancySampling(2, offs);
 		if(render_data.ray_division_ > 1)
 		{
 			s_1 = math::addMod1(s_1, render_data.dc_1_);
@@ -802,8 +802,8 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 				}
 			}
 
-			s_1 = scrHalton__(d_4 + 3, offs);
-			s_2 = scrHalton__(d_4 + 4, offs);
+			s_1 = Halton::lowDiscrepancySampling(d_4 + 3, offs);
+			s_2 = Halton::lowDiscrepancySampling(d_4 + 4, offs);
 
 			if(render_data.ray_division_ > 1)
 			{

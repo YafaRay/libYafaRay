@@ -20,6 +20,9 @@
 #ifndef YAFARAY_HALTON_H
 #define YAFARAY_HALTON_H
 
+#include "constants.h"
+#include <algorithm>
+
 BEGIN_YAFARAY
 
 // fast incremental Halton sequence generator
@@ -32,6 +35,7 @@ class Halton final
 		void setStart(unsigned int start);
 		void reset() { value_ = 0.0; }
 		float getNext();
+		static double lowDiscrepancySampling(int dim, unsigned int n);
 
 	private:
 		void setBase(int base);

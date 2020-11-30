@@ -29,7 +29,6 @@
 #include "common/timer.h"
 #include "render/imagefilm.h"
 #include "camera/camera.h"
-#include "sampler/halton_scr.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
 #include "light/light.h"
@@ -220,7 +219,7 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 
 			rstate.pixel_number_ = x * i + j;
 			rstate.sampling_offs_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			float toff = scrHalton__(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
+			float toff = Halton::lowDiscrepancySampling(5, pass_offs + rstate.sampling_offs_); // **shall be just the pass number...**
 
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
@@ -235,8 +234,8 @@ bool SppmIntegrator::renderTile(RenderArea &a, const RenderView *render_view, co
 
 				if(sample_lns)
 				{
-					lens_u = scrHalton__(3, rstate.pixel_sample_ + rstate.sampling_offs_);
-					lens_v = scrHalton__(4, rstate.pixel_sample_ + rstate.sampling_offs_);
+					lens_u = Halton::lowDiscrepancySampling(3, rstate.pixel_sample_ + rstate.sampling_offs_);
+					lens_v = Halton::lowDiscrepancySampling(4, rstate.pixel_sample_ + rstate.sampling_offs_);
 				}
 				c_ray = camera->shootRay(j + dx, i + dy, lens_u, lens_v, wt); // wt need to be considered
 				if(wt == 0.0)
@@ -388,7 +387,7 @@ void SppmIntegrator::photonWorker(PhotonMap *diffuse_map, PhotonMap *caustic_map
 		unsigned int haltoncurr = curr + n_photons_thread * thread_id;
 
 		render_data.chromatic_ = true;
-		render_data.wavelength_ = scrHalton__(5, haltoncurr);
+		render_data.wavelength_ = Halton::lowDiscrepancySampling(5, haltoncurr);
 
 		// Tried LD, get bad and strange results for some stategy.
 		{
@@ -874,8 +873,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 				for(int ns = 0; ns < dsam; ++ns)
 				{
 					render_data.wavelength_ = (ns + ss_1) * d_1;
-					render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-					render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+					render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+					render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
 					if(old_division > 1) render_data.wavelength_ = math::addMod1(render_data.wavelength_, old_dc_1);
 					render_data.ray_offset_ = branch;
 					++branch;
@@ -956,8 +955,8 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 
 				for(int ns = 0; ns < gsam; ++ns)
 				{
-					render_data.dc_1_ = scrHalton__(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
-					render_data.dc_2_ = scrHalton__(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
+					render_data.dc_1_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 1, branch + render_data.sampling_offs_);
+					render_data.dc_2_ = Halton::lowDiscrepancySampling(2 * render_data.raylevel_ + 2, branch + render_data.sampling_offs_);
 					render_data.ray_offset_ = branch;
 					++offs;
 					++branch;
