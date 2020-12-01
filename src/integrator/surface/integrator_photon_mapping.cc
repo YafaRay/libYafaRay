@@ -874,7 +874,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	SurfacePoint sp;
 
 	void *o_udat = render_data.arena_;
-	bool old_include_lights = render_data.include_lights_;
+	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
@@ -887,7 +887,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 		if(render_data.raylevel_ == 0)
 		{
 			render_data.chromatic_ = true;
-			render_data.include_lights_ = true;
+			render_data.lights_geometry_material_emit_ = true;
 		}
 		BsdfFlags bsdfs;
 
@@ -904,7 +904,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
 
-		render_data.include_lights_ = false;
+		render_data.lights_geometry_material_emit_ = false;
 
 		if(use_photon_diffuse_ && final_gather_)
 		{
@@ -1062,7 +1062,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	}
 
 	render_data.arena_ = o_udat;
-	render_data.include_lights_ = old_include_lights;
+	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
 	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);

@@ -103,7 +103,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	float alpha;
 	SurfacePoint sp;
 	void *o_udat = render_data.arena_;
-	bool old_include_lights = render_data.include_lights_;
+	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
@@ -119,7 +119,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 		BsdfFlags bsdfs;
 
 		const Vec3 wo = -ray.dir_;
-		if(render_data.raylevel_ == 0) render_data.include_lights_ = true;
+		if(render_data.raylevel_ == 0) render_data.lights_geometry_material_emit_ = true;
 
 		material->initBsdf(render_data, sp, bsdfs);
 
@@ -192,7 +192,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	}
 
 	render_data.arena_ = o_udat;
-	render_data.include_lights_ = old_include_lights;
+	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgb col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
 	Rgb col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);

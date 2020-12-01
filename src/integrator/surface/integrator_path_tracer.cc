@@ -136,7 +136,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 		// if camera ray initialize sampling offset:
 		if(render_data.raylevel_ == 0)
 		{
-			render_data.include_lights_ = true;
+			render_data.lights_geometry_material_emit_ = true;
 			//...
 		}
 		alignas (16) unsigned char userdata[user_data_size_];
@@ -222,7 +222,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 				scol *= w;
 				throughput = scol;
-				render_data.include_lights_ = false;
+				render_data.lights_geometry_material_emit_ = false;
 
 				p_ray.tmin_ = scene_->ray_min_dist_;
 				p_ray.tmax_ = -1.0;
@@ -271,7 +271,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 
 					throughput *= scol;
 					caustic = trace_caustics_ && s.sampled_flags_.hasAny(BsdfFlags::Specular | BsdfFlags::Glossy | BsdfFlags::Filter);
-					render_data.include_lights_ = caustic;
+					render_data.lights_geometry_material_emit_ = caustic;
 
 					p_ray.tmin_ = scene_->ray_min_dist_;
 					p_ray.tmax_ = -1.0;

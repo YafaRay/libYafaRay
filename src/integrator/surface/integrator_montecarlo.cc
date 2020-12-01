@@ -695,7 +695,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 		// dispersive effects with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 		{
-			render_data.include_lights_ = false; //debatable...
+			render_data.lights_geometry_material_emit_ = false; //debatable...
 			int dsam = 8;
 			const int old_division = render_data.ray_division_;
 			const int old_offset = render_data.ray_offset_;
@@ -759,7 +759,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 		// glossy reflection with recursive raytracing:
 		if(bsdfs.hasAny(BsdfFlags::Glossy) && render_data.raylevel_ < 20)
 		{
-			render_data.include_lights_ = true;
+			render_data.lights_geometry_material_emit_ = true;
 			int gsam = 8;
 			const int old_division = render_data.ray_division_;
 			const int old_offset = render_data.ray_offset_;
@@ -888,7 +888,7 @@ void MonteCarloIntegrator::recursiveRaytrace(RenderData &render_data, const Diff
 		//...perfect specular reflection/refraction with recursive raytracing...
 		if(bsdfs.hasAny((BsdfFlags::Specular | BsdfFlags::Filter)) && render_data.raylevel_ < 20)
 		{
-			render_data.include_lights_ = true;
+			render_data.lights_geometry_material_emit_ = true;
 			const Material::Specular specular = material->getSpecular(render_data, sp, wo);
 			if(specular.reflect_.enabled_)
 			{

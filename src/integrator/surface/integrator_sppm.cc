@@ -704,7 +704,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 	SurfacePoint sp;
 
 	void *o_udat = render_data.arena_;
-	bool old_include_lights = render_data.include_lights_;
+	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 
 	if(transp_background_) alpha = 0.0;
 	else alpha = 1.0;
@@ -716,7 +716,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 		if(render_data.raylevel_ == 0)
 		{
 			render_data.chromatic_ = true;
-			render_data.include_lights_ = true;
+			render_data.lights_geometry_material_emit_ = true;
 		}
 
 		BsdfFlags bsdfs;
@@ -734,7 +734,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 		{
 			if(ColorLayer *color_layer = color_layers->find(Layer::Emit)) color_layer->color_ += col_emit;
 		}
-		render_data.include_lights_ = false;
+		render_data.lights_geometry_material_emit_ = false;
 		SpDifferentials sp_diff(sp, ray);
 
 		if(bsdfs.hasAny(BsdfFlags::Diffuse))
@@ -852,7 +852,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			// dispersive effects with recursive raytracing:
 			if(bsdfs.hasAny(BsdfFlags::Dispersive) && render_data.chromatic_)
 			{
-				render_data.include_lights_ = false; //debatable...
+				render_data.lights_geometry_material_emit_ = false; //debatable...
 				int dsam = 8;
 				int old_division = render_data.ray_division_;
 				int old_offset = render_data.ray_offset_;
@@ -929,7 +929,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 
 			if(bsdfs.hasAny(BsdfFlags::Glossy))
 			{
-				render_data.include_lights_ = false;
+				render_data.lights_geometry_material_emit_ = false;
 				int gsam = 8;
 				int old_division = render_data.ray_division_;
 				int old_offset = render_data.ray_offset_;
@@ -1109,7 +1109,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			//...perfect specular reflection/refraction with recursive raytracing...
 			if(bsdfs.hasAny(BsdfFlags::Specular | BsdfFlags::Filter))
 			{
-				render_data.include_lights_ = true;
+				render_data.lights_geometry_material_emit_ = true;
 				const Material::Specular specular = material->getSpecular(render_data, sp, wo);
 				if(specular.reflect_.enabled_)
 				{
@@ -1201,7 +1201,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 	}
 
 	render_data.arena_ = o_udat;
-	render_data.include_lights_ = old_include_lights;
+	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 
 	Rgba col_vol_transmittance = scene_->vol_integrator_->transmittance(render_data, ray);
 	Rgba col_vol_integration = scene_->vol_integrator_->integrate(render_data, ray);

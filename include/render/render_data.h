@@ -53,7 +53,7 @@ class RenderData final
 		int thread_id_ = 0; //!< identify the current render thread; shall range from 0 to scene_t::getNumThreads() - 1
 		unsigned int sampling_offs_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
 		bool chromatic_ = true; //!< indicates wether the full spectrum is calculated (true) or only a single wavelength (false).
-		bool include_lights_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
+		bool lights_geometry_material_emit_ = false; //!< indicate that emission of materials assiciated to lights shall be included, for correctly visible lights etc.
 		float wavelength_ = 0.f; //!< the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.
 		float time_ = 0.f; //!< the current (normalized) frame time
 		const Camera *cam_ = nullptr;

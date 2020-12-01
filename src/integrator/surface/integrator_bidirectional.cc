@@ -263,7 +263,7 @@ Rgba BidirectionalIntegrator::integrate(RenderData &render_data, const DiffRay &
 	{
 		Vec3 wo = -ray.dir_;
 		static int dbg = 0;
-		render_data.include_lights_ = true;
+		render_data.lights_geometry_material_emit_ = true;
 		PathData &path_data = thread_data_[render_data.thread_id_];
 		++path_data.n_paths_;
 		Random &prng = *(render_data.prng_);

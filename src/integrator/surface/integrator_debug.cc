@@ -71,7 +71,7 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	Rgb col(0.0);
 	SurfacePoint sp;
 	void *o_udat = render_data.arena_;
-	bool old_include_lights = render_data.include_lights_;
+	const bool old_lights_geometry_material_emit = render_data.lights_geometry_material_emit_;
 	//shoot ray into scene
 	if(scene_->intersect(ray, sp))
 	{
@@ -102,7 +102,7 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 
 	}
 	render_data.arena_ = o_udat;
-	render_data.include_lights_ = old_include_lights;
+	render_data.lights_geometry_material_emit_ = old_lights_geometry_material_emit;
 	return Rgba(col, 1.f);
 }
 

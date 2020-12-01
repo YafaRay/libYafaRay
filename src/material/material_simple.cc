@@ -46,7 +46,7 @@ Rgb LightMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 
 Rgb LightMaterial::emit(const RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!render_data.include_lights_) return Rgb(0.f);
+	if(!render_data.lights_geometry_material_emit_) return Rgb(0.f);
 	if(double_sided_) return light_col_;
 
 	const float angle = wo * sp.n_;
