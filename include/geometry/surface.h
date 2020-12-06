@@ -25,8 +25,8 @@
 
 #include "constants.h"
 #include "geometry/vector.h"
+#include "geometry/intersect_data.h"
 #include "color/color.h"
-
 
 BEGIN_YAFARAY
 class Material;
@@ -35,14 +35,7 @@ class Object;
 class DiffRay;
 class Vec3;
 class Primitive;
-
-struct IntersectData
-{
-	float barycentric_u_ = 0.f;
-	float barycentric_v_ = 0.f;
-	float barycentric_w_ = 0.f;
-	float time_ = 0.f;
-};
+struct IntersectData;
 
 /*! This holds a sampled surface point's data
 	When a ray intersects an object, a surfacePoint_t is computed.
@@ -61,8 +54,8 @@ class SurfacePoint
 		const Light *light_; //!< light source if surface point is on a light
 		const Object *object_; //!< object the prim belongs to
 		//	point2d_t screenpos; // only used with 'win' texture coord. mode
-		const Primitive *origin_;
-		IntersectData data_;
+		const Primitive *hit_primitive_;
+		IntersectData intersect_data_;
 
 		// Geometry related
 		Vec3 n_; //!< the shading normal.
@@ -97,11 +90,11 @@ class SurfacePoint
 
 inline float SurfacePoint::getDistToNearestEdge() const
 {
-	const float u_dist_rel = 0.5f - std::abs(data_.barycentric_u_ - 0.5f);
+	const float u_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_u_ - 0.5f);
 	const float u_dist_abs = u_dist_rel * dp_du_abs_.length();
-	const float v_dist_rel = 0.5f - std::abs(data_.barycentric_v_ - 0.5f);
+	const float v_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_v_ - 0.5f);
 	const float v_dist_abs = v_dist_rel * dp_dv_abs_.length();
-	const float w_dist_rel = 0.5f - std::abs(data_.barycentric_w_ - 0.5f);
+	const float w_dist_rel = 0.5f - std::abs(intersect_data_.barycentric_w_ - 0.5f);
 	const float w_dist_abs = w_dist_rel * (dp_dv_abs_ - dp_du_abs_).length();
 	return math::min(u_dist_abs, v_dist_abs, w_dist_abs);
 }

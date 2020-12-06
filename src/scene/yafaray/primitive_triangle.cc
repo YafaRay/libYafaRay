@@ -36,13 +36,13 @@ TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, c
 	calculateGeometricNormal();
 }
 
-bool TrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const
+IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
 	const std::vector<Point3> vertices = getVertices(obj_to_world);
-	return TrianglePrimitive::intersect(ray, t, data, {vertices[0], vertices[1], vertices[2]});
+	return TrianglePrimitive::intersect(ray, {vertices[0], vertices[1], vertices[2]});
 }
 
-bool TrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const std::array<Point3, 3> &vertices)
+IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Point3, 3> &vertices)
 {
 	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const Vec3 edge_1 = vertices[1] - vertices[0];
@@ -50,22 +50,25 @@ bool TrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data,
 	const float epsilon = 0.1f * min_raydist__ * std::max(edge_1.length(), edge_2.length());
 	const Vec3 pvec = ray.dir_ ^ edge_2;
 	const float det = edge_1 * pvec;
-	if(det > -epsilon && det < epsilon) return false;
+	if(det > -epsilon && det < epsilon) return {};
 	const float inv_det = 1.f / det;
 	const Vec3 tvec = ray.from_ - vertices[0];
 	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.f || u > 1.f) return false;
+	if(u < 0.f || u > 1.f) return {};
 	const Vec3 qvec = tvec ^ edge_1;
 	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.f) || ((u + v) > 1.f)) return false;
-	t = edge_2 * qvec * inv_det;
-	if(t < epsilon) return false;
+	if((v < 0.f) || ((u + v) > 1.f)) return {};
+	const float t = edge_2 * qvec * inv_det;
+	if(t < epsilon) return {};
+	IntersectData intersect_data;
+	intersect_data.hit_ = true;
+	intersect_data.t_hit_ = t;
 	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	data.barycentric_u_ = 1.f - u - v;
-	data.barycentric_v_ = u;
-	data.barycentric_w_ = v;
-	data.time_ = ray.time_;
-	return true;
+	intersect_data.barycentric_u_ = 1.f - u - v;
+	intersect_data.barycentric_v_ = u;
+	intersect_data.barycentric_w_ = v;
+	intersect_data.time_ = ray.time_;
+	return intersect_data;
 }
 
 bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const
@@ -98,12 +101,15 @@ Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
 	return ((vertices[1] - vertices[0]) ^ (vertices[2] - vertices[0])).normalize();
 }
 
-void TrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const
+SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const
 {
+	SurfacePoint sp;
+	sp.intersect_data_ = intersect_data;
 	sp.ng_ = getGeometricNormal(obj_to_world);
-	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
+	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
+	const MeshObject *base_mesh_object = static_cast<const MeshObject *>(base_object_);
 
-	if(static_cast<const MeshObject *>(base_object_)->isSmooth() || static_cast<const MeshObject *>(base_object_)->hasNormalsExported())
+	if(base_mesh_object->isSmooth() || base_mesh_object->hasNormalsExported())
 	{
 		const std::vector<Vec3> v = getVerticesNormals(sp.ng_, obj_to_world);
 		sp.n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
@@ -111,7 +117,7 @@ void TrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, Intersec
 	}
 	else sp.n_ = sp.ng_;
 
-	if(static_cast<const MeshObject *>(base_object_)->hasOrco())
+	if(base_mesh_object->hasOrco())
 	{
 		const std::vector<Point3> orco_p = getOrcoVertices();
 		sp.orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
@@ -120,14 +126,14 @@ void TrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, Intersec
 	}
 	else
 	{
-		sp.orco_p_ = hit;
+		sp.orco_p_ = hit_point;
 		sp.has_orco_ = false;
 		sp.orco_ng_ = getGeometricNormal();
 	}
 
 	bool implicit_uv = true;
 	const std::vector<Point3> p = getVertices(obj_to_world);
-	if(static_cast<const MeshObject *>(base_object_)->hasUv())
+	if(base_mesh_object->hasUv())
 	{
 		const std::vector<Uv> &uv = getVerticesUvs();
 		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
@@ -168,13 +174,14 @@ void TrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, Intersec
 	sp.dp_dv_.normalize();
 
 	sp.object_ = base_object_;
-	sp.light_ = static_cast<const MeshObject *>(base_object_)->getLight();
-	sp.has_uv_ = static_cast<const MeshObject *>(base_object_)->hasUv();
+	sp.light_ = base_mesh_object->getLight();
+	sp.has_uv_ = base_mesh_object->hasUv();
 	sp.prim_num_ = getSelfIndex();
 	sp.material_ = getMaterial();
-	sp.p_ = hit;
+	sp.p_ = hit_point;
 	Vec3::createCs(sp.n_, sp.nu_, sp.nv_);
 	calculateShadingSpace(sp);
+	return sp;
 }
 
 void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const

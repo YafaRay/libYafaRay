@@ -686,11 +686,11 @@ template<class T>
 bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const
 {
 	z = dist;
+	IntersectData current_intersection_data;
 
 	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist)) { return false; }
 
-	IntersectData current_data, temp_data;
 	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 	//	int rayId = curMailboxId++;
 	bool hit = false;
@@ -777,10 +777,10 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 		if(n_primitives == 1)
 		{
 			const T *mp = curr_node->one_primitive_;
-			float t_hit;
-			if(mp->intersect(ray, t_hit, temp_data, nullptr))
+			const IntersectData intersect_data = mp->intersect(ray);
+			if(intersect_data.hit_)
 			{
-				if(t_hit < z && t_hit >= ray.tmin_)
+				if(intersect_data.t_hit_ < z && intersect_data.t_hit_ >= ray.tmin_)
 				{
 					bool check_instersection = false;
 					Visibility visibility = mp->getVisibility();
@@ -792,9 +792,9 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 					}
 					if(check_instersection)
 					{
-						z = t_hit;
+						z = intersect_data.t_hit_;
 						*tr = mp;
-						current_data = temp_data;
+						current_intersection_data = intersect_data;
 						hit = true;
 					}
 				}
@@ -806,10 +806,10 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
-				float t_hit;
-				if(mp->intersect(ray, t_hit, temp_data, nullptr))
+				const IntersectData intersect_data = mp->intersect(ray);
+				if(intersect_data.hit_)
 				{
-					if(t_hit < z && t_hit >= ray.tmin_)
+					if(intersect_data.t_hit_ < z && intersect_data.t_hit_ >= ray.tmin_)
 					{
 						bool check_instersection = false;
 						Visibility visibility = mp->getVisibility();
@@ -821,9 +821,9 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 						}
 						if(check_instersection)
 						{
-							z = t_hit;
+							z = intersect_data.t_hit_;
 							*tr = mp;
-							current_data = temp_data;
+							current_intersection_data = intersect_data;
 							hit = true;
 						}
 					}
@@ -833,7 +833,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 
 		if(hit && z <= stack[ex_pt].t_)
 		{
-			data = current_data;
+			data = current_intersection_data;
 			return true;
 		}
 
@@ -841,7 +841,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
 	} // while
-	data = current_data;
+	data = current_intersection_data;
 	return hit;
 }
 
@@ -936,10 +936,10 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 		if(n_primitives == 1)
 		{
 			const T *mp = curr_node->one_primitive_;
-			float t_hit;
-			if(mp->intersect(ray, t_hit, bary, nullptr))
+			const IntersectData intersect_data = mp->intersect(ray);
+			if(intersect_data.hit_)
 			{
-				if(t_hit < dist && t_hit >= 0.f)  // '>=' ?
+				if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= 0.f)  // '>=' ?
 				{
 					bool check_instersection = false;
 					Visibility visibility = mp->getVisibility();
@@ -963,10 +963,10 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
-				float t_hit;
-				if(mp->intersect(ray, t_hit, bary, nullptr))
+				const IntersectData intersect_data = mp->intersect(ray);
+				if(intersect_data.hit_)
 				{
-					if(t_hit < dist && t_hit >= 0.f)
+					if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= 0.f)
 					{
 						const Material *mat = mp->getMaterial();
 						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
@@ -995,8 +995,6 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 	float a, b; // entry/exit
 	if(!tree_bound_.cross(ray, a, b, dist))
 		return false;
-
-	IntersectData bary;
 
 	//To avoid division by zero
 	float inv_dir_x, inv_dir_y, inv_dir_z;
@@ -1098,22 +1096,21 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 		if(n_primitives == 1)
 		{
 			const T *mp = curr_node->one_primitive_;
-			float t_hit;
-			if(mp->intersect(ray, t_hit, bary, nullptr))
+			const IntersectData intersect_data = mp->intersect(ray);
+			if(intersect_data.hit_)
 			{
-				if(t_hit < dist && t_hit >= ray.tmin_)  // '>=' ?
+				if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= ray.tmin_)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
-					if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly) // '>=' ?
+					if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 					{
 						*tr = mp;
 						if(!mat->isTransparent()) return true;
 						if(filtered.insert(mp).second)
 						{
 							if(depth >= max_depth) return true;
-							const Point3 h = ray.from_ + t_hit * ray.dir_;
-							SurfacePoint sp;
-							mp->getSurface(sp, h, bary, nullptr);
+							const Point3 hit_point = ray.from_ + intersect_data.t_hit_ * ray.dir_;
+							const SurfacePoint sp = mp->getSurface(hit_point, intersect_data);
 							filt *= mat->getTransparency(render_data, sp, ray.dir_);
 							++depth;
 						}
@@ -1127,10 +1124,10 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 			for(uint32_t i = 0; i < n_primitives; ++i)
 			{
 				T *mp = prims[i];
-				float t_hit;
-				if(mp->intersect(ray, t_hit, bary, nullptr))
+				const IntersectData intersect_data = mp->intersect(ray);
+				if(intersect_data.hit_)
 				{
-					if(t_hit < dist && t_hit >= ray.tmin_)
+					if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
 						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
@@ -1140,9 +1137,8 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 							if(filtered.insert(mp).second)
 							{
 								if(depth >= max_depth) return true;
-								const Point3 h = ray.from_ + t_hit * ray.dir_;
-								SurfacePoint sp;
-								mp->getSurface(sp, h, bary, nullptr);
+								const Point3 hit_point = ray.from_ + intersect_data.t_hit_ * ray.dir_;
+								const SurfacePoint sp  = mp->getSurface(hit_point, intersect_data);
 								filt *= mat->getTransparency(render_data, sp, ray.dir_);
 								++depth;
 							}

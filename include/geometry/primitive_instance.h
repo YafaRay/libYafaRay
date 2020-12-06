@@ -44,8 +44,8 @@ class PrimitiveInstance : public Primitive
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		virtual bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
 		virtual bool clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *) const override;
-		virtual bool intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *) const override;
-		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *) const override;
+		virtual IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
+		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *) const override;
 		virtual const Material *getMaterial() const override { return base_primitive_->getMaterial(); }
 		virtual float surfaceArea(const Matrix4 *) const override;
 		virtual Vec3 getGeometricNormal(const Matrix4 *, float u, float v) const override;

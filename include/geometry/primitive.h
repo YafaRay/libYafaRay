@@ -59,9 +59,9 @@ class Primitive
 			The caller decides wether t matters or not.
 			\return false if ray misses primitive, true otherwise
 			\param t set this to raydepth where hit occurs */
-		virtual bool intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const { return false; }
+		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world = nullptr) const;
 		/* fill in surfacePoint_t */
-		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const { }
+		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world = nullptr) const;
 		/* return the material */
 		virtual const Material *getMaterial() const { return nullptr; }
 		/* calculate surface area */

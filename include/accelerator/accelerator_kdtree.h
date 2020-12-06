@@ -28,7 +28,7 @@
 BEGIN_YAFARAY
 
 class RenderData;
-class IntersectData;
+struct IntersectData;
 
 // ============================================================
 /*! kd-tree nodes, kept as small as possible

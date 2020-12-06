@@ -17,25 +17,23 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H
-#define YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H
+#ifndef YAFARAY_INTERSECT_DATA_H
+#define YAFARAY_INTERSECT_DATA_H
 
-#include "primitive_face.h"
+#include "constants.h"
 
 BEGIN_YAFARAY
 
-class MeshObject;
-
-/*! a triangle supporting time based deformation described by a quadratic bezier spline */
-class BsTrianglePrimitive: public FacePrimitive
+struct IntersectData
 {
-	public:
-		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object);
-		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
-		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
-		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;
+	bool hit_ = false;
+	float t_hit_;
+	float barycentric_u_;
+	float barycentric_v_;
+	float barycentric_w_;
+	float time_;
 };
 
 END_YAFARAY
 
-#endif //YAFARAY_PRIMITIVE_TRIANGLE_BSPLINE_H
+#endif //YAFARAY_INTERSECT_DATA_H

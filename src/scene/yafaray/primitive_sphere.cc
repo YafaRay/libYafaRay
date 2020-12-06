@@ -50,14 +50,14 @@ Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const
 	return Bound(center_ - r, center_ + r);
 }
 
-bool SpherePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const
+IntersectData SpherePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
 	const Vec3 vf = ray.from_ - center_;
 	const float ea = ray.dir_ * ray.dir_;
 	const float eb = 2.0 * (vf * ray.dir_);
 	const float ec = vf * vf - radius_ * radius_;
 	float osc = eb * eb - 4.0 * ea * ec;
-	if(osc < 0) return false;
+	if(osc < 0) return {};
 	osc = math::sqrt(osc);
 	const float sol_1 = (-eb - osc) / (2.0 * ea);
 	const float sol_2 = (-eb + osc) / (2.0 * ea);
@@ -65,15 +65,19 @@ bool SpherePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, c
 	if(sol < ray.tmin_)
 	{
 		sol = sol_2;
-		if(sol < ray.tmin_) return false;
+		if(sol < ray.tmin_) return {};
 	}
 	//if(sol > ray.tmax) return false; //tmax = -1 is not substituted yet...
-	t = sol;
-	return true;
+	IntersectData intersect_data;
+	intersect_data.hit_ = true;
+	intersect_data.t_hit_ = sol;
+	return intersect_data;
 }
 
-void SpherePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const
+SurfacePoint SpherePrimitive::getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const
 {
+	SurfacePoint sp;
+	sp.intersect_data_ = intersect_data;
 	Vec3 normal = hit - center_;
 	sp.orco_p_ = normal;
 	normal.normalize();
@@ -87,6 +91,7 @@ void SpherePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectD
 	sp.u_ = atan2(normal.y_, normal.x_) * M_1_PI + 1;
 	sp.v_ = 1.f - math::acos(normal.z_) * M_1_PI;
 	sp.light_ = nullptr;
+	return sp;
 }
 
 float SpherePrimitive::surfaceArea(const Matrix4 *obj_to_world) const

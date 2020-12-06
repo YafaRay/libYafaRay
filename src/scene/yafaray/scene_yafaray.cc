@@ -257,17 +257,16 @@ bool YafaRayScene::updateObjects()
 bool YafaRayScene::intersect(const Ray &ray, SurfacePoint &sp) const
 {
 	float dis, z;
-	IntersectData data;
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else dis = ray.tmax_;
 	// intersect with tree:
 	if(!accelerator_) return false;
-	const Primitive *hitprim = nullptr;
-	if(!accelerator_->intersect(ray, dis, &hitprim, z, data)) { return false; }
-	Point3 h = ray.from_ + z * ray.dir_;
-	hitprim->getSurface(sp, h, data, nullptr);
-	sp.origin_ = hitprim;
-	sp.data_ = data;
+	const Primitive *hit_primitive = nullptr;
+	IntersectData intersect_data;
+	if(!accelerator_->intersect(ray, dis, &hit_primitive, z, intersect_data)) { return false; }
+	const Point3 hit_point = ray.from_ + z * ray.dir_;
+	sp = hit_primitive->getSurface(hit_point, intersect_data);
+	sp.hit_primitive_ = hit_primitive;
 	sp.ray_ = nullptr;
 	ray.tmax_ = z;
 	return true;
@@ -276,17 +275,16 @@ bool YafaRayScene::intersect(const Ray &ray, SurfacePoint &sp) const
 bool YafaRayScene::intersect(const DiffRay &ray, SurfacePoint &sp) const
 {
 	float dis, z;
-	IntersectData data;
 	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
 	else dis = ray.tmax_;
 	// intersect with tree:
 	if(!accelerator_) return false;
-	const Primitive *hitprim = nullptr;
-	if(!accelerator_->intersect(ray, dis, &hitprim, z, data)) { return false; }
-	Point3 h = ray.from_ + z * ray.dir_;
-	hitprim->getSurface(sp, h, data, nullptr);
-	sp.origin_ = hitprim;
-	sp.data_ = data;
+	const Primitive *hit_primitive = nullptr;
+	IntersectData intersect_data;
+	if(!accelerator_->intersect(ray, dis, &hit_primitive, z, intersect_data)) { return false; }
+	const Point3 hit_point = ray.from_ + z * ray.dir_;
+	sp = hit_primitive->getSurface(hit_point, intersect_data);
+	sp.hit_primitive_ = hit_primitive;
 	sp.ray_ = &ray;
 	ray.tmax_ = z;
 	return true;

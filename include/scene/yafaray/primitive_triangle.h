@@ -32,17 +32,17 @@ class TrianglePrimitive: public FacePrimitive
 {
 	public:
 		TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object);
-		virtual bool intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const override;
+		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual bool intersectsBound(const ExBound &eb, const Matrix4 *obj_to_world) const override;
 		virtual bool clippingSupport() const override { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
 		virtual bool clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const override;
-		virtual void getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const override;
+		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
 		virtual void calculateGeometricNormal() override;
 		void calculateShadingSpace(SurfacePoint &sp) const;
-		static bool intersect(const Ray &ray, float &t, IntersectData &data, const std::array<Point3, 3> &vertices);
+		static IntersectData intersect(const Ray &ray, const std::array<Point3, 3> &vertices);
 		static bool intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices);
 		static Vec3 calculateNormal(const std::array<Point3, 3> &vertices);
 		static int triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat);

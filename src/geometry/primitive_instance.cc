@@ -18,6 +18,7 @@
 
 #include "geometry/primitive_instance.h"
 #include "geometry/object_instance.h"
+#include "geometry/surface.h"
 #include "geometry/matrix4.h"
 #include "geometry/bound.h"
 
@@ -38,14 +39,14 @@ bool PrimitiveInstance::clipToBound(const double (*bound)[3], int axis, Bound &c
 	return base_primitive_->clipToBound(bound, axis, clipped, d_old, d_new, base_object_->getObjToWorldMatrix());
 }
 
-bool PrimitiveInstance::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *) const
+IntersectData PrimitiveInstance::intersect(const Ray &ray, const Matrix4 *) const
 {
-	return base_primitive_->intersect(ray, t, data, base_object_->getObjToWorldMatrix());
+	return base_primitive_->intersect(ray, base_object_->getObjToWorldMatrix());
 }
 
-void PrimitiveInstance::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *) const
+SurfacePoint PrimitiveInstance::getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *) const
 {
-	return base_primitive_->getSurface(sp, hit, data, base_object_->getObjToWorldMatrix());
+	return base_primitive_->getSurface(hit_point, intersect_data, base_object_->getObjToWorldMatrix());
 }
 
 float PrimitiveInstance::surfaceArea(const Matrix4 *) const

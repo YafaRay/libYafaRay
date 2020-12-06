@@ -30,7 +30,7 @@ BsTrianglePrimitive::BsTrianglePrimitive(const std::vector<int> &vertices_indice
 	//calculateGeometricNormal(); //FIXME?
 }
 
-bool BsTrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &data, const Matrix4 *obj_to_world) const
+IntersectData BsTrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
 	const std::vector<int> vertices_indices = getVerticesIndices();
 	const Point3 *an = &static_cast<const MeshObject *>(base_object_)->getPoints()[vertices_indices[0]];
@@ -45,21 +45,23 @@ bool BsTrianglePrimitive::intersect(const Ray &ray, float &t, IntersectData &dat
 	const Vec3 edge_2 = c - a;
 	const Vec3 pvec = ray.dir_ ^ edge_2;
 	const float det = edge_1 * pvec;
-	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return false;
+	if(/*(det>-0.000001) && (det<0.000001)*/ det == 0.0) return {};
 	const float inv_det = 1.f / det;
 	const Vec3 tvec = ray.from_ - a;
 	const float u = (tvec * pvec) * inv_det;
-	if(u < 0.0 || u > 1.0) return false;
+	if(u < 0.0 || u > 1.0) return {};
 	const Vec3 qvec = tvec ^ edge_1;
 	const float v = (ray.dir_ * qvec) * inv_det;
-	if((v < 0.0) || ((u + v) > 1.0)) return false;
-	t = edge_2 * qvec * inv_det;
+	if((v < 0.0) || ((u + v) > 1.0)) return {};
+	IntersectData intersect_data;
+	intersect_data.hit_ = true;
+	intersect_data.t_hit_ = edge_2 * qvec * inv_det;
 	//UV <-> Barycentric UVW relationship is not obvious, interesting explanation in: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
-	data.barycentric_u_ = 1.f - u - v;
-	data.barycentric_v_ = u;
-	data.barycentric_w_ = v;
-	data.time_ = ray.time_;
-	return true;
+	intersect_data.barycentric_u_ = 1.f - u - v;
+	intersect_data.barycentric_v_ = u;
+	intersect_data.barycentric_w_ = v;
+	intersect_data.time_ = ray.time_;
+	return intersect_data;
 }
 
 Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
@@ -79,23 +81,25 @@ Bound BsTrianglePrimitive::getBound(const Matrix4 *obj_to_world) const
 	return Bound(l, h);
 }
 
-void BsTrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, IntersectData &data, const Matrix4 *obj_to_world) const
+SurfacePoint BsTrianglePrimitive::getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const
 {
 	// recalculating the points is not really the nicest solution...
 	const std::vector<int> vertices_indices = getVerticesIndices();
 	const Point3 *an = &static_cast<const MeshObject *>(base_object_)->getPoints()[vertices_indices[0]];
 	const Point3 *bn = &static_cast<const MeshObject *>(base_object_)->getPoints()[vertices_indices[1]];
 	const Point3 *cn = &static_cast<const MeshObject *>(base_object_)->getPoints()[vertices_indices[2]];
-	const float time = data.time_;
+	const float time = intersect_data.time_;
 	const float tc = 1.f - time;
 	const float b_1 = tc * tc, b_2 = 2.f * time * tc, b_3 = time * time;
 	const Point3 a = b_1 * an[0] + b_2 * an[1] + b_3 * an[2];
 	const Point3 b = b_1 * bn[0] + b_2 * bn[1] + b_3 * bn[2];
 	const Point3 c = b_1 * cn[0] + b_2 * cn[1] + b_3 * cn[2];
 
+	SurfacePoint sp;
+	sp.intersect_data_ = intersect_data;
 	sp.ng_ = ((b - a) ^ (c - a)).normalize();
 	// the "u" and "v" in triangle intersection code are actually "v" and "w" when u=>p1, v=>p2, w=>p3
-	const float barycentric_u = data.barycentric_u_, barycentric_v = data.barycentric_v_, barycentric_w = data.barycentric_w_;
+	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
 
 	//todo: calculate smoothed normal...
 	/* if(mesh->is_smooth || mesh->normals_exported)
@@ -180,6 +184,8 @@ void BsTrianglePrimitive::getSurface(SurfacePoint &sp, const Point3 &hit, Inters
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
 	sp.light_ = static_cast<const MeshObject *>(base_object_)->getLight();
 	sp.has_uv_ = static_cast<const MeshObject *>(base_object_)->hasUv();
+
+	return sp;
 }
 
 END_YAFARAY

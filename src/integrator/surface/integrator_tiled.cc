@@ -470,7 +470,7 @@ void TiledIntegrator::generateCommonLayers(RenderData &render_data, const Surfac
 		}
 		if((color_layer = color_layers->find(Layer::BarycentricUvw)))
 		{
-			color_layer->color_ = Rgba(sp.data_.barycentric_u_, sp.data_.barycentric_v_, sp.data_.barycentric_w_, 1.f);
+			color_layer->color_ = Rgba(sp.intersect_data_.barycentric_u_, sp.intersect_data_.barycentric_v_, sp.intersect_data_.barycentric_w_, 1.f);
 		}
 		if((color_layer = color_layers->find(Layer::NormalSmooth)))
 		{

@@ -26,7 +26,7 @@
 BEGIN_YAFARAY
 
 class RenderData;
-class IntersectData;
+struct IntersectData;
 class Rgb;
 class Bound;
 class ParamMap;
