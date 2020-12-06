@@ -42,24 +42,15 @@ Rgb SkyVolumeRegion::sigmaS(const Point3 &p, const Vec3 &v) const
 
 Rgb SkyVolumeRegion::tau(const Ray &ray, float step, float offset) const
 {
-	float t_0 = -1, t_1 = -1;
-
+	Bound::Cross cross = crossBound(ray);
 	// ray doesn't hit the BB
-	if(!intersect(ray, t_0, t_1))
-	{
-		return Rgb(0.f);
-	}
-
-	if(ray.tmax_ < t_0 && ray.tmax_ >= 0) return Rgb(0.f);
-
-	if(ray.tmax_ < t_1 && ray.tmax_ >= 0) t_1 = ray.tmax_;
-
+	if(!cross.crossed_) return {0.f};
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb(0.f);
+	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0) cross.leave_ = ray.tmax_;
 	// t0 < 0 means, ray.from is in the volume
-	if(t_0 < 0.f) t_0 = 0.f;
-
+	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
 	// distance travelled in the volume
-	float dist = t_1 - t_0;
-
+	float dist = cross.leave_ - cross.enter_;
 	return (s_ray_ + s_mie_) * dist;
 }
 

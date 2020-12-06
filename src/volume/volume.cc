@@ -68,23 +68,16 @@ VolumeRegion::VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3
 
 Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
 {
-	float t_0 = -1, t_1 = -1;
-
+	Bound::Cross cross = crossBound(ray);
 	// ray doesn't hit the BB
-	if(!intersect(ray, t_0, t_1))
-	{
-		return Rgb(0.f);
-	}
-
-	if(ray.tmax_ < t_0 && ray.tmax_ >= 0) return Rgb(0.f);
-
-	if(ray.tmax_ < t_1 && ray.tmax_ >= 0) t_1 = ray.tmax_;
-
-	if(t_0 < 0.f) t_0 = 0.f;
+	if(!cross.crossed_) return {0.f};
+	if(ray.tmax_ < cross.enter_ && ray.tmax_ >= 0) return Rgb(0.f);
+	if(ray.tmax_ < cross.leave_ && ray.tmax_ >= 0) cross.leave_ = ray.tmax_;
+	if(cross.enter_ < 0.f) cross.enter_ = 0.f;
 
 	// distance travelled in the volume
 	float step = step_size; // length between two sample points along the ray
-	float pos = t_0 + offset * step;
+	float pos = cross.enter_ + offset * step;
 	Rgb tau_val(0.f);
 
 
@@ -92,7 +85,7 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 
 	bool adaptive = false; //FIXME: unused, always false??
 
-	while(pos < t_1)
+	while(pos < cross.leave_)
 	{
 		Rgb tau_tmp = sigmaT(ray.from_ + (ray.dir_ * pos), ray.dir_);
 

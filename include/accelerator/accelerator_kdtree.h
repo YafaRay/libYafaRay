@@ -24,6 +24,7 @@
 #include "common/memory_arena.h"
 #include "geometry/bound.h"
 #include "scene/yafaray/object_yafaray.h"
+#include <array>
 
 BEGIN_YAFARAY
 
@@ -131,16 +132,16 @@ template<class T> class AcceleratorKdTree : public Accelerator<T>
 		AcceleratorKdTree(const std::vector<const T *> &primitives_list, int np, int depth = -1, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		virtual ~AcceleratorKdTree() override;
-		virtual bool intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const override;
+		virtual AcceleratorIntersectData<T> intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		virtual bool intersectS(const Ray &ray, float dist, const T **tr, float shadow_bias) const override;
-		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, const T **tr, Rgb &filt, float shadow_bias) const override;
+		virtual AcceleratorIntersectData<T> intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
+		virtual AcceleratorTsIntersectData<T> intersectTs(const RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
 		Bound getBound() const override { return tree_bound_; }
 
-		void pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
-		void minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split);
-		int buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, BoundEdge *edges[3], uint32_t right_mem_size, int depth, int bad_refines);
+		void pigeonMinCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
+		void minimalCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx, const Bound *all_bounds, const std::array<BoundEdge *, 3> &edges, SplitCost &split);
+		int buildTree(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
 		float cost_ratio_; 	//!< node traversal cost divided by primitive intersection cost
 		float e_bonus_; 	//!< empty bonus

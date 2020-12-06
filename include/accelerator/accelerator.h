@@ -21,25 +21,36 @@
 #define YAFARAY_ACCELERATOR_H
 
 #include "constants.h"
+#include "geometry/intersect_data.h"
+#include "color/color.h"
 #include <vector>
 
 BEGIN_YAFARAY
 
 class RenderData;
-struct IntersectData;
-class Rgb;
 class Bound;
 class ParamMap;
 class Ray;
+
+template<class T> struct AcceleratorIntersectData : IntersectData
+{
+	float t_max_ = std::numeric_limits<float>::infinity();
+	const T *hit_item_ = nullptr;
+};
+
+template<class T> struct AcceleratorTsIntersectData : AcceleratorIntersectData<T>
+{
+	Rgb transparent_color_ {1.f};
+};
 
 template<class T> class Accelerator
 {
 	public:
 		static Accelerator<T> *factory(const std::vector<const T *> &primitives_list, ParamMap &params);
 		virtual ~Accelerator() { };
-		virtual bool intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const = 0;
-		virtual bool intersectS(const Ray &ray, float dist, const T **tr, float shadow_bias) const = 0;
-		virtual bool intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, const T **tr, Rgb &filt, float shadow_bias) const = 0;
+		virtual AcceleratorIntersectData<T> intersect(const Ray &ray, float t_max) const = 0;
+		virtual AcceleratorIntersectData<T> intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
+		virtual AcceleratorTsIntersectData<T> intersectTs(const RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;
 		virtual Bound getBound() const = 0;
 };
 

@@ -256,84 +256,74 @@ bool YafaRayScene::updateObjects()
 
 bool YafaRayScene::intersect(const Ray &ray, SurfacePoint &sp) const
 {
-	float dis, z;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax_;
+	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	if(!accelerator_) return false;
-	const Primitive *hit_primitive = nullptr;
-	IntersectData intersect_data;
-	if(!accelerator_->intersect(ray, dis, &hit_primitive, z, intersect_data)) { return false; }
-	const Point3 hit_point = ray.from_ + z * ray.dir_;
-	sp = hit_primitive->getSurface(hit_point, intersect_data);
-	sp.hit_primitive_ = hit_primitive;
-	sp.ray_ = nullptr;
-	ray.tmax_ = z;
-	return true;
+	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersect(ray, t_max);
+	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_item_)
+	{
+		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
+		sp = accelerator_intersect_data.hit_item_->getSurface(hit_point, accelerator_intersect_data);
+		sp.hit_primitive_ = accelerator_intersect_data.hit_item_;
+		sp.ray_ = nullptr;
+		ray.tmax_ = accelerator_intersect_data.t_max_;
+		return true;
+	}
+	return false;
 }
 
 bool YafaRayScene::intersect(const DiffRay &ray, SurfacePoint &sp) const
 {
-	float dis, z;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax_;
-	// intersect with tree:
-	if(!accelerator_) return false;
-	const Primitive *hit_primitive = nullptr;
-	IntersectData intersect_data;
-	if(!accelerator_->intersect(ray, dis, &hit_primitive, z, intersect_data)) { return false; }
-	const Point3 hit_point = ray.from_ + z * ray.dir_;
-	sp = hit_primitive->getSurface(hit_point, intersect_data);
-	sp.hit_primitive_ = hit_primitive;
+	if(!intersect(static_cast<Ray>(ray), sp)) return false;
 	sp.ray_ = &ray;
-	ray.tmax_ = z;
 	return true;
 }
 
-bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const
+bool YafaRayScene::isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const
 {
-
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
 	sray.time_ = render_data.time_;
-	float dis;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else  dis = sray.tmax_ - 2 * sray.tmin_;
-	const Primitive *hitt = nullptr;
+	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	if(!accelerator_) return false;
-	bool shadowed = accelerator_->intersectS(sray, dis, &hitt, shadow_bias_);
-	if(hitt)
+	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersectS(sray, t_max, shadow_bias_);
+	if(accelerator_intersect_data.hit_)
 	{
-		if(hitt->getObject()) obj_index = hitt->getObject()->getAbsObjectIndex();	//Object index of the object casting the shadow
-		if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+		if(accelerator_intersect_data.hit_item_)
+		{
+			if(accelerator_intersect_data.hit_item_->getObject()) obj_index = accelerator_intersect_data.hit_item_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
+			if(accelerator_intersect_data.hit_item_->getMaterial()) mat_index = accelerator_intersect_data.hit_item_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
+		}
+		return true;
 	}
-	return shadowed;
+	return false;
 }
 
 bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const
 {
 	Ray sray(ray);
 	sray.from_ += sray.dir_ * sray.tmin_;
-	float dis;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else  dis = sray.tmax_ - 2 * sray.tmin_;
-	filt = Rgb(1.0);
+	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	void *odat = render_data.arena_;
 	alignas (16) unsigned char userdata[Integrator::getUserDataSize()];
 	render_data.arena_ = static_cast<void *>(userdata);
-	bool isect = false;
-	const Primitive *hitt = nullptr;
+	bool intersect = false;
 	if(accelerator_)
 	{
-		isect = accelerator_->intersectTs(render_data, sray, max_depth, dis, &hitt, filt, shadow_bias_);
-		if(hitt)
+		const AcceleratorTsIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersectTs(render_data, sray, max_depth, t_max, shadow_bias_);
+		filt = accelerator_intersect_data.transparent_color_;
+		if(accelerator_intersect_data.hit_)
 		{
-			if(hitt->getObject()) obj_index = hitt->getObject()->getAbsObjectIndex();	//Object index of the object casting the shadow
-			if(hitt->getMaterial()) mat_index = hitt->getMaterial()->getAbsMaterialIndex();	//Material index of the object casting the shadow
+			intersect = true;
+			if(accelerator_intersect_data.hit_item_)
+			{
+				if(accelerator_intersect_data.hit_item_->getObject()) obj_index = accelerator_intersect_data.hit_item_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
+				if(accelerator_intersect_data.hit_item_->getMaterial()) mat_index = accelerator_intersect_data.hit_item_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
+			}
 		}
 	}
 	render_data.arena_ = odat;
-	return isect;
+	return intersect;
 }
 
 

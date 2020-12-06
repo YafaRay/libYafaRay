@@ -48,7 +48,7 @@ class YafaRayScene final : public Scene
 		virtual bool updateObjects() override;
 		virtual bool intersect(const Ray &ray, SurfacePoint &sp) const override;
 		virtual bool intersect(const DiffRay &ray, SurfacePoint &sp) const override;
-		virtual bool isShadowed(RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const override;
+		virtual bool isShadowed(const RenderData &render_data, const Ray &ray, float &obj_index, float &mat_index) const override;
 		virtual bool isShadowed(RenderData &render_data, const Ray &ray, int max_depth, Rgb &filt, float &obj_index, float &mat_index) const override;
 		virtual Object *getObject(const std::string &name) const override;
 		void clearObjects();

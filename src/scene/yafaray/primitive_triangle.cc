@@ -195,7 +195,7 @@ void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
 }
 
-bool TrianglePrimitive::clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const
+bool TrianglePrimitive::clipToBound(const std::array<std::array<double, 3>, 2> &bound, int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const
 {
 	if(axis >= 0) // re-clip
 	{
@@ -211,7 +211,7 @@ bool TrianglePrimitive::clipToBound(const double bound[2][3], int axis, Bound &c
 	{
 		WHOOPS:
 		const std::vector<Point3> p = getVertices(obj_to_world);
-		double t_points[3][3];
+		std::array<std::array<double, 3>, 3> t_points;
 		for(int i = 0; i < 3; ++i)
 		{
 			t_points[0][i] = p[0][i];
@@ -276,7 +276,7 @@ struct ClipDump
 			3: resulting polygon degenerated to less than 3 edges (never happened either)
 */
 
-int TrianglePrimitive::triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat)
+int TrianglePrimitive::triBoxClip(const std::array<double, 3> &b_min, const std::array<double, 3> &b_max, const std::array<std::array<double, 3>, 3> &triverts, Bound &box, void *n_dat)
 {
 	Vec3Double dump_1[11], dump_2[11]; double t;
 	Vec3Double *poly = dump_1, *cpoly = dump_2;

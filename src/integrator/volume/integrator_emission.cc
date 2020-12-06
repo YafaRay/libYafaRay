@@ -34,20 +34,19 @@ Rgba EmissionIntegrator::transmittance(RenderData &render_data, const Ray &ray) 
 }
 
 Rgba EmissionIntegrator::integrate(RenderData &render_data, const Ray &ray, int additional_depth) const {
-	float t_0 = 0.f, t_1 = 0.f;
 	int n = 10; // samples + 1 on the ray inside the volume
-
 	Rgba result(0.f);
 	bool hit = ray.tmax_ > 0.f;
 	auto volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes)
 	{
-		if(!v.second->intersect(ray, t_0, t_1)) continue;
-		if(hit && ray.tmax_ < t_0) continue;
-		if(hit && ray.tmax_ < t_1) t_1 = ray.tmax_;
-		float step = (t_1 - t_0) / (float)n; // length between two sample points
+		Bound::Cross cross = v.second->crossBound(ray);
+		if(!cross.crossed_) continue;
+		if(hit && ray.tmax_ < cross.enter_) continue;
+		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
+		float step = (cross.leave_ - cross.enter_) / static_cast<float>(n); // length between two sample points
 		--n;
-		float pos = t_0 + 0.5 * step;
+		float pos = cross.enter_ + 0.5 * step;
 		Rgb tr(1.f);
 		for(int i = 0; i < n; ++i)
 		{

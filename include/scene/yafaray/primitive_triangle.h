@@ -36,7 +36,7 @@ class TrianglePrimitive: public FacePrimitive
 		virtual bool intersectsBound(const ExBound &eb, const Matrix4 *obj_to_world) const override;
 		virtual bool clippingSupport() const override { return true; }
 		// return: false:=doesn't overlap bound; true:=valid clip exists
-		virtual bool clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const override;
+		virtual bool clipToBound(const std::array<std::array<double, 3>, 2> &bound, int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const override;
 		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;
 		virtual float surfaceArea(const Matrix4 *obj_to_world) const override;
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const override;
@@ -45,7 +45,7 @@ class TrianglePrimitive: public FacePrimitive
 		static IntersectData intersect(const Ray &ray, const std::array<Point3, 3> &vertices);
 		static bool intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices);
 		static Vec3 calculateNormal(const std::array<Point3, 3> &vertices);
-		static int triBoxClip(const double b_min[3], const double b_max[3], const double triverts[3][3], Bound &box, void *n_dat);
+		static int triBoxClip(const std::array<double, 3> &b_min, const std::array<double, 3> &b_max, const std::array<std::array<double, 3>, 3> &triverts, Bound &box, void *n_dat);
 		static int triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat);
 		static float surfaceArea(const std::array<Point3, 3> &vertices);
 		static void sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices);

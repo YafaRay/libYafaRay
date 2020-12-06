@@ -20,6 +20,7 @@
 #ifndef YAFARAY_PRIMITIVE_INSTANCE_H
 #define YAFARAY_PRIMITIVE_INSTANCE_H
 
+#include <array>
 #include "geometry/primitive.h"
 
 BEGIN_YAFARAY
@@ -43,7 +44,7 @@ class PrimitiveInstance : public Primitive
 		virtual Bound getBound(const Matrix4 *) const override;
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		virtual bool clippingSupport() const override { return base_primitive_->clippingSupport(); }
-		virtual bool clipToBound(const double bound[2][3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *) const override;
+		virtual bool clipToBound(const std::array<std::array<double, 3>, 2> &bound, int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *) const override;
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *) const override;
 		virtual SurfacePoint getSurface(const Point3 &hit_point, const IntersectData &intersect_data, const Matrix4 *) const override;
 		virtual const Material *getMaterial() const override { return base_primitive_->getMaterial(); }

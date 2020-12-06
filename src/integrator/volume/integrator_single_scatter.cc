@@ -176,8 +176,8 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 						// replaced by
 						for(const auto &v : volumes)
 						{
-							float t_0_tmp = -1, t_1_tmp = -1;
-							if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp)) light_tr += v.second->attenuation(sp.p_, (*l));
+							const Bound::Cross cross = v.second->crossBound(light_ray);
+							if(cross.crossed_) light_tr += v.second->attenuation(sp.p_, (*l));
 						}
 					}
 					else
@@ -186,11 +186,8 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 						Rgb lightstep_tau(0.f);
 						for(const auto &v : volumes)
 						{
-							float t_0_tmp = -1, t_1_tmp = -1;
-							if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
-							{
-								lightstep_tau += v.second->tau(light_ray, current_step, 0.f);
-							}
+							const Bound::Cross cross = v.second->crossBound(light_ray);
+							if(cross.crossed_) lightstep_tau += v.second->tau(light_ray, current_step, 0.f);
 						}
 						// transmittance from the point p in the volume to the light (i.e. how much light reaches p)
 						light_tr = math::exp(-lightstep_tau.energy());
@@ -229,8 +226,8 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 							// replaced by
 							for(const auto &v : volumes)
 							{
-								float t_0_tmp = -1, t_1_tmp = -1;
-								if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
+								const Bound::Cross cross = v.second->crossBound(light_ray);
+								if(cross.crossed_)
 								{
 									light_tr += v.second->attenuation(sp.p_, (*l));
 									break;
@@ -243,8 +240,8 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 							Rgb lightstep_tau(0.f);
 							for(const auto &v : volumes)
 							{
-								float t_0_tmp = -1, t_1_tmp = -1;
-								if(v.second->intersect(light_ray, t_0_tmp, t_1_tmp))
+								const Bound::Cross cross = v.second->crossBound(light_ray);
+								if(cross.crossed_)
 								{
 									lightstep_tau += v.second->tau(light_ray, current_step * 4.f, 0.0f);
 								}
@@ -268,18 +265,16 @@ Rgb SingleScatterIntegrator::getInScatter(RenderData &render_data, Ray &step_ray
 }
 
 Rgba SingleScatterIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
+	if(vr_size_ == 0) return {1.f};
 	Rgba tr(1.f);
-	//return Tr;
-	if(vr_size_ == 0) return tr;
-
 	const auto &volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes)
 	{
-		float t_0 = -1, t_1 = -1;
-		if(v.second->intersect(ray, t_0, t_1))
+		const Bound::Cross cross = v.second->crossBound(ray);
+		if(cross.crossed_)
 		{
-			float random = (*render_data.prng_)();
-			Rgb optical_thickness = v.second->tau(ray, step_size_, random);
+			const float random = (*render_data.prng_)();
+			const Rgb optical_thickness = v.second->tau(ray, step_size_, random);
 			tr *= Rgba(math::exp(-optical_thickness.energy()));
 		}
 	}
@@ -300,14 +295,14 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 	// find min t0 and max t1
 	for(const auto &v : volumes)
 	{
-		float t_0_tmp = 0.f, t_1_tmp = 0.f;
-		if(!v.second->intersect(ray, t_0_tmp, t_1_tmp)) continue;
-		if(hit && ray.tmax_ < t_0_tmp) continue;
+		Bound::Cross cross = v.second->crossBound(ray);
+		if(!cross.crossed_) continue;
+		if(hit && ray.tmax_ < cross.enter_) continue;
 
-		if(t_0_tmp < 0.f) t_0_tmp = 0.f;
-		if(hit && ray.tmax_ < t_1_tmp) t_1_tmp = ray.tmax_;
-		if(t_1_tmp > t_1) t_1 = t_1_tmp;
-		if(t_0_tmp < t_0) t_0 = t_0_tmp;
+		if(cross.enter_ < 0.f) cross.enter_ = 0.f;
+		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
+		if(cross.leave_ > t_1) t_1 = cross.leave_;
+		if(cross.enter_ < t_0) t_0 = cross.enter_;
 	}
 
 	float dist = t_1 - t_0;
@@ -390,8 +385,8 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 		{
 			for(const auto &v : volumes)
 			{
-				float t_0_tmp = -1, t_1_tmp = -1;
-				if(v.second->intersect(step_ray, t_0_tmp, t_1_tmp))
+				const Bound::Cross cross = v.second->crossBound(step_ray);
+				if(cross.crossed_)
 				{
 					step_tau += v.second->sigmaT(step_ray.from_, step_ray.dir_) * current_step;
 				}
@@ -413,8 +408,8 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 		float sigma_s = 0.0f;
 		for(const auto &v : volumes)
 		{
-			float t_0_tmp = -1, t_1_tmp = -1;
-			if(v.second->intersect(step_ray, t_0_tmp, t_1_tmp))
+			const Bound::Cross cross = v.second->crossBound(step_ray);
+			if(cross.crossed_)
 			{
 				sigma_s += v.second->sigmaS(step_ray.from_, step_ray.dir_).energy();
 			}

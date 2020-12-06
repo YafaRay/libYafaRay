@@ -39,7 +39,12 @@ BEGIN_YAFARAY
 class Bound
 {
 	public:
-
+		struct Cross
+		{
+			bool crossed_ = false;
+			float enter_;
+			float leave_;
+		};
 		/*! Main constructor.
 		 * The box is defined by two points, this constructor just takes them.
 		 *
@@ -59,14 +64,13 @@ class Bound
 		Bound(const Bound &r, const Bound &l);
 		//! Sets the bound like the constructor
 		void set(const Point3 &a, const Point3 &g) { a_ = a; g_ = g; };
-		void get(Point3 &a, Point3 &g) const { a = a_; g = g_; };
 
 		//! Returns true if the given ray crosses the bound
 		//bool cross(const point3d_t &from,const vector3d_t &ray) const;
 		//! Returns true if the given ray crosses the bound closer than dist
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float dist) const;
 		//bool cross(const point3d_t &from, const vector3d_t &ray, float &where, float dist) const;
-		bool cross(const Ray &ray, float &enter, float &leave, const float dist) const;
+		Cross cross(const Ray &ray, float t_max) const;
 
 		//! Returns the volume of the bound
 		float vol() const;
@@ -133,7 +137,7 @@ inline void Bound::include(const Point3 &p)
 	g_.z_ = std::max(g_.z_, p.z_);
 }
 
-inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float dist) const
+inline Bound::Cross Bound::cross(const Ray &ray, float t_max) const
 {
 	// Smits method
 	const Point3 &a_0 = a_, &a_1 = g_;
@@ -155,7 +159,7 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 			lmax = -p.x_ * invrx;
 		}
 
-		if((lmax < 0) || (lmin > dist)) return false;
+		if((lmax < 0) || (lmin > t_max)) return {};
 	}
 	if(ray.dir_.y_ != 0)
 	{
@@ -173,7 +177,7 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);
 
-		if((lmax < 0) || (lmin > dist)) return false;
+		if((lmax < 0) || (lmin > t_max)) return {};
 	}
 	if(ray.dir_.z_ != 0)
 	{
@@ -191,16 +195,18 @@ inline bool Bound::cross(const Ray &ray, float &enter, float &leave, const float
 		lmin = std::max(ltmin, lmin);
 		lmax = std::min(ltmax, lmax);
 
-		if((lmax < 0) || (lmin > dist)) return false;
+		if((lmax < 0) || (lmin > t_max)) return {};
 	}
-	if((lmin <= lmax) && (lmax >= 0) && (lmin <= dist))
+	if((lmin <= lmax) && (lmax >= 0) && (lmin <= t_max))
 	{
-		enter = lmin;   //(lmin>0) ? lmin : 0;
-		leave = lmax;
-		return true;
+		Bound::Cross cross;
+		cross.crossed_ = true;
+		cross.enter_ = lmin;   //(lmin>0) ? lmin : 0;
+		cross.leave_ = lmax;
+		return cross;
 	}
 
-	return false;
+	return {};
 }
 
 

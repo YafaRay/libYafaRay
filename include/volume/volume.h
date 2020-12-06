@@ -72,9 +72,9 @@ class VolumeRegion
 
 		virtual Rgb tau(const Ray &ray, float step, float offset) const = 0;
 
-		bool intersect(const Ray &ray, float &t_0, float &t_1) const
+		Bound::Cross crossBound(const Ray &ray) const
 		{
-			return b_box_.cross(ray, t_0, t_1, 10000.f);
+			return b_box_.cross(ray, 10000.f);
 		}
 
 		Bound getBb() const { return b_box_; }

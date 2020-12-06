@@ -195,25 +195,20 @@ Rgb MeshLight::emitSample(Vec3 &wo, LSample &s) const
 bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
 	if(!accelerator_) return false;
-	float dis;
-	IntersectData bary;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax_;
+	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
-	const Primitive *hitt;
-	if(!accelerator_->intersect(ray, dis, &hitt, t, bary)) { return false; }
-
-	const Vec3 n = static_cast<const FacePrimitive *>(hitt)->getGeometricNormal();
+	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersect(ray, t_max);
+	if(!accelerator_intersect_data.hit_) { return false; }
+	const Vec3 n = accelerator_intersect_data.hit_item_->getGeometricNormal();
 	float cos_angle = ray.dir_ * (-n);
-	if(cos_angle <= 0)
+	if(cos_angle <= 0.f)
 	{
 		if(double_sided_) cos_angle = std::abs(cos_angle);
 		else return false;
 	}
-	float idist_sqr = 1.f / (t * t);
+	const float idist_sqr = 1.f / (t * t);
 	ipdf = idist_sqr * area_ * cos_angle * (1.f / M_PI);
 	col = color_;
-
 	return true;
 }
 

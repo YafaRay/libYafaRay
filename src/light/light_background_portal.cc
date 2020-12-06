@@ -197,23 +197,17 @@ Rgb BackgroundPortalLight::emitSample(Vec3 &wo, LSample &s) const
 bool BackgroundPortalLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 {
 	if(!accelerator_) return false;
-	float dis;
-	IntersectData bary;
-	const Primitive *hitt = nullptr;
-	if(ray.tmax_ < 0) dis = std::numeric_limits<float>::infinity();
-	else dis = ray.tmax_;
+	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
-	if(!accelerator_->intersect(ray, dis, &hitt, t, bary)) { return false; }
-
-	Vec3 n = static_cast<const FacePrimitive *>(hitt)->getGeometricNormal();
+	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersect(ray, t_max);
+	if(!accelerator_intersect_data.hit_) { return false; }
+	const Vec3 n = accelerator_intersect_data.hit_item_->getGeometricNormal();
 	float cos_angle = ray.dir_ * (-n);
-	if(cos_angle <= 0) return false;
-	float idist_sqr = 1.f / (t * t);
+	if(cos_angle <= 0.f) return false;
+	const float idist_sqr = 1.f / (t * t);
 	ipdf = idist_sqr * area_ * cos_angle * (1.f / M_PI);
 	col = bg_->eval(ray, true) * power_;
-
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
-
 	return true;
 }
 

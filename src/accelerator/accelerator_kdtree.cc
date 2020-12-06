@@ -93,7 +93,7 @@ AcceleratorKdTree<T>::AcceleratorKdTree(const std::vector<const T *> &primitives
 	}
 	Y_VERBOSE << "Kd-Tree: Done." << YENDL;
 	// get working memory for tree construction
-	BoundEdge *edges[3];
+	std::array<BoundEdge *, 3> edges;
 	const uint32_t r_mem_size = 3 * total_prims_; // (maxDepth+1)*totalPrims;
 	uint32_t *left_prims = new uint32_t[std::max((uint32_t)2 * prim_clip_thresh_, total_prims_)];
 	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
@@ -149,7 +149,7 @@ AcceleratorKdTree<T>::~AcceleratorKdTree()
 */
 
 template<class T>
-void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx, SplitCost &split)
+void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx, SplitCost &split)
 {
 	TreeBin bin[kd_bins_ + 1 ];
 	float d[3];
@@ -298,8 +298,8 @@ void AcceleratorKdTree<T>::pigeonMinCost(uint32_t n_prims, Bound &node_bound, ui
 */
 
 template<class T>
-void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint32_t *prim_idx,
-									   const Bound *all_bounds, BoundEdge *edges[3], SplitCost &split)
+void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx,
+									   const Bound *all_bounds, const std::array<BoundEdge *, 3> &edges, SplitCost &split)
 {
 	float d[3];
 	d[0] = node_bound.longX();
@@ -441,8 +441,8 @@ void AcceleratorKdTree<T>::minimalCost(uint32_t n_prims, Bound &node_bound, uint
 				2 when neither current nor subsequent split reduced cost
 */
 template<class T>
-int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_t *prim_nums,
-									uint32_t *left_prims, uint32_t *right_prims, BoundEdge *edges[3], //working memory
+int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_nums,
+									uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, //working memory
                            uint32_t right_mem_size, int depth, int bad_refines)  // status
 {
 	//	std::cout << "tree level: " << depth << std::endl;
@@ -462,8 +462,8 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	{
 		//		exBound_t ebound(nodeBound);
 		int o_prims[prim_clip_thresh_], n_overl = 0;
-		double b_half_size[3];
-		double b_ext[2][3];
+		std::array<double, 3> b_half_size;
+		std::array<std::array<double, 3>, 2> b_ext;
 		for(int i = 0; i < 3; ++i)
 		{
 			//			bCenter[i]   = ((double)nodeBound.a[i] + (double)nodeBound.g[i])*0.5;
@@ -683,41 +683,39 @@ int AcceleratorKdTree<T>::buildTree(uint32_t n_prims, Bound &node_bound, uint32_
 	returns the closest hit within dist
 */
 template<class T>
-bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, float &z, IntersectData &data) const
+AcceleratorIntersectData<T> AcceleratorKdTree<T>::intersect(const Ray &ray, float t_max) const
 {
-	z = dist;
-	IntersectData current_intersection_data;
-
-	float a, b; // entry/exit
-	if(!tree_bound_.cross(ray, a, b, dist)) { return false; }
+	AcceleratorIntersectData<T> accelerator_intersect_data;
+	accelerator_intersect_data.t_max_ = t_max;
+	const Bound::Cross cross = tree_bound_.cross(ray, t_max);
+	if(!cross.crossed_) { return {}; }
 
 	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 	//	int rayId = curMailboxId++;
-	bool hit = false;
 
 	KdStack<T> stack[kd_max_stack_];
 	const KdTreeNode<T> *far_child, *curr_node;
 	curr_node = nodes_;
 
 	int en_pt = 0;
-	stack[en_pt].t_ = a;
+	stack[en_pt].t_ = cross.enter_;
 
 	//distinguish between internal and external origin
-	if(a >= 0.f) // ray with external origin
-		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
+	if(cross.enter_ >= 0.f) // ray with external origin
+		stack[en_pt].pb_ = ray.from_ + ray.dir_ * cross.enter_;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
 
 	// setup initial entry and exit poimt in stack
 	int ex_pt = 1; // pointer to stack
-	stack[ex_pt].t_ = b;
-	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * b;
+	stack[ex_pt].t_ = cross.leave_;
+	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * cross.leave_;
 	stack[ex_pt].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while(curr_node != nullptr)
 	{
-		if(dist < stack[en_pt].t_) break;
+		if(t_max < stack[en_pt].t_) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
@@ -780,7 +778,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 			const IntersectData intersect_data = mp->intersect(ray);
 			if(intersect_data.hit_)
 			{
-				if(intersect_data.t_hit_ < z && intersect_data.t_hit_ >= ray.tmin_)
+				if(intersect_data.t_hit_ < accelerator_intersect_data.t_max_ && intersect_data.t_hit_ >= ray.tmin_)
 				{
 					bool check_instersection = false;
 					Visibility visibility = mp->getVisibility();
@@ -792,10 +790,9 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 					}
 					if(check_instersection)
 					{
-						z = intersect_data.t_hit_;
-						*tr = mp;
-						current_intersection_data = intersect_data;
-						hit = true;
+						accelerator_intersect_data.setIntersectData(intersect_data);
+						accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
+						accelerator_intersect_data.hit_item_ = mp;
 					}
 				}
 			}
@@ -809,7 +806,7 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 				const IntersectData intersect_data = mp->intersect(ray);
 				if(intersect_data.hit_)
 				{
-					if(intersect_data.t_hit_ < z && intersect_data.t_hit_ >= ray.tmin_)
+					if(intersect_data.t_hit_ < accelerator_intersect_data.t_max_ && intersect_data.t_hit_ >= ray.tmin_)
 					{
 						bool check_instersection = false;
 						Visibility visibility = mp->getVisibility();
@@ -821,63 +818,56 @@ bool AcceleratorKdTree<T>::intersect(const Ray &ray, float dist, const T **tr, f
 						}
 						if(check_instersection)
 						{
-							z = intersect_data.t_hit_;
-							*tr = mp;
-							current_intersection_data = intersect_data;
-							hit = true;
+							accelerator_intersect_data.setIntersectData(intersect_data);
+							accelerator_intersect_data.t_max_ = intersect_data.t_hit_;
+							accelerator_intersect_data.hit_item_ = mp;
 						}
 					}
 				}
 			}
 		}
 
-		if(hit && z <= stack[ex_pt].t_)
+		if(accelerator_intersect_data.hit_ && accelerator_intersect_data.t_max_ <= stack[ex_pt].t_)
 		{
-			data = current_intersection_data;
-			return true;
+			return accelerator_intersect_data;
 		}
 
 		en_pt = ex_pt;
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
 	} // while
-	data = current_intersection_data;
-	return hit;
+	return accelerator_intersect_data;
 }
 
 template<class T>
-bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, float shadow_bias) const
+AcceleratorIntersectData<T> AcceleratorKdTree<T>::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
-	float a, b; // entry/exit
-	if(!tree_bound_.cross(ray, a, b, dist))
-		return false;
-
-	IntersectData bary;
+	AcceleratorIntersectData<T> accelerator_intersect_data;
+	const Bound::Cross cross = tree_bound_.cross(ray, t_max);
+	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
-
 	KdStack<T> stack[kd_max_stack_];
 	const KdTreeNode<T> *far_child, *curr_node;
 	curr_node = nodes_;
-
 	int en_pt = 0;
-	stack[en_pt].t_ = a;
+	stack[en_pt].t_ = cross.enter_;
 
 	//distinguish between internal and external origin
-	if(a >= 0.f) // ray with external origin
-		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
+	if(cross.enter_ >= 0.f) // ray with external origin
+		stack[en_pt].pb_ = ray.from_ + ray.dir_ * cross.enter_;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
 
 	// setup initial entry and exit poimt in stack
 	int ex_pt = 1; // pointer to stack
-	stack[ex_pt].t_ = b;
-	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * b;
+	stack[ex_pt].t_ = cross.leave_;
+	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * cross.leave_;
 	stack[ex_pt].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while(curr_node != nullptr)
 	{
-		if(dist < stack[en_pt].t_ /*a*/) break;
+		if(t_max < stack[en_pt].t_ /*a*/) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
@@ -939,7 +929,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 			const IntersectData intersect_data = mp->intersect(ray);
 			if(intersect_data.hit_)
 			{
-				if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= 0.f)  // '>=' ?
+				if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= 0.f)  // '>=' ?
 				{
 					bool check_instersection = false;
 					Visibility visibility = mp->getVisibility();
@@ -951,8 +941,9 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 					}
 					if(check_instersection)
 					{
-						*tr = mp;
-						return true;
+						accelerator_intersect_data.setIntersectData(intersect_data);
+						accelerator_intersect_data.hit_item_ = mp;
+						return accelerator_intersect_data;
 					}
 				}
 			}
@@ -966,13 +957,14 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 				const IntersectData intersect_data = mp->intersect(ray);
 				if(intersect_data.hit_)
 				{
-					if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= 0.f)
+					if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= 0.f)
 					{
 						const Material *mat = mp->getMaterial();
 						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 						{
-							*tr = mp;
-							return true;
+							accelerator_intersect_data.setIntersectData(intersect_data);
+							accelerator_intersect_data.hit_item_ = mp;
+							return accelerator_intersect_data;
 						}
 					}
 				}
@@ -982,7 +974,7 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
 	} // while
-	return false;
+	return {};
 }
 
 /*=============================================================
@@ -990,11 +982,11 @@ bool AcceleratorKdTree<T>::intersectS(const Ray &ray, float dist, const T **tr, 
 =============================================================*/
 
 template<class T>
-bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, const T **tr, Rgb &filt, float shadow_bias) const
+AcceleratorTsIntersectData<T> AcceleratorKdTree<T>::intersectTs(const RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const
 {
-	float a, b; // entry/exit
-	if(!tree_bound_.cross(ray, a, b, dist))
-		return false;
+	AcceleratorTsIntersectData<T> accelerator_intersect_data;
+	const Bound::Cross cross = tree_bound_.cross(ray, t_max);
+	if(!cross.crossed_) { return {}; }
 
 	//To avoid division by zero
 	float inv_dir_x, inv_dir_y, inv_dir_z;
@@ -1021,24 +1013,24 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 	curr_node = nodes_;
 
 	int en_pt = 0;
-	stack[en_pt].t_ = a;
+	stack[en_pt].t_ = cross.enter_;
 
 	//distinguish between internal and external origin
-	if(a >= 0.f) // ray with external origin
-		stack[en_pt].pb_ = ray.from_ + ray.dir_ * a;
+	if(cross.enter_ >= 0.f) // ray with external origin
+		stack[en_pt].pb_ = ray.from_ + ray.dir_ * cross.enter_;
 	else // ray with internal origin
 		stack[en_pt].pb_ = ray.from_;
 
 	// setup initial entry and exit poimt in stack
 	int ex_pt = 1; // pointer to stack
-	stack[ex_pt].t_ = b;
-	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * b;
+	stack[ex_pt].t_ = cross.leave_;
+	stack[ex_pt].pb_ = ray.from_ + ray.dir_ * cross.leave_;
 	stack[ex_pt].node_ = nullptr; // "nowhere", termination flag
 
 	//loop, traverse kd-Tree until object intersection or ray leaves tree bound
 	while(curr_node != nullptr)
 	{
-		if(dist < stack[en_pt].t_ /*a*/) break;
+		if(t_max < stack[en_pt].t_ /*a*/) break;
 		// loop until leaf is found
 		while(!curr_node->isLeaf())
 		{
@@ -1080,7 +1072,7 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 			// possibly skip current entry point so not to overwrite the data
 			if(ex_pt == en_pt) ex_pt++;
 			// push values onto the stack //todo: lookup table
-			static const int np_axis[2][3] = {{1, 2, 0}, {2, 0, 1} };
+			static const std::array<std::array<int, 3>, 2> np_axis {{{1, 2, 0}, {2, 0, 1}}};
 			const int next_axis = np_axis[0][axis];//(axis+1)%3;
 			const int prev_axis = np_axis[1][axis];//(axis+2)%3;
 			stack[ex_pt].prev_ = tmp;
@@ -1099,19 +1091,20 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 			const IntersectData intersect_data = mp->intersect(ray);
 			if(intersect_data.hit_)
 			{
-				if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= ray.tmin_)  // '>=' ?
+				if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= ray.tmin_)  // '>=' ?
 				{
 					const Material *mat = mp->getMaterial();
 					if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 					{
-						*tr = mp;
-						if(!mat->isTransparent()) return true;
+						accelerator_intersect_data.setIntersectData(intersect_data);
+						accelerator_intersect_data.hit_item_ = mp;
+						if(!mat->isTransparent()) return accelerator_intersect_data;
 						if(filtered.insert(mp).second)
 						{
-							if(depth >= max_depth) return true;
-							const Point3 hit_point = ray.from_ + intersect_data.t_hit_ * ray.dir_;
-							const SurfacePoint sp = mp->getSurface(hit_point, intersect_data);
-							filt *= mat->getTransparency(render_data, sp, ray.dir_);
+							if(depth >= max_depth) return accelerator_intersect_data;
+							const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_;
+							const SurfacePoint sp = mp->getSurface(hit_point, accelerator_intersect_data);
+							accelerator_intersect_data.transparent_color_ *= mat->getTransparency(render_data, sp, ray.dir_);
 							++depth;
 						}
 					}
@@ -1127,19 +1120,20 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 				const IntersectData intersect_data = mp->intersect(ray);
 				if(intersect_data.hit_)
 				{
-					if(intersect_data.t_hit_ < dist && intersect_data.t_hit_ >= ray.tmin_)
+					if(intersect_data.t_hit_ < t_max && intersect_data.t_hit_ >= ray.tmin_)
 					{
 						const Material *mat = mp->getMaterial();
 						if(mat->getVisibility() == Visibility::NormalVisible || mat->getVisibility() == Visibility::InvisibleShadowsOnly)
 						{
-							*tr = mp;
-							if(!mat->isTransparent()) return true;
+							accelerator_intersect_data.setIntersectData(intersect_data);
+							accelerator_intersect_data.hit_item_ = mp;
+							if(!mat->isTransparent()) return accelerator_intersect_data;
 							if(filtered.insert(mp).second)
 							{
-								if(depth >= max_depth) return true;
-								const Point3 hit_point = ray.from_ + intersect_data.t_hit_ * ray.dir_;
-								const SurfacePoint sp  = mp->getSurface(hit_point, intersect_data);
-								filt *= mat->getTransparency(render_data, sp, ray.dir_);
+								if(depth >= max_depth) return accelerator_intersect_data;
+								const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_hit_ * ray.dir_;
+								const SurfacePoint sp  = mp->getSurface(hit_point, accelerator_intersect_data);
+								accelerator_intersect_data.transparent_color_ *= mat->getTransparency(render_data, sp, ray.dir_);
 								++depth;
 							}
 						}
@@ -1151,7 +1145,8 @@ bool AcceleratorKdTree<T>::intersectTs(RenderData &render_data, const Ray &ray, 
 		curr_node = stack[ex_pt].node_;
 		ex_pt = stack[en_pt].prev_;
 	} // while
-	return false;
+	accelerator_intersect_data.hit_ = false;
+	return accelerator_intersect_data;
 }
 
 // explicit instantiation of template:

@@ -34,7 +34,7 @@ bool PrimitiveInstance::intersectsBound(const ExBound &b, const Matrix4 *) const
 	return base_primitive_->intersectsBound(b, base_object_->getObjToWorldMatrix());
 }
 
-bool PrimitiveInstance::clipToBound(const double (*bound)[3], int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *) const
+bool PrimitiveInstance::clipToBound(const std::array<std::array<double, 3>, 2> (&bound), int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *) const
 {
 	return base_primitive_->clipToBound(bound, axis, clipped, d_old, d_new, base_object_->getObjToWorldMatrix());
 }
