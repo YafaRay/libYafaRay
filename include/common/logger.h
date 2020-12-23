@@ -68,6 +68,7 @@ class LIBYAFARAY_EXPORT Logger
 		Logger() = default;
 		Logger(const Logger &) = delete; //deleting copy constructor so we can use a std::mutex as a class member (not copiable)
 
+		void enablePrintDateTime(bool value) { print_datetime_ = value; }
 		void setConsoleMasterVerbosity(const std::string &str_v_level);
 		void setLogMasterVerbosity(const std::string &str_v_level);
 
@@ -112,6 +113,7 @@ class LIBYAFARAY_EXPORT Logger
 		int verbosity_level_ = VlInfo;
 		int console_master_verbosity_level_ = VlInfo;
 		int log_master_verbosity_level_ = VlVerbose;
+		bool print_datetime_ = true;
 		std::vector<LogEntry> memory_log_;	//Log entries stored in memory
 		std::string image_path_ = "";
 		bool console_log_colors_enabled_ = true;	//If false, will supress the colors from the Console log, to help some 3rd party software that cannot handle properly the color ANSI codes

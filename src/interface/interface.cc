@@ -335,6 +335,11 @@ void Interface::render(ProgressBar *pb)
 	scene_->render();
 }
 
+void Interface::enablePrintDateTime(bool value)
+{
+	logger__.enablePrintDateTime(value);
+}
+
 void Interface::setConsoleVerbosityLevel(const std::string &str_v_level)
 {
 	logger__.setConsoleMasterVerbosity(str_v_level);

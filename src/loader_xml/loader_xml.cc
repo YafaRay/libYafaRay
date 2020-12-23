@@ -74,12 +74,15 @@ int main(int argc, char *argv[])
 
 	parse.setOption("vl", "verbosity-level", false, "Set console verbosity level, options are:\n                                       \"mute\" (Prints nothing)\n                                       \"error\" (Prints only errors)\n                                       \"warning\" (Prints also warnings)\n                                       \"params\" (Prints also render param messages)\n                                       \"info\" (Prints also basi info messages)\n                                       \"verbose\" (Prints additional info messages)\n                                       \"debug\" (Prints debug messages if any)\n");
 	parse.setOption("lvl", "log-verbosity-level", false, "Set log/HTML files verbosity level, options are the same as for the \"verbosity-level\" parameter\n");
+	parse.setOption("nodt", "no-date-time", true, "If specified, disables the logging of the date/time in the screen and file logs");
 	parse.setOption("ccd", "console-colors-disabled", true, "If specified, disables the Console colors ANSI codes, useful for some 3rd party software that cannot handle ANSI codes well.");
 
 	parse.parseCommandLine();
 
+	bool no_date_time = parse.getFlag("nodt");
 	bool console_colors_disabled = parse.getFlag("ccd");
 
+	if(no_date_time) logger__.enablePrintDateTime(false);
 	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
 	else logger__.setConsoleLogColorsEnabled(true);
 

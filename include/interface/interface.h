@@ -103,6 +103,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual ParamMap *getRenderParameters() { return params_; }
 
 		bool setInteractive(bool interactive);
+		void enablePrintDateTime(bool value);
 		void setConsoleVerbosityLevel(const std::string &str_v_level);
 		void setLogVerbosityLevel(const std::string &str_v_level);
 		std::string getVersion() const; //!< Get version to check against the exporters

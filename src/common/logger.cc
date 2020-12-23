@@ -52,7 +52,9 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 
 		for(const auto &log_entry : memory_log_)
 		{
-			ss << "[" << Logger::printDate(log_entry.date_time_) << " " << Logger::printTime(log_entry.date_time_) << " (" << Logger::printDuration(log_entry.duration_) << ")] ";
+			if(print_datetime_) ss << "[" << Logger::printDate(log_entry.date_time_) << " " << Logger::printTime(log_entry.date_time_);
+			ss << " (" << Logger::printDuration(log_entry.duration_) << ")";
+			if(print_datetime_) ss << "] ";
 
 			switch(log_entry.verbosity_level_)
 			{
@@ -142,11 +144,14 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 
 	if(!memory_log_.empty())
 	{
-		ss << "<p /><table id=\"yafalog\"><th>Date</th><th>Time</th><th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
+		ss << "<p /><table id=\"yafalog\">";
+		if(print_datetime_) ss << "<th>Date</th><th>Time</th>";
+		ss << "<th>Dur.</th><th>Verbosity</th><th>Description</th>" << std::endl;
 
 		for(const auto &log_entry : memory_log_)
 		{
-			ss << "<tr><td>" << Logger::printDate(log_entry.date_time_) << "</td><td>" << Logger::printTime(log_entry.date_time_) << "</td><td>" << Logger::printDuration(log_entry.duration_) << "</td>";
+			if(print_datetime_) ss << "<tr><td>" << Logger::printDate(log_entry.date_time_) << "</td><td>" << Logger::printTime(log_entry.date_time_) << "</td>";
+			ss << "<td>" << Logger::printDuration(log_entry.duration_) << "</td>";
 
 			switch(log_entry.verbosity_level_)
 			{
@@ -200,30 +205,32 @@ Logger &Logger::out(int verbosity_level)
 	{
 		if(previous_console_event_date_time_ == 0) previous_console_event_date_time_ = current_datetime;
 		const double duration = std::difftime(current_datetime, previous_console_event_date_time_);
+		std::string date_time_str;
+		if(print_datetime_) date_time_str = "[" + Logger::printTime(current_datetime) + "] ";
 		if(console_log_colors_enabled_)
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug: std::cout << ConsoleColor(ConsoleColor::Magenta) << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose: std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
-				case VlInfo: std::cout << ConsoleColor(ConsoleColor::Green) << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
-				case VlParams: std::cout << ConsoleColor(ConsoleColor::Cyan) << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
-				case VlWarning: std::cout << ConsoleColor(ConsoleColor::Yellow) << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
-				case VlError: std::cout << ConsoleColor(ConsoleColor::Red) << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
-				default: std::cout << ConsoleColor(ConsoleColor::White) << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
+				case VlDebug: std::cout << ConsoleColor(ConsoleColor::Magenta) << date_time_str << "DEBUG"; break;
+				case VlVerbose: std::cout << ConsoleColor(ConsoleColor::Green) << date_time_str << "VERB"; break;
+				case VlInfo: std::cout << ConsoleColor(ConsoleColor::Green) << date_time_str << "INFO"; break;
+				case VlParams: std::cout << ConsoleColor(ConsoleColor::Cyan) << date_time_str << "PARM"; break;
+				case VlWarning: std::cout << ConsoleColor(ConsoleColor::Yellow) << date_time_str << "WARNING"; break;
+				case VlError: std::cout << ConsoleColor(ConsoleColor::Red) << date_time_str << "ERROR"; break;
+				default: std::cout << ConsoleColor(ConsoleColor::White) << date_time_str << "LOG"; break;
 			}
 		}
 		else
 		{
 			switch(verbosity_level_)
 			{
-				case VlDebug: std::cout << "[" << Logger::printTime(current_datetime) << "] DEBUG"; break;
-				case VlVerbose: std::cout << "[" << Logger::printTime(current_datetime) << "] VERB"; break;
-				case VlInfo: std::cout << "[" << Logger::printTime(current_datetime) << "] INFO"; break;
-				case VlParams: std::cout << "[" << Logger::printTime(current_datetime) << "] PARM"; break;
-				case VlWarning: std::cout << "[" << Logger::printTime(current_datetime) << "] WARNING"; break;
-				case VlError: std::cout << "[" << Logger::printTime(current_datetime) << "] ERROR"; break;
-				default: std::cout << "[" << Logger::printTime(current_datetime) << "] LOG"; break;
+				case VlDebug: std::cout << date_time_str << "DEBUG"; break;
+				case VlVerbose: std::cout << date_time_str << "VERB"; break;
+				case VlInfo: std::cout << date_time_str << "INFO"; break;
+				case VlParams: std::cout << date_time_str << "PARM"; break;
+				case VlWarning: std::cout << date_time_str << "WARNING"; break;
+				case VlError: std::cout << date_time_str << "ERROR"; break;
+				default: std::cout << date_time_str << "LOG"; break;
 			}
 		}
 		if(duration == 0) std::cout << ": ";
