@@ -16,28 +16,10 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "accelerator/accelerator.h"
-#include "accelerator/accelerator_kdtree.h"
-#include "common/logger.h"
-#include "common/param.h"
+#include "geometry/axis.h"
 
 BEGIN_YAFARAY
 
-Accelerator *Accelerator::factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params)
-{
-	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
-	std::string type;
-	params.getParam("type", type);
-	if(type == "kdtree")
-	{
-		Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
-		return AcceleratorKdTree::factory(primitives_list, params);
-	}
-	else
-	{
-		Y_ERROR << "Accelerator type '" << type << "' could not be created." << YENDL;
-		return nullptr;
-	}
-}
+//const std::array<std::array<int, 3>, 3> Axis::axis_lut_ {{ {X, Y, Z}, {Y, Z, X}, {Z, X, Y} }};
 
 END_YAFARAY

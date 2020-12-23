@@ -42,4 +42,9 @@ IntersectData Primitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) 
 	return {};
 }
 
+PolyDouble::ClipResultWithBound Primitive::clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
+{
+	return { PolyDouble::ClipResultWithBound::Code::FatalError };
+}
+
 END_YAFARAY

@@ -23,18 +23,16 @@
 #include "accelerator/accelerator.h"
 #include "common/memory_arena.h"
 #include "geometry/bound.h"
+#include "geometry/primitive.h"
 #include "scene/yafaray/object_yafaray.h"
 #include <array>
 
 BEGIN_YAFARAY
 
+#define PRIMITIVE_CLIPPING 1
+
 class RenderData;
 struct IntersectData;
-
-// ============================================================
-/*! kd-tree nodes, kept as small as possible
-    double precision float and/or 64 bit system: 12bytes
-    else 8 bytes */
 
 struct KdStats
 {
@@ -50,10 +48,15 @@ struct KdStats
 	int num_bad_splits_ = 0;
 };
 
-template<class T> class KdTreeNode
+// ============================================================
+/*! kd-tree nodes, kept as small as possible
+    double precision float and/or 64 bit system: 12bytes
+    else 8 bytes */
+
+class KdTreeNode
 {
 	public:
-		void createLeaf(uint32_t *prim_idx, int np, const std::vector<const T *> &prims, MemoryArena &arena, KdStats &kd_stats);
+		void createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, KdStats &kd_stats);
 		void createInterior(int axis, float d, KdStats &kd_stats);
 		float splitPos() const { return division_; }
 		int splitAxis() const { return flags_ & 3; }
@@ -65,19 +68,19 @@ template<class T> class KdTreeNode
 		union
 		{
 			float division_; //!< interior: division plane position
-			T **primitives_; //!< leaf: list of primitives
-			const T *one_primitive_ = nullptr; //!< leaf: direct inxex of one primitive
+			const Primitive **primitives_; //!< leaf: list of primitives
+			const Primitive *one_primitive_ = nullptr; //!< leaf: direct inxex of one primitive
 		};
 		uint32_t flags_; //!< 2bits: isLeaf, axis; 30bits: nprims (leaf) or index of right child
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
-template<class T> struct KdStack
+struct KdStack
 {
-	const KdTreeNode<T> *node_; //!< pointer to far child
+	const KdTreeNode *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
-	Point3 pb_; //!< the point coordinates of entry/exit point
-	int prev_; //!< the pointer to the previous stack item
+	Point3 point_; //!< the point coordinates of entry/exit point
+	int prev_stack_idx_; //!< the pointer to the previous stack item
 };
 
 /*! Serves to store the lower and upper bound edges of the primitives
@@ -103,15 +106,14 @@ struct SplitCost
 	int best_axis_ = -1;
 	int best_offset_ = -1;
 	float best_cost_;
-	float old_cost_;
 	float t_;
-	int n_below_, n_above_, n_edge_;
+	int num_edges_;
 };
 
 class TreeBin
 {
 	public:
-		bool empty() { return n_ == 0; };
+		bool empty() const { return n_ == 0; };
 		void reset() { n_ = 0, c_left_ = 0, c_right_ = 0, c_both_ = 0, c_bleft_ = 0;};
 		int n_ = 0;
 		int c_left_ = 0, c_right_ = 0;
@@ -123,25 +125,30 @@ class TreeBin
 /*! This class holds a complete kd-tree with building and
 	traversal funtions
 */
-template<class T> class AcceleratorKdTree : public Accelerator<T>
+class AcceleratorKdTree final : public Accelerator
 {
 	public:
-		static Accelerator<T> *factory(const std::vector<const T *> &primitives_list, ParamMap &params);
+		static Accelerator *factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
-		AcceleratorKdTree(const std::vector<const T *> &primitives_list, int np, int depth = -1, int leaf_size = 2,
+		AcceleratorKdTree(const std::vector<const Primitive *> &primitives, int depth = -1, int leaf_size = 2,
 						  float cost_ratio = 0.35, float empty_bonus = 0.33);
 		virtual ~AcceleratorKdTree() override;
-		virtual AcceleratorIntersectData<T> intersect(const Ray &ray, float t_max) const override;
+		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
 		//	bool IntersectDBG(const ray_t &ray, float dist, triangle_t **tr, float &Z) const;
-		virtual AcceleratorIntersectData<T> intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData<T> intersectTs(const RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
-		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, T **tr, float &Z) const;
-		Bound getBound() const override { return tree_bound_; }
+		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
+		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
+		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
+		virtual Bound getBound() const override { return tree_bound_; }
 
-		void pigeonMinCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx, SplitCost &split);
-		void minimalCost(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_idx, const Bound *all_bounds, const std::array<BoundEdge *, 3> &edges, SplitCost &split);
-		int buildTree(uint32_t n_prims, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
+		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
+
+		static SplitCost pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx);
+		static SplitCost minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<BoundEdge *, 3> &edges, KdStats &kd_stats);
+
+		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const KdTreeNode *nodes, const Bound &tree_bound);
+		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const KdTreeNode *nodes, const Bound &tree_bound);
+		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const KdTreeNode *nodes, const Bound &tree_bound);
 
 		float cost_ratio_; 	//!< node traversal cost divided by primitive intersection cost
 		float e_bonus_; 	//!< empty bonus
@@ -150,36 +157,32 @@ template<class T> class AcceleratorKdTree : public Accelerator<T>
 		unsigned int max_leaf_size_;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
-		KdTreeNode<T> *nodes_;
+		KdTreeNode *nodes_;
 
 		// those are temporary actually, to keep argument counts bearable
-		std::vector<const T *> prims_;
 		Bound *all_bounds_;
-		int *clip_; // indicate clip plane(s) for current level
-		char *cdata_; // clipping data...
-
+#if PRIMITIVE_CLIPPING > 0
+		ClipPlane *clip_; // indicate clip plane(s) for current level
+		std::vector<PolyDouble> cdata_; // clipping data...
+#endif
 		// some statistics:
 		KdStats kd_stats_;
 
 		static constexpr int prim_clip_thresh_ = 32;
-		static constexpr int clip_data_size_ = 3 * 12 * sizeof(double);
-		static constexpr int kd_bins_ = 1024;
 		static constexpr int kd_max_stack_ = 64;
 		static constexpr int lower_b_ = 0;
 		static constexpr int upper_b_ = 2;
 		static constexpr int both_b_ = 1;
 };
 
-
-template<class T>
-inline void KdTreeNode<T>::createLeaf(uint32_t *prim_idx, int np, const std::vector<const T *> &prims, MemoryArena &arena, KdStats &kd_stats) {
+inline void KdTreeNode::createLeaf(const uint32_t *prim_idx, int np, const std::vector<const Primitive *> &prims, MemoryArena &arena, KdStats &kd_stats) {
 	primitives_ = nullptr;
 	flags_ = np << 2;
 	flags_ |= 3;
 	if(np > 1)
 	{
-		primitives_ = (T **) arena.alloc(np * sizeof(T *));
-		for(int i = 0; i < np; i++) primitives_[i] = (T *)prims[prim_idx[i]];
+		primitives_ = static_cast<const Primitive **>(arena.alloc(np * sizeof(const Primitive *)));
+		for(int i = 0; i < np; i++) primitives_[i] = static_cast<const Primitive *>(prims[prim_idx[i]]);
 		kd_stats.kd_prims_ += np; //stat
 	}
 	else if(np == 1)
@@ -191,8 +194,7 @@ inline void KdTreeNode<T>::createLeaf(uint32_t *prim_idx, int np, const std::vec
 	kd_stats.kd_leaves_++; //stat
 }
 
-template<class T>
-inline void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
+inline void KdTreeNode::createInterior(int axis, float d, KdStats &kd_stats)
 {
 	division_ = d;
 	flags_ = (flags_ & ~3) | axis;
@@ -200,4 +202,5 @@ inline void KdTreeNode<T>::createInterior(int axis, float d, KdStats &kd_stats)
 }
 
 END_YAFARAY
+
 #endif    //YAFARAY_ACCELERATOR_KDTREE_H

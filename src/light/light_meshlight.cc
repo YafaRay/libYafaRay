@@ -74,7 +74,7 @@ void MeshLight::initIs()
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
 
-	accelerator_ = Accelerator<Primitive>::factory(primitives_, params);
+	accelerator_ = Accelerator::factory(primitives_, params);
 }
 
 void MeshLight::init(Scene &scene)
@@ -197,9 +197,9 @@ bool MeshLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	if(!accelerator_) return false;
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
-	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersect(ray, t_max);
+	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
 	if(!accelerator_intersect_data.hit_) { return false; }
-	const Vec3 n = accelerator_intersect_data.hit_item_->getGeometricNormal();
+	const Vec3 n = accelerator_intersect_data.hit_primitive_->getGeometricNormal();
 	float cos_angle = ray.dir_ * (-n);
 	if(cos_angle <= 0.f)
 	{

@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-template <typename T> class Accelerator;
+class Accelerator;
 class Primitive;
 
 class YafaRayScene final : public Scene
@@ -54,7 +54,7 @@ class YafaRayScene final : public Scene
 		void clearObjects();
 
 		Object *current_object_ = nullptr;
-		Accelerator<Primitive> *accelerator_ = nullptr;
+		Accelerator *accelerator_ = nullptr;
 		std::map<std::string, Object *> objects_;
 };
 

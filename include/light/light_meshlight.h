@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 class MeshObject;
 class Primitive;
-template<class T> class Accelerator;
+class Accelerator;
 class Pdf1D;
 class ParamMap;
 class Scene;
@@ -66,7 +66,7 @@ class MeshLight final : public Light
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		MeshObject *mesh_object_ = nullptr;
-		Accelerator<Primitive> *accelerator_ = nullptr;
+		Accelerator *accelerator_ = nullptr;
 		//debug stuff:
 		int *stats_ = nullptr;
 };

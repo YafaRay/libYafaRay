@@ -213,42 +213,35 @@ Object *YafaRayScene::getObject(const std::string &name) const
 bool YafaRayScene::updateObjects()
 {
 	if(accelerator_) { delete accelerator_; accelerator_ = nullptr; }
-	int nprims = 0;
+	std::vector<const Primitive *> primitives;
 	for(const auto &o : objects_)
 	{
 		if(o.second->getVisibility() == Visibility::Invisible) continue;
 		if(o.second->isBaseObject()) continue;
-		nprims += o.second->numPrimitives();
+		const auto prims = o.second->getPrimitives();
+		primitives.insert(primitives.end(), prims.begin(), prims.end());
 	}
-	if(nprims > 0)
+	if(primitives.empty())
 	{
-		std::vector<const Primitive *> primitives;
-		for(const auto &o : objects_)
-		{
-			if(o.second->getVisibility() == Visibility::Invisible) continue;
-			if(o.second->isBaseObject()) continue;
-			const auto prims = o.second->getPrimitives();
-			primitives.insert(primitives.end(), prims.begin(), prims.end());
-		}
-		ParamMap params;
-		params["type"] = std::string("kdtree"); //Do not remove the std::string(), entering directly a string literal can be confused with bool until C++17 new string literals
-		params["num_primitives"] = nprims;
-		params["depth"] = -1;
-		params["leaf_size"] = 1;
-		params["cost_ratio"] = 0.8f;
-		params["empty_bonus"] = 0.33f;
-
-		accelerator_ = Accelerator<Primitive>::factory(primitives, params);
-		scene_bound_ = accelerator_->getBound();
-		Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
-
-		if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
-		if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
-
-		Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
-
+		Y_ERROR << "Scene: Scene is empty..." << YENDL;
+		return false;
 	}
-	else Y_ERROR << "Scene: Scene is empty..." << YENDL;
+	ParamMap params;
+	params["type"] = std::string("kdtree");
+	params["num_primitives"] = static_cast<int>(primitives.size());
+	params["depth"] = -1;
+	params["leaf_size"] = 1;
+	params["cost_ratio"] = 0.8f;
+	params["empty_bonus"] = 0.33f;
+
+	accelerator_ = Accelerator::factory(primitives, params);
+	scene_bound_ = accelerator_->getBound();
+	Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+
+	if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
+	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
+
+	Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 	return true;
 }
 
@@ -257,12 +250,12 @@ bool YafaRayScene::intersect(const Ray &ray, SurfacePoint &sp) const
 	const float t_max = (ray.tmax_ >= 0.f) ? ray.tmax_ : std::numeric_limits<float>::infinity();
 	// intersect with tree:
 	if(!accelerator_) return false;
-	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersect(ray, t_max);
-	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_item_)
+	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersect(ray, t_max);
+	if(accelerator_intersect_data.hit_ && accelerator_intersect_data.hit_primitive_)
 	{
 		const Point3 hit_point = ray.from_ + accelerator_intersect_data.t_max_ * ray.dir_;
-		sp = accelerator_intersect_data.hit_item_->getSurface(hit_point, accelerator_intersect_data);
-		sp.hit_primitive_ = accelerator_intersect_data.hit_item_;
+		sp = accelerator_intersect_data.hit_primitive_->getSurface(hit_point, accelerator_intersect_data);
+		sp.hit_primitive_ = accelerator_intersect_data.hit_primitive_;
 		sp.ray_ = nullptr;
 		ray.tmax_ = accelerator_intersect_data.t_max_;
 		return true;
@@ -284,13 +277,13 @@ bool YafaRayScene::isShadowed(const RenderData &render_data, const Ray &ray, flo
 	sray.time_ = render_data.time_;
 	const float t_max = (ray.tmax_ >= 0.f) ? sray.tmax_ - 2 * sray.tmin_ : std::numeric_limits<float>::infinity();
 	if(!accelerator_) return false;
-	const AcceleratorIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersectS(sray, t_max, shadow_bias_);
+	const AcceleratorIntersectData accelerator_intersect_data = accelerator_->intersectS(sray, t_max, shadow_bias_);
 	if(accelerator_intersect_data.hit_)
 	{
-		if(accelerator_intersect_data.hit_item_)
+		if(accelerator_intersect_data.hit_primitive_)
 		{
-			if(accelerator_intersect_data.hit_item_->getObject()) obj_index = accelerator_intersect_data.hit_item_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
-			if(accelerator_intersect_data.hit_item_->getMaterial()) mat_index = accelerator_intersect_data.hit_item_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
+			if(accelerator_intersect_data.hit_primitive_->getObject()) obj_index = accelerator_intersect_data.hit_primitive_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
+			if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
 		}
 		return true;
 	}
@@ -308,15 +301,15 @@ bool YafaRayScene::isShadowed(RenderData &render_data, const Ray &ray, int max_d
 	bool intersect = false;
 	if(accelerator_)
 	{
-		const AcceleratorTsIntersectData<Primitive> accelerator_intersect_data = accelerator_->intersectTs(render_data, sray, max_depth, t_max, shadow_bias_);
+		const AcceleratorTsIntersectData accelerator_intersect_data = accelerator_->intersectTs(render_data, sray, max_depth, t_max, shadow_bias_);
 		filt = accelerator_intersect_data.transparent_color_;
 		if(accelerator_intersect_data.hit_)
 		{
 			intersect = true;
-			if(accelerator_intersect_data.hit_item_)
+			if(accelerator_intersect_data.hit_primitive_)
 			{
-				if(accelerator_intersect_data.hit_item_->getObject()) obj_index = accelerator_intersect_data.hit_item_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
-				if(accelerator_intersect_data.hit_item_->getMaterial()) mat_index = accelerator_intersect_data.hit_item_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
+				if(accelerator_intersect_data.hit_primitive_->getObject()) obj_index = accelerator_intersect_data.hit_primitive_->getObject()->getAbsObjectIndex();    //Object index of the object casting the shadow
+				if(accelerator_intersect_data.hit_primitive_->getMaterial()) mat_index = accelerator_intersect_data.hit_primitive_->getMaterial()->getAbsMaterialIndex();    //Material index of the object casting the shadow
 			}
 		}
 	}

@@ -34,7 +34,7 @@ class Pdf1D;
 class ParamMap;
 class Scene;
 class Background;
-template<class T> class Accelerator;
+class Accelerator;
 
 class BackgroundPortalLight final : public Light
 {
@@ -68,7 +68,7 @@ class BackgroundPortalLight final : public Light
 		float area_, inv_area_;
 		float power_;
 		MeshObject *mesh_object_ = nullptr;
-		Accelerator<Primitive> *accelerator_ = nullptr;
+		Accelerator *accelerator_ = nullptr;
 		Background *bg_ = nullptr;
 		Point3 world_center_;
 		float a_pdf_;

@@ -19,13 +19,13 @@
 #include "yafaray_config.h"
 #include "scene/yafaray/primitive_triangle.h"
 #include "scene/yafaray/object_mesh.h"
+#include "geometry/axis.h"
 #include "geometry/ray.h"
 #include "geometry/bound.h"
 #include "geometry/surface.h"
 #include "geometry/uv.h"
 #include "geometry/matrix4.h"
-#include "scene/yafaray/vector_double.h"
-#include "common/logger.h"
+#include "geometry/poly_double.h"
 #include "common/param.h"
 #include <string.h>
 
@@ -183,32 +183,23 @@ void TrianglePrimitive::calculateShadingSpace(SurfacePoint &sp) const
 	sp.ds_dv_.z_ = sp.n_ * sp.dp_dv_;
 }
 
-bool TrianglePrimitive::clipToBound(const std::array<std::array<double, 3>, 2> &bound, int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const
+PolyDouble::ClipResultWithBound TrianglePrimitive::clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const
 {
-	if(axis >= 0) // re-clip
+	if(clip_plane.pos_ != ClipPlane::Pos::None) // re-clip
 	{
-		const bool lower = axis & ~3;
-		const int axis_calc = axis & 3;
-		const double split = lower ? bound[0][axis_calc] : bound[1][axis_calc];
-		const int tri_plane_clip = TrianglePrimitive::triPlaneClip(split, axis_calc, lower, clipped, d_old, d_new);
-		// if an error occured due to precision limits...ugly solution i admitt
-		if(tri_plane_clip > 1) goto WHOOPS;
-		return (tri_plane_clip == 0) ? true : false;
+		const double split = (clip_plane.pos_ == ClipPlane::Pos::Lower) ? bound[0][clip_plane.axis_] : bound[1][clip_plane.axis_];
+		const PolyDouble::ClipResultWithBound clip_result = PolyDouble::planeClipWithBound(split, clip_plane, poly);
+		if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::Correct) return clip_result;
+		else if(clip_result.clip_result_code_ == PolyDouble::ClipResultWithBound::NoOverlapDisappeared) return {PolyDouble::ClipResultWithBound::NoOverlapDisappeared};
+		//else: do initial clipping below, if there are any other PolyDouble::ClipResult results (errors)
 	}
-	else // initial clip
-	{
-		WHOOPS:
-		const std::vector<Point3> p = getVertices(obj_to_world);
-		std::array<std::array<double, 3>, 3> t_points;
-		for(int i = 0; i < 3; ++i)
-		{
-			t_points[0][i] = p[0][i];
-			t_points[1][i] = p[1][i];
-			t_points[2][i] = p[2][i];
-		}
-		const int tri_box_clip = TrianglePrimitive::triBoxClip(bound[0], bound[1], t_points, clipped, d_new);
-		return (tri_box_clip == 0) ? true : false;
-	}
+	// initial clip
+	const std::array<Point3, 3> triangle_vertices {
+		getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world)
+	};
+	PolyDouble poly_triangle;
+	for(const auto &vert : triangle_vertices) poly_triangle.addVertex({vert.x_, vert.y_, vert.z_ });
+	return PolyDouble::boxClip(bound[0], bound[1], poly_triangle);
 }
 
 float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)
@@ -239,384 +230,6 @@ void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array
 	const float v = s_2 * su_1;
 	p = u * vertices[0] + v * vertices[1] + (1.f - u - v) * vertices[2];
 }
-
-
-template <class T>
-void swap__(T **a, T **b)
-{
-	T *x;
-	x = *a;
-	*a = *b;
-	*b = x;
-}
-
-struct ClipDump
-{
-	int nverts_;
-	Vec3Double poly_[10];
-};
-
-/*! function to clip a triangle against an axis aligned bounding box and return new bound
-	\param box the AABB of the clipped triangle
-	\return 0: triangle was clipped successfully
-			1: triangle didn't overlap the bound at all => disappeared
-			2: fatal error occured (didn't ever happen to me :)
-			3: resulting polygon degenerated to less than 3 edges (never happened either)
-*/
-
-int TrianglePrimitive::triBoxClip(const std::array<double, 3> &b_min, const std::array<double, 3> &b_max, const std::array<std::array<double, 3>, 3> &triverts, Bound &box, void *n_dat)
-{
-	Vec3Double dump_1[11], dump_2[11]; double t;
-	Vec3Double *poly = dump_1, *cpoly = dump_2;
-
-	for(int q = 0; q < 3; q++)
-	{
-		poly[q][0] = triverts[q][0], poly[q][1] = triverts[q][1], poly[q][2] = triverts[q][2];
-		poly[3][q] = triverts[0][q];
-	}
-
-	int n = 3, nc;
-	bool p_1_inside;
-
-	//for each axis
-	for(int axis = 0; axis < 3; axis++)
-	{
-		Vec3Double *p_1, *p_2;
-		int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
-
-		// === clip lower ===
-		nc = 0;
-		p_1_inside = (poly[0][axis] >= b_min[axis]) ? true : false;
-		for(int i = 0; i < n; i++) // for each poly edge
-		{
-			p_1 = &poly[i], p_2 = &poly[i + 1];
-			if(p_1_inside)   // p1 inside
-			{
-				if((*p_2)[axis] >= b_min[axis]) //both "inside"
-				{
-					// copy p2 to new poly
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else
-				{
-					// clip line, add intersection to new poly
-					t = (b_min[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
-					cpoly[nc][axis] = b_min[axis];
-					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
-					nc++;
-					p_1_inside = false;
-				}
-			}
-			else //p1 < b_min -> outside
-			{
-				if((*p_2)[axis] > b_min[axis]) //p2 inside, add s and p2
-				{
-					t = (b_min[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
-					cpoly[nc][axis] = b_min[axis];
-					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
-					nc++;
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else if((*p_2)[axis] == b_min[axis]) //p2 and s are identical, only add p2
-				{
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else p_1_inside = false;
-			}
-			//else: both outse, do nothing.
-		} //for all edges
-
-		if(nc > 9)
-		{
-			Y_VERBOSE << "TriangleClip: after min n is now " << nc << ", that's bad!" << YENDL;
-			return 2;
-		}
-
-		cpoly[nc] = cpoly[0];
-		n = nc;
-		swap__(&cpoly, &poly);
-
-
-		// === clip upper ===
-		nc = 0;
-		p_1_inside = (poly[0][axis] <= b_max[axis]) ? true : false;
-		for(int i = 0; i < n; i++) // for each poly edge
-		{
-			p_1 = &poly[i], p_2 = &poly[i + 1];
-			if(p_1_inside)
-			{
-				if((*p_2)[axis] <= b_max[axis]) //both "inside"
-				{
-					// copy p2 to new poly
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else
-				{
-					// clip line, add intersection to new poly
-					t = (b_max[axis] - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
-					cpoly[nc][axis] = b_max[axis];
-					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
-					nc++;
-					p_1_inside = false;
-				}
-			}
-			else //p1 > b_max -> outside
-			{
-				if((*p_2)[axis] < b_max[axis]) //p2 inside, add s and p2
-				{
-					t = (b_max[axis] - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
-					cpoly[nc][axis] = b_max[axis];
-					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
-					nc++;
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else if((*p_2)[axis] == b_max[axis]) //p2 and s are identical, only add p2
-				{
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else p_1_inside = false;
-			}
-			//else: both outse, do nothing.
-		} //for all edges
-
-		if(nc > 9)
-		{
-			Y_VERBOSE << "TriangleClip: After max n is now " << nc << ", that's bad!" << YENDL;
-			return 2;
-		}
-
-		if(nc == 0) return 1;
-
-		cpoly[nc] = cpoly[0];
-		n = nc;
-		swap__(&cpoly, &poly);
-	} //for all axis
-
-	if(n < 2)
-	{
-		static bool foobar = false;
-		if(foobar) return 3;
-		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << n << YENDL;
-		Y_VERBOSE << "TriangleClip: b_min:\t" << b_min[0] << ",\t" << b_min[1] << ",\t" << b_min[2] << YENDL;
-		Y_VERBOSE << "TriangleClip: b_max:\t" << b_max[0] << ",\t" << b_max[1] << ",\t" << b_max[2] << YENDL;
-		Y_VERBOSE << "TriangleClip: delta:\t" << b_max[0] - b_min[0] << ",\t" << b_max[1] - b_min[1] << ",\t" << b_max[2] - b_min[2] << YENDL;
-
-		for(int j = 0; j < 3; j++)
-		{
-			Y_VERBOSE << "TriangleClip: point" << j << ": " << triverts[j][0] << ",\t" << triverts[j][1] << ",\t" << triverts[j][2] << YENDL;
-		}
-		foobar = true;
-		return 3;
-	}
-
-	double a[3], g[3];
-	for(int i = 0; i < 3; ++i) a[i] = g[i] = poly[0][i];
-	for(int i = 1; i < n; i++)
-	{
-		a[0] = std::min(a[0], poly[i][0]);
-		a[1] = std::min(a[1], poly[i][1]);
-		a[2] = std::min(a[2], poly[i][2]);
-		g[0] = std::max(g[0], poly[i][0]);
-		g[1] = std::max(g[1], poly[i][1]);
-		g[2] = std::max(g[2], poly[i][2]);
-	}
-
-	box.a_[0] = a[0], box.g_[0] = g[0];
-	box.a_[1] = a[1], box.g_[1] = g[1];
-	box.a_[2] = a[2], box.g_[2] = g[2];
-
-	ClipDump *output = (ClipDump *)n_dat;
-	output->nverts_ = n;
-	memcpy(output->poly_, poly, (n + 1) * sizeof(Vec3Double));
-
-	return 0;
-}
-
-int TrianglePrimitive::triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat)
-{
-	ClipDump *input = (ClipDump *) o_dat; //FIXME: casting const away and writing to it using swap__, dangerous!
-	ClipDump *output = (ClipDump *) n_dat;
-	Vec3Double *poly = input->poly_;
-	Vec3Double *cpoly = output->poly_;
-	int nverts = input->nverts_;
-	int next_axis = (axis + 1) % 3, prev_axis = (axis + 2) % 3;
-
-	if(lower)
-	{
-		// === clip lower ===
-		int nc = 0;
-		bool p_1_inside = (poly[0][axis] >= pos) ? true : false;
-		for(int i = 0; i < nverts; i++) // for each poly edge
-		{
-			const Vec3Double *p_1 = &poly[i], *p_2 = &poly[i + 1];
-			if(p_1_inside)   // p1 inside
-			{
-				if((*p_2)[axis] >= pos) //both "inside"
-				{
-					// copy p2 to new poly
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else
-				{
-					// clip line, add intersection to new poly
-					const double t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
-					cpoly[nc][axis] = pos;
-					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
-					nc++;
-					p_1_inside = false;
-				}
-			}
-			else //p1 < b_min -> outside
-			{
-				if((*p_2)[axis] > pos) //p2 inside, add s and p2
-				{
-					const double t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
-					cpoly[nc][axis] = pos;
-					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
-					nc++;
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
-				{
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else p_1_inside = false;
-			}
-			//else: both outse, do nothing.
-		} //for all edges
-
-		if(nc == 0) return 1;
-
-		if(nc > 9)
-		{
-			Y_VERBOSE << "TriangleClip: After min n is now " << nc << ", that's bad!" << YENDL;
-			return 2;
-		}
-
-		cpoly[nc] = cpoly[0];
-		nverts = nc;
-		swap__(&cpoly, &poly);
-	}
-	else
-	{
-		// === clip upper ===
-		int nc = 0;
-		bool p_1_inside = (poly[0][axis] <= pos) ? true : false;
-		for(int i = 0; i < nverts; i++) // for each poly edge
-		{
-			const Vec3Double *p_1 = &poly[i], *p_2 = &poly[i + 1];
-			if(p_1_inside)
-			{
-				if((*p_2)[axis] <= pos) //both "inside"
-				{
-					// copy p2 to new poly
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else
-				{
-					// clip line, add intersection to new poly
-					const double t = (pos - (*p_1)[axis]) / ((*p_2)[axis] - (*p_1)[axis]);
-					cpoly[nc][axis] = pos;
-					cpoly[nc][next_axis] = (*p_1)[next_axis] + t * ((*p_2)[next_axis] - (*p_1)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_1)[prev_axis] + t * ((*p_2)[prev_axis] - (*p_1)[prev_axis]);
-					nc++;
-					p_1_inside = false;
-				}
-			}
-			else //p1 > pos -> outside
-			{
-				if((*p_2)[axis] < pos) //p2 inside, add s and p2
-				{
-					const double t = (pos - (*p_2)[axis]) / ((*p_1)[axis] - (*p_2)[axis]);
-					cpoly[nc][axis] = pos;
-					cpoly[nc][next_axis] = (*p_2)[next_axis] + t * ((*p_1)[next_axis] - (*p_2)[next_axis]);
-					cpoly[nc][prev_axis] = (*p_2)[prev_axis] + t * ((*p_1)[prev_axis] - (*p_2)[prev_axis]);
-					nc++;
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else if((*p_2)[axis] == pos) //p2 and s are identical, only add p2
-				{
-					cpoly[nc] = *p_2;
-					nc++;
-					p_1_inside = true;
-				}
-				else p_1_inside = false;
-			}
-			//else: both outse, do nothing.
-		} //for all edges
-
-		if(nc == 0) return 1;
-
-		if(nc > 9)
-		{
-			Y_VERBOSE << "TriangleClip: after max n is now " << nc << ", that's bad!" << YENDL;
-			return 2;
-		}
-
-		cpoly[nc] = cpoly[0];
-		nverts = nc;
-		swap__(&cpoly, &poly);
-	} //for all axis
-
-	if(nverts < 2)
-	{
-		static bool foobar = false;
-		if(foobar) return 3;
-		Y_VERBOSE << "TriangleClip: Clip degenerated! n=" << nverts << YENDL;
-		foobar = true;
-		return 3;
-	}
-
-	double a[3], g[3];
-	for(int i = 0; i < 3; ++i) a[i] = g[i] = poly[0][i];
-	for(int i = 1; i < nverts; i++)
-	{
-		a[0] = std::min(a[0], poly[i][0]);
-		a[1] = std::min(a[1], poly[i][1]);
-		a[2] = std::min(a[2], poly[i][2]);
-		g[0] = std::max(g[0], poly[i][0]);
-		g[1] = std::max(g[1], poly[i][1]);
-		g[2] = std::max(g[2], poly[i][2]);
-	}
-
-	box.a_[0] = a[0], box.g_[0] = g[0];
-	box.a_[1] = a[1], box.g_[1] = g[1];
-	box.a_[2] = a[2], box.g_[2] = g[2];
-
-	output->nverts_ = nverts;
-
-	return 0;
-}
-
-
 
 /*************************************************************
  *      The code below (triBoxOverlap and related functions)
@@ -781,6 +394,5 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 
 	return true;   /* box and triangle overlaps */
 }
-
 
 END_YAFARAY

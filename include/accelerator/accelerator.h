@@ -31,26 +31,27 @@ class RenderData;
 class Bound;
 class ParamMap;
 class Ray;
+class Primitive;
 
-template<class T> struct AcceleratorIntersectData : IntersectData
+struct AcceleratorIntersectData : IntersectData
 {
 	float t_max_ = std::numeric_limits<float>::infinity();
-	const T *hit_item_ = nullptr;
+	const Primitive *hit_primitive_ = nullptr;
 };
 
-template<class T> struct AcceleratorTsIntersectData : AcceleratorIntersectData<T>
+struct AcceleratorTsIntersectData : AcceleratorIntersectData
 {
 	Rgb transparent_color_ {1.f};
 };
 
-template<class T> class Accelerator
+class Accelerator
 {
 	public:
-		static Accelerator<T> *factory(const std::vector<const T *> &primitives_list, ParamMap &params);
+		static Accelerator *factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params);
 		virtual ~Accelerator() { };
-		virtual AcceleratorIntersectData<T> intersect(const Ray &ray, float t_max) const = 0;
-		virtual AcceleratorIntersectData<T> intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
-		virtual AcceleratorTsIntersectData<T> intersectTs(const RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;
+		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const = 0;
+		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
+		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;
 		virtual Bound getBound() const = 0;
 };
 

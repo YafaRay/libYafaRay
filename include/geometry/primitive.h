@@ -20,9 +20,11 @@
 #ifndef YAFARAY_PRIMITIVE_H
 #define YAFARAY_PRIMITIVE_H
 
-#include <array>
 #include "constants.h"
 #include "common/visibility.h"
+#include "geometry/poly_double.h"
+#include <vector>
+#include <array>
 
 BEGIN_YAFARAY
 
@@ -52,9 +54,6 @@ class Primitive
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *obj_to_world) const { return true; };
 		/*! indicate if the object has a clipping implementation */
 		virtual bool clippingSupport() const { return false; }
-		/*! calculate the overlapping box of given bound and primitive
-			\return: false:=doesn't overlap bound; true:=valid clip exists */
-		virtual bool clipToBound(const std::array<std::array<double, 3>, 2> &bound, int axis, Bound &clipped, const void *d_old, void *d_new, const Matrix4 *obj_to_world) const { return false; }
 		/*! basic ray primitive interection for raytracing.
 			This should NOT skip intersections outside of [tmin,tmax], unless negative.
 			The caller decides wether t matters or not.
@@ -73,6 +72,9 @@ class Primitive
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world = nullptr) const = 0;
 		const Object *getObject() const { return &base_object_; }
 		Visibility getVisibility() const;
+		/*! calculate the overlapping box of given bound and primitive
+			\return: false:=doesn't overlap bound; true:=valid clip exists */
+		virtual PolyDouble::ClipResultWithBound clipToBound(const std::array<Vec3Double, 2> &bound, const ClipPlane &clip_plane, const PolyDouble &poly, const Matrix4 *obj_to_world) const;
 
 	protected:
 		const Object &base_object_;
