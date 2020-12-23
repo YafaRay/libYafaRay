@@ -631,6 +631,7 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	params.getParam("adv_min_raydist_value", adv_min_raydist_value);
 	params.getParam("adv_base_sampling_offset", adv_base_sampling_offset); //Base sampling offset, in case of multi-computer rendering each should have a different offset so they don't "repeat" the same samples (user configurable)
 	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
+	params.getParam("scene_accelerator", scene_accelerator_); //Computer node in multi-computer render environments/render farms
 
 	delete image_film_;
 	defineBasicLayers();

@@ -175,6 +175,7 @@ class LIBYAFARAY_EXPORT Scene
 			const Material *current_material_ = nullptr;
 		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
+		std::string scene_accelerator_;
 		std::map<std::string, Light *> lights_;
 		std::map<std::string, Material *> materials_;
 

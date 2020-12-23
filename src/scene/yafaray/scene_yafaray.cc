@@ -227,7 +227,7 @@ bool YafaRayScene::updateObjects()
 		return false;
 	}
 	ParamMap params;
-	params["type"] = std::string("kdtree");
+	params["type"] = scene_accelerator_;
 	params["num_primitives"] = static_cast<int>(primitives.size());
 	params["depth"] = -1;
 	params["leaf_size"] = 1;
