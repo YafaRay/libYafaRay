@@ -233,6 +233,7 @@ bool YafaRayScene::updateObjects()
 	params["leaf_size"] = 1;
 	params["cost_ratio"] = 0.8f;
 	params["empty_bonus"] = 0.33f;
+	params["accelerator_threads"] = getNumThreads();
 
 	accelerator_ = Accelerator::factory(primitives, params);
 	scene_bound_ = accelerator_->getBound();

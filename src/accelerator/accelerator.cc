@@ -18,6 +18,7 @@
 
 #include "accelerator/accelerator.h"
 #include "accelerator/accelerator_kdtree.h"
+#include "accelerator/accelerator_kdtree_multi_thread.h"
 #include "accelerator/accelerator_simple_test.h"
 #include "common/logger.h"
 #include "common/param.h"
@@ -31,6 +32,7 @@ Accelerator *Accelerator::factory(const std::vector<const Primitive *> &primitiv
 	params.getParam("type", type);
 	Accelerator *accelerator = nullptr;
 	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(primitives_list, params);
+	else if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(primitives_list, params);
 	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(primitives_list, params);
 
 	if(accelerator) Y_INFO << "Accelerator type '" << type << "' created." << YENDL;
