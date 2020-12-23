@@ -125,7 +125,7 @@ inline Logger &Logger::operator<<(const T &obj) {
 	std::ostringstream tmp_stream;
 	tmp_stream << obj;
 
-	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << tmp_stream.str();
 	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
 	return *this;
 }
@@ -134,7 +134,7 @@ inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
 	std::ostringstream tmp_stream;
 	tmp_stream << obj;
 
-	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << obj;
+	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << tmp_stream.str();
 	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
 	return *this;
 }
