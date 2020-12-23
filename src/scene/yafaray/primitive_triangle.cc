@@ -38,8 +38,7 @@ TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, c
 
 IntersectData TrianglePrimitive::intersect(const Ray &ray, const Matrix4 *obj_to_world) const
 {
-	const std::vector<Point3> vertices = getVertices(obj_to_world);
-	return TrianglePrimitive::intersect(ray, {vertices[0], vertices[1], vertices[2]});
+	return TrianglePrimitive::intersect(ray, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
 }
 
 IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Point3, 3> &vertices)
@@ -73,8 +72,7 @@ IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Poin
 
 bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *obj_to_world) const
 {
-	const std::vector<Point3> vertices = getVertices(obj_to_world);
-	return TrianglePrimitive::intersectsBound(ex_bound, {vertices[0], vertices[1], vertices[2]});
+	return TrianglePrimitive::intersectsBound(ex_bound, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
 }
 
 bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices)
@@ -88,8 +86,7 @@ bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::arra
 
 void TrianglePrimitive::calculateGeometricNormal()
 {
-	const std::vector<Point3> vertices = getVertices();
-	normal_geometric_ = calculateNormal({vertices[0], vertices[1], vertices[2]});
+	normal_geometric_ = calculateNormal({ getVertex(0, nullptr), getVertex(1, nullptr), getVertex(2, nullptr) });
 }
 
 Vec3 TrianglePrimitive::calculateNormal(const std::array<Point3, 3> &vertices)
@@ -106,14 +103,19 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	const MeshObject &base_mesh_object = static_cast<const MeshObject &>(base_object_);
 	if(base_mesh_object.isSmooth() || base_mesh_object.hasNormalsExported())
 	{
-		const std::vector<Vec3> v = getVerticesNormals(sp.ng_, obj_to_world);
+		const std::array<Vec3, 3> v {
+			getVertexNormal(0, sp.ng_, obj_to_world),
+			getVertexNormal(1, sp.ng_, obj_to_world),
+			getVertexNormal(2, sp.ng_, obj_to_world)
+		};
 		sp.n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp.n_.normalize();
 	}
 	else sp.n_ = sp.ng_;
 	if(base_mesh_object.hasOrco())
 	{
-		const std::vector<Point3> orco_p = getOrcoVertices();
+		const std::array<Point3, 3> orco_p { getOrcoVertex(0), getOrcoVertex(1), getOrcoVertex(2) };
+
 		sp.orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
 		sp.orco_ng_ = ((orco_p[1] - orco_p[0]) ^ (orco_p[2] - orco_p[0])).normalize();
 		sp.has_orco_ = true;
@@ -125,10 +127,10 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 		sp.orco_ng_ = getGeometricNormal();
 	}
 	bool implicit_uv = true;
-	const std::vector<Point3> p = getVertices(obj_to_world);
+	const std::array<Point3, 3> p { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) };
 	if(base_mesh_object.hasUv())
 	{
-		const std::vector<Uv> &uv = getVerticesUvs();
+		const std::array<Uv, 3> uv { getVertexUv(0), getVertexUv(1), getVertexUv(2) };
 		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
 		sp.v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
 		// calculate dPdU and dPdV
@@ -211,15 +213,12 @@ float TrianglePrimitive::surfaceArea(const std::array<Point3, 3> &vertices)
 
 float TrianglePrimitive::surfaceArea(const Matrix4 *obj_to_world) const
 {
-	const std::vector<Point3> vertices = getVertices(obj_to_world);
-	return surfaceArea({vertices[0], vertices[1], vertices[2]});
+	return surfaceArea({ getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
 }
-
 
 void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world) const
 {
-	const std::vector<Point3> vertices = getVertices(obj_to_world);
-	TrianglePrimitive::sample(s_1, s_2, p, {vertices[0], vertices[1], vertices[2]});
+	TrianglePrimitive::sample(s_1, s_2, p, { getVertex(0, obj_to_world), getVertex(1, obj_to_world), getVertex(2, obj_to_world) });
 	n = getGeometricNormal(obj_to_world);
 }
 
