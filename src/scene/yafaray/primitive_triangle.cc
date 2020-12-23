@@ -79,15 +79,11 @@ bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const Matrix4 *
 
 bool TrianglePrimitive::intersectsBound(const ExBound &ex_bound, const std::array<Point3, 3> &vertices)
 {
-	double t_points[3][3];
+	std::array<Vec3Double, 3> t_points;
 	for(size_t i = 0; i < 3; ++i)
-	{
-		t_points[0][i] = vertices[0][i];
-		t_points[1][i] = vertices[1][i];
-		t_points[2][i] = vertices[2][i];
-	}
-	// triBoxOverlap__() is in src/yafraycore/tribox3_d.cc!
-	return triBoxOverlap__(ex_bound.center_, ex_bound.half_size_, (double **) t_points);
+		for(size_t j = 0; j < 3; ++j)
+			t_points[j][i] = vertices[j][i];
+	return triBoxOverlap(ex_bound.center_, ex_bound.half_size_, t_points);
 }
 
 void TrianglePrimitive::calculateGeometricNormal()
@@ -619,5 +615,172 @@ int TrianglePrimitive::triPlaneClip(double pos, int axis, bool lower, Bound &box
 
 	return 0;
 }
+
+
+
+/*************************************************************
+ *      The code below (triBoxOverlap and related functions)
+ *      is based on "AABB-triangle overlap test code"
+ *          by Tomas Akenine-Möller
+ *      (see information below about the original code)
+ ************************************************************/
+/* AABB-triangle overlap test code                      */
+/* by Tomas Akenine-Möller                              */
+/* Function: int triBoxOverlap(float boxcenter[3],      */
+/*          float boxhalfsize[3],float triverts[3][3]); */
+/* History:                                             */
+/*   2001-03-05: released the code in its first version */
+/*   2001-06-18: changed the order of the tests, faster */
+/*                                                      */
+/* Acknowledgement: Many thanks to Pierre Terdiman for  */
+/* suggestions and discussions on how to optimize code. */
+/* Thanks to David Hunt for finding a ">="-bug!         */
+/********************************************************/
+
+Vec3Double cross__(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	Vec3Double result;
+	result[0] = v_1[1] * v_2[2] - v_1[2] * v_2[1];
+	result[1] = v_1[2] * v_2[0] - v_1[0] * v_2[2];
+	result[2] = v_1[0] * v_2[1] - v_1[1] * v_2[0];
+	return result;
+}
+
+double dot__(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	return v_1[0] * v_2[0] + v_1[1] * v_2[1] + v_1[2] * v_2[2];
+}
+
+Vec3Double sub__(const Vec3Double &v_1, const Vec3Double &v_2)
+{
+	Vec3Double result;
+	for(int i = 0; i < 3; ++i) result[i] = v_1[i] - v_2[i];
+	return result;
+}
+
+struct MinMax
+{
+	double min_;
+	double max_;
+};
+
+MinMax findMinMax__(const Vec3Double values)
+{
+	MinMax min_max;
+	min_max.min_ = math::min(values[0], values[1], values[2]);
+	min_max.max_ = math::max(values[0], values[1], values[2]);
+	return min_max;
+}
+
+int planeBoxOverlap__(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)	// -NJMP-
+{
+	Vec3Double vmin, vmax;
+	for(int axis = 0; axis < 3; ++axis)
+	{
+		const double v = vert[axis];					// -NJMP-
+		if(normal[axis] > 0)
+		{
+			vmin[axis] = -maxbox[axis] - v;	// -NJMP-
+			vmax[axis] = maxbox[axis] - v;	// -NJMP-
+		}
+		else
+		{
+			vmin[axis] = maxbox[axis] - v;	// -NJMP-
+			vmax[axis] = -maxbox[axis] - v;	// -NJMP-
+		}
+	}
+	if(dot__(normal, vmin) > 0) return 0;	// -NJMP-
+	if(dot__(normal, vmax) >= 0) return 1;	// -NJMP-
+
+	return 0;
+}
+
+bool axisTest__(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
+{
+	const int axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
+	const int axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
+	const int sign = (axis == Axis::Y ? -1 : 1);
+	const double p_a = sign * (a * v_a[axis_a] - b * v_a[axis_b]);
+	const double p_b = sign * (a * v_b[axis_a] - b * v_b[axis_b]);
+	double min, max;
+	if(p_a < p_b)
+	{
+		min = p_a;
+		max = p_b;
+	}
+	else
+	{
+		min = p_b;
+		max = p_a;
+	}
+	const double rad = f_a * boxhalfsize[axis_a] + f_b * boxhalfsize[axis_b];
+	if(min > rad || max < -rad) return false;
+	else return true;
+}
+
+bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalfsize, const std::array<Vec3Double, 3> &triverts)
+{
+
+	/*    use separating axis theorem to test overlap between triangle and box */
+	/*    need to test for overlap in these directions: */
+	/*    1) the {x,y,z}-directions (actually, since we use the AABB of the triangle */
+	/*       we do not even need to test these) */
+	/*    2) normal of the triangle */
+	/*    3) crossproduct(edge from tri, {x,y,z}-directin) */
+	/*       this gives 3x3=9 more tests */
+	/* This is the fastest branch on Sun */
+	/* move everything so that the boxcenter is in (0,0,0) */
+	const std::array<Vec3Double, 3> tri_verts {
+		sub__(triverts[0], boxcenter),
+		sub__(triverts[1], boxcenter),
+		sub__(triverts[2], boxcenter)
+	};
+	const std::array<Vec3Double, 3> tri_edges {
+		sub__(tri_verts[1], tri_verts[0]),
+		sub__(tri_verts[2], tri_verts[1]),
+		sub__(tri_verts[0], tri_verts[2])
+	};
+	/* Bullet 3:  */
+	/*  test the 9 tests first (this was faster) */
+	const std::array<Vec3Double, 3> fe {{
+		{std::abs(tri_edges[0][Axis::X]), std::abs(tri_edges[0][Axis::Y]), std::abs(tri_edges[0][Axis::Z])},
+		{std::abs(tri_edges[1][Axis::X]), std::abs(tri_edges[1][Axis::Y]), std::abs(tri_edges[1][Axis::Z])},
+		{std::abs(tri_edges[2][Axis::X]), std::abs(tri_edges[2][Axis::Y]), std::abs(tri_edges[2][Axis::Z])}
+	}};
+	if(!axisTest__(tri_edges[0][Axis::Z], tri_edges[0][Axis::Y], fe[0][Axis::Z], fe[0][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!axisTest__(tri_edges[0][Axis::Z], tri_edges[0][Axis::X], fe[0][Axis::Z], fe[0][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest__(tri_edges[0][Axis::Y], tri_edges[0][Axis::X], fe[0][Axis::Y], fe[0][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+
+	if(!axisTest__(tri_edges[1][Axis::Z], tri_edges[1][Axis::Y], fe[1][Axis::Z], fe[1][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!axisTest__(tri_edges[1][Axis::Z], tri_edges[1][Axis::X], fe[1][Axis::Z], fe[1][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest__(tri_edges[1][Axis::Y], tri_edges[1][Axis::X], fe[1][Axis::Y], fe[1][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Z)) return false;
+
+	if(!axisTest__(tri_edges[2][Axis::Z], tri_edges[2][Axis::Y], fe[2][Axis::Z], fe[2][Axis::Y], tri_verts[0], tri_verts[1], boxhalfsize, Axis::X)) return false;
+	if(!axisTest__(tri_edges[2][Axis::Z], tri_edges[2][Axis::X], fe[2][Axis::Z], fe[2][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest__(tri_edges[2][Axis::Y], tri_edges[2][Axis::X], fe[2][Axis::Y], fe[2][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+
+	/* Bullet 1: */
+	/*  first test overlap in the {x,y,z}-directions */
+	/*  find min, max of the triangle each direction, and test for overlap in */
+	/*  that direction -- this is equivalent to testing a minimal AABB around */
+	/*  the triangle against the AABB */
+
+	/* test in the 3 directions */
+	for(int axis = 0; axis < 3; ++axis)
+	{
+		const MinMax min_max = findMinMax__(tri_verts[axis]);
+		if(min_max.min_ > boxhalfsize[axis] || min_max.max_ < -boxhalfsize[axis]) return false;
+	}
+
+	/* Bullet 2: */
+	/*  test if the box intersects the plane of the triangle */
+	/*  compute plane equation of triangle: normal*x+d=0 */
+	const Vec3Double normal = cross__(tri_edges[0], tri_edges[1]);
+	// -NJMP- (line removed here)
+	if(!planeBoxOverlap__(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
+
+	return true;   /* box and triangle overlaps */
+}
+
 
 END_YAFARAY

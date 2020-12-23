@@ -26,6 +26,7 @@
 
 #include "constants.h"
 #include "ray.h"
+#include "geometry/vector_double.h"
 
 BEGIN_YAFARAY
 
@@ -222,8 +223,8 @@ class ExBound: public Bound
 			}
 		}
 
-		double center_[3];
-		double half_size_[3];
+		Vec3Double center_;
+		Vec3Double half_size_;
 };
 
 

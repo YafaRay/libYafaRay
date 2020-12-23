@@ -27,6 +27,7 @@
 BEGIN_YAFARAY
 
 class MeshObject;
+class Vec3Double;
 
 class TrianglePrimitive: public FacePrimitive
 {
@@ -49,10 +50,9 @@ class TrianglePrimitive: public FacePrimitive
 		static int triPlaneClip(double pos, int axis, bool lower, Bound &box, const void *o_dat, void *n_dat);
 		static float surfaceArea(const std::array<Point3, 3> &vertices);
 		static void sample(float s_1, float s_2, Point3 &p, const std::array<Point3, 3> &vertices);
+		//! triBoxOverlap and related functions are based on "AABB-triangle overlap test code" by Tomas Akenine-Möller
+		static bool triBoxOverlap(const Vec3Double &boxcenter, const Vec3Double &boxhalfsize, const std::array<Vec3Double, 3> &triverts);
 };
-
-//triBoxOverlap comes from tribox3_d.cc (AABB-triangle overlap test code by Tomas Akenine-Möller)
-extern int triBoxOverlap__(const double *boxcenter, const double *boxhalfsize, double **triverts);
 
 END_YAFARAY
 
