@@ -27,19 +27,9 @@
 
 BEGIN_YAFARAY
 
-Primitive *Primitive::factory(ParamMap &params, const Scene &scene)
-{
-	Y_DEBUG PRTEXT(**Primitive) PREND; params.printDebug();
-	std::string type;
-	params.getParam("type", type);
-	if(type == "triangle") return TrianglePrimitive::factory(params, scene);
-	else if(type == "sphere") return SpherePrimitive::factory(params, scene);
-	else return nullptr;
-}
-
 Visibility Primitive::getVisibility() const
 {
-	return base_object_->getVisibility();
+	return base_object_.getVisibility();
 }
 
 SurfacePoint Primitive::getSurface(const Point3 &hit, const IntersectData &data, const Matrix4 *obj_to_world) const

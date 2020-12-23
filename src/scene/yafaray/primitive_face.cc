@@ -24,21 +24,20 @@
 
 BEGIN_YAFARAY
 
-FacePrimitive::FacePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object) : vertices_(vertices_indices), vertex_normals_(vertices_indices.size(), -1), vertex_uvs_(vertices_uv_indices)
+FacePrimitive::FacePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : Primitive(mesh_object), vertices_(vertices_indices), vertex_normals_(vertices_indices.size(), -1), vertex_uvs_(vertices_uv_indices)
 {
-	base_object_ = mesh_object;
 }
 
 Point3 FacePrimitive::getVertex(size_t vertex_number, const Matrix4 *obj_to_world) const
 {
-	const Point3 point = static_cast<const MeshObject *>(base_object_)->getVertex(vertices_[vertex_number]);
+	const Point3 point = static_cast<const MeshObject &>(base_object_).getVertex(vertices_[vertex_number]);
 	if(obj_to_world) return (*obj_to_world) * point;
 	else return point;
 }
 
 Point3 FacePrimitive::getOrcoVertex(size_t vertex_number) const
 {
-	if(static_cast<const MeshObject *>(base_object_)->hasOrco()) return static_cast<const MeshObject *>(base_object_)->getOrcoVertex(vertices_[vertex_number]);
+	if(static_cast<const MeshObject &>(base_object_).hasOrco()) return static_cast<const MeshObject &>(base_object_).getOrcoVertex(vertices_[vertex_number]);
 	else return getVertex(vertex_number, nullptr);
 }
 
@@ -46,7 +45,7 @@ Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_no
 {
 	if(vertex_normals_[vertex_number] >= 0)
 	{
-		const Vec3 vertex_normal = static_cast<const MeshObject *>(base_object_)->getVertexNormal(vertex_normals_[vertex_number]);
+		const Vec3 vertex_normal = static_cast<const MeshObject &>(base_object_).getVertexNormal(vertex_normals_[vertex_number]);
 		if(obj_to_world) return ((*obj_to_world) * vertex_normal).normalize();
 		else return vertex_normal;
 	}
@@ -55,7 +54,7 @@ Vec3 FacePrimitive::getVertexNormal(size_t vertex_number, const Vec3 &surface_no
 
 Uv FacePrimitive::getVertexUv(size_t vertex_number) const
 {
-	return static_cast<const MeshObject *>(base_object_)->getUvValues()[vertex_uvs_[vertex_number]];
+	return static_cast<const MeshObject &>(base_object_).getUvValues()[vertex_uvs_[vertex_number]];
 }
 
 std::vector<Point3> FacePrimitive::getVertices(const Matrix4 *obj_to_world) const

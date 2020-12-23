@@ -73,7 +73,7 @@ void MeshObject::addFace(FacePrimitive *face)
 void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat)
 {
 	FacePrimitive *face;
-	if(vertices.size() == 3) face = new TrianglePrimitive(vertices, vertices_uv, this);
+	if(vertices.size() == 3) face = new TrianglePrimitive(vertices, vertices_uv, *this);
 	else return; //Other primitives are not supported
 	face->setMaterial(mat);
 	if(hasNormalsExported()) face->setNormalsIndices(vertices);

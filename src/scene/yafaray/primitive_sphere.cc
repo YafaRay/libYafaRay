@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene)
+Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene, const Object &object)
 {
 	Y_DEBUG PRTEXT(**SpherePrimitive) PREND; params.printDebug();
 	Point3 center(0.f, 0.f, 0.f);
@@ -41,7 +41,7 @@ Primitive *SpherePrimitive::factory(ParamMap &params, const Scene &scene)
 	if(matname.empty()) return nullptr;
 	mat = scene.getMaterial(matname);
 	if(!mat) return nullptr;
-	return new SpherePrimitive(center, radius, mat);
+	return new SpherePrimitive(center, radius, mat, object);
 }
 
 Bound SpherePrimitive::getBound(const Matrix4 *obj_to_world) const

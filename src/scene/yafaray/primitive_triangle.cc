@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
+TrianglePrimitive::TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object) : FacePrimitive(vertices_indices, vertices_uv_indices, mesh_object)
 {
 	calculateGeometricNormal();
 }
@@ -107,17 +107,15 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 	sp.intersect_data_ = intersect_data;
 	sp.ng_ = getGeometricNormal(obj_to_world);
 	const float barycentric_u = intersect_data.barycentric_u_, barycentric_v = intersect_data.barycentric_v_, barycentric_w = intersect_data.barycentric_w_;
-	const MeshObject *base_mesh_object = static_cast<const MeshObject *>(base_object_);
-
-	if(base_mesh_object->isSmooth() || base_mesh_object->hasNormalsExported())
+	const MeshObject &base_mesh_object = static_cast<const MeshObject &>(base_object_);
+	if(base_mesh_object.isSmooth() || base_mesh_object.hasNormalsExported())
 	{
 		const std::vector<Vec3> v = getVerticesNormals(sp.ng_, obj_to_world);
 		sp.n_ = barycentric_u * v[0] + barycentric_v * v[1] + barycentric_w * v[2];
 		sp.n_.normalize();
 	}
 	else sp.n_ = sp.ng_;
-
-	if(base_mesh_object->hasOrco())
+	if(base_mesh_object.hasOrco())
 	{
 		const std::vector<Point3> orco_p = getOrcoVertices();
 		sp.orco_p_ = barycentric_u * orco_p[0] + barycentric_v * orco_p[1] + barycentric_w * orco_p[2];
@@ -130,22 +128,19 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 		sp.has_orco_ = false;
 		sp.orco_ng_ = getGeometricNormal();
 	}
-
 	bool implicit_uv = true;
 	const std::vector<Point3> p = getVertices(obj_to_world);
-	if(base_mesh_object->hasUv())
+	if(base_mesh_object.hasUv())
 	{
 		const std::vector<Uv> &uv = getVerticesUvs();
 		sp.u_ = barycentric_u * uv[0].u_ + barycentric_v * uv[1].u_ + barycentric_w * uv[2].u_;
 		sp.v_ = barycentric_u * uv[0].v_ + barycentric_v * uv[1].v_ + barycentric_w * uv[2].v_;
-
 		// calculate dPdU and dPdV
 		const float du_1 = uv[1].u_ - uv[0].u_;
 		const float du_2 = uv[2].u_ - uv[0].u_;
 		const float dv_1 = uv[1].v_ - uv[0].v_;
 		const float dv_2 = uv[2].v_ - uv[0].v_;
 		const float det = du_1 * dv_2 - dv_1 * du_2;
-
 		if(std::abs(det) > 1e-30f)
 		{
 			const float invdet = 1.f / det;
@@ -165,17 +160,14 @@ SurfacePoint TrianglePrimitive::getSurface(const Point3 &hit_point, const Inters
 		sp.v_ = barycentric_v;
 	}
 	sp.has_uv_ = !implicit_uv;
-
 	//Copy original dPdU and dPdV before normalization to the "absolute" dPdU and dPdV (for mipmap calculations)
 	sp.dp_du_abs_ = sp.dp_du_;
 	sp.dp_dv_abs_ = sp.dp_dv_;
-
 	sp.dp_du_.normalize();
 	sp.dp_dv_.normalize();
-
-	sp.object_ = base_object_;
-	sp.light_ = base_mesh_object->getLight();
-	sp.has_uv_ = base_mesh_object->hasUv();
+	sp.object_ = &base_object_;
+	sp.light_ = base_mesh_object.getLight();
+	sp.has_uv_ = base_mesh_object.hasUv();
 	sp.prim_num_ = getSelfIndex();
 	sp.material_ = getMaterial();
 	sp.p_ = hit_point;

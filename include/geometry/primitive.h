@@ -42,7 +42,7 @@ class Object;
 class Primitive
 {
 	public:
-		static Primitive *factory(ParamMap &params, const Scene &scene);
+		Primitive(const Object &base_object) : base_object_(base_object) { }
 		virtual ~Primitive() = default;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound getBound(const Matrix4 *obj_to_world = nullptr) const = 0;
@@ -71,12 +71,11 @@ class Primitive
 		virtual Vec3 getGeometricNormal(const Matrix4 *obj_to_world = nullptr, float u = 0.f, float v = 0.f) const = 0;
 		/* surface sampling */
 		virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n, const Matrix4 *obj_to_world = nullptr) const = 0;
-		void setObject(const Object *object) { base_object_ = object; }
-		const Object *getObject() const { return base_object_; }
+		const Object *getObject() const { return &base_object_; }
 		Visibility getVisibility() const;
 
 	protected:
-		const Object *base_object_ = nullptr;
+		const Object &base_object_;
 };
 
 END_YAFARAY

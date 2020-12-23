@@ -40,7 +40,7 @@ class PrimitiveInstance : public Primitive
 {
 	public:
 		//static PrimitiveInstance *factory(ParamMap &params, const Scene &scene);
-		PrimitiveInstance(const Primitive *base_primitive, const Object *object_yafaray_instance) : base_primitive_(base_primitive) { base_object_ = object_yafaray_instance; }
+		PrimitiveInstance(const Primitive *base_primitive, const Object &object_yafaray_instance) : Primitive(object_yafaray_instance), base_primitive_(base_primitive) { }
 		virtual Bound getBound(const Matrix4 *) const override;
 		virtual bool intersectsBound(const ExBound &b, const Matrix4 *) const override;
 		virtual bool clippingSupport() const override { return base_primitive_->clippingSupport(); }

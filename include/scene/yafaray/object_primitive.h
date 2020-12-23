@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class PrimitiveObject : public ObjectYafaRay
 {
 	public:
-		PrimitiveObject(const Primitive *p): primitive_(p) { }
+		void setPrimitive(const Primitive *primitive) { primitive_ = primitive; }
 		virtual int numPrimitives() const override { return 1; }
 		virtual const std::vector<const Primitive *> getPrimitives() const override { return {primitive_}; }
 		virtual bool calculateObject(const Material *material) override { return true; }

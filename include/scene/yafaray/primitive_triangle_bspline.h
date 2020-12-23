@@ -30,7 +30,7 @@ class MeshObject;
 class BsTrianglePrimitive: public FacePrimitive
 {
 	public:
-		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object);
+		BsTrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual Bound getBound(const Matrix4 *obj_to_world) const override;
 		virtual SurfacePoint getSurface(const Point3 &hit, const IntersectData &intersect_data, const Matrix4 *obj_to_world) const override;

@@ -33,7 +33,12 @@ Object *Object::factory(ParamMap &params, const Scene &scene)
 	params.getParam("type", type);
 	if(type == "mesh") return MeshObject::factory(params, scene);
 	else if(type == "curve") return CurveObject::factory(params, scene);
-	else if(type == "sphere") return new PrimitiveObject(SpherePrimitive::factory(params, scene));
+	else if(type == "sphere")
+	{
+		PrimitiveObject *object = new PrimitiveObject;
+		object->setPrimitive(SpherePrimitive::factory(params, scene, *object));
+		return object;
+	}
 	else return nullptr;
 }
 

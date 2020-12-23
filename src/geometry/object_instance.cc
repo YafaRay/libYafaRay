@@ -28,7 +28,7 @@ ObjectInstance::ObjectInstance(const Object *base, const Matrix4 &obj_to_world) 
 	primitive_instances_.reserve(base->numPrimitives());
 	for(const auto &primitive : primitives)
 	{
-		PrimitiveInstance *instance_primitive = new PrimitiveInstance(primitive, this);
+		PrimitiveInstance *instance_primitive = new PrimitiveInstance(primitive, *this);
 		primitive_instances_.emplace_back(instance_primitive);
 	}
 }

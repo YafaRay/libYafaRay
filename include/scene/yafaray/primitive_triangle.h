@@ -31,7 +31,7 @@ class MeshObject;
 class TrianglePrimitive: public FacePrimitive
 {
 	public:
-		TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, MeshObject *mesh_object);
+		TrianglePrimitive(const std::vector<int> &vertices_indices, const std::vector<int> &vertices_uv_indices, const MeshObject &mesh_object);
 		virtual IntersectData intersect(const Ray &ray, const Matrix4 *obj_to_world) const override;
 		virtual bool intersectsBound(const ExBound &eb, const Matrix4 *obj_to_world) const override;
 		virtual bool clippingSupport() const override { return true; }
