@@ -240,9 +240,7 @@ bool YafaRayScene::updateObjects()
 
 		accelerator_ = Accelerator<Primitive>::factory(primitives, params);
 		scene_bound_ = accelerator_->getBound();
-		Y_VERBOSE << "Scene: New scene bound is:" << YENDL <<
-				  "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" <<
-				  scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
+		Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
 		if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
 		if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
