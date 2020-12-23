@@ -23,7 +23,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "sampler/sample.h"
-#include "accelerator/accelerator_kdtree.h"
+#include "accelerator/accelerator.h"
 #include "geometry/surface.h"
 #include "sampler/sample_pdf1d.h"
 #include "scene/yafaray/object_mesh.h"

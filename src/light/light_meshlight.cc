@@ -27,7 +27,7 @@
 #include "scene/scene.h"
 #include "sampler/sample.h"
 #include "sampler/sample_pdf1d.h"
-#include "accelerator/accelerator_kdtree.h"
+#include "accelerator/accelerator.h"
 #include "geometry/surface.h"
 #include "scene/yafaray/object_mesh.h"
 #include "scene/yafaray/primitive_face.h"
