@@ -39,6 +39,7 @@ class PolyDouble
 		std::string print() const;
 		struct ClipResult;
 		struct ClipResultWithBound;
+		/* Sutherland-Hodgman triangle clipping */
 		static ClipResultWithBound planeClipWithBound(double pos, const ClipPlane &clip_plane, const PolyDouble &poly);
 		static ClipResultWithBound boxClip(const Vec3Double &b_min, const Vec3Double &b_max, const PolyDouble &poly);
 	private:

@@ -99,10 +99,8 @@ class AcceleratorKdTree final : public Accelerator
 		} kd_stats_;
 
 		static constexpr int prim_clip_thresh_ = 32;
+		static constexpr int pigeonhole_sort_thresh_ = 128;
 		static constexpr int kd_max_stack_ = 64;
-		static constexpr int lower_b_ = 0;
-		static constexpr int upper_b_ = 2;
-		static constexpr int both_b_ = 1;
 };
 
 // ============================================================
@@ -146,8 +144,9 @@ struct AcceleratorKdTree::Stack
 class AcceleratorKdTree::BoundEdge
 {
 	public:
+		enum class EndBound : int { Left, Both, Right };
 		BoundEdge() = default;
-		BoundEdge(float position, int primitive, int bound_end): pos_(position), prim_num_(primitive), end_(bound_end) { }
+		BoundEdge(float position, int primitive, EndBound bound_end): pos_(position), prim_num_(primitive), end_(bound_end) { }
 		bool operator<(const BoundEdge &e) const
 		{
 			if(pos_ == e.pos_) return end_ > e.end_;
@@ -155,7 +154,7 @@ class AcceleratorKdTree::BoundEdge
 		}
 		float pos_;
 		int prim_num_;
-		int end_;
+		EndBound end_;
 };
 
 struct AcceleratorKdTree::SplitCost
