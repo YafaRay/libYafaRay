@@ -271,7 +271,7 @@ SplitCostMultiThread AcceleratorKdTreeMultiThread::pigeonMinCost(float e_bonus, 
 	Cost function: Find the optimal split with SAH
 */
 
-SplitCostMultiThread AcceleratorKdTreeMultiThread::minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds, bool do_poly_clipping)
+SplitCostMultiThread AcceleratorKdTreeMultiThread::minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
 	const uint32_t num_indices = indices.size();
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
@@ -479,10 +479,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	const float modified_empty_bonus = parameters.empty_bonus_ * (1.1 - static_cast<float>(depth) / static_cast<float>(parameters.max_depth_));
 	SplitCostMultiThread split;
 	if(num_new_indices > pigeon_sort_threshold) split = pigeonMinCost(modified_empty_bonus, parameters.cost_ratio_, new_bounds, node_bound, new_indices);
-#if POLY_CLIPPING_MULTITHREAD > 0
-	else if(do_poly_clipping) split = minimalCost(modified_empty_bonus, parameters.cost_ratio_, node_bound, new_indices, new_bounds, do_poly_clipping);
-#endif //PRIMITIVE_CLIPPING_2 > 0
-	else split = minimalCost(modified_empty_bonus, parameters.cost_ratio_, node_bound, new_indices, new_bounds, false);
+	else split = minimalCost(modified_empty_bonus, parameters.cost_ratio_, node_bound, new_indices, new_bounds);
 	result.stats_.early_out_ += split.stats_early_out_;
 	//<< if (minimum > leafcost) increase bad refines >>
 	if(split.cost_ > static_cast<float>(num_new_indices)) ++bad_refines;
@@ -552,7 +549,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		}
 		split_pos = split.edges_[split.edge_offset_].pos_;
 	}
-#endif //PRIMITIVE_CLIPPING_2 > 0
+#endif //POLY_CLIPPING_MULTITHREAD > 0
 	else //we did "normal" cost function
 	{
 		for(int edge_id = 0; edge_id < split.edge_offset_; ++edge_id)
@@ -600,7 +597,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		left_clip_plane = {split.axis_, ClipPlane::Pos::Upper};
 		right_clip_plane = {split.axis_, ClipPlane::Pos::Lower};
 	}
-#endif //PRIMITIVE_CLIPPING_2 > 0
+#endif //POLY_CLIPPING_MULTITHREAD > 0
 
 	if(num_current_threads_ < parameters.num_threads_ && (left_primitive_indices.size() >= (right_primitive_indices.size() / 10)) && (right_primitive_indices.size() >= (left_primitive_indices.size() / 10)) && (left_primitive_indices.size() >= static_cast<size_t>(parameters.min_indices_to_spawn_threads_)))
 	{
