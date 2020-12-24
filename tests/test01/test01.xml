@@ -1045,6 +1045,8 @@ To test, using the terminal (or Windows "cmd") do this:
 	<integrator_name sval="default"/>
 	<premult bval="false"/>
 	<show_sam_pix bval="true"/>
+	<scene_accelerator sval="yafaray-kdtree-original"/>
+	<!-- other possible values: "yafaray-kdtree-multi-thread", "yafaray-simpletest" -->
 	<threads ival="-1"/>
 	<threads_photons ival="-1"/>
 	<tile_size ival="32"/>
