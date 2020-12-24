@@ -539,6 +539,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		}
 		split_pos = split.t_;
 	}
+#if PRIMITIVE_CLIPPING > 0
 	else if(n_prims <= prim_clip_thresh_)
 	{
 		std::array<int, prim_clip_thresh_> cindizes;
@@ -574,6 +575,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		for(int i = 0; i < n_1; ++i) { n_right_prims[n_1 + i] = cindizes[i]; /* std::cout << cindizes[i] << " "; */ }
 		split_pos = edges[split.best_axis_][split.best_offset_].pos_;
 	}
+#endif //PRIMITIVE_CLIPPING > 0
 	else //we did "normal" cost function
 	{
 		for(int i = 0; i < split.best_offset_; ++i)
