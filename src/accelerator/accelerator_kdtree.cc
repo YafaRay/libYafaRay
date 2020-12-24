@@ -53,7 +53,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	c_start = clock();
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = new KdTreeNode[allocated_nodes_count_];
+	nodes_ = new Node[allocated_nodes_count_];
 	if(max_depth_ <= 0) max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(total_prims_)));
 	const double log_leaves = 1.442695f * log(static_cast<double >(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -139,7 +139,7 @@ AcceleratorKdTree::~AcceleratorKdTree()
 	and binning => O(n)
 */
 
-SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx)
 {
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
@@ -281,8 +281,8 @@ SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, float cost_ratio, uint
 	Cost function: Find the optimal split with SAH
 */
 
-SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx,
-									const Bound *all_bounds, const Bound *all_bounds_general, const std::array<BoundEdge *, 3> &edges, KdStats &kd_stats)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx,
+															const Bound *all_bounds, const Bound *all_bounds_general, const std::array<BoundEdge *, 3> &edges, Stats &kd_stats)
 {
 	const std::array<float, 3> node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
@@ -424,8 +424,8 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		KdTreeNode *n = new KdTreeNode[new_count];
-		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(KdTreeNode));
+		Node *n = new Node[new_count];
+		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(Node));
 		delete[] nodes_;
 		nodes_ = n;
 		allocated_nodes_count_ = new_count;
@@ -637,7 +637,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 	return intersect(ray, t_max, nodes_, tree_bound_);
 }
 
-AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const KdTreeNode *nodes, const Bound &tree_bound)
+AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
 {
 	AcceleratorIntersectData accelerator_intersect_data;
 	accelerator_intersect_data.t_max_ = t_max;
@@ -646,8 +646,8 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 
 	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
 
-	std::array<KdStack, kd_max_stack_> stack;
-	const KdTreeNode *far_child, *curr_node;
+	std::array<Stack, kd_max_stack_> stack;
+	const Node *far_child, *curr_node;
 	curr_node = nodes;
 
 	int entry_idx = 0;
@@ -781,14 +781,14 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 	return intersectS(ray, t_max, shadow_bias, nodes_, tree_bound_);
 }
 
-AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const KdTreeNode *nodes, const Bound &tree_bound)
+AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
 {
 	AcceleratorIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
 	if(!cross.crossed_) { return {}; }
 	const Vec3 inv_dir(1.f / ray.dir_.x_, 1.f / ray.dir_.y_, 1.f / ray.dir_.z_);
-	std::array<KdStack, kd_max_stack_> stack;
-	const KdTreeNode *far_child, *curr_node;
+	std::array<Stack, kd_max_stack_> stack;
+	const Node *far_child, *curr_node;
 	curr_node = nodes;
 	int entry_idx = 0;
 	stack[entry_idx].t_ = cross.enter_;
@@ -920,7 +920,7 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 	return intersectTs(render_data, ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_);
 }
 
-AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const KdTreeNode *nodes, const Bound &tree_bound)
+AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
 	{
 	AcceleratorTsIntersectData accelerator_intersect_data;
 	const Bound::Cross cross = tree_bound.cross(ray, t_max);
@@ -942,8 +942,8 @@ AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_dat
 	int depth = 0;
 
 	std::set<const Primitive *> filtered;
-	std::array<KdStack, kd_max_stack_> stack;
-	const KdTreeNode *far_child, *curr_node;
+	std::array<Stack, kd_max_stack_> stack;
+	const Node *far_child, *curr_node;
 	curr_node = nodes;
 
 	int entry_idx = 0;

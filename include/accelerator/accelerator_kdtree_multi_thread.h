@@ -34,10 +34,59 @@ BEGIN_YAFARAY
 class RenderData;
 struct IntersectData;
 
-struct KdStatsMultiThread
+// ============================================================
+/*! This class holds a complete kd-tree with building and
+	traversal funtions
+*/
+class AcceleratorKdTreeMultiThread final : public Accelerator
+{
+	public:
+		static Accelerator *factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
+
+	private:
+		struct Parameters;
+		struct Stats;
+		struct Result;
+		struct SplitCost;
+		class Node;
+		struct Stack;
+		class BoundEdge;
+		class TreeBin;
+		AcceleratorKdTreeMultiThread(const std::vector<const Primitive *> &primitives, const Parameters &parameters);
+		virtual ~AcceleratorKdTreeMultiThread() override;
+		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
+		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
+		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
+		virtual Bound getBound() const override { return tree_bound_; }
+
+		Result buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices) const;
+		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result) const;
+		static SplitCost pigeonMinCost(float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
+		static SplitCost minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
+		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const std::vector<Node> &nodes, const Bound &tree_bound);
+		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
+		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const std::vector<Node> &nodes, const Bound &tree_bound);
+
+		Bound tree_bound_; 	//!< overall space the tree encloses
+		std::vector<Node> nodes_;
+		mutable std::atomic<int> num_current_threads_ { 0 };
+		static constexpr int kd_max_stack_ = 64;
+};
+
+struct AcceleratorKdTreeMultiThread::Parameters
+{
+	int max_depth_ = -1;
+	int max_leaf_size_ = 2;
+	float cost_ratio_ = 0.35; //!< node traversal cost divided by primitive intersection cost
+	float empty_bonus_ = 0.33;
+	int num_threads_ = 1;
+	int min_indices_to_spawn_threads_ = 10000; //Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices
+};
+
+struct AcceleratorKdTreeMultiThread::Stats
 {
 	void outputLog(uint32_t num_primitives, int max_leaf_size) const;
-	KdStatsMultiThread operator += (const KdStatsMultiThread &kd_stats);
+	Stats operator += (const Stats &kd_stats);
 	int kd_inodes_ = 0;
 	int kd_leaves_ = 0;
 	int empty_kd_leaves_ = 0;
@@ -55,11 +104,11 @@ struct KdStatsMultiThread
     double precision float and/or 64 bit system: 12bytes
     else 8 bytes */
 
-class KdTreeNodeMultiThread
+class AcceleratorKdTreeMultiThread::Node
 {
 	public:
-		KdStatsMultiThread createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives);
-		KdStatsMultiThread createInterior(Axis axis, float d);
+		Stats createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives);
+		Stats createInterior(Axis axis, float d);
 		float splitPos() const { return division_; }
 		int splitAxis() const { return flags_ & 3; }
 		int nPrimitives() const { return primitives_.size(); /*flags_ >> 2; */ }
@@ -72,9 +121,9 @@ class KdTreeNodeMultiThread
 };
 
 /*! Stack elements for the custom stack of the recursive traversal */
-struct KdStackMultiThread
+struct AcceleratorKdTreeMultiThread::Stack
 {
-	const KdTreeNodeMultiThread *node_; //!< pointer to far child
+	const Node *node_; //!< pointer to far child
 	float t_; //!< the entry/exit signed distance
 	Point3 point_; //!< the point coordinates of entry/exit point
 	int prev_stack_id_; //!< the pointer to the previous stack item
@@ -83,13 +132,13 @@ struct KdStackMultiThread
 /*! Serves to store the lower and upper bound edges of the primitives
 	for the cost funtion */
 
-class BoundEdgeMultiThread
+class AcceleratorKdTreeMultiThread::BoundEdge
 {
 	public:
 		enum class EndBound : int { Left, Both, Right };
-		BoundEdgeMultiThread() = default;
-		BoundEdgeMultiThread(float position, uint32_t index, EndBound bound_end): pos_(position), index_(index), end_(bound_end) { }
-		bool operator<(const BoundEdgeMultiThread &e) const
+		BoundEdge() = default;
+		BoundEdge(float position, uint32_t index, EndBound bound_end): pos_(position), index_(index), end_(bound_end) { }
+		bool operator<(const BoundEdge &e) const
 		{
 			if(pos_ == e.pos_) return end_ > e.end_;
 			else return pos_ < e.pos_;
@@ -99,17 +148,17 @@ class BoundEdgeMultiThread
 		EndBound end_;
 };
 
-struct SplitCostMultiThread
+struct AcceleratorKdTreeMultiThread::SplitCost
 {
 	int axis_ = Axis::None;
 	int edge_offset_ = -1;
 	float cost_;
 	float t_;
-	std::vector<BoundEdgeMultiThread> edges_;
+	std::vector<AcceleratorKdTreeMultiThread::BoundEdge> edges_;
 	int stats_early_out_ = 0;
 };
 
-class TreeBinMultiThread
+class AcceleratorKdTreeMultiThread::TreeBin
 {
 	public:
 		bool empty() const { return n_ == 0; };
@@ -120,58 +169,17 @@ class TreeBinMultiThread
 		float t_ = 0.f;
 };
 
-struct KdTreeResultMultiThread
+struct AcceleratorKdTreeMultiThread::Result
 {
-	KdStatsMultiThread stats_;
-	std::vector<KdTreeNodeMultiThread> nodes_;
+	Stats stats_;
+	std::vector<Node> nodes_;
 };
 
-// ============================================================
-/*! This class holds a complete kd-tree with building and
-	traversal funtions
-*/
-class AcceleratorKdTreeMultiThread final : public Accelerator
-{
-	public:
-		static Accelerator *factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
 
-	private:
-		struct Parameters;
-		AcceleratorKdTreeMultiThread(const std::vector<const Primitive *> &primitives, const Parameters &parameters);
-		virtual ~AcceleratorKdTreeMultiThread() override;
-		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const override;
-		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const override;
-		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const override;
-		virtual Bound getBound() const override { return tree_bound_; }
-
-		KdTreeResultMultiThread buildTree(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices) const;
-		void buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound> &bounds, const Parameters &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, KdTreeResultMultiThread &result) const;
-		static SplitCostMultiThread pigeonMinCost(float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices);
-		static SplitCostMultiThread minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds);
-		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const std::vector<KdTreeNodeMultiThread> &nodes, const Bound &tree_bound);
-		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const std::vector<KdTreeNodeMultiThread> &nodes, const Bound &tree_bound);
-		static AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const std::vector<KdTreeNodeMultiThread> &nodes, const Bound &tree_bound);
-
-		Bound tree_bound_; 	//!< overall space the tree encloses
-		std::vector<KdTreeNodeMultiThread> nodes_;
-		mutable std::atomic<int> num_current_threads_ { 0 };
-		static constexpr int kd_max_stack_ = 64;
-};
-
-struct AcceleratorKdTreeMultiThread::Parameters
-{
-	int max_depth_ = -1;
-	int max_leaf_size_ = 2;
-	float cost_ratio_ = 0.35; //!< node traversal cost divided by primitive intersection cost
-	float empty_bonus_ = 0.33;
-	int num_threads_ = 1;
-	int min_indices_to_spawn_threads_ = 10000; //Only spawn threaded subtree building when the number of indices in the subtree is higher than this value to prevent slowdown due to very small subtree left indices
-};
-
-inline KdStatsMultiThread KdTreeNodeMultiThread::createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives)
+inline AcceleratorKdTreeMultiThread::Stats AcceleratorKdTreeMultiThread::Node::createLeaf(const std::vector<uint32_t> &prim_indices, const std::vector<const Primitive *> &primitives)
 {
 	const uint32_t num_prim_indices = prim_indices.size();
-	KdStatsMultiThread kd_stats;
+	AcceleratorKdTreeMultiThread::Stats kd_stats;
 	primitives_.clear();
 	//flags_ = num_prim_indices << 2;
 	flags_ |= 3;
@@ -186,9 +194,9 @@ inline KdStatsMultiThread KdTreeNodeMultiThread::createLeaf(const std::vector<ui
 	return kd_stats;
 }
 
-inline KdStatsMultiThread KdTreeNodeMultiThread::createInterior(Axis axis, float d)
+inline AcceleratorKdTreeMultiThread::Stats AcceleratorKdTreeMultiThread::Node::createInterior(Axis axis, float d)
 {
-	KdStatsMultiThread kd_stats;
+	AcceleratorKdTreeMultiThread::Stats kd_stats;
 	division_ = d;
 	flags_ = (flags_ & ~3) | axis.get();
 	kd_stats.kd_inodes_++;
