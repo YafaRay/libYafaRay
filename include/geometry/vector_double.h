@@ -34,8 +34,6 @@ class Vec3Double
 		Vec3Double &operator = (const Vec3Double &v) { x_ = v.x_, y_ = v.y_, z_ = v.z_; return *this; }
 		double operator[](int i) const { return (&x_)[i]; }
 		double &operator[](int i) { return (&x_)[i]; }
-		double operator[](const Axis &axis) const { return (&x_)[axis.get()]; }
-		double &operator[](const Axis &axis) { return (&x_)[axis.get()]; }
 		std::string print() const;
 		double x_, y_, z_;
 };
