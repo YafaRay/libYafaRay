@@ -49,7 +49,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Avoid adding too many dependencies to headers, use classes and enum:type forward declarations whenever possible.
 * Avoid using "using" (except for yafaray namespace itself), for example write std::cout and not just cout. That way it's clear when we are using external libraries.
 * All struct/class internal variables are to be named with trailing underscore (var_). It's ugly, and should be, because directly accessing class/struct variables should be clearly visible (and discouraged as much as possible). From a design point of view it's better to use inline getters/setters instead, as it allows more flexibility in future changes to the class internals.
-* All "free" (global) functions and all global variables are to be named with a trailin underscore followed by "global" (for example: function_global()). It's really ugly, and also should be because we should avoid using them as much as possible, using classes variables and functions (even if static), instead.
+* All "free" (global) functions and all global variables are to be named with a trailing underscore followed by "global" (for example: function_global()). It's really ugly, and also should be because we should avoid using them as much as possible, using classes variables and functions (even if static), instead.
 * Avoid singletons and static/global variables as much as possible, avoid unexpected hidden dependencies!
 * For classes, use the keyword "final" when no further derived classes are expected.
 * Use templated functions and classes when necesary to reduce code repetition as much as possible
