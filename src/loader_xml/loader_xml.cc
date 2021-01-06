@@ -186,9 +186,9 @@ int main(int argc, char *argv[])
 	if(! scene->setupScene(*scene, params)) return 1;
 	session_global.setInteractive(false);
 	scene->render();
-	scene->clearAll();
-
 	auto outputs = scene->getOutputs();
 	for(auto &output : outputs) delete output.second;
+	scene->clearAll();
+	delete scene;
 	return 0;
 }

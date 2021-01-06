@@ -29,7 +29,6 @@
 #endif
 #include <cstring>
 
-
 BEGIN_YAFARAY
 
 #if HAVE_XML
@@ -119,30 +118,30 @@ static void myFatalError_global(void *user_data, const char *msg, ...)
 
 static xmlSAXHandler my_handler_global =
 {
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		startDocument_global, //  startDocumentSAXFunc startDocument;
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	startDocument_global, //  startDocumentSAXFunc startDocument;
 	endDocument_global, //  endDocumentSAXFunc endDocument;
 	startElement_global, //  startElementSAXFunc startElement;
 	endElement_global, //  endElementSAXFunc endElement;
 	nullptr,
-		nullptr, //  charactersSAXFunc characters;
+	nullptr, //  charactersSAXFunc characters;
 	nullptr,
-		nullptr,
-		nullptr,
-		myWarning_global,
-		myError_global,
-		myFatalError_global
+	nullptr,
+	nullptr,
+	myWarning_global,
+	myError_global,
+	myFatalError_global
 };
 #endif // HAVE_XML
 
@@ -170,7 +169,7 @@ Scene *parseXmlFile_global(const char *filename, ParamMap &render, const std::st
 =============================================================*/
 
 XmlParser::XmlParser(ParamMap &r, ColorSpace input_color_space, float input_gamma):
-		render_(r), current_(0), level_(0), input_gamma_(input_gamma), input_color_space_(input_color_space)
+		render_(r), input_gamma_(input_gamma), input_color_space_(input_color_space)
 {
 	cparams_ = &params_;
 	pushState(startElDocument_global, endElDocument_global);
@@ -234,7 +233,6 @@ static bool parsePoint_global(const char **attrs, Point3 &p, Point3 &op, bool &h
 			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in point" << YENDL;
 		}
 	}
-
 	return true;
 }
 
@@ -256,7 +254,6 @@ static bool parseNormal_global(const char **attrs, Vec3 &n)
 			default: Y_WARNING << "XMLParser: Ignored wrong attribute " << attrs[0] << " in normal." << YENDL;
 		}
 	}
-
 	return (compo_read == 3);
 }
 
@@ -312,10 +309,14 @@ void parseParam_global(const char **attrs, Parameter &param, XmlParser &parser)
 =============================================================*/
 
 void endElDummy_global(XmlParser &parser, const char *element)
-{	parser.popState();	}
+{
+	parser.popState();
+}
 
 void startElDummy_global(XmlParser &parser, const char *element, const char **attrs)
-{ parser.pushState(startElDummy_global, endElDummy_global);	}
+{
+	parser.pushState(startElDummy_global, endElDummy_global);
+}
 
 void startElDocument_global(XmlParser &parser, const char *element, const char **attrs)
 {
@@ -531,8 +532,7 @@ void startElInstance_global(XmlParser &parser, const char *element, const char *
 				m[i][j] = atof(attrs[n + 1]);
 			}
 		}
-		Matrix4 *m_4 = new Matrix4(m);
-		parser.scene_->addInstance(base_object_name, *m_4);
+		parser.scene_->addInstance(base_object_name, m);
 	}
 }
 
@@ -560,45 +560,45 @@ void startElParammap_global(XmlParser &parser, const char *element, const char *
 		parser.pushState(startElParamlist_global, endElParamlist_global);
 		return;
 	}
-	Parameter p;
-	parseParam_global(attrs, p, parser);
-	parser.setParam(std::string(element), p);
+	Parameter param;
+	parseParam_global(attrs, param, parser);
+	parser.setParam(std::string(element), param);
 }
 
-void endElParammap_global(XmlParser &p, const char *element)
+void endElParammap_global(XmlParser &parser, const char *element)
 {
-	bool exit_state = (p.currLevel() == p.stateLevel());
+	bool exit_state = (parser.currLevel() == parser.stateLevel());
 	if(exit_state)
 	{
 		std::string el(element);
-		std::string *name = (std::string *)p.stateData();
+		std::string *name = (std::string *)parser.stateData();
 		if(!name) Y_ERROR << "XMLParser: No name for scene element available!" << YENDL;
 		else
 		{
 			if(el == "scene_parameters")
 			{
-				p.scene_ = Scene::factory(p.params_);
-				if(!p.scene_)
+				parser.scene_ = Scene::factory(parser.params_);
+				if(!parser.scene_)
 				{
 					Y_ERROR << "XML Loader: scene could not be created." << YENDL;
 				}
 			}
-			else if(el == "material") p.scene_->createMaterial(*name, p.params_, p.eparams_);
-			else if(el == "integrator") p.scene_->createIntegrator(*name, p.params_);
-			else if(el == "light") p.scene_->createLight(*name, p.params_);
-			else if(el == "texture") p.scene_->createTexture(*name, p.params_);
-			else if(el == "camera") p.scene_->createCamera(*name, p.params_);
-			else if(el == "background") p.scene_->createBackground(*name, p.params_);
-			else if(el == "object_parameters") p.scene_->createObject(*name, p.params_);
-			else if(el == "volumeregion") p.scene_->createVolumeRegion(*name, p.params_);
-			else if(el == "layers_parameters") p.scene_->setupLayersParameters(p.params_);
-			else if(el == "layer") p.scene_->defineLayer(p.params_);
-			else if(el == "output") p.scene_->createOutput(*name, p.params_);
-			else if(el == "render_view") p.scene_->createRenderView(*name, p.params_);
+			else if(el == "material") parser.scene_->createMaterial(*name, parser.params_, parser.eparams_);
+			else if(el == "integrator") parser.scene_->createIntegrator(*name, parser.params_);
+			else if(el == "light") parser.scene_->createLight(*name, parser.params_);
+			else if(el == "texture") parser.scene_->createTexture(*name, parser.params_);
+			else if(el == "camera") parser.scene_->createCamera(*name, parser.params_);
+			else if(el == "background") parser.scene_->createBackground(*name, parser.params_);
+			else if(el == "object_parameters") parser.scene_->createObject(*name, parser.params_);
+			else if(el == "volumeregion") parser.scene_->createVolumeRegion(*name, parser.params_);
+			else if(el == "layers_parameters") parser.scene_->setupLayersParameters(parser.params_);
+			else if(el == "layer") parser.scene_->defineLayer(parser.params_);
+			else if(el == "output") parser.scene_->createOutput(*name, parser.params_);
+			else if(el == "render_view") parser.scene_->createRenderView(*name, parser.params_);
 			else Y_WARNING << "XMLParser: Unexpected end-tag of scene element!" << YENDL;
 		}
 		delete name;
-		p.popState(); p.params_.clear(); p.eparams_.clear();
+		parser.popState(); parser.params_.clear(); parser.eparams_.clear();
 	}
 }
 
@@ -607,9 +607,9 @@ void startElParamlist_global(XmlParser &parser, const char *element, const char 
 	parser.setLastSection("Params list");
 	parser.setLastElementName(element);
 	parser.setLastElementNameAttrs(attrs);
-	Parameter p;
-	parseParam_global(attrs, p, parser);
-	parser.setParam(std::string(element), p);
+	Parameter param;
+	parseParam_global(attrs, param, parser);
+	parser.setParam(std::string(element), param);
 }
 
 void endElParamlist_global(XmlParser &parser, const char *element)

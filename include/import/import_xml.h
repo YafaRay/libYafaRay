@@ -43,7 +43,7 @@ struct ParserState
 {
 	StartElementCb_t start_;
 	EndElementCb_t end_;
-	void *userdata_;
+	void *userdata_ = nullptr;
 	int level_;
 	std::string last_section_; //! to show last section previous to a XML Parser error
 	std::string last_element_; //! to show last element previous to a XML Parser error
@@ -75,11 +75,11 @@ class XmlParser
 		Scene *scene_ = nullptr;
 		ParamMap params_, &render_;
 		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.
-		ParamMap *cparams_; //! just a pointer to the current paramMap, either params or a eparams element
+		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element
 	protected:
 		std::vector<ParserState> state_stack_;
-		ParserState *current_;
-		int level_;
+		ParserState *current_ = nullptr;
+		int level_ = 0;
 		float input_gamma_;
 		ColorSpace input_color_space_;
 };
@@ -94,7 +94,7 @@ void endElObject_global(XmlParser &p, const char *element);
 void startElInstance_global(XmlParser &p, const char *element, const char **attrs);
 void endElInstance_global(XmlParser &p, const char *element);
 void startElParammap_global(XmlParser &p, const char *element, const char **attrs);
-void endElParammap_global(XmlParser &p, const char *element);
+void endElParammap_global(XmlParser &parser, const char *element);
 void startElParamlist_global(XmlParser &p, const char *element, const char **attrs);
 void endElParamlist_global(XmlParser &p, const char *element);
 void endElRender_global(XmlParser &p, const char *element);
