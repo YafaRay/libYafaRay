@@ -32,7 +32,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Try to reduce states as much as possible, if a static class function can do the job in a "pure functional mode", better.
 * Avoid "free" (global) functions as much as possible, embed them in classes, as static functions if possible to provide them with context and better meaning.
 * Avoid global and static variables as much as possible. For global constants use constexpr and better if possible embed them in classes as static
-* Avoid global free functions as much as possible. Wrap them within namespaces. For example don't use something like fSin__(float x, float y) but a namespaced math::sin(float x, float y)
+* Avoid global free functions as much as possible. Wrap them within namespaces. For example don't use something like fSin_global(float x, float y) but a namespaced math::sin(float x, float y)
 * Try using templating for generic functions as long as it does not cause performance problems
 * Do NOT use defines as a replacement for Enums!
 * Avoid global Enums as much as possible. Embed them within classes.
@@ -49,7 +49,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Avoid adding too many dependencies to headers, use classes and enum:type forward declarations whenever possible.
 * Avoid using "using" (except for yafaray namespace itself), for example write std::cout and not just cout. That way it's clear when we are using external libraries.
 * All struct/class internal variables are to be named with trailing underscore (var_). It's ugly, and should be, because directly accessing class/struct variables should be clearly visible (and discouraged as much as possible). From a design point of view it's better to use inline getters/setters instead, as it allows more flexibility in future changes to the class internals.
-* All "free" (global) functions and all global variables are to be named with *two* trailing underscores (function__()). It's really ugly, and also should be because we should avoid using them as much as possible, using classes variables and functions (even if static), instead.
+* All "free" (global) functions and all global variables are to be named with a trailin underscore followed by "global" (for example: function_global()). It's really ugly, and also should be because we should avoid using them as much as possible, using classes variables and functions (even if static), instead.
 * Avoid singletons and static/global variables as much as possible, avoid unexpected hidden dependencies!
 * For classes, use the keyword "final" when no further derived classes are expected.
 * Use templated functions and classes when necesary to reduce code repetition as much as possible

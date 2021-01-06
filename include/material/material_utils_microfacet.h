@@ -22,10 +22,10 @@
 
 BEGIN_YAFARAY
 
-inline constexpr float pdfDivisor__(float cos) { return 8.f * M_PI * (cos * 0.99f + 0.04f); }
-inline float asDivisor__(float cos_1, float cos_i, float cos_o) { return 8.f * M_PI * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f); }
+inline constexpr float pdfDivisor_global(float cos) { return 8.f * M_PI * (cos * 0.99f + 0.04f); }
+inline float asDivisor_global(float cos_1, float cos_i, float cos_o) { return 8.f * M_PI * ((cos_1 * std::max(cos_i, cos_o)) * 0.99f + 0.04f); }
 
-inline void sampleQuadrantAniso__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
+inline void sampleQuadrantAniso_global(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
 	float phi = std::atan(math::sqrt((e_u + 1.f) / (e_v + 1.f)) * std::tan(M_PI_2 * s_1));
 	float cos_phi = math::cos(phi);
@@ -40,53 +40,53 @@ inline void sampleQuadrantAniso__(Vec3 &h, float s_1, float s_2, float e_u, floa
 	h = Vec3(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
 }
 
-inline float asAnisoD__(Vec3 h, float e_u, float e_v)
+inline float asAnisoD_global(Vec3 h, float e_u, float e_v)
 {
 	if(h.z_ <= 0.f) return 0.f;
 	float exponent = (e_u * h.x_ * h.x_ + e_v * h.y_ * h.y_) / (1.00001f - h.z_ * h.z_);
 	return math::sqrt((e_u + 1.f) * (e_v + 1.f)) * math::pow(std::max(0.f, h.z_), exponent);
 }
 
-inline float asAnisoPdf__(Vec3 h, float cos_w_h, float e_u, float e_v)
+inline float asAnisoPdf_global(Vec3 h, float cos_w_h, float e_u, float e_v)
 {
-	return asAnisoD__(h, e_u, e_v) / pdfDivisor__(cos_w_h);
+	return asAnisoD_global(h, e_u, e_v) / pdfDivisor_global(cos_w_h);
 }
 
-inline void asAnisoSample__(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
+inline void asAnisoSample_global(Vec3 &h, float s_1, float s_2, float e_u, float e_v)
 {
 	if(s_1 < 0.25f)
 	{
-		sampleQuadrantAniso__(h, 4.f * s_1, s_2, e_u, e_v);
+		sampleQuadrantAniso_global(h, 4.f * s_1, s_2, e_u, e_v);
 	}
 	else if(s_1 < 0.5f)
 	{
-		sampleQuadrantAniso__(h, 1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v);
+		sampleQuadrantAniso_global(h, 1.f - 4.f * (0.5f - s_1), s_2, e_u, e_v);
 		h.x_ = -h.x_;
 	}
 	else if(s_1 < 0.75f)
 	{
-		sampleQuadrantAniso__(h, 4.f * (s_1 - 0.5f), s_2, e_u, e_v);
+		sampleQuadrantAniso_global(h, 4.f * (s_1 - 0.5f), s_2, e_u, e_v);
 		h.x_ = -h.x_;
 		h.y_ = -h.y_;
 	}
 	else
 	{
-		sampleQuadrantAniso__(h, 1.f - 4.f * (1.f - s_1), s_2, e_u, e_v);
+		sampleQuadrantAniso_global(h, 1.f - 4.f * (1.f - s_1), s_2, e_u, e_v);
 		h.y_ = -h.y_;
 	}
 }
 
-inline float blinnD__(float cos_h, float e)
+inline float blinnD_global(float cos_h, float e)
 {
 	return (e + 1.f) * math::pow(cos_h, e);
 }
 
-inline float blinnPdf__(float costheta, float cos_w_h, float e)
+inline float blinnPdf_global(float costheta, float cos_w_h, float e)
 {
-	return blinnD__(costheta, e) / pdfDivisor__(cos_w_h);
+	return blinnD_global(costheta, e) / pdfDivisor_global(cos_w_h);
 }
 
-inline void blinnSample__(Vec3 &h, float s_1, float s_2, float exponent)
+inline void blinnSample_global(Vec3 &h, float s_1, float s_2, float exponent)
 {
 	// Compute sampled half-angle vector H for Blinn distribution
 	float cos_theta = math::pow(1.f - s_2, 1.f / (exponent + 1.f));
@@ -98,7 +98,7 @@ inline void blinnSample__(Vec3 &h, float s_1, float s_2, float exponent)
 // implementation of microfacet model with GGX facet distribution
 // based on http://www.graphics.cornell.edu/~bjw/microfacetbsdf.pdf
 
-inline void ggxSample__(Vec3 &h, float alpha_2, float s_1, float s_2)
+inline void ggxSample_global(Vec3 &h, float alpha_2, float s_1, float s_2)
 {
 	// using the flollowing identity:
 	// cosTheta == 1 / sqrt(1 + tanTheta2)
@@ -110,7 +110,7 @@ inline void ggxSample__(Vec3 &h, float alpha_2, float s_1, float s_2)
 	h = Vec3(sin_theta * math::cos(phi), sin_theta * math::sin(phi), cos_theta);
 }
 
-inline float ggxD__(float alpha_2, float cos_theta_2, float tan_theta_2)
+inline float ggxD_global(float alpha_2, float cos_theta_2, float tan_theta_2)
 {
 	float cos_theta_4 = cos_theta_2 * cos_theta_2;
 	float a_tan = alpha_2 + tan_theta_2;
@@ -118,7 +118,7 @@ inline float ggxD__(float alpha_2, float cos_theta_2, float tan_theta_2)
 	return alpha_2 / div;
 }
 
-inline float ggxG__(float alpha_2, float wo_n, float wi_n)
+inline float ggxG_global(float alpha_2, float wo_n, float wi_n)
 {
 	// 2.f / (1.f + fSqrt(1.f + alpha2 * ( tanTheta^2 ));
 	float wo_n_2 = wo_n * wo_n;
@@ -132,12 +132,12 @@ inline float ggxG__(float alpha_2, float wo_n, float wi_n)
 	return g_1_wo * g_1_wi;
 }
 
-inline float ggxPdf__(float d, float cos_theta, float jacobian)
+inline float ggxPdf_global(float d, float cos_theta, float jacobian)
 {
 	return d * cos_theta * jacobian;
 }
 
-inline float microfacetFresnel__(float wo_h, float ior)
+inline float microfacetFresnel_global(float wo_h, float ior)
 {
 	float c = std::abs(wo_h);
 	float g = ior * ior - 1 + c * c;
@@ -151,7 +151,7 @@ inline float microfacetFresnel__(float wo_h, float ior)
 	return 1.0f; // TIR
 }
 
-inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float &kr, float &kt)
+inline bool refractMicrofacet_global(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 &h, float wo_h, float &kr, float &kt)
 {
 	wi = Vec3(0.f);
 	const float c = -wo * h;
@@ -162,26 +162,26 @@ inline bool refractMicrofacet__(float eta, const Vec3 &wo, Vec3 &wi, const Vec3 
 	wi = -wi;
 
 	kt = 0.f;
-	kr = microfacetFresnel__(wo_h, 1.f / eta);
+	kr = microfacetFresnel_global(wo_h, 1.f / eta);
 	if(kr == 1.f) return false;
 	kt = 1 - kr;
 	return true;
 }
 
-inline void reflectMicrofacet__(const Vec3 &wo, Vec3 &wi, const Vec3 &h)
+inline void reflectMicrofacet_global(const Vec3 &wo, Vec3 &wi, const Vec3 &h)
 {
 	wi = wo + (2.f * (h * -wo) * h);
 	wi = -wi;
 }
 
-inline float schlickFresnel__(float costheta, float r)
+inline float schlickFresnel_global(float costheta, float r)
 {
 	float c_1 = (1.f - costheta);
 	float c_2 = c_1 * c_1;
 	return r + ((1.f - r) * c_1 * c_2 * c_2);
 }
 
-inline Rgb diffuseReflect__(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base)
+inline Rgb diffuseReflect_global(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base)
 {
 	constexpr double diffuse_ratio = 0.387507688; //This comment was in the original macro define, but not sure what it means: 1.21739130434782608696 // (28 / 23)
 	float f_wi = (1.f - (0.5f * wi_n));
@@ -193,9 +193,9 @@ inline Rgb diffuseReflect__(float wi_n, float wo_n, float glossy, float diffuse,
 	return diffuse_ratio * diffuse * (1.f - glossy) * (1.f - f_wi) * (1.f - f_wo) * diff_base;
 }
 
-inline Rgb diffuseReflectFresnel__(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base, float kt)
+inline Rgb diffuseReflectFresnel_global(float wi_n, float wo_n, float glossy, float diffuse, const Rgb &diff_base, float kt)
 {
-	return kt * diffuseReflect__(wi_n, wo_n, glossy, diffuse, diff_base);
+	return kt * diffuseReflect_global(wi_n, wo_n, glossy, diffuse, diff_base);
 }
 
 END_YAFARAY

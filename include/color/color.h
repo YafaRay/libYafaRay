@@ -247,14 +247,14 @@ void operator << (unsigned char *data, const Rgb &c);
 void operator >> (float *data, Rgb &c);
 void operator << (float *data, const Rgb &c);
 std::ostream &operator << (std::ostream &out, const Rgb c);
-Rgb mix__(const Rgb &a, const Rgb &b, float point);
+Rgb mix_global(const Rgb &a, const Rgb &b, float point);
 
 void operator >> (unsigned char *data, Rgba &c);
 void operator << (unsigned char *data, const Rgba &c);
 void operator >> (float *data, Rgba &c);
 void operator << (float *data, const Rgba &c);
 std::ostream &operator << (std::ostream &out, const Rgba c);
-Rgba mix__(const Rgba &a, const Rgba &b, float point);
+Rgba mix_global(const Rgba &a, const Rgba &b, float point);
 
 
 inline Rgb operator * (const Rgb &a, const Rgb &b)
@@ -332,13 +332,13 @@ inline Rgba &Rgba::operator *=(const Rgba &c) { r_ *= c.r_; g_ *= c.g_; b_ *= c.
 inline Rgba &Rgba::operator *=(float f) { r_ *= f; g_ *= f; b_ *= f; a_ *= f;  return *this; }
 inline Rgba &Rgba::operator -=(const Rgba &c) { r_ -= c.r_; g_ -= c.g_; b_ -= c.b_; a_ -= c.a_;  return *this; }
 
-inline float maxAbsDiff__(const Rgb &a, const Rgb &b)
+inline float maxAbsDiff_global(const Rgb &a, const Rgb &b)
 {
 	return (a - b).absmax();
 }
 
 //Matrix information from: http://www.color.org/chardata/rgb/sRGB.pdf
-static float linear_rgb_from_xyz_d_65__[3][3] =
+static float linear_rgb_from_xyz_d_65_global[3][3] =
 {
 	{ 3.2406255f, -1.537208f,  -0.4986286f },
 	{-0.9689307f,  1.8757561f,  0.0415175f },
@@ -346,7 +346,7 @@ static float linear_rgb_from_xyz_d_65__[3][3] =
 };
 
 //Inverse matrices
-static float xyz_d_65_from_linear_rgb__[3][3] =
+static float xyz_d_65_from_linear_rgb_global[3][3] =
 {
 	{ 0.412400f,   0.357600f,   0.180500f },
 	{ 0.212600f,   0.715200f,   0.072200f },
@@ -379,9 +379,9 @@ inline void Rgb::linearRgbFromColorSpace(ColorSpace color_space, float gamma)
 	else if(color_space == XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
-		r_ = linear_rgb_from_xyz_d_65__[0][0] * old_r + linear_rgb_from_xyz_d_65__[0][1] * old_g + linear_rgb_from_xyz_d_65__[0][2] * old_b;
-		g_ = linear_rgb_from_xyz_d_65__[1][0] * old_r + linear_rgb_from_xyz_d_65__[1][1] * old_g + linear_rgb_from_xyz_d_65__[1][2] * old_b;
-		b_ = linear_rgb_from_xyz_d_65__[2][0] * old_r + linear_rgb_from_xyz_d_65__[2][1] * old_g + linear_rgb_from_xyz_d_65__[2][2] * old_b;
+		r_ = linear_rgb_from_xyz_d_65_global[0][0] * old_r + linear_rgb_from_xyz_d_65_global[0][1] * old_g + linear_rgb_from_xyz_d_65_global[0][2] * old_b;
+		g_ = linear_rgb_from_xyz_d_65_global[1][0] * old_r + linear_rgb_from_xyz_d_65_global[1][1] * old_g + linear_rgb_from_xyz_d_65_global[1][2] * old_b;
+		b_ = linear_rgb_from_xyz_d_65_global[2][0] * old_r + linear_rgb_from_xyz_d_65_global[2][1] * old_g + linear_rgb_from_xyz_d_65_global[2][2] * old_b;
 	}
 	else if(color_space == RawManualGamma && gamma != 1.f)
 	{
@@ -401,9 +401,9 @@ inline void Rgb::colorSpaceFromLinearRgb(ColorSpace color_space, float gamma)
 	else if(color_space == XyzD65)
 	{
 		float old_r = r_, old_g = g_, old_b = b_;
-		r_ = xyz_d_65_from_linear_rgb__[0][0] * old_r + xyz_d_65_from_linear_rgb__[0][1] * old_g + xyz_d_65_from_linear_rgb__[0][2] * old_b;
-		g_ = xyz_d_65_from_linear_rgb__[1][0] * old_r + xyz_d_65_from_linear_rgb__[1][1] * old_g + xyz_d_65_from_linear_rgb__[1][2] * old_b;
-		b_ = xyz_d_65_from_linear_rgb__[2][0] * old_r + xyz_d_65_from_linear_rgb__[2][1] * old_g + xyz_d_65_from_linear_rgb__[2][2] * old_b;
+		r_ = xyz_d_65_from_linear_rgb_global[0][0] * old_r + xyz_d_65_from_linear_rgb_global[0][1] * old_g + xyz_d_65_from_linear_rgb_global[0][2] * old_b;
+		g_ = xyz_d_65_from_linear_rgb_global[1][0] * old_r + xyz_d_65_from_linear_rgb_global[1][1] * old_g + xyz_d_65_from_linear_rgb_global[1][2] * old_b;
+		b_ = xyz_d_65_from_linear_rgb_global[2][0] * old_r + xyz_d_65_from_linear_rgb_global[2][1] * old_g + xyz_d_65_from_linear_rgb_global[2][2] * old_b;
 	}
 	else if(color_space == RawManualGamma && gamma != 1.f)
 	{

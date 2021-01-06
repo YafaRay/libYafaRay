@@ -429,7 +429,7 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	BlendMaterial *mat = new BlendMaterial(m_1, m_2, blend_val, visibility);
 

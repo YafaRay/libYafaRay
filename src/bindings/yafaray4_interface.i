@@ -80,7 +80,7 @@ inline Rgba TilesLayers::getColor(int x, int y, const Layer &layer)
 	else return {0.f};
 }
 
-static Py_ssize_t pythonTileSize__(const Tile *tile)
+static Py_ssize_t pythonTileSize_global(const Tile *tile)
 {
 	const int area_w = (tile->area_x_1_ - tile->area_x_0_);
 	const int area_h = (tile->area_y_1_ - tile->area_y_0_);
@@ -89,11 +89,11 @@ static Py_ssize_t pythonTileSize__(const Tile *tile)
 }
 
 
-static PyObject *pythonTileSubscriptInt__(const Tile *tile, int py_index)
+static PyObject *pythonTileSubscriptInt_global(const Tile *tile, int py_index)
 {
 	const int num_channels = tile->image_layer_->image_->getNumChannels();
 	// Check boundaries and fill w and h
-	if(py_index >= pythonTileSize__(tile) || py_index < 0)
+	if(py_index >= pythonTileSize_global(tile) || py_index < 0)
 	{
 		PyObject* groupPix = PyTuple_New(num_channels);
 		for(int i = 0; i < num_channels; ++i)
@@ -134,7 +134,7 @@ static PyObject *pythonTileSubscriptInt__(const Tile *tile, int py_index)
 	return groupPix;
 }
 
-static void pythonTileDelete__(Tile *tile)
+static void pythonTileDelete_global(Tile *tile)
 {
 	SWIG_PYTHON_THREAD_BEGIN_BLOCK;
 	PyObject_Del(tile);
@@ -143,19 +143,19 @@ static void pythonTileDelete__(Tile *tile)
 
 PySequenceMethods sequence_methods =
 {
-	( lenfunc ) pythonTileSize__,
+	( lenfunc ) pythonTileSize_global,
 	nullptr,
 	nullptr,
-	( ssizeargfunc ) pythonTileSubscriptInt__
+	( ssizeargfunc ) pythonTileSubscriptInt_global
 };
 
-PyTypeObject python_tile_type__ =
+PyTypeObject python_tile_type_global =
 {
 	PyVarObject_HEAD_INIT(nullptr, 0)
 	"yaf_tile",							/* tp_name */
 	sizeof(Tile),			/* tp_basicsize */
 	0,									/* tp_itemsize */
-	( destructor ) pythonTileDelete__,	/* tp_dealloc */
+	( destructor ) pythonTileDelete_global,	/* tp_dealloc */
 	0,                             		/* tp_print / tp_vectorcall_offset */
 	nullptr,								/* getattrfunc tp_getattr; */
 	nullptr,								/* setattrfunc tp_setattr; */
@@ -211,7 +211,7 @@ public:
 			{
 				Image::Type image_type = it.second.getImageType();
 				Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
-				Tile *tile = PyObject_New(Tile, &python_tile_type__);
+				Tile *tile = PyObject_New(Tile, &python_tile_type_global);
 				tile->init();
 				tile->image_layer_->image_ = image;
 				tile->image_layer_->layer_ = it.second;
@@ -513,7 +513,7 @@ END_YAFARAY
 %}
 
 %init %{
-	PyType_Ready(&python_tile_type__);
+	PyType_Ready(&python_tile_type_global);
 %}
 
 %typemap(in) PyObject *pyfunc

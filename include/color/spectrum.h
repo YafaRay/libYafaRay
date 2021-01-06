@@ -25,23 +25,23 @@
 
 BEGIN_YAFARAY
 
-void wl2RgbFromCie__(float wl, Rgb &col);
+void wl2RgbFromCie_global(float wl, Rgb &col);
 //void approxSpectrumRGB(float wl, Rgb &col);
 //void fakeSpectrum(float p, Rgb &col);
-void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
-float getIoRcolor__(float w, float cauchy_a, float cauchy_b, Rgb &col);
-Rgb wl2Xyz__(float wl);
+void cauchyCoefficients_global(float ior, float disp_pw, float &cauchy_a, float &cauchy_b);
+float getIoRcolor_global(float w, float cauchy_a, float cauchy_b, Rgb &col);
+Rgb wl2Xyz_global(float wl);
 
-static inline float getIor__(float w, float cauchy_a, float cauchy_b)
+static inline float getIor_global(float w, float cauchy_a, float cauchy_b)
 {
 	float wl = 300.f * w + 400.f;
 	return cauchy_a + cauchy_b / (wl * wl);
 }
 
-static inline void wl2Rgb__(float w, Rgb &wl_col)
+static inline void wl2Rgb_global(float w, Rgb &wl_col)
 {
 	float wl = 300.f * w + 400.f;
-	wl2RgbFromCie__(wl, wl_col);
+	wl2RgbFromCie_global(wl, wl_col);
 	wl_col *= 2.214032659670777114f;
 }
 

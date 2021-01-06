@@ -1,7 +1,7 @@
 
 
-int sprite_00035_size__ = 5312;
-unsigned char sprite_00035__[] =
+int sprite_00035_size_global = 5312;
+unsigned char sprite_00035_global[] =
 {
 
 	137, 80, 78, 71, 13, 10, 26, 10,  0,  0,  0, 13, 73, 72, 68, 82,  0,  0,  0, 200,  0,  0,  0, 87,  8,  2,  0,  0,  0, 206, 10, 157,

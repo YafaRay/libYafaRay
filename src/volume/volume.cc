@@ -117,10 +117,10 @@ Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) cons
 	return tau_val;
 }
 
-inline float min__(float a, float b) { return (a > b) ? b : a; }
-inline float max__(float a, float b) { return (a < b) ? b : a; }
+inline float min_global(float a, float b) { return (a > b) ? b : a; }
+inline float max_global(float a, float b) { return (a < b) ? b : a; }
 
-inline double cosInter__(double y_1, double y_2, double mu)
+inline double cosInter_global(double y_1, double y_2, double mu)
 {
 	const double mu_2 = (1.0f - math::cos(mu * M_PI)) / 2.0f;
 	return y_1 * (1.0f - mu_2) + y_2 * mu_2;
@@ -144,13 +144,13 @@ float VolumeRegion::attenuation(const Point3 p, Light *l) const
 	else if(x > (att_grid_x_ - 0.5f) || y > (att_grid_y_ - 0.5f) || z > (att_grid_z_ - 0.5f)) return 0.f;
 
 	// cell vertices in which p lies
-	int x_0 = max__(0, floor(x));
-	int y_0 = max__(0, floor(y));
-	int z_0 = max__(0, floor(z));
+	int x_0 = max_global(0, floor(x));
+	int y_0 = max_global(0, floor(y));
+	int z_0 = max_global(0, floor(z));
 
-	int x_1 = min__(att_grid_x_ - 1, ceil(x));
-	int y_1 = min__(att_grid_y_ - 1, ceil(y));
-	int z_1 = min__(att_grid_z_ - 1, ceil(z));
+	int x_1 = min_global(att_grid_x_ - 1, ceil(x));
+	int y_1 = min_global(att_grid_y_ - 1, ceil(y));
+	int z_1 = min_global(att_grid_z_ - 1, ceil(z));
 
 	// offsets
 	float xd = x - x_0;

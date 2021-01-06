@@ -78,7 +78,7 @@ Scene::Scene()
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 
 	Y_INFO << "LibYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")" << YENDL;
-	session__.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
+	session_global.setDifferentialRaysEnabled(false);	//By default, disable ray differential calculations. Only if at least one texture uses them, then enable differentials.
 	createDefaultMaterial();
 
 #ifndef HAVE_OPENCV
@@ -560,9 +560,9 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	AaNoiseParams aa_noise_params;
 	int nthreads = -1, nthreads_photons = -1;
 	bool adv_auto_shadow_bias_enabled = true;
-	float adv_shadow_bias_value = shadow_bias__;
+	float adv_shadow_bias_value = shadow_bias_global;
 	bool adv_auto_min_raydist_enabled = true;
-	float adv_min_raydist_value = min_raydist__;
+	float adv_min_raydist_value = min_raydist_global;
 	int adv_base_sampling_offset = 0;
 	int adv_computer_node = 0;
 	bool background_resampling = true;  //If false, the background will not be resampled in subsequent adaptative AA passes

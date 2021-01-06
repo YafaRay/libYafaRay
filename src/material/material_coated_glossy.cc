@@ -154,11 +154,11 @@ Rgb CoatedGlossyMaterial::eval(const RenderData &render_data, const SurfacePoint
 		if(anisotropic_)
 		{
 			const Vec3 hs(h * sp.nu_, h * sp.nv_, h * n);
-			glossy = kt * asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wi_h, dat->glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
+			glossy = kt * asAnisoD_global(hs, exp_u_, exp_v_) * schlickFresnel_global(cos_wi_h, dat->glossy_) / asDivisor_global(cos_wi_h, wo_n, wi_n);
 		}
 		else
 		{
-			glossy = kt * blinnD__(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wi_h, dat->glossy_) / asDivisor__(cos_wi_h, wo_n, wi_n);
+			glossy = kt * blinnD_global(h * n, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel_global(cos_wi_h, dat->glossy_) / asDivisor_global(cos_wi_h, wo_n, wi_n);
 		}
 		col = glossy * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 	}
@@ -262,8 +262,8 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 			}
 			break;
 		case C_GLOSSY: // glossy
-			if(anisotropic_) asAnisoSample__(hs, s_1, s.s_2_, exp_u_, exp_v_);
-			else blinnSample__(hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
+			if(anisotropic_) asAnisoSample_global(hs, s_1, s.s_2_, exp_u_, exp_v_);
+			else blinnSample_global(hs, s_1, s.s_2_, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_));
 			break;
 		case C_DIFFUSE: // lambertian
 		default:
@@ -320,21 +320,21 @@ Rgb CoatedGlossyMaterial::sample(const RenderData &render_data, const SurfacePoi
 
 			if(anisotropic_)
 			{
-				s.pdf_ += asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * width[rc_index[C_GLOSSY]];
-				glossy = asAnisoD__(hs, exp_u_, exp_v_) * schlickFresnel__(cos_wo_h, dat->glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
+				s.pdf_ += asAnisoPdf_global(hs, cos_wo_h, exp_u_, exp_v_) * width[rc_index[C_GLOSSY]];
+				glossy = asAnisoD_global(hs, exp_u_, exp_v_) * schlickFresnel_global(cos_wo_h, dat->glossy_) / asDivisor_global(cos_wo_h, wo_n, wi_n);
 			}
 			else
 			{
 				float cos_hn = h * n;
-				s.pdf_ += blinnPdf__(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
-				glossy = blinnD__(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel__(cos_wo_h, dat->glossy_) / asDivisor__(cos_wo_h, wo_n, wi_n);
+				s.pdf_ += blinnPdf_global(cos_hn, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width[rc_index[C_GLOSSY]];
+				glossy = blinnD_global(cos_hn, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * schlickFresnel_global(cos_wo_h, dat->glossy_) / asDivisor_global(cos_wo_h, wo_n, wi_n);
 			}
 			scolor = glossy * kt * (glossy_shader_ ? glossy_shader_->getColor(stack) : gloss_color_);
 		}
 
 		if(use[C_DIFFUSE])
 		{
-			Rgb add_col = diffuseReflectFresnel__(wi_n, wo_n, dat->glossy_, dat->diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_), kt);
+			Rgb add_col = diffuseReflectFresnel_global(wi_n, wo_n, dat->glossy_, dat->diffuse_, (diffuse_shader_ ? diffuse_shader_->getColor(stack) : diff_color_), kt);
 
 			if(diffuse_reflection_shader_) add_col *= diffuse_reflection_shader_->getScalar(stack);
 
@@ -395,9 +395,9 @@ float CoatedGlossyMaterial::pdf(const RenderData &render_data, const SurfacePoin
 				if(anisotropic_)
 				{
 					Vec3 hs(h * sp.nu_, h * sp.nv_, cos_n_h);
-					pdf += asAnisoPdf__(hs, cos_wo_h, exp_u_, exp_v_) * width;
+					pdf += asAnisoPdf_global(hs, cos_wo_h, exp_u_, exp_v_) * width;
 				}
-				else pdf += blinnPdf__(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width;
+				else pdf += blinnPdf_global(cos_n_h, cos_wo_h, (exponent_shader_ ? exponent_shader_->getScalar(stack) : exponent_)) * width;
 			}
 			else if(i == C_DIFFUSE)
 			{
@@ -491,7 +491,7 @@ Material *CoatedGlossyMaterial::factory(ParamMap &params, std::list< ParamMap > 
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	if(ior == 1.f) ior = 1.0000001f;
 

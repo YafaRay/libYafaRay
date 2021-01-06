@@ -25,10 +25,10 @@
 BEGIN_YAFARAY
 
 // Initialization of the master instance of yafLog
-Logger logger__{ };
+Logger logger_global{ };
 
 // Initialization of the master session instance
-Session session__{ };
+Session session_global{ };
 
 Session::Session()
 {

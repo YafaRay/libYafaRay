@@ -43,8 +43,8 @@ struct YAFARAY_QT_EXPORT Settings
 
 extern "C"
 {
-	YAFARAY_QT_EXPORT void initGui__();
-	YAFARAY_QT_EXPORT int createRenderWidget__(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings);
+	YAFARAY_QT_EXPORT void initGui_global();
+	YAFARAY_QT_EXPORT int createRenderWidget_global(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings);
 }
 
 #endif // YAFARAY_INTERFACE_QT_H

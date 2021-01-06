@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-float mieScatter__(float theta)
+float mieScatter_global(float theta)
 {
 	theta *= 360 / math::mult_pi_by_2;
 	if(theta < 1.f)
@@ -183,7 +183,7 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 			float b_r_angular = b_r_ * 3 / (2 * M_PI * 8) * (1.0f + (w * (-ray.dir_)) * (w * (-ray.dir_)));
 			float k = 0.67f;
 			float angle = math::acos(w * (ray.dir_));
-			float b_m_angular = b_m_ / (2 * k * M_PI) * mieScatter__(angle);
+			float b_m_angular = b_m_ / (2 * k * M_PI) * mieScatter_global(angle);
 			//std::cout << "w: " << w << " theta: " << theta << " -ray.dir: " << -ray.dir << " angle: " << angle << " mie ang " << b_m_angular << std::endl;
 			s_0_m = s_0_m + Rgba(l_s) * b_m_angular;
 			s_0_r = s_0_r + Rgba(l_s) * b_r_angular;

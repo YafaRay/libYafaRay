@@ -24,7 +24,7 @@ BEGIN_YAFARAY
 
 // needed for voronoi
 
-static constexpr float hashpntf__[768] = {0.536902, 0.020915, 0.501445, 0.216316, 0.517036, 0.822466, 0.965315,
+static constexpr float hashpntf_global[768] = {0.536902, 0.020915, 0.501445, 0.216316, 0.517036, 0.822466, 0.965315,
 								0.377313, 0.678764, 0.744545, 0.097731, 0.396357, 0.247202, 0.520897,
 								0.613396, 0.542124, 0.146813, 0.255489, 0.810868, 0.638641, 0.980742,
 								0.292316, 0.357948, 0.114382, 0.861377, 0.629634, 0.722530, 0.714103,
@@ -136,7 +136,7 @@ static constexpr float hashpntf__[768] = {0.536902, 0.020915, 0.501445, 0.216316
 								0.114246, 0.905043, 0.713870, 0.555261, 0.951333
                              };
 
-static constexpr unsigned char hash__[512] =
+static constexpr unsigned char hash_global[512] =
 {
 	0xA2, 0xA0, 0x19, 0x3B, 0xF8, 0xEB, 0xAA, 0xEE, 0xF3, 0x1C, 0x67, 0x28, 0x1D, 0xED, 0x0, 0xDE, 0x95, 0x2E, 0xDC, 0x3F, 0x3A, 0x82, 0x35, 0x4D, 0x6C, 0xBA, 0x36, 0xD0, 0xF6, 0xC, 0x79, 0x32, 0xD1, 0x59, 0xF4, 0x8, 0x8B, 0x63, 0x89, 0x2F, 0xB8, 0xB4, 0x97, 0x83, 0xF2, 0x8F, 0x18, 0xC7, 0x51, 0x14, 0x65, 0x87, 0x48, 0x20, 0x42, 0xA8, 0x80, 0xB5, 0x40, 0x13, 0xB2, 0x22, 0x7E, 0x57,
 	0xBC, 0x7F, 0x6B, 0x9D, 0x86, 0x4C, 0xC8, 0xDB, 0x7C, 0xD5, 0x25, 0x4E, 0x5A, 0x55, 0x74, 0x50, 0xCD, 0xB3, 0x7A, 0xBB, 0xC3, 0xCB, 0xB6, 0xE2, 0xE4, 0xEC, 0xFD, 0x98, 0xB, 0x96, 0xD3, 0x9E, 0x5C, 0xA1, 0x64, 0xF1, 0x81, 0x61, 0xE1, 0xC4, 0x24, 0x72, 0x49, 0x8C, 0x90, 0x4B, 0x84, 0x34, 0x38, 0xAB, 0x78, 0xCA, 0x1F, 0x1, 0xD7, 0x93, 0x11, 0xC1, 0x58, 0xA9, 0x31, 0xF9, 0x44, 0x6D,
@@ -148,7 +148,7 @@ static constexpr unsigned char hash__[512] =
 	0xDA, 0x2A, 0xBD, 0x68, 0x17, 0x9F, 0xBE, 0xD4, 0xA, 0xCC, 0xD2, 0xE8, 0x43, 0x3D, 0x70, 0xB7, 0x2, 0x7D, 0x99, 0xD8, 0xD, 0x60, 0x8A, 0x4, 0x2C, 0x3E, 0x92, 0xE5, 0xAF, 0x53, 0x7, 0xE0, 0x29, 0xA6, 0xC5, 0xE3, 0xF5, 0xF7, 0x4A, 0x41, 0x26, 0x6A, 0x16, 0x5E, 0x52, 0x2D, 0x21, 0xAD, 0xF0, 0x91, 0xFF, 0xEA, 0x54, 0xFA, 0x66, 0x1A, 0x45, 0x39, 0xCF, 0x75, 0xA4, 0x88, 0xFB, 0x5D,
 };
 
-static constexpr float hashvectf__[768] =
+static constexpr float hashvectf_global[768] =
 {
 	0.33783, 0.715698, -0.611206, -0.944031, -0.326599, -0.045624, -0.101074, -0.416443, -0.903503, 0.799286, 0.49411, -0.341949, -0.854645, 0.518036, 0.033936, 0.42514, -0.437866, -0.792114, -0.358948, 0.597046, 0.717377, -0.985413, 0.144714, 0.089294, -0.601776, -0.33728, -0.723907, -0.449921, 0.594513, 0.666382, 0.208313, -0.10791,
 	0.972076, 0.575317, 0.060425, 0.815643, 0.293365, -0.875702, -0.383453, 0.293762, 0.465759, 0.834686, -0.846008, -0.233398, -0.47934, -0.115814, 0.143036, -0.98291, 0.204681, -0.949036, -0.239532, 0.946716, -0.263947, 0.184326, -0.235596, 0.573822, 0.784332, 0.203705, -0.372253, -0.905487, 0.756989, -0.651031, 0.055298, 0.497803,
@@ -200,18 +200,18 @@ float NewPerlinNoiseGenerator::operator()(const Point3 &pt) const
 	w = fade(z);
 
 	//Hash coordinates of the 8 cube corners and add blended results from 8 corners of cube
-	const int a = hash__[xi] + yi;
-	const int aa = hash__[a] + zi;
-	const int ab = hash__[a + 1] + zi;
-	const int b = hash__[xi + 1] + yi;
-	const int ba = hash__[b] + zi;
-	const int bb = hash__[b + 1] + zi;
+	const int a = hash_global[xi] + yi;
+	const int aa = hash_global[a] + zi;
+	const int ab = hash_global[a + 1] + zi;
+	const int b = hash_global[xi + 1] + yi;
+	const int ba = hash_global[b] + zi;
+	const int bb = hash_global[b + 1] + zi;
 
-	const float lerp_00 = math::lerp(grad(hash__[ab + 1], x, y - 1, z - 1), grad(hash__[bb + 1], x - 1, y - 1, z - 1), u);
-	const float lerp_01 = math::lerp(grad(hash__[aa + 1], x, y, z - 1), grad(hash__[ba + 1], x - 1, y, z - 1), u);
+	const float lerp_00 = math::lerp(grad(hash_global[ab + 1], x, y - 1, z - 1), grad(hash_global[bb + 1], x - 1, y - 1, z - 1), u);
+	const float lerp_01 = math::lerp(grad(hash_global[aa + 1], x, y, z - 1), grad(hash_global[ba + 1], x - 1, y, z - 1), u);
 	const float lerp_02 = math::lerp(lerp_01, lerp_00, v);
-	const float lerp_03 = math::lerp(grad(hash__[ab], x, y - 1, z), grad(hash__[bb], x - 1, y - 1, z), u);
-	const float lerp_04 = math::lerp(grad(hash__[aa], x, y, z), grad(hash__[ba], x - 1, y, z), u);
+	const float lerp_03 = math::lerp(grad(hash_global[ab], x, y - 1, z), grad(hash_global[bb], x - 1, y - 1, z), u);
+	const float lerp_04 = math::lerp(grad(hash_global[aa], x, y, z), grad(hash_global[ba], x - 1, y, z), u);
 	const float lerp_05 = math::lerp(lerp_04, lerp_03, v);
 	const float nv = math::lerp(lerp_05, lerp_02, w);
 
@@ -222,7 +222,7 @@ float NewPerlinNoiseGenerator::operator()(const Point3 &pt) const
 // Standard (old) Perlin noise
 
 // unsigned!!
-static constexpr unsigned char stdp_p__[512 + 2] =
+static constexpr unsigned char stdp_p_global[512 + 2] =
 {
 	0xA2, 0xA0, 0x19, 0x3B, 0xF8, 0xEB, 0xAA, 0xEE, 0xF3, 0x1C, 0x67, 0x28, 0x1D, 0xED, 0x0, 0xDE, 0x95, 0x2E, 0xDC, 0x3F, 0x3A, 0x82, 0x35, 0x4D, 0x6C, 0xBA, 0x36, 0xD0, 0xF6, 0xC, 0x79, 0x32, 0xD1, 0x59, 0xF4, 0x8, 0x8B, 0x63, 0x89, 0x2F, 0xB8, 0xB4, 0x97, 0x83, 0xF2, 0x8F, 0x18, 0xC7, 0x51, 0x14, 0x65, 0x87, 0x48, 0x20, 0x42, 0xA8, 0x80, 0xB5, 0x40, 0x13, 0xB2, 0x22, 0x7E, 0x57,
 	0xBC, 0x7F, 0x6B, 0x9D, 0x86, 0x4C, 0xC8, 0xDB, 0x7C, 0xD5, 0x25, 0x4E, 0x5A, 0x55, 0x74, 0x50, 0xCD, 0xB3, 0x7A, 0xBB, 0xC3, 0xCB, 0xB6, 0xE2, 0xE4, 0xEC, 0xFD, 0x98, 0xB, 0x96, 0xD3, 0x9E, 0x5C, 0xA1, 0x64, 0xF1, 0x81, 0x61, 0xE1, 0xC4, 0x24, 0x72, 0x49, 0x8C, 0x90, 0x4B, 0x84, 0x34, 0x38, 0xAB, 0x78, 0xCA, 0x1F, 0x1, 0xD7, 0x93, 0x11, 0xC1, 0x58, 0xA9, 0x31, 0xF9, 0x44, 0x6D,
@@ -236,7 +236,7 @@ static constexpr unsigned char stdp_p__[512 + 2] =
 };
 
 
-static constexpr float stdp_g__[512 + 2][3] =
+static constexpr float stdp_g_global[512 + 2][3] =
 {
 	{0.33783, 0.715698, -0.611206},	{-0.944031, -0.326599, -0.045624}, {-0.101074, -0.416443, -0.903503}, {0.799286, 0.49411, -0.341949},	{-0.854645, 0.518036, 0.033936},	{0.42514, -0.437866, -0.792114},
 	{-0.358948, 0.597046, 0.717377},	{-0.985413, 0.144714, 0.089294},	{-0.601776, -0.33728, -0.723907},	{-0.449921, 0.594513, 0.666382},	{0.208313, -0.10791, 0.972076},	{0.575317, 0.060425, 0.815643},
@@ -326,17 +326,17 @@ static constexpr float stdp_g__[512 + 2][3] =
 	{0.114716, 0.044525, -0.992371},	{0.966003, 0.244873, -0.082764},	{0.33783, 0.715698, -0.611206},	{-0.944031, -0.326599, -0.045624}
 };
 
-constexpr float stdpAt__(float rx, float ry, float rz, const float *q)
+constexpr float stdpAt_global(float rx, float ry, float rz, const float *q)
 {
 	return rx * q[0] + ry * q[1] + rz * q[2];
 }
 
-constexpr float surve__(float t)
+constexpr float surve_global(float t)
 {
 	return t * t * (3.f - 2.f * t);
 }
 
-void setup__(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec)
+void setup_global(int i, int &b_0, int &b_1, float &r_0, float &r_1, const std::array<float, 3> &vec)
 {
 	const float t = vec[i] + 10000.0;
 	b_0 = static_cast<int>(t) & 255;
@@ -351,46 +351,46 @@ float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 	float rx_0, rx_1, ry_0, ry_1, rz_0, rz_1;
 	const std::array<float, 3> vec { pt.x_, pt.y_, pt.z_ };
 
-	setup__(0, bx_0, bx_1, rx_0, rx_1, vec);
-	setup__(1, by_0, by_1, ry_0, ry_1, vec);
-	setup__(2, bz_0, bz_1, rz_0, rz_1, vec);
+	setup_global(0, bx_0, bx_1, rx_0, rx_1, vec);
+	setup_global(1, by_0, by_1, ry_0, ry_1, vec);
+	setup_global(2, bz_0, bz_1, rz_0, rz_1, vec);
 
-	const int i = stdp_p__[ bx_0 ];
-	const int j = stdp_p__[ bx_1 ];
+	const int i = stdp_p_global[ bx_0 ];
+	const int j = stdp_p_global[ bx_1 ];
 
-	const int b_00 = stdp_p__[i + by_0 ];
-	const int b_10 = stdp_p__[j + by_0 ];
-	const int b_01 = stdp_p__[i + by_1 ];
-	const int b_11 = stdp_p__[j + by_1 ];
+	const int b_00 = stdp_p_global[i + by_0 ];
+	const int b_10 = stdp_p_global[j + by_0 ];
+	const int b_01 = stdp_p_global[i + by_1 ];
+	const int b_11 = stdp_p_global[j + by_1 ];
 
-	const float sx = surve__(rx_0);
-	const float sy = surve__(ry_0);
-	const float sz = surve__(rz_0);
+	const float sx = surve_global(rx_0);
+	const float sy = surve_global(ry_0);
+	const float sz = surve_global(rz_0);
 
-	const float *q = stdp_g__[b_00 + bz_0 ] ;
-	float u = stdpAt__(rx_0, ry_0, rz_0, q);
-	q = stdp_g__[b_10 + bz_0 ] ;
-	float v = stdpAt__(rx_1, ry_0, rz_0, q);
+	const float *q = stdp_g_global[b_00 + bz_0 ] ;
+	float u = stdpAt_global(rx_0, ry_0, rz_0, q);
+	q = stdp_g_global[b_10 + bz_0 ] ;
+	float v = stdpAt_global(rx_1, ry_0, rz_0, q);
 	float a = math::lerp(u, v, sx);
 
-	q = stdp_g__[b_01 + bz_0 ] ;
-	u = stdpAt__(rx_0, ry_1, rz_0, q);
-	q = stdp_g__[b_11 + bz_0 ] ;
-	v = stdpAt__(rx_1, ry_1, rz_0, q);
+	q = stdp_g_global[b_01 + bz_0 ] ;
+	u = stdpAt_global(rx_0, ry_1, rz_0, q);
+	q = stdp_g_global[b_11 + bz_0 ] ;
+	v = stdpAt_global(rx_1, ry_1, rz_0, q);
 	float b = math::lerp(u, v, sx);
 
 	const float c = math::lerp(a, b, sy);
 
-	q = stdp_g__[b_00 + bz_1 ] ;
-	u = stdpAt__(rx_0, ry_0, rz_1, q);
-	q = stdp_g__[b_10 + bz_1 ] ;
-	v = stdpAt__(rx_1, ry_0, rz_1, q);
+	q = stdp_g_global[b_00 + bz_1 ] ;
+	u = stdpAt_global(rx_0, ry_0, rz_1, q);
+	q = stdp_g_global[b_10 + bz_1 ] ;
+	v = stdpAt_global(rx_1, ry_0, rz_1, q);
 	a = math::lerp(u, v, sx);
 
-	q = stdp_g__[b_01 + bz_1 ] ;
-	u = stdpAt__(rx_0, ry_1, rz_1, q);
-	q = stdp_g__[b_11 + bz_1 ] ;
-	v = stdpAt__(rx_1, ry_1, rz_1, q);
+	q = stdp_g_global[b_01 + bz_1 ] ;
+	u = stdpAt_global(rx_0, ry_1, rz_1, q);
+	q = stdp_g_global[b_11 + bz_1 ] ;
+	v = stdpAt_global(rx_1, ry_1, rz_1, q);
 	b = math::lerp(u, v, sx);
 
 	const float d = math::lerp(a, b, sy);
@@ -398,10 +398,10 @@ float StdPerlinNoiseGenerator::operator()(const Point3 &pt) const
 }
 
 // distance metric function:
-float distRealF__(float x, float y, float z, float e) { return math::sqrt(x * x + y * y + z * z); }
-float distSquaredF__(float x, float y, float z, float e) { return x * x + y * y + z * z; }
-float distManhattanF__(float x, float y, float z, float e) { return (std::abs(x) + std::abs(y) + std::abs(z)); }
-float distChebychevF__(float x, float y, float z, float e)
+float distRealF_global(float x, float y, float z, float e) { return math::sqrt(x * x + y * y + z * z); }
+float distSquaredF_global(float x, float y, float z, float e) { return x * x + y * y + z * z; }
+float distManhattanF_global(float x, float y, float z, float e) { return (std::abs(x) + std::abs(y) + std::abs(z)); }
+float distChebychevF_global(float x, float y, float z, float e)
 {
 	x = std::abs(x);
 	y = std::abs(y);
@@ -410,13 +410,13 @@ float distChebychevF__(float x, float y, float z, float e)
 	return ((z > t) ? z : t);
 }
 // minkovsky preset exponent 0.5
-float distMinkovskyHf__(float x, float y, float z, float e)
+float distMinkovskyHf_global(float x, float y, float z, float e)
 {
 	const float d = math::sqrt(std::abs(x)) + math::sqrt(std::abs(y)) + math::sqrt(std::abs(z));
 	return (d * d);
 }
 // minkovsky preset exponent 4
-float distMinkovsky4F__(float x, float y, float z, float e)
+float distMinkovsky4F_global(float x, float y, float z, float e)
 {
 	x *= x;
 	y *= y;
@@ -424,7 +424,7 @@ float distMinkovsky4F__(float x, float y, float z, float e)
 	return math::sqrt(math::sqrt(x * x + y * y + z * z));
 }
 // Minkovsky, general case, slow
-float distMinkovskyF__(float x, float y, float z, float e)
+float distMinkovskyF_global(float x, float y, float z, float e)
 {
 	return math::pow(math::pow(std::abs(x), e) + math::pow(std::abs(y), e) + math::pow(std::abs(z), e), (float) 1.0 / e);
 }
@@ -457,45 +457,45 @@ float BlenderNoiseGenerator::operator()(const Point3 &pt) const
 	cn_5 = 1.f - 3.f * cn_5 - 2.f * cn_5 * jy;
 	cn_6 = 1.f - 3.f * cn_6 - 2.f * cn_6 * jz;
 
-	const int b_00 = hash__[hash__[ix & 255] + (iy & 255)];
-	const int b_10 = hash__[hash__[(ix + 1) & 255] + (iy & 255)];
-	const int b_01 = hash__[hash__[ix & 255] + ((iy + 1) & 255)];
-	const int b_11 = hash__[hash__[(ix + 1) & 255] + ((iy + 1) & 255)];
+	const int b_00 = hash_global[hash_global[ix & 255] + (iy & 255)];
+	const int b_10 = hash_global[hash_global[(ix + 1) & 255] + (iy & 255)];
+	const int b_01 = hash_global[hash_global[ix & 255] + ((iy + 1) & 255)];
+	const int b_11 = hash_global[hash_global[(ix + 1) & 255] + ((iy + 1) & 255)];
 	const int b_20 = iz & 255;
 	const int b_21 = (iz + 1) & 255;
 
 	/* 0 */
 	float i = (cn_1 * cn_2 * cn_3);
-	const float *h = hashvectf__ + 3 * hash__[b_20 + b_00];
+	const float *h = hashvectf_global + 3 * hash_global[b_20 + b_00];
 	float n = 0.5f;
 	n += i * (h[0] * ox + h[1] * oy + h[2] * oz);
 	/* 1 */
 	i = (cn_1 * cn_2 * cn_6);
-	h = hashvectf__ + 3 * hash__[b_21 + b_00];
+	h = hashvectf_global + 3 * hash_global[b_21 + b_00];
 	n += i * (h[0] * ox + h[1] * oy + h[2] * jz);
 	/* 2 */
 	i = (cn_1 * cn_5 * cn_3);
-	h = hashvectf__ + 3 * hash__[b_20 + b_01];
+	h = hashvectf_global + 3 * hash_global[b_20 + b_01];
 	n += i * (h[0] * ox + h[1] * jy + h[2] * oz);
 	/* 3 */
 	i = (cn_1 * cn_5 * cn_6);
-	h = hashvectf__ + 3 * hash__[b_21 + b_01];
+	h = hashvectf_global + 3 * hash_global[b_21 + b_01];
 	n += i * (h[0] * ox + h[1] * jy + h[2] * jz);
 	/* 4 */
 	i = cn_4 * cn_2 * cn_3;
-	h = hashvectf__ + 3 * hash__[b_20 + b_10];
+	h = hashvectf_global + 3 * hash_global[b_20 + b_10];
 	n += i * (h[0] * jx + h[1] * oy + h[2] * oz);
 	/* 5 */
 	i = cn_4 * cn_2 * cn_6;
-	h = hashvectf__ + 3 * hash__[b_21 + b_10];
+	h = hashvectf_global + 3 * hash_global[b_21 + b_10];
 	n += i * (h[0] * jx + h[1] * oy + h[2] * jz);
 	/* 6 */
 	i = cn_4 * cn_5 * cn_3;
-	h = hashvectf__ + 3 * hash__[b_20 + b_11];
+	h = hashvectf_global + 3 * hash_global[b_20 + b_11];
 	n +=  i * (h[0] * jx + h[1] * jy + h[2] * oz);
 	/* 7 */
 	i = (cn_4 * cn_5 * cn_6);
-	h = hashvectf__ + 3 * hash__[b_21 + b_11];
+	h = hashvectf_global + 3 * hash_global[b_21 + b_11];
 	n += i * (h[0] * jx + h[1] * jy + h[2] * jz);
 
 	if(n < 0.0) n = 0.0; else if(n > 1.0) n = 1.0;
@@ -511,32 +511,32 @@ void VoronoiNoiseGenerator::setDistM(DMetricType dm)
 	{
 		case DistSquared:
 			//distfunc = new dist_Squared();
-			distfunc_2_ = distSquaredF__;
+			distfunc_2_ = distSquaredF_global;
 			break;
 		case DistManhattan:
 			//distfunc = new dist_Squared();
-			distfunc_2_ = distSquaredF__;
+			distfunc_2_ = distSquaredF_global;
 			break;
 		case DistChebychev:
 			//distfunc = new dist_Chebychev();
-			distfunc_2_ = distChebychevF__;
+			distfunc_2_ = distChebychevF_global;
 			break;
 		case DistMinkovskyHalf:
 			//distfunc = new dist_MinkovskyH();
-			distfunc_2_ = distMinkovskyHf__;
+			distfunc_2_ = distMinkovskyHf_global;
 			break;
 		case DistMinkovskyFour:
 			//distfunc = new dist_Minkovsky4();
-			distfunc_2_ = distMinkovsky4F__;
+			distfunc_2_ = distMinkovsky4F_global;
 			break;
 		case DistMinkovsky:
 			//distfunc = new dist_Minkovsky();
-			distfunc_2_ = distMinkovskyF__;
+			distfunc_2_ = distMinkovskyF_global;
 			break;
 		default:
 		case DistReal:
 			//distfunc = new dist_Real();
-			distfunc_2_ = distRealF__;
+			distfunc_2_ = distRealF_global;
 			break;
 	}
 }
@@ -549,9 +549,9 @@ VoronoiNoiseGenerator::VoronoiNoiseGenerator(VoronoiType vt, DMetricType dm, flo
 	setDistM(dm_type_);
 }
 
-const float *hash_pnt__(int x, int y, int z)
+const float *hash_pnt_global(int x, int y, int z)
 {
-	return hashpntf__ + 3 * hash__[(hash__[(hash__[z & 255] + y) & 255] + x) & 255];
+	return hashpntf_global + 3 * hash_global[(hash_global[(hash_global[z & 255] + y) & 255] + x) & 255];
 }
 
 void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa[4]) const
@@ -571,7 +571,7 @@ void VoronoiNoiseGenerator::getFeatures(const Point3 &pt, float da[4], Point3 pa
 		{
 			for(zz = zi - 1; zz <= zi + 1; zz++)
 			{
-				const float *p = hash_pnt__(xx, yy, zz);
+				const float *p = hash_pnt_global(xx, yy, zz);
 				xd = x - (p[0] + xx);
 				yd = y - (p[1] + yy);
 				zd = z - (p[2] + zz);
@@ -660,12 +660,12 @@ float FBmMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
-		value += getSignedNoise__(n_gen_, tp) * pwr;
+		value += getSignedNoise_global(n_gen_, tp) * pwr;
 		pwr *= pw_hl;
 		tp *= lacunarity_;
 	}
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != 0.f) value += rmd * getSignedNoise__(n_gen_, tp) * pwr;
+	if(rmd != 0.f) value += rmd * getSignedNoise_global(n_gen_, tp) * pwr;
 	return value;
 }
 
@@ -689,12 +689,12 @@ float MFractalMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 	for(int i = 0; i < (int)octaves_; i++)
 	{
-		value *= (pwr * getSignedNoise__(n_gen_, tp) + (float)1.0);
+		value *= (pwr * getSignedNoise_global(n_gen_, tp) + (float)1.0);
 		pwr *= pw_hl;
 		tp *= lacunarity_;
 	}
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != (float)0.0) value *= (rmd * getSignedNoise__(n_gen_, tp) * pwr + (float)1.0);
+	if(rmd != (float)0.0) value *= (rmd * getSignedNoise_global(n_gen_, tp) * pwr + (float)1.0);
 	return value;
 }
 
@@ -716,12 +716,12 @@ float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
 	Point3 tp(pt);
 
 	// first unscaled octave of function; later octaves are scaled
-	float value = offset_ + getSignedNoise__(n_gen_, tp);
+	float value = offset_ + getSignedNoise_global(n_gen_, tp);
 	tp *= lacunarity_;
 	float increment;
 	for(int i = 1; i < (int)octaves_; i++)
 	{
-		increment = (getSignedNoise__(n_gen_, tp) + offset_) * pwr * value;
+		increment = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr * value;
 		value += increment;
 		pwr *= pw_hl;
 		tp *= lacunarity_;
@@ -730,7 +730,7 @@ float HeteroTerrainMusgrave::operator()(const Point3 &pt) const
 	float rmd = octaves_ - floor(octaves_);
 	if(rmd != (float)0.0)
 	{
-		increment = (getSignedNoise__(n_gen_, tp) + offset_) * pwr * value;
+		increment = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr * value;
 		value += rmd * increment;
 	}
 
@@ -751,14 +751,14 @@ float HybridMFractalMusgrave::operator()(const Point3 &pt) const
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
-	float result = getSignedNoise__(n_gen_, tp) + offset_;
+	float result = getSignedNoise_global(n_gen_, tp) + offset_;
 	float weight = gain_ * result;
 	tp *= lacunarity_;
 
 	for(int i = 1; (weight > (float)0.001) && (i < (int)octaves_); i++)
 	{
 		if(weight > (float)1.0)  weight = (float)1.0;
-		float signal = (getSignedNoise__(n_gen_, tp) + offset_) * pwr;
+		float signal = (getSignedNoise_global(n_gen_, tp) + offset_) * pwr;
 		pwr *= pw_hl;
 		result += weight * signal;
 		weight *= gain_ * signal;
@@ -766,7 +766,7 @@ float HybridMFractalMusgrave::operator()(const Point3 &pt) const
 	}
 
 	float rmd = octaves_ - floor(octaves_);
-	if(rmd != (float)0.0) result += rmd * ((getSignedNoise__(n_gen_, tp) + offset_) * pwr);
+	if(rmd != (float)0.0) result += rmd * ((getSignedNoise_global(n_gen_, tp) + offset_) * pwr);
 
 	return result;
 
@@ -787,7 +787,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 	float pwr = pw_hl;	// starts with i=1 instead of 0
 	Point3 tp(pt);
 
-	float signal = offset_ - std::abs(getSignedNoise__(n_gen_, tp));
+	float signal = offset_ - std::abs(getSignedNoise_global(n_gen_, tp));
 	signal *= signal;
 	float result = signal;
 	float weight = 1.0;
@@ -797,7 +797,7 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 		tp *= lacunarity_;
 		weight = signal * gain_;
 		if(weight > (float)1.0) weight = (float)1.0; else if(weight < (float)0.0) weight = (float)0.0;
-		signal = offset_ - std::abs(getSignedNoise__(n_gen_, tp));
+		signal = offset_ - std::abs(getSignedNoise_global(n_gen_, tp));
 		signal *= signal;
 		signal *= weight;
 		result += signal * pwr;
@@ -812,17 +812,17 @@ float RidgedMFractalMusgrave::operator()(const Point3 &pt) const
 
 
 // color cell noise, used by voronoi shader block
-Rgba cellNoiseColor__(const Point3 &pt)
+Rgba cellNoiseColor_global(const Point3 &pt)
 {
 	int xi = (int)(floor(pt.x_));
 	int yi = (int)(floor(pt.y_));
 	int zi = (int)(floor(pt.z_));
-	const float *cl = hash_pnt__(xi, yi, zi);
+	const float *cl = hash_pnt_global(xi, yi, zi);
 	return Rgba(cl[0], cl[1], cl[2], 1.0);
 }
 
 // turbulence function used by basic blocks
-float turbulence__(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard)
+float turbulence_global(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard)
 {
 	float val, amp = 1, sum = 0;
 	Point3 tp = ngen->offset(pt) * size;	// only blendernoise adds offset

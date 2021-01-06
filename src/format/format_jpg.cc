@@ -39,7 +39,7 @@ BEGIN_YAFARAY
 
 // error handlers for libJPEG,
 
-METHODDEF(void) jpgErrorMessage__(j_common_ptr info)
+METHODDEF(void) jpgErrorMessage_global(j_common_ptr info)
 {
 	char buffer[JMSG_LENGTH_MAX];
 	(*info->err->format_message)(info, buffer);
@@ -55,7 +55,7 @@ struct JpgErrorManager
 // JPEG error manager pointer
 typedef struct JpgErrorManager *ErrorPtr_t;
 
-void jpgExitOnError__(j_common_ptr info)
+void jpgExitOnError_global(j_common_ptr info)
 {
 	ErrorPtr_t myerr = (ErrorPtr_t)info->err;
 	(*info->err->output_message)(info);
@@ -77,8 +77,8 @@ bool JpgFormat::saveToFile(const std::string &name, const Image *image)
 	struct JpgErrorManager jerr;
 
 	info.err = jpeg_std_error(&jerr.pub_);
-	info.err->output_message = jpgErrorMessage__;
-	jerr.pub_.error_exit = jpgExitOnError__;
+	info.err->output_message = jpgErrorMessage_global;
+	jerr.pub_.error_exit = jpgExitOnError_global;
 
 	jpeg_create_compress(&info);
 	jpeg_stdio_dest(&info, fp);
@@ -129,8 +129,8 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	struct ::jpeg_compress_struct info;
 	struct JpgErrorManager jerr;
 	info.err = jpeg_std_error(&jerr.pub_);
-	info.err->output_message = jpgErrorMessage__;
-	jerr.pub_.error_exit = jpgExitOnError__;
+	info.err->output_message = jpgErrorMessage_global;
+	jerr.pub_.error_exit = jpgExitOnError_global;
 	jpeg_create_compress(&info);
 	jpeg_stdio_dest(&info, fp);
 	info.image_width = width;
@@ -174,8 +174,8 @@ Image *JpgFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	JpgErrorManager jerr;
 
 	info.err = jpeg_std_error(&jerr.pub_);
-	info.err->output_message = jpgErrorMessage__;
-	jerr.pub_.error_exit = jpgExitOnError__;
+	info.err->output_message = jpgErrorMessage_global;
+	jerr.pub_.error_exit = jpgExitOnError_global;
 
 	if(setjmp(jerr.setjmp_buffer_))
 	{

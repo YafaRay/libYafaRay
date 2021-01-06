@@ -54,8 +54,8 @@ PathIntegrator::PathIntegrator(bool transp_shad, int shadow_depth)
 bool PathIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
 	std::stringstream set;
-	g_timer__.addEvent("prepass");
-	g_timer__.start("prepass");
+	g_timer_global.addEvent("prepass");
+	g_timer_global.start("prepass");
 
 	lights_ = render_view->getLightsVisible();
 
@@ -103,10 +103,10 @@ bool PathIntegrator::preprocess(const RenderControl &render_control, const Rende
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	g_timer__.stop("prepass");
-	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	g_timer_global.stop("prepass");
+	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 

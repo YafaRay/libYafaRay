@@ -121,7 +121,7 @@ float ShinyDiffuseMaterial::getFresnelKr(const Vec3 &wo, const Vec3 &n, float cu
 // calculate the absolute value of scattering components from the "normalized"
 // fractions which are between 0 (no scattering) and 1 (scatter all remaining light)
 // Kr is an optional reflection multiplier (e.g. from Fresnel)
-static inline void accumulate__(const float *component, float *accum, float kr)
+static inline void accumulate_global(const float *component, float *accum, float kr)
 {
 	accum[0] = component[0] * kr;
 	float acc = 1.f - accum[0];
@@ -277,7 +277,7 @@ Rgb ShinyDiffuseMaterial::sample(const RenderData &render_data, const SurfacePoi
 	else cur_ior_squared = ior_squared_;
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
-	accumulate__(dat->component_, accum_c, kr);
+	accumulate_global(dat->component_, accum_c, kr);
 
 	float sum = 0.f, val[4], width[4];
 	BsdfFlags choice[4];
@@ -376,7 +376,7 @@ float ShinyDiffuseMaterial::pdf(const RenderData &render_data, const SurfacePoin
 
 	const float kr = getFresnelKr(wo, n, cur_ior_squared);
 
-	accumulate__(dat->component_, accum_c, kr);
+	accumulate_global(dat->component_, accum_c, kr);
 	float sum = 0.f, width;
 	int n_match = 0;
 	for(int i = 0; i < n_bsdf_; ++i)
@@ -566,7 +566,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
 	ShinyDiffuseMaterial *mat = new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);

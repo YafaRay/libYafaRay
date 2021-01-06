@@ -58,7 +58,7 @@ inline size_t PngDataReader::read(uint8_t *buf, size_t s)
 	return i;
 }
 
-void readFromMem__(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read)
+void readFromMem_global(png_structp png_ptr, png_bytep buffer, png_size_t bytes_to_read)
 {
 	PngDataReader *img = (PngDataReader *) png_get_io_ptr(png_ptr);
 	if(!img) png_error(png_ptr, "The image data pointer is null!!");

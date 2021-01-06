@@ -151,8 +151,8 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 	Y_INFO << pass_string.str() << YENDL;
 	if(intpb_) intpb_->setTag(pass_string.str().c_str());
 
-	g_timer__.addEvent("rendert");
-	g_timer__.start("rendert");
+	g_timer_global.addEvent("rendert");
+	g_timer_global.start("rendert");
 
 	image_film_->init(render_control, aa_noise_params_.passes_);
 	image_film_->setAaNoiseParams(aa_noise_params_);
@@ -169,7 +169,7 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 	max_depth_ = 0.f;
 	min_depth_ = 1e38f;
 
-	diff_rays_enabled_ = session__.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
+	diff_rays_enabled_ = session_global.getDifferentialRaysEnabled();	//enable ray differentials for mipmap calculation if there is at least one image texture using Mipmap interpolation
 
 	if(scene_->getLayers().isDefinedAny({Layer::ZDepthNorm, Layer::Mist})) precalcDepths(render_view);
 
@@ -232,9 +232,9 @@ bool TiledIntegrator::render(ImageFilm *image_film, RenderControl &render_contro
 		}
 	}
 	max_depth_ = 0.f;
-	g_timer__.stop("rendert");
+	g_timer_global.stop("rendert");
 	render_control.setFinished();
-	Y_INFO << getName() << ": Overall rendertime: " << g_timer__.getTime("rendert") << "s" << YENDL;
+	Y_INFO << getName() << ": Overall rendertime: " << g_timer_global.getTime("rendert") << "s" << YENDL;
 
 	return true;
 }

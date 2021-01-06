@@ -1,7 +1,7 @@
 
 
-int rgb_icon_size__ = 2315;
-unsigned char rgb_icon__[] =
+int rgb_icon_size_global = 2315;
+unsigned char rgb_icon_global[] =
 {
 	137, 80, 78, 71, 13, 10, 26, 10,  0,  0,  0,
 	13, 73, 72, 68, 82,  0,  0,  0, 32,  0,  0,  0, 32,  8,  6,  0,  0,  0, 115, 122, 122, 244,  0,  0,  0,  4, 115, 66, 73, 84,  8,  8,

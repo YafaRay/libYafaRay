@@ -143,7 +143,7 @@ const Photon *PhotonMap::findNearest(const Point3 &p, const Vec3 &n, float dist)
 }
 
 #ifdef SMALL_PHOTONS
-DirConverter dirconverter__;
+DirConverter dirconverter_global;
 
 DirConverter::DirConverter()
 {

@@ -38,7 +38,7 @@ RoughGlassMaterial::RoughGlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, 
 	if(disp_pow > 0.0)
 	{
 		disperse_ = true;
-		cauchyCoefficients__(ior, disp_pow, cauchy_a_, cauchy_b_);
+		cauchyCoefficients_global(ior, disp_pow, cauchy_a_, cauchy_b_);
 		bsdf_flags_ |= BsdfFlags::Dispersive;
 	}
 }
@@ -60,7 +60,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 	const float alpha_texture = roughness_shader_ ? roughness_shader_->getScalar(stack) + 0.001f : 0.001f;
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 	Vec3 h(0.f);
-	ggxSample__(h, alpha_2, s.s_1_, s.s_2_);
+	ggxSample_global(h, alpha_2, s.s_1_, s.s_2_);
 	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
 	h.normalize();
 	float cur_ior = ior_;
@@ -70,21 +70,21 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	const float cos_theta = h * n;
 	const float cos_theta_2 = cos_theta * cos_theta;
 	const float tan_theta_2 = (1.f - cos_theta_2) / std::max(1.0e-8f, cos_theta_2);
 	float glossy_d = 0.f;
-	if(cos_theta > 0.f) glossy_d = ggxD__(alpha_2, cos_theta_2, tan_theta_2);
+	if(cos_theta > 0.f) glossy_d = ggxD_global(alpha_2, cos_theta_2, tan_theta_2);
 	const float wo_h = wo * h;
 	const float wo_n = wo * n;
 
 	Rgb ret(0.f);
 	float kr, kt;
-	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
+	if(refractMicrofacet_global(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
 	{
 		if(s.s_1_ < kt && s.flags_.hasAny(BsdfFlags::Transmit))
 		{
@@ -92,7 +92,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 			const float wi_h = wi * h;
 
 			float glossy_g = 0.f;
-			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG__(alpha_2, wi_n, wo_n);
+			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG_global(alpha_2, wi_n, wo_n);
 
 			float ior_wi = 1.f;
 			float ior_wo = 1.f;
@@ -104,7 +104,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 			const float jacobian = (ior_wi * ior_wi) / std::max(1.0e-8f, ht * ht);
 			const float glossy = std::abs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::abs(wi_h));
+			s.pdf_ = ggxPdf_global(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && render_data.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
@@ -112,17 +112,17 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 		}
 		else if(s.flags_.hasAny(BsdfFlags::Reflect))
 		{
-			reflectMicrofacet__(wo, wi, h);
+			reflectMicrofacet_global(wo, wi, h);
 
 			const float wi_n = wi * n;
 			const float wi_h = wi * h;
 
-			const float glossy_g = ggxG__(alpha_2, wi_n, wo_n);
+			const float glossy_g = ggxG_global(alpha_2, wi_n, wo_n);
 
 			const float jacobian = 1.f / std::max(1.0e-8f, (4.f * std::abs(wi_h)));
 			const float glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
 
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
+			s.pdf_ = ggxPdf_global(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ = BsdfFlags::Glossy | BsdfFlags::Reflect;
 
 			ret = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
@@ -153,7 +153,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 	const float alpha_2 = roughness_shader_ ? alpha_texture * alpha_texture : a_2_;
 
 	Vec3 h(0.f);
-	ggxSample__(h, alpha_2, s.s_1_, s.s_2_);
+	ggxSample_global(h, alpha_2, s.s_1_, s.s_2_);
 	h = h.x_ * sp.nu_ + h.y_ * sp.nv_ + h.z_ * n;
 	h.normalize();
 
@@ -164,8 +164,8 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	const float cos_theta = h * n;
@@ -173,7 +173,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 	const float tan_theta_2 = (1.f - cos_theta_2) / std::max(1.0e-8f, cos_theta_2);
 
 	float glossy_d = 0.f;
-	if(cos_theta > 0.f) glossy_d = ggxD__(alpha_2, cos_theta_2, tan_theta_2);
+	if(cos_theta > 0.f) glossy_d = ggxD_global(alpha_2, cos_theta_2, tan_theta_2);
 
 	const float wo_h = wo * h;
 	const float wo_n = wo * n;
@@ -183,7 +183,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 	float kr, kt;
 	Vec3 wi;
-	if(refractMicrofacet__(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
+	if(refractMicrofacet_global(((outside) ? 1.f / cur_ior : cur_ior), wo, wi, h, wo_h, kr, kt))
 	{
 		if(s.flags_.hasAny(BsdfFlags::Transmit))
 		{
@@ -191,7 +191,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 			const float wi_h = wi * h;
 
 			float glossy_g = 0.f;
-			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG__(alpha_2, wi_n, wo_n);
+			if((wi_h * wi_n) > 0.f && (wo_h * wo_n) > 0.f) glossy_g = ggxG_global(alpha_2, wi_n, wo_n);
 
 			float ior_wi = 1.f;
 			float ior_wo = 1.f;
@@ -204,7 +204,7 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 
 			const float glossy = std::abs((wo_h * wi_h) / (wi_n * wo_n)) * kt * glossy_g * glossy_d * jacobian;
 
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian * std::abs(wi_h));
+			s.pdf_ = ggxPdf_global(glossy_d, cos_theta, jacobian * std::abs(wi_h));
 			s.sampled_flags_ = ((disperse_ && render_data.chromatic_) ? BsdfFlags::Dispersive : BsdfFlags::Glossy) | BsdfFlags::Transmit;
 
 			ret = (glossy * (filter_col_shader_ ? filter_col_shader_->getColor(stack) : filter_color_));
@@ -214,13 +214,13 @@ Rgb RoughGlassMaterial::sample(const RenderData &render_data, const SurfacePoint
 		}
 		if(s.flags_.hasAny(BsdfFlags::Reflect))
 		{
-			reflectMicrofacet__(wo, wi, h);
+			reflectMicrofacet_global(wo, wi, h);
 			const float wi_n = wi * n;
 			const float wi_h = wi * h;
-			const float glossy_g = ggxG__(alpha_2, wi_n, wo_n);
+			const float glossy_g = ggxG_global(alpha_2, wi_n, wo_n);
 			const float jacobian = 1.f / std::max(1.0e-8f, (4.f * std::abs(wi_h)));
 			const float glossy = (kr * glossy_g * glossy_d) / std::max(1.0e-8f, (4.f * std::abs(wo_n * wi_n)));
-			s.pdf_ = ggxPdf__(glossy_d, cos_theta, jacobian);
+			s.pdf_ = ggxPdf_global(glossy_d, cos_theta, jacobian);
 			s.sampled_flags_ |= BsdfFlags::Glossy | BsdfFlags::Reflect;
 			tcol = (glossy * (mirror_color_shader_ ? mirror_color_shader_->getColor(stack) : specular_reflection_color_));
 			w[1] = std::abs(wi_n) / std::max(0.1f, s.pdf_); //FIXME: I have to put a lower limit to s.pdf to avoid white dots (high values) piling up in the recursive render stage. Why is this needed?
@@ -305,7 +305,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 

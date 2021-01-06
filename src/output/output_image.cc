@@ -138,7 +138,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
 			saveImageFileMultiChannel(fname_pass, format, render_control);
 
-			logger__.setImagePath(fname_pass); //to show the image in the HTML log output
+			logger_global.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
 		else
 		{
@@ -150,7 +150,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 				if(layer_type == Layer::Combined)
 				{
 					saveImageFile(image_path_, layer_type, format, render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
-					logger__.setImagePath(image_path_); //to show the image in the HTML log output
+					logger_global.setImagePath(image_path_); //to show the image in the HTML log output
 				}
 
 				if(layer_type != Layer::Disabled && (image_layers_->size() > 1 || render_views_->size() > 1))
@@ -168,17 +168,17 @@ void ImageOutput::flush(const RenderControl &render_control)
 	if(save_log_txt_)
 	{
 		std::string f_log_txt_name = directory + "/" + base_name + "_log.txt";
-		logger__.saveTxtLog(f_log_txt_name, badge_, render_control);
+		logger_global.saveTxtLog(f_log_txt_name, badge_, render_control);
 	}
 	if(save_log_html_)
 	{
 		std::string f_log_html_name = directory + "/" + base_name + "_log.html";
-		logger__.saveHtmlLog(f_log_html_name, badge_, render_control);
+		logger_global.saveHtmlLog(f_log_html_name, badge_, render_control);
 	}
-	if(logger__.getSaveStats())
+	if(logger_global.getSaveStats())
 	{
 		std::string f_stats_name = directory + "/" + base_name + "_stats.csv";
-		logger__.statsSaveToFile(f_stats_name, /*sorted=*/ true);
+		logger_global.statsSaveToFile(f_stats_name, /*sorted=*/ true);
 	}
 }
 

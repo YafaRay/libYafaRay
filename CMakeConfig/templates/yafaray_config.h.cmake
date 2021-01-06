@@ -26,8 +26,8 @@
 #define Y_CONFIG_H
 
 // Some important ray tracing parameters set in CMake
-static constexpr float min_raydist__ = @YAF_MIN_RAY_DIST@;
-static constexpr float shadow_bias__ = @YAF_SHADOW_BIAS@;
+static constexpr float min_raydist_global = @YAF_MIN_RAY_DIST@;
+static constexpr float shadow_bias_global = @YAF_SHADOW_BIAS@;
 
 // CMake checks for the unistd.h header file
 #cmakedefine HAVE_UNISTD_H 1

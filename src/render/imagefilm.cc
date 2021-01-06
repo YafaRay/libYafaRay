@@ -40,8 +40,8 @@
 
 BEGIN_YAFARAY
 
-static constexpr int filter_table_size__ = 16;
-static constexpr int max_filter_size__ = 8;
+static constexpr int filter_table_size_global = 16;
+static constexpr int max_filter_size_global = 8;
 
 typedef float FilterFunc_t(float dx, float dy);
 
@@ -130,7 +130,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;
-	filter_table_ = new float[filter_table_size__ * filter_table_size__];
+	filter_table_ = new float[filter_table_size_global * filter_table_size_global];
 
 	//Creation of the image buffers for the render passes
 	for(const auto &l : layers_.getLayersWithImages())
@@ -146,7 +146,7 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 
 	// fill filter table:
 	float *f_tp = filter_table_;
-	float scale = 1.f / static_cast<float>(filter_table_size__);
+	float scale = 1.f / static_cast<float>(filter_table_size_global);
 
 	FilterFunc_t *ffunc = nullptr;
 	switch(filt)
@@ -158,18 +158,18 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 		case ImageFilm::FilterType::Box: ffunc = math::filter::box; break;
 	}
 
-	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size__); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
+	filterw_ = std::min(std::max(0.501f, filterw_), 0.5f * max_filter_size_global); // filter needs to cover at least the area of one pixel and no more than MAX_FILTER_SIZE/2
 
-	for(int y = 0; y < filter_table_size__; ++y)
+	for(int y = 0; y < filter_table_size_global; ++y)
 	{
-		for(int x = 0; x < filter_table_size__; ++x)
+		for(int x = 0; x < filter_table_size_global; ++x)
 		{
 			*f_tp = ffunc((x + .5f) * scale, (y + .5f) * scale);
 			++f_tp;
 		}
 	}
 
-	table_scale_ = 0.9999 * filter_table_size__ / filterw_;
+	table_scale_ = 0.9999 * filter_table_size_global / filterw_;
 	area_cnt_ = 0;
 
 	progress_bar_ = new ConsoleProgressBar(80);
@@ -227,12 +227,12 @@ void ImageFilm::init(RenderControl &render_control, int num_passes)
 	film_load_save_.auto_save_.pass_counter_ = 0;
 	resetImagesAutoSaveTimer();
 	resetFilmAutoSaveTimer();
-	g_timer__.addEvent("imagesAutoSaveTimer");
-	g_timer__.addEvent("filmAutoSaveTimer");
-	g_timer__.start("imagesAutoSaveTimer");
-	g_timer__.start("filmAutoSaveTimer");
+	g_timer_global.addEvent("imagesAutoSaveTimer");
+	g_timer_global.addEvent("filmAutoSaveTimer");
+	g_timer_global.start("imagesAutoSaveTimer");
+	g_timer_global.start("filmAutoSaveTimer");
 
-	if(!session__.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
+	if(!session_global.isPreview())	// Avoid doing the Film Load & Save operations and updating the film check values when we are just rendering a preview!
 	{
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 		if(film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
@@ -254,7 +254,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 
 	Y_DEBUG << "nPass=" << n_pass_ << " imagesAutoSavePassCounter=" << images_auto_save_params_.pass_counter_ << " filmAutoSavePassCounter=" << film_load_save_.auto_save_.pass_counter_ << YENDL;
 
-	if(render_control.inProgress() && !session__.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
@@ -396,7 +396,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 				{
 					++n_resample;
 
-					if(session__.isInteractive() && show_mask_)
+					if(session_global.isInteractive() && show_mask_)
 					{
 						float mat_sample_factor = 1.f;
 						const float weight = weights_(x, y).getFloat();
@@ -430,7 +430,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		n_resample = height_ * width_;
 	}
 
-	if(session__.isInteractive())
+	if(session_global.isInteractive())
 	{
 		for(auto &output : outputs_)
 		{
@@ -475,7 +475,7 @@ bool ImageFilm::nextArea(RenderArea &a)
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(session__.isInteractive())
+			if(session_global.isInteractive())
 			{
 				out_mutex_.lock();
 				int end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
@@ -558,7 +558,7 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(session__.isInteractive())
+	if(session_global.isInteractive())
 	{
 		for(auto &output : outputs_)
 		{
@@ -569,17 +569,17 @@ void ImageFilm::finishArea(const RenderView *render_view, RenderControl &render_
 		}
 	}
 
-	if(render_control.inProgress() && !session__.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
+	if(render_control.inProgress() && !session_global.isPreview())	//avoid saving images/film if we are just rendering material/world/lights preview windows, etc
 	{
-		g_timer__.stop("imagesAutoSaveTimer");
-		images_auto_save_params_.timer_ += g_timer__.getTime("imagesAutoSaveTimer");
+		g_timer_global.stop("imagesAutoSaveTimer");
+		images_auto_save_params_.timer_ += g_timer_global.getTime("imagesAutoSaveTimer");
 		if(images_auto_save_params_.timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		g_timer__.start("imagesAutoSaveTimer");
+		g_timer_global.start("imagesAutoSaveTimer");
 
-		g_timer__.stop("filmAutoSaveTimer");
-		film_load_save_.auto_save_.timer_ += g_timer__.getTime("filmAutoSaveTimer");
+		g_timer_global.stop("filmAutoSaveTimer");
+		film_load_save_.auto_save_.timer_ += g_timer_global.getTime("filmAutoSaveTimer");
 		if(film_load_save_.auto_save_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		g_timer__.start("filmAutoSaveTimer");
+		g_timer_global.start("filmAutoSaveTimer");
 
 		if((images_auto_save_params_.interval_type_ == ImageFilm::AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
@@ -695,15 +695,15 @@ void ImageFilm::flush(const RenderView *render_view, const RenderControl &render
 
 	if(render_control.finished())
 	{
-		if(!session__.isPreview() && (film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save))
+		if(!session_global.isPreview() && (film_load_save_.mode_ == FilmLoadSave::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Save))
 		{
 			imageFilmSave();
 		}
 
-		g_timer__.stop("imagesAutoSaveTimer");
-		g_timer__.stop("filmAutoSaveTimer");
+		g_timer_global.stop("imagesAutoSaveTimer");
+		g_timer_global.stop("filmAutoSaveTimer");
 
-		logger__.clearMemoryLog();
+		logger_global.clearMemoryLog();
 		out_mutex_.unlock();
 		Y_VERBOSE << "imageFilm: Done." << YENDL;
 	}
@@ -731,7 +731,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 	// get indizes in filter table
 	double x_offs = dx - 0.5;
 
-	int x_index[max_filter_size__ + 1], y_index[max_filter_size__ + 1];
+	int x_index[max_filter_size_global + 1], y_index[max_filter_size_global + 1];
 
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
 	{
@@ -757,7 +757,7 @@ void ImageFilm::addSample(int x, int y, float dx, float dy, const RenderArea *a,
 		for(int i = x_0; i <= x_1; ++i)
 		{
 			// get filter value at pixel (x,y)
-			const int offset = y_index[j - y_0] * filter_table_size__ + x_index[i - x_0];
+			const int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
 			const float filter_wt = filter_table_[offset];
 			weights_(i - cx_0_, j - cy_0_).setFloat(weights_(i - cx_0_, j - cy_0_).getFloat() + filter_wt);
 
@@ -790,7 +790,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	dy_1 = std::min(cy_1_ - y - 1, math::roundToInt((double) dy + filterw_ - 1.0));
 
 
-	int x_index[max_filter_size__ + 1], y_index[max_filter_size__ + 1];
+	int x_index[max_filter_size_global + 1], y_index[max_filter_size_global + 1];
 
 	double x_offs = dx - 0.5;
 	for(int i = dx_0, n = 0; i <= dx_1; ++i, ++n)
@@ -815,7 +815,7 @@ void ImageFilm::addDensitySample(const Rgb &c, int x, int y, float dx, float dy,
 	{
 		for(int i = x_0; i <= x_1; ++i)
 		{
-			int offset = y_index[j - y_0] * filter_table_size__ + x_index[i - x_0];
+			int offset = y_index[j - y_0] * filter_table_size_global + x_index[i - x_0];
 
 			Rgb &pixel = (*density_image_)(i - cx_0_, j - cy_0_);
 			pixel += c * filter_table_[offset];
@@ -1188,7 +1188,7 @@ void ImageFilm::imageFilmFileBackup() const
 //The next edge detection, debug faces/object edges and toon functions will only work if YafaRay is built with OpenCV support
 #ifdef HAVE_OPENCV
 
-void edgeImageDetection__(std::vector<cv::Mat> &image_mat, float edge_threshold, int edge_thickness, float smoothness)
+void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_threshold, int edge_thickness, float smoothness)
 {
 	//The result of the edges detection will be stored in the first component image of the vector
 
@@ -1240,7 +1240,7 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 			}
 		}
 
-		edgeImageDetection__(image_mat, edge_params.threshold_, edge_params.thickness_, edge_params.smoothness_);
+		edgeImageDetection_global(image_mat, edge_params.threshold_, edge_params.thickness_, edge_params.smoothness_);
 
 		for(int j = ystart; j < height; ++j)
 		{
@@ -1324,7 +1324,7 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 			cv::GaussianBlur(image_mat_combined_vec, image_mat_combined_vec, cv::Size(3, 3), toon_post_smooth);
 		}
 
-		edgeImageDetection__(image_mat, object_edge_threshold, object_edge_thickness, object_edge_smoothness);
+		edgeImageDetection_global(image_mat, object_edge_threshold, object_edge_thickness, object_edge_smoothness);
 
 		for(int j = ystart; j < height; ++j)
 		{

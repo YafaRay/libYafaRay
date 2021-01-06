@@ -49,8 +49,8 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 {
 	bool success = true;
 	std::stringstream set;
-	g_timer__.addEvent("prepass");
-	g_timer__.start("prepass");
+	g_timer_global.addEvent("prepass");
+	g_timer_global.start("prepass");
 
 	set << "Direct Light  ";
 
@@ -83,10 +83,10 @@ bool DirectLightIntegrator::preprocess(const RenderControl &render_control, cons
 		else if(photon_map_processing_ == PhotonsGenerateAndSave) set << " (saving photon maps to file)";
 	}
 
-	g_timer__.stop("prepass");
-	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
+	g_timer_global.stop("prepass");
+	Y_INFO << getName() << ": Photonmap building time: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " (" << scene_->getNumThreadsPhotons() << " thread(s))" << YENDL;
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer__.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << g_timer_global.getTime("prepass") << "s" << " [" << scene_->getNumThreadsPhotons() << " thread(s)]";
 
 	render_info_ += set.str();
 

@@ -42,7 +42,7 @@ BEGIN_YAFARAY
 bool TifFormat::saveToFile(const std::string &name, const Image *image)
 {
 #if defined(_WIN32)
-	std::wstring wname = utf8ToWutf16Le__(name);
+	std::wstring wname = utf8ToWutf16Le_global(name);
 	libtiff::TIFF *out = libtiff::TIFFOpenW(wname.c_str(), "w");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *out = libtiff::TIFFOpen(name.c_str(), "w");
@@ -99,7 +99,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 #if defined(_WIN32)
-	std::wstring wname = utf8ToWutf16Le__(name);
+	std::wstring wname = utf8ToWutf16Le_global(name);
 	libtiff::TIFF *tif = libtiff::TIFFOpenW(wname.c_str(), "r");	//Windows needs the path in UTF16LE (unicode, UTF16, little endian) so we have to convert the UTF8 path to UTF16
 #else
 	libtiff::TIFF *tif = libtiff::TIFFOpen(name.c_str(), "r");

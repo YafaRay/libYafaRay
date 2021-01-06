@@ -60,7 +60,7 @@ class Timer
 };
 
 // global timer object, defined in timer.cc
-extern Timer g_timer__;
+extern Timer g_timer_global;
 
 END_YAFARAY
 

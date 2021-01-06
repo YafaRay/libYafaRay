@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-void recursiveSolver__(ShaderNode *node, std::vector<ShaderNode *> &sorted)
+void recursiveSolver_global(ShaderNode *node, std::vector<ShaderNode *> &sorted)
 {
 	if(node->getId() != 0) return;
 	node->setId(1);
@@ -32,12 +32,12 @@ void recursiveSolver__(ShaderNode *node, std::vector<ShaderNode *> &sorted)
 	{
 		for(const auto &dependency_node : dependency_nodes)
 			// FIXME someone tell me a smarter way than casting away a const...
-			if(dependency_node->getId() == 0) recursiveSolver__((ShaderNode *) dependency_node, sorted);
+			if(dependency_node->getId() == 0) recursiveSolver_global((ShaderNode *) dependency_node, sorted);
 	}
 	sorted.push_back(node);
 }
 
-void recursiveFinder__(const ShaderNode *node, std::set<const ShaderNode *> &tree)
+void recursiveFinder_global(const ShaderNode *node, std::set<const ShaderNode *> &tree)
 {
 	std::vector<const ShaderNode *> dependency_nodes;
 	if(node->getDependencies(dependency_nodes))
@@ -45,7 +45,7 @@ void recursiveFinder__(const ShaderNode *node, std::set<const ShaderNode *> &tre
 		for(const auto &dependency_node : dependency_nodes)
 		{
 			tree.insert(dependency_node);
-			recursiveFinder__(dependency_node, tree);
+			recursiveFinder_global(dependency_node, tree);
 		}
 	}
 	tree.insert(node);
@@ -66,7 +66,7 @@ void NodeMaterial::solveNodesOrder(const std::vector<ShaderNode *> &roots)
 {
 	//set all IDs = 0 to indicate "not tested yet"
 	for(unsigned int i = 0; i < color_nodes_.size(); ++i) color_nodes_[i]->setId(0);
-	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver__(roots[i], color_nodes_sorted_);
+	for(unsigned int i = 0; i < roots.size(); ++i) recursiveSolver_global(roots[i], color_nodes_sorted_);
 	if(color_nodes_.size() != color_nodes_sorted_.size()) Y_WARNING << "NodeMaterial: Unreachable nodes!" << YENDL;
 	//give the nodes an index to be used as the "stack"-index.
 	//using the order of evaluation can't hurt, can it?
@@ -87,7 +87,7 @@ void NodeMaterial::getNodeList(const ShaderNode *root, std::vector<ShaderNode *>
 {
 	std::set<const ShaderNode *> in_tree;
 	for(const auto &node : nodes) in_tree.insert(node);
-	recursiveFinder__(root, in_tree);
+	recursiveFinder_global(root, in_tree);
 	nodes.clear();
 	for(const auto &node : color_nodes_sorted_) if(in_tree.find(node) != in_tree.end()) nodes.push_back(node);
 }

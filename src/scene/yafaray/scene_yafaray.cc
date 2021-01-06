@@ -126,7 +126,7 @@ int YafaRayScene::addVertex(const Point3 &p)
 		mesh_object->addPoint(p);
 		return mesh_object->lastVertexId();
 	}
-/*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim__)
+/*FIXME BsTriangle handling? if(geometry_creation_state_.cur_obj_->type_ == mtrim_global)
 	{
 		geometry_creation_state_.cur_obj_->mobj_->addPoint(p);
 		geometry_creation_state_.cur_obj_->last_vert_id_ = geometry_creation_state_.cur_obj_->mobj_->getPoints().size() - 1;
@@ -146,7 +146,7 @@ int YafaRayScene::addVertex(const Point3 &p, const Point3 &orco)
 	}
 	return mesh_object->lastVertexId();
 
-	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim__) return addVertex(p);
+	//	FIXME BsTriangle handling? if(object_creation_state_.cur_obj_->type_ == mtrim_global) return addVertex(p);
 }
 
 void YafaRayScene::addNormal(const Vec3 &n)
@@ -239,8 +239,8 @@ bool YafaRayScene::updateObjects()
 	scene_bound_ = accelerator_->getBound();
 	Y_VERBOSE << "Scene: New scene bound is: " << "(" << scene_bound_.a_.x_ << ", " << scene_bound_.a_.y_ << ", " << scene_bound_.a_.z_ << "), (" << scene_bound_.g_.x_ << ", " << scene_bound_.g_.y_ << ", " << scene_bound_.g_.z_ << ")" << YENDL;
 
-	if(shadow_bias_auto_) shadow_bias_ = shadow_bias__;
-	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist__;
+	if(shadow_bias_auto_) shadow_bias_ = shadow_bias_global;
+	if(ray_min_dist_auto_) ray_min_dist_ = min_raydist_global;
 
 	Y_INFO << "Scene: total scene dimensions: X=" << scene_bound_.longX() << ", Y=" << scene_bound_.longY() << ", Z=" << scene_bound_.longZ() << ", volume=" << scene_bound_.vol() << ", Shadow Bias=" << shadow_bias_ << (shadow_bias_auto_ ? " (auto)" : "") << ", Ray Min Dist=" << ray_min_dist_ << (ray_min_dist_auto_ ? " (auto)" : "") << YENDL;
 	return true;

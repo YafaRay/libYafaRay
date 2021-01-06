@@ -40,8 +40,8 @@ shall not be used in advertising or otherwise to promote the sale, use or other 
 Font Software without prior written authorization from the Gnome Foundation or Bitstream Inc.,
 respectively. For further information, contact: fonts at gnome dot org.
 */
-int guifont_size__ = 65932;
-unsigned char guifont__[] =
+int guifont_size_global = 65932;
+unsigned char guifont_global[] =
 {
 	0,  1,  0,  0,  0, 17,  1,  0,  0,  4,  0, 16,
 	79, 83, 47, 50, 180, 95, 244, 99,  0,  0, 235, 112,  0,  0,  0, 86, 80, 67, 76, 84, 209, 138, 94, 151,  0,  0, 235, 200,  0,  0,  0, 54,

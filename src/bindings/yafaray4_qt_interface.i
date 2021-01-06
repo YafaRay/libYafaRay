@@ -44,6 +44,6 @@ struct Settings {
     std::string file_name_;
 };
 
-void initGui__();
-int createRenderWidget__(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings);
+void initGui_global();
+int createRenderWidget_global(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings);
 

@@ -187,7 +187,7 @@ inline bool  operator == (const Point3 &a, const Point3 &b)
 bool  operator == (const Vec3 &a, const Vec3 &b);
 bool  operator != (const Vec3 &a, const Vec3 &b);
 
-inline Point3 mult__(const Point3 &a, const Vec3 &b)
+inline Point3 mult_global(const Point3 &a, const Vec3 &b)
 {
 	return Point3(a.x_ * b.x_, a.y_ * b.y_, a.z_ * b.z_);
 }

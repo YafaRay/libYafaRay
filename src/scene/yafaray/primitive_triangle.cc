@@ -46,7 +46,7 @@ IntersectData TrianglePrimitive::intersect(const Ray &ray, const std::array<Poin
 	//Tomas Moller and Ben Trumbore ray intersection scheme
 	const Vec3 edge_1 = vertices[1] - vertices[0];
 	const Vec3 edge_2 = vertices[2] - vertices[0];
-	const float epsilon = 0.1f * min_raydist__ * std::max(edge_1.length(), edge_2.length());
+	const float epsilon = 0.1f * min_raydist_global * std::max(edge_1.length(), edge_2.length());
 	const Vec3 pvec = ray.dir_ ^ edge_2;
 	const float det = edge_1 * pvec;
 	if(det > -epsilon && det < epsilon) return {};
@@ -249,7 +249,7 @@ void TrianglePrimitive::sample(float s_1, float s_2, Point3 &p, const std::array
 /* Thanks to David Hunt for finding a ">="-bug!         */
 /********************************************************/
 
-Vec3Double cross__(const Vec3Double &v_1, const Vec3Double &v_2)
+Vec3Double cross_global(const Vec3Double &v_1, const Vec3Double &v_2)
 {
 	Vec3Double result;
 	result[0] = v_1[1] * v_2[2] - v_1[2] * v_2[1];
@@ -258,12 +258,12 @@ Vec3Double cross__(const Vec3Double &v_1, const Vec3Double &v_2)
 	return result;
 }
 
-double dot__(const Vec3Double &v_1, const Vec3Double &v_2)
+double dot_global(const Vec3Double &v_1, const Vec3Double &v_2)
 {
 	return v_1[0] * v_2[0] + v_1[1] * v_2[1] + v_1[2] * v_2[2];
 }
 
-Vec3Double sub__(const Vec3Double &v_1, const Vec3Double &v_2)
+Vec3Double sub_global(const Vec3Double &v_1, const Vec3Double &v_2)
 {
 	Vec3Double result;
 	for(int i = 0; i < 3; ++i) result[i] = v_1[i] - v_2[i];
@@ -276,7 +276,7 @@ struct MinMax
 	double max_;
 };
 
-MinMax findMinMax__(const Vec3Double values)
+MinMax findMinMax_global(const Vec3Double values)
 {
 	MinMax min_max;
 	min_max.min_ = math::min(values[0], values[1], values[2]);
@@ -284,7 +284,7 @@ MinMax findMinMax__(const Vec3Double values)
 	return min_max;
 }
 
-int planeBoxOverlap__(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)	// -NJMP-
+int planeBoxOverlap_global(const Vec3Double &normal, const Vec3Double &vert, const Vec3Double &maxbox)	// -NJMP-
 {
 	Vec3Double vmin, vmax;
 	for(int axis = 0; axis < 3; ++axis)
@@ -301,13 +301,13 @@ int planeBoxOverlap__(const Vec3Double &normal, const Vec3Double &vert, const Ve
 			vmax[axis] = -maxbox[axis] - v;	// -NJMP-
 		}
 	}
-	if(dot__(normal, vmin) > 0) return 0;	// -NJMP-
-	if(dot__(normal, vmax) >= 0) return 1;	// -NJMP-
+	if(dot_global(normal, vmin) > 0) return 0;	// -NJMP-
+	if(dot_global(normal, vmax) >= 0) return 1;	// -NJMP-
 
 	return 0;
 }
 
-bool axisTest__(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
+bool axisTest_global(double a, double b, double f_a, double f_b, const Vec3Double &v_a, const Vec3Double &v_b, const Vec3Double &boxhalfsize, int axis)
 {
 	const int axis_a = (axis == Axis::X ? Axis::Y : Axis::X);
 	const int axis_b = (axis == Axis::Z ? Axis::Y : Axis::Z);
@@ -343,14 +343,14 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 	/* This is the fastest branch on Sun */
 	/* move everything so that the boxcenter is in (0,0,0) */
 	const std::array<Vec3Double, 3> tri_verts {
-		sub__(triverts[0], boxcenter),
-		sub__(triverts[1], boxcenter),
-		sub__(triverts[2], boxcenter)
+		sub_global(triverts[0], boxcenter),
+		sub_global(triverts[1], boxcenter),
+		sub_global(triverts[2], boxcenter)
 	};
 	const std::array<Vec3Double, 3> tri_edges {
-		sub__(tri_verts[1], tri_verts[0]),
-		sub__(tri_verts[2], tri_verts[1]),
-		sub__(tri_verts[0], tri_verts[2])
+		sub_global(tri_verts[1], tri_verts[0]),
+		sub_global(tri_verts[2], tri_verts[1]),
+		sub_global(tri_verts[0], tri_verts[2])
 	};
 	/* Bullet 3:  */
 	/*  test the 9 tests first (this was faster) */
@@ -359,17 +359,17 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 		{std::abs(tri_edges[1][Axis::X]), std::abs(tri_edges[1][Axis::Y]), std::abs(tri_edges[1][Axis::Z])},
 		{std::abs(tri_edges[2][Axis::X]), std::abs(tri_edges[2][Axis::Y]), std::abs(tri_edges[2][Axis::Z])}
 	}};
-	if(!axisTest__(tri_edges[0][Axis::Z], tri_edges[0][Axis::Y], fe[0][Axis::Z], fe[0][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
-	if(!axisTest__(tri_edges[0][Axis::Z], tri_edges[0][Axis::X], fe[0][Axis::Z], fe[0][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest__(tri_edges[0][Axis::Y], tri_edges[0][Axis::X], fe[0][Axis::Y], fe[0][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+	if(!axisTest_global(tri_edges[0][Axis::Z], tri_edges[0][Axis::Y], fe[0][Axis::Z], fe[0][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!axisTest_global(tri_edges[0][Axis::Z], tri_edges[0][Axis::X], fe[0][Axis::Z], fe[0][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest_global(tri_edges[0][Axis::Y], tri_edges[0][Axis::X], fe[0][Axis::Y], fe[0][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
 
-	if(!axisTest__(tri_edges[1][Axis::Z], tri_edges[1][Axis::Y], fe[1][Axis::Z], fe[1][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
-	if(!axisTest__(tri_edges[1][Axis::Z], tri_edges[1][Axis::X], fe[1][Axis::Z], fe[1][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest__(tri_edges[1][Axis::Y], tri_edges[1][Axis::X], fe[1][Axis::Y], fe[1][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Z)) return false;
+	if(!axisTest_global(tri_edges[1][Axis::Z], tri_edges[1][Axis::Y], fe[1][Axis::Z], fe[1][Axis::Y], tri_verts[0], tri_verts[2], boxhalfsize, Axis::X)) return false;
+	if(!axisTest_global(tri_edges[1][Axis::Z], tri_edges[1][Axis::X], fe[1][Axis::Z], fe[1][Axis::X], tri_verts[0], tri_verts[2], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest_global(tri_edges[1][Axis::Y], tri_edges[1][Axis::X], fe[1][Axis::Y], fe[1][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Z)) return false;
 
-	if(!axisTest__(tri_edges[2][Axis::Z], tri_edges[2][Axis::Y], fe[2][Axis::Z], fe[2][Axis::Y], tri_verts[0], tri_verts[1], boxhalfsize, Axis::X)) return false;
-	if(!axisTest__(tri_edges[2][Axis::Z], tri_edges[2][Axis::X], fe[2][Axis::Z], fe[2][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Y)) return false;
-	if(!axisTest__(tri_edges[2][Axis::Y], tri_edges[2][Axis::X], fe[2][Axis::Y], fe[2][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
+	if(!axisTest_global(tri_edges[2][Axis::Z], tri_edges[2][Axis::Y], fe[2][Axis::Z], fe[2][Axis::Y], tri_verts[0], tri_verts[1], boxhalfsize, Axis::X)) return false;
+	if(!axisTest_global(tri_edges[2][Axis::Z], tri_edges[2][Axis::X], fe[2][Axis::Z], fe[2][Axis::X], tri_verts[0], tri_verts[1], boxhalfsize, Axis::Y)) return false;
+	if(!axisTest_global(tri_edges[2][Axis::Y], tri_edges[2][Axis::X], fe[2][Axis::Y], fe[2][Axis::X], tri_verts[1], tri_verts[2], boxhalfsize, Axis::Z)) return false;
 
 	/* Bullet 1: */
 	/*  first test overlap in the {x,y,z}-directions */
@@ -380,16 +380,16 @@ bool TrianglePrimitive::triBoxOverlap(const Vec3Double &boxcenter, const Vec3Dou
 	/* test in the 3 directions */
 	for(int axis = 0; axis < 3; ++axis)
 	{
-		const MinMax min_max = findMinMax__(tri_verts[axis]);
+		const MinMax min_max = findMinMax_global(tri_verts[axis]);
 		if(min_max.min_ > boxhalfsize[axis] || min_max.max_ < -boxhalfsize[axis]) return false;
 	}
 
 	/* Bullet 2: */
 	/*  test if the box intersects the plane of the triangle */
 	/*  compute plane equation of triangle: normal*x+d=0 */
-	const Vec3Double normal = cross__(tri_edges[0], tri_edges[1]);
+	const Vec3Double normal = cross_global(tri_edges[0], tri_edges[1]);
 	// -NJMP- (line removed here)
-	if(!planeBoxOverlap__(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
+	if(!planeBoxOverlap_global(normal, tri_verts[0], boxhalfsize)) return false;	// -NJMP-
 
 	return true;   /* box and triangle overlaps */
 }

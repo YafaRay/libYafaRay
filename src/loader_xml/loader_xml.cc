@@ -32,24 +32,24 @@
 
 using namespace::yafaray4;
 
-RenderControl *global_render_control__ = nullptr;
+RenderControl *global_render_control_global = nullptr;
 
 #ifdef WIN32
-BOOL WINAPI ctrlCHandler__(DWORD signal)
+BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
 	Y_WARNING << "Interface: Render aborted by user." << YENDL;
-	if(global_render_control__)
+	if(global_render_control_global)
 	{
-		global_render_control__->setAborted();
+		global_render_control_global->setAborted();
 		return TRUE;
 	}
 	else exit(1);
 }
 #else
-void ctrlCHandler__(int signal)
+void ctrlCHandler_global(int signal)
 {
 	Y_WARNING << "Interface: Render aborted by user." << YENDL;
-	if(global_render_control__) global_render_control__->setAborted();
+	if(global_render_control_global) global_render_control_global->setAborted();
 	else exit(1);
 }
 #endif
@@ -58,10 +58,10 @@ int main(int argc, char *argv[])
 {
 	//handle CTRL+C events
 #ifdef WIN32
-	SetConsoleCtrlHandler(ctrlCHandler__, true);
+	SetConsoleCtrlHandler(ctrlCHandler_global, true);
 #else
 	struct ::sigaction signal_handler;
-	signal_handler.sa_handler = ctrlCHandler__;
+	signal_handler.sa_handler = ctrlCHandler_global;
 	sigemptyset(&signal_handler.sa_mask);
 	signal_handler.sa_flags = 0;
 	sigaction(SIGINT, &signal_handler, nullptr);
@@ -82,18 +82,18 @@ int main(int argc, char *argv[])
 	bool no_date_time = parse.getFlag("nodt");
 	bool console_colors_disabled = parse.getFlag("ccd");
 
-	if(no_date_time) logger__.enablePrintDateTime(false);
-	if(console_colors_disabled) logger__.setConsoleLogColorsEnabled(false);
-	else logger__.setConsoleLogColorsEnabled(true);
+	if(no_date_time) logger_global.enablePrintDateTime(false);
+	if(console_colors_disabled) logger_global.setConsoleLogColorsEnabled(false);
+	else logger_global.setConsoleLogColorsEnabled(true);
 
 	std::string verb_level = parse.getOptionString("vl");
 	std::string log_verb_level = parse.getOptionString("lvl");
 
-	if(verb_level.empty()) logger__.setConsoleMasterVerbosity("info");
-	else logger__.setConsoleMasterVerbosity(verb_level);
+	if(verb_level.empty()) logger_global.setConsoleMasterVerbosity("info");
+	else logger_global.setConsoleMasterVerbosity(verb_level);
 
-	if(log_verb_level.empty()) logger__.setLogMasterVerbosity("verbose");
-	else logger__.setLogMasterVerbosity(log_verb_level);
+	if(log_verb_level.empty()) logger_global.setLogMasterVerbosity("verbose");
+	else logger_global.setLogMasterVerbosity(log_verb_level);
 
 	parse.setOption("v", "version", true, "Displays this program's version.");
 	parse.setOption("h", "help", true, "Displays this help text.");
@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
 	if(files.size() > 1) output_file_path = files.at(1);
 
 	ParamMap params;
-	Scene *scene =parseXmlFile__(xml_file_path.c_str(), params, input_color_space_string, input_gamma);
+	Scene *scene =parseXmlFile_global(xml_file_path.c_str(), params, input_color_space_string, input_gamma);
 	if(!scene) exit(1);
-	global_render_control__ = &scene->getRenderControl();	//for the CTRL+C handler
+	global_render_control_global = &scene->getRenderControl();	//for the CTRL+C handler
 
 	int width = 320, height = 240;
 	int bx = 0, by = 0;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	if(!params_badge_position.empty()) params["badge_position"] = params_badge_position;
 
 	if(! scene->setupScene(*scene, params)) return 1;
-	session__.setInteractive(false);
+	session_global.setInteractive(false);
 	scene->render();
 	scene->clearAll();
 

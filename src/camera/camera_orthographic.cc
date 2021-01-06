@@ -55,8 +55,8 @@ Ray OrthographicCamera::shootRay(float px, float py, float lu, float lv, float &
 	ray.from_ = pos_ + vright_ * px + vup_ * py;
 	ray.dir_ = vto_;
 
-	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
-	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
+	ray.tmin_ = rayPlaneIntersection_global(ray, near_plane_);
+	ray.tmax_ = rayPlaneIntersection_global(ray, far_plane_);
 
 	return ray;
 }

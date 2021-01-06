@@ -21,7 +21,7 @@
 BEGIN_YAFARAY
 
 // CIE color matching function table, 1931, 2 degree
-constexpr float cie_xy_zcolmat__[471][4] =
+constexpr float cie_xy_zcolmat_global[471][4] =
 {
 	{360.f, 0.000129900000f, 0.000003917000f, 0.000606100000f}, {361.f, 0.000145847000f, 0.000004393581f, 0.000680879200f},
 	{362.f, 0.000163802100f, 0.000004929604f, 0.000765145600f}, {363.f, 0.000184003700f, 0.000005532136f, 0.000860012400f},
@@ -261,7 +261,7 @@ constexpr float cie_xy_zcolmat__[471][4] =
 	{830.f, 0.000001251141f, 0.000000451810f, 0.000000000000f}
 };
 
-void xyzToRgb__(float x, float y, float z, Rgb &col)
+void xyzToRgb_global(float x, float y, float z, Rgb &col)
 {
 	// xyz->RGB using CIE RGB colsys. (Illuminant E w.point)
 	col.set(2.28783848734076f * x - 0.833367677835217f * y - 0.454470795871421f * z,
@@ -273,7 +273,7 @@ void xyzToRgb__(float x, float y, float z, Rgb &col)
 }
 
 // spectrum color using CIE tables
-void wl2RgbFromCie__(float wl, Rgb &col)
+void wl2RgbFromCie_global(float wl, Rgb &col)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
@@ -282,13 +282,13 @@ void wl2RgbFromCie__(float wl, Rgb &col)
 	if(p_2 > 470) { col.black(); return; }
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
-	const float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
-	const float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
-	const float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
-	xyzToRgb__(x, y, z, col);
+	const float x = fr_2 * cie_xy_zcolmat_global[p_1][1] + fr * cie_xy_zcolmat_global[p_2][1];
+	const float y = fr_2 * cie_xy_zcolmat_global[p_1][2] + fr * cie_xy_zcolmat_global[p_2][2];
+	const float z = fr_2 * cie_xy_zcolmat_global[p_1][3] + fr * cie_xy_zcolmat_global[p_2][3];
+	xyzToRgb_global(x, y, z, col);
 }
 
-Rgb wl2Xyz__(float wl)
+Rgb wl2Xyz_global(float wl)
 {
 	float fr = wl - 360.f;
 	const int p_1 = int(fr);
@@ -297,27 +297,27 @@ Rgb wl2Xyz__(float wl)
 	if(p_2 > 470) { return Rgb(0.f); }
 	fr -= std::floor(fr);
 	const float fr_2 = 1.f - fr;
-	const float x = fr_2 * cie_xy_zcolmat__[p_1][1] + fr * cie_xy_zcolmat__[p_2][1];
-	const float y = fr_2 * cie_xy_zcolmat__[p_1][2] + fr * cie_xy_zcolmat__[p_2][2];
-	const float z = fr_2 * cie_xy_zcolmat__[p_1][3] + fr * cie_xy_zcolmat__[p_2][3];
+	const float x = fr_2 * cie_xy_zcolmat_global[p_1][1] + fr * cie_xy_zcolmat_global[p_2][1];
+	const float y = fr_2 * cie_xy_zcolmat_global[p_1][2] + fr * cie_xy_zcolmat_global[p_2][2];
+	const float z = fr_2 * cie_xy_zcolmat_global[p_1][3] + fr * cie_xy_zcolmat_global[p_2][3];
 	return Rgb(x, y, z);
 }
 
 // from various 'spectral composite model..' papers by Sun et al
 // approximation of CIE matching function by gaussians (only used for analysis in paper, not actual model)
 // slow but might be useful sometime
-void approxSpectrum__(float wl, Rgb &col)
+void approxSpectrum_global(float wl, Rgb &col)
 {
 	const float t_1 = wl - 445.f, t_2 = wl - 595.f, t_3 = wl - 560.f, t_4 = wl - 451.f;
 	const float x = 0.38f * math::exp(-t_1 * t_1 * 1.3691796159e-3f) + 1.06f * math::exp(-t_2 * t_2 * 4.3321698785e-4f);
 	const float y = math::exp(-t_3 * t_3 * 2.7725887222e-4f), z = 1.8f * math::exp(-t_4 * t_4 * 9.1655825529e-4f);
-	xyzToRgb__(x, y, z, col);
+	xyzToRgb_global(x, y, z, col);
 }
 
 // just a simple rainbow gradient, but perfect 1/3 sum,
 // could be useful for some things as a fast rough spectrum color approximation
 // p in range 0 to 1
-void fakeSpectrum__(float p, Rgb &col)
+void fakeSpectrum_global(float p, Rgb &col)
 {
 	const float r = 4.f * (p - 0.75f), g = 4.f * (p - 0.5f), b = 4.f * (p - 0.25f);
 	col.set(1.f - r * r, 1.f - g * g, 1.f - b * b);
@@ -327,7 +327,7 @@ void fakeSpectrum__(float p, Rgb &col)
 // returns Cauchy coefficients for the reduced form equation n = A + B/lambda^2
 // used to calculate dispersion curve, disp_pw is the refractive index difference Nf-nC
 // may not be quite correct or accurate
-void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauchy_b)
+void cauchyCoefficients_global(float ior, float disp_pw, float &cauchy_a, float &cauchy_b)
 {
 	cauchy_a = cauchy_b = 0;
 	if(disp_pw > 0)
@@ -344,11 +344,11 @@ void cauchyCoefficients__(float ior, float disp_pw, float &cauchy_a, float &cauc
 // returns IOR and color at specified wavelength (not called with actual wavelength, but number in 0-1 range)
 // for wl2rgb_fromCIE() & approxSpectrumRGB() range is 380nm to 780nm
 // but could shorten it to 400-700 maybe, 720-780 is quite dark anyway
-float getIoRcolor__(float w, float cauchy_a, float cauchy_b, Rgb &col)
+float getIoRcolor_global(float w, float cauchy_a, float cauchy_b, Rgb &col)
 {
 	//float wl = 400.0*w + 380.0;
 	const float wl = 300.f * w + 400.f;
-	wl2RgbFromCie__(wl, col);
+	wl2RgbFromCie_global(wl, col);
 	col *= 2.214032659670777114f;	// scale for CIE sys. equal energy, range 400-700
 	return cauchy_a + cauchy_b / (wl * wl);
 }

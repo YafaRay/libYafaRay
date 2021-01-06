@@ -45,7 +45,7 @@ Object *MeshObject::factory(ParamMap &params, const Scene &scene)
 	MeshObject *object = new MeshObject(num_vertices, num_faces, has_uv, has_orco);
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
-	object->setVisibility(visibilityFromString__(visibility));
+	object->setVisibility(visibilityFromString_global(visibility));
 	object->useAsBaseObject(is_base_object);
 	object->setObjectIndex(object_index);
 	return object;
@@ -110,7 +110,7 @@ void MeshObject::addNormal(const Vec3 &n)
 	normals_.push_back(n);
 }
 
-float getAngleSine__(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
+float getAngleSine_global(const std::array<int, 3> &triangle_indices, const std::vector<Point3> &vertices)
 {
 	const Vec3 edge_1 = vertices[triangle_indices[1]] - vertices[triangle_indices[0]];
 	const Vec3 edge_2 = vertices[triangle_indices[2]] - vertices[triangle_indices[0]];
@@ -131,7 +131,7 @@ bool MeshObject::smoothNormals(float angle)
 			const size_t num_indices = vert_indices.size();
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 			{
-				normals_[vert_indices[relative_vertex]] += n * getAngleSine__({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_);
+				normals_[vert_indices[relative_vertex]] += n * getAngleSine_global({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_);
 			}
 			face->setNormalsIndices(vert_indices);
 		}
@@ -149,7 +149,7 @@ bool MeshObject::smoothNormals(float angle)
 			const size_t num_indices = vert_indices.size();
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 			{
-				points_angles_sines[vert_indices[relative_vertex]].push_back(getAngleSine__({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_));
+				points_angles_sines[vert_indices[relative_vertex]].push_back(getAngleSine_global({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_));
 				points_faces[vert_indices[relative_vertex]].push_back(face);
 			}
 		}

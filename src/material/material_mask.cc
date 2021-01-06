@@ -147,7 +147,7 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 

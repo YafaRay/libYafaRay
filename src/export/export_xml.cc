@@ -149,7 +149,7 @@ bool XmlExport::smoothMesh(const char *name, double angle)
 	return true;
 }
 
-void writeMatrix__(const std::string &name, const Matrix4 &m, std::ofstream &xml_file)
+void writeMatrix_global(const std::string &name, const Matrix4 &m, std::ofstream &xml_file)
 {
 	xml_file << "<" << name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
 			 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
@@ -157,7 +157,7 @@ void writeMatrix__(const std::string &name, const Matrix4 &m, std::ofstream &xml
 			 << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2] << "\" m33=\"" << m[3][3] << "\"/>";
 }
 
-inline void writeParam__(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma)
+inline void writeParam_global(const std::string &name, const Parameter &param, std::ofstream &xml_file, ColorSpace xml_color_space, float xml_gamma)
 {
 	const Parameter::Type type = param.type();
 	if(type == Parameter::Int)
@@ -201,7 +201,7 @@ inline void writeParam__(const std::string &name, const Parameter &param, std::o
 	{
 		Matrix4 m;
 		param.getVal(m);
-		writeMatrix__(name, m, xml_file);
+		writeMatrix_global(name, m, xml_file);
 	}
 	else
 	{
@@ -212,7 +212,7 @@ inline void writeParam__(const std::string &name, const Parameter &param, std::o
 bool XmlExport::addInstance(const char *base_object_name, const Matrix4 &obj_to_world)
 {
 	xml_file_ << "\n<instance base_object_name=\"" << base_object_name << "\" >\n\t";
-	writeMatrix__("transform", obj_to_world, xml_file_);
+	writeMatrix_global("transform", obj_to_world, xml_file_);
 	xml_file_ << "\n</instance>\n";
 	return true;
 }
@@ -223,7 +223,7 @@ void XmlExport::writeParamMap(const ParamMap &param_map, int indent)
 	for(const auto &param : param_map)
 	{
 		xml_file_ << tabs;
-		writeParam__(param.first, param.second, xml_file_, xml_color_space_, xml_gamma_);
+		writeParam_global(param.first, param.second, xml_file_, xml_color_space_, xml_gamma_);
 	}
 }
 
@@ -339,7 +339,7 @@ void XmlExport::setXmlColorSpace(std::string color_space_string, float gamma_val
 
 extern "C"
 {
-	XmlExport *getYafrayXml__(const char *fname)
+	XmlExport *getYafrayXml_global(const char *fname)
 	{
 		return new XmlExport(fname);
 	}

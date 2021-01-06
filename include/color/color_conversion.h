@@ -35,28 +35,28 @@
 
 BEGIN_YAFARAY
 
-constexpr float cie_rgb_e__[9] =
+constexpr float cie_rgb_e_global[9] =
 {
 	2.3706743f, -0.9000405f, -0.4706338f,
 	-0.5138850f,  1.4253036f,  0.0885814f,
 	0.0052982f, -0.0146949f,  1.0093968f
 };
 
-constexpr float cie_rgb_d_50__[9] =
+constexpr float cie_rgb_d_50_global[9] =
 {
 	2.3638081f, -0.8676030f, -0.4988161f,
 	-0.5005940f,  1.3962369f,  0.1047562f,
 	0.0141712f, -0.0306400f,  1.2323842f
 };
 
-constexpr float s_rgb_d_65__[9] =
+constexpr float s_rgb_d_65_global[9] =
 {
 	3.2404542f, -1.5371385f, -0.4985314f,
 	-0.9692660f,  1.8760108f,  0.0415560f,
 	0.0556434f, -0.2040259f,  1.0572252f
 };
 
-constexpr float s_rgb_d_50__[9] =
+constexpr float s_rgb_d_50_global[9] =
 {
 	3.1338561f, -1.6168667f, -0.4906146f,
 	-0.9787684f,  1.9161415f,  0.0334540f,
@@ -91,19 +91,19 @@ inline ColorConv::ColorConv(bool cl, bool g_enc, ColorSpace cs, float exposure) 
 	switch(color_space_)
 	{
 		case CieRgbECs:
-			mat_ = cie_rgb_e__;
+			mat_ = cie_rgb_e_global;
 			break;
 
 		case CieRgbD50Cs:
-			mat_ = cie_rgb_d_50__;
+			mat_ = cie_rgb_d_50_global;
 			break;
 
 		case SRgbD50Cs:
-			mat_ = s_rgb_d_50__;
+			mat_ = s_rgb_d_50_global;
 			break;
 
 		case SRgbD65Cs:
-			mat_ = s_rgb_d_65__;
+			mat_ = s_rgb_d_65_global;
 			break;
 	}
 };

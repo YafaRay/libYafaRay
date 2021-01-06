@@ -80,7 +80,7 @@ class Texture
 		InterpolationType interpolation_type_ = InterpolationType::Bilinear;
 };
 
-inline void angmap__(const Point3 &p, float &u, float &v)
+inline void angmap_global(const Point3 &p, float &u, float &v)
 {
 	float r = p.x_ * p.x_ + p.z_ * p.z_;
 	u = v = 0.f;
@@ -95,7 +95,7 @@ inline void angmap__(const Point3 &p, float &u, float &v)
 
 // slightly modified Blender's own function,
 // works better than previous function which needed extra tweaks
-inline void tubemap__(const Point3 &p, float &u, float &v)
+inline void tubemap_global(const Point3 &p, float &u, float &v)
 {
 	u = 0;
 	v = 1 - (p.z_ + 1) * 0.5f;
@@ -108,7 +108,7 @@ inline void tubemap__(const Point3 &p, float &u, float &v)
 }
 
 // maps a direction to a 2d 0..1 interval
-inline void spheremap__(const Point3 &p, float &u, float &v)
+inline void spheremap_global(const Point3 &p, float &u, float &v)
 {
 	const float sqrt_r_phi = p.x_ * p.x_ + p.y_ * p.y_;
 	const float sqrt_r_theta = sqrt_r_phi + p.z_ * p.z_;
@@ -128,7 +128,7 @@ inline void spheremap__(const Point3 &p, float &u, float &v)
 }
 
 // maps u,v coords in the 0..1 interval to a direction
-inline void invSpheremap__(float u, float v, Vec3 &p)
+inline void invSpheremap_global(float u, float v, Vec3 &p)
 {
 	const float theta = v * M_PI;
 	const float phi = -(u * math::mult_pi_by_2);

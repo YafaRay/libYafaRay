@@ -142,14 +142,14 @@ inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
 }
 
 
-extern LIBYAFARAY_EXPORT Logger logger__;
+extern LIBYAFARAY_EXPORT Logger logger_global;
 
-#define Y_DEBUG logger__.out(yafaray4::Logger::VlDebug)
-#define Y_VERBOSE logger__.out(yafaray4::Logger::VlVerbose)
-#define Y_INFO logger__.out(yafaray4::Logger::VlInfo)
-#define Y_PARAMS logger__.out(yafaray4::Logger::VlParams)
-#define Y_WARNING logger__.out(yafaray4::Logger::VlWarning)
-#define Y_ERROR logger__.out(yafaray4::Logger::VlError)
+#define Y_DEBUG logger_global.out(yafaray4::Logger::VlDebug)
+#define Y_VERBOSE logger_global.out(yafaray4::Logger::VlVerbose)
+#define Y_INFO logger_global.out(yafaray4::Logger::VlInfo)
+#define Y_PARAMS logger_global.out(yafaray4::Logger::VlParams)
+#define Y_WARNING logger_global.out(yafaray4::Logger::VlWarning)
+#define Y_ERROR logger_global.out(yafaray4::Logger::VlError)
 #define YENDL std::endl
 
 END_YAFARAY

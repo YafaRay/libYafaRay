@@ -29,27 +29,27 @@
 
 BEGIN_YAFARAY
 
-static constexpr int max_vsamples__ = 360;
-static constexpr int max_usamples__ = 720;
-static constexpr int min_samples__ = 16;
+static constexpr int max_vsamples_global = 360;
+static constexpr int max_usamples_global = 720;
+static constexpr int min_samples_global = 16;
 
-static constexpr float smpl_off__ = 0.4999f;
-static constexpr float sigma__ = 0.000001f;
+static constexpr float smpl_off_global = 0.4999f;
+static constexpr float sigma_global = 0.000001f;
 
-static constexpr float addOff__(float v) { return (v + smpl_off__); }
-int clampSample__(int s, int m) { return std::max(0, std::min(s, m - 1)); }
+static constexpr float addOff_global(float v) { return (v + smpl_off_global); }
+int clampSample_global(int s, int m) { return std::max(0, std::min(s, m - 1)); }
 
 #define MULT_PDF(p0, p1) (p0 * p1)
-#define CALC_PDF(p0, p1, s) std::max( sigma__, MULT_PDF(p0, p1) * (float)math::div_1_by_2pi * clampZero__(sinSample__(s)) )
-#define CALC_INV_PDF(p0, p1, s) std::max( sigma__, (float)math::mult_pi_by_2 * sinSample__(s) * clampZero__(MULT_PDF(p0, p1)) )
+#define CALC_PDF(p0, p1, s) std::max( sigma_global, MULT_PDF(p0, p1) * (float)math::div_1_by_2pi * clampZero_global(sinSample_global(s)) )
+#define CALC_INV_PDF(p0, p1, s) std::max( sigma_global, (float)math::mult_pi_by_2 * sinSample_global(s) * clampZero_global(MULT_PDF(p0, p1)) )
 
-inline float clampZero__(float val)
+inline float clampZero_global(float val)
 {
 	if(val > 0.f) return 1.f / val;
 	else return 0.f;
 }
 
-inline float sinSample__(float s)
+inline float sinSample_global(float s)
 {
 	return math::sin(s * M_PI);
 }
@@ -72,9 +72,9 @@ BackgroundLight::~BackgroundLight()
 
 void BackgroundLight::init(Scene &scene)
 {
-	float *fu = new float[max_usamples__];
-	float *fv = new float[max_vsamples__];
-	const int nv = max_vsamples__;
+	float *fu = new float[max_usamples_global];
+	float *fv = new float[max_vsamples_global];
+	const int nv = max_vsamples_global;
 
 	Ray ray;
 	ray.from_ = Point3(0.f);
@@ -83,14 +83,14 @@ void BackgroundLight::init(Scene &scene)
 	for(int y = 0; y < nv; y++)
 	{
 		const float fy = ((float)y + 0.5f) * inv;
-		const float sintheta = sinSample__(fy);
-		const int nu = min_samples__ + (int)(sintheta * (max_usamples__ - min_samples__));
+		const float sintheta = sinSample_global(fy);
+		const int nu = min_samples_global + (int)(sintheta * (max_usamples_global - min_samples_global));
 		const float inu = 1.f / (float)nu;
 
 		for(int x = 0; x < nu; x++)
 		{
 			const float fx = ((float)x + 0.5f) * inu;
-			invSpheremap__(fx, fy, ray.dir_);
+			invSpheremap_global(fx, fy, ray.dir_);
 			fu[x] = background_->eval(ray, true).energy() * sintheta;
 		}
 
@@ -115,7 +115,7 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 	int iv;
 	float pdf_1 = 0.f, pdf_2 = 0.f;
 	v = v_dist_->sample(s_2, &pdf_2);
-	iv = clampSample__(addOff__(v), v_dist_->count_);
+	iv = clampSample_global(addOff_global(v), v_dist_->count_);
 	u = u_dist_[iv]->sample(s_1, &pdf_1);
 	u *= u_dist_[iv]->inv_count_;
 	v *= v_dist_->inv_count_;
@@ -126,9 +126,9 @@ inline float BackgroundLight::calcFromSample(float s_1, float s_2, float &u, flo
 inline float BackgroundLight::calcFromDir(const Vec3 &dir, float &u, float &v, bool inv) const
 {
 	float pdf_1 = 0.f, pdf_2 = 0.f;
-	spheremap__(dir, u, v); // Returns u,v pair in [0,1] range
-	const int iv = clampSample__(addOff__(v * v_dist_->count_), v_dist_->count_);
-	const int iu = clampSample__(addOff__(u * u_dist_[iv]->count_), u_dist_[iv]->count_);
+	spheremap_global(dir, u, v); // Returns u,v pair in [0,1] range
+	const int iv = clampSample_global(addOff_global(v * v_dist_->count_), v_dist_->count_);
+	const int iu = clampSample_global(addOff_global(u * u_dist_[iv]->count_), u_dist_[iv]->count_);
 	pdf_1 = u_dist_[iv]->func_[iu] * u_dist_[iv]->inv_integral_;
 	pdf_2 = v_dist_->func_[iv] * v_dist_->inv_integral_;
 	if(inv)return CALC_INV_PDF(pdf_1, pdf_2, v);
@@ -139,7 +139,7 @@ void BackgroundLight::sampleDir(float s_1, float s_2, Vec3 &dir, float &pdf, boo
 {
 	float u = 0.f, v = 0.f;
 	pdf = calcFromSample(s_1, s_2, u, v, inv);
-	invSpheremap__(u, v, dir);
+	invSpheremap_global(u, v, dir);
 }
 
 // dir points from surface point to background
@@ -155,7 +155,7 @@ bool BackgroundLight::illumSample(const SurfacePoint &sp, LSample &s, Ray &wi) c
 	float u = 0.f, v = 0.f;
 	wi.tmax_ = -1.0;
 	s.pdf_ = calcFromSample(s.s_1_, s.s_2_, u, v, false);
-	invSpheremap__(u, v, wi.dir_);
+	invSpheremap_global(u, v, wi.dir_);
 	s.col_ = background_->eval(wi, true);
 	return true;
 }
@@ -167,7 +167,7 @@ bool BackgroundLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf)
 	if(abs_inter_) abs_dir = -abs_dir;
 	float u = 0.f, v = 0.f;
 	ipdf = calcFromDir(abs_dir, u, v, true);
-	invSpheremap__(u, v, tr.dir_);
+	invSpheremap_global(u, v, tr.dir_);
 	col = background_->eval(tr, true);
 	col.clampProportionalRgb(clamp_intersect_); //trick to reduce light sampling noise at the expense of realism and inexact overall light. 0.f disables clamping
 	return true;

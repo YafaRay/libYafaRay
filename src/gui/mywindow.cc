@@ -68,7 +68,7 @@
 #include <QFontDatabase>
 #include <QSettings>
 
-static QApplication *app__ = nullptr;
+static QApplication *app_global = nullptr;
 
 /**************************
  *
@@ -76,7 +76,7 @@ static QApplication *app__ = nullptr;
  *
  *************************/
 
-void initGui__()
+void initGui_global()
 {
 	static int argc = 0;
 
@@ -88,19 +88,19 @@ void initGui__()
 #endif
 		using namespace yafaray4;
 		Y_INFO << "Starting Qt graphical interface..." << YENDL;
-		app__ = new QApplication(argc, 0);
+		app_global = new QApplication(argc, 0);
 	}
-	else app__ = static_cast<QApplication *>(QApplication::instance());
+	else app_global = static_cast<QApplication *>(QApplication::instance());
 }
 
-int createRenderWidget__(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings)
+int createRenderWidget_global(yafaray4::Interface *interf, int xsize, int ysize, int b_start_x, int b_start_y, Settings settings)
 {
 	MainWindow w(interf, xsize, ysize, b_start_x, b_start_y, settings);
 	w.show();
 	w.adjustWindow();
 	w.slotRender();
 
-	return app__->exec();
+	return app_global->exec();
 }
 
 
@@ -129,19 +129,19 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	QPixmap zoom_out_icon;
 	QPixmap quit_icon;
 
-	yaf_icon.loadFromData(yafarayicon__, yafarayicon_size__);
-	zbuff_icon.loadFromData(z_buf_icon__, z_buf_icon_size__);
-	alpha_icon.loadFromData(alpha_icon__, alpha_icon_size__);
-	cancel_icon.loadFromData(cancel_icon__, cancel_icon_size__);
-	save_as_icon.loadFromData(saveas_icon__, saveas_icon_size__);
-	render_icon.loadFromData(render_icon__, render_icon_size__);
-	show_alpha_icon.loadFromData(show_alpha_icon__, show_alpha_icon_size__);
-	show_color_icon.loadFromData(rgb_icon__, rgb_icon_size__);
-	save_depth_icon.loadFromData(save_z_buf_icon__, save_z_buf_icon_size__);
-	draw_params_icon.loadFromData(drawparams_icon__, drawparams_icon_size__);
-	zoom_in_icon.loadFromData(zoomin_icon__, zoomin_icon_size__);
-	zoom_out_icon.loadFromData(zoomout_icon__, zoomout_icon_size__);
-	quit_icon.loadFromData(quit_icon__, quit_icon_size__);
+	yaf_icon.loadFromData(yafarayicon_global, yafarayicon_size_global);
+	zbuff_icon.loadFromData(z_buf_icon_global, z_buf_icon_size_global);
+	alpha_icon.loadFromData(alpha_icon_global, alpha_icon_size_global);
+	cancel_icon.loadFromData(cancel_icon_global, cancel_icon_size_global);
+	save_as_icon.loadFromData(saveas_icon_global, saveas_icon_size_global);
+	render_icon.loadFromData(render_icon_global, render_icon_size_global);
+	show_alpha_icon.loadFromData(show_alpha_icon_global, show_alpha_icon_size_global);
+	show_color_icon.loadFromData(rgb_icon_global, rgb_icon_size_global);
+	save_depth_icon.loadFromData(save_z_buf_icon_global, save_z_buf_icon_size_global);
+	draw_params_icon.loadFromData(drawparams_icon_global, drawparams_icon_size_global);
+	zoom_in_icon.loadFromData(zoomin_icon_global, zoomin_icon_size_global);
+	zoom_out_icon.loadFromData(zoomout_icon_global, zoomout_icon_size_global);
+	quit_icon.loadFromData(quit_icon_global, quit_icon_size_global);
 
 #if !defined(__APPLE__) && defined(YAFQT_EMBEDED_FONT)
 	int fId = QFontDatabase::addApplicationFontFromData(QByteArray((const char *)guifont, guifont_size));
@@ -308,7 +308,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	{
 		slotCancel();
 
-		if(render_cancelled_) app__->exit(1); //check if a render was stopped and exit with the appropiate code
+		if(render_cancelled_) app_global->exit(1); //check if a render was stopped and exit with the appropiate code
 		e->accept();
 	}
 
@@ -357,8 +357,8 @@ void MainWindow::slotFinished()
 
 		if(auto_close_)
 		{
-			if(render_cancelled_) app__->exit(1);
-			else app__->quit();
+			if(render_cancelled_) app_global->exit(1);
+			else app_global->quit();
 			return;
 		}
 	}
@@ -409,8 +409,8 @@ void MainWindow::slotFinished()
 
 	if(auto_close_)
 	{
-		if(render_cancelled_) app__->exit(1);
-		else app__->quit();
+		if(render_cancelled_) app_global->exit(1);
+		else app_global->quit();
 		return;
 	}
 

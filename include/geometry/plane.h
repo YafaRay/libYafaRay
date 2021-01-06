@@ -31,7 +31,7 @@ struct Plane
 	Vec3 n_;
 };
 
-inline float rayPlaneIntersection__(Ray const &ray, Plane const &plane)
+inline float rayPlaneIntersection_global(Ray const &ray, Plane const &plane)
 {
 	return plane.n_ * (plane.p_ - static_cast<Vec3>(ray.from_)) / (ray.dir_ * plane.n_);
 }

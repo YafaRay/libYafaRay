@@ -97,12 +97,12 @@ std::ostream &operator << (std::ostream &out, const Rgba c)
 	return out;
 }
 
-Rgb mix__(const Rgb &a, const Rgb &b, float point)
+Rgb mix_global(const Rgb &a, const Rgb &b, float point)
 {
 	return math::lerpTruncated(b, a, point);
 }
 
-Rgba mix__(const Rgba &a, const Rgba &b, float point)
+Rgba mix_global(const Rgba &a, const Rgba &b, float point)
 {
 	return math::lerpTruncated(b, a, point);
 }

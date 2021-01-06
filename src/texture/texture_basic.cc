@@ -22,7 +22,7 @@
 
 BEGIN_YAFARAY
 
-NoiseGenerator *newNoise__(const std::string &ntype)
+NoiseGenerator *newNoise_global(const std::string &ntype)
 {
 	if(ntype == "blender")
 		return new BlenderNoiseGenerator();
@@ -51,7 +51,7 @@ NoiseGenerator *newNoise__(const std::string &ntype)
 	return new NewPerlinNoiseGenerator();
 }
 
-void textureReadColorRamp__(const ParamMap &params, Texture *tex)
+void textureReadColorRamp_global(const ParamMap &params, Texture *tex)
 {
 	std::string mode_str, interpolation_str, hue_interpolation_str;
 	int ramp_num_items = 0;
@@ -103,7 +103,7 @@ CloudsTexture::CloudsTexture(int dep, float sz, bool hd,
 	bias_ = BiasType::None;
 	if(btype == "positive") bias_ = BiasType::Positive;
 	else if(btype == "negative") bias_ = BiasType::Negative;
-	n_gen_ = newNoise__(ntype);
+	n_gen_ = newNoise_global(ntype);
 }
 
 CloudsTexture::~CloudsTexture()
@@ -113,7 +113,7 @@ CloudsTexture::~CloudsTexture()
 
 float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float v = turbulence__(n_gen_, p, depth_, size_, hard_);
+	float v = turbulence_global(n_gen_, p, depth_, size_, hard_);
 	if(bias_ != BiasType::None)
 	{
 		v *= v;
@@ -162,7 +162,7 @@ Texture *CloudsTexture::factory(ParamMap &params,
 	CloudsTexture *tex = new CloudsTexture(depth, size, hard, color_1, color_2, ntype, btype);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
 
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -177,7 +177,7 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 {
 	sharpness_ = 1.f;
 	if(shp > 1) sharpness_ = 1.f / shp;
-	n_gen_ = newNoise__(ntype);
+	n_gen_ = newNoise_global(ntype);
 	if(shape == "saw") wshape_ = Shape::Saw;
 	else if(shape == "tri") wshape_ = Shape::Tri;
 	else wshape_ = Shape::Sin;
@@ -185,7 +185,7 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_));
+	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence_global(n_gen_, p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -243,7 +243,7 @@ Texture *MarbleTexture::factory(ParamMap &params,
 
 	MarbleTexture *tex = new MarbleTexture(oct, sz, col_1, col_2, turb, shp, hrd, ntype, shape);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -258,7 +258,7 @@ WoodTexture::WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, floa
 	: octaves_(oct), color_1_(c_1), color_2_(c_2), turb_(turb), size_(sz), hard_(hrd)
 {
 	rings_ = (wtype == "rings");
-	n_gen_ = newNoise__(ntype);
+	n_gen_ = newNoise_global(ntype);
 	if(shape == "saw") wshape_ = Shape::Saw;
 	else if(shape == "tri") wshape_ = Shape::Tri;
 	else wshape_ = Shape::Sin;
@@ -271,7 +271,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.f;
 	else
 		w = (p.x_ + p.y_ + p.z_) * 10.f;
-	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence__(n_gen_, p, octaves_, size_, hard_);
+	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence_global(n_gen_, p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -333,7 +333,7 @@ Texture *WoodTexture::factory(ParamMap &params,
 
 	WoodTexture *tex = new WoodTexture(oct, sz, col_1, col_2, turb, hrd, ntype, wtype, shape);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -376,7 +376,7 @@ Texture *RgbCubeTexture::factory(ParamMap &params, const Scene &scene)
 
 	RgbCubeTexture *tex = new RgbCubeTexture();
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -433,10 +433,10 @@ Rgba VoronoiTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params
 	if(color_ramp_) return applyColorAdjustments(color_ramp_->getColorInterpolated(inte));
 	else if(color_mode_ != ColorMode::IntensityWithoutColor)
 	{
-		col += aw_1_ * cellNoiseColor__(v_gen_.getPoint(0, pa));
-		col += aw_2_ * cellNoiseColor__(v_gen_.getPoint(1, pa));
-		col += aw_3_ * cellNoiseColor__(v_gen_.getPoint(2, pa));
-		col += aw_4_ * cellNoiseColor__(v_gen_.getPoint(3, pa));
+		col += aw_1_ * cellNoiseColor_global(v_gen_.getPoint(0, pa));
+		col += aw_2_ * cellNoiseColor_global(v_gen_.getPoint(1, pa));
+		col += aw_3_ * cellNoiseColor_global(v_gen_.getPoint(2, pa));
+		col += aw_4_ * cellNoiseColor_global(v_gen_.getPoint(3, pa));
 		if(color_mode_ == ColorMode::PositionOutline || color_mode_ == ColorMode::PositionOutlineIntensity)
 		{
 			float t_1 = (v_gen_.getDistance(1, da) - v_gen_.getDistance(0, da)) * 10.f;
@@ -496,7 +496,7 @@ Texture *VoronoiTexture::factory(ParamMap &params, const Scene &scene)
 
 	VoronoiTexture *tex = new VoronoiTexture(col_1, col_2, color_mode, fw_1, fw_2, fw_3, fw_4, mex, sz, isc, dname);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -511,7 +511,7 @@ MusgraveTexture::MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
 								 const std::string &ntype, const std::string &mtype)
 	: color_1_(c_1), color_2_(c_2), size_(size), iscale_(iscale)
 {
-	n_gen_ = newNoise__(ntype);
+	n_gen_ = newNoise_global(ntype);
 	if(mtype == "multifractal")
 		m_gen_ = new MFractalMusgrave(h, lacu, octs, n_gen_);
 	else if(mtype == "heteroterrain")
@@ -577,7 +577,7 @@ Texture *MusgraveTexture::factory(ParamMap &params, const Scene &scene)
 
 	MusgraveTexture *tex = new MusgraveTexture(col_1, col_2, h, lacu, octs, offs, gain, size, iscale, ntype, mtype);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -591,8 +591,8 @@ DistortedNoiseTexture::DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
 											 const std::string &noiseb_1, const std::string noiseb_2)
 	: color_1_(c_1), color_2_(c_2), distort_(distort), size_(size)
 {
-	n_gen_1_ = newNoise__(noiseb_1);
-	n_gen_2_ = newNoise__(noiseb_2);
+	n_gen_1_ = newNoise_global(noiseb_1);
+	n_gen_2_ = newNoise_global(noiseb_2);
 }
 
 DistortedNoiseTexture::~DistortedNoiseTexture()
@@ -606,8 +606,8 @@ float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipma
 	// get a random vector and scale the randomization
 	const Point3 ofs(13.5, 13.5, 13.5);
 	const Point3 tp(p * size_);
-	const Point3 rv(getSignedNoise__(n_gen_1_, tp + ofs), getSignedNoise__(n_gen_1_, tp), getSignedNoise__(n_gen_1_, tp - ofs));
-	return applyIntensityContrastAdjustments(getSignedNoise__(n_gen_2_, tp + rv * distort_));	// distorted-domain noise
+	const Point3 rv(getSignedNoise_global(n_gen_1_, tp + ofs), getSignedNoise_global(n_gen_1_, tp), getSignedNoise_global(n_gen_1_, tp - ofs));
+	return applyIntensityContrastAdjustments(getSignedNoise_global(n_gen_2_, tp + rv * distort_));	// distorted-domain noise
 }
 
 Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -647,7 +647,7 @@ Texture *DistortedNoiseTexture::factory(ParamMap &params, const Scene &scene)
 
 	DistortedNoiseTexture *tex = new DistortedNoiseTexture(col_1, col_2, dist, size, ntype_1, ntype_2);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }
@@ -743,7 +743,7 @@ Texture *BlendTexture::factory(ParamMap &params, const Scene &scene)
 
 	BlendTexture *tex = new BlendTexture(stype, use_flip_axis);
 	tex->setAdjustments(intensity, contrast, saturation, hue, clamp, factor_red, factor_green, factor_blue);
-	if(use_color_ramp) textureReadColorRamp__(params, tex);
+	if(use_color_ramp) textureReadColorRamp_global(params, tex);
 
 	return tex;
 }

@@ -57,7 +57,7 @@ class LIBYAFARAY_EXPORT Session
 		bool interactive_ = false;
 };
 
-extern LIBYAFARAY_EXPORT Session session__;
+extern LIBYAFARAY_EXPORT Session session_global;
 
 END_YAFARAY
 

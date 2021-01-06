@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 
 
 // k_o Spectrum table from pg 127, MI.
-static constexpr float k_o_wavelengths__[64] =
+static constexpr float k_o_wavelengths_global[64] =
 {
 	300, 305, 310, 315, 320,
 	325, 330, 335, 340, 345,
@@ -55,7 +55,7 @@ static constexpr float k_o_wavelengths__[64] =
 
 
 
-static constexpr float k_o_amplitudes__[64] =
+static constexpr float k_o_amplitudes_global[64] =
 {
 	10.0,  4.8,  2.7,   1.35,  .8,
 	.380,  .160,  .075,  .04,  .019,
@@ -80,24 +80,24 @@ static constexpr float k_o_amplitudes__[64] =
 
 
 // k_g Spectrum table from pg 130, MI.
-static constexpr float k_g_wavelengths__[4] =
+static constexpr float k_g_wavelengths_global[4] =
 {
 	759,  760,  770,  771
 };
 
-static constexpr float k_g_amplitudes__[4] =
+static constexpr float k_g_amplitudes_global[4] =
 {
 	0,  3.0,  0.210,  0
 };
 
 // k_wa Spectrum table from pg 130, MI.
-static constexpr float k_wa_wavelengths__[13] =
+static constexpr float k_wa_wavelengths_global[13] =
 {
 	689,  690,  700,  710,  720,  730,  740,
 	750,  760,  770,  780,  790,  800
 };
 
-static constexpr float k_wa_amplitudes__[13] =
+static constexpr float k_wa_amplitudes_global[13] =
 {
 	0,
 	0.160e-1,
@@ -116,7 +116,7 @@ static constexpr float k_wa_amplitudes__[13] =
 
 
 // 380-750 by 10nm
-static constexpr float sol_amplitudes__[38] =
+static constexpr float sol_amplitudes_global[38] =
 {
 	165.5, 162.3, 211.2, 258.8, 258.2,
 	242.3, 267.6, 296.6, 305.4, 300.6,
@@ -149,11 +149,11 @@ inline float IrregularSpectrum::sample(float wl)
 	return (1.f - delta) * amplitude_[index] + delta * amplitude_[index + 1];
 }
 
-inline Rgb computeAttenuatedSunlight__(float theta, int turbidity)
+inline Rgb computeAttenuatedSunlight_global(float theta, int turbidity)
 {
-	IrregularSpectrum k_o_curve(k_o_amplitudes__, k_o_wavelengths__, 64);
-	IrregularSpectrum k_g_curve(k_g_amplitudes__, k_g_wavelengths__, 4);
-	IrregularSpectrum k_wa_curve(k_wa_amplitudes__, k_wa_wavelengths__, 13);
+	IrregularSpectrum k_o_curve(k_o_amplitudes_global, k_o_wavelengths_global, 64);
+	IrregularSpectrum k_g_curve(k_g_amplitudes_global, k_g_wavelengths_global, 4);
+	IrregularSpectrum k_wa_curve(k_wa_amplitudes_global, k_wa_wavelengths_global, 13);
 	//RiRegularSpectralCurve   solCurve(solAmplitudes, 380, 750, 38);  // every 10 nm  IN WRONG UNITS
 	// Need a factor of 100 (done below)
 	float data[38];  // (750 - 380) / 10  + 1
@@ -191,9 +191,9 @@ inline Rgb computeAttenuatedSunlight__(float theta, int turbidity)
 		tau_wa = math::exp(-0.2385f * k_wa_curve.sample(lambda) * w * m /
 						math::pow(1.f + 20.07f * k_wa_curve.sample(lambda) * w * m, 0.45f));
 
-		data[i] = 100.f * sol_amplitudes__[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
+		data[i] = 100.f * sol_amplitudes_global[i] * tau_r * tau_a * tau_o * tau_g * tau_wa; // 100 comes from solCurve being
 		// in wrong units.
-		sun_xyz += wl2Xyz__(lambda) * data[i];
+		sun_xyz += wl2Xyz_global(lambda) * data[i];
 	}
 	sun_xyz *= 0.02631578947368421053f;
 	Rgb sun_col;

@@ -262,11 +262,11 @@ class RidgedMFractalMusgrave final : public Musgrave
 
 // basic turbulence, half amplitude, double frequency defaults
 // returns value in range (0,1)
-float turbulence__(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard);
+float turbulence_global(const NoiseGenerator *ngen, const Point3 &pt, int oct, float size, bool hard);
 // noise cell color (used with voronoi)
-Rgba cellNoiseColor__(const Point3 &pt);
+Rgba cellNoiseColor_global(const Point3 &pt);
 
-static inline float getSignedNoise__(const NoiseGenerator *n_gen, const Point3 &pt)
+static inline float getSignedNoise_global(const NoiseGenerator *n_gen, const Point3 &pt)
 {
 	return 2.f * (*n_gen)(pt) - 1.f;
 }

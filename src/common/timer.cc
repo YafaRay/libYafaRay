@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-Timer g_timer__;
+Timer g_timer_global;
 
 bool Timer::addEvent(const std::string &name)
 {

@@ -46,7 +46,7 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 	header.width_ = w;
 	header.height_ = h;
 	header.bit_depth_ = ((image->hasAlpha()) ? 32 : 24);
-	header.desc_ = tl__ | ((image->hasAlpha()) ? alpha_8__ : no_alpha__);
+	header.desc_ = tl_global | ((image->hasAlpha()) ? alpha_8_global : no_alpha_global);
 
 	std::fwrite(&header, sizeof(TgaHeader), 1, fp);
 	std::fwrite(image_id.c_str(), static_cast<size_t>(header.id_length_), 1, fp);
@@ -96,8 +96,8 @@ template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProc
 	{
 		uint8_t pack_desc = 0;
 		std::fread(&pack_desc, sizeof(uint8_t), 1, fp);
-		bool rle_pack = (pack_desc & rle_pack_mask__);
-		int rle_rep = static_cast<int>(pack_desc & rle_rep_mask__) + 1;
+		bool rle_pack = (pack_desc & rle_pack_mask_global);
+		int rle_rep = static_cast<int>(pack_desc & rle_rep_mask_global) + 1;
 		ColorType color_type;
 		if(rle_pack) std::fread(&color_type, sizeof(ColorType), 1, fp);
 		for(int i = 0; i < rle_rep; i++)
@@ -142,7 +142,7 @@ Rgba TgaFormat::processGray8(void *data)
 Rgba TgaFormat::processGray16(void *data)
 {
 	uint16_t color = *(uint16_t *)data;
-	return Rgba(Rgb((color & gray_mask_8_bit__) * inv_max_8_bit_), ((color & alpha_gray_mask_8_bit__) >> 8) * inv_max_8_bit_);
+	return Rgba(Rgb((color & gray_mask_8_bit_global) * inv_max_8_bit_), ((color & alpha_gray_mask_8_bit_global) >> 8) * inv_max_8_bit_);
 }
 
 Rgba TgaFormat::processColor8(void *data)
@@ -154,19 +154,19 @@ Rgba TgaFormat::processColor8(void *data)
 Rgba TgaFormat::processColor15(void *data)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & red_mask__) >> 11) * inv_31_,
-				((color & green_mask__) >> 6) * inv_31_,
-				((color & blue_mask__) >> 1) * inv_31_,
+	return Rgba(((color & red_mask_global) >> 11) * inv_31_,
+				((color & green_mask_global) >> 6) * inv_31_,
+				((color & blue_mask_global) >> 1) * inv_31_,
 				1.f);
 }
 
 Rgba TgaFormat::processColor16(void *data)
 {
 	const uint16_t color = *(uint16_t *)data;
-	return Rgba(((color & red_mask__) >> 11) * inv_31_,
-				((color & green_mask__) >> 6) * inv_31_,
-				((color & blue_mask__) >> 1) * inv_31_,
-				(float)(color & alpha_mask__));
+	return Rgba(((color & red_mask_global) >> 11) * inv_31_,
+				((color & green_mask_global) >> 6) * inv_31_,
+				((color & blue_mask_global) >> 1) * inv_31_,
+				(float)(color & alpha_mask_global));
 }
 
 Rgba TgaFormat::processColor24(void *data)
@@ -286,7 +286,7 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	TgaHeader header;
 	std::fread(&header, 1, sizeof(TgaHeader), fp);
 	// Prereading checks
-	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & alpha_bit_depth_mask__);
+	uint8_t alpha_bit_depth = (uint8_t)(header.desc_ & alpha_bit_depth_mask_global);
 	bool is_rle = false;
 	bool has_color_map = false;
 	bool is_gray = false;
@@ -330,14 +330,14 @@ Image *TgaFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	min_y_ = 0;
 	max_y_ = header.height_;
 	step_y_ = 1;
-	const bool from_top = ((header.desc_ & top_mask__) >> 5);
+	const bool from_top = ((header.desc_ & top_mask_global) >> 5);
 	if(!from_top)
 	{
 		min_y_ = header.height_ - 1;
 		max_y_ = -1;
 		step_y_ = -1;
 	}
-	const bool from_left = ((header.desc_ & left_mask__) >> 4);
+	const bool from_left = ((header.desc_ & left_mask_global) >> 4);
 	if(from_left)
 	{
 		min_x_ = header.width_ - 1;

@@ -527,7 +527,7 @@ void ImageTexture::generateMipMaps()
 #endif
 }
 
-ImageTexture::ClipMode string2Cliptype__(const std::string &clipname)
+ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
 {
 	// default "repeat"
 	ImageTexture::ClipMode	tex_clipmode = ImageTexture::ClipMode::Repeat;
@@ -570,7 +570,7 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 	const Path path(name);
 
 	ParamMap format_params;
-	format_params["type"] = toLower__(path.getExtension());
+	format_params["type"] = toLower_global(path.getExtension());
 	std::unique_ptr<Format> format = std::unique_ptr<Format>(Format::factory(format_params));
 	if(!format)
 	{
@@ -608,17 +608,17 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 	if(interpolation_type == InterpolationType::Trilinear || interpolation_type == InterpolationType::Ewa)
 	{
 		tex->generateMipMaps();
-		if(!session__.getDifferentialRaysEnabled())
+		if(!session_global.getDifferentialRaysEnabled())
 		{
 			Y_VERBOSE << "At least one texture using mipmaps interpolation, enabling ray differentials." << YENDL;
-			session__.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
+			session_global.setDifferentialRaysEnabled(true);	//If there is at least one texture using mipmaps, then enable differential rays in the rendering process.
 		}
 
 		/*//FIXME DAVID: TEST SAVING MIPMAPS. CAREFUL: IT COULD CAUSE CRASHES!
 		for(int i=0; i<=format->getHighestImgIndex(); ++i)
 		{
 			std::stringstream ss;
-			ss << "//tmp//saved_mipmap_" << ihname << "__" << i;
+			ss << "//tmp//saved_mipmap_" << ihname << "_global" << i;
 			format->saveToFile(ss.str(), i);
 		}*/
 	}
@@ -671,7 +671,7 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 	tex->setCrop(minx, miny, maxx, maxy);
 	tex->calc_alpha_ = calc_alpha;
 	tex->normalmap_ = normalmap;
-	tex->tex_clip_mode_ = string2Cliptype__(clipmode);
+	tex->tex_clip_mode_ = string2Cliptype_global(clipmode);
 	tex->checker_even_ = even_tiles;
 	tex->checker_odd_ = odd_tiles;
 	tex->checker_dist_ = cdist;

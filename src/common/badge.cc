@@ -78,10 +78,10 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	if(!YAFARAY_BUILD_PLATFORM.empty()) compiler = YAFARAY_BUILD_PLATFORM + "-" + YAFARAY_BUILD_COMPILER;
 	ss_badge << "\nYafaRay (" << YAFARAY_BUILD_VERSION << ")" << " " << YAFARAY_BUILD_OS << " " << YAFARAY_BUILD_ARCHITECTURE << " (" << compiler << ")";
 	ss_badge << std::setprecision(2);
-	double times = g_timer__.getTimeNotStopping("rendert");
-	if(render_control.finished()) times = g_timer__.getTime("rendert");
+	double times = g_timer_global.getTimeNotStopping("rendert");
+	if(render_control.finished()) times = g_timer_global.getTime("rendert");
 	int timem, timeh;
-	g_timer__.splitTime(times, &times, &timem, &timeh);
+	g_timer_global.splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_width_ << "x" << image_height_;
 	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
 	else if(render_control.aborted()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
@@ -97,9 +97,9 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	if(timem > 0) ss_badge << " " << timem << "m";
 	ss_badge << " " << times << "s";
 
-	times = g_timer__.getTimeNotStopping("rendert") + g_timer__.getTime("prepass");
-	if(render_control.finished()) times = g_timer__.getTime("rendert") + g_timer__.getTime("prepass");
-	g_timer__.splitTime(times, &times, &timem, &timeh);
+	times = g_timer_global.getTimeNotStopping("rendert") + g_timer_global.getTime("prepass");
+	if(render_control.finished()) times = g_timer_global.getTime("rendert") + g_timer_global.getTime("prepass");
+	g_timer_global.splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | Total time:";
 	if(timeh > 0) ss_badge << " " << timeh << "h";
 	if(timem > 0) ss_badge << " " << timem << "m";
@@ -172,7 +172,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	FT_Vector pen; // untransformed origin
 
 	const std::string text_utf_8 = ss_badge.str();
-	const std::u32string wtext_utf_32 = utf8ToWutf32__(text_utf_8);
+	const std::u32string wtext_utf_32 = utf8ToWutf32_global(text_utf_8);
 
 	// set font size at default dpi
 	float fontsize = 12.5f * getFontSizeFactor();
@@ -188,7 +188,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	const std::string font_path = getFontPath();
 	if(font_path.empty())
 	{
-		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont__, guifont_size__, 0, &face))
+		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
 		{
 			Y_ERROR << "Badge: FreeType couldn't load the default font!" << YENDL;
 			return nullptr;
@@ -198,7 +198,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 	{
 		Y_WARNING << "Badge: FreeType couldn't load the font '" << font_path << "', loading default font." << YENDL;
 
-		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont__, guifont_size__, 0, &face))
+		if(FT_New_Memory_Face(library, (const FT_Byte *)guifont_global, guifont_size_global, 0, &face))
 		{
 			Y_ERROR << "Badge: FreeType couldn't load the default font!" << YENDL;
 			return nullptr;
@@ -293,7 +293,7 @@ const Image *Badge::generateImage(const std::string &denoise_params, const Rende
 		ParamMap logo_image_params;
 		logo_image_params["type"] = std::string("png");
 		std::unique_ptr<Format> logo_format = std::unique_ptr<Format>(Format::factory(logo_image_params));
-		if(logo_format) logo = logo_format->loadFromMemory(yaf_logo_tiny__, yaf_logo_tiny_size__, Image::Optimization::None, ColorSpace::Srgb, 1.f);
+		if(logo_format) logo = logo_format->loadFromMemory(yaf_logo_tiny_global, yaf_logo_tiny_size_global, Image::Optimization::None, ColorSpace::Srgb, 1.f);
 	}
 
 	if(logo)

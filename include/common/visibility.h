@@ -27,7 +27,7 @@ BEGIN_YAFARAY
 
 enum class Visibility : int { NormalVisible = 0, VisibleNoShadows, InvisibleShadowsOnly, Invisible };
 
-inline Visibility visibilityFromString__(const std::string &str)
+inline Visibility visibilityFromString_global(const std::string &str)
 {
 	if(str == "normal") return Visibility::NormalVisible;
 	else if(str == "invisible") return Visibility::Invisible;
@@ -36,7 +36,7 @@ inline Visibility visibilityFromString__(const std::string &str)
 	else return Visibility::NormalVisible;
 }
 
-inline std::string stringFromVisibility__(const Visibility &visibility)
+inline std::string stringFromVisibility_global(const Visibility &visibility)
 {
 	if(visibility == Visibility::NormalVisible) return "normal";
 	else if(visibility == Visibility::Invisible) return "invisible";

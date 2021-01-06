@@ -39,7 +39,7 @@ GlassMaterial::GlassMaterial(float ior, Rgb filt_c, const Rgb &srcol, double dis
 	if(disp_pow > 0.0)
 	{
 		disperse_ = true;
-		cauchyCoefficients__(ior, disp_pow, cauchy_a_, cauchy_b_);
+		cauchyCoefficients_global(ior, disp_pow, cauchy_a_, cauchy_b_);
 		bsdf_flags_ |= BsdfFlags::Dispersive;
 	}
 
@@ -82,8 +82,8 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
 
-		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
 		{
@@ -134,8 +134,8 @@ Rgb GlassMaterial::sample(const RenderData &render_data, const SurfacePoint &sp,
 		{
 			float cur_cauchy_a = cauchy_a_;
 			float cur_cauchy_b = cauchy_b_;
-			if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-			cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+			if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+			cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 		}
 
 		if(Vec3::refract(n, wo, refdir, cur_ior))
@@ -246,8 +246,8 @@ Material::Specular GlassMaterial::getSpecular(const RenderData &render_data, con
 	{
 		float cur_cauchy_a = cauchy_a_;
 		float cur_cauchy_b = cauchy_b_;
-		if(ior_shader_) cauchyCoefficients__(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
-		cur_ior = getIor__(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
+		if(ior_shader_) cauchyCoefficients_global(cur_ior, dispersion_power_, cur_cauchy_a, cur_cauchy_b);
+		cur_ior = getIor_global(render_data.wavelength_, cur_cauchy_a, cur_cauchy_b);
 	}
 
 	if(Vec3::refract(n, wo, refdir, cur_ior))
@@ -327,7 +327,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 	params.getParam("wireframe_exponent", wire_frame_exponent);
 	params.getParam("wireframe_color", wire_frame_color);
 
-	const Visibility visibility = visibilityFromString__(s_visibility);
+	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	GlassMaterial *mat = new GlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
 

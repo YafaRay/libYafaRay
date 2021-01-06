@@ -35,7 +35,7 @@ Format *Format::factory(ParamMap &params)
 	std::string type;
 	params.getParam("type", type);
 
-	type = toLower__(type);
+	type = toLower_global(type);
 	if(type == "tiff") type = "tif";
 	else if(type == "tpic") type = "tga";
 	else if(type == "jpeg") type = "jpg";

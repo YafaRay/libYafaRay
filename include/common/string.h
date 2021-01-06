@@ -35,7 +35,7 @@
 BEGIN_YAFARAY
 
 template <class T>
-inline void converter__(std::string str, T &val)
+inline void converter_global(std::string str, T &val)
 {
 	std::stringstream conv;
 
@@ -43,7 +43,7 @@ inline void converter__(std::string str, T &val)
 	conv >> std::skipws >> val;
 }
 
-inline std::string toLower__(const std::string &in)
+inline std::string toLower_global(const std::string &in)
 {
 	std::string out = in;
 
@@ -55,7 +55,7 @@ inline std::string toLower__(const std::string &in)
 	return out;
 }
 
-inline std::vector<std::string> tokenize__(std::string str, std::string delimiter = " ")
+inline std::vector<std::string> tokenize_global(std::string str, std::string delimiter = " ")
 {
 	std::vector<std::string> result;
 	size_t last_pos = str.find_first_not_of(delimiter, 0);
@@ -71,7 +71,7 @@ inline std::vector<std::string> tokenize__(std::string str, std::string delimite
 	return result;
 }
 
-inline std::u32string utf8ToWutf32__(const std::string &utf_8_str)
+inline std::u32string utf8ToWutf32_global(const std::string &utf_8_str)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 	//Workaround for bug in VS2015/2017
@@ -84,7 +84,7 @@ inline std::u32string utf8ToWutf32__(const std::string &utf_8_str)
 #endif
 }
 
-inline std::string wutf32ToUtf8__(const std::u32string &wutf_32_str)
+inline std::string wutf32ToUtf8_global(const std::u32string &wutf_32_str)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 	//Workaround for bug in VS2015/2017
@@ -98,13 +98,13 @@ inline std::string wutf32ToUtf8__(const std::u32string &wutf_32_str)
 #endif
 }
 
-inline std::wstring utf8ToWutf16Le__(const std::string &utf_8_str)
+inline std::wstring utf8ToWutf16Le_global(const std::string &utf_8_str)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
 	return string_conversion.from_bytes(utf_8_str);
 }
 
-inline std::string wutf16LeToUtf8__(const std::wstring &wutf_16_str)
+inline std::string wutf16LeToUtf8_global(const std::wstring &wutf_16_str)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10FFFF, std::little_endian>, wchar_t> string_conversion;
 	return string_conversion.to_bytes(wutf_16_str);

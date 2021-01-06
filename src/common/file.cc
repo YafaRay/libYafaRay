@@ -149,7 +149,7 @@ bool File::remove(const std::string &path, bool files_only)
 {
 	if(files_only && !File::exists(path, files_only)) return false;
 #if defined(_WIN32)
-	return ::_wremove(utf8ToWutf16Le__(path).c_str()) == 0;
+	return ::_wremove(utf8ToWutf16Le_global(path).c_str()) == 0;
 #else //defined(_WIN32)
 	return ::remove(path.c_str()) == 0;
 #endif //defined(_WIN32)
@@ -160,7 +160,7 @@ bool File::rename(const std::string &path_old, const std::string &path_new, bool
 	if(files_only && !File::exists(path_old, files_only)) return false;
 	if(overwrite) File::remove(path_new, files_only);
 #if defined(_WIN32)
-	return ::_wrename(utf8ToWutf16Le__(path_old).c_str(), utf8ToWutf16Le__(path_new).c_str()) == 0;
+	return ::_wrename(utf8ToWutf16Le_global(path_old).c_str(), utf8ToWutf16Le_global(path_new).c_str()) == 0;
 #else //defined(_WIN32)
 	return ::rename(path_old.c_str(), path_new.c_str()) == 0;
 #endif //defined(_WIN32)
@@ -213,7 +213,7 @@ std::FILE *File::open(const std::string &path, const std::string &access_mode)
 {
 	std::FILE *fp = nullptr;
 #if defined(_WIN32)
-	const std::wstring w_path = utf8ToWutf16Le__(path);
+	const std::wstring w_path = utf8ToWutf16Le_global(path);
 	std::wstringstream w_access_mode;
 	w_access_mode << access_mode.c_str();
 	//fp = ::_wfopen(wPath.c_str(), wAccessMode.str().c_str());	//Windows needs the path in UTF16LE (unicode UTF-16, little endian) so we have to convert the UTF8 path to UTF16
@@ -239,7 +239,7 @@ int File::close(std::FILE *fp)
 bool File::exists(const std::string &path, bool files_only)
 {
 #if defined(_WIN32)
-	const std::wstring wPath = utf8ToWutf16Le__(path);
+	const std::wstring wPath = utf8ToWutf16Le_global(path);
 	struct _stat buf;
 	errno = 0;
 	/*const int result = */::_wstat(wPath.c_str(), &buf);
@@ -270,14 +270,14 @@ std::vector<std::string> File::listFiles(const std::string &directory)
 #if defined(_WIN32)
 	::WIN32_FIND_DATAW findData;
 	::HANDLE hFind = INVALID_HANDLE_VALUE;
-	hFind = ::FindFirstFileW(utf8ToWutf16Le__(directory + "/*").c_str(), &findData);
+	hFind = ::FindFirstFileW(utf8ToWutf16Le_global(directory + "/*").c_str(), &findData);
 	if(hFind != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
 			if(!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !(findData.dwFileAttributes & FILE_ATTRIBUTE_DEVICE))
 			{
-				files.push_back(wutf16LeToUtf8__(std::wstring(findData.cFileName)));
+				files.push_back(wutf16LeToUtf8_global(std::wstring(findData.cFileName)));
 			}
 		}
 		while(::FindNextFileW(hFind, &findData) != 0);

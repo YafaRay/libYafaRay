@@ -147,7 +147,7 @@ Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::
 		delete reader;
 		return nullptr;
 	}
-	png_set_read_fn(png_ptr, (void *) reader, readFromMem__);
+	png_set_read_fn(png_ptr, (void *) reader, readFromMem_global);
 	png_set_sig_bytes(png_ptr, 8);
 	Image *image = readFromStructs(png_structs, optimization, color_space, gamma);
 	delete reader;

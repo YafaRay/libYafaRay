@@ -51,11 +51,11 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 		Point3 dir(ray.dir_);
 		dir.x_ = ray.dir_.x_ * cos_r_ + ray.dir_.y_ * sin_r_;
 		dir.y_ = ray.dir_.x_ * -sin_r_ + ray.dir_.y_ * cos_r_;
-		angmap__(dir, u, v);
+		angmap_global(dir, u, v);
 	}
 	else
 	{
-		spheremap__(ray.dir_, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
+		spheremap_global(ray.dir_, u, v); // This returns u,v in 0,1 range (useful for bgLight_t)
 		// Put u,v in -1,1 range for mapping
 		u = 2.f * u - 1.f;
 		v = 2.f * v - 1.f;

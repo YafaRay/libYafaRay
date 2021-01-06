@@ -71,8 +71,8 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	else phi = radius / focal_length_; //By default, AngularProjection::Equidistant
 	//float sp = sin(phi);
 	ray.dir_ = math::sin(phi) * (math::cos(theta) * vright_ + math::sin(theta) * vup_) + math::cos(phi) * vto_;
-	ray.tmin_ = rayPlaneIntersection__(ray, near_plane_);
-	ray.tmax_ = rayPlaneIntersection__(ray, far_plane_);
+	ray.tmin_ = rayPlaneIntersection_global(ray, near_plane_);
+	ray.tmax_ = rayPlaneIntersection_global(ray, far_plane_);
 	return ray;
 }
 

@@ -47,7 +47,7 @@ Object *CurveObject::factory(ParamMap &params, const Scene &scene)
 	CurveObject *object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco);
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
-	object->setVisibility(visibilityFromString__(visibility));
+	object->setVisibility(visibilityFromString_global(visibility));
 	object->useAsBaseObject(is_base_object);
 	object->setObjectIndex(object_index);
 	return object;
