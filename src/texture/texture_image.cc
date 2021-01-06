@@ -41,6 +41,11 @@ ImageTexture::ImageTexture(Image *image)
 	images_.push_back(image);
 }
 
+ImageTexture::~ImageTexture()
+{
+	for(auto &image : images_) delete image;
+}
+
 void ImageTexture::resolution(int &x, int &y, int &z) const
 {
 	x = images_.at(0)->getWidth();

@@ -52,6 +52,7 @@ class ImageTexture final : public Texture
 
 	private:
 		ImageTexture(Image *image);
+		virtual ~ImageTexture() override;
 		virtual bool discrete() const override { return true; }
 		virtual bool isThreeD() const override { return false; }
 		virtual bool isNormalmap() const override { return normalmap_; }
