@@ -128,7 +128,11 @@ inline Logger &Logger::operator<<(const T &obj) {
 	tmp_stream << obj;
 
 	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << tmp_stream.str();
-	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty())
+	{
+		std::lock_guard<std::mutex> lock_guard(mutx_);
+		memory_log_.back().description_ += tmp_stream.str();
+	}
 	return *this;
 }
 
@@ -137,7 +141,11 @@ inline Logger &Logger::operator<<(std::ostream &(*obj)(std::ostream &)) {
 	tmp_stream << obj;
 
 	if(verbosity_level_ <= console_master_verbosity_level_) std::cout << tmp_stream.str();
-	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty()) memory_log_.back().description_ += tmp_stream.str();
+	if(verbosity_level_ <= log_master_verbosity_level_ && !memory_log_.empty())
+	{
+		std::lock_guard<std::mutex> lock_guard(mutx_);
+		memory_log_.back().description_ += tmp_stream.str();
+	}
 	return *this;
 }
 
