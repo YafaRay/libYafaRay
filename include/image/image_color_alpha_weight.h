@@ -44,7 +44,7 @@ class LIBYAFARAY_EXPORT ImageColorAlphaWeight final : public Image
 		virtual void setWeight(int x, int y, float val) override { buffer_(x, y).setWeight(val); }
 		virtual void clear() override { buffer_.clear(); }
 
-		ImageBuffer2D<PixelGrayAlpha> buffer_;
+		ImageBuffer2D<Pixel> buffer_;
 };
 
 END_YAFARAY
