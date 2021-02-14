@@ -229,23 +229,23 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
-		Y_INFO << name_ << ": Saving separate alpha channel file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
+		Y_INFO << name_ << ": Saving separate alpha channel file as \"" << file_name_alpha << "\"...  " << printDenoiseParams() << YENDL;
 
 		if(denoiseEnabled())
 		{
 			const Image *image_denoised = Image::getDenoisedLdrImage(image, denoise_params_);
 			if(image_denoised)
 			{
-				format->saveAlphaChannelOnlyToFile(filename, image_denoised);
+				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised);
 				if(image_denoised != image) delete image_denoised;
 			}
 			else
 			{
 				Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
-				format->saveAlphaChannelOnlyToFile(filename, image);
+				format->saveAlphaChannelOnlyToFile(file_name_alpha, image);
 			}
 		}
-		else format->saveAlphaChannelOnlyToFile(filename, image);
+		else format->saveAlphaChannelOnlyToFile(file_name_alpha, image);
 	}
 	if(image != (*image_layers_)(layer_type).image_) delete image; //only delete the image if it's a postprocessed copy and not the original
 }
