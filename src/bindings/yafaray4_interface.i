@@ -626,8 +626,6 @@ namespace yafaray4
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
 		virtual unsigned int getNextFreeId();
-		virtual void setCurrentMaterial(const Material *material);
-		virtual const Material *getCurrentMaterial() const;
 		virtual bool endObject(); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
@@ -654,6 +652,7 @@ namespace yafaray4
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
+		virtual void setCurrentMaterial(const char *name);
 		virtual Object *createObject(const char *name);
 		virtual Light *createLight(const char *name);
 		virtual Texture *createTexture(const char *name);
@@ -710,9 +709,7 @@ namespace yafaray4
 		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) override;
 		virtual int  addUv(float u, float v) override;
 		virtual bool smoothMesh(const char *name, double angle) override;
-		virtual void setCurrentMaterial(const Material *material) override;
-		virtual const Material *getCurrentMaterial() const override { return current_material_; }
-
+		virtual void setCurrentMaterial(const char *name) override;
 		virtual Object *createObject(const char *name) override;
 		virtual Light *createLight(const char *name) override;
 		virtual Texture *createTexture(const char *name) override;

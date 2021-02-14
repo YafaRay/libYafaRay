@@ -49,7 +49,6 @@ void XmlExport::createScene()
 void XmlExport::clearAll()
 {
 	Y_VERBOSE << "XmlExport: cleaning up..." << YENDL;
-	materials_.clear();
 	if(xml_file_.is_open())
 	{
 		xml_file_.flush();
@@ -113,14 +112,13 @@ void XmlExport::addNormal(double x, double y, double z)
 	xml_file_ << "\t<n x=\"" << x << "\" y=\"" << y << "\" z=\"" << z << "\"/>\n";
 }
 
-void XmlExport::setCurrentMaterial(const Material *material)
+void XmlExport::setCurrentMaterial(const char *name)
 {
-	if(material != getCurrentMaterial()) //need to set current material
+	const std::string name_str(name);
+	if(name_str != current_material_) //need to set current material
 	{
-		const auto &i = materials_.find(material);
-		if(i == materials_.end()) return;
-		xml_file_ << "\t<set_material sval=\"" << i->second << "\"/>\n";
-		current_material_ = material;
+		xml_file_ << "\t<set_material sval=\"" << name_str << "\"/>\n";
+		current_material_ = name_str;
 	}
 }
 
@@ -256,13 +254,11 @@ Texture *XmlExport::createTexture(const char *name)
 
 Material *XmlExport::createMaterial(const char *name)
 {
-	Material *matp = (Material *)++nmat_; //FIXME: strange hack, should it be replaced by a better solution to keep track of the materials during the export process?
-	materials_[matp] = std::string(name);
 	xml_file_ << "\n<material name=\"" << name << "\">\n";
 	writeParamMap(*params_);
 	writeParamList(1);
 	xml_file_ << "</material>\n";
-	return matp;
+	return nullptr;
 }
 Camera *XmlExport::createCamera(const char *name)
 {

@@ -46,9 +46,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual bool addFace(int a, int b, int c, int uv_a, int uv_b, int uv_c) override;
 		virtual int  addUv(float u, float v) override;
 		virtual bool smoothMesh(const char *name, double angle) override;
-		virtual void setCurrentMaterial(const Material *material) override;
-		virtual const Material *getCurrentMaterial() const override { return current_material_; }
-
+		virtual void setCurrentMaterial(const char *name) override;
 		virtual Object *createObject(const char *name) override;
 		virtual Light *createLight(const char *name) override;
 		virtual Texture *createTexture(const char *name) override;
@@ -67,11 +65,9 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 	protected:
 		void writeParamMap(const ParamMap &param_map, int indent = 1);
 		void writeParamList(int indent);
-
-		std::map<const Material *, std::string> materials_;
 		std::ofstream xml_file_;
 		std::string xml_name_;
-		const Material *current_material_ = nullptr;
+		std::string current_material_;
 		size_t nmat_ = 0;
 		int n_uvs_ = 0;
 		unsigned int next_obj_ = 0;

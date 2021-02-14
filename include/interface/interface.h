@@ -54,8 +54,6 @@ class LIBYAFARAY_EXPORT Interface
 		virtual bool startGeometry(); //!< call before creating geometry; only meshes and vmaps can be created in this state
 		virtual bool endGeometry(); //!< call after creating geometry;
 		virtual unsigned int getNextFreeId();
-		virtual void setCurrentMaterial(const Material *material);
-		virtual const Material *getCurrentMaterial() const;
 		virtual bool endObject(); //!< end current mesh and return to geometry state
 		virtual int  addVertex(double x, double y, double z); //!< add vertex to mesh; returns index to be used for addTriangle
 		virtual int  addVertex(double x, double y, double z, double ox, double oy, double oz); //!< add vertex with Orco to mesh; returns index to be used for addTriangle
@@ -82,6 +80,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void paramsStartList(); //!< start writing parameters to the extended paramList (used by materials)
 		virtual void paramsPushList(); 	//!< push new list item in paramList (e.g. new shader node description)
 		virtual void paramsEndList(); 	//!< revert to writing to normal paramMap
+		virtual void setCurrentMaterial(const char *name);
 		virtual Object *createObject(const char *name);
 		virtual Light *createLight(const char *name);
 		virtual Texture *createTexture(const char *name);
@@ -119,6 +118,8 @@ class LIBYAFARAY_EXPORT Interface
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val);
 
 	protected:
+		virtual void setCurrentMaterial(const Material *material);
+		virtual const Material *getCurrentMaterial() const;
 		ParamMap *params_ = nullptr;
 		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element

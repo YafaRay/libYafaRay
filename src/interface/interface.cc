@@ -288,6 +288,11 @@ void Interface::setCurrentMaterial(const Material *material)
 	if(scene_) scene_->setCurrentMaterial(material);
 }
 
+void Interface::setCurrentMaterial(const char *name)
+{
+	if(scene_) scene_->setCurrentMaterial(scene_->getMaterial(std::string(name)));
+}
+
 const Material *Interface::getCurrentMaterial() const
 {
 	if(scene_) return scene_->getCurrentMaterial();
