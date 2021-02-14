@@ -266,7 +266,7 @@ bool YafaRayScene::intersect(const Ray &ray, SurfacePoint &sp) const
 
 bool YafaRayScene::intersect(const DiffRay &ray, SurfacePoint &sp) const
 {
-	if(!intersect(static_cast<Ray>(ray), sp)) return false;
+	if(!intersect(static_cast<const Ray&>(ray), sp)) return false;
 	sp.ray_ = &ray;
 	return true;
 }
