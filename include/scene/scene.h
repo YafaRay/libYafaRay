@@ -151,6 +151,7 @@ class LIBYAFARAY_EXPORT Scene
 		const std::map<std::string, ColorOutput *> getOutputs() const { return outputs_; }
 		bool setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb = nullptr);
 		void defineLayer(const ParamMap &params);
+		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
 		void defineLayer(const Layer::Type &layer_type, const Image::Type &image_type = Image::Type::None, const Image::Type &exported_image_type = Image::Type::None, const std::string &exported_image_name = "");
 		void setupLayersParameters(const ParamMap &params);
 		void clearLayers();

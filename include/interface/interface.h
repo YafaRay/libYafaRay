@@ -96,7 +96,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
-		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
+		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }

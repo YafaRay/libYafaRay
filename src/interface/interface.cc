@@ -99,11 +99,9 @@ void Interface::clearAll()
 	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
-void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
+void Interface::defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name)
 {
-	const Layer::Type layer_type = Layer::getType(layer_type_name);
-	const Image::Type image_type = Image::getTypeFromName(exported_image_type_name);
-	scene_->defineLayer(layer_type, image_type, image_type, exported_image_name);
+	scene_->defineLayer(layer_type_name, image_type_name, exported_image_type_name, exported_image_name);
 }
 
 bool Interface::setupLayersParameters()

@@ -91,7 +91,7 @@ static Py_ssize_t pythonTileSize_global(const Tile *tile)
 
 static PyObject *pythonTileSubscriptInt_global(const Tile *tile, int py_index)
 {
-	const int num_channels = tile->image_layer_->image_->getNumChannels();
+	const int num_channels = tile->image_layer_->layer_.getNumExportedChannels();
 	// Check boundaries and fill w and h
 	if(py_index >= pythonTileSize_global(tile) || py_index < 0)
 	{
@@ -668,7 +668,7 @@ namespace yafaray4
 		virtual void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
 		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
-		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
+		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void abort();
 		virtual ParamMap *getRenderParameters() { return params_; }
@@ -696,7 +696,7 @@ namespace yafaray4
 		XmlExport(const char *fname);
 		virtual void createScene() override;
 		virtual bool setupLayersParameters() override; //!< setup render passes information
-		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name) override;
+		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "") override;
 		virtual bool startGeometry() override;
 		virtual bool endGeometry() override;
 		virtual unsigned int getNextFreeId() override;

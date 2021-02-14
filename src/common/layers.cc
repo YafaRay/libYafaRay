@@ -170,9 +170,9 @@ Image::Type Layer::getDefaultImageType(const Type &type)
 		case ObjIndexMaskAll:
 		case MatIndexMask:
 		case MatIndexMaskShadow:
-		case MatIndexMaskAll: return Image::Type::ColorAlpha;
-
-		case Combined: return Image::Type::ColorAlphaWeight;
+		case MatIndexMaskAll:
+		case DebugWireframe:
+		case Combined: return Image::Type::ColorAlpha;
 
 		default: return Image::Type::Color;
 	}

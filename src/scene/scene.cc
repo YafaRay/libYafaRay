@@ -673,14 +673,18 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 void Scene::defineLayer(const ParamMap &params)
 {
 	Y_DEBUG PRTEXT(**Scene::defineLayer) PREND; params.printDebug();
-
-	std::string layer_type_name, exported_image_name, exported_image_type_name;
+	std::string layer_type_name, image_type_name, exported_image_name, exported_image_type_name;
 	params.getParam("type", layer_type_name);
+	params.getParam("image_type", image_type_name);
 	params.getParam("exported_image_name", exported_image_name);
 	params.getParam("exported_image_type", exported_image_type_name);
+	defineLayer(layer_type_name, image_type_name, exported_image_type_name, exported_image_name);
+}
 
+void Scene::defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name)
+{
 	const Layer::Type layer_type = Layer::getType(layer_type_name);
-	const Image::Type image_type = Layer::getDefaultImageType(layer_type);
+	const Image::Type image_type = image_type_name.empty() ? Layer::getDefaultImageType(layer_type) : Image::getTypeFromName(image_type_name);
 	const Image::Type exported_image_type = Image::getTypeFromName(exported_image_type_name);
 	defineLayer(layer_type, image_type, exported_image_type, exported_image_name);
 }
