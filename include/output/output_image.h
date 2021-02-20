@@ -57,7 +57,7 @@ class ImageOutput final : public ColorOutput
 		float border_y_;
 		bool multi_layer_ = true;
 		DenoiseParams denoise_params_;
-		ImageLayers *image_layers_ = nullptr;
+		std::unique_ptr<ImageLayers> image_layers_;
 };
 
 END_YAFARAY

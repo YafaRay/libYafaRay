@@ -79,7 +79,6 @@ void ImageOutput::clearImageLayers()
 {
 	if(image_layers_)
 	{
-		delete image_layers_;
 		image_layers_ = nullptr;
 	}
 }
@@ -88,7 +87,7 @@ void ImageOutput::init(int width, int height, const Layers *layers, const std::m
 {
 	ColorOutput::init(width, height, layers, render_views);
 	clearImageLayers();
-	image_layers_ = new ImageLayers();
+	image_layers_ = std::unique_ptr<ImageLayers>(new ImageLayers());
 
 	const Layers layers_exported = layers_->getLayersWithExportedImages();
 	for(const auto &it : layers_exported)
@@ -260,7 +259,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 		}
 		format->saveToFileMultiChannel(filename, &image_layers_badge);
 	}
-	else format->saveToFileMultiChannel(filename, image_layers_);
+	else format->saveToFileMultiChannel(filename, image_layers_.get());
 }
 
 std::string ImageOutput::printDenoiseParams() const
