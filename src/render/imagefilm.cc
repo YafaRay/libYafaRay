@@ -137,8 +137,8 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 	{
 		Image::Type image_type = l.second.getImageType();
 		image_type = Image::imageTypeWithAlpha(image_type); //Alpha channel is needed in all images of the weight normalization process will cause problems
-		Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
-		image_layers_.set(l.first, {image, l.second});
+		std::unique_ptr<Image> image = Image::factory(width, height, image_type, Image::Optimization::None);
+		image_layers_.set(l.first, {std::move(image), l.second});
 	}
 
 	density_image_ = nullptr;
@@ -184,7 +184,6 @@ ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_thr
 
 ImageFilm::~ImageFilm()
 {
-	for(auto &it : image_layers_) delete(it.second.image_);
 	if(density_image_) delete density_image_;
 	delete[] filter_table_;
 	if(splitter_) delete splitter_;
@@ -271,7 +270,7 @@ int ImageFilm::nextPass(const RenderView *render_view, RenderControl &render_con
 		}
 	}
 
-	Image *sampling_factor_image_pass = image_layers_(Layer::DebugSamplingFactor).image_;
+	const Image *sampling_factor_image_pass = image_layers_(Layer::DebugSamplingFactor).image_.get();
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
@@ -1217,9 +1216,9 @@ void edgeImageDetection_global(std::vector<cv::Mat> &image_mat, float edge_thres
 void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder)
 {
 	const EdgeToonParams &edge_params = layers_.getEdgeToonParams();
-	Image *normal_image = image_layers_(Layer::NormalGeom).image_;
-	Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_;
-	Image *debug_faces_edges_image = image_layers_(Layer::DebugFacesEdges).image_;
+	const Image *normal_image = image_layers_(Layer::NormalGeom).image_.get();
+	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
+	Image *debug_faces_edges_image = image_layers_(Layer::DebugFacesEdges).image_.get();
 
 	if(normal_image && z_depth_image)
 	{
@@ -1259,10 +1258,10 @@ void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int h
 void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder)
 {
 	const EdgeToonParams &edge_params = layers_.getEdgeToonParams();
-	Image *normal_image = image_layers_(Layer::NormalSmooth).image_;
-	Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_;
-	Image *debug_objects_edges_image = image_layers_(Layer::DebugObjectsEdges).image_;
-	Image *toon_image = image_layers_(Layer::Toon).image_;
+	const Image *normal_image = image_layers_(Layer::NormalSmooth).image_.get();
+	const Image *z_depth_image = image_layers_(Layer::ZDepthNorm).image_.get();
+	Image *debug_objects_edges_image = image_layers_(Layer::DebugObjectsEdges).image_.get();
+	Image *toon_image = image_layers_(Layer::Toon).image_.get();
 
 	const float toon_pre_smooth = edge_params.toon_pre_smooth_;
 	const float toon_quantization = edge_params.toon_quantization_;

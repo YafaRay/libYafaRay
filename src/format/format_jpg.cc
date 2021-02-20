@@ -161,7 +161,7 @@ bool JpgFormat::saveAlphaChannelOnlyToFile(const std::string &name, const Image 
 	return true;
 }
 
-Image *JpgFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
@@ -203,7 +203,7 @@ Image *JpgFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	const int width = info.output_width;
 	const int height = info.output_height;
 	const Image::Type type = Image::getTypeFromSettings(false, grayscale_);
-	Image *image = Image::factory(width, height, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(width, height, type, optimization);
 
 	uint8_t *scanline = new uint8_t[width * info.output_components];
 	for(int y = 0; info.output_scanline < info.output_height; ++y)

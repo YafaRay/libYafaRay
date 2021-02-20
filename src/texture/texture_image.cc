@@ -36,14 +36,13 @@ BEGIN_YAFARAY
 
 float *ImageTexture::ewa_weight_lut_ = nullptr;
 
-ImageTexture::ImageTexture(Image *image)
+ImageTexture::ImageTexture(std::unique_ptr<Image> image)
 {
-	images_.push_back(image);
+	images_.emplace_back(std::move(image));
 }
 
 ImageTexture::~ImageTexture()
 {
-	for(auto &image : images_) delete image;
 }
 
 void ImageTexture::resolution(int &x, int &y, int &z) const
@@ -503,7 +502,7 @@ void ImageTexture::generateMipMaps()
 		int w_2 = (w + 1) / 2;
 		int h_2 = (h + 1) / 2;
 		++img_index;
-		images_.push_back(Image::factory(w_2, h_2, images_[img_index - 1]->getType(), images_[img_index - 1]->getOptimization()));
+		images_.emplace_back(Image::factory(w_2, h_2, images_[img_index - 1]->getType(), images_[img_index - 1]->getOptimization()));
 
 		const cv::Mat b(h_2, w_2, CV_32FC4);
 		const cv::Mat_<cv::Vec4f> b_vec = b;
@@ -593,14 +592,14 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 
 	format->setGrayScaleSetting(img_grayscale);
 
-	Image *image = format->loadFromFile(name, image_optimization, color_space, gamma);
+	std::unique_ptr<Image> image = format->loadFromFile(name, image_optimization, color_space, gamma);
 	if(!image)
 	{
 		Y_ERROR << "ImageTexture: Couldn't load image file, dropping texture." << YENDL;
 		return nullptr;
 	}
 
-	ImageTexture *tex = new ImageTexture(image);
+	ImageTexture *tex = new ImageTexture(std::move(image));
 	if(!tex) //FIXME: this will never be true, replace by exception handling??
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;

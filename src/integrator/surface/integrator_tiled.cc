@@ -308,7 +308,7 @@ bool TiledIntegrator::renderTile(RenderArea &a, const RenderView *render_view, c
 	const MaskParams &mask_params = layers.getMaskParams();
 	ColorLayers color_layers(layers);
 
-	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_;
+	const Image *sampling_factor_image_pass = (*image_film_->getImageLayers())(Layer::DebugSamplingFactor).image_.get();
 
 	int film_cx_0 = image_film_->getCx0();
 	int film_cy_0 = image_film_->getCy0();

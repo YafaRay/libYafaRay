@@ -51,7 +51,7 @@ class ImageTexture final : public Texture
 		static Texture *factory(ParamMap &params, const Scene &scene);
 
 	private:
-		ImageTexture(Image *image);
+		ImageTexture(std::unique_ptr<Image> image);
 		virtual ~ImageTexture() override;
 		virtual bool discrete() const override { return true; }
 		virtual bool isThreeD() const override { return false; }
@@ -80,7 +80,7 @@ class ImageTexture final : public Texture
 		float checker_dist_;
 		int xrepeat_, yrepeat_;
 		ClipMode tex_clip_mode_;
-		std::vector<Image *> images_;
+		std::vector<std::unique_ptr<Image>> images_;
 		ColorSpace original_image_file_color_space_;
 		float original_image_file_gamma_;
 		bool mirror_x_;

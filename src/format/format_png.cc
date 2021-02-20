@@ -97,7 +97,7 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 	return true;
 }
 
-Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name, "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
@@ -123,13 +123,13 @@ Image *PngFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	}
 	png_init_io(png_ptr, fp);
 	png_set_sig_bytes(png_ptr, 8);
-	Image *image = readFromStructs(png_structs, optimization, color_space, gamma);
+	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
 	File::close(fp);
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
 
-Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	PngDataReader *reader = new PngDataReader(data, size);
 	uint8_t signature[8];
@@ -149,7 +149,7 @@ Image *PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::
 	}
 	png_set_read_fn(png_ptr, (void *) reader, readFromMem_global);
 	png_set_sig_bytes(png_ptr, 8);
-	Image *image = readFromStructs(png_structs, optimization, color_space, gamma);
+	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
 	delete reader;
 	return image;
 }
@@ -210,7 +210,7 @@ bool PngFormat::fillWriteStructs(std::FILE *fp, unsigned int color_type, const P
 	return true;
 }
 
-Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	png_read_info(png_structs.png_ptr_, png_structs.info_ptr_);
 	png_uint_32 w, h;
@@ -247,7 +247,7 @@ Image *PngFormat::readFromStructs(const PngStructs &png_structs, const Image::Op
 	// even 2,147,483,647 (max signed int positive value) pixels on one side is purpostrous
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
-	Image *image = Image::factory(w, h, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(w, h, type, optimization);
 	png_bytepp row_pointers = new png_bytep[h];
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;

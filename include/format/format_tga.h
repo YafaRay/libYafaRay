@@ -42,7 +42,7 @@ class TgaFormat final : public Format
 
 	private:
 		virtual std::string getFormatName() const override { return "TgaFormat"; }
-		virtual Image *loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
+		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) override;
 		virtual bool saveToFile(const std::string &name, const Image *image) override;
 
 		/*! Image data reading template functions */

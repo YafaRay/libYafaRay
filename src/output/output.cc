@@ -91,7 +91,7 @@ std::string ColorOutput::printBadge(const RenderControl &render_control) const
 	return badge_.print(printDenoiseParams(), render_control);
 }
 
-const Image *ColorOutput::generateBadgeImage(const RenderControl &render_control) const
+std::unique_ptr<const Image> ColorOutput::generateBadgeImage(const RenderControl &render_control) const
 {
 	return badge_.generateImage(printDenoiseParams(), render_control);
 }

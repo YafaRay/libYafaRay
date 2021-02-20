@@ -21,6 +21,7 @@
 #ifndef YAFARAY_IMAGE_LAYERS_H
 #define YAFARAY_IMAGE_LAYERS_H
 
+#include <memory>
 #include "common/layers.h"
 #include "image/image.h"
 #include "image_layers.h"
@@ -35,9 +36,9 @@ class ImageLayer
 {
 	public:
 		ImageLayer() = default;
-		ImageLayer(Image *image, const Layer &layer) : image_(image), layer_(layer) { }
+		ImageLayer(std::unique_ptr<Image> image, const Layer &layer) : image_(std::move(image)), layer_(layer) { }
 
-		Image *image_ = nullptr;
+		std::shared_ptr<Image> image_;
 		Layer layer_;
 };
 

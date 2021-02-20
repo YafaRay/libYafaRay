@@ -96,7 +96,7 @@ bool TifFormat::saveToFile(const std::string &name, const Image *image)
 	return true;
 }
 
-Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 #if defined(_WIN32)
 	std::wstring wname = utf8ToWutf16Le_global(name);
@@ -120,7 +120,7 @@ Image *TifFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		return nullptr;
 	}
 	const Image::Type type = Image::getTypeFromSettings(true, grayscale_);
-	Image *image = Image::factory(w, h, type, optimization);
+	std::unique_ptr<Image> image = Image::factory(w, h, type, optimization);
 	int i = 0;
 	for(int y = static_cast<int>(h) - 1; y >= 0; y--)
 	{

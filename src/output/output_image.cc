@@ -79,7 +79,6 @@ void ImageOutput::clearImageLayers()
 {
 	if(image_layers_)
 	{
-		for(auto &it : *image_layers_) delete it.second.image_;
 		delete image_layers_;
 		image_layers_ = nullptr;
 	}
@@ -96,8 +95,8 @@ void ImageOutput::init(int width, int height, const Layers *layers, const std::m
 	{
 		{
 			Image::Type image_type = it.second.getImageType();
-			Image *image = Image::factory(width, height, image_type, Image::Optimization::None);
-			image_layers_->set(it.first, {image, it.second});
+			std::unique_ptr<Image> image = Image::factory(width, height, image_type, Image::Optimization::None);
+			image_layers_->set(it.first, {std::move(image), it.second});
 		}
 	}
 }
@@ -187,7 +186,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 	if(render_control.inProgress()) Y_INFO << name_ << ": Autosaving partial render (" << math::roundFloatPrecision(render_control.currentPassPercent(), 0.01) << "% of pass " << render_control.currentPass() << " of " << render_control.totalPasses() << ") file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
 	else Y_INFO << name_ << ": Saving file as \"" << filename << "\"...  " << printDenoiseParams() << YENDL;
 
-	const Image *image = (*image_layers_)(layer_type).image_;
+	std::shared_ptr<Image> image = (*image_layers_)(layer_type).image_;
 
 	if(!image)
 	{
@@ -197,11 +196,10 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const Image *badge_image = generateBadgeImage(render_control);
+		const std::unique_ptr<const Image> badge_image = generateBadgeImage(render_control);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
-		image = Image::getComposedImage(image, badge_image, badge_image_position);
-		delete badge_image;
+		image = Image::getComposedImage(image.get(), badge_image.get(), badge_image_position);
 		if(!image)
 		{
 			Y_WARNING << name_ << ": Image could not be composed with badge and could not be saved." << YENDL;
@@ -211,19 +209,18 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 	if(denoiseEnabled())
 	{
-		const Image *image_denoised = Image::getDenoisedLdrImage(image, denoise_params_);
+		std::unique_ptr<const Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
 		if(image_denoised)
 		{
-			format->saveToFile(filename, image_denoised);
-			if(image_denoised != image) delete image_denoised;
+			format->saveToFile(filename, image_denoised.get());
 		}
 		else
 		{
 			Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
-			format->saveToFile(filename, image);
+			format->saveToFile(filename, image.get());
 		}
 	}
-	else format->saveToFile(filename, image);
+	else format->saveToFile(filename, image.get());
 
 	if(with_alpha_ && !format->supportsAlpha())
 	{
@@ -233,37 +230,34 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 		if(denoiseEnabled())
 		{
-			const Image *image_denoised = Image::getDenoisedLdrImage(image, denoise_params_);
+			std::unique_ptr<const Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
 			if(image_denoised)
 			{
-				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised);
-				if(image_denoised != image) delete image_denoised;
+				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised.get());
 			}
 			else
 			{
 				Y_VERBOSE << name_ << ": Denoise was not possible, saving image without denoise postprocessing." << YENDL;
-				format->saveAlphaChannelOnlyToFile(file_name_alpha, image);
+				format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
 			}
 		}
-		else format->saveAlphaChannelOnlyToFile(file_name_alpha, image);
+		else format->saveAlphaChannelOnlyToFile(file_name_alpha, image.get());
 	}
-	if(image != (*image_layers_)(layer_type).image_) delete image; //only delete the image if it's a postprocessed copy and not the original
 }
 
 void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control)
 {
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const Image *badge_image = generateBadgeImage(render_control);
+		std::unique_ptr<const Image> badge_image = generateBadgeImage(render_control);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;
 		for(const auto &image_layer : *image_layers_)
 		{
-			Image *image_layer_badge = Image::getComposedImage(image_layer.second.image_, badge_image, badge_image_position);
-			image_layers_badge.set(image_layer.first, {image_layer_badge, image_layer.second.layer_});
+			std::unique_ptr<Image> image_layer_badge = Image::getComposedImage(image_layer.second.image_.get(), badge_image.get(), badge_image_position);
+			image_layers_badge.set(image_layer.first, {std::move(image_layer_badge), image_layer.second.layer_});
 		}
-		delete badge_image;
 		format->saveToFileMultiChannel(filename, &image_layers_badge);
 	}
 	else format->saveToFileMultiChannel(filename, image_layers_);

@@ -39,21 +39,21 @@
 
 BEGIN_YAFARAY
 
-Image *Image::factory(int width, int height, const Type &type, const Optimization &optimization)
+std::unique_ptr<Image> Image::factory(int width, int height, const Type &type, const Optimization &optimization)
 {
 	Y_DEBUG PRTEXT(**Image::factory) PREND;
-	if(type == Type::ColorAlphaWeight) return new ImageColorAlphaWeight(width, height);
-	else if(type == Type::GrayAlphaWeight) return new ImageGrayAlphaWeight(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::None) return new ImageColorAlpha(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return new ImageColorAlphaOptimized(width, height);
-	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return new ImageColorAlphaCompressed(width, height);
-	else if(type == Type::Color && optimization == Optimization::None) return new ImageColor(width, height);
-	else if(type == Type::Color && optimization == Optimization::Optimized) return new ImageColorOptimized(width, height);
-	else if(type == Type::Color && optimization == Optimization::Compressed) return new ImageColorCompressed(width, height);
-	else if(type == Type::GrayAlpha) return new ImageGrayAlpha(width, height);
-	else if(type == Type::GrayWeight) return new ImageGrayWeight(width, height);
-	else if(type == Type::Gray && optimization == Optimization::None) return new ImageGray(width, height);
-	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return new ImageGrayOptimized(width, height);
+	if(type == Type::ColorAlphaWeight) return std::unique_ptr<Image>(new ImageColorAlphaWeight(width, height));
+	else if(type == Type::GrayAlphaWeight) return std::unique_ptr<Image>(new ImageGrayAlphaWeight(width, height));
+	else if(type == Type::ColorAlpha && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageColorAlpha(width, height));
+	else if(type == Type::ColorAlpha && optimization == Optimization::Optimized) return std::unique_ptr<Image>(new ImageColorAlphaOptimized(width, height));
+	else if(type == Type::ColorAlpha && optimization == Optimization::Compressed) return std::unique_ptr<Image>(new ImageColorAlphaCompressed(width, height));
+	else if(type == Type::Color && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageColor(width, height));
+	else if(type == Type::Color && optimization == Optimization::Optimized) return std::unique_ptr<Image>(new ImageColorOptimized(width, height));
+	else if(type == Type::Color && optimization == Optimization::Compressed) return std::unique_ptr<Image>(new ImageColorCompressed(width, height));
+	else if(type == Type::GrayAlpha) return std::unique_ptr<Image>(new ImageGrayAlpha(width, height));
+	else if(type == Type::GrayWeight) return std::unique_ptr<Image>(new ImageGrayWeight(width, height));
+	else if(type == Type::Gray && optimization == Optimization::None) return std::unique_ptr<Image>(new ImageGray(width, height));
+	else if(type == Type::Gray && (optimization == Optimization::Optimized || optimization == Optimization::Compressed)) return std::unique_ptr<Image>(new ImageGrayOptimized(width, height));
 	else return nullptr;
 }
 
@@ -176,12 +176,12 @@ std::string Image::getTypeName(const Type &image_type)
 	}
 }
 
-const Image *Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
+std::unique_ptr<const Image> Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
 {
 #ifdef HAVE_OPENCV
 	if(!denoise_params.enabled_) return nullptr;
 
-	Image *image_denoised = Image::factory(image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
+	std::unique_ptr<Image> image_denoised = Image::factory(image->getWidth(), image->getHeight(), image->getType(), image->getOptimization());
 	if(!image_denoised) return image_denoised;
 
 	const int width = image_denoised->getWidth();
@@ -225,7 +225,7 @@ const Image *Image::getDenoisedLdrImage(const Image *image, const DenoiseParams 
 #endif //HAVE_OPENCV
 }
 
-Image *Image::getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
+std::unique_ptr<Image> Image::getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x, int overlay_y)
 {
 	if(!image_1 || !image_2) return nullptr;
 	const int width_1 = image_1->getWidth();
@@ -243,7 +243,7 @@ Image *Image::getComposedImage(const Image *image_1, const Image *image_2, const
 		case Position::Overlay: break;
 		default: return nullptr;
 	}
-	Image *result = Image::factory(width, height, image_1->getType(), image_1->getOptimization());
+	std::unique_ptr<Image> result = Image::factory(width, height, image_1->getType(), image_1->getOptimization());
 
 	for(int x = 0; x < width; ++x)
 	{

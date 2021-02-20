@@ -321,7 +321,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	return result;
 }
 
-Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
+std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
 	std::FILE *fp = File::open(name.c_str(), "rb");
 	Y_INFO << getFormatName() << ": Loading image \"" << name << "\"..." << YENDL;
@@ -339,7 +339,7 @@ Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 		std::fseek(fp, 0, SEEK_SET);
 	}
 
-	Image *image = nullptr;
+	std::unique_ptr<Image> image;
 	try
 	{
 		CiStream istr(fp, name.c_str());
@@ -371,7 +371,6 @@ Image *ExrFormat::loadFromFile(const std::string &name, const Image::Optimizatio
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
-		delete image;
 		image = nullptr;
 	}
 	return image;

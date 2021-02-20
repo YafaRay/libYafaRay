@@ -61,7 +61,7 @@ class LIBYAFARAY_EXPORT ColorOutput
 		int getHeight() const { return height_; }
 		std::string getName() const { return name_; }
 		std::string printBadge(const RenderControl &render_control) const;
-		const Image *generateBadgeImage(const RenderControl &render_control) const;
+		std::unique_ptr<const Image> generateBadgeImage(const RenderControl &render_control) const;
 
 	protected:
 		LIBYAFARAY_EXPORT ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false);
