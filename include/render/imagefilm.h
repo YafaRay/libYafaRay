@@ -71,7 +71,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 			AutoSaveParams auto_save_;
 		};
 
-		static ImageFilm *factory(const ParamMap &params, Scene *scene);
+		static std::unique_ptr<ImageFilm> factory(const ParamMap &params, Scene *scene);
 		/*! imageFilm_t Constructor */
 		ImageFilm(int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, ColorOutput *> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
 				  bool show_sam_mask = false, int t_size = 32,

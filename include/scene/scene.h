@@ -112,7 +112,7 @@ class LIBYAFARAY_EXPORT Scene
 		bool render();
 
 		Background *getBackground() const;
-		const ImageFilm *getImageFilm() const { return image_film_; }
+		const ImageFilm *getImageFilm() const { return image_film_.get(); }
 		RenderControl render_control_;
 		Bound getSceneBound() const;
 		int getNumThreads() const { return nthreads_; }
@@ -194,7 +194,7 @@ class LIBYAFARAY_EXPORT Scene
 		AaNoiseParams aa_noise_params_;
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
-		ImageFilm *image_film_ = nullptr;
+		std::unique_ptr<ImageFilm> image_film_;
 		Background *background_ = nullptr;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
 		std::map<std::string, Texture *> textures_;

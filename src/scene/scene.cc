@@ -89,7 +89,6 @@ Scene::Scene()
 Scene::~Scene()
 {
 	clearAll();
-	delete image_film_;
 }
 
 void Scene::createDefaultMaterial()
@@ -245,7 +244,7 @@ bool Scene::render()
 			surf_integrator_->cleanup();
 			image_film_->cleanup();
 			render_control_.setStarted();
-			success = surf_integrator_->render(image_film_, render_control_, it.second);
+			success = surf_integrator_->render(image_film_.get(), render_control_, it.second);
 			if(!success)
 			{
 				Y_ERROR << "Scene: Rendering process failed, exiting..." << YENDL;
@@ -633,7 +632,6 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 	params.getParam("adv_computer_node", adv_computer_node); //Computer node in multi-computer render environments/render farms
 	params.getParam("scene_accelerator", scene_accelerator_); //Computer node in multi-computer render environments/render farms
 
-	delete image_film_;
 	defineBasicLayers();
 	defineDependentLayers();
 	image_film_ = ImageFilm::factory(params, this);

@@ -46,9 +46,9 @@ static constexpr int max_filter_size_global = 8;
 typedef float FilterFunc_t(float dx, float dy);
 
 
-ImageFilm *ImageFilm::factory(const ParamMap &params, Scene *scene)
+std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *scene)
 {
-	Y_DEBUG PRTEXT(**Scene::createImageFilm) PREND; params.printDebug();
+	Y_DEBUG PRTEXT(**ImageFilm::factory) PREND; params.printDebug();
 	std::string name;
 	std::string tiles_order;
 	int width = 320, height = 240, xstart = 0, ystart = 0;
@@ -107,7 +107,7 @@ ImageFilm *ImageFilm::factory(const ParamMap &params, Scene *scene)
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre") Y_VERBOSE << "ImageFilm: " << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
 
-	ImageFilm *film = new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type);
+	std::unique_ptr<ImageFilm> film = std::unique_ptr<ImageFilm>(new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
