@@ -24,6 +24,7 @@
 #include "geometry/vector.h"
 #include "geometry/uv.h"
 #include <vector>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -48,13 +49,10 @@ class MeshObject : public ObjectYafaRay
 		Point3 getOrcoVertex(int index) const { return orco_points_[index]; }
 		int numVertices() const { return points_.size(); }
 		int numNormals() const { return normals_.size(); }
-		void addFace(FacePrimitive *face);
+		void addFace(std::unique_ptr<FacePrimitive> face);
 		void addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat);
 		void calculateNormals();
-		const std::vector<FacePrimitive *> getFaces() const { return faces_; }
 		const std::vector<Point3> &getPoints() const { return points_; }
-		const std::vector<Point3> &getOrcoPoints() const { return orco_points_; }
-		const std::vector<Vec3> &getNormals() const { return normals_; }
 		const std::vector<Uv> &getUvValues() const { return uv_values_; }
 		bool hasOrco() const { return !orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
@@ -71,7 +69,7 @@ class MeshObject : public ObjectYafaRay
 		static MeshObject *getMeshFromObject(Object *object);
 
 	protected:
-		std::vector<FacePrimitive *> faces_;
+		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Point3> points_;
 		std::vector<Point3> orco_points_;
 		std::vector<Vec3> normals_;

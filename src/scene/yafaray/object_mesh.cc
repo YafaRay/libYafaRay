@@ -61,23 +61,25 @@ MeshObject::MeshObject(int num_vertices, int num_faces, bool has_uv, bool has_or
 
 MeshObject::~MeshObject()
 {
-	for(auto &face : faces_) delete face;
 }
 
-void MeshObject::addFace(FacePrimitive *face)
+void MeshObject::addFace(std::unique_ptr<FacePrimitive> face)
 {
-	face->setSelfIndex(faces_.size());
-	faces_.push_back(face);
+	if(face)
+	{
+		face->setSelfIndex(faces_.size());
+		faces_.emplace_back(std::move(face));
+	}
 }
 
 void MeshObject::addFace(const std::vector<int> &vertices, const std::vector<int> &vertices_uv, const Material *mat)
 {
-	FacePrimitive *face;
-	if(vertices.size() == 3) face = new TrianglePrimitive(vertices, vertices_uv, *this);
+	std::unique_ptr<FacePrimitive> face;
+	if(vertices.size() == 3) face = std::unique_ptr<FacePrimitive>(new TrianglePrimitive(vertices, vertices_uv, *this));
 	else return; //Other primitives are not supported
 	face->setMaterial(mat);
 	if(hasNormalsExported()) face->setNormalsIndices(vertices);
-	addFace(face);
+	addFace(std::move(face));
 }
 
 void MeshObject::calculateNormals()
@@ -99,7 +101,7 @@ const std::vector<const Primitive *> MeshObject::getPrimitives() const
 {
 	std::vector<const Primitive *> primitives;
 	primitives.reserve(faces_.size());
-	for(const auto &face : faces_) primitives.push_back(face);
+	for(const auto &face : faces_) primitives.push_back(face.get());
 	return primitives;
 }
 
@@ -150,7 +152,7 @@ bool MeshObject::smoothNormals(float angle)
 			for(size_t relative_vertex = 0; relative_vertex < num_indices; ++relative_vertex)
 			{
 				points_angles_sines[vert_indices[relative_vertex]].push_back(getAngleSine_global({vert_indices[relative_vertex], vert_indices[(relative_vertex + 1) % num_indices], vert_indices[(relative_vertex + 2) % num_indices]}, points_));
-				points_faces[vert_indices[relative_vertex]].push_back(face);
+				points_faces[vert_indices[relative_vertex]].push_back(face.get());
 			}
 		}
 		for(size_t point_id = 0; point_id < points_size; ++point_id)
