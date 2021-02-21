@@ -1349,9 +1349,9 @@ void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystar
 
 #else   //If not built with OpenCV, these functions will do nothing
 
-void ImageFilm::generateToonAndDebugObjectEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement) { }
+void ImageFilm::generateToonAndDebugObjectEdges(int xstart, int width, int ystart, int height, bool drawborder) { }
 
-void ImageFilm::generateDebugFacesEdges(int num_view, int idx_pass, int xstart, int width, int ystart, int height, bool drawborder, ColorOutput *out_1, int out_1_displacement, ColorOutput *out_2, int out_2_displacement) { }
+void ImageFilm::generateDebugFacesEdges(int xstart, int width, int ystart, int height, bool drawborder) { }
 
 #endif
 
