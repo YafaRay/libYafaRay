@@ -1,0 +1,3 @@
+include/resource/*.h -linguist-detectable
+include/resource/qtanim/*.h -linguist-detectable
+*.h linguist-language=C++
