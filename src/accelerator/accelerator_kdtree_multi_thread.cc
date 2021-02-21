@@ -131,7 +131,7 @@ AcceleratorKdTreeMultiThread::~AcceleratorKdTreeMultiThread()
 
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinCost(float e_bonus, float cost_ratio, const std::vector<Bound> &bounds, const Bound &node_bound, const std::vector<uint32_t> &prim_indices)
 {
-	const uint32_t num_prim_indices = prim_indices.size();
+	const uint32_t num_prim_indices = static_cast<uint32_t>(prim_indices.size());
 	static constexpr int max_bin = 1024;
 	static constexpr int num_bins = max_bin + 1;
 	std::array<TreeBin, num_bins> bins;
@@ -274,7 +274,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::pigeonMinC
 
 AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCost(float e_bonus, float cost_ratio, const Bound &node_bound, const std::vector<uint32_t> &indices, const std::vector<Bound> &bounds)
 {
-	const uint32_t num_indices = indices.size();
+	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
 	const Vec3 node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const Vec3 inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
 	SplitCost split;
@@ -343,7 +343,7 @@ AcceleratorKdTreeMultiThread::SplitCost AcceleratorKdTreeMultiThread::minimalCos
 				continue;
 			}
 		}
-		const int num_edges = edges_all_axes[axis].size();
+		const int num_edges = static_cast<int>(edges_all_axes[axis].size());
 		for(int edge_id = 0; edge_id < num_edges; ++edge_id)
 		{
 			if(edges_all_axes[axis][edge_id].end_ == BoundEdge::EndBound::Right) --num_right;
@@ -412,7 +412,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	std::vector<uint32_t> poly_indices;
 	std::vector<uint32_t> prim_indices;
 	std::vector<Bound> poly_bounds;
-	const uint32_t num_indices = indices.size();
+	const uint32_t num_indices = static_cast<uint32_t>(indices.size());
 	const bool do_poly_clipping = (num_indices <= poly_clipping_threshold);
 	if(do_poly_clipping)
 	{
@@ -446,7 +446,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 					++result.stats_.clip_;
 					new_polygons.emplace_back(clip_result.poly_);
 					poly_bounds.emplace_back(clip_result.box_);
-					poly_indices.emplace_back(poly_indices.size());
+					poly_indices.emplace_back(static_cast<uint32_t>(poly_indices.size()));
 					prim_indices.emplace_back(prim_id);
 				}
 				else ++result.stats_.null_clip_;
@@ -464,7 +464,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 	}
 #endif
 
-	const uint32_t num_new_indices = new_indices.get().size();
+	const uint32_t num_new_indices = static_cast<uint32_t>(new_indices.get().size());
 	//	<< check if leaf criteria met >>
 	if(num_new_indices <= static_cast<uint32_t>(parameters.max_leaf_size_) || depth >= parameters.max_depth_)
 	{
@@ -539,7 +539,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 			right_indices.emplace_back(split.edges_[split.edge_offset_].index_);
 			right_primitive_indices.emplace_back(new_primitive_indices.get()[right_indices.back()]);
 		}
-		const int num_edges = split.edges_.size();
+		const int num_edges = static_cast<int>(split.edges_.size());
 		for(int edge_id = split.edge_offset_ + 1; edge_id < num_edges; ++edge_id)
 		{
 			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Left)
@@ -564,7 +564,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		{
 			right_indices.emplace_back(split.edges_[split.edge_offset_].index_);
 		}
-		const int num_edges = split.edges_.size();
+		const int num_edges = static_cast<int>(split.edges_.size());
 		for(int edge_id = split.edge_offset_ + 1; edge_id < num_edges; ++edge_id)
 		{
 			if(split.edges_[edge_id].end_ != BoundEdge::EndBound::Left)
@@ -602,7 +602,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 
 	if(num_current_threads_ < parameters.num_threads_ && (left_primitive_indices.size() >= (right_primitive_indices.size() / 10)) && (right_primitive_indices.size() >= (left_primitive_indices.size() / 10)) && (left_primitive_indices.size() >= static_cast<size_t>(parameters.min_indices_to_spawn_threads_)))
 	{
-		const uint32_t next_free_node_original = next_node_id + result.nodes_.size();
+		const uint32_t next_free_node_original = static_cast<uint32_t>(next_node_id + result.nodes_.size());
 		Result result_left;
 		auto left_worker = std::thread(&AcceleratorKdTreeMultiThread::buildTreeWorker, this, primitives, bound_left, left_indices, depth + 1, next_free_node_original, bad_refines, new_bounds, parameters, left_clip_plane, new_polygons, left_primitive_indices, std::ref(result_left));
 		num_current_threads_++;
@@ -617,7 +617,7 @@ void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primi
 		result.stats_ += result_left.stats_;
 		result.stats_ += result_right.stats_;
 
-		const uint32_t num_nodes_left = result_left.nodes_.size();
+		const uint32_t num_nodes_left = static_cast<uint32_t>(result_left.nodes_.size());
 		const uint32_t next_free_node_left = next_free_node_original + num_nodes_left;
 		result.nodes_.back().setRightChild(next_free_node_left);
 		//Correct the "right child" in the right nodes adding the original nodes + left nodes list sizes as offset to each

@@ -69,7 +69,7 @@ class LIBYAFARAY_EXPORT ColorOutput
 		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control) const;
 
 	protected:
-		LIBYAFARAY_EXPORT ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false);
+		ColorOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false);
 		ColorLayer preProcessColor(const ColorLayer &color_layer);
 		virtual std::string printDenoiseParams() const { return ""; }
 		ColorSpace getColorSpace() const { return color_space_; }
