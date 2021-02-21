@@ -187,7 +187,7 @@ void IesLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf, 
 	dir_pdf = (rad > 0.f) ? (tot_energy_ / rad) : 0.f;
 }
 
-Light *IesLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> IesLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);
@@ -217,13 +217,9 @@ Light *IesLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	IesLight *light = new IesLight(from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<IesLight>(new IesLight(from, to, color, power, file, sam, s_sha, ang, light_enabled, cast_shadows));
 
-	if(!light->isIesOk())
-	{
-		delete light;
-		return nullptr;
-	}
+	if(!light->isIesOk()) return nullptr;
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

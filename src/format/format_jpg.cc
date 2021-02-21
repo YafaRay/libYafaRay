@@ -259,9 +259,9 @@ std::unique_ptr<Image> JpgFormat::loadFromFile(const std::string &name, const Im
 }
 
 
-Format *JpgFormat::factory(ParamMap &params)
+std::unique_ptr<Format> JpgFormat::factory(ParamMap &params)
 {
-	return new JpgFormat();
+	return std::unique_ptr<Format>(new JpgFormat());
 }
 
 END_YAFARAY

@@ -106,14 +106,14 @@ Rgba DebugIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int
 	return Rgba(col, 1.f);
 }
 
-Integrator *DebugIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DebugIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	int dt = 1;
 	bool pn = false;
 	params.getParam("debugType", dt);
 	params.getParam("showPN", pn);
 	std::cout << "debugType " << dt << std::endl;
-	DebugIntegrator *inte = new DebugIntegrator((SurfaceProperties)dt);
+	auto inte = std::unique_ptr<DebugIntegrator>(new DebugIntegrator(static_cast<SurfaceProperties>(dt)));
 	inte->show_pn_ = pn;
 
 	return inte;

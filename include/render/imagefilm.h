@@ -29,6 +29,7 @@
 #include "common/thread.h"
 #include "common/aa_noise_params.h"
 #include "common/layers.h"
+#include "common/memory.h"
 #include "image/image_buffers.h"
 #include "image/image_layers.h"
 
@@ -73,7 +74,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 
 		static std::unique_ptr<ImageFilm> factory(const ParamMap &params, Scene *scene);
 		/*! imageFilm_t Constructor */
-		ImageFilm(int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, ColorOutput *> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
+		ImageFilm(int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
 				  bool show_sam_mask = false, int t_size = 32,
 				  ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
 		/*! imageFilm_t Destructor */
@@ -172,7 +173,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		int num_density_samples_ = 0;
 		AaNoiseParams aa_noise_params_;
 		const Layers &layers_;
-		const std::map<std::string, ColorOutput *> &outputs_;
+		const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs_;
 		ImageSplitter *splitter_ = nullptr;
 		ProgressBar *progress_bar_ = nullptr;
 		//const Scene *scene_ = nullptr;

@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-ColorOutput *ColorOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> ColorOutput::factory(const ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**ColorOutput) PREND; params.printDebug();
 	std::string type;
@@ -52,7 +52,7 @@ ColorOutput::ColorOutput(const std::string &name, const ColorSpace color_space, 
 	}
 }
 
-void ColorOutput::init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views)
+void ColorOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
 	width_ = width;
 	height_ = height;
@@ -91,7 +91,7 @@ std::string ColorOutput::printBadge(const RenderControl &render_control) const
 	return badge_.print(printDenoiseParams(), render_control);
 }
 
-std::unique_ptr<const Image> ColorOutput::generateBadgeImage(const RenderControl &render_control) const
+std::unique_ptr<Image> ColorOutput::generateBadgeImage(const RenderControl &render_control) const
 {
 	return badge_.generateImage(printDenoiseParams(), render_control);
 }

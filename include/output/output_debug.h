@@ -26,7 +26,7 @@ BEGIN_YAFARAY
 class DebugOutput final : public ColorOutput
 {
 	public:
-		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene);
 		DebugOutput(const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false) : ColorOutput(name, color_space, gamma, with_alpha, alpha_premultiply) { }
 
 	private:

@@ -291,7 +291,7 @@ VolumeRegion *XmlExport::createVolumeRegion(const char *name)
 	return nullptr;
 }
 
-ColorOutput *XmlExport::createOutput(const char *name)
+ColorOutput *XmlExport::createOutput(const char *name, bool auto_delete)
 {
 	xml_file_ << "\n<output name=\"" << name << "\">\n";
 	writeParamMap(*params_);

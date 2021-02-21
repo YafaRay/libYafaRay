@@ -32,7 +32,7 @@ class Scene;
 class SkyVolumeRegion final : public VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax);

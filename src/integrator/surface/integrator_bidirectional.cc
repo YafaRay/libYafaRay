@@ -1087,7 +1087,7 @@ Rgb BidirectionalIntegrator::sampleAmbientOcclusionClayLayer(RenderData &render_
 }
 
 
-Integrator *BidirectionalIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> BidirectionalIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool do_ao = false;
 	int ao_samples = 32;
@@ -1107,7 +1107,7 @@ Integrator *BidirectionalIntegrator::factory(ParamMap &params, const Scene &scen
 	params.getParam("bg_transp", bg_transp);
 	params.getParam("bg_transp_refract", bg_transp_refract);
 
-	BidirectionalIntegrator *inte = new BidirectionalIntegrator(transp_shad, shadow_depth);
+	auto inte = std::unique_ptr<BidirectionalIntegrator>(new BidirectionalIntegrator(transp_shad, shadow_depth));
 
 	// AO settings
 	inte->use_ambient_occlusion_ = do_ao;

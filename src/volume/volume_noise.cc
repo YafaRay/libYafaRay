@@ -37,7 +37,7 @@ float NoiseVolumeRegion::density(Point3 p) const
 	return d;
 }
 
-VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> NoiseVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -81,9 +81,7 @@ VolumeRegion *NoiseVolumeRegion::factory(const ParamMap &params, const Scene &sc
 		return nullptr;
 	}
 
-	NoiseVolumeRegion *vol = new NoiseVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens,
-												   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise);
-	return vol;
+	return std::unique_ptr<VolumeRegion>(new NoiseVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, cov, sharp, dens, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc, noise));
 }
 
 END_YAFARAY

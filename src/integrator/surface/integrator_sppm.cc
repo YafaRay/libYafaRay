@@ -1246,7 +1246,7 @@ void SppmIntegrator::initializePpm(const RenderView *render_view)
 
 }
 
-Integrator *SppmIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> SppmIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool pm_ire = false;
@@ -1284,24 +1284,24 @@ Integrator *SppmIntegrator::factory(ParamMap &params, const Scene &scene)
 	params.getParam("AO_distance", ao_dist);
 	params.getParam("AO_color", ao_col);
 
-	SppmIntegrator *ite = new SppmIntegrator(num_photons, pass_num, transp_shad, shadow_depth);
-	ite->r_depth_ = raydepth;
-	ite->max_bounces_ = bounces;
-	ite->initial_factor_ = times;
+	auto inte = std::unique_ptr<SppmIntegrator>(new SppmIntegrator(num_photons, pass_num, transp_shad, shadow_depth));
+	inte->r_depth_ = raydepth;
+	inte->max_bounces_ = bounces;
+	inte->initial_factor_ = times;
 
-	ite->ds_radius_ = ds_rad; // under tests enable now
-	ite->n_search_ = search_num;
-	ite->pm_ire_ = pm_ire;
+	inte->ds_radius_ = ds_rad; // under tests enable now
+	inte->n_search_ = search_num;
+	inte->pm_ire_ = pm_ire;
 	// Background settings
-	ite->transp_background_ = bg_transp;
-	ite->transp_refracted_background_ = bg_transp_refract;
+	inte->transp_background_ = bg_transp;
+	inte->transp_refracted_background_ = bg_transp_refract;
 	// AO settings
-	ite->use_ambient_occlusion_ = do_ao;
-	ite->ao_samples_ = ao_samples;
-	ite->ao_dist_ = ao_dist;
-	ite->ao_col_ = ao_col;
+	inte->use_ambient_occlusion_ = do_ao;
+	inte->ao_samples_ = ao_samples;
+	inte->ao_dist_ = ao_dist;
+	inte->ao_col_ = ao_col;
 
-	return ite;
+	return inte;
 }
 
 END_YAFARAY

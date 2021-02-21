@@ -38,7 +38,7 @@ unsigned int Material::material_index_highest_ = 1;
 unsigned int Material::material_index_auto_ = 0;
 float Material::highest_sampling_factor_ = 1.f;
 
-Material *Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
+std::unique_ptr<Material> Material::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Material) PREND; params.printDebug();
 	std::string type;

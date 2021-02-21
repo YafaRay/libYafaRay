@@ -24,8 +24,10 @@
 
 #include "constants.h"
 #include "common/collection.h"
+#include "common/memory.h"
 #include <string>
 #include <vector>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -37,7 +39,7 @@ class Scene;
 class RenderView final
 {
 	public:
-		static RenderView *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<RenderView> factory(ParamMap &params, const Scene &scene);
 		bool init(const Scene &scene);
 		std::string getName() const { return name_; }
 		const Camera *getCamera() const { return camera_; }

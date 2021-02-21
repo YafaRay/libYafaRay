@@ -32,7 +32,7 @@
 
 BEGIN_YAFARAY
 
-Integrator *Integrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> Integrator::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Integrator) PREND; params.printDebug();
 	std::string type;

@@ -31,6 +31,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
+#include "output/output.h"
 #include "color/spectral_data.h"
 #include "math/interpolation_curve.h"
 
@@ -197,7 +198,7 @@ Rgb DarkSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return getSkyCol(ray) * power_;
 }
 
-Background *DarkSkyBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> DarkSkyBackground::factory(ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);
 	float turb = 4.0;
@@ -263,8 +264,7 @@ Background *DarkSkyBackground::factory(ParamMap &params, Scene &scene)
 		pw *= 0.5;
 	}
 
-	DarkSkyBackground *dark_sky = new DarkSkyBackground(dir, turb, power, bright, clamp, av, bv, cv, dv, ev,
-														altitude, night, exp, gamma_enc, color_s, bgl, caus);
+	auto dark_sky = std::make_shared<DarkSkyBackground>(DarkSkyBackground(dir, turb, power, bright, clamp, av, bv, cv, dv, ev, altitude, night, exp, gamma_enc, color_s, bgl, caus));
 
 	if(add_sun && math::radToDeg(math::acos(dir.z_)) < 100.0)
 	{

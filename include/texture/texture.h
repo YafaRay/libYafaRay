@@ -25,6 +25,7 @@
 #include "color/color_ramp.h"
 #include "geometry/vector.h"
 #include "common/logger.h"
+#include "common/memory.h"
 #include <sstream>
 
 BEGIN_YAFARAY
@@ -38,7 +39,7 @@ enum class InterpolationType : int { None, Bilinear, Bicubic, Trilinear, Ewa };
 class Texture
 {
 	public :
-		static Texture *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
 		virtual ~Texture() = default;
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */

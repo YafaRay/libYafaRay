@@ -24,6 +24,7 @@
 #include "common/flags.h"
 #include "color/color.h"
 #include "common/visibility.h"
+#include "common/memory.h"
 #include "geometry/vector.h"
 #include <list>
 
@@ -76,7 +77,7 @@ class Material
 				Rgb col_;
 			} reflect_, refract_;
 		};
-		static Material *factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
+		static std::unique_ptr<Material> factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene);
 		Material();
 		virtual ~Material() { resetMaterialIndex(); }
 

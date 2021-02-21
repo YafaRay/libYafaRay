@@ -20,6 +20,7 @@
 #ifndef YAFARAY_BACKGROUND_H
 #define YAFARAY_BACKGROUND_H
 
+#include <memory>
 #include "constants.h"
 
 BEGIN_YAFARAY
@@ -34,8 +35,8 @@ class Ray;
 class Background
 {
 	public:
-		static Background *factory(ParamMap &params, Scene &scene);
-
+		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
+		virtual ~Background() = default;
 		//! get the background color for a given ray
 		virtual Rgb operator()(const Ray &ray, RenderData &render_data, bool from_postprocessed = false) const = 0;
 		virtual Rgb eval(const Ray &ray, bool from_postprocessed = false) const = 0;
@@ -45,7 +46,6 @@ class Background
 		*/
 		bool hasIbl() const { return with_ibl_; }
 		bool shootsCaustic() const { return shoot_caustic_; }
-		virtual ~Background() = default;
 
 	protected:
 		bool with_ibl_ = false;

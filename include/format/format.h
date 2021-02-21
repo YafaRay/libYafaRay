@@ -26,6 +26,7 @@
 
 #include "constants.h"
 #include "image/image.h"
+#include "common/memory.h"
 #include <limits>
 
 BEGIN_YAFARAY
@@ -38,8 +39,8 @@ enum ColorSpace : int;
 class LIBYAFARAY_EXPORT Format
 {
 	public:
-		static Format *factory(ParamMap &params);
-		virtual ~Format() { }
+		static std::unique_ptr<Format> factory(ParamMap &params);
+		virtual ~Format() = default;
 		virtual std::unique_ptr<Image> loadFromFile(const std::string &name, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) = 0;
 		virtual std::unique_ptr<Image> loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma) {return nullptr; }
 		virtual bool saveToFile(const std::string &name, const Image *image) = 0;

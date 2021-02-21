@@ -61,7 +61,7 @@ struct GatherInfo final
 class SppmIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SppmIntegrator(unsigned int d_photons, int passnum, bool transp_shad, int shadow_depth);

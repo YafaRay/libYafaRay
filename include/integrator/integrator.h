@@ -25,7 +25,7 @@
 
 #include "constants.h"
 #include <string>
-#include <render/render_control.h>
+#include "render/render_control.h"
 #include "render/render_view.h"
 
 BEGIN_YAFARAY
@@ -47,7 +47,7 @@ class ImageFilm;
 class Integrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 		Integrator() = default;
 		virtual ~Integrator() = default;

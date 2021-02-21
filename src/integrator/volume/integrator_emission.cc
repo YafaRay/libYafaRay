@@ -25,10 +25,11 @@
 
 BEGIN_YAFARAY
 
-Rgba EmissionIntegrator::transmittance(RenderData &render_data, const Ray &ray) const {
+Rgba EmissionIntegrator::transmittance(RenderData &render_data, const Ray &ray) const
+{
 	Rgba result(1.f);
-	auto volumes = scene_->getVolumeRegions();
-	for(const auto &v : volumes) result *= v.second->tau(ray, 0, 0);
+	auto &volumes = scene_->getVolumeRegions();
+	for(const auto &v : volumes) result *= v.second.get()->tau(ray, 0, 0);
 	result = Rgba(math::exp(-result.getR()), math::exp(-result.getG()), math::exp(-result.getB()));
 	return result;
 }
@@ -37,10 +38,10 @@ Rgba EmissionIntegrator::integrate(RenderData &render_data, const Ray &ray, int 
 	int n = 10; // samples + 1 on the ray inside the volume
 	Rgba result(0.f);
 	bool hit = ray.tmax_ > 0.f;
-	auto volumes = scene_->getVolumeRegions();
+	auto &volumes = scene_->getVolumeRegions();
 	for(const auto &v : volumes)
 	{
-		Bound::Cross cross = v.second->crossBound(ray);
+		Bound::Cross cross = v.second.get()->crossBound(ray);
 		if(!cross.crossed_) continue;
 		if(hit && ray.tmax_ < cross.enter_) continue;
 		if(hit && ray.tmax_ < cross.leave_) cross.leave_ = ray.tmax_;
@@ -61,9 +62,9 @@ Rgba EmissionIntegrator::integrate(RenderData &render_data, const Ray &ray, int 
 	return result;
 }
 
-Integrator *EmissionIntegrator::factory(ParamMap &params, const Scene &scene) {
-	EmissionIntegrator *inte = new EmissionIntegrator();
-	return inte;
+std::unique_ptr<Integrator> EmissionIntegrator::factory(ParamMap &params, const Scene &scene)
+{
+	return std::unique_ptr<Integrator>(new EmissionIntegrator());
 }
 
 END_YAFARAY

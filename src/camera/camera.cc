@@ -31,7 +31,7 @@
 
 BEGIN_YAFARAY
 
-Camera *Camera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> Camera::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Camera) PREND; params.printDebug();
 	std::string type;

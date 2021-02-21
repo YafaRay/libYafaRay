@@ -515,7 +515,7 @@ float ShinyDiffuseMaterial::getAlpha(const RenderData &render_data, const Surfac
 	return 1.f;
 }
 
-Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, Scene &scene)
+std::unique_ptr<Material> ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &params_list, Scene &scene)
 {
 	/// Material Parameters
 	Rgb diffuse_color = 1.f;
@@ -569,7 +569,7 @@ Material *ShinyDiffuseMaterial::factory(ParamMap &params, std::list<ParamMap> &p
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
 	// !!remember to put diffuse multiplier in material itself!
-	ShinyDiffuseMaterial *mat = new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility);
+	auto mat = std::unique_ptr<ShinyDiffuseMaterial>(new ShinyDiffuseMaterial(diffuse_color, mirror_color, diffuse_strength, transparency_strength, translucency_strength, mirror_strength, emit_strength, transmit_filter_strength, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;

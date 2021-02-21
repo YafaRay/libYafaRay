@@ -24,10 +24,11 @@
 #include "common/param.h"
 #include "common/logger.h"
 #include "render/render_view.h"
+#include "scene/scene.h"
 
 BEGIN_YAFARAY
 
-ColorOutput *DebugOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> DebugOutput::factory(const ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string color_space_str = "Raw_Manual_Gamma";
@@ -42,7 +43,7 @@ ColorOutput *DebugOutput::factory(const ParamMap &params, const Scene &scene)
 	params.getParam("alpha_premultiply", alpha_premultiply);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	ColorOutput *output = new DebugOutput(name, color_space, gamma, with_alpha, alpha_premultiply);
+	auto output = UniquePtr_t<ColorOutput>(new DebugOutput(name, color_space, gamma, with_alpha, alpha_premultiply));
 	return output;
 }
 

@@ -20,10 +20,11 @@
 #include "output/output_memory.h"
 #include "color/color_layers.h"
 #include "common/param.h"
+#include "scene/scene.h"
 
 BEGIN_YAFARAY
 
-ColorOutput *MemoryInputOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> MemoryInputOutput::factory(const ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	int width = 0;
@@ -41,7 +42,7 @@ ColorOutput *MemoryInputOutput::factory(const ParamMap &params, const Scene &sce
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
 	float *image_mem = nullptr; //FIXME image_mem???
-	return nullptr; return new MemoryInputOutput(width, height, image_mem, name, color_space, gamma, alpha_premultiply);
+	return UniquePtr_t<ColorOutput>(new MemoryInputOutput(width, height, image_mem, name, color_space, gamma, alpha_premultiply));
 }
 
 // Depth channel support?

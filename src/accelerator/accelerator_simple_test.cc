@@ -23,9 +23,9 @@
 
 BEGIN_YAFARAY
 
-Accelerator *AcceleratorSimpleTest::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorSimpleTest::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
-	Accelerator *accelerator = new AcceleratorSimpleTest(primitives);
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorSimpleTest(primitives));
 	return accelerator;
 }
 

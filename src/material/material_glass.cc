@@ -291,7 +291,7 @@ float GlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	double ior = 1.4;
 	double filt = 0.f;
@@ -329,7 +329,7 @@ Material *GlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
-	GlassMaterial *mat = new GlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility);
+	auto mat = std::unique_ptr<GlassMaterial>(new GlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, disp_power, fake_shad, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -448,13 +448,13 @@ Material::Specular MirrorMaterial::getSpecular(const RenderData &render_data, co
 	return specular;
 }
 
-Material *MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> MirrorMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	Rgb col(1.0);
 	float refl = 1.0;
 	params.getParam("color", col);
 	params.getParam("reflect", refl);
-	return new MirrorMaterial(col, refl);
+	return std::unique_ptr<Material>(new MirrorMaterial(col, refl));
 }
 
 
@@ -465,9 +465,9 @@ Rgb NullMaterial::sample(const RenderData &render_data, const SurfacePoint &sp, 
 	return Rgb(0.f);
 }
 
-Material *NullMaterial::factory(ParamMap &, std::list< ParamMap > &, Scene &)
+std::unique_ptr<Material> NullMaterial::factory(ParamMap &, std::list< ParamMap > &, Scene &)
 {
-	return new NullMaterial();
+	return std::unique_ptr<Material>(new NullMaterial());
 }
 
 END_YAFARAY

@@ -256,7 +256,7 @@ bool SpotLight::intersect(const Ray &ray, float &t, Rgb &col, float &ipdf) const
 	return false;
 }
 
-Light *SpotLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> SpotLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 to(0.f, 0.f, -1.f);
@@ -287,7 +287,7 @@ Light *SpotLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_caustic", shoot_c);
 	params.getParam("with_diffuse", shoot_d);
 
-	SpotLight *light = new SpotLight(from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<SpotLight>(new SpotLight(from, to, color, power, angle, falloff, soft_shadows, smpl, ssfuzzy, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

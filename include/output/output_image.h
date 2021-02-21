@@ -35,7 +35,7 @@ class Format;
 class ImageOutput final : public ColorOutput
 {
 	public:
-		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene);
 		ImageOutput(const std::string &image_path, int border_x, int border_y, const DenoiseParams denoise_params, const std::string &name = "out", const ColorSpace color_space = ColorSpace::RawManualGamma, float gamma = 1.f, bool with_alpha = true, bool alpha_premultiply = false, bool multi_layer = true);
 		virtual ~ImageOutput() override;
 
@@ -45,7 +45,7 @@ class ImageOutput final : public ColorOutput
 		virtual void flushArea(int x_0, int y_0, int x_1, int y_1) override {} // not used by images... yet
 		virtual bool isImageOutput() const override { return true; }
 		virtual std::string printDenoiseParams() const override;
-		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views) override;
+		virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override;
 		void saveImageFile(const std::string &filename, const Layer::Type &layer_type, Format *format, const RenderControl &render_control);
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
 		void clearImageLayers();

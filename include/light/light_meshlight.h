@@ -23,7 +23,9 @@
 #define YAFARAY_LIGHT_MESHLIGHT_H
 
 #include "light/light.h"
+#include "light_ies.h"
 #include <vector>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -37,11 +39,11 @@ class Scene;
 class MeshLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		virtual ~MeshLight() override;
 
 	private:
 		MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
-		virtual ~MeshLight() override;
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
@@ -66,7 +68,7 @@ class MeshLight final : public Light
 		int num_primitives_; //!< gives the array size of uDist
 		float area_, inv_area_;
 		MeshObject *mesh_object_ = nullptr;
-		Accelerator *accelerator_ = nullptr;
+		std::unique_ptr<Accelerator> accelerator_;
 		//debug stuff:
 		int *stats_ = nullptr;
 };

@@ -40,7 +40,7 @@ astyle -r --mode=c --style=allman --indent-classes --indent=tab --keep-one-line-
 * Avoid passing too many parameters to functions, if needed create a new Class or Struct and pass it.
 * Always try to add const (or better constexpr) to everything unless it really needs to change its internal state.
 * Always try to pass parameters by reference (&) unless it's a plain old data ("POD") like bool, float, int, etc.
-* Avoid manual deletes! Use smart pointers to manage object lifetime/ownership. Use unique_ptr when possible, and only use shared_ptr when there is actual shared ownership as it has runtime/multithread overheads.
+* Avoid manual deletes! Use smart pointers to manage object lifetime/ownership. Use std::unique_ptr when possible (or UniquePtr_t if an optional custom deleter might be needed), and only use shared_ptr when there is actual shared ownership as it has runtime/multithread overheads.
 * Pass by reference (or raw pointer if the reference can be null) when there is no transfer of ownership. Use const references/raw pointers whenever possible.
 * Try to avoid "c-style" casts like float x = (float) integer; Use float x = static_cast<float>(integer) instead when possible.
 * Declare const everything you can, unless it needs to be non-const.

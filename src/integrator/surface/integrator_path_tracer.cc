@@ -384,7 +384,7 @@ Rgba PathIntegrator::integrate(RenderData &render_data, const DiffRay &ray, int 
 	return Rgba(col, alpha);
 }
 
-Integrator *PathIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> PathIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false, no_rec = false;
 	int shadow_depth = 5;
@@ -416,7 +416,7 @@ Integrator *PathIntegrator::factory(ParamMap &params, const Scene &scene)
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	PathIntegrator *inte = new PathIntegrator(transp_shad, shadow_depth);
+	auto inte = std::unique_ptr<PathIntegrator>(new PathIntegrator(transp_shad, shadow_depth));
 	if(params.getParam("caustic_type", c_method))
 	{
 		bool use_photons = false;

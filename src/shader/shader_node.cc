@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-ShaderNode *ShaderNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> ShaderNode::factory(const ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**ShaderNode) PREND; params.printDebug();
 	std::string type;

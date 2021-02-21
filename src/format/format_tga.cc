@@ -398,9 +398,9 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 	return image;
 }
 
-Format *TgaFormat::factory(ParamMap &params)
+std::unique_ptr<Format> TgaFormat::factory(ParamMap &params)
 {
-	return new TgaFormat();
+	return std::unique_ptr<Format>(new TgaFormat());
 }
 
 END_YAFARAY

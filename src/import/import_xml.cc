@@ -22,6 +22,7 @@
 #include "common/logger.h"
 #include "scene/scene.h"
 #include "color/color.h"
+#include "output/output.h"
 #include "geometry/matrix4.h"
 
 #if HAVE_XML

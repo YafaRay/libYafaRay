@@ -24,7 +24,7 @@
 
 BEGIN_YAFARAY
 
-Texture *Texture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> Texture::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Texture) PREND; params.printDebug();
 	std::string type;

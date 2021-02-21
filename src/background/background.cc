@@ -28,7 +28,7 @@
 
 BEGIN_YAFARAY
 
-Background *Background::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> Background::factory(ParamMap &params, Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Background) PREND; params.printDebug();
 	std::string type;

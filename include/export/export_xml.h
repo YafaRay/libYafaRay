@@ -56,7 +56,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual Integrator *createIntegrator(const char *name) override;
 		virtual VolumeRegion *createVolumeRegion(const char *name) override;
 		virtual RenderView *createRenderView(const char *name) override;
-		virtual ColorOutput *createOutput(const char *name) override;
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() override { }
 		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...

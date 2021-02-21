@@ -32,7 +32,7 @@ class Scene;
 class PerspectiveCamera : public Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
 
 	protected:
 		enum BokehType {BkDisk1, BkDisk2, BkTri = 3, BkSqr, BkPenta, BkHexa, BkRing};

@@ -34,7 +34,7 @@ class Rgb;
 class SingleScatterIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SingleScatterIntegrator(float s_size, bool adapt, bool opt);

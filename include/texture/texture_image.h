@@ -48,11 +48,11 @@ class ImageTexture final : public Texture
 {
 	public:
 		enum class ClipMode : int { Extend, Clip, ClipCube, Repeat, Checker };
-		static Texture *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
+		virtual ~ImageTexture() override;
 
 	private:
 		ImageTexture(std::unique_ptr<Image> image);
-		virtual ~ImageTexture() override;
 		virtual bool discrete() const override { return true; }
 		virtual bool isThreeD() const override { return false; }
 		virtual bool isNormalmap() const override { return normalmap_; }

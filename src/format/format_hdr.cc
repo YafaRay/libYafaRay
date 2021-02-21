@@ -415,9 +415,9 @@ bool HdrFormat::writeScanline(std::ofstream &file, RgbePixel *scanline, const Im
 	return true;
 }
 
-Format *HdrFormat::factory(ParamMap &params)
+std::unique_ptr<Format> HdrFormat::factory(ParamMap &params)
 {
-	return new HdrFormat();
+	return std::unique_ptr<Format>(new HdrFormat());
 }
 
 END_YAFARAY

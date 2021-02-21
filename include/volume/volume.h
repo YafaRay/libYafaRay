@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "geometry/bound.h"
 #include "color/color.h"
+#include "common/memory.h"
 #include <map>
 
 BEGIN_YAFARAY
@@ -37,7 +38,7 @@ class Scene;
 class VolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeHandler> factory(const ParamMap &params, const Scene &scene);
 		virtual bool transmittance(const RenderData &render_data, const Ray &ray, Rgb &col) const = 0;
 		virtual bool scatter(const RenderData &render_data, const Ray &ray, Ray &s_ray, PSample &s) const = 0;
 		virtual ~VolumeHandler() = default;
@@ -46,11 +47,10 @@ class VolumeHandler
 class VolumeRegion
 {
 	public:
-		static VolumeRegion *factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeRegion> factory(const ParamMap &params, const Scene &scene);
 		VolumeRegion() = default;
 		VolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale);
-
-		virtual ~VolumeRegion() {}
+		virtual ~VolumeRegion() = default;
 
 		virtual Rgb sigmaA(const Point3 &p, const Vec3 &v) const = 0;
 		virtual Rgb sigmaS(const Point3 &p, const Vec3 &v) const = 0;

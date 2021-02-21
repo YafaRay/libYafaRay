@@ -43,7 +43,6 @@ BackgroundPortalLight::BackgroundPortalLight(const std::string &object_name, int
 BackgroundPortalLight::~BackgroundPortalLight()
 {
 	delete area_dist_;
-	delete accelerator_;
 }
 
 void BackgroundPortalLight::initIs()
@@ -62,7 +61,6 @@ void BackgroundPortalLight::initIs()
 	inv_area_ = (float)(1.0 / total_area);
 	//delete[] tris;
 	delete[] areas;
-	delete accelerator_;
 	accelerator_ = nullptr;
 
 	ParamMap params;
@@ -227,7 +225,7 @@ void BackgroundPortalLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, floa
 }
 
 
-Light *BackgroundPortalLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> BackgroundPortalLight::factory(ParamMap &params, const Scene &scene)
 {
 	int samples = 4;
 	std::string object_name;
@@ -247,7 +245,7 @@ Light *BackgroundPortalLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("light_enabled", light_enabled);
 	params.getParam("cast_shadows", cast_shadows);
 
-	BackgroundPortalLight *light = new BackgroundPortalLight(object_name, samples, pow, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<BackgroundPortalLight>(new BackgroundPortalLight(object_name, samples, pow, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

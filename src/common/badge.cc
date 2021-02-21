@@ -146,7 +146,7 @@ void Badge::drawFontBitmap(FT_Bitmap_ *bitmap, Image *badge_image, int x, int y)
 
 #endif
 
-std::unique_ptr<const Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control) const
+std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;

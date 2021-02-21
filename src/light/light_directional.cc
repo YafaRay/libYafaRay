@@ -113,7 +113,7 @@ Rgb DirectionalLight::emitSample(Vec3 &wo, LSample &s) const
 	return color_;
 }
 
-Light *DirectionalLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> DirectionalLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Point3 dir(0.0, 0.0, 1.0);
@@ -146,7 +146,7 @@ Light *DirectionalLight::factory(ParamMap &params, const Scene &scene)
 		params.getParam("radius", rad);
 	}
 
-	DirectionalLight *light = new DirectionalLight(from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<DirectionalLight>(new DirectionalLight(from, Vec3(dir.x_, dir.y_, dir.z_), color, power, inf, rad, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

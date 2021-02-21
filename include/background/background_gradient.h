@@ -22,6 +22,7 @@
 #ifndef YAFARAY_BACKGROUND_GRADIENT_H
 #define YAFARAY_BACKGROUND_GRADIENT_H
 
+#include <memory>
 #include "background.h"
 #include "color/color.h"
 
@@ -33,7 +34,7 @@ class ParamMap;
 class GradientBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
 
 	private:
 		GradientBackground(Rgb gzcol, Rgb ghcol, Rgb szcol, Rgb shcol, bool ibl, bool with_caustic);

@@ -128,31 +128,26 @@ float MaskMaterial::getAlpha(const RenderData &render_data, const SurfacePoint &
 	return alpha;
 }
 
-Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, Scene &scene)
+std::unique_ptr<Material> MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams, Scene &scene)
 {
 	std::string name;
-	const Material *m_1 = nullptr, *m_2 = nullptr;
-	double thresh = 0.5;
-	std::string s_visibility = "normal";
-	bool receive_shadows = true;
-
-	params.getParam("threshold", thresh);
-	if(! params.getParam("material1", name)) return nullptr;
-	m_1 = scene.getMaterial(name);
-	if(! params.getParam("material2", name)) return nullptr;
-	m_2 = scene.getMaterial(name);
+	if(!params.getParam("material1", name)) return nullptr;
+	const Material *m_1 = scene.getMaterial(name);
+	if(!params.getParam("material2", name)) return nullptr;
+	const Material *m_2 = scene.getMaterial(name);
+	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
 	//if(! params.getParam("mask", name) ) return nullptr;
 	//mask = scene.getTexture(*name);
 
+	double thresh = 0.5;
+	std::string s_visibility = "normal";
+	bool receive_shadows = true;
+	params.getParam("threshold", thresh);
 	params.getParam("receive_shadows", receive_shadows);
 	params.getParam("visibility", s_visibility);
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
-
-	if(m_1 == nullptr || m_2 == nullptr) return nullptr;
-
-	MaskMaterial *mat = new MaskMaterial(m_1, m_2, thresh, visibility);
-
+	auto mat = std::unique_ptr<MaskMaterial>(new MaskMaterial(m_1, m_2, thresh, visibility));
 	mat->receive_shadows_ = receive_shadows;
 
 	std::vector<ShaderNode *> roots;
@@ -161,11 +156,10 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 		if(params.getParam("mask", name))
 		{
 			auto i = mat->shaders_table_.find(name);
-			if(i != mat->shaders_table_.end()) { mat->mask_ = i->second; roots.push_back(mat->mask_); }
+			if(i != mat->shaders_table_.end()) { mat->mask_ = i->second.get(); roots.push_back(mat->mask_); }
 			else
 			{
 				Y_ERROR << "MaskMat: Mask shader node '" << name << "' does not exist!" << YENDL;
-				delete mat;
 				return nullptr;
 			}
 		}
@@ -173,7 +167,6 @@ Material *MaskMaterial::factory(ParamMap &params, std::list< ParamMap > &eparams
 	else
 	{
 		Y_ERROR << "MaskMat: loadNodes() failed!" << YENDL;
-		delete mat;
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);

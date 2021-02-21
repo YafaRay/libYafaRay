@@ -312,7 +312,7 @@ void TextureMapperNode::evalDerivative(NodeStack &stack, const RenderData &rende
 	stack[this->getId()] = NodeResult(Rgba(du, dv, 0.f, 0.f), 0.f);
 }
 
-ShaderNode *TextureMapperNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> TextureMapperNode::factory(const ParamMap &params, const Scene &scene)
 {
 	const Texture *tex = nullptr;
 	std::string texname, option;
@@ -334,7 +334,7 @@ ShaderNode *TextureMapperNode::factory(const ParamMap &params, const Scene &scen
 		Y_ERROR << "TextureMapper: texture '" << texname << "' does not exist!" << YENDL;
 		return nullptr;
 	}
-	TextureMapperNode *tm = new TextureMapperNode(tex);
+	auto tm = std::unique_ptr<TextureMapperNode>(new TextureMapperNode(tex));
 	if(params.getParam("texco", option))
 	{
 		if(option == "uv") tc = Uv;
@@ -387,7 +387,7 @@ void ValueNode::eval(NodeStack &stack, const RenderData &render_data, const Surf
 	stack[this->getId()] = NodeResult(color_, value_);
 }
 
-ShaderNode *ValueNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> ValueNode::factory(const ParamMap &params, const Scene &scene)
 {
 	Rgb col(1.f);
 	float alpha = 1.f;
@@ -395,7 +395,7 @@ ShaderNode *ValueNode::factory(const ParamMap &params, const Scene &scene)
 	params.getParam("color", col);
 	params.getParam("alpha", alpha);
 	params.getParam("scalar", val);
-	return new ValueNode(Rgba(col, alpha), val);
+	return std::unique_ptr<ShaderNode>(new ValueNode(Rgba(col, alpha), val));
 }
 
 /* ==========================================
@@ -666,24 +666,24 @@ class OverlayNode: public MixNode
 };
 
 
-ShaderNode *MixNode::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<ShaderNode> MixNode::factory(const ParamMap &params, const Scene &scene)
 {
 	float cfactor = 0.5f;
 	std::string blend_mode;
 	params.getParam("cfactor", cfactor);
 	params.getParam("blend_mode", blend_mode);
 
-	if(blend_mode == "add") return new AddNode();
-	else if(blend_mode == "multiply") return new MultNode();
-	else if(blend_mode == "subtract") return new SubNode();
-	else if(blend_mode == "screen") return new ScreenNode();
-	//else if(blend_mode == "divide") return new DivNode(); //FIXME Why isn't there a DivNode?
-	else if(blend_mode == "difference") return new DiffNode();
-	else if(blend_mode == "darken") return new DarkNode();
-	else if(blend_mode == "lighten") return new LightNode();
-	else if(blend_mode == "overlay") return new OverlayNode();
+	if(blend_mode == "add") return std::unique_ptr<ShaderNode>(new AddNode());
+	else if(blend_mode == "multiply") return std::unique_ptr<ShaderNode>(new MultNode());
+	else if(blend_mode == "subtract") return std::unique_ptr<ShaderNode>(new SubNode());
+	else if(blend_mode == "screen") return std::unique_ptr<ShaderNode>(new ScreenNode());
+	//else if(blend_mode == "divide") return std::unique_ptr<ShaderNode>(new DivNode()); //FIXME Why isn't there a DivNode?
+	else if(blend_mode == "difference") return std::unique_ptr<ShaderNode>(new DiffNode());
+	else if(blend_mode == "darken") return std::unique_ptr<ShaderNode>(new DarkNode());
+	else if(blend_mode == "lighten") return std::unique_ptr<ShaderNode>(new LightNode());
+	else if(blend_mode == "overlay") return std::unique_ptr<ShaderNode>(new OverlayNode());
 	//else if(blend_mode == "mix")
-	else return new MixNode(cfactor);
+	else return std::unique_ptr<ShaderNode>(new MixNode(cfactor));
 }
 
 END_YAFARAY

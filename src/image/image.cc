@@ -176,7 +176,7 @@ std::string Image::getTypeName(const Type &image_type)
 	}
 }
 
-std::unique_ptr<const Image> Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
+std::unique_ptr<Image> Image::getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params)
 {
 #ifdef HAVE_OPENCV
 	if(!denoise_params.enabled_) return nullptr;

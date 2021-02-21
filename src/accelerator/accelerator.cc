@@ -25,12 +25,12 @@
 
 BEGIN_YAFARAY
 
-Accelerator *Accelerator::factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params)
+std::unique_ptr<Accelerator> Accelerator::factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params)
 {
 	Y_DEBUG PRTEXT(**Accelerator) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
-	Accelerator *accelerator = nullptr;
+	std::unique_ptr<Accelerator> accelerator;
 	if(type == "yafaray-kdtree-original") accelerator = AcceleratorKdTree::factory(primitives_list, params);
 	else if(type == "yafaray-kdtree-multi-thread") accelerator = AcceleratorKdTreeMultiThread::factory(primitives_list, params);
 	else if(type == "yafaray-simpletest") accelerator = AcceleratorSimpleTest::factory(primitives_list, params);

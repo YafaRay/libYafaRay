@@ -232,7 +232,7 @@ void BackgroundLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &are
 	area_pdf = 1.f;
 }
 
-Light *BackgroundLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> BackgroundLight::factory(ParamMap &params, const Scene &scene)
 {
 	int samples = 16;
 	bool shoot_d = true;
@@ -250,7 +250,7 @@ Light *BackgroundLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("cast_shadows", cast_shadows);
 	params.getParam("photon_only", p_only);
 
-	BackgroundLight *light = new BackgroundLight(samples, abs_int, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<BackgroundLight>(new BackgroundLight(samples, abs_int, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

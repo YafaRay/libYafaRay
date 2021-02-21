@@ -180,7 +180,7 @@ bool PerspectiveCamera::project(const Ray &wo, float lu, float lv, float &u, flo
 
 bool PerspectiveCamera::sampleLense() const { return aperture_ != 0; }
 
-Camera *PerspectiveCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> PerspectiveCamera::factory(ParamMap &params, const Scene &scene)
 {
 	std::string bkhtype = "disk1", bkhbias = "uniform";
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
@@ -217,7 +217,7 @@ Camera *PerspectiveCamera::factory(ParamMap &params, const Scene &scene)
 	if(bkhbias == "center") 		bbt = BbCenter;
 	else if(bkhbias == "edge") 		bbt = BbEdge;
 
-	return new PerspectiveCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip);
+	return std::unique_ptr<Camera>(new PerspectiveCamera(from, to, up, resx, resy, aspect, dfocal, apt, dofd, bt, bbt, bkhrot, near_clip, far_clip));
 }
 
 END_YAFARAY

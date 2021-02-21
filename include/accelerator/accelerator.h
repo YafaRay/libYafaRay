@@ -23,6 +23,7 @@
 #include "constants.h"
 #include "geometry/intersect_data.h"
 #include "color/color.h"
+#include "common/memory.h"
 #include <vector>
 
 BEGIN_YAFARAY
@@ -47,8 +48,8 @@ struct AcceleratorTsIntersectData : AcceleratorIntersectData
 class Accelerator
 {
 	public:
-		static Accelerator *factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params);
-		virtual ~Accelerator() { };
+		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives_list, ParamMap &params);
+		virtual ~Accelerator() = default;
 		virtual AcceleratorIntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias) const = 0;
 		virtual AcceleratorTsIntersectData intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float dist, float shadow_bias) const = 0;

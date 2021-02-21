@@ -101,7 +101,7 @@ void PointLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf
 	cos_wo = 1.f;
 }
 
-Light *PointLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> PointLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0.0);
 	Rgb color(1.0);
@@ -122,7 +122,7 @@ Light *PointLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("photon_only", p_only);
 
 
-	PointLight *light = new PointLight(from, color, power, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<PointLight>(new PointLight(from, color, power, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

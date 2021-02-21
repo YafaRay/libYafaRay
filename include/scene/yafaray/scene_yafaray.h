@@ -54,7 +54,7 @@ class YafaRayScene final : public Scene
 		void clearObjects();
 
 		Object *current_object_ = nullptr;
-		Accelerator *accelerator_ = nullptr;
+		std::unique_ptr<Accelerator> accelerator_;
 		std::map<std::string, Object *> objects_;
 };
 

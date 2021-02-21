@@ -63,7 +63,7 @@ Ray EquirectangularCamera::shootRay(float px, float py, float lu, float lv, floa
 	return ray;
 }
 
-Camera *EquirectangularCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> EquirectangularCamera::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
@@ -80,7 +80,7 @@ Camera *EquirectangularCamera::factory(ParamMap &params, const Scene &scene)
 	params.getParam("nearClip", near_clip);
 	params.getParam("farClip", far_clip);
 
-	return new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip);
+	return std::unique_ptr<Camera>(new EquirectangularCamera(from, to, up, resx, resy, aspect, near_clip, far_clip));
 }
 
 Point3 EquirectangularCamera::screenproject(const Point3 &p) const

@@ -92,7 +92,7 @@ Rgb SunLight::emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, f
 }
 
 
-Light *SunLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> SunLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 dir(0.0, 0.0, 1.0);
 	Rgb color(1.0);
@@ -116,7 +116,7 @@ Light *SunLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	SunLight *light = new SunLight(Vec3(dir.x_, dir.y_, dir.z_), color, power, angle, samples, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<SunLight>(new SunLight(Vec3(dir.x_, dir.y_, dir.z_), color, power, angle, samples, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

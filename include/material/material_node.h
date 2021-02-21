@@ -21,6 +21,7 @@
 #define YAFARAY_MATERIAL_NODE_H
 
 #include "material/material.h"
+#include "common/memory.h"
 #include <map>
 #include <vector>
 
@@ -34,9 +35,9 @@ class NodeMaterial: public Material
 {
 	public:
 		NodeMaterial() = default;
+		virtual ~NodeMaterial() override;
 
 	protected:
-		virtual ~NodeMaterial() override;
 		/*! load nodes from parameter map list */
 		bool loadNodes(const std::list<ParamMap> &params_list, Scene &scene);
 		/** parse node shaders to fill nodeList */
@@ -49,7 +50,7 @@ class NodeMaterial: public Material
 		void evalBump(NodeStack &stack, const RenderData &render_data, SurfacePoint &sp, const ShaderNode *bump_shader_node) const;
 
 		std::vector<ShaderNode *> color_nodes_, color_nodes_sorted_, bump_nodes_;
-		std::map<std::string, ShaderNode *> shaders_table_;
+		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_table_;
 		size_t req_node_mem_ = 0;
 };
 

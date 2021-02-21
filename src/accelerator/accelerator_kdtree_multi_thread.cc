@@ -24,10 +24,11 @@
 #include "geometry/primitive.h"
 #include "geometry/axis.h"
 #include "common/param.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
-Accelerator *AcceleratorKdTreeMultiThread::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorKdTreeMultiThread::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	AcceleratorKdTreeMultiThread::Parameters parameters;
 
@@ -38,7 +39,7 @@ Accelerator *AcceleratorKdTreeMultiThread::factory(const std::vector<const Primi
 	params.getParam("accelerator_threads", parameters.num_threads_);
 	params.getParam("accelerator_min_indices_threads", parameters.min_indices_to_spawn_threads_);
 
-	Accelerator *accelerator = new AcceleratorKdTreeMultiThread(primitives, parameters);
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTreeMultiThread(primitives, parameters));
 	return accelerator;
 }
 

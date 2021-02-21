@@ -73,7 +73,7 @@ Rgb UniformVolumeRegion::emission(const Point3 &p, const Vec3 &v) const
 		return Rgb(0.f);
 }
 
-VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> UniformVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -95,9 +95,7 @@ VolumeRegion *UniformVolumeRegion::factory(const ParamMap &params, const Scene &
 	params.getParam("maxZ", max[2]);
 	params.getParam("attgridScale", att_sc);
 
-	UniformVolumeRegion *vol = new UniformVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g,
-													   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc);
-	return vol;
+	return std::unique_ptr<VolumeRegion>(new UniformVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]), att_sc));
 }
 
 UniformVolumeRegion::UniformVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax, int attgrid_scale) :

@@ -22,6 +22,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
@@ -51,7 +52,7 @@ Rgb GradientBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return color;
 }
 
-Background *GradientBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> GradientBackground::factory(ParamMap &params, Scene &scene)
 {
 	Rgb gzenith, ghoriz, szenith(0.4f, 0.5f, 1.f), shoriz(1.f);
 	float p = 1.0;
@@ -74,7 +75,7 @@ Background *GradientBackground::factory(ParamMap &params, Scene &scene)
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	Background *grad_bg = new GradientBackground(gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true);
+	auto grad_bg = std::make_shared<GradientBackground>(GradientBackground(gzenith * p, ghoriz * p, szenith * p, shoriz * p, bgl, true));
 
 	if(bgl)
 	{

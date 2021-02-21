@@ -22,6 +22,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
@@ -41,7 +42,7 @@ Rgb ConstantBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return color_;
 }
 
-Background *ConstantBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> ConstantBackground::factory(ParamMap &params, Scene &scene)
 {
 	Rgb col(0.f);
 	float power = 1.0;
@@ -59,7 +60,7 @@ Background *ConstantBackground::factory(ParamMap &params, Scene &scene)
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	Background *const_bg = new ConstantBackground(col * power, ibl, true);
+	auto const_bg = std::make_shared<ConstantBackground>(ConstantBackground(col * power, ibl, true));
 
 	if(ibl)
 	{

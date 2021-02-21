@@ -543,7 +543,7 @@ ImageTexture::ClipMode string2Cliptype_global(const std::string &clipname)
 	return tex_clipmode;
 }
 
-Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Texture> ImageTexture::factory(ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string interpolation_type_str;
@@ -599,7 +599,7 @@ Texture *ImageTexture::factory(ParamMap &params, const Scene &scene)
 		return nullptr;
 	}
 
-	ImageTexture *tex = new ImageTexture(std::move(image));
+	auto tex = std::unique_ptr<ImageTexture>(new ImageTexture(std::move(image)));
 	if(!tex) //FIXME: this will never be true, replace by exception handling??
 	{
 		Y_ERROR << "ImageTexture: Couldn't create image texture." << YENDL;

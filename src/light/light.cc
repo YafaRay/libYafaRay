@@ -33,7 +33,7 @@
 
 BEGIN_YAFARAY
 
-Light *Light::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> Light::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**Light) PREND; params.printDebug();
 	std::string type;

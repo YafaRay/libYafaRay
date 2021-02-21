@@ -57,7 +57,7 @@ float GridVolumeRegion::density(Point3 p) const
 	return dens;
 }
 
-VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> GridVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -76,9 +76,7 @@ VolumeRegion *GridVolumeRegion::factory(const ParamMap &params, const Scene &sce
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	GridVolumeRegion *vol = new GridVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g,
-												 Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
-	return vol;
+	return std::unique_ptr<VolumeRegion>(new GridVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), g, Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
 }
 
 GridVolumeRegion::GridVolumeRegion(Rgb sa, Rgb ss, Rgb le, float gg, Point3 pmin, Point3 pmax) {

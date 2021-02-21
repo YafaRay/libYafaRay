@@ -142,9 +142,9 @@ std::unique_ptr<Image> TifFormat::loadFromFile(const std::string &name, const Im
 	return image;
 }
 
-Format *TifFormat::factory(ParamMap &params)
+std::unique_ptr<Format> TifFormat::factory(ParamMap &params)
 {
-	return new TifFormat();
+	return std::unique_ptr<Format>(new TifFormat());
 }
 
 END_YAFARAY

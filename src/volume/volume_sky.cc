@@ -83,7 +83,7 @@ float SkyVolumeRegion::phaseMie(const Vec3 &w_l, const Vec3 &w_s) const
 }
 
 
-VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> SkyVolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	float ss = .1f;
 	float sa = .1f;
@@ -102,9 +102,7 @@ VolumeRegion *SkyVolumeRegion::factory(const ParamMap &params, const Scene &scen
 	params.getParam("maxY", max[1]);
 	params.getParam("maxZ", max[2]);
 
-	SkyVolumeRegion *vol = new SkyVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le),
-											   Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2]));
-	return vol;
+	return std::unique_ptr<VolumeRegion>(new SkyVolumeRegion(Rgb(sa), Rgb(ss), Rgb(le), Point3(min[0], min[1], min[2]), Point3(max[0], max[1], max[2])));
 }
 
 SkyVolumeRegion::SkyVolumeRegion(Rgb sa, Rgb ss, Rgb le, Point3 pmin, Point3 pmax) {

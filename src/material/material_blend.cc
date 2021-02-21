@@ -399,7 +399,7 @@ const VolumeHandler *BlendMaterial::getVolumeHandler(bool inside) const
 	else return vol_2;
 }
 
-Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
+std::unique_ptr<Material> BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams, Scene &scene)
 {
 	std::string name;
 	double blend_val = 0.5;
@@ -431,7 +431,7 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 
 	const Visibility visibility = visibilityFromString_global(s_visibility);
 
-	BlendMaterial *mat = new BlendMaterial(m_1, m_2, blend_val, visibility);
+	auto mat = std::unique_ptr<BlendMaterial>(new BlendMaterial(m_1, m_2, blend_val, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;
@@ -449,14 +449,13 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 			auto i = mat->shaders_table_.find(name);
 			if(i != mat->shaders_table_.end())
 			{
-				mat->blend_shader_ = i->second;
+				mat->blend_shader_ = i->second.get();
 				mat->recalc_blend_ = true;
 				roots.push_back(mat->blend_shader_);
 			}
 			else
 			{
 				Y_ERROR << "Blend: Blend shader node '" << name << "' does not exist!" << YENDL;
-				delete mat;
 				return nullptr;
 			}
 		}
@@ -464,7 +463,6 @@ Material *BlendMaterial::factory(ParamMap &params, std::list<ParamMap> &eparams,
 	else
 	{
 		Y_ERROR << "Blend: loadNodes() failed!" << YENDL;
-		delete mat;
 		return nullptr;
 	}
 	mat->solveNodesOrder(roots);

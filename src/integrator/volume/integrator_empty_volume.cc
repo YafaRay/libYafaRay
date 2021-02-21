@@ -31,8 +31,8 @@ Rgba EmptyVolumeIntegrator::integrate(RenderData &render_data, const Ray &ray, i
 	return Rgba(0.f);
 }
 
-Integrator *EmptyVolumeIntegrator::factory(ParamMap &params, const Scene &scene) {
-	return new EmptyVolumeIntegrator();
+std::unique_ptr<Integrator> EmptyVolumeIntegrator::factory(ParamMap &params, const Scene &scene) {
+	return std::unique_ptr<Integrator>(new EmptyVolumeIntegrator());
 }
 
 END_YAFARAY

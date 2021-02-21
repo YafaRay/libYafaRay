@@ -76,7 +76,7 @@ Ray AngularCamera::shootRay(float px, float py, float lu, float lv, float &wt) c
 	return ray;
 }
 
-Camera *AngularCamera::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Camera> AngularCamera::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 from(0, 1, 0), to(0, 0, 0), up(0, 1, 1);
 	int resx = 320, resy = 200;
@@ -109,7 +109,7 @@ Camera *AngularCamera::factory(ParamMap &params, const Scene &scene)
 	else if(projection_string == "rectilinear") projection = Projection::Rectilinear;
 	else projection = Projection::Equidistant;
 
-	AngularCamera *cam = new AngularCamera(from, to, up, resx, resy, aspect, angle_degrees * M_PI / 180.f, max_angle_degrees * M_PI / 180.f, circular, projection, near_clip, far_clip);
+	auto cam = std::unique_ptr<AngularCamera>(new AngularCamera(from, to, up, resx, resy, aspect, angle_degrees * M_PI / 180.f, max_angle_degrees * M_PI / 180.f, circular, projection, near_clip, far_clip));
 	if(mirrored) cam->vright_ *= -1.0;
 	return cam;
 }

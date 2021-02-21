@@ -1,4 +1,3 @@
-#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -17,33 +16,24 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_CAMERA_ORTHOGRAPHIC_H
-#define YAFARAY_CAMERA_ORTHOGRAPHIC_H
-
-#include "constants.h"
-#include "camera/camera.h"
+#include "common/memory.h"
+#include "common/logger.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
-class ParamMap;
-class Scene;
-
-class OrthographicCamera final: public Camera
+template <typename T>
+void CustomDeleter<T>::operator()(T *object)
 {
-	public:
-		OrthographicCamera(const Point3 &pos, const Point3 &look, const Point3 &up,
-						   int resx, int resy, float aspect, float scale,
-						   float const near_clip_distance = 0.0f, float const far_clip_distance = 1e6f);
-		virtual void setAxis(const Vec3 &vx, const Vec3 &vy, const Vec3 &vz);
-		virtual Ray shootRay(float px, float py, float lu, float lv, float &wt) const;
-		virtual Point3 screenproject(const Point3 &p) const;
+	if(!object)
+	{
+		Y_DEBUG << "Custom deleter destruction, null pointer, exiting" << YENDL;
+		return;
+	}
+	Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroing it!" : " false (externally owned), not destroying it") << YENDL;
+	if(object->isAutoDeleted()) delete object;
+}
 
-		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
-	protected:
-		float scale_;
-		Point3 pos_;
-};
+template struct CustomDeleter<ColorOutput>;
 
 END_YAFARAY
-
-#endif // YAFARAY_CAMERA_ORTHOGRAPHIC_H

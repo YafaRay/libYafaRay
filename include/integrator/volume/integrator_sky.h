@@ -29,7 +29,7 @@ class Background;
 class SkyIntegrator : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 	private:
 		SkyIntegrator(float s_size, float a, float ss, float t);

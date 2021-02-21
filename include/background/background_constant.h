@@ -22,6 +22,7 @@
 #ifndef YAFARAY_BACKGROUND_CONSTANT_H
 #define YAFARAY_BACKGROUND_CONSTANT_H
 
+#include <memory>
 #include "background.h"
 #include "color/color.h"
 
@@ -33,7 +34,7 @@ class ParamMap;
 class ConstantBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
 
 	private:
 		ConstantBackground(Rgb col, bool ibl, bool with_caustic);

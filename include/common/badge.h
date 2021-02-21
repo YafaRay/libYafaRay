@@ -22,8 +22,9 @@
 #define YAFARAY_BADGE_H
 
 #include "constants.h"
+#include "common/memory.h"
+#include "render/render_control.h"
 #include <string>
-#include <render/render_control.h>
 
 #if HAVE_FREETYPE
 	struct FT_Bitmap_;
@@ -68,7 +69,7 @@ class Badge
 		void setIconPath(const std::string &icon_path) { icon_path_ = icon_path; }
 
 		std::string print(const std::string &denoise_params, const RenderControl &render_control) const;
-		std::unique_ptr<const Image> generateImage(const std::string &denoise_params, const RenderControl &render_control) const;
+		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control) const;
 
 	protected:
 #if HAVE_FREETYPE

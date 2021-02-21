@@ -193,7 +193,7 @@ public:
 		//Y_DEBUG PRTEXT(setRenderCallbacks after) PR(py_draw_area_callback_) PR(py_flush_callback_) PREND;
 	}
 
-    virtual void init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views) override
+    virtual void init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views) override
     { 
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
@@ -565,7 +565,7 @@ namespace yafaray4
 	class ColorOutput
 	{
 		public:
-		static ColorOutput *factory(const ParamMap &params, const Scene &scene);
+		//static UniquePtr_t<ColorOutput> factory(const ParamMap &params, const Scene &scene);
 		void setLoggingParams(const ParamMap &params);
 		void setBadgeParams(const ParamMap &params);
 		virtual ~ColorOutput() = default;
@@ -662,11 +662,11 @@ namespace yafaray4
 		virtual Integrator *createIntegrator(const char *name);
 		virtual VolumeRegion *createVolumeRegion(const char *name);
 		virtual RenderView *createRenderView(const char *name);
-		virtual ColorOutput *createOutput(const char *name); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-		virtual ColorOutput *createOutput(const std::string &name, ColorOutput *output); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-		bool removeOutput(const std::string &name); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		virtual void clearOutputs(); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		virtual void clearAll(); //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true); //!< ColorOutput creation, usually for internally-owned outputs that are destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to keep ownership, it can set the "auto_delete" to false.
+		virtual ColorOutput *createOutput(const char *name, ColorOutput *output, bool auto_delete = false); //!< ColorOutput creation, usually for externally client-owned and client-supplied outputs that are *NOT* destroyed when the scene is deleted or when libYafaRay instance is closed. If the client wants to transfer ownership to libYafaRay, it can set the "auto_delete" to true.
+		bool removeOutput(const char *name);
+		virtual void clearOutputs();
+		virtual void clearAll();
 		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
@@ -719,7 +719,7 @@ namespace yafaray4
 		virtual Integrator *createIntegrator(const char *name) override;
 		virtual VolumeRegion *createVolumeRegion(const char *name) override;
 		virtual RenderView *createRenderView(const char *name) override;
-		virtual ColorOutput *createOutput(const char *name) override;
+		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() override { }
 		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...

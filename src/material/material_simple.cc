@@ -57,7 +57,7 @@ float LightMaterial::pdf(const RenderData &render_data, const SurfacePoint &sp, 
 {
 	return 0.f;
 }
-Material *LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, Scene &scene)
+std::unique_ptr<Material> LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparans, Scene &scene)
 {
 	Rgb col(1.0);
 	double power = 1.0;
@@ -66,7 +66,7 @@ Material *LightMaterial::factory(ParamMap &params, std::list< ParamMap > &eparan
 	params.getParam("color", col);
 	params.getParam("power", power);
 	params.getParam("double_sided", ds);
-	return new LightMaterial(col * (float)power, ds);
+	return std::unique_ptr<Material>(new LightMaterial(col * static_cast<float>(power), ds));
 }
 
 END_YAFARAY

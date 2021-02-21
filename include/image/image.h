@@ -23,8 +23,8 @@
 #define YAFARAY_IMAGE_H
 
 #include "constants.h"
+#include "common/memory.h"
 #include <string>
-#include <memory>
 
 BEGIN_YAFARAY
 
@@ -75,7 +75,7 @@ class LIBYAFARAY_EXPORT Image
 		static bool hasAlpha(const Type &image_type);
 		static bool isGrayscale(const Type &image_type);
 		static Type getTypeFromSettings(bool has_alpha, bool grayscale, bool has_weight = false);
-		static std::unique_ptr<const Image> getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
+		static std::unique_ptr<Image> getDenoisedLdrImage(const Image *image, const DenoiseParams &denoise_params); //!< Provides a denoised buffer, but only works with LDR images (that can be represented in 8-bit 0..255 values). If attempted with HDR images they would lose the HDR range and become unusable!
 		static std::unique_ptr<Image> getComposedImage(const Image *image_1, const Image *image_2, const Position &position_image_2, int overlay_x = 0, int overlay_y = 0);
 
 	protected:

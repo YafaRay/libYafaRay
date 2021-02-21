@@ -107,7 +107,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	else if(tiles_order == "random") tiles_order_type = ImageSplitter::Random;
 	else if(tiles_order != "centre") Y_VERBOSE << "ImageFilm: " << "Defaulting to Centre tiles order." << YENDL; // this is info imho not a warning
 
-	std::unique_ptr<ImageFilm> film = std::unique_ptr<ImageFilm>(new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
+	auto film = std::unique_ptr<ImageFilm>(new ImageFilm(width, height, xstart, ystart, scene->getNumThreads(), scene->getRenderControl(), scene->getLayers(), scene->getOutputs(), filt_sz, type, show_sampled_pixels, tile_size, tiles_order_type));
 
 	film->setImagesAutoSaveParams(images_autosave_params);
 	film->setFilmLoadSaveParams(film_load_save);
@@ -126,7 +126,7 @@ std::unique_ptr<ImageFilm> ImageFilm::factory(const ParamMap &params, Scene *sce
 	return film;
 }
 
-ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, ColorOutput *> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width,height)
+ImageFilm::ImageFilm (int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size, FilterType filt, bool show_sam_mask, int t_size, ImageSplitter::TilesOrderType tiles_order_type) : width_(width), height_(height), cx_0_(xstart), cy_0_(ystart), show_mask_(show_sam_mask), tile_size_(t_size), tiles_order_(tiles_order_type), num_threads_(num_threads), layers_(layers), outputs_(outputs), filterw_(filter_size * 0.5), flags_(width, height), weights_(width, height)
 {
 	cx_1_ = xstart + width;
 	cy_1_ = ystart + height;

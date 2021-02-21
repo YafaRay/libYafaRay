@@ -334,9 +334,9 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	return image;
 }
 
-Format *PngFormat::factory(ParamMap &params)
+std::unique_ptr<Format> PngFormat::factory(ParamMap &params)
 {
-	return new PngFormat();
+	return std::unique_ptr<Format>(new PngFormat());
 }
 
 END_YAFARAY

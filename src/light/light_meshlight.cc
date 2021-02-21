@@ -45,7 +45,6 @@ MeshLight::MeshLight(const std::string &object_name, const Rgb &col, int sampl, 
 MeshLight::~MeshLight()
 {
 	delete area_dist_;
-	delete accelerator_;
 }
 
 void MeshLight::initIs()
@@ -63,7 +62,6 @@ void MeshLight::initIs()
 	area_ = (float)total_area;
 	inv_area_ = (float)(1.0 / total_area);
 	delete[] areas;
-	delete accelerator_;
 	accelerator_ = nullptr;
 
 	ParamMap params;
@@ -228,7 +226,7 @@ void MeshLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 }
 
 
-Light *MeshLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> MeshLight::factory(ParamMap &params, const Scene &scene)
 {
 	bool double_s = false;
 	Rgb color(1.0);
@@ -252,7 +250,7 @@ Light *MeshLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	MeshLight *light = new MeshLight(object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<MeshLight>(new MeshLight(object_name, color * (float)power * M_PI, samples, double_s, light_enabled, cast_shadows));
 
 	light->shoot_caustic_ = shoot_c;
 	light->shoot_diffuse_ = shoot_d;

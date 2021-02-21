@@ -232,7 +232,7 @@ Rgba SkyIntegrator::integrate(RenderData &render_data, const Ray &ray, int addit
 	return s_0_r * i_r + s_0_m * i_m;
 }
 
-Integrator *SkyIntegrator::factory(ParamMap &params, const Scene &scene) {
+std::unique_ptr<Integrator> SkyIntegrator::factory(ParamMap &params, const Scene &scene) {
 	float s_size = 1.f;
 	float a = .5f;
 	float ss = .1f;
@@ -241,8 +241,7 @@ Integrator *SkyIntegrator::factory(ParamMap &params, const Scene &scene) {
 	params.getParam("sigma_t", ss);
 	params.getParam("alpha", a);
 	params.getParam("turbidity", t);
-	SkyIntegrator *inte = new SkyIntegrator(s_size, a, ss, t);
-	return inte;
+	return std::unique_ptr<Integrator>(new SkyIntegrator(s_size, a, ss, t));
 }
 
 

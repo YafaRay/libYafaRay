@@ -30,7 +30,7 @@ class Scene;
 class SssVolumeHandler final : public BeerVolumeHandler
 {
 	public:
-		static VolumeHandler *factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<VolumeHandler> factory(const ParamMap &params, const Scene &scene);
 
 	private:
 		SssVolumeHandler(const Rgb &a_col, const Rgb &s_col, double dist);

@@ -23,11 +23,12 @@
 #include "geometry/surface.h"
 #include "geometry/primitive.h"
 #include "common/param.h"
+#include "output/output.h"
 #include <cstring>
 
 BEGIN_YAFARAY
 
-Accelerator *AcceleratorKdTree::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
+std::unique_ptr<Accelerator> AcceleratorKdTree::factory(const std::vector<const Primitive *> &primitives, ParamMap &params)
 {
 	int depth = -1;
 	int leaf_size = 2;
@@ -39,7 +40,7 @@ Accelerator *AcceleratorKdTree::factory(const std::vector<const Primitive *> &pr
 	params.getParam("cost_ratio", cost_ratio);
 	params.getParam("empty_bonus", empty_bonus);
 
-	Accelerator *accelerator = new AcceleratorKdTree(primitives, depth, leaf_size, cost_ratio, empty_bonus);
+	auto accelerator = std::unique_ptr<Accelerator>(new AcceleratorKdTree(primitives, depth, leaf_size, cost_ratio, empty_bonus));
 	return accelerator;
 }
 

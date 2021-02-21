@@ -455,15 +455,14 @@ Rgba SingleScatterIntegrator::integrate(RenderData &render_data, const Ray &ray,
 	return result;
 }
 
-Integrator *SingleScatterIntegrator::factory(ParamMap &params, const Scene &scene) {
+std::unique_ptr<Integrator> SingleScatterIntegrator::factory(ParamMap &params, const Scene &scene) {
 	bool adapt = false;
 	bool opt = false;
 	float s_size = 1.f;
 	params.getParam("stepSize", s_size);
 	params.getParam("adaptive", adapt);
 	params.getParam("optimize", opt);
-	SingleScatterIntegrator *inte = new SingleScatterIntegrator(s_size, adapt, opt);
-	return inte;
+	return std::unique_ptr<Integrator>(new SingleScatterIntegrator(s_size, adapt, opt));
 }
 
 END_YAFARAY

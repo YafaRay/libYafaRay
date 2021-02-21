@@ -210,7 +210,7 @@ Rgba DirectLightIntegrator::integrate(RenderData &render_data, const DiffRay &ra
 	return Rgba(col, alpha);
 }
 
-Integrator *DirectLightIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> DirectLightIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool caustics = false;
@@ -242,7 +242,7 @@ Integrator *DirectLightIntegrator::factory(ParamMap &params, const Scene &scene)
 	params.getParam("bg_transp_refract", bg_transp_refract);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	DirectLightIntegrator *inte = new DirectLightIntegrator(transp_shad, shadow_depth, raydepth);
+	auto inte = std::unique_ptr<DirectLightIntegrator>(new DirectLightIntegrator(transp_shad, shadow_depth, raydepth));
 	// caustic settings
 	inte->use_photon_caustics_ = caustics;
 	inte->n_caus_photons_ = photons;

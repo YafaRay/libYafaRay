@@ -27,7 +27,7 @@ BEGIN_YAFARAY
 class EmissionIntegrator final : public VolumeIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 	private:
 		virtual std::string getShortName() const override { return "Em"; }

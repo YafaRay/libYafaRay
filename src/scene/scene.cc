@@ -173,9 +173,9 @@ void Scene::setNumThreadsPhotons(int threads_photons)
 	Y_PARAMS << "Using for Photon Mapping [" << nthreads_photons_ << "] Threads." << YENDL;
 }
 
-void Scene::setBackground(Background *bg)
+void Scene::setBackground(std::shared_ptr<Background> bg)
 {
-	background_ = bg;
+	background_ = std::move(bg);
 }
 
 void Scene::setSurfIntegrator(SurfaceIntegrator *s)
@@ -194,7 +194,7 @@ void Scene::setVolIntegrator(VolumeIntegrator *v)
 
 Background *Scene::getBackground() const
 {
-	return background_;
+	return background_.get();
 }
 
 Bound Scene::getSceneBound() const
@@ -227,7 +227,7 @@ bool Scene::render()
 		if(creation_state_.changes_ & CreationState::Flags::CGeom) updateObjects();
 		for(auto &it : render_views_)
 		{
-			for(auto &o : outputs_) o.second->setRenderView(it.second);
+			for(auto &o : outputs_) o.second->setRenderView(it.second.get());
 			std::stringstream inte_settings;
 			bool success = it.second->init(*this);
 			if(!success)
@@ -235,7 +235,7 @@ bool Scene::render()
 				Y_WARNING << "Scene: No cameras or lights found at RenderView " << it.second->getName() << "', skipping this RenderView..." << YENDL;
 				continue;
 			}
-			success = (surf_integrator_->preprocess(render_control_, it.second) && vol_integrator_->preprocess(render_control_, it.second));
+			success = (surf_integrator_->preprocess(render_control_, it.second.get()) && vol_integrator_->preprocess(render_control_, it.second.get()));
 			if(!success)
 			{
 				Y_ERROR << "Scene: Preprocessing process failed, exiting..." << YENDL;
@@ -244,7 +244,7 @@ bool Scene::render()
 			surf_integrator_->cleanup();
 			image_film_->cleanup();
 			render_control_.setStarted();
-			success = surf_integrator_->render(image_film_.get(), render_control_, it.second);
+			success = surf_integrator_->render(image_film_.get(), render_control_, it.second.get());
 			if(!success)
 			{
 				Y_ERROR << "Scene: Rendering process failed, exiting..." << YENDL;
@@ -252,7 +252,7 @@ bool Scene::render()
 			}
 			render_control_.setRenderInfo(surf_integrator_->getRenderInfo());
 			render_control_.setAaNoiseInfo(surf_integrator_->getAaNoiseInfo());
-			image_film_->flush(it.second, render_control_);
+			image_film_->flush(it.second.get(), render_control_);
 			render_control_.setFinished();
 		}
 	}
@@ -272,15 +272,6 @@ ObjId_t Scene::getNextFreeId()
 
 void Scene::clearNonObjects()
 {
-	freeMap(lights_);
-	freeMap(textures_);
-	freeMap(materials_);
-	freeMap(cameras_);
-	freeMap(backgrounds_);
-	freeMap(integrators_);
-	freeMap(volume_handlers_);
-	freeMap(volume_regions_);
-	freeMap(render_views_);
 	//Do *NOT* delete or free the outputs, we do not have ownership!
 
 	lights_.clear();
@@ -302,17 +293,9 @@ void Scene::clearAll()
 	clearNonObjects();
 }
 
-template <class T>
-void Scene::freeMap(std::map< std::string, T * > &map)
-{
-	for(auto &m : map) { delete m.second; m.second = nullptr; }
-}
-
-template void Scene::freeMap<Object>(std::map< std::string, Object * > &map);
-
 void Scene::clearOutputs()
 {
-	freeMap(outputs_); outputs_.clear();
+	outputs_.clear();
 }
 
 void Scene::clearLayers()
@@ -322,11 +305,27 @@ void Scene::clearLayers()
 
 void Scene::clearRenderViews()
 {
-	freeMap(render_views_); render_views_.clear();
+	render_views_.clear();
 }
 
 template <typename T>
-T *Scene::findMapItem(const std::string &name, const std::map<std::string, T*> &map)
+T *Scene::findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map)
+{
+	auto i = map.find(name);
+	if(i != map.end()) return i->second.get();
+	else return nullptr;
+}
+
+template <typename T>
+T *Scene::findMapItem(const std::string &name, const std::map<std::string, UniquePtr_t<T>> &map)
+{
+	auto i = map.find(name);
+	if(i != map.end()) return i->second.get();
+	else return nullptr;
+}
+
+template <typename T>
+std::shared_ptr<T> Scene::findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map)
 {
 	auto i = map.find(name);
 	if(i != map.end()) return i->second;
@@ -353,7 +352,7 @@ Light *Scene::getLight(const std::string &name) const
 	return Scene::findMapItem<Light>(name, lights_);
 }
 
-Background *Scene::getBackground(const std::string &name) const
+std::shared_ptr<Background> Scene::getBackground(const std::string &name) const
 {
 	return Scene::findMapItem<Background>(name, backgrounds_);
 }
@@ -382,7 +381,6 @@ bool Scene::removeOutput(const std::string &name)
 {
 	ColorOutput *output = getOutput(name);
 	if(!output) return false;
-	delete output;
 	outputs_.erase(name);
 	return true;
 }
@@ -400,14 +398,14 @@ Light *Scene::createLight(const std::string &name, ParamMap &params)
 	{
 		ERR_NO_TYPE; return nullptr;
 	}
-	Light *light = Light::factory(params, *this);
+	auto light = Light::factory(params, *this);
 	if(light)
 	{
-		lights_[name] = light;
-		if(light->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
+		lights_[name] = std::move(light);
+		if(lights_[name]->lightEnabled()) INFO_VERBOSE_SUCCESS(name, type);
 		else INFO_VERBOSE_SUCCESS_DISABLED(name, type);
 		creation_state_.changes_ |= CreationState::Flags::CLight;
-		return light;
+		return lights_[name].get();
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
@@ -427,19 +425,24 @@ Material *Scene::createMaterial(const std::string &name, ParamMap &params, std::
 		ERR_NO_TYPE; return nullptr;
 	}
 	params["name"] = name;
-	Material *material = Material::factory(params, eparams, *this);
+	auto material = Material::factory(params, eparams, *this);
 	if(material)
 	{
-		materials_[name] = material;
+		materials_[name] = std::move(material);
 		INFO_VERBOSE_SUCCESS(name, type);
-		return material;
+		return materials_[name].get();
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
+ColorOutput * Scene::createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete)
+{
+	return createMapItem<ColorOutput>(name, "ColorOutput", std::move(output), outputs_, auto_delete);
+}
+
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map)
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map)
 {
 	std::string pname = class_name;
 	if(map.find(name) != map.end())
@@ -448,22 +451,35 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 	}
 	if(item)
 	{
-		map[name] = item;
+		map[name] = std::move(item);
 		INFO_VERBOSE_SUCCESS(name, class_name);
-		return item;
+		return map[name].get();
 	}
 	ERR_ON_CREATE(class_name);
-	return item;
+	return nullptr;
 }
-
-ColorOutput *Scene::createOutput(const std::string &name, ColorOutput *output)
-{
-	return createMapItem<ColorOutput>(name, "ColorOutput", output, outputs_);
-}
-
 
 template <typename T>
-T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists)
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete)
+{
+	std::string pname = class_name;
+	if(map.find(name) != map.end())
+	{
+		WARN_EXIST; return nullptr;
+	}
+	if(item)
+	{
+		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
+		map[name] = std::move(item);
+		INFO_VERBOSE_SUCCESS(name, class_name);
+		return map[name].get();
+	}
+	ERR_ON_CREATE(class_name);
+	return nullptr;
+}
+
+template <typename T>
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists)
 {
 	std::string pname = class_name;
 	params["name"] = std::string(name);
@@ -480,20 +496,80 @@ T *Scene::createMapItem(const std::string &name, const std::string &class_name, 
 			return nullptr;
 		}
 	}
-	T *item = T::factory(params, *scene);
+	std::unique_ptr<T> item = T::factory(params, *scene);
 	if(item)
 	{
-		map[name] = item;
+		map[name] = std::move(item);
 		INFO_VERBOSE_SUCCESS(name, type);
-		return item;
+		return map[name].get();
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
 }
 
-ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params)
+template <typename T>
+T *Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists)
 {
-	return createMapItem<ColorOutput>(name, "ColorOutput", params, outputs_, this);
+
+	std::string pname = class_name;
+	params["name"] = std::string(name);
+	if(map.find(name) != map.end())
+	{
+		WARN_EXIST; return nullptr;
+	}
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		if(check_type_exists)
+		{
+			ERR_NO_TYPE;
+			return nullptr;
+		}
+	}
+	UniquePtr_t<T> item = T::factory(params, *scene);
+	if(item)
+	{
+		item->setAutoDelete(auto_delete); //By default all objects will autodelete as usual unique_ptr. If that's not desired, auto_delete can be set to false but then the object class must have the setAutoDelete and isAutoDeleted methods
+		map[name] = std::move(item);
+		INFO_VERBOSE_SUCCESS(name, type);
+		return map[name].get();
+	}
+	ERR_ON_CREATE(type);
+	return nullptr;
+}
+
+template <typename T>
+std::shared_ptr<T> Scene::createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists)
+{
+	std::string pname = class_name;
+	params["name"] = std::string(name);
+	if(map.find(name) != map.end())
+	{
+		WARN_EXIST; return nullptr;
+	}
+	std::string type;
+	if(! params.getParam("type", type))
+	{
+		if(check_type_exists)
+		{
+			ERR_NO_TYPE;
+			return nullptr;
+		}
+	}
+	std::shared_ptr<T> item = T::factory(params, *scene);
+	if(item)
+	{
+		map[name] = std::move(item);
+		INFO_VERBOSE_SUCCESS(name, type);
+		return map[name];
+	}
+	ERR_ON_CREATE(type);
+	return nullptr;
+}
+
+ColorOutput *Scene::createOutput(const std::string &name, ParamMap &params, bool auto_delete)
+{
+	return createMapItem<ColorOutput>(name, "ColorOutput", params, outputs_, auto_delete, this);
 }
 
 Texture *Scene::createTexture(const std::string &name, ParamMap &params)
@@ -506,7 +582,7 @@ ShaderNode *Scene::createShaderNode(const std::string &name, ParamMap &params)
 	return createMapItem<ShaderNode>(name, "ShaderNode", params, shaders_, this);
 }
 
-Background *Scene::createBackground(const std::string &name, ParamMap &params)
+std::shared_ptr<Background> Scene::createBackground(const std::string &name, ParamMap &params)
 {
 	return createMapItem<Background>(name, "Background", params, backgrounds_, this);
 }
@@ -595,10 +671,10 @@ bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
 		return false;
 	}
 
-	Background *background = nullptr;
+	std::shared_ptr<Background> background;
 	if(params.getParam("background_name", name))
 	{
-		background = this->getBackground(name);
+		background = getBackground(name);
 		if(!background) Y_ERROR_SCENE << "please specify an _existing_ Background!!" << YENDL;
 	}
 

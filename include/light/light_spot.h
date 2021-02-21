@@ -32,11 +32,11 @@ class Pdf1D;
 class SpotLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		virtual ~SpotLight() override;
 
 	private:
 		SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
-		virtual ~SpotLight() override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
 		virtual Rgb emitSample(Vec3 &wo, LSample &s) const override;

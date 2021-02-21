@@ -24,6 +24,7 @@
 #include "geometry/matrix4.h"
 #include "render/imagefilm.h"
 #include "common/param.h"
+#include "output/output.h"
 #include <signal.h>
 
 #ifdef WIN32
@@ -266,14 +267,31 @@ Light *Interface::createLight(const char *name) { return scene_->createLight(nam
 Texture *Interface::createTexture(const char *name) { return scene_->createTexture(name, *params_); }
 Material *Interface::createMaterial(const char *name) { return scene_->createMaterial(name, *params_, *eparams_); }
 Camera *Interface::createCamera(const char *name) { return scene_->createCamera(name, *params_); }
-Background *Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_); }
+Background *Interface::createBackground(const char *name) { return scene_->createBackground(name, *params_).get(); }
 Integrator *Interface::createIntegrator(const char *name) { return scene_->createIntegrator(name, *params_); }
 VolumeRegion *Interface::createVolumeRegion(const char *name) { return scene_->createVolumeRegion(name, *params_); }
 RenderView *Interface::createRenderView(const char *name) { return scene_->createRenderView(name, *params_); }
-ColorOutput *Interface::createOutput(const char *name) { return scene_->createOutput(name, *params_); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-ColorOutput *Interface::createOutput(const std::string &name, ColorOutput *output) { return scene_->createOutput(name, output); } //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-bool Interface::removeOutput(const std::string &name) { return scene_->removeOutput(name); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-void Interface::clearOutputs() { return scene_->clearOutputs(); } //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
+
+ColorOutput *Interface::createOutput(const char *name, bool auto_delete)
+{
+	return scene_->createOutput(name, *params_, auto_delete);
+}
+
+ColorOutput *Interface::createOutput(const char *name, ColorOutput *output, bool auto_delete)
+{
+	auto output_unique = UniquePtr_t<ColorOutput>(output);
+	return scene_->createOutput(name, std::move(output_unique), auto_delete);
+}
+
+bool Interface::removeOutput(const char *name)
+{
+	return scene_->removeOutput(name);
+}
+
+void Interface::clearOutputs()
+{
+	return scene_->clearOutputs();
+}
 
 void Interface::abort()
 {

@@ -39,11 +39,11 @@ class Accelerator;
 class BackgroundPortalLight final : public Light
 {
 	public:
-		static Light *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
+		virtual ~BackgroundPortalLight() override;
 
 	private:
 		BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
-		virtual ~BackgroundPortalLight() override;
 		virtual void init(Scene &scene) override;
 		virtual Rgb totalEnergy() const override;
 		virtual Rgb emitPhoton(float s_1, float s_2, float s_3, float s_4, Ray &ray, float &ipdf) const override;
@@ -68,7 +68,7 @@ class BackgroundPortalLight final : public Light
 		float area_, inv_area_;
 		float power_;
 		MeshObject *mesh_object_ = nullptr;
-		Accelerator *accelerator_ = nullptr;
+		std::unique_ptr<Accelerator> accelerator_;
 		Background *bg_ = nullptr;
 		Point3 world_center_;
 		float a_pdf_;

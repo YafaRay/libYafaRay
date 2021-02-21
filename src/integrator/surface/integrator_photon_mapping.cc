@@ -1080,7 +1080,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 	return Rgba(col, alpha);
 }
 
-Integrator *PhotonIntegrator::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Integrator> PhotonIntegrator::factory(ParamMap &params, const Scene &scene)
 {
 	bool transp_shad = false;
 	bool final_gather = true;
@@ -1135,36 +1135,36 @@ Integrator *PhotonIntegrator::factory(ParamMap &params, const Scene &scene)
 	params.getParam("AO_color", ao_col);
 	params.getParam("photon_maps_processing", photon_maps_processing_str);
 
-	PhotonIntegrator *ite = new PhotonIntegrator(num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad);
+	auto inte = std::unique_ptr<PhotonIntegrator>(new PhotonIntegrator(num_photons, num_c_photons, transp_shad, shadow_depth, ds_rad, c_rad));
 
-	ite->use_photon_caustics_ = caustics;
-	ite->use_photon_diffuse_ = diffuse;
+	inte->use_photon_caustics_ = caustics;
+	inte->use_photon_diffuse_ = diffuse;
 
-	ite->r_depth_ = raydepth;
-	ite->n_diffuse_search_ = search;
-	ite->n_caus_search_ = caustic_mix;
-	ite->final_gather_ = final_gather;
-	ite->max_bounces_ = bounces;
-	ite->caus_depth_ = bounces;
-	ite->n_paths_ = fg_paths;
-	ite->gather_bounces_ = fg_bounces;
-	ite->show_map_ = show_map;
-	ite->gather_dist_ = gather_dist;
+	inte->r_depth_ = raydepth;
+	inte->n_diffuse_search_ = search;
+	inte->n_caus_search_ = caustic_mix;
+	inte->final_gather_ = final_gather;
+	inte->max_bounces_ = bounces;
+	inte->caus_depth_ = bounces;
+	inte->n_paths_ = fg_paths;
+	inte->gather_bounces_ = fg_bounces;
+	inte->show_map_ = show_map;
+	inte->gather_dist_ = gather_dist;
 	// Background settings
-	ite->transp_background_ = bg_transp;
-	ite->transp_refracted_background_ = bg_transp_refract;
+	inte->transp_background_ = bg_transp;
+	inte->transp_refracted_background_ = bg_transp_refract;
 	// AO settings
-	ite->use_ambient_occlusion_ = do_ao;
-	ite->ao_samples_ = ao_samples;
-	ite->ao_dist_ = ao_dist;
-	ite->ao_col_ = ao_col;
+	inte->use_ambient_occlusion_ = do_ao;
+	inte->ao_samples_ = ao_samples;
+	inte->ao_dist_ = ao_dist;
+	inte->ao_col_ = ao_col;
 
-	if(photon_maps_processing_str == "generate-save") ite->photon_map_processing_ = PhotonsGenerateAndSave;
-	else if(photon_maps_processing_str == "load") ite->photon_map_processing_ = PhotonsLoad;
-	else if(photon_maps_processing_str == "reuse-previous") ite->photon_map_processing_ = PhotonsReuse;
-	else ite->photon_map_processing_ = PhotonsGenerateOnly;
+	if(photon_maps_processing_str == "generate-save") inte->photon_map_processing_ = PhotonsGenerateAndSave;
+	else if(photon_maps_processing_str == "load") inte->photon_map_processing_ = PhotonsLoad;
+	else if(photon_maps_processing_str == "reuse-previous") inte->photon_map_processing_ = PhotonsReuse;
+	else inte->photon_map_processing_ = PhotonsGenerateOnly;
 
-	return ite;
+	return inte;
 }
 
 END_YAFARAY

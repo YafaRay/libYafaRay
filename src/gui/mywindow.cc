@@ -346,15 +346,11 @@ void MainWindow::slotFinished()
 		interface_->paramsSetString("image_path", "file_name_");
 		interface_->paramsSetInt("border_x", b_x_);
 		interface_->paramsSetInt("border_y", b_y_);
-		ColorOutput *out = interface_->createOutput("image_output");
-
+		interface_->createOutput("image_output");
 		interface_->paramsClearAll();
 		render_saved_ = true;
 
 		rt = QString("Image Auto-saved. ");
-
-		delete out;
-
 		if(auto_close_)
 		{
 			if(render_cancelled_) app_global->exit(1);
@@ -549,7 +545,7 @@ bool MainWindow::saveDlg()
 		interface_->paramsSetString("image_path", last_path_.toStdString().c_str());
 		interface_->paramsSetInt("border_x", b_x_);
 		interface_->paramsSetInt("border_y", b_y_);
-		ColorOutput *out = interface_->createOutput("image_output");
+		interface_->createOutput("image_output");
 		interface_->paramsClearAll();
 		//FIXME: interf->setDrawParams(useDrawParams);
 
@@ -561,7 +557,6 @@ bool MainWindow::saveDlg()
 		savemesg.append("saved.");
 
 		ui_->yafLabel->setText(savemesg);
-		delete out;
 	}
 
 	return render_saved_;

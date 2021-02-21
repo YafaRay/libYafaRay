@@ -38,11 +38,11 @@ class ImageFilm;
 class BidirectionalIntegrator final : public TiledIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
+		virtual ~BidirectionalIntegrator() override;
 
 	private:
 		BidirectionalIntegrator(bool transp_shad = false, int shadow_depth = 4);
-		virtual ~BidirectionalIntegrator() override;
 		virtual std::string getShortName() const override { return "BdPT"; }
 		virtual std::string getName() const override { return "BidirectionalPathTracer"; }
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) override;

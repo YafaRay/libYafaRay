@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-Format *Format::factory(ParamMap &params)
+std::unique_ptr<Format> Format::factory(ParamMap &params)
 {
 	Y_DEBUG PRTEXT(**Format) PREND; params.printDebug();
 	std::string type;

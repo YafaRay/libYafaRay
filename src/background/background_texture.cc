@@ -24,6 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
@@ -77,7 +78,7 @@ Rgb TextureBackground::eval(const Ray &ray, bool use_ibl_blur) const
 	return power_ * ret;
 }
 
-Background *TextureBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> TextureBackground::factory(ParamMap &params, Scene &scene)
 {
 	Texture *tex = nullptr;
 	std::string texname;
@@ -117,7 +118,7 @@ Background *TextureBackground::factory(ParamMap &params, Scene &scene)
 	params.getParam("with_diffuse", diffuse);
 	params.getParam("cast_shadows", cast_shadows);
 
-	Background *tex_bg = new TextureBackground(tex, pr, power, rot, ibl, ibl_blur, caust);
+	auto tex_bg = std::make_shared<TextureBackground>(TextureBackground(tex, pr, power, rot, ibl, ibl_blur, caust));
 
 	if(ibl)
 	{

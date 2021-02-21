@@ -24,8 +24,10 @@
 #ifndef YAFARAY_CAMERA_H
 #define YAFARAY_CAMERA_H
 
+#include <memory>
 #include "constants.h"
 #include "geometry/plane.h"
+#include "common/memory.h"
 
 BEGIN_YAFARAY
 
@@ -42,8 +44,7 @@ class Point3;
 class Camera
 {
 	public:
-		static Camera *factory(ParamMap &params, const Scene &scene);
-
+		static std::unique_ptr<Camera> factory(ParamMap &params, const Scene &scene);
 		Camera() = default;
 		Camera(const Point3 &pos, const Point3 &look, const Point3 &up, int resx, int resy, float aspect, float const near_clip_distance, float const far_clip_distance);
 		virtual ~Camera() = default;

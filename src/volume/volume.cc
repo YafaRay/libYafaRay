@@ -29,7 +29,7 @@
 
 BEGIN_YAFARAY
 
-VolumeRegion *VolumeRegion::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeRegion> VolumeRegion::factory(const ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**VolumeRegion) PREND; params.printDebug();
 	std::string type;
@@ -42,7 +42,7 @@ VolumeRegion *VolumeRegion::factory(const ParamMap &params, const Scene &scene)
 	else return nullptr;
 }
 
-VolumeHandler *VolumeHandler::factory(const ParamMap &params, const Scene &scene)
+std::unique_ptr<VolumeHandler> VolumeHandler::factory(const ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**VolumeHandler) PREND; params.printDebug();
 	std::string type;

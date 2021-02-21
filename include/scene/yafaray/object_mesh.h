@@ -23,8 +23,8 @@
 #include "object_yafaray.h"
 #include "geometry/vector.h"
 #include "geometry/uv.h"
+#include "common/memory.h"
 #include <vector>
-#include <memory>
 
 BEGIN_YAFARAY
 

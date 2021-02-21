@@ -53,9 +53,6 @@ void recursiveFinder_global(const ShaderNode *node, std::set<const ShaderNode *>
 
 NodeMaterial::~NodeMaterial()
 {
-	//clear nodes map:
-	for(const auto &node : shaders_table_) delete node.second;
-	shaders_table_.clear();
 }
 
 void NodeMaterial::evalNodes(const RenderData &render_data, const SurfacePoint &sp, const std::vector<ShaderNode *> &nodes, NodeStack &stack) const {
@@ -136,12 +133,12 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 			break;
 		}
 
-		ShaderNode *shader = ShaderNode::factory(param_map, scene);
+		std::unique_ptr<ShaderNode> shader = ShaderNode::factory(param_map, scene);
 		if(shader)
 		{
-			shaders_table_[name] = shader;
-			color_nodes_.push_back(shader);
-			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shader << ")" << YENDL;
+			shaders_table_[name] = std::move(shader);
+			color_nodes_.push_back(shaders_table_[name].get());
+			Y_VERBOSE << "NodeMaterial: Added ShaderNode '" << name << "'! (" << (void *)shaders_table_[name].get() << ")" << YENDL;
 		}
 		else
 		{
@@ -165,14 +162,7 @@ bool NodeMaterial::loadNodes(const std::list<ParamMap> &params_list, Scene &scen
 			++n;
 		}
 	}
-
-	if(error)
-	{
-		//clear nodes map:
-		for(const auto &node : shaders_table_) delete node.second;
-		shaders_table_.clear();
-	}
-
+	if(error) shaders_table_.clear();
 	return !error;
 }
 
@@ -187,7 +177,7 @@ void NodeMaterial::parseNodes(const ParamMap &params, std::vector<ShaderNode *> 
 			const auto node_found = shaders_table_.find(name);
 			if(node_found != shaders_table_.end())
 			{
-				current_node.second = node_found->second;
+				current_node.second = node_found->second.get();
 				roots.push_back(current_node.second);
 			}
 			else Y_WARNING << "Shader node " << current_node.first << " '" << name << "' does not exist!" << YENDL;

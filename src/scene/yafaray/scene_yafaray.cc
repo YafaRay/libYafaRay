@@ -75,8 +75,7 @@ YafaRayScene::~YafaRayScene()
 
 void YafaRayScene::clearObjects()
 {
-	if(accelerator_) { delete accelerator_; accelerator_ = nullptr; }
-	freeMap(objects_);
+	accelerator_ = nullptr;
 	objects_.clear();
 }
 
@@ -212,7 +211,6 @@ Object *YafaRayScene::getObject(const std::string &name) const
 
 bool YafaRayScene::updateObjects()
 {
-	if(accelerator_) { delete accelerator_; accelerator_ = nullptr; }
 	std::vector<const Primitive *> primitives;
 	for(const auto &o : objects_)
 	{

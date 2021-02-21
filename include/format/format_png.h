@@ -32,7 +32,7 @@ struct PngStructs;
 class PngFormat final : public Format
 {
 	public:
-		static Format *factory(ParamMap &params);
+		static std::unique_ptr<Format> factory(ParamMap &params);
 
 	private:
 		virtual std::string getFormatName() const override { return "PngFormat"; }

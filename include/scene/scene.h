@@ -28,6 +28,7 @@
 #include "image/image.h"
 #include "common/aa_noise_params.h"
 #include "geometry/bound.h"
+#include "common/memory.h"
 #include <vector>
 #include <map>
 #include <list>
@@ -59,7 +60,6 @@ class RenderData;
 enum class DarkDetectionType : int;
 
 typedef unsigned int ObjId_t;
-
 
 /*! describes an instance of a scene, including all data and functionality to
 	create and render a whole scene on the lowest "layer".
@@ -97,7 +97,7 @@ class LIBYAFARAY_EXPORT Scene
 		ObjId_t getNextFreeId();
 		bool startObjects();
 		bool endObjects();
-		void setBackground(Background *bg);
+		void setBackground(std::shared_ptr<Background> bg);
 		void setSurfIntegrator(SurfaceIntegrator *s);
 		SurfaceIntegrator *getSurfIntegrator() const { return surf_integrator_; }
 		void setVolIntegrator(VolumeIntegrator *v);
@@ -125,30 +125,30 @@ class LIBYAFARAY_EXPORT Scene
 		ShaderNode *getShaderNode(const std::string &name) const;
 		Camera *getCamera(const std::string &name) const;
 		Light *getLight(const std::string &name) const;
-		Background *getBackground(const std::string &name) const;
+		std::shared_ptr<Background> getBackground(const std::string &name) const;
 		Integrator *getIntegrator(const std::string &name) const;
 		ColorOutput *getOutput(const std::string &name) const;
 		RenderView *getRenderView(const std::string &name) const;
-		const std::map<std::string, RenderView *> &getRenderViews() const { return render_views_; }
-		const std::map<std::string, VolumeRegion *> &getVolumeRegions() const { return volume_regions_; }
-		const std::map<std::string, Light *> &getLights() const { return lights_; }
+		const std::map<std::string, std::unique_ptr<RenderView>> &getRenderViews() const { return render_views_; }
+		const std::map<std::string, std::unique_ptr<VolumeRegion>> &getVolumeRegions() const { return volume_regions_; }
+		const std::map<std::string, std::unique_ptr<Light>> &getLights() const { return lights_; }
 
 		Light *createLight(const std::string &name, ParamMap &params);
 		Texture *createTexture(const std::string &name, ParamMap &params);
 		Material *createMaterial(const std::string &name, ParamMap &params, std::list<ParamMap> &eparams);
 		Camera *createCamera(const std::string &name, ParamMap &params);
-		Background *createBackground(const std::string &name, ParamMap &params);
+		std::shared_ptr<Background> createBackground(const std::string &name, ParamMap &params);
 		Integrator *createIntegrator(const std::string &name, ParamMap &params);
 		ShaderNode *createShaderNode(const std::string &name, ParamMap &params);
 		VolumeHandler *createVolumeHandler(const std::string &name, ParamMap &params);
 		VolumeRegion *createVolumeRegion(const std::string &name, ParamMap &params);
 		RenderView *createRenderView(const std::string &name, ParamMap &params);
-		ColorOutput *createOutput(const std::string &name, ParamMap &params); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-		ColorOutput *createOutput(const std::string &name, ColorOutput *output); //We do *NOT* have ownership of the outputs, do *NOT* delete them!
-		bool removeOutput(const std::string &name); //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		void clearOutputs();; //Caution: this will delete outputs, only to be called by the client on demand, we do *NOT* have ownership of the outputs
-		std::map<std::string, ColorOutput *> &getOutputs() { return outputs_; }
-		const std::map<std::string, ColorOutput *> getOutputs() const { return outputs_; }
+		ColorOutput *createOutput(const std::string &name, ParamMap &params, bool auto_delete = true);
+		ColorOutput *createOutput(const std::string &name, UniquePtr_t<ColorOutput> output, bool auto_delete = true);
+		bool removeOutput(const std::string &name);
+		void clearOutputs();
+		std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() { return outputs_; }
+		const std::map<std::string, UniquePtr_t<ColorOutput>> &getOutputs() const { return outputs_; }
 		bool setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb = nullptr);
 		void defineLayer(const ParamMap &params);
 		void defineLayer(const std::string &layer_type_name, const std::string &image_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name);
@@ -165,7 +165,6 @@ class LIBYAFARAY_EXPORT Scene
 		bool ray_min_dist_auto_ = true;  //enable automatic ray minimum distance calculation
 
 	protected:
-		template <class T> static void freeMap(std::map< std::string, T * > &map);
 		struct CreationState
 		{
 			enum State { Ready, Geometry, Object };
@@ -177,17 +176,22 @@ class LIBYAFARAY_EXPORT Scene
 		} creation_state_;
 		Bound scene_bound_; //!< bounding box of all (finite) scene geometry
 		std::string scene_accelerator_;
-		std::map<std::string, Light *> lights_;
-		std::map<std::string, Material *> materials_;
+		std::map<std::string, std::unique_ptr<Light>> lights_;
+		std::map<std::string, std::unique_ptr<Material>> materials_;
 
 	private:
 		const Layers getLayersWithImages() const;
 		const Layers getLayersWithExportedImages() const;
-		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, T*> &map);
+		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, std::unique_ptr<T>> &map);
+		template <typename T> static T *findMapItem(const std::string &name, const std::map<std::string, UniquePtr_t<T>> &map);
+		template <typename T> static std::shared_ptr<T> findMapItem(const std::string &name, const std::map<std::string, std::shared_ptr<T>> &map);
 		void setMaskParams(const ParamMap &params);
 		void setEdgeToonParams(const ParamMap &params);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, T *item, std::map<std::string, T*> &map);
-		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, T*> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, std::unique_ptr<T> item, std::map<std::string, std::unique_ptr<T>> &map);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, UniquePtr_t<T> item, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::unique_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
+		template <typename T> static T *createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, UniquePtr_t<T>> &map, bool auto_delete, Scene *scene, bool check_type_exists = true);
+		template <typename T> static std::shared_ptr<T> createMapItem(const std::string &name, const std::string &class_name, ParamMap &params, std::map<std::string, std::shared_ptr<T>> &map, Scene *scene, bool check_type_exists = true);
 		void defineBasicLayers();
 		void defineDependentLayers(); //!< This function generates the basic/auxiliary layers. Must be called *after* defining all render layers with the defineLayer function.
 
@@ -195,17 +199,17 @@ class LIBYAFARAY_EXPORT Scene
 		int nthreads_ = 1;
 		int nthreads_photons_ = 1;
 		std::unique_ptr<ImageFilm> image_film_;
-		Background *background_ = nullptr;
+		std::shared_ptr<Background> background_;
 		SurfaceIntegrator *surf_integrator_ = nullptr;
-		std::map<std::string, Texture *> textures_;
-		std::map<std::string, Camera *> cameras_;
-		std::map<std::string, Background *> backgrounds_;
-		std::map<std::string, Integrator *> integrators_;
-		std::map<std::string, ShaderNode *> shaders_;
-		std::map<std::string, VolumeHandler *> volume_handlers_;
-		std::map<std::string, VolumeRegion *> volume_regions_;
-		std::map<std::string, ColorOutput *> outputs_;
-		std::map<std::string, RenderView *> render_views_;
+		std::map<std::string, std::unique_ptr<Texture>> textures_;
+		std::map<std::string, std::unique_ptr<Camera>> cameras_;
+		std::map<std::string, std::shared_ptr<Background>> backgrounds_;
+		std::map<std::string, std::unique_ptr<Integrator>> integrators_;
+		std::map<std::string, std::unique_ptr<ShaderNode>> shaders_;
+		std::map<std::string, std::unique_ptr<VolumeHandler>> volume_handlers_;
+		std::map<std::string, std::unique_ptr<VolumeRegion>> volume_regions_;
+		std::map<std::string, UniquePtr_t<ColorOutput>> outputs_;
+		std::map<std::string, std::unique_ptr<RenderView>> render_views_;
 		Layers layers_;
 };
 

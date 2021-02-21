@@ -27,7 +27,7 @@
 
 BEGIN_YAFARAY
 
-RenderView *RenderView::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<RenderView> RenderView::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(**RenderView) PREND;
 	params.printDebug();
@@ -40,7 +40,7 @@ RenderView *RenderView::factory(ParamMap &params, const Scene &scene)
 	params.getParam("light_names", light_names);
 	params.getParam("wavelength", wavelength);
 
-	return new RenderView(name, camera_name, light_names, wavelength);
+	return std::unique_ptr<RenderView>(new RenderView(name, camera_name, light_names, wavelength));
 }
 
 bool RenderView::init(const Scene &scene)
@@ -55,7 +55,10 @@ bool RenderView::init(const Scene &scene)
 	lights_.clear();
 	const std::vector<std::string> selected_lights_names = tokenize_global(light_names_, ";");
 
-	if(selected_lights_names.empty()) lights_ = scene.getLights();
+	if(selected_lights_names.empty())
+	{
+		for(const auto &l : scene.getLights()) lights_[l.first] = l.second.get();
+	}
 	else
 	{
 		for(const auto &light_name : selected_lights_names)

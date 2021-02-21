@@ -267,7 +267,7 @@ float RoughGlassMaterial::getMatIor() const
 	return ior_;
 }
 
-Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
+std::unique_ptr<Material> RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &param_list, Scene &scene)
 {
 	float ior = 1.4;
 	float filt = 0.f;
@@ -309,7 +309,7 @@ Material *RoughGlassMaterial::factory(ParamMap &params, std::list< ParamMap > &p
 
 	alpha = std::max(1e-4f, std::min(alpha * 0.5f, 1.f));
 
-	RoughGlassMaterial *mat = new RoughGlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility);
+	auto mat = std::unique_ptr<RoughGlassMaterial>(new RoughGlassMaterial(ior, filt * filt_col + Rgb(1.f - filt), sr_col, fake_shad, alpha, disp_power, visibility));
 
 	mat->setMaterialIndex(mat_pass_index);
 	mat->receive_shadows_ = receive_shadows;

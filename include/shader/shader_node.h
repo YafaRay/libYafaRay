@@ -54,7 +54,7 @@ class NodeStack final
 class NodeFinder final : public Collection<std::string, ShaderNode *>
 {
 	public:
-		NodeFinder(const std::map<std::string, ShaderNode *> &table) { items_ = table; }
+		NodeFinder(const std::map<std::string, std::unique_ptr<ShaderNode>> &table) { for(const auto &s : table) items_[s.first] = s.second.get(); }
 };
 
 /*!	shader nodes are as the name implies elements of a node based shading tree.
@@ -65,7 +65,7 @@ class NodeFinder final : public Collection<std::string, ShaderNode *>
 class ShaderNode
 {
 	public:
-		static ShaderNode *factory(const ParamMap &params, const Scene &scene);
+		static std::unique_ptr<ShaderNode> factory(const ParamMap &params, const Scene &scene);
 		virtual ~ShaderNode() = default;
 		unsigned int getId() const { return id_; }
 		void setId(unsigned int id) { id_ = id; }

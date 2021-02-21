@@ -24,6 +24,7 @@
 #include "common/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
+#include "output/output.h"
 
 BEGIN_YAFARAY
 
@@ -178,7 +179,7 @@ Rgb SunSkyBackground::eval(const Ray &ray, bool from_postprocessed) const
 	return power_ * getSkyCol(ray);
 }
 
-Background *SunSkyBackground::factory(ParamMap &params, Scene &scene)
+std::shared_ptr<Background> SunSkyBackground::factory(ParamMap &params, Scene &scene)
 {
 	Point3 dir(1, 1, 1);	// same as sunlight, position interpreted as direction
 	float turb = 4.0;	// turbidity of atmosphere
@@ -217,7 +218,7 @@ Background *SunSkyBackground::factory(ParamMap &params, Scene &scene)
 	params.getParam("with_caustic", caus);
 	params.getParam("with_diffuse", diff);
 
-	Background *new_sunsky = new SunSkyBackground(dir, turb, av, bv, cv, dv, ev, power, bgl, true);
+	auto new_sunsky = std::make_shared<SunSkyBackground>(SunSkyBackground(dir, turb, av, bv, cv, dv, ev, power, bgl, true));
 
 	if(bgl)
 	{

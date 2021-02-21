@@ -41,7 +41,7 @@ struct IntersectData;
 class AcceleratorKdTreeMultiThread final : public Accelerator
 {
 	public:
-		static Accelerator *factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
+		static std::unique_ptr<Accelerator> factory(const std::vector<const Primitive *> &primitives, ParamMap &params);
 
 	private:
 		struct Parameters;

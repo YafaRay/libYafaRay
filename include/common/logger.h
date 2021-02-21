@@ -33,7 +33,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-#include <render/render_control.h>
+#include "render/render_control.h"
 
 //for Y_DEBUG printing of variable name + value. For example:  Y_DEBUG PRTEXT(Integration1) PR(color) PR(ray.dir) PREND;
 #define PRPREC(precision) << std::setprecision(precision)

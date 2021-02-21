@@ -27,10 +27,11 @@
 #include "format/format.h"
 #include "image/image_layers.h"
 #include "render/render_view.h"
+#include "scene/scene.h"
 
 BEGIN_YAFARAY
 
-ColorOutput *ImageOutput::factory(const ParamMap &params, const Scene &scene)
+UniquePtr_t<ColorOutput> ImageOutput::factory(const ParamMap &params, const Scene &scene)
 {
 	std::string name;
 	std::string image_path;
@@ -59,7 +60,7 @@ ColorOutput *ImageOutput::factory(const ParamMap &params, const Scene &scene)
 	params.getParam("denoise_mix", denoise_params.mix_);
 
 	const ColorSpace color_space = Rgb::colorSpaceFromName(color_space_str);
-	ColorOutput *output = new ImageOutput(image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer);
+	auto output = UniquePtr_t<ColorOutput>(new ImageOutput(image_path, border_x, border_y, denoise_params, name, color_space, gamma, with_alpha, alpha_premultiply, multi_layer));
 	output->setLoggingParams(params);
 	output->setBadgeParams(params);
 	return output;
@@ -83,7 +84,7 @@ void ImageOutput::clearImageLayers()
 	}
 }
 
-void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, RenderView *> *render_views)
+void ImageOutput::init(int width, int height, const Layers *layers, const std::map<std::string, std::unique_ptr<RenderView>> *render_views)
 {
 	ColorOutput::init(width, height, layers, render_views);
 	clearImageLayers();
@@ -121,7 +122,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 
 	ParamMap params;
 	params["type"] = ext;
-	Format *format = Format::factory(params);
+	std::unique_ptr<Format> format = Format::factory(params);
 	
 	if(format)
 	{
@@ -129,12 +130,12 @@ void ImageOutput::flush(const RenderControl &render_control)
 		{
 			if(view_name == current_render_view_->getName())
 			{
-				saveImageFile(image_path_, Layer::Combined, format, render_control); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
+				saveImageFile(image_path_, Layer::Combined, format.get(), render_control); //This should not be necessary but Blender API seems to be limited and the API "load_from_file" function does not work (yet) with multilayered images, so I have to generate this extra combined pass file so it's displayed in the Blender window.
 			}
 
 			if(!directory.empty()) directory += "/";
 			const std::string fname_pass = directory + base_name + " (" + "multilayer" + ")." + ext;
-			saveImageFileMultiChannel(fname_pass, format, render_control);
+			saveImageFileMultiChannel(fname_pass, format.get(), render_control);
 
 			logger_global.setImagePath(fname_pass); //to show the image in the HTML log output
 		}
@@ -147,7 +148,7 @@ void ImageOutput::flush(const RenderControl &render_control)
 				const std::string exported_image_name = image_layer.second.layer_.getExportedImageName();
 				if(layer_type == Layer::Combined)
 				{
-					saveImageFile(image_path_, layer_type, format, render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
+					saveImageFile(image_path_, layer_type, format.get(), render_control); //default imagehandler filename, when not using views nor passes and for reloading into Blender
 					logger_global.setImagePath(image_path_); //to show the image in the HTML log output
 				}
 
@@ -157,11 +158,10 @@ void ImageOutput::flush(const RenderControl &render_control)
 					std::string fname_pass = directory + base_name + " [" + layer_type_name;
 					if(!exported_image_name.empty()) fname_pass += " - " + exported_image_name;
 					fname_pass += "]." + ext;
-					saveImageFile(fname_pass, layer_type, format, render_control);
+					saveImageFile(fname_pass, layer_type, format.get(), render_control);
 				}
 			}
 		}
-		delete format;
 	}
 	if(save_log_txt_)
 	{
@@ -195,7 +195,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		const std::unique_ptr<const Image> badge_image = generateBadgeImage(render_control);
+		const std::unique_ptr<Image> badge_image = generateBadgeImage(render_control);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		image = Image::getComposedImage(image.get(), badge_image.get(), badge_image_position);
@@ -208,7 +208,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 	if(denoiseEnabled())
 	{
-		std::unique_ptr<const Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
+		std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
 		if(image_denoised)
 		{
 			format->saveToFile(filename, image_denoised.get());
@@ -229,7 +229,7 @@ void ImageOutput::saveImageFile(const std::string &filename, const Layer::Type &
 
 		if(denoiseEnabled())
 		{
-			std::unique_ptr<const Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
+			std::unique_ptr<Image> image_denoised = Image::getDenoisedLdrImage(image.get(), denoise_params_);
 			if(image_denoised)
 			{
 				format->saveAlphaChannelOnlyToFile(file_name_alpha, image_denoised.get());
@@ -248,7 +248,7 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 {
 	if(badge_.getPosition() != Badge::Position::None)
 	{
-		std::unique_ptr<const Image> badge_image = generateBadgeImage(render_control);
+		std::unique_ptr<Image> badge_image = generateBadgeImage(render_control);
 		Image::Position badge_image_position = Image::Position::Bottom;
 		if(badge_.getPosition() == Badge::Position::Top) badge_image_position = Image::Position::Top;
 		ImageLayers image_layers_badge;

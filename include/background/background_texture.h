@@ -22,6 +22,7 @@
 #ifndef YAFARAY_BACKGROUND_TEXTURE_H
 #define YAFARAY_BACKGROUND_TEXTURE_H
 
+#include <memory>
 #include "background.h"
 #include "color/color.h"
 
@@ -34,7 +35,7 @@ class Texture;
 class TextureBackground final : public Background
 {
 	public:
-		static Background *factory(ParamMap &params, Scene &scene);
+		static std::shared_ptr<Background> factory(ParamMap &params, Scene &scene);
 
 	private:
 		enum Projection { Spherical = 0, Angular };

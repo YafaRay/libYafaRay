@@ -168,7 +168,7 @@ void AreaLight::emitPdf(const SurfacePoint &sp, const Vec3 &wo, float &area_pdf,
 	dir_pdf = cos_wo > 0 ? cos_wo : 0.f;
 }
 
-Light *AreaLight::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Light> AreaLight::factory(ParamMap &params, const Scene &scene)
 {
 	Point3 corner(0.0);
 	Point3 p_1(0.0);
@@ -196,7 +196,7 @@ Light *AreaLight::factory(ParamMap &params, const Scene &scene)
 	params.getParam("with_diffuse", shoot_d);
 	params.getParam("photon_only", p_only);
 
-	AreaLight *light = new AreaLight(corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows);
+	auto light = std::unique_ptr<AreaLight>(new AreaLight(corner, p_1 - corner, p_2 - corner, color, power, samples, light_enabled, cast_shadows));
 
 	light->object_name_ = object_name;
 	light->shoot_caustic_ = shoot_c;

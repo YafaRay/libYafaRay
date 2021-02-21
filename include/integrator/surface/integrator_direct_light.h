@@ -27,7 +27,7 @@ BEGIN_YAFARAY
 class DirectLightIntegrator final : public MonteCarloIntegrator
 {
 	public:
-		static Integrator *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Integrator> factory(ParamMap &params, const Scene &scene);
 
 	private:
 		DirectLightIntegrator(bool transp_shad = false, int shadow_depth = 4, int ray_depth = 6);

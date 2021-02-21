@@ -376,9 +376,9 @@ std::unique_ptr<Image> ExrFormat::loadFromFile(const std::string &name, const Im
 	return image;
 }
 
-Format *ExrFormat::factory(ParamMap &params)
+std::unique_ptr<Format> ExrFormat::factory(ParamMap &params)
 {
-	return new ExrFormat();
+	return std::unique_ptr<Format>(new ExrFormat());
 }
 
 END_YAFARAY
