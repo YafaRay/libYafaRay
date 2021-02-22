@@ -117,13 +117,12 @@ bool PhotonMap::save(const std::string &filename) const
 
 void PhotonMap::updateTree()
 {
-	if(tree_) delete tree_;
 	if(photons_.size() > 0)
 	{
-		tree_ = new kdtree::PointKdTree<Photon>(photons_, name_, threads_pkd_tree_);
+		tree_ = std::unique_ptr<kdtree::PointKdTree<Photon>>(new kdtree::PointKdTree<Photon>(photons_, name_, threads_pkd_tree_));
 		updated_ = true;
 	}
-	else tree_ = 0;
+	else tree_ = nullptr;
 }
 
 int PhotonMap::gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const

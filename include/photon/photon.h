@@ -109,12 +109,11 @@ struct FoundPhoton
 	float dis_;
 };
 
-class PhotonMap
+class PhotonMap final
 {
 	public:
-		PhotonMap(): paths_(0), updated_(false), search_radius_(1.f), tree_(nullptr) { }
-		PhotonMap(const std::string &mapname, int threads): paths_(0), updated_(false), search_radius_(1.f), tree_(nullptr), name_(mapname), threads_pkd_tree_(threads) { }
-		~PhotonMap() { if(tree_) delete tree_; }
+		PhotonMap() = default;
+		PhotonMap(const std::string &mapname, int threads): name_(mapname), threads_pkd_tree_(threads) { }
 		void setNumPaths(int n) { paths_ = n; }
 		void setName(const std::string &mapname) { name_ = mapname; }
 		void setNumThreadsPkDtree(int threads) { threads_pkd_tree_ = threads; }
@@ -125,7 +124,7 @@ class PhotonMap
 		void appendVector(std::vector<Photon> &vec, unsigned int curr) { photons_.insert(std::end(photons_), std::begin(vec), std::end(vec)); updated_ = false; paths_ += curr;}
 		void reserveMemory(size_t num_photons) { photons_.reserve(num_photons); }
 		void updateTree();
-		void clear() { photons_.clear(); delete tree_; tree_ = nullptr; updated_ = false; }
+		void clear() { photons_.clear(); tree_ = nullptr; updated_ = false; }
 		bool ready() const { return updated_; }
 		//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
 		int gather(const Point3 &p, FoundPhoton *found, unsigned int k, float &sq_radius) const;
@@ -136,10 +135,10 @@ class PhotonMap
 
 	protected:
 		std::vector<Photon> photons_;
-		int paths_; //!< amount of photon paths that have been traced for generating the map
-		bool updated_;
-		float search_radius_;
-		kdtree::PointKdTree<Photon> *tree_ = nullptr;
+		int paths_ = 0; //!< amount of photon paths that have been traced for generating the map
+		bool updated_ = false;
+		float search_radius_ = 1.f;
+		std::unique_ptr<kdtree::PointKdTree<Photon>> tree_;
 		std::string name_;
 		int threads_pkd_tree_ = 1;
 };
