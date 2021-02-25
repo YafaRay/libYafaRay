@@ -67,7 +67,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	if(max_depth_ > kd_max_stack_) max_depth_ = kd_max_stack_; //to prevent our stack to overflow
 	//experiment: add penalty to cost ratio to reduce memory usage on huge scenes
 	if(log_leaves > 16.0) cost_ratio_ += 0.25 * (log_leaves - 16.0);
-	all_bounds_ = new Bound[total_prims_ + prim_clip_thresh_ + 1];
+	all_bounds_ = std::unique_ptr<Bound[]>(new Bound[total_prims_ + prim_clip_thresh_ + 1]);
 	Y_VERBOSE << "Kd-Tree: Getting primitive bounds..." << YENDL;
 	for(uint32_t i = 0; i < total_prims_; i++)
 	{
@@ -85,13 +85,13 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	}
 	Y_VERBOSE << "Kd-Tree: Done." << YENDL;
 	// get working memory for tree construction
-	std::array<BoundEdge *, 3> edges;
+	std::array<std::unique_ptr<BoundEdge[]>, 3> edges;
 	const uint32_t r_mem_size = 3 * total_prims_;
-	uint32_t *left_prims = new uint32_t[std::max(static_cast<uint32_t>(2 * prim_clip_thresh_), total_prims_)];
-	uint32_t *right_prims = new uint32_t[r_mem_size]; //just a rough guess, allocating worst case is insane!
-	for(int i = 0; i < 3; ++i) edges[i] = new BoundEdge[514];
+	auto left_prims = std::unique_ptr<uint32_t[]>(new uint32_t[std::max(static_cast<uint32_t>(2 * prim_clip_thresh_), total_prims_)]);
+	auto right_prims = std::unique_ptr<uint32_t[]>(new uint32_t[r_mem_size]); //just a rough guess, allocating worst case is insane!
+	for(int i = 0; i < 3; ++i) edges[i] = std::unique_ptr<BoundEdge[]>(new BoundEdge[514]);
 #if PRIMITIVE_CLIPPING > 0
-	clip_ = new ClipPlane[max_depth_ + 2];
+	clip_ = std::unique_ptr<ClipPlane[]>(new ClipPlane[max_depth_ + 2]);
 	cdata_.resize((max_depth_ + 2) * prim_clip_thresh_);
 #endif
 	// prepare data
@@ -101,18 +101,10 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 #endif
 	/* build tree */
 	Y_VERBOSE << "Kd-Tree: Starting recursive build..." << YENDL;
-	buildTree(total_prims_, primitives, tree_bound_, left_prims,
-			  left_prims, right_prims, edges, // <= working memory
+	buildTree(total_prims_, primitives, tree_bound_, left_prims.get(),
+			  left_prims.get(), right_prims.get(), edges, // <= working memory
 	          r_mem_size, 0, 0);
 
-	// free working memory
-	delete[] left_prims;
-	delete[] right_prims;
-	delete[] all_bounds_;
-	for(auto &edge : edges) delete[] edge;
-#if PRIMITIVE_CLIPPING > 0
-	delete[] clip_;
-#endif
 	//print some stats:
 	c_end = clock() - c_start;
 	Y_VERBOSE << "Kd-Tree: Stats (" << static_cast<float>(c_end) / static_cast<float>(CLOCKS_PER_SEC) << "s)" << YENDL;
@@ -282,8 +274,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::pigeonMinCost(float e_bonus, flo
 	Cost function: Find the optimal split with SAH
 */
 
-AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx,
-															const Bound *all_bounds, const Bound *all_bounds_general, const std::array<BoundEdge *, 3> &edges, Stats &kd_stats)
+AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats)
 {
 	const std::array<float, 3> node_bound_axes {node_bound.longX(), node_bound.longY(), node_bound.longZ() };
 	const std::array<float, 3> inv_node_bound_axes { 1.f / node_bound_axes[0], 1.f / node_bound_axes[1], 1.f / node_bound_axes[2] };
@@ -419,7 +410,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(float e_bonus, float
 				2 when neither current nor subsequent split reduced cost
 */
 
-int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines)
+int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines)
 {
 	if(next_free_node_ == allocated_nodes_count_)
 	{
@@ -491,11 +482,11 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	const float base_bonus = e_bonus_;
 	e_bonus_ *= 1.1 - static_cast<float>(depth) / static_cast<float>(max_depth_);
 	SplitCost split;
-	if(n_prims > pigeonhole_sort_thresh_) split = pigeonMinCost(e_bonus_, cost_ratio_, n_prims, all_bounds_, node_bound, prim_nums);
+	if(n_prims > pigeonhole_sort_thresh_) split = pigeonMinCost(e_bonus_, cost_ratio_, n_prims, all_bounds_.get(), node_bound, prim_nums);
 #if PRIMITIVE_CLIPPING > 0
-	else if(n_prims <= prim_clip_thresh_) split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_ + total_prims_, all_bounds_, edges, kd_stats_);
+	else if(n_prims <= prim_clip_thresh_) split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get() + total_prims_, all_bounds_.get(), edges, kd_stats_);
 #endif
-	else split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_, all_bounds_, edges, kd_stats_);
+	else split = minimalCost(e_bonus_, cost_ratio_, n_prims, node_bound, prim_nums, all_bounds_.get(), all_bounds_.get(), edges, kd_stats_);
 	e_bonus_ = base_bonus; //restore eBonus
 	//<< if (minimum > leafcost) increase bad refines >>
 	if(split.best_cost_ > n_prims) ++bad_refines;

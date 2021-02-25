@@ -60,10 +60,10 @@ class AcceleratorKdTree final : public Accelerator
 		//	bool IntersectO(const point3d_t &from, const vector3d_t &ray, float dist, Primitive **tr, float &Z) const;
 		virtual Bound getBound() const override { return tree_bound_; }
 
-		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<BoundEdge *, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
+		int buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines);
 
 		static SplitCost pigeonMinCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound *all_bounds, const Bound &node_bound, const uint32_t *prim_idx);
-		static SplitCost minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<BoundEdge *, 3> &edges, Stats &kd_stats);
+		static SplitCost minimalCost(float e_bonus, float cost_ratio, uint32_t n_prims, const Bound &node_bound, const uint32_t *prim_idx, const Bound *all_bounds, const Bound *all_bounds_general, const std::array<std::unique_ptr<BoundEdge[]>, 3> &edges, Stats &kd_stats);
 
 		static AcceleratorIntersectData intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound);
 		static AcceleratorIntersectData intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound);
@@ -78,9 +78,9 @@ class AcceleratorKdTree final : public Accelerator
 		MemoryArena prims_arena_;
 		Node *nodes_;
 		// those are temporary actually, to keep argument counts bearable
-		Bound *all_bounds_;
+		std::unique_ptr<Bound[]> all_bounds_;
 #if PRIMITIVE_CLIPPING > 0
-		ClipPlane *clip_; // indicate clip plane(s) for current level
+		std::unique_ptr<ClipPlane[]> clip_; // indicate clip plane(s) for current level
 		std::vector<PolyDouble> cdata_; // clipping data...
 #endif
 		// some statistics:
