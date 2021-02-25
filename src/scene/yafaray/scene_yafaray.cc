@@ -55,11 +55,11 @@ BEGIN_YAFARAY
 #define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
 
 
-Scene *YafaRayScene::factory(ParamMap &params)
+std::unique_ptr<Scene> YafaRayScene::factory(ParamMap &params)
 {
 	std::string scene_mode;
 	params.getParam("mode", scene_mode);
-	Scene *scene = new YafaRayScene();
+	auto scene = std::unique_ptr<Scene>(new YafaRayScene());
 	return scene;
 }
 

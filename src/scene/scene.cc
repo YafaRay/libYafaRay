@@ -54,12 +54,12 @@ BEGIN_YAFARAY
 #define INFO_VERBOSE_SUCCESS(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")!" << YENDL
 #define INFO_VERBOSE_SUCCESS_DISABLED(name, t) Y_VERBOSE_SCENE << "Added " << pname << " '"<< name << "' (" << t << ")! [DISABLED]" << YENDL
 
-Scene *Scene::factory(ParamMap &params)
+std::unique_ptr<Scene> Scene::factory(ParamMap &params)
 {
 	Y_DEBUG PRTEXT(**Scene::factory) PREND; params.printDebug();
 	std::string type;
 	params.getParam("type", type);
-	Scene *scene;
+	std::unique_ptr<Scene> scene;
 	if(type == "yafaray") scene = YafaRayScene::factory(params);
 	else scene = YafaRayScene::factory(params);
 

@@ -74,7 +74,7 @@ typedef unsigned int ObjId_t;
 class LIBYAFARAY_EXPORT Scene
 {
 	public:
-		static Scene *factory(ParamMap &params);
+		static std::unique_ptr<Scene> factory(ParamMap &params);
 		Scene();
 		Scene(const Scene &s) = delete;
 		virtual ~Scene();

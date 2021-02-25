@@ -56,7 +56,7 @@ void XmlExport::clearAll()
 	}
 	params_->clear();
 	eparams_->clear();
-	cparams_ = params_;
+	cparams_ = params_.get();
 	nmat_ = 0;
 	next_obj_ = 0;
 }

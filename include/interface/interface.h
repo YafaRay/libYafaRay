@@ -21,10 +21,11 @@
 #define YAFARAY_INTERFACE_H
 
 #include "constants.h"
+#include "color/color.h"
 #include <list>
 #include <vector>
 #include <string>
-#include "color/color.h"
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -99,7 +100,7 @@ class LIBYAFARAY_EXPORT Interface
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void abort();
-		virtual ParamMap *getRenderParameters() { return params_; }
+		virtual ParamMap *getRenderParameters() { return params_.get(); }
 
 		bool setInteractive(bool interactive);
 		void enablePrintDateTime(bool value);
@@ -120,10 +121,10 @@ class LIBYAFARAY_EXPORT Interface
 	protected:
 		virtual void setCurrentMaterial(const Material *material);
 		virtual const Material *getCurrentMaterial() const;
-		ParamMap *params_ = nullptr;
-		std::list<ParamMap> *eparams_; //! for materials that need to define a whole shader tree etc.
+		std::unique_ptr<ParamMap> params_;
+		std::unique_ptr<std::list<ParamMap>> eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element
-		Scene *scene_ = nullptr;
+		std::unique_ptr<Scene> scene_;
 		float input_gamma_ = 1.f;
 		ColorSpace input_color_space_ = RawManualGamma;
 };

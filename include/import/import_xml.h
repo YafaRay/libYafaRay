@@ -25,6 +25,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <memory>
 
 BEGIN_YAFARAY
 
@@ -33,7 +34,7 @@ class Scene;
 class XmlParser;
 enum ColorSpace : int;
 
-LIBYAFARAY_EXPORT Scene *parseXmlFile_global(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma);
+LIBYAFARAY_EXPORT std::unique_ptr<Scene> parseXmlFile_global(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma);
 
 typedef void (*StartElementCb_t)(XmlParser &p, const char *element, const char **attrs);
 typedef void (*EndElementCb_t)(XmlParser &p, const char *element);
@@ -70,9 +71,9 @@ class XmlParser
 		std::string getLastSection() const { return current_->last_section_; }
 		std::string getLastElementName() const { return current_->last_element_; }
 		std::string getLastElementNameAttrs() const { return current_->last_element_attrs_; }
-		Scene *getScene() { return scene_; }
+		std::unique_ptr<Scene> getScene() { return std::move(scene_); }
 
-		Scene *scene_ = nullptr;
+		std::unique_ptr<Scene> scene_;
 		ParamMap params_, &render_;
 		std::list<ParamMap> eparams_; //! for materials that need to define a whole shader tree etc.
 		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a eparams element

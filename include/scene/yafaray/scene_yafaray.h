@@ -30,7 +30,7 @@ class Primitive;
 class YafaRayScene final : public Scene
 {
 	public:
-		static Scene *factory(ParamMap &params);
+		static std::unique_ptr<Scene> factory(ParamMap &params);
 
 	private:
 		YafaRayScene();

@@ -146,7 +146,7 @@ static xmlSAXHandler my_handler_global =
 };
 #endif // HAVE_XML
 
-Scene *parseXmlFile_global(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma)
+std::unique_ptr<Scene> parseXmlFile_global(const char *filename, ParamMap &render, const std::string &color_space_string, float input_gamma)
 {
 #if HAVE_XML
 

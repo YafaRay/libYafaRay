@@ -68,9 +68,9 @@ Interface::Interface()
 	sigaction(SIGINT, &signal_handler, nullptr);
 #endif
 
-	params_ = new ParamMap;
-	eparams_ = new std::list<ParamMap>;
-	cparams_ = params_;
+	params_ = std::unique_ptr<ParamMap>(new ParamMap);
+	eparams_ = std::unique_ptr<std::list<ParamMap>>(new std::list<ParamMap>);
+	cparams_ = params_.get();
 }
 
 void Interface::createScene()
@@ -83,10 +83,7 @@ void Interface::createScene()
 Interface::~Interface()
 {
 	Y_VERBOSE << "Interface: Deleting scene..." << YENDL;
-	if(scene_) delete scene_;
 	Y_INFO << "Interface: Done." << YENDL;
-	delete params_;
-	delete eparams_;
 	logger_global.clearAll();
 }
 
@@ -96,7 +93,7 @@ void Interface::clearAll()
 	scene_->clearAll();
 	params_->clear();
 	eparams_->clear();
-	cparams_ = params_;
+	cparams_ = params_.get();
 	Y_VERBOSE << "Interface: Cleanup done." << YENDL;
 }
 
@@ -242,7 +239,7 @@ void Interface::paramsClearAll()
 {
 	params_->clear();
 	eparams_->clear();
-	cparams_ = params_;
+	cparams_ = params_.get();
 }
 
 void Interface::paramsStartList()
@@ -259,7 +256,7 @@ void Interface::paramsPushList()
 
 void Interface::paramsEndList()
 {
-	cparams_ = params_;
+	cparams_ = params_.get();
 }
 
 Object *Interface::createObject(const char *name) { return scene_->createObject(name, *params_); }

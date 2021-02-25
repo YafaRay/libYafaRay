@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 	if(files.size() > 1) output_file_path = files.at(1);
 
 	ParamMap params;
-	auto scene = std::unique_ptr<Scene>(parseXmlFile_global(xml_file_path.c_str(), params, input_color_space_string, input_gamma));
+	std::unique_ptr<Scene> scene = parseXmlFile_global(xml_file_path.c_str(), params, input_color_space_string, input_gamma);
 	if(!scene) exit(1);
 	global_render_control_global = &scene->getRenderControl();	//for the CTRL+C handler
 
