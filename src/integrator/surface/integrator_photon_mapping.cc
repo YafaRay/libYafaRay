@@ -50,7 +50,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 	end = gdata->fetched_ = std::min(total, start + 32);
 	gdata->mutx_.unlock();
 
-	FoundPhoton *gathered = new FoundPhoton[n_search];
+	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_search]);
 
 	float radius = 0.f;
 	float i_scale = 1.f / ((float)gdata->diffuse_map_->nPaths() * M_PI);
@@ -61,7 +61,7 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 		for(unsigned int n = start; n < end; ++n)
 		{
 			radius = ds_radius_2;//actually the square radius...
-			int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered, n_search, radius);
+			int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
 
 			Vec3 rnorm = gdata->rad_points_[n].normal_;
 
@@ -88,7 +88,6 @@ void PhotonIntegrator::preGatherWorker(PreGatherData *gdata, float ds_rad, int n
 		gdata->pbar_->update(32);
 		gdata->mutx_.unlock();
 	}
-	delete[] gathered;
 }
 
 PhotonIntegrator::PhotonIntegrator(unsigned int d_photons, unsigned int c_photons, bool transp_shad, int shadow_depth, float ds_rad, float c_rad)
@@ -424,7 +423,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	int num_c_lights = 0;
 	int num_d_lights = 0;
 	float f_num_lights = 0.f;
-	float *energies = nullptr;
+	std::unique_ptr<float[]> energies;
 	Rgb pcol;
 
 	//shoot photons
@@ -457,11 +456,11 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	if(use_photon_diffuse_)
 	{
 		f_num_lights = (float)num_d_lights;
-		energies = new float[num_d_lights];
+		energies = std::unique_ptr<float[]>(new float[num_d_lights]);
 
 		for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = new Pdf1D(energies, num_d_lights);
+		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_d_lights));
 
 		Y_VERBOSE << getName() << ": Light(s) photon color testing for diffuse map:" << YENDL;
 		for(int i = 0; i < num_d_lights; ++i)
@@ -471,8 +470,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
-
-		delete[] energies;
 
 		//shoot photons
 		curr = 0;
@@ -491,15 +488,13 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_diffuse_photons_ << " photons across " << n_threads << " threads (" << (n_diffuse_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_, i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_, i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
 		pb->setTag("Diffuse photon map built.");
 		Y_VERBOSE << getName() << ": Diffuse photon map built." << YENDL;
 		Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
-
-		delete light_power_d_;
 
 		tmplights.clear();
 
@@ -555,11 +550,11 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		curr = 0;
 
 		f_num_lights = (float)num_c_lights;
-		energies = new float[num_c_lights];
+		energies = std::unique_ptr<float[]>(new float[num_c_lights]);
 
 		for(int i = 0; i < num_c_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-		light_power_d_ = new Pdf1D(energies, num_c_lights);
+		light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_c_lights));
 
 		Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
 		for(int i = 0; i < num_c_lights; ++i)
@@ -569,8 +564,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
-
-		delete[] energies;
 
 		Y_INFO << getName() << ": Building caustics photon map..." << YENDL;
 		pb->init(128);
@@ -585,13 +578,11 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_, num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
 		pb->setTag("Caustics photon map built.");
-		delete light_power_d_;
-
 		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_c_lights << " light(s)." << YENDL;
 		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_->nPhotons() << YENDL;
 	}
@@ -631,7 +622,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	if(use_photon_diffuse_ && final_gather_) //create radiance map:
 	{
 		// == remove too close radiance points ==//
-		kdtree::PointKdTree< RadData > *r_tree = new kdtree::PointKdTree< RadData >(pgdat.rad_points_, "FG Radiance Photon Map", scene_->getNumThreadsPhotons());
+		auto r_tree = std::unique_ptr<kdtree::PointKdTree<RadData>>(new kdtree::PointKdTree<RadData>(pgdat.rad_points_, "FG Radiance Photon Map", scene_->getNumThreadsPhotons()));
 		std::vector< RadData > cleaned;
 		for(unsigned int i = 0; i < pgdat.rad_points_.size(); ++i)
 		{
@@ -663,9 +654,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_VERBOSE << getName() << ": Radiance tree built... Updating the tree..." << YENDL;
 		session_global.radiance_map_->updateTree();
 		Y_VERBOSE << getName() << ": Done." << YENDL;
-
-		delete r_tree;
-		r_tree = nullptr;
 	}
 
 	if(use_photon_caustics_ && session_global.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)

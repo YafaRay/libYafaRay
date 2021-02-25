@@ -45,6 +45,10 @@ BEGIN_YAFARAY
 
 static constexpr int loffs_delta_global = 4567; //just some number to have different sequences per light...and it's a prime even...
 
+//Constructor and destructor defined here to avoid issues with std::unique_ptr<Pdf1D> being Pdf1D incomplete in the header (forward declaration)
+MonteCarloIntegrator::MonteCarloIntegrator() = default;
+MonteCarloIntegrator::~MonteCarloIntegrator() = default;
+
 Rgb MonteCarloIntegrator::estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers) const
 {
 	const bool layers_used = render_data.raylevel_ == 0 && color_layers && color_layers->size() > 1;
@@ -574,9 +578,9 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	{
 		float light_num_pdf, light_pdf;
 		const float f_num_lights = (float)num_lights;
-		float *energies = new float[num_lights];
+		auto energies = std::unique_ptr<float[]>(new float[num_lights]);
 		for(int i = 0; i < num_lights; ++i) energies[i] = caus_lights[i]->totalEnergy().energy();
-		Pdf1D *light_power_d = new Pdf1D(energies, num_lights);
+		auto light_power_d = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
 
 		Y_VERBOSE << getName() << ": Light(s) photon color testing for caustics map:" << YENDL;
 
@@ -588,8 +592,6 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 			Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 		}
-
-		delete[] energies;
 
 		int pb_step;
 		Y_INFO << getName() << ": Building caustics photon map..." << YENDL;
@@ -606,7 +608,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d, num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -614,8 +616,6 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		Y_VERBOSE << getName() << ": Done." << YENDL;
 		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
 		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_->nPhotons() << YENDL;
-
-		delete light_power_d;
 
 		if(session_global.caustic_map_->nPhotons() > 0)
 		{
@@ -645,12 +645,12 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const 
 {
 	if(!session_global.caustic_map_->ready()) return Rgb(0.f);
 
-	FoundPhoton *gathered = new FoundPhoton[n_caus_search_];//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
+	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_caus_search_]);//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
 	int n_gathered = 0;
 
 	float g_radius_square = caus_radius_ * caus_radius_;
 
-	n_gathered = session_global.caustic_map_->gather(sp.p_, gathered, n_caus_search_, g_radius_square);
+	n_gathered = session_global.caustic_map_->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
 
 	g_radius_square = 1.f / g_radius_square;
 
@@ -672,9 +672,6 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const 
 		}
 		sum *= 1.f / (float(session_global.caustic_map_->nPaths()));
 	}
-
-	delete [] gathered;
-
 	return sum;
 }
 

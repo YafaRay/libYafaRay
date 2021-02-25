@@ -45,9 +45,10 @@ enum PhotonMapProcessing
 class MonteCarloIntegrator: public TiledIntegrator
 {
 	public:
-		MonteCarloIntegrator() = default;
+		MonteCarloIntegrator();
 
 	protected:
+		virtual ~MonteCarloIntegrator() override;
 		/*! Estimates direct light from all sources in a mc fashion and completing MIS (Multiple Importance Sampling) for a given surface point */
 		Rgb estimateAllDirectLight(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo, ColorLayers *color_layers = nullptr) const;
 		/*! Like previous but for only one random light source for a given surface point */
@@ -74,7 +75,7 @@ class MonteCarloIntegrator: public TiledIntegrator
 		int n_caus_search_; //! Amount of caustic photons to be gathered in estimation
 		float caus_radius_; //! Caustic search radius for estimation
 		int caus_depth_; //! Caustic photons max path depth
-		Pdf1D *light_power_d_;
+		std::unique_ptr<Pdf1D> light_power_d_;
 
 		bool use_ambient_occlusion_; //! Use ambient occlusion
 		int ao_samples_; //! Ambient occlusion samples

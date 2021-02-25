@@ -561,7 +561,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	float light_num_pdf, light_pdf;
 	int num_d_lights = 0;
 	float f_num_lights = 0.f;
-	float *energies = nullptr;
+	std::unique_ptr<float[]> energies;
 	Rgb pcol;
 
 	tmplights.clear();
@@ -573,11 +573,11 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	}
 
 	f_num_lights = (float)num_d_lights;
-	energies = new float[num_d_lights];
+	energies = std::unique_ptr<float[]>(new float[num_d_lights]);
 
 	for(int i = 0; i < num_d_lights; ++i) energies[i] = tmplights[i]->totalEnergy().energy();
 
-	light_power_d_ = new Pdf1D(energies, num_d_lights);
+	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_d_lights));
 
 	Y_VERBOSE << getName() << ": Light(s) photon color testing for photon map:" << YENDL;
 
@@ -588,8 +588,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 		pcol *= f_num_lights * light_pdf / light_num_pdf; //remember that lightPdf is the inverse of the pdf, hence *=...
 		Y_VERBOSE << getName() << ": Light [" << i + 1 << "] Photon col:" << pcol << " | lnpdf: " << light_num_pdf << YENDL;
 	}
-
-	delete[] energies;
 
 	//shoot photons
 	unsigned int curr = 0;
@@ -625,14 +623,13 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	Y_PARAMS << getName() << ": Shooting " << n_photons_ << " photons across " << n_threads << " threads (" << (n_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_, num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 	for(auto &t : threads) t.join();
 
 	pb->done();
 	pb->setTag(previous_progress_tag + " - photon map built.");
 	Y_VERBOSE << getName() << ":Photon map built." << YENDL;
 	Y_INFO << getName() << ": Shot " << curr << " photons from " << num_d_lights << " light(s)" << YENDL;
-	delete light_power_d_;
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
@@ -743,7 +740,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 		}
 
 		// estimate radiance using photon map
-		FoundPhoton *gathered = new FoundPhoton[n_max_gather_global];
+		auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_max_gather_global]);
 
 		//if PM_IRE is on. we should estimate the initial radius using the photonMaps. (PM_IRE is only for the first pass, so not consume much time)
 		if(pm_ire_ && !hp.radius_setted_) // "waste" two gather here as it has two maps now. This make the logic simple.
@@ -753,9 +750,9 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			int n_gathered_1 = 0, n_gathered_2 = 0;
 
 			if(session_global.diffuse_map_->nPhotons() > 0)
-				n_gathered_1 = session_global.diffuse_map_->gather(sp.p_, gathered, n_search_, radius_1);
+				n_gathered_1 = session_global.diffuse_map_->gather(sp.p_, gathered.get(), n_search_, radius_1);
 			if(session_global.caustic_map_->nPhotons() > 0)
-				n_gathered_2 = session_global.caustic_map_->gather(sp.p_, gathered, n_search_, radius_2);
+				n_gathered_2 = session_global.caustic_map_->gather(sp.p_, gathered.get(), n_search_, radius_2);
 			if(n_gathered_1 > 0 || n_gathered_2 > 0) // it none photon gathered, we just skip.
 			{
 				if(radius_1 < radius_2) // we choose the smaller one to be the initial radius.
@@ -771,12 +768,12 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 		float radius_2 = hp.radius_2_;
 
 		if(b_hashgrid_)
-			n_gathered = photon_grid_.gather(sp.p_, gathered, n_max_gather_global, radius_2); // disable now
+			n_gathered = photon_grid_.gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); // disable now
 		else
 		{
 			if(session_global.diffuse_map_->nPhotons() > 0) // this is needed to avoid a runtime error.
 			{
-				n_gathered = session_global.diffuse_map_->gather(sp.p_, gathered, n_max_gather_global, radius_2); //we always collected all the photon inside the radius
+				n_gathered = session_global.diffuse_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2); //we always collected all the photon inside the radius
 			}
 
 			if(n_gathered > 0)
@@ -820,7 +817,7 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
-				n_gathered = session_global.caustic_map_->gather(sp.p_, gathered, n_max_gather_global, radius_2);
+				n_gathered = session_global.caustic_map_->gather(sp.p_, gathered.get(), n_max_gather_global, radius_2);
 				if(n_gathered > 0)
 				{
 					Rgb surf_col(0.f);
@@ -842,7 +839,6 @@ GatherInfo SppmIntegrator::traceGatherRay(yafaray4::RenderData &render_data, yaf
 				}
 			}
 		}
-		delete [] gathered;
 
 		render_data.raylevel_++;
 		if(render_data.raylevel_ <= (r_depth_ + additional_depth))

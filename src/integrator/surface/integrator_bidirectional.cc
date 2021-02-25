@@ -165,16 +165,14 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	lights_ = render_view->getLightsVisible();
 	int num_lights = lights_.size();
 	f_num_lights_ = 1.f / (float) num_lights;
-	float *energies = new float[num_lights];
+	auto energies = std::unique_ptr<float[]>(new float[num_lights]);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
-	light_power_d_ = new Pdf1D(energies, num_lights);
+	light_power_d_ = new Pdf1D(energies.get(), num_lights);
 
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 
 	for(int i = 0; i < num_lights; ++i) Y_DEBUG << getName() << ": " << energies[i] << " (" << light_power_d_->func_[i] << ") " << YENDL;
 	Y_DEBUG << getName() << ": preprocess(): lights: " << num_lights << " invIntegral:" << light_power_d_->inv_integral_ << YENDL;
-
-	delete[] energies;
 
 	//nPaths = 0;
 	light_image_ = image_film_;// new imageFilm_t(cam->resX(), cam->resY(), 0, 0, *lightOut, 1.5f);
