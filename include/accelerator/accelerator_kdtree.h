@@ -76,7 +76,7 @@ class AcceleratorKdTree final : public Accelerator
 		unsigned int max_leaf_size_;
 		Bound tree_bound_; 	//!< overall space the tree encloses
 		MemoryArena prims_arena_;
-		Node *nodes_;
+		std::unique_ptr<Node[]> nodes_;
 		// those are temporary actually, to keep argument counts bearable
 		std::unique_ptr<Bound[]> all_bounds_;
 #if PRIMITIVE_CLIPPING > 0

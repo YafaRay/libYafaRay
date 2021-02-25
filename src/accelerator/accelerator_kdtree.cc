@@ -54,7 +54,7 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 	c_start = clock();
 	next_free_node_ = 0;
 	allocated_nodes_count_ = 256;
-	nodes_ = new Node[allocated_nodes_count_];
+	nodes_ = std::unique_ptr<Node[]>(new Node[allocated_nodes_count_]);
 	if(max_depth_ <= 0) max_depth_ = static_cast<int>(7.0f + 1.66f * log(static_cast<float>(total_prims_)));
 	const double log_leaves = 1.442695f * log(static_cast<double >(total_prims_)); // = base2 log
 	if(leaf_size <= 0)
@@ -121,8 +121,6 @@ AcceleratorKdTree::AcceleratorKdTree(const std::vector<const Primitive *> &primi
 
 AcceleratorKdTree::~AcceleratorKdTree()
 {
-	Y_INFO << "Kd-Tree: Freeing nodes..." << YENDL;
-	delete[] nodes_;
 	Y_VERBOSE << "Kd-Tree: Done" << YENDL;
 }
 
@@ -416,10 +414,9 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	{
 		int new_count = 2 * allocated_nodes_count_;
 		new_count = (new_count > 0x100000) ? allocated_nodes_count_ + 0x80000 : new_count;
-		Node *n = new Node[new_count];
-		memcpy(n, nodes_, allocated_nodes_count_ * sizeof(Node));
-		delete[] nodes_;
-		nodes_ = n;
+		auto n = std::unique_ptr<Node[]>(new Node[new_count]);
+		memcpy(n.get(), nodes_.get(), allocated_nodes_count_ * sizeof(Node));
+		nodes_ = std::move(n);
 		allocated_nodes_count_ = new_count;
 	}
 
@@ -500,13 +497,14 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 	}
 
 	//todo: check working memory for child recursive calls
-	uint32_t remaining_mem, *more_prims = nullptr, *n_right_prims;
+	uint32_t remaining_mem, *n_right_prims;
 	uint32_t *old_right_prims = right_prims;
+	std::unique_ptr<uint32_t[]> more_prims;
 	if(n_prims > right_mem_size || 2 * prim_clip_thresh_ > right_mem_size) // *possibly* not enough, get some more
 	{
 		remaining_mem = n_prims * 3;
-		more_prims = new uint32_t[remaining_mem];
-		n_right_prims = more_prims;
+		more_prims = std::unique_ptr<uint32_t[]>(new uint32_t[remaining_mem]);
+		n_right_prims = more_prims.get();
 	}
 	else
 	{
@@ -617,8 +615,6 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 		nodes_[cur_node].setRightChild(next_free_node_);
 		buildTree(n_1, original_primitives, bound_r, n_right_prims, left_prims, n_right_prims + n_1, edges, remaining_mem, depth + 1, bad_refines);
 	}
-	// free additional working memory, if present
-	if(more_prims) delete[] more_prims;
 	return 1;
 }
 
@@ -628,7 +624,7 @@ int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primi
 */
 AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max) const
 {
-	return intersect(ray, t_max, nodes_, tree_bound_);
+	return intersect(ray, t_max, nodes_.get(), tree_bound_);
 }
 
 AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_max, const Node *nodes, const Bound &tree_bound)
@@ -772,7 +768,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersect(const Ray &ray, float t_ma
 
 AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias) const
 {
-	return intersectS(ray, t_max, shadow_bias, nodes_, tree_bound_);
+	return intersectS(ray, t_max, shadow_bias, nodes_.get(), tree_bound_);
 }
 
 AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
@@ -911,7 +907,7 @@ AcceleratorIntersectData AcceleratorKdTree::intersectS(const Ray &ray, float t_m
 
 AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias) const
 {
-	return intersectTs(render_data, ray, max_depth, t_max, shadow_bias, nodes_, tree_bound_);
+	return intersectTs(render_data, ray, max_depth, t_max, shadow_bias, nodes_.get(), tree_bound_);
 }
 
 AcceleratorTsIntersectData AcceleratorKdTree::intersectTs(RenderData &render_data, const Ray &ray, int max_depth, float t_max, float shadow_bias, const Node *nodes, const Bound &tree_bound)
