@@ -62,7 +62,7 @@ class TgaFormat final : public Format
 
 		bool precheckFile(TgaHeader &header, const std::string &name, bool &is_gray, bool &is_rle, bool &has_color_map, uint8_t &alpha_bit_depth);
 
-		ImageBuffer2D<RgbAlpha> *color_map_;
+		std::unique_ptr<ImageBuffer2D<RgbAlpha>> color_map_;
 		size_t tot_pixels_;
 		size_t min_x_, max_x_, step_x_;
 		size_t min_y_, max_y_, step_y_;

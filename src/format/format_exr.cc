@@ -250,7 +250,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	FrameBuffer fb;
 	header.compression() = ZIP_COMPRESSION;
 
-	std::vector<Imf::Array2D<Imf::Rgba> *> pixels;
+	std::vector<std::unique_ptr<Imf::Array2D<Imf::Rgba>>> pixels;
 
 	for(const auto &image_layer : *image_layers)
 	{
@@ -275,7 +275,7 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 		header.channels().insert(channel_b, Channel(HALF));
 		header.channels().insert(channel_a, Channel(HALF));
 
-		pixels.push_back(new Imf::Array2D<Imf::Rgba>);
+		pixels.emplace_back(new Imf::Array2D<Imf::Rgba>);
 		pixels.back()->resizeErase(h_0, w_0);
 
 		for(int i = 0; i < w_0; ++i)
@@ -308,13 +308,11 @@ bool ExrFormat::saveToFileMultiChannel(const std::string &name, const ImageLayer
 	{
 		file.writePixels(h_0);
 		Y_VERBOSE << getFormatName() << ": Done." << YENDL;
-		for(auto &pixel : pixels) delete pixel;
 		pixels.clear();
 	}
 	catch(const std::exception &exc)
 	{
 		Y_ERROR << getFormatName() << ": " << exc.what() << YENDL;
-		for(auto &pixel : pixels) delete pixel;
 		pixels.clear();
 		result = false;
 	}

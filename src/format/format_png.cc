@@ -67,7 +67,7 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 		File::close(fp);
 		return false;
 	}
-	png_bytep *row_pointers = new png_bytep[h];
+	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	channels = 3;
 	if(image->hasAlpha()) channels++;
 	for(int i = 0; i < h; i++) row_pointers[i] = new uint8_t[w * channels];
@@ -86,13 +86,12 @@ bool PngFormat::saveToFile(const std::string &name, const Image *image)
 		}
 	}
 
-	png_write_image(png_ptr, row_pointers);
+	png_write_image(png_ptr, row_pointers.get());
 	png_write_end(png_ptr, nullptr);
 	png_destroy_write_struct(&png_ptr, &info_ptr);
 	File::close(fp);
 	// cleanup:
 	for(int i = 0; i < h; i++) delete [] row_pointers[i];
-	delete[] row_pointers;
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return true;
 }
@@ -131,12 +130,11 @@ std::unique_ptr<Image> PngFormat::loadFromFile(const std::string &name, const Im
 
 std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t size, const Image::Optimization &optimization, const ColorSpace &color_space, float gamma)
 {
-	PngDataReader *reader = new PngDataReader(data, size);
+	auto reader = std::unique_ptr<PngDataReader>(new PngDataReader(data, size));
 	uint8_t signature[8];
 	if(reader->read(signature, 8) < 8)
 	{
 		Y_ERROR << getFormatName() << ": EOF found on image data while reading PNG signature." << YENDL;
-		delete reader;
 		return nullptr;
 	}
 	png_structp png_ptr = nullptr;
@@ -144,13 +142,11 @@ std::unique_ptr<Image> PngFormat::loadFromMemory(const uint8_t *data, size_t siz
 	PngStructs png_structs(png_ptr, info_ptr);
 	if(!fillReadStructs(signature, png_structs))
 	{
-		delete reader;
 		return nullptr;
 	}
-	png_set_read_fn(png_ptr, (void *) reader, readFromMem_global);
+	png_set_read_fn(png_ptr, static_cast<void *>(reader.get()), readFromMem_global);
 	png_set_sig_bytes(png_ptr, 8);
 	std::unique_ptr<Image> image = readFromStructs(png_structs, optimization, color_space, gamma);
-	delete reader;
 	return image;
 }
 
@@ -248,11 +244,11 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	// at 1 channel, 8 bits per channel and the other side of 1 pixel wide the resulting image uses 2gb of memory
 	const Image::Type type = Image::getTypeFromSettings(has_alpha, (num_chan == 1 || grayscale_));
 	std::unique_ptr<Image> image = Image::factory(w, h, type, optimization);
-	png_bytepp row_pointers = new png_bytep[h];
+	auto row_pointers = std::unique_ptr<png_bytep[]>(new png_bytep[h]);
 	int bit_mult = 1;
 	if(bit_depth == 16) bit_mult = 2;
 	for(size_t i = 0; i < h; i++) row_pointers[i] = new uint8_t[w * num_chan * bit_mult ];
-	png_read_image(png_structs.png_ptr_, row_pointers);
+	png_read_image(png_structs.png_ptr_, row_pointers.get());
 	float divisor = 1.f;
 	if(bit_depth == 8) divisor = inv_max_8_bit_;
 	else if(bit_depth == 16) divisor = inv_max_16_bit_;
@@ -330,7 +326,6 @@ std::unique_ptr<Image> PngFormat::readFromStructs(const PngStructs &png_structs,
 	png_destroy_read_struct(&png_structs.png_ptr_, &png_structs.info_ptr_, nullptr);
 	// cleanup:
 	for(int i = 0; i < static_cast<int>(h); i++) delete [] row_pointers[i];
-	delete[] row_pointers;
 	return image;
 }
 

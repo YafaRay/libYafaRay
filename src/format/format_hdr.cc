@@ -196,7 +196,7 @@ bool HdrFormat::readHeader(FILE *fp, int &width, int &height)
 
 bool HdrFormat::readOrle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma)
 {
-	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
+	auto scanline = std::unique_ptr<RgbePixel[]>(new RgbePixel[scan_width]); // Scanline buffer
 	int rshift = 0;
 	RgbePixel pixel;
 	for(int x = header_.min_[1]; x < scan_width; )
@@ -236,13 +236,12 @@ bool HdrFormat::readOrle(std::FILE *fp, int y, int scan_width, Image *image, con
 		else image->setColor(y, x, color);
 		++j;
 	}
-	delete [] scanline;
 	return true;
 }
 
 bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, const ColorSpace &color_space, float gamma)
 {
-	RgbePixel *scanline = new RgbePixel[scan_width]; // Scanline buffer
+	auto scanline = std::unique_ptr<RgbePixel[]>(new RgbePixel[scan_width]); // Scanline buffer
 	if(!scanline) //FIXME: this no longer does anything since exceptions were introduced, failing "new" does not return nullptr but an exception (which is unhandled here)
 	{
 		Y_ERROR << getFormatName() << ": Unable to allocate buffer memory..." << YENDL;
@@ -306,7 +305,6 @@ bool HdrFormat::readArle(std::FILE *fp, int y, int scan_width, Image *image, con
 		else image->setColor(y, x, color);
 		++j;
 	}
-	delete [] scanline;
 	return true;
 }
 
@@ -321,7 +319,7 @@ bool HdrFormat::saveToFile(const std::string &name, const Image *image)
 		writeHeader(file, image);
 		RgbePixel signature; //scanline start signature for adaptative RLE
 		signature.setScanlineStart(w); //setup the signature
-		RgbePixel *scanline = new RgbePixel[w];
+		auto scanline = std::unique_ptr<RgbePixel[]>(new RgbePixel[w]);
 		// write using adaptive-rle encoding
 		for(int y = 0; y < h; y++)
 		{
@@ -330,13 +328,12 @@ bool HdrFormat::saveToFile(const std::string &name, const Image *image)
 			// fill the scanline buffer
 			for(int x = 0; x < w; x++) scanline[x] = image->getColor(x, y);
 			// write the scanline RLE compressed by channel in 4 separated blocks not as contigous pixels pixel blocks
-			if(!writeScanline(file, scanline, image))
+			if(!writeScanline(file, scanline.get(), image))
 			{
 				Y_ERROR << getFormatName() << ": An error has occurred during scanline saving..." << YENDL;
 				return false;
 			}
 		}
-		delete [] scanline;
 		file.close();
 	}
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;

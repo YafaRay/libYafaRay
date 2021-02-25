@@ -79,13 +79,12 @@ bool TgaFormat::saveToFile(const std::string &name, const Image *image)
 
 template <class ColorType> void TgaFormat::readColorMap(std::FILE *fp, TgaHeader &header, ColorProcessor_t cp)
 {
-	ColorType *color = new ColorType[header.cm_number_of_entries_];
-	std::fread(color, sizeof(ColorType), header.cm_number_of_entries_, fp);
+	auto color = std::unique_ptr<ColorType[]>(new ColorType[header.cm_number_of_entries_]);
+	std::fread(color.get(), sizeof(ColorType), header.cm_number_of_entries_, fp);
 	for(int x = 0; x < static_cast<int>(header.cm_number_of_entries_); x++)
 	{
 		(*color_map_)(x, 0).setColor( (this->*cp)(&color[x]));
 	}
-	delete [] color;
 }
 
 template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
@@ -118,8 +117,8 @@ template <class ColorType> void TgaFormat::readRleImage(std::FILE *fp, ColorProc
 
 template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProcessor_t cp, Image *image, const ColorSpace &color_space, float gamma)
 {
-	ColorType *color_type = new ColorType[tot_pixels_];
-	std::fread(color_type, sizeof(ColorType), tot_pixels_, fp);
+	auto color_type = std::unique_ptr<ColorType[]>(new ColorType[tot_pixels_]);
+	std::fread(color_type.get(), sizeof(ColorType), tot_pixels_, fp);
 	size_t i = 0;
 	for(size_t y = min_y_; y != max_y_; y += step_y_)
 	{
@@ -131,7 +130,6 @@ template <class ColorType> void TgaFormat::readDirectImage(FILE *fp, ColorProces
 			++i;
 		}
 	}
-	delete [] color_type;
 }
 
 Rgba TgaFormat::processGray8(void *data)
@@ -305,7 +303,7 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 	// Read the colormap if needed
 	if(has_color_map)
 	{
-		color_map_ = new ImageBuffer2D<RgbAlpha>(header.cm_number_of_entries_, 1);
+		color_map_ = std::unique_ptr<ImageBuffer2D<RgbAlpha>>(new ImageBuffer2D<RgbAlpha>(header.cm_number_of_entries_, 1));
 		switch(header.cm_entry_bit_depth_)
 		{
 			case 15:
@@ -392,8 +390,6 @@ std::unique_ptr<Image> TgaFormat::loadFromFile(const std::string &name, const Im
 		}
 	}
 	File::close(fp);
-	if(color_map_) delete color_map_;
-	color_map_ = nullptr;
 	Y_VERBOSE << getFormatName() << ": Done." << YENDL;
 	return image;
 }
