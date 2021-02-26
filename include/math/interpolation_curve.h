@@ -35,22 +35,20 @@ class IrregularCurve final
 	public:
 		IrregularCurve(const float *datay, const float *datax, int n);
 		IrregularCurve(const float *datay, int n);
-		~IrregularCurve();
 		float getSample(float wl) const;
 		float operator()(float x) const {return getSample(x);};
 		void addSample(float data);
 
 	private:
-		float *c_1_ = nullptr;
-		float *c_2_ = nullptr;
+		std::unique_ptr<float[]> c_1_, c_2_;
 		int size_;
 		int index_;
 };
 
-IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): c_1_(nullptr), c_2_(nullptr), size_(n), index_(0)
+IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): size_(n), index_(0)
 {
-	c_1_ = new float[n];
-	c_2_ = new float[n];
+	c_1_ = std::unique_ptr<float[]>(new float[n]);
+	c_2_ = std::unique_ptr<float[]>(new float[n]);
 	for(int i = 0; i < n; i++)
 	{
 		c_1_[i] = datax[i];
@@ -58,17 +56,11 @@ IrregularCurve::IrregularCurve(const float *datay, const float *datax, int n): c
 	}
 }
 
-IrregularCurve::IrregularCurve(const float *datay, int n): c_1_(nullptr), c_2_(nullptr), size_(n), index_(0)
+IrregularCurve::IrregularCurve(const float *datay, int n): size_(n), index_(0)
 {
-	c_1_ = new float[n];
-	c_2_ = new float[n];
+	c_1_ = std::unique_ptr<float[]>(new float[n]);
+	c_2_ = std::unique_ptr<float[]>(new float[n]);
 	for(int i = 0; i < n; i++) c_2_[i] = datay[i];
-}
-
-IrregularCurve::~IrregularCurve()
-{
-	if(c_1_) { delete [] c_1_; c_1_ = nullptr; }
-	if(c_2_) { delete [] c_2_; c_2_ = nullptr; }
 }
 
 float IrregularCurve::getSample(float x) const
