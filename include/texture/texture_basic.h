@@ -29,7 +29,6 @@ class CloudsTexture final : public Texture
 {
 	public:
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~CloudsTexture() override;
 
 	private:
 		enum BiasType : int { None, Positive, Negative };
@@ -43,7 +42,7 @@ class CloudsTexture final : public Texture
 		float size_;
 		bool hard_;
 		Rgb color_1_, color_2_;
-		NoiseGenerator *n_gen_ = nullptr;
+		std::unique_ptr<NoiseGenerator> n_gen_;
 };
 
 
@@ -51,14 +50,6 @@ class MarbleTexture final : public Texture
 {
 	public:
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~MarbleTexture() override
-		{
-			if(n_gen_)
-			{
-				delete n_gen_;
-				n_gen_ = nullptr;
-			}
-		}
 
 	private:
 		MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
@@ -71,7 +62,7 @@ class MarbleTexture final : public Texture
 		Rgb color_1_, color_2_;
 		float turb_, sharpness_, size_;
 		bool hard_;
-		NoiseGenerator *n_gen_ = nullptr;
+		std::unique_ptr<NoiseGenerator> n_gen_;
 		enum Shape {Sin, Saw, Tri} wshape_;
 };
 
@@ -79,14 +70,6 @@ class WoodTexture final : public Texture
 {
 	public:
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~WoodTexture() override
-		{
-			if(n_gen_)
-			{
-				delete n_gen_;
-				n_gen_ = nullptr;
-			}
-		}
 
 	private:
 		WoodTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2, float turb,
@@ -99,7 +82,7 @@ class WoodTexture final : public Texture
 		Rgb color_1_, color_2_;
 		float turb_, size_;
 		bool hard_, rings_;
-		NoiseGenerator *n_gen_ = nullptr;
+		std::unique_ptr<NoiseGenerator> n_gen_;
 		enum Shape {Sin, Saw, Tri} wshape_;
 };
 
@@ -118,7 +101,6 @@ class VoronoiTexture final : public Texture
 		virtual Rgba getColor(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;
 		virtual float getFloat(const Point3 &p, const MipMapParams *mipmap_params = nullptr) const override;;
 
-		Rgb color_1_, color_2_;
 		float w_1_, w_2_, w_3_, w_4_;	// feature weights
 		float aw_1_, aw_2_, aw_3_, aw_4_;	// absolute value of above
 		float size_ = 1.f;
@@ -131,7 +113,6 @@ class MusgraveTexture final : public Texture
 {
 	public:
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~MusgraveTexture() override;
 
 	private:
 		MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
@@ -143,15 +124,14 @@ class MusgraveTexture final : public Texture
 
 		Rgb color_1_, color_2_;
 		float size_, iscale_;
-		NoiseGenerator *n_gen_ = nullptr;
-		Musgrave *m_gen_ = nullptr;
+		std::unique_ptr<NoiseGenerator> n_gen_;
+		std::unique_ptr<Musgrave> m_gen_;
 };
 
 class DistortedNoiseTexture final : public Texture
 {
 	public:
 		static std::unique_ptr<Texture> factory(ParamMap &params, const Scene &scene);
-		virtual ~DistortedNoiseTexture() override;
 
 	private:
 		DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
@@ -162,7 +142,7 @@ class DistortedNoiseTexture final : public Texture
 
 		Rgb color_1_, color_2_;
 		float distort_, size_;
-		NoiseGenerator *n_gen_1_ = nullptr, *n_gen_2_ = nullptr;
+		std::unique_ptr<NoiseGenerator> n_gen_1_, n_gen_2_;
 };
 
 /*! RGB cube.

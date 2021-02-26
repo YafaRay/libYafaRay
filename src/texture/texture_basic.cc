@@ -22,12 +22,12 @@
 
 BEGIN_YAFARAY
 
-NoiseGenerator *newNoise_global(const std::string &ntype)
+std::unique_ptr<NoiseGenerator> newNoise_global(const std::string &ntype)
 {
 	if(ntype == "blender")
-		return new BlenderNoiseGenerator();
+		return std::unique_ptr<NoiseGenerator>(new BlenderNoiseGenerator());
 	else if(ntype == "stdperlin")
-		return new StdPerlinNoiseGenerator();
+		return std::unique_ptr<NoiseGenerator>(new StdPerlinNoiseGenerator());
 	else if(int(ntype.find("voronoi")) != -1)
 	{
 		VoronoiNoiseGenerator::VoronoiType vt = VoronoiNoiseGenerator::Vf1;	// default
@@ -43,12 +43,12 @@ NoiseGenerator *newNoise_global(const std::string &ntype)
 			vt = VoronoiNoiseGenerator::Vf2F1;
 		else if(ntype == "voronoi_crackle")
 			vt = VoronoiNoiseGenerator::VCrackle;
-		return new VoronoiNoiseGenerator(vt);
+		return std::unique_ptr<NoiseGenerator>(new VoronoiNoiseGenerator(vt));
 	}
 	else if(ntype == "cellnoise")
-		return new CellNoiseGenerator();
+		return std::unique_ptr<NoiseGenerator>(new CellNoiseGenerator());
 	// default
-	return new NewPerlinNoiseGenerator();
+	return std::unique_ptr<NoiseGenerator>(new NewPerlinNoiseGenerator());
 }
 
 void textureReadColorRamp_global(const ParamMap &params, Texture *tex)
@@ -106,14 +106,9 @@ CloudsTexture::CloudsTexture(int dep, float sz, bool hd,
 	n_gen_ = newNoise_global(ntype);
 }
 
-CloudsTexture::~CloudsTexture()
-{
-	delete n_gen_;
-}
-
 float CloudsTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float v = turbulence_global(n_gen_, p, depth_, size_, hard_);
+	float v = turbulence_global(n_gen_.get(), p, depth_, size_, hard_);
 	if(bias_ != BiasType::None)
 	{
 		v *= v;
@@ -185,7 +180,7 @@ MarbleTexture::MarbleTexture(int oct, float sz, const Rgb &c_1, const Rgb &c_2,
 
 float MarbleTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
-	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence_global(n_gen_, p, octaves_, size_, hard_));
+	float w = (p.x_ + p.y_ + p.z_) * 5.f + ((turb_ == 0.f) ? 0.f : turb_ * turbulence_global(n_gen_.get(), p, octaves_, size_, hard_));
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -271,7 +266,7 @@ float WoodTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) 
 		w = math::sqrt(p.x_ * p.x_ + p.y_ * p.y_ + p.z_ * p.z_) * 20.f;
 	else
 		w = (p.x_ + p.y_ + p.z_) * 10.f;
-	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence_global(n_gen_, p, octaves_, size_, hard_);
+	w += (turb_ == 0.0) ? 0.0 : turb_ * turbulence_global(n_gen_.get(), p, octaves_, size_, hard_);
 	switch(wshape_)
 	{
 		case Shape::Saw:
@@ -513,21 +508,15 @@ MusgraveTexture::MusgraveTexture(const Rgb &c_1, const Rgb &c_2,
 {
 	n_gen_ = newNoise_global(ntype);
 	if(mtype == "multifractal")
-		m_gen_ = new MFractalMusgrave(h, lacu, octs, n_gen_);
+		m_gen_ = std::unique_ptr<Musgrave>(new MFractalMusgrave(h, lacu, octs, n_gen_.get()));
 	else if(mtype == "heteroterrain")
-		m_gen_ = new HeteroTerrainMusgrave(h, lacu, octs, offs, n_gen_);
+		m_gen_ = std::unique_ptr<Musgrave>(new HeteroTerrainMusgrave(h, lacu, octs, offs, n_gen_.get()));
 	else if(mtype == "hybridmf")
-		m_gen_ = new HybridMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_);
+		m_gen_ = std::unique_ptr<Musgrave>(new HybridMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_.get()));
 	else if(mtype == "ridgedmf")
-		m_gen_ = new RidgedMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_);
+		m_gen_ = std::unique_ptr<Musgrave>(new RidgedMFractalMusgrave(h, lacu, octs, offs, gain, n_gen_.get()));
 	else	// 'fBm' default
-		m_gen_ = new FBmMusgrave(h, lacu, octs, n_gen_);
-}
-
-MusgraveTexture::~MusgraveTexture()
-{
-	delete n_gen_;
-	delete m_gen_;
+		m_gen_ = std::unique_ptr<Musgrave>(new FBmMusgrave(h, lacu, octs, n_gen_.get()));
 }
 
 float MusgraveTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
@@ -595,19 +584,14 @@ DistortedNoiseTexture::DistortedNoiseTexture(const Rgb &c_1, const Rgb &c_2,
 	n_gen_2_ = newNoise_global(noiseb_2);
 }
 
-DistortedNoiseTexture::~DistortedNoiseTexture()
-{
-	delete n_gen_1_;
-	delete n_gen_2_;
-}
 
 float DistortedNoiseTexture::getFloat(const Point3 &p, const MipMapParams *mipmap_params) const
 {
 	// get a random vector and scale the randomization
 	const Point3 ofs(13.5, 13.5, 13.5);
 	const Point3 tp(p * size_);
-	const Point3 rv(getSignedNoise_global(n_gen_1_, tp + ofs), getSignedNoise_global(n_gen_1_, tp), getSignedNoise_global(n_gen_1_, tp - ofs));
-	return applyIntensityContrastAdjustments(getSignedNoise_global(n_gen_2_, tp + rv * distort_));	// distorted-domain noise
+	const Point3 rv(getSignedNoise_global(n_gen_1_.get(), tp + ofs), getSignedNoise_global(n_gen_1_.get(), tp), getSignedNoise_global(n_gen_1_.get(), tp - ofs));
+	return applyIntensityContrastAdjustments(getSignedNoise_global(n_gen_2_.get(), tp + rv * distort_));	// distorted-domain noise
 }
 
 Rgba DistortedNoiseTexture::getColor(const Point3 &p, const MipMapParams *mipmap_params) const
