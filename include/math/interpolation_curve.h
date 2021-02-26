@@ -98,13 +98,12 @@ class RegularCurve final
 	public:
 		RegularCurve(const float *data, float begin_r, float end_r, int n);
 		RegularCurve(float begin_r, float end_r, int n);
-		~RegularCurve();
 		float getSample(float x) const;
 		float operator()(float x) const {return getSample(x);};
 		void addSample(float data);
 
 	private:
-		float *c_ = nullptr;
+		std::unique_ptr<float[]> c_;
 		float end_r_;
 		float begin_r_;
 		float step_;
@@ -113,22 +112,17 @@ class RegularCurve final
 };
 
 RegularCurve::RegularCurve(const float *data, float begin_r, float end_r, int n):
-		c_(nullptr), end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
+		end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
 {
-	c_ = new float[n];
+	c_ = std::unique_ptr<float[]>(new float[n]);
 	for(int i = 0; i < n; i++) c_[i] = data[i];
 	step_ = n / (begin_r_ - end_r_);
 }
 
 RegularCurve::RegularCurve(float begin_r, float end_r, int n) : c_(nullptr), end_r_(begin_r), begin_r_(end_r), step_(0.0), size_(n), index_(0)
 {
-	c_ = new float[n];
+	c_ = std::unique_ptr<float[]>(new float[n]);
 	step_ = n / (begin_r_ - end_r_);
-}
-
-RegularCurve::~RegularCurve()
-{
-	if(c_) { delete [] c_; c_ = nullptr; }
 }
 
 float RegularCurve::getSample(float x) const
