@@ -597,7 +597,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	render_data.arena_ = static_cast<void *>(userdata);
 	render_data.cam_ = render_view->getCamera();
 
-	ProgressBar *pb;
+	std::shared_ptr<ProgressBar> pb;
 	std::string previous_progress_tag;
 	int previous_progress_total_steps = 0;
 	int pb_step;
@@ -607,7 +607,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 		previous_progress_tag = pb->getTag();
 		previous_progress_total_steps = pb->getTotalSteps();
 	}
-	else pb = new ConsoleProgressBar(80);
+	else pb = std::make_shared<ConsoleProgressBar>(80);
 
 	if(b_hashgrid_) Y_INFO << getName() << ": Building photon hashgrid..." << YENDL;
 	else Y_INFO << getName() << ": Building photon map..." << YENDL;
@@ -623,7 +623,7 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 	Y_PARAMS << getName() << ": Shooting " << n_photons_ << " photons across " << n_threads << " threads (" << (n_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 	std::vector<std::thread> threads;
-	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_.get(), session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
+	for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&SppmIntegrator::photonWorker, this, session_global.diffuse_map_.get(), session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, std::ref(prng)));
 	for(auto &t : threads) t.join();
 
 	pb->done();
@@ -676,8 +676,6 @@ void SppmIntegrator::prePass(int samples, int offset, bool adaptive, const Rende
 		intpb_->setTag(previous_progress_tag);
 		intpb_->init(previous_progress_total_steps);
 	}
-
-	if(!intpb_) delete pb;
 	return;
 }
 

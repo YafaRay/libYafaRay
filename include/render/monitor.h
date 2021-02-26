@@ -29,7 +29,7 @@ BEGIN_YAFARAY
 class LIBYAFARAY_EXPORT ProgressBar
 {
 	public:
-		virtual ~ProgressBar() {}
+		virtual ~ProgressBar() = default;
 		//! initialize (or reset) the monitor, give the total number of steps that can occur
 		virtual void init(int total_steps = 100) = 0;
 		//! update the montior, increment by given number of steps; init has to be called before the first update.
@@ -42,7 +42,13 @@ class LIBYAFARAY_EXPORT ProgressBar
 		virtual std::string getTag() const = 0;
 		virtual float getPercent() const = 0;
 		virtual float getTotalSteps() const = 0;
+		void setAutoDelete(bool value) { auto_delete_ = value; }
+		bool isAutoDeleted() const { return auto_delete_; }
+		std::string getName() const { return "ProgressBar"; }
 		std::mutex mutx_;
+
+	protected:
+		bool auto_delete_ = true; //!< If true, the progress bar is owned by libYafaRay and it is automatically deleted when render finishes. Set it to false when the libYafaRay client owns the progress bar.
 };
 
 /*! the default console progress bar (implemented in console.cc)

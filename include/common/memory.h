@@ -29,6 +29,7 @@ BEGIN_YAFARAY
  * This allows to set the unique_ptr to either:
  *   - If isAutoDeleted() is true, default unique_ptr behavior: automatically be deleted when it gets out of scope or the containing object is destroyed.
  *   - If isAutoDeleted() is false, only for libYafaRay clients owning the object, the object will not be deleted when unique_ptr gets out of the scope or containing object destroyed, even surviving the end of the libYafaRay instance itself. In that case it's the client's responsibility to delete the object.
+ *   - getName() function is also required in the class to get object name (if any)
  */
 template <typename T>
 struct LIBYAFARAY_EXPORT CustomDeleter

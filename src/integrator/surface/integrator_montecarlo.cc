@@ -524,9 +524,9 @@ void MonteCarloIntegrator::causticWorker(PhotonMap *caustic_map, int thread_id, 
 
 bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const RenderControl &render_control)
 {
-	ProgressBar *pb;
+	std::shared_ptr<ProgressBar> pb;
 	if(intpb_) pb = intpb_;
-	else pb = new ConsoleProgressBar(80);
+	else pb = std::make_shared<ConsoleProgressBar>(80);
 
 	if(photon_map_processing_ == PhotonsLoad)
 	{
@@ -608,7 +608,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -636,8 +636,6 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	{
 		Y_VERBOSE << getName() << ": No caustic source lights found, skiping caustic map building..." << YENDL;
 	}
-
-	if(!intpb_) delete pb;
 	return true;
 }
 

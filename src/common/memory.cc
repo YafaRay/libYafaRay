@@ -19,6 +19,7 @@
 #include "common/memory.h"
 #include "common/logger.h"
 #include "output/output.h"
+#include "render/monitor.h"
 
 BEGIN_YAFARAY
 
@@ -30,10 +31,11 @@ void CustomDeleter<T>::operator()(T *object)
 		Y_DEBUG << "Custom deleter destruction, null pointer, exiting" << YENDL;
 		return;
 	}
-	Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroing it!" : " false (externally owned), not destroying it") << YENDL;
+	Y_DEBUG << "Custom deleter destruction '" << object->getName() << "' auto deletion = " << (object->isAutoDeleted() ? " true (internally owned), destroying it!" : " false (externally owned), not destroying it") << YENDL;
 	if(object->isAutoDeleted()) delete object;
 }
 
 template struct CustomDeleter<ColorOutput>;
+template struct CustomDeleter<ProgressBar>;
 
 END_YAFARAY

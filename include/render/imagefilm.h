@@ -77,8 +77,6 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		ImageFilm(int width, int height, int xstart, int ystart, int num_threads, RenderControl &render_control, const Layers &layers, const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs, float filter_size = 1.0, FilterType filt = FilterType::Box,
 				  bool show_sam_mask = false, int t_size = 32,
 				  ImageSplitter::TilesOrderType tiles_order_type = ImageSplitter::Linear);
-		/*! imageFilm_t Destructor */
-		~ImageFilm();
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, int num_passes = 0);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
@@ -115,7 +113,7 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		/*! Sets the adaptative AA sampling threshold */
 		void setAaThreshold(float thresh) { aa_noise_params_.threshold_ = thresh; }
 		/*! Sets a custom progress bar in the image film */
-		void setProgressBar(ProgressBar *pb);
+		void setProgressBar(std::shared_ptr<ProgressBar> pb);
 		/*! The following methods set the strings used for the parameters badge rendering */
 		int getTotalPixels() const { return width_ * height_; };
 		void setAaNoiseParams(const AaNoiseParams &aa_noise_params) { aa_noise_params_ = aa_noise_params; };
@@ -174,8 +172,8 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		AaNoiseParams aa_noise_params_;
 		const Layers &layers_;
 		const std::map<std::string, UniquePtr_t<ColorOutput>> &outputs_;
-		ImageSplitter *splitter_ = nullptr;
-		ProgressBar *progress_bar_ = nullptr;
+		std::unique_ptr<ImageSplitter> splitter_;
+		std::shared_ptr<ProgressBar> progress_bar_;
 		//const Scene *scene_ = nullptr;
 		//const RenderControl *render_control_;
 
@@ -183,14 +181,14 @@ class LIBYAFARAY_EXPORT ImageFilm final
 		FilmLoadSave film_load_save_;
 
 		float filterw_, table_scale_;
-		float *filter_table_ = nullptr;
+		std::unique_ptr<float[]> filter_table_;
 		// Thread mutes for shared access
 		std::mutex image_mutex_, splitter_mutex_, out_mutex_, density_image_mutex_;
 
 		ImageBuffer2D<bool> flags_; //!< flags for adaptive AA sampling;
 		ImageBuffer2D<Gray> weights_;
 		ImageLayers image_layers_;
-		ImageBuffer2D<Rgb> *density_image_; //!< storage for z-buffer channel
+		std::unique_ptr<ImageBuffer2D<Rgb>> density_image_; //!< storage for z-buffer channel
 };
 
 END_YAFARAY

@@ -25,6 +25,7 @@
 #include "render/imagefilm.h"
 #include "common/param.h"
 #include "output/output.h"
+#include "render/monitor.h"
 #include <signal.h>
 
 #ifdef WIN32
@@ -347,9 +348,11 @@ void Interface::printError(const std::string &msg) const
 	Y_ERROR << msg << YENDL;
 }
 
-void Interface::render(ProgressBar *pb)
+void Interface::render(ProgressBar *pb, bool auto_delete_progress_bar)
 {
-	if(! scene_->setupScene(*scene_, *params_, pb)) return;
+	std::shared_ptr<ProgressBar> progress_bar(pb, CustomDeleter<ProgressBar>());
+	progress_bar->setAutoDelete(auto_delete_progress_bar);
+	if(!scene_->setupScene(*scene_, *params_, progress_bar)) return;
 	scene_->render();
 }
 

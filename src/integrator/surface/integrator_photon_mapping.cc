@@ -269,9 +269,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
 
 bool PhotonIntegrator::preprocess(const RenderControl &render_control, const RenderView *render_view)
 {
-	ProgressBar *pb;
+	std::shared_ptr<ProgressBar> pb;
 	if(intpb_) pb = intpb_;
-	else pb = new ConsoleProgressBar(80);
+	else pb = std::make_shared<ConsoleProgressBar>(80);
 
 	lookup_rad_ = 4 * ds_radius_ * ds_radius_;
 
@@ -488,7 +488,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_diffuse_photons_ << " photons across " << n_threads << " threads (" << (n_diffuse_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb.get(), pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -578,7 +578,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb.get(), pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -639,7 +639,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		int n_threads = scene_->getNumThreads();
 		pgdat.radiance_vec_.resize(pgdat.rad_points_.size());
 		if(intpb_) pgdat.pbar_ = intpb_;
-		else pgdat.pbar_ = new ConsoleProgressBar(80);
+		else pgdat.pbar_ = std::make_shared<ConsoleProgressBar>(80);
 		pgdat.pbar_->init(pgdat.rad_points_.size());
 		pgdat.pbar_->setTag("Pregathering radiance data for final gathering...");
 
@@ -650,7 +650,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		session_global.radiance_map_.get()->swapVector(pgdat.radiance_vec_);
 		pgdat.pbar_->done();
 		pgdat.pbar_->setTag("Pregathering radiance data done...");
-		if(!intpb_) delete pgdat.pbar_;
 		Y_VERBOSE << getName() << ": Radiance tree built... Updating the tree..." << YENDL;
 		session_global.radiance_map_.get()->updateTree();
 		Y_VERBOSE << getName() << ": Done." << YENDL;
@@ -697,8 +696,6 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	render_info_ += set.str();
 
 	for(std::string line; std::getline(set, line, '\n');) Y_VERBOSE << line << YENDL;
-
-	if(!intpb_) delete pb;
 	return true;
 }
 

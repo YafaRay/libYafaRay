@@ -55,7 +55,7 @@ class Integrator
 		virtual bool render(ImageFilm *image_film, RenderControl &render_control, const RenderView *render_view) { return false; }
 		void setScene(const Scene *s) { scene_ = s; }
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
-		void setProgressBar(ProgressBar *pb) { intpb_ = pb; }
+		void setProgressBar(std::shared_ptr<ProgressBar> pb) { intpb_ = std::move(pb); }
 		/*! gets called before the scene rendering (i.e. before first call to integrate)
 			\return false when preprocessing could not be done properly, true otherwise */
 		virtual bool preprocess(const RenderControl &render_control, const RenderView *render_view) { return true; };
@@ -75,7 +75,7 @@ class Integrator
 		std::string render_info_;
 		std::string aa_noise_info_;
 		const Scene *scene_ = nullptr;
-		ProgressBar *intpb_ = nullptr;
+		std::shared_ptr<ProgressBar> intpb_;
 };
 
 class SurfaceIntegrator: public Integrator

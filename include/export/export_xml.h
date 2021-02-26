@@ -59,7 +59,7 @@ class LIBYAFARAY_EXPORT XmlExport: public Interface
 		virtual ColorOutput *createOutput(const char *name, bool auto_delete = true) override;
 		virtual void clearAll() override; //!< clear the whole environment + scene, i.e. free (hopefully) all memory.
 		virtual void clearOutputs() override { }
-		virtual void render(ProgressBar *pb = nullptr) override; //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false) override; //!< render the scene...
 		void setXmlColorSpace(std::string color_space_string, float gamma_val);
 
 	protected:

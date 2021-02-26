@@ -34,7 +34,7 @@ struct PreGatherData final
 
 	std::vector<RadData> rad_points_;
 	std::vector<Photon> radiance_vec_;
-	ProgressBar *pbar_;
+	std::shared_ptr<ProgressBar> pbar_;
 	volatile int fetched_;
 	std::mutex mutx_;
 };

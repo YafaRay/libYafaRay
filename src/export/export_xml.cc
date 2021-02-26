@@ -318,7 +318,7 @@ Object *XmlExport::createObject(const char *name)
 	return nullptr;
 }
 
-void XmlExport::render(ProgressBar *pb)
+void XmlExport::render(ProgressBar *pb, bool)
 {
 	xml_file_ << "\n<render>\n";
 	writeParamMap(*params_);

@@ -627,7 +627,7 @@ const Layers Scene::getLayersWithExportedImages() const
 	attention: since this function creates an image film and asigns it to the scene,
 	you need to delete it before deleting the scene!
 */
-bool Scene::setupScene(Scene &scene, const ParamMap &params, ProgressBar *pb)
+bool Scene::setupScene(Scene &scene, const ParamMap &params, std::shared_ptr<ProgressBar> pb)
 {
 	Y_DEBUG PRTEXT(**Scene::setupScene) PREND; params.printDebug();
 	std::string name;

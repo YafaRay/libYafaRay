@@ -96,7 +96,7 @@ class LIBYAFARAY_EXPORT Interface
 		bool removeOutput(const char *name);
 		virtual void clearOutputs();
 		virtual void clearAll();
-		virtual void render(ProgressBar *pb = nullptr); //!< render the scene...
+		virtual void render(ProgressBar *pb = nullptr, bool auto_delete_progress_bar = false); //!< render the scene...
 		virtual void defineLayer(const std::string &layer_type_name, const std::string &exported_image_type_name, const std::string &exported_image_name, const std::string &image_type_name = "");
 		virtual bool setupLayersParameters();
 		virtual void abort();
