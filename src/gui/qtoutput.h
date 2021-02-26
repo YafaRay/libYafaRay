@@ -33,8 +33,6 @@ class QtOutput final : public yafaray4::ColorOutput
 {
 	public:
 		QtOutput(RenderWidget *render);
-		~QtOutput() override {}
-
 		void setRenderSize(const QSize &s);
 
 		// inherited from yafaray4::colorOutput_t
@@ -44,7 +42,7 @@ class QtOutput final : public yafaray4::ColorOutput
 		virtual void highlightArea(int x_0, int y_0, int x_1, int y_1) override;
 
 	private:
-		RenderWidget *render_buffer_;
+		RenderWidget *render_buffer_ = nullptr;
 };
 
 #endif

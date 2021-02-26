@@ -47,15 +47,14 @@ class MainWindow : public QMainWindow
 		Q_OBJECT
 	public:
 		MainWindow(yafaray4::Interface *interface, int resx, int resy, int b_start_x, int b_start_y, Settings settings);
-		~MainWindow();
-
-		virtual bool event(QEvent *e);
+		virtual ~MainWindow() override;
+		virtual bool event(QEvent *e) override;
 		void adjustWindow();
 
 	protected:
-		virtual bool eventFilter(QObject *obj, QEvent *event);
-		virtual void keyPressEvent(QKeyEvent *event);
-		void closeEvent(QCloseEvent *e);
+		virtual bool eventFilter(QObject *obj, QEvent *event) override;
+		virtual void keyPressEvent(QKeyEvent *event) override;
+		virtual void closeEvent(QCloseEvent *e) override;
 		bool closeUnsaved();
 		bool saveDlg();
 
@@ -76,10 +75,10 @@ class MainWindow : public QMainWindow
 		void zoomOut();
 
 	private:
-		Ui_WindowBase *ui_;
-		RenderWidget *render_;
-		QtOutput *output_;
-		Worker *worker_;
+		std::unique_ptr<Ui_WindowBase> ui_;
+		std::unique_ptr<RenderWidget> render_;
+		std::unique_ptr<QtOutput> output_;
+		std::unique_ptr<Worker> worker_;
 		yafaray4::Interface *interface_;
 		QString output_path_;
 		QString last_path_;
@@ -92,7 +91,7 @@ class MainWindow : public QMainWindow
 		bool save_with_depth_;
 		bool use_draw_params_;
 		QTime time_measure_;		// time measure for the render
-		AnimWorking *anim_;
+		std::unique_ptr<AnimWorking> anim_;
 		bool render_saved_;
 		bool render_cancelled_;
 		bool use_zbuf_;

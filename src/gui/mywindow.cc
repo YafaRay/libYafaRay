@@ -65,7 +65,6 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QDesktopWidget>
-#include <QFontDatabase>
 #include <QSettings>
 
 static QApplication *app_global = nullptr;
@@ -157,7 +156,7 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 #endif
 #endif
 
-	ui_ = new Ui_WindowBase();
+	ui_ = std::unique_ptr<Ui_WindowBase>(new Ui_WindowBase());
 	ui_->setupUi(this);
 
 	setWindowIcon(QIcon(yaf_icon));
@@ -176,21 +175,21 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	yafaray4::ParamMap *p = interface_->getRenderParameters();
 	p->getParam("z_channel", use_zbuf_);
 
-	render_ = new RenderWidget(ui_->renderArea, use_zbuf_);
-	output_ = new QtOutput(render_);
-	worker_ = new Worker(interface_, this, output_);
+	render_ = std::unique_ptr<RenderWidget>(new RenderWidget(ui_->renderArea, use_zbuf_));
+	output_ = std::unique_ptr<QtOutput>(new QtOutput(render_.get()));
+	worker_ = std::unique_ptr<Worker>(new Worker(interface_, this, output_.get()));
 
 	output_->setRenderSize(QSize(resx, resy));
 
 	// animation widget
-	anim_ = new AnimWorking(ui_->renderArea);
+	anim_ = std::unique_ptr<AnimWorking>(new AnimWorking(ui_->renderArea));
 	anim_->resize(200, 87);
 
 	this->move(20, 20);
 
 	ui_->renderArea->setWidgetResizable(false);
 	ui_->renderArea->resize(resx, resy);
-	ui_->renderArea->setWidget(render_);
+	ui_->renderArea->setWidget(render_.get());
 
 	QPalette render_area_pal;
 	render_area_pal = ui_->renderArea->viewport()->palette();
@@ -201,7 +200,7 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	ui_->cancelButton->setIcon(QIcon(cancel_icon));
 
 	connect(ui_->cancelButton, SIGNAL(clicked()), this, SLOT(slotCancel()));
-	connect(worker_, SIGNAL(finished()), this, SLOT(slotFinished()));
+	connect(worker_.get(), SIGNAL(finished()), this, SLOT(slotFinished()));
 
 	// move the animwidget over the render area
 	QRect r = anim_->rect();
@@ -266,13 +265,7 @@ MainWindow::MainWindow(yafaray4::Interface *interface, int resx, int resy, int b
 	ui_->renderArea->installEventFilter(this);
 }
 
-MainWindow::~MainWindow()
-{
-	delete output_;
-	delete render_;
-	delete worker_;
-	delete ui_;
-}
+MainWindow::~MainWindow() = default;
 
 bool MainWindow::event(QEvent *e)
 {
