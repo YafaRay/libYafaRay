@@ -1019,7 +1019,7 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 	bool any_film_loaded = false;
 	for(const auto &film_file : film_file_paths_list)
 	{
-		ImageFilm *loaded_film = new ImageFilm(width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box);
+		auto loaded_film = std::unique_ptr<ImageFilm>(new ImageFilm(width_, height_, cx_0_, cy_0_, num_threads_, render_control, layers_, outputs_, 1.0, FilterType::Box));
 		if(!loaded_film->imageFilmLoad(film_file))
 		{
 			Y_WARNING << "ImageFilm: Could not load film file '" << film_file << "'" << YENDL;
@@ -1046,20 +1046,13 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 				}
 			}
 		}
-
 		if(sampling_offset_ < loaded_film->sampling_offset_) sampling_offset_ = loaded_film->sampling_offset_;
 		if(base_sampling_offset_ < loaded_film->base_sampling_offset_) base_sampling_offset_ = loaded_film->base_sampling_offset_;
-
-		delete loaded_film;
-
 		Y_VERBOSE << "ImageFilm: loaded film '" << film_file << "'" << YENDL;
 	}
-
 	if(any_film_loaded) render_control.setResumed();
-
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 }
-
 
 bool ImageFilm::imageFilmSave()
 {
@@ -1140,7 +1133,6 @@ bool ImageFilm::imageFilmSave()
 			}
 		}
 	}
-
 	file.close();
 	if(progress_bar_) progress_bar_->setTag(old_tag);
 	return result_ok;
