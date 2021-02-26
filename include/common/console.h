@@ -65,9 +65,8 @@ CliParserOption::CliParserOption(const std::string &s_opt, const std::string &l_
 class CliParser final
 {
 	public:
-		CliParser() {} //! Default constructor for 2 step init
+		CliParser() = default; //! Default constructor for 2 step init
 		CliParser(int argc, char **argv, int clean_args_num, int clean_opt_args_num, const std::string &clean_arg_error);  //! One step init constructor
-		~CliParser();
 		void setCommandLineArgs(int argc, char **argv);  //! Initialization method for 2 step init
 		void setCleanArgsNumber(int arg_num, int opt_arg, const std::string &clean_arg_error); //! Configures the parser to get arguments non-paired at the end of the command string with optional arg number
 		void setOption(const std::string &s_opt, const std::string &l_opt, bool is_flag, const std::string &desc); //! Option registrer method, it adds a valid parsing option to the list
@@ -79,7 +78,6 @@ class CliParser final
 		void setAppName(const std::string &name, const std::string &b_usage);
 		void printUsage() const; //! Prints usage instructions with the registrered options
 		void printError() const; //! Prints error found during parsing (if any)
-		void clearOptions(); //! Clears the registrered options list
 		bool parseCommandLine(); //! Parses the input values from command line and fills the values on the right options if they exist on the args
 
 	private:
@@ -89,7 +87,7 @@ class CliParser final
 		std::string basic_usage_; //! Holds the basic usage instructions of the command
 		std::vector<std::string> arg_values_; //! Holds argv values
 		std::vector<std::string> clean_values_; //! Holds clean (non-paired options) values
-		std::vector<CliParserOption *> reg_options_; //! Holds registrered options
+		std::vector<std::unique_ptr<CliParserOption>> reg_options_; //! Holds registrered options
 		size_t clean_args_;
 		size_t clean_args_optional_;
 		std::string clean_args_error_;
@@ -102,14 +100,9 @@ CliParser::CliParser(int argc, char **argv, int clean_args_num, int clean_opt_ar
 	setCleanArgsNumber(clean_args_num, clean_opt_args_num, clean_arg_error);
 }
 
-CliParser::~CliParser()
-{
-	clearOptions();
-}
-
 void CliParser::setCommandLineArgs(int argc, char **argv)
 {
-	arg_count_ = (size_t)argc;
+	arg_count_ = static_cast<size_t>(argc);
 	arg_values_.clear();
 	app_name_ = std::string(argv[0]);
 	bin_name_ = std::string(argv[0]);
@@ -128,7 +121,7 @@ void CliParser::setCleanArgsNumber(int arg_num, int opt_arg, const std::string &
 
 void CliParser::setOption(const std::string &s_opt, const std::string &l_opt, bool is_flag, const std::string &desc)
 {
-	if(!s_opt.empty() || !l_opt.empty()) reg_options_.push_back(new CliParserOption(s_opt, l_opt, is_flag, desc));
+	if(!s_opt.empty() || !l_opt.empty()) reg_options_.emplace_back(new CliParserOption(s_opt, l_opt, is_flag, desc));
 }
 
 std::string CliParser::getOptionString(const std::string &s_opt, const std::string &l_opt)
@@ -146,7 +139,6 @@ std::string CliParser::getOptionString(const std::string &s_opt, const std::stri
 			}
 		}
 	}
-
 	return std::string("");
 }
 
@@ -170,7 +162,6 @@ int CliParser::getOptionInteger(const std::string &s_opt, const std::string &l_o
 			}
 		}
 	}
-
 	return ret;
 }
 
@@ -189,7 +180,6 @@ bool CliParser::getFlag(const std::string &s_opt, const std::string &l_opt)
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -208,7 +198,6 @@ bool CliParser::isSet(const std::string &s_opt, const std::string &l_opt)
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -244,18 +233,6 @@ void CliParser::printUsage() const
 void CliParser::printError() const
 {
 	Y_ERROR << parse_error_ << YENDL;
-}
-
-void CliParser::clearOptions()
-{
-	if(reg_options_.size() > 0)
-	{
-		for(size_t i = 0; i < reg_options_.size(); i++)
-		{
-			delete reg_options_[i];
-		}
-		reg_options_.clear();
-	}
 }
 
 bool CliParser::parseCommandLine()
@@ -316,7 +293,6 @@ bool CliParser::parseCommandLine()
 		parse_error_ = error.str();
 		return false;
 	}
-
 	return true;
 }
 
