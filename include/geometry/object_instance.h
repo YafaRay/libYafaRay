@@ -29,12 +29,12 @@ class Matrix4;
 class ObjectInstance : public Object
 {
 	public:
-		ObjectInstance(const Object *base, const Matrix4 &obj_to_world);
+		ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world);
 		virtual int numPrimitives() const override { return primitive_instances_.size(); }
 		virtual const std::vector<const Primitive *> getPrimitives() const override;
-		virtual std::string getName() const override { return base_->getName(); }
+		virtual std::string getName() const override { return base_object_.getName(); }
 		virtual void setName(const std::string &name) override { }
-		virtual bool isMesh() const override { return base_->isMesh(); }
+		virtual bool isMesh() const override { return base_object_.isMesh(); }
 		/*! sample object surface */
 		//virtual void sample(float s_1, float s_2, Point3 &p, Vec3 &n) const override;
 		/*! Sets the object visibility to the renderer (is added or not to the kdtree) */
@@ -42,25 +42,25 @@ class ObjectInstance : public Object
 		/*! Indicates that this object should be used as base object for instances */
 		virtual void useAsBaseObject(bool v) override { }
 		/*! Returns if this object should be used for rendering and/or shadows. */
-		virtual Visibility getVisibility() const override { return base_->getVisibility(); }
+		virtual Visibility getVisibility() const override { return base_object_.getVisibility(); }
 		/*! Returns if this object is used as base object for instances. */
 		virtual bool isBaseObject() const override { return false; }
 		virtual void resetObjectIndex() override { }
 		virtual void setObjectIndex(unsigned int new_obj_index) override { }
-		virtual unsigned int getAbsObjectIndex() const override { return base_->getAbsObjectIndex(); }
-		virtual float getNormObjectIndex() const override { return base_->getNormObjectIndex(); }
-		virtual Rgb getAbsObjectIndexColor() const override { return base_->getAbsObjectIndex(); }
-		virtual Rgb getNormObjectIndexColor() const override { return base_->getNormObjectIndex(); }
-		virtual Rgb getAutoObjectIndexColor() const override { return base_->getAutoObjectIndexColor(); }
-		virtual Rgb getAutoObjectIndexNumber() const override { return base_->getAutoObjectIndexNumber(); }
-		virtual const Light *getLight() const override { return base_->getLight(); }
+		virtual unsigned int getAbsObjectIndex() const override { return base_object_.getAbsObjectIndex(); }
+		virtual float getNormObjectIndex() const override { return base_object_.getNormObjectIndex(); }
+		virtual Rgb getAbsObjectIndexColor() const override { return base_object_.getAbsObjectIndex(); }
+		virtual Rgb getNormObjectIndexColor() const override { return base_object_.getNormObjectIndex(); }
+		virtual Rgb getAutoObjectIndexColor() const override { return base_object_.getAutoObjectIndexColor(); }
+		virtual Rgb getAutoObjectIndexNumber() const override { return base_object_.getAutoObjectIndexNumber(); }
+		virtual const Light *getLight() const override { return base_object_.getLight(); }
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) override { }
 		virtual const Matrix4 *getObjToWorldMatrix() const override { return obj_to_world_.get(); }
 		virtual bool calculateObject(const Material *material = nullptr) override { return true; }
 
 	protected:
-		const Object *base_ = nullptr;
+		const Object &base_object_;
 		std::unique_ptr<const Matrix4> obj_to_world_;
 		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };

@@ -35,7 +35,7 @@ class Material;
 class MeshObject : public ObjectYafaRay
 {
 	public:
-		static Object *factory(ParamMap &params, const Scene &scene);
+		static std::unique_ptr<Object> factory(ParamMap &params, const Scene &scene);
 		MeshObject(int num_vertices, int num_faces, bool has_uv = false, bool has_orco = false);
 		virtual ~MeshObject() override;
 		virtual bool isMesh() const override { return true; }

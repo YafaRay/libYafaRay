@@ -55,7 +55,7 @@ class YafaRayScene final : public Scene
 
 		Object *current_object_ = nullptr;
 		std::unique_ptr<Accelerator> accelerator_;
-		std::map<std::string, Object *> objects_;
+		std::map<std::string, std::unique_ptr<Object>> objects_;
 };
 
 END_YAFARAY

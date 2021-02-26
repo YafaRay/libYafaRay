@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-Object *MeshObject::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> MeshObject::factory(ParamMap &params, const Scene &scene)
 {
 	//Y_DEBUG PRTEXT(MeshObject::factory) PREND; params.printDebug();
 	std::string name, light_name, visibility, base_object_name;
@@ -42,7 +42,7 @@ Object *MeshObject::factory(ParamMap &params, const Scene &scene)
 	params.getParam("num_vertices", num_vertices);
 	params.getParam("has_uv", has_uv);
 	params.getParam("has_orco", has_orco);
-	MeshObject *object = new MeshObject(num_vertices, num_faces, has_uv, has_orco);
+	auto object = std::unique_ptr<MeshObject>(new MeshObject(num_vertices, num_faces, has_uv, has_orco));
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
 	object->setVisibility(visibilityFromString_global(visibility));

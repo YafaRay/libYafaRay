@@ -97,7 +97,7 @@ bool YafaRayScene::smoothNormals(const std::string &name, float angle)
 	{
 		auto it = objects_.find(name);
 		if(it == objects_.end()) return false;
-		object = it->second;
+		object = it->second.get();
 	}
 	else
 	{
@@ -187,16 +187,16 @@ Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)
 		ERR_NO_TYPE;
 		return nullptr;
 	}
-	Object *object = Object::factory(params, *this);
+	std::unique_ptr<Object> object = Object::factory(params, *this);
 	if(object)
 	{
 		object->setName(name);
-		objects_[name] = object;
+		objects_[name] = std::move(object);
 		INFO_VERBOSE_SUCCESS(name, type);
 		creation_state_.stack_.push_front(CreationState::Object);
 		creation_state_.changes_ |= CreationState::Flags::CGeom;
-		current_object_ = object;
-		return object;
+		current_object_ = objects_[name].get();
+		return objects_[name].get();
 	}
 	ERR_ON_CREATE(type);
 	return nullptr;
@@ -205,7 +205,7 @@ Object *YafaRayScene::createObject(const std::string &name, ParamMap &params)
 Object *YafaRayScene::getObject(const std::string &name) const
 {
 	auto oi = objects_.find(name);
-	if(oi != objects_.end()) return oi->second;
+	if(oi != objects_.end()) return oi->second.get();
 	else return nullptr;
 }
 
@@ -321,7 +321,7 @@ bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix
 {
 	//Y_DEBUG PRTEXT(YafaRayScene::addInstance) PR(base_object_name) PREND;
 	//Y_DEBUG PRPREC(6) PR(obj_to_world) PREND;
-	const Object *base_object = objects_.find(base_object_name)->second;
+	const Object *base_object = objects_.find(base_object_name)->second.get();
 	if(objects_.find(base_object_name) == objects_.end())
 	{
 		Y_ERROR << "Base mesh for instance doesn't exist " << base_object_name << YENDL;
@@ -332,7 +332,7 @@ bool YafaRayScene::addInstance(const std::string &base_object_name, const Matrix
 	{
 		const std::string instance_name = base_object_name + "-" + std::to_string(id);
 		Y_DEBUG << "  " PRTEXT(Instance:) PR(instance_name) PR(base_object_name) PREND;
-		objects_[instance_name] = new ObjectInstance(base_object, obj_to_world);
+		objects_[instance_name] = std::unique_ptr<Object>(new ObjectInstance(*base_object, obj_to_world));
 		return true;
 	}
 	else return false;

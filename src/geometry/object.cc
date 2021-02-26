@@ -26,7 +26,7 @@
 
 BEGIN_YAFARAY
 
-Object *Object::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> Object::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(Object::factory) PREND; params.printDebug();
 	std::string type;
@@ -35,7 +35,7 @@ Object *Object::factory(ParamMap &params, const Scene &scene)
 	else if(type == "curve") return CurveObject::factory(params, scene);
 	else if(type == "sphere")
 	{
-		PrimitiveObject *object = new PrimitiveObject;
+		auto object = std::unique_ptr<PrimitiveObject>(new PrimitiveObject);
 		object->setPrimitive(SpherePrimitive::factory(params, scene, *object));
 		return object;
 	}

@@ -22,14 +22,13 @@
 
 BEGIN_YAFARAY
 
-ObjectInstance::ObjectInstance(const Object *base, const Matrix4 &obj_to_world) : base_(base), obj_to_world_(new Matrix4(obj_to_world))
+ObjectInstance::ObjectInstance(const Object &base_object, const Matrix4 &obj_to_world) : base_object_(base_object), obj_to_world_(new Matrix4(obj_to_world))
 {
-	const std::vector<const Primitive *> primitives = base_->getPrimitives();
-	primitive_instances_.reserve(base->numPrimitives());
+	const std::vector<const Primitive *> primitives = base_object_.getPrimitives();
+	primitive_instances_.reserve(base_object.numPrimitives());
 	for(const auto &primitive : primitives)
 	{
-		PrimitiveInstance *instance_primitive = new PrimitiveInstance(primitive, *this);
-		primitive_instances_.emplace_back(instance_primitive);
+		primitive_instances_.emplace_back(new PrimitiveInstance(primitive, *this));
 	}
 }
 

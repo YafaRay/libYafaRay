@@ -23,7 +23,7 @@
 
 BEGIN_YAFARAY
 
-Object *CurveObject::factory(ParamMap &params, const Scene &scene)
+std::unique_ptr<Object> CurveObject::factory(ParamMap &params, const Scene &scene)
 {
 	Y_DEBUG PRTEXT(CurveObject::factory) PREND; params.printDebug();
 	std::string name, light_name, visibility, base_object_name;
@@ -44,7 +44,7 @@ Object *CurveObject::factory(ParamMap &params, const Scene &scene)
 	params.getParam("strand_shape", strand_shape);
 	params.getParam("has_uv", has_uv);
 	params.getParam("has_orco", has_orco);
-	CurveObject *object = new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco);
+	auto object = std::unique_ptr<CurveObject>(new CurveObject(num_vertices, strand_start, strand_end, strand_shape, has_uv, has_orco));
 	object->setName(name);
 	object->setLight(scene.getLight(light_name));
 	object->setVisibility(visibilityFromString_global(visibility));
