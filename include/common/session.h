@@ -46,10 +46,7 @@ class LIBYAFARAY_EXPORT Session
 
 		bool isInteractive();
 
-		PhotonMap *caustic_map_ = nullptr;
-		PhotonMap *diffuse_map_ = nullptr;
-		PhotonMap *radiance_map_ = nullptr;
-
+		std::unique_ptr<PhotonMap> caustic_map_, diffuse_map_, radiance_map_;
 		std::mutex mutx_;
 
 	protected:

@@ -533,7 +533,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		pb->setTag("Loading caustic photon map from file...");
 		const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 		Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-		if(session_global.caustic_map_->load(filename))
+		if(session_global.caustic_map_.get()->load(filename))
 		{
 			Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			return true;
@@ -548,7 +548,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 	if(photon_map_processing_ == PhotonsReuse)
 	{
 		Y_INFO << getName() << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-		if(session_global.caustic_map_->nPhotons() == 0)
+		if(session_global.caustic_map_.get()->nPhotons() == 0)
 		{
 			photon_map_processing_ = PhotonsGenerateOnly;
 			Y_WARNING << getName() << ": One of the photon maps in memory was empty, they cannot be reused: changing to Generate mode." << YENDL;
@@ -556,10 +556,10 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		else return true;
 	}
 
-	session_global.caustic_map_->clear();
-	session_global.caustic_map_->setNumPaths(0);
-	session_global.caustic_map_->reserveMemory(n_caus_photons_);
-	session_global.caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+	session_global.caustic_map_.get()->clear();
+	session_global.caustic_map_.get()->setNumPaths(0);
+	session_global.caustic_map_.get()->reserveMemory(n_caus_photons_);
+	session_global.caustic_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
 	Ray ray;
 	std::vector<Light *> caus_lights;
@@ -608,19 +608,19 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&MonteCarloIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d.get(), num_lights, caus_lights, caus_depth_, pb, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
 		pb->setTag("Caustic photon map built.");
 		Y_VERBOSE << getName() << ": Done." << YENDL;
 		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_lights << " light(s)." << YENDL;
-		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_->nPhotons() << YENDL;
+		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_.get()->nPhotons() << YENDL;
 
-		if(session_global.caustic_map_->nPhotons() > 0)
+		if(session_global.caustic_map_.get()->nPhotons() > 0)
 		{
 			pb->setTag("Building caustic photons kd-tree...");
-			session_global.caustic_map_->updateTree();
+			session_global.caustic_map_.get()->updateTree();
 			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 
@@ -629,7 +629,7 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 			pb->setTag("Saving caustic photon map to file...");
 			std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session_global.caustic_map_->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
+			if(session_global.caustic_map_.get()->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
 	}
 	else
@@ -643,14 +643,14 @@ bool MonteCarloIntegrator::createCausticMap(const RenderView *render_view, const
 
 Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const SurfacePoint &sp, const Vec3 &wo) const
 {
-	if(!session_global.caustic_map_->ready()) return Rgb(0.f);
+	if(!session_global.caustic_map_.get()->ready()) return Rgb(0.f);
 
 	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_caus_search_]);//(foundPhoton_t *)alloca(nCausSearch * sizeof(foundPhoton_t));
 	int n_gathered = 0;
 
 	float g_radius_square = caus_radius_ * caus_radius_;
 
-	n_gathered = session_global.caustic_map_->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
+	n_gathered = session_global.caustic_map_.get()->gather(sp.p_, gathered.get(), n_caus_search_, g_radius_square);
 
 	g_radius_square = 1.f / g_radius_square;
 
@@ -670,7 +670,7 @@ Rgb MonteCarloIntegrator::estimateCausticPhotons(RenderData &render_data, const 
 			k = sample::kernel(gathered[i].dist_square_, g_radius_square);
 			sum += surf_col * k * photon->color();
 		}
-		sum *= 1.f / (float(session_global.caustic_map_->nPaths()));
+		sum *= 1.f / (float(session_global.caustic_map_.get()->nPaths()));
 	}
 	return sum;
 }

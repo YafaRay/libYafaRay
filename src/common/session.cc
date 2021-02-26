@@ -36,19 +36,16 @@ Session::Session()
 #if defined(_WIN32)
 	SetConsoleOutputCP(65001);	//set Windows Console to UTF8 so the image path can be displayed correctly
 #endif
-	caustic_map_ = new PhotonMap;
+	caustic_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
 	caustic_map_->setName("Caustic Photon Map");
-	diffuse_map_ = new PhotonMap;
+	diffuse_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
 	diffuse_map_->setName("Diffuse Photon Map");
-	radiance_map_ = new PhotonMap;
+	radiance_map_ = std::unique_ptr<PhotonMap>(new PhotonMap);
 	radiance_map_->setName("FG Radiance Photon Map");
 }
 
 Session::~Session()
 {
-	delete radiance_map_;
-	delete diffuse_map_;
-	delete caustic_map_;
 	Y_VERBOSE << "Session: ended" << YENDL;
 }
 

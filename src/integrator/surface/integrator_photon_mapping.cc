@@ -318,7 +318,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Loading caustic photon map from file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Loading caustic photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.caustic_map_->load(filename)) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
+			if(session_global.caustic_map_.get()->load(filename)) Y_VERBOSE << getName() << ": Caustic map loaded." << YENDL;
 			else caustic_map_failed_load = true;
 		}
 
@@ -327,7 +327,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Loading diffuse photon map from file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_diffuse.photonmap";
 			Y_INFO << getName() << ": Loading diffuse photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.diffuse_map_->load(filename)) Y_VERBOSE << getName() << ": Diffuse map loaded." << YENDL;
+			if(session_global.diffuse_map_.get()->load(filename)) Y_VERBOSE << getName() << ": Diffuse map loaded." << YENDL;
 			else diffuse_map_failed_load = true;
 		}
 
@@ -336,7 +336,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Loading FG radiance photon map from file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_fg_radiance.photonmap";
 			Y_INFO << getName() << ": Loading FG radiance photon map from: " << filename << ". If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.radiance_map_->load(filename)) Y_VERBOSE << getName() << ": FG radiance map loaded." << YENDL;
+			if(session_global.radiance_map_.get()->load(filename)) Y_VERBOSE << getName() << ": FG radiance map loaded." << YENDL;
 			else fg_radiance_map_failed_load = true;
 		}
 
@@ -352,7 +352,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		if(use_photon_caustics_)
 		{
 			Y_INFO << getName() << ": Reusing caustics photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.caustic_map_->nPhotons() == 0)
+			if(session_global.caustic_map_.get()->nPhotons() == 0)
 			{
 				Y_WARNING << getName() << ": Caustic photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
@@ -362,7 +362,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		if(use_photon_diffuse_)
 		{
 			Y_INFO << getName() << ": Reusing diffuse photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.diffuse_map_->nPhotons() == 0)
+			if(session_global.diffuse_map_.get()->nPhotons() == 0)
 			{
 				Y_WARNING << getName() << ": Diffuse photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
@@ -372,7 +372,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		if(final_gather_)
 		{
 			Y_INFO << getName() << ": Reusing FG radiance photon map from memory. If it does not match the scene you could have crashes and/or incorrect renders, USE WITH CARE!" << YENDL;
-			if(session_global.radiance_map_->nPhotons() == 0)
+			if(session_global.radiance_map_.get()->nPhotons() == 0)
 			{
 				Y_WARNING << getName() << ": FG radiance photon map enabled but empty, cannot be reused: changing to Generate mode." << YENDL;
 				photon_map_processing_ = PhotonsGenerateOnly;
@@ -404,19 +404,19 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		return true;
 	}
 
-	session_global.diffuse_map_->clear();
-	session_global.diffuse_map_->setNumPaths(0);
-	session_global.diffuse_map_->reserveMemory(n_diffuse_photons_);
-	session_global.diffuse_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+	session_global.diffuse_map_.get()->clear();
+	session_global.diffuse_map_.get()->setNumPaths(0);
+	session_global.diffuse_map_.get()->reserveMemory(n_diffuse_photons_);
+	session_global.diffuse_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
-	session_global.caustic_map_->clear();
-	session_global.caustic_map_->setNumPaths(0);
-	session_global.caustic_map_->reserveMemory(n_caus_photons_);
-	session_global.caustic_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+	session_global.caustic_map_.get()->clear();
+	session_global.caustic_map_.get()->setNumPaths(0);
+	session_global.caustic_map_.get()->reserveMemory(n_caus_photons_);
+	session_global.caustic_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
-	session_global.radiance_map_->clear();
-	session_global.radiance_map_->setNumPaths(0);
-	session_global.radiance_map_->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
+	session_global.radiance_map_.get()->clear();
+	session_global.radiance_map_.get()->setNumPaths(0);
+	session_global.radiance_map_.get()->setNumThreadsPkDtree(scene_->getNumThreadsPhotons());
 
 	Ray ray;
 	float light_num_pdf, light_pdf;
@@ -429,7 +429,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 	//shoot photons
 	unsigned int curr = 0;
 	// for radiance map:
-	PreGatherData pgdat(session_global.diffuse_map_);
+	PreGatherData pgdat(session_global.diffuse_map_.get());
 	RenderData render_data;
 	alignas (16) unsigned char userdata[user_data_size_];
 	render_data.arena_ = static_cast<void *>(userdata);
@@ -488,7 +488,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_diffuse_photons_ << " photons across " << n_threads << " threads (" << (n_diffuse_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_, i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::diffuseWorker, this, session_global.diffuse_map_.get(), i, scene_, render_view, std::ref(render_control), n_diffuse_photons_, light_power_d_.get(), num_d_lights, tmplights, pb, pb_step, std::ref(curr), max_bounces_, final_gather_, std::ref(pgdat)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
@@ -498,13 +498,13 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 
 		tmplights.clear();
 
-		if(session_global.diffuse_map_->nPhotons() < 50)
+		if(session_global.diffuse_map_.get()->nPhotons() < 50)
 		{
 			Y_ERROR << getName() << ": Too few diffuse photons, stopping now." << YENDL;
 			return false;
 		}
 
-		Y_VERBOSE << getName() << ": Stored diffuse photons: " << session_global.diffuse_map_->nPhotons() << YENDL;
+		Y_VERBOSE << getName() << ": Stored diffuse photons: " << session_global.diffuse_map_.get()->nPhotons() << YENDL;
 	}
 	else
 	{
@@ -513,20 +513,20 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 
 	std::thread diffuse_map_build_kd_tree_thread;
 
-	if(use_photon_diffuse_ && session_global.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
+	if(use_photon_diffuse_ && session_global.diffuse_map_.get()->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 		pb->setTag("Building diffuse photons kd-tree...");
 
-		diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session_global.diffuse_map_);
+		diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session_global.diffuse_map_.get());
 	}
 	else
 
-		if(use_photon_diffuse_ && session_global.diffuse_map_->nPhotons() > 0)
+		if(use_photon_diffuse_ && session_global.diffuse_map_.get()->nPhotons() > 0)
 		{
 			Y_INFO << getName() << ": Building diffuse photons kd-tree:" << YENDL;
 			pb->setTag("Building diffuse photons kd-tree...");
-			session_global.diffuse_map_->updateTree();
+			session_global.diffuse_map_.get()->updateTree();
 			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 
@@ -578,13 +578,13 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		Y_PARAMS << getName() << ": Shooting " << n_caus_photons_ << " photons across " << n_threads << " threads (" << (n_caus_photons_ / n_threads) << " photons/thread)" << YENDL;
 
 		std::vector<std::thread> threads;
-		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_, i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
+		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::causticWorker, this, session_global.caustic_map_.get(), i, scene_, render_view, std::ref(render_control), n_caus_photons_, light_power_d_.get(), num_c_lights, tmplights, caus_depth_, pb, pb_step, std::ref(curr)));
 		for(auto &t : threads) t.join();
 
 		pb->done();
 		pb->setTag("Caustics photon map built.");
 		Y_INFO << getName() << ": Shot " << curr << " caustic photons from " << num_c_lights << " light(s)." << YENDL;
-		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_->nPhotons() << YENDL;
+		Y_VERBOSE << getName() << ": Stored caustic photons: " << session_global.caustic_map_.get()->nPhotons() << YENDL;
 	}
 	else
 	{
@@ -595,25 +595,25 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 
 	std::thread caustic_map_build_kd_tree_thread;
 
-	if(use_photon_caustics_ && session_global.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
+	if(use_photon_caustics_ && session_global.caustic_map_.get()->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 		pb->setTag("Building caustic photons kd-tree...");
 
-		caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session_global.caustic_map_);
+		caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, this, session_global.caustic_map_.get());
 	}
 	else
 	{
-		if(use_photon_caustics_ && session_global.caustic_map_->nPhotons() > 0)
+		if(use_photon_caustics_ && session_global.caustic_map_.get()->nPhotons() > 0)
 		{
 			Y_INFO << getName() << ": Building caustic photons kd-tree:" << YENDL;
 			pb->setTag("Building caustic photons kd-tree...");
-			session_global.caustic_map_->updateTree();
+			session_global.caustic_map_.get()->updateTree();
 			Y_VERBOSE << getName() << ": Done." << YENDL;
 		}
 	}
 
-	if(use_photon_diffuse_ && session_global.diffuse_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
+	if(use_photon_diffuse_ && session_global.diffuse_map_.get()->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		diffuse_map_build_kd_tree_thread.join();
 		Y_VERBOSE << getName() << ": Diffuse photon map: done." << YENDL;
@@ -647,16 +647,16 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 		for(int i = 0; i < n_threads; ++i) threads.push_back(std::thread(&PhotonIntegrator::preGatherWorker, this, &pgdat, ds_radius_, n_diffuse_search_));
 		for(auto &t : threads) t.join();
 
-		session_global.radiance_map_->swapVector(pgdat.radiance_vec_);
+		session_global.radiance_map_.get()->swapVector(pgdat.radiance_vec_);
 		pgdat.pbar_->done();
 		pgdat.pbar_->setTag("Pregathering radiance data done...");
 		if(!intpb_) delete pgdat.pbar_;
 		Y_VERBOSE << getName() << ": Radiance tree built... Updating the tree..." << YENDL;
-		session_global.radiance_map_->updateTree();
+		session_global.radiance_map_.get()->updateTree();
 		Y_VERBOSE << getName() << ": Done." << YENDL;
 	}
 
-	if(use_photon_caustics_ && session_global.caustic_map_->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
+	if(use_photon_caustics_ && session_global.caustic_map_.get()->nPhotons() > 0 && scene_->getNumThreadsPhotons() >= 2)
 	{
 		caustic_map_build_kd_tree_thread.join();
 		Y_VERBOSE << getName() << ": Caustic photon map: done." << YENDL;
@@ -669,7 +669,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Saving diffuse photon map to file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_diffuse.photonmap";
 			Y_INFO << getName() << ": Saving diffuse photon map to: " << filename << YENDL;
-			if(session_global.diffuse_map_->save(filename)) Y_VERBOSE << getName() << ": Diffuse map saved." << YENDL;
+			if(session_global.diffuse_map_.get()->save(filename)) Y_VERBOSE << getName() << ": Diffuse map saved." << YENDL;
 		}
 
 		if(use_photon_caustics_)
@@ -677,7 +677,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Saving caustic photon map to file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_caustic.photonmap";
 			Y_INFO << getName() << ": Saving caustic photon map to: " << filename << YENDL;
-			if(session_global.caustic_map_->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
+			if(session_global.caustic_map_.get()->save(filename)) Y_VERBOSE << getName() << ": Caustic map saved." << YENDL;
 		}
 
 		if(use_photon_diffuse_ && final_gather_)
@@ -685,7 +685,7 @@ bool PhotonIntegrator::preprocess(const RenderControl &render_control, const Ren
 			pb->setTag("Saving FG radiance photon map to file...");
 			const std::string filename = scene_->getImageFilm()->getFilmSavePath() + "_fg_radiance.photonmap";
 			Y_INFO << getName() << ": Saving FG radiance photon map to: " << filename << YENDL;
-			if(session_global.radiance_map_->save(filename)) Y_VERBOSE << getName() << ": FG radiance map saved." << YENDL;
+			if(session_global.radiance_map_.get()->save(filename)) Y_VERBOSE << getName() << ": FG radiance map saved." << YENDL;
 		}
 	}
 
@@ -779,7 +779,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 				else if(caustic)
 				{
 					Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, pwo);
-					const Photon *nearest = session_global.radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
+					const Photon *nearest = session_global.radiance_map_.get()->findNearest(hit.p_, sf, lookup_rad_);
 					if(nearest) lcol = nearest->color();
 				}
 
@@ -839,7 +839,7 @@ Rgb PhotonIntegrator::finalGathering(RenderData &render_data, const SurfacePoint
 			if(mat_bsd_fs.hasAny(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Vec3 sf = SurfacePoint::normalFaceForward(hit.ng_, hit.n_, -pRay.dir_);
-				const Photon *nearest = session_global.radiance_map_->findNearest(hit.p_, sf, lookup_rad_);
+				const Photon *nearest = session_global.radiance_map_.get()->findNearest(hit.p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->color();
 				if(mat_bsd_fs.hasAny(BsdfFlags::Emit)) lcol += p_mat->emit(render_data, hit, -pRay.dir_);
 				path_col += lcol * throughput;
@@ -899,7 +899,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			if(show_map_)
 			{
 				Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = session_global.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+				const Photon *nearest = session_global.radiance_map_.get()->findNearest(sp.p_, n, lookup_rad_);
 				if(nearest) col += nearest->color();
 			}
 			else
@@ -909,7 +909,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
 						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = session_global.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						const Photon *nearest = session_global.radiance_map_.get()->findNearest(sp.p_, n, lookup_rad_);
 						if(nearest) color_layer->color_ = nearest->color();
 					}
 				}
@@ -943,7 +943,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 			if(use_photon_diffuse_ && show_map_)
 			{
 				Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-				const Photon *nearest = session_global.diffuse_map_->findNearest(sp.p_, n, ds_radius_);
+				const Photon *nearest = session_global.diffuse_map_.get()->findNearest(sp.p_, n, ds_radius_);
 				if(nearest) col += nearest->color();
 			}
 			else
@@ -953,7 +953,7 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 					if(ColorLayer *color_layer = color_layers->find(Layer::Radiance))
 					{
 						Vec3 n = SurfacePoint::normalFaceForward(sp.ng_, sp.n_, wo);
-						const Photon *nearest = session_global.radiance_map_->findNearest(sp.p_, n, lookup_rad_);
+						const Photon *nearest = session_global.radiance_map_.get()->findNearest(sp.p_, n, lookup_rad_);
 						if(nearest) color_layer->color_ = nearest->color();
 					}
 				}
@@ -978,12 +978,12 @@ Rgba PhotonIntegrator::integrate(RenderData &render_data, const DiffRay &ray, in
 
 				int n_gathered = 0;
 
-				if(use_photon_diffuse_ && session_global.diffuse_map_->nPhotons() > 0) n_gathered = session_global.diffuse_map_->gather(sp.p_, gathered, n_diffuse_search_, radius);
+				if(use_photon_diffuse_ && session_global.diffuse_map_.get()->nPhotons() > 0) n_gathered = session_global.diffuse_map_.get()->gather(sp.p_, gathered, n_diffuse_search_, radius);
 				if(use_photon_diffuse_ && n_gathered > 0)
 				{
 					if(n_gathered > n_max) n_max = n_gathered;
 
-					float scale = 1.f / ((float)session_global.diffuse_map_->nPaths() * radius * M_PI);
+					float scale = 1.f / ((float)session_global.diffuse_map_.get()->nPaths() * radius * M_PI);
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3 pdir = gathered[i].photon_->direction();
