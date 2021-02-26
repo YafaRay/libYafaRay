@@ -33,7 +33,6 @@ class SpotLight final : public Light
 {
 	public:
 		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
-		virtual ~SpotLight() override;
 
 	private:
 		SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float power, float angle, float falloff, bool s_sha, int smpl, float ssfuzzy, bool b_light_enabled = true, bool b_cast_shadows = true);
@@ -56,7 +55,7 @@ class SpotLight final : public Light
 		float icos_diff_; //<! 1.0/(cosStart-cosEnd);
 		Rgb color_; //<! color, premulitplied by light intensity
 		float intensity_;
-		Pdf1D *pdf_;
+		std::unique_ptr<Pdf1D> pdf_;
 		float interv_1_, interv_2_;
 
 		bool soft_shadows_;

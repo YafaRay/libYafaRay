@@ -36,7 +36,6 @@ class BackgroundLight final : public Light
 {
 	public:
 		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
-		virtual ~BackgroundLight() override;
 
 	private:
 		BackgroundLight(int sampl, bool invert_intersect = false, bool light_enabled = true, bool cast_shadows = true);
@@ -57,7 +56,8 @@ class BackgroundLight final : public Light
 		float calcFromSample(float s_1, float s_2, float &u, float &v, bool inv = false) const;
 		float calcFromDir(const Vec3 &dir, float &u, float &v, bool inv = false) const;
 
-		Pdf1D **u_dist_ = nullptr, *v_dist_ = nullptr;
+		std::unique_ptr<std::unique_ptr<Pdf1D>[]> u_dist_;
+		std::unique_ptr<Pdf1D> v_dist_;
 		int samples_;
 		Point3 world_center_;
 		float world_radius_;

@@ -40,7 +40,6 @@ class BackgroundPortalLight final : public Light
 {
 	public:
 		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
-		virtual ~BackgroundPortalLight() override;
 
 	private:
 		BackgroundPortalLight(const std::string &object_name, int sampl, float pow, bool light_enabled = true, bool cast_shadows = true);
@@ -61,7 +60,7 @@ class BackgroundPortalLight final : public Light
 		void sampleSurface(Point3 &p, Vec3 &n, float s_1, float s_2) const;
 
 		std::string object_name_;
-		Pdf1D *area_dist_ = nullptr;
+		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
 		int samples_;
 		int num_primitives_; //!< gives the array size of uDist

@@ -40,7 +40,6 @@ class MeshLight final : public Light
 {
 	public:
 		static std::unique_ptr<Light> factory(ParamMap &params, const Scene &scene);
-		virtual ~MeshLight() override;
 
 	private:
 		MeshLight(const std::string &object_name, const Rgb &col, int sampl, bool dbl_s = false, bool light_enabled = true, bool cast_shadows = true);
@@ -62,7 +61,7 @@ class MeshLight final : public Light
 		std::string object_name_;
 		bool double_sided_;
 		Rgb color_;
-		Pdf1D *area_dist_ = nullptr;
+		std::unique_ptr<Pdf1D> area_dist_;
 		std::vector<const Primitive *> primitives_;
 		int samples_;
 		int num_primitives_; //!< gives the array size of uDist

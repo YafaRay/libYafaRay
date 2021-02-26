@@ -40,27 +40,20 @@ BackgroundPortalLight::BackgroundPortalLight(const std::string &object_name, int
 	a_pdf_ = 0.f;
 }
 
-BackgroundPortalLight::~BackgroundPortalLight()
-{
-	delete area_dist_;
-}
-
 void BackgroundPortalLight::initIs()
 {
 	num_primitives_ = mesh_object_->numPrimitives();
 	primitives_ = mesh_object_->getPrimitives();
-	float *areas = new float[num_primitives_];
+	auto areas = std::unique_ptr<float[]>(new float[num_primitives_]);
 	double total_area = 0.0;
 	for(int i = 0; i < num_primitives_; ++i)
 	{
 		areas[i] = static_cast<const FacePrimitive *>(primitives_[i])->surfaceArea();
 		total_area += areas[i];
 	}
-	area_dist_ = new Pdf1D(areas, num_primitives_);
-	area_ = (float)total_area;
-	inv_area_ = (float)(1.0 / total_area);
-	//delete[] tris;
-	delete[] areas;
+	area_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(areas.get(), num_primitives_));
+	area_ = static_cast<float>(total_area);
+	inv_area_ = static_cast<float>(1.0 / total_area);
 	accelerator_ = nullptr;
 
 	ParamMap params;

@@ -42,17 +42,13 @@ SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float
 	cos_end_ = math::cos(rad_angle);
 	icos_diff_ = 1.0 / (cos_start_ - cos_end_);
 
-	float *f = new float[65];
-
+	auto f = std::unique_ptr<float[]>(new float[65]);
 	for(int i = 0; i < 65; i++)
 	{
 		float v = (float)i / 64.f;
 		f[i] = v * v * (3.f - 2.f * v);
 	}
-
-	pdf_ = new Pdf1D(f, 65);
-
-	delete [] f;
+	pdf_ = std::unique_ptr<Pdf1D>(new Pdf1D(f.get(), 65));
 
 	/* the integral of the smoothstep is 0.5, and since it gets applied to the cos, and each delta cos
 		corresponds to a constant surface are of the (partial) emitting sphere, we can actually simply
@@ -67,11 +63,6 @@ SpotLight::SpotLight(const Point3 &from, const Point3 &to, const Rgb &col, float
 	if(sum > 0.f) sum = 1.0 / sum;
 	interv_1_ *= sum;
 	interv_2_ *= sum;
-}
-
-SpotLight::~SpotLight()
-{
-	if(pdf_) delete pdf_;
 }
 
 Rgb SpotLight::totalEnergy() const

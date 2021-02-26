@@ -60,26 +60,18 @@ BackgroundLight::BackgroundLight(int sampl, bool invert_intersect, bool light_en
 	light_enabled_ = light_enabled;
 	cast_shadows_ = cast_shadows;
 	background_ = nullptr;
-	u_dist_ = nullptr;
-	v_dist_ = nullptr;
-}
-
-BackgroundLight::~BackgroundLight()
-{
-	if(u_dist_) delete[] u_dist_;
-	delete v_dist_;
 }
 
 void BackgroundLight::init(Scene &scene)
 {
-	float *fu = new float[max_usamples_global];
-	float *fv = new float[max_vsamples_global];
+	auto fu = std::unique_ptr<float[]>(new float[max_usamples_global]);
+	auto fv = std::unique_ptr<float[]>(new float[max_vsamples_global]);
 	const int nv = max_vsamples_global;
 
 	Ray ray;
 	ray.from_ = Point3(0.f);
 	const float inv = 1.f / (float)nv;
-	u_dist_ = new Pdf1D *[nv];
+	u_dist_ = std::unique_ptr<std::unique_ptr<Pdf1D>[]>(new std::unique_ptr<Pdf1D>[nv]);
 	for(int y = 0; y < nv; y++)
 	{
 		const float fy = ((float)y + 0.5f) * inv;
@@ -94,14 +86,11 @@ void BackgroundLight::init(Scene &scene)
 			fu[x] = background_->eval(ray, true).energy() * sintheta;
 		}
 
-		u_dist_[y] = new Pdf1D(fu, nu);
+		u_dist_[y] = std::unique_ptr<Pdf1D>(new Pdf1D(fu.get(), nu));
 		fv[y] = u_dist_[y]->integral_;
 	}
 
-	v_dist_ = new Pdf1D(fv, nv);
-
-	delete[] fv;
-	delete[] fu;
+	v_dist_ = std::unique_ptr<Pdf1D>(new Pdf1D(fv.get(), nv));
 
 	Bound w = scene.getSceneBound();
 	world_center_ = 0.5 * (w.a_ + w.g_);
