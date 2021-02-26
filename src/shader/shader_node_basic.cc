@@ -164,7 +164,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 {
 	Point3 texpt(0.f);
 	Vec3 ng(0.f);
-	const MipMapParams *mip_map_params = nullptr;
+	std::unique_ptr<const MipMapParams> mip_map_params;
 
 	if((tex_->getInterpolationType() == InterpolationType::Trilinear || tex_->getInterpolationType() == InterpolationType::Ewa) && sp.ray_ && sp.ray_->has_differentials_)
 	{
@@ -179,7 +179,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 			sp_diff.getUVdifferentials(du_dx, dv_dx, du_dy, dv_dy);
 			const Point3 texpt_diffx = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dx, dv_dx, 0.f), ng) - texpt);
 			const Point3 texpt_diffy = 1.0e+2f * (doMapping(texptorig + 1.0e-2f * Point3(du_dy, dv_dy, 0.f), ng) - texpt);
-			mip_map_params = new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_);
+			mip_map_params = std::unique_ptr<const MipMapParams>(new MipMapParams(texpt_diffx.x_, texpt_diffx.y_, texpt_diffy.x_, texpt_diffy.y_));
 		}
 	}
 	else
@@ -188,13 +188,7 @@ void TextureMapperNode::eval(NodeStack &stack, const RenderData &render_data, co
 		texpt = doMapping(texpt, ng);
 	}
 
-	stack[this->getId()] = NodeResult(tex_->getColor(texpt, mip_map_params), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params) : 0.f);
-
-	if(mip_map_params)
-	{
-		delete mip_map_params;
-		mip_map_params = nullptr;
-	}
+	stack[this->getId()] = NodeResult(tex_->getColor(texpt, mip_map_params.get()), (do_scalar_) ? tex_->getFloat(texpt, mip_map_params.get()) : 0.f);
 }
 
 // Normal perturbation
