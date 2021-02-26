@@ -33,33 +33,21 @@ class IesData final
 {
 	public:
 		IesData() = default;
-		~IesData();
 		bool parseIesFile(const std::string &file);
 		float getRadiance(float h_ang, float v_ang) const;
 		float getMaxVAngle() const { return max_v_angle_; }
 
 	private:
 		enum Type : int { TypeC = 1, TypeB = 2, TypeA = 3, };
-		float *vert_angle_map_ = nullptr; //<! vertical spherical angles
-		float *hor_angle_map_ = nullptr; //<! horizontal sperical angles
-		float **rad_map_ = nullptr; //<! spherical radiance map corresponding with entries to the angle maps
+		std::unique_ptr<float[]> vert_angle_map_; //<! vertical spherical angles
+		std::unique_ptr<float[]> hor_angle_map_; //<! horizontal sperical angles
+		std::unique_ptr<std::unique_ptr<float[]>[]> rad_map_; //<! spherical radiance map corresponding with entries to the angle maps
 		int hor_angles_; //<! number of angles in the 2 directions
 		int vert_angles_;
 		float max_rad_;
 		float max_v_angle_;
 		int type_;
 };
-
-IesData::~IesData()
-{
-	if(vert_angle_map_) delete [] vert_angle_map_;
-	if(hor_angle_map_) delete [] hor_angle_map_;
-	if(rad_map_)
-	{
-		for(int i = 0; i < hor_angles_; i++) delete [] rad_map_[i];
-		delete [] rad_map_;
-	}
-}
 
 //! hAng and vAng in degrees, returns the radiance at that angle
 float IesData::getRadiance(float h_ang, float v_ang) const
@@ -297,7 +285,7 @@ bool IesData::parseIesFile(const std::string &file)
 	fin >> line;
 	Y_VERBOSE << "IES Parser: Input Watts: " << line << YENDL;
 
-	vert_angle_map_ = new float[vert_angles_];
+	vert_angle_map_ = std::unique_ptr<float[]>(new float[vert_angles_]);
 
 	max_v_angle_ = 0.f;
 
@@ -339,7 +327,7 @@ bool IesData::parseIesFile(const std::string &file)
 		h_adjust = true;
 	}
 
-	hor_angle_map_ = new float[hor_angles_];
+	hor_angle_map_ = std::unique_ptr<float[]>(new float[hor_angles_]);
 
 	Y_VERBOSE << "IES Parser: Horizontal Angle Map:" << YENDL;
 
@@ -353,10 +341,10 @@ bool IesData::parseIesFile(const std::string &file)
 
 	max_rad_ = 0.f;
 
-	rad_map_ = new float*[hor_angles_];
+	rad_map_ = std::unique_ptr<std::unique_ptr<float[]>[]>(new std::unique_ptr<float[]>[hor_angles_]);
 	for(int i = 0; i < hor_angles_; ++i)
 	{
-		rad_map_[i] = new float[vert_angles_];
+		rad_map_[i] = std::unique_ptr<float[]>(new float[vert_angles_]);
 		for(int j = 0; j < vert_angles_; ++j)
 		{
 			if(i == hor_angles_ - 1 && h_adjust) rad_map_[i][j] = rad_map_[i - 1][j];
