@@ -113,7 +113,7 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 
 	nodes_ = (KdNode<T> *) malloc(4 * n_elements_ * sizeof(KdNode<T>)); //actually we could allocate one less...2n-1
 
-	const T **elements = new const T*[n_elements_];
+	auto elements = std::unique_ptr<const T*[]>(new const T*[n_elements_]);
 
 	for(uint32_t i = 0; i < n_elements_; ++i) elements[i] = &dat[i];
 
@@ -126,11 +126,9 @@ PointKdTree<T>::PointKdTree(const std::vector<T> &dat, const std::string &map_na
 
 	Y_INFO << "pointKdTree: Starting " << map_name << " recusive tree build for " << n_elements_ << " elements [using " << real_threads << " threads]" << YENDL;
 
-	buildTree(0, n_elements_, tree_bound_, elements);
+	buildTree(0, n_elements_, tree_bound_, elements.get());
 
 	Y_VERBOSE << "pointKdTree: " << map_name << " tree built." << YENDL;
-
-	delete[] elements;
 }
 
 template<class T>
