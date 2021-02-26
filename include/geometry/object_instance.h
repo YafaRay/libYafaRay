@@ -20,7 +20,6 @@
 #ifndef YAFARAY_OBJECT_INSTANCE_H
 #define YAFARAY_OBJECT_INSTANCE_H
 
-
 #include "geometry/object.h"
 
 BEGIN_YAFARAY
@@ -31,9 +30,8 @@ class ObjectInstance : public Object
 {
 	public:
 		ObjectInstance(const Object *base, const Matrix4 &obj_to_world);
-		virtual ~ObjectInstance() override;
 		virtual int numPrimitives() const override { return primitive_instances_.size(); }
-		virtual const std::vector<const Primitive *> getPrimitives() const override { return primitive_instances_; }
+		virtual const std::vector<const Primitive *> getPrimitives() const override;
 		virtual std::string getName() const override { return base_->getName(); }
 		virtual void setName(const std::string &name) override { }
 		virtual bool isMesh() const override { return base_->isMesh(); }
@@ -58,13 +56,13 @@ class ObjectInstance : public Object
 		virtual const Light *getLight() const override { return base_->getLight(); }
 		/*! set a light source to be associated with this object */
 		virtual void setLight(const Light *light) override { }
-		virtual const Matrix4 *getObjToWorldMatrix() const override { return obj_to_world_; }
+		virtual const Matrix4 *getObjToWorldMatrix() const override { return obj_to_world_.get(); }
 		virtual bool calculateObject(const Material *material = nullptr) override { return true; }
 
 	protected:
 		const Object *base_ = nullptr;
-		const Matrix4 *obj_to_world_ = nullptr;
-		std::vector<const Primitive *> primitive_instances_;
+		std::unique_ptr<const Matrix4> obj_to_world_;
+		std::vector<std::unique_ptr<const Primitive>> primitive_instances_;
 };
 
 END_YAFARAY

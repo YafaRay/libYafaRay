@@ -33,10 +33,11 @@ ObjectInstance::ObjectInstance(const Object *base, const Matrix4 &obj_to_world) 
 	}
 }
 
-ObjectInstance::~ObjectInstance()
+const std::vector<const Primitive *> ObjectInstance::getPrimitives() const
 {
-	for(auto &primitive_instance : primitive_instances_) delete primitive_instance;
-	delete obj_to_world_;
+	std::vector<const Primitive *> result;
+	for(const auto &primitive_instance : primitive_instances_) result.emplace_back(primitive_instance.get());
+	return result;
 }
 
 /*void ObjectInstance::sample(float s_1, float s_2, Point3 &p, Vec3 &n) const

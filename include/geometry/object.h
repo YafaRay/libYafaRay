@@ -20,11 +20,11 @@
 #ifndef YAFARAY_OBJECT_H
 #define YAFARAY_OBJECT_H
 
-
 #include "constants.h"
 #include "color/color.h"
 #include "common/visibility.h"
 #include <vector>
+#include <memory>
 
 BEGIN_YAFARAY
 
