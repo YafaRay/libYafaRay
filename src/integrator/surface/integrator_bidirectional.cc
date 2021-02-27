@@ -167,7 +167,7 @@ bool BidirectionalIntegrator::preprocess(const RenderControl &render_control, co
 	f_num_lights_ = 1.f / (float) num_lights;
 	auto energies = std::unique_ptr<float[]>(new float[num_lights]);
 	for(int i = 0; i < num_lights; ++i) energies[i] = lights_[i]->totalEnergy().energy();
-	light_power_d_ = new Pdf1D(energies.get(), num_lights);
+	light_power_d_ = std::unique_ptr<Pdf1D>(new Pdf1D(energies.get(), num_lights));
 
 	for(int i = 0; i < num_lights; ++i) inv_light_power_d_[lights_[i]] = light_power_d_->func_[i] * light_power_d_->inv_integral_;
 

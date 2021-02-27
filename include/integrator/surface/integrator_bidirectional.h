@@ -68,7 +68,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		//mutable pathData_t pathData;
 		mutable std::vector<PathData> thread_data_;
 		std::vector<Light *> lights_; //! An array containing all the scene lights
-		Pdf1D *light_power_d_ = nullptr;
+		std::unique_ptr<Pdf1D> light_power_d_;
 		float f_num_lights_;
 		std::map <const Light *, float> inv_light_power_d_;
 		ImageFilm *light_image_ = nullptr;
