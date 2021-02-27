@@ -54,7 +54,7 @@ struct Tile
 	PyObject_HEAD //Important! Python automatically reads/writes this head by position within the struct (not by name!), the class *must never* have anything located before the head or it will be overwritten in a very messy way!
 	int area_x_0_ = 0, area_x_1_ = 0;
 	int area_y_0_ = 0, area_y_1_ = 0;
-	ImageLayer *image_layer_ = nullptr; //The Python Object header needs to know the size of the object, better to use pointers to contained objects to get a reliable size
+	ImageLayer *image_layer_ = nullptr; //The Python Object header needs to know the size of the object, better to use simple raw pointers to contained objects to get a reliable size. Do not use smart pointers or classes here or weird random crashes will happen!
 	//Important: the PyObject_New function does *not* initialize the structure with its default values, an explicit init function needed to initialize and allocate any pointer(s)
 	void init() { area_x_0_ = 0; area_x_1_ = 0; area_y_0_ = 0; area_y_1_ = 0; image_layer_ = new ImageLayer(); }
 	~Tile() { delete image_layer_; }
@@ -204,8 +204,7 @@ public:
 		ColorOutput::init(width, height, layers, render_views);
 		for(const auto &render_view : *render_views)
 		{
-			//FIXME clearImageLayers();
-			TilesLayers *tiles_layers = new TilesLayers();
+			auto tiles_layers = std::unique_ptr<TilesLayers>(new TilesLayers());
 			const Layers layers_exported = layers_->getLayersWithExportedImages();
 			for(const auto &it : layers_exported)
 			{
@@ -217,7 +216,7 @@ public:
 				tile->image_layer_->layer_ = it.second;
 				tiles_layers->set(it.first, *tile);
 			}
-			tiles_views_[render_view.first] = tiles_layers;
+			tiles_views_[render_view.first] = std::move(tiles_layers);
 		}
 		PyGILState_Release(gstate);
 		SWIG_PYTHON_THREAD_END_BLOCK; 
@@ -228,18 +227,6 @@ public:
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
-
-		for(size_t view = 0; view < tiles_views_.size(); ++view)
-		{
-//			for(size_t idx = 0; idx < tiles_views_.at(current_render_view_->getName())->size(); ++idx)
-//			{
-//				if(tile.second.color_vector_) delete [] tile.second.color_vector_;
-//				//Py_XDECREF(tiles_views_.at(current_render_view_->getName())->[idx]);
-//			}
-			//FIXME clearImageLayers();
-		}
-		tiles_views_.clear();
-		
 		PyGILState_Release(gstate);
 		SWIG_PYTHON_THREAD_END_BLOCK; 
 	}
@@ -261,7 +248,7 @@ public:
 		PyGILState_STATE gstate;
 		gstate = PyGILState_Ensure();
 		const std::string view_name = current_render_view_->getName();
-		TilesLayers *tiles_layers = tiles_views_.at(view_name);
+		TilesLayers *tiles_layers = tiles_views_.at(view_name).get();
 		const size_t num_tiles_layers = tiles_layers->size();
 		PyObject* groupTile = PyTuple_New(num_tiles_layers);
 		//Y_DEBUG PR(groupTile) PREND; if(groupTile) //Y_DEBUG PR(groupTile->ob_refcnt) PREND;
@@ -301,7 +288,7 @@ public:
 		gstate = PyGILState_Ensure();
 
 		const std::string view_name = current_render_view_->getName();
-		TilesLayers *tiles_layers = tiles_views_.at(view_name);
+		TilesLayers *tiles_layers = tiles_views_.at(view_name).get();
 		const size_t num_tiles_layers = tiles_layers->size();
 		PyObject* groupTile = PyTuple_New(num_tiles_layers);
 		//Y_DEBUG PR(groupTile) PREND; if(groupTile) //Y_DEBUG PR(groupTile->ob_refcnt) PREND;
@@ -341,7 +328,7 @@ public:
 
 		SWIG_PYTHON_THREAD_BEGIN_BLOCK;
 		const std::string view_name = current_render_view_->getName();
-		TilesLayers *tiles_layers = tiles_views_.at(view_name);
+		TilesLayers *tiles_layers = tiles_views_.at(view_name).get();
 		Tile *tile = tiles_layers->find(Layer::Combined);
 
 		tile->area_x_0_ = x0 - border_x_;
@@ -441,7 +428,7 @@ private:
 	bool preview_ = false;
 	PyObject *py_draw_area_callback_ = nullptr;
 	PyObject *py_flush_callback_ = nullptr;
-	std::map<std::string, TilesLayers *> tiles_views_;
+	std::map<std::string, std::unique_ptr<TilesLayers>> tiles_views_;
 };
 
 class YafPyProgress : public ProgressBar
@@ -531,10 +518,10 @@ END_YAFARAY
 {
 	void render(PyObject *py_progress_callback)
 	{
-		YafPyProgress *pbar_wrap = new YafPyProgress(py_progress_callback);
+		auto pbar_wrap = std::unique_ptr<YafPyProgress>(new YafPyProgress(py_progress_callback));
 		//Y_DEBUG PR(py_progress_callback) PREND;
 		Py_BEGIN_ALLOW_THREADS;
-		self->render(pbar_wrap);
+		self->render(pbar_wrap.get());
 		Py_END_ALLOW_THREADS;
 	}
 }
