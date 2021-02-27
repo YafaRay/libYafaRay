@@ -32,7 +32,7 @@ IesLight::IesLight(const Point3 &from, const Point3 &to, const Rgb &col, float p
 {
 	light_enabled_ = b_light_enabled;
 	cast_shadows_ = b_cast_shadows;
-	ies_data_ = new IesData();
+	ies_data_ = std::unique_ptr<IesData>(new IesData());
 
 	if((ies_ok_ = ies_data_->parseIesFile(ies_file)))
 	{

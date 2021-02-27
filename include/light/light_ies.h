@@ -60,7 +60,7 @@ class IesLight final : public Light
 		int samples_;
 		bool soft_shadow_;
 		float tot_energy_;
-		IesData *ies_data_ = nullptr;
+		std::unique_ptr<IesData> ies_data_;
 		bool ies_ok_;
 };
 
