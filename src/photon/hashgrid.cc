@@ -51,10 +51,12 @@ void HashGrid::updateGrid()
 
 	if(!hash_grid_)
 	{
-		hash_grid_ = new std::list<Photon *> *[grid_size_];
+		hash_grid_ = std::unique_ptr<std::unique_ptr<std::list<const Photon *>>[]>(new std::unique_ptr<std::list<const Photon *>>[grid_size_]);
 
 		for(unsigned int i = 0; i < grid_size_; ++i)
+		{
 			hash_grid_[i] = nullptr;
+		}
 	}
 	else
 	{
@@ -62,9 +64,7 @@ void HashGrid::updateGrid()
 		{
 			if(hash_grid_[i])
 			{
-				//delete hashGrid[i];
 				hash_grid_[i]->clear(); // fix me! too many time consumed here
-				//hashGrid[i] = nullptr;
 			}
 		}
 	}
@@ -80,8 +80,7 @@ void HashGrid::updateGrid()
 
 		unsigned int index = hash(ix, iy, iz);
 
-		if(hash_grid_[index] == nullptr)
-			hash_grid_[index] = new std::list<Photon *>();
+		if(!hash_grid_[index]) hash_grid_[index] = std::unique_ptr<std::list<const Photon *>>(new std::list<const Photon *>());
 
 		hash_grid_[index]->push_front(&(*itr));
 	}

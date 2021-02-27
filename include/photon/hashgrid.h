@@ -47,7 +47,7 @@ class HashGrid final
 	private:
 		unsigned int hash(const int ix, const int iy, const int iz)
 		{
-			return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % grid_size_;
+			return static_cast<unsigned int>((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % grid_size_;
 		}
 
 	public:
@@ -55,7 +55,7 @@ class HashGrid final
 		unsigned int grid_size_;
 		Bound bounding_box_;
 		std::vector<Photon>photons_;
-		std::list<Photon *> **hash_grid_;
+		std::unique_ptr<std::unique_ptr<std::list<const Photon *>>[]> hash_grid_;
 };
 
 
